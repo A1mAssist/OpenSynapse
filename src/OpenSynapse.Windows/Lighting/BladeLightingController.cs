@@ -14,6 +14,7 @@ public enum BladeLightingMode
     Fire,
     Reactive,
     Ripple,
+    AudioMeter,
 }
 
 public sealed record BladeLightingEffect(
@@ -113,20 +114,27 @@ public sealed class BladeLightingController : IBladeLightingController
                     _transport,
                     device.Id,
                     token => RestoreAsync(device.Id, token));
-                WindowsKeyboardLightingAdapter? keyboardInput = null;
+                ILightingInputAdapter? inputAdapter = null;
                 ISoftwareLightingFrameSource source;
                 if (effect.Mode is BladeLightingMode.Reactive or BladeLightingMode.Ripple)
                 {
-                    keyboardInput = new WindowsKeyboardLightingAdapter();
+                    var keyboardInput = new WindowsKeyboardLightingAdapter();
+                    inputAdapter = keyboardInput;
                     source = new KeyboardEffectFrameSource(effect, keyboardInput);
+                }
+                else if (effect.Mode == BladeLightingMode.AudioMeter)
+                {
+                    var audioInput = new WasapiAudioMeterAdapter();
+                    inputAdapter = audioInput;
+                    source = new AudioMeterFrameSource(audioInput);
                 }
                 else
                 {
                     source = new EffectFrameSource(effect);
                 }
-                var runtime = keyboardInput is null
+                var runtime = inputAdapter is null
                     ? new SoftwareLightingRuntime(pump, source, FrameInterval)
-                    : new SoftwareLightingRuntime(pump, source, FrameInterval, keyboardInput);
+                    : new SoftwareLightingRuntime(pump, source, FrameInterval, inputAdapter);
                 _runtime = runtime;
                 _runtimeCompletion = runtime.Completion;
                 _ = runtime.Completion.ContinueWith(
@@ -387,6 +395,18 @@ public sealed class BladeLightingController : IBladeLightingController
                 _ => throw new InvalidOperationException("键盘输入源仅支持 Reactive 或 Ripple。"),
             };
             return ValueTask.FromResult(frame);
+        }
+    }
+
+    private sealed class AudioMeterFrameSource(WasapiAudioMeterAdapter adapter) : ISoftwareLightingFrameSource
+    {
+        public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
+            TimeSpan elapsed,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(
+                QuickLightingEngine.RenderAudioMeter(adapter.ReadLevel(), colorBoost: 0));
         }
     }
 }

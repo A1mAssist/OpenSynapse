@@ -14,7 +14,9 @@ import java.util.Set;
 public class TraceLightingConstructors extends ghidra.app.script.GhidraScript {
     @Override
     public void run() throws Exception {
-        long[] vftables = {0x1801ac698L, 0x1801ac758L, 0x1801ac928L, 0x1801aca28L};
+        long[] vftables = {
+            0x1801ac5a8L, 0x1801ac698L, 0x1801ac758L, 0x1801ac928L, 0x1801aca28L
+        };
         Set<Function> functions = new LinkedHashSet<>();
         StringBuilder out = new StringBuilder();
         for (long value : vftables) {

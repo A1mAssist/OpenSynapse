@@ -1,7 +1,33 @@
 using System.Text.Json;
+using System.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
+
+var validationCommands = new[]
+{
+    "--viper-dpi-stages",
+    "--viper-low-battery-threshold",
+    "--keyboard-lighting",
+    "--blade-fan-fixed",
+    "--blade-battery-sleep",
+    "--logo",
+};
+if (args.Any(argument => validationCommands.Contains(argument, StringComparer.Ordinal)))
+{
+    var runningApp = Process.GetProcessesByName("OpenSynapse.App")
+        .FirstOrDefault(process => process.Id != Environment.ProcessId);
+    if (runningApp is not null)
+    {
+        using (runningApp)
+        {
+            Console.Error.WriteLine(
+                $"检测到 OpenSynapse.App 仍在运行（PID {runningApp.Id}）。请从托盘完全退出后再执行验证；验证工具不会自动终止进程。\n" +
+                "设备被占用时继续执行可能得到错序报告，并且不能作为协议证据。");
+        }
+        return 2;
+    }
+}
 
 return args.Contains("--viper-dpi-stages", StringComparer.Ordinal)
     ? await ViperDpiStagesValidation.RunAsync(args)

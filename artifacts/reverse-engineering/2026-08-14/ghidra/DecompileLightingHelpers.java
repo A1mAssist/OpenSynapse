@@ -15,6 +15,8 @@ public class DecompileLightingHelpers extends ghidra.app.script.GhidraScript {
         String[] names = {
             "FUN_1800692e0", "FUN_180069590", "FUN_180065f50", "FUN_180066160",
             "FUN_180069600", "FUN_180069140", "FUN_180069190", "FUN_18004b6c0",
+            "FUN_180060380", "FUN_180060900", "FUN_180060950", "FUN_180060dc0", "FUN_180060de0",
+            "FUN_180061470", "FUN_1800614d0",
             "FUN_1801551d0", "FUN_180194710", "FUN_180194db0"
         };
         DecompInterface decompiler = new DecompInterface();
