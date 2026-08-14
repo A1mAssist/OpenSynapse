@@ -13,7 +13,7 @@ internal static class BladeLightingProfileCodec
         var parameters = profile.Parameters ?? new Dictionary<string, string>();
         string[] allowed = mode switch
         {
-            "static" or "breathing" => ["color"],
+            "static" or "breathing" or "reactive" or "ripple" => ["color"],
             "wave" => ["direction"],
             "off" or "spectrum" or "fire" => [],
             _ => throw new InvalidOperationException($"不支持的键盘灯效：{profile.Effect}。"),
@@ -32,6 +32,8 @@ internal static class BladeLightingProfileCodec
             "breathing" => BladeLightingMode.Breathing,
             "spectrum" => BladeLightingMode.Spectrum,
             "wave" => BladeLightingMode.Wave,
+            "reactive" => BladeLightingMode.Reactive,
+            "ripple" => BladeLightingMode.Ripple,
             _ => BladeLightingMode.Fire,
         }, color, direction);
     }
@@ -40,7 +42,8 @@ internal static class BladeLightingProfileCodec
     {
         ArgumentNullException.ThrowIfNull(effect);
         var profile = new LightingProfile { Effect = effect.Mode.ToString().ToLowerInvariant() };
-        if (effect.Mode is BladeLightingMode.Static or BladeLightingMode.Breathing)
+        if (effect.Mode is BladeLightingMode.Static or BladeLightingMode.Breathing or
+            BladeLightingMode.Reactive or BladeLightingMode.Ripple)
         {
             profile.Parameters["color"] =
                 $"{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}";

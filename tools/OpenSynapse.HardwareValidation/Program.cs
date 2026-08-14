@@ -11,6 +11,8 @@ return args.Contains("--viper-dpi-stages", StringComparer.Ordinal)
         ? await KeyboardLightingValidation.RunAsync(args)
     : args.Contains("--blade-fan-fixed", StringComparer.Ordinal)
         ? await BladeFanValidation.RunAsync(args)
+    : args.Contains("--blade-battery-sleep", StringComparer.Ordinal)
+        ? await BladeBatterySleepValidation.RunAsync(args)
         : await LogoValidation.RunAsync(args);
 
 internal static class LogoValidation

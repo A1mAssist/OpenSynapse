@@ -27,6 +27,7 @@ public sealed class SoftwareLightingRuntimeTests
             pump,
             source,
             TimeSpan.FromMilliseconds(16),
+            null,
             (delay, cancellationToken) =>
             {
                 delays.Add(delay);
@@ -65,6 +66,7 @@ public sealed class SoftwareLightingRuntimeTests
             pump,
             source,
             TimeSpan.FromMilliseconds(1),
+            null,
             static (_, cancellationToken) => new ValueTask(Task.CompletedTask),
             static () => Stopwatch.GetTimestamp());
 
@@ -97,6 +99,7 @@ public sealed class SoftwareLightingRuntimeTests
             pump,
             source,
             TimeSpan.FromMilliseconds(10),
+            null,
             static (_, cancellationToken) =>
                 new ValueTask(Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken)),
             static () => Stopwatch.GetTimestamp());
@@ -106,6 +109,31 @@ public sealed class SoftwareLightingRuntimeTests
 
         Assert.Equal(1, restored);
         Assert.True(source.RenderCount >= 1);
+    }
+
+    [Fact]
+    public async Task StopsAndDisposesInputBeforeRestoringPump()
+    {
+        var order = new List<string>();
+        await using var pump = new BladeMatrixFramePump(
+            new RuntimeTransport(),
+            "blade",
+            _ =>
+            {
+                order.Add("restore");
+                return Task.CompletedTask;
+            });
+        var adapter = new RecordingAdapter(order);
+        var runtime = new SoftwareLightingRuntime(
+            pump,
+            new SequenceSource(CreateFrame(7)),
+            TimeSpan.FromMilliseconds(10),
+            adapter);
+
+        await adapter.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await runtime.StopAsync();
+
+        Assert.Equal(["start", "stop", "dispose", "restore"], order);
     }
 
     private static RazerRgb[] CreateFrame(byte marker) =>
@@ -183,6 +211,31 @@ public sealed class SoftwareLightingRuntimeTests
             arguments.CopyTo(response.AsMemory(RazerFeatureReport.ArgumentsOffset));
             response[89] = RazerFeatureReport.CalculateCrc(response);
             return Task.FromResult(response);
+        }
+    }
+
+    private sealed class RecordingAdapter(List<string> order) : ILightingInputAdapter
+    {
+        public TaskCompletionSource Started { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public ValueTask StartAsync(CancellationToken cancellationToken)
+        {
+            order.Add("start");
+            Started.TrySetResult();
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask StopAsync()
+        {
+            order.Add("stop");
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            order.Add("dispose");
+            return ValueTask.CompletedTask;
         }
     }
 }

@@ -26,6 +26,7 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
     private readonly TimeSpan _frameInterval;
     private readonly Func<TimeSpan, CancellationToken, ValueTask> _delay;
     private readonly Func<long> _timestamp;
+    private readonly ILightingInputAdapter? _inputAdapter;
     private readonly long _startedAt;
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _worker;
@@ -35,7 +36,7 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
         BladeMatrixFramePump pump,
         ISoftwareLightingFrameSource source,
         TimeSpan frameInterval)
-        : this(pump, source, frameInterval, DefaultDelay, Stopwatch.GetTimestamp)
+        : this(pump, source, frameInterval, null, DefaultDelay, Stopwatch.GetTimestamp)
     {
     }
 
@@ -43,6 +44,16 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
         BladeMatrixFramePump pump,
         ISoftwareLightingFrameSource source,
         TimeSpan frameInterval,
+        ILightingInputAdapter inputAdapter)
+        : this(pump, source, frameInterval, inputAdapter, DefaultDelay, Stopwatch.GetTimestamp)
+    {
+    }
+
+    internal SoftwareLightingRuntime(
+        BladeMatrixFramePump pump,
+        ISoftwareLightingFrameSource source,
+        TimeSpan frameInterval,
+        ILightingInputAdapter? inputAdapter,
         Func<TimeSpan, CancellationToken, ValueTask> delay,
         Func<long> timestamp)
     {
@@ -60,6 +71,7 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
         _frameInterval = frameInterval;
         _delay = delay;
         _timestamp = timestamp;
+        _inputAdapter = inputAdapter;
         _startedAt = timestamp();
         _worker = RunAsync();
     }
@@ -93,6 +105,10 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
         Exception? failure = null;
         try
         {
+            if (_inputAdapter is not null)
+            {
+                await _inputAdapter.StartAsync(_stop.Token).ConfigureAwait(false);
+            }
             while (!_stop.IsCancellationRequested)
             {
                 var elapsed = Stopwatch.GetElapsedTime(_startedAt, _timestamp());
@@ -119,6 +135,20 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
         }
         finally
         {
+            if (_inputAdapter is not null)
+            {
+                try
+                {
+                    await _inputAdapter.StopAsync().ConfigureAwait(false);
+                    await _inputAdapter.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    failure = failure is null
+                        ? exception
+                        : new AggregateException(failure, exception);
+                }
+            }
             try
             {
                 await _pump.StopAsync().ConfigureAwait(false);

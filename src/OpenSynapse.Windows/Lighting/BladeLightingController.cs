@@ -12,6 +12,8 @@ public enum BladeLightingMode
     Spectrum,
     Wave,
     Fire,
+    Reactive,
+    Ripple,
 }
 
 public sealed record BladeLightingEffect(
@@ -111,10 +113,20 @@ public sealed class BladeLightingController : IBladeLightingController
                     _transport,
                     device.Id,
                     token => RestoreAsync(device.Id, token));
-                var runtime = new SoftwareLightingRuntime(
-                    pump,
-                    new EffectFrameSource(effect),
-                    FrameInterval);
+                WindowsKeyboardLightingAdapter? keyboardInput = null;
+                ISoftwareLightingFrameSource source;
+                if (effect.Mode is BladeLightingMode.Reactive or BladeLightingMode.Ripple)
+                {
+                    keyboardInput = new WindowsKeyboardLightingAdapter();
+                    source = new KeyboardEffectFrameSource(effect, keyboardInput);
+                }
+                else
+                {
+                    source = new EffectFrameSource(effect);
+                }
+                var runtime = keyboardInput is null
+                    ? new SoftwareLightingRuntime(pump, source, FrameInterval)
+                    : new SoftwareLightingRuntime(pump, source, FrameInterval, keyboardInput);
                 _runtime = runtime;
                 _runtimeCompletion = runtime.Completion;
                 _ = runtime.Completion.ContinueWith(
@@ -347,6 +359,32 @@ public sealed class BladeLightingController : IBladeLightingController
                 BladeLightingMode.Wave => QuickLightingEngine.RenderWave(elapsed, effect.Direction),
                 BladeLightingMode.Fire => QuickLightingEngine.RenderFire(elapsed, 710),
                 _ => throw new InvalidOperationException("不支持的 Blade 灯光模式。"),
+            };
+            return ValueTask.FromResult(frame);
+        }
+    }
+
+    private sealed class KeyboardEffectFrameSource(
+        BladeLightingEffect effect,
+        WindowsKeyboardLightingAdapter adapter) : ISoftwareLightingFrameSource
+    {
+        private static readonly TimeSpan Duration = TimeSpan.FromSeconds(1);
+        private readonly List<QuickLightingKeyEvent> _events = [];
+
+        public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
+            TimeSpan elapsed,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            adapter.DrainTo(_events);
+            _events.RemoveAll(item => item.At <= elapsed - Duration);
+            IReadOnlyList<RazerRgb> frame = effect.Mode switch
+            {
+                BladeLightingMode.Reactive =>
+                    QuickLightingEngine.RenderReactive(elapsed, _events, effect.Color, Duration),
+                BladeLightingMode.Ripple =>
+                    QuickLightingEngine.RenderRipple(elapsed, _events, effect.Color, Duration),
+                _ => throw new InvalidOperationException("键盘输入源仅支持 Reactive 或 Ripple。"),
             };
             return ValueTask.FromResult(frame);
         }

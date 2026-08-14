@@ -15,6 +15,21 @@ public sealed class BladeLightingProfileCodecTests
         Assert.Equal(expected, BladeLightingProfileCodec.Parse(new LightingProfile { Effect = name }).Mode);
     }
 
+    [Theory]
+    [InlineData("reactive", BladeLightingMode.Reactive)]
+    [InlineData("ripple", BladeLightingMode.Ripple)]
+    public void ParsesKeyboardInputModes(string name, BladeLightingMode expected)
+    {
+        var effect = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = name,
+            Parameters = new(StringComparer.OrdinalIgnoreCase) { ["color"] = "99DD72" },
+        });
+
+        Assert.Equal(expected, effect.Mode);
+        Assert.Equal("99DD72", BladeLightingProfileCodec.Create(effect).Parameters["color"]);
+    }
+
     [Fact]
     public void ParsesAndCreatesCanonicalColor()
     {
