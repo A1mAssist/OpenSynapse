@@ -38,10 +38,15 @@ public partial class App : Application
 
         _performanceMonitor = new WindowsPerformanceMonitor();
         var razerTransport = new RazerFeatureTransport();
-        _bladeLightingController = new BladeLightingController(razerTransport);
+        var registryLoad = RazerDeviceRegistry.Load();
+        foreach (var error in registryLoad.Errors)
+        {
+            _diagnosticLog.TryWrite("device-manifest", error);
+        }
+        _bladeLightingController = new BladeLightingController(razerTransport, registryLoad.Registry);
         var viewModel = new MainViewModel(
-            new WindowsHidDiscovery(),
-            new RazerDeviceTelemetryReader(razerTransport),
+            new WindowsHidDiscovery(registryLoad.Registry),
+            new RazerDeviceTelemetryReader(razerTransport, registryLoad.Registry),
             _performanceMonitor,
             new ProfileStore(),
             new WindowsPowerSourceProvider(),
@@ -50,7 +55,8 @@ public partial class App : Application
             new WindowsInternalDisplayController(),
             _bladeLightingController,
             new WindowsStartupManager(),
-            Environment.ProcessPath);
+            Environment.ProcessPath,
+            registryLoad.Errors);
         _diagnosticLog.TryWrite("application", "OpenSynapse started.");
         var window = new MainWindow(viewModel);
         _window = window;

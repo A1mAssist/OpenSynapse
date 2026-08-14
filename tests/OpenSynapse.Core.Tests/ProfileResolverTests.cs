@@ -136,4 +136,82 @@ public sealed class ProfileResolverTests
         Assert.Equal((byte)BladeMaxFanMode.Disabled, ProfileResolver.Resolve(document, BladeDevice(), false).Blade.MaxFanMode);
         Assert.Equal(165, ProfileResolver.Resolve(document, BladeDevice(), null).Blade.RefreshRateHertz);
     }
+
+    [Fact]
+    public void ExpandedSettingsUsePowerDeviceGlobalPrecedenceAndCloneDpiStages()
+    {
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Blade.CpuBoostMode = (byte)BladeCpuBoostMode.Low;
+        document.Global.Blade.GpuBoostMode = (byte)BladeGpuBoostMode.Low;
+        document.Global.Blade.LogoMode = (byte)BladeLogoMode.Static;
+        document.Global.Viper.DpiStages = DpiStages(800);
+        document.Devices["1532:02C6"] = new DeviceProfileSettings
+        {
+            Blade = new BladeProfileSettings
+            {
+                CpuBoostMode = (byte)BladeCpuBoostMode.Medium,
+                GpuBoostMode = (byte)BladeGpuBoostMode.Medium,
+                LogoMode = (byte)BladeLogoMode.Off,
+            },
+            Viper = new ViperProfileSettings { DpiStages = DpiStages(1600) },
+        };
+        document.PluggedIn.Blade.CpuBoostMode = (byte)BladeCpuBoostMode.High;
+        document.PluggedIn.Blade.GpuBoostMode = (byte)BladeGpuBoostMode.High;
+        document.PluggedIn.Blade.LogoMode = (byte)BladeLogoMode.Static;
+        document.PluggedIn.Viper.DpiStages = DpiStages(3200);
+
+        var pluggedIn = ProfileResolver.Resolve(document, BladeDevice(), isPluggedIn: true);
+        var unknownPower = ProfileResolver.Resolve(document, BladeDevice(), isPluggedIn: null);
+
+        Assert.Equal((byte)BladeCpuBoostMode.High, pluggedIn.Blade.CpuBoostMode);
+        Assert.Equal((byte)BladeGpuBoostMode.High, pluggedIn.Blade.GpuBoostMode);
+        Assert.Equal((byte)BladeLogoMode.Static, pluggedIn.Blade.LogoMode);
+        Assert.Equal(3200, pluggedIn.Viper.DpiStages!.Stages[0].X);
+        Assert.Equal((byte)BladeCpuBoostMode.Medium, unknownPower.Blade.CpuBoostMode);
+        Assert.Equal((byte)BladeGpuBoostMode.Medium, unknownPower.Blade.GpuBoostMode);
+        Assert.Equal((byte)BladeLogoMode.Off, unknownPower.Blade.LogoMode);
+        Assert.Equal(1600, unknownPower.Viper.DpiStages!.Stages[0].X);
+
+        pluggedIn.Viper.DpiStages.Stages[0].X = 6400;
+        Assert.Equal(3200, document.PluggedIn.Viper.DpiStages!.Stages[0].X);
+    }
+
+    [Fact]
+    public void LightingMergesGlobalDeviceAndPowerOverrides()
+    {
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Lighting.Effect = "static";
+        document.Global.Lighting.Parameters["color"] = "111111";
+        document.Global.Lighting.Parameters["speed"] = "slow";
+        document.Devices["1532:02C6"] = new DeviceProfileSettings
+        {
+            Lighting = new LightingProfile
+            {
+                Effect = "wave",
+                Parameters = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["color"] = "222222",
+                    ["direction"] = "right",
+                },
+            },
+        };
+        document.PluggedIn.Lighting.Effect = "fire";
+        document.PluggedIn.Lighting.Parameters["direction"] = "left";
+
+        var pluggedIn = ProfileResolver.Resolve(document, BladeDevice(), isPluggedIn: true);
+        var unknownPower = ProfileResolver.Resolve(document, BladeDevice(), isPluggedIn: null);
+
+        Assert.Equal("fire", pluggedIn.Lighting.Effect);
+        Assert.Equal("222222", pluggedIn.Lighting.Parameters["color"]);
+        Assert.Equal("slow", pluggedIn.Lighting.Parameters["speed"]);
+        Assert.Equal("left", pluggedIn.Lighting.Parameters["direction"]);
+        Assert.Equal("wave", unknownPower.Lighting.Effect);
+        Assert.Equal("right", unknownPower.Lighting.Parameters["direction"]);
+    }
+
+    private static ViperDpiStagesProfile DpiStages(int dpi) => new()
+    {
+        ActiveStage = 1,
+        Stages = [new ViperDpiStageProfile { Number = 1, X = dpi, Y = dpi }],
+    };
 }

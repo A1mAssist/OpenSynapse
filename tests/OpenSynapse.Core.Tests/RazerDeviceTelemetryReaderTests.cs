@@ -209,6 +209,146 @@ public sealed class RazerDeviceTelemetryReaderTests
     }
 
     [Fact]
+    public async Task WritesBladeFanTargetsBeforeManualModeAndReadsBothZonesBack()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            PerformanceMode = BladePerformanceMode.Custom,
+            FanMode = BladeFanMode.Automatic,
+            FanTargetRpm = 3200,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var actual = await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, 3400);
+
+        Assert.Equal(new BladeFanControlState(BladeFanMode.Manual, 3400), actual);
+        Assert.Equal(3400, transport.FanTargetRpm);
+        Assert.Equal((ushort)3400, transport.Zone2FanTargetRpm);
+        Assert.Equal(BladeFanMode.Manual, transport.FanMode);
+        Assert.Equal(BladeFanMode.Manual, transport.Zone2FanMode);
+        Assert.Equal(
+            new[] { "GET-M1", "GET-M2", "GET-T1", "GET-T2", "GET-RPM1", "GET-RPM2", "SET-T1", "SET-T2", "SET-M1", "SET-M2", "GET-M1", "GET-M2", "GET-T1", "GET-T2" },
+            transport.FanCommands);
+    }
+
+    [Fact]
+    public async Task WritesAutomaticModeWithoutChangingStoredTargets()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            FanMode = BladeFanMode.Manual,
+            FanTargetRpm = 3400,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var actual = await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Automatic, null);
+
+        Assert.Equal(new BladeFanControlState(BladeFanMode.Automatic, 3400), actual);
+        Assert.Equal((ushort)3400, transport.FanTargetRpm);
+        Assert.DoesNotContain(transport.FanCommands, command => command.StartsWith("SET-T", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(1900)]
+    [InlineData(5100)]
+    [InlineData(3350)]
+    public async Task RejectsInvalidBladeFanTargetBeforeAnyDeviceIo(int targetRpm)
+    {
+        var transport = new FakeRazerFeatureTransport();
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, targetRpm));
+
+        Assert.Empty(transport.FanCommands);
+    }
+
+    [Fact]
+    public async Task BlocksBladeFanSetWhenCurrentPathGetFails()
+    {
+        var transport = new FakeRazerFeatureTransport { FailFanTargetGetZone = BladeFanProtocol.ZoneGpu };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, 3400));
+
+        Assert.DoesNotContain(transport.FanCommands, command => command.StartsWith("SET-", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task BlocksBladeFanSetWhenOriginalTargetsDiffer()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            FanTargetRpm = 3200,
+            Zone2FanTargetRpm = 3300,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, 3400));
+
+        Assert.Contains("两个风扇分区设定不一致", error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(transport.FanCommands, command => command.StartsWith("SET-", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task RestoresBladeFanWhenGpuTargetWriteIsIgnored()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            Zone2FanTargetRpm = 3200,
+            IgnoreFanTargetWriteNumbers = [2],
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, 3400));
+
+        Assert.Contains("原状态已恢复", error.Message, StringComparison.Ordinal);
+        Assert.Equal(3200, transport.FanTargetRpm);
+        Assert.Equal((ushort)3200, transport.Zone2FanTargetRpm);
+        Assert.Equal(BladeFanMode.Automatic, transport.FanMode);
+        Assert.Equal(BladeFanMode.Automatic, transport.Zone2FanMode);
+    }
+
+    [Fact]
+    public async Task RestoresBladeFanNonCancelableWhenCanceledAfterCpuTargetWrite()
+    {
+        var transport = new FakeRazerFeatureTransport { CancelFanTargetWriteNumberAfterApplying = 1 };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var error = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, 3400));
+
+        Assert.Contains("原状态已恢复", error.Message, StringComparison.Ordinal);
+        Assert.Equal(3200, transport.FanTargetRpm);
+        Assert.Equal((ushort)3200, transport.Zone2FanTargetRpm);
+        Assert.Equal(BladeFanMode.Automatic, transport.FanMode);
+        Assert.All(transport.RestorationCancellationTokens, token => Assert.Equal(CancellationToken.None, token));
+    }
+
+    [Fact]
+    public async Task AggregatesBladeFanOperationAndRestorationFailures()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            Zone2FanTargetRpm = 3200,
+            CancelFanTargetWriteNumberAfterApplying = 1,
+            IgnoreFanTargetWriteNumbers = [2],
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var error = await Assert.ThrowsAsync<AggregateException>(async () =>
+            await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, 3400));
+
+        Assert.Contains(error.InnerExceptions, exception => exception is OperationCanceledException);
+        Assert.Contains(error.InnerExceptions, exception =>
+            exception.ToString().Contains("恢复读回", StringComparison.Ordinal));
+        Assert.Equal(3400, transport.FanTargetRpm);
+    }
+
+    [Fact]
     public async Task RejectsSplitBladeFanTargetAndKeepsPerformanceWriteGated()
     {
         var transport = new FakeRazerFeatureTransport
@@ -605,12 +745,19 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
 {
     private readonly List<byte> _performanceWriteZones = new();
     private readonly List<byte> _boostWriteClusters = new();
+    private int _fanTargetWriteCount;
 
     public BladePerformanceMode PerformanceMode { get; set; } = BladePerformanceMode.Balanced;
     public BladePerformanceMode? Zone2PerformanceMode { get; set; }
     public BladeFanMode FanMode { get; set; } = BladeFanMode.Automatic;
+    public BladeFanMode? Zone2FanMode { get; set; }
     public ushort FanTargetRpm { get; set; } = 3200;
     public ushort? Zone2FanTargetRpm { get; set; }
+    public byte? FailFanTargetGetZone { get; set; }
+    public HashSet<int> IgnoreFanTargetWriteNumbers { get; set; } = [];
+    public int? CancelFanTargetWriteNumberAfterApplying { get; set; }
+    public List<string> FanCommands { get; } = [];
+    public List<CancellationToken> RestorationCancellationTokens { get; } = [];
     public ushort CurrentFanCpuRpm { get; set; } = 2200;
     public ushort CurrentFanGpuRpm { get; set; } = 2000;
     public byte? FailCurrentFanId { get; set; }
@@ -806,17 +953,26 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
         if ((commandClass, commandId) == (0x0D, 0x82))
         {
             var zone = args[1];
+            FanCommands.Add($"GET-M{zone}");
             var mode = zone == 0x02 && Zone2PerformanceMode is BladePerformanceMode zone2Mode
                 ? zone2Mode
                 : PerformanceMode;
+            var fanMode = zone == 0x02 && Zone2FanMode is BladeFanMode zone2FanMode
+                ? zone2FanMode
+                : FanMode;
             return Task.FromResult(CreateResponse(
                 transactionId, 4, commandClass, commandId,
-                new byte[] { 0x00, zone, (byte)mode, (byte)FanMode }));
+                new byte[] { 0x00, zone, (byte)mode, (byte)fanMode }));
         }
 
         if ((commandClass, commandId) == (0x0D, 0x81))
         {
             var zone = args[1];
+            FanCommands.Add($"GET-T{zone}");
+            if (FailFanTargetGetZone == zone)
+            {
+                throw new InvalidOperationException($"Simulated fan target GET zone {zone} failure.");
+            }
             var targetRpm = zone == BladeFanProtocol.ZoneGpu && Zone2FanTargetRpm is ushort zone2Target
                 ? zone2Target
                 : FanTargetRpm;
@@ -828,6 +984,7 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
         if ((commandClass, commandId) == (0x0D, 0x88))
         {
             var fanId = args[1];
+            FanCommands.Add($"GET-RPM{fanId}");
             if (FailCurrentFanId == fanId)
             {
                 throw new InvalidOperationException($"Simulated current fan {fanId:X2} failure.");
@@ -908,6 +1065,11 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
         if ((commandClass, commandId) == (0x0D, 0x02))
         {
             _performanceWriteZones.Add(args[1]);
+            FanCommands.Add($"SET-M{args[1]}");
+            if (!cancellationToken.CanBeCanceled)
+            {
+                RestorationCancellationTokens.Add(cancellationToken);
+            }
             if (FailPerformanceWriteZone == args[1])
             {
                 throw new InvalidOperationException($"Simulated zone {args[1]} write failure.");
@@ -919,13 +1081,49 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
             }
             if (!IgnorePerformanceWrites)
             {
-                PerformanceMode = (BladePerformanceMode)args[2];
-                FanMode = (BladeFanMode)args[3];
+                if (args[1] == BladeFanProtocol.ZoneCpu)
+                {
+                    PerformanceMode = (BladePerformanceMode)args[2];
+                    FanMode = (BladeFanMode)args[3];
+                }
+                else
+                {
+                    Zone2PerformanceMode = (BladePerformanceMode)args[2];
+                    Zone2FanMode = (BladeFanMode)args[3];
+                }
             }
             if (CancelNextPerformanceWriteAfterApplying)
             {
                 CancelNextPerformanceWriteAfterApplying = false;
                 throw new OperationCanceledException("Simulated cancellation after performance write.");
+            }
+            return Task.FromResult(CreateResponse(transactionId, dataSize, commandClass, commandId, args));
+        }
+
+        if ((commandClass, commandId) == (0x0D, 0x01))
+        {
+            var zone = args[1];
+            _fanTargetWriteCount++;
+            FanCommands.Add($"SET-T{zone}");
+            if (!cancellationToken.CanBeCanceled)
+            {
+                RestorationCancellationTokens.Add(cancellationToken);
+            }
+            if (!IgnoreFanTargetWriteNumbers.Contains(_fanTargetWriteCount))
+            {
+                var rpm = checked((ushort)(args[2] * BladeFanProtocol.StepRpm));
+                if (zone == BladeFanProtocol.ZoneCpu)
+                {
+                    FanTargetRpm = rpm;
+                }
+                else
+                {
+                    Zone2FanTargetRpm = rpm;
+                }
+            }
+            if (CancelFanTargetWriteNumberAfterApplying == _fanTargetWriteCount)
+            {
+                throw new OperationCanceledException("Simulated cancellation after fan target write.");
             }
             return Task.FromResult(CreateResponse(transactionId, dataSize, commandClass, commandId, args));
         }

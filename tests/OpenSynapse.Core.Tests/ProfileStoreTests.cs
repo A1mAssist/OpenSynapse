@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 
 namespace OpenSynapse.Core.Tests;
@@ -113,6 +114,42 @@ public sealed class ProfileStoreTests : IDisposable
         Assert.Equal("Gaming", imported.ActiveProfileName);
         Assert.Equal(1000, imported.Global.Viper.PollingRateHertz);
         Assert.Equal("Gaming", ApplicationProfileBinding.Resolve(imported, @"c:\games\GAME.EXE"));
+    }
+
+    [Fact]
+    public async Task ExportsAndImportsExpandedDeviceSettings()
+    {
+        var exportPath = Path.Combine(_directory, "expanded.json");
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Blade.CpuBoostMode = (byte)BladeCpuBoostMode.High;
+        document.Global.Blade.GpuBoostMode = (byte)BladeGpuBoostMode.Medium;
+        document.Global.Blade.LogoMode = (byte)BladeLogoMode.Off;
+        document.Global.Viper.DpiStages = new ViperDpiStagesProfile
+        {
+            ActiveStage = 1,
+            Stages = [new() { Number = 1, X = 1600, Y = 1800 }],
+        };
+        document.Devices["1532:02C6"] = new DeviceProfileSettings
+        {
+            Lighting = new LightingProfile
+            {
+                Effect = "static",
+                Parameters = new(StringComparer.OrdinalIgnoreCase) { ["color"] = "99DD72" },
+            },
+        };
+
+        await ProfileStore.ExportAsync(document, exportPath);
+        var imported = await ProfileStore.ImportAsync(exportPath);
+
+        Assert.Equal((byte)BladeCpuBoostMode.High, imported.Global.Blade.CpuBoostMode);
+        Assert.Equal((byte)BladeGpuBoostMode.Medium, imported.Global.Blade.GpuBoostMode);
+        Assert.Equal((byte)BladeLogoMode.Off, imported.Global.Blade.LogoMode);
+        Assert.Equal((byte)1, imported.Global.Viper.DpiStages!.ActiveStage);
+        Assert.Equal((byte)1, imported.Global.Viper.DpiStages.Stages[0].Number);
+        Assert.Equal(1600, imported.Global.Viper.DpiStages.Stages[0].X);
+        Assert.Equal(1800, imported.Global.Viper.DpiStages.Stages[0].Y);
+        Assert.Equal("static", imported.Devices["1532:02C6"].Lighting.Effect);
+        Assert.Equal("99DD72", imported.Devices["1532:02C6"].Lighting.Parameters["color"]);
     }
 
     [Fact]

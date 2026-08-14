@@ -30,7 +30,7 @@ public static class ProfileResolver
         return new ResolvedProfile(
             ResolveBlade(global?.Blade, deviceSettings?.Blade, powerSettings?.Blade),
             ResolveViper(global?.Viper, deviceSettings?.Viper, powerSettings?.Viper),
-            ResolveLighting(global?.Lighting, powerSettings?.Lighting));
+            ResolveLighting(global?.Lighting, deviceSettings?.Lighting, powerSettings?.Lighting));
     }
 
     public static string GetDeviceKey(DeviceDescriptor device)
@@ -53,6 +53,9 @@ public static class ProfileResolver
             ChargeLimitPercent = First(power?.ChargeLimitPercent, device?.ChargeLimitPercent, global?.ChargeLimitPercent),
             RefreshRateHertz = First(power?.RefreshRateHertz, device?.RefreshRateHertz, global?.RefreshRateHertz),
             MaxFanMode = First(power?.MaxFanMode, device?.MaxFanMode, global?.MaxFanMode),
+            CpuBoostMode = First(power?.CpuBoostMode, device?.CpuBoostMode, global?.CpuBoostMode),
+            GpuBoostMode = First(power?.GpuBoostMode, device?.GpuBoostMode, global?.GpuBoostMode),
+            LogoMode = First(power?.LogoMode, device?.LogoMode, global?.LogoMode),
         };
     }
 
@@ -67,27 +70,37 @@ public static class ProfileResolver
             DpiY = First(power?.DpiY, device?.DpiY, global?.DpiY),
             PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
             IdleSeconds = First(power?.IdleSeconds, device?.IdleSeconds, global?.IdleSeconds),
+            DpiStages = (power?.DpiStages ?? device?.DpiStages ?? global?.DpiStages)?.Clone(),
         };
     }
 
     private static LightingProfile ResolveLighting(
         LightingProfile? global,
+        LightingProfile? device,
         LightingProfile? power)
     {
         var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         CopyParameters(parameters, global?.Parameters);
+        CopyParameters(parameters, device?.Parameters);
         CopyParameters(parameters, power?.Parameters);
 
         return new LightingProfile
         {
-            Effect = ResolveEffect(global, power),
+            Effect = ResolveEffect(global, device, power),
             Parameters = parameters,
         };
     }
 
-    private static string ResolveEffect(LightingProfile? global, LightingProfile? power)
+    private static string ResolveEffect(
+        LightingProfile? global,
+        LightingProfile? device,
+        LightingProfile? power)
     {
         var effect = string.IsNullOrWhiteSpace(global?.Effect) ? "off" : global.Effect;
+        if (HasLightingOverride(device))
+        {
+            effect = device!.Effect!;
+        }
         if (HasLightingOverride(power))
         {
             effect = power!.Effect!;

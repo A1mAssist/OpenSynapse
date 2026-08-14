@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 
 namespace OpenSynapse.Core.Tests;
@@ -86,5 +87,37 @@ public sealed class ProfileCatalogTests
         Assert.Equal("Gaming", clone.ActiveProfileName);
         Assert.Equal(new[] { "Default", "Gaming" }, ProfileCatalog.GetNames(clone));
         Assert.Equal("Gaming", ApplicationProfileBinding.Resolve(clone, @"C:\Games\GAME.EXE"));
+    }
+
+    [Fact]
+    public void DocumentCloneDeepCopiesExpandedDeviceSettings()
+    {
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Blade.CpuBoostMode = (byte)BladeCpuBoostMode.Boost;
+        document.Global.Blade.GpuBoostMode = (byte)BladeGpuBoostMode.High;
+        document.Global.Blade.LogoMode = (byte)BladeLogoMode.Static;
+        document.Global.Viper.DpiStages = new ViperDpiStagesProfile
+        {
+            ActiveStage = 1,
+            Stages = [new() { Number = 1, X = 800, Y = 800 }],
+        };
+        document.Devices["1532:02C6"] = new DeviceProfileSettings
+        {
+            Lighting = new LightingProfile
+            {
+                Effect = "static",
+                Parameters = new(StringComparer.OrdinalIgnoreCase) { ["color"] = "99DD72" },
+            },
+        };
+
+        var clone = document.Clone();
+        clone.Global.Viper.DpiStages!.Stages[0].X = 1600;
+        clone.Devices["1532:02C6"].Lighting.Parameters["color"] = "FFFFFF";
+
+        Assert.Equal((byte)BladeCpuBoostMode.Boost, clone.Global.Blade.CpuBoostMode);
+        Assert.Equal((byte)BladeGpuBoostMode.High, clone.Global.Blade.GpuBoostMode);
+        Assert.Equal((byte)BladeLogoMode.Static, clone.Global.Blade.LogoMode);
+        Assert.Equal(800, document.Global.Viper.DpiStages.Stages[0].X);
+        Assert.Equal("99DD72", document.Devices["1532:02C6"].Lighting.Parameters["color"]);
     }
 }

@@ -65,6 +65,13 @@ public sealed class BladeLightingController : IBladeLightingController
 
     internal BladeLightingController(
         IRazerFeatureTransport transport,
+        RazerDeviceRegistry registry)
+        : this(transport, registry, DefaultRestoreColor)
+    {
+    }
+
+    internal BladeLightingController(
+        IRazerFeatureTransport transport,
         RazerDeviceRegistry registry,
         RazerRgb restoreColor)
     {

@@ -44,6 +44,8 @@ public sealed record ViperDpiStagesTelemetry(
     byte ActiveStage,
     IReadOnlyList<ViperDpiStageTelemetry> Stages);
 
+public sealed record BladeFanControlState(BladeFanMode Mode, int TargetRpm);
+
 public sealed record RazerDeviceTelemetry(
     byte? BladeKeyboardBrightness,
     BladePerformanceMode? BladePerformanceMode,
@@ -87,6 +89,13 @@ public interface IRazerDeviceTelemetryReader
         IReadOnlyList<DeviceDescriptor> devices,
         BladePerformanceMode mode,
         CancellationToken cancellationToken = default);
+
+    ValueTask<BladeFanControlState> SetBladeFanAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeFanMode mode,
+        int? targetRpm,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
 
     ValueTask<BladeCpuBoostMode> SetBladeCpuBoostModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,

@@ -5,9 +5,17 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
+internal sealed record ManifestDocument(string SourceName, string Json, bool IsBuiltIn);
+
+internal sealed record RazerDeviceRegistryLoadResult(
+    RazerDeviceRegistry Registry,
+    IReadOnlyList<string> Errors);
+
 internal sealed class RazerDeviceRegistry
 {
     private const int SchemaVersion = 1;
+    private const int MaximumExternalManifestFiles = 64;
+    private const long MaximumExternalManifestBytes = 64 * 1024;
     private static readonly Lazy<RazerDeviceRegistry> BuiltInValue = new(LoadBuiltIn);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -76,7 +84,98 @@ internal sealed class RazerDeviceRegistry
     internal static RazerDeviceRegistry LoadJson(IEnumerable<string> documents)
     {
         ArgumentNullException.ThrowIfNull(documents);
-        var manifests = documents.Select(Parse).ToArray();
+        var manifests = documents
+            .Select((document, index) => Parse(new ManifestDocument($"memory-{index + 1}.json", document, false)))
+            .ToArray();
+        return CreateRegistry(manifests);
+    }
+
+    internal static RazerDeviceRegistryLoadResult Load(string? externalDirectory = null)
+    {
+        externalDirectory ??= Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "OpenSynapse",
+            "devices");
+
+        var errors = new List<string>();
+        var externalDocuments = new List<ManifestDocument>();
+        if (Directory.Exists(externalDirectory))
+        {
+            string[] files;
+            try
+            {
+                files = Directory.EnumerateFiles(
+                        externalDirectory,
+                        "*.json",
+                        SearchOption.TopDirectoryOnly)
+                    .Order(StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(file => file, StringComparer.Ordinal)
+                    .ToArray();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                errors.Add("外部 manifest 目录：无权枚举文件。");
+                files = [];
+            }
+            catch (IOException)
+            {
+                errors.Add("外部 manifest 目录：枚举文件失败。");
+                files = [];
+            }
+
+            if (files.Length > MaximumExternalManifestFiles)
+            {
+                errors.Add($"外部 manifest 超过 {MaximumExternalManifestFiles} 个，已拒绝全部外部配置。");
+            }
+            else
+            {
+                foreach (var file in files)
+                {
+                    var name = Path.GetFileName(file);
+                    try
+                    {
+                        externalDocuments.Add(new ManifestDocument(
+                            name,
+                            ReadExternalManifest(file),
+                            false));
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        errors.Add($"{name}：无权读取文件。");
+                    }
+                    catch (IOException)
+                    {
+                        errors.Add($"{name}：读取文件失败。");
+                    }
+                    catch (InvalidOperationException exception)
+                    {
+                        errors.Add($"{name}：{exception.Message}");
+                    }
+                }
+            }
+        }
+
+        return Merge(LoadBuiltInDocuments(), externalDocuments, errors);
+    }
+
+    private static string ReadExternalManifest(string path)
+    {
+        using var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read);
+        if (stream.Length > MaximumExternalManifestBytes)
+        {
+            throw new InvalidOperationException("文件超过 65536 字节。");
+        }
+
+        using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
+    }
+
+    private static RazerDeviceRegistry CreateRegistry(IReadOnlyList<RazerDeviceManifest> manifests)
+    {
         var ids = new HashSet<string>(StringComparer.Ordinal);
         var devices = new Dictionary<(ushort VendorId, ushort ProductId), RazerDeviceManifest>();
 
@@ -102,6 +201,12 @@ internal sealed class RazerDeviceRegistry
 
     private static RazerDeviceRegistry LoadBuiltIn()
     {
+        var result = Merge(LoadBuiltInDocuments(), [], []);
+        return result.Registry;
+    }
+
+    private static IReadOnlyList<ManifestDocument> LoadBuiltInDocuments()
+    {
         var assembly = typeof(RazerDeviceRegistry).Assembly;
         var resourceNames = assembly.GetManifestResourceNames()
             .Where(name => name.Contains(".Devices.Manifests.", StringComparison.Ordinal) &&
@@ -113,30 +218,108 @@ internal sealed class RazerDeviceRegistry
             throw new InvalidOperationException("未找到内置 Razer 设备 manifest。");
         }
 
-        var documents = resourceNames.Select(name =>
+        return resourceNames.Select(name =>
         {
             using var stream = assembly.GetManifestResourceStream(name)
                 ?? throw new InvalidOperationException($"无法读取内置资源 '{name}'。");
             using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
-        });
-        return LoadJson(documents);
+            return new ManifestDocument(name, reader.ReadToEnd(), true);
+        }).ToArray();
     }
 
-    private static RazerDeviceManifest Parse(string document)
+    private static RazerDeviceRegistryLoadResult Merge(
+        IReadOnlyList<ManifestDocument> builtInDocuments,
+        IReadOnlyList<ManifestDocument> externalDocuments,
+        List<string> errors)
     {
-        if (string.IsNullOrWhiteSpace(document))
+        var manifests = builtInDocuments.Select(Parse).ToList();
+        var registry = CreateRegistry(manifests);
+        var ids = registry.Manifests.Select(manifest => manifest.Id).ToHashSet(StringComparer.Ordinal);
+        var devices = registry._devices.ToDictionary();
+
+        foreach (var document in externalDocuments
+                     .OrderBy(item => item.SourceName, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy(item => item.SourceName, StringComparer.Ordinal))
+        {
+            try
+            {
+                var manifest = Parse(document);
+                var familyTemplate = manifests.First(item =>
+                    item.ProtocolFamily == manifest.ProtocolFamily &&
+                    builtInDocuments.Any(builtIn => builtIn.SourceName == item.SourceName));
+                EnsureExternalContract(manifest, familyTemplate);
+                if (ids.Contains(manifest.Id))
+                {
+                    throw new InvalidOperationException($"重复的设备 manifest ID：'{manifest.Id}'。");
+                }
+
+                ushort? conflict = null;
+                foreach (var productId in manifest.ProductIds)
+                {
+                    if (devices.ContainsKey((manifest.VendorId, productId)))
+                    {
+                        conflict = productId;
+                        break;
+                    }
+                }
+                if (conflict is { } conflictingProductId)
+                {
+                    throw new InvalidOperationException(
+                        $"重复的 VID/PID：{manifest.VendorId:X4}:{conflictingProductId:X4}。");
+                }
+
+                ids.Add(manifest.Id);
+                manifests.Add(manifest);
+                foreach (var productId in manifest.ProductIds)
+                {
+                    devices.Add((manifest.VendorId, productId), manifest);
+                }
+            }
+            catch (InvalidOperationException exception)
+            {
+                errors.Add($"{document.SourceName}：{exception.Message}");
+            }
+        }
+
+        return new RazerDeviceRegistryLoadResult(
+            new RazerDeviceRegistry(manifests, devices),
+            errors.ToArray());
+    }
+
+    private static void EnsureExternalContract(
+        RazerDeviceManifest external,
+        RazerDeviceManifest builtIn)
+    {
+        foreach (var (capabilityId, descriptor) in external.Capabilities)
+        {
+            var contract = builtIn.GetRequiredCapability(capabilityId);
+            if (descriptor.TransactionId != contract.TransactionId)
+            {
+                throw new InvalidOperationException(
+                    $"capability '{capabilityId}' 的 transaction ID 不符合内置协议族契约。");
+            }
+            if (descriptor.Wait < contract.Wait)
+            {
+                throw new InvalidOperationException(
+                    $"capability '{capabilityId}' 的等待时间短于内置协议族契约。");
+            }
+        }
+    }
+
+    private static RazerDeviceManifest Parse(ManifestDocument document)
+    {
+        if (string.IsNullOrWhiteSpace(document.Json))
         {
             throw new InvalidOperationException("设备 manifest 不能为空。");
         }
 
         try
         {
-            using var parsed = JsonDocument.Parse(document);
+            using var parsed = JsonDocument.Parse(document.Json);
             EnsureNoDuplicateProperties(parsed.RootElement);
-            var source = JsonSerializer.Deserialize<ManifestJson>(document, JsonOptions)
+            var source = JsonSerializer.Deserialize<ManifestJson>(document.Json, JsonOptions)
                 ?? throw new InvalidOperationException("设备 manifest 反序列化结果为空。");
-            return Validate(source);
+            return Validate(source, document.SourceName);
         }
         catch (JsonException exception)
         {
@@ -144,7 +327,7 @@ internal sealed class RazerDeviceRegistry
         }
     }
 
-    private static RazerDeviceManifest Validate(ManifestJson source)
+    private static RazerDeviceManifest Validate(ManifestJson source, string sourceName)
     {
         if (source is null || source.ProductIds is null || source.Collection is null ||
             source.Transport is null || source.Capabilities is null)
@@ -246,6 +429,7 @@ internal sealed class RazerDeviceRegistry
         }
 
         return new RazerDeviceManifest(
+            sourceName,
             source.Id,
             source.DisplayName,
             vendorId,

@@ -33,52 +33,71 @@ public sealed class VerifiedProfileApplier
         var errors = new List<string>();
         var applied = 0;
 
+        async Task ApplyValueAsync<T>(
+            ICollection<string> deviceErrors,
+            string label,
+            T requested,
+            T? current,
+            Func<T, CancellationToken, ValueTask<T>> setter)
+            where T : struct
+        {
+            if (current is not T currentValue)
+            {
+                deviceErrors.Add($"{label}未成功读回，已跳过配置应用。");
+                return;
+            }
+            if (EqualityComparer<T>.Default.Equals(requested, currentValue))
+            {
+                return;
+            }
+
+            try
+            {
+                await setter(requested, cancellationToken);
+                applied++;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
+            {
+                deviceErrors.Add($"{label}：{exception.Message}");
+            }
+        }
+
         var blade = devices.FirstOrDefault(device =>
             device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available);
         if (blade is not null)
         {
+            var bladeErrors = new List<string>();
             var profile = ProfileResolver.Resolve(document, blade, isPluggedIn);
-            if (profile.Blade.KeyboardBrightness is byte brightness)
+            var effectivePerformanceMode = telemetry.BladePerformanceMode;
+            var performanceValueInvalid = false;
+            if (profile.Blade.PerformanceMode is byte rawPerformanceMode)
             {
-                if (telemetry.BladeKeyboardBrightness is not byte current)
+                if (!Enum.IsDefined(typeof(BladePerformanceMode), rawPerformanceMode))
                 {
-                    errors.Add("Blade 键盘亮度未成功读回，已跳过配置应用。");
-                }
-                else if (brightness != current)
-                {
-                    try
-                    {
-                        await reader.SetBladeKeyboardBrightnessAsync(devices, brightness, cancellationToken);
-                        applied++;
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        throw;
-                    }
-                    catch (Exception exception) when (IsExpectedHardwareException(exception))
-                    {
-                        errors.Add($"Blade 键盘亮度：{exception.Message}");
-                    }
-                }
-            }
-
-            if (errors.Count == 0 && profile.Blade.PerformanceMode is byte rawMode)
-            {
-                if (!Enum.IsDefined(typeof(BladePerformanceMode), rawMode))
-                {
-                    errors.Add($"Blade 性能模式值无效：{rawMode}。");
+                    performanceValueInvalid = true;
+                    effectivePerformanceMode = null;
+                    bladeErrors.Add($"Blade 性能模式值无效：{rawPerformanceMode}。");
                 }
                 else if (telemetry.BladePerformanceMode is not BladePerformanceMode current)
                 {
-                    errors.Add("Blade 性能模式未成功读回，已跳过配置应用。");
+                    bladeErrors.Add("Blade 性能模式未成功读回，已跳过配置应用。");
                 }
-                else if (current != (BladePerformanceMode)rawMode)
+                else
                 {
+                    var requested = (BladePerformanceMode)rawPerformanceMode;
+                    effectivePerformanceMode = current;
                     try
                     {
-                        await reader.SetBladePerformanceModeAsync(
-                            devices, (BladePerformanceMode)rawMode, cancellationToken);
-                        applied++;
+                        if (requested != current)
+                        {
+                            effectivePerformanceMode = await reader.SetBladePerformanceModeAsync(
+                                devices, requested, cancellationToken);
+                            applied++;
+                        }
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {
@@ -86,75 +105,151 @@ public sealed class VerifiedProfileApplier
                     }
                     catch (Exception exception) when (IsExpectedHardwareException(exception))
                     {
-                        errors.Add($"Blade 性能模式：{exception.Message}");
+                        bladeErrors.Add($"Blade 性能模式：{exception.Message}");
                     }
                 }
             }
 
-            if (errors.Count == 0 && profile.Blade.ChargeLimitPercent is int chargeLimit)
+            var hasCustomOnlySetting = profile.Blade.CpuBoostMode is not null ||
+                profile.Blade.GpuBoostMode is not null || profile.Blade.MaxFanMode is not null;
+            if (hasCustomOnlySetting && effectivePerformanceMode is null && !performanceValueInvalid)
             {
-                if (telemetry.BladeChargeLimitPercent is not int current)
+                bladeErrors.Add("Blade 性能模式未成功读回，已跳过 CPU/GPU Boost 和 Max Fan 配置应用。");
+            }
+            else if (effectivePerformanceMode == BladePerformanceMode.Custom)
+            {
+                if (profile.Blade.CpuBoostMode is byte rawCpuBoost)
                 {
-                    errors.Add("Blade 充电上限未成功读回，已跳过配置应用。");
+                    if (!Enum.IsDefined(typeof(BladeCpuBoostMode), rawCpuBoost))
+                    {
+                        bladeErrors.Add($"Blade CPU Boost 值无效：{rawCpuBoost}。");
+                    }
+                    else
+                    {
+                        await ApplyValueAsync(
+                            bladeErrors,
+                            "Blade CPU Boost",
+                            (BladeCpuBoostMode)rawCpuBoost,
+                            telemetry.BladeCpuBoostMode,
+                            (value, token) => reader.SetBladeCpuBoostModeAsync(devices, value, token));
+                    }
                 }
-                else if (chargeLimit != current)
+
+                if (profile.Blade.GpuBoostMode is byte rawGpuBoost)
                 {
-                    try
+                    if (!Enum.IsDefined(typeof(BladeGpuBoostMode), rawGpuBoost))
                     {
-                        await reader.SetBladeChargeLimitAsync(devices, chargeLimit, cancellationToken);
-                        applied++;
+                        bladeErrors.Add($"Blade GPU Boost 值无效：{rawGpuBoost}。");
                     }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    else
                     {
-                        throw;
+                        await ApplyValueAsync(
+                            bladeErrors,
+                            "Blade GPU Boost",
+                            (BladeGpuBoostMode)rawGpuBoost,
+                            telemetry.BladeGpuBoostMode,
+                            (value, token) => reader.SetBladeGpuBoostModeAsync(devices, value, token));
                     }
-                    catch (Exception exception) when (IsExpectedHardwareException(exception))
+                }
+
+                if (profile.Blade.MaxFanMode is byte rawMaxFan)
+                {
+                    if (!Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
                     {
-                        errors.Add($"Blade 充电上限：{exception.Message}");
+                        bladeErrors.Add($"Blade Max Fan 值无效：{rawMaxFan}。");
+                    }
+                    else
+                    {
+                        await ApplyValueAsync(
+                            bladeErrors,
+                            "Blade Max Fan",
+                            (BladeMaxFanMode)rawMaxFan,
+                            telemetry.BladeMaxFanMode,
+                            (value, token) => reader.SetBladeMaxFanModeAsync(devices, value, token));
                     }
                 }
             }
 
-            if (errors.Count == 0 && profile.Blade.MaxFanMode is byte rawMaxFan)
+            if (profile.Blade.KeyboardBrightness is byte brightness)
             {
-                if (!Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade 键盘亮度",
+                    brightness,
+                    telemetry.BladeKeyboardBrightness,
+                    (value, token) => reader.SetBladeKeyboardBrightnessAsync(devices, value, token));
+            }
+            if (profile.Blade.ChargeLimitPercent is int chargeLimit)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade 充电上限",
+                    chargeLimit,
+                    telemetry.BladeChargeLimitPercent,
+                    (value, token) => reader.SetBladeChargeLimitAsync(devices, value, token));
+            }
+            if (profile.Blade.LogoMode is byte rawLogoMode)
+            {
+                var requested = (BladeLogoMode)rawLogoMode;
+                if (!Enum.IsDefined(typeof(BladeLogoMode), requested) ||
+                    requested is not (BladeLogoMode.Off or BladeLogoMode.Static))
                 {
-                    errors.Add($"Blade Max Fan 值无效：{rawMaxFan}。");
+                    bladeErrors.Add($"Blade Logo 模式值无效或未经验证：{rawLogoMode}。");
                 }
-                else if (telemetry.BladeMaxFanMode is not BladeMaxFanMode current)
+                else
                 {
-                    errors.Add("Blade Max Fan 未成功读回，已跳过配置应用。");
-                }
-                else if (current != (BladeMaxFanMode)rawMaxFan)
-                {
-                    try
-                    {
-                        await reader.SetBladeMaxFanModeAsync(
-                            devices, (BladeMaxFanMode)rawMaxFan, cancellationToken);
-                        applied++;
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        throw;
-                    }
-                    catch (Exception exception) when (IsExpectedHardwareException(exception))
-                    {
-                        errors.Add($"Blade Max Fan：{exception.Message}");
-                    }
+                    await ApplyValueAsync(
+                        bladeErrors,
+                        "Blade Logo",
+                        requested,
+                        telemetry.BladeLogoMode,
+                        (value, token) => reader.SetBladeLogoModeAsync(devices, value, token));
                 }
             }
+
+            errors.AddRange(bladeErrors);
         }
 
         var viper = devices.FirstOrDefault(device =>
             device.ProtocolFamily == "viper-184" && device.Access == DeviceAccessState.Available);
-        if (viper is not null && errors.Count == 0)
+        if (viper is not null)
         {
+            var viperErrors = new List<string>();
             var profile = ProfileResolver.Resolve(document, viper, isPluggedIn);
-            if (profile.Viper.DpiX is not null || profile.Viper.DpiY is not null)
+            if (profile.Viper.DpiStages is ViperDpiStagesProfile dpiStages)
+            {
+                if (telemetry.ViperDpiStages is not ViperDpiStagesTelemetry current)
+                {
+                    viperErrors.Add("Viper DPI 档位未成功读回，已跳过配置应用。");
+                }
+                else
+                {
+                    var requested = ToTelemetry(dpiStages);
+                    if (!DpiStagesEqual(requested, current))
+                    {
+                        try
+                        {
+                            await reader.SetViperDpiStagesAsync(devices, requested, cancellationToken);
+                            applied++;
+                        }
+                        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                        {
+                            throw;
+                        }
+                        catch (Exception exception) when (IsExpectedHardwareException(exception))
+                        {
+                            viperErrors.Add($"Viper DPI 档位：{exception.Message}");
+                        }
+                    }
+                }
+            }
+
+            if (viperErrors.Count == 0 &&
+                (profile.Viper.DpiX is not null || profile.Viper.DpiY is not null))
             {
                 if (telemetry.ViperDpiX is not int currentX || telemetry.ViperDpiY is not int currentY)
                 {
-                    errors.Add("Viper DPI 未成功读回，已跳过配置应用。");
+                    viperErrors.Add("Viper DPI 未成功读回，已跳过配置应用。");
                 }
                 else
                 {
@@ -173,65 +268,52 @@ public sealed class VerifiedProfileApplier
                         }
                         catch (Exception exception) when (IsExpectedHardwareException(exception))
                         {
-                            errors.Add($"Viper DPI：{exception.Message}");
+                            viperErrors.Add($"Viper DPI：{exception.Message}");
                         }
                     }
                 }
             }
 
-            if (errors.Count == 0 && profile.Viper.PollingRateHertz is int pollingRate)
+            if (viperErrors.Count == 0 && profile.Viper.PollingRateHertz is int pollingRate)
             {
-                if (telemetry.ViperPollingRateHertz is not int current)
-                {
-                    errors.Add("Viper 轮询率未成功读回，已跳过配置应用。");
-                }
-                else if (pollingRate != current)
-                {
-                    try
-                    {
-                        await reader.SetViperPollingRateAsync(devices, pollingRate, cancellationToken);
-                        applied++;
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        throw;
-                    }
-                    catch (Exception exception) when (IsExpectedHardwareException(exception))
-                    {
-                        errors.Add($"Viper 轮询率：{exception.Message}");
-                    }
-                }
+                await ApplyValueAsync(
+                    viperErrors,
+                    "Viper 轮询率",
+                    pollingRate,
+                    telemetry.ViperPollingRateHertz,
+                    (value, token) => reader.SetViperPollingRateAsync(devices, value, token));
             }
 
-            if (errors.Count == 0 && profile.Viper.IdleSeconds is int idleSeconds)
+            if (viperErrors.Count == 0 && profile.Viper.IdleSeconds is int idleSeconds)
             {
-                if (telemetry.ViperIdleSeconds is not int current)
-                {
-                    errors.Add("Viper 休眠时间未成功读回，已跳过配置应用。");
-                }
-                else if (idleSeconds != current)
-                {
-                    try
-                    {
-                        await reader.SetViperIdleSecondsAsync(devices, idleSeconds, cancellationToken);
-                        applied++;
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        throw;
-                    }
-                    catch (Exception exception) when (IsExpectedHardwareException(exception))
-                    {
-                        errors.Add($"Viper 休眠时间：{exception.Message}");
-                    }
-                }
+                await ApplyValueAsync(
+                    viperErrors,
+                    "Viper 休眠时间",
+                    idleSeconds,
+                    telemetry.ViperIdleSeconds,
+                    (value, token) => reader.SetViperIdleSecondsAsync(devices, value, token));
             }
+
+            errors.AddRange(viperErrors);
         }
 
         return new ProfileApplyResult(applied, errors);
     }
 
+    private static ViperDpiStagesTelemetry ToTelemetry(ViperDpiStagesProfile profile) =>
+        new(
+            profile.ActiveStage,
+            profile.Stages.Select(stage =>
+                new ViperDpiStageTelemetry(stage.Number, stage.X, stage.Y)).ToArray());
+
+    private static bool DpiStagesEqual(
+        ViperDpiStagesTelemetry left,
+        ViperDpiStagesTelemetry right) =>
+        left.ActiveStage == right.ActiveStage &&
+        left.Stages is not null && right.Stages is not null &&
+        left.Stages.SequenceEqual(right.Stages);
+
     private static bool IsExpectedHardwareException(Exception exception) =>
         exception is Win32Exception or IOException or UnauthorizedAccessException or
-        InvalidOperationException or ArgumentOutOfRangeException;
+        InvalidOperationException or ArgumentException;
 }

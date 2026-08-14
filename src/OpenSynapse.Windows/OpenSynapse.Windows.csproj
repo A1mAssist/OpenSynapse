@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="OpenSynapse.App" />
     <InternalsVisibleTo Include="OpenSynapse.Core.Tests" />
   </ItemGroup>
 

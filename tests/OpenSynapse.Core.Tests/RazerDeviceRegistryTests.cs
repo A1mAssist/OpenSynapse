@@ -4,8 +4,13 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Core.Tests;
 
-public sealed class RazerDeviceRegistryTests
+public sealed class RazerDeviceRegistryTests : IDisposable
 {
+    private readonly string _externalDirectory = Path.Combine(
+        Path.GetTempPath(),
+        "OpenSynapse.RegistryTests",
+        Guid.NewGuid().ToString("N"));
+
     [Fact]
     public void LoadsBuiltInBladeAndViperManifests()
     {
@@ -20,6 +25,173 @@ public sealed class RazerDeviceRegistryTests
         Assert.Equal("viper-184", viper.ProtocolFamily);
         Assert.Equal(TimeSpan.FromMilliseconds(60), viper.GetRequiredCapability("battery.get").Wait);
         Assert.Null(registry.Find(0x1532, 0xFFFF));
+    }
+
+    [Fact]
+    public void LoadsExternalSameFamilyManifestAndPreservesSources()
+    {
+        Directory.CreateDirectory(_externalDirectory);
+        var compatible = ParseBuiltIn("blade-710");
+        compatible["id"] = "blade-compatible";
+        compatible["displayName"] = "Compatible Blade";
+        compatible["productIds"]![0] = "02C7";
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "compatible.json"),
+            compatible.ToJsonString());
+
+        var result = RazerDeviceRegistry.Load(_externalDirectory);
+
+        Assert.Empty(result.Errors);
+        Assert.EndsWith(".blade-710.json", result.Registry.Find(0x1532, 0x02C6)!.SourceName);
+        var external = Assert.IsType<RazerDeviceManifest>(result.Registry.Find(0x1532, 0x02C7));
+        Assert.Equal("Compatible Blade", external.DisplayName);
+        Assert.Equal("compatible.json", external.SourceName);
+    }
+
+    [Fact]
+    public void RejectsExternalConflictWithoutReplacingBuiltInOrValidSibling()
+    {
+        Directory.CreateDirectory(_externalDirectory);
+        var duplicate = ParseBuiltIn("blade-710");
+        duplicate["id"] = "duplicate-blade";
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "a-duplicate.json"),
+            duplicate.ToJsonString());
+        var duplicateId = ParseBuiltIn("blade-710");
+        duplicateId["productIds"]![0] = "02C8";
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "b-duplicate-id.json"),
+            duplicateId.ToJsonString());
+        var compatible = ParseBuiltIn("blade-710");
+        compatible["id"] = "blade-compatible";
+        compatible["productIds"]![0] = "02C7";
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "c-compatible.json"),
+            compatible.ToJsonString());
+
+        var result = RazerDeviceRegistry.Load(_externalDirectory);
+
+        Assert.Collection(
+            result.Errors,
+            error =>
+            {
+                Assert.StartsWith("a-duplicate.json：", error);
+                Assert.Contains("1532:02C6", error);
+            },
+            error =>
+            {
+                Assert.StartsWith("b-duplicate-id.json：", error);
+                Assert.Contains("'blade-710'", error);
+            });
+        Assert.All(result.Errors, error => Assert.DoesNotContain(_externalDirectory, error));
+        Assert.Equal("blade-710", result.Registry.Find(0x1532, 0x02C6)!.Id);
+        Assert.Equal("blade-compatible", result.Registry.Find(0x1532, 0x02C7)!.Id);
+        Assert.Null(result.Registry.Find(0x1532, 0x02C8));
+    }
+
+    [Theory]
+    [InlineData("transactionId", "20")]
+    [InlineData("waitMilliseconds", 1)]
+    public void RejectsExternalReportHeaderOrRelaxedWait(string property, object value)
+    {
+        Directory.CreateDirectory(_externalDirectory);
+        var document = ParseBuiltIn("viper-184");
+        document["id"] = "viper-compatible";
+        document["productIds"]![0] = "00B9";
+        document["capabilities"]!["battery.get"]![property] = JsonValue.Create(value);
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "relaxed.json"),
+            document.ToJsonString());
+
+        var result = RazerDeviceRegistry.Load(_externalDirectory);
+
+        Assert.StartsWith("relaxed.json：", Assert.Single(result.Errors));
+        Assert.Null(result.Registry.Find(0x1532, 0x00B9));
+    }
+
+    [Fact]
+    public void KeepsBuiltInsAndValidSiblingWhenExternalFilesAreInvalid()
+    {
+        Directory.CreateDirectory(_externalDirectory);
+        File.WriteAllText(Path.Combine(_externalDirectory, "a-malformed.json"), "{");
+        var unknownField = ParseBuiltIn("viper-184");
+        unknownField["verified"] = true;
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "b-unknown-field.json"),
+            unknownField.ToJsonString());
+        var missingCapability = ParseBuiltIn("viper-184");
+        missingCapability["capabilities"]!.AsObject().Remove("current-dpi.set");
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "c-missing-capability.json"),
+            missingCapability.ToJsonString());
+        var unknownFamily = ParseBuiltIn("viper-184");
+        unknownFamily["protocolFamily"] = "unknown";
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "d-unknown-family.json"),
+            unknownFamily.ToJsonString());
+        var valid = ParseBuiltIn("viper-184");
+        valid["id"] = "viper-compatible";
+        valid["productIds"]![0] = "00B9";
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "e-valid.json"),
+            valid.ToJsonString());
+
+        var result = RazerDeviceRegistry.Load(_externalDirectory);
+
+        Assert.Equal(4, result.Errors.Count);
+        Assert.Equal(
+            new[]
+            {
+                "a-malformed.json",
+                "b-unknown-field.json",
+                "c-missing-capability.json",
+                "d-unknown-family.json",
+            },
+            result.Errors.Select(error => error[..error.IndexOf('：')]).ToArray());
+        Assert.NotNull(result.Registry.Find(0x1532, 0x02C6));
+        Assert.Equal("viper-compatible", result.Registry.Find(0x1532, 0x00B9)!.Id);
+    }
+
+    [Fact]
+    public void RejectsOversizedExternalFileWithoutReadingItAsJson()
+    {
+        Directory.CreateDirectory(_externalDirectory);
+        File.WriteAllText(
+            Path.Combine(_externalDirectory, "oversized.json"),
+            new string(' ', 65_537));
+
+        var result = RazerDeviceRegistry.Load(_externalDirectory);
+
+        Assert.Equal(
+            "oversized.json：文件超过 65536 字节。",
+            Assert.Single(result.Errors));
+        Assert.NotNull(result.Registry.Find(0x1532, 0x02C6));
+    }
+
+    [Fact]
+    public void RejectsAllExternalFilesWhenFileCountExceedsLimit()
+    {
+        Directory.CreateDirectory(_externalDirectory);
+        for (var index = 0; index < 65; index++)
+        {
+            File.WriteAllText(Path.Combine(_externalDirectory, $"{index:D2}.json"), "{}");
+        }
+
+        var result = RazerDeviceRegistry.Load(_externalDirectory);
+
+        Assert.Equal(
+            "外部 manifest 超过 64 个，已拒绝全部外部配置。",
+            Assert.Single(result.Errors));
+        Assert.Equal(2, result.Registry.Manifests.Count);
+    }
+
+    [Fact]
+    public void MissingExternalDirectoryLoadsBuiltInsWithoutErrors()
+    {
+        var result = RazerDeviceRegistry.Load(_externalDirectory);
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(2, result.Registry.Manifests.Count);
     }
 
     [Fact]
@@ -301,5 +473,13 @@ public sealed class RazerDeviceRegistryTests
         using var stream = assembly.GetManifestResourceStream(resourceName)!;
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_externalDirectory))
+        {
+            Directory.Delete(_externalDirectory, recursive: true);
+        }
     }
 }

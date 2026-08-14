@@ -1,4 +1,6 @@
+using System.Text.Json.Nodes;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 
@@ -42,6 +44,27 @@ public sealed class BladeLightingControllerTests
 
         Assert.Equal(0, transport.BrightnessReads);
         Assert.Empty(transport.Rows);
+    }
+
+    [Fact]
+    public async Task UsesInjectedSameFamilyManifestForCompatiblePid()
+    {
+        var document = ReadBuiltInBladeManifest();
+        document["id"] = "blade-compatible";
+        document["productIds"]![0] = "02C7";
+        document["capabilities"]!["keyboard-brightness.get"]!["transactionId"] = "2A";
+        var registry = RazerDeviceRegistry.LoadJson([document.ToJsonString()]);
+        var compatible = Blade with { ProductId = 0x02C7 };
+        var transport = new LightingTransport();
+        await using var controller = new BladeLightingController(transport, registry);
+
+        await controller.ApplyAsync(
+            [compatible],
+            new BladeLightingEffect(BladeLightingMode.Static, new RazerRgb(1, 2, 3)));
+
+        Assert.Equal(1, transport.BrightnessReads);
+        Assert.Contains(transport.Commands, command =>
+            (command.TransactionId, command.CommandClass, command.CommandId) == (0x2A, 0x0E, 0x84));
     }
 
     [Fact]
@@ -142,6 +165,16 @@ public sealed class BladeLightingControllerTests
 
         Assert.Equal(2, transport.DeviceModeWrites);
         Assert.Equal(1, transport.LightingEngineGateWrites);
+    }
+
+    private static JsonObject ReadBuiltInBladeManifest()
+    {
+        var assembly = typeof(RazerDeviceRegistry).Assembly;
+        var resourceName = Assert.Single(
+            assembly.GetManifestResourceNames(),
+            name => name.EndsWith(".blade-710.json", StringComparison.Ordinal));
+        using var stream = assembly.GetManifestResourceStream(resourceName)!;
+        return JsonNode.Parse(stream)!.AsObject();
     }
 
     private sealed class LightingTransport : IRazerFeatureTransport

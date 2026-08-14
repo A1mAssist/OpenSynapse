@@ -136,6 +136,7 @@ public sealed class ProfileDefinition
             {
                 Blade = CloneBlade(settings.Blade),
                 Viper = CloneViper(settings.Viper),
+                Lighting = CloneLighting(settings.Lighting),
             };
         }
 
@@ -158,6 +159,9 @@ public sealed class ProfileDefinition
         ChargeLimitPercent = source.ChargeLimitPercent,
         RefreshRateHertz = source.RefreshRateHertz,
         MaxFanMode = source.MaxFanMode,
+        CpuBoostMode = source.CpuBoostMode,
+        GpuBoostMode = source.GpuBoostMode,
+        LogoMode = source.LogoMode,
     };
 
     private static ViperProfileSettings CloneViper(ViperProfileSettings source) => new()
@@ -166,6 +170,7 @@ public sealed class ProfileDefinition
         DpiY = source.DpiY,
         PollingRateHertz = source.PollingRateHertz,
         IdleSeconds = source.IdleSeconds,
+        DpiStages = source.DpiStages?.Clone(),
     };
 
     private static LightingProfile CloneLighting(LightingProfile source) => new()
@@ -186,6 +191,7 @@ public sealed class ProfileSettings
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
         Lighting ??= new LightingProfile();
+        Viper.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
     }
 }
@@ -194,11 +200,15 @@ public sealed class DeviceProfileSettings
 {
     public BladeProfileSettings Blade { get; set; } = new();
     public ViperProfileSettings Viper { get; set; } = new();
+    public LightingProfile Lighting { get; set; } = new();
 
     internal void ApplySafeDefaults()
     {
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
+        Lighting ??= new LightingProfile();
+        Viper.ApplySafeDefaults();
+        Lighting.ApplySafeDefaults();
     }
 }
 
@@ -213,6 +223,7 @@ public sealed class PowerProfileOverrides
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
         Lighting ??= new LightingProfile();
+        Viper.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
     }
 }
@@ -226,6 +237,9 @@ public sealed class BladeProfileSettings
     public int? ChargeLimitPercent { get; set; }
     public int? RefreshRateHertz { get; set; }
     public byte? MaxFanMode { get; set; }
+    public byte? CpuBoostMode { get; set; }
+    public byte? GpuBoostMode { get; set; }
+    public byte? LogoMode { get; set; }
 }
 
 public sealed class ViperProfileSettings
@@ -234,6 +248,37 @@ public sealed class ViperProfileSettings
     public int? DpiY { get; set; }
     public int? PollingRateHertz { get; set; }
     public int? IdleSeconds { get; set; }
+    public ViperDpiStagesProfile? DpiStages { get; set; }
+
+    internal void ApplySafeDefaults() => DpiStages?.ApplySafeDefaults();
+}
+
+public sealed class ViperDpiStagesProfile
+{
+    public byte ActiveStage { get; set; }
+    public List<ViperDpiStageProfile> Stages { get; set; } = [];
+
+    internal void ApplySafeDefaults() =>
+        Stages = Stages?.Where(stage => stage is not null).ToList() ?? [];
+
+    internal ViperDpiStagesProfile Clone()
+    {
+        ApplySafeDefaults();
+        return new ViperDpiStagesProfile
+        {
+            ActiveStage = ActiveStage,
+            Stages = Stages.Select(stage => stage.Clone()).ToList(),
+        };
+    }
+}
+
+public sealed class ViperDpiStageProfile
+{
+    public byte Number { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+
+    internal ViperDpiStageProfile Clone() => new() { Number = Number, X = X, Y = Y };
 }
 
 public sealed class LightingProfile

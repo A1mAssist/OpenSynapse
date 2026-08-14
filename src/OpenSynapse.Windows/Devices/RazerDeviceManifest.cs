@@ -65,6 +65,7 @@ internal sealed class RazerRequestDescriptor
 internal sealed class RazerDeviceManifest
 {
     internal RazerDeviceManifest(
+        string sourceName,
         string id,
         string displayName,
         ushort vendorId,
@@ -73,6 +74,7 @@ internal sealed class RazerDeviceManifest
         string protocolFamily,
         IReadOnlyDictionary<string, RazerRequestDescriptor> capabilities)
     {
+        SourceName = sourceName;
         Id = id;
         DisplayName = displayName;
         VendorId = vendorId;
@@ -82,6 +84,7 @@ internal sealed class RazerDeviceManifest
         Capabilities = capabilities;
     }
 
+    internal string SourceName { get; }
     internal string Id { get; }
     internal string DisplayName { get; }
     internal ushort VendorId { get; }

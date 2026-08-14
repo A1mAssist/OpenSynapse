@@ -399,6 +399,83 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         }
     }
 
+    public async ValueTask<BladeFanControlState> SetBladeFanAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeFanMode mode,
+        int? targetRpm,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(mode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode));
+        }
+        if (mode == BladeFanMode.Manual)
+        {
+            if (targetRpm is null)
+            {
+                throw new ArgumentNullException(nameof(targetRpm));
+            }
+            BladeFanProtocol.ValidateTargetRpm(targetRpm.Value);
+        }
+        else if (targetRpm is not null)
+        {
+            throw new ArgumentException("自动风扇模式不能指定固定转速。", nameof(targetRpm));
+        }
+
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade 风扇控制通道不可用。");
+
+        // The transaction gates every SET on fresh GETs from this exact HID path.
+        var original = await ReadBladeFanTransactionStateAsync(blade, cancellationToken, readTachometers: true);
+        try
+        {
+            if (mode == BladeFanMode.Manual)
+            {
+                await WriteBladeFanTargetAsync(
+                    blade, BladeFanProtocol.ZoneCpu, targetRpm!.Value, cancellationToken);
+                await WriteBladeFanTargetAsync(
+                    blade, BladeFanProtocol.ZoneGpu, targetRpm.Value, cancellationToken);
+            }
+
+            await WriteBladeThermalZoneAsync(
+                blade, BladeFanProtocol.ZoneCpu, original.Thermal.PerformanceMode, mode, cancellationToken);
+            await WriteBladeThermalZoneAsync(
+                blade, BladeFanProtocol.ZoneGpu, original.Thermal.PerformanceMode, mode, cancellationToken);
+
+            var actual = await ReadBladeFanTransactionStateAsync(blade, cancellationToken, readTachometers: false);
+            var expectedTarget = targetRpm ?? original.TargetRpm;
+            if (actual.Thermal.PerformanceMode != original.Thermal.PerformanceMode ||
+                actual.Thermal.FanMode != mode ||
+                actual.TargetRpm != expectedTarget)
+            {
+                throw new InvalidOperationException(
+                    $"固定风扇读回不一致：写入 {mode} / {expectedTarget} RPM，" +
+                    $"读回 {actual.Thermal.FanMode} / {actual.TargetRpm} RPM。"
+                );
+            }
+
+            return new BladeFanControlState(actual.Thermal.FanMode, actual.TargetRpm);
+        }
+        catch (Exception operationException)
+        {
+            var restorationException = await RestoreBladeFanTransactionStateAsync(blade, original);
+            if (restorationException is not null)
+            {
+                throw new AggregateException(
+                    "固定风扇设置失败，且原状态恢复失败。",
+                    operationException,
+                    restorationException);
+            }
+
+            var message = $"固定风扇设置失败：{operationException.Message} 原状态已恢复。";
+            if (operationException is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, operationException, cancellationToken);
+            }
+            throw new InvalidOperationException(message, operationException);
+        }
+    }
+
     public async ValueTask<int> SetBladeChargeLimitAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         int percent,
@@ -748,6 +825,97 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         return rpm ?? throw new InvalidOperationException("Blade 未返回风扇转速。");
     }
 
+    private async Task<BladeFanTransactionState> ReadBladeFanTransactionStateAsync(
+        ReadyDevice device,
+        CancellationToken cancellationToken,
+        bool readTachometers)
+    {
+        var thermal = await ReadBladeThermalStateAsync(device, cancellationToken);
+        var targetRpm = await ReadBladeFanTargetRpmAsync(device, cancellationToken);
+        if (readTachometers)
+        {
+            _ = await ReadBladeCurrentFanRpmAsync(
+                device, BladeThermalProtocol.CpuFanId, cancellationToken);
+            _ = await ReadBladeCurrentFanRpmAsync(
+                device, BladeThermalProtocol.GpuFanId, cancellationToken);
+        }
+        return new BladeFanTransactionState(thermal, targetRpm);
+    }
+
+    private Task WriteBladeFanTargetAsync(
+        ReadyDevice device,
+        byte zone,
+        int rpm,
+        CancellationToken cancellationToken)
+    {
+        var request = BladeFanProtocol.CreateSetTargetRequest(zone, rpm);
+        var transport = device.Manifest.GetRequiredCapability("fan-target.get");
+        return _transport.QueryAsync(
+            device.Descriptor.Id,
+            transport.TransactionId,
+            request[6],
+            transport.CommandClass,
+            0x01,
+            request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
+            transport.Wait,
+            cancellationToken,
+            transport.AllowRemainingPacketsMismatch);
+    }
+
+    private async Task<Exception?> RestoreBladeFanTransactionStateAsync(
+        ReadyDevice device,
+        BladeFanTransactionState original)
+    {
+        var errors = new List<Exception>();
+
+        async Task AttemptAsync(string operation, Func<Task> action)
+        {
+            try
+            {
+                await action();
+            }
+            catch (Exception exception)
+            {
+                errors.Add(new InvalidOperationException($"{operation}失败：{exception.Message}", exception));
+            }
+        }
+
+        await AttemptAsync("恢复 CPU 风扇目标", () => WriteBladeFanTargetAsync(
+            device, BladeFanProtocol.ZoneCpu, original.TargetRpm, CancellationToken.None));
+        await AttemptAsync("恢复 GPU 风扇目标", () => WriteBladeFanTargetAsync(
+            device, BladeFanProtocol.ZoneGpu, original.TargetRpm, CancellationToken.None));
+        await AttemptAsync("恢复 CPU 风扇模式", () => WriteBladeThermalZoneAsync(
+            device,
+            BladeFanProtocol.ZoneCpu,
+            original.Thermal.PerformanceMode,
+            original.Thermal.FanMode,
+            CancellationToken.None));
+        await AttemptAsync("恢复 GPU 风扇模式", () => WriteBladeThermalZoneAsync(
+            device,
+            BladeFanProtocol.ZoneGpu,
+            original.Thermal.PerformanceMode,
+            original.Thermal.FanMode,
+            CancellationToken.None));
+        await AttemptAsync("恢复读回", async () =>
+        {
+            var restored = await ReadBladeFanTransactionStateAsync(
+                device, CancellationToken.None, readTachometers: false);
+            if (restored != original)
+            {
+                throw new InvalidOperationException(
+                    $"期望 {original.Thermal.FanMode} / {original.TargetRpm} RPM，" +
+                    $"读回 {restored.Thermal.FanMode} / {restored.TargetRpm} RPM。");
+            }
+        });
+
+        return errors.Count switch
+        {
+            0 => null,
+            1 => errors[0],
+            _ => new AggregateException("固定风扇原状态恢复包含多个失败。", errors),
+        };
+    }
+
     private async Task<int> ReadBladeCurrentFanRpmAsync(
         ReadyDevice device,
         byte fanId,
@@ -1036,6 +1204,10 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
     private sealed record BladeThermalState(
         BladePerformanceMode PerformanceMode,
         BladeFanMode FanMode);
+
+    private sealed record BladeFanTransactionState(
+        BladeThermalState Thermal,
+        int TargetRpm);
 
     private sealed record BladeBoostState(
         BladeCpuBoostMode Cpu,

@@ -31,7 +31,7 @@ public static class BladeFanProtocol
 
     public static byte[] CreateSetTargetRequest(byte zone, int rpm)
     {
-        ValidateRpm(rpm);
+        ValidateTargetRpm(rpm);
         return RazerFeatureReport.CreateRequest(
             TransactionId,
             DataSize,
@@ -74,7 +74,7 @@ public static class BladeFanProtocol
         _ => throw new ArgumentOutOfRangeException(nameof(zone), "Blade 风扇分区必须为 CPU(0x01) 或 GPU(0x02)。"),
     };
 
-    private static void ValidateRpm(int rpm)
+    public static void ValidateTargetRpm(int rpm)
     {
         if (rpm is < MinimumRpm or > MaximumRpm || (rpm - MinimumRpm) % StepRpm != 0)
         {

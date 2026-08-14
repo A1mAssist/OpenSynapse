@@ -47,6 +47,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly WindowsStartupManager? _startupManager;
     private readonly string? _executablePath;
+    private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly VerifiedProfileApplier _profileApplier = new();
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
     private ProfileDocument _profile = ProfileDocument.CreateDefault();
@@ -125,6 +126,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _canSetViperDpiStages;
     private ViperDpiStagesTelemetry? _confirmedViperDpiStages;
     private string _deviceFingerprint = string.Empty;
+    private string _lightingShadowFingerprint = string.Empty;
+    private string _bladeLightingDevicePath = string.Empty;
     private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _deviceRefreshRequested;
     private string _cpuName = "CPU";
@@ -164,7 +167,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         IInternalDisplayController? internalDisplayController = null,
         IBladeLightingController? bladeLightingController = null,
         WindowsStartupManager? startupManager = null,
-        string? executablePath = null)
+        string? executablePath = null,
+        IReadOnlyList<string>? startupDiagnostics = null)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -177,6 +181,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _bladeLightingController = bladeLightingController;
         _startupManager = startupManager;
         _executablePath = executablePath;
+        _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -684,11 +689,95 @@ public sealed class MainViewModel : INotifyPropertyChanged
         return result;
     }
 
-    private async Task SaveProfileAsync(CancellationToken cancellationToken)
+    private async Task<string?> ApplyLoadedLightingProfileAsync(
+        DeviceDescriptor? blade,
+        bool? powerState,
+        CancellationToken cancellationToken)
+    {
+        if (_bladeLightingController is null)
+        {
+            return null;
+        }
+
+        if (blade is null || blade.Access != DeviceAccessState.Available)
+        {
+            if (_bladeLightingDevicePath.Length > 0)
+            {
+                try
+                {
+                    await _bladeLightingController.StopAsync();
+                }
+                catch (Exception exception) when (IsExpectedRuntimeException(exception))
+                {
+                    _diagnosticLog.TryWrite("keyboard-lighting", $"disconnect restore failed: {exception}");
+                }
+            }
+
+            _bladeLightingDevicePath = string.Empty;
+            _lightingShadowFingerprint = string.Empty;
+            return null;
+        }
+
+        var profile = ProfileResolver.Resolve(_profile, blade, powerState).Lighting;
+        string fingerprint;
+        BladeLightingEffect effect;
+        try
+        {
+            effect = BladeLightingProfileCodec.Parse(profile);
+            fingerprint = CreateLightingFingerprint(profile, blade.Id, powerState);
+        }
+        catch (InvalidOperationException exception)
+        {
+            _lightingShadowFingerprint = string.Empty;
+            return exception.Message;
+        }
+
+        if (StringComparer.Ordinal.Equals(_lightingShadowFingerprint, fingerprint))
+        {
+            return null;
+        }
+
+        if (_bladeLightingDevicePath.Length > 0 &&
+            !StringComparer.OrdinalIgnoreCase.Equals(_bladeLightingDevicePath, blade.Id))
+        {
+            try
+            {
+                await _bladeLightingController.StopAsync();
+            }
+            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            {
+                _diagnosticLog.TryWrite("keyboard-lighting", $"path-change restore failed: {exception}");
+            }
+        }
+
+        try
+        {
+            await _bladeLightingController.ApplyAsync(_deviceDescriptors, effect, cancellationToken);
+            _bladeLightingDevicePath = blade.Id;
+            _lightingShadowFingerprint = fingerprint;
+            _ = ObserveBladeLightingRuntimeAsync(_bladeLightingController.RuntimeCompletion);
+            return null;
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _bladeLightingDevicePath = string.Empty;
+            _lightingShadowFingerprint = string.Empty;
+            return FormatOperationException(exception);
+        }
+    }
+
+    private string CreateLightingFingerprint(
+        LightingProfile profile,
+        string devicePath,
+        bool? powerState) =>
+        $"{_profile.ActiveProfileName}\n{powerState}\n{BladeLightingProfileCodec.Fingerprint(profile, devicePath)}";
+
+    private async Task<bool> SaveProfileAsync(CancellationToken cancellationToken)
     {
         try
         {
             await _profileStore.SaveAsync(_profile, cancellationToken);
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -697,6 +786,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             SetDeviceOperationError($"配置保存：{exception.Message}");
+            return false;
         }
     }
 
@@ -828,6 +918,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
                 ApplyDeviceTelemetry(telemetry);
             }
+            var lightingError = profileApply?.Errors.Any(error =>
+                    error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
+                ? null
+                : await ApplyLoadedLightingProfileAsync(blade, powerState, cancellationToken);
             foreach (var device in snapshot.Devices)
             {
                 Devices.Add(new DeviceRowViewModel(device, telemetry));
@@ -837,6 +931,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (profileApply is { Errors.Count: > 0 })
             {
                 errors.AddRange(profileApply.Errors.Select(error => $"配置应用：{error}"));
+            }
+            if (!string.IsNullOrWhiteSpace(lightingError))
+            {
+                errors.Add($"键盘灯效：{lightingError}");
             }
             if (!string.IsNullOrWhiteSpace(snapshot.ErrorMessage))
             {
@@ -859,6 +957,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             _deviceFingerprint = string.Empty;
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
+            _lightingShadowFingerprint = string.Empty;
+            _bladeLightingDevicePath = string.Empty;
             RefreshInternalDisplay(powerState, applyDisplayProfile);
             Devices.Clear();
             SetDeviceQueryError(exception.Message);
@@ -916,8 +1016,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
             "键盘灯效",
             async () =>
             {
+                var previousProfile = _profile.Clone();
                 await _bladeLightingController.ApplyAsync(
                     _deviceDescriptors, effect, cancellationToken);
+                _profile.Global.Lighting = BladeLightingProfileCodec.Create(effect);
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    _profile = previousProfile;
+                    _lightingShadowFingerprint = string.Empty;
+                    throw new InvalidOperationException("灯效已启动，但配置保存失败，已恢复内存中的配置。");
+                }
+
+                var blade = _deviceDescriptors.FirstOrDefault(device =>
+                    device.ProtocolFamily == "blade-710" &&
+                    device.Access == DeviceAccessState.Available);
+                if (blade is not null)
+                {
+                    _bladeLightingDevicePath = blade.Id;
+                    _lightingShadowFingerprint = CreateLightingFingerprint(
+                        _profile.Global.Lighting, blade.Id, _powerSourceProvider.IsPluggedIn);
+                }
                 _ = ObserveBladeLightingRuntimeAsync(
                     _bladeLightingController.RuntimeCompletion);
             },
@@ -989,9 +1107,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         await RunDeviceOperationAsync("CPU Boost", async () =>
         {
+            var previousProfile = _profile.Clone();
             var actual = await _deviceTelemetryReader.SetBladeCpuBoostModeAsync(
                 _deviceDescriptors, BladeCpuBoostModes[BladeCpuBoostIndex], cancellationToken);
             SetBladeCpuBoost(actual);
+            _profile.Global.Blade.CpuBoostMode = (byte)actual;
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previousProfile;
+                throw new InvalidOperationException("CPU Boost 已写入，但配置保存失败，已恢复内存中的配置。");
+            }
         }, cancellationToken, () => BladeCpuBoostIndex = _confirmedBladeCpuBoostIndex);
     }
 
@@ -1004,9 +1129,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         await RunDeviceOperationAsync("GPU Boost", async () =>
         {
+            var previousProfile = _profile.Clone();
             var actual = await _deviceTelemetryReader.SetBladeGpuBoostModeAsync(
                 _deviceDescriptors, BladeGpuBoostModes[BladeGpuBoostIndex], cancellationToken);
             SetBladeGpuBoost(actual);
+            _profile.Global.Blade.GpuBoostMode = (byte)actual;
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previousProfile;
+                throw new InvalidOperationException("GPU Boost 已写入，但配置保存失败，已恢复内存中的配置。");
+            }
         }, cancellationToken, () => BladeGpuBoostIndex = _confirmedBladeGpuBoostIndex);
     }
 
@@ -1037,9 +1169,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         await RunDeviceOperationAsync("机身 Logo", async () =>
         {
+            var previousProfile = _profile.Clone();
             var actual = await _deviceTelemetryReader.SetBladeLogoModeAsync(
                 _deviceDescriptors, BladeLogoModes[BladeLogoIndex], cancellationToken);
             SetBladeLogo(actual);
+            _profile.Global.Blade.LogoMode = (byte)actual;
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previousProfile;
+                throw new InvalidOperationException("Logo 已写入，但配置保存失败，已恢复内存中的配置。");
+            }
         }, cancellationToken, () => BladeLogoIndex = _confirmedBladeLogoIndex);
     }
 
@@ -1124,6 +1263,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         await RunDeviceOperationAsync("鼠标 DPI 档位", async () =>
         {
+            var previousProfile = _profile.Clone();
             var requested = new ViperDpiStagesTelemetry(
                 checked((byte)ViperActiveDpiStage),
                 ViperDpiStages.Select(row => new ViperDpiStageTelemetry(
@@ -1131,6 +1271,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var actual = await _deviceTelemetryReader.SetViperDpiStagesAsync(
                 _deviceDescriptors, requested, cancellationToken);
             SetViperDpiStages(actual);
+            _profile.Global.Viper.DpiStages = new ViperDpiStagesProfile
+            {
+                ActiveStage = actual.ActiveStage,
+                Stages = actual.Stages.Select(stage => new ViperDpiStageProfile
+                {
+                    Number = stage.Number,
+                    X = stage.X,
+                    Y = stage.Y,
+                }).ToList(),
+            };
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previousProfile;
+                throw new InvalidOperationException("DPI 档位已写入，但配置保存失败，已恢复内存中的配置。");
+            }
         }, cancellationToken, RestoreViperDpiStages);
     }
 
@@ -1193,6 +1348,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             if (_bladeLightingController?.RuntimeCompletion == completion)
             {
+                _lightingShadowFingerprint = string.Empty;
+                _bladeLightingDevicePath = string.Empty;
                 SetDeviceOperationError($"键盘灯效运行：{FormatOperationException(exception)}");
             }
         }
@@ -1757,6 +1914,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 device,
                 capability,
                 "查询失败",
+                detail,
+                new SolidColorBrush(Color.FromArgb(255, 255, 107, 107))));
+        }
+
+        foreach (var error in _startupDiagnostics)
+        {
+            var separator = error.IndexOf('：');
+            var source = separator > 0 ? error[..separator] : "外部配置";
+            var detail = separator > 0 ? error[(separator + 1)..] : error;
+            Diagnostics.Add(new DiagnosticRowViewModel(
+                "外部 manifest",
+                source,
+                "加载失败",
                 detail,
                 new SolidColorBrush(Color.FromArgb(255, 255, 107, 107))));
         }
