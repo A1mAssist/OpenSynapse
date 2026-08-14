@@ -199,7 +199,7 @@ await viewModel.ApplyBladeLightingEffectAsync(
 
 当前生产 UI 模式为 `Off`、`Static`、`Breathing`、`Spectrum`、`Wave`、`Fire`。`Static` 和 `Breathing` 使用 `Color`；`Wave` 使用 `Direction`。控制器在返回前已完成亮度读回门禁及首个 `6 x 17` 完整矩阵帧 ACK；切换、退出和 transport 故障会停止旧任务并恢复 `#99DD72` 持久帧。后端另外提供 `Reactive` 和 `Ripple` 的低级键盘输入适配器与有界事件队列，但它们仍是 `SourceBacked`，尚未进入 `BladeLightingModeOptions`。
 
-`Wave` 和 `Fire` 是基于本地 Lighting Engine 证据实现的近似软件渲染器，不是 Synapse 1:1 复刻。当前仍缺少 Wave 的 exact speed、pause 和 angle scaling，Fire 原生 `7 x 23` 工作网格到 Blade `6 x 17` 输出的确切映射，以及两种效果的实际刷新率证据。前端可以保留现有模式和方向选择，但不得标注“与雷云完全一致”或暴露尚无证据的速度/角度参数。响应、涟漪、音频计和星光不得出现在生产 UI，直到对应输入/WASAPI/Lighting Engine 证据完成。
+`Wave` 和 `Fire` 是基于本地 Lighting Engine 证据实现的近似软件渲染器，不是 Synapse 1:1 复刻。当前仍缺少 Wave 的 exact speed、pause 和 angle scaling，Fire 原生 `7 x 23` 工作网格到 Blade `6 x 17` 输出的确切映射，以及两种效果的实际刷新率证据。前端可以保留现有模式和方向选择，但不得标注“与雷云完全一致”或暴露尚无证据的速度/角度参数。响应、涟漪、音频计和星光不得出现在生产 UI，直到对应输入、完整 WASAPI loopback、Lighting Engine 证据和 side-by-side 视觉验证完成。当前 Audio Meter 后端只读取默认渲染端点的 Core Audio 峰值计，不能宣称为 Synapse 等价的 loopback 实现。
 
 设备页现已通过 `BladeLightingModeOptions`、`BladeLightingColor`、`BladeWaveDirectionOptions` 和 `ApplySelectedBladeLightingEffectAsync` 接入以上六种模式。颜色使用 WinUI `ColorPicker`，应用按钮只在 Blade 亮度成功读回且 App 持有控制器时启用；前端不应再增加第二套灯光状态或直接调用矩阵报文。Reactive/Ripple 仍需真实事件过滤、布局映射和 side-by-side 视觉验证，完成前不应自行加入下拉选项。
 
