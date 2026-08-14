@@ -1,0 +1,17 @@
+{
+  "StartedAt": "2026-08-12T17:39:29.3348441+00:00",
+  "CompletedAt": "2026-08-12T17:39:29.4810299+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "TargetState": "Static",
+  "ProfileId": 1,
+  "HoldSeconds": 30,
+  "LeaveTarget": null,
+  "OriginalState": null,
+  "TargetElectronicReadback": null,
+  "RestorationElectronicReadback": null,
+  "VisualConfirmed": null,
+  "OperationError": "Blade Logo \u8FD4\u56DE\u4E86\u9519\u8BEF\u7684\u5BF9\u8C61\u6807\u8BC6\u3002",
+  "RestorationError": null
+}

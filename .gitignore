@@ -1,0 +1,33 @@
+# Build and test output
+**/bin/
+**/obj/
+TestResults/
+*.trx
+
+# IDE and user state
+.vs/
+.idea/
+*.user
+*.suo
+
+# Local agent/runtime state
+.superpowers/
+
+# Extracted proprietary Synapse application tree
+artifacts/synapse-asar-*/
+
+# Local reverse-engineering projects and captures
+*.ghidra
+*.gpr
+*.rep/
+*.dmp
+*.etl
+*.pcap
+*.pcapng
+*.log
+*.tmp
+*.bak
+
+# OS metadata
+Thumbs.db
+Desktop.ini

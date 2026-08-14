@@ -1,0 +1,17 @@
+{
+  "StartedAt": "2026-08-12T17:56:44.1805711+00:00",
+  "CompletedAt": "2026-08-12T17:57:14.3086786+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "TargetState": "Static",
+  "ProfileId": 1,
+  "HoldSeconds": 30,
+  "LeaveTarget": "effect-only",
+  "OriginalState": null,
+  "TargetElectronicReadback": null,
+  "RestorationElectronicReadback": null,
+  "VisualConfirmed": null,
+  "OperationError": null,
+  "RestorationError": null
+}

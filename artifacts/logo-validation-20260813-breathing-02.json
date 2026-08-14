@@ -1,0 +1,17 @@
+{
+  "StartedAt": "2026-08-12T19:05:24.0914785+00:00",
+  "CompletedAt": "2026-08-12T19:05:44.4713161+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "TargetState": "Breathing",
+  "ProfileId": 1,
+  "HoldSeconds": 20,
+  "LeaveTarget": null,
+  "OriginalState": "LogoState { Powered = False, Mode = Static }",
+  "TargetElectronicReadback": "LogoState { Powered = True, Mode = Breathing }",
+  "RestorationElectronicReadback": "LogoState { Powered = False, Mode = Static }",
+  "VisualConfirmed": null,
+  "OperationError": null,
+  "RestorationError": null
+}

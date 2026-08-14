@@ -1,0 +1,15 @@
+CreateLightingDevice 0x45170
+DestroyLightingDevice 0x45210
+CreateLightingEngine 0x45230
+DestroyLightingEngine 0x452D0
+FreeMalloc 0x340C0
+GetDLLVersion 0x33CF0
+GetFeatureSet 0x331B0
+PollEvents 0x32D90
+RzLightingApi 0x33490
+RzLightingApiNoReturn 0x33B60
+SetAllocator 0x322D0
+SetEventInterface 0x32250
+SetNodeFFIEvent 0x340D0
+SetOperatingMode 0x32D00
+UsePollingMode 0x32D80

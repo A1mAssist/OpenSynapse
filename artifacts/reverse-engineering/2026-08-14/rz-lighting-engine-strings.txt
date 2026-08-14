@@ -1,0 +1,16 @@
+Breath
+BreathingEffect
+ColorStops
+Cycles
+duration
+Effect
+Fire
+Pause
+Reactive
+Ripple
+Spectrum
+SpectrumEffect
+Speed
+Starlight
+Wave
+width

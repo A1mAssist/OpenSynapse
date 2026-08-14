@@ -1,0 +1,26 @@
+{
+  "path": "%LOCALAPPDATA%\\Razer\\RazerAppEngine\\User Data\\Apps\\Common\\RzLightingEngineApi_v4.0.55.0.dll",
+  "fileVersion": "4.0.55.0",
+  "productVersion": "4.0.55.0",
+  "architecture": "x86_64",
+  "size": 2153672,
+  "imageBase": "0x180000000",
+  "sha256": "CD9FC2A61FF920B9B73E1F5E27632020E2F8586F443E426A875AD3B042B714FA",
+  "analysis": {
+    "tool": "Ghidra 12.1.2 headless",
+    "project": "disposable project moved outside the repository after evidence export",
+    "readOnly": true,
+    "deviceIoPerformed": false,
+    "hidReportsSent": false
+  },
+  "effectTypeDescriptors": [
+    ".?AVCRippleEffect@@",
+    ".?AVCStarlightEffect@@",
+    ".?AVCSpectrumEffect@@",
+    ".?AVCFireEffect@@",
+    ".?AVCReactiveEffect@@",
+    ".?AVCBreathingEffect@@",
+    ".?AVCWaveEffect@@"
+  ],
+  "caveat": "Function names and parameter types are Ghidra defaults; strings, RTTI, and decompiler output do not prove visual parity."
+}

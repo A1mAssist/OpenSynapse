@@ -1,0 +1,77 @@
+# OpenSynapse Device Capability Matrix
+
+Date: 2026-08-14
+
+This matrix separates Synapse-visible capability, protocol evidence, readback, and current implementation state. It covers only Blade 16 2025 (`1532:02C6`) and Viper V3 HyperSpeed (`1532:00B8`). Account, cloud, store, news, game-library, telemetry, and firmware-update features are excluded.
+
+Status vocabulary:
+
+- **Verified**: current-device read/write/readback/restore evidence is complete; a production write may be exposed.
+- **SourceBacked**: exact public or device-specific evidence exists, but current-device write/readback/restore evidence is incomplete; production writes remain disabled.
+- **Approximate**: an evidence-based software implementation is production-connected, but exact native parameters, mapping, timing, or visual parity remain unproven; it must not be described as 1:1.
+- **Native**: supplied by a documented Windows API or system setting rather than a Razer private command.
+- **Blocked**: the feature is known or claimed to exist, but current evidence is insufficient for a runnable command.
+- **Explicitly excluded**: outside this release or unsupported by the target device.
+
+## Blade 16 2025 (`02C6`)
+
+| Synapse/device function | Parameters and boundaries | Exact protocol evidence | Readback | Development state |
+|---|---|---|---|---|
+| Keyboard brightness | Raw `0..255`, UI `0..100%` | OpenRazer PR `#2450`; class `0E`, GET `84`, SET `04`, args `[01,value]` | Yes | Verified |
+| Performance mode | Firmware values: Balanced `0`, Performance `2`, Custom `4`, Silent `5`, Battery `6`, HyperBoost `7` | `blauzim/razer-ctl` exact `RZ09-05286` / `02C6`; class `0D`, GET `82`, SET `02`, two zones | Yes, both zones must agree; current hardware changed one mode and restored it while preserving fan mode | `Verified`; production SET enabled with two-zone readback and failure recovery |
+| Fan mode and stored target | Automatic `0`; Manual `1`; verified `02C6` safe target range `2000..5000 RPM`, step `100` | Exact `02C6` public implementations; GET `0D82` and `0D81`, SET `0D01`, two zones; independent `razer-light` driver confirms `0D01` args `[00,zone,rpm/100]` | Stored target is read back; current tachometer RPM uses Product 710 GET `0D88` for CPU/GPU and returned `2200/2000 RPM` on 2026-08-13 | Read-only telemetry now includes current CPU/GPU RPM; production manual writes remain `Blocked` pending process-exit, device-disconnect, and sleep/wake recovery |
+| CPU boost in Custom mode | Low `0`, Medium `1`, High `2`, Boost `3`, Undervolt `4` | Exact `02C6` implementation; GET `0D87`, SET `0D07`, CPU cluster `1` | Yes; current hardware passed same-value and one-step change, then restored CPU/GPU and performance mode | `Verified`; production SET requires current Custom mode and preserves the GPU cluster |
+| GPU boost in Custom mode | Low `0`, Medium `1`, High `2` | Exact `02C6` implementation; GET `0D87`, SET `0D07`, GPU cluster `2` | Yes; current hardware passed same-value and one-step change, then restored CPU/GPU and performance mode | `Verified`; production SET requires current Custom mode and preserves the CPU cluster |
+| Max fan speed mode | Disable `0`, Enable `2`; production write requires Custom performance mode | Exact `02C6` implementation; GET `078F`, SET `070F` | Yes; GET has a known remaining-packet exception; current hardware passed toggle/readback/restore and restored the original performance mode | `Verified`; production SET enabled after a successful current-path GET, with readback and failure recovery |
+| Battery charge limit | `50,55,60,65,70,75,80%`; disabled=`100%` | Exact `02C6` implementations; GET `0792`, SET `0712`; raw `B2,B7,BC,C1,C6,CB,D0,50` | Yes; current hardware changed one allowed value and restored it; GET has a known remaining-packet exception | `Verified`; production SET enabled with readback and failure recovery |
+| Wired battery level / charging status | Product 710 wired battery object `0`; battery level is raw `0..255` scaled to percent | Exact Product 710 calls `020780 [00]` and `020784 [00]` | Read-only telemetry now queries both independently; current-device promotion evidence still pending | `SourceBacked`; no SET |
+| Auto sleep / time to sleep | Product 710 uses battery object `0`; time is seconds | Exact Product 710 calls `020788 [00]` and `020783` | Read-only telemetry now queries both independently; current-device promotion evidence still pending | `SourceBacked`; no SET |
+| Firmware quick effects | Off, wave, spectrum, reactive, static, breathing, starlight | OpenRazer `02C6`; class `03`, SET `0A`; Starlight deliberately declares `data_size=01` while carrying nine argument bytes, hardware-tested upstream in commit `4e65f1249587` | No standard effect GET; current `02C6` acknowledged Static-red and restore SETs without any visible keyboard change | `SourceBacked`; not used by the PID 710 production backend because Synapse registers `rzDevice25LedMatrixSkipSetEffect` and skips this command |
+| Custom RGB matrix | `6 x 17`; row packet `[FF,row,start,stop,RGB...]` | Local Synapse product module sets Software mode and effect-8 engine ownership once; native driver emits class `03`, SET `0B`, six rows, transaction IDs `1..6` per frame, 1 ms row delay; official layout maps 7 x 16 logical keys into 6 x 17 sparse device slots | No state GET; production apply waits for all six row ACKs; 2026-08-13 sustained locator showed red/green/blue row bands for 60 seconds, while the corrected four-corner mapping awaits a separate visual check | `Verified`; production backend owns takeover, official sparse-layout projection, bounded latest-frame pumping, failure-safe Normal-mode recovery, and persistent-frame restore |
+| Software quick effects | Off, Static, Breathing, Spectrum, Wave, Fire | Synapse registers the PID 710 Basic Lighting Engine for a 25 FPS cadence; observed mappings include Breathing engine effect 5, Spectrum 4, Wave 2, and Fire 8 | Frame output and six row ACKs only; the registered cadence is not proof of each native effect's actual refresh timing | `Approximate`; production `IBladeLightingController` is App-owned and the WinUI device page exposes the six current modes, color, and Wave direction. Wave color stops and Fire's native `7 x 23` work grid are source-backed, but exact Wave speed/pause/angle scaling, the Fire `7 x 23` to Blade `6 x 17` mapping, and actual Wave/Fire refresh rates remain unknown. Both are evidence-based approximations, not 1:1 Synapse implementations. Reactive/Ripple/Audio Meter await Windows input/WASAPI adapters; Starlight awaits exact engine evidence. |
+| Chroma Studio | Local lighting manifest says supported; matrix `6 x 17` | Local Razer module confirms capability, public matrix writes exist | No full-state readback | Not planned until a truthful local shadow-state/recovery design exists |
+| Lid logo Off / Static | Off, static | OpenRazer exact Blade branch: state GET/SET `03/03/80` and `03/03/00`, mode GET/SET `03/03/82` and `03/03/02`, args `[01,04,value]`, transaction `FF`; Blade on/off uses LED state rather than effect | 2026-08-13: Static visibly lit the physical logo, electronic readback matched, and original Off state was restored | `Verified`; production control may use the exact mode-then-power sequence with readback and restoration |
+| Lid logo Breathing | breathing | Generic LED-effect `0302` report `[01,04,02]`, transaction `FF`; OpenRazer explicitly marks Blade mode 2 undocumented/technically unsupported | 2026-08-13 single-report run from Off produced no physical light | `SourceBacked`; keep disabled until an exact Synapse enable sequence is captured |
+| Device mode (not lights-always-on) | Normal `00`; Driver `03` disables native Fn media-key behavior | Exact `02C6` implementation; GET `0084`, SET `0004` | Yes | No user-facing control; keep Normal mode. Always-on lighting requires a separate keep-alive design and is not represented by `0004` |
+| Key mapping and HyperShift | Local module contains normal and HyperShift maps | No exact open `02C6` mapping protocol established | Unproven | Blocked |
+| Snap Tap | Local Blade UI/MW module contains the feature | No exact public `02C6` protocol established | Unproven | Blocked |
+| Display refresh rate | Current internal panel is `2560 x 1600`; local enumeration returned `48,60,75,100,120,240 Hz` | `QueryDisplayConfig` identifies exactly one active `LVDS`/embedded DP/embedded UDI/`INTERNAL` target; `EnumDisplaySettingsExW` and `ChangeDisplaySettingsExW` operate only on its returned GDI source name | Yes; set path performs `CDS_TEST`, apply, same-source readback, and best-effort restore | `Native`; backend read/set/profile power override implemented. Writes fail closed for zero/multiple internal paths, clone topology, or unsupported rates |
+| HDR, display mode, local dimming | Local Blade module/native logs expose the features | HDR has Windows APIs; other paths use closed vendor native code | Partial | Native for documented Windows API portions; otherwise Blocked |
+| ICC color profiles | Local logs reference Display P3, Adobe RGB, BT.709, sRGB, Native profiles | Windows color-management APIs; vendor `.icm` files are local installation assets | Yes for active profile | Native for documented Windows color-management APIs; asset behavior still needs definition |
+| GPU mode / NVIDIA OC / AMD OC | This Blade 16 configuration is Optimus-only; no Dedicated GPU-only target is in scope | GPU MUX is a vendor/native path and no exact `02C6` HID contract is accepted | N/A | Explicitly excluded for this device; Windows/Razer owns Optimus mode |
+| THX spatial audio, EQ, normalization, voice clarity | Local Blade module bundles THX v4 components | Closed vendor driver/native interface | Unknown | Blocked; no fake controls |
+| Trackpad toggle, game mode, startup animation | Blade 16 guide documents Gaming Mode and trackpad options; local module exposes entries | No exact `02C6` HID mapping/keyboard-policy contract or behaviorally safe Windows hook has been established | Unknown | Blocked; no fake controls |
+| Firmware update | BIOS/EC/VBIOS manifests exist | Vendor updater only | Not applicable | Explicitly excluded |
+
+## Viper V3 HyperSpeed (`00B8`)
+
+| Synapse/device function | Parameters and boundaries | Exact protocol evidence | Readback | Development state |
+|---|---|---|---|---|
+| Current DPI | `100..30000`, step `50`; X/Y axes | OpenRazer PR `#2149`, tested on `00B8`; class `04`, GET `85`, SET `05` | Yes | Verified |
+| DPI stages | Up to 5; default `400,800,1600,3200,6400`; max `30000`; X/Y step `50` | Product 184 source-backed chain: transaction `1F`, GET `0486`, SET `0406`; persistent storage arg `[01]`; SET payload `[storage,active,count] + [zeroBasedId,X_BE,Y_BE,00,00]` | 2026-08-13 current-device GET returned active stage 3/5 and `400,800,1600,3200,6400`; non-active stage 1 changed to `450x450`, read back exactly, then original table restored and read back exactly | Verified; backend setter is current-path gated, compares the complete table, and attempts exact restoration on failure/cancellation. The WinUI device page exposes an editor that submits the complete table. |
+| Polling rate | `125,500,1000 Hz`; raw `08,02,01` | OpenRazer PR `#2149`, tested on `00B8`; class `00`, GET `85`, SET `05` | Yes | Verified |
+| Battery level | Raw `0..255`, displayed as percentage estimate | OpenRazer PR `#2149`, tested on `00B8`; class `07`, command `80` | Strict Product 184 parser now validates envelope, transaction, command and CRC | Verified read-only; AA device has no charging state |
+| Low-battery threshold | Raw `0..255`; official decode is `floor(raw / 255 * 100)` | Exact `00B8` OpenRazer driver switch; Product 184 `rzDevice30` GET decodes the raw byte and SET encodes `ceil(percent / 100 * 255)` | 2026-08-13 current-device GET returned `0x4D`, decoded by the official rule as `30%` | SourceBacked; validated read-only telemetry, no UI write/SET until write/readback/restore |
+| Idle timeout | `60..900 seconds` | Exact `00B8` OpenRazer implementation; GET `0783`, SET `0703` | Strict Product 184 parser now validates range and envelope | Verified |
+| Battery chemistry | Alkaline `00`, rechargeable NiMH `01`, lithium `02` | Exact `00B8` Synapse captures: transaction `1F`, SET `0714`, size `01`; the device returned success and echoed each value | No GET/readback was captured or established | SourceBacked SET builder only; no production control until an exact GET or another deterministic restore path is proven |
+| Button assignment | Synapse manual exposes the physical inputs; local `00B8` state identifies DPI cycle as `DKM_SB_03` / key `82` | Local assignments are stored under Synapse `appEngine.mappings`; this is not a HID or board-profile protocol | Unknown | Blocked |
+| HyperShift, Turbo, and stored profile | Synapse manual/module exposes both layers, repeat behavior, and one profile | Local `00B8` state stores mappings in Synapse AppEngine JSON; no reliable exact board-profile or RzControl contract is established | Unknown | Blocked; do not confuse local software mappings with on-device persistence |
+| Surface calibration | Generic mouse modules may contain the page, but exact local `00B8` support has not been proven | None accepted | Unknown | Do not expose based on generic bundle strings alone |
+| Chroma lighting | Local lighting manifest explicitly sets Chroma and Chroma Studio support to false | Device has no supported lighting surface | Not applicable | Explicitly excluded |
+| Firmware update | Vendor package path only | Vendor updater only | Not applicable | Explicitly excluded |
+
+## Front-End / Back-End Boundary
+
+The WinUI front end binds immutable telemetry and capability state. It never opens HID handles. A write control exists only for a `Verified` capability and remains disabled until its backend GET succeeds for the current device path; errors preserve `--` instead of inventing values.
+
+The Profile page currently exposes selection, create, clone, rename, delete, executable bind/unbind, JSON import/export, and current-user startup registration. These are application-management capabilities and do not change the evidence status of any hardware command.
+
+The Windows backend owns SetupAPI enumeration, feature-report transport, packet validation, retries, range checks, write/readback, and disconnect recovery. Strict embedded manifests select supported VID/PIDs, HID collections, protocol families, transport waits, and admitted request headers; strongly typed C# family handlers still own dynamic encoding, parsing, current-path gates, readback, and restoration. Closed Synapse module names or UI strings are evidence that a feature exists, not permission to invent a packet.
+
+## Evidence Notes
+
+- OpenRazer commit `6820f9da169d354bc7e6e93a0aa8683a6bb75792`, PR `#2149`, and PR `#2450`.
+- OpenRGB commit `684b74ca9e2e2bfe096f074e1e8a1f7e04db5255`.
+- `blauzim/razer-ctl` (MIT), including the `RZ09-05286` descriptor and performance/fan/battery command implementation.
+- `encomjp/razer-control-revived` (GPL-2.0), used as independent corroboration rather than copied implementation.
+- Local Razer AppEngine manifests, product modules, and native logs. No serial numbers, account identifiers, or other personal data are included here.

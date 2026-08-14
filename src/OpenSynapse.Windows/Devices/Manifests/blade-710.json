@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "blade-710",
+  "displayName": "Razer Blade 16 2025",
+  "vendorId": "1532",
+  "productIds": ["02C6"],
+  "collection": {
+    "usagePage": "0001",
+    "usage": "0002",
+    "featureReportLength": 91
+  },
+  "protocolFamily": "blade-710",
+  "transport": {
+    "waitMilliseconds": 2
+  },
+  "capabilities": {
+    "keyboard-brightness.get": { "transactionId": "FF", "dataSize": "02", "commandClass": "0E", "commandId": "84", "arguments": "0100", "waitMilliseconds": 1 },
+    "keyboard-brightness.set": { "transactionId": "FF", "dataSize": "02", "commandClass": "0E", "commandId": "04", "arguments": "", "waitMilliseconds": 1 },
+    "thermal-state.get": { "transactionId": "1F", "dataSize": "04", "commandClass": "0D", "commandId": "82", "arguments": "" },
+    "thermal-state.set": { "transactionId": "1F", "dataSize": "04", "commandClass": "0D", "commandId": "02", "arguments": "" },
+    "fan-target.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "81", "arguments": "" },
+    "current-fan-rpm.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "88", "arguments": "" },
+    "advanced-fan-mode.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "87", "arguments": "" },
+    "boost.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "87", "arguments": "" },
+    "boost.set": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "07", "arguments": "" },
+    "charge-limit.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "92", "arguments": "00", "allowRemainingPacketsMismatch": true },
+    "charge-limit.set": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "12", "arguments": "" },
+    "max-fan.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "8F", "arguments": "00", "allowRemainingPacketsMismatch": true },
+    "max-fan.set": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "0F", "arguments": "" },
+    "wired-battery.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "07", "commandId": "80", "arguments": "0000" },
+    "charging-status.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "07", "commandId": "84", "arguments": "0000" },
+    "auto-sleep.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "07", "commandId": "88", "arguments": "0000" },
+    "time-to-sleep.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "07", "commandId": "83", "arguments": "0000" },
+    "logo-power.get": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "80", "arguments": "010400" },
+    "logo-power.set": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "00", "arguments": "" },
+    "logo-mode.get": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "82", "arguments": "010400" },
+    "logo-mode.set": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "02", "arguments": "" }
+  }
+}

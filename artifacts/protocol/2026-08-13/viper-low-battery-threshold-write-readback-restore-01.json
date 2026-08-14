@@ -1,0 +1,19 @@
+{
+  "StartedAt": "2026-08-13T03:55:45.6778098+00:00",
+  "CompletedAt": "2026-08-13T03:55:46.3164783+00:00",
+  "Device": "1532:00B8",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "TargetPercent": 35,
+  "OriginalRaw": 77,
+  "OriginalPercent": 30,
+  "SameValueReadbackRaw": 77,
+  "SameValueReadbackPercent": 30,
+  "TargetRaw": 90,
+  "TargetReadbackRaw": 90,
+  "TargetReadbackPercent": 35,
+  "RestorationReadbackRaw": 77,
+  "RestorationReadbackPercent": 30,
+  "OperationError": null,
+  "RestorationError": null
+}

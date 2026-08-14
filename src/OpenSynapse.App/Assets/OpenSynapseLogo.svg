@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <title>OpenSynapse</title>
+  <path
+    d="M25.1 11A10.7 10.7 0 1 0 25.4 19.4"
+    stroke="#99DD72"
+    stroke-width="3"
+    stroke-linecap="round" />
+  <path
+    d="M22.3 9.2C20.8 7.9 18.9 7.2 16.9 7.2c-3.2 0-5.5 1.7-5.5 4.2 0 2.7 2.2 3.7 5.3 4.3 3.1.6 5.1 1.5 5.1 4 0 2.7-2.5 4.6-5.7 4.6-2.3 0-4.4-.8-5.9-2.1"
+    stroke="#99DD72"
+    stroke-width="2.35"
+    stroke-linecap="round"
+    stroke-linejoin="round" />
+  <circle cx="25.1" cy="11" r="1.7" fill="#99DD72" />
+  <circle cx="25.4" cy="19.4" r="1.7" fill="#99DD72" />
+  <circle cx="10.2" cy="22.2" r="1.7" fill="#99DD72" />
+</svg>

@@ -1,0 +1,16 @@
+{
+  "StartedAt": "2026-08-12T13:29:58.3591079+00:00",
+  "CompletedAt": "2026-08-12T13:29:58.6011962+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "TargetState": "Static",
+  "HoldSeconds": 30,
+  "LeaveTarget": "Static",
+  "OriginalState": "LogoState { Powered = False, Mode = Static }",
+  "TargetElectronicReadback": "LogoState { Powered = True, Mode = Static }",
+  "RestorationElectronicReadback": null,
+  "VisualConfirmed": false,
+  "OperationError": null,
+  "RestorationError": null
+}
