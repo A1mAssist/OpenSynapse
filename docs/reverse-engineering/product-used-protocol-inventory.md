@@ -15,7 +15,7 @@ Evidence states:
 |---|---|---|---|
 | Keyboard brightness | GET `02/0E/84`, SET `02/0E/04` | profile, brightness | Verified read/write |
 | Thermal fan mode | GET `04/0D/82`, SET `04/0D/02` | profile, fan ID, mode, value | Verified performance-mode write; exact two-zone read |
-| Stored fan target | GET `03/0D/81`, SET `03/0D/01` | profile, fan ID, RPM / 100 | SourceBacked read; write Blocked by recovery requirements |
+| Stored fan target | GET `03/0D/81`, SET `03/0D/01` | profile, fan ID, RPM / 100 | SourceBacked read; the backend now reads and restores CPU/GPU targets independently for the software curve transaction. Ordinary fixed-target writes remain gated by lifecycle evidence |
 | Fan ID list | GET `50/0D/80` | response count, fan IDs | SourceBacked opt-in probe |
 | Current fan RPM | GET `03/0D/88` | profile, fan ID; response raw RPM / 100 | SourceBacked opt-in probe |
 | Advanced fan mode / wattage | GET `03/0D/87`, SET `03/0D/07` | profile, CPU/GPU fan ID, value | SourceBacked GET; no production write |
@@ -25,6 +25,7 @@ Evidence states:
 | LED brightness/state/effect/RGB | Blade Logo state: GET `03/03/80`, SET `03/03/00`; args `[01,04,state]`; transaction `FF` | OpenRazer `razerchromacommon.c` and Blade laptop branch in `razerkbd_driver.c`; LED state, not effect, for on/off | Keyboard brightness Verified; Logo Off/Static Verified on current hardware; quick effects SourceBacked; Logo Breathing SourceBacked pending visual validation |
 | Function-key swap / game mode / device game-mode selection / auto sleep | Product 710 call exists | complete safe `02C6` mapping/policy contract not established | Blocked |
 | BIOS/EC/firmware/display/OLED reads | Product 710 call exists | mixed native/vendor paths | Not admitted to HID backend without exact product contract |
+| Smart fan curve runtime | No separate HID table | Product 710 persists `smartFanCurve.cpu/gpu` nodes and software-interpolates CPU/GPU outputs before calling `setThermalFanSpeed` for fan IDs 1 and 2; observed target conversion is `floor(value/100)` | SourceBacked software implementation; no guessed curve-table packet is admitted |
 | VGA configure / GPU mode | GET `02/0D/89`, SET `02/0D/09` | mode byte | Excluded: this Blade configuration is Optimus-only |
 
 `getThermalFanInformation` and thermal fan-table helpers exist in the dependency, but the ordinary Product 710 flow does not require a table write; they are not admitted as production features.

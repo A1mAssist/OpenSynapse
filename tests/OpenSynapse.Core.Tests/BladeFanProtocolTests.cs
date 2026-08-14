@@ -65,6 +65,35 @@ public sealed class BladeFanProtocolTests
                 CreateResponse(BladeFanProtocol.ZoneCpu, raw), BladeFanProtocol.ZoneCpu));
     }
 
+    [Theory]
+    [InlineData(1900)]
+    [InlineData(2000)]
+    [InlineData(5000)]
+    public void CurveParserAndBuilderAllowSourceBackedRange(int rpm)
+    {
+        var request = BladeFanProtocol.CreateSetCurveTargetRequest(
+            BladeFanProtocol.ZoneCpu, rpm);
+        Assert.Equal((byte)(rpm / 100), request[11]);
+
+        var response = CreateResponse(BladeFanProtocol.ZoneCpu, (byte)(rpm / 100));
+        Assert.Equal(
+            rpm,
+            BladeFanProtocol.ParseCurveTarget(
+                response,
+                BladeFanProtocol.ZoneCpu,
+                BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu)));
+    }
+
+    [Fact]
+    public void CurveParserRejectsFixedFanOutOfRangeRawValue()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            BladeFanProtocol.ParseCurveTarget(
+                CreateResponse(BladeFanProtocol.ZoneCpu, 51),
+                BladeFanProtocol.ZoneCpu,
+                BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu)));
+    }
+
     [Fact]
     public void RejectsUnknownZoneAndCrossZoneResponse()
     {

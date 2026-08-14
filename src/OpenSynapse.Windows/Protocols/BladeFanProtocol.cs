@@ -11,9 +11,10 @@ public static class BladeFanProtocol
 {
     public const byte ZoneCpu = 0x01;
     public const byte ZoneGpu = 0x02;
-    public const int MinimumRpm = 2000;
-    public const int MaximumRpm = 5000;
-    public const int StepRpm = 100;
+    public const int MinimumRpm = BladeFanLimits.MinimumRpm;
+    public const int MaximumRpm = BladeFanLimits.MaximumRpm;
+    public const int StepRpm = BladeFanLimits.StepRpm;
+    internal const int MinimumCurveRpm = 1900;
 
     private const byte TransactionId = 0x1F;
     private const byte DataSize = 0x03;
@@ -32,6 +33,17 @@ public static class BladeFanProtocol
     public static byte[] CreateSetTargetRequest(byte zone, int rpm)
     {
         ValidateTargetRpm(rpm);
+        return CreateSetTargetRequestCore(zone, rpm);
+    }
+
+    internal static byte[] CreateSetCurveTargetRequest(byte zone, int rpm)
+    {
+        ValidateCurveTargetRpm(rpm);
+        return CreateSetTargetRequestCore(zone, rpm);
+    }
+
+    private static byte[] CreateSetTargetRequestCore(byte zone, int rpm)
+    {
         return RazerFeatureReport.CreateRequest(
             TransactionId,
             DataSize,
@@ -41,12 +53,25 @@ public static class BladeFanProtocol
     }
 
     public static int ParseTarget(ReadOnlySpan<byte> response, byte expectedZone) =>
-        ParseTarget(response, expectedZone, CreateGetTargetRequest(expectedZone));
+        ParseTargetCore(response, expectedZone, CreateGetTargetRequest(expectedZone), MinimumRpm);
 
     internal static int ParseTarget(
         ReadOnlySpan<byte> response,
         byte expectedZone,
-        ReadOnlySpan<byte> request)
+        ReadOnlySpan<byte> request) =>
+        ParseTargetCore(response, expectedZone, request, MinimumRpm);
+
+    internal static int ParseCurveTarget(
+        ReadOnlySpan<byte> response,
+        byte expectedZone,
+        ReadOnlySpan<byte> request) =>
+        ParseTargetCore(response, expectedZone, request, MinimumCurveRpm);
+
+    private static int ParseTargetCore(
+        ReadOnlySpan<byte> response,
+        byte expectedZone,
+        ReadOnlySpan<byte> request,
+        int minimumRpm)
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, DataSize))
         {
@@ -60,10 +85,11 @@ public static class BladeFanProtocol
         }
 
         var rpm = response[RazerFeatureReport.ArgumentsOffset + 2] * StepRpm;
-        if (rpm is < MinimumRpm or > MaximumRpm || (rpm - MinimumRpm) % StepRpm != 0)
+        if (rpm < minimumRpm || rpm > MaximumRpm || rpm % StepRpm != 0)
         {
+            var kind = minimumRpm == MinimumRpm ? "固定风扇转速" : "风扇曲线转速";
             throw new InvalidOperationException(
-                $"Blade 返回了不支持的固定风扇转速 {rpm} RPM；允许范围为 {MinimumRpm}..{MaximumRpm} RPM，步进 {StepRpm} RPM。");
+                $"Blade 返回了不支持的{kind} {rpm} RPM；允许范围为 {minimumRpm}..{MaximumRpm} RPM，步进 {StepRpm} RPM。");
         }
         return rpm;
     }
@@ -75,12 +101,15 @@ public static class BladeFanProtocol
     };
 
     public static void ValidateTargetRpm(int rpm)
+        => BladeFanLimits.ValidateTargetRpm(rpm);
+
+    internal static void ValidateCurveTargetRpm(int rpm)
     {
-        if (rpm is < MinimumRpm or > MaximumRpm || (rpm - MinimumRpm) % StepRpm != 0)
+        if (rpm is < MinimumCurveRpm or > MaximumRpm || rpm % StepRpm != 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(rpm),
-                $"Blade 固定风扇转速必须为 {MinimumRpm}..{MaximumRpm} RPM，步进 {StepRpm} RPM。");
+                $"Blade 曲线目标必须为 {MinimumCurveRpm}..{MaximumRpm} RPM，步进 {StepRpm} RPM。");
         }
     }
 }

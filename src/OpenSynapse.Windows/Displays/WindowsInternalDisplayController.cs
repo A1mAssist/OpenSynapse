@@ -20,6 +20,8 @@ public sealed class WindowsInternalDisplayController : IInternalDisplayControlle
 
     public InternalDisplaySnapshot Read() => Resolve().ToSnapshot();
 
+    internal string ResolveSourceName() => Resolve().SourceName;
+
     public InternalDisplaySnapshot SetRefreshRate(int refreshRateHertz)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(refreshRateHertz);

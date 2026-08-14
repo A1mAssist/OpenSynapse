@@ -15,6 +15,7 @@ public enum BladeLightingMode
     Reactive,
     Ripple,
     AudioMeter,
+    Ambient,
 }
 
 public sealed record BladeLightingEffect(
@@ -127,6 +128,12 @@ public sealed class BladeLightingController : IBladeLightingController
                     var audioInput = new WasapiAudioMeterAdapter();
                     inputAdapter = audioInput;
                     source = new AudioMeterFrameSource(audioInput);
+                }
+                else if (effect.Mode == BladeLightingMode.Ambient)
+                {
+                    var displayInput = new WindowsDisplayCaptureAdapter();
+                    inputAdapter = displayInput;
+                    source = new AmbientFrameSource(displayInput);
                 }
                 else
                 {
@@ -407,6 +414,20 @@ public sealed class BladeLightingController : IBladeLightingController
             cancellationToken.ThrowIfCancellationRequested();
             return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(
                 QuickLightingEngine.RenderAudioMeter(adapter.ReadLevel(), colorBoost: 0));
+        }
+    }
+
+    private sealed class AmbientFrameSource(WindowsDisplayCaptureAdapter adapter) : ISoftwareLightingFrameSource
+    {
+        public async ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
+            TimeSpan elapsed,
+            CancellationToken cancellationToken)
+        {
+            var frame = await adapter.ReadFrameAsync(cancellationToken).ConfigureAwait(false);
+            return QuickLightingEngine.RenderAmbientAwareness(
+                frame.Pixels,
+                frame.Width,
+                frame.Height);
         }
     }
 }

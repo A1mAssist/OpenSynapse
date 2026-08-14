@@ -276,7 +276,7 @@ public sealed class RazerDeviceTelemetryReaderTests
     }
 
     [Fact]
-    public async Task BlocksBladeFanSetWhenOriginalTargetsDiffer()
+    public async Task FixedFanSetCanReplaceDifferentOriginalTargets()
     {
         var transport = new FakeRazerFeatureTransport
         {
@@ -285,11 +285,36 @@ public sealed class RazerDeviceTelemetryReaderTests
         };
         var reader = new RazerDeviceTelemetryReader(transport);
 
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await reader.SetBladeFanAsync(new[] { Blade }, BladeFanMode.Manual, 3400));
+        var actual = await reader.SetBladeFanAsync(
+            new[] { Blade }, BladeFanMode.Manual, 3400);
 
-        Assert.Contains("两个风扇分区设定不一致", error.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain(transport.FanCommands, command => command.StartsWith("SET-", StringComparison.Ordinal));
+        Assert.Equal(new BladeFanControlState(BladeFanMode.Manual, 3400), actual);
+        Assert.Equal(3400, transport.FanTargetRpm);
+        Assert.Equal((ushort)3400, transport.Zone2FanTargetRpm);
+    }
+
+    [Fact]
+    public async Task WritesAndReadsIndependentCurveTargets()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            FanTargetRpm = 3200,
+            Zone2FanTargetRpm = 3300,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var actual = await reader.SetBladeFanTargetsAsync(
+            new[] { Blade }, BladeFanMode.Manual, 2100, 1900);
+
+        Assert.Equal(
+            new BladeFanControlSnapshot(
+                BladePerformanceMode.Balanced,
+                BladeFanMode.Manual,
+                2100,
+                1900),
+            actual);
+        Assert.Equal(2100, transport.FanTargetRpm);
+        Assert.Equal((ushort)1900, transport.Zone2FanTargetRpm);
     }
 
     [Fact]

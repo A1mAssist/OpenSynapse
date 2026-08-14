@@ -199,7 +199,7 @@ await viewModel.ApplyBladeLightingEffectAsync(
 
 当前生产 UI 模式为 `Off`、`Static`、`Breathing`、`Spectrum`、`Wave`、`Fire`。`Static` 和 `Breathing` 使用 `Color`；`Wave` 使用 `Direction`。控制器在返回前已完成亮度读回门禁及首个 `6 x 17` 完整矩阵帧 ACK；切换、退出和 transport 故障会停止旧任务并恢复 `#99DD72` 持久帧。后端另外提供 `Reactive` 和 `Ripple` 的低级键盘输入适配器与有界事件队列，但它们仍是 `SourceBacked`，尚未进入 `BladeLightingModeOptions`。
 
-`Wave` 和 `Fire` 是基于本地 Lighting Engine 证据实现的近似软件渲染器，不是 Synapse 1:1 复刻。当前仍缺少 Wave 的 exact speed、pause 和 angle scaling，Fire 原生 `7 x 23` 工作网格到 Blade `6 x 17` 输出的确切映射，以及两种效果的实际刷新率证据。前端可以保留现有模式和方向选择，但不得标注“与雷云完全一致”或暴露尚无证据的速度/角度参数。响应、涟漪、音频计和星光不得出现在生产 UI，直到对应输入、完整 WASAPI loopback、Lighting Engine 证据和 side-by-side 视觉验证完成。当前 Audio Meter 后端只读取默认渲染端点的 Core Audio 峰值计，不能宣称为 Synapse 等价的 loopback 实现。
+`Wave` 和 `Fire` 是基于本地 Lighting Engine 证据实现的近似软件渲染器，不是 Synapse 1:1 复刻。当前仍缺少 Wave 的 exact speed、pause 和 angle scaling，Fire 原生 `7 x 23` 工作网格到 Blade `6 x 17` 输出的确切映射，以及两种效果的实际刷新率证据。前端可以保留现有模式和方向选择，但不得标注“与雷云完全一致”或暴露尚无证据的速度/角度参数。响应、涟漪、音频计、环境感知和星光不得出现在生产 UI，直到对应输入、Lighting Engine 证据和 side-by-side 视觉验证完成。Audio Meter 后端已经改为默认渲染端点的真实 WASAPI loopback，按所有通道计算 RMS/Peak，使用容量 1 的最新样本队列，并在默认端点失效或切换后重建。Ambient Awareness 后端使用 Windows Graphics Capture 绑定唯一内置显示器，只采样边缘带并在权限/拓扑失败时显式报错；这些只完成了输入链路，尚未完成灯光视觉验证。
 
 设备页现已通过 `BladeLightingModeOptions`、`BladeLightingColor`、`BladeWaveDirectionOptions` 和 `ApplySelectedBladeLightingEffectAsync` 接入以上六种模式。颜色使用 WinUI `ColorPicker`，应用按钮只在 Blade 亮度成功读回且 App 持有控制器时启用；前端不应再增加第二套灯光状态或直接调用矩阵报文。Reactive/Ripple 仍需真实事件过滤、布局映射和 side-by-side 视觉验证，完成前不应自行加入下拉选项。
 
@@ -245,7 +245,7 @@ await RunDeviceOperationAsync(
 | Viper 休眠 | 是 | 是 | 是 |
 | Viper DPI 档位 | 是 | 是 | 是，必须整表提交 |
 
-不要因为 `BladeProfileSettings` 中存在 `FanMode` 或 `FanTargetRpm` 就画出可应用控件。当前自动应用器明确忽略它们；固定转速 setter 仅供硬件验证工具使用，未通过断连、睡眠和异常退出门禁前不得接入 UI，风扇曲线仍没有已证明的生产协议。
+不要因为 `BladeProfileSettings` 中存在 `FanMode` 或 `FanTargetRpm` 就画出可应用控件。当前自动应用器明确忽略它们；固定转速 setter 仅供硬件验证工具使用，未通过断连、睡眠和异常退出门禁前不得接入 UI。雷云的 Smart Fan Curve 已确认是软件温度插值而不是独立 HID 曲线协议；后端已有 Product-710 双输出 `BladeFanCurve`、独立目标事务和 `BladeFanCurveRuntime`，但同样必须通过上述生命周期门禁后才能接入生产 UI。
 
 ## 9. 各功能交互规则
 
