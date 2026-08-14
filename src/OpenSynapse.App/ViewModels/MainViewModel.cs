@@ -32,7 +32,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         [BladeGpuBoostMode.Low, BladeGpuBoostMode.Medium, BladeGpuBoostMode.High];
     private static readonly BladeLogoMode[] BladeLogoModes = [BladeLogoMode.Off, BladeLogoMode.Static];
     private static readonly BladeLightingMode[] BladeLightingModes =
-        [BladeLightingMode.Off, BladeLightingMode.Static, BladeLightingMode.Breathing, BladeLightingMode.Spectrum, BladeLightingMode.Wave, BladeLightingMode.Fire, BladeLightingMode.Reactive, BladeLightingMode.Ripple];
+        [BladeLightingMode.Off, BladeLightingMode.Static, BladeLightingMode.Breathing, BladeLightingMode.Spectrum, BladeLightingMode.Wave, BladeLightingMode.Fire];
     private static readonly BladeWaveDirection[] BladeWaveDirections =
         [BladeWaveDirection.Right, BladeWaveDirection.Left];
 
@@ -320,7 +320,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string BladeLogoText { get => _bladeLogoText; private set => SetField(ref _bladeLogoText, value); }
     public int BladeLogoIndex { get => _bladeLogoIndex; set => SetField(ref _bladeLogoIndex, value); }
     public bool CanSetBladeLogo { get => _canSetBladeLogo && !IsBusy; private set => SetField(ref _canSetBladeLogo, value); }
-    public IReadOnlyList<string> BladeLightingModeOptions { get; } = ["关闭", "静态", "呼吸", "光谱循环", "波浪", "火焰", "响应", "涟漪"];
+    public IReadOnlyList<string> BladeLightingModeOptions { get; } = ["关闭", "静态", "呼吸", "光谱循环", "波浪", "火焰"];
     public int BladeLightingModeIndex { get => _bladeLightingModeIndex; set => SetField(ref _bladeLightingModeIndex, value); }
     public IReadOnlyList<string> BladeWaveDirectionOptions { get; } = ["向右", "向左"];
     public int BladeWaveDirectionIndex { get => _bladeWaveDirectionIndex; set => SetField(ref _bladeWaveDirectionIndex, value); }
