@@ -139,7 +139,7 @@ public static class QuickLightingEngine
 
     /// <summary>
     /// Renders a left-to-right audio meter. <paramref name="level"/> is normalized
-    /// RMS/peak input from a future WASAPI adapter; color boost expands the lit range.
+    /// RMS/peak input from a normalized audio adapter; color boost expands the lit range.
     /// </summary>
     public static RazerRgb[] RenderAudioMeter(double level, double colorBoost)
     {
