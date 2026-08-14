@@ -85,7 +85,7 @@ WindowsAppSDKSelfContained: true
 
 ## 5. 设备识别与可用状态
 
-设备名称来自内置 manifest，并通过 `DeviceDescriptor.Name`、`BladeDeviceName` 和 `ViperDeviceName` 暴露。新增界面不要硬编码当前两个型号名。
+设备名称来自启动时合并后的 manifest registry，并通过 `DeviceDescriptor.Name`、`BladeDeviceName` 和 `ViperDeviceName` 暴露。新增界面不要硬编码当前两个型号名；外部 manifest 加载失败会进入 `Diagnostics`。
 
 按协议族选择设备页面：
 
@@ -236,15 +236,16 @@ await RunDeviceOperationAsync(
 | Blade 充电上限 | 是 | 是 | 是 |
 | Blade Max Fan | 是 | 是 | 是，仅 Custom |
 | Blade FanMode / FanTargetRpm | 字段存在 | 否 | 否，禁止接 UI 写入 |
-| Blade CPU/GPU Boost | 否 | 否 | 是，仅 Custom |
-| Blade Logo | 否 | 否 | 是，仅 Off/Static |
+| Blade CPU/GPU Boost | 是 | 是 | 是，仅 Custom |
+| Blade Logo | 是 | 是 | 是，仅 Off/Static |
+| Blade 软件快速灯效 | 是 | 由 `MainViewModel` 指纹自动应用 | 是，当前六种生产 UI 模式 |
 | Blade 内置屏刷新率 | 是 | 由显示控制流程应用 | Windows 显示 setter 已完成 |
 | Viper 当前 DPI | 是 | 是 | 是 |
 | Viper 轮询率 | 是 | 是 | 是 |
 | Viper 休眠 | 是 | 是 | 是 |
-| Viper DPI 档位 | 否 | 否 | 是，必须整表提交 |
+| Viper DPI 档位 | 是 | 是 | 是，必须整表提交 |
 
-不要因为 `BladeProfileSettings` 中存在 `FanMode` 或 `FanTargetRpm` 就画出可应用控件。当前自动应用器明确忽略它们，生产后端也没有开放固定/曲线风扇 setter。
+不要因为 `BladeProfileSettings` 中存在 `FanMode` 或 `FanTargetRpm` 就画出可应用控件。当前自动应用器明确忽略它们；固定转速 setter 仅供硬件验证工具使用，未通过断连、睡眠和异常退出门禁前不得接入 UI，风扇曲线仍没有已证明的生产协议。
 
 ## 9. 各功能交互规则
 
@@ -423,7 +424,7 @@ dotnet build 'OpenSynapse.slnx' --no-restore
 2026-08-14 最新完整验证结果：
 
 ```text
-360 个非硬件测试通过
+416 个非硬件测试通过
 9 个硬件测试被 opt-in 门禁跳过
 0 个测试失败
 0 个构建警告
