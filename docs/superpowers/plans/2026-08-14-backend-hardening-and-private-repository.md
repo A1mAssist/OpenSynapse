@@ -44,7 +44,7 @@
 
 ### Task 5: Private GitHub Publication
 
-- [ ] Initialize the local Git repository with branch `main`.
-- [ ] Commit the verified source tree.
-- [ ] Create `A1mAssist/OpenSynapse` with private visibility.
-- [ ] Push `main`, verify remote branch/commit, and verify repository visibility is `PRIVATE`.
+- [x] Initialize the local Git repository with branch `main`.
+- [x] Commit the verified source tree.
+- [x] Create `A1mAssist/OpenSynapse` with private visibility.
+- [x] Push `main`, verify remote branch/commit, and verify repository visibility is `PRIVATE`.
