@@ -139,17 +139,11 @@ internal static class KeyboardLightingValidation
                 var frame = Enumerable.Repeat(
                     RestoreColor,
                     BladeLightingProtocol.Rows * BladeLightingProtocol.Columns).ToArray();
-                var requests = new byte[BladeLightingProtocol.Rows][];
-                for (byte row = 0; row < BladeLightingProtocol.Rows; row++)
-                {
-                    var offset = row * BladeLightingProtocol.Columns;
-                    requests[row] = BladeLightingProtocol.CreateMatrixRowRequest(
-                        (byte)(row + 1),
-                        row,
-                        0,
-                        frame[offset..(offset + BladeLightingProtocol.Columns)]);
-                }
-                await transport.SendBatchAsync(devicePath, requests, DeviceWait, cancellationToken);
+                await transport.SendBatchAsync(
+                    devicePath,
+                    BladeLightingProtocol.CreateMatrixFrameRequests(frame),
+                    DeviceWait,
+                    cancellationToken);
             }
             else
             {

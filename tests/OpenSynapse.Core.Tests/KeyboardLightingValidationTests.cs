@@ -98,7 +98,7 @@ public sealed class KeyboardLightingValidationTests
         Assert.True(result.TargetAcknowledged);
         Assert.True(result.RestorationAcknowledged);
         Assert.Equal(6, result.MatrixRowsAcknowledged);
-        Assert.Equal(15, transport.Commands.Count);
+        Assert.Equal(17, transport.Commands.Count);
         Assert.Equal((0x00, 0x04),
             (transport.Commands[0].CommandClass, transport.Commands[0].CommandId));
         Assert.Equal(new byte[] { 0x03, 0x00 }, transport.Commands[0].Arguments);
@@ -126,13 +126,18 @@ public sealed class KeyboardLightingValidationTests
         Assert.Equal(new RazerRgb(0x00, 0x00, 0xFF), ReadColor(transport.Commands[7], 0));
         Assert.Equal(new RazerRgb(0xFF, 0xFF, 0xFF), ReadColor(transport.Commands[7], 1));
         Assert.Equal(new RazerRgb(0xFF, 0xFF, 0xFF), ReadColor(transport.Commands[7], 16));
-        Assert.All(transport.Commands.Skip(8).Take(6), command =>
+        Assert.Equal((0x03, 0x0A),
+            (transport.Commands[8].CommandClass, transport.Commands[8].CommandId));
+        Assert.Equal(new byte[] { 0x05, 0x00 }, transport.Commands[8].Arguments);
+        Assert.All(transport.Commands.Skip(9).Take(6), command =>
         {
             Assert.Equal(0x0B, command.CommandId);
             Assert.Equal(0x99, command.Arguments[4]);
             Assert.Equal(0xDD, command.Arguments[5]);
             Assert.Equal(0x72, command.Arguments[6]);
         });
+        Assert.Equal((0x03, 0x0A),
+            (transport.Commands[15].CommandClass, transport.Commands[15].CommandId));
         Assert.Equal((0x00, 0x04),
             (transport.Commands[^1].CommandClass, transport.Commands[^1].CommandId));
         Assert.Equal(new byte[] { 0x00, 0x00 }, transport.Commands[^1].Arguments);
@@ -176,8 +181,8 @@ public sealed class KeyboardLightingValidationTests
         Assert.False(result.TargetAcknowledged);
         Assert.True(result.RestorationAcknowledged);
         Assert.Null(result.MatrixRowsAcknowledged);
-        Assert.Equal(0x0B, transport.Commands[^2].CommandId);
-        Assert.Equal(new byte[] { 0x99, 0xDD, 0x72 }, transport.Commands[^2].Arguments[4..7]);
+        Assert.Equal(0x0B, transport.Commands[^3].CommandId);
+        Assert.Equal(new byte[] { 0x99, 0xDD, 0x72 }, transport.Commands[^3].Arguments[4..7]);
         Assert.Equal((0x00, 0x04),
             (transport.Commands[^1].CommandClass, transport.Commands[^1].CommandId));
     }

@@ -28,7 +28,7 @@ public sealed class BladeMatrixFramePumpTests
         await transport.WaitForRowsAsync(12);
         await pump.StopAsync();
 
-        Assert.Equal(0, transport.CustomModeCount);
+        Assert.Equal(2, transport.CustomModeCount);
         Assert.Equal(1, restored);
         Assert.Equal(
             new byte[] { 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3 },
@@ -59,7 +59,7 @@ public sealed class BladeMatrixFramePumpTests
     }
 
     [Fact]
-    public async Task SkipsFirmwareEffectCommandForBladeMatrixProtocol()
+    public async Task CommitsCustomFrameAfterEveryMatrixFrame()
     {
         var transport = new FrameTransport();
         var restored = 0;
@@ -77,7 +77,7 @@ public sealed class BladeMatrixFramePumpTests
         await pump.StopAsync();
 
         Assert.Equal(1, restored);
-        Assert.Equal(0, transport.CustomModeCount);
+        Assert.Equal(1, transport.CustomModeCount);
     }
 
     [Fact]

@@ -9,6 +9,10 @@ var validationCommands = new[]
     "--viper-dpi-stages",
     "--viper-low-battery-threshold",
     "--keyboard-lighting",
+    "--software-lighting",
+    "--keyboard-input-log",
+    "--blade-col04-input",
+    "--blade-col05-input",
     "--blade-fan-fixed",
     "--blade-battery-sleep",
     "--logo",
@@ -35,6 +39,14 @@ return args.Contains("--viper-dpi-stages", StringComparer.Ordinal)
         ? await ViperLowBatteryThresholdValidation.RunAsync(args)
     : args.Contains("--keyboard-lighting", StringComparer.Ordinal)
         ? await KeyboardLightingValidation.RunAsync(args)
+    : args.Contains("--software-lighting", StringComparer.Ordinal)
+        ? await SoftwareLightingValidation.RunAsync(args)
+    : args.Contains("--keyboard-input-log", StringComparer.Ordinal)
+        ? await KeyboardInputValidation.RunAsync(args)
+    : args.Contains("--blade-col04-input", StringComparer.Ordinal)
+        ? await BladeCol04InputValidation.RunAsync(args)
+    : args.Contains("--blade-col05-input", StringComparer.Ordinal)
+        ? await BladeCol04InputValidation.RunAsync(args)
     : args.Contains("--blade-fan-fixed", StringComparer.Ordinal)
         ? await BladeFanValidation.RunAsync(args)
     : args.Contains("--blade-battery-sleep", StringComparer.Ordinal)

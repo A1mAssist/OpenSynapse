@@ -29,7 +29,7 @@ public sealed class BladeLightingControllerTests
             transport.Rows.Take(BladeLightingProtocol.Rows).Select(row => row.TransactionId));
         Assert.True(transport.Rows.Count >= BladeLightingProtocol.Rows);
         Assert.All(transport.Rows.Take(BladeLightingProtocol.Rows), row => Assert.Equal(color, row.Color));
-        Assert.Equal(0, transport.FirmwareEffectWrites);
+        Assert.True(transport.FirmwareEffectWrites >= 1);
     }
 
     [Fact]

@@ -282,18 +282,11 @@ public sealed class BladeLightingController : IBladeLightingController
         IReadOnlyList<RazerRgb> frame,
         CancellationToken cancellationToken)
     {
-        var requests = new byte[BladeLightingProtocol.Rows][];
-        for (byte row = 0; row < BladeLightingProtocol.Rows; row++)
-        {
-            var offset = row * BladeLightingProtocol.Columns;
-            requests[row] = BladeLightingProtocol.CreateMatrixRowRequest(
-                (byte)(row + 1),
-                row,
-                0,
-                frame.Skip(offset).Take(BladeLightingProtocol.Columns).ToArray());
-        }
-
-        await _transport.SendBatchAsync(devicePath, requests, MatrixWait, cancellationToken).ConfigureAwait(false);
+        await _transport.SendBatchAsync(
+            devicePath,
+            BladeLightingProtocol.CreateMatrixFrameRequests(frame),
+            MatrixWait,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task RestoreAsync(string devicePath, CancellationToken cancellationToken)

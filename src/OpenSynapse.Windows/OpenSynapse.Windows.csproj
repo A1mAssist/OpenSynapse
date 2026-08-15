@@ -14,6 +14,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="OpenSynapse.App" />
     <InternalsVisibleTo Include="OpenSynapse.Core.Tests" />
+    <InternalsVisibleTo Include="OpenSynapse.HardwareValidation" />
   </ItemGroup>
 
   <ItemGroup>

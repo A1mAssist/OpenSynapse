@@ -78,6 +78,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _confirmedBladePerformanceModeIndex = -1;
     private bool _canSetBladePerformanceMode;
     private string _bladeFanText = "--";
+    private string _bladeFanModeText = "--";
+    private string _bladeFanTargetRpmText = "--";
+    private string _bladeCurrentFanCpuRpmText = "--";
+    private string _bladeCurrentFanGpuRpmText = "--";
+    private string _bladeAdvancedFanCpuModeRawText = "--";
+    private string _bladeAdvancedFanGpuModeRawText = "--";
+    private string _bladeWiredBatteryText = "--";
+    private string _bladeChargingStatusRawText = "--";
+    private string _bladeAutoSleepRawText = "--";
+    private string _bladeTimeToSleepText = "--";
     private string _bladeChargeLimitText = "--";
     private int _bladeChargeLimitIndex = -1;
     private int _confirmedBladeChargeLimitIndex = -1;
@@ -301,6 +311,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public int BladePerformanceModeIndex { get => _bladePerformanceModeIndex; set => SetField(ref _bladePerformanceModeIndex, value); }
     public bool CanSetBladePerformanceMode { get => _canSetBladePerformanceMode && !IsBusy; private set => SetField(ref _canSetBladePerformanceMode, value); }
     public string BladeFanText { get => _bladeFanText; private set => SetField(ref _bladeFanText, value); }
+    public string BladeFanModeText { get => _bladeFanModeText; private set => SetField(ref _bladeFanModeText, value); }
+    public string BladeFanTargetRpmText { get => _bladeFanTargetRpmText; private set => SetField(ref _bladeFanTargetRpmText, value); }
+    public string BladeCurrentFanCpuRpmText { get => _bladeCurrentFanCpuRpmText; private set => SetField(ref _bladeCurrentFanCpuRpmText, value); }
+    public string BladeCurrentFanGpuRpmText { get => _bladeCurrentFanGpuRpmText; private set => SetField(ref _bladeCurrentFanGpuRpmText, value); }
+    public string BladeAdvancedFanCpuModeRawText { get => _bladeAdvancedFanCpuModeRawText; private set => SetField(ref _bladeAdvancedFanCpuModeRawText, value); }
+    public string BladeAdvancedFanGpuModeRawText { get => _bladeAdvancedFanGpuModeRawText; private set => SetField(ref _bladeAdvancedFanGpuModeRawText, value); }
+    public string BladeWiredBatteryText { get => _bladeWiredBatteryText; private set => SetField(ref _bladeWiredBatteryText, value); }
+    public string BladeChargingStatusRawText { get => _bladeChargingStatusRawText; private set => SetField(ref _bladeChargingStatusRawText, value); }
+    public string BladeAutoSleepRawText { get => _bladeAutoSleepRawText; private set => SetField(ref _bladeAutoSleepRawText, value); }
+    public string BladeTimeToSleepText { get => _bladeTimeToSleepText; private set => SetField(ref _bladeTimeToSleepText, value); }
     public string BladeChargeLimitText { get => _bladeChargeLimitText; private set => SetField(ref _bladeChargeLimitText, value); }
     public IReadOnlyList<string> BladeChargeLimitOptions { get; } = ["50%", "55%", "60%", "65%", "70%", "75%", "80%", "关闭限制（100%）"];
     public int BladeChargeLimitIndex { get => _bladeChargeLimitIndex; set => SetField(ref _bladeChargeLimitIndex, value); }
@@ -1447,6 +1467,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             BladeFanMode.Manual => "手动 · -- RPM",
             _ => "--",
         };
+        BladeFanModeText = telemetry.BladeFanMode switch
+        {
+            BladeFanMode.Automatic => "自动",
+            BladeFanMode.Manual => "手动",
+            _ => "未知",
+        };
+        BladeFanTargetRpmText = telemetry.BladeFanTargetRpm is int targetRpm ? $"{targetRpm:N0} RPM" : "未知";
+        BladeCurrentFanCpuRpmText = telemetry.BladeCurrentFanCpuRpm is int cpuRpm ? $"{cpuRpm:N0} RPM" : "未知";
+        BladeCurrentFanGpuRpmText = telemetry.BladeCurrentFanGpuRpm is int gpuRpm ? $"{gpuRpm:N0} RPM" : "未知";
+        BladeAdvancedFanCpuModeRawText = FormatRawByte(telemetry.BladeAdvancedFanCpuModeRaw);
+        BladeAdvancedFanGpuModeRawText = FormatRawByte(telemetry.BladeAdvancedFanGpuModeRaw);
+        BladeWiredBatteryText = telemetry.BladeWiredBatteryPercent is int batteryPercent ? $"{batteryPercent}%" : "未知";
+        BladeChargingStatusRawText = FormatRawByte(telemetry.BladeChargingStatusRaw);
+        BladeAutoSleepRawText = FormatRawByte(telemetry.BladeAutoSleepRaw);
+        BladeTimeToSleepText = telemetry.BladeTimeToSleepSeconds is int seconds ? FormatDuration(seconds) : "未知";
         if (telemetry.BladeChargeLimitPercent is int chargeLimit)
         {
             SetBladeChargeLimit(chargeLimit);
@@ -1750,6 +1785,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _confirmedBladePerformanceModeIndex = -1;
         CanSetBladePerformanceMode = false;
         BladeFanText = "--";
+        BladeFanModeText = "--";
+        BladeFanTargetRpmText = "--";
+        BladeCurrentFanCpuRpmText = "--";
+        BladeCurrentFanGpuRpmText = "--";
+        BladeAdvancedFanCpuModeRawText = "--";
+        BladeAdvancedFanGpuModeRawText = "--";
+        BladeWiredBatteryText = "--";
+        BladeChargingStatusRawText = "--";
+        BladeAutoSleepRawText = "--";
+        BladeTimeToSleepText = "--";
         BladeChargeLimitText = "--";
         BladeChargeLimitIndex = -1;
         _confirmedBladeChargeLimitIndex = -1;
@@ -1966,6 +2011,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     private static string FormatPercent(double? value) => value is null ? "--" : $"{value:0}%";
+
+    private static string FormatRawByte(byte? value) => value is byte raw ? $"0x{raw:X2} ({raw})" : "未知";
 
     private static string FormatNumber<T>(T? value, string format, string suffix) where T : struct, IFormattable =>
         value is null ? "--" : value.Value.ToString(format, null) + suffix;

@@ -145,19 +145,10 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         }
     }
 
-    private Task SendFrameAsync(IReadOnlyList<RazerRgb> frame, CancellationToken cancellationToken)
-    {
-        var requests = new byte[BladeLightingProtocol.Rows][];
-        for (byte row = 0; row < BladeLightingProtocol.Rows; row++)
-        {
-            var offset = row * BladeLightingProtocol.Columns;
-            requests[row] = BladeLightingProtocol.CreateMatrixRowRequest(
-                (byte)(row + 1),
-                row,
-                0,
-                frame.Skip(offset).Take(BladeLightingProtocol.Columns).ToArray());
-        }
-
-        return _transport.SendBatchAsync(_devicePath, requests, DeviceWait, cancellationToken);
-    }
+    private Task SendFrameAsync(IReadOnlyList<RazerRgb> frame, CancellationToken cancellationToken) =>
+        _transport.SendBatchAsync(
+            _devicePath,
+            BladeLightingProtocol.CreateMatrixFrameRequests(frame),
+            DeviceWait,
+            cancellationToken);
 }

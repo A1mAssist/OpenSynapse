@@ -20,6 +20,25 @@ public sealed class BladeLightingProtocolTests
     }
 
     [Fact]
+    public void BuildsPhysicallyVerifiedRowsThenCustomFrameCommit()
+    {
+        var frame = Enumerable.Repeat(
+            new RazerRgb(1, 2, 3),
+            BladeLightingProtocol.Rows * BladeLightingProtocol.Columns).ToArray();
+
+        var requests = BladeLightingProtocol.CreateMatrixFrameRequests(frame);
+
+        Assert.Equal(7, requests.Length);
+        Assert.Equal(Enumerable.Range(1, 6).Select(value => (byte)value), requests[..6].Select(request => request[2]));
+        Assert.All(requests[..6], request => Assert.Equal((0x03, 0x0B), (request[7], request[8])));
+        Assert.Equal(7, requests[6][2]);
+        Assert.Equal(0x02, requests[6][6]);
+        Assert.Equal((0x03, 0x0A), (requests[6][7], requests[6][8]));
+        Assert.Equal(new byte[] { 0x05, 0x00 }, requests[6][9..11]);
+        Assert.Equal(RazerFeatureReport.CalculateCrc(requests[6]), requests[6][89]);
+    }
+
+    [Fact]
     public void StarlightQuirkDoesNotRelaxOrdinaryReportValidation()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>

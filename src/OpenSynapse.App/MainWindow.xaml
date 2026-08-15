@@ -83,6 +83,59 @@
                 <StackPanel Orientation="Horizontal" Spacing="8"><Button x:Name="BladeDeviceButton" Tag="blade" Click="DeviceSelectorClick" Style="{StaticResource SecondaryButtonStyle}"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE7F8;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="笔记本设备" /><TextBlock Text="{Binding BladeDeviceName}" /></StackPanel></Button><Button x:Name="ViperDeviceButton" Tag="viper" Click="DeviceSelectorClick" Style="{StaticResource SecondaryButtonStyle}"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE962;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="鼠标设备" /><TextBlock Text="{Binding ViperDeviceName}" /></StackPanel></Button></StackPanel>
                 <StackPanel x:Name="BladeDevicePanel" Spacing="16">
                   <TextBlock Text="{Binding BladeDeviceName}" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="状态、灯光、性能、显示和电池。" Foreground="{StaticResource MutedBrush}" />
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="硬件遥测" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+                      <TextBlock Grid.Column="1" Text="{Binding DeviceTelemetryTimeText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                      <Border Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
+                        <StackPanel Spacing="10">
+                          <TextBlock Text="风扇转速" Style="{StaticResource MetricLabelStyle}" />
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                            <StackPanel Spacing="3"><TextBlock Text="CPU" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeCurrentFanCpuRpmText}" FontFamily="Cascadia Mono" FontSize="17" FontWeight="SemiBold" TextWrapping="NoWrap" /></StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="GPU" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeCurrentFanGpuRpmText}" FontFamily="Cascadia Mono" FontSize="17" FontWeight="SemiBold" TextWrapping="NoWrap" /></StackPanel>
+                          </Grid>
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
+                        <StackPanel Spacing="10">
+                          <TextBlock Text="风扇控制" Style="{StaticResource MetricLabelStyle}" />
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                            <StackPanel Spacing="3"><TextBlock Text="模式" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeFanModeText}" FontSize="16" FontWeight="SemiBold" /></StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="目标" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeFanTargetRpmText}" FontFamily="Cascadia Mono" FontSize="16" FontWeight="SemiBold" TextWrapping="NoWrap" /></StackPanel>
+                          </Grid>
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
+                        <StackPanel Spacing="10">
+                          <TextBlock Text="电池与充电" Style="{StaticResource MetricLabelStyle}" />
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                            <StackPanel Spacing="3"><TextBlock Text="有线电量" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeWiredBatteryText}" FontFamily="Cascadia Mono" FontSize="17" FontWeight="SemiBold" /></StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="充电原始值" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeChargingStatusRawText}" FontFamily="Cascadia Mono" FontSize="14" TextWrapping="NoWrap" /></StackPanel>
+                          </Grid>
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
+                        <StackPanel Spacing="10">
+                          <TextBlock Text="自动休眠" Style="{StaticResource MetricLabelStyle}" />
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                            <StackPanel Spacing="3"><TextBlock Text="剩余时间" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeTimeToSleepText}" FontSize="16" FontWeight="SemiBold" /></StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="原始值" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeAutoSleepRawText}" FontFamily="Cascadia Mono" FontSize="14" TextWrapping="NoWrap" /></StackPanel>
+                          </Grid>
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Row="2" Grid.ColumnSpan="2" Style="{StaticResource CardStyle}" Padding="16" MinHeight="78">
+                        <StackPanel Spacing="10">
+                          <TextBlock Text="高级风扇诊断" Style="{StaticResource MetricLabelStyle}" />
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                            <StackPanel Spacing="3"><TextBlock Text="CPU 原始模式" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeAdvancedFanCpuModeRawText}" FontFamily="Cascadia Mono" FontSize="14" TextWrapping="NoWrap" /></StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="GPU 原始模式" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeAdvancedFanGpuModeRawText}" FontFamily="Cascadia Mono" FontSize="14" TextWrapping="NoWrap" /></StackPanel>
+                          </Grid>
+                        </StackPanel>
+                      </Border>
+                    </Grid>
+                  </StackPanel>
                   <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12"><Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="性能模式" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladePerformanceModeText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladePerformanceModeOptions}" SelectedIndex="{Binding BladePerformanceModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladePerformanceMode}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyPerformanceModeClick" IsEnabled="{Binding CanSetBladePerformanceMode}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用性能模式" AutomationProperties.Name="应用性能模式"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border><Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="5"><TextBlock Text="风扇" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeFanText}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" /></StackPanel></Border><Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="充电上限" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeChargeLimitText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladeChargeLimitOptions}" SelectedIndex="{Binding BladeChargeLimitIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeChargeLimit}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyChargeLimitClick" IsEnabled="{Binding CanSetBladeChargeLimit}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用充电上限" AutomationProperties.Name="应用充电上限"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border></Grid>
                   <Border Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="14"><Grid ColumnDefinitions="*,*,*" ColumnSpacing="16"><StackPanel Spacing="8"><TextBlock Text="CPU Boost" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeCpuBoostText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladeCpuBoostOptions}" SelectedIndex="{Binding BladeCpuBoostIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeCpuBoost}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyCpuBoostClick" IsEnabled="{Binding CanSetBladeCpuBoost}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 CPU Boost" AutomationProperties.Name="应用 CPU Boost"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel><StackPanel Grid.Column="1" Spacing="8"><TextBlock Text="GPU Boost" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeGpuBoostText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladeGpuBoostOptions}" SelectedIndex="{Binding BladeGpuBoostIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeGpuBoost}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyGpuBoostClick" IsEnabled="{Binding CanSetBladeGpuBoost}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 GPU Boost" AutomationProperties.Name="应用 GPU Boost"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel><StackPanel Grid.Column="2" Spacing="8"><TextBlock Text="Max Fan" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeMaxFanText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ToggleSwitch IsOn="{Binding BladeMaxFanEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeMaxFan}" OnContent="开启" OffContent="关闭" /><Button Grid.Column="1" Click="ApplyMaxFanClick" IsEnabled="{Binding CanSetBladeMaxFan}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 Max Fan" AutomationProperties.Name="应用 Max Fan"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Grid><TextBlock Text="仅 Custom 性能模式可调；CPU/GPU Boost 仅当前会话，Max Fan 随配置保存。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel></Border>
                   <Border Style="{StaticResource CardStyle}" Padding="20">

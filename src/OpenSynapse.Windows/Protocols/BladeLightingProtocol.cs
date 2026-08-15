@@ -31,6 +31,36 @@ public static class BladeLightingProtocol
             0x02,
             new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 });
 
+    public static byte[] CreateCustomFrameEffectRequest(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(
+            ValidateMatrixTransactionId(transactionId),
+            0x02,
+            CommandClass,
+            EffectCommandId,
+            new byte[] { 0x05, 0x00 });
+
+    public static byte[][] CreateMatrixFrameRequests(IReadOnlyList<RazerRgb> frame)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+        if (frame.Count != Rows * Columns)
+        {
+            throw new ArgumentException("Blade 灯光帧必须正好包含 6 x 17 个颜色。", nameof(frame));
+        }
+
+        var requests = new byte[Rows + 1][];
+        for (byte row = 0; row < Rows; row++)
+        {
+            var offset = row * Columns;
+            requests[row] = CreateMatrixRowRequest(
+                (byte)(row + 1),
+                row,
+                0,
+                frame.Skip(offset).Take(Columns).ToArray());
+        }
+        requests[Rows] = CreateCustomFrameEffectRequest(Rows + 1);
+        return requests;
+    }
+
     public static byte[] CreateOffRequest() =>
         CreateEffectRequest(0x01, new byte[] { 0x00 });
 
@@ -101,10 +131,7 @@ public static class BladeLightingProtocol
         IReadOnlyList<RazerRgb> colors)
     {
         ArgumentNullException.ThrowIfNull(colors);
-        if (transactionId > 30)
-        {
-            throw new ArgumentOutOfRangeException(nameof(transactionId));
-        }
+        ValidateMatrixTransactionId(transactionId);
         if (row >= Rows)
         {
             throw new ArgumentOutOfRangeException(nameof(row));
@@ -142,6 +169,11 @@ public static class BladeLightingProtocol
             CommandClass,
             EffectCommandId,
             arguments);
+
+    private static byte ValidateMatrixTransactionId(byte transactionId) =>
+        transactionId <= 30
+            ? transactionId
+            : throw new ArgumentOutOfRangeException(nameof(transactionId));
 
     private static byte[] CreateStarlightRequest(
         byte speed,

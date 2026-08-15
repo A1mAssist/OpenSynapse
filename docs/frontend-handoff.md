@@ -1,39 +1,37 @@
-# OpenSynapse WinUI 3 前端开发交接文档
+# OpenSynapse WinUI 3 前端交接（新版）
 
-更新时间：2026-08-14
+更新时间：2026-08-15
 
-本文档是当前 OpenSynapse 代码的前端实施契约。若本文档与旧版设计 Brief 冲突，以本文档和下方引用的 C# 公共契约为准。
+这份文档是当前后端的前端实施契约。代码和强类型契约优先于旧设计稿；“已存在字段”不等于“允许用户写入”。
 
-## 1. 项目本质
+## 1. 架构边界
 
-OpenSynapse 是一个本地运行的 WinUI 3 桌面应用，不是 Web 前端，也没有 HTTP 后端。
+OpenSynapse 是本地 WinUI 3 桌面应用，没有 HTTP 后端：
 
 ```text
-WinUI 3 XAML / code-behind
-        -> MainViewModel
-        -> OpenSynapse.Core 公共契约
-        -> OpenSynapse.Windows 实现
-        -> SetupAPI / hid.dll / Windows API
+WinUI 3 XAML
+  -> MainViewModel
+  -> OpenSynapse.Core 契约 / Profile
+  -> OpenSynapse.Windows 实现
+  -> Windows API / HID Feature Report
 ```
 
-前端禁止：
+前端只绑定 `MainViewModel`，提交强类型值，展示后端读回的实际值。禁止在 XAML、Page 或 ViewModel 之外：
 
-- 直接打开 HID 句柄；
-- 构造或发送 Feature Report；
-- 直接调用 `OpenSynapse.Windows.Protocols` 下的协议 builder；
-- 仅因为识别到某个 VID/PID 就启用写入控件；
-- 把 SET 返回成功当成最终状态已经写入。
+- 打开 HID 句柄或发送 Feature Report；
+- 调用 `OpenSynapse.Windows.Protocols` 的 builder；
+- 看到 VID/PID 就启用写入；
+- 把 SET 成功当成最终状态，跳过 GET 读回；
+- 为同一设备另起轮询、设备探测或灯效 runtime。
 
-Windows 后端负责报文验证、当前设备路径写入门禁、GET 读回、重试、取消和失败恢复。前端只提交强类型参数、等待结果，并展示后端返回的实际值。
+后端统一负责设备门禁、报文、读回、重试、取消、恢复和设备断开错误。
 
-## 2. 构建与运行
+## 2. 构建和运行
 
-环境要求：
-
-- Windows 11 x64；
-- .NET 10 SDK；
-- WinUI 3 所需的 Windows App SDK workload；
-- Visual Studio 的 .NET 桌面开发与 Windows 应用开发 workload，或等价命令行工具链。
+- Windows 11 x64
+- .NET 10 SDK
+- Visual Studio 的 Windows 应用开发 workload（含 Windows App SDK）
+- 当前目标：`net10.0-windows10.0.19041.0`、x64、unpackaged、自包含
 
 ```powershell
 dotnet restore 'OpenSynapse.slnx'
@@ -41,394 +39,209 @@ dotnet build 'OpenSynapse.slnx' --no-restore
 & '.\src\OpenSynapse.App\bin\x64\Debug\net10.0-windows10.0.19041.0\OpenSynapse.App.exe'
 ```
 
-应用当前为 unpackaged、自包含发布：
+不要在普通 UI 调试中运行硬件验证工具。硬件验证会真实写设备状态，并且要求 `OPENSYNAPSE_HARDWARE_TEST=1`。
 
-```text
-TargetFramework: net10.0-windows10.0.19041.0
-Windows App SDK: 1.8.260710003
-Platform: x64
-WindowsPackageType: None
-WindowsAppSDKSelfContained: true
-```
+## 3. 前端应依赖的文件
 
-普通前端开发不要运行硬件测试。设置 `OPENSYNAPSE_HARDWARE_TEST=1` 后，测试会真实修改设备状态。
-
-## 3. 主要文件
-
-| 文件 | 职责 |
+| 文件 | 用途 |
 |---|---|
-| `src/OpenSynapse.App/App.xaml` | 主题资源和共享 WinUI 样式 |
 | `src/OpenSynapse.App/MainWindow.xaml` | 当前窗口、导航和页面布局 |
-| `src/OpenSynapse.App/MainWindow.xaml.cs` | 窗口生命周期、导航和点击事件路由 |
-| `src/OpenSynapse.App/ViewModels/MainViewModel.cs` | UI 状态、设备刷新和用户操作 |
-| `src/OpenSynapse.Core/Devices/RazerDeviceTelemetry.cs` | 强类型遥测和后端写接口 |
-| `src/OpenSynapse.Core/Devices/DeviceDescriptor.cs` | 设备身份和通道状态 |
-| `src/OpenSynapse.Core/Profiles` | 命名 Profile、设备覆盖、电源覆盖和应用绑定 |
-| `src/OpenSynapse.Windows/Devices/RazerDeviceTelemetryReader.cs` | 生产硬件实现，前端不得复制其中逻辑 |
-| `docs/device-capability-matrix.md` | 协议证据和生产状态 |
+| `src/OpenSynapse.App/MainWindow.xaml.cs` | 窗口生命周期、点击事件和文件选择器 |
+| `src/OpenSynapse.App/ViewModels/MainViewModel.cs` | 全部 UI 状态、刷新和操作入口 |
+| `src/OpenSynapse.Core/Devices/RazerDeviceTelemetry.cs` | 设备遥测和写入接口 |
+| `src/OpenSynapse.Core/Profiles/ProfileModels.cs` | Profile、设备覆盖和电源覆盖 |
+| `src/OpenSynapse.Windows/Devices/RazerDeviceTelemetryReader.cs` | 生产 HID 实现，前端不要复制 |
+| `src/OpenSynapse.Windows/Lighting/BladeLightingController.cs` | 长生命周期键盘灯效控制器 |
+| `docs/device-capability-matrix.md` | 协议证据、读回和生产状态 |
+| `docs/device-manifest-guide.md` | 外部 manifest 适配规则 |
 
-`App.OnLaunched` 目前直接构造具体实现，没有 DI 容器。前端重构不需要为了形式引入 DI 框架。
+## 4. 生命周期和通用状态
 
-## 4. 运行时生命周期
+`App.OnLaunched` 直接构造现有 ViewModel，不要为了前端重画引入 DI 框架或第二套导航框架。
 
-`MainWindow` 当前行为：
+- 第一次窗口激活调用 `InitializeAsync`。
+- 系统性能约每 2 秒采样一次。
+- 设备、Profile 和前台应用状态约每 3 秒检查一次，至少每 30 秒完整刷新一次。
+- 普通关闭隐藏到托盘；托盘退出才结束进程；第二实例激活已有窗口。
+- `IsBusy` 为全局硬件互斥。为 `true` 时禁用所有提交按钮，不要自行实现并发写入。
 
-1. 把 `MainViewModel` 设置为 `RootNavigationView.DataContext`。
-2. 第一次激活调用 `InitializeAsync`。
-3. 系统性能遥测每 2 秒刷新一次。
-4. HID 设备状态和前台应用 Profile 每 3 秒检查一次。
-5. 每 30 秒至少完整刷新一次设备；设备、电源、Profile、系统恢复变化时会提前刷新。
-6. 普通关闭窗口会隐藏到托盘；托盘“退出”才终止进程。
-7. 启动第二个实例时会激活已有窗口。
+通用绑定：
 
-不要在 Page 或 UserControl 内新增第二套轮询。新控件应绑定 `MainViewModel`，需要操作时在 ViewModel 增加一个明确入口。
-
-## 5. 设备识别与可用状态
-
-设备名称来自启动时合并后的 manifest registry，并通过 `DeviceDescriptor.Name`、`BladeDeviceName` 和 `ViperDeviceName` 暴露。新增界面不要硬编码当前两个型号名；外部 manifest 加载失败会进入 `Diagnostics`。
-
-按协议族选择设备页面：
-
-```text
-blade-710 -> Blade 控制
-viper-184 -> Viper 控制
-```
-
-`VID:PID` 用于具体设备身份和设备级 Profile key，不再用于选择 Blade/Viper handler。
-
-发现状态：
-
-| 状态 | UI 含义 |
+| 属性 | 用法 |
 |---|---|
-| `Access=Available` 且 `Capability=PendingValidation` | 控制 collection 可打开；每个写控件仍须等待对应遥测成功 |
-| `Access=BusyOrUnavailable` | Synapse 占用、访问拒绝、设备断开或打开失败 |
-| `Capability=Unsupported` | 已发现但不是获准控制 collection 的接口 |
-| `Capability=Blocked` | 已识别设备，但安全控制通道不可用 |
-
-最终写入门禁始终是具体功能的 `CanSet...`，不能只看设备列表状态。
-
-## 6. 当前 MainViewModel 契约
-
-### 通用状态
-
-| 属性 | 前端用途 |
-|---|---|
-| `IsBusy` | 稳定尺寸的加载状态；禁止重复提交 |
-| `CanRefresh` | 重新探测按钮 |
-| `Devices` | 已发现设备列表 |
-| `Diagnostics` | 诊断记录列表 |
-| `DeviceErrorText` / `HasDeviceError` | 设备页 `InfoBar` |
-| `ErrorText` / `HasError` | 汇总诊断 `InfoBar` |
-| `LastDeviceRefreshText` | 最近发现时间 |
-| `DeviceTelemetryTimeText` | 最近硬件读取/写入时间 |
+| `IsBusy` / `CanRefresh` | 加载、刷新和提交状态 |
+| `Devices` | 设备列表 |
+| `Diagnostics` | 能力查询记录 |
+| `DeviceErrorText` / `HasDeviceError` | 设备错误 `InfoBar` |
+| `ErrorText` / `HasError` | 全局错误 `InfoBar` |
+| `DeviceTelemetryTimeText` | 最近硬件读写时间 |
 | `TelemetryTimeText` | 最近系统性能采样时间 |
-| `ProfileStatusText` | Profile 加载/保存状态 |
+| `ProfileStatusText` | Profile 保存、应用和恢复状态 |
 
-刷新开始时，硬件数值会回到 `--`，写控件全部禁用。遥测字段为 `null` 表示没有获得可信值，禁止用猜测的默认值填充。
+刷新期间数值清为 `--`，写控件禁用；`null` 必须展示为未知，不得填入猜测的默认值。
 
-### 已经端到端接好的控件
+## 5. 设备识别
 
-这些功能已有 ViewModel 选中值、`CanSet...` 和应用方法，可以直接重画 XAML：
+按 `DeviceDescriptor.ProtocolFamily` 选择页面，不要硬编码型号名：
 
-| 功能 | 编辑值 | 启用条件 | 操作入口 |
-|---|---|---|---|
-| Blade 键盘亮度 | `BladeBrightnessPercent`，UI 为 0..100% | `CanSetBladeBrightness` | `ApplyBladeBrightnessAsync` |
-| Blade 性能模式 | `BladePerformanceModeIndex` | `CanSetBladePerformanceMode` | `ApplyBladePerformanceModeAsync` |
-| Blade 充电上限 | `BladeChargeLimitIndex` | `CanSetBladeChargeLimit` | `ApplyBladeChargeLimitAsync` |
-| Blade CPU Boost | `BladeCpuBoostIndex` | `CanSetBladeCpuBoost`，仅 Custom | `ApplyBladeCpuBoostAsync` |
-| Blade GPU Boost | `BladeGpuBoostIndex` | `CanSetBladeGpuBoost`，仅 Custom | `ApplyBladeGpuBoostAsync` |
-| Blade Max Fan | `BladeMaxFanEnabled` | `CanSetBladeMaxFan`，仅 Custom | `ApplyBladeMaxFanAsync` |
-| Blade A 面 Logo | `BladeLogoIndex`，仅 Off/Static | `CanSetBladeLogo` | `ApplyBladeLogoAsync` |
-| Blade 键盘快速灯效 | `BladeLightingModeIndex`、颜色和 Wave 方向 | `CanSetBladeLighting` | `ApplySelectedBladeLightingEffectAsync` |
-| Blade 内置屏刷新率 | `InternalDisplayRefreshRateHertz` | `CanSetInternalDisplayRefreshRate` | `ApplyInternalDisplayRefreshRateAsync` |
-| Viper 轮询率 | `ViperPollingRateIndex`，125/500/1000 Hz | `CanSetViperPollingRate` | `ApplyViperPollingRateAsync` |
-| Viper 当前 DPI | `ViperDpiXValue`、`ViperDpiYValue` | `CanSetViperDpi` | `ApplyViperDpiAsync` |
-| Viper 休眠 | `ViperIdleMinutesValue`，整数 1..15 | `CanSetViperIdle` | `ApplyViperIdleAsync` |
-| Viper DPI 档位表 | 档位数、活动档和每档 X/Y | `CanSetViperDpiStages` | `ApplyViperDpiStagesAsync` |
+```text
+blade-710 -> Blade 页面
+viper-184 -> Viper 页面
+```
 
-`MainWindow.xaml.cs` 的点击事件使用窗口生命周期 token 调用以上方法。若继续使用 code-behind，保留这一取消模式。
+设备状态组合如下：
 
-内置屏刷新率选择器和应用按钮已经接入当前 XAML；外屏、多内屏和克隆拓扑仍由 Windows 后端 fail closed。
+| 条件 | UI 含义 |
+|---|---|
+| `Access=Available`、`Capability=PendingValidation` | 控制 collection 可打开，但每项仍须通过自己的读回门禁 |
+| `BusyOrUnavailable` | Synapse 占用、拒绝、断开或打开失败 |
+| `Unsupported` | 已发现但不是获准控制 collection |
+| `Blocked` | 已识别，但安全控制通道不可用 |
 
-### 已暴露的状态值
+新增设备只可通过 manifest 复用已审核协议族。外部 manifest 位于 `%LocalAppData%\OpenSynapse\devices\`，只允许修改身份字段；报文、命令、长度和 capability 名称不是扩展点。新报文必须新增审核过的内置协议族。
 
-Blade：
+## 6. MainViewModel 可用操作
 
-- `BladePerformanceModeText`；
-- `BladeFanText`；
-- `BladeChargeLimitText`；
-- 键盘亮度文本和编辑值；
-- 设备状态；
-- 内置屏分辨率和刷新率。
+所有操作均为异步方法；按钮点击沿用 `MainWindow` 的窗口取消 token。
 
-Viper：
+### Blade
 
-- `ViperBatteryText`；
-- `ViperPollingRateText`；
-- `ViperDpiText`；
-- `ViperIdleText`；
-- `ViperDpiStagesText`；
-- `ViperLowBatteryThresholdText`；
-- 设备状态。
+| 属性/方法 | 输入或范围 | 控件 |
+|---|---|---|
+| `BladeBrightnessPercent` / `ApplyBladeBrightnessAsync` | UI `0..100%`，后端 `0..255` | `Slider` + 应用按钮 |
+| `BladePerformanceModeIndex` / `ApplyBladePerformanceModeAsync` | 平衡、性能、自定义、静音、电池、HyperBoost | `ComboBox` |
+| `BladeCpuBoostIndex` / `ApplyBladeCpuBoostAsync` | 低、中、高、Boost、降压；仅 Custom | `ComboBox` |
+| `BladeGpuBoostIndex` / `ApplyBladeGpuBoostAsync` | 低、中、高；仅 Custom | `ComboBox` |
+| `BladeMaxFanEnabled` / `ApplyBladeMaxFanAsync` | 开/关；仅 Custom | `ToggleSwitch` |
+| `BladeChargeLimitIndex` / `ApplyBladeChargeLimitAsync` | 50、55、60、65、70、75、80、100 | `ComboBox`，不可用自由滑块 |
+| `BladeLogoIndex` / `ApplyBladeLogoAsync` | 关闭、常亮 | `ComboBox` |
+| `InternalDisplayRefreshRateHertz` / `ApplyInternalDisplayRefreshRateAsync` | 后端枚举出的内部屏刷新率 | `ComboBox` |
 
-Blade CPU/GPU Boost、Max Fan、Logo、性能模式和充电上限均已映射到 ViewModel 和设备页控制。风扇状态仍只读；高级风扇模式、有线电池、充电状态、自动休眠和休眠倒计时仍只存在于后端遥测，新增展示时不要在 XAML 内解析原始协议值。Viper 电量和低电量阈值保持只读，DPI 档位表已经提供整表编辑器。
+所有 `CanSet...` 都必须绑定。CPU/GPU Boost 和 Max Fan 在非 Custom 模式自动禁用。
 
-## 7. 已接出的生产控制
+### Viper V3 HyperSpeed
 
-以下生产方法均已通过 `MainViewModel` 和设备页控件接出，并保留写入门禁、读回和失败恢复。前端重画时必须复用现有属性和操作入口。
+| 属性/方法 | 输入或范围 | 控件 |
+|---|---|---|
+| `ViperPollingRateIndex` / `ApplyViperPollingRateAsync` | 125、500、1000 Hz | `ComboBox` |
+| `ViperDpiXValue`、`ViperDpiYValue` / `ApplyViperDpiAsync` | 每轴 100..30000，步进 50 | 两个 `NumberBox` |
+| `ViperIdleMinutesValue` / `ApplyViperIdleAsync` | 1..15 分钟整数 | `NumberBox` |
+| `ViperDpiStageCount`、`ViperActiveDpiStage`、`ViperDpiStages` / `ApplyViperDpiStagesAsync` | 1..5 档；每档 X/Y 100..30000，步进 50；一次提交完整表 | `NumberBox` + `ItemsRepeater` |
 
-| 功能 | 后端方法 | 合法输入 | 推荐控件 |
-|---|---|---|---|
-| Blade 性能模式 | `SetBladePerformanceModeAsync` | `Balanced`、`Performance`、`Custom`、`Silent`、`Battery`、`Hyperboost` | `ComboBox` 或分段选择 |
-| Blade CPU Boost | `SetBladeCpuBoostModeAsync` | `Low`、`Medium`、`High`、`Boost`、`Undervolt` | `ComboBox`，仅 Custom 模式可用 |
-| Blade GPU Boost | `SetBladeGpuBoostModeAsync` | `Low`、`Medium`、`High` | `ComboBox`，仅 Custom 模式可用 |
-| Blade Max Fan | `SetBladeMaxFanModeAsync` | `Disabled`、`Enabled` | `ToggleSwitch`，仅 Custom 模式可用 |
-| Blade 充电上限 | `SetBladeChargeLimitAsync` | 50、55、60、65、70、75、80、100；100 表示关闭限制 | `ComboBox`，不能用自由滑块 |
-| Blade A 面 Logo | `SetBladeLogoModeAsync` | 仅 `Off`、`Static` | 两项选择；不得出现 Breathing |
-| Viper DPI 档位 | `SetViperDpiStagesAsync` | 1..5 个连续档位，活动档位在表内，每轴 100..30000、步进 50 | 可编辑列表和活动档位选择器 |
+`ViperBatteryText`、`ViperDpiText`、`ViperDpiStagesText`、`ViperLowBatteryThresholdText` 是展示值。低电量阈值当前只读，按产品要求不增加编辑控件。
 
-Blade 键盘快速灯效走独立的长生命周期后端 `IBladeLightingController`，不要塞进一次性 telemetry setter：
+### Profile 和系统
+
+已接入：`SelectProfileAsync`、`CreateProfileAsync`、`CloneActiveProfileAsync`、`RenameActiveProfileAsync`、`DeleteActiveProfileAsync`、`ImportProfilesAsync`、`ExportProfilesAsync`、`BindApplicationAsync`、`UnbindApplicationAsync`、`SetStartupEnabledAsync`。
+
+Profile 支持全局、设备、插电、电池和前台应用绑定。保存采用原子替换；保存或设备应用失败时同时恢复文档和 UI 选中值。禁止直接编辑 JSON 或绕过 `ProfileStore`。
+
+## 7. Blade 键盘灯效
+
+长生命周期入口只有：
 
 ```csharp
-await viewModel.ApplyBladeLightingEffectAsync(
-    new BladeLightingEffect(
-        BladeLightingMode.Wave,
-        Direction: BladeWaveDirection.Right),
-    cancellationToken);
+await viewModel.ApplySelectedBladeLightingEffectAsync(cancellationToken);
+// 或
+await viewModel.ApplyBladeLightingEffectAsync(effect, cancellationToken);
 ```
 
-当前生产 UI 模式为 `Off`、`Static`、`Breathing`、`Spectrum`、`Wave`、`Fire`。`Static` 和 `Breathing` 使用 `Color`；`Wave` 使用 `Direction`。控制器在返回前已完成亮度读回门禁及首个 `6 x 17` 完整矩阵帧 ACK；切换、退出和 transport 故障会停止旧任务并恢复 `#99DD72` 持久帧。后端另外提供 `Reactive` 和 `Ripple` 的低级键盘输入适配器与有界事件队列，但它们仍是 `SourceBacked`，尚未进入 `BladeLightingModeOptions`。
-
-`Wave` 和 `Fire` 是基于本地 Lighting Engine 证据实现的近似软件渲染器，不是 Synapse 1:1 复刻。当前仍缺少 Wave 的 exact speed、pause 和 angle scaling，Fire 原生 `7 x 23` 工作网格到 Blade `6 x 17` 输出的确切映射，以及两种效果的实际刷新率证据。前端可以保留现有模式和方向选择，但不得标注“与雷云完全一致”或暴露尚无证据的速度/角度参数。响应、涟漪、音频计、环境感知和星光不得出现在生产 UI，直到对应输入、Lighting Engine 证据和 side-by-side 视觉验证完成。Audio Meter 后端已经改为默认渲染端点的真实 WASAPI loopback，按所有通道计算 RMS/Peak，使用容量 1 的最新样本队列，并在默认端点失效或切换后重建。Ambient Awareness 后端使用 Windows Graphics Capture 绑定唯一内置显示器，只采样边缘带并在权限/拓扑失败时显式报错；这些只完成了输入链路，尚未完成灯光视觉验证。
-
-设备页现已通过 `BladeLightingModeOptions`、`BladeLightingColor`、`BladeWaveDirectionOptions` 和 `ApplySelectedBladeLightingEffectAsync` 接入以上六种模式。颜色使用 WinUI `ColorPicker`，应用按钮只在 Blade 亮度成功读回且 App 持有控制器时启用；前端不应再增加第二套灯光状态或直接调用矩阵报文。Reactive/Ripple 仍需真实事件过滤、布局映射和 side-by-side 视觉验证，完成前不应自行加入下拉选项。
-
-新增 ViewModel 操作应复用当前模式：
-
-```csharp
-if (IsBusy || !CanSetFeature)
-{
-    return;
-}
-
-await RunDeviceOperationAsync(
-    "用户可理解的操作名称",
-    async () =>
-    {
-        var actual = await _deviceTelemetryReader.SetFeatureAsync(
-            _deviceDescriptors, requested, cancellationToken);
-        // 展示和持久化 actual，不能直接使用 requested。
-    },
-    cancellationToken,
-    restoreSelection: () => Selection = ConfirmedSelection);
-```
-
-如果某项设置尚未出现在 `ProfileModels.cs`，必须先决定它是仅当前会话生效，还是需要持久化。不能只向 JSON 模型塞字段而不处理 clone、default、resolver、applier 和测试。
-
-## 8. Profile 能力矩阵
-
-“模型中有字段”“会自动应用”“有安全生产 setter”是三件不同的事：
-
-| 功能 | Profile 可持久化 | `VerifiedProfileApplier` 自动应用 | 生产 setter |
-|---|---|---|---|
-| Blade 键盘亮度 | 是 | 是 | 是 |
-| Blade 性能模式 | 是 | 是 | 是 |
-| Blade 充电上限 | 是 | 是 | 是 |
-| Blade Max Fan | 是 | 是 | 是，仅 Custom |
-| Blade FanMode / FanTargetRpm | 字段存在 | 否 | 否，禁止接 UI 写入 |
-| Blade CPU/GPU Boost | 是 | 是 | 是，仅 Custom |
-| Blade Logo | 是 | 是 | 是，仅 Off/Static |
-| Blade 软件快速灯效 | 是 | 由 `MainViewModel` 指纹自动应用 | 是，当前六种生产 UI 模式 |
-| Blade 内置屏刷新率 | 是 | 由显示控制流程应用 | Windows 显示 setter 已完成 |
-| Viper 当前 DPI | 是 | 是 | 是 |
-| Viper 轮询率 | 是 | 是 | 是 |
-| Viper 休眠 | 是 | 是 | 是 |
-| Viper DPI 档位 | 是 | 是 | 是，必须整表提交 |
-
-不要因为 `BladeProfileSettings` 中存在 `FanMode` 或 `FanTargetRpm` 就画出可应用控件。当前自动应用器明确忽略它们；固定转速 setter 仅供硬件验证工具使用，未通过断连、睡眠和异常退出门禁前不得接入 UI。雷云的 Smart Fan Curve 已确认是软件温度插值而不是独立 HID 曲线协议；后端已有 Product-710 双输出 `BladeFanCurve`、独立目标事务和 `BladeFanCurveRuntime`，但同样必须通过上述生命周期门禁后才能接入生产 UI。
-
-## 9. 各功能交互规则
-
-### Blade 性能与 Boost
-
-- 性能模式写入会保留当前风扇模式，并校验两个固件分区。
-- CPU/GPU Boost 仅在当前性能模式为 `Custom` 时可写。
-- Max Fan 同样仅允许在 `Custom` 模式写入。
-- 非 Custom 状态下禁用 Boost/Max Fan，并说明依赖条件。
-- 不要在 XAML 中串联多个后端调用。依赖操作放进一个 ViewModel 方法。
-
-### Blade 充电上限
-
-只允许：
+当前生产页面可显示：
 
 ```text
-50, 55, 60, 65, 70, 75, 80, 100
+Off / Static / Breathing / Spectrum / Wave / Fire
 ```
 
-`100` 显示为“关闭限制（100%）”。自由滑块会产生无效中间值，不得使用。
+- `Static`、`Breathing` 使用 `BladeLightingColor`，颜色格式为 `RRGGBB`。
+- `Wave` 使用 `BladeWaveDirectionOptions`（向右、向左）。
+- 运行时按约 25 FPS 生成完整 `6 x 17` 设备矩阵，首帧和每行 ACK 成功后才算应用完成。
+- 切换、退出、取消或 transport 故障会停止旧 runtime，并恢复默认持久帧 `#99DD72`。
+- Wave、Fire 是基于本地 Basic Lighting Engine 证据的近似实现，不得标注为雷云 1:1；速度、暂停、角度缩放和 Fire 的原生工作网格映射仍不公开。
 
-### Blade Logo
+以下模式后端已有输入链路，但暂不放入生产下拉框：
 
-生产目标只有 `Off` 和 `Static`。`BladeLogoMode.Breathing` 存在的原因是后端需要解析并恢复设备原始状态；把它作为新目标传入会被拒绝。普通控制中不要放一个“即将支持”的 Breathing 选项，这会制造错误预期。
+| 模式 | 当前状态 | 前端处理 |
+|---|---|---|
+| Reactive / Ripple | 已有 Raw Input + Raw HID 适配器；普通键验证过，Blade M3/M4 报文已采集但当前实机视觉验证未通过 | 不加入生产选项；可保留开发开关或测试页 |
+| Audio Meter | 默认 WASAPI loopback、RMS/Peak、端点失效重建已完成 | 等待实际灯效视觉验证 |
+| Ambient | 唯一内置显示器 Graphics Capture、边缘采样、权限/拓扑 fail-closed 已完成 | 等待实际灯效视觉验证 |
+| Starlight | 有协议和静态逆向证据 | 继续隐藏，等待 exact 默认参数与视觉证据 |
 
-### Viper 当前 DPI
+不要把一次性 `KeyboardLightingValidation` 工具当作 App UI API。键盘事件适配器保持内部实现，前端不处理 HID 报文。
 
-- X/Y 可分别编辑；
-- 范围 `100..30000`；
-- 步进必须为 `50`；
-- 保存最后确认值，失败后恢复编辑器。
+## 8. Blade 新增只读遥测
 
-### Viper DPI 档位
+`RazerDeviceTelemetry` 已增加以下字段，前端可以做展示，但不能因此增加写入口：
 
-- 1 到 5 档；
-- UI 档位号连续且从 1 开始；
-- 活动档位为 `1..档位数`；
-- 每档 X/Y 均为 `100..30000`，步进 50；
-- 用一个 `ViperDpiStagesTelemetry` 一次提交完整表；
-- 禁止按行调用当前 DPI SET；
-- 写入失败时后端会尝试恢复完整原表，异常消息包含恢复结果，前端必须展示。
+| 字段 | 说明 | 状态 |
+|---|---|---|
+| `BladeCurrentFanCpuRpm` / `BladeCurrentFanGpuRpm` | 当前 CPU/GPU 转速 | 只读；查询链路已接入 |
+| `BladeAdvancedFanCpuModeRaw` / `BladeAdvancedFanGpuModeRaw` | 高级风扇模式原始值 | 只读原始诊断，UI 不要自行翻译 |
+| `BladeWiredBatteryPercent` | 有线电池电量 | 只读；生产 promotion 证据仍在补 |
+| `BladeChargingStatusRaw` | 充电状态原始值 | 只读；显示“未知”而不是猜状态 |
+| `BladeAutoSleepRaw` | 自动休眠原始值 | 只读 |
+| `BladeTimeToSleepSeconds` | 距离休眠秒数 | 只读 |
+| `BladeFanMode` / `BladeFanTargetRpm` | 当前风扇模式和存储目标 | 可展示；固定转速写入仍禁止 |
 
-### Viper 休眠与轮询率
+当前 ViewModel 只把部分值汇总为 `BladeFanText`。若前端要拆成独立卡片，应先在 ViewModel 增加命名展示属性，继续绑定 `RazerDeviceTelemetry`，不要在 XAML 解析 Raw 字段。
 
-- 休眠为 1 到 15 的整数分钟；
-- 轮询率只有 125、500、1000 Hz；
-- 不要提供自由文本的额外值。
+### 风扇曲线边界
 
-### 键盘亮度
+后端已有 `BladeFanCurve`、温度插值和 `BladeFanCurveRuntime`，曲线在软件侧按 CPU/GPU 目标分别计算并写入，不是固件保存的一张“曲线报文”。它仍是 `SourceBacked`：断连、睡眠/唤醒、取消和进程硬退出的物理恢复验证未完成。当前没有 `MainViewModel` 生产写入口，前端不得自行画可应用曲线编辑器；只读风扇目标/转速可以展示。
 
-后端参数是 `byte 0..255`，当前 ViewModel 已完成 UI 百分比转换：
+## 9. 系统性能卡片
+
+当前 `MainViewModel` 已暴露：
 
 ```text
-UI 0..100% -> 四舍五入到 byte 0..255
-byte 0..255 -> UI 百分比
+CpuName, CpuValue, CpuPercent, CpuTemperatureText, CpuPowerText, CpuClockText
+GpuName, GpuValue, GpuPercent, GpuTemperatureText, GpuPowerText, GpuClockText, GpuMemoryText
+MemoryValue, MemoryDetail, MemoryPercent
+StorageValue, StorageDetail, StoragePercent
 ```
 
-重画 XAML 时继续绑定 `BladeBrightnessPercent`，不要把百分比直接传给后端 setter。
+数据来源：CPU 使用率/内存/磁盘为 Windows API，CPU 温度/功耗/时钟为 PDH + `CallNtPowerInformation`，GPU 为 `nvidia-smi.exe`。GPU 读取失败时只显示未知并保留诊断提示。
 
-## 10. 错误和忙碌状态
+注意：当前 CPU 时钟是 Windows 返回的各逻辑处理器当前频率的平均值，不是“最快核心瞬时频率”；不要在 UI 文案中写成最快核心。CPU/GPU 电压已移除，GPU MUX 不在本设备范围内。
 
-ViewModel 当前区分：
+## 10. 错误、恢复和禁用规则
 
-- 发现/查询错误；
-- 用户写入错误；
-- 显示控制器错误；
-- 性能采样错误。
+每个提交都必须遵循：
 
-使用 `InfoBar` 展示错误。写入失败后不得把界面值保留为用户请求值，必须恢复到最后确认值。后端错误可能包含：
+1. 检查 `IsBusy` 和对应 `CanSet...`。
+2. 调用单个 ViewModel 操作，不在 XAML 串联多个 setter。
+3. 成功后展示后端实际读回值。
+4. 失败后恢复最后确认值，并在持久 `InfoBar` 和 `Diagnostics` 显示恢复结果。
 
-```text
-原值已恢复
-原值恢复失败，请立即检查 Synapse/设备
-写入后读回不一致
-当前设备路径未完成验证
-控制通道不可用
-```
+常见后端错误包括：设备占用、控制路径未验证、写入后读回不一致、原值恢复失败、设备断开、睡眠/唤醒期间 transport 失效。恢复失败不能只用 Toast。
 
-恢复失败不能只用短暂 Toast，必须留在持久 `InfoBar` 和诊断信息中。
+## 11. WinUI 3 交付规则
 
-`IsBusy` 目前是全局状态。为避免并发破坏硬件操作，在它为 true 时禁用所有提交，保持控件尺寸稳定，只显示一个克制的进度状态。后端和 ViewModel 尚未支持逐控件并发，不要自行增加。
+- 保留 `NavigationView`、Mica、托盘、第二实例激活和系统恢复刷新。
+- 使用 `ComboBox`、`NumberBox`、`Slider`、`ToggleSwitch`、`InfoBar`、`ContentDialog`、`ProgressRing`、`ItemsRepeater`、原生文件选择器。
+- 所有图标按钮设置 `AutomationProperties.Name`、Tooltip、键盘焦点和稳定尺寸。
+- 颜色使用 `ThemeResource`；品牌色为 `#99DD72`，悬停 `#A9E889`，按下 `#82C95D`。
+- 支持浅色、深色和 High Contrast；主题切换放在标题栏/应用设置区，不要占用设备控制卡片。
+- 不引入 React、WebView、Tailwind 或第三方 UI 框架；不要卡片套卡片。
+- 数值、按钮和错误文本在窄窗口下不得重叠；硬件操作期间控件尺寸不得抖动。
 
-## 11. Profile 和设置页面
+## 12. 前端验收清单
 
-Profile 页面已接入活动配置选择、新建、克隆、重命名、删除、JSON 导入导出、应用绑定和当前用户开机启动。删除最后一个 Profile 仍由 Core 拒绝；开机启动写入 HKCU，不需要管理员权限。
+- [ ] 页面只绑定 `MainViewModel`，没有 HID 或协议代码。
+- [ ] 每个提交按钮绑定对应 `CanSet...` 和 `IsBusy`。
+- [ ] 提交成功显示读回值；失败恢复编辑值并留下 `InfoBar`。
+- [ ] Blade 六个生产灯效、亮度、Logo、性能/Boost/Max Fan/充电上限、内部屏刷新率均可操作。
+- [ ] Viper 轮询率、当前 DPI、休眠、完整 DPI 档位表可操作。
+- [ ] Viper 电量和低电量阈值只读。
+- [ ] CPU/GPU 电压、GPU MUX、固定风扇/风扇曲线、宏、HyperShift、键位映射、Snap Tap、Chroma Studio、Reactive/Ripple、Audio、Ambient、Starlight 没有生产写入口。
+- [ ] Profile 创建/克隆/重命名/删除、导入/导出、应用绑定和当前用户开机启动可用。
+- [ ] 窗口关闭、托盘退出、第二实例、设备断开、主题切换和 High Contrast 已手测。
 
-可用 Core API：
+## 13. 交接后优先级
 
-- `ProfileCatalog.GetNames`、`Select`、`Create`、`Clone`、`Rename`、`Delete`；
-- `ApplicationProfileBinding.Bind`、`Unbind`、`Resolve`；
-- `ProfileStore.ImportAsync`、`ExportAsync` 和原子 `SaveAsync`；
-- 全局值、`VID:PID` 设备覆盖、插电覆盖和电池覆盖；
-- 前台应用自动切换 Profile；
-- `WindowsStartupManager.IsEnabled`、`SetEnabled`。
+1. 先按本契约重画 WinUI 页面，不改后端协议。
+2. 将新增 Blade 只读遥测从汇总文本拆成独立可读卡片；原始字段先保持诊断用途。
+3. 等 Reactive/Ripple、Audio、Ambient 的物理视觉验证完成后，再增加对应生产选项。
+4. 风扇曲线只有在断连、睡眠/唤醒、取消和进程退出恢复验证完成后，才讨论 UI 入口。
 
-以上管理能力均已通过 `MainViewModel` 接入 App；文件选择器使用当前 WinUI 窗口句柄初始化，XAML 不反射访问 `_profile`，也不直接读取或写入 JSON。修改操作先保留完整内存快照，只有原子保存成功后才刷新设备；失败或取消会同时恢复 Profile 文档和自动切换 fallback 状态。
-
-尚未提供的是全局/当前设备/插电/电池作用域编辑器。当前各设备控件继续写入活动 Profile 的全局层；不要仅依据 JSON 模型自动生成未验证硬件控制。
-
-Core 禁止删除最后一个 Profile。Profile 名最多 64 个字符，且禁止控制字符和 `\ / : * ? " < > |`。
-
-默认 Profile 文件：
-
-```text
-%LocalAppData%\OpenSynapse\profiles.json
-```
-
-本地诊断日志已经启用：
-
-```text
-%LocalAppData%\OpenSynapse\logs\opensynapse.log
-```
-
-日志达到 1 MiB 后保留一份 `opensynapse.log.previous`。当前 UI 尚无“打开日志目录”“复制错误”“导出日志”入口；增加这些命令时只操作日志文件，不要把 HID 路径、设备序列号或其它个人信息自动放进导出内容。
-
-## 12. WinUI 3 实施规则
-
-- 保留 `NavigationView`、Mica 和 `AppWindow` 生命周期行为。
-- 使用原生 `ComboBox`、`NumberBox`、`Slider`、`ToggleSwitch`、`InfoBar`、`ContentDialog`、`ProgressRing`、`ItemsRepeater` 和文件选择器。
-- 保留托盘关闭、退出、第二实例激活和系统恢复刷新。
-- 设备标题绑定 `BladeDeviceName` 和 `ViperDeviceName`。
-- 页面颜色使用 `ThemeResource`/应用资源，不要散落硬编码颜色。
-- 保留 OpenSynapse 品牌绿色：主色 `#99DD72`、悬停 `#A9E889`、按下 `#82C95D`。
-- 支持浅色、深色和 High Contrast。当前已有浅/深按钮；可增加跟随系统，但不能破坏现有生命周期。
-- 图标按钮设置 `AutomationProperties.Name`、键盘焦点和 Tooltip。
-- 不要卡片套卡片；卡片只用于离散的设置单元或工具。
-- 不要引入 React、WebView、Tailwind 或第三方 UI 框架。
-
-当前 `MainWindow.xaml` 过度压缩，可以拆成职责明确的 WinUI `Page` 或 `UserControl`，但仍通过现有 ViewModel 交互。不要为了拆文件引入一套导航框架。
-
-## 13. 明确禁止开放的功能
-
-不得创建可用写入控件或 ViewModel 写入口：
-
-- Blade 固定转速或风扇曲线；
-- Chroma Studio、高级灯效编辑器和任意自定义矩阵编辑；现有六种快速灯效除外；
-- Blade Logo Breathing；
-- GPU MUX；
-- Viper 低电量阈值写入；
-- Viper 电池类型写入；
-- Viper 按键映射、HyperShift 和板载 Profile；
-- Viper 表面校准；
-- 宏系统。
-
-部分功能可能已有 parser、builder 或只读遥测，但这不代表生产写入已经完成。若展示，只能做只读信息并准确标注。
-
-## 14. 前端验收清单
-
-- 解决方案构建为 0 warning / 0 error。
-- 普通测试通过，且没有启用硬件测试。
-- UI 项目没有调用协议 builder 或 HID transport。
-- 每个写控件只有在当前设备路径对应 GET 成功后才启用。
-- 写入完成后显示后端返回值，不显示未经确认的请求值。
-- 写入失败后编辑器恢复到最后确认值。
-- 原状态恢复失败持续可见。
-- 设备断开后清空旧值并禁用 setter。
-- 重连、Resume、电源变化、活动 Profile 变化后正常刷新。
-- 设备名称来自 manifest；协议族路由不比较硬编码 PID。
-- DPI、休眠、轮询率和充电上限控件无法生成非法值。
-- Logo 只出现 Off 和 Static。
-- 非 Custom 模式下禁用 Boost 和 Max Fan。
-- 验证浅色、深色、键盘导航、High Contrast，以及 100/150/200% 缩放。
-- 验证托盘隐藏、退出和第二实例激活未被破坏。
-
-验证命令：
-
-```powershell
-dotnet test 'tests\OpenSynapse.Core.Tests\OpenSynapse.Core.Tests.csproj' --no-restore
-dotnet build 'OpenSynapse.slnx' --no-restore
-```
-
-除非设备所有者明确授权真实硬件验证，否则不要设置 `OPENSYNAPSE_HARDWARE_TEST`。
-
-## 15. 当前基线
-
-2026-08-14 最新完整验证结果：
-
-```text
-416 个非硬件测试通过
-9 个硬件测试被 opt-in 门禁跳过
-0 个测试失败
-0 个构建警告
-0 个构建错误
-```
-
-后续增加 Profile 作用域编辑器时，不得削弱本文定义的门禁、读回、事务回滚和失败状态。
+不要把“已研究”“有解析器”“能发出报文”写成“已完成”。完成标准是：当前设备可运行、读回或视觉结果可验证、异常可恢复。
