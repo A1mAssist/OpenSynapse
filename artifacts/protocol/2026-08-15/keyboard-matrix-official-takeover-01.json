@@ -1,0 +1,18 @@
+{
+  "StartedAt": "2026-08-15T10:26:28.985495+00:00",
+  "CompletedAt": "2026-08-15T10:27:29.4039159+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "Target": "6 x 17 locator matrix",
+  "HoldSeconds": 60,
+  "RestorationTarget": "Static #99DD72",
+  "TargetAcknowledged": true,
+  "MatrixRowsAcknowledged": 6,
+  "RestorationAcknowledged": true,
+  "TargetVisualConfirmed": false,
+  "TargetVisualObservation": "Operator observed only a solid color when 03/0A [05,00] was sent once before the row stream.",
+  "RestorationVisualConfirmed": null,
+  "OperationError": null,
+  "RestorationError": null
+}

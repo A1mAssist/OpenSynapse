@@ -1,0 +1,11 @@
+{
+  "StartedAt": "2026-08-15T11:10:31.2951173+00:00",
+  "CompletedAt": "2026-08-15T11:11:31.7554528+00:00",
+  "Device": "1532:02C6",
+  "Mode": "AudioMeter",
+  "HoldSeconds": 60,
+  "FirstFrameApplied": true,
+  "OperationError": null,
+  "RestorationError": "0x88890008",
+  "VisualConfirmed": null
+}

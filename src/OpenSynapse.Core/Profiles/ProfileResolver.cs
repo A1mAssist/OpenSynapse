@@ -50,6 +50,7 @@ public static class ProfileResolver
             PerformanceMode = First(power?.PerformanceMode, device?.PerformanceMode, global?.PerformanceMode),
             FanMode = First(power?.FanMode, device?.FanMode, global?.FanMode),
             FanTargetRpm = First(power?.FanTargetRpm, device?.FanTargetRpm, global?.FanTargetRpm),
+            FanCurve = (power?.FanCurve ?? device?.FanCurve ?? global?.FanCurve)?.Clone(),
             ChargeLimitPercent = First(power?.ChargeLimitPercent, device?.ChargeLimitPercent, global?.ChargeLimitPercent),
             RefreshRateHertz = First(power?.RefreshRateHertz, device?.RefreshRateHertz, global?.RefreshRateHertz),
             MaxFanMode = First(power?.MaxFanMode, device?.MaxFanMode, global?.MaxFanMode),

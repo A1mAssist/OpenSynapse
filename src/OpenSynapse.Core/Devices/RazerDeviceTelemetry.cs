@@ -4,9 +4,10 @@ public enum BladePerformanceMode : byte
 {
     Balanced = 0x00,
     Performance = 0x02,
+    BatterySaver = 0x03,
     Custom = 0x04,
     Silent = 0x05,
-    Battery = 0x06,
+    BalancedDc = 0x06,
     Hyperboost = 0x07,
 }
 
@@ -38,11 +39,54 @@ public enum BladeMaxFanMode : byte
     Enabled = 0x02,
 }
 
+public enum BladeNativeDisplayMode : byte
+{
+    Uhd = 0,
+    Fhd = 1,
+}
+
+public readonly record struct BladeGameModeTelemetry(
+    byte GameMode,
+    byte KeyCover,
+    byte Lifted);
+
+public readonly record struct BladeSkuHardwareConfiguration(
+    bool Dds,
+    bool MiniLedResolution,
+    bool IllegalBatterySupport,
+    byte Raw);
+
 public sealed record ViperDpiStageTelemetry(byte Number, int X, int Y);
 
 public sealed record ViperDpiStagesTelemetry(
     byte ActiveStage,
     IReadOnlyList<ViperDpiStageTelemetry> Stages);
+
+public enum ViperButtonMappingLayer : byte
+{
+    Normal = 0,
+    HyperShift = 1,
+}
+
+public enum ViperButtonMappingFunction : byte
+{
+    Off = 0,
+    MouseButton = 1,
+    KeyboardKey = 2,
+    Dpi = 6,
+    MediaKey = 10,
+    DoubleClick = 11,
+    HyperShift = 12,
+    KeyboardTurbo = 13,
+    MouseTurbo = 14,
+}
+
+public sealed record ViperButtonAssignment(
+    byte ProfileId,
+    byte ButtonId,
+    ViperButtonMappingLayer Layer,
+    ViperButtonMappingFunction Function,
+    IReadOnlyList<byte> FunctionData);
 
 public sealed record BladeFanControlState(BladeFanMode Mode, int TargetRpm);
 
@@ -72,13 +116,15 @@ public sealed record RazerDeviceTelemetry(
     int? BladeCurrentFanGpuRpm = null,
     byte? BladeAdvancedFanCpuModeRaw = null,
     byte? BladeAdvancedFanGpuModeRaw = null,
-    int? BladeWiredBatteryPercent = null,
-    byte? BladeChargingStatusRaw = null,
-    byte? BladeAutoSleepRaw = null,
-    int? BladeTimeToSleepSeconds = null,
     ViperDpiStagesTelemetry? ViperDpiStages = null,
     byte? ViperLowBatteryThresholdRaw = null,
-    BladeLogoMode? BladeLogoMode = null);
+    BladeLogoMode? BladeLogoMode = null,
+    BladeGameModeTelemetry? BladeGameMode = null,
+    bool? BladeStartupAnimationEnabled = null,
+    BladeNativeDisplayMode? BladeNativeDisplayMode = null,
+    BladeSkuHardwareConfiguration? BladeSkuHardwareConfiguration = null,
+    bool? BladeOneTimeFullChargeEnabled = null,
+    bool? BladeLocalDimmingEnabled = null);
 
 public interface IRazerDeviceTelemetryReader
 {
@@ -95,6 +141,18 @@ public interface IRazerDeviceTelemetryReader
         IReadOnlyList<DeviceDescriptor> devices,
         BladePerformanceMode mode,
         CancellationToken cancellationToken = default);
+
+    ValueTask<BladeGameModeTelemetry> SetBladeGameModeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<bool> SetBladeFnKeyStateAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool multiFunctionPrimary,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
 
     ValueTask<BladeFanControlState> SetBladeFanAsync(
         IReadOnlyList<DeviceDescriptor> devices,
@@ -131,6 +189,30 @@ public interface IRazerDeviceTelemetryReader
         BladeMaxFanMode mode,
         CancellationToken cancellationToken = default);
 
+    ValueTask<bool> SetBladeOneTimeFullChargeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<bool> SetBladeLocalDimmingAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<bool> SetBladeStartupAnimationAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<BladeNativeDisplayMode> SetBladeNativeDisplayModeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeNativeDisplayMode mode,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
     ValueTask<int> SetBladeChargeLimitAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         int percent,
@@ -161,4 +243,15 @@ public interface IRazerDeviceTelemetryReader
         IReadOnlyList<DeviceDescriptor> devices,
         int seconds,
         CancellationToken cancellationToken = default);
+
+    ValueTask<IReadOnlyList<ViperButtonAssignment>> ReadViperButtonAssignmentsAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<ViperButtonAssignment> SetViperButtonAssignmentAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        ViperButtonAssignment assignment,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
 }

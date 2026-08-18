@@ -294,12 +294,13 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                         break;
                     }
                 }
-                catch (COMException) when (!cancellationToken.IsCancellationRequested)
+                catch (COMException)
                 {
                     Publish(AudioMeterSample.Silence);
                     session?.Dispose();
                     session = null;
-                    if (cancellationToken.WaitHandle.WaitOne(_retryInterval))
+                    if (cancellationToken.IsCancellationRequested ||
+                        cancellationToken.WaitHandle.WaitOne(_retryInterval))
                     {
                         break;
                     }

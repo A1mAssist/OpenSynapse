@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -20,6 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\OpenSynapse.App\OpenSynapse.App.csproj"
+                      AdditionalProperties="Platform=x64" />
     <ProjectReference Include="..\..\src\OpenSynapse.Core\OpenSynapse.Core.csproj" />
     <ProjectReference Include="..\..\src\OpenSynapse.Windows\OpenSynapse.Windows.csproj" />
     <ProjectReference Include="..\..\tools\OpenSynapse.HardwareValidation\OpenSynapse.HardwareValidation.csproj" />

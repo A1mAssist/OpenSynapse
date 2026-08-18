@@ -119,6 +119,9 @@ public static class RazerFeatureReport
                response[89] == CalculateCrc(response);
     }
 
+    internal static bool MatchesReportId(ReadOnlySpan<byte> response, byte reportId) =>
+        response.Length == Length && response[0] == reportId;
+
     internal static bool IsSuccessfulResponse(
         ReadOnlySpan<byte> request,
         ReadOnlySpan<byte> response,

@@ -7,6 +7,15 @@ using OpenSynapse.Windows.Protocols;
 var validationCommands = new[]
 {
     "--viper-dpi-stages",
+    "--viper-obm-read",
+    "--viper-obm-write",
+    "--viper-obm-keyboard",
+    "--viper-obm-double-click",
+    "--viper-obm-dpi",
+    "--viper-obm-media",
+    "--viper-obm-hypershift",
+    "--viper-obm-keyboard-turbo",
+    "--viper-obm-mouse-turbo",
     "--viper-low-battery-threshold",
     "--keyboard-lighting",
     "--software-lighting",
@@ -14,7 +23,9 @@ var validationCommands = new[]
     "--blade-col04-input",
     "--blade-col05-input",
     "--blade-fan-fixed",
-    "--blade-battery-sleep",
+    "--blade-fan-curve",
+    "--blade-policy-writes",
+    "--blade-audio-mute-led",
     "--logo",
 };
 if (args.Any(argument => validationCommands.Contains(argument, StringComparer.Ordinal)))
@@ -35,6 +46,24 @@ if (args.Any(argument => validationCommands.Contains(argument, StringComparer.Or
 
 return args.Contains("--viper-dpi-stages", StringComparer.Ordinal)
     ? await ViperDpiStagesValidation.RunAsync(args)
+    : args.Contains("--viper-obm-dpi", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunDpiAsync(args)
+    : args.Contains("--viper-obm-media", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunMediaAsync(args)
+    : args.Contains("--viper-obm-hypershift", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunHyperShiftAsync(args)
+    : args.Contains("--viper-obm-keyboard-turbo", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunKeyboardTurboAsync(args)
+    : args.Contains("--viper-obm-mouse-turbo", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunMouseTurboAsync(args)
+    : args.Contains("--viper-obm-double-click", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunDoubleClickAsync(args)
+    : args.Contains("--viper-obm-keyboard", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunKeyboardAsync(args)
+    : args.Contains("--viper-obm-write", StringComparer.Ordinal)
+        ? await ViperObmWriteValidation.RunAsync(args)
+    : args.Contains("--viper-obm-read", StringComparer.Ordinal)
+        ? await ViperObmReadValidation.RunAsync(args)
     : args.Contains("--viper-low-battery-threshold", StringComparer.Ordinal)
         ? await ViperLowBatteryThresholdValidation.RunAsync(args)
     : args.Contains("--keyboard-lighting", StringComparer.Ordinal)
@@ -49,9 +78,55 @@ return args.Contains("--viper-dpi-stages", StringComparer.Ordinal)
         ? await BladeCol04InputValidation.RunAsync(args)
     : args.Contains("--blade-fan-fixed", StringComparer.Ordinal)
         ? await BladeFanValidation.RunAsync(args)
-    : args.Contains("--blade-battery-sleep", StringComparer.Ordinal)
-        ? await BladeBatterySleepValidation.RunAsync(args)
+    : args.Contains("--blade-fan-curve", StringComparer.Ordinal)
+        ? await BladeFanCurveValidation.RunAsync(args)
+    : args.Contains("--blade-policy-writes", StringComparer.Ordinal)
+        ? await BladePolicyValidation.RunAsync(args)
+    : args.Contains("--blade-audio-mute-led", StringComparer.Ordinal)
+        ? await BladeAudioMuteLedValidation.RunAsync(args)
+    : args.Contains("--core-audio-mute-read", StringComparer.Ordinal)
+        ? await CoreAudioMuteValidation.RunAsync()
         : await LogoValidation.RunAsync(args);
+
+internal static class CoreAudioMuteValidation
+{
+    public static async Task<int> RunAsync()
+    {
+        using var observed = new CancellationTokenSource();
+        var received = 0;
+        using var source = new WindowsCoreAudioMuteEventSource(state =>
+        {
+            Interlocked.Increment(ref received);
+            Console.WriteLine($"{state.Target}: muted={state.Muted}");
+        });
+
+        try
+        {
+            source.Start();
+            await Task.Delay(TimeSpan.FromSeconds(1), observed.Token);
+        }
+        catch (Exception exception)
+        {
+            Console.Error.WriteLine($"Core Audio 静音读取失败：{exception.Message}");
+            return 1;
+        }
+
+        if (source.LastError is string error)
+        {
+            Console.Error.WriteLine($"Core Audio 静音读取失败：{error}");
+            return 1;
+        }
+
+        if (received < 1)
+        {
+            Console.Error.WriteLine("Core Audio 未返回默认端点的初始静音状态。");
+            return 1;
+        }
+
+        Console.WriteLine("Core Audio 静音读取完成；未发送任何 Razer 报文。");
+        return 0;
+    }
+}
 
 internal static class LogoValidation
 {
@@ -74,6 +149,7 @@ internal static class LogoValidation
         LogoState? original = null;
         LogoState? targetReadback = null;
         LogoState? restorationReadback = null;
+        string? targetCommandAcknowledgement = null;
         var targetApplied = false;
         string? operationError = null;
         string? restorationError = null;
@@ -143,6 +219,7 @@ internal static class LogoValidation
                     null,
                     null,
                     null,
+                    null,
                     null);
                 var effectOutput = Path.GetFullPath(options.OutputPath);
                 await WriteArtifactAsync(effectOutput, effectArtifact);
@@ -153,6 +230,27 @@ internal static class LogoValidation
             await SendAsync(transport, blade[0].Id, BladeDeviceModeProtocol.CreateSetNormalRequest());
 
             original = await ReadAsync(transport, blade[0].Id, options.ProfileId);
+            if (options.Product710Sequence)
+            {
+                var product710Operation = await ExecuteProduct710Async(
+                    transport,
+                    blade[0].Id,
+                    original,
+                    options.State,
+                    async () =>
+                    {
+                        Console.WriteLine($"Logo Product 710 {options.State} 两报文已确认；保持 {options.HoldSeconds} 秒供目视确认。");
+                        await Task.Delay(TimeSpan.FromSeconds(options.HoldSeconds), interrupted.Token);
+                    },
+                    options.ProfileId);
+                targetCommandAcknowledgement = product710Operation.TargetAcknowledgement;
+                restorationReadback = product710Operation.RestorationReadback;
+                targetApplied = product710Operation.TargetApplied;
+                operationError = product710Operation.OperationError;
+                restorationError = product710Operation.RestorationError;
+            }
+            else
+            {
             var target = options.State switch
             {
                 BladeLogoMode.Off => new LogoState(false, original.Mode),
@@ -178,6 +276,7 @@ internal static class LogoValidation
             targetApplied = operation.TargetApplied;
             operationError = operation.OperationError;
             restorationError = operation.RestorationError;
+            }
 
             if (options.LeaveTarget && targetApplied)
             {
@@ -205,6 +304,7 @@ internal static class LogoValidation
             options.LeaveTarget ? options.State.ToString() : null,
             original?.ToString(),
             targetReadback?.ToString(),
+            targetCommandAcknowledgement,
             restorationReadback?.ToString(),
             null,
             operationError,
@@ -284,6 +384,46 @@ internal static class LogoValidation
 
         return new OperationResult(
             targetReadback,
+            restorationReadback,
+            targetApplied,
+            operationError,
+            restorationError);
+    }
+
+    internal static async Task<Product710OperationResult> ExecuteProduct710Async(
+        IRazerFeatureTransport transport,
+        string devicePath,
+        LogoState original,
+        BladeLogoMode target,
+        Func<Task> holdAsync,
+        byte restoreProfileId = 1)
+    {
+        var targetApplied = false;
+        string? operationError = null;
+        LogoState? restorationReadback = null;
+        string? restorationError = null;
+        try
+        {
+            await SendProduct710Async(
+                transport, devicePath, BladeSynapsePolicyProtocol.CreateSetLogoEffectRequest(target));
+            await SendProduct710Async(
+                transport, devicePath, BladeSynapsePolicyProtocol.CreateSetLogoStateRequest(target));
+            targetApplied = true;
+            await holdAsync();
+        }
+        catch (Exception exception)
+        {
+            operationError = exception.Message;
+        }
+        finally
+        {
+            var restoration = await RestoreAsync(transport, devicePath, original, restoreProfileId);
+            restorationReadback = restoration.Readback;
+            restorationError = restoration.Error;
+        }
+
+        return new Product710OperationResult(
+            targetApplied ? "effect+state ACK" : null,
             restorationReadback,
             targetApplied,
             operationError,
@@ -395,6 +535,15 @@ internal static class LogoValidation
             DeviceWait,
             CancellationToken.None);
 
+    private static async Task SendProduct710Async(
+        IRazerFeatureTransport transport,
+        string devicePath,
+        byte[] request)
+    {
+        var response = await SendAsync(transport, devicePath, request);
+        _ = BladeSynapsePolicyProtocol.ParseLedCommandResult(response, request);
+    }
+
     private static async Task WriteArtifactAsync(string output, LogoValidationArtifact artifact)
     {
         if (!StringComparer.OrdinalIgnoreCase.Equals(Path.GetExtension(output), ".json"))
@@ -443,12 +592,13 @@ internal static class LogoValidation
         string? LeaveTarget,
         string? OriginalState,
         string? TargetElectronicReadback,
+        string? TargetCommandAcknowledgement,
         string? RestorationElectronicReadback,
         bool? VisualConfirmed,
         string? OperationError,
         string? RestorationError);
 
-    internal sealed record Options(BladeLogoMode State, int HoldSeconds, string OutputPath, bool LeaveTarget, byte ProfileId, bool EffectOnly, bool StateOnly)
+    internal sealed record Options(BladeLogoMode State, int HoldSeconds, string OutputPath, bool LeaveTarget, byte ProfileId, bool EffectOnly, bool StateOnly, bool Product710Sequence)
     {
         public static Options Parse(string[] args)
         {
@@ -459,6 +609,7 @@ internal static class LogoValidation
             byte profileId = 1;
             var effectOnly = false;
             var stateOnly = false;
+            var product710Sequence = false;
             var legacyLeaveOff = false;
 
             for (var index = 0; index < args.Length; index++)
@@ -501,6 +652,9 @@ internal static class LogoValidation
                         effectOnly = true;
                         stateOnly = true;
                         break;
+                    case "--product710-sequence":
+                        product710Sequence = true;
+                        break;
                     default:
                         throw new ArgumentException($"不支持或不完整的参数：{args[index]}");
                 }
@@ -536,7 +690,21 @@ internal static class LogoValidation
                 throw new ArgumentException("--effect-only 只接受 static 或 breathing。");
             }
 
-            return new Options(state.Value, holdSeconds, outputPath, leaveTarget, profileId, effectOnly, stateOnly);
+            if (product710Sequence &&
+                (state != BladeLogoMode.Breathing || effectOnly || leaveTarget || profileId != 1))
+            {
+                throw new ArgumentException(
+                    "--product710-sequence 只接受可恢复的 --logo breathing，且不能组合 --effect-only、--leave-target 或非默认 profile。");
+            }
+
+            return new Options(state.Value, holdSeconds, outputPath, leaveTarget, profileId, effectOnly, stateOnly, product710Sequence);
         }
     }
+
+    internal sealed record Product710OperationResult(
+        string? TargetAcknowledgement,
+        LogoState? RestorationReadback,
+        bool TargetApplied,
+        string? OperationError,
+        string? RestorationError);
 }

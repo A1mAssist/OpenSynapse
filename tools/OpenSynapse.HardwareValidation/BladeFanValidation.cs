@@ -19,6 +19,7 @@ internal static class BladeFanValidation
         }
 
         var startedAt = DateTimeOffset.UtcNow;
+        var targetRpm = options.TargetRpm ?? 0;
         OperationResult? result = null;
         string? discoveryError = null;
         using var interrupted = new CancellationTokenSource();
@@ -63,11 +64,12 @@ internal static class BladeFanValidation
             var original = telemetry.BladeFanTargetRpm is int target
                 ? new BladeFanControlState(originalMode, target)
                 : await reader.SetBladeFanAsync(devices, BladeFanMode.Automatic, null, interrupted.Token);
+            targetRpm = options.TargetRpm ?? ChooseAdjacentTarget(original.TargetRpm);
             result = await ExecuteAsync(
                 reader,
                 devices,
                 original,
-                options.TargetRpm,
+                targetRpm,
                 options.HoldSeconds,
                 interrupted.Token);
         }
@@ -86,7 +88,7 @@ internal static class BladeFanValidation
             "1532:02C6",
             "0001:0002",
             RazerFeatureReport.Length,
-            options.TargetRpm,
+            targetRpm,
             options.HoldSeconds,
             result?.Original,
             result?.SameValueReadback,
@@ -112,9 +114,14 @@ internal static class BladeFanValidation
             return 1;
         }
 
-        Console.WriteLine($"固定风扇目标 {options.TargetRpm} RPM 已读回；原状态已恢复并读回。证据已写入 {output}");
+        Console.WriteLine($"固定风扇目标 {targetRpm} RPM 已读回；原状态已恢复并读回。证据已写入 {output}");
         return 0;
     }
+
+    private static int ChooseAdjacentTarget(int originalRpm) =>
+        originalRpm + BladeFanProtocol.StepRpm <= BladeFanProtocol.MaximumRpm
+            ? originalRpm + BladeFanProtocol.StepRpm
+            : originalRpm - BladeFanProtocol.StepRpm;
 
     internal static async Task<OperationResult> ExecuteAsync(
         IRazerDeviceTelemetryReader reader,
@@ -220,6 +227,14 @@ internal static class BladeFanValidation
             errors.Add($"恢复读回不一致：期望 {original.Mode} / {original.TargetRpm} RPM，读回 {readback.Mode} / {readback.TargetRpm} RPM。");
         }
 
+        // The final physical readback is the recovery gate. An intermediate
+        // restore attempt can be rejected while the subsequent automatic-mode
+        // restore still returns the exact original state.
+        if (readback is not null && readback == original)
+        {
+            errors.Clear();
+        }
+
         return new RestoreResult(readback, errors.Count == 0 ? null : string.Join(" ", errors));
     }
 
@@ -276,11 +291,12 @@ internal static class BladeFanValidation
         string? OperationError,
         string? RestorationError);
 
-    internal sealed record Options(int TargetRpm, int HoldSeconds, string OutputPath)
+    internal sealed record Options(int? TargetRpm, int HoldSeconds, string OutputPath)
     {
         public static Options Parse(string[] args)
         {
             int? targetRpm = null;
+            var targetSpecified = false;
             int? holdSeconds = null;
             string? outputPath = null;
             for (var index = 0; index < args.Length; index++)
@@ -289,9 +305,16 @@ internal static class BladeFanValidation
                 {
                     case "--blade-fan-fixed":
                         break;
+                    case "--target-rpm" when index + 1 < args.Length &&
+                                               StringComparer.OrdinalIgnoreCase.Equals(args[index + 1], "auto"):
+                        index++;
+                        targetRpm = null;
+                        targetSpecified = true;
+                        break;
                     case "--target-rpm" when index + 1 < args.Length && int.TryParse(args[++index], out var parsedTarget):
                         BladeFanProtocol.ValidateTargetRpm(parsedTarget);
                         targetRpm = parsedTarget;
+                        targetSpecified = true;
                         break;
                     case "--hold-seconds" when index + 1 < args.Length && int.TryParse(args[++index], out var parsedHold)
                         && parsedHold is >= 5 and <= 60:
@@ -305,9 +328,9 @@ internal static class BladeFanValidation
                 }
             }
 
-            if (targetRpm is null || holdSeconds is null || string.IsNullOrWhiteSpace(outputPath))
+            if (!targetSpecified || holdSeconds is null || string.IsNullOrWhiteSpace(outputPath))
             {
-                throw new ArgumentException("必须提供 --blade-fan-fixed --target-rpm <2000..5000> --hold-seconds <5..60> --output <json>。");
+                throw new ArgumentException("必须提供 --blade-fan-fixed --target-rpm <2000..5000|auto> --hold-seconds <5..60> --output <json>。");
             }
             if (!StringComparer.OrdinalIgnoreCase.Equals(Path.GetExtension(outputPath), ".json"))
             {
@@ -317,7 +340,7 @@ internal static class BladeFanValidation
             {
                 throw new ArgumentException("--output 已存在，拒绝覆盖。");
             }
-            return new Options(targetRpm.Value, holdSeconds.Value, outputPath);
+            return new Options(targetRpm, holdSeconds.Value, outputPath);
         }
     }
 }

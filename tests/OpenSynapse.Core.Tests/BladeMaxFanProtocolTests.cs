@@ -37,4 +37,17 @@ public sealed class BladeMaxFanProtocolTests
         Assert.Equal(expectedMask, request[9]);
         Assert.Equal(RazerFeatureReport.CalculateCrc(request), request[89]);
     }
+
+    [Fact]
+    public void PowerModeFeatureBuildersChangeOnlyTheirOwnedBit()
+    {
+        Assert.Equal(0x0F,
+            BladeMaxFanProtocol.CreateSetOneTimeFullChargeRequest(true, 0x0B)[9]);
+        Assert.Equal(0x0B,
+            BladeMaxFanProtocol.CreateSetOneTimeFullChargeRequest(false, 0x0F)[9]);
+        Assert.Equal(0x0F,
+            BladeMaxFanProtocol.CreateSetLocalDimmingRequest(true, 0x07)[9]);
+        Assert.Equal(0x07,
+            BladeMaxFanProtocol.CreateSetLocalDimmingRequest(false, 0x0F)[9]);
+    }
 }

@@ -1,0 +1,27 @@
+{
+  "StartedAt": "2026-08-18T03:59:09.6073197+00:00",
+  "CompletedAt": "2026-08-18T03:59:20.9452839+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "TargetRpm": 3900,
+  "HoldSeconds": 10,
+  "Original": {
+    "Mode": 0,
+    "TargetRpm": 3800
+  },
+  "SameValueReadback": {
+    "Mode": 0,
+    "TargetRpm": 3800
+  },
+  "TargetReadback": {
+    "Mode": 1,
+    "TargetRpm": 3900
+  },
+  "RestorationReadback": {
+    "Mode": 0,
+    "TargetRpm": 3800
+  },
+  "OperationError": null,
+  "RestorationError": "Blade \u8FD4\u56DE\u4E86\u4E0D\u652F\u6301\u7684\u98CE\u6247\u66F2\u7EBF\u8F6C\u901F 0 RPM\uFF1B\u5141\u8BB8\u8303\u56F4\u4E3A 1900..5000 RPM\uFF0C\u6B65\u8FDB 100 RPM\u3002"
+}

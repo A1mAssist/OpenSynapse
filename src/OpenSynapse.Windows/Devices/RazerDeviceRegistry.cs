@@ -41,10 +41,15 @@ internal sealed class RazerDeviceRegistry
                 ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
                 ["max-fan.get"] = new(0x01, 0x07, 0x8F, "00", true),
                 ["max-fan.set"] = new(0x01, 0x07, 0x0F, ""),
-                ["wired-battery.get"] = new(0x02, 0x07, 0x80, "0000"),
-                ["charging-status.get"] = new(0x02, 0x07, 0x84, "0000"),
-                ["auto-sleep.get"] = new(0x02, 0x07, 0x88, "0000"),
-                ["time-to-sleep.get"] = new(0x02, 0x07, 0x83, "0000"),
+                ["gaming-mode.get"] = new(0x04, 0x00, 0x88, "", AllowZeroTransactionId: true),
+                ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                ["gaming-mode-led.set"] = new(0x03, 0x03, 0x00, "", AllowZeroTransactionId: true),
+                ["fn-key.set"] = new(0x02, 0x02, 0x06, "", AllowZeroTransactionId: true),
+                ["startup-animation.get"] = new(0x01, 0x0F, 0x98, "00"),
+                ["startup-animation.set"] = new(0x02, 0x0F, 0x18, ""),
+                ["native-display-mode.get"] = new(0x01, 0x0D, 0x8E, "00", true),
+                ["native-display-mode.set"] = new(0x01, 0x0D, 0x0E, ""),
+                ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
                 ["logo-power.get"] = new(0x03, 0x03, 0x80, "010400"),
                 ["logo-power.set"] = new(0x03, 0x03, 0x00, ""),
                 ["logo-mode.get"] = new(0x03, 0x03, 0x82, "010400"),
@@ -62,6 +67,12 @@ internal sealed class RazerDeviceRegistry
                 ["dpi-stages.get"] = new(0x26, 0x04, 0x86, "01"),
                 ["dpi-stages.set"] = new(0x26, 0x04, 0x06, ""),
                 ["low-battery-threshold.get"] = new(0x01, 0x07, 0x81, ""),
+                ["obm-maximum-profiles.get"] = new(0x01, 0x05, 0x8A, ""),
+                ["obm-profile-count.get"] = new(0x01, 0x05, 0x80, ""),
+                ["obm-profile-ids.get"] = new(0x50, 0x05, 0x81, ""),
+                ["obm-button-ids.get"] = new(0x50, 0x02, 0x84, ""),
+                ["obm-assignment.get"] = new(0x50, 0x02, 0x8C, ""),
+                ["obm-assignment.set"] = new(0x50, 0x02, 0x0C, ""),
             },
         };
 
@@ -389,7 +400,8 @@ internal sealed class RazerDeviceRegistry
             var commandId = ParseByte(request.CommandId, $"{capabilityId}.commandId");
             var arguments = ParseBytes(request.Arguments, $"{capabilityId}.arguments");
             var waitMilliseconds = request.WaitMilliseconds ?? source.Transport.WaitMilliseconds;
-            if (transactionId == 0 || dataSize > 80 || arguments.Length > dataSize ||
+            if ((transactionId == 0 && !contract.AllowZeroTransactionId) ||
+                dataSize > 80 || arguments.Length > dataSize ||
                 waitMilliseconds is < 1 or > 1000)
             {
                 throw new InvalidOperationException(
@@ -397,7 +409,8 @@ internal sealed class RazerDeviceRegistry
             }
             if (request.AllowRemainingPacketsMismatch &&
                 (source.ProtocolFamily != "blade-710" ||
-                 capabilityId is not ("charge-limit.get" or "max-fan.get")))
+                 capabilityId is not ("charge-limit.get" or "max-fan.get" or
+                     "native-display-mode.get" or "sku-hardware-configuration.get")))
             {
                 throw new InvalidOperationException(
                     $"capability '{capabilityId}' 不允许 remaining-packets mismatch 例外。");
@@ -541,5 +554,6 @@ internal sealed class RazerDeviceRegistry
         byte CommandClass,
         byte CommandId,
         string Arguments,
-        bool AllowRemainingPacketsMismatch = false);
+        bool AllowRemainingPacketsMismatch = false,
+        bool AllowZeroTransactionId = false);
 }

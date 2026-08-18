@@ -47,6 +47,22 @@ public sealed class BladeLightingControllerTests
     }
 
     [Fact]
+    public async Task RejectsInvalidWheelDirectionBeforeWriting()
+    {
+        var transport = new LightingTransport();
+        await using var controller = new BladeLightingController(transport);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            controller.ApplyAsync(
+                [Blade],
+                new BladeLightingEffect(
+                    BladeLightingMode.Wheel,
+                    Direction: (BladeWaveDirection)99)));
+
+        Assert.Empty(transport.Commands);
+    }
+
+    [Fact]
     public async Task UsesInjectedSameFamilyManifestForCompatiblePid()
     {
         var document = ReadBuiltInBladeManifest();
@@ -97,6 +113,43 @@ public sealed class BladeLightingControllerTests
 
         Assert.True(transport.Rows.Count >= BladeLightingProtocol.Rows * 2);
         Assert.All(transport.Rows.TakeLast(BladeLightingProtocol.Rows), row => Assert.Equal(restore, row.Color));
+    }
+
+    [Fact]
+    public async Task SharedModeLeasePreventsPrematureNormalRestore()
+    {
+        var transport = new LightingTransport();
+        var coordinator = new BladeSoftwareModeCoordinator();
+        var finalRestores = 0;
+        var externalLease = await coordinator.AcquireAsync(
+            Blade.Id,
+            static _ => Task.CompletedTask,
+            () =>
+            {
+                Interlocked.Increment(ref finalRestores);
+                return Task.CompletedTask;
+            },
+            CancellationToken.None);
+        await using var controller = new BladeLightingController(
+            transport,
+            RazerDeviceRegistry.BuiltIn,
+            new RazerRgb(0x99, 0xDD, 0x72),
+            coordinator);
+
+        await controller.ApplyAsync(
+            [Blade],
+            new BladeLightingEffect(BladeLightingMode.Static, new RazerRgb(1, 2, 3)));
+        await controller.StopAsync();
+
+        Assert.Equal(1, transport.DeviceModeWrites);
+        Assert.True(transport.Rows.Count >= BladeLightingProtocol.Rows * 2);
+
+        await externalLease.ReleaseAsync(() =>
+        {
+            Interlocked.Increment(ref finalRestores);
+            return Task.CompletedTask;
+        });
+        Assert.Equal(1, finalRestores);
     }
 
     [Fact]

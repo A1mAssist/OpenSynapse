@@ -1,6 +1,6 @@
 # OpenSynapse WinUI 3 前端交接（新版）
 
-更新时间：2026-08-15
+更新时间：2026-08-17
 
 这份文档是当前后端的前端实施契约。代码和强类型契约优先于旧设计稿；“已存在字段”不等于“允许用户写入”。
 
@@ -31,7 +31,7 @@ WinUI 3 XAML
 - Windows 11 x64
 - .NET 10 SDK
 - Visual Studio 的 Windows 应用开发 workload（含 Windows App SDK）
-- 当前目标：`net10.0-windows10.0.19041.0`、x64、unpackaged、自包含
+- 当前目标：`net10.0-windows10.0.26100.0`，最低运行版本 `10.0.19041.0`，x64、unpackaged、自包含；开发机需安装 Windows SDK 10.0.26100
 
 ```powershell
 dotnet restore 'OpenSynapse.slnx'
@@ -109,8 +109,9 @@ viper-184 -> Viper 页面
 | 属性/方法 | 输入或范围 | 控件 |
 |---|---|---|
 | `BladeBrightnessPercent` / `ApplyBladeBrightnessAsync` | UI `0..100%`，后端 `0..255` | `Slider` + 应用按钮 |
-| `BladePerformanceModeIndex` / `ApplyBladePerformanceModeAsync` | 平衡、性能、自定义、静音、电池、HyperBoost | `ComboBox` |
-| `BladeCpuBoostIndex` / `ApplyBladeCpuBoostAsync` | 低、中、高、Boost、降压；仅 Custom | `ComboBox` |
+| `BladePerformanceModeIndex` / `ApplyBladePerformanceModeAsync` | 当前可写选项为平衡、性能、自定义、静音、HyperBoost；固件读回 `3` 显示“电池节能”，`6` 显示“平衡（电池）”，两者在固件门禁和针对性实机验证完成前都不是手动选项 | `ComboBox` |
+| `BladeCpuBoostIndex` / `ApplyBladeCpuBoostAsync` | 低、中、高、Boost、降压预设；仅 Custom | `ComboBox` |
+| `BladeCurveOptimizerValue` / `ReadBladeCurveOptimizerAsync` / `ApplyBladeCurveOptimizerAsync` | 研究代码保留，但 2026-08-16 同步 ABI 实机 GET 触发 `SEHException` | 生产界面不接控件；现有区域已隐藏，`CanReadBladeCurveOptimizer` / `CanSetBladeCurveOptimizer` 固定为 `false`，等待官方 async service 路径 |
 | `BladeGpuBoostIndex` / `ApplyBladeGpuBoostAsync` | 低、中、高；仅 Custom | `ComboBox` |
 | `BladeMaxFanEnabled` / `ApplyBladeMaxFanAsync` | 开/关；仅 Custom | `ToggleSwitch` |
 | `BladeChargeLimitIndex` / `ApplyBladeChargeLimitAsync` | 50、55、60、65、70、75、80、100 | `ComboBox`，不可用自由滑块 |
@@ -129,6 +130,15 @@ viper-184 -> Viper 页面
 | `ViperDpiStageCount`、`ViperActiveDpiStage`、`ViperDpiStages` / `ApplyViperDpiStagesAsync` | 1..5 档；每档 X/Y 100..30000，步进 50；一次提交完整表 | `NumberBox` + `ItemsRepeater` |
 
 `ViperBatteryText`、`ViperDpiText`、`ViperDpiStagesText`、`ViperLowBatteryThresholdText` 是展示值。低电量阈值当前只读，按产品要求不增加编辑控件。
+
+板载映射后端现提供 `ReadViperButtonAssignmentsAsync` 与
+`SetViperButtonAssignmentAsync`。前者在返回前校验固定 Profile `1`、八个 firmware
+button ID 和全部 Normal/HyperShift 共 16 条记录；后者只改一条记录，并执行目标 GET、
+另一层隔离 GET 以及失败时不可取消恢复。WinUI 已接入完整 16 条记录的读取和受限编辑。生产 SET 允许 `Off`、
+已物理确认的鼠标 `ButtonCode`（`1,2,3,4,5,9,10`）、`KeyboardKey` 和 `DoubleClick`；当前 WinUI 选择器仍只生成 Off/鼠标键。
+Dpi、MediaKey、HyperShift、KeyboardTurbo、MouseTurbo 的协议解析和校验虽已完成，写入仍在
+transport 前被拒绝；每个函数族完成独立可逆真机验证后才能逐项放行。不得从共享 enum
+渲染 Macro/Profile/Lighting/Power/Controller/RazerKey/WindowsShortcuts。
 
 ### Profile 和系统
 
@@ -149,23 +159,26 @@ await viewModel.ApplyBladeLightingEffectAsync(effect, cancellationToken);
 当前生产页面可显示：
 
 ```text
-Off / Static / Breathing / Spectrum / Wave / Fire
+Off / Static / Breathing / Spectrum / Wave / Fire / Reactive / Ripple / Audio Meter / Ambient / Wheel / Starlight / Tidal
 ```
 
 - `Static`、`Breathing` 使用 `BladeLightingColor`，颜色格式为 `RRGGBB`。
-- `Wave` 使用 `BladeWaveDirectionOptions`（向右、向左）。
+- `Wave` / `Wheel` 使用 `BladeWaveDirectionOptions`（向右/顺时针、向左/逆时针）。
+- `Tidal` 使用 `BladeLightingColor` 和 `BladeLightingSecondColor`。
 - 运行时按约 25 FPS 生成完整 `6 x 17` 设备矩阵，首帧和每行 ACK 成功后才算应用完成。
 - 切换、退出、取消或 transport 故障会停止旧 runtime，并恢复默认持久帧 `#99DD72`。
-- Wave、Fire 是基于本地 Basic Lighting Engine 证据的近似实现，不得标注为雷云 1:1；速度、暂停、角度缩放和 Fire 的原生工作网格映射仍不公开。
+- Wave 已移植 Product 710 的 `Width=100`、`Speed=25`、`Pause=0`、`Angle=90|270`、25 FPS 投影。Fire 已移植 DLL 的真实 100 基础场、`Rate=160` 五相插值/500 帧循环、固定 mask/color 表和 `7 x 23 -> 6 x 17` 反向裁剪。两者在完成当前设备视觉/恢复对比前仍标记为 `Approximate`，不得宣称雷云 1:1。
 
-以下模式后端已有输入链路，但暂不放入生产下拉框：
+以下模式的实现和生产接入状态：
 
 | 模式 | 当前状态 | 前端处理 |
 |---|---|---|
-| Reactive / Ripple | 已有 Raw Input + Raw HID 适配器；普通键验证过，Blade M3/M4 报文已采集但当前实机视觉验证未通过 | 不加入生产选项；可保留开发开关或测试页 |
-| Audio Meter | 默认 WASAPI loopback、RMS/Peak、端点失效重建已完成 | 等待实际灯效视觉验证 |
-| Ambient | 唯一内置显示器 Graphics Capture、边缘采样、权限/拓扑 fail-closed 已完成 | 等待实际灯效视觉验证 |
-| Starlight | 有协议和静态逆向证据 | 继续隐藏，等待 exact 默认参数与视觉证据 |
+| Reactive / Ripple | Raw Input + Raw HID 适配器已通过普通键、Blade 右侧 M3/M4/M5、外接键盘隔离和实机视觉验证 | 已加入生产选项；继续复用后端输入适配器，不在 UI 解析按键报文 |
+| Audio Meter | 默认 WASAPI loopback、RMS/Peak、端点失效重建已完成；2026-08-15 播放/暂停响应和 Normal 恢复通过实机目视验证 | 已加入生产选项 |
+| Ambient | 唯一内置显示器 Graphics Capture、边缘采样、权限/拓扑 fail-closed 已完成；2026-08-15 四区颜色映射、Normal 恢复和 Windows 11 Borderless 捕获通过实机验证 | 已加入生产选项；无边框权限被拒绝时允许系统边框降级，不得让灯效失败 |
+| Wheel | Product 710 色轮中心、方向、周期和逐键投影已实现并覆盖自动测试 | 已加入生产模式列表；仍标记为 `Approximate`，等待与雷云视觉对比 |
+| Starlight | 确定性渲染器已实现 Product 710 容量、再生周期、节点寿命/亮度、随机数发生器和输出生命周期；视觉与 Normal 恢复已验证 | 已加入生产模式列表 |
+| Tidal | 渲染器已实现 Product 710 默认请求和原生三波道投影算法，视觉与 Normal 恢复已验证，Profile 支持第二颜色 | 已加入生产模式列表和双颜色编辑器 |
 
 不要把一次性 `KeyboardLightingValidation` 工具当作 App UI API。键盘事件适配器保持内部实现，前端不处理 HID 报文。
 
@@ -177,17 +190,14 @@ Off / Static / Breathing / Spectrum / Wave / Fire
 |---|---|---|
 | `BladeCurrentFanCpuRpm` / `BladeCurrentFanGpuRpm` | 当前 CPU/GPU 转速 | 只读；查询链路已接入 |
 | `BladeAdvancedFanCpuModeRaw` / `BladeAdvancedFanGpuModeRaw` | 高级风扇模式原始值 | 只读原始诊断，UI 不要自行翻译 |
-| `BladeWiredBatteryPercent` | 有线电池电量 | 只读；生产 promotion 证据仍在补 |
-| `BladeChargingStatusRaw` | 充电状态原始值 | 只读；显示“未知”而不是猜状态 |
-| `BladeAutoSleepRaw` | 自动休眠原始值 | 只读 |
-| `BladeTimeToSleepSeconds` | 距离休眠秒数 | 只读 |
 | `BladeFanMode` / `BladeFanTargetRpm` | 当前风扇模式和存储目标 | 可展示；固定转速写入仍禁止 |
+| `BladeStartupAnimationEnabled` | 启动动画当前状态 | 后端已有 `SetBladeStartupAnimationAsync` 的读取门禁、写入、读回和失败恢复；真机可逆验证前不要显示写控件 |
 
 当前 ViewModel 只把部分值汇总为 `BladeFanText`。若前端要拆成独立卡片，应先在 ViewModel 增加命名展示属性，继续绑定 `RazerDeviceTelemetry`，不要在 XAML 解析 Raw 字段。
 
 ### 风扇曲线边界
 
-后端已有 `BladeFanCurve`、温度插值和 `BladeFanCurveRuntime`，曲线在软件侧按 CPU/GPU 目标分别计算并写入，不是固件保存的一张“曲线报文”。它仍是 `SourceBacked`：断连、睡眠/唤醒、取消和进程硬退出的物理恢复验证未完成。当前没有 `MainViewModel` 生产写入口，前端不得自行画可应用曲线编辑器；只读风扇目标/转速可以展示。
+后端已有 `BladeFanCurve`、温度插值和 `BladeFanCurveRuntime`，曲线在软件侧按 CPU/GPU 目标分别计算并写入，不是固件保存的一张“曲线报文”。并发 Stop/Dispose、调用方取消时不可取消恢复、短暂传感器丢失和有界失败已由测试覆盖。它仍是 `SourceBacked`：断连、睡眠/唤醒和进程硬退出的物理恢复验证未完成。当前没有 `MainViewModel` 生产写入口，前端不得自行画可应用曲线编辑器；只读风扇目标/转速可以展示。
 
 ## 9. 系统性能卡片
 
@@ -230,18 +240,18 @@ StorageValue, StorageDetail, StoragePercent
 - [ ] 页面只绑定 `MainViewModel`，没有 HID 或协议代码。
 - [ ] 每个提交按钮绑定对应 `CanSet...` 和 `IsBusy`。
 - [ ] 提交成功显示读回值；失败恢复编辑值并留下 `InfoBar`。
-- [ ] Blade 六个生产灯效、亮度、Logo、性能/Boost/Max Fan/充电上限、内部屏刷新率均可操作。
-- [ ] Viper 轮询率、当前 DPI、休眠、完整 DPI 档位表可操作。
+- [ ] Blade 十三个生产灯效、亮度、Logo、性能/Boost/Max Fan/充电上限、内部屏刷新率均可操作。
+- [ ] Viper 125/500/1000 Hz 轮询率、当前 DPI、休眠、完整 DPI 档位表和受限板载映射可操作。
 - [ ] Viper 电量和低电量阈值只读。
-- [ ] CPU/GPU 电压、GPU MUX、固定风扇/风扇曲线、宏、HyperShift、键位映射、Snap Tap、Chroma Studio、Reactive/Ripple、Audio、Ambient、Starlight 没有生产写入口。
+- [ ] CPU/GPU 电压、GPU MUX、固定风扇/风扇曲线、宏、Blade HyperShift/键位映射、Snap Tap、Chroma Studio 和尚未接入 UI 的灯效不显示可操作入口；Blade 映射/Snap Tap 的编译器、会话、Raw Input 和 SendInput 安全收尾已在后端完成，但仍是显式 opt-in，必须通过真实按键、焦点/断连/崩溃恢复验证后才能显示。Viper 映射只读链路和 `Off`/鼠标按键恢复型写入后端已存在，其他 function 仍被生产拒绝，必须通过各自的可逆真机验证后才能逐项显示。
 - [ ] Profile 创建/克隆/重命名/删除、导入/导出、应用绑定和当前用户开机启动可用。
 - [ ] 窗口关闭、托盘退出、第二实例、设备断开、主题切换和 High Contrast 已手测。
 
 ## 13. 交接后优先级
 
 1. 先按本契约重画 WinUI 页面，不改后端协议。
-2. 将新增 Blade 只读遥测从汇总文本拆成独立可读卡片；原始字段先保持诊断用途。
-3. 等 Reactive/Ripple、Audio、Ambient 的物理视觉验证完成后，再增加对应生产选项。
+2. 保持 Blade 新增遥测为只读独立字段；原始值不得变成未经验证的写入口。
+3. Viper 当前选择器只开放 `Off` 和已验证鼠标键码；后端也允许 `KeyboardKey`/`DoubleClick`，增加对应编辑器时直接复用现有 setter。其他函数族继续由后端拒绝。
 4. 风扇曲线只有在断连、睡眠/唤醒、取消和进程退出恢复验证完成后，才讨论 UI 入口。
 
 不要把“已研究”“有解析器”“能发出报文”写成“已完成”。完成标准是：当前设备可运行、读回或视觉结果可验证、异常可恢复。

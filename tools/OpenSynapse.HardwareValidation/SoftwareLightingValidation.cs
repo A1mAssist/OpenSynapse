@@ -56,7 +56,8 @@ internal static class SoftwareLightingValidation
         }
         catch (Exception exception)
         {
-            operationError = exception.Message;
+            var failure = controller.RuntimeCompletion.Exception?.GetBaseException() ?? exception;
+            operationError = $"{failure.GetType().FullName}: {failure.Message}";
         }
         finally
         {
@@ -67,7 +68,7 @@ internal static class SoftwareLightingValidation
             }
             catch (Exception exception)
             {
-                restorationError = exception.Message;
+                restorationError = $"{exception.GetType().FullName}: {exception.Message}";
             }
         }
 
@@ -97,7 +98,11 @@ internal static class SoftwareLightingValidation
     private static BladeLightingEffect CreateEffect(BladeLightingMode mode) => mode switch
     {
         BladeLightingMode.AudioMeter or BladeLightingMode.Ambient => new(mode),
-        BladeLightingMode.Reactive or BladeLightingMode.Ripple => new(mode, new(0x99, 0xDD, 0x72)),
+        BladeLightingMode.Reactive or BladeLightingMode.Ripple or BladeLightingMode.Starlight =>
+            new(mode, new(0x99, 0xDD, 0x72)),
+        BladeLightingMode.Tidal => new(
+            mode, new(0x99, 0xDD, 0x72), SecondColor: new(0x00, 0x78, 0xD4)),
+        BladeLightingMode.Wave or BladeLightingMode.Fire => new(mode),
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
 
@@ -128,8 +133,12 @@ internal static class SoftwareLightingValidation
                             "ambient" => BladeLightingMode.Ambient,
                             "reactive" => BladeLightingMode.Reactive,
                             "ripple" => BladeLightingMode.Ripple,
+                            "wave" => BladeLightingMode.Wave,
+                            "fire" => BladeLightingMode.Fire,
+                            "starlight" => BladeLightingMode.Starlight,
+                            "tidal" => BladeLightingMode.Tidal,
                             _ => throw new ArgumentException(
-                                "--software-lighting 只接受 audio、ambient、reactive 或 ripple。"),
+                                "--software-lighting 只接受 audio、ambient、reactive、ripple、wave、fire、starlight 或 tidal。"),
                         };
                         break;
                     case "--hold-seconds" when index + 1 < args.Length &&
@@ -148,7 +157,7 @@ internal static class SoftwareLightingValidation
             if (mode is null || string.IsNullOrWhiteSpace(output))
             {
                 throw new ArgumentException(
-                    "必须提供 --software-lighting <audio|ambient|reactive|ripple> 和 --output <json>。");
+                    "必须提供 --software-lighting <audio|ambient|reactive|ripple|wave|fire|starlight|tidal> 和 --output <json>。");
             }
             if (holdSeconds is < 5 or > 120)
             {

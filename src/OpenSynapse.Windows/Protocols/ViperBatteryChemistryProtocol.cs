@@ -9,7 +9,8 @@ public enum ViperBatteryChemistry : byte
 
 /// <summary>
 /// Source-backed SET builder from Viper 00B8 Synapse USB captures.
-/// There is no accepted GET/readback command, so production sending is intentionally absent.
+/// Product 184 only calls SET. A shared rzDevice25 dependency defines GET 07/94,
+/// but that is not Product 184 evidence, so production sending remains absent.
 /// </summary>
 public static class ViperBatteryChemistryProtocol
 {

@@ -30,6 +30,15 @@ public sealed class CpuHardwareMonitorTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void SelectsFastestValidCoreClock()
+    {
+        var clock = CpuHardwareMonitor.SelectFastestCoreClock([0u, 2400u, 5100u, 10001u]);
+
+        Assert.Equal(5100, clock);
+        Assert.Null(CpuHardwareMonitor.SelectFastestCoreClock([0u, 10001u]));
+    }
+
+    [Fact]
     public void NativeSamplingReturnsOnlyValidCpuMetrics()
     {
         using var monitor = new CpuHardwareMonitor();

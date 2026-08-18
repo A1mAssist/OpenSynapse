@@ -84,8 +84,10 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     {
         Exception? failure = null;
         var restoreRequired = false;
+        IRazerFeatureSession? session = null;
         try
         {
+            session = await TryOpenSessionAsync(_stop.Token).ConfigureAwait(false);
             while (await _frames.Reader.WaitToReadAsync(_stop.Token).ConfigureAwait(false))
             {
                 if (!_frames.Reader.TryRead(out var frame))
@@ -99,7 +101,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
                 }
 
                 restoreRequired = true;
-                await SendFrameAsync(frame, _stop.Token).ConfigureAwait(false);
+                await SendFrameAsync(frame, session, _stop.Token).ConfigureAwait(false);
 
                 _firstFrameApplied.TrySetResult();
             }
@@ -114,6 +116,18 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
 
         Interlocked.Exchange(ref _stopped, 1);
         _frames.Writer.TryComplete(failure);
+
+        if (session is not null)
+        {
+            try
+            {
+                await session.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                failure = failure is null ? exception : new AggregateException(failure, exception);
+            }
+        }
 
         if (!_firstFrameApplied.Task.IsCompleted)
         {
@@ -145,10 +159,36 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         }
     }
 
-    private Task SendFrameAsync(IReadOnlyList<RazerRgb> frame, CancellationToken cancellationToken) =>
-        _transport.SendBatchAsync(
-            _devicePath,
-            BladeLightingProtocol.CreateMatrixFrameRequests(frame),
-            DeviceWait,
-            cancellationToken);
+    private async Task SendFrameAsync(
+        IReadOnlyList<RazerRgb> frame,
+        IRazerFeatureSession? session,
+        CancellationToken cancellationToken)
+    {
+        var requests = BladeLightingProtocol.CreateMatrixFrameRequests(frame);
+        if (session is null)
+        {
+            await _transport.SendBatchAsync(
+                _devicePath,
+                requests,
+                DeviceWait,
+                cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await session.SendBatchAsync(requests, DeviceWait, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<IRazerFeatureSession?> TryOpenSessionAsync(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _transport.OpenSessionAsync(_devicePath, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
+    }
 }

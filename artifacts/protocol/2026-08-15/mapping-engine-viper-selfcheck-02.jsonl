@@ -1,0 +1,12 @@
+{"at":"2026-08-15T09:06:44.249Z","kind":"initialized","value":true}
+{"at":"2026-08-15T09:06:44.747Z","kind":"addUsbDevice","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{9E502CF7-160A-51EA-8250-14BD19EB4A4A}\",\"productId\":184,\"guid\":\"6cd4d3da-6475-4ded-8812-58dc9343defd\"}"}}
+{"at":"2026-08-15T09:06:44.749Z","kind":"deviceEvent","value":{"info":"{\"vendorId\":5426,\"containerId\":\"{9E502CF7-160A-51EA-8250-14BD19EB4A4A}\",\"productId\":184,\"guid\":\"6cd4d3da-6475-4ded-8812-58dc9343defd\"}","type":5,"event":"{\"info\":\"driver ready\",\"type\":\"info\"}","parsedEvent":{"info":"driver ready","type":"info"},"tick":"81997070696"}}
+{"at":"2026-08-15T09:06:44.752Z","kind":"localStorageSetItem","value":{"ok":true,"reason":""}}
+{"at":"2026-08-15T09:06:44.753Z","kind":"deviceEvent","value":{"info":"{\"vendorId\":5426,\"containerId\":\"{9E502CF7-160A-51EA-8250-14BD19EB4A4A}\",\"productId\":184,\"guid\":\"6cd4d3da-6475-4ded-8812-58dc9343defd\"}","type":5,"event":"{\"info\":\"json data applied[synapse_184_{9E502CF7-160A-51EA-8250-14BD19EB4A4A}]\",\"type\":\"info\"}","parsedEvent":{"info":"json data applied[synapse_184_{9E502CF7-160A-51EA-8250-14BD19EB4A4A}]","type":"info"},"tick":"81997074289"}}
+{"at":"2026-08-15T09:06:45.253Z","kind":"enableMapping","value":{"ok":false,"reason":"already enabled"}}
+{"at":"2026-08-15T09:06:45.255Z","kind":"registerInputNotification","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{9E502CF7-160A-51EA-8250-14BD19EB4A4A}\",\"productId\":184,\"guid\":\"6cd4d3da-6475-4ded-8812-58dc9343defd\"}"}}
+{"at":"2026-08-15T09:06:45.256Z","kind":"setInputNotificationCallback","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{9E502CF7-160A-51EA-8250-14BD19EB4A4A}\",\"productId\":184,\"guid\":\"6cd4d3da-6475-4ded-8812-58dc9343defd\"}"}}
+{"at":"2026-08-15T09:06:45.257Z","kind":"ready","value":"Press Viper M3, M4, and M5 once each. Waiting 5000 ms."}
+{"at":"2026-08-15T09:06:50.261Z","kind":"unregisterInputNotification","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{9E502CF7-160A-51EA-8250-14BD19EB4A4A}\",\"productId\":184,\"guid\":\"6cd4d3da-6475-4ded-8812-58dc9343defd\"}"}}
+{"at":"2026-08-15T09:06:50.263Z","kind":"removeUsbDevice","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{9E502CF7-160A-51EA-8250-14BD19EB4A4A}\",\"productId\":184,\"guid\":\"6cd4d3da-6475-4ded-8812-58dc9343defd\"}"}}
+{"at":"2026-08-15T09:06:50.263Z","kind":"stopped","value":true}

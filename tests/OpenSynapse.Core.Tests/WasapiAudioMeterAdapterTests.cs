@@ -140,6 +140,27 @@ public sealed class WasapiAudioMeterAdapterTests
         await adapter.DisposeAsync();
     }
 
+    [Fact]
+    public async Task IgnoresCaptureInvalidationAfterStopRequested()
+    {
+        var session = new StopRaceSession();
+        var adapter = new WasapiAudioMeterAdapter(
+            () => "same",
+            _ => session,
+            static () => DateTimeOffset.UtcNow,
+            TimeSpan.FromSeconds(10),
+            TimeSpan.FromMilliseconds(1));
+
+        await adapter.StartAsync(CancellationToken.None);
+        Assert.True(session.ReadStarted.Wait(TimeSpan.FromSeconds(1)));
+        var stop = adapter.StopAsync().AsTask();
+        session.ReleaseRead.Set();
+
+        await stop;
+        Assert.True(session.Disposed);
+        await adapter.DisposeAsync();
+    }
+
     private static byte[] FloatBytes(params float[] values)
     {
         var bytes = new byte[values.Length * sizeof(float)];
@@ -197,6 +218,24 @@ public sealed class WasapiAudioMeterAdapterTests
             Drained.Set();
             sample = default;
             return false;
+        }
+
+        public void Dispose() => Disposed = true;
+    }
+
+    private sealed class StopRaceSession : IAudioLoopbackSession
+    {
+        public string EndpointId => "same";
+        public bool Disposed { get; private set; }
+        public ManualResetEventSlim ReadStarted { get; } = new();
+        public ManualResetEventSlim ReleaseRead { get; } = new();
+
+        public bool TryReadSample(out AudioMeterSample sample)
+        {
+            sample = default;
+            ReadStarted.Set();
+            Assert.True(ReleaseRead.Wait(TimeSpan.FromSeconds(1)));
+            throw new COMException("resources invalidated", unchecked((int)0x88890008));
         }
 
         public void Dispose() => Disposed = true;

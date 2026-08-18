@@ -1,3 +1,5 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.Core.Profiles;
 
 public sealed class ProfileDocument
@@ -156,6 +158,7 @@ public sealed class ProfileDefinition
         PerformanceMode = source.PerformanceMode,
         FanMode = source.FanMode,
         FanTargetRpm = source.FanTargetRpm,
+        FanCurve = source.FanCurve?.Clone(),
         ChargeLimitPercent = source.ChargeLimitPercent,
         RefreshRateHertz = source.RefreshRateHertz,
         MaxFanMode = source.MaxFanMode,
@@ -191,6 +194,7 @@ public sealed class ProfileSettings
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
         Lighting ??= new LightingProfile();
+        Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
     }
@@ -207,6 +211,7 @@ public sealed class DeviceProfileSettings
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
         Lighting ??= new LightingProfile();
+        Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
     }
@@ -223,6 +228,7 @@ public sealed class PowerProfileOverrides
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
         Lighting ??= new LightingProfile();
+        Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
     }
@@ -234,12 +240,69 @@ public sealed class BladeProfileSettings
     public byte? PerformanceMode { get; set; }
     public byte? FanMode { get; set; }
     public int? FanTargetRpm { get; set; }
+    public BladeFanCurveProfile? FanCurve { get; set; }
     public int? ChargeLimitPercent { get; set; }
     public int? RefreshRateHertz { get; set; }
     public byte? MaxFanMode { get; set; }
     public byte? CpuBoostMode { get; set; }
     public byte? GpuBoostMode { get; set; }
     public byte? LogoMode { get; set; }
+
+    internal void ApplySafeDefaults() => FanCurve?.ApplySafeDefaults();
+}
+
+public sealed class BladeFanCurveProfile
+{
+    public BladeFanCurveTemperatureMode TemperatureMode { get; set; }
+    public List<BladeFanCurvePoint> CpuPoints { get; set; } = [];
+    public List<BladeFanCurvePoint> GpuPoints { get; set; } = [];
+    public int MinimumCpuTemperatureCelsius { get; set; } =
+        BladeFanCurve.DefaultMinimumCpuTemperatureCelsius;
+    public int MinimumGpuTemperatureCelsius { get; set; } =
+        BladeFanCurve.DefaultMinimumGpuTemperatureCelsius;
+    public int MinimumFanSpeedRpm { get; set; } = BladeFanCurve.DefaultMinimumFanSpeedRpm;
+
+    public BladeFanCurve CreateCurve() => new(
+        TemperatureMode,
+        CpuPoints,
+        GpuPoints,
+        MinimumCpuTemperatureCelsius,
+        MinimumGpuTemperatureCelsius,
+        MinimumFanSpeedRpm);
+
+    public static BladeFanCurveProfile FromCurve(BladeFanCurve curve)
+    {
+        ArgumentNullException.ThrowIfNull(curve);
+        return new()
+        {
+            TemperatureMode = curve.TemperatureMode,
+            CpuPoints = curve.CpuPoints.ToList(),
+            GpuPoints = curve.GpuPoints.ToList(),
+            MinimumCpuTemperatureCelsius = curve.MinimumCpuTemperatureCelsius,
+            MinimumGpuTemperatureCelsius = curve.MinimumGpuTemperatureCelsius,
+            MinimumFanSpeedRpm = curve.MinimumFanSpeedRpm,
+        };
+    }
+
+    internal BladeFanCurveProfile Clone()
+    {
+        ApplySafeDefaults();
+        return new()
+        {
+            TemperatureMode = TemperatureMode,
+            CpuPoints = CpuPoints.ToList(),
+            GpuPoints = GpuPoints.ToList(),
+            MinimumCpuTemperatureCelsius = MinimumCpuTemperatureCelsius,
+            MinimumGpuTemperatureCelsius = MinimumGpuTemperatureCelsius,
+            MinimumFanSpeedRpm = MinimumFanSpeedRpm,
+        };
+    }
+
+    internal void ApplySafeDefaults()
+    {
+        CpuPoints ??= [];
+        GpuPoints ??= [];
+    }
 }
 
 public sealed class ViperProfileSettings

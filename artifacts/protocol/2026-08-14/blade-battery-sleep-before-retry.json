@@ -1,0 +1,52 @@
+{
+  "StartedAt": "2026-08-14T10:02:02.0605452+00:00",
+  "CompletedAt": "2026-08-14T10:02:02.2935449+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "Snapshot": {
+    "BatteryPercent": 0,
+    "ChargingStatusRaw": 0,
+    "AutoSleepRaw": 0,
+    "TimeToSleepSeconds": 0,
+    "Envelopes": [
+      {
+        "Status": 2,
+        "TransactionId": 31,
+        "DataSize": 2,
+        "CommandClass": 7,
+        "CommandId": 128,
+        "Arguments": "0000",
+        "Crc": 133
+      },
+      {
+        "Status": 2,
+        "TransactionId": 31,
+        "DataSize": 2,
+        "CommandClass": 7,
+        "CommandId": 132,
+        "Arguments": "0000",
+        "Crc": 129
+      },
+      {
+        "Status": 2,
+        "TransactionId": 31,
+        "DataSize": 2,
+        "CommandClass": 7,
+        "CommandId": 136,
+        "Arguments": "0000",
+        "Crc": 141
+      },
+      {
+        "Status": 2,
+        "TransactionId": 31,
+        "DataSize": 2,
+        "CommandClass": 7,
+        "CommandId": 131,
+        "Arguments": "0000",
+        "Crc": 134
+      }
+    ]
+  },
+  "Error": null
+}

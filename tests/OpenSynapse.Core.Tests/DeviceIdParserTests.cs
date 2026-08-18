@@ -66,6 +66,16 @@ public sealed class RazerFeatureReportTests
 
         Assert.False(RazerFeatureReport.Matches(request, response));
     }
+
+    [Fact]
+    public void RejectsFeatureResponseFromAnotherReportId()
+    {
+        var response = new byte[RazerFeatureReport.Length];
+        response[0] = 0x02;
+
+        Assert.True(RazerFeatureReport.MatchesReportId(response, 0x02));
+        Assert.False(RazerFeatureReport.MatchesReportId(response, 0x00));
+    }
 }
 
 public sealed class BladeBoostProtocolTests

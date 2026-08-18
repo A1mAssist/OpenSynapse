@@ -1,0 +1,11 @@
+{
+  "StartedAt": "2026-08-14T16:17:59.8181515+00:00",
+  "CompletedAt": "2026-08-14T16:19:00.1757547+00:00",
+  "Device": "1532:02C6",
+  "Mode": "Ripple",
+  "HoldSeconds": 60,
+  "FirstFrameApplied": true,
+  "OperationError": null,
+  "RestorationError": null,
+  "VisualConfirmed": null
+}

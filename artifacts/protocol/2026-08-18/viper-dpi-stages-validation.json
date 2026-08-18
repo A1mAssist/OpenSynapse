@@ -1,0 +1,161 @@
+{
+  "StartedAt": "2026-08-18T04:35:35.3293952+00:00",
+  "CompletedAt": "2026-08-18T04:35:36.0301295+00:00",
+  "Device": "1532:00B8",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "Original": {
+    "ActiveStage": 3,
+    "Stages": [
+      {
+        "Number": 1,
+        "X": 400,
+        "Y": 400
+      },
+      {
+        "Number": 2,
+        "X": 800,
+        "Y": 800
+      },
+      {
+        "Number": 3,
+        "X": 1600,
+        "Y": 1600
+      },
+      {
+        "Number": 4,
+        "X": 3200,
+        "Y": 3200
+      },
+      {
+        "Number": 5,
+        "X": 6400,
+        "Y": 6400
+      }
+    ]
+  },
+  "SameValueReadback": {
+    "ActiveStage": 3,
+    "Stages": [
+      {
+        "Number": 1,
+        "X": 400,
+        "Y": 400
+      },
+      {
+        "Number": 2,
+        "X": 800,
+        "Y": 800
+      },
+      {
+        "Number": 3,
+        "X": 1600,
+        "Y": 1600
+      },
+      {
+        "Number": 4,
+        "X": 3200,
+        "Y": 3200
+      },
+      {
+        "Number": 5,
+        "X": 6400,
+        "Y": 6400
+      }
+    ]
+  },
+  "Target": {
+    "ActiveStage": 3,
+    "Stages": [
+      {
+        "Number": 1,
+        "X": 450,
+        "Y": 450
+      },
+      {
+        "Number": 2,
+        "X": 800,
+        "Y": 800
+      },
+      {
+        "Number": 3,
+        "X": 1600,
+        "Y": 1600
+      },
+      {
+        "Number": 4,
+        "X": 3200,
+        "Y": 3200
+      },
+      {
+        "Number": 5,
+        "X": 6400,
+        "Y": 6400
+      }
+    ]
+  },
+  "TargetReadback": {
+    "ActiveStage": 3,
+    "Stages": [
+      {
+        "Number": 1,
+        "X": 450,
+        "Y": 450
+      },
+      {
+        "Number": 2,
+        "X": 800,
+        "Y": 800
+      },
+      {
+        "Number": 3,
+        "X": 1600,
+        "Y": 1600
+      },
+      {
+        "Number": 4,
+        "X": 3200,
+        "Y": 3200
+      },
+      {
+        "Number": 5,
+        "X": 6400,
+        "Y": 6400
+      }
+    ]
+  },
+  "RestorationReadback": {
+    "ActiveStage": 3,
+    "Stages": [
+      {
+        "Number": 1,
+        "X": 400,
+        "Y": 400
+      },
+      {
+        "Number": 2,
+        "X": 800,
+        "Y": 800
+      },
+      {
+        "Number": 3,
+        "X": 1600,
+        "Y": 1600
+      },
+      {
+        "Number": 4,
+        "X": 3200,
+        "Y": 3200
+      },
+      {
+        "Number": 5,
+        "X": 6400,
+        "Y": 6400
+      }
+    ]
+  },
+  "ChangedStage": 1,
+  "Delta": 50,
+  "OperationError": null,
+  "RestorationError": null
+}

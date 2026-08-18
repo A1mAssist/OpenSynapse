@@ -26,11 +26,15 @@ public class DecompileStringReferences extends GhidraScript {
             return;
         }
 
-        println("STRING " + needle + " " + hit);
         Set<Function> functions = new LinkedHashSet<>();
-        collectReferences(hit, functions);
-        for (int offset = 1; offset < bytes.length; offset++) {
-            collectReferences(hit.add(offset), functions);
+        while (hit != null) {
+            println("STRING " + needle + " " + hit);
+            collectReferences(hit, functions);
+            for (int offset = 1; offset < bytes.length; offset++) {
+                collectReferences(hit.add(offset), functions);
+            }
+            Address next = hit.add(bytes.length);
+            hit = currentProgram.getMemory().findBytes(next, bytes, null, true, monitor);
         }
 
         DecompInterface decompiler = new DecompInterface();

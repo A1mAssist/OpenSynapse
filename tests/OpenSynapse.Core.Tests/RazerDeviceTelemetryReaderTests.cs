@@ -44,28 +44,60 @@ public sealed class RazerDeviceTelemetryReaderTests
         Assert.Equal(2000, telemetry.BladeCurrentFanGpuRpm);
         Assert.Equal((byte)0, telemetry.BladeAdvancedFanCpuModeRaw);
         Assert.Equal((byte)0, telemetry.BladeAdvancedFanGpuModeRaw);
-        Assert.Equal(50, telemetry.BladeWiredBatteryPercent);
-        Assert.Equal((byte)0, telemetry.BladeChargingStatusRaw);
-        Assert.Equal((byte)1, telemetry.BladeAutoSleepRaw);
-        Assert.Equal(300, telemetry.BladeTimeToSleepSeconds);
         Assert.Equal(BladeLogoMode.Static, telemetry.BladeLogoMode);
+        Assert.Equal(new BladeGameModeTelemetry(0, 0, 0), telemetry.BladeGameMode);
+        Assert.True(telemetry.BladeStartupAnimationEnabled);
+        Assert.Equal(BladeNativeDisplayMode.Uhd, telemetry.BladeNativeDisplayMode);
+        Assert.Equal(new BladeSkuHardwareConfiguration(false, false, false, 0),
+            telemetry.BladeSkuHardwareConfiguration);
+        Assert.False(telemetry.BladeOneTimeFullChargeEnabled);
+        Assert.Null(telemetry.BladeLocalDimmingEnabled);
+        Assert.Equal(1, transport.PowerModeReadCount);
         Assert.True(transport.BatteryQueryAllowedRemainingPacketsMismatch);
         Assert.Empty(telemetry.Errors);
     }
 
     [Fact]
-    public async Task KeepsBladeProduct710TelemetryWhenOneReadFails()
+    public async Task KeepsIndependentBladePolicyReadsWhenOneFails()
     {
-        var transport = new FakeRazerFeatureTransport { FailBladeProduct710Command = 0x84 };
-        var reader = new RazerDeviceTelemetryReader(transport);
+        var transport = new FakeRazerFeatureTransport
+        {
+            FailBladeCommand = (0x00, 0x88),
+            StartupAnimationEnabled = false,
+            NativeDisplayMode = BladeNativeDisplayMode.Fhd,
+            SkuHardwareConfigurationRaw = 0x07,
+            PowerModeSiblingBits = 0x0C,
+        };
 
-        var telemetry = await reader.ReadAsync(new[] { Blade });
+        var telemetry = await new RazerDeviceTelemetryReader(transport).ReadAsync(new[] { Blade });
 
-        Assert.Equal(50, telemetry.BladeWiredBatteryPercent);
-        Assert.Null(telemetry.BladeChargingStatusRaw);
-        Assert.Equal((byte)1, telemetry.BladeAutoSleepRaw);
-        Assert.Equal(300, telemetry.BladeTimeToSleepSeconds);
-        Assert.Contains(telemetry.Errors, error => error.StartsWith("充电状态：", StringComparison.Ordinal));
+        Assert.Null(telemetry.BladeGameMode);
+        Assert.False(telemetry.BladeStartupAnimationEnabled);
+        Assert.Equal(BladeNativeDisplayMode.Fhd, telemetry.BladeNativeDisplayMode);
+        Assert.Equal((byte)0x07, telemetry.BladeSkuHardwareConfiguration?.Raw);
+        Assert.True(telemetry.BladeOneTimeFullChargeEnabled);
+        Assert.True(telemetry.BladeLocalDimmingEnabled);
+        Assert.Contains(telemetry.Errors,
+            error => error.StartsWith("Gaming Mode：", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task KeepsIndependentBladeReadsWhenTransportDisconnectsForOneQuery()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            ThrowIoForBladeBrightness = true,
+            PerformanceMode = BladePerformanceMode.Balanced,
+            ChargeLimitRaw = 0xD0,
+        };
+
+        var telemetry = await new RazerDeviceTelemetryReader(transport).ReadAsync(new[] { Blade });
+
+        Assert.Null(telemetry.BladeKeyboardBrightness);
+        Assert.Equal(BladePerformanceMode.Balanced, telemetry.BladePerformanceMode);
+        Assert.Equal(80, telemetry.BladeChargeLimitPercent);
+        Assert.Contains(telemetry.Errors,
+            error => error.StartsWith("键盘亮度：", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -668,6 +700,121 @@ public sealed class RazerDeviceTelemetryReaderTests
     }
 
     [Fact]
+    public async Task WritesBladeLocalDimmingWithReadModifyWriteAndPreservesSiblingBits()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            PowerModeSiblingBits = 0x05,
+            SkuHardwareConfigurationRaw = 0x02,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        Assert.True(await reader.SetBladeLocalDimmingAsync(new[] { Blade }, true));
+
+        Assert.Equal(0x0D, transport.PowerModeSiblingBits);
+        Assert.Equal(1, transport.MaxFanWriteCount);
+    }
+
+    [Fact]
+    public async Task LocalDimmingSameValueDoesNotWrite()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            PowerModeSiblingBits = BladeMaxFanProtocol.LocalDimmingBit | 0x01,
+            SkuHardwareConfigurationRaw = 0x02,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        Assert.True(await reader.SetBladeLocalDimmingAsync(new[] { Blade }, true));
+
+        Assert.Equal(0, transport.MaxFanWriteCount);
+    }
+
+    [Fact]
+    public async Task RestoresBladeLocalDimmingWhenReadbackFails()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            PowerModeSiblingBits = 0x01,
+            IgnoreNextMaxFanWrite = true,
+            SkuHardwareConfigurationRaw = 0x02,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeLocalDimmingAsync(new[] { Blade }, true));
+
+        Assert.Contains("原值已恢复", error.Message, StringComparison.Ordinal);
+        Assert.Equal(0x01, transport.PowerModeSiblingBits);
+        Assert.Equal(2, transport.MaxFanWriteCount);
+    }
+
+    [Fact]
+    public async Task RestoresBladeLocalDimmingWhenCanceledAfterWriteApplies()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            PowerModeSiblingBits = 0x01,
+            CancelNextPowerModeWriteAfterApplying = true,
+            SkuHardwareConfigurationRaw = 0x02,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await reader.SetBladeLocalDimmingAsync(new[] { Blade }, true));
+
+        Assert.Equal(0x01, transport.PowerModeSiblingBits);
+        Assert.Equal(2, transport.MaxFanWriteCount);
+    }
+
+    [Fact]
+    public async Task SerializesSharedBladePowerModeBitUpdates()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            PowerModeSiblingBits = 0x01,
+            BlockNextPowerModeWrite = true,
+            SkuHardwareConfigurationRaw = 0x02,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        var localDimming = reader.SetBladeLocalDimmingAsync(new[] { Blade }, true).AsTask();
+        await transport.PowerModeWriteEntered.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        var oneTimeCharge = reader.SetBladeOneTimeFullChargeAsync(new[] { Blade }, true).AsTask();
+        await Task.Delay(50);
+
+        Assert.Equal(1, transport.MaxFanWriteCount);
+        transport.ReleasePowerModeWrite.TrySetResult();
+        await Task.WhenAll(localDimming, oneTimeCharge);
+
+        Assert.Equal(0x0D, transport.PowerModeSiblingBits);
+        Assert.Equal(2, transport.MaxFanWriteCount);
+    }
+
+    [Fact]
+    public async Task RejectsBladeLocalDimmingOnNonMiniLedPanel()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            SkuHardwareConfigurationRaw = 0x00,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        var telemetry = await reader.ReadAsync(new[] { Blade });
+
+        Assert.Null(telemetry.BladeLocalDimmingEnabled);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeLocalDimmingAsync(new[] { Blade }, true));
+
+        Assert.Contains("MiniLED", error.Message, StringComparison.Ordinal);
+        Assert.Equal(0, transport.MaxFanWriteCount);
+    }
+
+    [Fact]
     public async Task WritesBladeLogoOffAndStaticWithReadback()
     {
         var transport = new FakeRazerFeatureTransport { LogoPowered = true };
@@ -681,6 +828,172 @@ public sealed class RazerDeviceTelemetryReaderTests
             await reader.SetBladeLogoModeAsync(new[] { Blade }, BladeLogoMode.Static));
         Assert.True(transport.LogoPowered);
         Assert.Equal(BladeLogoMode.Static, transport.LogoPoweredMode);
+    }
+
+    [Fact]
+    public async Task TogglesBladeGameModeAndM3IndicatorWithReadback()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            GameMode = new BladeGameModeTelemetry(0, 1, 0),
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        var enabled = await reader.SetBladeGameModeAsync(new[] { Blade }, true);
+
+        Assert.Equal(new BladeGameModeTelemetry(1, 1, 0), enabled);
+        Assert.True(transport.GameModeIndicatorPowered);
+        Assert.Equal(1, transport.GameModeWriteCount);
+        Assert.Equal(1, transport.GameModeIndicatorWriteCount);
+
+        var disabled = await reader.SetBladeGameModeAsync(new[] { Blade }, false);
+
+        Assert.Equal(new BladeGameModeTelemetry(0, 1, 0), disabled);
+        Assert.False(transport.GameModeIndicatorPowered);
+        Assert.Equal(2, transport.GameModeWriteCount);
+        Assert.Equal(2, transport.GameModeIndicatorWriteCount);
+    }
+
+    [Fact]
+    public async Task WritesAndRestoresBladeStartupAnimationWithReadback()
+    {
+        var transport = new FakeRazerFeatureTransport { StartupAnimationEnabled = true };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        Assert.False(await reader.SetBladeStartupAnimationAsync(new[] { Blade }, false));
+        Assert.Equal(1, transport.StartupAnimationWriteCount);
+
+        transport.FailReadbackAfterNextStartupAnimationWrite = true;
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeStartupAnimationAsync(new[] { Blade }, true));
+
+        Assert.Contains("原值已恢复", error.Message, StringComparison.Ordinal);
+        Assert.False(transport.StartupAnimationEnabled);
+        Assert.Equal(3, transport.StartupAnimationWriteCount);
+    }
+
+    [Fact]
+    public async Task ShortCircuitsBladeStartupAnimationWhenValueIsUnchanged()
+    {
+        var transport = new FakeRazerFeatureTransport { StartupAnimationEnabled = true };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        Assert.True(await reader.SetBladeStartupAnimationAsync(new[] { Blade }, true));
+        Assert.Equal(0, transport.StartupAnimationWriteCount);
+    }
+
+    [Fact]
+    public async Task RestoresBladeStartupAnimationWithNonCancelableTokenWhenCanceledAfterWrite()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            StartupAnimationEnabled = true,
+            CancelNextStartupAnimationWriteAfterApplying = true,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+        using var source = new CancellationTokenSource();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await reader.SetBladeStartupAnimationAsync(new[] { Blade }, false, source.Token));
+
+        Assert.True(transport.StartupAnimationEnabled);
+        Assert.Equal(2, transport.StartupAnimationWriteCount);
+        Assert.True(transport.StartupAnimationWriteCancellationTokens[0].CanBeCanceled);
+        Assert.False(transport.StartupAnimationWriteCancellationTokens[1].CanBeCanceled);
+    }
+
+    [Fact]
+    public async Task RejectsBladeStartupAnimationWriteBeforeSuccessfulGet()
+    {
+        var transport = new FakeRazerFeatureTransport();
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeStartupAnimationAsync(new[] { Blade }, false));
+
+        Assert.Contains("请先成功读取", error.Message, StringComparison.Ordinal);
+        Assert.Equal(0, transport.StartupAnimationWriteCount);
+    }
+
+    [Fact]
+    public async Task WritesBladeNativeDisplayModeWithReadbackAndSameValueShortCircuit()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            NativeDisplayMode = BladeNativeDisplayMode.Uhd,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        Assert.Equal(
+            BladeNativeDisplayMode.Fhd,
+            await reader.SetBladeNativeDisplayModeAsync(new[] { Blade }, BladeNativeDisplayMode.Fhd));
+        Assert.Equal(
+            BladeNativeDisplayMode.Fhd,
+            await reader.SetBladeNativeDisplayModeAsync(new[] { Blade }, BladeNativeDisplayMode.Fhd));
+
+        Assert.Equal(BladeNativeDisplayMode.Fhd, transport.NativeDisplayMode);
+        Assert.Equal(1, transport.NativeDisplayModeWriteCount);
+    }
+
+    [Fact]
+    public async Task RestoresBladeNativeDisplayModeWhenReadbackFailsAfterWrite()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            NativeDisplayMode = BladeNativeDisplayMode.Uhd,
+            FailReadbackAfterNextNativeDisplayModeWrite = true,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeNativeDisplayModeAsync(
+                new[] { Blade }, BladeNativeDisplayMode.Fhd));
+
+        Assert.Contains("原值已恢复", error.Message, StringComparison.Ordinal);
+        Assert.Equal(BladeNativeDisplayMode.Uhd, transport.NativeDisplayMode);
+        Assert.Equal(2, transport.NativeDisplayModeWriteCount);
+    }
+
+    [Fact]
+    public async Task RestoresBladeNativeDisplayModeWithNonCancelableTokenWhenCanceledAfterWrite()
+    {
+        var transport = new FakeRazerFeatureTransport
+        {
+            NativeDisplayMode = BladeNativeDisplayMode.Uhd,
+            CancelNextNativeDisplayModeWriteAfterApplying = true,
+        };
+        var reader = new RazerDeviceTelemetryReader(transport);
+        await reader.ReadAsync(new[] { Blade });
+        using var source = new CancellationTokenSource();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await reader.SetBladeNativeDisplayModeAsync(
+                new[] { Blade }, BladeNativeDisplayMode.Fhd, source.Token));
+
+        Assert.Equal(BladeNativeDisplayMode.Uhd, transport.NativeDisplayMode);
+        Assert.Equal(2, transport.NativeDisplayModeWriteCount);
+        Assert.True(transport.NativeDisplayModeWriteCancellationTokens[0].CanBeCanceled);
+        Assert.False(transport.NativeDisplayModeWriteCancellationTokens[1].CanBeCanceled);
+    }
+
+    [Fact]
+    public async Task RejectsBladeNativeDisplayModeWriteBeforeSuccessfulGet()
+    {
+        var transport = new FakeRazerFeatureTransport();
+        var reader = new RazerDeviceTelemetryReader(transport);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await reader.SetBladeNativeDisplayModeAsync(
+                new[] { Blade }, BladeNativeDisplayMode.Fhd));
+
+        Assert.Contains("请先成功读取", error.Message, StringComparison.Ordinal);
+        Assert.Equal(0, transport.NativeDisplayModeWriteCount);
     }
 
     [Fact]
@@ -770,6 +1083,8 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
 {
     private readonly List<byte> _performanceWriteZones = new();
     private readonly List<byte> _boostWriteClusters = new();
+    private bool _failNextStartupAnimationRead;
+    private bool _failNextNativeDisplayModeRead;
     private int _fanTargetWriteCount;
 
     public BladePerformanceMode PerformanceMode { get; set; } = BladePerformanceMode.Balanced;
@@ -804,19 +1119,38 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
     public int ChargeWriteCount { get; private set; }
     public bool BatteryQueryAllowedRemainingPacketsMismatch { get; private set; }
     public BladeMaxFanMode MaxFanMode { get; set; } = BladeMaxFanMode.Disabled;
-    public byte BladeWiredBatteryRaw { get; set; } = 128;
-    public byte BladeChargingStatusRaw { get; set; }
-    public byte BladeAutoSleepRaw { get; set; } = 1;
-    public ushort BladeTimeToSleepSeconds { get; set; } = 300;
-    public byte? FailBladeProduct710Command { get; set; }
     public byte PowerModeSiblingBits { get; set; }
+    public int PowerModeReadCount { get; private set; }
+    public BladeGameModeTelemetry GameMode { get; set; } = new(0, 0, 0);
+    public bool GameModeIndicatorPowered { get; private set; }
+    public int GameModeWriteCount { get; private set; }
+    public int GameModeIndicatorWriteCount { get; private set; }
+    public bool StartupAnimationEnabled { get; set; } = true;
+    public bool FailReadbackAfterNextStartupAnimationWrite { get; set; }
+    public bool CancelNextStartupAnimationWriteAfterApplying { get; set; }
+    public int StartupAnimationWriteCount { get; private set; }
+    public List<CancellationToken> StartupAnimationWriteCancellationTokens { get; } = [];
+    public BladeNativeDisplayMode NativeDisplayMode { get; set; } = BladeNativeDisplayMode.Uhd;
+    public bool FailReadbackAfterNextNativeDisplayModeWrite { get; set; }
+    public bool CancelNextNativeDisplayModeWriteAfterApplying { get; set; }
+    public int NativeDisplayModeWriteCount { get; private set; }
+    public List<CancellationToken> NativeDisplayModeWriteCancellationTokens { get; } = [];
+    public byte SkuHardwareConfigurationRaw { get; set; }
+    public (byte Class, byte Id)? FailBladeCommand { get; set; }
     public bool IgnoreNextMaxFanWrite { get; set; }
+    public bool CancelNextPowerModeWriteAfterApplying { get; set; }
+    public bool BlockNextPowerModeWrite { get; set; }
     public int MaxFanWriteCount { get; private set; }
+    public TaskCompletionSource PowerModeWriteEntered { get; } =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource ReleasePowerModeWrite { get; } =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
     public bool LogoPowered { get; set; } = true;
     public BladeLogoMode LogoPoweredMode { get; set; } = BladeLogoMode.Static;
     public bool IgnoreNextLogoPowerWrite { get; set; }
     public byte BladeBrightness { get; private set; } = 128;
     public bool IgnoreNextBrightnessWrite { get; set; }
+    public bool ThrowIoForBladeBrightness { get; set; }
     public int BrightnessWriteCount { get; private set; }
     public int ViperPollingRateHertz { get; private set; } = 500;
     public (int X, int Y) ViperDpi { get; private set; } = (1600, 1600);
@@ -930,7 +1264,103 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
 
         if ((commandClass, commandId) == (0x0E, 0x84))
         {
+            if (ThrowIoForBladeBrightness)
+            {
+                throw new IOException("Simulated Blade transport disconnect.");
+            }
             return Task.FromResult(CreateResponse(transactionId, 2, commandClass, commandId, new byte[] { 0x01, BladeBrightness }));
+        }
+
+        if (FailBladeCommand == (commandClass, commandId))
+        {
+            throw new InvalidOperationException(
+                $"Simulated Blade command 0x{commandClass:X2}{commandId:X2} failure.");
+        }
+
+        if ((commandClass, commandId) == (0x00, 0x88))
+        {
+            return Task.FromResult(CreateResponse(
+                transactionId, dataSize, commandClass, commandId,
+                new[] { GameMode.GameMode, GameMode.KeyCover, GameMode.Lifted }));
+        }
+
+        if ((commandClass, commandId) == (0x00, 0x08))
+        {
+            GameModeWriteCount++;
+            GameMode = new BladeGameModeTelemetry(args[0], GameMode.KeyCover, GameMode.Lifted);
+            return Task.FromResult(CreateResponse(transactionId, dataSize, commandClass, commandId, args));
+        }
+
+        if ((commandClass, commandId) == (0x0F, 0x98))
+        {
+            if (_failNextStartupAnimationRead)
+            {
+                _failNextStartupAnimationRead = false;
+                throw new InvalidOperationException("Simulated startup animation readback failure.");
+            }
+            return Task.FromResult(CreateResponse(
+                transactionId, dataSize, commandClass, commandId,
+                new[] { StartupAnimationEnabled ? (byte)0x00 : (byte)0x01 }));
+        }
+
+        if ((commandClass, commandId) == (0x0F, 0x18))
+        {
+            StartupAnimationWriteCount++;
+            StartupAnimationWriteCancellationTokens.Add(cancellationToken);
+            StartupAnimationEnabled = args[1] == 0x00;
+            if (FailReadbackAfterNextStartupAnimationWrite)
+            {
+                FailReadbackAfterNextStartupAnimationWrite = false;
+                _failNextStartupAnimationRead = true;
+            }
+            if (CancelNextStartupAnimationWriteAfterApplying)
+            {
+                CancelNextStartupAnimationWriteAfterApplying = false;
+                throw new OperationCanceledException(
+                    "Simulated cancellation after startup animation write.",
+                    cancellationToken);
+            }
+            return Task.FromResult(CreateResponse(transactionId, dataSize, commandClass, commandId, args));
+        }
+
+        if ((commandClass, commandId) == (0x0D, 0x8E))
+        {
+            if (_failNextNativeDisplayModeRead)
+            {
+                _failNextNativeDisplayModeRead = false;
+                throw new InvalidOperationException("Simulated native display mode readback failure.");
+            }
+            return Task.FromResult(CreateRemainingPacketsResponse(
+                transactionId, dataSize, commandClass, commandId,
+                new[] { (byte)NativeDisplayMode }));
+        }
+
+        if ((commandClass, commandId) == (0x0D, 0x0E))
+        {
+            NativeDisplayModeWriteCount++;
+            NativeDisplayModeWriteCancellationTokens.Add(cancellationToken);
+            NativeDisplayMode = (BladeNativeDisplayMode)args[0];
+            if (FailReadbackAfterNextNativeDisplayModeWrite)
+            {
+                FailReadbackAfterNextNativeDisplayModeWrite = false;
+                _failNextNativeDisplayModeRead = true;
+            }
+            if (CancelNextNativeDisplayModeWriteAfterApplying)
+            {
+                CancelNextNativeDisplayModeWriteAfterApplying = false;
+                throw new OperationCanceledException(
+                    "Simulated cancellation after native display mode write.",
+                    cancellationToken);
+            }
+            return Task.FromResult(CreateResponse(
+                transactionId, dataSize, commandClass, commandId, args));
+        }
+
+        if ((commandClass, commandId) == (0x0D, 0x8F))
+        {
+            return Task.FromResult(CreateRemainingPacketsResponse(
+                transactionId, dataSize, commandClass, commandId,
+                new[] { SkuHardwareConfigurationRaw }));
         }
 
         if ((commandClass, commandId) == (0x0E, 0x04))
@@ -964,6 +1394,13 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
 
         if ((commandClass, commandId) == (0x03, 0x00))
         {
+            if (args[1] == BladeSynapsePolicyProtocol.GameModeLedId)
+            {
+                GameModeIndicatorWriteCount++;
+                GameModeIndicatorPowered = args[2] != 0;
+                return Task.FromResult(CreateResponse(transactionId, dataSize, commandClass, commandId, args));
+            }
+
             if (IgnoreNextLogoPowerWrite)
             {
                 IgnoreNextLogoPowerWrite = false;
@@ -1029,23 +1466,6 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
             return Task.FromResult(CreateResponse(
                 transactionId, 3, commandClass, commandId,
                 new byte[] { 0x01, fanId, mode }));
-        }
-
-        if (commandClass == 0x07 && commandId is 0x80 or 0x84 or 0x88 or 0x83)
-        {
-            if (FailBladeProduct710Command == commandId)
-            {
-                throw new InvalidOperationException($"Simulated Product 710 command 0x{commandId:X2} failure.");
-            }
-
-            var values = commandId switch
-            {
-                0x80 => new[] { (byte)0x00, BladeWiredBatteryRaw },
-                0x84 => new[] { (byte)0x00, BladeChargingStatusRaw },
-                0x88 => new[] { (byte)0x00, BladeAutoSleepRaw },
-                _ => new[] { (byte)(BladeTimeToSleepSeconds >> 8), (byte)BladeTimeToSleepSeconds },
-            };
-            return Task.FromResult(CreateResponse(transactionId, 2, commandClass, commandId, values));
         }
 
         if ((commandClass, commandId) == (0x0D, 0x87))
@@ -1179,6 +1599,7 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
 
         if ((commandClass, commandId) == (0x07, 0x8F))
         {
+            PowerModeReadCount++;
             var mask = (byte)(PowerModeSiblingBits | (byte)MaxFanMode);
             var response = CreateResponse(
                 transactionId, 1, commandClass, commandId, new[] { mask });
@@ -1201,10 +1622,31 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
                     : BladeMaxFanMode.Disabled;
                 PowerModeSiblingBits = (byte)(args[0] & ~BladeMaxFanProtocol.MaxFanBit);
             }
-            return Task.FromResult(CreateResponse(transactionId, dataSize, commandClass, commandId, args));
+            if (CancelNextPowerModeWriteAfterApplying)
+            {
+                CancelNextPowerModeWriteAfterApplying = false;
+                throw new OperationCanceledException(
+                    "Simulated cancellation after power-mode write.");
+            }
+            var response = CreateResponse(transactionId, dataSize, commandClass, commandId, args);
+            if (BlockNextPowerModeWrite)
+            {
+                BlockNextPowerModeWrite = false;
+                PowerModeWriteEntered.TrySetResult();
+                return CompleteBlockedPowerModeWriteAsync(response, cancellationToken);
+            }
+            return Task.FromResult(response);
         }
 
         throw new InvalidOperationException($"Unexpected command {commandClass:X2}{commandId:X2}.");
+    }
+
+    private async Task<byte[]> CompleteBlockedPowerModeWriteAsync(
+        byte[] response,
+        CancellationToken cancellationToken)
+    {
+        await ReleasePowerModeWrite.Task.WaitAsync(cancellationToken);
+        return response;
     }
 
     private static byte[] CreateResponse(
@@ -1217,6 +1659,19 @@ internal sealed class FakeRazerFeatureTransport : IRazerFeatureTransport
         var response = RazerFeatureReport.CreateRequest(
             transactionId, dataSize, commandClass, commandId, arguments);
         response[1] = 0x02;
+        return response;
+    }
+
+    private static byte[] CreateRemainingPacketsResponse(
+        byte transactionId,
+        byte dataSize,
+        byte commandClass,
+        byte commandId,
+        byte[] arguments)
+    {
+        var response = CreateResponse(transactionId, dataSize, commandClass, commandId, arguments);
+        response[3] = 0x01;
+        response[89] = RazerFeatureReport.CalculateCrc(response);
         return response;
     }
 

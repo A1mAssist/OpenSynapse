@@ -1,0 +1,4 @@
+System.Runtime.InteropServices.SEHException (0x80004005): External component has thrown an exception.
+   at OpenSynapse.Windows.Performance.AmdCurveOptimizerController.Invoke(JsonAction action, String function, Nullable`1 value) in D:\Workspaces\OpenSynapse\src\OpenSynapse.Windows\Performance\AmdCurveOptimizerController.cs:line 318
+   at OpenSynapse.Windows.Performance.AmdCurveOptimizerController.GetValue() in D:\Workspaces\OpenSynapse\src\OpenSynapse.Windows\Performance\AmdCurveOptimizerController.cs:line 155
+   at AmdCurveOptimizerValidation.RunAsync(String[] args) in D:\Workspaces\OpenSynapse\tools\OpenSynapse.HardwareValidation\AmdCurveOptimizerValidation.cs:line 18

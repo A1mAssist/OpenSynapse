@@ -10,20 +10,25 @@
     <Grid x:Name="AppTitleBar" Grid.Row="0" ColumnDefinitions="224,*" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
       <Grid Padding="16,0" VerticalAlignment="Stretch">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Image Width="20" Height="20" Stretch="Uniform" AutomationProperties.Name="OpenSynapse 标志">
+          <Image Width="28" Height="28" Stretch="Uniform" AutomationProperties.Name="OpenSynapse 标志">
             <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source>
           </Image>
           <StackPanel Spacing="0" VerticalAlignment="Center">
-            <TextBlock Text="OpenSynapse" FontFamily="Segoe UI Variable Display" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+            <TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontFamily}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
             <TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono" FontSize="8" Foreground="{StaticResource MutedBrush}" CharacterSpacing="70" />
           </StackPanel>
         </StackPanel>
       </Grid>
       <Grid Grid.Column="1" Padding="24,0,160,0">
-        <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+        <StackPanel
+            Orientation="Horizontal"
+            Spacing="6"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsHitTestVisible="False">
           <TextBlock Text="OpenSynapse" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-          <TextBlock Text="/" Foreground="{StaticResource LineStrongBrush}" FontSize="12" />
-          <TextBlock x:Name="BreadcrumbText" Text="概览" Foreground="{StaticResource DataBrush}" FontSize="12" FontWeight="SemiBold" />
+          <TextBlock Text="/" Foreground="{StaticResource LineBrush}" FontSize="12" />
+          <TextBlock x:Name="BreadcrumbText" Text="概览" Foreground="{StaticResource DataBrush}" FontSize="13" FontWeight="SemiBold" />
         </StackPanel>
       </Grid>
     </Grid>
@@ -33,9 +38,11 @@
         IsSettingsVisible="False"
         IsBackButtonVisible="Collapsed"
         IsTitleBarAutoPaddingEnabled="False"
-        PaneDisplayMode="Left"
+        PaneDisplayMode="Auto"
+        CompactPaneLength="48"
         OpenPaneLength="224"
         Background="Transparent"
+        FontFamily="{StaticResource AppFontFamily}"
         SelectionChanged="NavigationChanged">
       <NavigationView.MenuItems>
         <NavigationViewItem Content="概览" Tag="overview" IsSelected="True"><NavigationViewItem.Icon><SymbolIcon Symbol="Home" /></NavigationViewItem.Icon></NavigationViewItem>
@@ -45,8 +52,8 @@
       </NavigationView.MenuItems>
       <NavigationView.Content>
         <Grid>
-            <ScrollViewer x:Name="OverviewPage">
-              <StackPanel Padding="24,8,32,48" Spacing="16">
+            <ScrollViewer x:Name="OverviewPage" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                 <StackPanel Spacing="12">
                   <TextBlock Text="系统遥测" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
@@ -75,11 +82,11 @@
                   <TextBlock Text="{Binding EmptyStateText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
               </StackPanel>
             </ScrollViewer>
-            <ScrollViewer x:Name="DevicesPage" Visibility="Collapsed">
-              <StackPanel Padding="24,24,32,48" Spacing="16">
+            <ScrollViewer x:Name="DevicesPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="5"><TextBlock Text="设备" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="已发现的设备及其已验证控制。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button Grid.Column="1" Content="重新探测" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid>
                 <InfoBar IsOpen="{Binding HasDeviceError}" IsClosable="False" Severity="Warning" Message="{Binding DeviceErrorText}" />
-                <ItemsRepeater ItemsSource="{Binding Devices}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout><ItemsRepeater.ItemTemplate><DataTemplate><Border Style="{StaticResource CardStyle}" Padding="14"><Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13"><Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="{Binding IconAutomationName}" /></Border><StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><TextBlock Grid.Column="2" Text="{Binding Capability}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{Binding StatusBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" /></Grid></Border></DataTemplate></ItemsRepeater.ItemTemplate></ItemsRepeater>
+                <ItemsRepeater ItemsSource="{Binding Devices}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout><ItemsRepeater.ItemTemplate><DataTemplate><Border Style="{StaticResource CardStyle}" Padding="16"><Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13"><Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="{Binding IconAutomationName}" /></Border><StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><TextBlock Grid.Column="2" Text="{Binding Capability}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{Binding StatusBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" /></Grid></Border></DataTemplate></ItemsRepeater.ItemTemplate></ItemsRepeater>
                 <StackPanel Orientation="Horizontal" Spacing="8"><Button x:Name="BladeDeviceButton" Tag="blade" Click="DeviceSelectorClick" Style="{StaticResource SecondaryButtonStyle}"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE7F8;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="笔记本设备" /><TextBlock Text="{Binding BladeDeviceName}" /></StackPanel></Button><Button x:Name="ViperDeviceButton" Tag="viper" Click="DeviceSelectorClick" Style="{StaticResource SecondaryButtonStyle}"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE962;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="鼠标设备" /><TextBlock Text="{Binding ViperDeviceName}" /></StackPanel></Button></StackPanel>
                 <StackPanel x:Name="BladeDevicePanel" Spacing="16">
                   <TextBlock Text="{Binding BladeDeviceName}" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="状态、灯光、性能、显示和电池。" Foreground="{StaticResource MutedBrush}" />
@@ -88,7 +95,7 @@
                       <TextBlock Text="硬件遥测" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
                       <TextBlock Grid.Column="1" Text="{Binding DeviceTelemetryTimeText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                     </Grid>
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
                       <Border Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
                         <StackPanel Spacing="10">
                           <TextBlock Text="风扇转速" Style="{StaticResource MetricLabelStyle}" />
@@ -107,25 +114,7 @@
                           </Grid>
                         </StackPanel>
                       </Border>
-                      <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
-                        <StackPanel Spacing="10">
-                          <TextBlock Text="电池与充电" Style="{StaticResource MetricLabelStyle}" />
-                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                            <StackPanel Spacing="3"><TextBlock Text="有线电量" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeWiredBatteryText}" FontFamily="Cascadia Mono" FontSize="17" FontWeight="SemiBold" /></StackPanel>
-                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="充电原始值" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeChargingStatusRawText}" FontFamily="Cascadia Mono" FontSize="14" TextWrapping="NoWrap" /></StackPanel>
-                          </Grid>
-                        </StackPanel>
-                      </Border>
-                      <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
-                        <StackPanel Spacing="10">
-                          <TextBlock Text="自动休眠" Style="{StaticResource MetricLabelStyle}" />
-                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                            <StackPanel Spacing="3"><TextBlock Text="剩余时间" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeTimeToSleepText}" FontSize="16" FontWeight="SemiBold" /></StackPanel>
-                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="原始值" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeAutoSleepRawText}" FontFamily="Cascadia Mono" FontSize="14" TextWrapping="NoWrap" /></StackPanel>
-                          </Grid>
-                        </StackPanel>
-                      </Border>
-                      <Border Grid.Row="2" Grid.ColumnSpan="2" Style="{StaticResource CardStyle}" Padding="16" MinHeight="78">
+                      <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource CardStyle}" Padding="16" MinHeight="78">
                         <StackPanel Spacing="10">
                           <TextBlock Text="高级风扇诊断" Style="{StaticResource MetricLabelStyle}" />
                           <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
@@ -136,36 +125,54 @@
                       </Border>
                     </Grid>
                   </StackPanel>
-                  <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12"><Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="性能模式" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladePerformanceModeText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladePerformanceModeOptions}" SelectedIndex="{Binding BladePerformanceModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladePerformanceMode}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyPerformanceModeClick" IsEnabled="{Binding CanSetBladePerformanceMode}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用性能模式" AutomationProperties.Name="应用性能模式"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border><Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="5"><TextBlock Text="风扇" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeFanText}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" /></StackPanel></Border><Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="充电上限" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeChargeLimitText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladeChargeLimitOptions}" SelectedIndex="{Binding BladeChargeLimitIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeChargeLimit}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyChargeLimitClick" IsEnabled="{Binding CanSetBladeChargeLimit}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用充电上限" AutomationProperties.Name="应用充电上限"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border></Grid>
-                  <Border Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="14"><Grid ColumnDefinitions="*,*,*" ColumnSpacing="16"><StackPanel Spacing="8"><TextBlock Text="CPU Boost" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeCpuBoostText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladeCpuBoostOptions}" SelectedIndex="{Binding BladeCpuBoostIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeCpuBoost}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyCpuBoostClick" IsEnabled="{Binding CanSetBladeCpuBoost}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 CPU Boost" AutomationProperties.Name="应用 CPU Boost"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel><StackPanel Grid.Column="1" Spacing="8"><TextBlock Text="GPU Boost" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeGpuBoostText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladeGpuBoostOptions}" SelectedIndex="{Binding BladeGpuBoostIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeGpuBoost}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyGpuBoostClick" IsEnabled="{Binding CanSetBladeGpuBoost}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 GPU Boost" AutomationProperties.Name="应用 GPU Boost"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel><StackPanel Grid.Column="2" Spacing="8"><TextBlock Text="Max Fan" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeMaxFanText}" FontSize="18" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ToggleSwitch IsOn="{Binding BladeMaxFanEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeMaxFan}" OnContent="开启" OffContent="关闭" /><Button Grid.Column="1" Click="ApplyMaxFanClick" IsEnabled="{Binding CanSetBladeMaxFan}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 Max Fan" AutomationProperties.Name="应用 Max Fan"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Grid><TextBlock Text="仅 Custom 性能模式可调；CPU/GPU Boost 仅当前会话，Max Fan 随配置保存。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel></Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="20">
+                  <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12"><Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="性能模式" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladePerformanceModeText}" FontSize="18" FontWeight="SemiBold" /><ComboBox Tag="performance" ItemsSource="{Binding BladePerformanceModeOptions}" SelectedIndex="{Binding BladePerformanceModeIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladePerformanceMode}" HorizontalAlignment="Stretch" /></StackPanel></Border><Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="5"><TextBlock Text="风扇" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeFanText}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" /></StackPanel></Border><Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="充电上限" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeChargeLimitText}" FontSize="18" FontWeight="SemiBold" /><ComboBox Tag="charge" ItemsSource="{Binding BladeChargeLimitOptions}" SelectedIndex="{Binding BladeChargeLimitIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeChargeLimit}" HorizontalAlignment="Stretch" /></StackPanel></Border></Grid>
+                  <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="14"><Grid ColumnDefinitions="*,*,*" ColumnSpacing="16"><StackPanel Spacing="8"><TextBlock Text="CPU Boost" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeCpuBoostText}" FontSize="18" FontWeight="SemiBold" /><ComboBox Tag="cpuBoost" ItemsSource="{Binding BladeCpuBoostOptions}" SelectedIndex="{Binding BladeCpuBoostIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeCpuBoost}" HorizontalAlignment="Stretch" /></StackPanel><StackPanel Grid.Column="1" Spacing="8"><TextBlock Text="GPU Boost" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeGpuBoostText}" FontSize="18" FontWeight="SemiBold" /><ComboBox Tag="gpuBoost" ItemsSource="{Binding BladeGpuBoostOptions}" SelectedIndex="{Binding BladeGpuBoostIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeGpuBoost}" HorizontalAlignment="Stretch" /></StackPanel><StackPanel Grid.Column="2" Spacing="8"><TextBlock Text="Max Fan" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeMaxFanText}" FontSize="18" FontWeight="SemiBold" /><ToggleSwitch IsOn="{Binding BladeMaxFanEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeMaxFan}" Toggled="AutoApplyMaxFanToggled" OnContent="开启" OffContent="关闭" /></StackPanel></Grid><TextBlock Text="仅 Custom 性能模式可调；CPU/GPU Boost 仅当前会话，Max Fan 随配置保存。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel></Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="14">
                       <Grid ColumnDefinitions="2*,*" ColumnSpacing="24">
                         <StackPanel Spacing="14">
                           <StackPanel Spacing="3"><TextBlock Text="键盘灯光" FontSize="19" FontWeight="SemiBold" /><TextBlock Text="{Binding BladeStatusText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14"><Slider Minimum="0" Maximum="100" StepFrequency="6.25" Value="{Binding BladeBrightnessPercent, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeBrightness}" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding BladeBrightnessSelectionText}" FontFamily="Cascadia Mono" MinWidth="42" VerticalAlignment="Center" /><Button Grid.Column="2" Content="应用亮度" Click="ApplyBrightnessClick" IsEnabled="{Binding CanSetBladeBrightness}" Style="{StaticResource PrimaryButtonStyle}" /></Grid>
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14"><Slider Minimum="0" Maximum="100" StepFrequency="6.25" Value="{Binding BladeBrightnessPercent, Mode=TwoWay}" ValueChanged="AutoApplyBrightnessValueChanged" IsEnabled="{Binding CanSetBladeBrightness}" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding BladeBrightnessSelectionText}" FontFamily="Cascadia Mono" MinWidth="42" VerticalAlignment="Center" /></Grid>
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                            <ComboBox ItemsSource="{Binding BladeLightingModeOptions}" SelectedIndex="{Binding BladeLightingModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" AutomationProperties.Name="键盘灯效" />
-                            <Button Grid.Column="1" Click="ApplyLightingEffectClick" IsEnabled="{Binding CanSetBladeLighting}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用键盘灯效" AutomationProperties.Name="应用键盘灯效"><SymbolIcon Symbol="Accept" /></Button>
+                            <ComboBox Grid.ColumnSpan="2" Tag="lighting" ItemsSource="{Binding BladeLightingModeOptions}" SelectedIndex="{Binding BladeLightingModeIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" AutomationProperties.Name="键盘灯效" />
                           </Grid>
-                          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                            <DropDownButton IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTipService.ToolTip="选择静态或呼吸颜色" AutomationProperties.Name="灯效颜色">
+                          <Grid Height="34" ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <DropDownButton Visibility="{Binding BladeLightingColorVisibility}" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTipService.ToolTip="选择灯效颜色" AutomationProperties.Name="灯效颜色">
                               <StackPanel Orientation="Horizontal" Spacing="7"><Border Width="18" Height="18" CornerRadius="3" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"><Border.Background><SolidColorBrush Color="{Binding BladeLightingColor}" /></Border.Background></Border><TextBlock Text="颜色" /></StackPanel>
                               <DropDownButton.Flyout><Flyout><ColorPicker Color="{Binding BladeLightingColor, Mode=TwoWay}" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" /></Flyout></DropDownButton.Flyout>
                             </DropDownButton>
-                            <ComboBox Grid.Column="1" ItemsSource="{Binding BladeWaveDirectionOptions}" SelectedIndex="{Binding BladeWaveDirectionIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" AutomationProperties.Name="波浪方向" />
+                            <DropDownButton Grid.Column="1" Visibility="{Binding BladeLightingSecondColorVisibility}" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTipService.ToolTip="选择灯效颜色 2" AutomationProperties.Name="灯效颜色 2">
+                              <StackPanel Orientation="Horizontal" Spacing="7"><Border Width="18" Height="18" CornerRadius="3" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"><Border.Background><SolidColorBrush Color="{Binding BladeLightingSecondColor}" /></Border.Background></Border><TextBlock Text="颜色 2" /></StackPanel>
+                              <DropDownButton.Flyout><Flyout><ColorPicker Color="{Binding BladeLightingSecondColor, Mode=TwoWay}" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" /></Flyout></DropDownButton.Flyout>
+                            </DropDownButton>
+                            <ComboBox Grid.ColumnSpan="2" Tag="lighting" Visibility="{Binding BladeWaveDirectionVisibility}" ItemsSource="{Binding BladeWaveDirectionOptions}" SelectedIndex="{Binding BladeWaveDirectionIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" AutomationProperties.Name="波浪方向" />
                           </Grid>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="8"><TextBlock Text="机身 Logo" FontSize="19" FontWeight="SemiBold" /><TextBlock Text="{Binding BladeLogoText}" Foreground="{StaticResource AccentBrush}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding BladeLogoOptions}" SelectedIndex="{Binding BladeLogoIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeLogo}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyLogoClick" IsEnabled="{Binding CanSetBladeLogo}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用机身 Logo" AutomationProperties.Name="应用机身 Logo"><SymbolIcon Symbol="Accept" /></Button></Grid><TextBlock Text="当前会话" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="8"><TextBlock Text="机身 Logo" FontSize="19" FontWeight="SemiBold" /><TextBlock Text="{Binding BladeLogoText}" Foreground="{StaticResource AccentBrush}" /><ComboBox Tag="logo" ItemsSource="{Binding BladeLogoOptions}" SelectedIndex="{Binding BladeLogoIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLogo}" HorizontalAlignment="Stretch" /><TextBlock Text="当前会话" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                       </Grid>
                     </StackPanel>
                   </Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="8"><TextBlock Text="显示" FontSize="19" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock Text="{Binding InternalDisplayResolutionText}" FontFamily="Cascadia Mono" /><TextBlock Text="{Binding InternalDisplayRefreshRateText}" FontFamily="Cascadia Mono" Foreground="{StaticResource GpuBrush}" /></StackPanel><Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="8" MinWidth="190"><ComboBox ItemsSource="{Binding InternalDisplayRefreshRates}" SelectedValue="{Binding InternalDisplayRefreshRateHertz, Mode=TwoWay}" IsEnabled="{Binding CanSetInternalDisplayRefreshRate}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyRefreshRateClick" IsEnabled="{Binding CanSetInternalDisplayRefreshRate}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用刷新率" AutomationProperties.Name="应用刷新率"><SymbolIcon Symbol="Accept" /></Button></Grid></Grid><TextBlock Text="当前刷新率由 Windows 本机显示控制器读取。" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel></Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock Text="触控板" FontSize="19" FontWeight="SemiBold" /><TextBlock Text="{Binding BladeTouchpadText}" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="使用 Windows 精确式触控板系统开关。" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel><Button Grid.Column="1" Content="切换" Click="ToggleTouchpadClick" IsEnabled="{Binding CanSetBladeTouchpad}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" /></Grid></Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="显示" FontSize="19" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock Text="{Binding InternalDisplayResolutionText}" FontFamily="Cascadia Mono" /><TextBlock Text="{Binding InternalDisplayRefreshRateText}" FontFamily="Cascadia Mono" Foreground="{StaticResource GpuBrush}" /></StackPanel><Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="8" MinWidth="190"><ComboBox ItemsSource="{Binding InternalDisplayRefreshRates}" SelectedValue="{Binding InternalDisplayRefreshRateHertz, Mode=TwoWay}" IsEnabled="{Binding CanSetInternalDisplayRefreshRate}" HorizontalAlignment="Stretch" /><Button Grid.Column="1" Click="ApplyRefreshRateClick" IsEnabled="{Binding CanSetInternalDisplayRefreshRate}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用刷新率" AutomationProperties.Name="应用刷新率"><SymbolIcon Symbol="Accept" /></Button></Grid></Grid><TextBlock Text="当前刷新率由 Windows 本机显示控制器读取。" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel></Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <TextBlock Text="平台状态" FontSize="19" FontWeight="SemiBold" />
+                      <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="12">
+                        <StackPanel Spacing="6"><TextBlock Text="Gaming Mode" Style="{StaticResource MetricLabelStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ToggleSwitch IsOn="{Binding BladeGameModeEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeGamingMode}" OnContent="开启" OffContent="关闭" AutomationProperties.Name="Gaming Mode" /><Button Grid.Column="1" Click="ApplyGamingModeClick" IsEnabled="{Binding CanApplyBladeGamingMode}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 Gaming Mode" AutomationProperties.Name="应用 Gaming Mode"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="启动动画" Style="{StaticResource MetricLabelStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ToggleSwitch IsOn="{Binding BladeStartupAnimationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeStartupAnimation}" OnContent="开启" OffContent="关闭" AutomationProperties.Name="启动动画" /><Button Grid.Column="1" Click="ApplyStartupAnimationClick" IsEnabled="{Binding CanApplyBladeStartupAnimation}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用启动动画" AutomationProperties.Name="应用启动动画"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="3"><TextBlock Text="面板模式" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeNativeDisplayModeText}" FontFamily="Cascadia Mono" /></StackPanel>
+                        <StackPanel Grid.Row="1" Spacing="3"><TextBlock Text="Local Dimming" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeLocalDimmingText}" FontFamily="Cascadia Mono" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6"><TextBlock Text="一次性充满" Style="{StaticResource MetricLabelStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ToggleSwitch IsOn="{Binding BladeOneTimeFullChargeEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeOneTimeFullCharge}" OnContent="开启" OffContent="关闭" AutomationProperties.Name="一次性充满" /><Button Grid.Column="1" Click="ApplyOneTimeFullChargeClick" IsEnabled="{Binding CanApplyBladeOneTimeFullCharge}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用一次性充满" AutomationProperties.Name="应用一次性充满"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="2" Spacing="3"><TextBlock Text="SKU Flags" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeSkuHardwareText}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
+                      </Grid>
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
                 <StackPanel x:Name="ViperDevicePanel" Visibility="Collapsed" Spacing="16">
                   <TextBlock Text="{Binding ViperDeviceName}" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="状态、DPI 与轮询率、电源。" Foreground="{StaticResource MutedBrush}" />
-                  <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="14"><Border Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="8"><TextBlock Text="电量" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperBatteryText}" Style="{StaticResource MetricValueStyle}" /><TextBlock Text="只读" FontFamily="Cascadia Mono" FontSize="9" Foreground="{StaticResource MutedBrush}" /></StackPanel></Border><Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="8"><TextBlock Text="轮询率" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperPollingRateText}" Style="{StaticResource MetricValueStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"><ComboBox SelectedIndex="{Binding ViperPollingRateIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetViperPollingRate}"><ComboBoxItem Content="125 Hz" /><ComboBoxItem Content="500 Hz" /><ComboBoxItem Content="1000 Hz" /></ComboBox><Button Grid.Column="1" Click="ApplyPollingRateClick" IsEnabled="{Binding CanSetViperPollingRate}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用轮询率" AutomationProperties.Name="应用轮询率"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border><Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="8"><TextBlock Text="当前 DPI" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperDpiText}" Style="{StaticResource MetricValueStyle}" /><Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10"><NumberBox Header="X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding ViperDpiXValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpi}" /><NumberBox Grid.Column="1" Header="Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding ViperDpiYValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpi}" /><Button Grid.Column="2" Click="ApplyDpiClick" IsEnabled="{Binding CanSetViperDpi}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 DPI" AutomationProperties.Name="应用 DPI" VerticalAlignment="Bottom"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border><Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="8"><TextBlock Text="休眠时间" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperIdleText}" Style="{StaticResource MetricValueStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"><NumberBox Header="分钟" Minimum="1" Maximum="15" SmallChange="1" SpinButtonPlacementMode="Compact" Value="{Binding ViperIdleMinutesValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperIdle}" /><Button Grid.Column="1" Click="ApplyIdleClick" IsEnabled="{Binding CanSetViperIdle}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用休眠时间" AutomationProperties.Name="应用休眠时间"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border></Grid>
-                  <Border Style="{StaticResource CardStyle}" Padding="20">
+                  <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="14"><Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="电量" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperBatteryText}" Style="{StaticResource MetricValueStyle}" /><TextBlock Text="只读" FontFamily="Cascadia Mono" FontSize="9" Foreground="{StaticResource MutedBrush}" /></StackPanel></Border><Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="轮询率" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperPollingRateText}" Style="{StaticResource MetricValueStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"><ComboBox SelectedIndex="{Binding ViperPollingRateIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetViperPollingRate}"><ComboBoxItem Content="125 Hz" /><ComboBoxItem Content="500 Hz" /><ComboBoxItem Content="1000 Hz" /></ComboBox><Button Grid.Column="1" Click="ApplyPollingRateClick" IsEnabled="{Binding CanSetViperPollingRate}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用轮询率" AutomationProperties.Name="应用轮询率"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border><Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="当前 DPI" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperDpiText}" Style="{StaticResource MetricValueStyle}" /><Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10"><NumberBox Header="X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding ViperDpiXValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpi}" /><NumberBox Grid.Column="1" Header="Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding ViperDpiYValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpi}" /><Button Grid.Column="2" Click="ApplyDpiClick" IsEnabled="{Binding CanSetViperDpi}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用 DPI" AutomationProperties.Name="应用 DPI" VerticalAlignment="Bottom"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border><Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="休眠时间" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperIdleText}" Style="{StaticResource MetricValueStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"><NumberBox Header="分钟" Minimum="1" Maximum="15" SmallChange="1" SpinButtonPlacementMode="Compact" Value="{Binding ViperIdleMinutesValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperIdle}" /><Button Grid.Column="1" Click="ApplyIdleClick" IsEnabled="{Binding CanSetViperIdle}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用休眠时间" AutomationProperties.Name="应用休眠时间"><SymbolIcon Symbol="Accept" /></Button></Grid></StackPanel></Border></Grid>
+                  <Border Style="{StaticResource CardStyle}" Padding="16"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock Text="低电量提醒" FontSize="19" FontWeight="SemiBold" /><TextBlock Text="{Binding ViperLowBatteryThresholdText}" FontFamily="Cascadia Mono" Foreground="{StaticResource AccentBrush}" /></StackPanel><TextBlock Grid.Column="1" Text="只读" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" /></Grid></Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
                       <StackPanel Spacing="3">
                         <TextBlock Text="DPI 档位" FontSize="19" FontWeight="SemiBold" />
@@ -197,18 +204,61 @@
                       </ContentControl>
                       <TextBlock Text="整表提交 · 100–30000 · 步进 50 · 当前会话" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     </StackPanel>
-                  </Border><TextBlock Text="{Binding ViperStatusText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding DeviceTelemetryTimeText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                        <StackPanel Spacing="3"><TextBlock Text="板载映射" FontSize="19" FontWeight="SemiBold" /><TextBlock Text="{Binding ViperButtonMappingsText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <TextBlock Text="映射层" Style="{StaticResource MetricLabelStyle}" />
+                          <ComboBox Width="152" ItemsSource="{Binding ViperButtonMappingLayerOptions}" SelectedIndex="{Binding ViperButtonMappingLayerIndex, Mode=TwoWay}" AutomationProperties.Name="板载映射层" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="读取" Click="ReadViperButtonMappingsClick" IsEnabled="{Binding CanReadViperButtonMappings}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>
+                      <ContentControl IsEnabled="{Binding CanSetViperButtonMappings}" Padding="0">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
+                          <Grid MinWidth="900" RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid ColumnDefinitions="150,250,180,260,Auto" ColumnSpacing="10">
+                              <TextBlock Text="鼠标控制" Style="{StaticResource MetricLabelStyle}" />
+                              <TextBlock Grid.Column="1" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
+                              <TextBlock Grid.Column="2" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
+                              <TextBlock Grid.Column="3" Text="参数" Style="{StaticResource MetricLabelStyle}" />
+                            </Grid>
+                            <ItemsRepeater Grid.Row="1" ItemsSource="{Binding VisibleViperButtonAssignments}">
+                              <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
+                              <ItemsRepeater.ItemTemplate>
+                                <DataTemplate>
+                                  <Grid ColumnDefinitions="150,250,180,260,Auto" ColumnSpacing="10" MinHeight="58">
+                                    <TextBlock Text="{Binding ButtonText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" TextWrapping="Wrap" ToolTipService.ToolTip="{Binding CurrentActionText}" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="2" ItemsSource="{Binding ActionOptions}" SelectedIndex="{Binding SelectedActionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" VerticalAlignment="Center" AutomationProperties.Name="目标板载映射动作" />
+                                    <Grid Grid.Column="3" ColumnDefinitions="*,*" ColumnSpacing="8" Visibility="{Binding KeyboardParameterVisibility}">
+                                      <NumberBox Header="修饰键 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Value="{Binding KeyboardModifierValue, Mode=TwoWay}" AutomationProperties.Name="键盘修饰键码" />
+                                      <NumberBox Grid.Column="1" Header="Usage 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Value="{Binding KeyboardUsageValue, Mode=TwoWay}" AutomationProperties.Name="键盘 HID Usage" />
+                                    </Grid>
+                                    <TextBlock Grid.Column="3" Text="固定双击" Visibility="{Binding DoubleClickParameterVisibility}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                    <Button Grid.Column="4" Tag="{Binding}" Click="ApplyViperButtonMappingClick" IsEnabled="{Binding CanApply}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="应用板载映射" AutomationProperties.Name="应用板载映射" VerticalAlignment="Center"><SymbolIcon Symbol="Accept" /></Button>
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                          </Grid>
+                        </ScrollViewer>
+                      </ContentControl>
+                    </StackPanel>
+                  </Border>
+                  <TextBlock Text="{Binding ViperStatusText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding DeviceTelemetryTimeText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </StackPanel>
               </StackPanel>
             </ScrollViewer>
-            <ScrollViewer x:Name="ProfilesPage" Visibility="Collapsed">
-              <StackPanel Padding="24,24,32,48" Spacing="16">
+            <ScrollViewer x:Name="ProfilesPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <TextBlock Text="配置" Style="{StaticResource PageTitleStyle}" />
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                   <TextBlock Text="本地配置、应用绑定以及当前用户的启动设置。" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"><Button Content="导入" Click="ImportProfilesClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /><Button Content="导出" Click="ExportProfilesClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /></StackPanel>
                 </Grid>
-                <Border Style="{StaticResource CardStyle}" Padding="20">
+                <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="14">
                     <TextBlock Text="活动配置" FontSize="18" FontWeight="SemiBold" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
@@ -225,7 +275,7 @@
                     <TextBlock Text="前台应用或电源状态变化时会自动应用已验证的设备设置。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
                   </StackPanel>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Padding="20">
+                <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="应用绑定" FontSize="18" FontWeight="SemiBold" /><TextBlock Text="应用进入前台时自动切换到当前配置。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button Grid.Column="1" Content="添加应用" Click="BindApplicationClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" /></Grid>
                     <ItemsRepeater ItemsSource="{Binding ApplicationBindings}">
@@ -234,7 +284,7 @@
                     </ItemsRepeater>
                   </StackPanel>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Padding="20">
+                <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4"><TextBlock Text="开机启动" FontSize="18" FontWeight="SemiBold" /><TextBlock Text="仅当前用户，不需要管理员权限。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                     <ToggleSwitch Grid.Column="1" IsOn="{Binding IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding CanSetStartup}" OnContent="开启" OffContent="关闭" />
@@ -242,7 +292,7 @@
                 </Border>
               </StackPanel>
             </ScrollViewer>
-            <ScrollViewer x:Name="DiagnosticsPage" Visibility="Collapsed"><StackPanel Padding="24,24,32,48" Spacing="16"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="5"><TextBlock Text="诊断" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="检查设备通道、协议读回和最近一次查询结果。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button Grid.Column="1" Content="重新检查" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" /></Grid><InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" /><Border Style="{StaticResource CardStyle}" Padding="20"><StackPanel Spacing="13"><TextBlock Text="查询记录" FontSize="19" FontWeight="SemiBold" /><ItemsRepeater ItemsSource="{Binding Diagnostics}"><ItemsRepeater.Layout><StackLayout Spacing="10" /></ItemsRepeater.Layout><ItemsRepeater.ItemTemplate><DataTemplate><Grid ColumnDefinitions="4,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="6"><Border Grid.RowSpan="2" Background="{Binding StatusBrush}" CornerRadius="2" /><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Text="{Binding Device}" FontWeight="SemiBold" /><TextBlock Text="{Binding Capability}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><TextBlock Grid.Column="2" Text="{Binding Status}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{Binding StatusBrush}" /><TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Detail}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" /></Grid></DataTemplate></ItemsRepeater.ItemTemplate></ItemsRepeater></StackPanel></Border><TextBlock Text="未通过读回的能力始终保持禁用；OpenSynapse 不会结束 Synapse 进程。" Foreground="{StaticResource MutedBrush}" /></StackPanel></ScrollViewer>
+            <ScrollViewer x:Name="DiagnosticsPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled"><StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="5"><TextBlock Text="诊断" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="检查设备通道、协议读回和最近一次查询结果。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button Grid.Column="1" Content="重新检查" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" /></Grid><InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" /><Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="13"><TextBlock Text="查询记录" FontSize="19" FontWeight="SemiBold" /><ItemsRepeater ItemsSource="{Binding Diagnostics}"><ItemsRepeater.Layout><StackLayout Spacing="10" /></ItemsRepeater.Layout><ItemsRepeater.ItemTemplate><DataTemplate><Grid ColumnDefinitions="4,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="6"><Border Grid.RowSpan="2" Background="{Binding StatusBrush}" CornerRadius="2" /><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Text="{Binding Device}" FontWeight="SemiBold" /><TextBlock Text="{Binding Capability}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><TextBlock Grid.Column="2" Text="{Binding Status}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{Binding StatusBrush}" /><TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Detail}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" /></Grid></DataTemplate></ItemsRepeater.ItemTemplate></ItemsRepeater></StackPanel></Border><TextBlock Text="未通过读回的能力始终保持禁用；OpenSynapse 不会结束 Synapse 进程。" Foreground="{StaticResource MutedBrush}" /></StackPanel></ScrollViewer>
         </Grid>
       </NavigationView.Content>
     </NavigationView>

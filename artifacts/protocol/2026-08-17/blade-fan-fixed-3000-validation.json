@@ -1,0 +1,24 @@
+{
+  "StartedAt": "2026-08-17T09:10:17.7843793+00:00",
+  "CompletedAt": "2026-08-17T09:10:18.9809147+00:00",
+  "Device": "1532:02C6",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "TargetRpm": 3000,
+  "HoldSeconds": 30,
+  "Original": {
+    "Mode": 0,
+    "TargetRpm": 2000
+  },
+  "SameValueReadback": {
+    "Mode": 0,
+    "TargetRpm": 2000
+  },
+  "TargetReadback": null,
+  "RestorationReadback": {
+    "Mode": 0,
+    "TargetRpm": 2000
+  },
+  "OperationError": "\u9A8C\u8BC1\u76EE\u6807\u5FC5\u987B\u4E0E\u539F\u503C\u76F8\u5DEE 100 RPM\u3002 (Parameter \u0027targetRpm\u0027)",
+  "RestorationError": null
+}

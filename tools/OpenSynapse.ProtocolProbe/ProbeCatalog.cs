@@ -8,6 +8,14 @@ public static class ProbeCatalog
     {
         new(0x02C6, "blade.keyboard-brightness", ProbeEvidenceLevel.Verified,
             0xFF, 0x02, 0x0E, 0x84, new byte[] { 0x01, 0x00 }, 1),
+        FromRequest(0x02C6, "blade.native-display-mode", ProbeEvidenceLevel.SourceBacked,
+            BladeProduct710Protocol.CreateGetNativeDisplayModeRequest(), 2, 1, true),
+        FromRequest(0x02C6, "blade.sku-hardware-configuration", ProbeEvidenceLevel.SourceBacked,
+            BladeProduct710Protocol.CreateGetSkuHardwareConfigurationRequest(), 2, 1, true),
+        FromRequest(0x02C6, "blade.game-mode", ProbeEvidenceLevel.SourceBacked,
+            BladeSynapsePolicyProtocol.CreateGetGameModeRequest(), 2, 0),
+        FromRequest(0x02C6, "blade.startup-animation", ProbeEvidenceLevel.SourceBacked,
+            BladeSynapsePolicyProtocol.CreateGetStartupAnimationRequest(), 2, 1),
 
         new(0x02C6, "blade.thermal-zone-1", ProbeEvidenceLevel.Verified,
             0x1F, 0x04, 0x0D, 0x82, new byte[] { 0x00, 0x01, 0x00, 0x00 }, 2),
@@ -39,15 +47,6 @@ public static class ProbeCatalog
             0xFF, 0x03, 0x03, 0x80, new byte[] { 0x01, 0x04, 0x00 }, 2),
         new(0x02C6, "blade.logo-mode", ProbeEvidenceLevel.SourceBacked,
             0xFF, 0x03, 0x03, 0x82, new byte[] { 0x01, 0x04, 0x00 }, 2),
-        FromRequest(0x02C6, "blade.battery-level", ProbeEvidenceLevel.SourceBacked,
-            BladeProduct710Protocol.CreateGetBatteryLevelRequest(), 2, 1),
-        FromRequest(0x02C6, "blade.charging-status", ProbeEvidenceLevel.SourceBacked,
-            BladeProduct710Protocol.CreateGetChargingStatusRequest(), 2, 1),
-        FromRequest(0x02C6, "blade.auto-sleep", ProbeEvidenceLevel.SourceBacked,
-            BladeProduct710Protocol.CreateGetAutoSleepRequest(), 2, 1),
-        FromRequest(0x02C6, "blade.time-to-sleep", ProbeEvidenceLevel.SourceBacked,
-            BladeProduct710Protocol.CreateGetTimeToSleepRequest(), 2, 0),
-
         new(0x00B8, "viper.battery", ProbeEvidenceLevel.Verified,
             0x1F, 0x02, 0x07, 0x80, Array.Empty<byte>(), 60),
         new(0x00B8, "viper.polling-rate", ProbeEvidenceLevel.Verified,
@@ -73,7 +72,9 @@ public static class ProbeCatalog
         ProbeEvidenceLevel evidence,
         byte[] request,
         int waitMilliseconds,
-        int argumentLength) =>
+        int argumentLength,
+        bool allowRemainingPacketsMismatch = false) =>
         new(productId, name, evidence, request[2], request[6], request[7], request[8],
-            request.AsMemory(RazerFeatureReport.ArgumentsOffset, argumentLength), waitMilliseconds);
+            request.AsMemory(RazerFeatureReport.ArgumentsOffset, argumentLength), waitMilliseconds,
+            allowRemainingPacketsMismatch);
 }

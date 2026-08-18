@@ -1,0 +1,70 @@
+<Window
+    x:Class="OpenSynapse.App.TrayMenuWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="OpenSynapse">
+  <Grid x:Name="MenuAnchor" Width="2" Height="2" Background="Transparent">
+    <Grid.ContextFlyout>
+      <MenuFlyout
+          x:Name="TrayMenuFlyout"
+          Placement="TopEdgeAlignedRight"
+          ShouldConstrainToRootBounds="False"
+          Closed="TrayMenuClosed">
+        <MenuFlyoutItem
+            Text="打开主面板"
+            MinWidth="176"
+            Height="34"
+            FontFamily="{StaticResource AppFontFamily}"
+            FontSize="14"
+            Click="OpenMainPanelClick"
+            AutomationProperties.Name="打开 OpenSynapse 主面板">
+          <MenuFlyoutItem.Icon><SymbolIcon Symbol="Home" /></MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
+        <MenuFlyoutItem
+            Text="设备控制"
+            Height="34"
+            FontFamily="{StaticResource AppFontFamily}"
+            FontSize="14"
+            Tag="devices"
+            Click="NavigateClick"
+            AutomationProperties.Name="打开设备控制">
+          <MenuFlyoutItem.Icon><SymbolIcon Symbol="AllApps" /></MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
+        <MenuFlyoutItem
+            Text="配置"
+            Height="34"
+            FontFamily="{StaticResource AppFontFamily}"
+            FontSize="14"
+            Tag="profiles"
+            Click="NavigateClick"
+            AutomationProperties.Name="打开配置">
+          <MenuFlyoutItem.Icon><SymbolIcon Symbol="Library" /></MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
+        <MenuFlyoutSeparator />
+        <ToggleMenuFlyoutItem
+            Text="开机启动"
+            Height="34"
+            FontFamily="{StaticResource AppFontFamily}"
+            FontSize="14"
+            IsChecked="{Binding IsStartupEnabled, Mode=OneWay}"
+            IsEnabled="{Binding CanSetStartup}"
+            Click="StartupClick"
+            AutomationProperties.Name="设置开机启动">
+          <ToggleMenuFlyoutItem.Icon><SymbolIcon Symbol="Play" /></ToggleMenuFlyoutItem.Icon>
+        </ToggleMenuFlyoutItem>
+        <MenuFlyoutSeparator />
+        <MenuFlyoutItem
+            Text="退出"
+            Height="34"
+            FontFamily="{StaticResource AppFontFamily}"
+            FontSize="14"
+            Click="ExitClick"
+            AutomationProperties.Name="退出 OpenSynapse">
+          <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xE8BB;" FontFamily="Segoe Fluent Icons" />
+          </MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
+      </MenuFlyout>
+    </Grid.ContextFlyout>
+  </Grid>
+</Window>

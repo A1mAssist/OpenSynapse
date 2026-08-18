@@ -81,6 +81,24 @@ public sealed class BladeMatrixFramePumpTests
     }
 
     [Fact]
+    public async Task ReusesPersistentFeatureSessionWhenAvailable()
+    {
+        var transport = new SessionFrameTransport();
+        var pump = new BladeMatrixFramePump(
+            transport,
+            "blade",
+            _ => Task.CompletedTask);
+
+        Assert.True(pump.TryPublish(CreateFrame(9)));
+        await pump.FirstFrameApplied.WaitAsync(TimeSpan.FromSeconds(2));
+        await pump.StopAsync();
+
+        Assert.Equal(BladeLightingProtocol.Rows + 1, transport.Session.Reports.Count);
+        Assert.Equal(1, transport.Session.BatchCount);
+        Assert.True(transport.Session.IsDisposed);
+    }
+
+    [Fact]
     public async Task RejectsIncompleteFrameBeforeStartingHardwareWork()
     {
         var transport = new FrameTransport();
@@ -215,6 +233,76 @@ public sealed class BladeMatrixFramePumpTests
             while (RowMarkers.Count < count)
             {
                 await Task.Delay(5, timeout.Token);
+            }
+        }
+    }
+
+    private sealed class SessionFrameTransport : IRazerFeatureTransport
+    {
+        public RecordingSession Session { get; } = new();
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new InvalidOperationException("矩阵泵不应回退到逐帧 QueryAsync。");
+
+        public Task<IRazerFeatureSession> OpenSessionAsync(
+            string devicePath,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IRazerFeatureSession>(Session);
+
+        public sealed class RecordingSession : IRazerFeatureSession
+        {
+            public List<byte[]> Reports { get; } = [];
+            public int BatchCount { get; private set; }
+            public bool IsDisposed { get; private set; }
+
+            public byte NextTransactionId() => 0;
+
+            public Task SendAsync(
+                ReadOnlyMemory<byte> request,
+                CancellationToken cancellationToken)
+            {
+                Reports.Add(request.ToArray());
+                return Task.CompletedTask;
+            }
+
+            public Task SendBatchAsync(
+                IReadOnlyList<byte[]> requests,
+                TimeSpan rowDelay,
+                CancellationToken cancellationToken)
+            {
+                BatchCount++;
+                foreach (var request in requests)
+                {
+                    Reports.Add(request.ToArray());
+                }
+                return Task.CompletedTask;
+            }
+
+            public Task<byte[]> QueryAsync(
+                byte transactionId,
+                byte dataSize,
+                byte commandClass,
+                byte commandId,
+                ReadOnlyMemory<byte> arguments,
+                TimeSpan deviceWait,
+                byte responseReportId,
+                CancellationToken cancellationToken,
+                bool allowRemainingPacketsMismatch = false) =>
+                throw new InvalidOperationException("矩阵泵不应调用会话 QueryAsync。");
+
+            public ValueTask DisposeAsync()
+            {
+                IsDisposed = true;
+                return ValueTask.CompletedTask;
             }
         }
     }

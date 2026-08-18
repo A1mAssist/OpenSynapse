@@ -93,6 +93,15 @@ public sealed class BladeFanValidationSafetyTests
         }
     }
 
+    [Fact]
+    public void AllowsAutomaticAdjacentTargetSelection()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"blade-fan-{Guid.NewGuid():N}.json");
+        var options = BladeFanValidation.Options.Parse([
+            "--blade-fan-fixed", "--target-rpm", "auto", "--hold-seconds", "5", "--output", path]);
+        Assert.Null(options.TargetRpm);
+    }
+
     private sealed class FakeReader(BladeFanControlState initial) : IRazerDeviceTelemetryReader
     {
         public BladeFanControlState State { get; private set; } = initial;

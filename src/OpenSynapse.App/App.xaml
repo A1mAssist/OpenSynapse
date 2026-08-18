@@ -10,6 +10,7 @@
         <controls:XamlControlsResources />
       </ResourceDictionary.MergedDictionaries>
 
+      <FontFamily x:Key="AppFontFamily">ms-appx:///Assets/Fonts/TitilliumWeb-Regular.ttf#Titillium Web</FontFamily>
       <SolidColorBrush x:Key="CanvasBrush" Color="#171717" />
       <SolidColorBrush x:Key="SurfaceBrush" Color="#202020" />
       <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#292929" />
@@ -28,17 +29,18 @@
       <SolidColorBrush x:Key="InfoBrush" Color="#59C7D9" />
 
       <Style x:Key="PageTitleStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="30" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource DataBrush}" />
         <Setter Property="CharacterSpacing" Value="0" />
       </Style>
       <Style x:Key="MetricLabelStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-        <Setter Property="CharacterSpacing" Value="70" />
+        <Setter Property="CharacterSpacing" Value="0" />
       </Style>
       <Style x:Key="MetricValueStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Cascadia Mono" />

@@ -120,7 +120,14 @@ internal static class Program
                     "blade.current-fan-speed-gpu" => BladeThermalProtocol.ParseCurrentSpeedRpm(response, BladeThermalProtocol.GpuFanId).ToString(),
                     "blade.advanced-fan-cpu" => BladeThermalProtocol.ParseAdvancedFanMode(response, BladeThermalProtocol.CpuFanId).ToString(),
                     "blade.advanced-fan-gpu" => BladeThermalProtocol.ParseAdvancedFanMode(response, BladeThermalProtocol.GpuFanId).ToString(),
-                    "blade.battery-level" => BladeProduct710Protocol.ParseBatteryPercent(response).ToString(),
+                    "blade.native-display-mode" => BladeProduct710Protocol.ParseNativeDisplayMode(response).ToString(),
+                    "blade.sku-hardware-configuration" => FormatBladeSku(
+                        BladeProduct710Protocol.ParseSkuHardwareConfiguration(response)),
+                    "blade.game-mode" => BladeSynapsePolicyProtocol.ParseGameMode(response).ToString(),
+                    "blade.startup-animation" =>
+                        BladeSynapsePolicyProtocol.ParseStartupAnimation(response).ToString(),
+                    "blade.max-fan-speed-mode" => FormatBladePowerMode(
+                        BladeMaxFanProtocol.ParsePowerModeMask(response)),
                     "viper.low-battery-threshold" => ViperLowBatteryThresholdProtocol.Format(
                         ViperLowBatteryThresholdProtocol.ParseRaw(response)),
                     "viper.dpi-stages" => ViperDpiStagesProtocol.Format(
@@ -168,4 +175,13 @@ internal static class Program
 
         return results.Count == 0 ? 2 : results.Any(result => result.Error is not null) ? 1 : 0;
     }
+
+    private static string FormatBladeSku(BladeSkuHardwareConfiguration configuration) =>
+        $"dds={configuration.Dds},miniLedResolution={configuration.MiniLedResolution}," +
+        $"illegalBatterySupport={configuration.IllegalBatterySupport},raw=0x{configuration.Raw:X2}";
+
+    private static string FormatBladePowerMode(byte mask) =>
+        $"maxFan={(mask & BladeMaxFanProtocol.MaxFanBit) != 0}," +
+        $"oneTimeFullCharge={(mask & BladeMaxFanProtocol.OneTimeFullChargeBit) != 0}," +
+        $"localDimming={(mask & BladeMaxFanProtocol.LocalDimmingBit) != 0},raw=0x{mask:X2}";
 }

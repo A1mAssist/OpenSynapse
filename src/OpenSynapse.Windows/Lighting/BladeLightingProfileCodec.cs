@@ -13,9 +13,10 @@ internal static class BladeLightingProfileCodec
         var parameters = profile.Parameters ?? new Dictionary<string, string>();
         string[] allowed = mode switch
         {
-            "static" or "breathing" or "reactive" or "ripple" => ["color"],
-            "wave" => ["direction"],
-            "off" or "spectrum" or "fire" => [],
+            "static" or "breathing" or "reactive" or "ripple" or "starlight" => ["color"],
+            "tidal" => ["color", "color2"],
+            "wave" or "wheel" => ["direction"],
+            "off" or "spectrum" or "fire" or "audiometer" or "ambient" => [],
             _ => throw new InvalidOperationException($"不支持的键盘灯效：{profile.Effect}。"),
         };
         if (parameters.Keys.Any(key => !allowed.Contains(key, StringComparer.OrdinalIgnoreCase)))
@@ -24,6 +25,9 @@ internal static class BladeLightingProfileCodec
         }
 
         var color = parameters.TryGetValue("color", out var hex) ? ParseColor(hex) : default;
+        var secondColor = parameters.TryGetValue("color2", out var secondHex)
+            ? ParseColor(secondHex)
+            : default;
         var direction = ParseDirection(parameters);
         return new BladeLightingEffect(mode switch
         {
@@ -34,8 +38,13 @@ internal static class BladeLightingProfileCodec
             "wave" => BladeLightingMode.Wave,
             "reactive" => BladeLightingMode.Reactive,
             "ripple" => BladeLightingMode.Ripple,
+            "audiometer" => BladeLightingMode.AudioMeter,
+            "ambient" => BladeLightingMode.Ambient,
+            "wheel" => BladeLightingMode.Wheel,
+            "starlight" => BladeLightingMode.Starlight,
+            "tidal" => BladeLightingMode.Tidal,
             _ => BladeLightingMode.Fire,
-        }, color, direction);
+        }, color, direction, secondColor);
     }
 
     internal static LightingProfile Create(BladeLightingEffect effect)
@@ -43,12 +52,18 @@ internal static class BladeLightingProfileCodec
         ArgumentNullException.ThrowIfNull(effect);
         var profile = new LightingProfile { Effect = effect.Mode.ToString().ToLowerInvariant() };
         if (effect.Mode is BladeLightingMode.Static or BladeLightingMode.Breathing or
-            BladeLightingMode.Reactive or BladeLightingMode.Ripple)
+            BladeLightingMode.Reactive or BladeLightingMode.Ripple or BladeLightingMode.Starlight or
+            BladeLightingMode.Tidal)
         {
             profile.Parameters["color"] =
                 $"{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}";
+            if (effect.Mode == BladeLightingMode.Tidal)
+            {
+                profile.Parameters["color2"] =
+                    $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}";
+            }
         }
-        else if (effect.Mode == BladeLightingMode.Wave)
+        else if (effect.Mode is BladeLightingMode.Wave or BladeLightingMode.Wheel)
         {
             profile.Parameters["direction"] =
                 effect.Direction == BladeWaveDirection.Left ? "left" : "right";
@@ -61,7 +76,8 @@ internal static class BladeLightingProfileCodec
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         var effect = Parse(profile);
-        return $"{devicePath}\n{effect.Mode}\n{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}\n{effect.Direction}";
+        return $"{devicePath}\n{effect.Mode}\n{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}\n" +
+            $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}\n{effect.Direction}";
     }
 
     private static BladeWaveDirection ParseDirection(IReadOnlyDictionary<string, string> parameters)
@@ -75,7 +91,7 @@ internal static class BladeLightingProfileCodec
         {
             "left" => BladeWaveDirection.Left,
             "right" => BladeWaveDirection.Right,
-            _ => throw new InvalidOperationException("Wave 方向必须是 left 或 right。"),
+            _ => throw new InvalidOperationException("灯效方向必须是 left 或 right。"),
         };
     }
 

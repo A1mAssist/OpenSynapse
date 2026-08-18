@@ -16,12 +16,16 @@ public enum BladeLightingMode
     Ripple,
     AudioMeter,
     Ambient,
+    Wheel,
+    Starlight,
+    Tidal,
 }
 
 public sealed record BladeLightingEffect(
     BladeLightingMode Mode,
     RazerRgb Color = default,
-    BladeWaveDirection Direction = BladeWaveDirection.Right)
+    BladeWaveDirection Direction = BladeWaveDirection.Right,
+    RazerRgb SecondColor = default)
 {
     public static BladeLightingEffect Off { get; } = new(BladeLightingMode.Off);
     public static BladeLightingEffect Spectrum { get; } = new(BladeLightingMode.Spectrum);
@@ -42,15 +46,19 @@ public interface IBladeLightingController : IAsyncDisposable
 
 public sealed class BladeLightingController : IBladeLightingController
 {
-    private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(40);
+    // The matrix path is seven feature reports per frame. Keep only the latest
+    // frame if the device cannot sustain this target; never build a stale queue.
+    private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000d / 60d);
     private static readonly RazerRgb DefaultRestoreColor = new(0x99, 0xDD, 0x72);
     private static readonly TimeSpan MatrixWait = TimeSpan.FromMilliseconds(1);
 
     private readonly IRazerFeatureTransport _transport;
     private readonly RazerDeviceRegistry _registry;
     private readonly RazerRgb[] _restoreFrame;
+    private readonly BladeSoftwareModeCoordinator _modeCoordinator;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private SoftwareLightingRuntime? _runtime;
+    private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;
     private byte _transactionId;
     private int _disposed;
@@ -77,11 +85,21 @@ public sealed class BladeLightingController : IBladeLightingController
     internal BladeLightingController(
         IRazerFeatureTransport transport,
         RazerDeviceRegistry registry,
-        RazerRgb restoreColor)
+        BladeSoftwareModeCoordinator modeCoordinator)
+        : this(transport, registry, DefaultRestoreColor, modeCoordinator)
+    {
+    }
+
+    internal BladeLightingController(
+        IRazerFeatureTransport transport,
+        RazerDeviceRegistry registry,
+        RazerRgb restoreColor,
+        BladeSoftwareModeCoordinator? modeCoordinator = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _restoreFrame = QuickLightingEngine.RenderSolid(restoreColor);
+        _modeCoordinator = modeCoordinator ?? new BladeSoftwareModeCoordinator();
     }
 
     public async Task ApplyAsync(
@@ -101,9 +119,16 @@ public sealed class BladeLightingController : IBladeLightingController
             await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
             await StopCoreAsync().ConfigureAwait(false);
             _transactionId = 0;
-            await SendAsync(
+            _modeLease = await _modeCoordinator.AcquireAsync(
                 device.Id,
-                BladeDeviceModeProtocol.CreateSetSoftwareRequest(NextTransactionId()),
+                token => SendAsync(
+                    device.Id,
+                    BladeDeviceModeProtocol.CreateSetSoftwareRequest(NextTransactionId()),
+                    token),
+                () => SendAsync(
+                    device.Id,
+                    BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
+                    CancellationToken.None),
                 cancellationToken).ConfigureAwait(false);
             try
             {
@@ -175,10 +200,7 @@ public sealed class BladeLightingController : IBladeLightingController
             {
                 try
                 {
-                    await SendAsync(
-                        device.Id,
-                        BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
-                        CancellationToken.None).ConfigureAwait(false);
+                    await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -229,10 +251,27 @@ public sealed class BladeLightingController : IBladeLightingController
     {
         var runtime = _runtime;
         _runtime = null;
-        if (runtime is not null)
+        try
         {
-            await runtime.DisposeAsync().ConfigureAwait(false);
+            if (runtime is not null)
+            {
+                await runtime.DisposeAsync().ConfigureAwait(false);
+            }
         }
+        catch (Exception runtimeFailure)
+        {
+            try
+            {
+                await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception modeFailure)
+            {
+                throw new AggregateException(runtimeFailure, modeFailure);
+            }
+            throw;
+        }
+
+        await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
     private (DeviceDescriptor Device, RazerDeviceManifest Manifest) FindReadyBlade(
@@ -299,10 +338,7 @@ public sealed class BladeLightingController : IBladeLightingController
         {
             try
             {
-                await SendAsync(
-                    devicePath,
-                    BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
-                    cancellationToken).ConfigureAwait(false);
+                await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception modeFailure)
             {
@@ -311,10 +347,21 @@ public sealed class BladeLightingController : IBladeLightingController
             throw;
         }
 
-        await SendAsync(
-            devicePath,
+        await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    private async Task ReleaseModeLeaseAsync(CancellationToken cancellationToken)
+    {
+        var lease = Interlocked.Exchange(ref _modeLease, null);
+        if (lease is null)
+        {
+            return;
+        }
+
+        await lease.ReleaseAsync(() => SendAsync(
+            lease.DevicePath,
             BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken)).ConfigureAwait(false);
     }
 
     private Task<byte[]> SendAsync(
@@ -345,27 +392,48 @@ public sealed class BladeLightingController : IBladeLightingController
         {
             throw new ArgumentOutOfRangeException(nameof(effect));
         }
-        if (effect.Mode == BladeLightingMode.Wave && !Enum.IsDefined(effect.Direction))
+        if (effect.Mode is BladeLightingMode.Wave or BladeLightingMode.Wheel &&
+            !Enum.IsDefined(effect.Direction))
         {
             throw new ArgumentOutOfRangeException(nameof(effect));
         }
     }
 
-    private sealed class EffectFrameSource(BladeLightingEffect effect) : ISoftwareLightingFrameSource
+    private sealed class EffectFrameSource : ISoftwareLightingFrameSource
     {
+        private readonly BladeLightingEffect _effect;
+        private readonly StarlightLightingRenderer? _starlight;
+
+        public EffectFrameSource(BladeLightingEffect effect)
+        {
+            _effect = effect;
+            if (effect.Mode == BladeLightingMode.Starlight)
+            {
+                _starlight = new StarlightLightingRenderer(effect.Color, seed: 710);
+            }
+        }
+
         public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
             TimeSpan elapsed,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            IReadOnlyList<RazerRgb> frame = effect.Mode switch
+            IReadOnlyList<RazerRgb> frame = _effect.Mode switch
             {
                 BladeLightingMode.Off => QuickLightingEngine.RenderSolid(default),
-                BladeLightingMode.Static => QuickLightingEngine.RenderSolid(effect.Color),
-                BladeLightingMode.Breathing => QuickLightingEngine.RenderBreathing(elapsed, effect.Color),
+                BladeLightingMode.Static => QuickLightingEngine.RenderSolid(_effect.Color),
+                BladeLightingMode.Breathing => QuickLightingEngine.RenderBreathing(elapsed, _effect.Color),
                 BladeLightingMode.Spectrum => QuickLightingEngine.RenderSpectrum(elapsed),
-                BladeLightingMode.Wave => QuickLightingEngine.RenderWave(elapsed, effect.Direction),
-                BladeLightingMode.Fire => QuickLightingEngine.RenderFire(elapsed, 710),
+                BladeLightingMode.Wave => QuickLightingEngine.RenderWave(elapsed, _effect.Direction),
+                BladeLightingMode.Fire => QuickLightingEngine.RenderFire(elapsed, 100),
+                BladeLightingMode.Wheel => QuickLightingEngine.RenderWheel(
+                    elapsed,
+                    _effect.Direction == BladeWaveDirection.Left
+                        ? QuickLightingDirection.CounterClockwise
+                        : QuickLightingDirection.Clockwise),
+                BladeLightingMode.Starlight => _starlight!.Render(elapsed),
+                BladeLightingMode.Tidal => QuickLightingEngine.RenderTidal(
+                    elapsed, _effect.Color, _effect.SecondColor),
                 _ => throw new InvalidOperationException("不支持的 Blade 灯光模式。"),
             };
             return ValueTask.FromResult(frame);

@@ -41,7 +41,7 @@ public static class ViperProduct184Protocol
     {
         if (seconds is < 60 or > 900)
         {
-            throw new ArgumentOutOfRangeException(nameof(seconds), "Viper 休眠时间必须在 60 到 900 秒之间。" );
+            throw new ArgumentOutOfRangeException(nameof(seconds), "Viper 休眠时间必须在 60 到 900 秒之间。");
         }
 
         return Create(0x02, 0x07, 0x03, High(seconds), Low(seconds));

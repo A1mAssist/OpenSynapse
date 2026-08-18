@@ -1,78 +1,76 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Product 710 (Blade 16 2025) read-only power reports used by the local Synapse product code.
+/// Product 710 (Blade 16 2025) reports used by the local Synapse product code.
 /// </summary>
 public static class BladeProduct710Protocol
 {
     public const byte TransactionId = 0x1F;
-    public const byte WiredBatteryId = 0x00;
 
-    public static byte[] CreateGetBatteryLevelRequest() =>
-        RazerFeatureReport.CreateRequest(TransactionId, 0x02, 0x07, 0x80, new[] { WiredBatteryId });
+    public static byte[] CreateGetNativeDisplayModeRequest() =>
+        RazerFeatureReport.CreateRequest(TransactionId, 0x01, 0x0D, 0x8E, new byte[] { 0x00 });
 
-    public static byte[] CreateGetChargingStatusRequest() =>
-        RazerFeatureReport.CreateRequest(TransactionId, 0x02, 0x07, 0x84, new[] { WiredBatteryId });
-
-    public static byte[] CreateGetAutoSleepRequest() =>
-        RazerFeatureReport.CreateRequest(TransactionId, 0x02, 0x07, 0x88, new[] { WiredBatteryId });
-
-    public static byte[] CreateGetTimeToSleepRequest() =>
-        RazerFeatureReport.CreateRequest(TransactionId, 0x02, 0x07, 0x83, ReadOnlySpan<byte>.Empty);
-
-    public static int ParseBatteryPercent(ReadOnlySpan<byte> response) =>
-        ParseBatteryPercent(response, CreateGetBatteryLevelRequest());
-
-    internal static int ParseBatteryPercent(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
+    public static byte[] CreateSetNativeDisplayModeRequest(BladeNativeDisplayMode mode)
     {
-        ValidateBatteryObject(response, request);
-
-        var raw = response[RazerFeatureReport.ArgumentsOffset + 1];
-        return (int)Math.Floor(raw * 100d / 255d);
-    }
-
-    public static byte ParseChargingStatusRaw(ReadOnlySpan<byte> response) =>
-        ParseChargingStatusRaw(response, CreateGetChargingStatusRequest());
-
-    internal static byte ParseChargingStatusRaw(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
-    {
-        ValidateBatteryObject(response, request);
-        return response[RazerFeatureReport.ArgumentsOffset + 1];
-    }
-
-    public static byte ParseAutoSleepRaw(ReadOnlySpan<byte> response) =>
-        ParseAutoSleepRaw(response, CreateGetAutoSleepRequest());
-
-    internal static byte ParseAutoSleepRaw(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
-    {
-        ValidateBatteryObject(response, request);
-        return response[RazerFeatureReport.ArgumentsOffset + 1];
-    }
-
-    public static int ParseTimeToSleepSeconds(ReadOnlySpan<byte> response) =>
-        ParseTimeToSleepSeconds(response, CreateGetTimeToSleepRequest());
-
-    internal static int ParseTimeToSleepSeconds(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
-    {
-        Validate(response, request);
-        return (response[RazerFeatureReport.ArgumentsOffset] << 8) |
-            response[RazerFeatureReport.ArgumentsOffset + 1];
-    }
-
-    private static void ValidateBatteryObject(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
-    {
-        Validate(response, request);
-        if (response[RazerFeatureReport.ArgumentsOffset] != WiredBatteryId)
+        if (!Enum.IsDefined(mode))
         {
-            throw new InvalidOperationException("Blade 返回了错误的电池对象。");
+            throw new ArgumentOutOfRangeException(nameof(mode));
         }
+
+        return RazerFeatureReport.CreateRequest(
+            TransactionId, 0x01, 0x0D, 0x0E, new[] { (byte)mode });
     }
 
-    private static void Validate(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
+    public static byte[] CreateGetSkuHardwareConfigurationRequest() =>
+        RazerFeatureReport.CreateRequest(TransactionId, 0x01, 0x0D, 0x8F, new byte[] { 0x00 });
+
+    public static BladeNativeDisplayMode ParseNativeDisplayMode(ReadOnlySpan<byte> response)
+        => ParseNativeDisplayMode(response, CreateGetNativeDisplayModeRequest());
+
+    internal static BladeNativeDisplayMode ParseNativeDisplayMode(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request)
     {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, 2))
+        Validate(response, request, 1, "Blade 原生显示模式", allowRemainingPacketsMismatch: true);
+        var mode = (BladeNativeDisplayMode)response[RazerFeatureReport.ArgumentsOffset];
+        return Enum.IsDefined(mode)
+            ? mode
+            : throw new InvalidOperationException($"Blade 返回了未知原生显示模式 0x{(byte)mode:X2}。");
+    }
+
+    public static BladeSkuHardwareConfiguration ParseSkuHardwareConfiguration(
+        ReadOnlySpan<byte> response)
+        => ParseSkuHardwareConfiguration(response, CreateGetSkuHardwareConfigurationRequest());
+
+    internal static BladeSkuHardwareConfiguration ParseSkuHardwareConfiguration(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request)
+    {
+        Validate(response, request, 1, "Blade SKU 硬件配置", allowRemainingPacketsMismatch: true);
+        var raw = response[RazerFeatureReport.ArgumentsOffset];
+        return new(
+            (raw & 0x01) != 0,
+            (raw & 0x02) != 0,
+            (raw & 0x04) != 0,
+            raw);
+    }
+
+    private static void Validate(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request,
+        byte minimumArguments,
+        string feature,
+        bool allowRemainingPacketsMismatch = false)
+    {
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request,
+                response,
+                minimumArguments,
+                allowRemainingPacketsMismatch))
         {
-            throw new InvalidOperationException("Blade 电源返回了无效或错序的 feature report。");
+            throw new InvalidOperationException($"{feature}返回了无效或错序的 feature report。");
         }
     }
 }

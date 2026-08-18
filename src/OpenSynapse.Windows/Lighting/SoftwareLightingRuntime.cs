@@ -103,6 +103,8 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
     private async Task RunAsync()
     {
         Exception? failure = null;
+        var firstFrame = true;
+        var nextFrameDeadline = TimeSpan.Zero;
         try
         {
             if (_inputAdapter is not null)
@@ -123,7 +125,25 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
                     break;
                 }
 
-                await _delay(_frameInterval, _stop.Token).ConfigureAwait(false);
+                // The frame write is part of the cadence. Waiting a full interval
+                // after publishing adds HID transfer time to every frame period.
+                if (firstFrame)
+                {
+                    firstFrame = false;
+                    await _delay(_frameInterval, _stop.Token).ConfigureAwait(false);
+                }
+                else
+                {
+                    var afterPublish = Stopwatch.GetElapsedTime(_startedAt, _timestamp());
+                    var remaining = nextFrameDeadline - afterPublish;
+                    if (remaining > TimeSpan.Zero)
+                    {
+                        await _delay(remaining, _stop.Token).ConfigureAwait(false);
+                    }
+                }
+
+                nextFrameDeadline =
+                    Stopwatch.GetElapsedTime(_startedAt, _timestamp()) + _frameInterval;
             }
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested)

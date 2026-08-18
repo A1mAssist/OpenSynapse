@@ -297,6 +297,52 @@ public sealed class VerifiedProfileApplierTests
         Assert.Equal(1000, reader.ViperPollingRate);
     }
 
+    [Fact]
+    public async Task BladeFailureStopsLaterWritesForTheSameDevice()
+    {
+        var profile = ProfileDocument.CreateDefault();
+        profile.Global.Blade.KeyboardBrightness = 100;
+        profile.Global.Blade.ChargeLimitPercent = 50;
+        profile.Global.Blade.LogoMode = (byte)BladeLogoMode.Off;
+        var reader = new FakeReader { FailBladeBrightness = true };
+
+        var result = await new VerifiedProfileApplier().ApplyAsync(
+            profile,
+            new[] { Blade },
+            Telemetry(
+                bladeKeyboardBrightness: 80,
+                bladeLogoMode: BladeLogoMode.Static),
+            reader,
+            isPluggedIn: true);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.AppliedCount);
+        Assert.Contains(result.Errors, error => error.Contains("键盘亮度", StringComparison.Ordinal));
+        Assert.Null(reader.BladeChargeLimit);
+        Assert.Null(reader.BladeLogoMode);
+    }
+
+    [Fact]
+    public async Task BladeFailureStopsRemainingBladeWrites()
+    {
+        var profile = ProfileDocument.CreateDefault();
+        profile.Global.Blade.KeyboardBrightness = 100;
+        profile.Global.Blade.ChargeLimitPercent = 50;
+        var reader = new FakeReader { FailBladeBrightness = true };
+
+        var result = await new VerifiedProfileApplier().ApplyAsync(
+            profile,
+            new[] { Blade },
+            Telemetry(bladeKeyboardBrightness: 80),
+            reader,
+            isPluggedIn: true);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.AppliedCount);
+        Assert.Contains(result.Errors, error => error.Contains("键盘亮度", StringComparison.Ordinal));
+        Assert.Null(reader.BladeChargeLimit);
+    }
+
     private static RazerDeviceTelemetry Telemetry(
         byte? bladeKeyboardBrightness = null,
         BladePerformanceMode? bladePerformanceMode = null,

@@ -4,7 +4,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
+public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
 {
     private readonly IRazerFeatureTransport _transport;
     private readonly RazerDeviceRegistry _registry;
@@ -13,11 +13,16 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
     private string? _validatedBladeBoostPath;
     private string? _validatedBladeChargeLimitPath;
     private string? _validatedBladeMaxFanPath;
+    private string? _validatedBladeLocalDimmingPath;
     private string? _validatedBladeLogoPath;
+    private string? _validatedBladeGameModePath;
+    private string? _validatedBladeStartupAnimationPath;
+    private string? _validatedBladeNativeDisplayModePath;
     private string? _validatedViperPollingPath;
     private string? _validatedViperDpiPath;
     private string? _validatedViperDpiStagesPath;
     private string? _validatedViperIdlePath;
+    private readonly SemaphoreSlim _bladePowerModeTransactionGate = new(1, 1);
 
     public RazerDeviceTelemetryReader()
         : this(new RazerFeatureTransport(), RazerDeviceRegistry.BuiltIn)
@@ -46,11 +51,16 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         _validatedBladeBoostPath = null;
         _validatedBladeChargeLimitPath = null;
         _validatedBladeMaxFanPath = null;
+        _validatedBladeLocalDimmingPath = null;
         _validatedBladeLogoPath = null;
+        _validatedBladeGameModePath = null;
+        _validatedBladeStartupAnimationPath = null;
+        _validatedBladeNativeDisplayModePath = null;
         _validatedViperPollingPath = null;
         _validatedViperDpiPath = null;
         _validatedViperDpiStagesPath = null;
         _validatedViperIdlePath = null;
+        _validatedViperButtonMappingsPath = null;
         byte? bladeBrightness = null;
         BladePerformanceMode? bladePerformanceMode = null;
         BladeFanMode? bladeFanMode = null;
@@ -63,11 +73,13 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         int? bladeCurrentFanGpuRpm = null;
         byte? bladeAdvancedFanCpuModeRaw = null;
         byte? bladeAdvancedFanGpuModeRaw = null;
-        int? bladeWiredBatteryPercent = null;
-        byte? bladeChargingStatusRaw = null;
-        byte? bladeAutoSleepRaw = null;
-        int? bladeTimeToSleepSeconds = null;
         BladeLogoMode? bladeLogoMode = null;
+        BladeGameModeTelemetry? bladeGameMode = null;
+        bool? bladeStartupAnimationEnabled = null;
+        BladeNativeDisplayMode? bladeNativeDisplayMode = null;
+        BladeSkuHardwareConfiguration? bladeSkuHardwareConfiguration = null;
+        bool? bladeOneTimeFullChargeEnabled = null;
+        bool? bladeLocalDimmingEnabled = null;
         int? batteryPercent = null;
         int? pollingRate = null;
         int? dpiX = null;
@@ -89,7 +101,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 bladeBrightness = response[RazerFeatureReport.ArgumentsOffset + 1];
                 _validatedBladeBrightnessPath = blade.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"键盘亮度：{exception.Message}");
             }
@@ -106,7 +118,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 _validatedBladePerformancePath = blade.Descriptor.Id;
                 bladeThermalReadSucceeded = true;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"性能与风扇状态：{exception.Message}");
             }
@@ -116,7 +128,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 bladeCurrentFanCpuRpm = await ReadBladeCurrentFanRpmAsync(
                     blade, BladeThermalProtocol.CpuFanId, cancellationToken);
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"当前 CPU 风扇转速：{exception.Message}");
             }
@@ -126,7 +138,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 bladeCurrentFanGpuRpm = await ReadBladeCurrentFanRpmAsync(
                     blade, BladeThermalProtocol.GpuFanId, cancellationToken);
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"当前 GPU 风扇转速：{exception.Message}");
             }
@@ -136,7 +148,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 bladeAdvancedFanCpuModeRaw = await ReadBladeAdvancedFanModeAsync(
                     blade, BladeThermalProtocol.CpuFanId, cancellationToken);
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"CPU 高级风扇模式：{exception.Message}");
             }
@@ -146,7 +158,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 bladeAdvancedFanGpuModeRaw = await ReadBladeAdvancedFanModeAsync(
                     blade, BladeThermalProtocol.GpuFanId, cancellationToken);
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"GPU 高级风扇模式：{exception.Message}");
             }
@@ -160,7 +172,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                     bladeGpuBoostMode = boostState.Gpu;
                     _validatedBladeBoostPath = blade.Descriptor.Id;
                 }
-                catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
                 {
                     errors.Add($"CPU/GPU Boost：{exception.Message}");
                 }
@@ -171,67 +183,83 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 bladeChargeLimitPercent = await ReadBladeChargeLimitAsync(blade, cancellationToken);
                 _validatedBladeChargeLimitPath = blade.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"充电上限：{exception.Message}");
             }
 
             try
             {
-                bladeMaxFanMode = ToMaxFanMode(await ReadBladePowerModeMaskAsync(blade, cancellationToken));
+                var powerModeMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+                bladeMaxFanMode = ToMaxFanMode(powerModeMask);
+                bladeOneTimeFullChargeEnabled =
+                    (powerModeMask & BladeMaxFanProtocol.OneTimeFullChargeBit) != 0;
+                bladeLocalDimmingEnabled =
+                    (powerModeMask & BladeMaxFanProtocol.LocalDimmingBit) != 0;
                 _validatedBladeMaxFanPath = blade.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
-                errors.Add($"Max Fan：{exception.Message}");
+                errors.Add($"Power Mode Control：{exception.Message}");
+            }
+
+            try
+            {
+                var response = await QueryCapabilityAsync(blade, "gaming-mode.get", cancellationToken);
+                var state = BladeSynapsePolicyProtocol.ParseGameMode(
+                    response, CreateCapabilityRequest(blade, "gaming-mode.get"));
+                bladeGameMode = new(state.GameMode, state.KeyCover, state.Lifted);
+                _validatedBladeGameModePath = blade.Descriptor.Id;
+            }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Gaming Mode：{exception.Message}");
             }
 
             try
             {
                 var response = await QueryCapabilityAsync(
-                    blade, "wired-battery.get", cancellationToken);
-                bladeWiredBatteryPercent = BladeProduct710Protocol.ParseBatteryPercent(
-                    response, CreateCapabilityRequest(blade, "wired-battery.get"));
+                    blade, "startup-animation.get", cancellationToken);
+                bladeStartupAnimationEnabled = BladeSynapsePolicyProtocol.ParseStartupAnimation(
+                    response, CreateCapabilityRequest(blade, "startup-animation.get")).Enabled;
+                _validatedBladeStartupAnimationPath = blade.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
-                errors.Add($"有线电池电量：{exception.Message}");
-            }
-
-            try
-            {
-                var response = await QueryCapabilityAsync(
-                    blade, "charging-status.get", cancellationToken);
-                bladeChargingStatusRaw = BladeProduct710Protocol.ParseChargingStatusRaw(
-                    response, CreateCapabilityRequest(blade, "charging-status.get"));
-            }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
-            {
-                errors.Add($"充电状态：{exception.Message}");
+                errors.Add($"启动动画：{exception.Message}");
             }
 
             try
             {
                 var response = await QueryCapabilityAsync(
-                    blade, "auto-sleep.get", cancellationToken);
-                bladeAutoSleepRaw = BladeProduct710Protocol.ParseAutoSleepRaw(
-                    response, CreateCapabilityRequest(blade, "auto-sleep.get"));
+                    blade, "native-display-mode.get", cancellationToken);
+                bladeNativeDisplayMode = BladeProduct710Protocol.ParseNativeDisplayMode(
+                    response, CreateCapabilityRequest(blade, "native-display-mode.get"));
+                _validatedBladeNativeDisplayModePath = blade.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
-                errors.Add($"自动休眠：{exception.Message}");
+                errors.Add($"原生显示模式：{exception.Message}");
             }
 
             try
             {
                 var response = await QueryCapabilityAsync(
-                    blade, "time-to-sleep.get", cancellationToken);
-                bladeTimeToSleepSeconds = BladeProduct710Protocol.ParseTimeToSleepSeconds(
-                    response, CreateCapabilityRequest(blade, "time-to-sleep.get"));
+                    blade, "sku-hardware-configuration.get", cancellationToken);
+                bladeSkuHardwareConfiguration = BladeProduct710Protocol.ParseSkuHardwareConfiguration(
+                    response, CreateCapabilityRequest(blade, "sku-hardware-configuration.get"));
+                if (bladeSkuHardwareConfiguration.Value.MiniLedResolution)
+                {
+                    _validatedBladeLocalDimmingPath = _validatedBladeMaxFanPath;
+                }
+                else
+                {
+                    bladeLocalDimmingEnabled = null;
+                }
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
-                errors.Add($"休眠倒计时：{exception.Message}");
+                errors.Add($"SKU 硬件配置：{exception.Message}");
             }
 
             try
@@ -239,7 +267,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 bladeLogoMode = (await ReadBladeLogoStateAsync(blade, cancellationToken)).CombinedMode;
                 _validatedBladeLogoPath = blade.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"Blade Logo：{exception.Message}");
             }
@@ -255,7 +283,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 batteryPercent = ViperProduct184Protocol.ParseBatteryPercent(
                     response, CreateCapabilityRequest(viper, "battery.get"));
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"鼠标电量：{exception.Message}");
             }
@@ -267,7 +295,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                     response, CreateCapabilityRequest(viper, "polling-rate.get"));
                 _validatedViperPollingPath = viper.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"鼠标轮询率：{exception.Message}");
             }
@@ -279,7 +307,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                     response, CreateCapabilityRequest(viper, "current-dpi.get"));
                 _validatedViperDpiPath = viper.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"鼠标 DPI：{exception.Message}");
             }
@@ -291,7 +319,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                     response, CreateCapabilityRequest(viper, "idle-timeout.get"));
                 _validatedViperIdlePath = viper.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"鼠标休眠：{exception.Message}");
             }
@@ -306,7 +334,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                     parsed.Stages.Select(stage => new ViperDpiStageTelemetry(stage.Number, stage.X, stage.Y)).ToArray());
                 _validatedViperDpiStagesPath = viper.Descriptor.Id;
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"鼠标 DPI 档位：{exception.Message}");
             }
@@ -318,7 +346,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 lowBatteryThresholdRaw = ViperLowBatteryThresholdProtocol.ParseRaw(
                     response, CreateCapabilityRequest(viper, "low-battery-threshold.get"));
             }
-            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"鼠标低电量阈值：{exception.Message}");
             }
@@ -345,13 +373,15 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             bladeCurrentFanGpuRpm,
             bladeAdvancedFanCpuModeRaw,
             bladeAdvancedFanGpuModeRaw,
-            bladeWiredBatteryPercent,
-            bladeChargingStatusRaw,
-            bladeAutoSleepRaw,
-            bladeTimeToSleepSeconds,
             dpiStages,
             lowBatteryThresholdRaw,
-            bladeLogoMode);
+            bladeLogoMode,
+            bladeGameMode,
+            bladeStartupAnimationEnabled,
+            bladeNativeDisplayMode,
+            bladeSkuHardwareConfiguration,
+            bladeOneTimeFullChargeEnabled,
+            bladeLocalDimmingEnabled);
     }
 
     public async ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
@@ -384,7 +414,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual.PerformanceMode;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreBladeThermalStateAsync(blade, original);
             var message = $"性能模式设置失败：{exception.Message} " +
@@ -397,6 +427,73 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             }
             throw new InvalidOperationException(message, exception);
         }
+    }
+
+    public async ValueTask<BladeGameModeTelemetry> SetBladeGameModeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade 游戏模式控制通道不可用。");
+        EnsureValidated(
+            _validatedBladeGameModePath,
+            blade.Descriptor.Id,
+            "请先成功读取 Blade 游戏模式。");
+
+        var original = await ReadBladeGameModeAsync(blade, cancellationToken);
+        if (original.GameMode == 2)
+        {
+            throw new InvalidOperationException("游戏模式当前由自动策略控制，M3 不执行手动切换。");
+        }
+
+        var expected = enabled ? (byte)1 : (byte)0;
+        try
+        {
+            await WriteBladeGameModeAsync(blade, expected, cancellationToken);
+            var actual = await ReadBladeGameModeAsync(blade, cancellationToken);
+            if (actual.GameMode != expected)
+            {
+                throw new InvalidOperationException(
+                    $"游戏模式读回不一致：写入 0x{expected:X2}，读回 0x{actual.GameMode:X2}。");
+            }
+
+            await WriteBladeGameModeIndicatorAsync(blade, enabled, cancellationToken);
+            return new(actual.GameMode, actual.KeyCover, actual.Lifted);
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreBladeGameModeAsync(blade, original);
+            var message = "游戏模式设置失败：" + exception.Message + " " +
+                (restored
+                    ? "原状态和 M3 指示灯已恢复。"
+                    : "原状态恢复失败；请立即在 Synapse 中检查游戏模式。");
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, exception, cancellationToken);
+            }
+            throw new InvalidOperationException(message, exception);
+        }
+    }
+
+    public async ValueTask<bool> SetBladeFnKeyStateAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool multiFunctionPrimary,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade Fn 主功能控制通道不可用。");
+        var builtRequest = BladeSynapsePolicyProtocol.CreateSetFnKeyStateRequest(multiFunctionPrimary);
+        var request = CreateConfiguredRequest(blade, "fn-key.set", builtRequest);
+        var response = await QueryCapabilityAsync(
+            blade,
+            "fn-key.set",
+            request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
+            cancellationToken,
+            request[6]);
+        var state = BladeSynapsePolicyProtocol.ParseFnKeyState(response, request);
+        return state.MultiFunctionPrimary;
     }
 
     public async ValueTask<BladeFanControlState> SetBladeFanAsync(
@@ -561,7 +658,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreBladeChargeLimitAsync(blade, original);
             var message = $"充电上限设置失败：{exception.Message} " +
@@ -606,7 +703,15 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         return state.Gpu;
     }
 
-    public async ValueTask<BladeMaxFanMode> SetBladeMaxFanModeAsync(
+    public ValueTask<BladeMaxFanMode> SetBladeMaxFanModeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeMaxFanMode mode,
+        CancellationToken cancellationToken = default) =>
+        RunBladePowerModeTransactionAsync(
+            () => SetBladeMaxFanModeCoreAsync(devices, mode, cancellationToken),
+            cancellationToken);
+
+    private async ValueTask<BladeMaxFanMode> SetBladeMaxFanModeCoreAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeMaxFanMode mode,
         CancellationToken cancellationToken = default)
@@ -649,7 +754,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreBladeMaxFanModeAsync(blade, original, originalMask);
             var message = "Max Fan 设置失败：" + exception.Message + " " +
@@ -658,6 +763,234 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             {
                 throw new OperationCanceledException(message, exception, cancellationToken);
             }
+            throw new InvalidOperationException(message, exception);
+        }
+    }
+
+    public ValueTask<bool> SetBladeOneTimeFullChargeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        RunBladePowerModeTransactionAsync(
+            () => SetBladeOneTimeFullChargeCoreAsync(devices, enabled, cancellationToken),
+            cancellationToken);
+
+    private async ValueTask<bool> SetBladeOneTimeFullChargeCoreAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade 一次性充满控制通道不可用。");
+        EnsureValidated(
+            _validatedBladeMaxFanPath,
+            blade.Descriptor.Id,
+            "请先成功读取 Blade Power Mode Control 状态。");
+        if (enabled && await ReadBladeChargeLimitAsync(blade, cancellationToken) == 100)
+        {
+            throw new InvalidOperationException("一次性充满仅在充电上限已启用时可用。");
+        }
+
+        var originalMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+        var original = (originalMask & BladeMaxFanProtocol.OneTimeFullChargeBit) != 0;
+        if (original == enabled)
+        {
+            return original;
+        }
+
+        var expectedMask = enabled
+            ? (byte)(originalMask | BladeMaxFanProtocol.OneTimeFullChargeBit)
+            : (byte)(originalMask & ~BladeMaxFanProtocol.OneTimeFullChargeBit);
+        try
+        {
+            await WriteBladePowerModeMaskAsync(blade, expectedMask, cancellationToken);
+            var actualMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+            if (actualMask != expectedMask)
+            {
+                throw new InvalidOperationException(
+                    $"一次性充满读回不一致：写入 0x{expectedMask:X2}，读回 0x{actualMask:X2}。");
+            }
+
+            return enabled;
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreBladePowerModeMaskAsync(blade, originalMask);
+            var message = "一次性充满设置失败：" + exception.Message + " " +
+                (restored ? "原值已恢复。" : "原值恢复失败；请立即在 Synapse 中检查充电设置。");
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, exception, cancellationToken);
+            }
+            throw new InvalidOperationException(message, exception);
+        }
+    }
+
+    public ValueTask<bool> SetBladeLocalDimmingAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        RunBladePowerModeTransactionAsync(
+            () => SetBladeLocalDimmingCoreAsync(devices, enabled, cancellationToken),
+            cancellationToken);
+
+    private async ValueTask<bool> SetBladeLocalDimmingCoreAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade Local Dimming 控制通道不可用。");
+        EnsureValidated(
+            _validatedBladeLocalDimmingPath,
+            blade.Descriptor.Id,
+            "Local Dimming 仅适用于已确认的 MiniLED 面板。");
+
+        var originalMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+        var original = (originalMask & BladeMaxFanProtocol.LocalDimmingBit) != 0;
+        if (original == enabled)
+        {
+            return original;
+        }
+
+        var expectedMask = enabled
+            ? (byte)(originalMask | BladeMaxFanProtocol.LocalDimmingBit)
+            : (byte)(originalMask & ~BladeMaxFanProtocol.LocalDimmingBit);
+        try
+        {
+            await WriteBladePowerModeMaskAsync(blade, expectedMask, cancellationToken);
+            var actualMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+            if (actualMask != expectedMask)
+            {
+                throw new InvalidOperationException(
+                    $"Local Dimming 读回不一致：写入 0x{expectedMask:X2}，读回 0x{actualMask:X2}。");
+            }
+
+            return enabled;
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreBladePowerModeMaskAsync(blade, originalMask);
+            var message = "Local Dimming 设置失败：" + exception.Message + " " +
+                (restored ? "原值已恢复。" : "原值恢复失败；请立即在 Synapse 中检查显示设置。");
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, exception, cancellationToken);
+            }
+
+            throw new InvalidOperationException(message, exception);
+        }
+    }
+
+    private async ValueTask<T> RunBladePowerModeTransactionAsync<T>(
+        Func<ValueTask<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        await _bladePowerModeTransactionGate.WaitAsync(cancellationToken);
+        try
+        {
+            return await operation();
+        }
+        finally
+        {
+            _bladePowerModeTransactionGate.Release();
+        }
+    }
+
+    public async ValueTask<bool> SetBladeStartupAnimationAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade 启动动画控制通道不可用。");
+        EnsureValidated(
+            _validatedBladeStartupAnimationPath,
+            blade.Descriptor.Id,
+            "请先成功读取 Blade 启动动画状态。");
+
+        var original = await ReadBladeStartupAnimationAsync(blade, cancellationToken);
+        if (original.Enabled == enabled)
+        {
+            return original.Enabled;
+        }
+
+        try
+        {
+            await WriteBladeStartupAnimationAsync(blade, enabled, cancellationToken);
+            var actual = await ReadBladeStartupAnimationAsync(blade, cancellationToken);
+            if (actual.Enabled != enabled)
+            {
+                throw new InvalidOperationException(
+                    $"启动动画读回不一致：写入 {(enabled ? "启用" : "禁用")}，" +
+                    $"读回 {(actual.Enabled ? "启用" : "禁用")}。");
+            }
+
+            return actual.Enabled;
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreBladeStartupAnimationAsync(blade, original.Enabled);
+            var message = "启动动画设置失败：" + exception.Message + " " +
+                (restored ? "原值已恢复。" : "原值恢复失败；请立即在 Synapse 中检查启动动画。");
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, exception, cancellationToken);
+            }
+
+            throw new InvalidOperationException(message, exception);
+        }
+    }
+
+    public async ValueTask<BladeNativeDisplayMode> SetBladeNativeDisplayModeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeNativeDisplayMode mode,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(mode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode));
+        }
+
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade 原生显示模式控制通道不可用。");
+        EnsureValidated(
+            _validatedBladeNativeDisplayModePath,
+            blade.Descriptor.Id,
+            "请先成功读取 Blade 原生显示模式。");
+
+        var original = await ReadBladeNativeDisplayModeAsync(blade, cancellationToken);
+        if (original == mode)
+        {
+            return original;
+        }
+
+        try
+        {
+            await WriteBladeNativeDisplayModeAsync(blade, mode, cancellationToken);
+            var actual = await ReadBladeNativeDisplayModeAsync(blade, cancellationToken);
+            if (actual != mode)
+            {
+                throw new InvalidOperationException(
+                    $"原生显示模式读回不一致：写入 {mode}，读回 {actual}。");
+            }
+
+            return actual;
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreBladeNativeDisplayModeAsync(blade, original);
+            var message = "原生显示模式设置失败：" + exception.Message + " " +
+                (restored ? "原值已恢复。" : "原值恢复失败；请立即在 Synapse 中检查显示模式。");
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, exception, cancellationToken);
+            }
+
             throw new InvalidOperationException(message, exception);
         }
     }
@@ -688,7 +1021,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreBladeBrightnessAsync(blade, original);
             var message = "亮度设置失败：" + exception.Message + " " +
@@ -724,7 +1057,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             await WriteBladeBrightnessAsync(device, original, CancellationToken.None);
             return await ReadBladeBrightnessAsync(device, CancellationToken.None) == original;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -765,7 +1098,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual.CombinedMode;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreBladeLogoStateAsync(blade, original);
             var message = "Logo 设置失败：" + exception.Message + " " +
@@ -828,7 +1161,124 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 CancellationToken.None);
             return await ReadBladeLogoStateAsync(device, CancellationToken.None) == original;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
+    private async Task<BladeStartupAnimationState> ReadBladeStartupAnimationAsync(
+        ReadyDevice device,
+        CancellationToken cancellationToken)
+    {
+        var request = CreateCapabilityRequest(device, "startup-animation.get");
+        var response = await QueryCapabilityAsync(device, "startup-animation.get", cancellationToken);
+        return BladeSynapsePolicyProtocol.ParseStartupAnimation(response, request);
+    }
+
+    private async Task WriteBladeStartupAnimationAsync(
+        ReadyDevice device,
+        bool enabled,
+        CancellationToken cancellationToken)
+    {
+        var request = BladeSynapsePolicyProtocol.CreateSetStartupAnimationRequest(enabled);
+        _ = await QueryBuiltRequestAsync(
+            device, "startup-animation.set", request, cancellationToken);
+    }
+
+    private async Task<bool> TryRestoreBladeStartupAnimationAsync(
+        ReadyDevice device,
+        bool original)
+    {
+        try
+        {
+            await WriteBladeStartupAnimationAsync(device, original, CancellationToken.None);
+            return (await ReadBladeStartupAnimationAsync(device, CancellationToken.None)).Enabled == original;
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
+    private async Task<BladeNativeDisplayMode> ReadBladeNativeDisplayModeAsync(
+        ReadyDevice device,
+        CancellationToken cancellationToken)
+    {
+        var request = CreateCapabilityRequest(device, "native-display-mode.get");
+        var response = await QueryCapabilityAsync(
+            device, "native-display-mode.get", cancellationToken);
+        return BladeProduct710Protocol.ParseNativeDisplayMode(response, request);
+    }
+
+    private Task WriteBladeNativeDisplayModeAsync(
+        ReadyDevice device,
+        BladeNativeDisplayMode mode,
+        CancellationToken cancellationToken) =>
+        QueryBuiltRequestAsync(
+            device,
+            "native-display-mode.set",
+            BladeProduct710Protocol.CreateSetNativeDisplayModeRequest(mode),
+            cancellationToken);
+
+    private async Task<bool> TryRestoreBladeNativeDisplayModeAsync(
+        ReadyDevice device,
+        BladeNativeDisplayMode original)
+    {
+        try
+        {
+            await WriteBladeNativeDisplayModeAsync(device, original, CancellationToken.None);
+            return await ReadBladeNativeDisplayModeAsync(device, CancellationToken.None) == original;
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
+    private async Task<BladeGameModeState> ReadBladeGameModeAsync(
+        ReadyDevice device,
+        CancellationToken cancellationToken)
+    {
+        var request = CreateCapabilityRequest(device, "gaming-mode.get");
+        var response = await QueryCapabilityAsync(device, "gaming-mode.get", cancellationToken);
+        return BladeSynapsePolicyProtocol.ParseGameMode(response, request);
+    }
+
+    private async Task WriteBladeGameModeAsync(
+        ReadyDevice device,
+        byte state,
+        CancellationToken cancellationToken)
+    {
+        var request = BladeSynapsePolicyProtocol.CreateSetGameModeRequest(state);
+        var response = await QueryBuiltRequestAsync(
+            device, "gaming-mode.set", request, cancellationToken);
+        _ = BladeSynapsePolicyProtocol.ParseGameMode(response, request);
+    }
+
+    private async Task WriteBladeGameModeIndicatorAsync(
+        ReadyDevice device,
+        bool enabled,
+        CancellationToken cancellationToken)
+    {
+        var request = BladeSynapsePolicyProtocol.CreateSetGameModeIndicatorRequest(enabled);
+        var response = await QueryBuiltRequestAsync(
+            device, "gaming-mode-led.set", request, cancellationToken);
+        _ = BladeSynapsePolicyProtocol.ParseLedCommandResult(response, request);
+    }
+
+    private async Task<bool> TryRestoreBladeGameModeAsync(
+        ReadyDevice device,
+        BladeGameModeState original)
+    {
+        try
+        {
+            await WriteBladeGameModeAsync(device, original.GameMode, CancellationToken.None);
+            await WriteBladeGameModeIndicatorAsync(
+                device, original.GameMode != 0, CancellationToken.None);
+            return await ReadBladeGameModeAsync(device, CancellationToken.None) == original;
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1095,7 +1545,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreBladeBoostStateAsync(blade, original);
             var message = "Boost 设置失败：" + exception.Message + " " +
@@ -1136,7 +1586,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
                 device, BladeBoostProtocol.GpuCluster, (byte)state.Gpu, CancellationToken.None);
             return await ReadBladeBoostStateAsync(device, CancellationToken.None) == state;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1172,6 +1622,31 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         return QueryBuiltRequestAsync(device, "max-fan.set", request, cancellationToken);
     }
 
+    private Task WriteBladePowerModeMaskAsync(
+        ReadyDevice device,
+        byte mask,
+        CancellationToken cancellationToken) =>
+        QueryBuiltRequestAsync(
+            device,
+            "max-fan.set",
+            BladeMaxFanProtocol.CreateSetPowerModeMaskRequest(mask),
+            cancellationToken);
+
+    private async Task<bool> TryRestoreBladePowerModeMaskAsync(
+        ReadyDevice device,
+        byte originalMask)
+    {
+        try
+        {
+            await WriteBladePowerModeMaskAsync(device, originalMask, CancellationToken.None);
+            return await ReadBladePowerModeMaskAsync(device, CancellationToken.None) == originalMask;
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
     private async Task<bool> TryRestoreBladeMaxFanModeAsync(
         ReadyDevice device,
         BladeMaxFanMode mode,
@@ -1182,7 +1657,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             await WriteBladeMaxFanModeAsync(device, mode, originalMask, CancellationToken.None);
             return await ReadBladePowerModeMaskAsync(device, CancellationToken.None) == originalMask;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1218,7 +1693,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             var restored = await ReadBladeThermalStateAsync(device, CancellationToken.None);
             return restored == state;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1241,7 +1716,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             var restored = await ReadBladeChargeLimitAsync(device, CancellationToken.None);
             return restored == percent;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1251,9 +1726,10 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
     {
         0x00 => BladePerformanceMode.Balanced,
         0x02 => BladePerformanceMode.Performance,
+        0x03 => BladePerformanceMode.BatterySaver,
         0x04 => BladePerformanceMode.Custom,
         0x05 => BladePerformanceMode.Silent,
-        0x06 => BladePerformanceMode.Battery,
+        0x06 => BladePerformanceMode.BalancedDc,
         0x07 => BladePerformanceMode.Hyperboost,
         _ => throw new InvalidOperationException($"Blade 返回了未知性能模式 0x{value:X2}。"),
     };
@@ -1338,7 +1814,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreViperPollingRateAsync(viper, original);
             var message = "轮询率设置失败：" + exception.Message + " " +
@@ -1387,7 +1863,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreViperDpiAsync(viper, original);
             var message = "DPI 设置失败：" + exception.Message + " " +
@@ -1429,7 +1905,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return ToTelemetry(actual);
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreViperDpiStagesAsync(viper, original);
             var message = "DPI 档位设置失败：" + exception.Message + " " +
@@ -1472,7 +1948,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             return actual;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or OperationCanceledException)
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreViperIdleSecondsAsync(viper, original);
             var message = "休眠时间设置失败：" + exception.Message + " " +
@@ -1511,7 +1987,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             await WriteViperPollingRateAsync(device, original, CancellationToken.None);
             return await ReadViperPollingRateAsync(device, CancellationToken.None) == original;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1546,7 +2022,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             await WriteViperDpiAsync(device, original.X, original.Y, CancellationToken.None);
             return await ReadViperDpiAsync(device, CancellationToken.None) == original;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1578,7 +2054,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             await WriteViperIdleSecondsAsync(device, original, CancellationToken.None);
             return await ReadViperIdleSecondsAsync(device, CancellationToken.None) == original;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1608,7 +2084,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             EnsureDpiStagesEqual(original, restored, "DPI 档位恢复");
             return true;
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
             return false;
         }
@@ -1754,6 +2230,10 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             throw new InvalidOperationException(message);
         }
     }
+
+    private static bool IsExpectedHardwareException(Exception exception) =>
+        exception is Win32Exception or IOException or UnauthorizedAccessException or
+        InvalidOperationException or ArgumentException;
 
     private sealed record ReadyDevice(
         DeviceDescriptor Descriptor,

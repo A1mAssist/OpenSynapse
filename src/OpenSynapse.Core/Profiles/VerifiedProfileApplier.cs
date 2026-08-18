@@ -116,7 +116,7 @@ public sealed class VerifiedProfileApplier
             {
                 bladeErrors.Add("Blade 性能模式未成功读回，已跳过 CPU/GPU Boost 和 Max Fan 配置应用。");
             }
-            else if (effectivePerformanceMode == BladePerformanceMode.Custom)
+            else if (bladeErrors.Count == 0 && effectivePerformanceMode == BladePerformanceMode.Custom)
             {
                 if (profile.Blade.CpuBoostMode is byte rawCpuBoost)
                 {
@@ -135,7 +135,7 @@ public sealed class VerifiedProfileApplier
                     }
                 }
 
-                if (profile.Blade.GpuBoostMode is byte rawGpuBoost)
+                if (bladeErrors.Count == 0 && profile.Blade.GpuBoostMode is byte rawGpuBoost)
                 {
                     if (!Enum.IsDefined(typeof(BladeGpuBoostMode), rawGpuBoost))
                     {
@@ -152,7 +152,7 @@ public sealed class VerifiedProfileApplier
                     }
                 }
 
-                if (profile.Blade.MaxFanMode is byte rawMaxFan)
+                if (bladeErrors.Count == 0 && profile.Blade.MaxFanMode is byte rawMaxFan)
                 {
                     if (!Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
                     {
@@ -170,7 +170,7 @@ public sealed class VerifiedProfileApplier
                 }
             }
 
-            if (profile.Blade.KeyboardBrightness is byte brightness)
+            if (bladeErrors.Count == 0 && profile.Blade.KeyboardBrightness is byte brightness)
             {
                 await ApplyValueAsync(
                     bladeErrors,
@@ -179,7 +179,7 @@ public sealed class VerifiedProfileApplier
                     telemetry.BladeKeyboardBrightness,
                     (value, token) => reader.SetBladeKeyboardBrightnessAsync(devices, value, token));
             }
-            if (profile.Blade.ChargeLimitPercent is int chargeLimit)
+            if (bladeErrors.Count == 0 && profile.Blade.ChargeLimitPercent is int chargeLimit)
             {
                 await ApplyValueAsync(
                     bladeErrors,
@@ -188,7 +188,7 @@ public sealed class VerifiedProfileApplier
                     telemetry.BladeChargeLimitPercent,
                     (value, token) => reader.SetBladeChargeLimitAsync(devices, value, token));
             }
-            if (profile.Blade.LogoMode is byte rawLogoMode)
+            if (bladeErrors.Count == 0 && profile.Blade.LogoMode is byte rawLogoMode)
             {
                 var requested = (BladeLogoMode)rawLogoMode;
                 if (!Enum.IsDefined(typeof(BladeLogoMode), requested) ||

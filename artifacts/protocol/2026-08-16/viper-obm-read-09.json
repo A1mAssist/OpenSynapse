@@ -1,0 +1,9 @@
+{
+  "StartedAt": "2026-08-15T17:27:14.7652244+00:00",
+  "CompletedAt": "2026-08-15T17:27:15.3318737+00:00",
+  "Device": "1532:00B8",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "Snapshot": null,
+  "Error": "\u8BBE\u5907\u8D85\u65F6\uFF080x04\uFF09\uFF1B\u8BF7\u5524\u9192\u8BBE\u5907\u5E76\u5173\u95ED Synapse \u540E\u91CD\u8BD5\u3002"
+}

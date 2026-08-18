@@ -1,0 +1,54 @@
+{
+  "StartedAt": "2026-08-18T04:34:06.8215829+00:00",
+  "CompletedAt": "2026-08-18T04:34:19.4705745+00:00",
+  "Original": {
+    "PerformanceMode": 2,
+    "Mode": 0,
+    "CpuTargetRpm": 3800,
+    "GpuTargetRpm": 3800
+  },
+  "Samples": [
+    {
+      "At": "2026-08-18T04:34:09.9271743+00:00",
+      "CpuRpm": 2500,
+      "GpuRpm": 2300,
+      "Mode": 0,
+      "TargetRpm": null
+    },
+    {
+      "At": "2026-08-18T04:34:12.2365612+00:00",
+      "CpuRpm": 2600,
+      "GpuRpm": 2400,
+      "Mode": 1,
+      "TargetRpm": 5000
+    },
+    {
+      "At": "2026-08-18T04:34:14.5405395+00:00",
+      "CpuRpm": 2700,
+      "GpuRpm": 2500,
+      "Mode": 1,
+      "TargetRpm": 5000
+    },
+    {
+      "At": "2026-08-18T04:34:16.8465599+00:00",
+      "CpuRpm": 2800,
+      "GpuRpm": 2700,
+      "Mode": 1,
+      "TargetRpm": 5000
+    },
+    {
+      "At": "2026-08-18T04:34:19.1535941+00:00",
+      "CpuRpm": 2900,
+      "GpuRpm": 2700,
+      "Mode": 1,
+      "TargetRpm": 5000
+    }
+  ],
+  "Restored": {
+    "PerformanceMode": 2,
+    "Mode": 0,
+    "CpuTargetRpm": 3800,
+    "GpuTargetRpm": 3800
+  },
+  "Error": null
+}

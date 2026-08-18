@@ -63,13 +63,18 @@ internal sealed class CpuHardwareMonitor : IDisposable
             0,
             processors,
             checked((uint)(processors.Length * Marshal.SizeOf<ProcessorPowerInformation>())));
-        var clocks = processors
-            .Where(item => item.CurrentMhz is > 0 and <= 10000)
-            .Select(item => (double)item.CurrentMhz)
-            .ToArray();
-        return status == 0 && clocks.Length > 0
-            ? checked((int)Math.Round(clocks.Average()))
+        return status == 0
+            ? SelectFastestCoreClock(processors.Select(item => item.CurrentMhz))
             : null;
+    }
+
+    internal static int? SelectFastestCoreClock(IEnumerable<uint> clocks)
+    {
+        var valid = clocks
+            .Where(clock => clock is > 0 and <= 10000)
+            .Select(clock => (int)clock)
+            .ToArray();
+        return valid.Length == 0 ? null : valid.Max();
     }
 
     [StructLayout(LayoutKind.Sequential)]

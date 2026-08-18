@@ -12,8 +12,10 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     private readonly Func<CancellationToken, ValueTask<PerformanceSnapshot>> _sample;
     private readonly TimeSpan _interval;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly object _disposeSync = new();
     private CancellationTokenSource? _stop;
     private Task? _worker;
+    private Task? _disposeTask;
     private int _disposed;
 
     public BladeFanCurveRuntime(
@@ -45,6 +47,83 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
 
     public Task Completion => _worker ?? Task.CompletedTask;
 
+    public bool IsRunning => Volatile.Read(ref _worker) is not null;
+
+    public async Task StartFixedAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeFanMode mode,
+        int? targetRpm,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(devices);
+        if (!Enum.IsDefined(mode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode));
+        }
+        if (mode == BladeFanMode.Manual)
+        {
+            if (targetRpm is null)
+            {
+                throw new ArgumentNullException(nameof(targetRpm));
+            }
+            BladeFanLimits.ValidateTargetRpm(targetRpm.Value);
+        }
+        else if (targetRpm is not null)
+        {
+            throw new ArgumentException("自动风扇模式不能指定固定转速。", nameof(targetRpm));
+        }
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            EnsureStopped();
+
+            var deviceSnapshot = devices.ToArray();
+            var original = await _read(deviceSnapshot, cancellationToken).ConfigureAwait(false);
+            var cpuTarget = targetRpm ?? original.CpuTargetRpm;
+            var gpuTarget = targetRpm ?? original.GpuTargetRpm;
+            try
+            {
+                await _set(
+                    deviceSnapshot,
+                    mode,
+                    cpuTarget,
+                    gpuTarget,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                try
+                {
+                    await _set(
+                        deviceSnapshot,
+                        original.Mode,
+                        original.CpuTargetRpm,
+                        original.GpuTargetRpm,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception restoreException)
+                {
+                    throw new AggregateException(
+                        "固定风扇写入失败，且原状态恢复失败。",
+                        exception,
+                        restoreException);
+                }
+
+                throw;
+            }
+
+            _stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _worker = HoldFixedAsync(deviceSnapshot, original, _stop.Token);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     public async Task StartAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeFanCurve curve,
@@ -58,10 +137,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         try
         {
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-            if (_worker is not null)
-            {
-                throw new InvalidOperationException("风扇曲线已经启动。");
-            }
+            EnsureStopped();
 
             var deviceSnapshot = devices.ToArray();
             var original = await _read(deviceSnapshot, cancellationToken).ConfigureAwait(false);
@@ -116,19 +192,19 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) == 0)
+        lock (_disposeSync)
         {
-            try
-            {
-                await StopAsync().ConfigureAwait(false);
-            }
-            finally
-            {
-                _gate.Dispose();
-            }
+            _disposeTask ??= DisposeCoreAsync();
+            return new ValueTask(_disposeTask);
         }
+    }
+
+    private async Task DisposeCoreAsync()
+    {
+        Interlocked.Exchange(ref _disposed, 1);
+        await StopAsync().ConfigureAwait(false);
     }
 
     private async Task RunAsync(
@@ -213,6 +289,42 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         if (failure is not null)
         {
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+        }
+    }
+
+    private async Task HoldFixedAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeFanControlSnapshot original,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+
+        try
+        {
+            await _set(
+                devices,
+                original.Mode,
+                original.CpuTargetRpm,
+                original.GpuTargetRpm,
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            throw new InvalidOperationException("固定风扇停止后无法恢复原状态。", exception);
+        }
+    }
+
+    private void EnsureStopped()
+    {
+        if (_worker is not null)
+        {
+            throw new InvalidOperationException("风扇控制已经启动。");
         }
     }
 

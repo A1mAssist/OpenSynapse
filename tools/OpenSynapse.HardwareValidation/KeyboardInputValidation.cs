@@ -1,12 +1,14 @@
 using System.Text.Json;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
+using OpenSynapse.Windows.Protocols;
 
 internal static class KeyboardInputValidation
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        var holdSeconds = ReadHoldSeconds(args);
-        var output = ReadOutput(args);
+        var options = Options.Parse(args);
         var observations = new List<Observation>();
         var gate = new object();
         using var interrupted = new CancellationTokenSource();
@@ -43,12 +45,28 @@ internal static class KeyboardInputValidation
                 "HID",
                 item.DeviceName,
                 Convert.ToHexString(item.Report))));
+        var transport = new RazerFeatureTransport();
+        string? controlDevicePath = null;
+        var softwareModeApplied = false;
 
         try
         {
+            if (options.UseSoftwareMode)
+            {
+                var devices = await WindowsHidDiscovery.DiscoverAllAsync();
+                controlDevicePath = devices.Devices.SingleOrDefault(device =>
+                    device.ProductId == 0x02C6 &&
+                    device.Access == DeviceAccessState.Available &&
+                    device.UsagePage == 0x0001 &&
+                    device.Usage == 0x0002 &&
+                    device.FeatureReportByteLength == RazerFeatureReport.Length)?.Id ??
+                    throw new InvalidOperationException("找不到唯一可用的 Blade 02C6 控制 collection。");
+                await SendModeAsync(transport, controlDevicePath, softwareMode: true);
+                softwareModeApplied = true;
+            }
             await adapter.StartAsync(interrupted.Token);
-            Console.WriteLine($"Raw Input 已启动；请依次按 M1..M5，再使用外接键盘输入。观察 {holdSeconds} 秒。");
-            await Task.Delay(TimeSpan.FromSeconds(holdSeconds), interrupted.Token);
+            Console.WriteLine($"Raw Input 已启动；请依次按 F1、F2、F3。观察 {options.HoldSeconds} 秒。");
+            await Task.Delay(TimeSpan.FromSeconds(options.HoldSeconds), interrupted.Token);
         }
         catch (OperationCanceledException) when (interrupted.IsCancellationRequested)
         {
@@ -57,6 +75,11 @@ internal static class KeyboardInputValidation
         {
             Console.CancelKeyPress -= cancelHandler;
             await adapter.StopAsync();
+            if (softwareModeApplied)
+            {
+                await SendModeAsync(transport, controlDevicePath!, softwareMode: false);
+                Console.WriteLine("Blade 已恢复 Normal 模式。");
+            }
         }
 
         Observation[] snapshot;
@@ -64,12 +87,31 @@ internal static class KeyboardInputValidation
         {
             snapshot = observations.ToArray();
         }
-        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(options.Output)!);
         await File.WriteAllTextAsync(
-            output,
+            options.Output,
             JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }));
-        Console.WriteLine($"记录 {snapshot.Length} 个 Blade key-down 事件：{output}");
+        Console.WriteLine($"记录 {snapshot.Length} 个 Blade key-down 事件：{options.Output}");
         return 0;
+    }
+
+    private static Task<byte[]> SendModeAsync(
+        IRazerFeatureTransport transport,
+        string devicePath,
+        bool softwareMode)
+    {
+        var request = softwareMode
+            ? BladeDeviceModeProtocol.CreateSetSoftwareRequest()
+            : BladeDeviceModeProtocol.CreateSetNormalRequest();
+        return transport.QueryAsync(
+            devicePath,
+            request[2],
+            request[6],
+            request[7],
+            request[8],
+            request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
+            TimeSpan.FromMilliseconds(2),
+            CancellationToken.None);
     }
 
     private static int ReadHoldSeconds(string[] args)
@@ -97,6 +139,14 @@ internal static class KeyboardInputValidation
             throw new ArgumentException("--output 必须是尚不存在的 .json 文件。");
         }
         return output;
+    }
+
+    internal sealed record Options(int HoldSeconds, string Output, bool UseSoftwareMode)
+    {
+        internal static Options Parse(string[] args) => new(
+            ReadHoldSeconds(args),
+            ReadOutput(args),
+            args.Contains("--software-mode", StringComparer.Ordinal));
     }
 
     private sealed record Observation(

@@ -1,0 +1,127 @@
+{
+  "StartedAt": "2026-08-15T13:09:16.8261488+00:00",
+  "CompletedAt": "2026-08-15T13:09:18.5302137+00:00",
+  "Device": "1532:00B8",
+  "Collection": "0001:0002",
+  "FeatureReportByteLength": 91,
+  "Snapshot": {
+    "MaximumProfiles": 1,
+    "ProfileIds": "AQ==",
+    "ButtonIds": "AQIDBAVgCQo=",
+    "Assignments": [
+      {
+        "ProfileId": 1,
+        "ButtonId": 1,
+        "Mode": 0,
+        "Function": 1,
+        "FunctionData": "AQ=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 1,
+        "Mode": 1,
+        "Function": 1,
+        "FunctionData": "AQ=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 2,
+        "Mode": 0,
+        "Function": 1,
+        "FunctionData": "Ag=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 2,
+        "Mode": 1,
+        "Function": 1,
+        "FunctionData": "Ag=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 3,
+        "Mode": 0,
+        "Function": 1,
+        "FunctionData": "Aw=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 3,
+        "Mode": 1,
+        "Function": 1,
+        "FunctionData": "Aw=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 4,
+        "Mode": 0,
+        "Function": 1,
+        "FunctionData": "BA=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 4,
+        "Mode": 1,
+        "Function": 1,
+        "FunctionData": "BA=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 5,
+        "Mode": 0,
+        "Function": 1,
+        "FunctionData": "BQ=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 5,
+        "Mode": 1,
+        "Function": 1,
+        "FunctionData": "BQ=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 96,
+        "Mode": 0,
+        "Function": 6,
+        "FunctionData": "Bg=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 96,
+        "Mode": 1,
+        "Function": 6,
+        "FunctionData": "Bg=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 9,
+        "Mode": 0,
+        "Function": 1,
+        "FunctionData": "CQ=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 9,
+        "Mode": 1,
+        "Function": 1,
+        "FunctionData": "CQ=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 10,
+        "Mode": 0,
+        "Function": 1,
+        "FunctionData": "Cg=="
+      },
+      {
+        "ProfileId": 1,
+        "ButtonId": 10,
+        "Mode": 1,
+        "Function": 1,
+        "FunctionData": "Cg=="
+      }
+    ]
+  },
+  "Error": null
+}

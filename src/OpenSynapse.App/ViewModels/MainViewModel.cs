@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
@@ -10,11 +11,12 @@ using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Protocols;
+using OpenSynapse.Windows.Devices;
 using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class MainViewModel : INotifyPropertyChanged
+public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
     private static readonly BladePerformanceMode[] BladePerformanceModes =
     [
@@ -22,7 +24,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
         BladePerformanceMode.Performance,
         BladePerformanceMode.Custom,
         BladePerformanceMode.Silent,
-        BladePerformanceMode.Battery,
         BladePerformanceMode.Hyperboost,
     ];
     private static readonly int[] BladeChargeLimits = [50, 55, 60, 65, 70, 75, 80, 100];
@@ -32,7 +33,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
         [BladeGpuBoostMode.Low, BladeGpuBoostMode.Medium, BladeGpuBoostMode.High];
     private static readonly BladeLogoMode[] BladeLogoModes = [BladeLogoMode.Off, BladeLogoMode.Static];
     private static readonly BladeLightingMode[] BladeLightingModes =
-        [BladeLightingMode.Off, BladeLightingMode.Static, BladeLightingMode.Breathing, BladeLightingMode.Spectrum, BladeLightingMode.Wave, BladeLightingMode.Fire];
+        [
+            BladeLightingMode.Off,
+            BladeLightingMode.Static,
+            BladeLightingMode.Breathing,
+            BladeLightingMode.Spectrum,
+            BladeLightingMode.Wave,
+            BladeLightingMode.Fire,
+            BladeLightingMode.Reactive,
+            BladeLightingMode.Ripple,
+            BladeLightingMode.AudioMeter,
+            BladeLightingMode.Ambient,
+            BladeLightingMode.Wheel,
+            BladeLightingMode.Starlight,
+            BladeLightingMode.Tidal,
+        ];
     private static readonly BladeWaveDirection[] BladeWaveDirections =
         [BladeWaveDirection.Right, BladeWaveDirection.Left];
 
@@ -46,9 +61,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly IInternalDisplayController? _internalDisplayController;
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly WindowsStartupManager? _startupManager;
+    private readonly WindowsTouchpadController? _touchpadController;
     private readonly string? _executablePath;
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly VerifiedProfileApplier _profileApplier = new();
+    private readonly BladeFanCurveRuntime _bladeFanRuntime;
+    private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
     private ProfileDocument _profile = ProfileDocument.CreateDefault();
     private bool? _lastPowerState;
@@ -84,10 +102,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _bladeCurrentFanGpuRpmText = "--";
     private string _bladeAdvancedFanCpuModeRawText = "--";
     private string _bladeAdvancedFanGpuModeRawText = "--";
-    private string _bladeWiredBatteryText = "--";
-    private string _bladeChargingStatusRawText = "--";
-    private string _bladeAutoSleepRawText = "--";
-    private string _bladeTimeToSleepText = "--";
+    private string _bladeGameModeText = "--";
+    private byte? _bladeGameModeState;
+    private bool _bladeGameModeEnabled;
+    private string _bladeStartupAnimationText = "--";
+    private bool? _bladeStartupAnimationEnabled;
+    private bool _bladeStartupAnimationSelection;
+    private string _bladeNativeDisplayModeText = "--";
+    private string _bladeSkuHardwareText = "--";
+    private string _bladeLocalDimmingText = "--";
+    private string _bladeOneTimeFullChargeText = "--";
+    private bool? _bladeOneTimeFullChargeEnabled;
+    private bool _bladeOneTimeFullChargeSelection;
     private string _bladeChargeLimitText = "--";
     private int _bladeChargeLimitIndex = -1;
     private int _confirmedBladeChargeLimitIndex = -1;
@@ -108,9 +134,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _bladeLogoIndex = -1;
     private int _confirmedBladeLogoIndex = -1;
     private bool _canSetBladeLogo;
+    private string _bladeTouchpadText = "--";
+    private bool _bladeTouchpadEnabled;
+    private bool _confirmedBladeTouchpadEnabled;
+    private bool _canSetBladeTouchpad;
     private int _bladeLightingModeIndex = 1;
     private int _bladeWaveDirectionIndex;
     private Color _bladeLightingColor = Color.FromArgb(0xFF, 0x99, 0xDD, 0x72);
+    private Color _bladeLightingSecondColor = Color.FromArgb(0xFF, 0x00, 0x66, 0xFF);
     private IReadOnlyList<DeviceDescriptor> _deviceDescriptors = Array.Empty<DeviceDescriptor>();
     private string _viperDeviceName = "Razer Viper V3 HyperSpeed";
     private string _viperStatusText = "未发现";
@@ -135,9 +166,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _viperActiveDpiStage;
     private bool _canSetViperDpiStages;
     private ViperDpiStagesTelemetry? _confirmedViperDpiStages;
+    private string _viperButtonMappingsText = "未读取";
+    private int _viperButtonMappingLayerIndex;
+    private bool _canReadViperButtonMappings;
+    private bool _canSetViperButtonMappings;
     private string _deviceFingerprint = string.Empty;
     private string _lightingShadowFingerprint = string.Empty;
     private string _bladeLightingDevicePath = string.Empty;
+    private string _bladeFanControlFingerprint = string.Empty;
+    private Task? _bladeFanControlCompletion;
+    private string? _bladeControlDevicePath;
     private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _deviceRefreshRequested;
     private string _cpuName = "CPU";
@@ -165,6 +203,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _internalDisplayRefreshRateHertz;
     private int _confirmedInternalDisplayRefreshRateHertz;
     private bool _canSetInternalDisplayRefreshRate;
+    private int _disposed;
 
     public MainViewModel(
         IDeviceDiscovery discovery,
@@ -178,7 +217,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         IBladeLightingController? bladeLightingController = null,
         WindowsStartupManager? startupManager = null,
         string? executablePath = null,
-        IReadOnlyList<string>? startupDiagnostics = null)
+        IReadOnlyList<string>? startupDiagnostics = null,
+        WindowsTouchpadController? touchpadController = null)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -190,11 +230,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _internalDisplayController = internalDisplayController;
         _bladeLightingController = bladeLightingController;
         _startupManager = startupManager;
+        _touchpadController = touchpadController;
+        _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    internal event Action<string?>? BladeControlDevicePathChanged;
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<DiagnosticRowViewModel> Diagnostics { get; } = new();
@@ -265,12 +308,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(CanSetBladeCpuBoost));
                 OnPropertyChanged(nameof(CanSetBladeGpuBoost));
                 OnPropertyChanged(nameof(CanSetBladeMaxFan));
+                OnPropertyChanged(nameof(CanSetBladeGamingMode));
+                OnPropertyChanged(nameof(CanApplyBladeGamingMode));
+                OnPropertyChanged(nameof(CanSetBladeStartupAnimation));
+                OnPropertyChanged(nameof(CanApplyBladeStartupAnimation));
+                OnPropertyChanged(nameof(CanSetBladeOneTimeFullCharge));
+                OnPropertyChanged(nameof(CanApplyBladeOneTimeFullCharge));
                 OnPropertyChanged(nameof(CanSetBladeLogo));
+                OnPropertyChanged(nameof(CanSetBladeTouchpad));
                 OnPropertyChanged(nameof(CanSetBladeLighting));
                 OnPropertyChanged(nameof(CanSetViperPollingRate));
                 OnPropertyChanged(nameof(CanSetViperDpi));
                 OnPropertyChanged(nameof(CanSetViperDpiStages));
                 OnPropertyChanged(nameof(CanSetViperIdle));
+                OnPropertyChanged(nameof(CanReadViperButtonMappings));
+                OnPropertyChanged(nameof(CanSetViperButtonMappings));
                 OnPropertyChanged(nameof(CanSetInternalDisplayRefreshRate));
                 OnPropertyChanged(nameof(CanDeleteProfile));
                 OnPropertyChanged(nameof(CanSetStartup));
@@ -307,7 +359,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
     public string BladePerformanceModeText { get => _bladePerformanceModeText; private set => SetField(ref _bladePerformanceModeText, value); }
-    public IReadOnlyList<string> BladePerformanceModeOptions { get; } = ["平衡", "性能", "自定义", "静音", "电池", "HyperBoost"];
+    public IReadOnlyList<string> BladePerformanceModeOptions { get; } = ["平衡", "性能", "自定义", "静音", "HyperBoost"];
     public int BladePerformanceModeIndex { get => _bladePerformanceModeIndex; set => SetField(ref _bladePerformanceModeIndex, value); }
     public bool CanSetBladePerformanceMode { get => _canSetBladePerformanceMode && !IsBusy; private set => SetField(ref _canSetBladePerformanceMode, value); }
     public string BladeFanText { get => _bladeFanText; private set => SetField(ref _bladeFanText, value); }
@@ -317,15 +369,61 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string BladeCurrentFanGpuRpmText { get => _bladeCurrentFanGpuRpmText; private set => SetField(ref _bladeCurrentFanGpuRpmText, value); }
     public string BladeAdvancedFanCpuModeRawText { get => _bladeAdvancedFanCpuModeRawText; private set => SetField(ref _bladeAdvancedFanCpuModeRawText, value); }
     public string BladeAdvancedFanGpuModeRawText { get => _bladeAdvancedFanGpuModeRawText; private set => SetField(ref _bladeAdvancedFanGpuModeRawText, value); }
-    public string BladeWiredBatteryText { get => _bladeWiredBatteryText; private set => SetField(ref _bladeWiredBatteryText, value); }
-    public string BladeChargingStatusRawText { get => _bladeChargingStatusRawText; private set => SetField(ref _bladeChargingStatusRawText, value); }
-    public string BladeAutoSleepRawText { get => _bladeAutoSleepRawText; private set => SetField(ref _bladeAutoSleepRawText, value); }
-    public string BladeTimeToSleepText { get => _bladeTimeToSleepText; private set => SetField(ref _bladeTimeToSleepText, value); }
+    public string BladeGameModeText { get => _bladeGameModeText; private set => SetField(ref _bladeGameModeText, value); }
+    public bool BladeGameModeEnabled
+    {
+        get => _bladeGameModeEnabled;
+        set
+        {
+            if (SetField(ref _bladeGameModeEnabled, value))
+            {
+                OnPropertyChanged(nameof(CanApplyBladeGamingMode));
+            }
+        }
+    }
+    public bool CanSetBladeGamingMode => _bladeGameModeState is byte state && state != 2 && !IsBusy;
+    public bool CanApplyBladeGamingMode =>
+        CanSetBladeGamingMode && BladeGameModeEnabled != (_bladeGameModeState != 0);
+    public string BladeStartupAnimationText { get => _bladeStartupAnimationText; private set => SetField(ref _bladeStartupAnimationText, value); }
+    public bool BladeStartupAnimationEnabled
+    {
+        get => _bladeStartupAnimationSelection;
+        set
+        {
+            if (SetField(ref _bladeStartupAnimationSelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyBladeStartupAnimation));
+            }
+        }
+    }
+    public bool CanSetBladeStartupAnimation => _bladeStartupAnimationEnabled is not null && !IsBusy;
+    public bool CanApplyBladeStartupAnimation =>
+        CanSetBladeStartupAnimation && BladeStartupAnimationEnabled != _bladeStartupAnimationEnabled;
+    public string BladeNativeDisplayModeText { get => _bladeNativeDisplayModeText; private set => SetField(ref _bladeNativeDisplayModeText, value); }
+    public string BladeSkuHardwareText { get => _bladeSkuHardwareText; private set => SetField(ref _bladeSkuHardwareText, value); }
+    public string BladeLocalDimmingText { get => _bladeLocalDimmingText; private set => SetField(ref _bladeLocalDimmingText, value); }
+    public string BladeOneTimeFullChargeText { get => _bladeOneTimeFullChargeText; private set => SetField(ref _bladeOneTimeFullChargeText, value); }
+    public bool BladeOneTimeFullChargeEnabled
+    {
+        get => _bladeOneTimeFullChargeSelection;
+        set
+        {
+            if (SetField(ref _bladeOneTimeFullChargeSelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyBladeOneTimeFullCharge));
+            }
+        }
+    }
+    public bool CanSetBladeOneTimeFullCharge =>
+        _bladeOneTimeFullChargeEnabled is not null && _confirmedBladeChargeLimitIndex >= 0 &&
+        BladeChargeLimits[_confirmedBladeChargeLimitIndex] < 100 && !IsBusy;
+    public bool CanApplyBladeOneTimeFullCharge =>
+        CanSetBladeOneTimeFullCharge && BladeOneTimeFullChargeEnabled != _bladeOneTimeFullChargeEnabled;
     public string BladeChargeLimitText { get => _bladeChargeLimitText; private set => SetField(ref _bladeChargeLimitText, value); }
     public IReadOnlyList<string> BladeChargeLimitOptions { get; } = ["50%", "55%", "60%", "65%", "70%", "75%", "80%", "关闭限制（100%）"];
     public int BladeChargeLimitIndex { get => _bladeChargeLimitIndex; set => SetField(ref _bladeChargeLimitIndex, value); }
     public bool CanSetBladeChargeLimit { get => _canSetBladeChargeLimit && !IsBusy; private set => SetField(ref _canSetBladeChargeLimit, value); }
-    public IReadOnlyList<string> BladeCpuBoostOptions { get; } = ["低", "中", "高", "Boost", "降压"];
+    public IReadOnlyList<string> BladeCpuBoostOptions { get; } = ["低", "中", "高", "Boost", "降压预设"];
     public string BladeCpuBoostText { get => _bladeCpuBoostText; private set => SetField(ref _bladeCpuBoostText, value); }
     public int BladeCpuBoostIndex { get => _bladeCpuBoostIndex; set => SetField(ref _bladeCpuBoostIndex, value); }
     public bool CanSetBladeCpuBoost => _hasBladeCpuBoost && IsBladeCustomMode && !IsBusy;
@@ -340,11 +438,43 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string BladeLogoText { get => _bladeLogoText; private set => SetField(ref _bladeLogoText, value); }
     public int BladeLogoIndex { get => _bladeLogoIndex; set => SetField(ref _bladeLogoIndex, value); }
     public bool CanSetBladeLogo { get => _canSetBladeLogo && !IsBusy; private set => SetField(ref _canSetBladeLogo, value); }
-    public IReadOnlyList<string> BladeLightingModeOptions { get; } = ["关闭", "静态", "呼吸", "光谱循环", "波浪", "火焰"];
-    public int BladeLightingModeIndex { get => _bladeLightingModeIndex; set => SetField(ref _bladeLightingModeIndex, value); }
-    public IReadOnlyList<string> BladeWaveDirectionOptions { get; } = ["向右", "向左"];
+    public string BladeTouchpadText { get => _bladeTouchpadText; private set => SetField(ref _bladeTouchpadText, value); }
+    public bool BladeTouchpadEnabled { get => _bladeTouchpadEnabled; private set => SetField(ref _bladeTouchpadEnabled, value); }
+    public bool CanSetBladeTouchpad => _canSetBladeTouchpad && !IsBusy;
+    public IReadOnlyList<string> BladeLightingModeOptions { get; } =
+        ["关闭", "静态", "呼吸", "光谱循环", "波浪", "火焰", "响应", "涟漪", "音频律动", "环境感知", "色轮", "星光", "潮汐"];
+    public int BladeLightingModeIndex
+    {
+        get => _bladeLightingModeIndex;
+        set
+        {
+            if (SetField(ref _bladeLightingModeIndex, value))
+            {
+                OnPropertyChanged(nameof(BladeLightingColorVisibility));
+                OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
+                OnPropertyChanged(nameof(BladeWaveDirectionVisibility));
+            }
+        }
+    }
+    private BladeLightingMode? SelectedBladeLightingMode =>
+        BladeLightingModeIndex >= 0 && BladeLightingModeIndex < BladeLightingModes.Length
+            ? BladeLightingModes[BladeLightingModeIndex]
+            : null;
+    public Visibility BladeLightingColorVisibility => SelectedBladeLightingMode is
+        BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
+        BladeLightingMode.Ripple or BladeLightingMode.Starlight or BladeLightingMode.Tidal
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeLightingSecondColorVisibility => SelectedBladeLightingMode == BladeLightingMode.Tidal
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeWaveDirectionVisibility => SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public IReadOnlyList<string> BladeWaveDirectionOptions { get; } = ["向右 / 顺时针", "向左 / 逆时针"];
     public int BladeWaveDirectionIndex { get => _bladeWaveDirectionIndex; set => SetField(ref _bladeWaveDirectionIndex, value); }
     public Color BladeLightingColor { get => _bladeLightingColor; set => SetField(ref _bladeLightingColor, value); }
+    public Color BladeLightingSecondColor { get => _bladeLightingSecondColor; set => SetField(ref _bladeLightingSecondColor, value); }
     public bool CanSetBladeLighting => _canSetBladeBrightness && _bladeLightingController is not null && !IsBusy;
     public string ViperDeviceName { get => _viperDeviceName; private set => SetField(ref _viperDeviceName, value); }
     public string ViperStatusText { get => _viperStatusText; private set => SetField(ref _viperStatusText, value); }
@@ -373,6 +503,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
         set => SetField(ref _viperActiveDpiStage, Math.Clamp(value, 1, Math.Max(1, ViperDpiStages.Count)));
     }
     public bool CanSetViperDpiStages { get => _canSetViperDpiStages && !IsBusy; private set => SetField(ref _canSetViperDpiStages, value); }
+    public string ViperButtonMappingsText { get => _viperButtonMappingsText; private set => SetField(ref _viperButtonMappingsText, value); }
+    public ObservableCollection<ViperButtonAssignmentRowViewModel> ViperButtonAssignments { get; } = new();
+    public IReadOnlyList<string> ViperButtonMappingLayerOptions { get; } = ["普通层", "HyperShift 层"];
+    public int ViperButtonMappingLayerIndex
+    {
+        get => _viperButtonMappingLayerIndex;
+        set
+        {
+            if (SetField(ref _viperButtonMappingLayerIndex, Math.Clamp(value, 0, 1)))
+            {
+                OnPropertyChanged(nameof(VisibleViperButtonAssignments));
+            }
+        }
+    }
+    public IReadOnlyList<ViperButtonAssignmentRowViewModel> VisibleViperButtonAssignments =>
+        ViperButtonAssignments
+            .Where(row => (int)row.Assignment.Layer == ViperButtonMappingLayerIndex)
+            .ToArray();
+    public bool CanReadViperButtonMappings => _canReadViperButtonMappings && !IsBusy;
+    public bool CanSetViperButtonMappings => _canSetViperButtonMappings && !IsBusy;
     public string InternalDisplayResolutionText { get => _internalDisplayResolutionText; private set => SetField(ref _internalDisplayResolutionText, value); }
     public string InternalDisplayRefreshRateText { get => _internalDisplayRefreshRateText; private set => SetField(ref _internalDisplayRefreshRateText, value); }
     public IReadOnlyList<int> InternalDisplayRefreshRates { get => _internalDisplayRefreshRates; private set => SetField(ref _internalDisplayRefreshRates, value); }
@@ -573,6 +723,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        if (!await TryEnterOperationAsync(cancellationToken))
+        {
+            return;
+        }
         IsBusy = true;
         try
         {
@@ -590,6 +744,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            _deviceOperationGate.Release();
         }
     }
 
@@ -600,6 +755,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        if (!await TryEnterOperationAsync(cancellationToken))
+        {
+            return;
+        }
         IsBusy = true;
         try
         {
@@ -616,6 +775,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            _deviceOperationGate.Release();
         }
     }
 
@@ -625,6 +785,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         CancellationToken cancellationToken)
     {
         var previous = _profile.Clone();
+        if (!await TryEnterOperationAsync(cancellationToken))
+        {
+            return;
+        }
         IsBusy = true;
         try
         {
@@ -648,6 +812,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            _deviceOperationGate.Release();
         }
     }
 
@@ -660,6 +825,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         ActiveProfileName = _profile.ActiveProfileName;
+        var lighting = BladeLightingProfileCodec.Parse(_profile.Global.Lighting);
+        var lightingIndex = Array.IndexOf(BladeLightingModes, lighting.Mode);
+        if (lightingIndex >= 0)
+        {
+            BladeLightingModeIndex = lightingIndex;
+            BladeWaveDirectionIndex = Array.IndexOf(BladeWaveDirections, lighting.Direction);
+            BladeLightingColor = Color.FromArgb(
+                0xFF, lighting.Color.Red, lighting.Color.Green, lighting.Color.Blue);
+            if (lighting.Mode == BladeLightingMode.Tidal)
+            {
+                BladeLightingSecondColor = Color.FromArgb(
+                    0xFF,
+                    lighting.SecondColor.Red,
+                    lighting.SecondColor.Green,
+                    lighting.SecondColor.Blue);
+            }
+        }
         ApplicationBindings.Clear();
         foreach (var binding in _profile.ApplicationBindings.OrderBy(binding => binding.Key, StringComparer.OrdinalIgnoreCase))
         {
@@ -707,6 +889,283 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         return result;
+    }
+
+    private async Task<BladeFanProfileApplyResult> ApplyLoadedFanProfileAsync(
+        DeviceDescriptor? blade,
+        bool? powerState,
+        CancellationToken cancellationToken)
+    {
+        if (blade is null || blade.Access != DeviceAccessState.Available)
+        {
+            return new(await StopBladeFanControlAsync("device-unavailable"), Changed: true);
+        }
+
+        var profile = ProfileResolver.Resolve(_profile, blade, powerState).Blade;
+        BladeFanCurve? curve = null;
+        try
+        {
+            if (profile.FanCurve is not null)
+            {
+                if (profile.FanMode is not null || profile.FanTargetRpm is not null)
+                {
+                    return new("固定转速和智能曲线不能同时配置。", Changed: false);
+                }
+
+                curve = profile.FanCurve.CreateCurve();
+            }
+            else if (profile.FanMode is byte rawMode)
+            {
+                if (!Enum.IsDefined(typeof(BladeFanMode), rawMode))
+                {
+                    return new($"Blade 风扇模式值无效：{rawMode}。", Changed: false);
+                }
+
+                var mode = (BladeFanMode)rawMode;
+                if (mode == BladeFanMode.Manual && profile.FanTargetRpm is null ||
+                    mode == BladeFanMode.Automatic && profile.FanTargetRpm is not null)
+                {
+                    return new("Blade 固定风扇模式和目标转速不匹配。", Changed: false);
+                }
+            }
+            else if (profile.FanTargetRpm is not null)
+            {
+                return new("Blade 固定风扇缺少模式。", Changed: false);
+            }
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            return new(exception.Message, Changed: false);
+        }
+
+        var fingerprint = CreateBladeFanFingerprint(profile, blade.Id, powerState);
+        if (StringComparer.Ordinal.Equals(_bladeFanControlFingerprint, fingerprint) &&
+            _bladeFanControlCompletion is { IsCompleted: false })
+        {
+            return new(null, Changed: false);
+        }
+
+        var hadControl = _bladeFanRuntime.IsRunning || _bladeFanControlFingerprint.Length > 0;
+        var stopError = await StopBladeFanControlAsync("profile-change");
+        if (stopError is not null)
+        {
+            return new(stopError, Changed: true);
+        }
+
+        if (fingerprint.Length == 0)
+        {
+            return new(null, Changed: hadControl);
+        }
+
+        try
+        {
+            if (curve is not null)
+            {
+                await _bladeFanRuntime.StartAsync(
+                    _deviceDescriptors,
+                    curve,
+                    cancellationToken);
+            }
+            else
+            {
+                var mode = (BladeFanMode)profile.FanMode!.Value;
+                await _bladeFanRuntime.StartFixedAsync(
+                    _deviceDescriptors,
+                    mode,
+                    profile.FanTargetRpm,
+                    cancellationToken);
+            }
+
+            _bladeFanControlFingerprint = fingerprint;
+            _bladeFanControlCompletion = _bladeFanRuntime.Completion;
+            _ = ObserveBladeFanControlAsync(_bladeFanControlCompletion);
+            return new(null, Changed: true);
+        }
+        catch (Exception exception) when (IsExpectedFanException(exception))
+        {
+            _bladeFanControlFingerprint = string.Empty;
+            _bladeFanControlCompletion = null;
+            return new(FormatOperationException(exception), Changed: true);
+        }
+    }
+
+    public async Task ApplyBladeFixedFanAsync(
+        BladeFanMode mode,
+        int? targetRpm,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("固定风扇", async () =>
+        {
+            var previous = _profile.Clone();
+            _profile.Global.Blade.FanCurve = null;
+            _profile.Global.Blade.FanMode = (byte)mode;
+            _profile.Global.Blade.FanTargetRpm = targetRpm;
+            var blade = _deviceDescriptors.FirstOrDefault(device =>
+                device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available);
+            var result = await ApplyLoadedFanProfileAsync(
+                blade,
+                _powerSourceProvider.IsPluggedIn,
+                cancellationToken);
+            if (result.Error is not null)
+            {
+                _profile = previous;
+                throw new InvalidOperationException(result.Error);
+            }
+
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previous;
+                await ApplyLoadedFanProfileAsync(
+                    blade,
+                    _powerSourceProvider.IsPluggedIn,
+                    cancellationToken);
+                throw new InvalidOperationException("固定风扇已写入，但配置保存失败，已恢复内存配置。");
+            }
+        }, cancellationToken);
+    }
+
+    public async Task ApplyBladeFanCurveAsync(
+        BladeFanCurve curve,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(curve);
+        if (IsBusy)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("智能风扇曲线", async () =>
+        {
+            var previous = _profile.Clone();
+            _profile.Global.Blade.FanCurve = BladeFanCurveProfile.FromCurve(curve);
+            _profile.Global.Blade.FanMode = null;
+            _profile.Global.Blade.FanTargetRpm = null;
+            var blade = _deviceDescriptors.FirstOrDefault(device =>
+                device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available);
+            var result = await ApplyLoadedFanProfileAsync(
+                blade,
+                _powerSourceProvider.IsPluggedIn,
+                cancellationToken);
+            if (result.Error is not null)
+            {
+                _profile = previous;
+                throw new InvalidOperationException(result.Error);
+            }
+
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previous;
+                await ApplyLoadedFanProfileAsync(
+                    blade,
+                    _powerSourceProvider.IsPluggedIn,
+                    cancellationToken);
+                throw new InvalidOperationException("智能风扇曲线已启动，但配置保存失败，已恢复内存配置。");
+            }
+        }, cancellationToken);
+    }
+
+    public async Task StopBladeFanControlAsync() =>
+        _ = await StopBladeFanControlAsync("explicit-stop");
+
+    private async Task<string?> StopBladeFanControlAsync(string reason)
+    {
+        _bladeFanControlCompletion = null;
+        _bladeFanControlFingerprint = string.Empty;
+        if (!_bladeFanRuntime.IsRunning)
+        {
+            return null;
+        }
+
+        try
+        {
+            await _bladeFanRuntime.StopAsync().ConfigureAwait(false);
+            return null;
+        }
+        catch (Exception exception) when (IsExpectedFanException(exception))
+        {
+            _diagnosticLog.TryWrite("blade-fan", $"{reason} restore failed: {exception}");
+            return FormatOperationException(exception);
+        }
+    }
+
+    private async Task ObserveBladeFanControlAsync(Task completion)
+    {
+        try
+        {
+            await completion.ConfigureAwait(false);
+        }
+        catch (Exception exception) when (IsExpectedFanException(exception))
+        {
+            if (ReferenceEquals(_bladeFanControlCompletion, completion))
+            {
+                _diagnosticLog.TryWrite("blade-fan", $"运行失败：{exception}");
+                _bladeFanControlFingerprint = string.Empty;
+                _bladeFanControlCompletion = null;
+                try
+                {
+                    await _bladeFanRuntime.StopAsync().ConfigureAwait(false);
+                }
+                catch (Exception restoreException) when (IsExpectedFanException(restoreException))
+                {
+                    _diagnosticLog.TryWrite("blade-fan", $"失败后恢复失败：{restoreException}");
+                }
+                RequestDeviceRefresh();
+            }
+        }
+    }
+
+    private static string CreateBladeFanFingerprint(
+        BladeProfileSettings profile,
+        string devicePath,
+        bool? powerState)
+    {
+        if (profile.FanCurve is { } curve)
+        {
+            var points = string.Join(",", curve.CpuPoints.Select(FormatPoint)) + "/" +
+                string.Join(",", curve.GpuPoints.Select(FormatPoint));
+            return $"curve\n{devicePath}\n{powerState}\n{curve.TemperatureMode}\n" +
+                $"{curve.MinimumCpuTemperatureCelsius},{curve.MinimumGpuTemperatureCelsius}," +
+                $"{curve.MinimumFanSpeedRpm}\n{points}";
+        }
+
+        return profile.FanMode is byte mode
+            ? $"fixed\n{devicePath}\n{powerState}\n{mode}\n{profile.FanTargetRpm}"
+            : string.Empty;
+
+        static string FormatPoint(BladeFanCurvePoint point) =>
+            $"{point.TemperatureCelsius}:{point.CpuFanSpeedRpm}:{point.GpuFanSpeedRpm}";
+    }
+
+    public async Task PrepareForSuspendAsync()
+    {
+        var error = await StopBladeFanControlAsync("suspend").ConfigureAwait(false);
+        if (error is not null)
+        {
+            _diagnosticLog.TryWrite("blade-fan", $"suspend restore incomplete: {error}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        _ = await StopBladeFanControlAsync("application-exit").ConfigureAwait(false);
+        try
+        {
+            await _bladeFanRuntime.DisposeAsync().ConfigureAwait(false);
+        }
+        catch (Exception exception) when (IsExpectedFanException(exception))
+        {
+            _diagnosticLog.TryWrite("blade-fan", $"dispose restore failed: {exception}");
+        }
     }
 
     private async Task<string?> ApplyLoadedLightingProfileAsync(
@@ -908,8 +1367,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        IsBusy = true;
-        ResetDeviceTelemetry();
+        if (!await TryEnterOperationAsync(cancellationToken))
+        {
+            return;
+        }
         SetDeviceQueryError(string.Empty);
         SetDeviceOperationError(string.Empty);
         var powerState = _powerSourceProvider.IsPluggedIn;
@@ -918,13 +1379,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
         try
         {
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
-            _deviceFingerprint = CreateDeviceFingerprint(snapshot);
+            var nextFingerprint = CreateDeviceFingerprint(snapshot);
+            if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
+            {
+                ResetDeviceTelemetry();
+            }
+            _deviceFingerprint = nextFingerprint;
             _deviceDescriptors = snapshot.Devices;
             RefreshInternalDisplay(powerState, applyDisplayProfile);
-            Devices.Clear();
 
             var blade = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "blade-710");
             var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "viper-184");
+            SetBladeControlDevicePath(
+                blade is
+                {
+                    Access: DeviceAccessState.Available,
+                    FeatureReportByteLength: RazerFeatureReport.Length,
+                }
+                    ? blade.Id
+                    : null);
             BladeDeviceName = blade?.Name ?? "Razer Blade";
             ViperDeviceName = viper?.Name ?? "Razer Viper";
             BladeStatusText = FormatDeviceStatus(blade);
@@ -938,10 +1411,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
                 ApplyDeviceTelemetry(telemetry);
             }
+            var bladeProfileBlocked = profileApply?.Errors.Any(error =>
+                error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
+            var fanApply = bladeProfileBlocked
+                ? new BladeFanProfileApplyResult(
+                    await StopBladeFanControlAsync("profile-error"),
+                    Changed: true)
+                : await ApplyLoadedFanProfileAsync(blade, powerState, cancellationToken);
+            if (fanApply.Changed && blade is { Access: DeviceAccessState.Available })
+            {
+                telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
+                ApplyDeviceTelemetry(telemetry);
+            }
             var lightingError = profileApply?.Errors.Any(error =>
                     error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
                 ? null
                 : await ApplyLoadedLightingProfileAsync(blade, powerState, cancellationToken);
+            Devices.Clear();
             foreach (var device in snapshot.Devices)
             {
                 Devices.Add(new DeviceRowViewModel(device, telemetry));
@@ -955,6 +1441,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (!string.IsNullOrWhiteSpace(lightingError))
             {
                 errors.Add($"键盘灯效：{lightingError}");
+            }
+            if (!string.IsNullOrWhiteSpace(fanApply.Error))
+            {
+                errors.Add($"风扇控制：{fanApply.Error}");
             }
             if (!string.IsNullOrWhiteSpace(snapshot.ErrorMessage))
             {
@@ -975,52 +1465,65 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
         {
-            _deviceFingerprint = string.Empty;
+            var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == "blade-710");
+            var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == "viper-184");
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
+            if (_bladeLightingController is not null && _bladeLightingDevicePath.Length > 0)
+            {
+                try
+                {
+                    await _bladeLightingController.StopAsync();
+                }
+                catch (Exception restoreException) when (IsExpectedRuntimeException(restoreException))
+                {
+                    _diagnosticLog.TryWrite(
+                        "keyboard-lighting",
+                        $"refresh-failure restore failed: {restoreException}");
+                }
+            }
+            _ = await StopBladeFanControlAsync("refresh-failure");
+            SetBladeControlDevicePath(null);
             _lightingShadowFingerprint = string.Empty;
             _bladeLightingDevicePath = string.Empty;
             RefreshInternalDisplay(powerState, applyDisplayProfile);
-            Devices.Clear();
+            BladeStatusText = hadBlade ? "查询失败 · 显示上次值" : "未发现";
+            ViperStatusText = hadViper ? "查询失败 · 显示上次值" : "未发现";
             SetDeviceQueryError(exception.Message);
             LastDeviceRefreshText = "设备探测失败";
             OnPropertyChanged(nameof(EmptyStateText));
         }
         finally
         {
-            IsBusy = false;
+            _deviceOperationGate.Release();
         }
     }
 
     public async Task ApplyBladeBrightnessAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanSetBladeBrightness)
+        if (!_canSetBladeBrightness)
         {
             return;
         }
 
-        IsBusy = true;
-        SetDeviceOperationError(string.Empty);
-        try
-        {
-            var requested = checked((byte)Math.Round(BladeBrightnessPercent * 255 / 100, MidpointRounding.AwayFromZero));
-            var actual = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(_deviceDescriptors, requested, cancellationToken);
-            SetBladeBrightness(actual);
-            _profile.Global.Blade.KeyboardBrightness = actual;
-            await SaveProfileAsync(cancellationToken);
-            DeviceTelemetryTimeText = $"亮度已应用并读回 {DateTimeOffset.Now:HH:mm:ss}";
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or OverflowException)
-        {
-            BladeBrightnessPercent = _confirmedBladeBrightnessPercent;
-            SetDeviceOperationError($"键盘亮度写入：{exception.Message}");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        await RunDeviceOperationAsync(
+            "键盘亮度",
+            () => ApplyBladeBrightnessCoreAsync(cancellationToken),
+            cancellationToken,
+            () => BladeBrightnessPercent = _confirmedBladeBrightnessPercent);
+    }
+
+    private async Task ApplyBladeBrightnessCoreAsync(CancellationToken cancellationToken)
+    {
+        var requested = checked((byte)Math.Round(
+            BladeBrightnessPercent * 255 / 100,
+            MidpointRounding.AwayFromZero));
+        var actual = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
+            _deviceDescriptors,
+            requested,
+            cancellationToken);
+        SetBladeBrightness(actual);
+        _profile.Global.Blade.KeyboardBrightness = actual;
+        await SaveProfileAsync(cancellationToken);
     }
 
     public async Task ApplyBladeLightingEffectAsync(
@@ -1060,7 +1563,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     _bladeLightingController.RuntimeCompletion);
             },
             cancellationToken,
-            reportsReadBack: false);
+            successVerb: "启动");
     }
 
     public Task ApplySelectedBladeLightingEffectAsync(CancellationToken cancellationToken = default)
@@ -1072,16 +1575,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         var color = new RazerRgb(BladeLightingColor.R, BladeLightingColor.G, BladeLightingColor.B);
+        var secondColor = new RazerRgb(
+            BladeLightingSecondColor.R,
+            BladeLightingSecondColor.G,
+            BladeLightingSecondColor.B);
         var effect = new BladeLightingEffect(
             BladeLightingModes[BladeLightingModeIndex],
             color,
-            BladeWaveDirections[BladeWaveDirectionIndex]);
+            BladeWaveDirections[BladeWaveDirectionIndex],
+            secondColor);
         return ApplyBladeLightingEffectAsync(effect, cancellationToken);
     }
 
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanSetBladePerformanceMode ||
+        if (!_canSetBladePerformanceMode ||
             BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= BladePerformanceModes.Length)
         {
             return;
@@ -1202,6 +1710,191 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }, cancellationToken, () => BladeLogoIndex = _confirmedBladeLogoIndex);
     }
 
+    public async Task ToggleBladeTouchpadAsync(CancellationToken cancellationToken = default)
+    {
+        await RunDeviceOperationAsync(
+            "触控板",
+            async () =>
+            {
+                if (!_canSetBladeTouchpad || _touchpadController is null)
+                {
+                    throw new InvalidOperationException("触控板状态不可用。");
+                }
+
+                var actual = await Task.Run(
+                    _touchpadController.ToggleVerified,
+                    cancellationToken);
+                BladeTouchpadEnabled = actual;
+                _confirmedBladeTouchpadEnabled = actual;
+                BladeTouchpadText = actual ? "已启用" : "已禁用";
+            },
+            cancellationToken,
+            () =>
+            {
+                BladeTouchpadEnabled = _confirmedBladeTouchpadEnabled;
+                BladeTouchpadText = _confirmedBladeTouchpadEnabled ? "已启用" : "已禁用";
+            },
+            successVerb: "切换并读回",
+            failureVerb: "切换");
+    }
+
+    internal async Task CycleBladePerformanceModeAsync(CancellationToken cancellationToken = default)
+    {
+        await RunDeviceOperationAsync("性能模式", async () =>
+        {
+            if (!_canSetBladePerformanceMode || _confirmedBladePerformanceModeIndex < 0)
+            {
+                throw new InvalidOperationException("性能模式状态不可用。");
+            }
+
+            BladePerformanceModeIndex =
+                (_confirmedBladePerformanceModeIndex + 1) % BladePerformanceModes.Length;
+            var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
+                _deviceDescriptors,
+                BladePerformanceModes[BladePerformanceModeIndex],
+                cancellationToken);
+            SetBladePerformanceMode(actual);
+            _profile.Global.Blade.PerformanceMode = (byte)actual;
+            await SaveProfileAsync(cancellationToken);
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladePerformanceModeIndex = _confirmedBladePerformanceModeIndex);
+    }
+
+    internal async Task ToggleBladeGamingModeAsync(CancellationToken cancellationToken = default)
+    {
+        await RunDeviceOperationAsync("游戏模式", async () =>
+        {
+            var current = _bladeGameModeState is byte state && state != 2
+                ? state
+                : throw new InvalidOperationException("游戏模式状态不可用。");
+            var actual = await _deviceTelemetryReader.SetBladeGameModeAsync(
+                _deviceDescriptors,
+                current == 0,
+                cancellationToken);
+            SetBladeGameMode(actual);
+            RequestDeviceRefresh();
+        }, cancellationToken);
+    }
+
+    public async Task ApplyBladeGamingModeAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyBladeGamingMode)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("游戏模式", async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeGameModeAsync(
+                _deviceDescriptors, BladeGameModeEnabled, cancellationToken);
+            SetBladeGameMode(actual);
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladeGameModeEnabled = _bladeGameModeState != 0);
+    }
+
+    public async Task ApplyBladeStartupAnimationAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyBladeStartupAnimation)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("启动动画", async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeStartupAnimationAsync(
+                _deviceDescriptors, BladeStartupAnimationEnabled, cancellationToken);
+            _bladeStartupAnimationEnabled = actual;
+            BladeStartupAnimationText = FormatOptionalState(actual);
+            BladeStartupAnimationEnabled = actual;
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladeStartupAnimationEnabled = _bladeStartupAnimationEnabled ?? false);
+    }
+
+    internal async Task CycleInternalDisplayRefreshRateAsync(CancellationToken cancellationToken = default)
+    {
+        await RunDeviceOperationAsync("内置屏刷新率", async () =>
+        {
+            if (!_canSetInternalDisplayRefreshRate ||
+                _internalDisplayController is null ||
+                InternalDisplayRefreshRates.Count == 0)
+            {
+                throw new InvalidOperationException("内置屏刷新率状态不可用。");
+            }
+
+            var currentIndex = Array.IndexOf(
+                InternalDisplayRefreshRates.ToArray(),
+                _confirmedInternalDisplayRefreshRateHertz);
+            InternalDisplayRefreshRateHertz = InternalDisplayRefreshRates[
+                (Math.Max(currentIndex, 0) + 1) % InternalDisplayRefreshRates.Count];
+            var snapshot = _internalDisplayController.SetRefreshRate(
+                InternalDisplayRefreshRateHertz);
+            ApplyInternalDisplaySnapshot(snapshot);
+            _profile.Global.Blade.RefreshRateHertz = snapshot.RefreshRateHertz;
+            await SaveProfileAsync(cancellationToken);
+        }, cancellationToken, () =>
+            InternalDisplayRefreshRateHertz = _confirmedInternalDisplayRefreshRateHertz);
+    }
+
+    internal async Task StepBladeBrightnessAsync(
+        bool increase,
+        CancellationToken cancellationToken = default)
+    {
+        await RunDeviceOperationAsync("键盘亮度", async () =>
+        {
+            if (!_canSetBladeBrightness)
+            {
+                throw new InvalidOperationException("键盘亮度状态不可用。");
+            }
+
+            BladeBrightnessPercent = Math.Clamp(
+                _confirmedBladeBrightnessPercent + (increase ? 6.25 : -6.25),
+                0,
+                100);
+            await ApplyBladeBrightnessCoreAsync(cancellationToken);
+        }, cancellationToken, () =>
+            BladeBrightnessPercent = _confirmedBladeBrightnessPercent);
+    }
+
+    internal async Task ToggleBladeOneTimeFullChargeAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await RunDeviceOperationAsync("一次性充满", async () =>
+        {
+            var current = _bladeOneTimeFullChargeEnabled ??
+                throw new InvalidOperationException("一次性充满状态不可用。");
+            var actual = await _deviceTelemetryReader.SetBladeOneTimeFullChargeAsync(
+                _deviceDescriptors,
+                !current,
+                cancellationToken);
+            _bladeOneTimeFullChargeEnabled = actual;
+            BladeOneTimeFullChargeEnabled = actual;
+            BladeOneTimeFullChargeText = FormatOptionalState(actual);
+            RequestDeviceRefresh();
+        }, cancellationToken);
+    }
+
+    public async Task ApplyBladeOneTimeFullChargeAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyBladeOneTimeFullCharge)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("一次性充满", async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeOneTimeFullChargeAsync(
+                _deviceDescriptors, BladeOneTimeFullChargeEnabled, cancellationToken);
+            _bladeOneTimeFullChargeEnabled = actual;
+            BladeOneTimeFullChargeText = FormatOptionalState(actual);
+            BladeOneTimeFullChargeEnabled = actual;
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladeOneTimeFullChargeEnabled = _bladeOneTimeFullChargeEnabled ?? false);
+    }
+
     public async Task ApplyViperPollingRateAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy || !CanSetViperPollingRate)
@@ -1309,9 +2002,62 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }, cancellationToken, RestoreViperDpiStages);
     }
 
+    public async Task ReadViperButtonMappingsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanReadViperButtonMappings)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("鼠标板载映射", async () =>
+        {
+            var assignments = await _deviceTelemetryReader.ReadViperButtonAssignmentsAsync(
+                _deviceDescriptors, cancellationToken);
+            ViperButtonAssignments.Clear();
+            foreach (var assignment in assignments
+                .OrderBy(item => item.ButtonId)
+                .ThenBy(item => item.Layer))
+            {
+                ViperButtonAssignments.Add(new(assignment));
+            }
+            OnPropertyChanged(nameof(VisibleViperButtonAssignments));
+
+            _canSetViperButtonMappings = assignments.Count == 16;
+            ViperButtonMappingsText = _canSetViperButtonMappings
+                ? "Profile 1 · 8 个可映射控制"
+                : $"读取不完整 · {assignments.Count}/16 条记录";
+            OnPropertyChanged(nameof(CanSetViperButtonMappings));
+        }, cancellationToken, () =>
+        {
+            ViperButtonAssignments.Clear();
+            OnPropertyChanged(nameof(VisibleViperButtonAssignments));
+            _canSetViperButtonMappings = false;
+            ViperButtonMappingsText = "读取失败";
+            OnPropertyChanged(nameof(CanSetViperButtonMappings));
+        });
+    }
+
+    public async Task ApplyViperButtonMappingAsync(
+        ViperButtonAssignmentRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (!CanSetViperButtonMappings || !row.CanApply)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("鼠标板载映射", async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetViperButtonAssignmentAsync(
+                _deviceDescriptors, row.CreateAssignment(), cancellationToken);
+            row.Apply(actual);
+        }, cancellationToken, row.RestoreSelection);
+    }
+
     public async Task ApplyInternalDisplayRefreshRateAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanSetInternalDisplayRefreshRate || _internalDisplayController is null)
+        if (!_canSetInternalDisplayRefreshRate || _internalDisplayController is null)
         {
             return;
         }
@@ -1331,27 +2077,51 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Func<Task> operation,
         CancellationToken cancellationToken,
         Action? restoreSelection = null,
-        bool reportsReadBack = true)
+        string successVerb = "应用并读回",
+        string failureVerb = "写入")
     {
+        if (!await TryEnterOperationAsync(cancellationToken))
+        {
+            restoreSelection?.Invoke();
+            return;
+        }
         IsBusy = true;
         SetDeviceOperationError(string.Empty);
         try
         {
             await operation();
-            DeviceTelemetryTimeText = $"{label}已{(reportsReadBack ? "应用并读回" : "启动")} {DateTimeOffset.Now:HH:mm:ss}";
+            DeviceTelemetryTimeText = $"{label}已{successVerb} {DateTimeOffset.Now:HH:mm:ss}";
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception)
         {
             restoreSelection?.Invoke();
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                SetDeviceOperationError($"{label}{failureVerb}：{FormatOperationException(exception)}");
+            }
         }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or ArgumentOutOfRangeException or OverflowException or AggregateException or ObjectDisposedException)
+        catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or ArgumentOutOfRangeException or OverflowException or AggregateException or ObjectDisposedException)
         {
             restoreSelection?.Invoke();
-            SetDeviceOperationError($"{label}写入：{FormatOperationException(exception)}");
+            SetDeviceOperationError($"{label}{failureVerb}：{FormatOperationException(exception)}");
         }
         finally
         {
             IsBusy = false;
+            _deviceOperationGate.Release();
+        }
+    }
+
+    private async Task<bool> TryEnterOperationAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _deviceOperationGate.WaitAsync(cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return false;
         }
     }
 
@@ -1383,37 +2153,68 @@ public sealed class MainViewModel : INotifyPropertyChanged
         return string.Join("；", exceptions.Select(error => error.Message).Where(message => !string.IsNullOrWhiteSpace(message)));
     }
 
+    private void SetBladeControlDevicePath(string? value)
+    {
+        if (StringComparer.OrdinalIgnoreCase.Equals(_bladeControlDevicePath, value))
+        {
+            return;
+        }
+
+        _bladeControlDevicePath = value;
+        BladeControlDevicePathChanged?.Invoke(value);
+    }
+
     private async Task RefreshPerformanceAsync(CancellationToken cancellationToken)
     {
         try
         {
             var snapshot = await _performanceMonitor.SampleAsync(cancellationToken);
-            CpuName = snapshot.CpuName;
-            CpuValue = FormatPercent(snapshot.CpuUsagePercent);
-            CpuPercent = snapshot.CpuUsagePercent ?? 0;
-            CpuTemperatureText = FormatNumber(snapshot.CpuTemperatureCelsius, "0", "°C");
-            CpuPowerText = FormatNumber(snapshot.CpuPowerWatts, "0.0", " W");
-            CpuClockText = FormatNumber(snapshot.CpuClockMegahertz, "0", " MHz");
+            if (!string.IsNullOrWhiteSpace(snapshot.CpuName)) CpuName = snapshot.CpuName;
+            if (snapshot.CpuUsagePercent is double cpuUsage)
+            {
+                CpuValue = FormatPercent(cpuUsage);
+                CpuPercent = cpuUsage;
+            }
+            if (snapshot.CpuTemperatureCelsius is double cpuTemperature)
+                CpuTemperatureText = FormatNumber<double>(cpuTemperature, "0", "°C");
+            if (snapshot.CpuPowerWatts is double cpuPower)
+                CpuPowerText = FormatNumber<double>(cpuPower, "0.0", " W");
+            if (snapshot.CpuClockMegahertz is int cpuClock)
+                CpuClockText = FormatNumber<int>(cpuClock, "0", " MHz");
 
-            GpuName = snapshot.GpuName;
-            GpuValue = FormatPercent(snapshot.GpuUsagePercent);
-            GpuPercent = snapshot.GpuUsagePercent ?? 0;
-            GpuTemperatureText = FormatNumber(snapshot.GpuTemperatureCelsius, "0", "°C");
-            GpuPowerText = FormatNumber(snapshot.GpuPowerWatts, "0.0", " W");
-            GpuClockText = FormatNumber(snapshot.GpuClockMegahertz, "0", " MHz");
-            GpuMemoryText = snapshot.GpuMemoryUsedMebibytes is not null && snapshot.GpuMemoryTotalMebibytes is not null
-                ? $"{snapshot.GpuMemoryUsedMebibytes:N0} / {snapshot.GpuMemoryTotalMebibytes:N0} MiB"
-                : "--";
+            if (!string.IsNullOrWhiteSpace(snapshot.GpuName)) GpuName = snapshot.GpuName;
+            if (snapshot.GpuUsagePercent is double gpuUsage)
+            {
+                GpuValue = FormatPercent(gpuUsage);
+                GpuPercent = gpuUsage;
+            }
+            if (snapshot.GpuTemperatureCelsius is double gpuTemperature)
+                GpuTemperatureText = FormatNumber<double>(gpuTemperature, "0", "°C");
+            if (snapshot.GpuPowerWatts is double gpuPower)
+                GpuPowerText = FormatNumber<double>(gpuPower, "0.0", " W");
+            if (snapshot.GpuClockMegahertz is int gpuClock)
+                GpuClockText = FormatNumber<int>(gpuClock, "0", " MHz");
+            if (snapshot.GpuMemoryUsedMebibytes is long gpuMemoryUsed &&
+                snapshot.GpuMemoryTotalMebibytes is long gpuMemoryTotal)
+            {
+                GpuMemoryText = $"{gpuMemoryUsed:N0} / {gpuMemoryTotal:N0} MiB";
+            }
 
             var memoryPercent = CalculatePercent(snapshot.MemoryUsedBytes, snapshot.MemoryTotalBytes);
-            MemoryPercent = memoryPercent ?? 0;
-            MemoryValue = FormatPercent(memoryPercent);
-            MemoryDetail = FormatBytePair(snapshot.MemoryUsedBytes, snapshot.MemoryTotalBytes);
+            if (memoryPercent is double currentMemoryPercent)
+            {
+                MemoryPercent = currentMemoryPercent;
+                MemoryValue = FormatPercent(currentMemoryPercent);
+                MemoryDetail = FormatBytePair(snapshot.MemoryUsedBytes, snapshot.MemoryTotalBytes);
+            }
 
             var storagePercent = CalculatePercent(snapshot.StorageUsedBytes, snapshot.StorageTotalBytes);
-            StoragePercent = storagePercent ?? 0;
-            StorageValue = FormatPercent(storagePercent);
-            StorageDetail = FormatBytePair(snapshot.StorageUsedBytes, snapshot.StorageTotalBytes);
+            if (storagePercent is double currentStoragePercent)
+            {
+                StoragePercent = currentStoragePercent;
+                StorageValue = FormatPercent(currentStoragePercent);
+                StorageDetail = FormatBytePair(snapshot.StorageUsedBytes, snapshot.StorageTotalBytes);
+            }
 
             TelemetryTimeText = $"实时采样 {snapshot.CapturedAt.ToLocalTime():HH:mm:ss}";
             _performanceErrorText = snapshot.ErrorMessage ?? string.Empty;
@@ -1458,30 +2259,85 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SetBladeLogo(logo);
             CanSetBladeLogo = true;
         }
-        BladeFanText = telemetry.BladeFanMode switch
+        if (telemetry.BladeFanMode is BladeFanMode fanMode)
         {
-            BladeFanMode.Automatic when telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu => $"自动 · CPU {cpu} / GPU {gpu} RPM",
-            BladeFanMode.Automatic => "自动",
-            BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int target && telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu => $"手动 · {target} RPM · 当前 {cpu} / {gpu}",
-            BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int rpm => $"手动 · {rpm} RPM",
-            BladeFanMode.Manual => "手动 · -- RPM",
-            _ => "--",
-        };
-        BladeFanModeText = telemetry.BladeFanMode switch
+            BladeFanText = fanMode switch
+            {
+                BladeFanMode.Automatic when telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu => $"自动 · CPU {cpu} / GPU {gpu} RPM",
+                BladeFanMode.Automatic => "自动",
+                BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int target && telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu => $"手动 · {target} RPM · 当前 {cpu} / {gpu}",
+                BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int rpm => $"手动 · {rpm} RPM",
+                BladeFanMode.Manual => "手动 · -- RPM",
+                _ => BladeFanText,
+            };
+            BladeFanModeText = fanMode switch
+            {
+                BladeFanMode.Automatic => "自动",
+                BladeFanMode.Manual => "手动",
+                _ => BladeFanModeText,
+            };
+            if (fanMode == BladeFanMode.Automatic)
+            {
+                BladeFanTargetRpmText = "--";
+            }
+            else if (telemetry.BladeFanTargetRpm is int targetRpm)
+            {
+                BladeFanTargetRpmText = $"{targetRpm:N0} RPM";
+            }
+        }
+        if (telemetry.BladeCurrentFanCpuRpm is int cpuRpm)
         {
-            BladeFanMode.Automatic => "自动",
-            BladeFanMode.Manual => "手动",
-            _ => "未知",
-        };
-        BladeFanTargetRpmText = telemetry.BladeFanTargetRpm is int targetRpm ? $"{targetRpm:N0} RPM" : "未知";
-        BladeCurrentFanCpuRpmText = telemetry.BladeCurrentFanCpuRpm is int cpuRpm ? $"{cpuRpm:N0} RPM" : "未知";
-        BladeCurrentFanGpuRpmText = telemetry.BladeCurrentFanGpuRpm is int gpuRpm ? $"{gpuRpm:N0} RPM" : "未知";
-        BladeAdvancedFanCpuModeRawText = FormatRawByte(telemetry.BladeAdvancedFanCpuModeRaw);
-        BladeAdvancedFanGpuModeRawText = FormatRawByte(telemetry.BladeAdvancedFanGpuModeRaw);
-        BladeWiredBatteryText = telemetry.BladeWiredBatteryPercent is int batteryPercent ? $"{batteryPercent}%" : "未知";
-        BladeChargingStatusRawText = FormatRawByte(telemetry.BladeChargingStatusRaw);
-        BladeAutoSleepRawText = FormatRawByte(telemetry.BladeAutoSleepRaw);
-        BladeTimeToSleepText = telemetry.BladeTimeToSleepSeconds is int seconds ? FormatDuration(seconds) : "未知";
+            BladeCurrentFanCpuRpmText = $"{cpuRpm:N0} RPM";
+        }
+        if (telemetry.BladeCurrentFanGpuRpm is int gpuRpm)
+        {
+            BladeCurrentFanGpuRpmText = $"{gpuRpm:N0} RPM";
+        }
+        if (telemetry.BladeAdvancedFanCpuModeRaw is byte cpuFanMode)
+        {
+            BladeAdvancedFanCpuModeRawText = FormatRawByte(cpuFanMode);
+        }
+        if (telemetry.BladeAdvancedFanGpuModeRaw is byte gpuFanMode)
+        {
+            BladeAdvancedFanGpuModeRawText = FormatRawByte(gpuFanMode);
+        }
+        if (telemetry.BladeGameMode is { } gameMode)
+        {
+            SetBladeGameMode(gameMode);
+        }
+        if (telemetry.BladeStartupAnimationEnabled is bool startupAnimationEnabled)
+        {
+            _bladeStartupAnimationEnabled = startupAnimationEnabled;
+            BladeStartupAnimationEnabled = startupAnimationEnabled;
+            BladeStartupAnimationText = FormatOptionalState(startupAnimationEnabled);
+            OnPropertyChanged(nameof(CanSetBladeStartupAnimation));
+            OnPropertyChanged(nameof(CanApplyBladeStartupAnimation));
+        }
+        if (telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode)
+        {
+            BladeNativeDisplayModeText = nativeDisplayMode == BladeNativeDisplayMode.Uhd ? "UHD" : "FHD";
+        }
+        if (telemetry.BladeSkuHardwareConfiguration is { } sku)
+        {
+            BladeSkuHardwareText =
+                $"0x{sku.Raw:X2} · DDS {FormatState(sku.Dds)} · MiniLED {FormatState(sku.MiniLedResolution)} · Battery {FormatState(sku.IllegalBatterySupport)}";
+            if (!sku.MiniLedResolution)
+            {
+                BladeLocalDimmingText = "不适用（非 MiniLED）";
+            }
+            else if (telemetry.BladeLocalDimmingEnabled is bool localDimmingEnabled)
+            {
+                BladeLocalDimmingText = FormatOptionalState(localDimmingEnabled);
+            }
+        }
+        if (telemetry.BladeOneTimeFullChargeEnabled is bool oneTimeFullChargeEnabled)
+        {
+            _bladeOneTimeFullChargeEnabled = oneTimeFullChargeEnabled;
+            BladeOneTimeFullChargeEnabled = oneTimeFullChargeEnabled;
+            BladeOneTimeFullChargeText = FormatOptionalState(oneTimeFullChargeEnabled);
+            OnPropertyChanged(nameof(CanSetBladeOneTimeFullCharge));
+            OnPropertyChanged(nameof(CanApplyBladeOneTimeFullCharge));
+        }
         if (telemetry.BladeChargeLimitPercent is int chargeLimit)
         {
             SetBladeChargeLimit(chargeLimit);
@@ -1489,14 +2345,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         if (_deviceDescriptors.Any(device => device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available))
         {
+            if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
+            {
+                BladeTouchpadEnabled = touchpadEnabled;
+                _confirmedBladeTouchpadEnabled = touchpadEnabled;
+                BladeTouchpadText = touchpadEnabled ? "已启用" : "已禁用";
+                _canSetBladeTouchpad = true;
+                OnPropertyChanged(nameof(CanSetBladeTouchpad));
+            }
+            else
+            {
+                BladeTouchpadText = "不可用";
+                _canSetBladeTouchpad = false;
+                OnPropertyChanged(nameof(CanSetBladeTouchpad));
+            }
+
             BladeStatusText = telemetry.BladeKeyboardBrightness is not null ||
                               telemetry.BladePerformanceMode is not null ||
                               telemetry.BladeChargeLimitPercent is not null
                 ? "已连接 · 已读取可用控制"
                 : "已连接 · 硬件查询失败";
         }
-
-        ViperBatteryText = telemetry.ViperBatteryPercent is int battery ? $"{battery}%" : "--";
+        if (telemetry.ViperBatteryPercent is int battery)
+        {
+            ViperBatteryText = $"{battery}%";
+        }
         if (telemetry.ViperPollingRateHertz is int pollingRate)
         {
             ViperPollingRateText = $"{pollingRate} Hz";
@@ -1525,11 +2398,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SetViperDpiStages(stages);
             CanSetViperDpiStages = true;
         }
-        ViperLowBatteryThresholdText = telemetry.ViperLowBatteryThresholdRaw is byte raw
-            ? ViperLowBatteryThresholdProtocol.Format(raw)
-            : "--";
+        if (telemetry.ViperLowBatteryThresholdRaw is byte raw)
+        {
+            ViperLowBatteryThresholdText = ViperLowBatteryThresholdProtocol.Format(raw);
+        }
         if (_deviceDescriptors.Any(device => device.ProtocolFamily == "viper-184" && device.Access == DeviceAccessState.Available))
         {
+            _canReadViperButtonMappings = true;
+            OnPropertyChanged(nameof(CanReadViperButtonMappings));
             ViperStatusText = telemetry.ViperBatteryPercent is not null ||
                               telemetry.ViperPollingRateHertz is not null ||
                               telemetry.ViperDpiX is not null ||
@@ -1600,11 +2476,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void SetInternalDisplayUnavailable()
     {
-        InternalDisplayResolutionText = "--";
-        InternalDisplayRefreshRateText = "--";
-        InternalDisplayRefreshRates = Array.Empty<int>();
-        InternalDisplayRefreshRateHertz = 0;
-        _confirmedInternalDisplayRefreshRateHertz = 0;
         CanSetInternalDisplayRefreshRate = false;
     }
 
@@ -1624,9 +2495,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             BladePerformanceMode.Balanced => "平衡",
             BladePerformanceMode.Performance => "性能",
+            BladePerformanceMode.BatterySaver => "电池节能",
             BladePerformanceMode.Custom => "自定义",
             BladePerformanceMode.Silent => "静音",
-            BladePerformanceMode.Battery => "电池",
+            BladePerformanceMode.BalancedDc => "平衡（电池）",
             BladePerformanceMode.Hyperboost => "HyperBoost",
             _ => "--",
         };
@@ -1641,11 +2513,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
     }
 
+    private void SetBladeGameMode(BladeGameModeTelemetry? gameMode)
+    {
+        _bladeGameModeState = gameMode?.GameMode;
+        BladeGameModeEnabled = gameMode is { GameMode: not 0 };
+        OnPropertyChanged(nameof(CanSetBladeGamingMode));
+        OnPropertyChanged(nameof(CanApplyBladeGamingMode));
+        BladeGameModeText = gameMode is { } value
+            ? $"模式 0x{value.GameMode:X2} · 屏蔽 0x{value.KeyCover:X2} · Lifted 0x{value.Lifted:X2}"
+            : "--";
+    }
+
     private void SetBladeChargeLimit(int percent)
     {
         BladeChargeLimitText = percent == 100 ? "关闭 · 100%" : $"{percent}%";
         BladeChargeLimitIndex = Array.IndexOf(BladeChargeLimits, percent);
         _confirmedBladeChargeLimitIndex = BladeChargeLimitIndex;
+        OnPropertyChanged(nameof(CanSetBladeOneTimeFullCharge));
+        OnPropertyChanged(nameof(CanApplyBladeOneTimeFullCharge));
     }
 
     private bool IsBladeCustomMode =>
@@ -1676,7 +2561,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             BladeCpuBoostMode.Medium => "中",
             BladeCpuBoostMode.High => "高",
             BladeCpuBoostMode.Boost => "Boost",
-            BladeCpuBoostMode.Undervolt => "降压",
+            BladeCpuBoostMode.Undervolt => "降压预设",
             _ => "--",
         };
         BladeCpuBoostIndex = Array.IndexOf(BladeCpuBoostModes, mode);
@@ -1791,10 +2676,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
         BladeCurrentFanGpuRpmText = "--";
         BladeAdvancedFanCpuModeRawText = "--";
         BladeAdvancedFanGpuModeRawText = "--";
-        BladeWiredBatteryText = "--";
-        BladeChargingStatusRawText = "--";
-        BladeAutoSleepRawText = "--";
-        BladeTimeToSleepText = "--";
+        SetBladeGameMode(null);
+        BladeStartupAnimationText = "--";
+        _bladeStartupAnimationEnabled = null;
+        BladeStartupAnimationEnabled = false;
+        BladeNativeDisplayModeText = "--";
+        BladeSkuHardwareText = "--";
+        BladeLocalDimmingText = "--";
+        _bladeOneTimeFullChargeEnabled = null;
+        BladeOneTimeFullChargeEnabled = false;
+        BladeOneTimeFullChargeText = "--";
         BladeChargeLimitText = "--";
         BladeChargeLimitIndex = -1;
         _confirmedBladeChargeLimitIndex = -1;
@@ -1804,6 +2695,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         BladeLogoIndex = -1;
         _confirmedBladeLogoIndex = -1;
         CanSetBladeLogo = false;
+        BladeTouchpadText = "--";
+        BladeTouchpadEnabled = false;
+        _confirmedBladeTouchpadEnabled = false;
+        _canSetBladeTouchpad = false;
+        OnPropertyChanged(nameof(CanSetBladeTouchpad));
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
         OnPropertyChanged(nameof(CanSetBladeGpuBoost));
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
@@ -1831,6 +2727,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ViperActiveDpiStage));
         _confirmedViperDpiStages = null;
         CanSetViperDpiStages = false;
+        ViperButtonAssignments.Clear();
+        OnPropertyChanged(nameof(VisibleViperButtonAssignments));
+        ViperButtonMappingsText = "未读取";
+        _canReadViperButtonMappings = false;
+        _canSetViperButtonMappings = false;
+        OnPropertyChanged(nameof(CanReadViperButtonMappings));
+        OnPropertyChanged(nameof(CanSetViperButtonMappings));
         DeviceTelemetryTimeText = "正在查询硬件";
     }
 
@@ -1847,6 +2750,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _ when seconds % 60 == 0 => $"{seconds / 60} 分钟",
         _ => $"{seconds / 60} 分 {seconds % 60} 秒",
     };
+
+    private static string FormatOptionalState(bool? value) => value switch
+    {
+        true => "已启用",
+        false => "已禁用",
+        null => "--",
+    };
+
+    private static string FormatState(bool value) => value ? "是" : "否";
 
     private void UpdateErrorText()
     {
@@ -1892,24 +2804,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void SetPerformanceUnavailable(string error)
     {
-        CpuValue = "--";
-        CpuPercent = 0;
-        CpuTemperatureText = "--";
-        CpuPowerText = "--";
-        CpuClockText = "--";
-        GpuValue = "--";
-        GpuPercent = 0;
-        GpuTemperatureText = "--";
-        GpuPowerText = "--";
-        GpuClockText = "--";
-        GpuMemoryText = "--";
-        MemoryValue = "--";
-        MemoryDetail = "-- / -- GB";
-        MemoryPercent = 0;
-        StorageValue = "--";
-        StorageDetail = "-- / -- GB";
-        StoragePercent = 0;
-        TelemetryTimeText = "实时采样不可用";
+        TelemetryTimeText = "采样失败 · 显示上次值";
         var message = $"性能采样：{error}";
         LogChangedError("performance", _performanceErrorText, message);
         _performanceErrorText = message;
@@ -1999,6 +2894,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private static bool IsExpectedRuntimeException(Exception exception) =>
         exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException;
 
+    private static bool IsExpectedFanException(Exception exception) =>
+        IsExpectedRuntimeException(exception) ||
+        exception is ArgumentException or AggregateException or ObjectDisposedException;
+
     private static double? CalculatePercent<T>(T? used, T? total) where T : struct, IConvertible
     {
         if (used is null || total is null)
@@ -2045,6 +2944,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    private readonly record struct BladeFanProfileApplyResult(string? Error, bool Changed);
 }
 
 internal sealed class UnknownPowerSourceProvider : IPowerSourceProvider
@@ -2059,6 +2960,249 @@ internal sealed class UnknownActiveApplicationProvider : IActiveApplicationProvi
     public static UnknownActiveApplicationProvider Instance { get; } = new();
 
     public string? ExecutablePath => null;
+}
+
+public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
+{
+    private static readonly byte[] MouseButtonCodes = [1, 2, 3, 4, 5, 9, 10];
+    private int _selectedActionIndex;
+    private double _keyboardModifierValue;
+    private double _keyboardUsageValue = 4;
+
+    public ViperButtonAssignmentRowViewModel(ViperButtonAssignment assignment)
+    {
+        ArgumentNullException.ThrowIfNull(assignment);
+        Assignment = assignment;
+        ButtonText = FormatButton(assignment.ButtonId);
+        LayerText = assignment.Layer == ViperButtonMappingLayer.Normal ? "普通" : "HyperShift";
+        CurrentActionText = FormatAction(assignment);
+        RestoreEditorFromAssignment();
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public IReadOnlyList<string> ActionOptions { get; } =
+        ["关闭", "左键", "右键", "滚轮按下", "后退", "前进", "滚轮向上", "滚轮向下", "键盘按键", "双击", "DPI 循环切换", "播放 / 暂停", "HyperShift", "键盘 Turbo", "鼠标 Turbo"];
+    public string ButtonText { get; }
+    public string LayerText { get; }
+    public string CurrentActionText { get; private set; }
+    public ViperButtonAssignment Assignment { get; private set; }
+    public int SelectedActionIndex
+    {
+        get => _selectedActionIndex;
+        set
+        {
+            if (_selectedActionIndex == value)
+            {
+                return;
+            }
+            _selectedActionIndex = value;
+            PropertyChanged?.Invoke(this, new(nameof(SelectedActionIndex)));
+            PropertyChanged?.Invoke(this, new(nameof(KeyboardParameterVisibility)));
+            PropertyChanged?.Invoke(this, new(nameof(DoubleClickParameterVisibility)));
+            PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+        }
+    }
+    public double KeyboardModifierValue
+    {
+        get => _keyboardModifierValue;
+        set => SetKeyboardByte(ref _keyboardModifierValue, value);
+    }
+    public double KeyboardUsageValue
+    {
+        get => _keyboardUsageValue;
+        set => SetKeyboardByte(ref _keyboardUsageValue, value);
+    }
+    public Visibility KeyboardParameterVisibility => SelectedActionIndex == 8
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility DoubleClickParameterVisibility => SelectedActionIndex == 9
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public bool CanApply => TryCreateAssignment(out var requested) && !AssignmentsEqual(Assignment, requested);
+
+    public ViperButtonAssignment CreateAssignment()
+    {
+        if (!TryCreateAssignment(out var assignment))
+        {
+            throw new InvalidOperationException("请选择已验证的板载映射动作。");
+        }
+        return assignment;
+    }
+
+    public void Apply(ViperButtonAssignment assignment)
+    {
+        Assignment = assignment;
+        CurrentActionText = FormatAction(assignment);
+        RestoreEditorFromAssignment();
+        NotifyEditorChanged();
+    }
+
+    public void RestoreSelection()
+    {
+        RestoreEditorFromAssignment();
+        NotifyEditorChanged();
+    }
+
+    private bool TryCreateAssignment(out ViperButtonAssignment assignment)
+    {
+        var (function, data) = SelectedActionIndex switch
+        {
+            0 => (ViperButtonMappingFunction.Off, Array.Empty<byte>()),
+            >= 1 and <= 7 => (
+                ViperButtonMappingFunction.MouseButton,
+                new byte[] { MouseButtonCodes[SelectedActionIndex - 1] }),
+            8 => (
+                ViperButtonMappingFunction.KeyboardKey,
+                new byte[] { checked((byte)KeyboardModifierValue), checked((byte)KeyboardUsageValue) }),
+            9 => (ViperButtonMappingFunction.DoubleClick, new byte[] { 1 }),
+            10 => (ViperButtonMappingFunction.Dpi, new byte[] { 6 }),
+            11 => (ViperButtonMappingFunction.MediaKey, new byte[] { 0xCD, 0x00 }),
+            12 => (ViperButtonMappingFunction.HyperShift, new byte[] { 1 }),
+            13 => (ViperButtonMappingFunction.KeyboardTurbo, new byte[] { 0, 4, 100, 0 }),
+            14 => (ViperButtonMappingFunction.MouseTurbo, new byte[] { 1, 100, 0 }),
+            _ => default,
+        };
+        if (SelectedActionIndex is < 0 or > 14)
+        {
+            assignment = Assignment;
+            return false;
+        }
+
+        assignment = Assignment with { Function = function, FunctionData = data };
+        return true;
+    }
+
+    private void RestoreEditorFromAssignment()
+    {
+        _selectedActionIndex = GetActionIndex(Assignment);
+        if (Assignment.Function == ViperButtonMappingFunction.KeyboardKey &&
+            Assignment.FunctionData.Count == 2)
+        {
+            _keyboardModifierValue = Assignment.FunctionData[0];
+            _keyboardUsageValue = Assignment.FunctionData[1];
+        }
+        else
+        {
+            _keyboardModifierValue = 0;
+            _keyboardUsageValue = 4;
+        }
+    }
+
+    private void SetKeyboardByte(ref double field, double value, [CallerMemberName] string? propertyName = null)
+    {
+        var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), byte.MinValue, byte.MaxValue) : field;
+        if (field == normalized)
+        {
+            return;
+        }
+        field = normalized;
+        PropertyChanged?.Invoke(this, new(propertyName));
+        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+    }
+
+    private void NotifyEditorChanged()
+    {
+        PropertyChanged?.Invoke(this, new(nameof(CurrentActionText)));
+        PropertyChanged?.Invoke(this, new(nameof(SelectedActionIndex)));
+        PropertyChanged?.Invoke(this, new(nameof(KeyboardModifierValue)));
+        PropertyChanged?.Invoke(this, new(nameof(KeyboardUsageValue)));
+        PropertyChanged?.Invoke(this, new(nameof(KeyboardParameterVisibility)));
+        PropertyChanged?.Invoke(this, new(nameof(DoubleClickParameterVisibility)));
+        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+    }
+
+    private static int GetActionIndex(ViperButtonAssignment assignment)
+    {
+        if (assignment.Function == ViperButtonMappingFunction.Off)
+        {
+            return 0;
+        }
+        if (assignment.Function == ViperButtonMappingFunction.KeyboardKey &&
+            assignment.FunctionData.Count == 2)
+        {
+            return 8;
+        }
+        if (assignment.Function == ViperButtonMappingFunction.DoubleClick &&
+            assignment.FunctionData.Count == 1 && assignment.FunctionData[0] == 1)
+        {
+            return 9;
+        }
+        if (assignment.Function == ViperButtonMappingFunction.Dpi &&
+            assignment.FunctionData.SequenceEqual(new byte[] { 6 }))
+        {
+            return 10;
+        }
+        if (assignment.Function == ViperButtonMappingFunction.MediaKey &&
+            assignment.FunctionData.SequenceEqual(new byte[] { 0xCD, 0x00 }))
+        {
+            return 11;
+        }
+        if (assignment.Function == ViperButtonMappingFunction.HyperShift &&
+            assignment.FunctionData.SequenceEqual(new byte[] { 1 }))
+        {
+            return 12;
+        }
+        if (assignment.Function == ViperButtonMappingFunction.KeyboardTurbo &&
+            assignment.FunctionData.SequenceEqual(new byte[] { 0, 4, 100, 0 }))
+        {
+            return 13;
+        }
+        if (assignment.Function == ViperButtonMappingFunction.MouseTurbo &&
+            assignment.FunctionData.SequenceEqual(new byte[] { 1, 100, 0 }))
+        {
+            return 14;
+        }
+        if (assignment.Function != ViperButtonMappingFunction.MouseButton ||
+            assignment.FunctionData.Count != 1)
+        {
+            return -1;
+        }
+
+        var index = Array.IndexOf(MouseButtonCodes, assignment.FunctionData[0]);
+        return index < 0 ? -1 : index + 1;
+    }
+
+    private static string FormatAction(ViperButtonAssignment assignment) =>
+        assignment.Function switch
+        {
+            ViperButtonMappingFunction.Off => "关闭",
+            ViperButtonMappingFunction.MouseButton when assignment.FunctionData.Count == 1 =>
+                FormatButton(assignment.FunctionData[0]),
+            ViperButtonMappingFunction.Dpi when assignment.FunctionData.SequenceEqual(new byte[] { 6 }) =>
+                "DPI 循环切换",
+            ViperButtonMappingFunction.MediaKey when assignment.FunctionData.SequenceEqual(new byte[] { 0xCD, 0x00 }) =>
+                "播放 / 暂停",
+            ViperButtonMappingFunction.HyperShift when assignment.FunctionData.SequenceEqual(new byte[] { 1 }) =>
+                "HyperShift",
+            ViperButtonMappingFunction.KeyboardKey when assignment.FunctionData.Count == 2 =>
+                $"键盘按键 · 修饰 0x{assignment.FunctionData[0]:X2} · Usage 0x{assignment.FunctionData[1]:X2}",
+            ViperButtonMappingFunction.DoubleClick when assignment.FunctionData.Count == 1 &&
+                assignment.FunctionData[0] == 1 => "双击",
+            _ => assignment.FunctionData.Count == 0
+                ? assignment.Function.ToString()
+                : $"{assignment.Function} · {Convert.ToHexString(assignment.FunctionData.ToArray())}",
+        };
+
+    private static string FormatButton(byte buttonId) => buttonId switch
+    {
+        1 => "左键",
+        2 => "右键",
+        3 => "滚轮按下",
+        4 => "后退",
+        5 => "前进",
+        9 => "滚轮向上",
+        10 => "滚轮向下",
+        96 => "DPI 切换键",
+        _ => $"控制 {buttonId}",
+    };
+
+    private static bool AssignmentsEqual(ViperButtonAssignment left, ViperButtonAssignment right) =>
+        left.ProfileId == right.ProfileId &&
+        left.ButtonId == right.ButtonId &&
+        left.Layer == right.Layer &&
+        left.Function == right.Function &&
+        left.FunctionData.SequenceEqual(right.FunctionData);
 }
 
 public sealed class ViperDpiStageRowViewModel : INotifyPropertyChanged
@@ -2125,27 +3269,7 @@ public sealed class DeviceRowViewModel
             _ => ("\uE772", "设备"),
         };
 
-        var (successful, total) = descriptor.ProtocolFamily switch
-        {
-            "blade-710" => (
-                CountAvailable(
-                    telemetry.BladeKeyboardBrightness,
-                    telemetry.BladePerformanceMode,
-                    telemetry.BladeChargeLimitPercent,
-                    telemetry.BladeCpuBoostMode,
-                    telemetry.BladeGpuBoostMode,
-                    telemetry.BladeMaxFanMode,
-                    telemetry.BladeLogoMode),
-                7),
-            "viper-184" => (
-                CountAvailable(
-                    telemetry.ViperPollingRateHertz,
-                    telemetry.ViperDpiX,
-                    telemetry.ViperIdleSeconds,
-                    telemetry.ViperDpiStages),
-                4),
-            _ => (0, 0),
-        };
+        var (successful, total) = CountCapabilities(descriptor.ProtocolFamily, telemetry);
 
         if (descriptor.Access != DeviceAccessState.Available ||
             descriptor.Capability != DeviceCapabilityState.PendingValidation)
@@ -2170,6 +3294,48 @@ public sealed class DeviceRowViewModel
         }
 
         IsAvailable = successful > 0;
+    }
+
+    internal static (int Successful, int Total) CountCapabilities(
+        string? protocolFamily,
+        RazerDeviceTelemetry telemetry)
+    {
+        var supportsLocalDimming =
+            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true;
+        return protocolFamily switch
+        {
+            "blade-710" => (
+                CountAvailable(
+                    telemetry.BladeKeyboardBrightness,
+                    telemetry.BladePerformanceMode,
+                    telemetry.BladeChargeLimitPercent,
+                    telemetry.BladeCpuBoostMode,
+                    telemetry.BladeGpuBoostMode,
+                    telemetry.BladeMaxFanMode,
+                    telemetry.BladeLogoMode,
+                    telemetry.BladeFanMode,
+                    telemetry.BladeCurrentFanCpuRpm,
+                    telemetry.BladeCurrentFanGpuRpm,
+                    telemetry.BladeAdvancedFanCpuModeRaw,
+                    telemetry.BladeAdvancedFanGpuModeRaw,
+                    telemetry.BladeGameMode,
+                    telemetry.BladeStartupAnimationEnabled,
+                    telemetry.BladeNativeDisplayMode,
+                    telemetry.BladeSkuHardwareConfiguration,
+                    telemetry.BladeOneTimeFullChargeEnabled) +
+                (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
+                17 + (supportsLocalDimming ? 1 : 0)),
+            "viper-184" => (
+                CountAvailable(
+                    telemetry.ViperBatteryPercent,
+                    telemetry.ViperPollingRateHertz,
+                    telemetry.ViperDpiX,
+                    telemetry.ViperIdleSeconds,
+                    telemetry.ViperDpiStages,
+                    telemetry.ViperLowBatteryThresholdRaw),
+                6),
+            _ => (0, 0),
+        };
     }
 
     public string Name { get; }

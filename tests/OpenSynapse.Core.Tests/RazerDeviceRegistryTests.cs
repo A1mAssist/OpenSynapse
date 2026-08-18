@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -91,6 +92,7 @@ public sealed class RazerDeviceRegistryTests : IDisposable
 
     [Theory]
     [InlineData("transactionId", "20")]
+    [InlineData("transactionId", "00")]
     [InlineData("waitMilliseconds", 1)]
     public void RejectsExternalReportHeaderOrRelaxedWait(string property, object value)
     {
@@ -209,6 +211,16 @@ public sealed class RazerDeviceRegistryTests : IDisposable
             blade.GetRequiredCapability("charge-limit.get").CreateRequest());
         Assert.True(blade.GetRequiredCapability("charge-limit.get").AllowRemainingPacketsMismatch);
         Assert.Equal(
+            BladeSynapsePolicyProtocol.CreateGetGameModeRequest(),
+            blade.GetRequiredCapability("gaming-mode.get").CreateRequest());
+        Assert.Equal(
+            BladeProduct710Protocol.CreateGetNativeDisplayModeRequest(),
+            blade.GetRequiredCapability("native-display-mode.get").CreateRequest());
+        Assert.True(blade.GetRequiredCapability("native-display-mode.get").AllowRemainingPacketsMismatch);
+        Assert.Equal(
+            BladeProduct710Protocol.CreateSetNativeDisplayModeRequest(BladeNativeDisplayMode.Fhd),
+            blade.GetRequiredCapability("native-display-mode.set").CreateRequest(new byte[] { 0x01 }));
+        Assert.Equal(
             ViperProduct184Protocol.CreateGetDpiRequest(),
             viper.GetRequiredCapability("current-dpi.get").CreateRequest());
 
@@ -240,10 +252,15 @@ public sealed class RazerDeviceRegistryTests : IDisposable
             ["charge-limit.set"] = (0x1F, 0x01, 0x07, 0x12),
             ["max-fan.get"] = (0x1F, 0x01, 0x07, 0x8F),
             ["max-fan.set"] = (0x1F, 0x01, 0x07, 0x0F),
-            ["wired-battery.get"] = (0x1F, 0x02, 0x07, 0x80),
-            ["charging-status.get"] = (0x1F, 0x02, 0x07, 0x84),
-            ["auto-sleep.get"] = (0x1F, 0x02, 0x07, 0x88),
-            ["time-to-sleep.get"] = (0x1F, 0x02, 0x07, 0x83),
+            ["gaming-mode.get"] = (0x00, 0x04, 0x00, 0x88),
+            ["gaming-mode.set"] = (0x00, 0x04, 0x00, 0x08),
+            ["gaming-mode-led.set"] = (0x00, 0x03, 0x03, 0x00),
+            ["fn-key.set"] = (0x00, 0x02, 0x02, 0x06),
+            ["startup-animation.get"] = (0x1F, 0x01, 0x0F, 0x98),
+            ["startup-animation.set"] = (0x1F, 0x02, 0x0F, 0x18),
+            ["native-display-mode.get"] = (0x1F, 0x01, 0x0D, 0x8E),
+            ["native-display-mode.set"] = (0x1F, 0x01, 0x0D, 0x0E),
+            ["sku-hardware-configuration.get"] = (0x1F, 0x01, 0x0D, 0x8F),
             ["logo-power.get"] = (0xFF, 0x03, 0x03, 0x80),
             ["logo-power.set"] = (0xFF, 0x03, 0x03, 0x00),
             ["logo-mode.get"] = (0xFF, 0x03, 0x03, 0x82),
@@ -261,6 +278,12 @@ public sealed class RazerDeviceRegistryTests : IDisposable
             ["dpi-stages.get"] = (0x1F, 0x26, 0x04, 0x86),
             ["dpi-stages.set"] = (0x1F, 0x26, 0x04, 0x06),
             ["low-battery-threshold.get"] = (0x1F, 0x01, 0x07, 0x81),
+            ["obm-maximum-profiles.get"] = (0x1F, 0x01, 0x05, 0x8A),
+            ["obm-profile-count.get"] = (0x1F, 0x01, 0x05, 0x80),
+            ["obm-profile-ids.get"] = (0x1F, 0x50, 0x05, 0x81),
+            ["obm-button-ids.get"] = (0x1F, 0x50, 0x02, 0x84),
+            ["obm-assignment.get"] = (0x1F, 0x50, 0x02, 0x8C),
+            ["obm-assignment.set"] = (0x1F, 0x50, 0x02, 0x0C),
         });
     }
 

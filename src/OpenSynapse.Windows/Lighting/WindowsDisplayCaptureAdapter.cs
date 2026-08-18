@@ -3,10 +3,12 @@ using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Protocols;
+using global::Windows.Foundation.Metadata;
 using global::Windows.Graphics.Capture;
 using global::Windows.Graphics.DirectX;
 using global::Windows.Graphics.DirectX.Direct3D11;
 using global::Windows.Graphics.Imaging;
+using global::Windows.Security.Authorization.AppCapabilityAccess;
 
 namespace OpenSynapse.Windows.Lighting;
 
@@ -45,7 +47,7 @@ internal interface IDisplayCaptureSession : IAsyncDisposable
 internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
 {
     private const double DefaultEdgeBandFraction = 0.08;
-    private readonly Func<IDisplayCaptureSession> _openSession;
+    private readonly Func<CancellationToken, ValueTask<IDisplayCaptureSession>> _openSession;
     private readonly double _edgeBandFraction;
     private Channel<AmbientCaptureFrame> _frames = CreateFrameChannel();
     private readonly object _lifecycleGate = new();
@@ -55,13 +57,20 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
     private int _disposed;
 
     internal WindowsDisplayCaptureAdapter()
-        : this(WindowsGraphicsCaptureSession.OpenInternalDisplay, DefaultEdgeBandFraction)
+        : this(WindowsGraphicsCaptureSession.OpenInternalDisplayAsync, DefaultEdgeBandFraction)
     {
     }
 
     internal WindowsDisplayCaptureAdapter(
         Func<IDisplayCaptureSession> openSession,
         double edgeBandFraction = DefaultEdgeBandFraction)
+        : this(_ => ValueTask.FromResult(openSession()), edgeBandFraction)
+    {
+    }
+
+    private WindowsDisplayCaptureAdapter(
+        Func<CancellationToken, ValueTask<IDisplayCaptureSession>> openSession,
+        double edgeBandFraction)
     {
         _openSession = openSession ?? throw new ArgumentNullException(nameof(openSession));
         if (double.IsNaN(edgeBandFraction) || edgeBandFraction is <= 0 or > 0.5)
@@ -71,35 +80,38 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
         _edgeBandFraction = edgeBandFraction;
     }
 
-    public ValueTask StartAsync(CancellationToken cancellationToken)
+    public async ValueTask StartAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         cancellationToken.ThrowIfCancellationRequested();
-        lock (_lifecycleGate)
+        var session = await _openSession(cancellationToken).ConfigureAwait(false);
+        var sessionOwnedByWorker = false;
+        try
         {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-            if (_worker is not null)
+            lock (_lifecycleGate)
             {
-                throw new InvalidOperationException("Ambient Awareness 已经启动。");
-            }
+                ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+                if (_worker is not null)
+                {
+                    throw new InvalidOperationException("Ambient Awareness 已经启动。");
+                }
 
-            _frames = CreateFrameChannel();
-            _latest = null;
-            var session = _openSession();
-            try
-            {
+                _frames = CreateFrameChannel();
+                _latest = null;
                 _stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 _worker = Task.Run(
                     () => CaptureAsync(session, _frames.Writer, _stop.Token),
                     CancellationToken.None);
-            }
-            catch
-            {
-                session.DisposeAsync().AsTask().GetAwaiter().GetResult();
-                throw;
+                sessionOwnedByWorker = true;
             }
         }
-        return ValueTask.CompletedTask;
+        finally
+        {
+            if (!sessionOwnedByWorker)
+            {
+                await session.DisposeAsync().ConfigureAwait(false);
+            }
+        }
     }
 
     public ValueTask StopAsync() => new(StopCoreAsync());
@@ -233,6 +245,30 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             }
         }
         return new AmbientCaptureFrame(Array.AsReadOnly(pixels), outputWidth, outputHeight);
+    }
+
+    internal static RawDisplayFrame CopyPixels(SoftwareBitmap bitmap, int width, int height)
+    {
+        if (width <= 0 || height <= 0 || width > bitmap.PixelWidth || height > bitmap.PixelHeight)
+        {
+            throw new AmbientCaptureException(
+                AmbientCaptureFailure.TopologyUnavailable,
+                "Windows 返回了无效的显示器捕获尺寸。");
+        }
+        if (bitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8)
+        {
+            throw new AmbientCaptureException(
+                AmbientCaptureFailure.CaptureFailed,
+                "Windows 返回了非 BGRA8 的显示器捕获帧。");
+        }
+
+        var stride = checked(width * 4);
+        var bytes = new byte[checked(stride * height)];
+        var destination = new global::Windows.Storage.Streams.Buffer(checked((uint)bytes.Length));
+        bitmap.CopyToBuffer(destination);
+        using var reader = global::Windows.Storage.Streams.DataReader.FromBuffer(destination);
+        reader.ReadBytes(bytes);
+        return new RawDisplayFrame(bytes, width, height, stride);
     }
 
     private async Task CaptureAsync(
@@ -411,7 +447,34 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             _item.Closed += OnItemClosed;
         }
 
-        internal static IDisplayCaptureSession OpenInternalDisplay()
+        internal static async ValueTask<IDisplayCaptureSession> OpenInternalDisplayAsync(
+            CancellationToken cancellationToken)
+        {
+            var borderless = false;
+            if (ApiInformation.IsTypePresent("Windows.Graphics.Capture.GraphicsCaptureAccess") &&
+                ApiInformation.IsPropertyPresent(
+                    "Windows.Graphics.Capture.GraphicsCaptureSession",
+                    "IsBorderRequired"))
+            {
+                try
+                {
+                    borderless = await GraphicsCaptureAccess.RequestAccessAsync(
+                            GraphicsCaptureAccessKind.Borderless)
+                        .AsTask(cancellationToken)
+                        .ConfigureAwait(false) == AppCapabilityAccessStatus.Allowed;
+                }
+                catch (Exception exception) when (
+                    !cancellationToken.IsCancellationRequested &&
+                    exception is COMException or UnauthorizedAccessException)
+                {
+                    // Windows keeps its capture border when borderless access is unavailable.
+                }
+            }
+
+            return OpenInternalDisplay(borderless);
+        }
+
+        private static IDisplayCaptureSession OpenInternalDisplay(bool borderless)
         {
             if (!GraphicsCaptureSession.IsSupported())
             {
@@ -468,6 +531,18 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
                     item.Size);
                 session = framePool.CreateCaptureSession(item);
                 session.IsCursorCaptureEnabled = false;
+                if (borderless)
+                {
+                    try
+                    {
+                        session.IsBorderRequired = false;
+                    }
+                    catch (Exception exception) when (
+                        exception is COMException or UnauthorizedAccessException)
+                    {
+                        // Permission can change between the access request and session creation.
+                    }
+                }
                 var result = new WindowsGraphicsCaptureSession(device, item, framePool, session);
                 itemOwnedByResult = true;
                 device = null;
@@ -579,33 +654,6 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
                 (_device as IDisposable)?.Dispose();
             }
             return ValueTask.CompletedTask;
-        }
-
-        private static RawDisplayFrame CopyPixels(SoftwareBitmap bitmap, int width, int height)
-        {
-            if (width <= 0 || height <= 0 || width > bitmap.PixelWidth || height > bitmap.PixelHeight)
-            {
-                throw new AmbientCaptureException(
-                    AmbientCaptureFailure.TopologyUnavailable,
-                    "Windows 返回了无效的显示器捕获尺寸。");
-            }
-
-            using var buffer = bitmap.LockBuffer(BitmapBufferAccessMode.Read);
-            var plane = buffer.GetPlaneDescription(0);
-            using var reference = buffer.CreateReference();
-            var access = (IMemoryBufferByteAccess)reference;
-            ThrowIfFailed(access.GetBuffer(out var data, out var capacity));
-            var required = checked(plane.StartIndex + plane.Stride * height);
-            if (plane.Stride < width * 4 || required > capacity)
-            {
-                throw new AmbientCaptureException(
-                    AmbientCaptureFailure.CaptureFailed,
-                    "Windows 返回了无效的显示器捕获 stride。");
-            }
-
-            var bytes = new byte[checked(plane.Stride * height)];
-            Marshal.Copy(data + plane.StartIndex, bytes, 0, bytes.Length);
-            return new RawDisplayFrame(bytes, width, height, plane.Stride);
         }
 
         private static nint FindMonitor(string sourceName)
@@ -764,14 +812,6 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             public int Bottom;
         }
 
-        [ComImport]
-        [Guid("5B0D3235-4DBA-4D44-865F-BC20AFCB0DFF")]
-        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        private interface IMemoryBufferByteAccess
-        {
-            [PreserveSig] int GetBuffer(out nint value, out uint capacity);
-        }
-
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool EnumDisplayMonitors(
@@ -802,4 +842,5 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             nint dxgiDevice,
             out nint graphicsDevice);
     }
+
 }

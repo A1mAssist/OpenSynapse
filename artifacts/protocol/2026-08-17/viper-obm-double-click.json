@@ -1,0 +1,64 @@
+{
+  "StartedAt": "2026-08-17T09:00:05.7136079+00:00",
+  "CompletedAt": "2026-08-17T09:00:36.5198314+00:00",
+  "Device": "1532:00B8",
+  "Collection": "0001:0002",
+  "ProfileId": 1,
+  "ButtonId": 5,
+  "OriginalNormal": {
+    "ProfileId": 1,
+    "ButtonId": 5,
+    "Mode": 0,
+    "Function": 1,
+    "FunctionData": [
+      5
+    ]
+  },
+  "OriginalHyperShift": {
+    "ProfileId": 1,
+    "ButtonId": 5,
+    "Mode": 1,
+    "Function": 1,
+    "FunctionData": [
+      5
+    ]
+  },
+  "TargetReadback": {
+    "ProfileId": 1,
+    "ButtonId": 5,
+    "Mode": 0,
+    "Function": 11,
+    "FunctionData": [
+      1
+    ]
+  },
+  "HyperShiftAfterTarget": {
+    "ProfileId": 1,
+    "ButtonId": 5,
+    "Mode": 1,
+    "Function": 1,
+    "FunctionData": [
+      5
+    ]
+  },
+  "RestorationNormalReadback": {
+    "ProfileId": 1,
+    "ButtonId": 5,
+    "Mode": 0,
+    "Function": 1,
+    "FunctionData": [
+      5
+    ]
+  },
+  "RestorationHyperShiftReadback": {
+    "ProfileId": 1,
+    "ButtonId": 5,
+    "Mode": 1,
+    "Function": 1,
+    "FunctionData": [
+      5
+    ]
+  },
+  "OperationError": null,
+  "RestorationError": null
+}

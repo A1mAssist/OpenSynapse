@@ -15,10 +15,10 @@ public sealed class ProbeCatalogTests
             new object[] { "blade.current-fan-speed-gpu", (ushort)0x02C6, (byte)0x1F, (byte)0x03, (byte)0x0D, (byte)0x88, "0102", 2, false },
             new object[] { "blade.advanced-fan-cpu", (ushort)0x02C6, (byte)0x1F, (byte)0x03, (byte)0x0D, (byte)0x87, "0101", 2, false },
             new object[] { "blade.advanced-fan-gpu", (ushort)0x02C6, (byte)0x1F, (byte)0x03, (byte)0x0D, (byte)0x87, "0102", 2, false },
-            new object[] { "blade.battery-level", (ushort)0x02C6, (byte)0x1F, (byte)0x02, (byte)0x07, (byte)0x80, "00", 2, false },
-            new object[] { "blade.charging-status", (ushort)0x02C6, (byte)0x1F, (byte)0x02, (byte)0x07, (byte)0x84, "00", 2, false },
-            new object[] { "blade.auto-sleep", (ushort)0x02C6, (byte)0x1F, (byte)0x02, (byte)0x07, (byte)0x88, "00", 2, false },
-            new object[] { "blade.time-to-sleep", (ushort)0x02C6, (byte)0x1F, (byte)0x02, (byte)0x07, (byte)0x83, "", 2, false },
+            new object[] { "blade.native-display-mode", (ushort)0x02C6, (byte)0x1F, (byte)0x01, (byte)0x0D, (byte)0x8E, "00", 2, true },
+            new object[] { "blade.sku-hardware-configuration", (ushort)0x02C6, (byte)0x1F, (byte)0x01, (byte)0x0D, (byte)0x8F, "00", 2, true },
+            new object[] { "blade.game-mode", (ushort)0x02C6, (byte)0x00, (byte)0x04, (byte)0x00, (byte)0x88, "", 2, false },
+            new object[] { "blade.startup-animation", (ushort)0x02C6, (byte)0x1F, (byte)0x01, (byte)0x0F, (byte)0x98, "00", 2, false },
             new object[] { "viper.low-battery-threshold", (ushort)0x00B8, (byte)0x1F, (byte)0x01, (byte)0x07, (byte)0x81, "", 60, false },
             new object[] { "viper.dpi-stages", (ushort)0x00B8, (byte)0x1F, (byte)0x26, (byte)0x04, (byte)0x86, "01", 60, false },
         };
@@ -82,7 +82,10 @@ public sealed class ProbeCatalogTests
         Assert.All(commands, command =>
         {
             Assert.Contains(command.ProductId, new ushort[] { 0x02C6, 0x00B8 });
-            Assert.NotEqual(0, command.TransactionId);
+            if (command.TransactionId == 0)
+            {
+                Assert.Equal("blade.game-mode", command.Name);
+            }
             Assert.NotEqual(0, command.CommandId & 0x80);
             Assert.InRange(command.DataSize, (byte)0, (byte)80);
             Assert.True(command.Arguments.Length <= command.DataSize);

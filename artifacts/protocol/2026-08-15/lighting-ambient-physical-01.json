@@ -1,0 +1,11 @@
+{
+  "StartedAt": "2026-08-15T11:14:40.1918685+00:00",
+  "CompletedAt": "2026-08-15T11:14:43.2377998+00:00",
+  "Device": "1532:02C6",
+  "Mode": "Ambient",
+  "HoldSeconds": 60,
+  "FirstFrameApplied": false,
+  "OperationError": "A task was canceled.",
+  "RestorationError": null,
+  "VisualConfirmed": null
+}

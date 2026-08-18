@@ -10,6 +10,8 @@ public sealed class BladeLightingProfileCodecTests
     [InlineData("off", BladeLightingMode.Off)]
     [InlineData("spectrum", BladeLightingMode.Spectrum)]
     [InlineData("fire", BladeLightingMode.Fire)]
+    [InlineData("audiometer", BladeLightingMode.AudioMeter)]
+    [InlineData("ambient", BladeLightingMode.Ambient)]
     public void ParsesParameterlessModes(string name, BladeLightingMode expected)
     {
         Assert.Equal(expected, BladeLightingProfileCodec.Parse(new LightingProfile { Effect = name }).Mode);
@@ -28,6 +30,30 @@ public sealed class BladeLightingProfileCodecTests
 
         Assert.Equal(expected, effect.Mode);
         Assert.Equal("99DD72", BladeLightingProfileCodec.Create(effect).Parameters["color"]);
+    }
+
+    [Fact]
+    public void ParsesSourceBackedStarlightAndTidalProfiles()
+    {
+        var starlight = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = "starlight",
+            Parameters = new(StringComparer.OrdinalIgnoreCase) { ["color"] = "00FF00" },
+        });
+        var tidal = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = "tidal",
+            Parameters = new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["color"] = "00FF00",
+                ["color2"] = "0000FF",
+            },
+        });
+
+        Assert.Equal(BladeLightingMode.Starlight, starlight.Mode);
+        Assert.Equal(BladeLightingMode.Tidal, tidal.Mode);
+        Assert.Equal(new RazerRgb(0, 0, 255), tidal.SecondColor);
+        Assert.Equal("0000FF", BladeLightingProfileCodec.Create(tidal).Parameters["color2"]);
     }
 
     [Fact]
@@ -58,6 +84,20 @@ public sealed class BladeLightingProfileCodecTests
 
         Assert.Equal(expected, effect.Direction);
         Assert.Equal(name, BladeLightingProfileCodec.Create(effect).Parameters["direction"]);
+    }
+
+    [Fact]
+    public void ParsesAndCreatesWheelDirection()
+    {
+        var effect = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = "wheel",
+            Parameters = new(StringComparer.OrdinalIgnoreCase) { ["direction"] = "left" },
+        });
+
+        Assert.Equal(BladeLightingMode.Wheel, effect.Mode);
+        Assert.Equal(BladeWaveDirection.Left, effect.Direction);
+        Assert.Equal("left", BladeLightingProfileCodec.Create(effect).Parameters["direction"]);
     }
 
     [Theory]

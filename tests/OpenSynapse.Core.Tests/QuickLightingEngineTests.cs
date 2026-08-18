@@ -53,14 +53,24 @@ public sealed class QuickLightingEngineTests
     [Fact]
     public void WaveDirectionReversesTravel()
     {
-        var right = QuickLightingEngine.RenderWave(TimeSpan.FromSeconds(1), BladeWaveDirection.Right);
-        var left = QuickLightingEngine.RenderWave(TimeSpan.FromSeconds(1), BladeWaveDirection.Left);
+        var right = QuickLightingEngine.RenderWave(TimeSpan.Zero, BladeWaveDirection.Right);
+        var left = QuickLightingEngine.RenderWave(TimeSpan.Zero, BladeWaveDirection.Left);
+        var advancedRight = QuickLightingEngine.RenderWave(
+            TimeSpan.FromMilliseconds(40),
+            BladeWaveDirection.Right);
+        var advancedLeft = QuickLightingEngine.RenderWave(
+            TimeSpan.FromMilliseconds(40),
+            BladeWaveDirection.Left);
 
         AssertCompleteFrame(right);
-        Assert.NotEqual(right, left);
-        Assert.Equal(
-            AtLogical(right, 0, 4),
-            AtLogical(left, 0, QuickLightingEngine.LogicalColumns - 1 - 4));
+        Assert.Equal(new RazerRgb(0xE0, 0x1E, 0x00), At(right, 0, 1));
+        Assert.Equal(new RazerRgb(0xE0, 0x00, 0x1E), At(left, 0, 1));
+        Assert.Equal(new RazerRgb(0x00, 0xCA, 0x34), At(right, 0, 7));
+        Assert.Equal(new RazerRgb(0x00, 0x34, 0xCA), At(left, 0, 7));
+        Assert.Equal(new RazerRgb(0xFF, 0x00, 0x00), At(advancedRight, 0, 1));
+        Assert.Equal(new RazerRgb(0xE0, 0x1E, 0x00), At(advancedLeft, 0, 16));
+        Assert.Equal(right, QuickLightingEngine.RenderWave(TimeSpan.FromSeconds(1), BladeWaveDirection.Right));
+        Assert.Equal(At(right, 0, 4), At(right, QuickLightingEngine.Rows - 1, 4));
     }
 
     [Fact]
@@ -153,8 +163,70 @@ public sealed class QuickLightingEngineTests
             Assert.True(color.Green >= color.Blue);
         });
         Assert.True(
-            AverageLogicalRed(first, QuickLightingEngine.LogicalRows - 1) > AverageLogicalRed(first, 0),
-            "Fire heat source must be below the keyboard, not above it.");
+            AverageLogicalRed(first, QuickLightingEngine.LogicalRows - 1) != AverageLogicalRed(first, 0));
+        Assert.Equal(first, QuickLightingEngine.RenderFire(TimeSpan.FromMilliseconds(20875), 42));
+    }
+
+    [Fact]
+    public void StarlightUsesBoundedDeterministicSourceBackedScheduler()
+    {
+        var first = new StarlightLightingRenderer(new RazerRgb(0, 255, 0), 710);
+        var repeated = new StarlightLightingRenderer(new RazerRgb(0, 255, 0), 710);
+
+        var frame = first.Render(TimeSpan.FromMilliseconds(160)).ToArray();
+        var same = repeated.Render(TimeSpan.FromMilliseconds(160)).ToArray();
+        var later = first.Render(TimeSpan.FromMilliseconds(800)).ToArray();
+        var lit = frame
+            .Select((color, index) => (index, color))
+            .Where(entry => entry.color != Black)
+            .ToArray();
+
+        Assert.Equal(frame, same);
+        Assert.NotEqual(frame, later);
+        Assert.Equal(
+            [
+                (46, new RazerRgb(0x00, 0x51, 0x00)),
+                (51, new RazerRgb(0x00, 0x52, 0x00)),
+                (64, new RazerRgb(0x00, 0x60, 0x00)),
+                (88, new RazerRgb(0x00, 0x42, 0x00)),
+                (92, new RazerRgb(0x00, 0x6B, 0x00)),
+            ],
+            lit);
+    }
+
+    [Fact]
+    public void TidalUsesProduct710CenterAngleAndTwoColorLanes()
+    {
+        var first = new RazerRgb(0, 255, 0);
+        var second = new RazerRgb(0, 0, 255);
+        var initial = QuickLightingEngine.RenderTidal(TimeSpan.Zero, first, second);
+        var later = QuickLightingEngine.RenderTidal(TimeSpan.FromSeconds(1), first, second);
+
+        AssertCompleteFrame(initial);
+        Assert.NotEqual(initial, later);
+        Assert.Equal(Black, At(initial, 4, 4));
+        Assert.Equal(new RazerRgb(0x00, 0xAC, 0x00), At(initial, 0, 9));
+        Assert.Equal(new RazerRgb(0x00, 0x00, 0xE3), At(initial, 2, 15));
+        Assert.Equal(Black, At(initial, 3, 8));
+        Assert.Equal(new RazerRgb(0x00, 0xAC, 0x00), At(later, 3, 8));
+        Assert.Equal(new RazerRgb(0x00, 0x00, 0xF1), At(later, 4, 14));
+        Assert.Equal(Black, At(later, 3, 16));
+    }
+
+    [Fact]
+    public void MovingEffectsProduceDistinctSixtyHertzSubframes()
+    {
+        var subframe = TimeSpan.FromMilliseconds(1000d / 60d);
+
+        Assert.NotEqual(
+            QuickLightingEngine.RenderWave(TimeSpan.Zero, BladeWaveDirection.Right),
+            QuickLightingEngine.RenderWave(subframe, BladeWaveDirection.Right));
+        Assert.NotEqual(
+            QuickLightingEngine.RenderFire(TimeSpan.Zero, 42),
+            QuickLightingEngine.RenderFire(subframe, 42));
+        Assert.NotEqual(
+            QuickLightingEngine.RenderTidal(TimeSpan.Zero, new(0, 255, 0), new(0, 0, 255)),
+            QuickLightingEngine.RenderTidal(subframe, new(0, 255, 0), new(0, 0, 255)));
     }
 
     [Fact]

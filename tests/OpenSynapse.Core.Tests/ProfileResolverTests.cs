@@ -209,9 +209,38 @@ public sealed class ProfileResolverTests
         Assert.Equal("right", unknownPower.Lighting.Parameters["direction"]);
     }
 
+    [Fact]
+    public void FanCurveUsesPowerDeviceGlobalPrecedenceAndIsDeepCloned()
+    {
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Blade.FanCurve = FanCurve(2400);
+        document.Devices["1532:02C6"] = new DeviceProfileSettings
+        {
+            Blade = new BladeProfileSettings { FanCurve = FanCurve(3000) },
+        };
+        document.PluggedIn.Blade.FanCurve = FanCurve(4200);
+
+        var resolved = ProfileResolver.Resolve(document, BladeDevice(), isPluggedIn: true);
+
+        Assert.NotNull(resolved.Blade.FanCurve);
+        Assert.Equal(4200, resolved.Blade.FanCurve!.CpuPoints[0].CpuFanSpeedRpm);
+        resolved.Blade.FanCurve.CpuPoints[0] = resolved.Blade.FanCurve.CpuPoints[0] with
+        {
+            CpuFanSpeedRpm = 5000,
+        };
+        Assert.Equal(4200, document.PluggedIn.Blade.FanCurve!.CpuPoints[0].CpuFanSpeedRpm);
+    }
+
     private static ViperDpiStagesProfile DpiStages(int dpi) => new()
     {
         ActiveStage = 1,
         Stages = [new ViperDpiStageProfile { Number = 1, X = dpi, Y = dpi }],
+    };
+
+    private static BladeFanCurveProfile FanCurve(int cpuRpm) => new()
+    {
+        TemperatureMode = BladeFanCurveTemperatureMode.Cpu,
+        CpuPoints = [new(60, cpuRpm, cpuRpm)],
+        GpuPoints = [new(60, cpuRpm, cpuRpm)],
     };
 }

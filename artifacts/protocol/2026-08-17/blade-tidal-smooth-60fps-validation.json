@@ -1,0 +1,11 @@
+{
+  "StartedAt": "2026-08-17T13:01:18.2288897+00:00",
+  "CompletedAt": "2026-08-17T13:01:48.6835845+00:00",
+  "Device": "1532:02C6",
+  "Mode": "Tidal",
+  "HoldSeconds": 30,
+  "FirstFrameApplied": true,
+  "OperationError": null,
+  "RestorationError": null,
+  "VisualConfirmed": null
+}

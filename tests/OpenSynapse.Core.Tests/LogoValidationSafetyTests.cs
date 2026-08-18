@@ -24,6 +24,41 @@ public sealed class LogoValidationSafetyTests
             ["--logo", "static", "--raw", "02 00", "--output", "logo-raw-test.json"]));
     }
 
+    [Fact]
+    public void Product710SequenceAcceptsOnlyRestoredBreathingRun()
+    {
+        var options = LogoValidation.Options.Parse([
+            "--logo", "breathing", "--product710-sequence", "--output", "logo-product710-test.json"]);
+
+        Assert.True(options.Product710Sequence);
+        Assert.Throws<ArgumentException>(() => LogoValidation.Options.Parse([
+            "--logo", "static", "--product710-sequence", "--output", "logo-product710-static-test.json"]));
+        Assert.Throws<ArgumentException>(() => LogoValidation.Options.Parse([
+            "--logo", "breathing", "--product710-sequence", "--leave-target", "--output", "logo-product710-leave-test.json"]));
+    }
+
+    [Fact]
+    public async Task Product710SequenceSendsEffectThenStateAndRestoresOriginal()
+    {
+        var original = new LogoValidation.LogoState(false, BladeLogoMode.Static);
+        var transport = new RestoreTransport { Powered = original.Powered, Mode = original.Mode };
+
+        var result = await LogoValidation.ExecuteProduct710Async(
+            transport,
+            "blade",
+            original,
+            BladeLogoMode.Breathing,
+            () => Task.CompletedTask);
+
+        Assert.True(result.TargetApplied);
+        Assert.Equal("effect+state ACK", result.TargetAcknowledgement);
+        Assert.Null(result.OperationError);
+        Assert.Null(result.RestorationError);
+        Assert.Equal(original, result.RestorationReadback);
+        Assert.Equal(new byte[] { 0x02, 0x00 }, transport.Commands.Take(2));
+        Assert.False(transport.Powered);
+    }
+
     [Theory]
     [InlineData(BladeLogoMode.Static, 0x00)]
     [InlineData(BladeLogoMode.Breathing, 0x02)]

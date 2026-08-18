@@ -12,21 +12,15 @@ public sealed class WindowsTrayIcon : IDisposable
     private const uint NifMessage = 0x00000001;
     private const uint NifIcon = 0x00000002;
     private const uint NifTip = 0x00000004;
-    private const uint WmNull = 0x0000;
     private const uint WmContextMenu = 0x007B;
     private const uint WmTimer = 0x0113;
     private const uint WmLeftButtonUp = 0x0202;
     private const uint WmLeftButtonDoubleClick = 0x0203;
     private const uint WmRightButtonUp = 0x0205;
-    private const uint MfString = 0x00000000;
-    private const uint MfSeparator = 0x00000800;
-    private const uint TpmRightButton = 0x0002;
-    private const uint TpmReturnCommand = 0x0100;
     private const uint ImageIcon = 1;
     private const uint LrLoadFromFile = 0x0010;
+    private const int TrayIconPixelSize = 32;
     private const int IdiApplication = 32512;
-    private const uint ShowCommand = 1;
-    private const uint ExitCommand = 2;
     private const uint RetryTimerId = 2;
     private const int MaxReAddAttempts = 3;
 
@@ -58,7 +52,13 @@ public sealed class WindowsTrayIcon : IDisposable
 
         if (!string.IsNullOrWhiteSpace(iconPath) && File.Exists(iconPath))
         {
-            _iconHandle = LoadImageW(IntPtr.Zero, iconPath, ImageIcon, 0, 0, LrLoadFromFile);
+            _iconHandle = LoadImageW(
+                IntPtr.Zero,
+                iconPath,
+                ImageIcon,
+                TrayIconPixelSize,
+                TrayIconPixelSize,
+                LrLoadFromFile);
             _ownsIcon = _iconHandle != IntPtr.Zero;
         }
 
@@ -88,7 +88,7 @@ public sealed class WindowsTrayIcon : IDisposable
 
     public event Action? ShowRequested;
 
-    public event Action? ExitRequested;
+    public event Action<int, int>? MenuRequested;
 
     public event Action? Unavailable;
 
@@ -155,7 +155,10 @@ public sealed class WindowsTrayIcon : IDisposable
             }
             else if (notification is WmRightButtonUp or WmContextMenu)
             {
-                ShowMenu();
+                if (GetCursorPos(out var cursor))
+                {
+                    MenuRequested?.Invoke(cursor.X, cursor.Y);
+                }
             }
         }
 
@@ -202,46 +205,6 @@ public sealed class WindowsTrayIcon : IDisposable
         KillTimer(_windowHandle, new UIntPtr(RetryTimerId));
         _unavailable = true;
         Unavailable?.Invoke();
-    }
-
-    private void ShowMenu()
-    {
-        var menu = CreatePopupMenu();
-        if (menu == IntPtr.Zero)
-        {
-            return;
-        }
-
-        try
-        {
-            AppendMenuW(menu, MfString, ShowCommand, "显示 OpenSynapse");
-            AppendMenuW(menu, MfSeparator, 0, null);
-            AppendMenuW(menu, MfString, ExitCommand, "退出");
-            GetCursorPos(out var cursor);
-            SetForegroundWindow(_windowHandle);
-            var command = TrackPopupMenu(
-                menu,
-                TpmRightButton | TpmReturnCommand,
-                cursor.X,
-                cursor.Y,
-                0,
-                _windowHandle,
-                IntPtr.Zero);
-            PostMessageW(_windowHandle, WmNull, UIntPtr.Zero, IntPtr.Zero);
-
-            if (command == ShowCommand)
-            {
-                ShowRequested?.Invoke();
-            }
-            else if (command == ExitCommand)
-            {
-                ExitRequested?.Invoke();
-            }
-        }
-        finally
-        {
-            DestroyMenu(menu);
-        }
     }
 
     private void ReleaseOwnedIcon()
@@ -345,41 +308,8 @@ public sealed class WindowsTrayIcon : IDisposable
     private static extern bool DestroyIcon(IntPtr icon);
 
     [DllImport("user32.dll")]
-    private static extern IntPtr CreatePopupMenu();
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool AppendMenuW(IntPtr menu, uint flags, uint itemId, string? text);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool DestroyMenu(IntPtr menu);
-
-    [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetCursorPos(out Point point);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetForegroundWindow(IntPtr windowHandle);
-
-    [DllImport("user32.dll")]
-    private static extern uint TrackPopupMenu(
-        IntPtr menu,
-        uint flags,
-        int x,
-        int y,
-        int reserved,
-        IntPtr windowHandle,
-        IntPtr rectangle);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool PostMessageW(
-        IntPtr windowHandle,
-        uint message,
-        UIntPtr wParam,
-        IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern UIntPtr SetTimer(

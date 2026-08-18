@@ -2,6 +2,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using OpenSynapse.App.ViewModels;
@@ -13,11 +14,14 @@ namespace OpenSynapse.App;
 
 public sealed partial class MainWindow : Window
 {
+    private const int MinimumWindowWidth = 1080;
+    private const int MinimumWindowHeight = 680;
     private readonly MainViewModel _viewModel;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherQueue _dispatcherQueue;
     private bool _trayLifecycleEnabled;
     private bool _exitRequested;
+    private bool _enforcingMinimumSize;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -25,6 +29,11 @@ public sealed partial class MainWindow : Window
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException("OpenSynapse 主窗口必须在 DispatcherQueue 线程创建。");
         InitializeComponent();
+        var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
+        if (File.Exists(appIconPath))
+        {
+            AppWindow.SetIcon(appIconPath);
+        }
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         RootNavigationView.DataContext = _viewModel;
@@ -33,10 +42,27 @@ public sealed partial class MainWindow : Window
         Activated += OnActivated;
         Closed += OnClosed;
         AppWindow.Closing += OnAppWindowClosing;
+        AppWindow.Changed += OnAppWindowChanged;
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
     }
 
     internal void RequestActivation() => _dispatcherQueue.TryEnqueue(RestoreAndActivate);
+
+    internal void RequestNavigation(string page) => _dispatcherQueue.TryEnqueue(() =>
+    {
+        var item = RootNavigationView.MenuItems
+            .OfType<NavigationViewItem>()
+            .FirstOrDefault(candidate => StringComparer.Ordinal.Equals(candidate.Tag as string, page));
+        if (item is not null)
+        {
+            RootNavigationView.SelectedItem = item;
+        }
+
+        RestoreAndActivate();
+    });
+
+    internal void RequestStartupChange(bool enabled) => _dispatcherQueue.TryEnqueue(
+        () => _ = _viewModel.SetStartupEnabledAsync(enabled, _lifetime.Token));
 
     internal void EnableTrayLifecycle() => _trayLifecycleEnabled = true;
 
@@ -74,9 +100,50 @@ public sealed partial class MainWindow : Window
         sender.Hide();
     }
 
+    private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (!args.DidSizeChange || _enforcingMinimumSize)
+        {
+            return;
+        }
+
+        var workArea = DisplayArea.GetFromWindowId(sender.Id, DisplayAreaFallback.Primary).WorkArea;
+        var minimumWidth = Math.Min(MinimumWindowWidth, workArea.Width);
+        var minimumHeight = Math.Min(MinimumWindowHeight, workArea.Height);
+        var size = sender.Size;
+        var width = Math.Max(size.Width, minimumWidth);
+        var height = Math.Max(size.Height, minimumHeight);
+        if (width == size.Width && height == size.Height)
+        {
+            return;
+        }
+
+        _enforcingMinimumSize = true;
+        try
+        {
+            sender.Resize(new SizeInt32(width, height));
+        }
+        finally
+        {
+            _enforcingMinimumSize = false;
+        }
+    }
+
     private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs args)
     {
-        if (args.Mode == PowerModes.Resume)
+        if (args.Mode == PowerModes.Suspend)
+        {
+            try
+            {
+                _viewModel.PrepareForSuspendAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception exception)
+            {
+                _dispatcherQueue.TryEnqueue(() =>
+                    _viewModel.ReportApplicationError($"休眠前恢复风扇：{exception.Message}"));
+            }
+        }
+        else if (args.Mode == PowerModes.Resume)
         {
             _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
         }
@@ -123,8 +190,17 @@ public sealed partial class MainWindow : Window
     private void OnClosed(object sender, WindowEventArgs args)
     {
         AppWindow.Closing -= OnAppWindowClosing;
+        AppWindow.Changed -= OnAppWindowChanged;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         _lifetime.Cancel();
+        try
+        {
+            _viewModel.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        }
+        catch (Exception exception)
+        {
+            _viewModel.ReportApplicationError($"退出前恢复风扇：{exception.Message}");
+        }
         _lifetime.Dispose();
     }
 
@@ -139,6 +215,52 @@ public sealed partial class MainWindow : Window
 
     private async void ApplyPerformanceModeClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
+
+    private async void AutoApplyComboSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox { IsDropDownOpen: true, Tag: string setting })
+        {
+            return;
+        }
+
+        switch (setting)
+        {
+            case "performance":
+                await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
+                break;
+            case "charge":
+                await _viewModel.ApplyBladeChargeLimitAsync(_lifetime.Token);
+                break;
+            case "cpuBoost":
+                await _viewModel.ApplyBladeCpuBoostAsync(_lifetime.Token);
+                break;
+            case "gpuBoost":
+                await _viewModel.ApplyBladeGpuBoostAsync(_lifetime.Token);
+                break;
+            case "lighting":
+                await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
+                break;
+            case "logo":
+                await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
+                break;
+        }
+    }
+
+    private async void AutoApplyMaxFanToggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch { FocusState: not FocusState.Unfocused })
+        {
+            await _viewModel.ApplyBladeMaxFanAsync(_lifetime.Token);
+        }
+    }
+
+    private async void AutoApplyBrightnessValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (sender is Slider { FocusState: not FocusState.Unfocused })
+        {
+            await _viewModel.ApplyBladeBrightnessAsync(_lifetime.Token);
+        }
+    }
 
     private async void ApplyChargeLimitClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeChargeLimitAsync(_lifetime.Token);
@@ -155,8 +277,20 @@ public sealed partial class MainWindow : Window
     private async void ApplyMaxFanClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeMaxFanAsync(_lifetime.Token);
 
+    private async void ApplyGamingModeClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyBladeGamingModeAsync(_lifetime.Token);
+
+    private async void ApplyStartupAnimationClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyBladeStartupAnimationAsync(_lifetime.Token);
+
+    private async void ApplyOneTimeFullChargeClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyBladeOneTimeFullChargeAsync(_lifetime.Token);
+
     private async void ApplyLogoClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
+
+    private async void ToggleTouchpadClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ToggleBladeTouchpadAsync(_lifetime.Token);
 
     private async void ApplyPollingRateClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyViperPollingRateAsync(_lifetime.Token);
@@ -169,6 +303,17 @@ public sealed partial class MainWindow : Window
 
     private async void ApplyIdleClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyViperIdleAsync(_lifetime.Token);
+
+    private async void ReadViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ReadViperButtonMappingsAsync(_lifetime.Token);
+
+    private async void ApplyViperButtonMappingClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: ViperButtonAssignmentRowViewModel row })
+        {
+            await _viewModel.ApplyViperButtonMappingAsync(row, _lifetime.Token);
+        }
+    }
 
     private async void ProfileSelectionChanged(object sender, SelectionChangedEventArgs e)
     {

@@ -1,10 +1,28 @@
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
+using global::Windows.Graphics.Imaging;
 
 namespace OpenSynapse.Core.Tests;
 
 public sealed class WindowsDisplayCaptureAdapterTests
 {
+    [Fact]
+    public void CopiesPixelsFromARealSoftwareBitmap()
+    {
+        using var bitmap = new SoftwareBitmap(
+            BitmapPixelFormat.Bgra8,
+            2,
+            1,
+            BitmapAlphaMode.Ignore);
+
+        var frame = WindowsDisplayCaptureAdapter.CopyPixels(bitmap, 2, 1);
+
+        Assert.Equal(2, frame.Width);
+        Assert.Equal(1, frame.Height);
+        Assert.True(frame.Stride >= 8);
+        Assert.Equal(frame.Stride, frame.Bgra.Length);
+    }
+
     [Fact]
     public void ReducesOnlyEdgeBandAndHonorsStride()
     {
