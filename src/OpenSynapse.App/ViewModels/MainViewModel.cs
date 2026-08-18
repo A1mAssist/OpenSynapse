@@ -31,7 +31,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High, BladeCpuBoostMode.Boost, BladeCpuBoostMode.Undervolt];
     private static readonly BladeGpuBoostMode[] BladeGpuBoostModes =
         [BladeGpuBoostMode.Low, BladeGpuBoostMode.Medium, BladeGpuBoostMode.High];
-    private static readonly BladeLogoMode[] BladeLogoModes = [BladeLogoMode.Off, BladeLogoMode.Static];
+    private static readonly BladeLogoMode[] BladeLogoModes =
+        [BladeLogoMode.Off, BladeLogoMode.Static, BladeLogoMode.Breathing];
     private static readonly BladeLightingMode[] BladeLightingModes =
         [
             BladeLightingMode.Off,
@@ -404,7 +405,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public string BladeMaxFanText { get => _bladeMaxFanText; private set => SetField(ref _bladeMaxFanText, value); }
     public bool BladeMaxFanEnabled { get => _bladeMaxFanEnabled; set => SetField(ref _bladeMaxFanEnabled, value); }
     public bool CanSetBladeMaxFan => _hasBladeMaxFan && IsBladeCustomMode;
-    public IReadOnlyList<string> BladeLogoOptions { get; } = ["关闭", "常亮"];
+    public IReadOnlyList<string> BladeLogoOptions { get; } = ["关闭", "常亮", "呼吸"];
     public string BladeLogoText { get => _bladeLogoText; private set => SetField(ref _bladeLogoText, value); }
     public int BladeLogoIndex { get => _bladeLogoIndex; set => SetField(ref _bladeLogoIndex, value); }
     public bool CanSetBladeLogo { get => _canSetBladeLogo; private set => SetField(ref _canSetBladeLogo, value); }
@@ -744,11 +745,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         Func<Task> operation,
         CancellationToken cancellationToken)
     {
-        var previous = _profile.Clone();
         if (!await TryEnterOperationAsync(cancellationToken))
         {
             return;
         }
+        var previous = _profile.Clone();
         IsBusy = true;
         try
         {
@@ -2540,7 +2541,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             BladeLogoMode.Off => "关闭",
             BladeLogoMode.Static => "常亮",
-            BladeLogoMode.Breathing => "呼吸（只读）",
+            BladeLogoMode.Breathing => "呼吸",
             _ => "--",
         };
         BladeLogoIndex = Array.IndexOf(BladeLogoModes, mode);
