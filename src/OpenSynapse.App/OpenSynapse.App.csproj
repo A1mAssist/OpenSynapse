@@ -44,4 +44,15 @@
     <ProjectReference Include="..\OpenSynapse.Core\OpenSynapse.Core.csproj" />
     <ProjectReference Include="..\OpenSynapse.Windows\OpenSynapse.Windows.csproj" />
   </ItemGroup>
+
+  <Target Name="IncludeWinUiRuntimeResourcesInPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_WinUiRuntimeResources Include="$(TargetDir)$(AssemblyName).pri" />
+      <_WinUiRuntimeResources Include="$(TargetDir)*.xbf" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(_WinUiRuntimeResources)"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
 </Project>
