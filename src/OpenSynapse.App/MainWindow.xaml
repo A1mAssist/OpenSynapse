@@ -19,18 +19,7 @@
           </StackPanel>
         </StackPanel>
       </Grid>
-      <Grid Grid.Column="1" Padding="24,0,160,0">
-        <StackPanel
-            Orientation="Horizontal"
-            Spacing="6"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            IsHitTestVisible="False">
-          <TextBlock Text="OpenSynapse" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-          <TextBlock Text="/" Foreground="{StaticResource LineBrush}" FontSize="12" />
-          <TextBlock x:Name="BreadcrumbText" Text="概览" Foreground="{StaticResource DataBrush}" FontSize="13" FontWeight="SemiBold" />
-        </StackPanel>
-      </Grid>
+      <Grid Grid.Column="1" />
     </Grid>
     <NavigationView
         x:Name="RootNavigationView"

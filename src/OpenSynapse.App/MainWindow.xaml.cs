@@ -441,13 +441,6 @@ public sealed partial class MainWindow : Window
         DevicesPage.Visibility = page == "devices" ? Visibility.Visible : Visibility.Collapsed;
         ProfilesPage.Visibility = page == "profiles" ? Visibility.Visible : Visibility.Collapsed;
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
-        BreadcrumbText.Text = page switch
-        {
-            "devices" => "设备",
-            "profiles" => "配置",
-            "diagnostics" => "诊断",
-            _ => "概览",
-        };
     }
 
     private void ApplyDarkTheme()
