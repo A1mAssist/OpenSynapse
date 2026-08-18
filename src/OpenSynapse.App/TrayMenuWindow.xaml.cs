@@ -8,6 +8,7 @@ namespace OpenSynapse.App;
 
 public sealed partial class TrayMenuWindow : Window
 {
+    private const int AnchorSize = 2;
     private bool _showPending;
     private bool _closing;
 
@@ -23,6 +24,7 @@ public sealed partial class TrayMenuWindow : Window
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = false;
+            presenter.IsAlwaysOnTop = true;
         }
     }
 
@@ -45,7 +47,9 @@ public sealed partial class TrayMenuWindow : Window
         var workArea = DisplayArea.GetFromPoint(
             new PointInt32(x, y),
             DisplayAreaFallback.Primary).WorkArea;
-        AppWindow.MoveAndResize(new RectInt32(x, workArea.Y + workArea.Height, 2, 2));
+        var anchorX = Math.Clamp(x, workArea.X, workArea.X + workArea.Width - AnchorSize);
+        var anchorY = Math.Clamp(y, workArea.Y, workArea.Y + workArea.Height - AnchorSize);
+        AppWindow.MoveAndResize(new RectInt32(anchorX, anchorY, AnchorSize, AnchorSize));
         Activate();
         if (!MenuAnchor.DispatcherQueue.TryEnqueue(() =>
             {

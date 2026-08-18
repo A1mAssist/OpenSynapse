@@ -14,7 +14,7 @@
             Text="打开主面板"
             MinWidth="176"
             Height="34"
-            FontFamily="{StaticResource AppFontFamily}"
+            FontFamily="Segoe UI Variable Text"
             FontSize="14"
             Click="OpenMainPanelClick"
             AutomationProperties.Name="打开 OpenSynapse 主面板">
@@ -23,7 +23,7 @@
         <MenuFlyoutItem
             Text="设备控制"
             Height="34"
-            FontFamily="{StaticResource AppFontFamily}"
+            FontFamily="Segoe UI Variable Text"
             FontSize="14"
             Tag="devices"
             Click="NavigateClick"
@@ -33,7 +33,7 @@
         <MenuFlyoutItem
             Text="配置"
             Height="34"
-            FontFamily="{StaticResource AppFontFamily}"
+            FontFamily="Segoe UI Variable Text"
             FontSize="14"
             Tag="profiles"
             Click="NavigateClick"
@@ -44,7 +44,7 @@
         <ToggleMenuFlyoutItem
             Text="开机启动"
             Height="34"
-            FontFamily="{StaticResource AppFontFamily}"
+            FontFamily="Segoe UI Variable Text"
             FontSize="14"
             IsChecked="{Binding IsStartupEnabled, Mode=OneWay}"
             IsEnabled="{Binding CanSetStartup}"
@@ -56,7 +56,7 @@
         <MenuFlyoutItem
             Text="退出"
             Height="34"
-            FontFamily="{StaticResource AppFontFamily}"
+            FontFamily="Segoe UI Variable Text"
             FontSize="14"
             Click="ExitClick"
             AutomationProperties.Name="退出 OpenSynapse">
