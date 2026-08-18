@@ -290,47 +290,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public string ProfileStatusText { get => _profileStatusText; private set => SetField(ref _profileStatusText, value); }
     public string ActiveProfileName { get => _activeProfileName; private set => SetField(ref _activeProfileName, value); }
     public string ProfileNameInput { get => _profileNameInput; set => SetField(ref _profileNameInput, value); }
-    public bool CanDeleteProfile => ProfileNames.Count > 1 && !IsBusy;
+    public bool CanDeleteProfile => ProfileNames.Count > 1;
     public bool IsStartupEnabled { get => _isStartupEnabled; private set => SetField(ref _isStartupEnabled, value); }
-    public bool CanSetStartup => _startupManager is not null && !string.IsNullOrWhiteSpace(_executablePath) && !IsBusy;
+    public bool CanSetStartup => _startupManager is not null && !string.IsNullOrWhiteSpace(_executablePath);
 
     public bool IsBusy
     {
         get => _isBusy;
-        private set
-        {
-            if (SetField(ref _isBusy, value))
-            {
-                OnPropertyChanged(nameof(CanRefresh));
-                OnPropertyChanged(nameof(CanSetBladeBrightness));
-                OnPropertyChanged(nameof(CanSetBladePerformanceMode));
-                OnPropertyChanged(nameof(CanSetBladeChargeLimit));
-                OnPropertyChanged(nameof(CanSetBladeCpuBoost));
-                OnPropertyChanged(nameof(CanSetBladeGpuBoost));
-                OnPropertyChanged(nameof(CanSetBladeMaxFan));
-                OnPropertyChanged(nameof(CanSetBladeGamingMode));
-                OnPropertyChanged(nameof(CanApplyBladeGamingMode));
-                OnPropertyChanged(nameof(CanSetBladeStartupAnimation));
-                OnPropertyChanged(nameof(CanApplyBladeStartupAnimation));
-                OnPropertyChanged(nameof(CanSetBladeOneTimeFullCharge));
-                OnPropertyChanged(nameof(CanApplyBladeOneTimeFullCharge));
-                OnPropertyChanged(nameof(CanSetBladeLogo));
-                OnPropertyChanged(nameof(CanSetBladeTouchpad));
-                OnPropertyChanged(nameof(CanSetBladeLighting));
-                OnPropertyChanged(nameof(CanSetViperPollingRate));
-                OnPropertyChanged(nameof(CanSetViperDpi));
-                OnPropertyChanged(nameof(CanSetViperDpiStages));
-                OnPropertyChanged(nameof(CanSetViperIdle));
-                OnPropertyChanged(nameof(CanReadViperButtonMappings));
-                OnPropertyChanged(nameof(CanSetViperButtonMappings));
-                OnPropertyChanged(nameof(CanSetInternalDisplayRefreshRate));
-                OnPropertyChanged(nameof(CanDeleteProfile));
-                OnPropertyChanged(nameof(CanSetStartup));
-            }
-        }
+        private set => SetField(ref _isBusy, value);
     }
 
-    public bool CanRefresh => !IsBusy;
+    public bool CanRefresh => true;
 
     public string BladeDeviceName { get => _bladeDeviceName; private set => SetField(ref _bladeDeviceName, value); }
     public string BladeStatusText { get => _bladeStatusText; private set => SetField(ref _bladeStatusText, value); }
@@ -349,7 +319,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     }
     public bool CanSetBladeBrightness
     {
-        get => _canSetBladeBrightness && !IsBusy;
+        get => _canSetBladeBrightness;
         private set
         {
             if (SetField(ref _canSetBladeBrightness, value))
@@ -361,7 +331,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public string BladePerformanceModeText { get => _bladePerformanceModeText; private set => SetField(ref _bladePerformanceModeText, value); }
     public IReadOnlyList<string> BladePerformanceModeOptions { get; } = ["平衡", "性能", "自定义", "静音", "HyperBoost"];
     public int BladePerformanceModeIndex { get => _bladePerformanceModeIndex; set => SetField(ref _bladePerformanceModeIndex, value); }
-    public bool CanSetBladePerformanceMode { get => _canSetBladePerformanceMode && !IsBusy; private set => SetField(ref _canSetBladePerformanceMode, value); }
+    public bool CanSetBladePerformanceMode { get => _canSetBladePerformanceMode; private set => SetField(ref _canSetBladePerformanceMode, value); }
     public string BladeFanText { get => _bladeFanText; private set => SetField(ref _bladeFanText, value); }
     public string BladeFanModeText { get => _bladeFanModeText; private set => SetField(ref _bladeFanModeText, value); }
     public string BladeFanTargetRpmText { get => _bladeFanTargetRpmText; private set => SetField(ref _bladeFanTargetRpmText, value); }
@@ -381,7 +351,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             }
         }
     }
-    public bool CanSetBladeGamingMode => _bladeGameModeState is byte state && state != 2 && !IsBusy;
+    public bool CanSetBladeGamingMode => _bladeGameModeState is byte state && state != 2;
     public bool CanApplyBladeGamingMode =>
         CanSetBladeGamingMode && BladeGameModeEnabled != (_bladeGameModeState != 0);
     public string BladeStartupAnimationText { get => _bladeStartupAnimationText; private set => SetField(ref _bladeStartupAnimationText, value); }
@@ -396,7 +366,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             }
         }
     }
-    public bool CanSetBladeStartupAnimation => _bladeStartupAnimationEnabled is not null && !IsBusy;
+    public bool CanSetBladeStartupAnimation => _bladeStartupAnimationEnabled is not null;
     public bool CanApplyBladeStartupAnimation =>
         CanSetBladeStartupAnimation && BladeStartupAnimationEnabled != _bladeStartupAnimationEnabled;
     public string BladeNativeDisplayModeText { get => _bladeNativeDisplayModeText; private set => SetField(ref _bladeNativeDisplayModeText, value); }
@@ -416,31 +386,31 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     }
     public bool CanSetBladeOneTimeFullCharge =>
         _bladeOneTimeFullChargeEnabled is not null && _confirmedBladeChargeLimitIndex >= 0 &&
-        BladeChargeLimits[_confirmedBladeChargeLimitIndex] < 100 && !IsBusy;
+        BladeChargeLimits[_confirmedBladeChargeLimitIndex] < 100;
     public bool CanApplyBladeOneTimeFullCharge =>
         CanSetBladeOneTimeFullCharge && BladeOneTimeFullChargeEnabled != _bladeOneTimeFullChargeEnabled;
     public string BladeChargeLimitText { get => _bladeChargeLimitText; private set => SetField(ref _bladeChargeLimitText, value); }
     public IReadOnlyList<string> BladeChargeLimitOptions { get; } = ["50%", "55%", "60%", "65%", "70%", "75%", "80%", "关闭限制（100%）"];
     public int BladeChargeLimitIndex { get => _bladeChargeLimitIndex; set => SetField(ref _bladeChargeLimitIndex, value); }
-    public bool CanSetBladeChargeLimit { get => _canSetBladeChargeLimit && !IsBusy; private set => SetField(ref _canSetBladeChargeLimit, value); }
+    public bool CanSetBladeChargeLimit { get => _canSetBladeChargeLimit; private set => SetField(ref _canSetBladeChargeLimit, value); }
     public IReadOnlyList<string> BladeCpuBoostOptions { get; } = ["低", "中", "高", "Boost", "降压预设"];
     public string BladeCpuBoostText { get => _bladeCpuBoostText; private set => SetField(ref _bladeCpuBoostText, value); }
     public int BladeCpuBoostIndex { get => _bladeCpuBoostIndex; set => SetField(ref _bladeCpuBoostIndex, value); }
-    public bool CanSetBladeCpuBoost => _hasBladeCpuBoost && IsBladeCustomMode && !IsBusy;
+    public bool CanSetBladeCpuBoost => _hasBladeCpuBoost && IsBladeCustomMode;
     public IReadOnlyList<string> BladeGpuBoostOptions { get; } = ["低", "中", "高"];
     public string BladeGpuBoostText { get => _bladeGpuBoostText; private set => SetField(ref _bladeGpuBoostText, value); }
     public int BladeGpuBoostIndex { get => _bladeGpuBoostIndex; set => SetField(ref _bladeGpuBoostIndex, value); }
-    public bool CanSetBladeGpuBoost => _hasBladeGpuBoost && IsBladeCustomMode && !IsBusy;
+    public bool CanSetBladeGpuBoost => _hasBladeGpuBoost && IsBladeCustomMode;
     public string BladeMaxFanText { get => _bladeMaxFanText; private set => SetField(ref _bladeMaxFanText, value); }
     public bool BladeMaxFanEnabled { get => _bladeMaxFanEnabled; set => SetField(ref _bladeMaxFanEnabled, value); }
-    public bool CanSetBladeMaxFan => _hasBladeMaxFan && IsBladeCustomMode && !IsBusy;
+    public bool CanSetBladeMaxFan => _hasBladeMaxFan && IsBladeCustomMode;
     public IReadOnlyList<string> BladeLogoOptions { get; } = ["关闭", "常亮"];
     public string BladeLogoText { get => _bladeLogoText; private set => SetField(ref _bladeLogoText, value); }
     public int BladeLogoIndex { get => _bladeLogoIndex; set => SetField(ref _bladeLogoIndex, value); }
-    public bool CanSetBladeLogo { get => _canSetBladeLogo && !IsBusy; private set => SetField(ref _canSetBladeLogo, value); }
+    public bool CanSetBladeLogo { get => _canSetBladeLogo; private set => SetField(ref _canSetBladeLogo, value); }
     public string BladeTouchpadText { get => _bladeTouchpadText; private set => SetField(ref _bladeTouchpadText, value); }
     public bool BladeTouchpadEnabled { get => _bladeTouchpadEnabled; private set => SetField(ref _bladeTouchpadEnabled, value); }
-    public bool CanSetBladeTouchpad => _canSetBladeTouchpad && !IsBusy;
+    public bool CanSetBladeTouchpad => _canSetBladeTouchpad;
     public IReadOnlyList<string> BladeLightingModeOptions { get; } =
         ["关闭", "静态", "呼吸", "光谱循环", "波浪", "火焰", "响应", "涟漪", "音频律动", "环境感知", "色轮", "星光", "潮汐"];
     public int BladeLightingModeIndex
@@ -475,22 +445,22 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public int BladeWaveDirectionIndex { get => _bladeWaveDirectionIndex; set => SetField(ref _bladeWaveDirectionIndex, value); }
     public Color BladeLightingColor { get => _bladeLightingColor; set => SetField(ref _bladeLightingColor, value); }
     public Color BladeLightingSecondColor { get => _bladeLightingSecondColor; set => SetField(ref _bladeLightingSecondColor, value); }
-    public bool CanSetBladeLighting => _canSetBladeBrightness && _bladeLightingController is not null && !IsBusy;
+    public bool CanSetBladeLighting => _canSetBladeBrightness && _bladeLightingController is not null;
     public string ViperDeviceName { get => _viperDeviceName; private set => SetField(ref _viperDeviceName, value); }
     public string ViperStatusText { get => _viperStatusText; private set => SetField(ref _viperStatusText, value); }
     public string ViperBatteryText { get => _viperBatteryText; private set => SetField(ref _viperBatteryText, value); }
     public string ViperPollingRateText { get => _viperPollingRateText; private set => SetField(ref _viperPollingRateText, value); }
     public int ViperPollingRateIndex { get => _viperPollingRateIndex; set => SetField(ref _viperPollingRateIndex, value); }
-    public bool CanSetViperPollingRate { get => _canSetViperPollingRate && !IsBusy; private set => SetField(ref _canSetViperPollingRate, value); }
+    public bool CanSetViperPollingRate { get => _canSetViperPollingRate; private set => SetField(ref _canSetViperPollingRate, value); }
     public string ViperDpiText { get => _viperDpiText; private set => SetField(ref _viperDpiText, value); }
     public double ViperDpiXValue { get => _viperDpiXValue; set => SetField(ref _viperDpiXValue, value); }
     public double ViperDpiYValue { get => _viperDpiYValue; set => SetField(ref _viperDpiYValue, value); }
-    public bool CanSetViperDpi { get => _canSetViperDpi && !IsBusy; private set => SetField(ref _canSetViperDpi, value); }
+    public bool CanSetViperDpi { get => _canSetViperDpi; private set => SetField(ref _canSetViperDpi, value); }
     public string ViperIdleText { get => _viperIdleText; private set => SetField(ref _viperIdleText, value); }
     public string ViperDpiStagesText { get => _viperDpiStagesText; private set => SetField(ref _viperDpiStagesText, value); }
     public string ViperLowBatteryThresholdText { get => _viperLowBatteryThresholdText; private set => SetField(ref _viperLowBatteryThresholdText, value); }
     public double ViperIdleMinutesValue { get => _viperIdleMinutesValue; set => SetField(ref _viperIdleMinutesValue, value); }
-    public bool CanSetViperIdle { get => _canSetViperIdle && !IsBusy; private set => SetField(ref _canSetViperIdle, value); }
+    public bool CanSetViperIdle { get => _canSetViperIdle; private set => SetField(ref _canSetViperIdle, value); }
     public ObservableCollection<ViperDpiStageRowViewModel> ViperDpiStages { get; } = new();
     public int ViperDpiStageCount
     {
@@ -502,7 +472,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         get => _viperActiveDpiStage;
         set => SetField(ref _viperActiveDpiStage, Math.Clamp(value, 1, Math.Max(1, ViperDpiStages.Count)));
     }
-    public bool CanSetViperDpiStages { get => _canSetViperDpiStages && !IsBusy; private set => SetField(ref _canSetViperDpiStages, value); }
+    public bool CanSetViperDpiStages { get => _canSetViperDpiStages; private set => SetField(ref _canSetViperDpiStages, value); }
     public string ViperButtonMappingsText { get => _viperButtonMappingsText; private set => SetField(ref _viperButtonMappingsText, value); }
     public ObservableCollection<ViperButtonAssignmentRowViewModel> ViperButtonAssignments { get; } = new();
     public IReadOnlyList<string> ViperButtonMappingLayerOptions { get; } = ["普通层", "HyperShift 层"];
@@ -521,13 +491,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         ViperButtonAssignments
             .Where(row => (int)row.Assignment.Layer == ViperButtonMappingLayerIndex)
             .ToArray();
-    public bool CanReadViperButtonMappings => _canReadViperButtonMappings && !IsBusy;
-    public bool CanSetViperButtonMappings => _canSetViperButtonMappings && !IsBusy;
+    public bool CanReadViperButtonMappings => _canReadViperButtonMappings;
+    public bool CanSetViperButtonMappings => _canSetViperButtonMappings;
     public string InternalDisplayResolutionText { get => _internalDisplayResolutionText; private set => SetField(ref _internalDisplayResolutionText, value); }
     public string InternalDisplayRefreshRateText { get => _internalDisplayRefreshRateText; private set => SetField(ref _internalDisplayRefreshRateText, value); }
     public IReadOnlyList<int> InternalDisplayRefreshRates { get => _internalDisplayRefreshRates; private set => SetField(ref _internalDisplayRefreshRates, value); }
     public int InternalDisplayRefreshRateHertz { get => _internalDisplayRefreshRateHertz; set => SetField(ref _internalDisplayRefreshRateHertz, value); }
-    public bool CanSetInternalDisplayRefreshRate { get => _canSetInternalDisplayRefreshRate && !IsBusy; private set => SetField(ref _canSetInternalDisplayRefreshRate, value); }
+    public bool CanSetInternalDisplayRefreshRate { get => _canSetInternalDisplayRefreshRate; private set => SetField(ref _canSetInternalDisplayRefreshRate, value); }
 
     public string EmptyStateText => Devices.Count == 0
         ? "未发现 Blade 16 或 Viper V3 HyperSpeed。"
@@ -587,7 +557,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task SelectProfileAsync(string? name, CancellationToken cancellationToken = default)
     {
-        if (IsBusy || string.IsNullOrWhiteSpace(name) ||
+        if (string.IsNullOrWhiteSpace(name) ||
             StringComparer.OrdinalIgnoreCase.Equals(name, ActiveProfileName))
         {
             return;
@@ -603,7 +573,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task CreateProfileAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || string.IsNullOrWhiteSpace(ProfileNameInput))
+        if (string.IsNullOrWhiteSpace(ProfileNameInput))
         {
             return;
         }
@@ -621,7 +591,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task DeleteActiveProfileAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanDeleteProfile)
+        if (!CanDeleteProfile)
         {
             return;
         }
@@ -636,7 +606,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task CloneActiveProfileAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || string.IsNullOrWhiteSpace(ProfileNameInput))
+        if (string.IsNullOrWhiteSpace(ProfileNameInput))
         {
             return;
         }
@@ -654,7 +624,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task RenameActiveProfileAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || string.IsNullOrWhiteSpace(ProfileNameInput))
+        if (string.IsNullOrWhiteSpace(ProfileNameInput))
         {
             return;
         }
@@ -687,11 +657,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ImportProfilesAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        if (IsBusy)
-        {
-            return;
-        }
-
         ProfileDocument imported;
         try
         {
@@ -718,11 +683,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ExportProfilesAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        if (IsBusy)
-        {
-            return;
-        }
-
         if (!await TryEnterOperationAsync(cancellationToken))
         {
             return;
@@ -994,11 +954,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         int? targetRpm,
         CancellationToken cancellationToken = default)
     {
-        if (IsBusy)
-        {
-            return;
-        }
-
         await RunDeviceOperationAsync("固定风扇", async () =>
         {
             var previous = _profile.Clone();
@@ -1034,11 +989,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(curve);
-        if (IsBusy)
-        {
-            return;
-        }
-
         await RunDeviceOperationAsync("智能风扇曲线", async () =>
         {
             var previous = _profile.Clone();
@@ -1291,11 +1241,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                if (IsBusy)
-                {
-                    continue;
-                }
-
                 try
                 {
                     var snapshot = await _discovery.DiscoverAsync(cancellationToken);
@@ -1362,11 +1307,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         CancellationToken cancellationToken,
         bool applyDisplayProfile = false)
     {
-        if (IsBusy)
-        {
-            return;
-        }
-
         if (!await TryEnterOperationAsync(cancellationToken))
         {
             return;
@@ -1609,7 +1549,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ApplyBladeChargeLimitAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanSetBladeChargeLimit ||
+        if (!CanSetBladeChargeLimit ||
             BladeChargeLimitIndex < 0 || BladeChargeLimitIndex >= BladeChargeLimits.Length)
         {
             return;
@@ -1897,7 +1837,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ApplyViperPollingRateAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanSetViperPollingRate)
+        if (!CanSetViperPollingRate)
         {
             return;
         }
@@ -1922,7 +1862,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ApplyViperDpiAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanSetViperDpi)
+        if (!CanSetViperDpi)
         {
             return;
         }
@@ -1949,7 +1889,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ApplyViperIdleAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy || !CanSetViperIdle)
+        if (!CanSetViperIdle)
         {
             return;
         }
