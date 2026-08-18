@@ -2,6 +2,10 @@
 
 OpenSynapse is a Windows 11 desktop controller for the verified Razer devices in the design spec.
 
+## Run the release
+
+Extract the complete release archive, then start `OpenSynapse.exe` in the root folder. Keep the adjacent `resources` folder intact; it contains the self-contained WinUI runtime and application files.
+
 ## Current slice
 
 The current build is a WinUI 3 desktop application. It ships strict embedded manifests for `1532:02C6` (Razer Blade 16 2025) and `1532:00B8` (Razer Viper V3 HyperSpeed), and selects each manifest's declared HID control collection (`UsagePage 0001 / Usage 0002 / Feature 91 B` for both built-ins).
