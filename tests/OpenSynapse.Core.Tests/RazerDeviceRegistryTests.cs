@@ -265,6 +265,8 @@ public sealed class RazerDeviceRegistryTests : IDisposable
             ["logo-power.set"] = (0xFF, 0x03, 0x03, 0x00),
             ["logo-mode.get"] = (0xFF, 0x03, 0x03, 0x82),
             ["logo-mode.set"] = (0xFF, 0x03, 0x03, 0x02),
+            ["logo-effect.set"] = (0x00, 0x03, 0x03, 0x02),
+            ["logo-state.set"] = (0x00, 0x03, 0x03, 0x00),
         });
         AssertHeaders(viper, new Dictionary<string, (byte Tx, byte Size, byte Class, byte Id)>
         {

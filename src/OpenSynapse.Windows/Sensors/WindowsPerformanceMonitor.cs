@@ -10,6 +10,8 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
 {
     private readonly string _cpuName;
     private readonly CpuHardwareMonitor _cpuHardware = new();
+    private readonly WindowsGpuActivityReader _gpuActivity = new();
+    private readonly AmdAdlTelemetryReader _amdGpu = new();
     private ulong _previousIdle;
     private ulong _previousKernel;
     private ulong _previousUser;
@@ -30,7 +32,15 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var cpu = _cpuHardware.Read();
         ReadMemory(out var memoryUsed, out var memoryTotal);
         ReadStorage(out var storageUsed, out var storageTotal);
-        var gpu = await ReadNvidiaGpuAsync(cancellationToken);
+        var windowsGpus = _gpuActivity.Read();
+        var nvidiaActive = WindowsGpuActivityReader.IsNvidiaActive(windowsGpus);
+        var nvidia = nvidiaActive ? await ReadNvidiaGpuAsync(cancellationToken) : null;
+        var integrated = WindowsGpuActivityReader.SelectIntegrated(windowsGpus);
+        var windowsNvidia = WindowsGpuActivityReader.SelectNvidia(windowsGpus);
+        var selected = nvidiaActive ? windowsNvidia : integrated;
+        var amd = selected?.VendorId == 0x1002 ? _amdGpu.Read() : default;
+        var gpuName = nvidia?.Name ?? selected?.Name ?? "GPU";
+        var gpuUsage = nvidia?.UsagePercent ?? selected?.UsagePercent;
 
         return new PerformanceSnapshot(
             _cpuName.Trim(),
@@ -38,22 +48,32 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             cpu.TemperatureCelsius,
             cpu.PowerWatts,
             cpu.ClockMegahertz,
-            gpu?.Name ?? "NVIDIA GPU",
-            gpu?.UsagePercent,
-            gpu?.TemperatureCelsius,
-            gpu?.PowerWatts,
-            gpu?.ClockMegahertz,
-            gpu?.MemoryUsedMebibytes,
-            gpu?.MemoryTotalMebibytes,
+            gpuName,
+            gpuUsage,
+            nvidia?.TemperatureCelsius ?? amd.TemperatureCelsius ?? selected?.TemperatureCelsius,
+            nvidia?.PowerWatts ?? amd.PowerWatts,
+            nvidia?.ClockMegahertz ?? amd.ClockMegahertz,
+            nvidia?.MemoryUsedMebibytes ?? selected?.MemoryUsedMebibytes,
+            nvidia?.MemoryTotalMebibytes ?? selected?.MemoryTotalMebibytes,
             memoryUsed,
             memoryTotal,
             storageUsed,
             storageTotal,
             DateTimeOffset.UtcNow,
-            gpu is null ? "无法读取 NVIDIA 遥测；其余指标仍在刷新。" : null);
+            windowsGpus.Count == 0
+                ? "无法读取 Windows GPU 性能计数器；其余指标仍在刷新。"
+                : nvidiaActive && nvidia is null
+                    ? "NVIDIA 正在工作，但详细温度、功耗和频率暂时不可用。"
+                    : null,
+            selected?.IsIntegrated == true ? "共享内存" : "专用显存");
     }
 
-    public void Dispose() => _cpuHardware.Dispose();
+    public void Dispose()
+    {
+        _gpuActivity.Dispose();
+        _amdGpu.Dispose();
+        _cpuHardware.Dispose();
+    }
 
     private double? ReadCpuUsage()
     {

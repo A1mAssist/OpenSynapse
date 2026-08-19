@@ -27,6 +27,19 @@ public sealed class BladeMappingEngineNativeRuntimeTests
     }
 
     [Fact]
+    public async Task StaleSessionRecoveryDisablesAndShutsDownBeforeStart()
+    {
+        var native = new FakeNativeApi();
+        await using var runtime = CreateRuntime(native);
+
+        Assert.True(await runtime.TryRecoverStaleSessionAsync(Device));
+        await runtime.DisposeAsync();
+
+        Assert.Equal(["initialize", "remove", "disable", "shutdown"], native.Calls);
+        Assert.Equal(1, native.ReleaseCount);
+    }
+
+    [Fact]
     public async Task StorageWaitsForDriverReadyAndTimeoutCleansUp()
     {
         var native = new FakeNativeApi { RaiseDriverReady = false };

@@ -1,0 +1,1412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppLogo.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>OpenSynapse 标志</value>
+    <comment>OpenSynapse 标志</comment>
+  </data>
+  <data name="Loc_70C0B22D6C.Content" xml:space="preserve">
+    <value>概览</value>
+    <comment>概览</comment>
+  </data>
+  <data name="Loc_D1F5A968DF.Content" xml:space="preserve">
+    <value>设备</value>
+    <comment>设备</comment>
+  </data>
+  <data name="Loc_8C8F3B71B8.Content" xml:space="preserve">
+    <value>配置</value>
+    <comment>配置</comment>
+  </data>
+  <data name="Loc_D1F42581D7.Content" xml:space="preserve">
+    <value>诊断</value>
+    <comment>诊断</comment>
+  </data>
+  <data name="Loc_F88204263B.Content" xml:space="preserve">
+    <value>关于</value>
+    <comment>关于</comment>
+  </data>
+  <data name="Loc_643DCA0BC0.Text" xml:space="preserve">
+    <value>系统遥测</value>
+    <comment>系统遥测</comment>
+  </data>
+  <data name="Loc_7A745D34B1.Text" xml:space="preserve">
+    <value>温度</value>
+    <comment>温度</comment>
+  </data>
+  <data name="Loc_B391411492.Text" xml:space="preserve">
+    <value>功耗</value>
+    <comment>功耗</comment>
+  </data>
+  <data name="Loc_F58BD88A2E.Text" xml:space="preserve">
+    <value>负载</value>
+    <comment>负载</comment>
+  </data>
+  <data name="Loc_38C653FB6C.Text" xml:space="preserve">
+    <value>频率</value>
+    <comment>频率</comment>
+  </data>
+  <data name="Loc_B7D0B7C1CD.Text" xml:space="preserve">
+    <value>已连接设备</value>
+    <comment>已连接设备</comment>
+  </data>
+  <data name="Loc_E7F68C4BF6.Text" xml:space="preserve">
+    <value>设备</value>
+    <comment>设备</comment>
+  </data>
+  <data name="Loc_0053B5D025.Text" xml:space="preserve">
+    <value>已发现的设备及其已验证控制。</value>
+    <comment>已发现的设备及其已验证控制。</comment>
+  </data>
+  <data name="Loc_AB55074471.Content" xml:space="preserve">
+    <value>重新探测</value>
+    <comment>重新探测</comment>
+  </data>
+  <data name="Loc_A89D57B72A.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>笔记本设备</value>
+    <comment>笔记本设备</comment>
+  </data>
+  <data name="Loc_D90B2AACF6.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>鼠标设备</value>
+    <comment>鼠标设备</comment>
+  </data>
+  <data name="Loc_5AADFF0A18.Text" xml:space="preserve">
+    <value>状态、灯光、性能、显示和电池。</value>
+    <comment>状态、灯光、性能、显示和电池。</comment>
+  </data>
+  <data name="Loc_B3082E3874.Text" xml:space="preserve">
+    <value>硬件遥测</value>
+    <comment>硬件遥测</comment>
+  </data>
+  <data name="Loc_D8667879C0.Text" xml:space="preserve">
+    <value>风扇转速</value>
+    <comment>风扇转速</comment>
+  </data>
+  <data name="Loc_C08649AE15.Text" xml:space="preserve">
+    <value>风扇控制</value>
+    <comment>风扇控制</comment>
+  </data>
+  <data name="Loc_3A5FA550D4.Text" xml:space="preserve">
+    <value>模式</value>
+    <comment>模式</comment>
+  </data>
+  <data name="Loc_F6E2342F87.Text" xml:space="preserve">
+    <value>目标</value>
+    <comment>目标</comment>
+  </data>
+  <data name="Loc_FCEF52F340.Text" xml:space="preserve">
+    <value>高级风扇诊断</value>
+    <comment>高级风扇诊断</comment>
+  </data>
+  <data name="Loc_FDC6488430.Text" xml:space="preserve">
+    <value>CPU 原始模式</value>
+    <comment>CPU 原始模式</comment>
+  </data>
+  <data name="Loc_68E5F3A8F7.Text" xml:space="preserve">
+    <value>GPU 原始模式</value>
+    <comment>GPU 原始模式</comment>
+  </data>
+  <data name="Loc_E45684D3DA.Text" xml:space="preserve">
+    <value>性能模式</value>
+    <comment>性能模式</comment>
+  </data>
+  <data name="Loc_C229515A4A.Text" xml:space="preserve">
+    <value>风扇</value>
+    <comment>风扇</comment>
+  </data>
+  <data name="Loc_E61D9AFAFA.Text" xml:space="preserve">
+    <value>充电上限</value>
+    <comment>充电上限</comment>
+  </data>
+  <data name="Loc_C78C6041E0.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="Loc_C78C6041E0.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="Loc_AE391759C5.Text" xml:space="preserve">
+    <value>CPU/GPU Boost 仅当前会话，Max Fan 随配置保存。</value>
+    <comment>CPU/GPU Boost 仅当前会话，Max Fan 随配置保存。</comment>
+  </data>
+  <data name="Loc_FBA62F56DE.Text" xml:space="preserve">
+    <value>键盘灯光</value>
+    <comment>键盘灯光</comment>
+  </data>
+  <data name="Loc_69EFED8C33.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>键盘灯效</value>
+    <comment>键盘灯效</comment>
+  </data>
+  <data name="Loc_CDBC79C8C5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>选择灯效颜色</value>
+    <comment>选择灯效颜色</comment>
+  </data>
+  <data name="Loc_CDBC79C8C5.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>灯效颜色</value>
+    <comment>灯效颜色</comment>
+  </data>
+  <data name="Loc_38C8E58C97.Text" xml:space="preserve">
+    <value>颜色</value>
+    <comment>颜色</comment>
+  </data>
+  <data name="Loc_5B268F9BA5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>选择灯效颜色 2</value>
+    <comment>选择灯效颜色 2</comment>
+  </data>
+  <data name="Loc_5B268F9BA5.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>灯效颜色 2</value>
+    <comment>灯效颜色 2</comment>
+  </data>
+  <data name="Loc_16D5B1620F.Text" xml:space="preserve">
+    <value>颜色 2</value>
+    <comment>颜色 2</comment>
+  </data>
+  <data name="Loc_EB57417109.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>波浪方向</value>
+    <comment>波浪方向</comment>
+  </data>
+  <data name="Loc_B4D7460469.Text" xml:space="preserve">
+    <value>机身 Logo</value>
+    <comment>机身 Logo</comment>
+  </data>
+  <data name="Loc_6FF5FBA77A.Text" xml:space="preserve">
+    <value>触控板</value>
+    <comment>触控板</comment>
+  </data>
+  <data name="Loc_C3B786E4F7.Text" xml:space="preserve">
+    <value>使用 Windows 精确式触控板系统开关。</value>
+    <comment>使用 Windows 精确式触控板系统开关。</comment>
+  </data>
+  <data name="Loc_DA6DE4EFA4.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="Loc_DA6DE4EFA4.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="Loc_DA6DE4EFA4.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>触控板</value>
+    <comment>触控板</comment>
+  </data>
+  <data name="Loc_A44CD62B33.Text" xml:space="preserve">
+    <value>显示</value>
+    <comment>显示</comment>
+  </data>
+  <data name="Loc_6071B823E0.Text" xml:space="preserve">
+    <value>当前刷新率由 Windows 本机显示控制器读取。</value>
+    <comment>当前刷新率由 Windows 本机显示控制器读取。</comment>
+  </data>
+  <data name="Loc_26D3C557FF.Text" xml:space="preserve">
+    <value>平台状态</value>
+    <comment>平台状态</comment>
+  </data>
+  <data name="Loc_3ED6955900.Text" xml:space="preserve">
+    <value>启动动画</value>
+    <comment>启动动画</comment>
+  </data>
+  <data name="Loc_8937CB3DA5.Text" xml:space="preserve">
+    <value>面板模式</value>
+    <comment>面板模式</comment>
+  </data>
+  <data name="Loc_E426750AB6.Text" xml:space="preserve">
+    <value>一次性充满</value>
+    <comment>一次性充满</comment>
+  </data>
+  <data name="Loc_0D037A64E0.Text" xml:space="preserve">
+    <value>状态、DPI 与轮询率、电源。</value>
+    <comment>状态、DPI 与轮询率、电源。</comment>
+  </data>
+  <data name="Loc_BEA434DB0D.Text" xml:space="preserve">
+    <value>电量</value>
+    <comment>电量</comment>
+  </data>
+  <data name="Loc_AAABCC9222.Text" xml:space="preserve">
+    <value>只读</value>
+    <comment>只读</comment>
+  </data>
+  <data name="Loc_4AA416AC22.Text" xml:space="preserve">
+    <value>轮询率</value>
+    <comment>轮询率</comment>
+  </data>
+  <data name="Loc_B67B486F7D.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存轮询率</value>
+    <comment>保存轮询率</comment>
+  </data>
+  <data name="Loc_1B300DD952.Text" xml:space="preserve">
+    <value>保存</value>
+    <comment>保存</comment>
+  </data>
+  <data name="Loc_91A248FC39.Text" xml:space="preserve">
+    <value>当前 DPI</value>
+    <comment>当前 DPI</comment>
+  </data>
+  <data name="Loc_1B0EA1DA45.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存当前 DPI</value>
+    <comment>保存当前 DPI</comment>
+  </data>
+  <data name="Loc_0BF9362E7D.Text" xml:space="preserve">
+    <value>休眠时间</value>
+    <comment>休眠时间</comment>
+  </data>
+  <data name="Loc_B16C078647.Header" xml:space="preserve">
+    <value>分钟</value>
+    <comment>分钟</comment>
+  </data>
+  <data name="Loc_6632C40B66.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存休眠时间</value>
+    <comment>保存休眠时间</comment>
+  </data>
+  <data name="Loc_76FCF14149.Text" xml:space="preserve">
+    <value>低电量提醒</value>
+    <comment>低电量提醒</comment>
+  </data>
+  <data name="Loc_FCAB5D1B32.Text" xml:space="preserve">
+    <value>DPI 档位</value>
+    <comment>DPI 档位</comment>
+  </data>
+  <data name="Loc_35DF22AAAD.Text" xml:space="preserve">
+    <value>档位数</value>
+    <comment>档位数</comment>
+  </data>
+  <data name="Loc_FCBC9D4D0F.Text" xml:space="preserve">
+    <value>活动档</value>
+    <comment>活动档</comment>
+  </data>
+  <data name="Loc_3500845EBF.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存 DPI 档位</value>
+    <comment>保存 DPI 档位</comment>
+  </data>
+  <data name="Loc_B7184FA7E2.Text" xml:space="preserve">
+    <value>保存档位</value>
+    <comment>保存档位</comment>
+  </data>
+  <data name="Loc_0A97A9B373.Text" xml:space="preserve">
+    <value>档位</value>
+    <comment>档位</comment>
+  </data>
+  <data name="Loc_A4CE42CFAB.Text" xml:space="preserve">
+    <value>整表提交 · 100–30000 · 步进 50 · 当前会话</value>
+    <comment>整表提交 · 100–30000 · 步进 50 · 当前会话</comment>
+  </data>
+  <data name="Loc_7228F14C77.Text" xml:space="preserve">
+    <value>板载映射</value>
+    <comment>板载映射</comment>
+  </data>
+  <data name="Loc_38C9EAF77D.Text" xml:space="preserve">
+    <value>映射层</value>
+    <comment>映射层</comment>
+  </data>
+  <data name="Loc_91C223D2EC.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>板载映射层</value>
+    <comment>板载映射层</comment>
+  </data>
+  <data name="Loc_56F4B1E701.Content" xml:space="preserve">
+    <value>读取</value>
+    <comment>读取</comment>
+  </data>
+  <data name="Loc_51866506E5.Text" xml:space="preserve">
+    <value>鼠标控制</value>
+    <comment>鼠标控制</comment>
+  </data>
+  <data name="Loc_6C071A20D1.Text" xml:space="preserve">
+    <value>当前动作</value>
+    <comment>当前动作</comment>
+  </data>
+  <data name="Loc_C89F81E3D1.Text" xml:space="preserve">
+    <value>目标动作</value>
+    <comment>目标动作</comment>
+  </data>
+  <data name="Loc_6EE879D982.Text" xml:space="preserve">
+    <value>参数</value>
+    <comment>参数</comment>
+  </data>
+  <data name="Loc_2D72DC9E3F.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>目标板载映射动作</value>
+    <comment>目标板载映射动作</comment>
+  </data>
+  <data name="Loc_A931F2A16F.Header" xml:space="preserve">
+    <value>修饰键 0–255</value>
+    <comment>修饰键 0–255</comment>
+  </data>
+  <data name="Loc_A931F2A16F.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>键盘修饰键码</value>
+    <comment>键盘修饰键码</comment>
+  </data>
+  <data name="Loc_0E422F6A72.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>键盘 HID Usage</value>
+    <comment>键盘 HID Usage</comment>
+  </data>
+  <data name="Loc_9F41F9592F.Text" xml:space="preserve">
+    <value>固定双击</value>
+    <comment>固定双击</comment>
+  </data>
+  <data name="Loc_767A063324.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存板载映射</value>
+    <comment>保存板载映射</comment>
+  </data>
+  <data name="Loc_14933D7587.Text" xml:space="preserve">
+    <value>配置</value>
+    <comment>配置</comment>
+  </data>
+  <data name="Loc_3453A83F8E.Text" xml:space="preserve">
+    <value>本地配置、应用绑定以及当前用户的启动设置。</value>
+    <comment>本地配置、应用绑定以及当前用户的启动设置。</comment>
+  </data>
+  <data name="Loc_E622287D8A.Content" xml:space="preserve">
+    <value>导入</value>
+    <comment>导入</comment>
+  </data>
+  <data name="Loc_58DC9A24FF.Content" xml:space="preserve">
+    <value>导出</value>
+    <comment>导出</comment>
+  </data>
+  <data name="Loc_CA6E17DD3A.Text" xml:space="preserve">
+    <value>活动配置</value>
+    <comment>活动配置</comment>
+  </data>
+  <data name="Loc_311EB20F8C.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>删除当前配置</value>
+    <comment>删除当前配置</comment>
+  </data>
+  <data name="Loc_311EB20F8C.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>删除当前配置</value>
+    <comment>删除当前配置</comment>
+  </data>
+  <data name="Loc_00DC0BB70D.PlaceholderText" xml:space="preserve">
+    <value>新配置名称</value>
+    <comment>新配置名称</comment>
+  </data>
+  <data name="Loc_9D032642E0.Content" xml:space="preserve">
+    <value>新建</value>
+    <comment>新建</comment>
+  </data>
+  <data name="Loc_212999B9CD.Content" xml:space="preserve">
+    <value>克隆</value>
+    <comment>克隆</comment>
+  </data>
+  <data name="Loc_12964C8CFC.Content" xml:space="preserve">
+    <value>重命名</value>
+    <comment>重命名</comment>
+  </data>
+  <data name="Loc_95B9EC6E0F.Text" xml:space="preserve">
+    <value>前台应用或电源状态变化时会自动应用已验证的设备设置。</value>
+    <comment>前台应用或电源状态变化时会自动应用已验证的设备设置。</comment>
+  </data>
+  <data name="Loc_2A6762CB42.Text" xml:space="preserve">
+    <value>应用绑定</value>
+    <comment>应用绑定</comment>
+  </data>
+  <data name="Loc_0EAF4E604F.Text" xml:space="preserve">
+    <value>应用进入前台时自动切换到当前配置。</value>
+    <comment>应用进入前台时自动切换到当前配置。</comment>
+  </data>
+  <data name="Loc_EB8ED8250D.Content" xml:space="preserve">
+    <value>添加应用</value>
+    <comment>添加应用</comment>
+  </data>
+  <data name="Loc_5DAE9E5AB4.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>移除应用绑定</value>
+    <comment>移除应用绑定</comment>
+  </data>
+  <data name="Loc_5DAE9E5AB4.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>移除应用绑定</value>
+    <comment>移除应用绑定</comment>
+  </data>
+  <data name="Loc_C6BFF9FFC0.Text" xml:space="preserve">
+    <value>开机启动</value>
+    <comment>开机启动</comment>
+  </data>
+  <data name="Loc_6048E58A89.Text" xml:space="preserve">
+    <value>仅当前用户，不需要管理员权限。</value>
+    <comment>仅当前用户，不需要管理员权限。</comment>
+  </data>
+  <data name="Loc_97C848E235.Text" xml:space="preserve">
+    <value>诊断</value>
+    <comment>诊断</comment>
+  </data>
+  <data name="Loc_2316E0EB08.Text" xml:space="preserve">
+    <value>检查设备通道、协议读回和最近一次查询结果。</value>
+    <comment>检查设备通道、协议读回和最近一次查询结果。</comment>
+  </data>
+  <data name="Loc_B2441B64DA.Content" xml:space="preserve">
+    <value>重新检查</value>
+    <comment>重新检查</comment>
+  </data>
+  <data name="Loc_BD61CEC3FA.Text" xml:space="preserve">
+    <value>查询记录</value>
+    <comment>查询记录</comment>
+  </data>
+  <data name="Loc_C153F25A3D.Text" xml:space="preserve">
+    <value>未通过读回的能力始终保持禁用；OpenSynapse 不会结束 Synapse 进程。</value>
+    <comment>未通过读回的能力始终保持禁用；OpenSynapse 不会结束 Synapse 进程。</comment>
+  </data>
+  <data name="Loc_9C7CF1DBDC.Text" xml:space="preserve">
+    <value>关于</value>
+    <comment>关于</comment>
+  </data>
+  <data name="Loc_BA196502D0.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>OpenSynapse 标志</value>
+    <comment>OpenSynapse 标志</comment>
+  </data>
+  <data name="Loc_3F55A9CDB4.Text" xml:space="preserve">
+    <value>本地设备控制工具</value>
+    <comment>本地设备控制工具</comment>
+  </data>
+  <data name="Loc_C606F601F7.Text" xml:space="preserve">
+    <value>版本 0.1.0</value>
+    <comment>版本 0.1.0</comment>
+  </data>
+  <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
+    <value>脱离雷云管理已连接的 Razer 设备，调整灯光、性能和常用设置。</value>
+    <comment>脱离雷云管理已连接的 Razer 设备，调整灯光、性能和常用设置。</comment>
+  </data>
+  <data name="Loc_502B244806.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>打开 OpenSynapse GitHub</value>
+    <comment>打开 OpenSynapse GitHub</comment>
+  </data>
+  <data name="Loc_79D0601598.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>查看使用引导</value>
+    <comment>查看使用引导</comment>
+  </data>
+  <data name="Loc_C100499F91.Text" xml:space="preserve">
+    <value>查看使用引导</value>
+    <comment>查看使用引导</comment>
+  </data>
+  <data name="Loc_A7FABDAFBA.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>正在启动 OpenSynapse</value>
+    <comment>正在启动 OpenSynapse</comment>
+  </data>
+  <data name="Loc_D21D65F64A.Text" xml:space="preserve">
+    <value>正在准备本机控制</value>
+    <comment>正在准备本机控制</comment>
+  </data>
+  <data name="Loc_A953098FFE.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>OpenSynapse 使用导览</value>
+    <comment>OpenSynapse 使用导览</comment>
+  </data>
+  <data name="Loc_870B386A8A.Content" xml:space="preserve">
+    <value>上一步</value>
+    <comment>上一步</comment>
+  </data>
+  <data name="Loc_0D81928209.Content" xml:space="preserve">
+    <value>下一步</value>
+    <comment>下一步</comment>
+  </data>
+  <data name="Loc_0CE53A16F8.Text" xml:space="preserve">
+    <value>打开主面板</value>
+    <comment>打开主面板</comment>
+  </data>
+  <data name="Loc_0CE53A16F8.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>打开 OpenSynapse 主面板</value>
+    <comment>打开 OpenSynapse 主面板</comment>
+  </data>
+  <data name="Loc_ED026FD231.Text" xml:space="preserve">
+    <value>设备控制</value>
+    <comment>设备控制</comment>
+  </data>
+  <data name="Loc_ED026FD231.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>打开设备控制</value>
+    <comment>打开设备控制</comment>
+  </data>
+  <data name="Loc_16444BA5AB.Text" xml:space="preserve">
+    <value>配置</value>
+    <comment>配置</comment>
+  </data>
+  <data name="Loc_16444BA5AB.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>打开配置</value>
+    <comment>打开配置</comment>
+  </data>
+  <data name="Loc_76EAEA9450.Text" xml:space="preserve">
+    <value>开机启动</value>
+    <comment>开机启动</comment>
+  </data>
+  <data name="Loc_76EAEA9450.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>设置开机启动</value>
+    <comment>设置开机启动</comment>
+  </data>
+  <data name="Loc_81394C3DA6.Text" xml:space="preserve">
+    <value>退出</value>
+    <comment>退出</comment>
+  </data>
+  <data name="Loc_81394C3DA6.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>退出 OpenSynapse</value>
+    <comment>退出 OpenSynapse</comment>
+  </data>
+  <data name="Text_0982EC10" xml:space="preserve">
+    <value>智能风扇曲线</value>
+    <comment>智能风扇曲线</comment>
+  </data>
+  <data name="Text_2B6750FA" xml:space="preserve">
+    <value>查看系统状态</value>
+    <comment>查看系统状态</comment>
+  </data>
+  <data name="Text_F55AD712" xml:space="preserve">
+    <value>已启用</value>
+    <comment>已启用</comment>
+  </data>
+  <data name="Text_E3D822CF" xml:space="preserve">
+    <value>自动</value>
+    <comment>自动</comment>
+  </data>
+  <data name="Text_D1D985CC" xml:space="preserve">
+    <value>涟漪</value>
+    <comment>涟漪</comment>
+  </data>
+  <data name="Text_28619638" xml:space="preserve">
+    <value>中</value>
+    <comment>中</comment>
+  </data>
+  <data name="Text_98C30F5D" xml:space="preserve">
+    <value>性能模式</value>
+    <comment>性能模式</comment>
+  </data>
+  <data name="Text_40985721" xml:space="preserve">
+    <value>控制通道不可用</value>
+    <comment>控制通道不可用</comment>
+  </data>
+  <data name="Text_949856B3" xml:space="preserve">
+    <value>取消</value>
+    <comment>取消</comment>
+  </data>
+  <data name="Text_2E25FD9A" xml:space="preserve">
+    <value>已连接 · 查询失败</value>
+    <comment>已连接 · 查询失败</comment>
+  </data>
+  <data name="Text_19D052FF" xml:space="preserve">
+    <value>触控板</value>
+    <comment>触控板</comment>
+  </data>
+  <data name="Text_528DF7D8" xml:space="preserve">
+    <value>正在读取配置与设备状态</value>
+    <comment>正在读取配置与设备状态</comment>
+  </data>
+  <data name="Text_3F48AC7F" xml:space="preserve">
+    <value>播放 / 暂停</value>
+    <comment>播放 / 暂停</comment>
+  </data>
+  <data name="Text_45977270" xml:space="preserve">
+    <value>双击</value>
+    <comment>双击</comment>
+  </data>
+  <data name="Text_62E1155B" xml:space="preserve">
+    <value>已启用开机启动</value>
+    <comment>已启用开机启动</comment>
+  </data>
+  <data name="Text_7EDA32B9" xml:space="preserve">
+    <value>呼吸</value>
+    <comment>呼吸</comment>
+  </data>
+  <data name="Text_51212D25" xml:space="preserve">
+    <value>星光</value>
+    <comment>星光</comment>
+  </data>
+  <data name="Text_C1DB7AE1" xml:space="preserve">
+    <value>性能</value>
+    <comment>性能</comment>
+  </data>
+  <data name="Text_BAA7D10B" xml:space="preserve">
+    <value>降压预设</value>
+    <comment>降压预设</comment>
+  </data>
+  <data name="Text_5965520A" xml:space="preserve">
+    <value>HID 控制通道可打开</value>
+    <comment>HID 控制通道可打开</comment>
+  </data>
+  <data name="Text_388555B3" xml:space="preserve">
+    <value>潮汐</value>
+    <comment>潮汐</comment>
+  </data>
+  <data name="Text_A14B88EA" xml:space="preserve">
+    <value>已发现 · 接口不可访问</value>
+    <comment>已发现 · 接口不可访问</comment>
+  </data>
+  <data name="Text_7F983785" xml:space="preserve">
+    <value>鼠标 DPI 档位</value>
+    <comment>鼠标 DPI 档位</comment>
+  </data>
+  <data name="Text_4E7B2B0B" xml:space="preserve">
+    <value>正在查询硬件</value>
+    <comment>正在查询硬件</comment>
+  </data>
+  <data name="Text_E19E170A" xml:space="preserve">
+    <value>尚未探测</value>
+    <comment>尚未探测</comment>
+  </data>
+  <data name="Text_E63FBFB1" xml:space="preserve">
+    <value>等待采样</value>
+    <comment>等待采样</comment>
+  </data>
+  <data name="Text_21BE26F0" xml:space="preserve">
+    <value>光谱循环</value>
+    <comment>光谱循环</comment>
+  </data>
+  <data name="Text_71816F86" xml:space="preserve">
+    <value>手动</value>
+    <comment>手动</comment>
+  </data>
+  <data name="Text_7E6D2390" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="Text_8FF9138F" xml:space="preserve">
+    <value>静态</value>
+    <comment>静态</comment>
+  </data>
+  <data name="Text_95979F99" xml:space="preserve">
+    <value>已发现 · Feature 接口可打开</value>
+    <comment>已发现 · Feature 接口可打开</comment>
+  </data>
+  <data name="Text_D0003708" xml:space="preserve">
+    <value>未知</value>
+    <comment>未知</comment>
+  </data>
+  <data name="Text_F3845B2A" xml:space="preserve">
+    <value>音频律动</value>
+    <comment>音频律动</comment>
+  </data>
+  <data name="Text_B4009B67" xml:space="preserve">
+    <value>采样失败 · 显示上次值</value>
+    <comment>采样失败 · 显示上次值</comment>
+  </data>
+  <data name="Text_2AA0915E" xml:space="preserve">
+    <value>是</value>
+    <comment>是</comment>
+  </data>
+  <data name="Text_85CC42C6" xml:space="preserve">
+    <value>手动 · -- RPM</value>
+    <comment>手动 · -- RPM</comment>
+  </data>
+  <data name="Text_61DF3243" xml:space="preserve">
+    <value>后退</value>
+    <comment>后退</comment>
+  </data>
+  <data name="Text_883A50D7" xml:space="preserve">
+    <value>向左 / 逆时针</value>
+    <comment>向左 / 逆时针</comment>
+  </data>
+  <data name="Text_242C3A0C" xml:space="preserve">
+    <value>应用并读回</value>
+    <comment>应用并读回</comment>
+  </data>
+  <data name="Text_6295D9CB" xml:space="preserve">
+    <value>常亮</value>
+    <comment>常亮</comment>
+  </data>
+  <data name="Text_78980344" xml:space="preserve">
+    <value>右键</value>
+    <comment>右键</comment>
+  </data>
+  <data name="Text_6320369E" xml:space="preserve">
+    <value>读取失败</value>
+    <comment>读取失败</comment>
+  </data>
+  <data name="Text_80A48F18" xml:space="preserve">
+    <value>键盘按键</value>
+    <comment>键盘按键</comment>
+  </data>
+  <data name="Text_1EE18BFF" xml:space="preserve">
+    <value>鼠标设备</value>
+    <comment>鼠标设备</comment>
+  </data>
+  <data name="Text_2A08EC21" xml:space="preserve">
+    <value>导入配置</value>
+    <comment>导入配置</comment>
+  </data>
+  <data name="Text_23A7CCBC" xml:space="preserve">
+    <value>外部配置</value>
+    <comment>外部配置</comment>
+  </data>
+  <data name="Text_DB0974DC" xml:space="preserve">
+    <value>未发现</value>
+    <comment>未发现</comment>
+  </data>
+  <data name="Text_CC4D3763" xml:space="preserve">
+    <value>未发现 Blade 16 或 Viper V3 HyperSpeed。</value>
+    <comment>未发现 Blade 16 或 Viper V3 HyperSpeed。</comment>
+  </data>
+  <data name="Text_1E13BD21" xml:space="preserve">
+    <value>完成</value>
+    <comment>完成</comment>
+  </data>
+  <data name="Text_6F38F6BC" xml:space="preserve">
+    <value>笔记本设备</value>
+    <comment>笔记本设备</comment>
+  </data>
+  <data name="Text_F9E7EDEF" xml:space="preserve">
+    <value>设备探测失败</value>
+    <comment>设备探测失败</comment>
+  </data>
+  <data name="Text_72C29287" xml:space="preserve">
+    <value>不可用</value>
+    <comment>不可用</comment>
+  </data>
+  <data name="Text_190B5DB1" xml:space="preserve">
+    <value>普通</value>
+    <comment>普通</comment>
+  </data>
+  <data name="Text_5C1F32A7" xml:space="preserve">
+    <value>高</value>
+    <comment>高</comment>
+  </data>
+  <data name="Text_8423206D" xml:space="preserve">
+    <value>内置屏刷新率</value>
+    <comment>内置屏刷新率</comment>
+  </data>
+  <data name="Text_6D40E761" xml:space="preserve">
+    <value>滚轮按下</value>
+    <comment>滚轮按下</comment>
+  </data>
+  <data name="Text_A8CF66DD" xml:space="preserve">
+    <value>平衡（电池）</value>
+    <comment>平衡（电池）</comment>
+  </data>
+  <data name="Text_3A5819C1" xml:space="preserve">
+    <value>DPI 切换键</value>
+    <comment>DPI 切换键</comment>
+  </data>
+  <data name="Text_7EEF96A9" xml:space="preserve">
+    <value>已连接 · 协议可用</value>
+    <comment>已连接 · 协议可用</comment>
+  </data>
+  <data name="Text_8FAB6EC0" xml:space="preserve">
+    <value>已关闭开机启动</value>
+    <comment>已关闭开机启动</comment>
+  </data>
+  <data name="Text_5EAB9F51" xml:space="preserve">
+    <value>设备通道</value>
+    <comment>设备通道</comment>
+  </data>
+  <data name="Text_CF8B06AA" xml:space="preserve">
+    <value>等待硬件查询</value>
+    <comment>等待硬件查询</comment>
+  </data>
+  <data name="Text_5F0C27DB" xml:space="preserve">
+    <value>键盘亮度</value>
+    <comment>键盘亮度</comment>
+  </data>
+  <data name="Text_794A1C95" xml:space="preserve">
+    <value>左键</value>
+    <comment>左键</comment>
+  </data>
+  <data name="Text_290DA6F9" xml:space="preserve">
+    <value>前进</value>
+    <comment>前进</comment>
+  </data>
+  <data name="Text_9753B259" xml:space="preserve">
+    <value>平衡</value>
+    <comment>平衡</comment>
+  </data>
+  <data name="Text_10C83C81" xml:space="preserve">
+    <value>下一步</value>
+    <comment>下一步</comment>
+  </data>
+  <data name="Text_CC3895A3" xml:space="preserve">
+    <value>写入</value>
+    <comment>写入</comment>
+  </data>
+  <data name="Text_09707A2C" xml:space="preserve">
+    <value>键盘灯效</value>
+    <comment>键盘灯效</comment>
+  </data>
+  <data name="Text_DA035EAB" xml:space="preserve">
+    <value>设备发现</value>
+    <comment>设备发现</comment>
+  </data>
+  <data name="Text_5DCB722E" xml:space="preserve">
+    <value>火焰</value>
+    <comment>火焰</comment>
+  </data>
+  <data name="Text_AA91A1FF" xml:space="preserve">
+    <value>启动动画</value>
+    <comment>启动动画</comment>
+  </data>
+  <data name="Text_165FCE9D" xml:space="preserve">
+    <value>波浪</value>
+    <comment>波浪</comment>
+  </data>
+  <data name="Text_470691B2" xml:space="preserve">
+    <value>已就绪</value>
+    <comment>已就绪</comment>
+  </data>
+  <data name="Text_5F541189" xml:space="preserve">
+    <value>普通层</value>
+    <comment>普通层</comment>
+  </data>
+  <data name="Text_0670E591" xml:space="preserve">
+    <value>HyperShift 层</value>
+    <comment>HyperShift 层</comment>
+  </data>
+  <data name="Text_14FD1E92" xml:space="preserve">
+    <value>GPU 内存</value>
+    <comment>GPU 内存</comment>
+  </data>
+  <data name="Text_8F4E16B7" xml:space="preserve">
+    <value>请选择已验证的板载映射动作。</value>
+    <comment>请选择已验证的板载映射动作。</comment>
+  </data>
+  <data name="Text_6027BEB0" xml:space="preserve">
+    <value>查询失败</value>
+    <comment>查询失败</comment>
+  </data>
+  <data name="Text_4B4189B0" xml:space="preserve">
+    <value>加载失败</value>
+    <comment>加载失败</comment>
+  </data>
+  <data name="Text_A70924BE" xml:space="preserve">
+    <value>查询失败 · 显示上次值</value>
+    <comment>查询失败 · 显示上次值</comment>
+  </data>
+  <data name="Text_5CF73A23" xml:space="preserve">
+    <value>切换并读回</value>
+    <comment>切换并读回</comment>
+  </data>
+  <data name="Text_945C2E42" xml:space="preserve">
+    <value>启动</value>
+    <comment>启动</comment>
+  </data>
+  <data name="Text_4626A505" xml:space="preserve">
+    <value>探测中</value>
+    <comment>探测中</comment>
+  </data>
+  <data name="Text_DEE979FD" xml:space="preserve">
+    <value>充电上限</value>
+    <comment>充电上限</comment>
+  </data>
+  <data name="Text_10DDDE56" xml:space="preserve">
+    <value>滚轮向上</value>
+    <comment>滚轮向上</comment>
+  </data>
+  <data name="Text_A9AE645B" xml:space="preserve">
+    <value>等待加载本地配置</value>
+    <comment>等待加载本地配置</comment>
+  </data>
+  <data name="Text_33F4E277" xml:space="preserve">
+    <value>环境感知</value>
+    <comment>环境感知</comment>
+  </data>
+  <data name="Text_EE43F0B1" xml:space="preserve">
+    <value>电池节能</value>
+    <comment>电池节能</comment>
+  </data>
+  <data name="Text_6555BB41" xml:space="preserve">
+    <value>Synapse 占用或访问被拒绝</value>
+    <comment>Synapse 占用或访问被拒绝</comment>
+  </data>
+  <data name="Text_CAF15352" xml:space="preserve">
+    <value>设备</value>
+    <comment>设备</comment>
+  </data>
+  <data name="Text_25083B1F" xml:space="preserve">
+    <value>鼠标 DPI</value>
+    <comment>鼠标 DPI</comment>
+  </data>
+  <data name="Text_0913960E" xml:space="preserve">
+    <value>Profile 1 · 8 个可映射控制</value>
+    <comment>Profile 1 · 8 个可映射控制</comment>
+  </data>
+  <data name="Text_874ADE24" xml:space="preserve">
+    <value>已连接 · 硬件查询失败</value>
+    <comment>已连接 · 硬件查询失败</comment>
+  </data>
+  <data name="Text_E2309DE4" xml:space="preserve">
+    <value>响应</value>
+    <comment>响应</comment>
+  </data>
+  <data name="Text_C409646C" xml:space="preserve">
+    <value>未读取</value>
+    <comment>未读取</comment>
+  </data>
+  <data name="Text_FB278D95" xml:space="preserve">
+    <value>协议查询失败</value>
+    <comment>协议查询失败</comment>
+  </data>
+  <data name="Text_76BEF6E0" xml:space="preserve">
+    <value>未发现目标设备</value>
+    <comment>未发现目标设备</comment>
+  </data>
+  <data name="Text_BA8E994B" xml:space="preserve">
+    <value>不适用（非 MiniLED）</value>
+    <comment>不适用（非 MiniLED）</comment>
+  </data>
+  <data name="Text_C41C6FC1" xml:space="preserve">
+    <value>鼠标休眠</value>
+    <comment>鼠标休眠</comment>
+  </data>
+  <data name="Text_CB5F70D1" xml:space="preserve">
+    <value>低</value>
+    <comment>低</comment>
+  </data>
+  <data name="Text_B7B42866" xml:space="preserve">
+    <value>CPU、GPU、内存和硬盘状态都在概览顶部。</value>
+    <comment>CPU、GPU、内存和硬盘状态都在概览顶部。</comment>
+  </data>
+  <data name="Text_D9D5D89A" xml:space="preserve">
+    <value>DPI 循环切换</value>
+    <comment>DPI 循环切换</comment>
+  </data>
+  <data name="Text_2A3A07A1" xml:space="preserve">
+    <value>色轮</value>
+    <comment>色轮</comment>
+  </data>
+  <data name="Text_0E45FC12" xml:space="preserve">
+    <value>关闭限制（100%）</value>
+    <comment>关闭限制（100%）</comment>
+  </data>
+  <data name="Text_4DC4534C" xml:space="preserve">
+    <value>连接受支持的 Blade 或 Viper 设备后重新探测。</value>
+    <comment>连接受支持的 Blade 或 Viper 设备后重新探测。</comment>
+  </data>
+  <data name="Text_7D07A709" xml:space="preserve">
+    <value>机身 Logo</value>
+    <comment>机身 Logo</comment>
+  </data>
+  <data name="Text_EA8D5381" xml:space="preserve">
+    <value>删除</value>
+    <comment>删除</comment>
+  </data>
+  <data name="Text_2A957CE7" xml:space="preserve">
+    <value>键盘 Turbo</value>
+    <comment>键盘 Turbo</comment>
+  </data>
+  <data name="Text_C85491EA" xml:space="preserve">
+    <value>关闭 · 100%</value>
+    <comment>关闭 · 100%</comment>
+  </data>
+  <data name="Text_7E3B0F3C" xml:space="preserve">
+    <value>已禁用</value>
+    <comment>已禁用</comment>
+  </data>
+  <data name="Text_FB3FF0D8" xml:space="preserve">
+    <value>向右 / 顺时针</value>
+    <comment>向右 / 顺时针</comment>
+  </data>
+  <data name="Text_39B523BD" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="Text_D9C12104" xml:space="preserve">
+    <value>鼠标板载映射</value>
+    <comment>鼠标板载映射</comment>
+  </data>
+  <data name="Text_C796738D" xml:space="preserve">
+    <value>保存鼠标设置</value>
+    <comment>保存鼠标设置</comment>
+  </data>
+  <data name="Text_5B78D29B" xml:space="preserve">
+    <value>切换页面</value>
+    <comment>切换页面</comment>
+  </data>
+  <data name="Text_6634ED40" xml:space="preserve">
+    <value>外部 manifest</value>
+    <comment>外部 manifest</comment>
+  </data>
+  <data name="Text_4033519A" xml:space="preserve">
+    <value>从左侧进入设备、配置和诊断。</value>
+    <comment>从左侧进入设备、配置和诊断。</comment>
+  </data>
+  <data name="Text_A98448E8" xml:space="preserve">
+    <value>已连接 · 已读取可用控制</value>
+    <comment>已连接 · 已读取可用控制</comment>
+  </data>
+  <data name="Text_598C5804" xml:space="preserve">
+    <value>自定义</value>
+    <comment>自定义</comment>
+  </data>
+  <data name="Text_B436A1F2" xml:space="preserve">
+    <value>固定风扇</value>
+    <comment>固定风扇</comment>
+  </data>
+  <data name="Text_11DDDFE9" xml:space="preserve">
+    <value>滚轮向下</value>
+    <comment>滚轮向下</comment>
+  </data>
+  <data name="Text_B9EC9D4C" xml:space="preserve">
+    <value>切换</value>
+    <comment>切换</comment>
+  </data>
+  <data name="Text_60E54E25" xml:space="preserve">
+    <value>静音</value>
+    <comment>静音</comment>
+  </data>
+  <data name="Text_AB65F0F4" xml:space="preserve">
+    <value>鼠标 Turbo</value>
+    <comment>鼠标 Turbo</comment>
+  </data>
+  <data name="Text_4BC87173" xml:space="preserve">
+    <value>删除当前配置？</value>
+    <comment>删除当前配置？</comment>
+  </data>
+  <data name="Text_2351D059" xml:space="preserve">
+    <value>否</value>
+    <comment>否</comment>
+  </data>
+  <data name="Text_47A60744" xml:space="preserve">
+    <value>选择设备</value>
+    <comment>选择设备</comment>
+  </data>
+  <data name="Text_EED40F9C" xml:space="preserve">
+    <value>游戏模式</value>
+    <comment>游戏模式</comment>
+  </data>
+  <data name="Text_CAEC7015" xml:space="preserve">
+    <value>鼠标轮询率</value>
+    <comment>鼠标轮询率</comment>
+  </data>
+  <data name="Text_67AB4301" xml:space="preserve">
+    <value>鼠标改动不会直接写入。确认无误后点“保存”。</value>
+    <comment>鼠标改动不会直接写入。确认无误后点“保存”。</comment>
+  </data>
+  <data name="Text_C777B66A" xml:space="preserve">
+    <value>在笔记本和鼠标之间切换，下面会显示对应设置。</value>
+    <comment>在笔记本和鼠标之间切换，下面会显示对应设置。</comment>
+  </data>
+  <data name="Text_6F8CB285" xml:space="preserve">
+    <value>一次性充满</value>
+    <comment>一次性充满</comment>
+  </data>
+  <data name="ProfileOperationSucceeded" xml:space="preserve">
+    <value>{0} · {1}</value>
+    <comment>{0} · {1}</comment>
+  </data>
+  <data name="GameModeRaw" xml:space="preserve">
+    <value>模式 0x{0:X2} · 屏蔽 0x{1:X2} · Lifted 0x{2:X2}</value>
+    <comment>模式 0x{0:X2} · 屏蔽 0x{1:X2} · Lifted 0x{2:X2}</comment>
+  </data>
+  <data name="DurationMinutes" xml:space="preserve">
+    <value>{0} 分钟</value>
+    <comment>{0} 分钟</comment>
+  </data>
+  <data name="KeyboardMappingDescription" xml:space="preserve">
+    <value>键盘按键 · 修饰 0x{0:X2} · Usage 0x{1:X2}</value>
+    <comment>键盘按键 · 修饰 0x{0:X2} · Usage 0x{1:X2}</comment>
+  </data>
+  <data name="DpiStageSummary" xml:space="preserve">
+    <value>DPI 档位 {0}/{1} · {2}</value>
+    <comment>DPI 档位 {0}/{1} · {2}</comment>
+  </data>
+  <data name="ProfileLoaded" xml:space="preserve">
+    <value>本地配置已加载 · {0}</value>
+    <comment>本地配置已加载 · {0}</comment>
+  </data>
+  <data name="DefaultProfileLoaded" xml:space="preserve">
+    <value>已使用默认本地配置 · {0}</value>
+    <comment>已使用默认本地配置 · {0}</comment>
+  </data>
+  <data name="BindApplication" xml:space="preserve">
+    <value>绑定应用 {0}</value>
+    <comment>绑定应用 {0}</comment>
+  </data>
+  <data name="HardwareQueryTime" xml:space="preserve">
+    <value>硬件查询 {0:HH:mm:ss}</value>
+    <comment>硬件查询 {0:HH:mm:ss}</comment>
+  </data>
+  <data name="HardwareQueryFailureCount" xml:space="preserve">
+    <value>{0} 项硬件查询失败，未成功读回的控制已停用。请在“诊断”页查看详情。</value>
+    <comment>{0} 项硬件查询失败，未成功读回的控制已停用。请在“诊断”页查看详情。</comment>
+  </data>
+  <data name="DeviceOperationSucceeded" xml:space="preserve">
+    <value>{0}已{1} {2:HH:mm:ss}</value>
+    <comment>{0}已{1} {2:HH:mm:ss}</comment>
+  </data>
+  <data name="ProfileExportFailed" xml:space="preserve">
+    <value>配置导出失败：{0}</value>
+    <comment>配置导出失败：{0}</comment>
+  </data>
+  <data name="DeleteProfile" xml:space="preserve">
+    <value>删除配置 {0}</value>
+    <comment>删除配置 {0}</comment>
+  </data>
+  <data name="ManualFanCurrentSpeed" xml:space="preserve">
+    <value>手动 · {0} RPM · 当前 {1} / {2}</value>
+    <comment>手动 · {0} RPM · 当前 {1} / {2}</comment>
+  </data>
+  <data name="UnbindApplication" xml:space="preserve">
+    <value>解绑应用 {0}</value>
+    <comment>解绑应用 {0}</comment>
+  </data>
+  <data name="ProfileExported" xml:space="preserve">
+    <value>配置已导出 · {0}</value>
+    <comment>配置已导出 · {0}</comment>
+  </data>
+  <data name="ProfileImportFailed" xml:space="preserve">
+    <value>配置导入失败：{0}</value>
+    <comment>配置导入失败：{0}</comment>
+  </data>
+  <data name="SwitchProfile" xml:space="preserve">
+    <value>切换配置 {0}</value>
+    <comment>切换配置 {0}</comment>
+  </data>
+  <data name="LiveSampleTime" xml:space="preserve">
+    <value>实时采样 {0:HH:mm:ss}</value>
+    <comment>实时采样 {0:HH:mm:ss}</comment>
+  </data>
+  <data name="StartupSettingFailed" xml:space="preserve">
+    <value>开机启动设置失败：{0}</value>
+    <comment>开机启动设置失败：{0}</comment>
+  </data>
+  <data name="DurationMinutesSeconds" xml:space="preserve">
+    <value>{0} 分 {1} 秒</value>
+    <comment>{0} 分 {1} 秒</comment>
+  </data>
+  <data name="ProtocolPartiallyAvailableCount" xml:space="preserve">
+    <value>部分可用 {0}/{1}</value>
+    <comment>部分可用 {0}/{1}</comment>
+  </data>
+  <data name="ManualFanSpeed" xml:space="preserve">
+    <value>手动 · {0} RPM</value>
+    <comment>手动 · {0} RPM</comment>
+  </data>
+  <data name="DeviceScanTime" xml:space="preserve">
+    <value>设备探测 {0:HH:mm:ss}</value>
+    <comment>设备探测 {0:HH:mm:ss}</comment>
+  </data>
+  <data name="CloneProfile" xml:space="preserve">
+    <value>克隆配置 {0}</value>
+    <comment>克隆配置 {0}</comment>
+  </data>
+  <data name="DeviceOperationFailed" xml:space="preserve">
+    <value>{0}{1}：{2}</value>
+    <comment>{0}{1}：{2}</comment>
+  </data>
+  <data name="AutomaticFanSpeed" xml:space="preserve">
+    <value>自动 · CPU {0} / GPU {1} RPM</value>
+    <comment>自动 · CPU {0} / GPU {1} RPM</comment>
+  </data>
+  <data name="ProfileAutoSwitched" xml:space="preserve">
+    <value>已自动切换 · {0}</value>
+    <comment>已自动切换 · {0}</comment>
+  </data>
+  <data name="MappingReadIncomplete" xml:space="preserve">
+    <value>读取不完整 · {0}/16 条记录</value>
+    <comment>读取不完整 · {0}/16 条记录</comment>
+  </data>
+  <data name="CreateProfile" xml:space="preserve">
+    <value>新建配置 {0}</value>
+    <comment>新建配置 {0}</comment>
+  </data>
+  <data name="RenameProfile" xml:space="preserve">
+    <value>重命名配置 {0}</value>
+    <comment>重命名配置 {0}</comment>
+  </data>
+  <data name="MouseControlNumber" xml:space="preserve">
+    <value>控制 {0}</value>
+    <comment>控制 {0}</comment>
+  </data>
+  <data name="DurationSeconds" xml:space="preserve">
+    <value>{0} 秒</value>
+    <comment>{0} 秒</comment>
+  </data>
+  <data name="DeleteProfileMessage" xml:space="preserve">
+    <value>将删除“{0}”，设备设置不会被卸载。</value>
+    <comment>将删除“{0}”，设备设置不会被卸载。</comment>
+  </data>
+  <data name="ProtocolAvailableCount" xml:space="preserve">
+    <value>协议可用 {0}/{1}</value>
+    <comment>协议可用 {0}/{1}</comment>
+  </data>
+  <data name="ProfileOperationFailed" xml:space="preserve">
+    <value>{0}失败：{1}</value>
+    <comment>{0}失败：{1}</comment>
+  </data>
+  <data name="Text_BA5FB914" xml:space="preserve">
+    <value>智能风扇曲线已启动，但配置保存失败，已恢复内存配置。</value>
+    <comment>智能风扇曲线已启动，但配置保存失败，已恢复内存配置。</comment>
+  </data>
+  <data name="Text_C7D0CD75" xml:space="preserve">
+    <value>灯效已启动，但配置保存失败，已恢复内存中的配置。</value>
+    <comment>灯效已启动，但配置保存失败，已恢复内存中的配置。</comment>
+  </data>
+  <data name="Text_780EB5E5" xml:space="preserve">
+    <value>固定转速和智能曲线不能同时配置。</value>
+    <comment>固定转速和智能曲线不能同时配置。</comment>
+  </data>
+  <data name="Text_C2463C0F" xml:space="preserve">
+    <value>设备监听</value>
+    <comment>设备监听</comment>
+  </data>
+  <data name="Text_07E747F7" xml:space="preserve">
+    <value>OpenSynapse 配置</value>
+    <comment>OpenSynapse 配置</comment>
+  </data>
+  <data name="Text_AB07F412" xml:space="preserve">
+    <value>GPU Boost 已写入，但配置保存失败，已恢复内存中的配置。</value>
+    <comment>GPU Boost 已写入，但配置保存失败，已恢复内存中的配置。</comment>
+  </data>
+  <data name="Text_8F0D00AE" xml:space="preserve">
+    <value>一次性充满状态不可用。</value>
+    <comment>一次性充满状态不可用。</comment>
+  </data>
+  <data name="Text_36D4C146" xml:space="preserve">
+    <value>内置屏刷新率状态不可用。</value>
+    <comment>内置屏刷新率状态不可用。</comment>
+  </data>
+  <data name="Text_D8072790" xml:space="preserve">
+    <value>MappingEngine unsupported output 缺少 type。</value>
+    <comment>MappingEngine unsupported output 缺少 type。</comment>
+  </data>
+  <data name="Text_58B6E9BD" xml:space="preserve">
+    <value>MappingEngine display output id 无效。</value>
+    <comment>MappingEngine display output id 无效。</comment>
+  </data>
+  <data name="Text_2263C356" xml:space="preserve">
+    <value>性能模式状态不可用。</value>
+    <comment>性能模式状态不可用。</comment>
+  </data>
+  <data name="Text_F11CE40A" xml:space="preserve">
+    <value>未找到已安装的已验证 Razer MappingEngine；Fn 和静音灯同步保持禁用。</value>
+    <comment>未找到已安装的已验证 Razer MappingEngine；Fn 和静音灯同步保持禁用。</comment>
+  </data>
+  <data name="Text_DB217284" xml:space="preserve">
+    <value>上次异常退出留下的 Blade Fn 会话未能清理，已拒绝重新进入 Driver Mode。</value>
+    <comment>上次异常退出留下的 Blade Fn 会话未能清理，已拒绝重新进入 Driver Mode。</comment>
+  </data>
+  <data name="Text_FF784DE9" xml:space="preserve">
+    <value>Blade 固定风扇缺少模式。</value>
+    <comment>Blade 固定风扇缺少模式。</comment>
+  </data>
+  <data name="Text_6D55CA11" xml:space="preserve">
+    <value>Blade MappingEngine 在音频同步完成前已被安全停止。</value>
+    <comment>Blade MappingEngine 在音频同步完成前已被安全停止。</comment>
+  </data>
+  <data name="Text_F00EAF88" xml:space="preserve">
+    <value>键盘亮度状态不可用。</value>
+    <comment>键盘亮度状态不可用。</comment>
+  </data>
+  <data name="Text_57D50118" xml:space="preserve">
+    <value>托盘图标恢复失败，已切换为普通窗口关闭模式。</value>
+    <comment>托盘图标恢复失败，已切换为普通窗口关闭模式。</comment>
+  </data>
+  <data name="Text_F76B82D3" xml:space="preserve">
+    <value>Blade 固定风扇模式和目标转速不匹配。</value>
+    <comment>Blade 固定风扇模式和目标转速不匹配。</comment>
+  </data>
+  <data name="Text_359F8C1A" xml:space="preserve">
+    <value>Logo 已写入，但配置保存失败，已恢复内存中的配置。</value>
+    <comment>Logo 已写入，但配置保存失败，已恢复内存中的配置。</comment>
+  </data>
+  <data name="Text_86504D84" xml:space="preserve">
+    <value>DPI 档位已写入，但配置保存失败，已恢复内存中的配置。</value>
+    <comment>DPI 档位已写入，但配置保存失败，已恢复内存中的配置。</comment>
+  </data>
+  <data name="Text_541E43C6" xml:space="preserve">
+    <value>没有找到包含完整 64 条 Product 710 默认映射的官方存储；为避免破坏 Fn 组合键，拒绝进入 Driver Mode。</value>
+    <comment>没有找到包含完整 64 条 Product 710 默认映射的官方存储；为避免破坏 Fn 组合键，拒绝进入 Driver Mode。</comment>
+  </data>
+  <data name="Text_3D32CBBD" xml:space="preserve">
+    <value>固定风扇已写入，但配置保存失败，已恢复内存配置。</value>
+    <comment>固定风扇已写入，但配置保存失败，已恢复内存配置。</comment>
+  </data>
+  <data name="Text_06C879B7" xml:space="preserve">
+    <value>游戏模式状态不可用。</value>
+    <comment>游戏模式状态不可用。</comment>
+  </data>
+  <data name="Text_EA682784" xml:space="preserve">
+    <value>触控板状态不可用。</value>
+    <comment>触控板状态不可用。</comment>
+  </data>
+  <data name="Text_79DA5816" xml:space="preserve">
+    <value>性能刷新</value>
+    <comment>性能刷新</comment>
+  </data>
+  <data name="Text_A257CB56" xml:space="preserve">
+    <value>CPU Boost 已写入，但配置保存失败，已恢复内存中的配置。</value>
+    <comment>CPU Boost 已写入，但配置保存失败，已恢复内存中的配置。</comment>
+  </data>
+  <data name="ApplicationInitializationError" xml:space="preserve">
+    <value>应用初始化：{0}</value>
+    <comment>应用初始化：{0}</comment>
+  </data>
+  <data name="PerformanceSamplingError" xml:space="preserve">
+    <value>性能采样：{0}</value>
+    <comment>性能采样：{0}</comment>
+  </data>
+  <data name="WalkthroughStateError" xml:space="preserve">
+    <value>使用引导状态：{0}</value>
+    <comment>使用引导状态：{0}</comment>
+  </data>
+  <data name="AutomaticProfileSaveError" xml:space="preserve">
+    <value>配置自动切换保存：{0}</value>
+    <comment>配置自动切换保存：{0}</comment>
+  </data>
+  <data name="StartupError" xml:space="preserve">
+    <value>开机启动：{0}</value>
+    <comment>开机启动：{0}</comment>
+  </data>
+  <data name="FnKeyError" xml:space="preserve">
+    <value>Fn 组合键：{0}</value>
+    <comment>Fn 组合键：{0}</comment>
+  </data>
+  <data name="ProfileSaveError" xml:space="preserve">
+    <value>配置保存：{0}</value>
+    <comment>配置保存：{0}</comment>
+  </data>
+  <data name="TrayInitializationError" xml:space="preserve">
+    <value>托盘初始化：{0}</value>
+    <comment>托盘初始化：{0}</comment>
+  </data>
+  <data name="DisplayRefreshRateError" xml:space="preserve">
+    <value>内置屏刷新率：{0}</value>
+    <comment>内置屏刷新率：{0}</comment>
+  </data>
+  <data name="LabeledError" xml:space="preserve">
+    <value>{0}：{1}</value>
+    <comment>{0}：{1}</comment>
+  </data>
+  <data name="ProfileExportError" xml:space="preserve">
+    <value>配置导出：{0}</value>
+    <comment>配置导出：{0}</comment>
+  </data>
+  <data name="ProfileApplyError" xml:space="preserve">
+    <value>配置应用：{0}</value>
+    <comment>配置应用：{0}</comment>
+  </data>
+  <data name="ProfileLoadError" xml:space="preserve">
+    <value>配置加载：{0}</value>
+    <comment>配置加载：{0}</comment>
+  </data>
+  <data name="DeviceWatchError" xml:space="preserve">
+    <value>设备状态监听：{0}</value>
+    <comment>设备状态监听：{0}</comment>
+  </data>
+  <data name="LightingRuntimeError" xml:space="preserve">
+    <value>键盘灯效运行：{0}</value>
+    <comment>键盘灯效运行：{0}</comment>
+  </data>
+  <data name="ProfileImportError" xml:space="preserve">
+    <value>配置导入：{0}</value>
+    <comment>配置导入：{0}</comment>
+  </data>
+  <data name="SuspendFanRestoreError" xml:space="preserve">
+    <value>休眠前恢复风扇：{0}</value>
+    <comment>休眠前恢复风扇：{0}</comment>
+  </data>
+  <data name="InvalidBladeFanMode" xml:space="preserve">
+    <value>Blade 风扇模式值无效：{0}。</value>
+    <comment>Blade 风扇模式值无效：{0}。</comment>
+  </data>
+  <data name="UnsupportedDisplayRefreshRate" xml:space="preserve">
+    <value>配置请求的 {0} Hz 不受当前内置屏 {1} x {2} 支持。</value>
+    <comment>配置请求的 {0} Hz 不受当前内置屏 {1} x {2} 支持。</comment>
+  </data>
+  <data name="Text_36CF587E" xml:space="preserve"><value>配置应用</value><comment>配置应用</comment></data>
+  <data name="Text_65811CCB" xml:space="preserve"><value>风扇控制</value><comment>风扇控制</comment></data>
+  <data name="Loc_69C8D0D8B7.Text" xml:space="preserve"><value>语言</value><comment>语言</comment></data>
+  <data name="Loc_7F211E0B63.Text" xml:space="preserve"><value>默认跟随 Windows 显示语言；更改将在下次启动时生效。</value><comment>默认跟随 Windows 显示语言；更改将在下次启动时生效。</comment></data>
+  <data name="Loc_C3B65B0A4F.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>界面语言</value><comment>界面语言</comment></data>
+  <data name="Loc_6E1BBAA0E8.Content" xml:space="preserve"><value>跟随系统</value><comment>跟随系统</comment></data>
+  <data name="Loc_5C8A32D3B1.Content" xml:space="preserve"><value>简体中文</value><comment>简体中文</comment></data>
+  <data name="Loc_F08B7A510E.Content" xml:space="preserve"><value>English</value><comment>English</comment></data>
+  <data name="LanguageSettingError" xml:space="preserve"><value>界面语言设置：{0}</value><comment>界面语言设置：{0}</comment></data>
+</root>

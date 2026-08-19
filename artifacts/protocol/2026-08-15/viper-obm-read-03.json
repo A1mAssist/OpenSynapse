@@ -1,9 +1,0 @@
-{
-  "StartedAt": "2026-08-15T13:06:06.28656+00:00",
-  "CompletedAt": "2026-08-15T13:06:06.675196+00:00",
-  "Device": "1532:00B8",
-  "Collection": "0001:0002",
-  "FeatureReportByteLength": 91,
-  "Snapshot": null,
-  "Error": "Viper OBM \u8FD4\u56DE\u4E86\u65E0\u6548\u6216\u9519\u5E8F\u7684 feature report\u3002"
-}

@@ -111,7 +111,6 @@ viper-184 -> Viper 页面
 | `BladeBrightnessPercent` / `ApplyBladeBrightnessAsync` | UI `0..100%`，后端 `0..255` | `Slider` + 应用按钮 |
 | `BladePerformanceModeIndex` / `ApplyBladePerformanceModeAsync` | 当前可写选项为平衡、性能、自定义、静音、HyperBoost；固件读回 `3` 显示“电池节能”，`6` 显示“平衡（电池）”，两者在固件门禁和针对性实机验证完成前都不是手动选项 | `ComboBox` |
 | `BladeCpuBoostIndex` / `ApplyBladeCpuBoostAsync` | 低、中、高、Boost、降压预设；仅 Custom | `ComboBox` |
-| `BladeCurveOptimizerValue` / `ReadBladeCurveOptimizerAsync` / `ApplyBladeCurveOptimizerAsync` | 研究代码保留，但 2026-08-16 同步 ABI 实机 GET 触发 `SEHException` | 生产界面不接控件；现有区域已隐藏，`CanReadBladeCurveOptimizer` / `CanSetBladeCurveOptimizer` 固定为 `false`，等待官方 async service 路径 |
 | `BladeGpuBoostIndex` / `ApplyBladeGpuBoostAsync` | 低、中、高；仅 Custom | `ComboBox` |
 | `BladeMaxFanEnabled` / `ApplyBladeMaxFanAsync` | 开/关；仅 Custom | `ToggleSwitch` |
 | `BladeChargeLimitIndex` / `ApplyBladeChargeLimitAsync` | 50、55、60、65、70、75、80、100 | `ComboBox`，不可用自由滑块 |
@@ -134,10 +133,9 @@ viper-184 -> Viper 页面
 板载映射后端现提供 `ReadViperButtonAssignmentsAsync` 与
 `SetViperButtonAssignmentAsync`。前者在返回前校验固定 Profile `1`、八个 firmware
 button ID 和全部 Normal/HyperShift 共 16 条记录；后者只改一条记录，并执行目标 GET、
-另一层隔离 GET 以及失败时不可取消恢复。WinUI 已接入完整 16 条记录的读取和受限编辑。生产 SET 允许 `Off`、
-已物理确认的鼠标 `ButtonCode`（`1,2,3,4,5,9,10`）、`KeyboardKey` 和 `DoubleClick`；当前 WinUI 选择器仍只生成 Off/鼠标键。
-Dpi、MediaKey、HyperShift、KeyboardTurbo、MouseTurbo 的协议解析和校验虽已完成，写入仍在
-transport 前被拒绝；每个函数族完成独立可逆真机验证后才能逐项放行。不得从共享 enum
+另一层隔离 GET 以及失败时不可取消恢复。WinUI 已接入完整 16 条记录的读取和编辑。生产 SET 允许 `Off`、
+鼠标 `ButtonCode`（`1,2,3,4,5,9,10`）、`KeyboardKey`、`DoubleClick`、DPI 循环、播放/暂停、
+HyperShift 激活器、键盘 Turbo（`A`，100 ms）和鼠标 Turbo（左键，100 ms）。不得从共享 enum
 渲染 Macro/Profile/Lighting/Power/Controller/RazerKey/WindowsShortcuts。
 
 ### Profile 和系统
@@ -191,7 +189,7 @@ Off / Static / Breathing / Spectrum / Wave / Fire / Reactive / Ripple / Audio Me
 | `BladeCurrentFanCpuRpm` / `BladeCurrentFanGpuRpm` | 当前 CPU/GPU 转速 | 只读；查询链路已接入 |
 | `BladeAdvancedFanCpuModeRaw` / `BladeAdvancedFanGpuModeRaw` | 高级风扇模式原始值 | 只读原始诊断，UI 不要自行翻译 |
 | `BladeFanMode` / `BladeFanTargetRpm` | 当前风扇模式和存储目标 | 可展示；固定转速写入仍禁止 |
-| `BladeStartupAnimationEnabled` | 启动动画当前状态 | 后端已有 `SetBladeStartupAnimationAsync` 的读取门禁、写入、读回和失败恢复；真机可逆验证前不要显示写控件 |
+| `BladeStartupAnimationEnabled` | 启动动画当前状态 | 后端已有 `SetBladeStartupAnimationAsync` 的读取门禁、写入、读回和失败恢复；前端 ToggleSwitch 只绑定 `CanSetBladeStartupAnimation` 并直接调用 ViewModel 提交 |
 
 当前 ViewModel 只把部分值汇总为 `BladeFanText`。若前端要拆成独立卡片，应先在 ViewModel 增加命名展示属性，继续绑定 `RazerDeviceTelemetry`，不要在 XAML 解析 Raw 字段。
 
@@ -243,7 +241,7 @@ StorageValue, StorageDetail, StoragePercent
 - [ ] Blade 十三个生产灯效、亮度、Logo、性能/Boost/Max Fan/充电上限、内部屏刷新率均可操作。
 - [ ] Viper 125/500/1000 Hz 轮询率、当前 DPI、休眠、完整 DPI 档位表和受限板载映射可操作。
 - [ ] Viper 电量和低电量阈值只读。
-- [ ] CPU/GPU 电压、GPU MUX、固定风扇/风扇曲线、宏、Blade HyperShift/键位映射、Snap Tap、Chroma Studio 和尚未接入 UI 的灯效不显示可操作入口；Blade 映射/Snap Tap 的编译器、会话、Raw Input 和 SendInput 安全收尾已在后端完成，但仍是显式 opt-in，必须通过真实按键、焦点/断连/崩溃恢复验证后才能显示。Viper 映射只读链路和 `Off`/鼠标按键恢复型写入后端已存在，其他 function 仍被生产拒绝，必须通过各自的可逆真机验证后才能逐项显示。
+- [ ] CPU/GPU 电压、GPU MUX、固定风扇/风扇曲线、宏、Blade HyperShift/键位映射、Snap Tap、Chroma Studio 和尚未接入 UI 的灯效不显示可操作入口；Blade 映射/Snap Tap 的编译器、会话、Raw Input 和 SendInput 安全收尾已在后端完成，但仍是显式 opt-in，必须通过真实按键、焦点/断连/崩溃恢复验证后才能显示。Viper 映射已支持 Off、鼠标键、键盘按键、双击、DPI、媒体、HyperShift 和两类 Turbo；Macro/Profile/Lighting/Power/Controller/RazerKey/Windows shortcuts 仍不得生成入口。
 - [ ] Profile 创建/克隆/重命名/删除、导入/导出、应用绑定和当前用户开机启动可用。
 - [ ] 窗口关闭、托盘退出、第二实例、设备断开、主题切换和 High Contrast 已手测。
 

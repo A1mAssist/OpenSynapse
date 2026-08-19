@@ -39,6 +39,8 @@
     "logo-power.get": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "80", "arguments": "010400" },
     "logo-power.set": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "00", "arguments": "" },
     "logo-mode.get": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "82", "arguments": "010400" },
-    "logo-mode.set": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "02", "arguments": "" }
+    "logo-mode.set": { "transactionId": "FF", "dataSize": "03", "commandClass": "03", "commandId": "02", "arguments": "" },
+    "logo-effect.set": { "transactionId": "00", "dataSize": "03", "commandClass": "03", "commandId": "02", "arguments": "" },
+    "logo-state.set": { "transactionId": "00", "dataSize": "03", "commandClass": "03", "commandId": "00", "arguments": "" }
   }
 }

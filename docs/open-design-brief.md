@@ -263,9 +263,9 @@ Open Design 输出应包括：
 
 ## 9. 现有代码参考
 
-- [主窗口 XAML](/D:/Workspaces/OpenSynapse/src/OpenSynapse.App/MainWindow.xaml)
-- [全局资源和样式](/D:/Workspaces/OpenSynapse/src/OpenSynapse.App/App.xaml)
-- [主视图模型](/D:/Workspaces/OpenSynapse/src/OpenSynapse.App/ViewModels/MainViewModel.cs)
-- [窗口生命周期](/D:/Workspaces/OpenSynapse/src/OpenSynapse.App/MainWindow.xaml.cs)
-- [设备能力矩阵](/D:/Workspaces/OpenSynapse/docs/device-capability-matrix.md)
-- [协议能力台账](/D:/Workspaces/OpenSynapse/docs/protocol/capability-ledger.md)
+- [主窗口 XAML](../src/OpenSynapse.App/MainWindow.xaml)
+- [全局资源和样式](../src/OpenSynapse.App/App.xaml)
+- [主视图模型](../src/OpenSynapse.App/ViewModels/MainViewModel.cs)
+- [窗口生命周期](../src/OpenSynapse.App/MainWindow.xaml.cs)
+- [设备能力矩阵](device-capability-matrix.md)
+- [协议能力台账](protocol/capability-ledger.md)

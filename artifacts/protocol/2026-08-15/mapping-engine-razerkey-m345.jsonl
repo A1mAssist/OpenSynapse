@@ -1,9 +1,0 @@
-{"at":"2026-08-15T08:48:20.703Z","kind":"initialized","value":true}
-{"at":"2026-08-15T08:48:21.183Z","kind":"addUsbDevice","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{00000000-0000-0000-FFFF-FFFFFFFFFFFF}\",\"productId\":710,\"guid\":\"97cbfbce-f8d5-492b-8a24-5bdc393b1a4b\"}"}}
-{"at":"2026-08-15T08:48:21.185Z","kind":"enableRazerKeyInputRedirect","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{00000000-0000-0000-FFFF-FFFFFFFFFFFF}\",\"productId\":710,\"guid\":\"97cbfbce-f8d5-492b-8a24-5bdc393b1a4b\"}"}}
-{"at":"2026-08-15T08:48:21.187Z","kind":"deviceEvent","value":"{\"vendorId\":5426,\"containerId\":\"{00000000-0000-0000-FFFF-FFFFFFFFFFFF}\",\"productId\":710,\"guid\":\"97cbfbce-f8d5-492b-8a24-5bdc393b1a4b\"}"}
-{"at":"2026-08-15T08:48:21.189Z","kind":"setInputRedirectCallback","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{00000000-0000-0000-FFFF-FFFFFFFFFFFF}\",\"productId\":710,\"guid\":\"97cbfbce-f8d5-492b-8a24-5bdc393b1a4b\"}"}}
-{"at":"2026-08-15T08:48:21.189Z","kind":"ready","value":"Press M3, M4, and M5 once each. Waiting 180000 ms."}
-{"at":"2026-08-15T08:51:21.195Z","kind":"disableRazerKeyInputRedirect","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{00000000-0000-0000-FFFF-FFFFFFFFFFFF}\",\"productId\":710,\"guid\":\"97cbfbce-f8d5-492b-8a24-5bdc393b1a4b\"}"}}
-{"at":"2026-08-15T08:51:21.197Z","kind":"removeUsbDevice","value":{"ok":true,"reason":"","info":"{\"vendorId\":5426,\"containerId\":\"{00000000-0000-0000-FFFF-FFFFFFFFFFFF}\",\"productId\":710,\"guid\":\"97cbfbce-f8d5-492b-8a24-5bdc393b1a4b\"}"}}
-{"at":"2026-08-15T08:51:21.198Z","kind":"stopped","value":true}

@@ -8,6 +8,7 @@ public sealed class ViperProduct184ProtocolTests
     public void BuildsProduct184ReadHeaders()
     {
         AssertHeader(ViperProduct184Protocol.CreateGetBatteryRequest(), 0x02, 0x07, 0x80, 0);
+        AssertHeader(ViperProduct184Protocol.CreateGetBatteryChemistryRequest(), 0x01, 0x07, 0x94, 0);
         AssertHeader(ViperProduct184Protocol.CreateGetPollingRateRequest(), 0x01, 0x00, 0x85, 0);
         AssertHeader(ViperProduct184Protocol.CreateGetDpiRequest(), 0x07, 0x04, 0x85, 1);
         AssertHeader(ViperProduct184Protocol.CreateGetIdleTimeoutRequest(), 0x02, 0x07, 0x83, 0);
@@ -106,6 +107,11 @@ public sealed class ViperProduct184ProtocolTests
 
         AssertHeader(report, 0x01, 0x07, 0x14, 1);
         Assert.Equal((byte)ViperBatteryChemistry.Lithium, report[RazerFeatureReport.ArgumentsOffset]);
+
+        var response = Response(0x01, 0x07, 0x94, (byte)ViperBatteryChemistry.RechargeableNiMh);
+        Assert.Equal(
+            ViperBatteryChemistry.RechargeableNiMh,
+            ViperProduct184Protocol.ParseBatteryChemistry(response));
     }
 
     [Fact]

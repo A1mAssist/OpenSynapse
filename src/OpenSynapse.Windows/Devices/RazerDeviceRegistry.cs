@@ -54,6 +54,8 @@ internal sealed class RazerDeviceRegistry
                 ["logo-power.set"] = new(0x03, 0x03, 0x00, ""),
                 ["logo-mode.get"] = new(0x03, 0x03, 0x82, "010400"),
                 ["logo-mode.set"] = new(0x03, 0x03, 0x02, ""),
+                ["logo-effect.set"] = new(0x03, 0x03, 0x02, "", AllowZeroTransactionId: true),
+                ["logo-state.set"] = new(0x03, 0x03, 0x00, "", AllowZeroTransactionId: true),
             },
             ["viper-184"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {

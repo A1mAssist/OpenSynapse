@@ -46,6 +46,7 @@ public sealed class BladeMappingEngineNativeRuntime : IAsyncDisposable
 
     public event Action<BladeUnsupportedMappingEvent>? UnsupportedMappingReceived;
     public event Action<BladeInputNotificationEvent>? InputNotificationReceived;
+    public bool InputNotificationRegistered => _inputNotificationRegistered;
 
     internal BladeMappingEngineNativeRuntime(NativeApi api, TimeSpan timeout)
     {
@@ -202,6 +203,63 @@ public sealed class BladeMappingEngineNativeRuntime : IAsyncDisposable
             if (cleanupException is not null)
             {
                 throw cleanupException;
+            }
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Clears a MappingEngine session left behind by a crashed host process.
+    /// The marker is written by the app only while a session is active, so this
+    /// path is never part of the normal start/stop flow.
+    /// </summary>
+    public async Task<bool> TryRecoverStaleSessionAsync(
+        string deviceInfoJson,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateDeviceInfo(deviceInfoJson);
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            _canReleaseNative = false;
+            try
+            {
+                await CallCompletionAsync(
+                    "mappingEngineInitialize",
+                    _api.Initialize,
+                    cancellationToken).ConfigureAwait(false);
+
+                // A stale process may have left either side of this pair active.
+                // Each operation is best effort because a clean machine reports
+                // the corresponding "not active" error.
+                await TryRecoveryOperationAsync(
+                    () => CallDeviceResultAsync(
+                        "removeUsbDevice",
+                        callback => _api.RemoveUsbDevice(deviceInfoJson, callback),
+                        CancellationToken.None)).ConfigureAwait(false);
+                await TryRecoveryOperationAsync(
+                    () => CallSimpleResultAsync(
+                        "disableMapping",
+                        _api.DisableMapping,
+                        allowAlreadyEnabled: false,
+                        CancellationToken.None)).ConfigureAwait(false);
+
+                await CallCompletionAsync(
+                    "mappingEngineShutdown",
+                    _api.Shutdown,
+                    CancellationToken.None).ConfigureAwait(false);
+                _canReleaseNative = true;
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
         finally
@@ -539,12 +597,50 @@ public sealed class BladeMappingEngineNativeRuntime : IAsyncDisposable
         }
     }
 
+    private static async Task TryRecoveryOperationAsync(Func<Task> operation)
+    {
+        try
+        {
+            await operation().ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Recovery must continue to shutdown even when the stale side is absent.
+        }
+    }
+
+    private static void ValidateDeviceInfo(string deviceInfoJson)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceInfoJson);
+        using var device = ParseObject(deviceInfoJson, "deviceInfoJson");
+        var root = device.RootElement;
+        if (!root.TryGetProperty("vendorId", out var vendor) ||
+            !vendor.TryGetInt32(out var vendorId) || vendorId != VendorId ||
+            !root.TryGetProperty("productId", out var product) ||
+            !product.TryGetInt32(out var productId) || productId != ProductId ||
+            !root.TryGetProperty("containerId", out var container) ||
+            container.ValueKind != JsonValueKind.String ||
+            string.IsNullOrWhiteSpace(container.GetString()) ||
+            !root.TryGetProperty("guid", out var guid) ||
+            guid.ValueKind != JsonValueKind.String ||
+            !Guid.TryParse(guid.GetString(), out _))
+        {
+            throw new ArgumentException(
+                "deviceInfoJson 必须声明 Product 710 的 vendorId、productId、containerId 和有效 guid。",
+                nameof(deviceInfoJson));
+        }
+    }
+
     private static void ValidateSession(
         string deviceInfoJson,
         string storageKey,
         string storageValueJson)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(deviceInfoJson);
+        ValidateDeviceInfo(deviceInfoJson);
         ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(storageValueJson);
 

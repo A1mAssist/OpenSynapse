@@ -3,7 +3,24 @@ const fs = require('fs');
 const path = require('path');
 const ffi = require('../../artifacts/synapse-asar-4.0.698/node_modules/ffi-napi-rz');
 
-const dllPath = 'C:/Program Files/Razer/RazerAppEngine/app-4.0.698/CommonDLL/mapping_engine.dll';
+const resolveMappingEngineDll = () => {
+  if (process.env.OPENSYNAPSE_MAPPING_ENGINE_DLL) return process.env.OPENSYNAPSE_MAPPING_ENGINE_DLL;
+  const root = path.join(process.env.ProgramFiles || 'C:/Program Files', 'Razer', 'RazerAppEngine');
+  const versions = fs.existsSync(root)
+    ? fs.readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith('app-'))
+      .map((entry) => entry.name)
+      .sort()
+      .reverse()
+    : [];
+  for (const version of versions) {
+    const candidate = path.join(root, version, 'CommonDLL', 'mapping_engine.dll');
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error('Set OPENSYNAPSE_MAPPING_ENGINE_DLL or install Razer AppEngine.');
+};
+
+const dllPath = resolveMappingEngineDll();
 const lib = ffi.Library(dllPath, {
   mappingEngineInitialize: ['void', ['pointer']],
   addUsbDevice: ['void', ['string', 'pointer', 'pointer']],
@@ -18,10 +35,11 @@ const lib = ffi.Library(dllPath, {
 const containerId = '{9E502CF7-160A-51EA-8250-14BD19EB4A4A}';
 const productId = 184;
 const device = JSON.stringify({ vendorId: 5426, containerId, productId, guid: crypto.randomUUID() });
-const storageLog = 'C:/Users/A1mAssist/AppData/Local/Razer/RazerAppEngine/User Data/Logs/' +
-  `products_184_mw ${containerId}1.log`;
+const storageLog = process.env.OPENSYNAPSE_RAZER_STORAGE_LOG ||
+  path.join(process.env.LOCALAPPDATA || '', 'Razer', 'RazerAppEngine', 'User Data', 'Logs',
+    `products_184_mw ${containerId}1.log`);
 const logPath = process.env.OPENSYNAPSE_MAPPING_LOG ||
-  'D:/Workspaces/OpenSynapse/artifacts/protocol/2026-08-15/mapping-engine-viper-m345.jsonl';
+  path.join(process.env.LOCALAPPDATA || process.cwd(), 'OpenSynapse', 'mapping-engine-viper-m345.jsonl');
 const waitMs = Number(process.env.OPENSYNAPSE_MAPPING_WAIT_MS || 60000);
 if (!Number.isFinite(waitMs) || waitMs <= 0) throw new Error('Invalid wait time.');
 

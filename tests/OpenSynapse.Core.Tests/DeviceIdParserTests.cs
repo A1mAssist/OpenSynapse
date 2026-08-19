@@ -602,3 +602,47 @@ public sealed class NvidiaSmiOutputParserTests
         Assert.Equal(8151, sample.MemoryTotalMebibytes);
     }
 }
+
+public sealed class WindowsGpuActivityReaderTests
+{
+    [Fact]
+    public void UsesIntegratedGpuWhileNvidiaHasNoExternalWork()
+    {
+        WindowsGpuSample[] samples =
+        [
+            new("NVIDIA", 0x10DE, 1.1, 0, 512, 8192),
+            new("AMD Radeon", 0x1002, 6.5, 6.5, 400, 16384, IsIntegrated: true),
+        ];
+
+        Assert.False(WindowsGpuActivityReader.IsNvidiaActive(samples));
+        Assert.Equal("AMD Radeon", WindowsGpuActivityReader.SelectIntegrated(samples)!.Name);
+        Assert.Equal("NVIDIA", WindowsGpuActivityReader.SelectNvidia(samples)!.Name);
+    }
+
+    [Fact]
+    public void TreatsExternalNvidiaWorkAsActive()
+    {
+        WindowsGpuSample[] samples =
+        [
+            new("NVIDIA", 0x10DE, 12, 11, 2048, 8192),
+            new("AMD Radeon", 0x1002, 4, 4, 400, 16384, IsIntegrated: true),
+        ];
+
+        Assert.True(WindowsGpuActivityReader.IsNvidiaActive(samples));
+    }
+
+    [Fact]
+    public void ParsesSupportedAmdPmLogSensors()
+    {
+        var sensors = new AmdAdlTelemetryReader.AmdSensorData[256];
+        sensors[1] = new(1, 2227);
+        sensors[8] = new(1, 50);
+        sensors[23] = new(1, 27);
+
+        var sample = AmdAdlTelemetryReader.Parse(sensors);
+
+        Assert.Equal(50, sample.TemperatureCelsius);
+        Assert.Equal(27, sample.PowerWatts);
+        Assert.Equal(2227, sample.ClockMegahertz);
+    }
+}

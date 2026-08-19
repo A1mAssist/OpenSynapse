@@ -65,7 +65,7 @@ await viewModel.ApplySelectedBladeLightingEffectAsync(cancellationToken);
 
 ## 3. Blade 平台状态
 
-以下属性全部只读：
+以下属性仍以原始文本只读展示；其中 Gaming Mode、启动动画和一次性充满另有受 `CanSet...` 门禁控制的 ToggleSwitch，用户变更后直接调用对应的 `Apply...Async`，不增加确认按钮：
 
 | ViewModel 属性 | 当前显示内容 | 未知值 |
 |---|---|---|
@@ -76,15 +76,12 @@ await viewModel.ApplySelectedBladeLightingEffectAsync(cancellationToken);
 | `BladeLocalDimmingText` | MiniLED 显示已启用/已禁用；非 MiniLED 显示不适用 | `--` |
 | `BladeOneTimeFullChargeText` | 已启用/已禁用 | `--` |
 
-建议继续放在一个不带操作按钮的“平台状态”区域。原始字段使用等宽字体并允许换行，不要把 Raw 值自行翻译成新的业务状态。
+建议继续放在一个紧凑的“平台状态”区域。原始字段使用等宽字体并允许换行，不要把 Raw 值自行翻译成新的业务状态。
 
 本轮不允许添加以下写入口：
 
-- Gaming Mode
-- 启动动画
 - Native Display Mode
 - Local Dimming
-- 一次性充满
 - SKU flags
 
 这些字段已有读取不代表写入通过了可逆真机验证。
@@ -137,7 +134,7 @@ CanApply
 await viewModel.ApplyViperButtonMappingAsync(row, cancellationToken);
 ```
 
-当前生产 UI 只生成以下目标：
+当前生产 UI 生成以下目标：
 
 ```text
 关闭
@@ -148,28 +145,29 @@ await viewModel.ApplyViperButtonMappingAsync(row, cancellationToken);
 鼠标键 5
 鼠标键 9
 鼠标键 10
+键盘按键
+双击
+DPI 循环切换
+播放 / 暂停
+HyperShift
+键盘 Turbo
+鼠标 Turbo
 ```
 
 前端处理规则：
 
 - 先显示“读取”按钮；不要在设备刷新时自动写入任何映射。
 - 未完整读取 16 条时，整个编辑区保持禁用。
-- 每行显示 firmware button ID 和 Normal/HyperShift 层；不要猜测未经确认的物理按键名称。
-- Button ID `96` 可显示为“DPI 键”，其他 ID 使用 ViewModel 提供的 `ButtonText`。
+- 每行显示 ViewModel 提供的物理按键名称和 Normal/HyperShift 层；不要向用户显示 firmware button ID。
 - 当前动作不在受支持列表时，`CurrentActionText` 仍会展示，`SelectedActionIndex` 为 `-1`；不要替换为默认动作。
 - 只有用户选择了不同且受支持的动作时，`CanApply` 才为 `true`。
 - 提交成功后以后端读回值刷新本行；失败时 ViewModel 会恢复上次确认的选择。
 - 不提供批量保存、拖拽换位或复制层功能；后端当前事务是一行一次。
-- 后端也已允许并验证 `KeyboardKey` 和 `DoubleClick`；增加对应参数编辑器时继续调用同一个行级 setter，不复制协议编码。
+- `KeyboardKey` 和 `DoubleClick` 使用各自的参数编辑器；其余扩展动作使用已验证的固定参数，并继续调用同一个行级 setter，不复制协议编码。
 
 以下映射族仍由后端在 transport 前拒绝，前端不得生成选项：
 
 ```text
-DPI function
-MediaKey
-HyperShift activator
-KeyboardTurbo
-MouseTurbo
 Macro
 Profile
 Lighting
@@ -207,9 +205,9 @@ M5 麦克风静音指示灯同步由应用生命周期自动启动和停止，�
 
 ## 9. 增量验收
 
-- [ ] Blade 灯效下拉框恰好显示 10 个生产模式，索引顺序与 ViewModel 一致。
+- [ ] Blade 灯效下拉框恰好显示 13 个生产模式，索引顺序与 ViewModel 一致。
 - [ ] 颜色和方向控件只在对应模式出现，不改变页面尺寸或遮挡其他控件。
-- [ ] 6 组 Blade 平台状态均为只读，`--` 状态布局稳定。
+- [ ] 6 组 Blade 平台状态文本均可读，Gaming Mode/启动动画/一次性充满的开关只受各自 `CanSet...` 门禁控制，`--` 状态布局稳定。
 - [ ] Viper 低电量阈值只有只读展示。
 - [ ] Viper 映射读取失败或不足 16 条时不能编辑。
 - [ ] 未知映射动作保持可见，不被前端替换或误提交。

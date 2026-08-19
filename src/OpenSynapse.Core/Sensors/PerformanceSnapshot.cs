@@ -18,4 +18,5 @@ public sealed record PerformanceSnapshot(
     long? StorageUsedBytes,
     long? StorageTotalBytes,
     DateTimeOffset CapturedAt,
-    string? ErrorMessage = null);
+    string? ErrorMessage = null,
+    string GpuMemoryLabel = "GPU 内存");

@@ -6,9 +6,12 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using OpenSynapse.App.ViewModels;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
 using Windows.UI;
+using Windows.UI.ViewManagement;
 
 namespace OpenSynapse.App;
 
@@ -16,12 +19,27 @@ public sealed partial class MainWindow : Window
 {
     private const int MinimumWindowWidth = 1080;
     private const int MinimumWindowHeight = 680;
+    private const int ShowWindowRestore = 9;
+    private const int MinimumLaunchDurationMilliseconds = 650;
+    private const int IntroductionStepCount = 4;
+    private static readonly TimeSpan IntroductionCloseTimeout = TimeSpan.FromSeconds(2);
+    private static readonly string IntroductionMarkerPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "OpenSynapse",
+        "introduction-v1.done");
     private readonly MainViewModel _viewModel;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherQueue _dispatcherQueue;
     private bool _trayLifecycleEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
+    private bool _touchpadToggleInFlight;
+    private bool _introductionTransitioning;
+    private bool _languageSelectionReady;
+    private Color? _lightingColorBeforeEdit;
+    private bool _introductionPendingAfterLaunch;
+    private int _introductionStep = -1;
+    private FrameworkElement? _introductionTarget;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -29,6 +47,8 @@ public sealed partial class MainWindow : Window
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException("OpenSynapse 主窗口必须在 DispatcherQueue 线程创建。");
         InitializeComponent();
+        SelectLanguage(AppLanguageSettings.Current);
+        _languageSelectionReady = true;
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {
@@ -39,6 +59,7 @@ public sealed partial class MainWindow : Window
         RootNavigationView.DataContext = _viewModel;
         SystemBackdrop = new MicaBackdrop();
         ApplyDarkTheme();
+        ApplyTitleBarColors(launchOverlayActive: true);
         Activated += OnActivated;
         Closed += OnClosed;
         AppWindow.Closing += OnAppWindowClosing;
@@ -72,22 +93,37 @@ public sealed partial class MainWindow : Window
         RestoreAndActivate();
     });
 
-    internal void RequestExit() => _dispatcherQueue.TryEnqueue(() =>
+    internal void RequestExit() => _dispatcherQueue.TryEnqueue(async () =>
     {
+        if (_exitRequested)
+        {
+            return;
+        }
+
         _exitRequested = true;
+        _introductionPendingAfterLaunch = false;
+        IntroductionOverlay.Visibility = Visibility.Collapsed;
+        SetIntroductionTarget(null);
+        await CloseIntroductionTipAsync();
+        _introductionStep = -1;
         Close();
     });
 
     private void RestoreAndActivate()
     {
-        AppWindow.Show();
-        if (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized } presenter)
-        {
-            presenter.Restore();
-        }
-
+        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        ShowWindow(windowHandle, ShowWindowRestore);
         Activate();
+        SetForegroundWindow(windowHandle);
     }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ShowWindow(nint windowHandle, int command);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(nint windowHandle);
 
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
@@ -140,7 +176,10 @@ public sealed partial class MainWindow : Window
             catch (Exception exception)
             {
                 _dispatcherQueue.TryEnqueue(() =>
-                    _viewModel.ReportApplicationError($"休眠前恢复风扇：{exception.Message}"));
+                    _viewModel.ReportApplicationError(AppStrings.Format(
+                        "SuspendFanRestoreError",
+                        "休眠前恢复风扇：{0}",
+                        exception.Message)));
             }
         }
         else if (args.Mode == PowerModes.Resume)
@@ -153,23 +192,404 @@ public sealed partial class MainWindow : Window
     {
         Activated -= OnActivated;
         ResizeForCurrentDisplay();
+        var launchStarted = Stopwatch.GetTimestamp();
+        LaunchStatusText.Text = AppStrings.Get("正在读取配置与设备状态");
         try
         {
             await _viewModel.InitializeAsync(_lifetime.Token);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunPerformanceLoopAsync(_lifetime.Token),
-                "性能刷新");
+                AppStrings.Get("性能刷新"));
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
-                "设备监听");
+                AppStrings.Get("设备监听"));
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {
         }
         catch (Exception exception)
         {
-            _viewModel.ReportApplicationError($"应用初始化：{exception.Message}");
+            _viewModel.ReportApplicationError(AppStrings.Format(
+                "ApplicationInitializationError",
+                "应用初始化：{0}",
+                exception.Message));
         }
+
+        var remaining = TimeSpan.FromMilliseconds(MinimumLaunchDurationMilliseconds) -
+            Stopwatch.GetElapsedTime(launchStarted);
+        if (remaining > TimeSpan.Zero)
+        {
+            try
+            {
+                await Task.Delay(remaining, _lifetime.Token);
+            }
+            catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+            {
+                return;
+            }
+        }
+
+        if (File.Exists(IntroductionMarkerPath))
+        {
+            LaunchStatusText.Text = AppStrings.Get("已就绪");
+            HideLaunchOverlay();
+        }
+        else
+        {
+            _introductionPendingAfterLaunch = true;
+            HideLaunchOverlay();
+        }
+    }
+
+    private void ShowIntroductionClick(object sender, RoutedEventArgs e) =>
+        _ = ShowIntroductionStepAsync(0);
+
+    private void IntroductionPreviousClick(object sender, RoutedEventArgs e)
+    {
+        if (_introductionStep > 0)
+        {
+            _ = ShowIntroductionStepAsync(_introductionStep - 1);
+        }
+    }
+
+    private void IntroductionNextClick(object sender, RoutedEventArgs e)
+    {
+        if (_introductionStep + 1 < IntroductionStepCount)
+        {
+            _ = ShowIntroductionStepAsync(_introductionStep + 1);
+            return;
+        }
+
+        CompleteIntroduction();
+    }
+
+    private void IntroductionTipCloseClick(TeachingTip sender, object e) =>
+        CompleteIntroduction();
+
+    private async Task ShowIntroductionStepAsync(int step)
+    {
+        if (_introductionTransitioning || _exitRequested)
+        {
+            return;
+        }
+
+        _introductionTransitioning = true;
+        try
+        {
+            IntroductionOverlay.Visibility = Visibility.Collapsed;
+            SetIntroductionTarget(null);
+            await CloseIntroductionTipAsync();
+            if (_exitRequested)
+            {
+                return;
+            }
+
+            _introductionStep = Math.Clamp(step, 0, IntroductionStepCount - 1);
+
+            FrameworkElement target;
+            switch (_introductionStep)
+            {
+                case 0:
+                    RootNavigationView.SelectedItem = OverviewNavigationItem;
+                    target = DevicesNavigationItem;
+                    IntroductionTip.Title = AppStrings.Get("切换页面");
+                    IntroductionBodyText.Text = AppStrings.Get("从左侧进入设备、配置和诊断。");
+                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
+                    break;
+                case 1:
+                    RootNavigationView.SelectedItem = OverviewNavigationItem;
+                    OverviewPage.ChangeView(null, 0, null, disableAnimation: true);
+                    target = SystemTelemetrySection;
+                    IntroductionTip.Title = AppStrings.Get("查看系统状态");
+                    IntroductionBodyText.Text = AppStrings.Get("CPU、GPU、内存和硬盘状态都在概览顶部。");
+                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
+                    break;
+                case 2:
+                    RootNavigationView.SelectedItem = DevicesNavigationItem;
+                    DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
+                    target = DeviceSelectorBar;
+                    IntroductionTip.Title = AppStrings.Get("选择设备");
+                    IntroductionBodyText.Text = AppStrings.Get("在笔记本和鼠标之间切换，下面会显示对应设置。");
+                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
+                    break;
+                default:
+                    RootNavigationView.SelectedItem = DevicesNavigationItem;
+                    BladeDevicePanel.Visibility = Visibility.Collapsed;
+                    ViperDevicePanel.Visibility = Visibility.Visible;
+                    UpdateDeviceSelector("viper");
+                    DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
+                    target = ViperPollingRateSaveButton;
+                    IntroductionTip.Title = AppStrings.Get("保存鼠标设置");
+                    IntroductionBodyText.Text = AppStrings.Get("鼠标改动不会直接写入。确认无误后点“保存”。");
+                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Top;
+                    break;
+            }
+
+            IntroductionProgressText.Text = $"{_introductionStep + 1} / {IntroductionStepCount}";
+            IntroductionPreviousButton.Visibility = _introductionStep == 0
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            IntroductionNextButton.Content = _introductionStep == IntroductionStepCount - 1
+                ? AppStrings.Get("完成")
+                : AppStrings.Get("下一步");
+
+            await Task.Yield();
+            if (_exitRequested)
+            {
+                return;
+            }
+
+            await WaitForNextRenderAsync();
+            RootLayout.UpdateLayout();
+            if (_introductionStep == IntroductionStepCount - 1)
+            {
+                var targetTop = target.TransformToVisual(DevicesPage)
+                    .TransformPoint(new global::Windows.Foundation.Point(0, 0)).Y +
+                    DevicesPage.VerticalOffset;
+                var centeredOffset = targetTop -
+                    Math.Max(0, (DevicesPage.ViewportHeight - target.ActualHeight) / 2);
+                DevicesPage.ChangeView(
+                    null,
+                    Math.Clamp(centeredOffset, 0, DevicesPage.ScrollableHeight),
+                    null,
+                    disableAnimation: true);
+            }
+            else
+            {
+                target.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false });
+            }
+
+            await WaitForNextRenderAsync();
+            if (_exitRequested)
+            {
+                return;
+            }
+
+            RootLayout.UpdateLayout();
+            SetIntroductionTarget(target);
+            UpdateIntroductionOverlay();
+            IntroductionOverlay.Visibility = Visibility.Visible;
+            IntroductionTip.Target = target;
+            IntroductionTip.IsOpen = true;
+        }
+        finally
+        {
+            _introductionTransitioning = false;
+        }
+    }
+
+    private static async Task WaitForNextRenderAsync()
+    {
+        var rendered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        void OnRendering(object? sender, object args)
+        {
+            CompositionTarget.Rendering -= OnRendering;
+            rendered.TrySetResult();
+        }
+
+        CompositionTarget.Rendering += OnRendering;
+        try
+        {
+            await rendered.Task;
+        }
+        finally
+        {
+            CompositionTarget.Rendering -= OnRendering;
+        }
+    }
+
+    private async Task CloseIntroductionTipAsync()
+    {
+        if (!IntroductionTip.IsOpen)
+        {
+            IntroductionTip.Target = null;
+            return;
+        }
+
+        var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnClosed(TeachingTip sender, TeachingTipClosedEventArgs args)
+        {
+            IntroductionTip.Closed -= OnClosed;
+            closed.TrySetResult();
+        }
+
+        IntroductionTip.Closed += OnClosed;
+        try
+        {
+            IntroductionTip.IsOpen = false;
+            await closed.Task.WaitAsync(IntroductionCloseTimeout);
+        }
+        catch (TimeoutException)
+        {
+        }
+        finally
+        {
+            IntroductionTip.Closed -= OnClosed;
+            IntroductionTip.Target = null;
+        }
+    }
+
+    private void CompleteIntroduction()
+    {
+        DismissIntroduction();
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(IntroductionMarkerPath)!);
+            File.WriteAllText(IntroductionMarkerPath, "1");
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            _viewModel.ReportApplicationError(AppStrings.Format(
+                "WalkthroughStateError",
+                "使用引导状态：{0}",
+                exception.Message));
+        }
+    }
+
+    private void DismissIntroduction()
+    {
+        _introductionPendingAfterLaunch = false;
+        IntroductionTip.IsOpen = false;
+        IntroductionOverlay.Visibility = Visibility.Collapsed;
+        SetIntroductionTarget(null);
+        _introductionStep = -1;
+    }
+
+    private void RootLayoutSizeChanged(object sender, SizeChangedEventArgs e) =>
+        UpdateIntroductionOverlay();
+
+    private void IntroductionTargetLayoutUpdated(object? sender, object e) =>
+        UpdateIntroductionOverlay();
+
+    private void SetIntroductionTarget(FrameworkElement? target)
+    {
+        if (_introductionTarget is not null)
+        {
+            _introductionTarget.LayoutUpdated -= IntroductionTargetLayoutUpdated;
+        }
+
+        _introductionTarget = target;
+        if (_introductionTarget is not null)
+        {
+            _introductionTarget.LayoutUpdated += IntroductionTargetLayoutUpdated;
+        }
+    }
+
+    private void UpdateIntroductionOverlay()
+    {
+        const double focusPadding = 8;
+        var target = _introductionTarget;
+        if (target is null || IntroductionOverlay.ActualWidth <= 0 || IntroductionOverlay.ActualHeight <= 0)
+        {
+            return;
+        }
+
+        var targetPosition = target.TransformToVisual(IntroductionOverlay)
+            .TransformPoint(new global::Windows.Foundation.Point(0, 0));
+        var left = Math.Clamp(targetPosition.X - focusPadding, 0, IntroductionOverlay.ActualWidth);
+        var top = Math.Clamp(targetPosition.Y - focusPadding, 0, IntroductionOverlay.ActualHeight);
+        var right = Math.Clamp(
+            targetPosition.X + target.ActualWidth + focusPadding,
+            left,
+            IntroductionOverlay.ActualWidth);
+        var bottom = Math.Clamp(
+            targetPosition.Y + target.ActualHeight + focusPadding,
+            top,
+            IntroductionOverlay.ActualHeight);
+
+        IntroductionOverlayPath.Data = CreateIntroductionOverlayGeometry(
+            IntroductionOverlay.ActualWidth,
+            IntroductionOverlay.ActualHeight,
+            new global::Windows.Foundation.Rect(
+            left,
+            top,
+            right - left,
+            bottom - top));
+    }
+
+    private static PathGeometry CreateIntroductionOverlayGeometry(
+        double width,
+        double height,
+        global::Windows.Foundation.Rect focus)
+    {
+        const double radius = 8;
+        var geometry = new PathGeometry { FillRule = FillRule.EvenOdd };
+        geometry.Figures.Add(CreateRectangleFigure(0, 0, width, height));
+
+        var left = focus.Left;
+        var top = focus.Top;
+        var right = focus.Right;
+        var bottom = focus.Bottom;
+        var corner = Math.Min(radius, Math.Min(focus.Width, focus.Height) / 2);
+        var roundedFocus = new PathFigure
+        {
+            StartPoint = new global::Windows.Foundation.Point(left + corner, top),
+            IsClosed = true,
+        };
+        roundedFocus.Segments.Add(new LineSegment { Point = new global::Windows.Foundation.Point(right - corner, top) });
+        roundedFocus.Segments.Add(CreateCorner(right, top + corner, corner));
+        roundedFocus.Segments.Add(new LineSegment { Point = new global::Windows.Foundation.Point(right, bottom - corner) });
+        roundedFocus.Segments.Add(CreateCorner(right - corner, bottom, corner));
+        roundedFocus.Segments.Add(new LineSegment { Point = new global::Windows.Foundation.Point(left + corner, bottom) });
+        roundedFocus.Segments.Add(CreateCorner(left, bottom - corner, corner));
+        roundedFocus.Segments.Add(new LineSegment { Point = new global::Windows.Foundation.Point(left, top + corner) });
+        roundedFocus.Segments.Add(CreateCorner(left + corner, top, corner));
+        geometry.Figures.Add(roundedFocus);
+        return geometry;
+    }
+
+    private static PathFigure CreateRectangleFigure(double left, double top, double width, double height)
+    {
+        var figure = new PathFigure
+        {
+            StartPoint = new global::Windows.Foundation.Point(left, top),
+            IsClosed = true,
+        };
+        figure.Segments.Add(new LineSegment { Point = new global::Windows.Foundation.Point(left + width, top) });
+        figure.Segments.Add(new LineSegment { Point = new global::Windows.Foundation.Point(left + width, top + height) });
+        figure.Segments.Add(new LineSegment { Point = new global::Windows.Foundation.Point(left, top + height) });
+        return figure;
+    }
+
+    private static ArcSegment CreateCorner(double x, double y, double radius) => new()
+    {
+        Point = new global::Windows.Foundation.Point(x, y),
+        Size = new global::Windows.Foundation.Size(radius, radius),
+        SweepDirection = SweepDirection.Clockwise,
+    };
+
+    private void HideLaunchOverlay()
+    {
+        LaunchProgressRing.IsActive = false;
+        if (new UISettings().AnimationsEnabled)
+        {
+            LaunchOverlayFadeStoryboard.Begin();
+        }
+        else
+        {
+            LaunchOverlay.Visibility = Visibility.Collapsed;
+            ApplyTitleBarColors(launchOverlayActive: false);
+            StartPendingIntroduction();
+        }
+    }
+
+    private void LaunchOverlayFadeCompleted(object sender, object e)
+    {
+        LaunchOverlay.Visibility = Visibility.Collapsed;
+        ApplyTitleBarColors(launchOverlayActive: false);
+        StartPendingIntroduction();
+    }
+
+    private void StartPendingIntroduction()
+    {
+        if (!_introductionPendingAfterLaunch)
+        {
+            return;
+        }
+
+        _introductionPendingAfterLaunch = false;
+        _ = ShowIntroductionStepAsync(0);
     }
 
     private async Task ObserveBackgroundLoopAsync(Func<Task> loop, string label)
@@ -193,19 +613,45 @@ public sealed partial class MainWindow : Window
         AppWindow.Changed -= OnAppWindowChanged;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         _lifetime.Cancel();
-        try
-        {
-            _viewModel.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
-        catch (Exception exception)
-        {
-            _viewModel.ReportApplicationError($"退出前恢复风扇：{exception.Message}");
-        }
         _lifetime.Dispose();
     }
 
     private async void RefreshClick(object sender, RoutedEventArgs e) =>
         await _viewModel.RefreshDevicesAsync(_lifetime.Token);
+
+    private void LanguageSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_languageSelectionReady ||
+            sender is not ComboBox { SelectedItem: ComboBoxItem { Tag: string language } } ||
+            language == AppLanguageSettings.Current)
+        {
+            return;
+        }
+
+        try
+        {
+            AppLanguageSettings.Save(language);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            _languageSelectionReady = false;
+            SelectLanguage(AppLanguageSettings.Current);
+            _languageSelectionReady = true;
+            _viewModel.ReportApplicationError(AppStrings.Format(
+                "LanguageSettingError",
+                "界面语言设置：{0}",
+                exception.Message));
+        }
+    }
+
+    private void SelectLanguage(string language)
+    {
+        AppLanguageComboBox.SelectedItem = AppLanguageComboBox.Items
+            .OfType<ComboBoxItem>()
+            .FirstOrDefault(item => StringComparer.Ordinal.Equals(item.Tag as string, language)) ??
+            AppLanguageComboBox.Items[0];
+    }
 
     private async void ApplyBrightnessClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeBrightnessAsync(_lifetime.Token);
@@ -243,6 +689,9 @@ public sealed partial class MainWindow : Window
             case "logo":
                 await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
                 break;
+            case "refreshRate":
+                await _viewModel.ApplyInternalDisplayRefreshRateAsync(_lifetime.Token);
+                break;
         }
     }
 
@@ -254,6 +703,27 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async void AutoApplyPlatformToggleToggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ToggleSwitch { FocusState: not FocusState.Unfocused, Tag: string setting })
+        {
+            return;
+        }
+
+        switch (setting)
+        {
+            case "gamingMode":
+                await _viewModel.ApplyBladeGamingModeAsync(_lifetime.Token);
+                break;
+            case "startupAnimation":
+                await _viewModel.ApplyBladeStartupAnimationAsync(_lifetime.Token);
+                break;
+            case "oneTimeFullCharge":
+                await _viewModel.ApplyBladeOneTimeFullChargeAsync(_lifetime.Token);
+                break;
+        }
+    }
+
     private async void AutoApplyBrightnessValueChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (sender is Slider { FocusState: not FocusState.Unfocused })
@@ -262,11 +732,38 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void LightingColorFlyoutOpened(object sender, object e)
+    {
+        _lightingColorBeforeEdit = sender is Flyout { Content: ColorPicker picker }
+            ? picker.Color
+            : null;
+    }
+
+    private async void LightingColorFlyoutClosed(object sender, object e)
+    {
+        var changed = sender is Flyout { Content: ColorPicker picker } &&
+            _lightingColorBeforeEdit is Color previous && picker.Color != previous;
+        _lightingColorBeforeEdit = null;
+        if (changed)
+        {
+            await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
+        }
+    }
+
+    private async void ApplyPollingRateClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyViperPollingRateAsync(_lifetime.Token);
+
+    private async void ApplyDpiClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyViperDpiAsync(_lifetime.Token);
+
+    private async void ApplyIdleClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyViperIdleAsync(_lifetime.Token);
+
+    private async void ApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyViperDpiStagesAsync(_lifetime.Token);
+
     private async void ApplyChargeLimitClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeChargeLimitAsync(_lifetime.Token);
-
-    private async void ApplyRefreshRateClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyInternalDisplayRefreshRateAsync(_lifetime.Token);
 
     private async void ApplyCpuBoostClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeCpuBoostAsync(_lifetime.Token);
@@ -277,32 +774,26 @@ public sealed partial class MainWindow : Window
     private async void ApplyMaxFanClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeMaxFanAsync(_lifetime.Token);
 
-    private async void ApplyGamingModeClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeGamingModeAsync(_lifetime.Token);
-
-    private async void ApplyStartupAnimationClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeStartupAnimationAsync(_lifetime.Token);
-
-    private async void ApplyOneTimeFullChargeClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeOneTimeFullChargeAsync(_lifetime.Token);
-
     private async void ApplyLogoClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
 
-    private async void ToggleTouchpadClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ToggleBladeTouchpadAsync(_lifetime.Token);
+    private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
+    {
+        if (_touchpadToggleInFlight || sender is not ToggleSwitch { FocusState: not FocusState.Unfocused })
+        {
+            return;
+        }
 
-    private async void ApplyPollingRateClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperPollingRateAsync(_lifetime.Token);
-
-    private async void ApplyDpiClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperDpiAsync(_lifetime.Token);
-
-    private async void ApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperDpiStagesAsync(_lifetime.Token);
-
-    private async void ApplyIdleClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperIdleAsync(_lifetime.Token);
+        _touchpadToggleInFlight = true;
+        try
+        {
+            await _viewModel.ToggleBladeTouchpadAsync(_lifetime.Token);
+        }
+        finally
+        {
+            _touchpadToggleInFlight = false;
+        }
+    }
 
     private async void ReadViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ReadViperButtonMappingsAsync(_lifetime.Token);
@@ -336,10 +827,13 @@ public sealed partial class MainWindow : Window
     {
         var dialog = new ContentDialog
         {
-            Title = "删除当前配置？",
-            Content = $"将删除“{_viewModel.ActiveProfileName}”，设备设置不会被卸载。",
-            PrimaryButtonText = "删除",
-            CloseButtonText = "取消",
+            Title = AppStrings.Get("删除当前配置？"),
+            Content = AppStrings.Format(
+                "DeleteProfileMessage",
+                "将删除“{0}”，设备设置不会被卸载。",
+                _viewModel.ActiveProfileName),
+            PrimaryButtonText = AppStrings.Get("删除"),
+            CloseButtonText = AppStrings.Get("取消"),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = RootNavigationView.XamlRoot,
         };
@@ -402,7 +896,7 @@ public sealed partial class MainWindow : Window
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
             SuggestedFileName = $"OpenSynapse-{_viewModel.ActiveProfileName}",
         };
-        picker.FileTypeChoices.Add("OpenSynapse 配置", [".json"]);
+        picker.FileTypeChoices.Add(AppStrings.Get("OpenSynapse 配置"), [".json"]);
         InitializePicker(picker);
         var file = await picker.PickSaveFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
@@ -441,6 +935,7 @@ public sealed partial class MainWindow : Window
         DevicesPage.Visibility = page == "devices" ? Visibility.Visible : Visibility.Collapsed;
         ProfilesPage.Visibility = page == "profiles" ? Visibility.Visible : Visibility.Collapsed;
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
+        AboutPage.Visibility = page == "about" ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ApplyDarkTheme()
@@ -450,7 +945,7 @@ public sealed partial class MainWindow : Window
         UpdateDeviceSelector(BladeDevicePanel.Visibility == Visibility.Visible ? "blade" : "viper");
     }
 
-    private void ApplyTitleBarColors()
+    private void ApplyTitleBarColors(bool launchOverlayActive = false)
     {
         var titleBar = AppWindow.TitleBar;
         if (!AppWindowTitleBar.IsCustomizationSupported())
@@ -458,11 +953,15 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        var background = Color.FromArgb(255, 0x20, 0x20, 0x20);
+        var background = launchOverlayActive
+            ? Color.FromArgb(255, 0x17, 0x17, 0x17)
+            : Color.FromArgb(255, 0x20, 0x20, 0x20);
         var foreground = Color.FromArgb(255, 0xF4, 0xF4, 0xF4);
         var hoverBackground = Color.FromArgb(255, 0x38, 0x38, 0x38);
         var pressedBackground = Color.FromArgb(255, 0x4C, 0x4C, 0x4C);
 
+        AppTitleBar.Background = (Brush)Application.Current.Resources[
+            launchOverlayActive ? "CanvasBrush" : "SurfaceBrush"];
         titleBar.BackgroundColor = background;
         titleBar.ForegroundColor = foreground;
         titleBar.InactiveBackgroundColor = background;

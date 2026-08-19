@@ -5,6 +5,7 @@ TestResults/
 *.trx
 
 # Local build and release bundles
+artifacts/
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/
@@ -13,6 +14,7 @@ artifacts/ghidra/
 artifacts/icon-inspect.png
 artifacts/logo-previews/
 artifacts/release-*/
+artifacts/codex-*/
 dist/
 src/OpenSynapse.App/artifacts/
 

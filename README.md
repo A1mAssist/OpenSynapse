@@ -1,101 +1,131 @@
 # OpenSynapse
 
-OpenSynapse is a Windows 11 desktop controller for the verified Razer devices in the design spec.
+[English](README.en.md) | 简体中文
 
-## Run the release
+OpenSynapse 是一款面向 Windows 11 的轻量级 Razer 设备控制工具。它不依赖雷云常驻，即可管理已验证设备的灯光、性能和常用设置。
 
-Extract the complete release archive, then start `OpenSynapse.exe` in the root folder. Keep the adjacent `resources` folder intact; it contains the self-contained WinUI runtime and application files.
+当前版本为 `0.1.0`，仅支持经过实机验证的具体设备。OpenSynapse 不会根据相近型号猜测协议，也不会向未知设备发送控制命令。
 
-## Current slice
+## 支持设备
 
-The current build is a WinUI 3 desktop application. It ships strict embedded manifests for `1532:02C6` (Razer Blade 16 2025) and `1532:00B8` (Razer Viper V3 HyperSpeed), and selects each manifest's declared HID control collection (`UsagePage 0001 / Usage 0002 / Feature 91 B` for both built-ins).
+| 设备 | USB VID:PID | 支持状态 |
+|---|---|---|
+| Razer Blade 16 (2025) | `1532:02C6` | 已支持 |
+| Razer Viper V3 HyperSpeed | `1532:00B8` | 已支持 |
 
-Implemented device paths:
+其他 Razer 设备即使外观或型号接近，也不会自动套用以上协议。新增设备需要单独的设备清单、协议证据和读回验证。
 
-- Enumerates HID interfaces through native `SetupAPI` and `hid.dll`, then watches path/access changes every three seconds so disconnects and reconnects clear stale controls.
-- Blade: reads keyboard brightness, performance mode, automatic/manual fan state, manual fan target, CPU/GPU Boost, battery charge limit, Product 710 power telemetry, current CPU/GPU fan speed, advanced fan mode, and lid-logo state.
-- Blade: writes keyboard brightness only after the matching read succeeds on the current device path, followed by an immediate GET readback.
-- Blade lighting: the production UI exposes Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal through complete `6 x 17` frames. Reactive/Ripple own the verified internal-key input path; Audio Meter owns recoverable WASAPI loopback; Ambient owns permission-gated internal-display capture. Wave and Fire use recovered algorithms but remain approximate pending exact visual parity.
-- Display: identifies the active internal panel through Windows display topology, reads its current resolution/rate, enumerates supported rates for that resolution, and applies a selected/profile rate with validation, readback, and restore. External and clone topologies fail closed.
-- Blade Logo: writes verified Off/Static states only after a current-path read; writes mode then power, reads both values back, and restores the original state after failure or cancellation. Breathing stays evidence-gated.
-- Viper: reads battery estimate, polling rate, current DPI, idle timeout, the complete DPI-stage table, and the validated low-battery raw value.
-- Viper: writes polling rate, current DPI (`100..30000`), idle timeout, and complete DPI-stage tables with readback; DPI-stage failure/cancellation restores and re-reads the original table.
-- Viper: reads all 16 Profile 1 Normal/HyperShift assignments and exposes only the verified `Off` and mouse-button codes `1,2,3,4,5,9,10` for readback/restored writes. Current hardware polling is limited to `125/500/1000 Hz`.
-- Shows live CPU, NVIDIA GPU, memory, and fixed-drive telemetry. Missing data is displayed as `--`; sampler failures remain visible and do not silently terminate the refresh loop.
+## 主要功能
 
-The Blade performance/fan/boost/charge protocol is backed by exact `02C6` / `RZ09-05286` public implementations and deterministic GET/parser tests. Performance mode, Custom-only CPU/GPU Boost and Max Fan, and charge-limit writes have passed local hardware write/readback/restore verification. Fixed-RPM target protocol builders/parsers now cover `0D01`/`0D81` with a strict `2000..5000 RPM` range and `100 RPM` step; production manual writes remain gated until thermal, process-exit, device-disconnect, and sleep/wake recovery tests are complete.
+### Blade 16 (2025)
 
-Manual fixed/curve fan writes, firmware quick-effect writes without visible confirmation, Viper extended button functions, one-time full charge, and battery-type calibration are not presented as finished features. GPU MUX is explicitly excluded for this Optimus-only Blade; OpenSynapse leaves GPU mode under the Windows/Razer platform path. The fixed target reader fails closed if CPU/GPU stored targets disagree or either zone is outside the verified range. The app implements local named Profile selection, create/clone/rename/delete, atomic JSON import/export, executable binding/unbinding with foreground switching, user-level startup registration, resume refresh, second-instance activation, and tray residency. Profile changes roll back their in-memory state when persistence fails. Global/device/power-scope editing remains a backend-only capability. Blade mapping/HyperShift/Snap Tap remain opt-in; the physically verified M5 microphone mute indicator follows the Blade control-collection lifecycle by default. Synapse can still contend for the same feature collection; a failed query is logged instead of silently using an old value.
+- 读取 CPU、GPU、内存、磁盘、风扇与设备状态。
+- 调整键盘亮度。
+- 使用 13 种键盘灯效：关闭、静态、呼吸、光谱循环、波浪、火焰、响应、涟漪、音频律动、环境感知、色轮、星光和双色潮汐。
+- 调整机身 Logo 的关闭、常亮和呼吸模式。
+- 切换性能模式，并在 Custom 模式下调整 CPU Boost、GPU Boost 和 Max Fan。
+- 设置 `50%` 至 `80%` 的充电上限，或关闭限制。
+- 调整 Windows 内置屏支持的刷新率。
+- 使用 Windows 系统接口切换触控板。
+- 后台处理已验证的 Fn 媒体键、屏幕亮度键、M3 游戏模式和 M5 麦克风静音指示灯。
+- 调整已验证的游戏模式、启动动画和一次性充满开关；每项操作都受设备能力门禁保护并在失败时恢复。
+- 只读显示面板模式、SKU、Local Dimming 等平台状态。
 
-M5 microphone mute-indicator synchronization starts automatically for Product 710 and stops on disconnect or App exit. Software lighting defers its Normal-mode restoration while this session is active, and App shutdown restores Normal exactly once after lighting stops. F3 speaker indication is excluded because the Product 710 Synapse path does not call that target.
+波浪、火焰和色轮采用已恢复的算法，但尚未完成与雷云的逐帧视觉一致性验证，因此不宣称 1:1 还原。
 
-Local diagnostics are appended to `%LocalAppData%\OpenSynapse\logs\opensynapse.log`. The file rotates at 1 MiB and keeps one `opensynapse.log.previous`; logging failures never interrupt device control.
+### Viper V3 HyperSpeed
 
-Production writes currently verified: Blade keyboard brightness, performance mode, Custom-only CPU/GPU Boost, Custom-only Max Fan, charge limit, Logo Off/Static, and the Windows internal-panel refresh rate; Viper current DPI, complete DPI stages, 125/500/1000 Hz polling, idle timeout, and restricted Profile 1 button mappings. Blade fixed/manual fan and battery policy remain evidence-gated. Blade software quick effects are production-connected, but Wave and Fire remain approximate pending the exact parameter, geometry-mapping, actual-refresh-rate, and current-device visual evidence described above. Advanced lighting editor, macros, and Viper calibration are deferred. THX, EQ, volume leveling, and voice clarity are explicitly outside OpenSynapse's product scope; reverse-engineering notes are retained as archival evidence only.
+- 读取电量、低电量阈值、轮询率、当前 DPI、休眠时间和完整 DPI 档位表。
+- 调整 `125 / 500 / 1000 Hz` 轮询率。
+- 调整 `100..30000`、步进 `50` 的 X/Y DPI。
+- 调整休眠时间和最多 5 档 DPI 配置。
+- 读取并编辑固定 Profile 1 的 Normal / HyperShift 板载映射。
+- 支持关闭、鼠标键、键盘按键、双击、DPI 循环、播放/暂停、HyperShift、键盘 Turbo 和鼠标 Turbo 映射。
 
-Device identity, collection matching, transport delay, and admitted request headers live in strict embedded JSON manifests under `src/OpenSynapse.Windows/Devices/Manifests`. A same-family device still requires a reviewed built-in manifest and hardware evidence; unknown fields, families, capabilities, duplicate VID/PIDs, malformed hex, oversized arguments, and unapproved transport exceptions fail closed. Dynamic values, parsers, current-path write gates, readback, cancellation, and restoration remain in strongly typed C# handlers. External drop-in manifests and arbitrary raw reports are intentionally unsupported.
+低电量阈值仅展示，不提供写入。当前设备不支持 `2000 / 4000 / 8000 Hz` HyperPolling。
 
-## Front end / back end
+### 应用功能
 
-- `src/OpenSynapse.App`: WinUI 3 window, bindings, refresh action, and user-facing states.
-- `src/OpenSynapse.Core`: device identity, performance snapshots, and hardware telemetry contracts.
-- `src/OpenSynapse.Windows`: Windows HID discovery, feature-report transport, evidence-gated Razer queries and writes, system telemetry, Core Audio M5 mute synchronization, and opt-in Blade mapping input hosts.
-- `tests/OpenSynapse.Core.Tests`: identity parsing, report validation, protocol replay, write/readback mismatch, boundary, and NVIDIA parser tests.
+- 本地配置的新建、克隆、重命名、删除、导入和导出。
+- 按前台应用或电源状态自动切换配置。
+- 托盘驻留和当前用户开机启动。
+- CPU、NVIDIA GPU、内存与磁盘实时遥测。
+- 中文和英文界面。
+- 本地滚动诊断日志：`%LocalAppData%\OpenSynapse\logs\opensynapse.log`。
 
-The WinUI project consumes `IDeviceDiscovery` and snapshots. It does not call `SetupAPI`, `hid.dll`, or any hardware API directly.
+## 截图
 
-## Build and test
+![平台状态](docs/screenshots/platform-status-zh.png)
+
+![Viper 设备页](docs/screenshots/devices-en.png)
+
+![板载映射](docs/screenshots/viper-mappings-zh.png)
+
+![托盘菜单](docs/screenshots/tray-menu.png)
+
+## 安装与运行
+
+1. 从 [Releases](https://github.com/A1mAssist/OpenSynapse/releases) 下载最新的 x64 压缩包。
+2. 完整解压压缩包，不要单独移动可执行文件，也不要删除旁边的 `resources` 目录。
+3. 运行根目录中的 `OpenSynapse.exe`。
+
+首次探测设备时建议退出 Razer Synapse。两者可能争用同一个 HID 控制通道；OpenSynapse 会报告访问失败，但不会结束 Synapse 进程。
+
+Fn 媒体键、M3/M5 指示灯同步依赖本机已安装的 Razer AppEngine。仓库和发布包不再分发 Razer 的 `mapping_engine.dll`；缺少该组件时，应用仍可运行，但对应后台同步会保持禁用。
+
+## 与 Razer Synapse 的关系
+
+对上表中的日常功能，OpenSynapse 可以在不运行 Synapse 的情况下工作，但它不是雷云的完整替代品。以下功能明确不在当前范围内：
+
+- 固件更新和 Razer 账号/云服务。
+- THX Spatial Audio、EQ、音量均衡和语音清晰度。
+- Chroma Studio 高级编辑器和宏编辑器。
+- GPU MUX、AMD Curve Optimizer 和未经验证的电池策略写入。
+- Blade 手动固定风扇和智能风扇曲线的生产写入。
+- Viper 低电量阈值、电池类型和 `2K / 4K / 8K` 轮询率写入。
+
+## 安全原则
+
+硬件写入只有在当前设备路径读取成功后才会启用。写入流程会进行读回，并在失败或取消时恢复已确认状态。设备断开、访问被拒绝或读回不完整时，对应控件保持禁用。
+
+协议状态和能力边界见 [设备能力矩阵](docs/device-capability-matrix.md)。硬件抓包和本机验证产物不随仓库分发；逆向资料也不会自动变成生产写入口。
+
+## 从源码构建
+
+需要 Windows 11 x64、.NET 10 SDK 和 Windows SDK `10.0.26100`。
 
 ```powershell
 dotnet restore OpenSynapse.slnx
-dotnet test tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj
-dotnet build OpenSynapse.slnx
-dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -p:Platform=x64
+dotnet build OpenSynapse.slnx -c Release
+dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
+dotnet test tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj -c Release -p:Platform=x64
 ```
 
-Run the opt-in hardware smoke tests. They read Blade platform state, change Blade brightness by one raw step, and temporarily change the three supported Viper settings. Every changed value is read back and restored:
+运行本地构建：
 
 ```powershell
-$env:OPENSYNAPSE_HARDWARE_TEST='1'
-dotnet test tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj --filter 'Category=Hardware'
+& '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
 
-Run the debug executable after the build:
+默认测试不会写入硬件。实机测试必须显式启用，并会在测试结束前读回和恢复原值：
 
 ```powershell
-& .\src\OpenSynapse.App\bin\x64\Debug\net10.0-windows10.0.19041.0\OpenSynapse.App.exe
+$env:OPENSYNAPSE_HARDWARE_TEST = '1'
+dotnet test tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj -c Release -p:Platform=x64 --filter 'Category=Hardware'
 ```
 
-Close Razer Synapse during the first hardware probe so the access state can be observed without a competing owner. The app never terminates Synapse itself.
+## 项目结构
 
-Run the GET-only protocol probe. By default it uses only locally verified reads; `--include-source-backed` adds the compiled source-backed GET list. The probe accepts no arbitrary class, command, argument, or SET input and omits HID paths from JSON:
+- `src/OpenSynapse.App`：WinUI 3 界面、托盘、配置与用户交互。
+- `src/OpenSynapse.Core`：设备、配置、显示和遥测契约。
+- `src/OpenSynapse.Windows`：Windows HID、设备协议、灯光、音频和系统集成。
+- `tests/OpenSynapse.Core.Tests`：协议字节、边界、读回、恢复与生命周期测试。
+- `docs`：能力矩阵、前端契约和协议证据。
 
-```powershell
-dotnet run --project tools/OpenSynapse.ProtocolProbe/OpenSynapse.ProtocolProbe.csproj -- `
-  --output artifacts/protocol/2026-08-12/verified.json
+## 许可与致谢
 
-dotnet run --project tools/OpenSynapse.ProtocolProbe/OpenSynapse.ProtocolProbe.csproj -- `
-  --include-source-backed `
-  --output artifacts/protocol/2026-08-12/source-backed.json
-```
+项目代码采用 [MIT License](LICENSE)。第三方组件和随附资源遵循各自的许可证与分发条款。
 
-Probe exit codes are `0` for successful results, `1` for query errors, `2` when no matching available device/result exists, and `64` for invalid options. Hardware smoke tests require `OPENSYNAPSE_HARDWARE_TEST=1`, and every supported write test restores the original value.
+协议实现参考并交叉验证了 [OpenRazer](https://github.com/openrazer/openrazer)、[OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) 及其他公开实现。OpenSynapse 与 Razer Inc. 无隶属或认可关系，Razer 及相关产品名称是其各自所有者的商标。
 
-Run the read-only Core Audio mute source check. It does not open Razer HID handles, send feature reports, or require OpenSynapse to be closed:
-
-```powershell
-dotnet run --project tools/OpenSynapse.HardwareValidation/OpenSynapse.HardwareValidation.csproj -c Release -- `
-  --core-audio-mute-read
-```
-
-## Protocol sources
-
-The 91-byte Windows feature-report layout, CRC, response states, and device commands are based on protocol facts documented and implemented by OpenRazer, cross-checked against OpenRGB, and verified against the two local HID collections. Relevant upstream sources:
-
-- OpenRazer `razercommon.h` and `razercommon.c`: report layout, CRC, retry, and response status.
-- OpenRazer `razerchromacommon.c`: Blade brightness and Viper battery, polling-rate, DPI, and idle-timeout commands.
-- OpenRazer device support PRs `#2450` (`02C6`) and `#2149` (`00B8`).
-- `blauzim/razer-ctl` (MIT): exact `RZ09-05286`, PID `02C6` performance, fan-state, and charge-limit commands and readbacks.
-- `encomjp/razer-control-revived` (GPL-2.0): independent `02C6` device table and fan bounds used only as corroborating protocol evidence.
-
-OpenRazer is GPL-2.0-or-later. This repository does not yet declare a distribution license; do not redistribute binaries until the project license and attribution requirements are finalized.
+Made with ❤ in C# by [A1mAssist](https://github.com/A1mAssist).

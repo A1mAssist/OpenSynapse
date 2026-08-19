@@ -49,6 +49,8 @@ public static class ProbeCatalog
             0xFF, 0x03, 0x03, 0x82, new byte[] { 0x01, 0x04, 0x00 }, 2),
         new(0x00B8, "viper.battery", ProbeEvidenceLevel.Verified,
             0x1F, 0x02, 0x07, 0x80, Array.Empty<byte>(), 60),
+        FromRequest(0x00B8, "viper.battery-chemistry", ProbeEvidenceLevel.SourceBacked,
+            ViperBatteryChemistryProtocol.CreateGetRequest(), 60, 0),
         new(0x00B8, "viper.polling-rate", ProbeEvidenceLevel.Verified,
             0x1F, 0x01, 0x00, 0x85, Array.Empty<byte>(), 60),
         new(0x00B8, "viper.current-dpi", ProbeEvidenceLevel.Verified,

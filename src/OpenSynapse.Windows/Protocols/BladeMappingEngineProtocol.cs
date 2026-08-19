@@ -229,6 +229,32 @@ public static class BladeMappingEngineProtocol
         return Convert.ToHexStringLower(digest);
     }
 
+    public static bool IsGameModeToggleInput(string inputJson)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(inputJson);
+        try
+        {
+            using var document = JsonDocument.Parse(inputJson);
+            var input = document.RootElement;
+            return input.ValueKind == JsonValueKind.Object &&
+                input.TryGetProperty("type", out var type) &&
+                type.ValueKind == JsonValueKind.String &&
+                type.GetString() == "razerKey" &&
+                input.TryGetProperty("key", out var key) &&
+                key.TryGetInt32(out var keyValue) &&
+                keyValue == 0x03 &&
+                input.TryGetProperty("flag", out var flag) &&
+                flag.TryGetInt32(out var flagValue) &&
+                flagValue == 0 &&
+                (!input.TryGetProperty("hypershift", out var hyperShift) ||
+                    hyperShift.ValueKind == JsonValueKind.False);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     internal static string SerializeCanonicalForHash(JsonObject graph)
     {
         ArgumentNullException.ThrowIfNull(graph);

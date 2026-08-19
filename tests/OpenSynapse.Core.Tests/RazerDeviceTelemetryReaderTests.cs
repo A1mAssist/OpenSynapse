@@ -1017,13 +1017,17 @@ public sealed class RazerDeviceTelemetryReaderTests
     }
 
     [Fact]
-    public async Task RejectsUnverifiedBladeLogoBreathingTarget()
+    public async Task WritesBladeLogoBreathingWithReadback()
     {
-        var reader = new RazerDeviceTelemetryReader(new FakeRazerFeatureTransport());
+        var transport = new FakeRazerFeatureTransport();
+        var reader = new RazerDeviceTelemetryReader(transport);
         await reader.ReadAsync(new[] { Blade });
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
-            await reader.SetBladeLogoModeAsync(new[] { Blade }, BladeLogoMode.Breathing));
+        var actual = await reader.SetBladeLogoModeAsync(new[] { Blade }, BladeLogoMode.Breathing);
+
+        Assert.Equal(BladeLogoMode.Breathing, actual);
+        Assert.True(transport.LogoPowered);
+        Assert.Equal(BladeLogoMode.Breathing, transport.LogoPoweredMode);
     }
 
     [Fact]

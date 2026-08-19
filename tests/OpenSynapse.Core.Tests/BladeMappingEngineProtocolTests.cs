@@ -23,6 +23,17 @@ public sealed class BladeMappingEngineProtocolTests
     }
 
     [Fact]
+    public void RecognizesOnlyNormalLayerM3PressAsGameModeToggle()
+    {
+        Assert.True(BladeMappingEngineProtocol.IsGameModeToggleInput(
+            "{\"type\":\"razerKey\",\"key\":3,\"flag\":0,\"hypershift\":false}"));
+        Assert.False(BladeMappingEngineProtocol.IsGameModeToggleInput(
+            "{\"type\":\"razerKey\",\"key\":3,\"flag\":1}"));
+        Assert.False(BladeMappingEngineProtocol.IsGameModeToggleInput(
+            "{\"type\":\"razerKey\",\"key\":3,\"flag\":0,\"hypershift\":true}"));
+    }
+
+    [Fact]
     public void HyperShiftActivatorMatchesProduct710Dkm03Graph()
     {
         var pair = BladeMappingEngineProtocol.CreateRazerKeyHyperShiftPair();

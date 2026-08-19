@@ -2,7 +2,7 @@
 
 The probe writes UTF-8 JSON with `CapturedAt`, collection identity, and `Results`. Each result contains `ProductId`, stable command `Name`, `Evidence`, exact 91-byte `RequestHex`, optional 91-byte `ResponseHex`, response status, and error text.
 
-Artifacts must not contain the HID device path, Windows account name, machine name, serial number, Razer account data, or cloud tokens. Store local runs under `artifacts/protocol/YYYY-MM-DD/`; do not treat them as product configuration.
+Artifacts must not contain the HID device path, Windows account name, machine name, serial number, Razer account data, or cloud tokens. Store local runs under `artifacts/protocol/YYYY-MM-DD/`; do not treat them as product configuration. Hardware captures are local validation output and are intentionally ignored by the clean repository.
 
 A successful response proves only that the GET command is accepted by the exact PID/collection. It does not prove that a related SET command, value range, persistence rule, or similarly numbered command is safe.
 

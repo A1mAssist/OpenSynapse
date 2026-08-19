@@ -1,9 +1,0 @@
-{
-  "StartedAt": "2026-08-15T13:08:21.6961809+00:00",
-  "CompletedAt": "2026-08-15T13:08:22.2385678+00:00",
-  "Device": "1532:00B8",
-  "Collection": "0001:0002",
-  "FeatureReportByteLength": 91,
-  "Snapshot": null,
-  "Error": "Viper OBM \u6620\u5C04\u54CD\u5E94\u4E0E\u8BF7\u6C42\u7684 Profile\u3001Button \u6216\u5C42\u4E0D\u4E00\u81F4\u3002"
-}

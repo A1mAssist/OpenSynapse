@@ -1068,10 +1068,10 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         BladeLogoMode mode,
         CancellationToken cancellationToken = default)
     {
-        if (mode is not (BladeLogoMode.Off or BladeLogoMode.Static))
+        if (mode is not (BladeLogoMode.Off or BladeLogoMode.Static or BladeLogoMode.Breathing))
         {
             throw new ArgumentOutOfRangeException(
-                nameof(mode), "生产控制只允许已验证的 Logo Off 或 Static。");
+                nameof(mode), "不支持的 Logo 模式。");
         }
 
         var blade = FindReadyDevice(devices, "blade-710")
@@ -1129,6 +1129,21 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         BladeLogoMode combinedMode,
         CancellationToken cancellationToken)
     {
+        if (combinedMode == BladeLogoMode.Breathing)
+        {
+            await QueryBuiltRequestAsync(
+                device,
+                "logo-effect.set",
+                BladeSynapsePolicyProtocol.CreateSetLogoEffectRequest(BladeLogoMode.Breathing),
+                cancellationToken);
+            await QueryBuiltRequestAsync(
+                device,
+                "logo-state.set",
+                BladeSynapsePolicyProtocol.CreateSetLogoStateRequest(BladeLogoMode.Breathing),
+                cancellationToken);
+            return;
+        }
+
         if (combinedMode == BladeLogoMode.Static)
         {
             await QueryBuiltRequestAsync(

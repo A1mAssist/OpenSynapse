@@ -16,6 +16,7 @@
     <FileVersion>0.1.0.0</FileVersion>
     <InformationalVersion>0.1.0</InformationalVersion>
     <SatelliteResourceLanguages>zh-CN;en-US</SatelliteResourceLanguages>
+    <DefaultLanguage>zh-CN</DefaultLanguage>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <Nullable>enable</Nullable>
@@ -32,9 +33,6 @@
     <Content Include="Assets\OpenSynapse.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Native\Razer\mapping_engine.dll"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Native\Razer\Product710Mapping.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />

@@ -5,6 +5,9 @@ namespace OpenSynapse.Windows.Lighting;
 
 internal static class BladeLightingProfileCodec
 {
+    private static readonly RazerRgb DefaultColor = new(0x99, 0xDD, 0x72);
+    private static readonly RazerRgb DefaultSecondColor = new(0x00, 0x66, 0xFF);
+
     internal static BladeLightingEffect Parse(LightingProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
@@ -24,10 +27,10 @@ internal static class BladeLightingProfileCodec
             throw new InvalidOperationException($"灯效 {profile.Effect} 包含不支持的参数。");
         }
 
-        var color = parameters.TryGetValue("color", out var hex) ? ParseColor(hex) : default;
+        var color = parameters.TryGetValue("color", out var hex) ? ParseColor(hex) : DefaultColor;
         var secondColor = parameters.TryGetValue("color2", out var secondHex)
             ? ParseColor(secondHex)
-            : default;
+            : DefaultSecondColor;
         var direction = ParseDirection(parameters);
         return new BladeLightingEffect(mode switch
         {

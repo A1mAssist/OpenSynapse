@@ -14,7 +14,11 @@ public sealed class BladeLightingProfileCodecTests
     [InlineData("ambient", BladeLightingMode.Ambient)]
     public void ParsesParameterlessModes(string name, BladeLightingMode expected)
     {
-        Assert.Equal(expected, BladeLightingProfileCodec.Parse(new LightingProfile { Effect = name }).Mode);
+        var effect = BladeLightingProfileCodec.Parse(new LightingProfile { Effect = name });
+
+        Assert.Equal(expected, effect.Mode);
+        Assert.Equal(new RazerRgb(0x99, 0xDD, 0x72), effect.Color);
+        Assert.Equal(new RazerRgb(0x00, 0x66, 0xFF), effect.SecondColor);
     }
 
     [Theory]

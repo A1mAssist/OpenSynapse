@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="OpenSynapse.App" />
     <InternalsVisibleTo Include="OpenSynapse.Core.Tests" />
     <InternalsVisibleTo Include="OpenSynapse.HardwareValidation" />

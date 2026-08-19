@@ -102,6 +102,12 @@ public static class ViperProduct184Protocol
         return Create(0x01, 0x07, 0x14, (byte)chemistry);
     }
 
+    public static byte[] CreateGetBatteryChemistryRequest() =>
+        Create(0x01, 0x07, 0x94);
+
+    public static ViperBatteryChemistry ParseBatteryChemistry(ReadOnlySpan<byte> response) =>
+        ViperBatteryChemistryProtocol.ParseGetResponse(response);
+
     public static int ParseBatteryPercent(ReadOnlySpan<byte> response) =>
         ParseBatteryPercent(response, CreateGetBatteryRequest());
 

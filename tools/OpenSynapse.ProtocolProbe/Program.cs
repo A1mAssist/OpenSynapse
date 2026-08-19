@@ -130,6 +130,8 @@ internal static class Program
                         BladeMaxFanProtocol.ParsePowerModeMask(response)),
                     "viper.low-battery-threshold" => ViperLowBatteryThresholdProtocol.Format(
                         ViperLowBatteryThresholdProtocol.ParseRaw(response)),
+                    "viper.battery-chemistry" =>
+                        ViperBatteryChemistryProtocol.ParseGetResponse(response).ToString(),
                     "viper.dpi-stages" => ViperDpiStagesProtocol.Format(
                         ViperDpiStagesProtocol.Parse(response)),
                     _ => null,
