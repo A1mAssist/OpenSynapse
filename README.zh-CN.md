@@ -67,8 +67,7 @@ OpenSynapse 可以在不让 Razer Synapse 常驻的情况下，读取设备状�
 
 ### 驱动边界
 
-OpenSynapse 不需要 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能需要 Product 710 的 Razer 设备驱动。使用这些功能前，请从 Razer 或 Blade 对应的设备支持包安装匹配驱动；未安装驱动时，Blade Fn 和相关硬件控制会保持不可用。OpenSynapse 不打包或重新分发驱动文件。
-
+OpenSynapse 不需要 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能需要 Product 710 的 Razer 设备驱动。使用这些功能前，请从 Razer 或 Blade 对应的设备支持包安装匹配驱动；未安装驱动时，Blade Fn 和相关硬件控制会保持不可用。
 ## 当前不包含
 
 - 固件更新、Razer 账号和云服务。
@@ -112,3 +111,6 @@ dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x
 协议实现参考并交叉验证了 [OpenRazer](https://github.com/openrazer/openrazer)、[OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) 及其他公开实现。OpenSynapse 与 Razer Inc. 无隶属或认可关系，Razer 及相关产品名称是其各自所有者的商标。
 
 Made with ❤ in C# by [A1mAssist](https://github.com/A1mAssist).
+
+abc def ghi jkl mno pqr stu
+abc def ghi jkl mno pqr stu
