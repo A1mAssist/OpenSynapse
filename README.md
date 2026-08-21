@@ -93,12 +93,6 @@ Run the local build:
 & '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
 
-Build the installer, portable archive, and Velopack update assets:
-
-```powershell
-.\scripts\Publish-VelopackRelease.ps1 -Version 1.1.0
-```
-
 Release packages are not code signed, so Windows SmartScreen may display a warning.
 
 ## Contributing
