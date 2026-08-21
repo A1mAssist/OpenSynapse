@@ -1451,7 +1451,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
             var blade = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "blade-710");
             var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "viper-184");
-            ViperDeviceVisibility = viper is null ? Visibility.Collapsed : Visibility.Visible;
             SetBladeControlDevicePath(
                 blade is
                 {
@@ -1489,16 +1488,32 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
                 ? null
                 : await ApplyLoadedLightingProfileAsync(blade, powerState, cancellationToken);
+            var viperAvailable = viper is not null &&
+                DeviceRowViewModel.CountCapabilities("viper-184", telemetry).Successful > 0;
+            var visibleDevices = viperAvailable
+                ? snapshot.Devices
+                : snapshot.Devices.Where(device => device.ProtocolFamily != "viper-184").ToArray();
+            _deviceDescriptors = visibleDevices;
+            ViperDeviceVisibility = viperAvailable ? Visibility.Visible : Visibility.Collapsed;
+            if (!viperAvailable)
+            {
+                ResetViperTelemetry();
+                ViperStatusText = "未发现";
+            }
             Devices.Clear();
-            foreach (var device in snapshot.Devices)
+            foreach (var device in visibleDevices)
             {
                 Devices.Add(new DeviceRowViewModel(device, telemetry));
             }
 
-            var errors = telemetry.Errors.ToList();
+            var errors = telemetry.Errors
+                .Where(error => viperAvailable || !error.StartsWith("鼠标", StringComparison.Ordinal))
+                .ToList();
             if (profileApply is { Errors.Count: > 0 })
             {
-                errors.AddRange(profileApply.Errors.Select(error => $"配置应用：{error}"));
+                errors.AddRange(profileApply.Errors
+                    .Where(error => viperAvailable || !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
+                    .Select(error => $"配置应用：{error}"));
             }
             if (!string.IsNullOrWhiteSpace(lightingError))
             {
@@ -1513,7 +1528,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 errors.Insert(0, snapshot.ErrorMessage);
             }
 
-            RebuildDiagnostics(snapshot, telemetry, errors);
+            RebuildDiagnostics(snapshot with { Devices = visibleDevices }, telemetry, errors);
             SetDeviceQueryError(errors.Count == 0
                 ? string.Empty
                 : AppStrings.Format(
@@ -2893,6 +2908,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
         OnPropertyChanged(nameof(CanSetBladeGpuBoost));
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
+        ResetViperTelemetry();
+        DeviceTelemetryTimeText = "正在查询硬件";
+    }
+
+    private void ResetViperTelemetry()
+    {
         ViperStatusText = "探测中";
         ViperDpiStagesText = "--";
         ViperLowBatteryThresholdText = "--";
@@ -2924,7 +2945,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         _canSetViperButtonMappings = false;
         OnPropertyChanged(nameof(CanReadViperButtonMappings));
         OnPropertyChanged(nameof(CanSetViperButtonMappings));
-        DeviceTelemetryTimeText = "正在查询硬件";
     }
 
     private static string FormatDeviceStatus(DeviceDescriptor? device) => device switch
