@@ -720,14 +720,14 @@ public partial class App : Application
                 CommandKind: BladeMappingOutputKind.Display,
                 Command: BladeMappingCommand.DriverBrightnessDown,
             }:
-                await _displayBrightnessController.StepAsync(false, cancellationToken).ConfigureAwait(true);
+                await TryStepDisplayBrightnessAsync(false, cancellationToken).ConfigureAwait(true);
                 break;
             case BladeCommandMappingAction
             {
                 CommandKind: BladeMappingOutputKind.Display,
                 Command: BladeMappingCommand.DriverBrightnessUp,
             }:
-                await _displayBrightnessController.StepAsync(true, cancellationToken).ConfigureAwait(true);
+                await TryStepDisplayBrightnessAsync(true, cancellationToken).ConfigureAwait(true);
                 break;
             case BladeCommandMappingAction
             {
@@ -763,6 +763,33 @@ public partial class App : Application
             default:
                 throw new InvalidOperationException(
                     $"Unsupported Blade Fn leaf action: {action}.");
+        }
+    }
+
+    private async Task TryStepDisplayBrightnessAsync(
+        bool increase,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _displayBrightnessController.StepAsync(increase, cancellationToken)
+                .ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (System.Runtime.InteropServices.COMException exception)
+        {
+            // Some Blade/OLED configurations do not expose the Windows brightness override API.
+            // Brightness is optional; it must not tear down the entire Fn input pipeline.
+            _diagnosticLog.TryWrite("blade-fn", $"display brightness unavailable: {exception.Message}");
+        }
+        catch (InvalidOperationException exception)
+        {
+            // Some Blade/OLED configurations do not expose the Windows brightness override API.
+            // Brightness is optional; it must not tear down the entire Fn input pipeline.
+            _diagnosticLog.TryWrite("blade-fn", $"display brightness unavailable: {exception.Message}");
         }
     }
 
