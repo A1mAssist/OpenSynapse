@@ -41,9 +41,9 @@ OpenSynapse 是一款面向 Windows 11 的轻量级 Razer 设备控制工具。�
 
 ## 安装与运行
 
-1. 从 [Releases](https://github.com/A1mAssist/OpenSynapse/releases) 下载最新的 x64 压缩包。
-2. 完整解压压缩包，不要单独移动可执行文件，也不要删除旁边的 `resources` 目录。
-3. 运行根目录中的 `OpenSynapse.exe`。
+1. 从 [Releases](https://github.com/A1mAssist/OpenSynapse/releases) 下载最新的 `OpenSynapse-win-Setup.exe`。
+2. 运行安装包；应用安装到当前用户目录，不需要管理员权限。
+3. 便携版仍可使用，但旧压缩包不支持应用内自动更新。
 
 首次探测设备时建议退出 Razer Synapse。两者可能争用同一个 HID 控制通道；OpenSynapse 会报告访问失败，但不会结束 Synapse 进程。
 
@@ -71,6 +71,14 @@ dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x
 ```powershell
 & '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
+
+生成安装包、便携包和 Velopack 更新资产：
+
+```powershell
+.\scripts\Publish-VelopackRelease.ps1 -Version 1.0.3
+```
+
+设置 `GITHUB_TOKEN` 后追加 `-Upload`，即可创建公开 GitHub Release 并上传更新源资产。
 
 ## 许可与致谢
 

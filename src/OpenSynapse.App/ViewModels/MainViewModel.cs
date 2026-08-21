@@ -59,6 +59,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private readonly IPowerSourceProvider _powerSourceProvider;
     private readonly IActiveApplicationProvider _activeApplicationProvider;
     private readonly LocalDiagnosticLog _diagnosticLog;
+    private HashSet<BladePerformanceMode> _bladePerformanceCycleModes =
+        [.. BladePerformanceModes];
+    private HashSet<int>? _internalDisplayRefreshRateCycleHertz;
+    private IReadOnlyList<BladePerformanceMode>? _legacyPerformanceCycleModes;
+    private IReadOnlyList<int>? _legacyRefreshRateCycleHertz;
+    private string _activeBladeMappingPreset = BladeProfileSettings.Product710DefaultMappingPreset;
+    private bool _activeSnapTapEnabled;
     private readonly IInternalDisplayController? _internalDisplayController;
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly WindowsStartupManager? _startupManager;
@@ -175,6 +182,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private int _viperButtonMappingLayerIndex;
     private bool _canReadViperButtonMappings;
     private bool _canSetViperButtonMappings;
+    private string _viperMappingProfileFingerprint = string.Empty;
     private string _deviceFingerprint = string.Empty;
     private string _lightingShadowFingerprint = string.Empty;
     private string _bladeLightingDevicePath = string.Empty;
@@ -183,6 +191,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private string? _bladeControlDevicePath;
     private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _deviceRefreshRequested;
+    private int _displayProfileApplyRequested;
     private string _cpuName = "CPU";
     private string _cpuValue = "--";
     private double _cpuPercent;
@@ -244,6 +253,113 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public event PropertyChangedEventHandler? PropertyChanged;
     internal event Action<string?>? BladeControlDevicePathChanged;
+    internal event Action<BladePerformanceMode>? BladePerformanceModeChangedByUser;
+    internal event Action<bool>? BladeGamingModeChangedByUser;
+    internal event Action? BladeInputProfileChanged;
+
+    internal IReadOnlySet<BladePerformanceMode> BladePerformanceCycleModes =>
+        _bladePerformanceCycleModes;
+    internal IReadOnlySet<int>? InternalDisplayRefreshRateCycleHertz =>
+        _internalDisplayRefreshRateCycleHertz;
+    internal bool ActiveSnapTapEnabled => _activeSnapTapEnabled;
+    internal string ActiveBladeMappingPreset => _activeBladeMappingPreset;
+
+    internal void SetLegacyShortcutCycleDefaults(
+        IEnumerable<BladePerformanceMode> performanceModes,
+        IEnumerable<int>? refreshRates)
+    {
+        _legacyPerformanceCycleModes = performanceModes
+            .Where(BladePerformanceModes.Contains)
+            .Distinct()
+            .ToArray();
+        _legacyRefreshRateCycleHertz = refreshRates?
+            .Where(hertz => hertz > 0)
+            .Distinct()
+            .Order()
+            .ToArray();
+    }
+
+    internal void SetBladePerformanceCycleModes(IEnumerable<BladePerformanceMode> modes)
+    {
+        var selected = modes.Where(BladePerformanceModes.Contains).ToHashSet();
+        if (selected.Count == 0)
+        {
+            throw new ArgumentException("At least one performance mode must remain in the shortcut cycle.", nameof(modes));
+        }
+        _bladePerformanceCycleModes = selected;
+    }
+
+    internal void SetInternalDisplayRefreshRateCycle(IEnumerable<int> refreshRates)
+    {
+        var selected = refreshRates.Where(hertz => hertz > 0).ToHashSet();
+        if (selected.Count == 0)
+        {
+            throw new ArgumentException("At least one refresh rate must remain in the shortcut cycle.", nameof(refreshRates));
+        }
+        _internalDisplayRefreshRateCycleHertz = selected;
+    }
+
+    internal async Task<bool> SavePerformanceCycleModesAsync(
+        IEnumerable<BladePerformanceMode> modes,
+        CancellationToken cancellationToken = default)
+    {
+        var selected = modes.Where(BladePerformanceModes.Contains).Distinct().ToArray();
+        if (selected.Length == 0)
+        {
+            return false;
+        }
+
+        var previous = _bladePerformanceCycleModes;
+        _bladePerformanceCycleModes = selected.ToHashSet();
+        GetActiveProfile().Shortcuts.PerformanceCycleModes = selected.ToList();
+        if (await SaveProfileAsync(cancellationToken))
+        {
+            OnPropertyChanged(nameof(BladePerformanceCycleModes));
+            return true;
+        }
+
+        _bladePerformanceCycleModes = previous;
+        GetActiveProfile().Shortcuts.PerformanceCycleModes = previous.ToList();
+        return false;
+    }
+
+    internal async Task<bool> SaveRefreshRateCycleAsync(
+        IEnumerable<int> refreshRates,
+        CancellationToken cancellationToken = default)
+    {
+        var selected = refreshRates.Where(hertz => hertz > 0).Distinct().Order().ToArray();
+        if (selected.Length == 0)
+        {
+            return false;
+        }
+
+        var previous = _internalDisplayRefreshRateCycleHertz;
+        _internalDisplayRefreshRateCycleHertz = selected.ToHashSet();
+        GetActiveProfile().Shortcuts.RefreshRateCycleHertz = selected.ToList();
+        if (await SaveProfileAsync(cancellationToken))
+        {
+            OnPropertyChanged(nameof(InternalDisplayRefreshRateCycleHertz));
+            return true;
+        }
+
+        _internalDisplayRefreshRateCycleHertz = previous;
+        GetActiveProfile().Shortcuts.RefreshRateCycleHertz = previous?.Order().ToList();
+        return false;
+    }
+
+    internal async Task SetBladeSnapTapEnabledAsync(
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var previous = _profile.Global.Blade.SnapTapEnabled;
+        _profile.Global.Blade.SnapTapEnabled = enabled;
+        if (!await SaveProfileAsync(cancellationToken))
+        {
+            _profile.Global.Blade.SnapTapEnabled = previous;
+            return;
+        }
+        _activeSnapTapEnabled = enabled;
+    }
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<DiagnosticRowViewModel> Diagnostics { get; } = new();
@@ -518,8 +634,43 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public bool CanSetViperButtonMappings => _canSetViperButtonMappings;
     public string InternalDisplayResolutionText { get => _internalDisplayResolutionText; private set => SetField(ref _internalDisplayResolutionText, value); }
     public string InternalDisplayRefreshRateText { get => _internalDisplayRefreshRateText; private set => SetField(ref _internalDisplayRefreshRateText, value); }
-    public IReadOnlyList<int> InternalDisplayRefreshRates { get => _internalDisplayRefreshRates; private set => SetField(ref _internalDisplayRefreshRates, value); }
-    public int InternalDisplayRefreshRateHertz { get => _internalDisplayRefreshRateHertz; set => SetField(ref _internalDisplayRefreshRateHertz, value); }
+    public IReadOnlyList<int> InternalDisplayRefreshRates
+    {
+        get => _internalDisplayRefreshRates;
+        private set
+        {
+            if (SetField(ref _internalDisplayRefreshRates, value))
+            {
+                OnPropertyChanged(nameof(InternalDisplayRefreshRateOptions));
+                OnPropertyChanged(nameof(InternalDisplayRefreshRateIndex));
+            }
+        }
+    }
+    public IReadOnlyList<string> InternalDisplayRefreshRateOptions => InternalDisplayRefreshRates
+        .Select(rate => $"{rate} Hz")
+        .ToArray();
+    public int InternalDisplayRefreshRateHertz
+    {
+        get => _internalDisplayRefreshRateHertz;
+        set
+        {
+            if (SetField(ref _internalDisplayRefreshRateHertz, value))
+            {
+                OnPropertyChanged(nameof(InternalDisplayRefreshRateIndex));
+            }
+        }
+    }
+    public int InternalDisplayRefreshRateIndex
+    {
+        get => Array.IndexOf(InternalDisplayRefreshRates.ToArray(), InternalDisplayRefreshRateHertz);
+        set
+        {
+            if (value >= 0 && value < InternalDisplayRefreshRates.Count)
+            {
+                InternalDisplayRefreshRateHertz = InternalDisplayRefreshRates[value];
+            }
+        }
+    }
     public bool CanSetInternalDisplayRefreshRate { get => _canSetInternalDisplayRefreshRate; private set => SetField(ref _canSetInternalDisplayRefreshRate, value); }
 
     public string EmptyStateText => Devices.Count == 0
@@ -548,6 +699,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public double StoragePercent { get => _storagePercent; private set => SetField(ref _storagePercent, value); }
 
     public void RequestDeviceRefresh() => Interlocked.Exchange(ref _deviceRefreshRequested, 1);
+
+    private void RequestProfileApply()
+    {
+        Interlocked.Exchange(ref _displayProfileApplyRequested, 1);
+        RequestDeviceRefresh();
+    }
 
     public void RefreshLocalization()
     {
@@ -610,7 +767,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         try
         {
             _profile = await _profileStore.LoadAsync(cancellationToken);
+            var migrated = EnsureActiveProfileExtensions();
             RefreshProfileState();
+            if (migrated)
+            {
+                await _profileStore.SaveAsync(_profile, cancellationToken);
+            }
             RefreshStartupState();
             ProfileStatusText = AppStrings.Format("ProfileLoaded", "本地配置已加载 · {0}", ActiveProfileName);
         }
@@ -618,7 +780,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             throw;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             _profile = ProfileDocument.CreateDefault();
             RefreshProfileState();
@@ -866,7 +1029,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             await operation();
             await _profileStore.SaveAsync(_profile, cancellationToken);
-            RequestDeviceRefresh();
+            RequestProfileApply();
             ProfileStatusText = AppStrings.Format("ProfileOperationSucceeded", "{0} · {1}", label, ActiveProfileName);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -890,6 +1053,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     private void RefreshProfileState()
     {
+        EnsureActiveProfileExtensions();
+        var snapTap = _profile.Global.Blade.SnapTapEnabled == true;
+        var mappingPreset = _profile.Global.Blade.MappingPreset ??
+            BladeProfileSettings.Product710DefaultMappingPreset;
+        var bladeInputChanged = snapTap != _activeSnapTapEnabled ||
+            !StringComparer.Ordinal.Equals(mappingPreset, _activeBladeMappingPreset);
+        _activeSnapTapEnabled = snapTap;
+        _activeBladeMappingPreset = mappingPreset;
         ProfileNames.Clear();
         foreach (var name in ProfileCatalog.GetNames(_profile))
         {
@@ -897,6 +1068,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
 
         ActiveProfileName = _profile.ActiveProfileName;
+        var shortcuts = GetActiveProfile().Shortcuts;
+        _bladePerformanceCycleModes = shortcuts.PerformanceCycleModes!.ToHashSet();
+        _internalDisplayRefreshRateCycleHertz = shortcuts.RefreshRateCycleHertz?.ToHashSet();
         var lighting = BladeLightingProfileCodec.Parse(_profile.Global.Lighting);
         var lightingIndex = Array.IndexOf(BladeLightingModes, lighting.Mode);
         if (lightingIndex >= 0)
@@ -921,6 +1095,58 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(CanDeleteProfile));
+        OnPropertyChanged(nameof(BladePerformanceCycleModes));
+        OnPropertyChanged(nameof(InternalDisplayRefreshRateCycleHertz));
+        if (bladeInputChanged)
+        {
+            BladeInputProfileChanged?.Invoke();
+        }
+    }
+
+    private ProfileDefinition GetActiveProfile() =>
+        _profile.Profiles.TryGetValue(_profile.ActiveProfileName, out var profile)
+            ? profile
+            : throw new InvalidOperationException("The active profile is missing from the profile catalog.");
+
+    private bool EnsureActiveProfileExtensions()
+    {
+        var profile = GetActiveProfile();
+        var changed = false;
+        if (profile.Shortcuts.PerformanceCycleModes is null)
+        {
+            profile.Shortcuts.PerformanceCycleModes = (_legacyPerformanceCycleModes is { Count: > 0 }
+                    ? _legacyPerformanceCycleModes
+                    : BladePerformanceModes)
+                .Distinct()
+                .ToList();
+            changed = true;
+        }
+        if (profile.Shortcuts.RefreshRateCycleHertz is null)
+        {
+            var defaults = _legacyRefreshRateCycleHertz is { Count: > 0 }
+                ? _legacyRefreshRateCycleHertz
+                : InternalDisplayRefreshRates;
+            if (defaults.Count > 0)
+            {
+                profile.Shortcuts.RefreshRateCycleHertz = defaults
+                    .Where(hertz => hertz > 0)
+                    .Distinct()
+                    .Order()
+                    .ToList();
+                changed = true;
+            }
+        }
+        if (profile.Global.Blade.MappingPreset is null)
+        {
+            profile.Global.Blade.MappingPreset = BladeProfileSettings.Product710DefaultMappingPreset;
+            changed = true;
+        }
+        if (profile.Global.Blade.SnapTapEnabled is null)
+        {
+            profile.Global.Blade.SnapTapEnabled = false;
+            changed = true;
+        }
+        return changed;
     }
 
     private void RefreshStartupState()
@@ -968,6 +1194,78 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
         return result;
     }
+
+    private async Task<string?> ApplyLoadedViperMappingProfileAsync(
+        DeviceDescriptor? viper,
+        bool? powerState,
+        CancellationToken cancellationToken)
+    {
+        if (viper is null || viper.Access != DeviceAccessState.Available)
+        {
+            _viperMappingProfileFingerprint = string.Empty;
+            return null;
+        }
+
+        var profile = ProfileResolver.Resolve(_profile, viper, powerState).Viper;
+        var fingerprint = CreateViperMappingFingerprint(viper.Id, profile.ButtonAssignments);
+        if (StringComparer.Ordinal.Equals(_viperMappingProfileFingerprint, fingerprint))
+        {
+            return null;
+        }
+
+        try
+        {
+            IReadOnlyList<ViperButtonAssignment> actual;
+            if (profile.ButtonAssignments is null)
+            {
+                actual = await _deviceTelemetryReader.ReadViperButtonAssignmentsAsync(
+                    _deviceDescriptors, cancellationToken);
+                var previous = _profile.Global.Viper.ButtonAssignments;
+                _profile.Global.Viper.ButtonAssignments = actual.Select(ToProfileAssignment).ToList();
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    _profile.Global.Viper.ButtonAssignments = previous;
+                    return AppStrings.Get("鼠标映射已读取，但活动配置保存失败。");
+                }
+                fingerprint = CreateViperMappingFingerprint(
+                    viper.Id,
+                    _profile.Global.Viper.ButtonAssignments);
+            }
+            else
+            {
+                actual = await _deviceTelemetryReader.SetViperButtonAssignmentsAsync(
+                    _deviceDescriptors,
+                    profile.ButtonAssignments.Select(ToDeviceAssignment).ToArray(),
+                    cancellationToken);
+            }
+
+            SetViperButtonAssignments(actual);
+            _viperMappingProfileFingerprint = fingerprint;
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _viperMappingProfileFingerprint = string.Empty;
+            return AppStrings.Format("ViperMappingProfileError", "鼠标板载映射：{0}", exception.Message);
+        }
+    }
+
+    private string CreateViperMappingFingerprint(
+        string devicePath,
+        IReadOnlyList<ViperButtonAssignmentProfile>? assignments) =>
+        string.Join('|',
+            _profile.ActiveProfileName,
+            devicePath,
+            assignments is null
+                ? "unmanaged"
+                : string.Join(';', assignments
+                    .OrderBy(item => item.ButtonId)
+                    .ThenBy(item => item.Layer)
+                    .Select(item => $"{item.ProfileId:X2}:{item.ButtonId:X2}:{(byte)item.Layer:X2}:{(byte)item.Function:X2}:{Convert.ToHexString(item.FunctionData.ToArray())}")));
 
     private async Task<BladeFanProfileApplyResult> ApplyLoadedFanProfileAsync(
         DeviceDescriptor? blade,
@@ -1393,16 +1691,19 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                         }
                     }
                     var powerChanged = _lastPowerState != powerState;
+                    var displayProfileRequested =
+                        Interlocked.Exchange(ref _displayProfileApplyRequested, 0) != 0;
                     if (!StringComparer.Ordinal.Equals(_deviceFingerprint, CreateDeviceFingerprint(snapshot)) ||
                         powerChanged ||
                         profileChanged ||
+                        displayProfileRequested ||
                         refreshRequested ||
                         DateTimeOffset.UtcNow >= _nextFullDeviceRefresh)
                     {
                         await RefreshDevicesCoreAsync(
                             snapshot,
                             cancellationToken,
-                            applyDisplayProfile: powerChanged || profileChanged);
+                            applyDisplayProfile: powerChanged || profileChanged || displayProfileRequested);
                     }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -1479,6 +1780,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     await StopBladeFanControlAsync("profile-error"),
                     Changed: true)
                 : await ApplyLoadedFanProfileAsync(blade, powerState, cancellationToken);
+            var viperMappingError = await ApplyLoadedViperMappingProfileAsync(
+                viper, powerState, cancellationToken);
+            if (viperMappingError is not null)
+            {
+                SetDeviceOperationError(viperMappingError);
+            }
             if (fanApply.Changed && blade is { Access: DeviceAccessState.Available })
             {
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
@@ -1522,6 +1829,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             if (!string.IsNullOrWhiteSpace(fanApply.Error))
             {
                 errors.Add($"风扇控制：{fanApply.Error}");
+            }
+            if (!string.IsNullOrWhiteSpace(viperMappingError) && viperAvailable)
+            {
+                errors.Add(viperMappingError);
             }
             if (!string.IsNullOrWhiteSpace(snapshot.ErrorMessage))
             {
@@ -1687,6 +1998,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _profile.Global.Blade.PerformanceMode = (byte)actual;
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
+            BladePerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
             BladePerformanceModeIndex = _confirmedBladePerformanceModeIndex);
     }
@@ -1831,8 +2143,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 throw new InvalidOperationException(AppStrings.Get("性能模式状态不可用。"));
             }
 
-            BladePerformanceModeIndex =
-                (_confirmedBladePerformanceModeIndex + 1) % BladePerformanceModes.Length;
+            var nextMode = BladePerformanceModeCycle.GetNext(
+                BladePerformanceModes[_confirmedBladePerformanceModeIndex],
+                BladePerformanceModes,
+                _bladePerformanceCycleModes);
+            BladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, nextMode);
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 _deviceDescriptors,
                 BladePerformanceModes[BladePerformanceModeIndex],
@@ -1841,6 +2156,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _profile.Global.Blade.PerformanceMode = (byte)actual;
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
+            BladePerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
             BladePerformanceModeIndex = _confirmedBladePerformanceModeIndex);
     }
@@ -1862,6 +2178,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 cancellationToken);
             SetBladeGameMode(actual);
             RequestDeviceRefresh();
+            BladeGamingModeChangedByUser?.Invoke(actual.GameMode != 0);
         }, cancellationToken);
     }
 
@@ -1879,6 +2196,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 cancellationToken);
             SetBladeGameMode(actual);
             RequestDeviceRefresh();
+            BladeGamingModeChangedByUser?.Invoke(actual.GameMode != 0);
         }, cancellationToken, () =>
             BladeGameModeEnabled = _bladeGameModeState != 0);
     }
@@ -1913,11 +2231,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 throw new InvalidOperationException(AppStrings.Get("内置屏刷新率状态不可用。"));
             }
 
-            var currentIndex = Array.IndexOf(
-                InternalDisplayRefreshRates.ToArray(),
-                _confirmedInternalDisplayRefreshRateHertz);
-            InternalDisplayRefreshRateHertz = InternalDisplayRefreshRates[
-                (Math.Max(currentIndex, 0) + 1) % InternalDisplayRefreshRates.Count];
+            var includedRates = _internalDisplayRefreshRateCycleHertz is { Count: > 0 }
+                ? _internalDisplayRefreshRateCycleHertz
+                : InternalDisplayRefreshRates.ToHashSet();
+            InternalDisplayRefreshRateHertz = BladePerformanceModeCycle.GetNext(
+                _confirmedInternalDisplayRefreshRateHertz,
+                InternalDisplayRefreshRates,
+                includedRates);
             var snapshot = _internalDisplayController.SetRefreshRate(
                 InternalDisplayRefreshRateHertz);
             ApplyInternalDisplaySnapshot(snapshot);
@@ -2100,22 +2420,19 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
         await RunDeviceOperationAsync("鼠标板载映射", async () =>
         {
+            var previousProfileAssignments = _profile.Global.Viper.ButtonAssignments;
             var assignments = await _deviceTelemetryReader.ReadViperButtonAssignmentsAsync(
                 _deviceDescriptors, cancellationToken);
-            ViperButtonAssignments.Clear();
-            foreach (var assignment in assignments
-                .OrderBy(item => item.ButtonId)
-                .ThenBy(item => item.Layer))
+            SetViperButtonAssignments(assignments);
+            _profile.Global.Viper.ButtonAssignments = assignments
+                .Select(ToProfileAssignment)
+                .ToList();
+            if (!await SaveProfileAsync(cancellationToken))
             {
-                ViperButtonAssignments.Add(new(assignment));
+                _profile.Global.Viper.ButtonAssignments = previousProfileAssignments;
+                throw new InvalidOperationException(AppStrings.Get(
+                    "鼠标映射已读取，但活动配置保存失败。"));
             }
-            OnPropertyChanged(nameof(VisibleViperButtonAssignments));
-
-            _canSetViperButtonMappings = assignments.Count == 16;
-            ViperButtonMappingsText = _canSetViperButtonMappings
-                ? AppStrings.Get("Profile 1 · 8 个可映射控制")
-                : AppStrings.Format("MappingReadIncomplete", "读取不完整 · {0}/16 条记录", assignments.Count);
-            OnPropertyChanged(nameof(CanSetViperButtonMappings));
         }, cancellationToken, () =>
         {
             ViperButtonAssignments.Clear();
@@ -2138,11 +2455,99 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
         await RunDeviceOperationAsync("鼠标板载映射", async () =>
         {
+            var previous = row.Assignment;
+            var previousProfileAssignments = _profile.Global.Viper.ButtonAssignments;
             var actual = await _deviceTelemetryReader.SetViperButtonAssignmentAsync(
                 _deviceDescriptors, row.CreateAssignment(), cancellationToken);
             row.Apply(actual);
+            _profile.Global.Viper.ButtonAssignments = ViperButtonAssignments
+                .Select(item => ToProfileAssignment(item.Assignment))
+                .ToList();
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile.Global.Viper.ButtonAssignments = previousProfileAssignments;
+                var restored = await _deviceTelemetryReader.SetViperButtonAssignmentAsync(
+                    _deviceDescriptors, previous, CancellationToken.None);
+                row.Apply(restored);
+                throw new InvalidOperationException(AppStrings.Get(
+                    "鼠标映射已写入，但配置保存失败，原映射已恢复。"));
+            }
         }, cancellationToken, row.RestoreSelection);
     }
+
+    public async Task ApplyAllViperButtonMappingsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanSetViperButtonMappings)
+        {
+            return;
+        }
+
+        if (!ViperButtonAssignments.Any(row => row.CanApply))
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("鼠标板载映射", async () =>
+        {
+            var previous = ViperButtonAssignments.Select(row => row.Assignment).ToArray();
+            var previousProfileAssignments = _profile.Global.Viper.ButtonAssignments;
+            var requested = ViperButtonAssignments.Select(row => row.CreateAssignment()).ToArray();
+            var actual = await _deviceTelemetryReader.SetViperButtonAssignmentsAsync(
+                _deviceDescriptors, requested, cancellationToken);
+            SetViperButtonAssignments(actual);
+            _profile.Global.Viper.ButtonAssignments = actual
+                .Select(ToProfileAssignment)
+                .ToList();
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile.Global.Viper.ButtonAssignments = previousProfileAssignments;
+                var restored = await _deviceTelemetryReader.SetViperButtonAssignmentsAsync(
+                    _deviceDescriptors, previous, CancellationToken.None);
+                SetViperButtonAssignments(restored);
+                throw new InvalidOperationException(AppStrings.Get(
+                    "鼠标映射已写入，但配置保存失败，整套原映射已恢复。"));
+            }
+        }, cancellationToken, () =>
+        {
+            foreach (var row in ViperButtonAssignments.Where(row => row.CanApply))
+            {
+                row.RestoreSelection();
+            }
+        });
+    }
+
+    private void SetViperButtonAssignments(IReadOnlyList<ViperButtonAssignment> assignments)
+    {
+        ViperButtonAssignments.Clear();
+        foreach (var assignment in assignments
+            .OrderBy(item => item.ButtonId)
+            .ThenBy(item => item.Layer))
+        {
+            ViperButtonAssignments.Add(new(assignment));
+        }
+        OnPropertyChanged(nameof(VisibleViperButtonAssignments));
+        _canSetViperButtonMappings = assignments.Count == 16;
+        ViperButtonMappingsText = _canSetViperButtonMappings
+            ? AppStrings.Get("Profile 1 · 8 个可映射控制")
+            : AppStrings.Format("MappingReadIncomplete", "读取不完整 · {0}/16 条记录", assignments.Count);
+        OnPropertyChanged(nameof(CanSetViperButtonMappings));
+    }
+
+    private static ViperButtonAssignmentProfile ToProfileAssignment(ViperButtonAssignment assignment) => new()
+    {
+        ProfileId = assignment.ProfileId,
+        ButtonId = assignment.ButtonId,
+        Layer = assignment.Layer,
+        Function = assignment.Function,
+        FunctionData = assignment.FunctionData.ToList(),
+    };
+
+    private static ViperButtonAssignment ToDeviceAssignment(ViperButtonAssignmentProfile assignment) => new(
+        assignment.ProfileId,
+        assignment.ButtonId,
+        assignment.Layer,
+        assignment.Function,
+        assignment.FunctionData.ToArray());
 
     public async Task ApplyInternalDisplayRefreshRateAsync(CancellationToken cancellationToken = default)
     {

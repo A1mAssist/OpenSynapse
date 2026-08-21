@@ -369,8 +369,8 @@
     <comment>概览页面说明</comment>
   </data>
   <data name="Loc_3453A83F8E.Text" xml:space="preserve">
-    <value>Local profiles, app bindings, and startup settings for the current user.</value>
-    <comment>本地配置、应用绑定以及当前用户的启动设置。</comment>
+    <value>Manage device presets, app bindings, and shortcut cycles.</value>
+    <comment>管理设备设置组合、应用绑定和快捷键循环。</comment>
   </data>
   <data name="Loc_E622287D8A.Content" xml:space="preserve">
     <value>Import</value>
@@ -1456,4 +1456,52 @@
   <data name="Text_BD97D2B0" xml:space="preserve"><value>The device timed out (0x04). Wake the device, close Synapse, and try again.</value><comment>设备超时（0x04）；请唤醒设备并关闭 Synapse 后重试。</comment></data>
   <data name="Text_04AABB92" xml:space="preserve"><value>Razer feature query failed.</value><comment>Razer feature 查询失败。</comment></data>
   <data name="Text_5DBCDF6D" xml:space="preserve"><value>Off</value><comment>已关闭</comment></data>
+  <data name="UpdateTitle.Text" xml:space="preserve"><value>Automatic updates</value><comment>自动更新</comment></data>
+  <data name="UpdateDescription.Text" xml:space="preserve"><value>Check and download at startup; you confirm before installation.</value><comment>启动时自动检查并下载；安装前由你确认。</comment></data>
+  <data name="AutomaticUpdatesToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Automatic updates</value><comment>自动更新</comment></data>
+  <data name="CheckUpdateButton.Content" xml:space="preserve"><value>Check for updates</value><comment>检查更新</comment></data>
+  <data name="UpdateInstallerRequired" xml:space="preserve"><value>This is an older portable build. Install the new setup package to enable automatic updates.</value><comment>当前为旧版便携包；安装新版安装包后可使用自动更新。</comment></data>
+  <data name="UpdateReady" xml:space="preserve"><value>Version {0} is downloaded and ready.</value><comment>版本 {0} 已下载，可以更新。</comment></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>Version {0} is available.</value><comment>发现版本 {0}。</comment></data>
+  <data name="CurrentVersion" xml:space="preserve"><value>Current version: {0}.</value><comment>当前版本 {0}。</comment></data>
+  <data name="更新并重启" xml:space="preserve"><value>Update and restart</value><comment>更新并重启</comment></data>
+  <data name="下载更新" xml:space="preserve"><value>Download update</value><comment>下载更新</comment></data>
+  <data name="正在检查更新" xml:space="preserve"><value>Checking for updates</value><comment>正在检查更新</comment></data>
+  <data name="当前已是最新版本" xml:space="preserve"><value>OpenSynapse is up to date</value><comment>当前已是最新版本</comment></data>
+  <data name="正在下载更新" xml:space="preserve"><value>Downloading update</value><comment>正在下载更新</comment></data>
+  <data name="正在安全退出并更新" xml:space="preserve"><value>Safely stopping device control before updating</value><comment>正在安全退出并更新</comment></data>
+  <data name="UpdateSettingError" xml:space="preserve"><value>Could not save update settings: {0}</value><comment>更新设置保存失败：{0}</comment></data>
+  <data name="UpdateCheckFailed" xml:space="preserve"><value>Could not check for updates: {0}</value><comment>检查更新失败：{0}</comment></data>
+  <data name="UpdateDownloadFailed" xml:space="preserve"><value>Could not download the update: {0}</value><comment>下载更新失败：{0}</comment></data>
+  <data name="UpdateApplyFailed" xml:space="preserve"><value>Could not start the update. Reopen OpenSynapse and try again: {0}</value><comment>启动更新失败，请重新打开 OpenSynapse 后重试：{0}</comment></data>
+  <data name="ModeNotificationTitle.Text" xml:space="preserve"><value>Mode change notifications</value><comment>模式切换通知</comment></data>
+  <data name="ModeNotificationDescription.Text" xml:space="preserve"><value>Send a Windows notification after a performance or gaming mode change succeeds.</value><comment>性能模式或游戏模式切换成功后发送 Windows 通知。</comment></data>
+  <data name="ModeNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mode change notifications</value><comment>模式切换通知</comment></data>
+  <data name="ActiveProfileShortcutsTitle.Text" xml:space="preserve"><value>Active profile shortcuts</value><comment>活动配置快捷键</comment></data>
+  <data name="ActiveProfileShortcutsScope.Text" xml:space="preserve"><value>Saved to the active profile:</value><comment>保存到当前活动配置：</comment></data>
+  <data name="ActiveProfileDeviceSettingsDescription.Text" xml:space="preserve"><value>Snap Tap, the verified Blade shortcut preset, and Viper onboard mappings configured on the Devices page are also saved to the active profile.</value><comment>设备页中的 Snap Tap、Blade 已验证快捷键预设和 Viper 板载映射也保存到当前活动配置。</comment></data>
+  <data name="PerformanceCycleTitle.Text" xml:space="preserve"><value>Performance modes in the shortcut cycle</value><comment>按键循环包含的性能模式</comment></data>
+  <data name="PerformanceCycleDescription.Text" xml:space="preserve"><value>Clear modes you do not want M4 or Fn+P to select. Manual selection is unaffected.</value><comment>取消不想通过 M4/Fn+P 切换到的模式；手动选择不受影响。</comment></data>
+  <data name="PerformanceCycleBalanced.Content" xml:space="preserve"><value>Balanced</value><comment>平衡</comment></data>
+  <data name="PerformanceCyclePerformance.Content" xml:space="preserve"><value>Performance</value><comment>性能</comment></data>
+  <data name="PerformanceCycleCustom.Content" xml:space="preserve"><value>Custom</value><comment>自定义</comment></data>
+  <data name="PerformanceCycleSilent.Content" xml:space="preserve"><value>Silent</value><comment>静音</comment></data>
+  <data name="RefreshRateCycleTitle.Text" xml:space="preserve"><value>Refresh rates in the Fn+R cycle</value><comment>Fn+R 循环包含的刷新率</comment></data>
+  <data name="RefreshRateCycleDescription.Text" xml:space="preserve"><value>Clear refresh rates you do not want Fn+R to select. Manual selection is unaffected.</value><comment>取消不想通过 Fn+R 切换到的刷新率；手动选择不受影响。</comment></data>
+  <data name="性能模式已切换" xml:space="preserve"><value>Performance mode changed</value><comment>性能模式已切换</comment></data>
+  <data name="PerformanceModeNotification" xml:space="preserve"><value>Current mode: {0}</value><comment>当前模式：{0}</comment></data>
+  <data name="游戏模式已切换" xml:space="preserve"><value>Gaming mode changed</value><comment>游戏模式已切换</comment></data>
+  <data name="游戏模式已启用" xml:space="preserve"><value>Gaming mode is on</value><comment>游戏模式已启用</comment></data>
+  <data name="游戏模式已关闭" xml:space="preserve"><value>Gaming mode is off</value><comment>游戏模式已关闭</comment></data>
+  <data name="BehaviorSettingError" xml:space="preserve"><value>Shortcut and notification settings: {0}</value><comment>快捷键与通知设置：{0}</comment></data>
+  <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>Settings</value><comment>设置导航项</comment></data>
+  <data name="SettingsPageTitle.Text" xml:space="preserve"><value>Settings</value><comment>设置页面标题</comment></data>
+  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>Manage OpenSynapse startup, notifications, language, and updates.</value><comment>设置页面说明</comment></data>
+  <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>About OpenSynapse</value><comment>设置页关于入口标题</comment></data>
+  <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>View the version, project page, and license information.</value><comment>设置页关于入口说明</comment></data>
+  <data name="SettingsAboutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open About OpenSynapse</value><comment>打开关于辅助功能名称</comment></data>
+  <data name="SettingsGuideTitle.Text" xml:space="preserve"><value>Getting started</value><comment>设置页使用引导标题</comment></data>
+  <data name="SettingsGuideDescription.Text" xml:space="preserve"><value>Review the main pages and device controls in OpenSynapse.</value><comment>设置页使用引导说明</comment></data>
+  <data name="AboutWindowTitle" xml:space="preserve"><value>About OpenSynapse</value><comment>关于窗口标题</comment></data>
+  <data name="AboutVersion" xml:space="preserve"><value>Version {0}</value><comment>关于窗口版本</comment></data>
 </root>

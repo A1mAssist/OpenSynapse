@@ -1,0 +1,29 @@
+<Window
+    x:Class="OpenSynapse.App.AboutWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    Title="关于 OpenSynapse">
+  <Grid x:Name="RootLayout" Background="{StaticResource CanvasBrush}" Padding="28" RequestedTheme="Dark">
+    <Border Style="{StaticResource CardStyle}" Padding="28">
+      <StackPanel Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+        <Image local:Localized.Uid="Loc_BA196502D0" Width="72" Height="72" Stretch="Uniform" AutomationProperties.Name="OpenSynapse 标志">
+          <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source>
+        </Image>
+        <TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
+        <TextBlock local:Localized.Uid="Loc_3F55A9CDB4" Text="本地设备控制工具" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+        <TextBlock x:Name="VersionText" Text="版本 1.0.2" FontFamily="Cascadia Mono" FontSize="12" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" />
+        <Border Height="1" Background="{StaticResource LineBrush}" />
+        <TextBlock local:Localized.Uid="Loc_C3734BA5BC" Text="脱离雷云管理已连接的 Razer 设备，调整灯光、性能和常用设置。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" />
+        <TextBlock Text="Made with ❤ in C# by A1mAssist." FontFamily="{StaticResource AppFontFamily}" FontSize="12" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+        <TextBlock Text="MIT License" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+        <HyperlinkButton local:Localized.Uid="Loc_502B244806" NavigateUri="https://github.com/A1mAssist/OpenSynapse" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" AutomationProperties.Name="打开 OpenSynapse GitHub">
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <Path Data="M12,0.297 C5.373,0.297 0,5.67 0,12.297 C0,17.6 3.438,22.1 8.205,23.682 C8.805,23.795 9.025,23.426 9.025,23.107 C9.025,22.822 9.015,21.567 9.01,20.567 C5.672,21.291 4.968,18.957 4.968,18.957 C4.422,17.57 3.635,17.201 3.635,17.201 C2.546,16.456 3.719,16.472 3.719,16.472 C4.924,16.556 5.557,17.709 5.557,17.709 C6.627,19.544 8.366,19.014 9.052,18.707 C9.16,17.931 9.47,17.402 9.814,17.102 C7.149,16.802 4.348,15.77 4.348,11.172 C4.348,9.862 4.813,8.792 5.583,7.952 C5.448,7.649 5.043,6.429 5.688,4.776 C5.688,4.776 6.693,4.454 8.988,6.006 C9.948,5.739 10.968,5.607 11.988,5.601 C13.008,5.607 14.028,5.739 14.988,6.006 C17.268,4.454 18.273,4.776 18.273,4.776 C18.918,6.429 18.513,7.649 18.393,7.952 C19.158,8.792 19.623,9.862 19.623,11.172 C19.623,15.782 16.818,16.802 14.148,17.097 C14.583,17.472 14.958,18.193 14.958,19.307 C14.958,20.902 14.943,22.187 14.943,22.577 C14.943,22.892 15.153,23.267 15.768,23.147 C20.565,21.592 24,17.092 24,12.297 C24,5.673 18.627,0.297 12,0.297 Z" Width="16" Height="16" Stretch="Uniform" Fill="{StaticResource AccentBrush}" />
+            <TextBlock Text="GitHub" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+          </StackPanel>
+        </HyperlinkButton>
+      </StackPanel>
+    </Border>
+  </Grid>
+</Window>

@@ -11,6 +11,57 @@ public enum BladePerformanceMode : byte
     Hyperboost = 0x07,
 }
 
+public static class BladePerformanceModeCycle
+{
+    public static BladePerformanceMode GetNext(
+        BladePerformanceMode current,
+        IReadOnlyList<BladePerformanceMode> orderedModes,
+        IReadOnlySet<BladePerformanceMode> includedModes)
+    {
+        return GetNextCore(current, orderedModes, includedModes);
+    }
+
+    public static int GetNext(
+        int current,
+        IReadOnlyList<int> orderedRates,
+        IReadOnlySet<int> includedRates) =>
+        GetNextCore(current, orderedRates, includedRates);
+
+    private static T GetNextCore<T>(
+        T current,
+        IReadOnlyList<T> orderedValues,
+        IReadOnlySet<T> includedValues)
+        where T : notnull
+    {
+        ArgumentNullException.ThrowIfNull(orderedValues);
+        ArgumentNullException.ThrowIfNull(includedValues);
+        if (orderedValues.Count == 0 || includedValues.Count == 0)
+        {
+            throw new ArgumentException("At least one value must be included.");
+        }
+
+        var currentIndex = -1;
+        for (var index = 0; index < orderedValues.Count; index++)
+        {
+            if (EqualityComparer<T>.Default.Equals(orderedValues[index], current))
+            {
+                currentIndex = index;
+                break;
+            }
+        }
+        for (var offset = 1; offset <= orderedValues.Count; offset++)
+        {
+            var candidate = orderedValues[(Math.Max(currentIndex, -1) + offset) % orderedValues.Count];
+            if (includedValues.Contains(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new ArgumentException("The included set does not contain a supported value.", nameof(includedValues));
+    }
+}
+
 public enum BladeFanMode : byte
 {
     Automatic = 0x00,
@@ -252,6 +303,12 @@ public interface IRazerDeviceTelemetryReader
     ValueTask<ViperButtonAssignment> SetViperButtonAssignmentAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         ViperButtonAssignment assignment,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<IReadOnlyList<ViperButtonAssignment>> SetViperButtonAssignmentsAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        IReadOnlyList<ViperButtonAssignment> assignments,
         CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 }

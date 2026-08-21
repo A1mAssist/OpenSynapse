@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppNotifications;
+using Microsoft.Windows.AppNotifications.Builder;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Diagnostics;
@@ -9,6 +11,7 @@ using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using OpenSynapse.Windows.Sensors;
+using Velopack;
 
 namespace OpenSynapse.App;
 
@@ -29,6 +32,7 @@ public partial class App : Application
     private BladeFnRuntime? _bladeFnRuntime;
     private IRazerFeatureTransport? _razerTransport;
     private MainViewModel? _audioMuteViewModel;
+    private string? _activeBladeControlDevicePath;
     private int _audioMuteGeneration;
     private int _closing;
     private int _emergencyMappingCleanupStarted;
@@ -36,6 +40,9 @@ public partial class App : Application
     private CancellationTokenSource? _mappingWatchdogCancellation;
     private Thread? _mappingWatchdogThread;
     private CancellationTokenSource? _activationCancellation;
+    private Task? _shutdownTask;
+    private bool _appNotificationsRegistered;
+    private AppBehaviorSettings _behaviorSettings = new();
     private readonly LocalDiagnosticLog _diagnosticLog = new();
 
     public App()
@@ -82,6 +89,9 @@ public partial class App : Application
             return;
         }
 
+        _behaviorSettings = AppBehaviorSettings.Load();
+        RegisterAppNotifications();
+
         try
         {
             if (Environment.ProcessPath is string executablePath &&
@@ -127,11 +137,17 @@ public partial class App : Application
             new WindowsTouchpadController());
         _audioMuteViewModel = viewModel;
         viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
+        viewModel.BladePerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
+        viewModel.BladeGamingModeChangedByUser += OnBladeGamingModeChangedByUser;
+        viewModel.BladeInputProfileChanged += OnBladeInputProfileChanged;
+        viewModel.SetLegacyShortcutCycleDefaults(
+            _behaviorSettings.PerformanceCycleModes,
+            _behaviorSettings.RefreshRateCycleHertz);
         _diagnosticLog.TryWrite(
             "audio-mute-sync",
             "Blade Fn and speaker/microphone mute synchronization enabled.");
         _diagnosticLog.TryWrite("application", "OpenSynapse started.");
-        var window = new MainWindow(viewModel, silentLaunch);
+        var window = new MainWindow(viewModel, _behaviorSettings, silentLaunch);
         RegisterMainWindow(window, viewModel);
         StartMappingWatchdog(window);
         InitializeTray(window, viewModel);
@@ -158,12 +174,31 @@ public partial class App : Application
             return;
         }
 
+        await (_shutdownTask ??= ShutdownApplicationAsync(viewModel));
+    }
+
+    internal async Task ApplyUpdateAndRestartAsync(UpdateManager updateManager, VelopackAsset release)
+    {
+        if (_audioMuteViewModel is null)
+        {
+            throw new InvalidOperationException("OpenSynapse is not ready to restart for an update.");
+        }
+
+        await (_shutdownTask ??= ShutdownApplicationAsync(_audioMuteViewModel));
+        updateManager.ApplyUpdatesAndRestart(release);
+    }
+
+    private async Task ShutdownApplicationAsync(MainViewModel viewModel)
+    {
         Interlocked.Exchange(ref _closing, 1);
         Interlocked.Increment(ref _audioMuteGeneration);
         StopMappingWatchdog();
         if (_audioMuteViewModel is not null)
         {
             _audioMuteViewModel.BladeControlDevicePathChanged -= OnBladeControlDevicePathChanged;
+            _audioMuteViewModel.BladePerformanceModeChangedByUser -= OnBladePerformanceModeChangedByUser;
+            _audioMuteViewModel.BladeGamingModeChangedByUser -= OnBladeGamingModeChangedByUser;
+            _audioMuteViewModel.BladeInputProfileChanged -= OnBladeInputProfileChanged;
             _audioMuteViewModel = null;
         }
         try
@@ -189,6 +224,75 @@ public partial class App : Application
         _singleInstanceGuard?.Dispose();
         _singleInstanceGuard = null;
         _razerTransport = null;
+        if (_appNotificationsRegistered)
+        {
+            try
+            {
+                AppNotificationManager.Default.Unregister();
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("notifications", $"unregistration failed: {exception}");
+            }
+            _appNotificationsRegistered = false;
+        }
+    }
+
+    private void RegisterAppNotifications()
+    {
+        try
+        {
+            AppNotificationManager.Default.Register();
+            _appNotificationsRegistered = true;
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("notifications", $"registration failed: {exception}");
+        }
+    }
+
+    private void OnBladePerformanceModeChangedByUser(OpenSynapse.Core.Devices.BladePerformanceMode mode)
+    {
+        var modeText = mode switch
+        {
+            OpenSynapse.Core.Devices.BladePerformanceMode.Balanced => AppStrings.Get("平衡"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Performance => AppStrings.Get("性能"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Custom => AppStrings.Get("自定义"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Silent => AppStrings.Get("静音"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Hyperboost => "HyperBoost",
+            _ => mode.ToString(),
+        };
+        ShowModeNotification(
+            AppStrings.Format("性能模式已切换", "性能模式已切换"),
+            AppStrings.Format("PerformanceModeNotification", "当前模式：{0}", modeText));
+    }
+
+    private void OnBladeGamingModeChangedByUser(bool enabled) => ShowModeNotification(
+        AppStrings.Format("游戏模式已切换", "游戏模式已切换"),
+        enabled
+            ? AppStrings.Format("游戏模式已启用", "游戏模式已启用")
+            : AppStrings.Format("游戏模式已关闭", "游戏模式已关闭"));
+
+    private void ShowModeNotification(string title, string body)
+    {
+        if (!_behaviorSettings.ModeChangeNotificationsEnabled || !_appNotificationsRegistered)
+        {
+            return;
+        }
+
+        try
+        {
+            var notification = new AppNotificationBuilder()
+                .AddText(title)
+                .AddText(body)
+                .BuildNotification();
+            notification.Tag = "blade-mode";
+            AppNotificationManager.Default.Show(notification);
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("notifications", $"show failed: {exception}");
+        }
     }
 
     private void InitializeTray(MainWindow window, MainViewModel viewModel)
@@ -270,8 +374,15 @@ public partial class App : Application
 
     private void OnBladeControlDevicePathChanged(string? devicePath)
     {
+        _activeBladeControlDevicePath = devicePath;
         var generation = Interlocked.Increment(ref _audioMuteGeneration);
         _ = SwitchBladeAudioMuteRuntimeAsync(devicePath, generation);
+    }
+
+    private void OnBladeInputProfileChanged()
+    {
+        var generation = Interlocked.Increment(ref _audioMuteGeneration);
+        _ = SwitchBladeAudioMuteRuntimeAsync(_activeBladeControlDevicePath, generation);
     }
 
     private async Task SwitchBladeAudioMuteRuntimeAsync(string? devicePath, int generation)
@@ -300,7 +411,11 @@ public partial class App : Application
                     _razerTransport,
                     devicePath,
                     _bladeModeCoordinator,
-                    (action, token) => ExecuteBladeFnLeafAsync(action, generation, token));
+                    (action, token) => ExecuteBladeFnLeafAsync(action, generation, token),
+                    _audioMuteViewModel?.ActiveBladeMappingPreset ??
+                        OpenSynapse.Core.Profiles.BladeProfileSettings.Product710DefaultMappingPreset,
+                    _audioMuteViewModel?.ActiveSnapTapEnabled == true,
+                    enabled => PersistBladeSnapTap(enabled, generation));
                 await fnRuntime.StartAsync().ConfigureAwait(false);
                 _bladeFnRuntime = fnRuntime;
                 if (Volatile.Read(ref _closing) != 0 ||
@@ -365,6 +480,24 @@ public partial class App : Application
         {
             _audioMuteRuntimeGate.Release();
         }
+    }
+
+    private void PersistBladeSnapTap(bool enabled, int generation)
+    {
+        var dispatcher = _window?.DispatcherQueue;
+        var viewModel = _audioMuteViewModel;
+        if (dispatcher is null || viewModel is null)
+        {
+            return;
+        }
+
+        dispatcher.TryEnqueue(async () =>
+        {
+            if (generation == Volatile.Read(ref _audioMuteGeneration))
+            {
+                await viewModel.SetBladeSnapTapEnabledAsync(enabled);
+            }
+        });
     }
 
     private async Task DisposeBladeAudioStackAsync()

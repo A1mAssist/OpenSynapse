@@ -191,8 +191,7 @@ public sealed class VerifiedProfileApplier
             if (bladeErrors.Count == 0 && profile.Blade.LogoMode is byte rawLogoMode)
             {
                 var requested = (BladeLogoMode)rawLogoMode;
-                if (!Enum.IsDefined(typeof(BladeLogoMode), requested) ||
-                    requested is not (BladeLogoMode.Off or BladeLogoMode.Static))
+                if (!Enum.IsDefined(typeof(BladeLogoMode), requested))
                 {
                     bladeErrors.Add($"Blade Logo 模式值无效或未经验证：{rawLogoMode}。");
                 }
@@ -206,7 +205,6 @@ public sealed class VerifiedProfileApplier
                         (value, token) => reader.SetBladeLogoModeAsync(devices, value, token));
                 }
             }
-
             errors.AddRange(bladeErrors);
         }
 

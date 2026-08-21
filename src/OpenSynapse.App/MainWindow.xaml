@@ -41,7 +41,7 @@
         <NavigationViewItem local:Localized.Uid="Loc_D1F42581D7" Content="诊断" Tag="diagnostics"><NavigationViewItem.Icon><SymbolIcon Symbol="Document" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.MenuItems>
       <NavigationView.FooterMenuItems>
-        <NavigationViewItem local:Localized.Uid="Loc_F88204263B" Content="关于" Tag="about"><NavigationViewItem.Icon><FontIcon Glyph="&#xE946;" FontFamily="Segoe Fluent Icons" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="SettingsNavigationItem" Content="设置" Tag="settings"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontFamily="Segoe Fluent Icons" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.FooterMenuItems>
       <NavigationView.Content>
         <Grid>
@@ -86,7 +86,6 @@
                   <TextBlock Text="{Binding BladeDeviceName}" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_5AADFF0A18" Text="状态、灯光、性能、显示和电池。" Foreground="{StaticResource MutedBrush}" />
                   <StackPanel Spacing="10">
                     <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock local:Localized.Uid="Loc_B3082E3874" Text="硬件遥测" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
                       <TextBlock Grid.Column="1" Text="{Binding DeviceTelemetryTimeText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                     </Grid>
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
@@ -147,7 +146,7 @@
                     </StackPanel>
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_6FF5FBA77A" Text="触控板" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding BladeTouchpadText}" Foreground="{StaticResource AccentBrush}" /><TextBlock local:Localized.Uid="Loc_C3B786E4F7" Text="使用 Windows 精确式触控板系统开关。" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel><ToggleSwitch local:Localized.Uid="Loc_DA6DE4EFA4" Grid.Column="1" IsOn="{Binding BladeTouchpadEnabled}" IsEnabled="{Binding CanSetBladeTouchpad}" Toggled="ToggleTouchpadToggled" OnContent="开启" OffContent="关闭" AutomationProperties.Name="触控板" VerticalAlignment="Center" /></Grid></Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_A44CD62B33" Text="显示" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock Text="{Binding InternalDisplayResolutionText}" FontFamily="Cascadia Mono" /><TextBlock Text="{Binding InternalDisplayRefreshRateText}" FontFamily="Cascadia Mono" Foreground="{StaticResource GpuBrush}" /></StackPanel><ComboBox Grid.Column="1" Tag="refreshRate" ItemsSource="{Binding InternalDisplayRefreshRates}" SelectedItem="{Binding InternalDisplayRefreshRateHertz, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetInternalDisplayRefreshRate}" HorizontalAlignment="Stretch" MinWidth="190"><ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding}" /><Run Text=" Hz" /></TextBlock></DataTemplate></ComboBox.ItemTemplate></ComboBox></Grid><TextBlock local:Localized.Uid="Loc_6071B823E0" Text="当前刷新率由 Windows 本机显示控制器读取。" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel></Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_A44CD62B33" Text="显示" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock Text="{Binding InternalDisplayResolutionText}" FontFamily="Cascadia Mono" /><TextBlock Text="{Binding InternalDisplayRefreshRateText}" FontFamily="Cascadia Mono" Foreground="{StaticResource GpuBrush}" /></StackPanel><ComboBox Grid.Column="1" Tag="refreshRate" ItemsSource="{Binding InternalDisplayRefreshRateOptions}" SelectedIndex="{Binding InternalDisplayRefreshRateIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetInternalDisplayRefreshRate}" HorizontalAlignment="Stretch" MinWidth="190" /></Grid><TextBlock local:Localized.Uid="Loc_6071B823E0" Text="当前刷新率由 Windows 本机显示控制器读取。" Foreground="{StaticResource MutedBrush}" FontSize="12" /></StackPanel></Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
                       <TextBlock local:Localized.Uid="Loc_26D3C557FF" Text="平台状态" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -234,18 +233,18 @@
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
-                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
                         <StackPanel Spacing="3"><TextBlock local:Localized.Uid="Loc_7228F14C77" Text="板载映射" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding ViperButtonMappingsText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                         <StackPanel Grid.Column="1" Spacing="3">
                           <TextBlock local:Localized.Uid="Loc_38C9EAF77D" Text="映射层" Style="{StaticResource MetricLabelStyle}" />
                           <ComboBox local:Localized.Uid="Loc_91C223D2EC" Width="152" ItemsSource="{Binding ViperButtonMappingLayerOptions}" SelectedIndex="{Binding ViperButtonMappingLayerIndex, Mode=TwoWay}" AutomationProperties.Name="板载映射层" />
                         </StackPanel>
                         <Button local:Localized.Uid="Loc_56F4B1E701" Grid.Column="2" Content="读取" Click="ReadViperButtonMappingsClick" IsEnabled="{Binding CanReadViperButtonMappings}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                        <Button local:Localized.Uid="Loc_767A063324" Grid.Column="3" Click="ApplyAllViperButtonMappingsClick" IsEnabled="{Binding CanSetViperButtonMappings}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" AutomationProperties.Name="保存板载映射"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
                       </Grid>
-                      <ContentControl IsEnabled="{Binding CanSetViperButtonMappings}" Padding="0">
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
-                          <Grid MinWidth="900" RowDefinitions="Auto,Auto" RowSpacing="6">
-                            <Grid ColumnDefinitions="150,250,180,260,Auto" ColumnSpacing="10">
+                      <ContentControl IsEnabled="{Binding CanSetViperButtonMappings}" Padding="0" HorizontalContentAlignment="Stretch">
+                          <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
+                            <Grid ColumnDefinitions="110,1.2*,1*,1.35*" ColumnSpacing="10">
                               <TextBlock local:Localized.Uid="Loc_51866506E5" Text="鼠标控制" Style="{StaticResource MetricLabelStyle}" />
                               <TextBlock local:Localized.Uid="Loc_6C071A20D1" Grid.Column="1" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
                               <TextBlock local:Localized.Uid="Loc_C89F81E3D1" Grid.Column="2" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
@@ -255,7 +254,7 @@
                               <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
                               <ItemsRepeater.ItemTemplate>
                                 <DataTemplate>
-                                  <Grid ColumnDefinitions="150,250,180,260,Auto" ColumnSpacing="10" MinHeight="58">
+                                  <Grid ColumnDefinitions="110,1.2*,1*,1.35*" ColumnSpacing="10" MinHeight="58">
                                     <TextBlock Text="{Binding ButtonText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" TextWrapping="Wrap" ToolTipService.ToolTip="{Binding CurrentActionText}" VerticalAlignment="Center" />
                                     <ComboBox local:Localized.Uid="Loc_2D72DC9E3F" Grid.Column="2" ItemsSource="{Binding ActionOptions}" SelectedIndex="{Binding SelectedActionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" VerticalAlignment="Center" AutomationProperties.Name="目标板载映射动作" />
@@ -264,13 +263,11 @@
                                       <NumberBox local:Localized.Uid="Loc_0E422F6A72" Grid.Column="1" Header="Usage 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Value="{Binding KeyboardUsageValue, Mode=TwoWay}" AutomationProperties.Name="键盘 HID Usage" />
                                     </Grid>
                                     <TextBlock local:Localized.Uid="Loc_9F41F9592F" Grid.Column="3" Text="固定双击" Visibility="{Binding DoubleClickParameterVisibility}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                                    <Button local:Localized.Uid="Loc_767A063324" Grid.Column="4" Tag="{Binding}" Click="ApplyViperButtonMappingClick" IsEnabled="{Binding CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" AutomationProperties.Name="保存板载映射"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
                                   </Grid>
                                 </DataTemplate>
                               </ItemsRepeater.ItemTemplate>
                             </ItemsRepeater>
                           </Grid>
-                        </ScrollViewer>
                       </ContentControl>
                     </StackPanel>
                   </Border>
@@ -281,7 +278,7 @@
             <ScrollViewer x:Name="ProfilesPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                  <StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_14933D7587" Text="配置" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_3453A83F8E" Text="本地配置、应用绑定以及当前用户的启动设置。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                  <StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_14933D7587" Text="配置" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_3453A83F8E" Text="管理设备设置组合、应用绑定和快捷键循环。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom"><Button local:Localized.Uid="Loc_E622287D8A" Content="导入" Click="ImportProfilesClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /><Button local:Localized.Uid="Loc_58DC9A24FF" Content="导出" Click="ExportProfilesClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /></StackPanel>
                 </Grid>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
@@ -312,16 +309,63 @@
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="ActiveProfileShortcutsTitle" Text="活动配置快捷键" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                        <TextBlock local:Localized.Uid="ActiveProfileShortcutsScope" Text="保存到当前活动配置：" Foreground="{StaticResource MutedBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding ActiveProfileName}" Foreground="{StaticResource AccentBrush}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      </Grid>
+                      <TextBlock local:Localized.Uid="ActiveProfileDeviceSettingsDescription" Text="设备页中的 Snap Tap、Blade 已验证快捷键预设和 Viper 板载映射也保存到当前活动配置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <StackPanel Spacing="8">
+                      <TextBlock local:Localized.Uid="PerformanceCycleTitle" Text="按键循环包含的性能模式" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="PerformanceCycleDescription" Text="取消不想通过 M4/Fn+P 切换到的模式；手动选择不受影响。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Grid x:Name="PerformanceCycleModesPanel" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="12">
+                        <CheckBox local:Localized.Uid="PerformanceCycleBalanced" Tag="Balanced" Content="平衡" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox local:Localized.Uid="PerformanceCyclePerformance" Grid.Column="1" Tag="Performance" Content="性能" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox local:Localized.Uid="PerformanceCycleCustom" Grid.Column="2" Tag="Custom" Content="自定义" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox local:Localized.Uid="PerformanceCycleSilent" Grid.Column="3" Tag="Silent" Content="静音" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox Grid.Column="4" Tag="Hyperboost" Content="HyperBoost" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                      </Grid>
+                    </StackPanel>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <StackPanel x:Name="RefreshRateCycleSection" Spacing="8" Visibility="Collapsed">
+                      <TextBlock local:Localized.Uid="RefreshRateCycleTitle" Text="Fn+R 循环包含的刷新率" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="RefreshRateCycleDescription" Text="取消不想通过 Fn+R 切换到的刷新率；手动选择不受影响。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Grid x:Name="RefreshRateCycleModesPanel" ColumnSpacing="12" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+            <ScrollViewer x:Name="SettingsPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
+                <StackPanel Spacing="5">
+                  <TextBlock local:Localized.Uid="SettingsPageTitle" Text="设置" Style="{StaticResource PageTitleStyle}" />
+                  <TextBlock local:Localized.Uid="SettingsPageDescription" Text="管理 OpenSynapse 的启动、通知、语言和更新。" Foreground="{StaticResource MutedBrush}" />
+                </StackPanel>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="14">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_C6BFF9FFC0" Text="开机启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_6048E58A89" Text="仅当前用户，不需要管理员权限。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                      <ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" Grid.Column="1" IsOn="{Binding IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding CanSetStartup}" OnContent="开启" OffContent="关闭" />
+                      <ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" Grid.Column="1" IsOn="{Binding IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding CanSetStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开机启动" />
                     </Grid>
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_4ED618F72C" Text="静默启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_E40B74CC08" Text="开机启动时仅显示托盘图标。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                      <ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" Grid.Column="1" IsOn="{Binding IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding CanSetSilentStartup}" OnContent="开启" OffContent="关闭" />
+                      <ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" Grid.Column="1" IsOn="{Binding IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="静默启动" />
                     </Grid>
                   </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="ModeNotificationTitle" Text="模式切换通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="ModeNotificationDescription" Text="性能模式或游戏模式切换成功后发送 Windows 通知。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="ModeNotificationToggle" x:Name="ModeNotificationToggle" Grid.Column="1" Toggled="ModeNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="模式切换通知" />
+                  </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="16">
@@ -336,33 +380,45 @@
                     </ComboBox>
                   </Grid>
                 </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="UpdateTitle" Text="自动更新" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="UpdateDescription" Text="启动时自动检查并下载；安装前由你确认。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="AutomaticUpdatesToggle" x:Name="AutomaticUpdatesToggle" Grid.Column="1" Toggled="AutomaticUpdatesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="自动更新" />
+                    </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <StackPanel Spacing="5" VerticalAlignment="Center">
+                        <TextBlock x:Name="UpdateStatusText" Text="正在读取更新状态" TextWrapping="Wrap" />
+                        <ProgressBar x:Name="UpdateProgressBar" Minimum="0" Maximum="100" Height="3" Visibility="Collapsed" />
+                      </StackPanel>
+                      <Button local:Localized.Uid="CheckUpdateButton" x:Name="CheckUpdateButton" Grid.Column="1" Content="检查更新" Click="CheckForUpdatesClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                      <Button x:Name="UpdateActionButton" Grid.Column="2" Content="下载更新" Click="UpdateActionClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" Visibility="Collapsed" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+                <Button local:Localized.Uid="Loc_79D0601598" Click="ShowIntroductionClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="查看使用引导">
+                  <Grid>
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="SettingsGuideTitle" Text="使用引导" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="SettingsGuideDescription" Text="重新查看 OpenSynapse 的主要页面和设备控制入口。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+                <Button local:Localized.Uid="SettingsAboutButton" Click="OpenAboutClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="打开关于 OpenSynapse">
+                  <Grid>
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                      <TextBlock local:Localized.Uid="SettingsAboutTitle" Text="关于 OpenSynapse" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="SettingsAboutDescription" Text="查看版本、项目主页和许可信息。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
               </StackPanel>
             </ScrollViewer>
             <ScrollViewer x:Name="DiagnosticsPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled"><StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_97C848E235" Text="诊断" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_2316E0EB08" Text="检查设备通道、协议读回和最近一次查询结果。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button local:Localized.Uid="Loc_B2441B64DA" Grid.Column="1" Content="重新检查" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" /></Grid><InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" /><Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="13"><TextBlock local:Localized.Uid="Loc_BD61CEC3FA" Text="查询记录" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ItemsRepeater ItemsSource="{Binding Diagnostics}"><ItemsRepeater.Layout><StackLayout Spacing="10" /></ItemsRepeater.Layout><ItemsRepeater.ItemTemplate><DataTemplate><Grid ColumnDefinitions="4,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="6"><Border Grid.RowSpan="2" Background="{Binding StatusBrush}" CornerRadius="2" /><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Text="{Binding Device}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding Capability}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><TextBlock Grid.Column="2" Text="{Binding Status}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{Binding StatusBrush}" /><TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Detail}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" /></Grid></DataTemplate></ItemsRepeater.ItemTemplate></ItemsRepeater></StackPanel></Border><TextBlock local:Localized.Uid="Loc_C153F25A3D" Text="未通过读回的能力始终保持禁用；OpenSynapse 不会结束 Synapse 进程。" Foreground="{StaticResource MutedBrush}" /></StackPanel></ScrollViewer>
-            <ScrollViewer x:Name="AboutPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
-              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
-                <TextBlock local:Localized.Uid="Loc_9C7CF1DBDC" Text="关于" Style="{StaticResource PageTitleStyle}" />
-                <Border Style="{StaticResource CardStyle}" Padding="24">
-                  <StackPanel Spacing="16" HorizontalAlignment="Center" MaxWidth="560">
-                    <Image local:Localized.Uid="Loc_BA196502D0" Width="72" Height="72" Stretch="Uniform" AutomationProperties.Name="OpenSynapse 标志"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source></Image>
-                    <TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
-                    <TextBlock local:Localized.Uid="Loc_3F55A9CDB4" Text="本地设备控制工具" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
-                    <TextBlock local:Localized.Uid="Loc_C606F601F7" Text="版本 1.0.2" FontFamily="Cascadia Mono" FontSize="12" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" />
-                    <Border Height="1" Background="{StaticResource LineBrush}" />
-                    <TextBlock local:Localized.Uid="Loc_C3734BA5BC" Text="脱离雷云管理已连接的 Razer 设备，调整灯光、性能和常用设置。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" />
-                    <TextBlock Text="Made with ❤ in C# by A1mAssist." FontFamily="{StaticResource AppFontFamily}" FontSize="12" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
-                    <TextBlock Text="MIT License" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
-                    <HyperlinkButton local:Localized.Uid="Loc_502B244806" NavigateUri="https://github.com/A1mAssist/OpenSynapse" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" AutomationProperties.Name="打开 OpenSynapse GitHub">
-                      <StackPanel Orientation="Horizontal" Spacing="7">
-                        <Path Data="M12,0.297 C5.373,0.297 0,5.67 0,12.297 C0,17.6 3.438,22.1 8.205,23.682 C8.805,23.795 9.025,23.426 9.025,23.107 C9.025,22.822 9.015,21.567 9.01,20.567 C5.672,21.291 4.968,18.957 4.968,18.957 C4.422,17.57 3.635,17.201 3.635,17.201 C2.546,16.456 3.719,16.472 3.719,16.472 C4.924,16.556 5.557,17.709 5.557,17.709 C6.627,19.544 8.366,19.014 9.052,18.707 C9.16,17.931 9.47,17.402 9.814,17.102 C7.149,16.802 4.348,15.77 4.348,11.172 C4.348,9.862 4.813,8.792 5.583,7.952 C5.448,7.649 5.043,6.429 5.688,4.776 C5.688,4.776 6.693,4.454 8.988,6.006 C9.948,5.739 10.968,5.607 11.988,5.601 C13.008,5.607 14.028,5.739 14.988,6.006 C17.268,4.454 18.273,4.776 18.273,4.776 C18.918,6.429 18.513,7.649 18.393,7.952 C19.158,8.792 19.623,9.862 19.623,11.172 C19.623,15.782 16.818,16.802 14.148,17.097 C14.583,17.472 14.958,18.193 14.958,19.307 C14.958,20.902 14.943,22.187 14.943,22.577 C14.943,22.892 15.153,23.267 15.768,23.147 C20.565,21.592 24,17.092 24,12.297 C24,5.673 18.627,0.297 12,0.297 Z" Width="16" Height="16" Stretch="Uniform" Fill="{StaticResource AccentBrush}" />
-                        <TextBlock Text="GitHub" VerticalAlignment="Center" />
-                      </StackPanel>
-                    </HyperlinkButton>
-                    <Button local:Localized.Uid="Loc_79D0601598" Click="ShowIntroductionClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Center" AutomationProperties.Name="查看使用引导"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Bullets" /><TextBlock local:Localized.Uid="Loc_C100499F91" Text="查看使用引导" /></StackPanel></Button>
-                  </StackPanel>
-                </Border>
-              </StackPanel>
-            </ScrollViewer>
         </Grid>
       </NavigationView.Content>
     </NavigationView>

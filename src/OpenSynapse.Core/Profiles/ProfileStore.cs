@@ -113,6 +113,10 @@ public sealed class ProfileStore
         {
             return ProfileDocument.CreateDefault();
         }
+        catch (InvalidDataException)
+        {
+            return ProfileDocument.CreateDefault();
+        }
     }
 
     public async Task SaveAsync(ProfileDocument document, CancellationToken cancellationToken = default)

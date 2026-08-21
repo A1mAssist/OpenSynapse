@@ -61,6 +61,8 @@ public static class ProfileResolver
                 power?.GamingModeEnabled,
                 device?.GamingModeEnabled,
                 global?.GamingModeEnabled),
+            SnapTapEnabled = First(power?.SnapTapEnabled, device?.SnapTapEnabled, global?.SnapTapEnabled),
+            MappingPreset = power?.MappingPreset ?? device?.MappingPreset ?? global?.MappingPreset,
         };
     }
 
@@ -76,6 +78,9 @@ public static class ProfileResolver
             PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
             IdleSeconds = First(power?.IdleSeconds, device?.IdleSeconds, global?.IdleSeconds),
             DpiStages = (power?.DpiStages ?? device?.DpiStages ?? global?.DpiStages)?.Clone(),
+            ButtonAssignments = (power?.ButtonAssignments ??
+                device?.ButtonAssignments ??
+                global?.ButtonAssignments)?.Select(assignment => assignment.Clone()).ToList(),
         };
     }
 

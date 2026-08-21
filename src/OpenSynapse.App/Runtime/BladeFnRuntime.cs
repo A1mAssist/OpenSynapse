@@ -25,6 +25,9 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     private readonly string _featureDevicePath;
     private readonly BladeSoftwareModeCoordinator _modeCoordinator;
     private readonly Func<BladeMappingAction, CancellationToken, ValueTask> _leafExecutor;
+    private readonly string _mappingPreset;
+    private readonly bool _initialSnapTapEnabled;
+    private readonly Action<bool> _snapTapChanged;
     private readonly Channel<BladeMappingInputEvent> _queue =
         Channel.CreateUnbounded<BladeMappingInputEvent>(new UnboundedChannelOptions
         {
@@ -47,13 +50,20 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         IRazerFeatureTransport transport,
         string featureDevicePath,
         BladeSoftwareModeCoordinator modeCoordinator,
-        Func<BladeMappingAction, CancellationToken, ValueTask> leafExecutor)
+        Func<BladeMappingAction, CancellationToken, ValueTask> leafExecutor,
+        string mappingPreset,
+        bool initialSnapTapEnabled,
+        Action<bool> snapTapChanged)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         ArgumentException.ThrowIfNullOrWhiteSpace(featureDevicePath);
         _featureDevicePath = featureDevicePath;
         _modeCoordinator = modeCoordinator ?? throw new ArgumentNullException(nameof(modeCoordinator));
         _leafExecutor = leafExecutor ?? throw new ArgumentNullException(nameof(leafExecutor));
+        ArgumentException.ThrowIfNullOrWhiteSpace(mappingPreset);
+        _mappingPreset = mappingPreset;
+        _initialSnapTapEnabled = initialSnapTapEnabled;
+        _snapTapChanged = snapTapChanged ?? throw new ArgumentNullException(nameof(snapTapChanged));
     }
 
     internal Task Completion => _consumer ?? Task.CompletedTask;
@@ -76,7 +86,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 ?? throw new InvalidOperationException(
                     "Could not uniquely identify the Product 710 RZCONTROL endpoint.");
 
-            _mapping = await LoadMappingAsync(cancellationToken).ConfigureAwait(false);
+            _mapping = await LoadMappingAsync(_mappingPreset, cancellationToken).ConfigureAwait(false);
             _session = await _transport
                 .OpenSessionAsync(_featureDevicePath, cancellationToken)
                 .ConfigureAwait(false);
@@ -96,6 +106,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 new WindowsKeyboardInputSink(),
                 _leafExecutor,
                 UpdateRecoveryKeys);
+            _executor.SendRuntimeOutputs(_mapping.SetSnapTapEnabled(_initialSnapTapEnabled));
             _filter = new RazerFilterInputHost(
                 filterDevicePath,
                 input =>
@@ -239,8 +250,13 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                                .ReadAllAsync(cancellationToken)
                                .ConfigureAwait(false))
             {
+                var snapTapBefore = mapping.SnapTapEnabled;
                 var outputs = mapping.Process(input, out var action);
                 executor.SendRuntimeOutputs(outputs);
+                if (snapTapBefore != mapping.SnapTapEnabled)
+                {
+                    _snapTapChanged(mapping.SnapTapEnabled);
+                }
                 if (action is not null)
                 {
                     await executor.ExecuteAsync(input, action, cancellationToken)
@@ -326,8 +342,15 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     }
 
     private static async Task<BladeMappingInputRuntime> LoadMappingAsync(
+        string mappingPreset,
         CancellationToken cancellationToken)
     {
+        if (!StringComparer.Ordinal.Equals(
+                mappingPreset,
+                OpenSynapse.Core.Profiles.BladeProfileSettings.Product710DefaultMappingPreset))
+        {
+            throw new InvalidDataException($"Unsupported Blade mapping preset: {mappingPreset}.");
+        }
         var json = await File.ReadAllTextAsync(MappingPath, cancellationToken)
             .ConfigureAwait(false);
         var root = JsonNode.Parse(json) as JsonObject

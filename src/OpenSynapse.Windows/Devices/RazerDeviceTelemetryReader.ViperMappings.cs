@@ -31,17 +31,10 @@ public sealed partial class RazerDeviceTelemetryReader
                 ?? throw new InvalidOperationException("Viper 控制通道不可用。");
 
             await ValidateViperProduct184MetadataAsync(viper, cancellationToken);
-            var assignments = new List<ViperButtonAssignment>(ViperProduct184ButtonIds.Length * 2);
-            foreach (var buttonId in ViperProduct184ButtonIds)
-            {
-                assignments.Add(ToPublicAssignment(await ReadViperObmAssignmentAsync(
-                    viper, buttonId, ViperObmMappingMode.Normal, cancellationToken)));
-                assignments.Add(ToPublicAssignment(await ReadViperObmAssignmentAsync(
-                    viper, buttonId, ViperObmMappingMode.HyperShift, cancellationToken)));
-            }
+            var assignments = await ReadAllViperObmAssignmentsAsync(viper, cancellationToken);
 
             _validatedViperButtonMappingsPath = viper.Descriptor.Id;
-            return assignments;
+            return assignments.Select(ToPublicAssignment).ToArray();
         }
         finally
         {
@@ -105,6 +98,78 @@ public sealed partial class RazerDeviceTelemetryReader
                     (restorationError is null
                         ? "原映射及另一层已恢复并读回确认。"
                         : "原映射恢复失败：" + restorationError + " 请立即在 Synapse 中检查该按键。");
+                if (exception is OperationCanceledException)
+                {
+                    throw new OperationCanceledException(message, exception, cancellationToken);
+                }
+                throw new InvalidOperationException(message, exception);
+            }
+        }
+        finally
+        {
+            _viperButtonMappingTransactionGate.Release();
+        }
+    }
+
+    public async ValueTask<IReadOnlyList<ViperButtonAssignment>> SetViperButtonAssignmentsAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        IReadOnlyList<ViperButtonAssignment> assignments,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(assignments);
+        var requested = ValidateViperButtonAssignmentBatch(assignments);
+
+        await _viperButtonMappingTransactionGate.WaitAsync(cancellationToken);
+        try
+        {
+            _validatedViperButtonMappingsPath = null;
+            var viper = FindReadyDevice(devices, "viper-184")
+                ?? throw new InvalidOperationException("Viper 控制通道不可用。");
+            await ValidateViperProduct184MetadataAsync(viper, cancellationToken);
+
+            var original = await ReadAllViperObmAssignmentsAsync(viper, cancellationToken);
+            var originalByKey = original.ToDictionary(AssignmentKey);
+            var attempted = new List<ViperObmAssignment>();
+            try
+            {
+                foreach (var target in requested)
+                {
+                    var current = originalByKey[AssignmentKey(target)];
+                    if (AssignmentsEqual(current, target))
+                    {
+                        continue;
+                    }
+
+                    attempted.Add(current);
+                    await WriteViperObmAssignmentAsync(viper, target, cancellationToken);
+                    var actual = await ReadViperObmAssignmentAsync(
+                        viper, target.ButtonId, target.Mode, cancellationToken);
+                    EnsureAssignmentsEqual(target, actual, "批量目标");
+                }
+
+                var final = await ReadAllViperObmAssignmentsAsync(viper, cancellationToken);
+                foreach (var target in requested)
+                {
+                    EnsureAssignmentsEqual(target, final.Single(item =>
+                        AssignmentKey(item) == AssignmentKey(target)), "批量最终");
+                }
+                _validatedViperButtonMappingsPath = viper.Descriptor.Id;
+                return final.Select(ToPublicAssignment).ToArray();
+            }
+            catch (Exception exception) when (
+                IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+            {
+                var restorationError = await RestoreViperObmAssignmentBatchAsync(
+                    viper, original, attempted);
+                if (restorationError is null)
+                {
+                    _validatedViperButtonMappingsPath = viper.Descriptor.Id;
+                }
+
+                var message = "鼠标板载映射批量设置失败：" + exception.Message + " " +
+                    (restorationError is null
+                        ? "完整原映射已恢复并读回确认。"
+                        : "完整原映射恢复失败：" + restorationError + " 请立即检查鼠标映射。");
                 if (exception is OperationCanceledException)
                 {
                     throw new OperationCanceledException(message, exception, cancellationToken);
@@ -197,6 +262,21 @@ public sealed partial class RazerDeviceTelemetryReader
             response, request, ViperProduct184ProfileId, buttonId, mode);
     }
 
+    private async Task<IReadOnlyList<ViperObmAssignment>> ReadAllViperObmAssignmentsAsync(
+        ReadyDevice device,
+        CancellationToken cancellationToken)
+    {
+        var assignments = new List<ViperObmAssignment>(ViperProduct184ButtonIds.Length * 2);
+        foreach (var buttonId in ViperProduct184ButtonIds)
+        {
+            assignments.Add(await ReadViperObmAssignmentAsync(
+                device, buttonId, ViperObmMappingMode.Normal, cancellationToken));
+            assignments.Add(await ReadViperObmAssignmentAsync(
+                device, buttonId, ViperObmMappingMode.HyperShift, cancellationToken));
+        }
+        return assignments;
+    }
+
     private async Task WriteViperObmAssignmentAsync(
         ReadyDevice device,
         ViperObmAssignment assignment,
@@ -263,6 +343,75 @@ public sealed partial class RazerDeviceTelemetryReader
         }
 
         return errors.Count == 0 ? null : string.Join(" ", errors);
+    }
+
+    private async Task<string?> RestoreViperObmAssignmentBatchAsync(
+        ReadyDevice device,
+        IReadOnlyList<ViperObmAssignment> original,
+        IReadOnlyList<ViperObmAssignment> attempted)
+    {
+        var errors = new List<string>();
+        foreach (var assignment in attempted.Reverse())
+        {
+            try
+            {
+                await WriteViperObmAssignmentAsync(device, assignment, CancellationToken.None);
+            }
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
+            {
+                errors.Add($"恢复 {FormatAssignment(assignment)} 写入失败：{exception.Message}");
+            }
+        }
+
+        try
+        {
+            var restored = await ReadAllViperObmAssignmentsAsync(device, CancellationToken.None);
+            var restoredByKey = restored.ToDictionary(AssignmentKey);
+            foreach (var expected in original)
+            {
+                EnsureAssignmentsEqual(
+                    expected,
+                    restoredByKey[AssignmentKey(expected)],
+                    "批量恢复");
+            }
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            errors.Add("完整恢复读回失败：" + exception.Message);
+        }
+
+        return errors.Count == 0 ? null : string.Join(" ", errors);
+    }
+
+    internal static IReadOnlyList<ViperObmAssignment> ValidateViperButtonAssignmentBatch(
+        IReadOnlyList<ViperButtonAssignment> assignments)
+    {
+        ArgumentNullException.ThrowIfNull(assignments);
+        if (assignments.Count != ViperProduct184ButtonIds.Length * 2)
+        {
+            throw new ArgumentException("Product 184 批量映射必须恰好包含 16 条记录。", nameof(assignments));
+        }
+
+        var converted = assignments.Select(assignment =>
+        {
+            ArgumentNullException.ThrowIfNull(assignment);
+            ArgumentNullException.ThrowIfNull(assignment.FunctionData);
+            return ToProtocolAssignment(assignment);
+        }).ToArray();
+        if (converted.Select(AssignmentKey).Distinct().Count() != converted.Length ||
+            ViperProduct184ButtonIds.Any(buttonId =>
+                !converted.Any(item => item.ButtonId == buttonId && item.Mode == ViperObmMappingMode.Normal) ||
+                !converted.Any(item => item.ButtonId == buttonId && item.Mode == ViperObmMappingMode.HyperShift)))
+        {
+            throw new ArgumentException(
+                "Product 184 批量映射必须为每个按钮各包含唯一的普通层和 HyperShift 层。",
+                nameof(assignments));
+        }
+
+        return converted
+            .OrderBy(item => Array.IndexOf(ViperProduct184ButtonIds, item.ButtonId))
+            .ThenBy(item => item.Mode)
+            .ToArray();
     }
 
     private static ViperObmAssignment ToProtocolAssignment(ViperButtonAssignment assignment)
@@ -360,6 +509,9 @@ public sealed partial class RazerDeviceTelemetryReader
         left.Mode == right.Mode &&
         left.Function == right.Function &&
         left.FunctionData.SequenceEqual(right.FunctionData);
+
+    private static (byte ButtonId, ViperObmMappingMode Mode) AssignmentKey(
+        ViperObmAssignment assignment) => (assignment.ButtonId, assignment.Mode);
 
     private static void EnsureAssignmentsEqual(
         ViperObmAssignment expected,

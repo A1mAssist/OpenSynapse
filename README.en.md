@@ -41,9 +41,9 @@ The low-battery threshold is read only. This device does not support `2000 / 400
 
 ## Install and run
 
-1. Download the latest x64 archive from [Releases](https://github.com/A1mAssist/OpenSynapse/releases).
-2. Extract the complete archive. Do not move the executable by itself or remove the adjacent `resources` directory.
-3. Run `OpenSynapse.exe` from the archive root.
+1. Download the latest `OpenSynapse-win-Setup.exe` from [Releases](https://github.com/A1mAssist/OpenSynapse/releases).
+2. Run the installer. OpenSynapse installs for the current user and does not require administrator privileges.
+3. A portable build remains available, but older archive builds cannot use in-app updates.
 
 Exit Razer Synapse before the first device scan. Both applications can contend for the same HID control channel. OpenSynapse reports access failures but never terminates the Synapse process.
 
@@ -71,6 +71,14 @@ Run the local build:
 ```powershell
 & '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
+
+Build the installer, portable package, and Velopack update assets:
+
+```powershell
+.\scripts\Publish-VelopackRelease.ps1 -Version 1.0.3
+```
+
+Set `GITHUB_TOKEN` and add `-Upload` to create a public GitHub Release and upload the update feed assets.
 
 ## License and acknowledgements
 

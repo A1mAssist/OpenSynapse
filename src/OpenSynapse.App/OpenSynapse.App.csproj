@@ -21,11 +21,13 @@
     <DebugSymbols>false</DebugSymbols>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="1.8.260709004" />
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.0" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,9 +66,11 @@
   </Target>
 
   <Target Name="IncludeWinUiRuntimeResourcesInPublish" AfterTargets="Publish">
+    <!-- App notifications require this Windows App SDK resource satellite in unpackaged publish output. -->
     <ItemGroup>
       <_WinUiRuntimeResources Include="$(TargetDir)$(AssemblyName).pri" />
       <_WinUiRuntimeResources Include="$(TargetDir)*.xbf" />
+      <_WinUiRuntimeResources Include="$(IntermediateOutputPath)MsixContent\Microsoft.WindowsAppRuntime.Insights.Resource.dll" />
     </ItemGroup>
     <Copy
       SourceFiles="@(_WinUiRuntimeResources)"

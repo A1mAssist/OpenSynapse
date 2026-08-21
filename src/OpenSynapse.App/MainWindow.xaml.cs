@@ -6,8 +6,12 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Devices;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using Velopack;
+using Velopack.Sources;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
 using Windows.UI;
@@ -22,6 +26,7 @@ public sealed partial class MainWindow : Window
     private const int ShowWindowRestore = 9;
     private const int MinimumLaunchDurationMilliseconds = 650;
     private static readonly TimeSpan IntroductionCloseTimeout = TimeSpan.FromSeconds(2);
+    private const string UpdateRepositoryUrl = "https://github.com/A1mAssist/OpenSynapse";
     private static readonly string IntroductionMarkerPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "OpenSynapse",
@@ -30,20 +35,34 @@ public sealed partial class MainWindow : Window
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly bool _silentLaunch;
+    private readonly AppBehaviorSettings _behaviorSettings;
+    private readonly UpdateManager _updateManager = new(
+        new GithubSource(UpdateRepositoryUrl, null, prerelease: false));
     private bool _trayLifecycleEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
     private bool _touchpadToggleInFlight;
     private bool _introductionTransitioning;
     private bool _languageSelectionReady;
+    private bool _updateUiReady;
+    private bool _behaviorUiReady;
+    private bool _updateBusy;
+    private int[] _refreshRateCycleOptions = [];
+    private UpdateInfo? _availableUpdate;
+    private VelopackAsset? _downloadedUpdate;
     private Color? _lightingColorBeforeEdit;
     private bool _introductionPendingAfterLaunch;
     private int _introductionStep = -1;
     private FrameworkElement? _introductionTarget;
+    private AboutWindow? _aboutWindow;
 
-    public MainWindow(MainViewModel viewModel, bool silentLaunch = false)
+    internal MainWindow(
+        MainViewModel viewModel,
+        AppBehaviorSettings behaviorSettings,
+        bool silentLaunch = false)
     {
         _viewModel = viewModel;
+        _behaviorSettings = behaviorSettings;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException("OpenSynapse 主窗口必须在 DispatcherQueue 线程创建。");
@@ -52,6 +71,8 @@ public sealed partial class MainWindow : Window
         RootLayout.Loaded += (_, _) => Localized.RefreshTree(RootLayout);
         SelectLanguage(AppLanguageSettings.Current);
         _languageSelectionReady = true;
+        InitializeBehaviorSettingsUi();
+        InitializeUpdateUi();
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {
@@ -78,7 +99,15 @@ public sealed partial class MainWindow : Window
 
     internal void RequestNavigation(string page) => _dispatcherQueue.TryEnqueue(() =>
     {
+        if (StringComparer.Ordinal.Equals(page, "about"))
+        {
+            RestoreAndActivate();
+            ShowAboutWindow();
+            return;
+        }
+
         var item = RootNavigationView.MenuItems
+            .Concat(RootNavigationView.FooterMenuItems)
             .OfType<NavigationViewItem>()
             .FirstOrDefault(candidate => StringComparer.Ordinal.Equals(candidate.Tag as string, page));
         if (item is not null)
@@ -218,6 +247,10 @@ public sealed partial class MainWindow : Window
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Get("设备监听"));
+            if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
+            {
+                _ = CheckForUpdatesAsync(downloadAutomatically: true);
+            }
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {
@@ -262,6 +295,18 @@ public sealed partial class MainWindow : Window
 
     private void ShowIntroductionClick(object sender, RoutedEventArgs e) =>
         _ = ShowIntroductionStepAsync(0);
+
+    private void OpenAboutClick(object sender, RoutedEventArgs e) => ShowAboutWindow();
+
+    private void ShowAboutWindow()
+    {
+        if (_aboutWindow is null)
+        {
+            _aboutWindow = new AboutWindow();
+            _aboutWindow.Closed += (_, _) => _aboutWindow = null;
+        }
+        _aboutWindow.Activate();
+    }
 
     private void IntroductionPreviousClick(object sender, RoutedEventArgs e)
     {
@@ -615,6 +660,8 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        _aboutWindow?.Close();
+        _aboutWindow = null;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
@@ -641,8 +688,10 @@ public sealed partial class MainWindow : Window
             AppStrings.Reset();
             _viewModel.RefreshLocalization();
             Localized.RefreshTree(RootLayout);
+            _aboutWindow?.RefreshLocalization();
             ((App)Application.Current).RefreshTrayLocalization();
             RefreshIntroductionLocalization();
+            RefreshUpdateUiText();
             SelectLanguage(language);
         }
         catch (Exception exception)
@@ -654,6 +703,360 @@ public sealed partial class MainWindow : Window
                 "LanguageSettingError",
                 "界面语言设置：{0}",
                 exception.Message));
+        }
+    }
+
+    private void InitializeUpdateUi()
+    {
+        AutomaticUpdatesToggle.IsOn = AppUpdateSettings.AutomaticUpdatesEnabled;
+        _downloadedUpdate = _updateManager.UpdatePendingRestart;
+        _updateUiReady = true;
+        RefreshUpdateUiText();
+    }
+
+    private void InitializeBehaviorSettingsUi()
+    {
+        ModeNotificationToggle.IsOn = _behaviorSettings.ModeChangeNotificationsEnabled;
+        foreach (var checkBox in PerformanceCycleModesPanel.Children.OfType<CheckBox>())
+        {
+            checkBox.IsChecked = checkBox.Tag is string tag &&
+                Enum.TryParse<BladePerformanceMode>(tag, out var mode) &&
+                _viewModel.BladePerformanceCycleModes.Contains(mode);
+        }
+        RebuildRefreshRateCycleOptions();
+        _behaviorUiReady = true;
+    }
+
+    private void RebuildRefreshRateCycleOptions(bool force = false)
+    {
+        var rates = _viewModel.InternalDisplayRefreshRates.Distinct().Order().ToArray();
+        if (!force && _refreshRateCycleOptions.SequenceEqual(rates))
+        {
+            return;
+        }
+        _refreshRateCycleOptions = rates;
+        var selected = _viewModel.InternalDisplayRefreshRateCycleHertz is { Count: > 0 } configured
+            ? rates.Where(configured.Contains).ToHashSet()
+            : rates.ToHashSet();
+        if (selected.Count == 0)
+        {
+            selected = rates.ToHashSet();
+        }
+
+        RefreshRateCycleModesPanel.Children.Clear();
+        RefreshRateCycleModesPanel.ColumnDefinitions.Clear();
+        for (var index = 0; index < rates.Length; index++)
+        {
+            RefreshRateCycleModesPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var checkBox = new CheckBox
+            {
+                Tag = rates[index],
+                Content = $"{rates[index]} Hz",
+                IsChecked = selected.Contains(rates[index]),
+            };
+            checkBox.Checked += RefreshRateCycleModeChanged;
+            checkBox.Unchecked += RefreshRateCycleModeChanged;
+            Grid.SetColumn(checkBox, index);
+            RefreshRateCycleModesPanel.Children.Add(checkBox);
+        }
+
+        RefreshRateCycleSection.Visibility = rates.Length > 1 ? Visibility.Visible : Visibility.Collapsed;
+        if (selected.Count > 0)
+        {
+            _viewModel.SetInternalDisplayRefreshRateCycle(selected);
+        }
+    }
+
+    private void ModeNotificationToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle)
+        {
+            return;
+        }
+
+        var previous = _behaviorSettings.ModeChangeNotificationsEnabled;
+        try
+        {
+            _behaviorSettings.ModeChangeNotificationsEnabled = toggle.IsOn;
+            _behaviorSettings.Save();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            _behaviorSettings.ModeChangeNotificationsEnabled = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            _viewModel.ReportApplicationError(AppStrings.Format(
+                "BehaviorSettingError",
+                "快捷键与通知设置：{0}",
+                exception.Message));
+        }
+    }
+
+    private async void PerformanceCycleModeChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady)
+        {
+            return;
+        }
+
+        var selected = PerformanceCycleModesPanel.Children
+            .OfType<CheckBox>()
+            .Where(checkBox => checkBox.IsChecked == true)
+            .Select(checkBox => checkBox.Tag as string)
+            .Select(tag => Enum.TryParse<BladePerformanceMode>(tag, out var mode) ? mode : (BladePerformanceMode?)null)
+            .OfType<BladePerformanceMode>()
+            .ToHashSet();
+        if (selected.Count == 0 && sender is CheckBox lastCheckBox)
+        {
+            _behaviorUiReady = false;
+            lastCheckBox.IsChecked = true;
+            _behaviorUiReady = true;
+            return;
+        }
+
+        if (!await _viewModel.SavePerformanceCycleModesAsync(selected, _lifetime.Token))
+        {
+            _behaviorUiReady = false;
+            InitializeBehaviorSettingsUi();
+        }
+    }
+
+    private async void RefreshRateCycleModeChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady)
+        {
+            return;
+        }
+
+        var selected = RefreshRateCycleModesPanel.Children
+            .OfType<CheckBox>()
+            .Where(checkBox => checkBox.IsChecked == true && checkBox.Tag is int)
+            .Select(checkBox => (int)checkBox.Tag)
+            .ToHashSet();
+        if (selected.Count == 0 && sender is CheckBox lastCheckBox)
+        {
+            _behaviorUiReady = false;
+            lastCheckBox.IsChecked = true;
+            _behaviorUiReady = true;
+            return;
+        }
+
+        if (!await _viewModel.SaveRefreshRateCycleAsync(selected, _lifetime.Token))
+        {
+            _behaviorUiReady = false;
+            RebuildRefreshRateCycleOptions(force: true);
+            _behaviorUiReady = true;
+        }
+    }
+
+    private void RefreshUpdateUiText()
+    {
+        if (!_updateManager.IsInstalled)
+        {
+            UpdateStatusText.Text = AppStrings.Format(
+                "UpdateInstallerRequired",
+                "当前为旧版便携包；安装新版安装包后可使用自动更新。");
+            CheckUpdateButton.IsEnabled = false;
+            AutomaticUpdatesToggle.IsEnabled = false;
+            UpdateActionButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        CheckUpdateButton.IsEnabled = !_updateBusy;
+        if (_downloadedUpdate is not null)
+        {
+            UpdateStatusText.Text = AppStrings.Format(
+                "UpdateReady",
+                "版本 {0} 已下载，可以更新。",
+                _downloadedUpdate.Version);
+            UpdateActionButton.Content = AppStrings.Format("更新并重启", "更新并重启");
+            UpdateActionButton.Visibility = Visibility.Visible;
+            UpdateActionButton.IsEnabled = !_updateBusy;
+            return;
+        }
+
+        if (_availableUpdate is not null)
+        {
+            UpdateStatusText.Text = AppStrings.Format(
+                "UpdateAvailable",
+                "发现版本 {0}。",
+                _availableUpdate.TargetFullRelease.Version);
+            UpdateActionButton.Content = AppStrings.Format("下载更新", "下载更新");
+            UpdateActionButton.Visibility = Visibility.Visible;
+            UpdateActionButton.IsEnabled = !_updateBusy;
+            return;
+        }
+
+        var currentVersion = _updateManager.CurrentVersion?.ToString() ??
+            Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "--";
+        UpdateStatusText.Text = AppStrings.Format(
+            "CurrentVersion",
+            "当前版本 {0}。",
+            currentVersion);
+        UpdateActionButton.Visibility = Visibility.Collapsed;
+    }
+
+    private async void AutomaticUpdatesToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_updateUiReady || sender is not ToggleSwitch toggle)
+        {
+            return;
+        }
+
+        try
+        {
+            AppUpdateSettings.AutomaticUpdatesEnabled = toggle.IsOn;
+            if (toggle.IsOn && _updateManager.IsInstalled && _availableUpdate is null && _downloadedUpdate is null)
+            {
+                await CheckForUpdatesAsync(downloadAutomatically: true);
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            System.Security.SecurityException)
+        {
+            _updateUiReady = false;
+            toggle.IsOn = AppUpdateSettings.AutomaticUpdatesEnabled;
+            _updateUiReady = true;
+            UpdateStatusText.Text = AppStrings.Format(
+                "UpdateSettingError",
+                "更新设置保存失败：{0}",
+                exception.Message);
+        }
+    }
+
+    private async void CheckForUpdatesClick(object sender, RoutedEventArgs e) =>
+        await CheckForUpdatesAsync(AutomaticUpdatesToggle.IsOn);
+
+    private async Task CheckForUpdatesAsync(bool downloadAutomatically)
+    {
+        if (_updateBusy || !_updateManager.IsInstalled)
+        {
+            return;
+        }
+
+        SetUpdateBusy(true, AppStrings.Format("正在检查更新", "正在检查更新"));
+        try
+        {
+            _availableUpdate = await _updateManager.CheckForUpdatesAsync();
+            AppUpdateSettings.MarkCheckCompleted();
+            if (_availableUpdate is null)
+            {
+                UpdateStatusText.Text = AppStrings.Format("当前已是最新版本", "当前已是最新版本");
+                UpdateActionButton.Visibility = Visibility.Collapsed;
+            }
+            else if (downloadAutomatically)
+            {
+                UpdateStatusText.Text = AppStrings.Format("正在下载更新", "正在下载更新");
+                await DownloadUpdateAsync();
+            }
+
+            SetUpdateBusy(false);
+            if (_availableUpdate is not null || _downloadedUpdate is not null)
+            {
+                RefreshUpdateUiText();
+            }
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            UpdateStatusText.Text = AppStrings.Format(
+                "UpdateCheckFailed",
+                "检查更新失败：{0}",
+                exception.Message);
+        }
+        finally
+        {
+            SetUpdateBusy(false);
+        }
+    }
+
+    private async void UpdateActionClick(object sender, RoutedEventArgs e)
+    {
+        if (_updateBusy)
+        {
+            return;
+        }
+
+        if (_downloadedUpdate is null)
+        {
+            SetUpdateBusy(true, AppStrings.Format("正在下载更新", "正在下载更新"));
+            try
+            {
+                await DownloadUpdateAsync();
+                SetUpdateBusy(false);
+                RefreshUpdateUiText();
+            }
+            catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception)
+            {
+                UpdateStatusText.Text = AppStrings.Format(
+                    "UpdateDownloadFailed",
+                    "下载更新失败：{0}",
+                    exception.Message);
+            }
+            finally
+            {
+                SetUpdateBusy(false);
+            }
+            return;
+        }
+
+        SetUpdateBusy(true, AppStrings.Format("正在安全退出并更新", "正在安全退出并更新"));
+        try
+        {
+            await ((App)Application.Current).ApplyUpdateAndRestartAsync(
+                _updateManager,
+                _downloadedUpdate);
+        }
+        catch (Exception exception)
+        {
+            SetUpdateBusy(false);
+            UpdateStatusText.Text = AppStrings.Format(
+                "UpdateApplyFailed",
+                "启动更新失败，请重新打开 OpenSynapse 后重试：{0}",
+                exception.Message);
+        }
+    }
+
+    private async Task DownloadUpdateAsync()
+    {
+        if (_availableUpdate is null)
+        {
+            return;
+        }
+
+        UpdateProgressBar.Visibility = Visibility.Visible;
+        UpdateProgressBar.Value = 0;
+        await _updateManager.DownloadUpdatesAsync(
+            _availableUpdate,
+            progress => _dispatcherQueue.TryEnqueue(() => UpdateProgressBar.Value = progress),
+            _lifetime.Token);
+        _downloadedUpdate = _availableUpdate.TargetFullRelease;
+        _availableUpdate = null;
+        UpdateProgressBar.Visibility = Visibility.Collapsed;
+    }
+
+    private void SetUpdateBusy(bool busy, string? status = null)
+    {
+        _updateBusy = busy;
+        CheckUpdateButton.IsEnabled = !busy && _updateManager.IsInstalled;
+        UpdateActionButton.IsEnabled = !busy;
+        AutomaticUpdatesToggle.IsEnabled = !busy;
+        if (status is not null)
+        {
+            UpdateStatusText.Text = status;
+        }
+        if (!busy)
+        {
+            UpdateProgressBar.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -829,13 +1232,8 @@ public sealed partial class MainWindow : Window
     private async void ReadViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ReadViperButtonMappingsAsync(_lifetime.Token);
 
-    private async void ApplyViperButtonMappingClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: ViperButtonAssignmentRowViewModel row })
-        {
-            await _viewModel.ApplyViperButtonMappingAsync(row, _lifetime.Token);
-        }
-    }
+    private async void ApplyAllViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyAllViperButtonMappingsAsync(_lifetime.Token);
 
     private async void ProfileSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -970,6 +1368,32 @@ public sealed partial class MainWindow : Window
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(MainViewModel.InternalDisplayRefreshRates))
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                _behaviorUiReady = false;
+                RebuildRefreshRateCycleOptions();
+                _behaviorUiReady = true;
+            });
+        }
+        if (args.PropertyName == nameof(MainViewModel.BladePerformanceCycleModes))
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                _behaviorUiReady = false;
+                InitializeBehaviorSettingsUi();
+            });
+        }
+        if (args.PropertyName == nameof(MainViewModel.InternalDisplayRefreshRateCycleHertz))
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                _behaviorUiReady = false;
+                RebuildRefreshRateCycleOptions(force: true);
+                _behaviorUiReady = true;
+            });
+        }
         if (args.PropertyName == nameof(MainViewModel.ViperDeviceVisibility) &&
             _viewModel.ViperDeviceVisibility != Visibility.Visible)
         {
@@ -991,8 +1415,8 @@ public sealed partial class MainWindow : Window
         OverviewPage.Visibility = page == "overview" ? Visibility.Visible : Visibility.Collapsed;
         DevicesPage.Visibility = page == "devices" ? Visibility.Visible : Visibility.Collapsed;
         ProfilesPage.Visibility = page == "profiles" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPage.Visibility = page == "settings" ? Visibility.Visible : Visibility.Collapsed;
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
-        AboutPage.Visibility = page == "about" ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ApplyDarkTheme()
