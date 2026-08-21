@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260710003" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="1.8.260709004" />
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.0" />
   </ItemGroup>
 
@@ -76,5 +76,26 @@
       SourceFiles="@(_RecoveryHostFile)"
       DestinationFolder="$(PublishDir)"
       SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="PruneReleasePublishOutput"
+          AfterTargets="IncludeWinUiRuntimeResourcesInPublish"
+          Condition="'$(Configuration)' == 'Release' and '$(PublishDir)' != ''">
+    <ItemGroup>
+      <_UnusedMui Include="$(PublishDir)*\*.mui"
+                  Exclude="$(PublishDir)en-US\*.mui;$(PublishDir)en-us\*.mui;$(PublishDir)zh-CN\*.mui" />
+      <_UnusedReleaseFile Include="$(PublishDir)createdump.exe;
+                                  $(PublishDir)clrgcexp.dll;
+                                  $(PublishDir)Microsoft.DiaSymReader.Native.amd64.dll;
+                                  $(PublishDir)Microsoft.Web.WebView2.Core.dll;
+                                  $(PublishDir)Microsoft.Web.WebView2.Core.Projection.dll;
+                                  $(PublishDir)mscordaccore*.dll;
+                                  $(PublishDir)mscordbi.dll;
+                                  $(PublishDir)OpenSynapse.Core.pdb;
+                                  $(PublishDir)OpenSynapse.Windows.pdb;
+                                  $(PublishDir)WebView2Loader.dll" />
+    </ItemGroup>
+    <Delete Files="@(_UnusedMui);@(_UnusedReleaseFile)" />
+    <RemoveDir Directories="@(_UnusedMui->'%(RootDir)%(Directory)')" />
   </Target>
 </Project>

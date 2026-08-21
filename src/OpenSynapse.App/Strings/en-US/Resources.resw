@@ -364,6 +364,10 @@
     <value>Overview</value>
     <comment>概览页面标题</comment>
   </data>
+  <data name="Loc_6F843C9A12.Text" xml:space="preserve">
+    <value>System status, resource usage, and connected devices.</value>
+    <comment>概览页面说明</comment>
+  </data>
   <data name="Loc_3453A83F8E.Text" xml:space="preserve">
     <value>Local profiles, app bindings, and startup settings for the current user.</value>
     <comment>本地配置、应用绑定以及当前用户的启动设置。</comment>

@@ -47,7 +47,7 @@
         <Grid>
             <ScrollViewer x:Name="OverviewPage" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
-                <TextBlock local:Localized.Uid="Loc_16E65B7F4A" Text="概览" Style="{StaticResource PageTitleStyle}" />
+                <StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_16E65B7F4A" Text="概览" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_6F843C9A12" Text="系统状态、资源使用与已连接设备概览。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                 <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                 <StackPanel x:Name="SystemTelemetrySection" Spacing="12">
                   <TextBlock local:Localized.Uid="Loc_643DCA0BC0" Text="系统遥测" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
