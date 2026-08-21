@@ -67,7 +67,7 @@ Exit Razer Synapse before the first device scan to avoid both applications conte
 
 ### Driver boundary
 
-OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support requires the Product 710 Razer device drivers. Install the matching drivers from Razer or your Blade device support package before using those functions; without them, Blade Fn and the related hardware controls remain unavailable. OpenSynapse does not bundle or redistribute the driver files.
+OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support requires the Product 710 Razer device drivers. Install the matching drivers from Razer or your Blade device support package before using those functions; without them, Blade Fn and the related hardware controls remain unavailable. 
 
 ## Out of scope
 
@@ -112,3 +112,6 @@ Project code is available under the [MIT License](LICENSE). Third-party componen
 Protocol work references and cross-checks [OpenRazer](https://github.com/openrazer/openrazer), [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB), and other public implementations. OpenSynapse is not affiliated with or endorsed by Razer Inc. Razer and related product names are trademarks of their respective owners.
 
 Made with ❤ in C# by [A1mAssist](https://github.com/A1mAssist).
+
+abc def ghi jkl mno pqr stu
+abc def ghi jkl mno pqr stu
