@@ -9,15 +9,22 @@ public sealed class WindowsStartupManager
 
     public bool IsEnabled(string executablePath)
     {
-        var expected = FormatCommand(executablePath);
         using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false);
         return key?.GetValue(ValueName) is string actual &&
-               StringComparer.OrdinalIgnoreCase.Equals(actual, expected);
+               (StringComparer.OrdinalIgnoreCase.Equals(actual, FormatCommand(executablePath, silent: false)) ||
+                StringComparer.OrdinalIgnoreCase.Equals(actual, FormatCommand(executablePath, silent: true)));
     }
 
-    public void SetEnabled(bool enabled, string executablePath)
+    public bool IsSilentEnabled(string executablePath)
     {
-        var command = FormatCommand(executablePath);
+        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false);
+        return key?.GetValue(ValueName) is string actual &&
+               StringComparer.OrdinalIgnoreCase.Equals(actual, FormatCommand(executablePath, silent: true));
+    }
+
+    public void SetEnabled(bool enabled, string executablePath, bool silent = false)
+    {
+        var command = FormatCommand(executablePath, silent);
         using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath, writable: true)
             ?? throw new InvalidOperationException("Unable to open the current-user startup registry key.");
         if (enabled)
@@ -30,9 +37,10 @@ public sealed class WindowsStartupManager
         }
     }
 
-    private static string FormatCommand(string executablePath)
+    internal static string FormatCommand(string executablePath, bool silent)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
-        return $"\"{Path.GetFullPath(executablePath.Trim())}\"";
+        var command = $"\"{Path.GetFullPath(executablePath.Trim())}\"";
+        return silent ? $"{command} --silent" : command;
     }
 }

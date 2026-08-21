@@ -11,7 +11,10 @@ public sealed class SingleInstanceGuard : IDisposable
         _activationEvent = activationEvent;
     }
 
-    public static bool TryAcquire(string name, out SingleInstanceGuard? guard)
+    public static bool TryAcquire(
+        string name,
+        out SingleInstanceGuard? guard,
+        bool activateExisting = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var activationEventName = $"{name}.Activate";
@@ -35,7 +38,10 @@ public sealed class SingleInstanceGuard : IDisposable
         {
             try
             {
-                activationEvent.Set();
+                if (activateExisting)
+                {
+                    activationEvent.Set();
+                }
             }
             finally
             {

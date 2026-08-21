@@ -21,7 +21,6 @@ public sealed partial class MainWindow : Window
     private const int MinimumWindowHeight = 680;
     private const int ShowWindowRestore = 9;
     private const int MinimumLaunchDurationMilliseconds = 650;
-    private const int IntroductionStepCount = 4;
     private static readonly TimeSpan IntroductionCloseTimeout = TimeSpan.FromSeconds(2);
     private static readonly string IntroductionMarkerPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -30,6 +29,7 @@ public sealed partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly bool _silentLaunch;
     private bool _trayLifecycleEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
@@ -41,9 +41,10 @@ public sealed partial class MainWindow : Window
     private int _introductionStep = -1;
     private FrameworkElement? _introductionTarget;
 
-    public MainWindow(MainViewModel viewModel)
+    public MainWindow(MainViewModel viewModel, bool silentLaunch = false)
     {
         _viewModel = viewModel;
+        _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException("OpenSynapse 主窗口必须在 DispatcherQueue 线程创建。");
         InitializeComponent();
@@ -59,6 +60,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         RootNavigationView.DataContext = _viewModel;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         SystemBackdrop = new MicaBackdrop();
         ApplyDarkTheme();
         ApplyTitleBarColors(launchOverlayActive: true);
@@ -68,6 +70,9 @@ public sealed partial class MainWindow : Window
         AppWindow.Changed += OnAppWindowChanged;
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
     }
+
+    private int IntroductionStepCount =>
+        _viewModel.ViperDeviceVisibility == Visibility.Visible ? 4 : 3;
 
     internal void RequestActivation() => _dispatcherQueue.TryEnqueue(RestoreAndActivate);
 
@@ -113,6 +118,7 @@ public sealed partial class MainWindow : Window
 
     private void RestoreAndActivate()
     {
+        AppWindow.IsShownInSwitchers = true;
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         ShowWindow(windowHandle, ShowWindowRestore);
         Activate();
@@ -193,6 +199,13 @@ public sealed partial class MainWindow : Window
     private async void OnActivated(object sender, WindowActivatedEventArgs args)
     {
         Activated -= OnActivated;
+        if (_silentLaunch)
+        {
+            AppWindow.Hide();
+            LaunchProgressRing.IsActive = false;
+            LaunchOverlay.Visibility = Visibility.Collapsed;
+            ApplyTitleBarColors(launchOverlayActive: false);
+        }
         ResizeForCurrentDisplay();
         var launchStarted = Stopwatch.GetTimestamp();
         LaunchStatusText.Text = AppStrings.Get("正在读取配置与设备状态");
@@ -231,6 +244,10 @@ public sealed partial class MainWindow : Window
             }
         }
 
+        if (_silentLaunch)
+        {
+            return;
+        }
         if (File.Exists(IntroductionMarkerPath))
         {
             LaunchStatusText.Text = AppStrings.Get("已就绪");
@@ -310,9 +327,7 @@ public sealed partial class MainWindow : Window
                     break;
                 default:
                     RootNavigationView.SelectedItem = DevicesNavigationItem;
-                    BladeDevicePanel.Visibility = Visibility.Collapsed;
-                    ViperDevicePanel.Visibility = Visibility.Visible;
-                    UpdateDeviceSelector("viper");
+                    SelectDevice("viper");
                     DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
                     target = ViperPollingRateSaveButton;
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Top;
@@ -600,6 +615,7 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
@@ -866,6 +882,14 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async void SilentStartupToggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch toggle && toggle.IsOn != _viewModel.IsSilentStartupEnabled)
+        {
+            await _viewModel.SetSilentStartupEnabledAsync(toggle.IsOn, _lifetime.Token);
+        }
+    }
+
     private async void BindApplicationClick(object sender, RoutedEventArgs e)
     {
         var picker = new FileOpenPicker
@@ -929,9 +953,27 @@ public sealed partial class MainWindow : Window
     {
         if (sender is Button { Tag: string device })
         {
-            BladeDevicePanel.Visibility = device == "blade" ? Visibility.Visible : Visibility.Collapsed;
-            ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
-            UpdateDeviceSelector(device);
+            SelectDevice(device);
+        }
+    }
+
+    private void SelectDevice(string device)
+    {
+        if (device == "viper" && _viewModel.ViperDeviceVisibility != Visibility.Visible)
+        {
+            device = "blade";
+        }
+        BladeDevicePanel.Visibility = device == "blade" ? Visibility.Visible : Visibility.Collapsed;
+        ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
+        UpdateDeviceSelector(device);
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(MainViewModel.ViperDeviceVisibility) &&
+            _viewModel.ViperDeviceVisibility != Visibility.Visible)
+        {
+            _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
         }
     }
 

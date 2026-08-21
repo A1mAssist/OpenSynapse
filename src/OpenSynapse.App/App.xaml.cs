@@ -49,23 +49,6 @@ public partial class App : Application
             _diagnosticLog.TryWrite("language", $"applying saved language failed: {exception}");
         }
 
-        try
-        {
-            if (Environment.ProcessPath is string executablePath &&
-                WindowsGpuPreference.EnsureMinimumPower(executablePath))
-            {
-                _diagnosticLog.TryWrite(
-                    "gpu-preference",
-                    "Registered Windows minimum-power GPU preference; effective on next launch.");
-            }
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or
-            InvalidOperationException or System.Security.SecurityException)
-        {
-            _diagnosticLog.TryWrite("gpu-preference", $"registration failed: {exception}");
-        }
-
         InitializeComponent();
         UnhandledException += (_, args) =>
         {
@@ -87,10 +70,33 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         AppStrings.Enable();
-        if (!SingleInstanceGuard.TryAcquire(@"Local\OpenSynapse", out _singleInstanceGuard))
+        var silentLaunch = Environment.GetCommandLineArgs()
+            .Skip(1)
+            .Any(argument => StringComparer.OrdinalIgnoreCase.Equals(argument, "--silent"));
+        if (!SingleInstanceGuard.TryAcquire(
+                @"Local\OpenSynapse",
+                out _singleInstanceGuard,
+                activateExisting: !silentLaunch))
         {
             Environment.Exit(0);
             return;
+        }
+
+        try
+        {
+            if (Environment.ProcessPath is string executablePath &&
+                WindowsGpuPreference.EnsureMinimumPower(executablePath))
+            {
+                _diagnosticLog.TryWrite(
+                    "gpu-preference",
+                    "Cleaned stale entries and registered the Windows minimum-power GPU preference.");
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            _diagnosticLog.TryWrite("gpu-preference", $"registration failed: {exception}");
         }
 
         _performanceMonitor = new WindowsPerformanceMonitor();
@@ -125,11 +131,15 @@ public partial class App : Application
             "audio-mute-sync",
             "Blade Fn and speaker/microphone mute synchronization enabled.");
         _diagnosticLog.TryWrite("application", "OpenSynapse started.");
-        var window = new MainWindow(viewModel);
+        var window = new MainWindow(viewModel, silentLaunch);
         RegisterMainWindow(window, viewModel);
         StartMappingWatchdog(window);
-        window.Activate();
         InitializeTray(window, viewModel);
+        if (silentLaunch)
+        {
+            window.AppWindow.IsShownInSwitchers = false;
+        }
+        window.Activate();
 
         _activationCancellation = new CancellationTokenSource();
         _ = ObserveActivationRequestsAsync(_activationCancellation.Token);

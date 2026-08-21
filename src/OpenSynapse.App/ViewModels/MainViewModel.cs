@@ -82,6 +82,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private string _activeProfileName = ProfileCatalog.DefaultProfileName;
     private string _profileNameInput = string.Empty;
     private bool _isStartupEnabled;
+    private bool _isSilentStartupEnabled;
     private string _telemetryTimeText = "等待采样";
     private string _errorText = string.Empty;
     private bool _isBusy;
@@ -147,6 +148,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private IReadOnlyList<DeviceDescriptor> _deviceDescriptors = Array.Empty<DeviceDescriptor>();
     private RazerDeviceTelemetry? _lastDeviceTelemetry;
     private string _viperDeviceName = "Razer Viper V3 HyperSpeed";
+    private Visibility _viperDeviceVisibility = Visibility.Collapsed;
     private string _viperStatusText = "未发现";
     private string _viperBatteryText = "--";
     private string _viperPollingRateText = "--";
@@ -295,8 +297,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public string ActiveProfileName { get => _activeProfileName; private set => SetField(ref _activeProfileName, value); }
     public string ProfileNameInput { get => _profileNameInput; set => SetField(ref _profileNameInput, value); }
     public bool CanDeleteProfile => ProfileNames.Count > 1;
-    public bool IsStartupEnabled { get => _isStartupEnabled; private set => SetField(ref _isStartupEnabled, value); }
+    public bool IsStartupEnabled
+    {
+        get => _isStartupEnabled;
+        private set
+        {
+            if (SetField(ref _isStartupEnabled, value))
+            {
+                OnPropertyChanged(nameof(CanSetSilentStartup));
+            }
+        }
+    }
+    public bool IsSilentStartupEnabled { get => _isSilentStartupEnabled; private set => SetField(ref _isSilentStartupEnabled, value); }
     public bool CanSetStartup => _startupManager is not null && !string.IsNullOrWhiteSpace(_executablePath);
+    public bool CanSetSilentStartup => CanSetStartup && IsStartupEnabled;
 
     public bool IsBusy
     {
@@ -455,6 +469,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public Color BladeLightingSecondColor { get => _bladeLightingSecondColor; set => SetField(ref _bladeLightingSecondColor, value); }
     public bool CanSetBladeLighting => _canSetBladeBrightness && _bladeLightingController is not null;
     public string ViperDeviceName { get => _viperDeviceName; private set => SetField(ref _viperDeviceName, value); }
+    public Visibility ViperDeviceVisibility { get => _viperDeviceVisibility; private set => SetField(ref _viperDeviceVisibility, value); }
     public string ViperStatusText { get => AppStrings.Get(_viperStatusText); private set => SetField(ref _viperStatusText, value); }
     public string ViperBatteryText { get => _viperBatteryText; private set => SetField(ref _viperBatteryText, value); }
     public string ViperPollingRateText { get => _viperPollingRateText; private set => SetField(ref _viperPollingRateText, value); }
@@ -780,9 +795,48 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         IsBusy = true;
         try
         {
-            _startupManager!.SetEnabled(enabled, _executablePath!);
+            _startupManager!.SetEnabled(enabled, _executablePath!, IsSilentStartupEnabled);
             IsStartupEnabled = enabled;
+            if (!enabled)
+            {
+                IsSilentStartupEnabled = false;
+            }
             ProfileStatusText = enabled ? "已启用开机启动" : "已关闭开机启动";
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException or InvalidOperationException)
+        {
+            SetDeviceOperationError(AppStrings.Format("StartupError", "开机启动：{0}", exception.Message));
+            ProfileStatusText = AppStrings.Format("StartupSettingFailed", "开机启动设置失败：{0}", exception.Message);
+            RefreshStartupState();
+        }
+        finally
+        {
+            IsBusy = false;
+            _deviceOperationGate.Release();
+        }
+    }
+
+    public async Task SetSilentStartupEnabledAsync(
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CanSetSilentStartup || cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (!await TryEnterOperationAsync(cancellationToken))
+        {
+            return;
+        }
+        IsBusy = true;
+        try
+        {
+            _startupManager!.SetEnabled(true, _executablePath!, enabled);
+            IsSilentStartupEnabled = enabled;
+            ProfileStatusText = AppStrings.Format(
+                enabled ? "SilentStartupEnabled" : "SilentStartupDisabled",
+                enabled ? "已启用静默启动" : "已关闭静默启动");
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException or InvalidOperationException)
         {
@@ -876,10 +930,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             IsStartupEnabled = _startupManager is not null &&
                 !string.IsNullOrWhiteSpace(_executablePath) &&
                 _startupManager.IsEnabled(_executablePath);
+            IsSilentStartupEnabled = IsStartupEnabled &&
+                _startupManager!.IsSilentEnabled(_executablePath!);
         }
         catch (Exception exception) when (exception is UnauthorizedAccessException or System.Security.SecurityException or InvalidOperationException)
         {
             IsStartupEnabled = false;
+            IsSilentStartupEnabled = false;
             SetDeviceOperationError(AppStrings.Format("StartupError", "开机启动：{0}", exception.Message));
         }
         OnPropertyChanged(nameof(CanSetStartup));
@@ -1394,6 +1451,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
             var blade = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "blade-710");
             var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "viper-184");
+            ViperDeviceVisibility = viper is null ? Visibility.Collapsed : Visibility.Visible;
             SetBladeControlDevicePath(
                 blade is
                 {
@@ -1478,6 +1536,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == "blade-710");
             var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == "viper-184");
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
+            ViperDeviceVisibility = Visibility.Collapsed;
             if (_bladeLightingController is not null && _bladeLightingDevicePath.Length > 0)
             {
                 try

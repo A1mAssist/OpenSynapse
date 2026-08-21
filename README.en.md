@@ -4,7 +4,7 @@ English | [简体中文](README.md)
 
 OpenSynapse is a lightweight Razer device controller for Windows 11. It manages verified lighting, performance, and everyday settings without requiring Razer Synapse to remain running.
 
-The current release is `1.0.1` and supports only the exact devices verified on hardware. OpenSynapse does not infer protocols from similar model names and does not send control commands to unknown devices.
+The current release is `1.0.2` and supports only the exact devices verified on hardware. OpenSynapse does not infer protocols from similar model names and does not send control commands to unknown devices.
 
 ## Supported devices
 

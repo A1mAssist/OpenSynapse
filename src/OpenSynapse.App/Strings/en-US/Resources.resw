@@ -360,6 +360,10 @@
     <value>Profiles</value>
     <comment>配置</comment>
   </data>
+  <data name="Loc_16E65B7F4A.Text" xml:space="preserve">
+    <value>Overview</value>
+    <comment>概览页面标题</comment>
+  </data>
   <data name="Loc_3453A83F8E.Text" xml:space="preserve">
     <value>Local profiles, app bindings, and startup settings for the current user.</value>
     <comment>本地配置、应用绑定以及当前用户的启动设置。</comment>
@@ -432,6 +436,20 @@
     <value>Current user only. Administrator access is not required.</value>
     <comment>仅当前用户，不需要管理员权限。</comment>
   </data>
+  <data name="Loc_4ED618F72C.Text" xml:space="preserve">
+    <value>Silent startup</value>
+    <comment>静默启动</comment>
+  </data>
+  <data name="Loc_E40B74CC08.Text" xml:space="preserve">
+    <value>Show only the tray icon when Windows starts OpenSynapse.</value>
+    <comment>静默启动说明</comment>
+  </data>
+  <data name="SilentStartupEnabled" xml:space="preserve">
+    <value>Silent startup enabled</value>
+  </data>
+  <data name="SilentStartupDisabled" xml:space="preserve">
+    <value>Silent startup disabled</value>
+  </data>
   <data name="Loc_97C848E235.Text" xml:space="preserve">
     <value>Diagnostics</value>
     <comment>诊断</comment>
@@ -465,8 +483,8 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>Version 1.0.1</value>
-    <comment>版本 1.0.1</comment>
+    <value>Version 1.0.2</value>
+    <comment>版本 1.0.2</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
     <value>Manage connected Razer devices without Synapse, including lighting, performance, and everyday settings.</value>

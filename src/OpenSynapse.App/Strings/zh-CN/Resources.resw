@@ -360,6 +360,10 @@
     <value>配置</value>
     <comment>配置</comment>
   </data>
+  <data name="Loc_16E65B7F4A.Text" xml:space="preserve">
+    <value>概览</value>
+    <comment>概览页面标题</comment>
+  </data>
   <data name="Loc_3453A83F8E.Text" xml:space="preserve">
     <value>本地配置、应用绑定以及当前用户的启动设置。</value>
     <comment>本地配置、应用绑定以及当前用户的启动设置。</comment>
@@ -432,6 +436,20 @@
     <value>仅当前用户，不需要管理员权限。</value>
     <comment>仅当前用户，不需要管理员权限。</comment>
   </data>
+  <data name="Loc_4ED618F72C.Text" xml:space="preserve">
+    <value>静默启动</value>
+    <comment>静默启动</comment>
+  </data>
+  <data name="Loc_E40B74CC08.Text" xml:space="preserve">
+    <value>开机启动时仅显示托盘图标。</value>
+    <comment>静默启动说明</comment>
+  </data>
+  <data name="SilentStartupEnabled" xml:space="preserve">
+    <value>已启用静默启动</value>
+  </data>
+  <data name="SilentStartupDisabled" xml:space="preserve">
+    <value>已关闭静默启动</value>
+  </data>
   <data name="Loc_97C848E235.Text" xml:space="preserve">
     <value>诊断</value>
     <comment>诊断</comment>
@@ -465,8 +483,8 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>版本 1.0.1</value>
-    <comment>版本 1.0.1</comment>
+    <value>版本 1.0.2</value>
+    <comment>版本 1.0.2</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
     <value>脱离雷云管理已连接的 Razer 设备，调整灯光、性能和常用设置。</value>
