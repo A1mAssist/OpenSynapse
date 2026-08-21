@@ -3,6 +3,9 @@
 **/obj/
 TestResults/
 *.trx
+coverage/
+*.coverage
+*.coveragexml
 
 # Local build and release bundles
 artifacts/
@@ -21,8 +24,10 @@ src/OpenSynapse.App/artifacts/
 # IDE and user state
 .vs/
 .idea/
+.vscode/
 *.user
 *.suo
+*.userprefs
 
 # Local agent/runtime state
 .superpowers/
@@ -44,6 +49,25 @@ tools/
 *.log
 *.tmp
 *.bak
+
+# Secrets and signing material
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.p12
+*.cer
+secrets.json
+
+# Generated release packages
+*.nupkg
+*.snupkg
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
 
 # OS metadata
 Thumbs.db

@@ -1,31 +1,43 @@
-# OpenSynapse
+<p align="center">
+  <img src="src/OpenSynapse.App/Assets/OpenSynapseLogo.svg" width="112" height="112" alt="OpenSynapse Logo">
+</p>
 
-English | [简体中文](README.md)
+<h1 align="center">OpenSynapse</h1>
 
-OpenSynapse is a lightweight Razer device controller for Windows 11. It manages verified lighting, performance, and everyday settings without requiring Razer Synapse to remain running.
+<p align="center">A lightweight Razer device controller for Windows 11.</p>
 
-The current release is `1.0.2` and supports only the exact devices verified on hardware. OpenSynapse does not infer protocols from similar model names and does not send control commands to unknown devices.
+<p align="center">
+  <a href="https://github.com/A1mAssist/OpenSynapse/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/A1mAssist/OpenSynapse?style=flat-square"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-44D62C?style=flat-square"></a>
+  <img alt="Windows 11 x64" src="https://img.shields.io/badge/Windows-11%20x64-0078D4?style=flat-square">
+</p>
+
+<p align="center"><a href="README.md">简体中文</a> · English</p>
+
+OpenSynapse reads device state and manages hardware-verified lighting, performance, display, battery, and key functions without keeping Razer Synapse running. It never infers protocols from similar model names or sends control commands to unknown devices.
+
+> Current stable release: `v1.1.0`. Only the exact hardware and USB identifiers listed below are supported.
 
 ## Supported devices
 
-| Device | USB VID:PID | Status |
+| Device | USB VID:PID | Verified capabilities |
 |---|---|---|
-| Razer Blade 16 (2025) | `1532:02C6` | Supported |
-| Razer Viper V3 HyperSpeed | `1532:00B8` | Supported |
+| Razer Blade 16 (2025) | `1532:02C6` | Telemetry, lighting, performance, fans, display, battery, Fn/M3/M4/M5 |
+| Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep, onboard button mappings |
 
 ## Features
 
-### Blade 16 (2025)
+### Razer Blade 16 (2025)
 
 - Read CPU, GPU, memory, storage, fan, and device status.
-- Adjust keyboard brightness and use 13 keyboard effects: Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal.
+- Adjust keyboard brightness and use Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal effects.
 - Select performance modes and configure CPU Boost, GPU Boost, and Max Fan in Custom mode.
-- Set a charge limit from `50%` to `80%`, or disable the limit.
-- Select a refresh rate supported by the Windows internal display and toggle the touchpad.
+- Use automatic or manual fan control and set a charge limit from `50%` to `80%`.
+- Select a refresh rate supported by the internal display and toggle the touchpad.
 - Handle verified Fn shortcuts, M3 Gaming Mode, M4 performance mode, and the M5 microphone-mute indicator in the background.
-- Show panel mode, SKU, Local Dimming, and other platform fields as read-only state.
+- Show panel mode, SKU, and other platform fields as read-only state.
 
-### Viper V3 HyperSpeed
+### Razer Viper V3 HyperSpeed
 
 - Read battery level, low-battery threshold, polling rate, current DPI, sleep timeout, and DPI stages.
 - Set `125 / 500 / 1000 Hz` polling.
@@ -33,36 +45,45 @@ The current release is `1.0.2` and supports only the exact devices verified on h
 - Read and edit Normal / HyperShift onboard mappings in fixed Profile 1.
 - Use verified Off, mouse-button, keyboard-key, and double-click mapping actions.
 
-The low-battery threshold is read only. This device does not support `2000 / 4000 / 8000 Hz` HyperPolling.
+The low-battery threshold remains read only. Viper V3 HyperSpeed does not support `2000 / 4000 / 8000 Hz` HyperPolling.
 
-## Interface preview
+## Screenshots
 
-![OpenSynapse English device page](screenshots/devices-en.png)
+| Overview | Devices |
+|---|---|
+| ![OpenSynapse English overview page](screenshots/overview-en.png) | ![OpenSynapse English devices page](screenshots/devices-en.png) |
 
-## Install and run
+| Blade controls | Settings |
+|---|---|
+| ![OpenSynapse English Blade controls](screenshots/blade-en.png) | ![OpenSynapse English settings page](screenshots/settings-en.png) |
 
-1. Download the latest `OpenSynapse-win-Setup.exe` from [Releases](https://github.com/A1mAssist/OpenSynapse/releases).
+## Installation
+
+1. Download `OpenSynapse-win-Setup.exe` from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 2. Run the installer. OpenSynapse installs for the current user and does not require administrator privileges.
-3. A portable build remains available, but older archive builds cannot use in-app updates.
+3. For a no-install build, download `OpenSynapse-win-Portable.zip`. Automatic updates are intended for the installed build.
 
-Exit Razer Synapse before the first device scan. Both applications can contend for the same HID control channel. OpenSynapse reports access failures but never terminates the Synapse process.
+Exit Razer Synapse before the first device scan to avoid both applications contending for the same HID control channel. OpenSynapse reports access failures but never terminates the Synapse process.
 
-OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support still requires the Product 710 Razer device drivers; keep those drivers installed when removing Synapse. The drivers are not part of OpenSynapse and are not redistributed in the repository or release archive.
+### Driver boundary
+
+OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support still requires the Product 710 Razer device drivers; keep those drivers when removing Synapse. OpenSynapse does not redistribute Razer drivers.
 
 ## Out of scope
 
 - Firmware updates, Razer accounts, and cloud services.
 - THX Spatial Audio, EQ, volume leveling, and voice clarity.
 - Chroma Studio, advanced macro editing, GPU MUX, and AMD Curve Optimizer.
-- Unverified battery-policy writes, plus Viper low-battery threshold, battery type, and `2K / 4K / 8K` polling writes.
+- Writes for devices or protocols that have not passed hardware validation.
 
 ## Build from source
 
-Building requires Windows 11 x64, the .NET 10 SDK, and Windows SDK `10.0.26100`.
+Building requires Windows 11 x64, the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), and Windows SDK `10.0.26100`.
 
 ```powershell
 dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
+dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
 ```
 
@@ -72,13 +93,17 @@ Run the local build:
 & '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
 
-Build the installer, portable package, and Velopack update assets:
+Build the installer, portable archive, and Velopack update assets:
 
 ```powershell
-.\scripts\Publish-VelopackRelease.ps1 -Version 1.0.3
+.\scripts\Publish-VelopackRelease.ps1 -Version 1.1.0
 ```
 
-Set `GITHUB_TOKEN` and add `-Upload` to create a public GitHub Release and upload the update feed assets.
+Release packages are not code signed, so Windows SmartScreen may display a warning.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting source, tests, or documentation. Build output, logs, captures, reverse-engineering workspaces, private keys, tokens, and machine-local configuration must never be committed.
 
 ## License and acknowledgements
 
