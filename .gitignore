@@ -20,6 +20,7 @@ artifacts/release-*/
 artifacts/codex-*/
 dist/
 src/OpenSynapse.App/artifacts/
+scripts/
 
 # IDE and user state
 .vs/

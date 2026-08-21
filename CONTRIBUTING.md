@@ -10,7 +10,6 @@ Commit only files needed to build, test, document, or license the project:
 - tests and deterministic test data;
 - device manifests and verified runtime configuration;
 - documentation, localized screenshots, product artwork, and third-party license files;
-- release/build scripts that contain no credentials or machine-specific paths.
 
 Do not commit:
 
@@ -19,6 +18,7 @@ Do not commit:
 - Ghidra projects, extracted proprietary application files, reverse-engineering workspaces, or unreviewed protocol captures;
 - API tokens, passwords, private keys, signing certificates, `.env` files, device paths, usernames, or absolute paths tied to one workstation;
 - Razer binaries, drivers, firmware, or other proprietary files. These are external runtime prerequisites for some Blade Fn features, but users must install them from Razer or the device support package; they are not checked into or redistributed by this repository.
+- repository-local build or release automation under `scripts/`; keep such scripts outside the repository.
 
 Release binaries belong on GitHub Releases, not in Git history.
 

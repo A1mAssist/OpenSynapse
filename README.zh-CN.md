@@ -92,12 +92,6 @@ dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x
 & '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
 
-生成安装包、便携包和 Velopack 更新资产：
-
-```powershell
-.\scripts\Publish-VelopackRelease.ps1 -Version 1.1.0
-```
-
 发布包没有代码签名证书，Windows SmartScreen 可能显示警告。
 
 ## 参与贡献
