@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Windows.Graphics.Display;
 
 namespace OpenSynapse.Windows.Displays;
@@ -17,7 +19,8 @@ public sealed class WindowsDisplayBrightnessController
             var brightness = BrightnessOverride.GetDefaultForSystem();
             if (!brightness.IsSupported)
             {
-                throw new InvalidOperationException("Windows 未提供可控的内置屏亮度。");
+                SendSystemBrightnessKey(increase);
+                return double.NaN;
             }
 
             var target = CalculateStep(brightness.BrightnessLevel, increase);
@@ -31,6 +34,13 @@ public sealed class WindowsDisplayBrightnessController
 
             cancellationToken.ThrowIfCancellationRequested();
             return target;
+        }
+        catch (COMException)
+        {
+            // OLED panels commonly reject BrightnessOverride while still accepting
+            // the Windows display-brightness media keys.
+            SendSystemBrightnessKey(increase);
+            return double.NaN;
         }
         finally
         {
@@ -46,5 +56,49 @@ public sealed class WindowsDisplayBrightnessController
         }
 
         return Math.Clamp(current + (increase ? Step : -Step), 0, 1);
+    }
+
+    private static void SendSystemBrightnessKey(bool increase)
+    {
+        var virtualKey = (ushort)(increase ? 0x89 : 0x88); // VK_DISPLAY_BRIGHTNESS_UP/DOWN
+        var inputs = new[]
+        {
+            new Input { Type = InputKeyboard, Data = new InputUnion { Keyboard = new KeyboardInput { VirtualKey = virtualKey } } },
+            new Input { Type = InputKeyboard, Data = new InputUnion { Keyboard = new KeyboardInput { VirtualKey = virtualKey, Flags = KeyUpFlag } } },
+        };
+        var sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>());
+        if (sent != inputs.Length)
+        {
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows 未接受显示亮度按键。");
+        }
+    }
+
+    private const uint InputKeyboard = 1;
+    private const uint KeyUpFlag = 0x0002;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint inputCount, Input[] inputs, int inputSize);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Input
+    {
+        public uint Type;
+        public InputUnion Data;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    private struct InputUnion
+    {
+        [FieldOffset(0)] public KeyboardInput Keyboard;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KeyboardInput
+    {
+        public ushort VirtualKey;
+        public ushort ScanCode;
+        public uint Flags;
+        public uint Time;
+        public nuint ExtraInfo;
     }
 }
