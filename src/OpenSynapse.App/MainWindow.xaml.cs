@@ -47,6 +47,8 @@ public sealed partial class MainWindow : Window
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException("OpenSynapse 主窗口必须在 DispatcherQueue 线程创建。");
         InitializeComponent();
+        Localized.RefreshTree(RootLayout);
+        RootLayout.Loaded += (_, _) => Localized.RefreshTree(RootLayout);
         SelectLanguage(AppLanguageSettings.Current);
         _languageSelectionReady = true;
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
@@ -292,24 +294,18 @@ public sealed partial class MainWindow : Window
                 case 0:
                     RootNavigationView.SelectedItem = OverviewNavigationItem;
                     target = DevicesNavigationItem;
-                    IntroductionTip.Title = AppStrings.Get("切换页面");
-                    IntroductionBodyText.Text = AppStrings.Get("从左侧进入设备、配置和诊断。");
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
                     break;
                 case 1:
                     RootNavigationView.SelectedItem = OverviewNavigationItem;
                     OverviewPage.ChangeView(null, 0, null, disableAnimation: true);
                     target = SystemTelemetrySection;
-                    IntroductionTip.Title = AppStrings.Get("查看系统状态");
-                    IntroductionBodyText.Text = AppStrings.Get("CPU、GPU、内存和硬盘状态都在概览顶部。");
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
                     break;
                 case 2:
                     RootNavigationView.SelectedItem = DevicesNavigationItem;
                     DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
                     target = DeviceSelectorBar;
-                    IntroductionTip.Title = AppStrings.Get("选择设备");
-                    IntroductionBodyText.Text = AppStrings.Get("在笔记本和鼠标之间切换，下面会显示对应设置。");
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
                     break;
                 default:
@@ -319,20 +315,15 @@ public sealed partial class MainWindow : Window
                     UpdateDeviceSelector("viper");
                     DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
                     target = ViperPollingRateSaveButton;
-                    IntroductionTip.Title = AppStrings.Get("保存鼠标设置");
-                    IntroductionBodyText.Text = AppStrings.Get("鼠标改动不会直接写入。确认无误后点“保存”。");
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Top;
                     break;
             }
 
+            RefreshIntroductionLocalization();
             IntroductionProgressText.Text = $"{_introductionStep + 1} / {IntroductionStepCount}";
             IntroductionPreviousButton.Visibility = _introductionStep == 0
                 ? Visibility.Collapsed
                 : Visibility.Visible;
-            IntroductionNextButton.Content = _introductionStep == IntroductionStepCount - 1
-                ? AppStrings.Get("完成")
-                : AppStrings.Get("下一步");
-
             await Task.Yield();
             if (_exitRequested)
             {
@@ -631,9 +622,14 @@ public sealed partial class MainWindow : Window
         try
         {
             AppLanguageSettings.Save(language);
+            AppStrings.Reset();
+            _viewModel.RefreshLocalization();
+            Localized.RefreshTree(RootLayout);
+            ((App)Application.Current).RefreshTrayLocalization();
+            RefreshIntroductionLocalization();
+            SelectLanguage(language);
         }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        catch (Exception exception)
         {
             _languageSelectionReady = false;
             SelectLanguage(AppLanguageSettings.Current);
@@ -651,6 +647,25 @@ public sealed partial class MainWindow : Window
             .OfType<ComboBoxItem>()
             .FirstOrDefault(item => StringComparer.Ordinal.Equals(item.Tag as string, language)) ??
             AppLanguageComboBox.Items[0];
+    }
+
+    private void RefreshIntroductionLocalization()
+    {
+        if (_introductionStep < 0)
+        {
+            return;
+        }
+
+        (IntroductionTip.Title, IntroductionBodyText.Text) = _introductionStep switch
+        {
+            0 => (AppStrings.Get("切换页面"), AppStrings.Get("从左侧进入设备、配置和诊断。")),
+            1 => (AppStrings.Get("查看系统状态"), AppStrings.Get("CPU、GPU、内存和硬盘状态都在概览顶部。")),
+            2 => (AppStrings.Get("选择设备"), AppStrings.Get("在笔记本和鼠标之间切换，下面会显示对应设置。")),
+            _ => (AppStrings.Get("保存鼠标设置"), AppStrings.Get("鼠标改动不会直接写入。确认无误后点“保存”。")),
+        };
+        IntroductionNextButton.Content = _introductionStep == IntroductionStepCount - 1
+            ? AppStrings.Get("完成")
+            : AppStrings.Get("下一步");
     }
 
     private async void ApplyBrightnessClick(object sender, RoutedEventArgs e) =>

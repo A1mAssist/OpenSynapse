@@ -57,6 +57,10 @@ public static class ProfileResolver
             CpuBoostMode = First(power?.CpuBoostMode, device?.CpuBoostMode, global?.CpuBoostMode),
             GpuBoostMode = First(power?.GpuBoostMode, device?.GpuBoostMode, global?.GpuBoostMode),
             LogoMode = First(power?.LogoMode, device?.LogoMode, global?.LogoMode),
+            GamingModeEnabled = First(
+                power?.GamingModeEnabled,
+                device?.GamingModeEnabled,
+                global?.GamingModeEnabled),
         };
     }
 

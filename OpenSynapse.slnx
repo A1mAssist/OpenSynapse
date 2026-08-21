@@ -4,6 +4,10 @@
       <Platform Project="x64" />
     </Project>
     <Project Path="src/OpenSynapse.Core/OpenSynapse.Core.csproj" />
+    <Project Path="src/OpenSynapse.RecoveryHost/OpenSynapse.RecoveryHost.csproj" />
     <Project Path="src/OpenSynapse.Windows/OpenSynapse.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj" />
   </Folder>
 </Solution>

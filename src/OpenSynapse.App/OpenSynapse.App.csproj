@@ -11,10 +11,10 @@
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationIcon>Assets\OpenSynapse.ico</ApplicationIcon>
-    <Version>0.1.0</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
-    <InformationalVersion>0.1.0</InformationalVersion>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+    <InformationalVersion>1.0.1</InformationalVersion>
     <SatelliteResourceLanguages>zh-CN;en-US</SatelliteResourceLanguages>
     <DefaultLanguage>zh-CN</DefaultLanguage>
     <DebugType>none</DebugType>
@@ -32,6 +32,8 @@
     <Content Include="Assets\OpenSynapseLogo.svg" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\OpenSynapse.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Fonts\TitilliumWeb-SemiBold.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Fonts\TitilliumWeb-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Native\Razer\Product710Mapping.json"
              CopyToOutputDirectory="PreserveNewest"
@@ -40,8 +42,26 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenSynapse.Core\OpenSynapse.Core.csproj" />
+    <ProjectReference Include="..\OpenSynapse.RecoveryHost\OpenSynapse.RecoveryHost.csproj"
+                      ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\OpenSynapse.Windows\OpenSynapse.Windows.csproj" />
   </ItemGroup>
+
+  <Target Name="CopyRecoveryHost" AfterTargets="Build">
+    <PropertyGroup>
+      <_RecoveryHostOutputDir>$(MSBuildProjectDirectory)\..\OpenSynapse.RecoveryHost\bin\$(Platform)\$(Configuration)\net10.0-windows10.0.26100.0\</_RecoveryHostOutputDir>
+      <_RecoveryHostOutputDir Condition="'$(RuntimeIdentifier)' != ''">$(_RecoveryHostOutputDir)$(RuntimeIdentifier)\</_RecoveryHostOutputDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_RecoveryHostFile Include="$(_RecoveryHostOutputDir)OpenSynapse.RecoveryHost.exe" />
+      <_RecoveryHostFile Include="$(_RecoveryHostOutputDir)OpenSynapse.RecoveryHost.dll" />
+      <_RecoveryHostFile Include="$(_RecoveryHostOutputDir)OpenSynapse.RecoveryHost.deps.json" />
+      <_RecoveryHostFile Include="$(_RecoveryHostOutputDir)OpenSynapse.RecoveryHost.runtimeconfig.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_RecoveryHostFile)"
+          DestinationFolder="$(TargetDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
 
   <Target Name="IncludeWinUiRuntimeResourcesInPublish" AfterTargets="Publish">
     <ItemGroup>
@@ -50,6 +70,10 @@
     </ItemGroup>
     <Copy
       SourceFiles="@(_WinUiRuntimeResources)"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(_RecoveryHostFile)"
       DestinationFolder="$(PublishDir)"
       SkipUnchangedFiles="true" />
   </Target>

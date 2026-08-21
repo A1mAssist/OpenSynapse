@@ -22,27 +22,11 @@ internal sealed class BladeSoftwareModeCoordinator
         await state.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            state.OwnerCount++;
-            try
+            if (state.OwnerCount == 0)
             {
                 await enterSoftwareMode(cancellationToken).ConfigureAwait(false);
             }
-            catch
-            {
-                state.OwnerCount--;
-                if (state.OwnerCount == 0)
-                {
-                    try
-                    {
-                        await restoreNormalMode().ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        // Preserve the takeover failure as the useful error.
-                    }
-                }
-                throw;
-            }
+            state.OwnerCount++;
 
             return new BladeSoftwareModeLease(this, devicePath, state);
         }

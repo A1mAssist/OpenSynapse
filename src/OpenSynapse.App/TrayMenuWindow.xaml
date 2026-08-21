@@ -2,14 +2,9 @@
     x:Class="OpenSynapse.App.TrayMenuWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
     Title="OpenSynapse">
   <Grid x:Name="MenuAnchor" Width="2" Height="2" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent">
-    <Grid.Resources>
-      <Thickness x:Key="MenuFlyoutItemPlaceholderThemeThickness">20,0,0,0</Thickness>
-      <Thickness x:Key="MenuFlyoutItemDoublePlaceholderThemeThickness">40,0,0,0</Thickness>
-      <Thickness x:Key="MenuFlyoutItemThemePadding">7,4,9,7</Thickness>
-      <Thickness x:Key="MenuFlyoutItemThemePaddingNarrow">7,4,9,5</Thickness>
-    </Grid.Resources>
     <Grid.ContextFlyout>
       <MenuFlyout
           x:Name="TrayMenuFlyout"
@@ -21,7 +16,7 @@
             <Setter Property="MinWidth" Value="0" />
           </Style>
         </MenuFlyout.MenuFlyoutPresenterStyle>
-        <MenuFlyoutItem x:Uid="Loc_0CE53A16F8"
+        <MenuFlyoutItem local:Localized.Uid="Loc_0CE53A16F8" x:Name="OpenMainPanelMenuItem"
             Text="打开主面板"
             Height="34"
             Padding="7,4,6,7"
@@ -31,7 +26,7 @@
             AutomationProperties.Name="打开 OpenSynapse 主面板">
           <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE80F;" FontFamily="Segoe Fluent Icons" FontSize="14" Margin="0,1,0,0" /></MenuFlyoutItem.Icon>
         </MenuFlyoutItem>
-        <MenuFlyoutItem x:Uid="Loc_ED026FD231"
+        <MenuFlyoutItem local:Localized.Uid="Loc_ED026FD231" x:Name="DevicesMenuItem"
             Text="设备控制"
             Height="34"
             Padding="7,4,6,7"
@@ -42,7 +37,7 @@
             AutomationProperties.Name="打开设备控制">
           <MenuFlyoutItem.Icon><SymbolIcon Symbol="AllApps" /></MenuFlyoutItem.Icon>
         </MenuFlyoutItem>
-        <MenuFlyoutItem x:Uid="Loc_16444BA5AB"
+        <MenuFlyoutItem local:Localized.Uid="Loc_16444BA5AB" x:Name="ProfilesMenuItem"
             Text="配置"
             Height="34"
             Padding="7,4,6,7"
@@ -54,20 +49,19 @@
           <MenuFlyoutItem.Icon><SymbolIcon Symbol="Library" /></MenuFlyoutItem.Icon>
         </MenuFlyoutItem>
         <MenuFlyoutSeparator />
-        <ToggleMenuFlyoutItem x:Uid="Loc_76EAEA9450"
+        <MenuFlyoutItem local:Localized.Uid="Loc_76EAEA9450" x:Name="StartupMenuItem"
             Text="开机启动"
             Height="34"
             Padding="7,4,6,7"
             FontFamily="Microsoft YaHei UI"
             FontSize="14"
-            IsChecked="{Binding IsStartupEnabled, Mode=OneWay}"
             IsEnabled="{Binding CanSetStartup}"
             Click="StartupClick"
             AutomationProperties.Name="设置开机启动">
-          <ToggleMenuFlyoutItem.Icon><SymbolIcon Symbol="Play" /></ToggleMenuFlyoutItem.Icon>
-        </ToggleMenuFlyoutItem>
+          <MenuFlyoutItem.Icon><SymbolIcon x:Name="StartupIcon" Symbol="Play" /></MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
         <MenuFlyoutSeparator />
-        <MenuFlyoutItem x:Uid="Loc_81394C3DA6"
+        <MenuFlyoutItem local:Localized.Uid="Loc_81394C3DA6" x:Name="ExitMenuItem"
             Text="退出"
             Height="34"
             Padding="7,4,6,7"

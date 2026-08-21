@@ -15,7 +15,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private string? _validatedBladeMaxFanPath;
     private string? _validatedBladeLocalDimmingPath;
     private string? _validatedBladeLogoPath;
-    private string? _validatedBladeGameModePath;
     private string? _validatedBladeStartupAnimationPath;
     private string? _validatedBladeNativeDisplayModePath;
     private string? _validatedViperPollingPath;
@@ -53,7 +52,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         _validatedBladeMaxFanPath = null;
         _validatedBladeLocalDimmingPath = null;
         _validatedBladeLogoPath = null;
-        _validatedBladeGameModePath = null;
         _validatedBladeStartupAnimationPath = null;
         _validatedBladeNativeDisplayModePath = null;
         _validatedViperPollingPath = null;
@@ -74,7 +72,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         byte? bladeAdvancedFanCpuModeRaw = null;
         byte? bladeAdvancedFanGpuModeRaw = null;
         BladeLogoMode? bladeLogoMode = null;
-        BladeGameModeTelemetry? bladeGameMode = null;
         bool? bladeStartupAnimationEnabled = null;
         BladeNativeDisplayMode? bladeNativeDisplayMode = null;
         BladeSkuHardwareConfiguration? bladeSkuHardwareConfiguration = null;
@@ -201,19 +198,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"Power Mode Control：{exception.Message}");
-            }
-
-            try
-            {
-                var response = await QueryCapabilityAsync(blade, "gaming-mode.get", cancellationToken);
-                var state = BladeSynapsePolicyProtocol.ParseGameMode(
-                    response, CreateCapabilityRequest(blade, "gaming-mode.get"));
-                bladeGameMode = new(state.GameMode, state.KeyCover, state.Lifted);
-                _validatedBladeGameModePath = blade.Descriptor.Id;
-            }
-                catch (Exception exception) when (IsExpectedHardwareException(exception))
-            {
-                errors.Add($"Gaming Mode：{exception.Message}");
             }
 
             try
@@ -376,7 +360,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             dpiStages,
             lowBatteryThresholdRaw,
             bladeLogoMode,
-            bladeGameMode,
+            null,
             bladeStartupAnimationEnabled,
             bladeNativeDisplayMode,
             bladeSkuHardwareConfiguration,
@@ -436,45 +420,12 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     {
         var blade = FindReadyDevice(devices, "blade-710")
             ?? throw new InvalidOperationException("Blade 游戏模式控制通道不可用。");
-        EnsureValidated(
-            _validatedBladeGameModePath,
-            blade.Descriptor.Id,
-            "请先成功读取 Blade 游戏模式。");
-
-        var original = await ReadBladeGameModeAsync(blade, cancellationToken);
-        if (original.GameMode == 2)
-        {
-            throw new InvalidOperationException("游戏模式当前由自动策略控制，M3 不执行手动切换。");
-        }
-
-        var expected = enabled ? (byte)1 : (byte)0;
-        try
-        {
-            await WriteBladeGameModeAsync(blade, expected, cancellationToken);
-            var actual = await ReadBladeGameModeAsync(blade, cancellationToken);
-            if (actual.GameMode != expected)
-            {
-                throw new InvalidOperationException(
-                    $"游戏模式读回不一致：写入 0x{expected:X2}，读回 0x{actual.GameMode:X2}。");
-            }
-
-            await WriteBladeGameModeIndicatorAsync(blade, enabled, cancellationToken);
-            return new(actual.GameMode, actual.KeyCover, actual.Lifted);
-        }
-        catch (Exception exception) when (
-            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
-        {
-            var restored = await TryRestoreBladeGameModeAsync(blade, original);
-            var message = "游戏模式设置失败：" + exception.Message + " " +
-                (restored
-                    ? "原状态和 M3 指示灯已恢复。"
-                    : "原状态恢复失败；请立即在 Synapse 中检查游戏模式。");
-            if (exception is OperationCanceledException)
-            {
-                throw new OperationCanceledException(message, exception, cancellationToken);
-            }
-            throw new InvalidOperationException(message, exception);
-        }
+        await QueryBuiltRequestAsync(
+            blade,
+            "gaming-mode.set",
+            BladeSynapsePolicyProtocol.CreateSetGameModeRequest(enabled),
+            cancellationToken);
+        return new(enabled ? (byte)1 : (byte)0, 0, 0);
     }
 
     public async ValueTask<bool> SetBladeFnKeyStateAsync(
@@ -1244,54 +1195,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         {
             await WriteBladeNativeDisplayModeAsync(device, original, CancellationToken.None);
             return await ReadBladeNativeDisplayModeAsync(device, CancellationToken.None) == original;
-        }
-        catch (Exception exception) when (IsExpectedHardwareException(exception))
-        {
-            return false;
-        }
-    }
-
-    private async Task<BladeGameModeState> ReadBladeGameModeAsync(
-        ReadyDevice device,
-        CancellationToken cancellationToken)
-    {
-        var request = CreateCapabilityRequest(device, "gaming-mode.get");
-        var response = await QueryCapabilityAsync(device, "gaming-mode.get", cancellationToken);
-        return BladeSynapsePolicyProtocol.ParseGameMode(response, request);
-    }
-
-    private async Task WriteBladeGameModeAsync(
-        ReadyDevice device,
-        byte state,
-        CancellationToken cancellationToken)
-    {
-        var request = BladeSynapsePolicyProtocol.CreateSetGameModeRequest(state);
-        var response = await QueryBuiltRequestAsync(
-            device, "gaming-mode.set", request, cancellationToken);
-        _ = BladeSynapsePolicyProtocol.ParseGameMode(response, request);
-    }
-
-    private async Task WriteBladeGameModeIndicatorAsync(
-        ReadyDevice device,
-        bool enabled,
-        CancellationToken cancellationToken)
-    {
-        var request = BladeSynapsePolicyProtocol.CreateSetGameModeIndicatorRequest(enabled);
-        var response = await QueryBuiltRequestAsync(
-            device, "gaming-mode-led.set", request, cancellationToken);
-        _ = BladeSynapsePolicyProtocol.ParseLedCommandResult(response, request);
-    }
-
-    private async Task<bool> TryRestoreBladeGameModeAsync(
-        ReadyDevice device,
-        BladeGameModeState original)
-    {
-        try
-        {
-            await WriteBladeGameModeAsync(device, original.GameMode, CancellationToken.None);
-            await WriteBladeGameModeIndicatorAsync(
-                device, original.GameMode != 0, CancellationToken.None);
-            return await ReadBladeGameModeAsync(device, CancellationToken.None) == original;
         }
         catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
@@ -2248,7 +2151,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
     private static bool IsExpectedHardwareException(Exception exception) =>
         exception is Win32Exception or IOException or UnauthorizedAccessException or
-        InvalidOperationException or ArgumentException;
+        InvalidOperationException or NotSupportedException or ArgumentException;
 
     private sealed record ReadyDevice(
         DeviceDescriptor Descriptor,

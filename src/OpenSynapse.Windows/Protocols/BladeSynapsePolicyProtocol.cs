@@ -10,7 +10,6 @@ public static class BladeSynapsePolicyProtocol
 {
     public const byte SynapseTransactionId = 0x00;
     public const byte GameModeCommandClass = 0x00;
-    public const byte GameModeGetCommandId = 0x88;
     public const byte GameModeSetCommandId = 0x08;
     public const byte FnCommandClass = 0x02;
     public const byte FnSetCommandId = 0x06;
@@ -18,44 +17,11 @@ public static class BladeSynapsePolicyProtocol
     public const byte LedEffectSetCommandId = 0x02;
     public const byte LedStateSetCommandId = 0x00;
     public const byte LogoLedId = 0x04;
-    public const byte GameModeLedId = 0x08;
     public const byte StartupAnimationCommandClass = 0x0F;
     public const byte StartupAnimationGetCommandId = 0x98;
     public const byte StartupAnimationSetCommandId = 0x18;
     public const byte AudioMuteCommandClass = 0x18;
     public const byte AudioMuteSetCommandId = 0x04;
-
-    public static byte[] CreateGetGameModeRequest() =>
-        RazerFeatureReport.CreateRequest(
-            SynapseTransactionId,
-            0x04,
-            GameModeCommandClass,
-            GameModeGetCommandId,
-            ReadOnlySpan<byte>.Empty);
-
-    public static byte[] CreateSetGameModeRequest(byte state) =>
-        RazerFeatureReport.CreateRequest(
-            SynapseTransactionId,
-            0x04,
-            GameModeCommandClass,
-            GameModeSetCommandId,
-            new[] { state });
-
-    public static BladeGameModeState ParseGameMode(ReadOnlySpan<byte> response) =>
-        ParseGameMode(response, CreateGetGameModeRequest());
-
-    internal static BladeGameModeState ParseGameMode(
-        ReadOnlySpan<byte> response,
-        ReadOnlySpan<byte> request)
-    {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: 3))
-        {
-            throw new InvalidOperationException("Blade Gaming Mode 返回了无效或错序的 feature report。");
-        }
-
-        var offset = RazerFeatureReport.ArgumentsOffset;
-        return new BladeGameModeState(response[offset], response[offset + 1], response[offset + 2]);
-    }
 
     public static byte[] CreateSetFnKeyStateRequest(
         bool multiFunctionPrimary,
@@ -135,36 +101,13 @@ public static class BladeSynapsePolicyProtocol
                 },
             });
 
-    public static byte[] CreateSetGameModeIndicatorRequest(bool enabled) =>
+    public static byte[] CreateSetGameModeRequest(bool enabled) =>
         RazerFeatureReport.CreateRequest(
             SynapseTransactionId,
-            0x03,
-            LedCommandClass,
-            LedStateSetCommandId,
-            new byte[] { 0x00, GameModeLedId, enabled ? (byte)0x01 : (byte)0x00 });
-
-    public static BladeLedCommandResult ParseLedCommandResult(
-        ReadOnlySpan<byte> response,
-        ReadOnlySpan<byte> request)
-    {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: 3))
-        {
-            throw new InvalidOperationException("Blade Logo LED 返回了无效或错序的 feature report。");
-        }
-
-        var offset = RazerFeatureReport.ArgumentsOffset;
-        if (response[offset] != request[offset] ||
-            response[offset + 1] != request[offset + 1] ||
-            response[offset + 2] != request[offset + 2])
-        {
-            throw new InvalidOperationException("Blade 指示灯返回了错误的对象或状态。");
-        }
-
-        return new BladeLedCommandResult(
-            response[offset],
-            response[offset + 1],
-            response[offset + 2]);
-    }
+            0x04,
+            GameModeCommandClass,
+            GameModeSetCommandId,
+            new[] { enabled ? (byte)0x01 : (byte)0x00 });
 
     public static byte[] CreateGetStartupAnimationRequest() =>
         RazerFeatureReport.CreateRequest(
@@ -257,19 +200,9 @@ public static class BladeSynapsePolicyProtocol
     }
 }
 
-public readonly record struct BladeGameModeState(
-    byte GameMode,
-    byte KeyCover,
-    byte Lifted);
-
 public readonly record struct BladeFnKeyState(
     byte ClassId,
     bool MultiFunctionPrimary);
-
-public readonly record struct BladeLedCommandResult(
-    byte ClassId,
-    byte LedId,
-    byte Value);
 
 public readonly record struct BladeStartupAnimationState(
     byte? ProfileId,

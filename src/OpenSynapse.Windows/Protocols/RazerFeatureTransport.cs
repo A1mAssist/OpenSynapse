@@ -294,7 +294,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             }
             else if (response[1] == 0x05)
             {
-                throw new InvalidOperationException("设备不支持该查询命令。");
+                throw new NotSupportedException("设备不支持该命令。");
             }
             else
             {

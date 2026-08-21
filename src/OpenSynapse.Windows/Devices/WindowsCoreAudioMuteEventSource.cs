@@ -51,6 +51,12 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
 
     public event Action<Exception>? ReadFailed;
 
+    internal static void ToggleDefaultCaptureMute()
+    {
+        using var reader = new CoreAudioMuteSnapshotReader();
+        reader.ToggleMute(1);
+    }
+
     public void Start()
     {
         lock (_sync)
@@ -231,6 +237,27 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                 volume = (IAudioEndpointVolume)value;
                 ThrowIfFailed(volume.GetMute(out var muted));
                 return muted;
+            }
+            finally
+            {
+                Release(volume);
+                Release(device);
+            }
+        }
+
+        internal void ToggleMute(int dataFlow)
+        {
+            var enumerator = _enumerator ?? throw new ObjectDisposedException(nameof(CoreAudioMuteSnapshotReader));
+            IMMDevice? device = null;
+            IAudioEndpointVolume? volume = null;
+            try
+            {
+                ThrowIfFailed(enumerator.GetDefaultAudioEndpoint(dataFlow, EMultimedia, out device));
+                var iid = AudioEndpointVolumeInterfaceId;
+                ThrowIfFailed(device.Activate(ref iid, ClsctxAll, 0, out var value));
+                volume = (IAudioEndpointVolume)value;
+                ThrowIfFailed(volume.GetMute(out var muted));
+                ThrowIfFailed(volume.SetMute(!muted, 0));
             }
             finally
             {

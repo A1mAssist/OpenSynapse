@@ -165,6 +165,7 @@ public sealed class ProfileDefinition
         CpuBoostMode = source.CpuBoostMode,
         GpuBoostMode = source.GpuBoostMode,
         LogoMode = source.LogoMode,
+        GamingModeEnabled = source.GamingModeEnabled,
     };
 
     private static ViperProfileSettings CloneViper(ViperProfileSettings source) => new()
@@ -247,6 +248,7 @@ public sealed class BladeProfileSettings
     public byte? CpuBoostMode { get; set; }
     public byte? GpuBoostMode { get; set; }
     public byte? LogoMode { get; set; }
+    public bool? GamingModeEnabled { get; set; }
 
     internal void ApplySafeDefaults() => FanCurve?.ApplySafeDefaults();
 }

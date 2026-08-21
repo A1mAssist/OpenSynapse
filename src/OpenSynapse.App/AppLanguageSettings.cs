@@ -1,4 +1,4 @@
-using Windows.Globalization;
+using System.Globalization;
 
 namespace OpenSynapse.App;
 
@@ -14,12 +14,13 @@ internal static class AppLanguageSettings
         "language.txt");
 
     public static string Current { get; private set; } = System;
+    public static string Effective => Current == System
+        ? ResolveSystemLanguage([CultureInfo.CurrentUICulture.Name])
+        : Current;
 
     public static void ApplySaved()
     {
-        var language = Read();
-        ApplicationLanguages.PrimaryLanguageOverride = language == System ? string.Empty : language;
-        Current = language;
+        Apply(Read());
     }
 
     public static void Save(string language)
@@ -33,6 +34,8 @@ internal static class AppLanguageSettings
         File.WriteAllText(SettingsPath, language);
         Current = language;
     }
+
+    private static void Apply(string language) => Current = language;
 
     private static string Read()
     {
@@ -52,4 +55,21 @@ internal static class AppLanguageSettings
 
     private static bool IsSupported(string language) =>
         language is System or Chinese or English;
+
+    internal static string ResolveSystemLanguage(IEnumerable<string> languages)
+    {
+        foreach (var language in languages)
+        {
+            if (language.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+            {
+                return Chinese;
+            }
+            if (language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+            {
+                return English;
+            }
+        }
+
+        return English;
+    }
 }

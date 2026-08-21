@@ -4,10 +4,19 @@ namespace OpenSynapse.App;
 
 internal static class AppStrings
 {
-    private static ResourceLoader? _loader;
+    private static ResourceManager? _manager;
+    private static ResourceMap? _resources;
+    private static ResourceContext? _context;
     private static bool _enabled;
 
     public static void Enable() => _enabled = true;
+
+    public static void Reset()
+    {
+        _manager = null;
+        _resources = null;
+        _context = null;
+    }
 
     public static string Get(string source)
     {
@@ -34,16 +43,30 @@ internal static class AppStrings
     public static string Format(string key, string fallback, params object?[] args) =>
         string.Format(System.Globalization.CultureInfo.CurrentCulture, Load(key, fallback), args);
 
-    private static string Load(string key, string fallback)
+    internal static string? TryGet(string key)
     {
+        if (!_enabled)
+        {
+            return null;
+        }
+
         try
         {
-            var value = (_loader ??= new ResourceLoader()).GetString(key);
-            return string.IsNullOrEmpty(value) ? fallback : value;
+            _manager ??= new ResourceManager();
+            _resources ??= _manager.MainResourceMap.GetSubtree("Resources");
+            _context ??= _manager.CreateResourceContext();
+            _context.QualifierValues["Language"] = AppLanguageSettings.Effective;
+            return _resources.TryGetValue(key, _context)?.ValueAsString;
         }
         catch
         {
-            return fallback;
+            return null;
         }
+    }
+
+    private static string Load(string key, string fallback)
+    {
+        var value = TryGet(key);
+        return string.IsNullOrEmpty(value) ? fallback : value;
     }
 }

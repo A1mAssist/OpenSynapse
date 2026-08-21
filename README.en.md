@@ -4,7 +4,7 @@ English | [简体中文](README.md)
 
 OpenSynapse is a lightweight Razer device controller for Windows 11. It manages verified lighting, performance, and everyday settings without requiring Razer Synapse to remain running.
 
-The current release is `0.1.0` and supports only the exact devices verified on hardware. OpenSynapse does not infer protocols from similar model names and does not send control commands to unknown devices.
+The current release is `1.0.1` and supports only the exact devices verified on hardware. OpenSynapse does not infer protocols from similar model names and does not send control commands to unknown devices.
 
 ## Supported devices
 
@@ -22,7 +22,7 @@ The current release is `0.1.0` and supports only the exact devices verified on h
 - Select performance modes and configure CPU Boost, GPU Boost, and Max Fan in Custom mode.
 - Set a charge limit from `50%` to `80%`, or disable the limit.
 - Select a refresh rate supported by the Windows internal display and toggle the touchpad.
-- Handle verified Fn media keys, display-brightness keys, M3 Gaming Mode, and the M5 microphone-mute indicator in the background.
+- Handle verified Fn shortcuts, M3 Gaming Mode, M4 performance mode, and the M5 microphone-mute indicator in the background.
 - Show panel mode, SKU, Local Dimming, and other platform fields as read-only state.
 
 ### Viper V3 HyperSpeed
@@ -47,13 +47,7 @@ The low-battery threshold is read only. This device does not support `2000 / 400
 
 Exit Razer Synapse before the first device scan. Both applications can contend for the same HID control channel. OpenSynapse reports access failures but never terminates the Synapse process.
 
-Fn media keys and M3/M5 indicator synchronization require Razer AppEngine to be installed on the machine. `mapping_engine.dll` is a proprietary Razer component, so it is not redistributed in this repository or in release bundles. After installing the official Razer Synapse, OpenSynapse looks for:
-
-```text
-%ProgramFiles%\Razer\RazerAppEngine\app-*\CommonDLL\mapping_engine.dll
-```
-
-The rest of the application remains usable when that component is missing; the dependent background synchronization stays disabled.
+OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support still requires the Product 710 Razer device drivers; keep those drivers installed when removing Synapse. The drivers are not part of OpenSynapse and are not redistributed in the repository or release archive.
 
 ## Out of scope
 

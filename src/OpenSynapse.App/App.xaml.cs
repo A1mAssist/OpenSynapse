@@ -1,5 +1,5 @@
 using Microsoft.UI.Xaml;
-using System.Text.Json;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Profiles;
@@ -16,10 +16,6 @@ public partial class App : Application
 {
     private static readonly TimeSpan AudioMuteRetryDelay = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan ExitCleanupTimeout = TimeSpan.FromSeconds(12);
-    private static readonly string BladeMappingSessionMarkerPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "blade-mapping-session.json");
     private MainWindow? _window;
     private SingleInstanceGuard? _singleInstanceGuard;
     private WindowsTrayIcon? _trayIcon;
@@ -30,7 +26,7 @@ public partial class App : Application
     private readonly SemaphoreSlim _audioMuteRuntimeGate = new(1, 1);
     private readonly WindowsDisplayBrightnessController _displayBrightnessController = new();
     private BladeAudioMuteRuntime? _audioMuteRuntime;
-    private BladeMappingEngineNativeRuntime? _bladeMappingRuntime;
+    private BladeFnRuntime? _bladeFnRuntime;
     private IRazerFeatureTransport? _razerTransport;
     private MainViewModel? _audioMuteViewModel;
     private int _audioMuteGeneration;
@@ -127,47 +123,70 @@ public partial class App : Application
         viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
         _diagnosticLog.TryWrite(
             "audio-mute-sync",
-            "Blade speaker/microphone mute synchronization enabled behind MappingEngine.");
+            "Blade Fn and speaker/microphone mute synchronization enabled.");
         _diagnosticLog.TryWrite("application", "OpenSynapse started.");
         var window = new MainWindow(viewModel);
-        _window = window;
+        RegisterMainWindow(window, viewModel);
         StartMappingWatchdog(window);
-        _window.Closed += async (_, _) =>
-        {
-            Interlocked.Exchange(ref _closing, 1);
-            Interlocked.Increment(ref _audioMuteGeneration);
-            StopMappingWatchdog();
-            if (_audioMuteViewModel is not null)
-            {
-                _audioMuteViewModel.BladeControlDevicePathChanged -= OnBladeControlDevicePathChanged;
-                _audioMuteViewModel = null;
-            }
-            try
-            {
-                await DisposeHardwareForExitAsync(viewModel).WaitAsync(ExitCleanupTimeout);
-            }
-            catch (TimeoutException)
-            {
-                _diagnosticLog.TryWrite(
-                    "application",
-                    "Exit cleanup timed out; stale-session recovery remains armed.");
-            }
-            _diagnosticLog.TryWrite("application", "OpenSynapse stopped.");
-            _trayIcon?.Dispose();
-            _trayIcon = null;
-            _trayMenuWindow?.CloseMenuHost();
-            _trayMenuWindow = null;
-            _performanceMonitor?.Dispose();
-            _performanceMonitor = null;
-            _activationCancellation?.Cancel();
-            _activationCancellation?.Dispose();
-            _activationCancellation = null;
-            _singleInstanceGuard?.Dispose();
-            _singleInstanceGuard = null;
-            _razerTransport = null;
-        };
-        _window.Activate();
+        window.Activate();
+        InitializeTray(window, viewModel);
 
+        _activationCancellation = new CancellationTokenSource();
+        _ = ObserveActivationRequestsAsync(_activationCancellation.Token);
+    }
+
+    private void RegisterMainWindow(MainWindow window, MainViewModel viewModel)
+    {
+        _window = window;
+        window.Closed += async (_, _) => await CloseApplicationAsync(window, viewModel);
+    }
+
+    private async Task CloseApplicationAsync(MainWindow window, MainViewModel viewModel)
+    {
+        if (!ReferenceEquals(_window, window))
+        {
+            return;
+        }
+
+        Interlocked.Exchange(ref _closing, 1);
+        Interlocked.Increment(ref _audioMuteGeneration);
+        StopMappingWatchdog();
+        if (_audioMuteViewModel is not null)
+        {
+            _audioMuteViewModel.BladeControlDevicePathChanged -= OnBladeControlDevicePathChanged;
+            _audioMuteViewModel = null;
+        }
+        try
+        {
+            await DisposeHardwareForExitAsync(viewModel).WaitAsync(ExitCleanupTimeout);
+        }
+        catch (TimeoutException)
+        {
+            _diagnosticLog.TryWrite(
+                "application",
+                "Exit cleanup timed out; stale-session recovery remains armed.");
+        }
+        _diagnosticLog.TryWrite("application", "OpenSynapse stopped.");
+        _trayIcon?.Dispose();
+        _trayIcon = null;
+        _trayMenuWindow?.CloseMenuHost();
+        _trayMenuWindow = null;
+        _performanceMonitor?.Dispose();
+        _performanceMonitor = null;
+        _activationCancellation?.Cancel();
+        _activationCancellation?.Dispose();
+        _activationCancellation = null;
+        _singleInstanceGuard?.Dispose();
+        _singleInstanceGuard = null;
+        _razerTransport = null;
+    }
+
+    private void InitializeTray(MainWindow window, MainViewModel viewModel)
+    {
+        _trayIcon?.Dispose();
+        _trayIcon = null;
+        _trayMenuWindow?.CloseMenuHost();
+        _trayMenuWindow = null;
         try
         {
             var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(window);
@@ -195,10 +214,9 @@ public partial class App : Application
             _trayMenuWindow = null;
             viewModel.ReportApplicationError(AppStrings.Format("TrayInitializationError", "托盘初始化：{0}", exception.Message));
         }
-
-        _activationCancellation = new CancellationTokenSource();
-        _ = ObserveActivationRequestsAsync(_activationCancellation.Token);
     }
+
+    internal void RefreshTrayLocalization() => _trayMenuWindow?.RefreshLocalization();
 
     private async Task DisposeHardwareForExitAsync(MainViewModel viewModel)
     {
@@ -264,43 +282,22 @@ public partial class App : Application
                 return;
             }
 
-            BladeMappingEngineNativeRuntime? mappingRuntime = null;
+            BladeFnRuntime? fnRuntime = null;
             BladeAudioMuteRuntime? audioRuntime = null;
             try
             {
-                var deviceInfoJson = BladeMappingEngineProtocol.CreateBladeMediaMappingDeviceInfoJson();
-                var (storageKey, storageValueJson) = LoadInstalledBladeMappingStorage();
-                var staleDeviceInfoJson = ReadBladeMappingSessionMarker();
-                if (staleDeviceInfoJson is not null)
-                {
-                    await using var recoveryRuntime = CreateInstalledMappingEngineRuntime();
-                    if (!await recoveryRuntime.TryRecoverStaleSessionAsync(staleDeviceInfoJson)
-                            .ConfigureAwait(false))
-                    {
-                        throw new InvalidOperationException(AppStrings.Get(
-                            "上次异常退出留下的 Blade Fn 会话未能清理，已拒绝重新进入 Driver Mode。"));
-                    }
-
-                    DeleteBladeMappingSessionMarker();
-                    _diagnosticLog.TryWrite("blade-fn", "Recovered stale MappingEngine session.");
-                }
-
-                mappingRuntime = CreateInstalledMappingEngineRuntime();
-                mappingRuntime.UnsupportedMappingReceived += mappingEvent =>
-                    OnBladeUnsupportedMappingReceived(mappingEvent, generation);
-                mappingRuntime.InputNotificationReceived += inputEvent =>
-                    OnBladeInputNotificationReceived(inputEvent, generation);
-                WriteBladeMappingSessionMarker(deviceInfoJson);
-                await mappingRuntime.StartAsync(
-                    deviceInfoJson,
-                    storageKey,
-                    storageValueJson).ConfigureAwait(false);
-                _bladeMappingRuntime = mappingRuntime;
+                fnRuntime = new BladeFnRuntime(
+                    _razerTransport,
+                    devicePath,
+                    _bladeModeCoordinator,
+                    (action, token) => ExecuteBladeFnLeafAsync(action, generation, token));
+                await fnRuntime.StartAsync().ConfigureAwait(false);
+                _bladeFnRuntime = fnRuntime;
                 if (Volatile.Read(ref _closing) != 0 ||
                     generation != Volatile.Read(ref _audioMuteGeneration))
                 {
                     throw new OperationCanceledException(AppStrings.Get(
-                        "Blade MappingEngine 在音频同步完成前已被安全停止。"));
+                        "Blade Fn 运行时在音频同步完成前已被安全停止。"));
                 }
 
                 audioRuntime = new BladeAudioMuteRuntime(
@@ -315,12 +312,13 @@ public partial class App : Application
                     $"audio indicator synchronization failed: {exception}");
                 await audioRuntime.StartAsync().ConfigureAwait(false);
 
-                mappingRuntime = null;
+                fnRuntime = null;
                 _audioMuteRuntime = audioRuntime;
                 audioRuntime = null;
                 _diagnosticLog.TryWrite(
                     "audio-mute-sync",
-                    "Blade MappingEngine and endpoint synchronization started.");
+                    "Blade Fn runtime and endpoint synchronization started without MappingEngine/AppEngine.");
+                _ = ObserveBladeFnRuntimeAsync(_bladeFnRuntime, devicePath, generation);
             }
             catch
             {
@@ -328,15 +326,14 @@ public partial class App : Application
                 {
                     await audioRuntime.DisposeAsync().ConfigureAwait(false);
                 }
-                if (mappingRuntime is not null)
+                if (fnRuntime is not null)
                 {
-                    if (ReferenceEquals(_bladeMappingRuntime, mappingRuntime))
+                    if (ReferenceEquals(_bladeFnRuntime, fnRuntime))
                     {
-                        _bladeMappingRuntime = null;
+                        _bladeFnRuntime = null;
                     }
 
-                    await mappingRuntime.DisposeAsync().ConfigureAwait(false);
-                    DeleteBladeMappingSessionMarker();
+                    await fnRuntime.DisposeAsync().ConfigureAwait(false);
                 }
                 throw;
             }
@@ -344,7 +341,9 @@ public partial class App : Application
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("audio-mute-sync", $"switch failed: {exception}");
+            ReportBladeFnFailure(exception);
             if (exception is not FileNotFoundException &&
+                exception is not AggregateException &&
                 !string.IsNullOrWhiteSpace(devicePath) &&
                 Volatile.Read(ref _closing) == 0 &&
                 generation == Volatile.Read(ref _audioMuteGeneration))
@@ -362,8 +361,8 @@ public partial class App : Application
     {
         var audioRuntime = _audioMuteRuntime;
         _audioMuteRuntime = null;
-        var mappingRuntime = _bladeMappingRuntime;
-        _bladeMappingRuntime = null;
+        var fnRuntime = _bladeFnRuntime;
+        _bladeFnRuntime = null;
         Exception? audioError = null;
         try
         {
@@ -379,17 +378,16 @@ public partial class App : Application
 
         try
         {
-            if (mappingRuntime is not null)
+            if (fnRuntime is not null)
             {
-                await mappingRuntime.DisposeAsync().ConfigureAwait(false);
-                DeleteBladeMappingSessionMarker();
+                await fnRuntime.DisposeAsync().ConfigureAwait(false);
             }
         }
-        catch (Exception mappingError)
+        catch (Exception fnError)
         {
             throw audioError is null
-                ? mappingError
-                : new AggregateException(audioError, mappingError);
+                ? fnError
+                : new AggregateException(audioError, fnError);
         }
 
         if (audioError is not null)
@@ -414,12 +412,12 @@ public partial class App : Application
             {
                 _diagnosticLog.TryWrite(
                     "blade-fn",
-                    "Emergency MappingEngine cleanup timed out; stale-session recovery remains armed.");
+                    "Emergency Blade Fn cleanup timed out; RecoveryHost remains armed.");
             }
         }
         catch (Exception exception)
         {
-            _diagnosticLog.TryWrite("blade-fn", $"Emergency MappingEngine cleanup failed: {exception}");
+            _diagnosticLog.TryWrite("blade-fn", $"Emergency Blade Fn cleanup failed: {exception}");
         }
     }
 
@@ -447,11 +445,11 @@ public partial class App : Application
                     var heartbeatAge = Environment.TickCount64 -
                         Interlocked.Read(ref _lastUiHeartbeatTicks);
                     if (heartbeatAge > TimeSpan.FromSeconds(12).TotalMilliseconds &&
-                        Volatile.Read(ref _bladeMappingRuntime) is not null)
+                        Volatile.Read(ref _bladeFnRuntime) is not null)
                     {
                         _diagnosticLog.TryWrite(
                             "blade-fn",
-                            "UI thread heartbeat stopped; emergency MappingEngine cleanup started.");
+                            "UI thread heartbeat stopped; emergency Blade Fn cleanup started.");
                         EmergencyStopBladeMapping();
                         return;
                     }
@@ -478,302 +476,219 @@ public partial class App : Application
 
     private async Task StopBladeMappingForExitAsync()
     {
-        var mappingRuntime = Interlocked.Exchange(ref _bladeMappingRuntime, null);
-        if (mappingRuntime is null)
-        {
-            return;
-        }
-
-        await mappingRuntime.DisposeAsync().ConfigureAwait(false);
-        DeleteBladeMappingSessionMarker();
-    }
-
-    private void OnBladeUnsupportedMappingReceived(
-        BladeUnsupportedMappingEvent mappingEvent,
-        int generation)
-    {
-        var dispatcher = _window?.DispatcherQueue;
-        if (dispatcher is null ||
-            Volatile.Read(ref _closing) != 0 ||
-            generation != Volatile.Read(ref _audioMuteGeneration))
-        {
-            return;
-        }
-
-        dispatcher.TryEnqueue(() => _ = HandleBladeUnsupportedMappingAsync(mappingEvent, generation));
-    }
-
-    private void OnBladeInputNotificationReceived(
-        BladeInputNotificationEvent inputEvent,
-        int generation)
-    {
-        if (!BladeMappingEngineProtocol.IsGameModeToggleInput(inputEvent.InputJson))
-        {
-            return;
-        }
-
-        var dispatcher = _window?.DispatcherQueue;
-        if (dispatcher is null ||
-            Volatile.Read(ref _closing) != 0 ||
-            generation != Volatile.Read(ref _audioMuteGeneration))
-        {
-            return;
-        }
-
-        dispatcher.TryEnqueue(() => _ = HandleBladeGameModeInputAsync(generation));
-    }
-
-    private async Task HandleBladeGameModeInputAsync(int generation)
-    {
-        var viewModel = _audioMuteViewModel;
-        if (viewModel is null ||
-            Volatile.Read(ref _closing) != 0 ||
-            generation != Volatile.Read(ref _audioMuteGeneration))
-        {
-            return;
-        }
-
-        await viewModel.ToggleBladeGamingModeAsync().ConfigureAwait(true);
-    }
-
-    private async Task HandleBladeUnsupportedMappingAsync(
-        BladeUnsupportedMappingEvent mappingEvent,
-        int generation)
-    {
-        var viewModel = _audioMuteViewModel;
-        if (viewModel is null ||
-            Volatile.Read(ref _closing) != 0 ||
-            generation != Volatile.Read(ref _audioMuteGeneration))
-        {
-            return;
-        }
-
+        await _audioMuteRuntimeGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            using var document = JsonDocument.Parse(mappingEvent.OutputJson);
-            var output = document.RootElement;
-            if (output.ValueKind != JsonValueKind.Object ||
-                !output.TryGetProperty("type", out var typeValue) ||
-                typeValue.ValueKind != JsonValueKind.String)
-            {
-                throw new InvalidDataException(AppStrings.Get("MappingEngine unsupported output 缺少 type。"));
-            }
-
-            var type = typeValue.GetString();
-            switch (type)
-            {
-                case "gameMode" when _bladeMappingRuntime?.InputNotificationRegistered != true:
-                    await viewModel.ToggleBladeGamingModeAsync().ConfigureAwait(true);
-                    break;
-                case "bladeTrackpad":
-                    await viewModel.ToggleBladeTouchpadAsync().ConfigureAwait(true);
-                    break;
-                case "bladePerformance":
-                    await viewModel.CycleBladePerformanceModeAsync().ConfigureAwait(true);
-                    break;
-                case "screenRefresh":
-                    await viewModel.CycleInternalDisplayRefreshRateAsync().ConfigureAwait(true);
-                    break;
-                case "display" when
-                    output.TryGetProperty("id", out var displayId) &&
-                    displayId.ValueKind == JsonValueKind.String:
-                    switch (displayId.GetString())
-                    {
-                        case "driverBrightnessDown":
-                            await _displayBrightnessController.StepAsync(false).ConfigureAwait(true);
-                            break;
-                        case "driverBrightnessUp":
-                            await _displayBrightnessController.StepAsync(true).ConfigureAwait(true);
-                            break;
-                        case "driverBrightnessStop":
-                            break;
-                        default:
-                            throw new InvalidDataException(AppStrings.Get("MappingEngine display output id 无效。"));
-                    }
-                    break;
-                case "bladeBattery":
-                    await viewModel.ToggleBladeOneTimeFullChargeAsync().ConfigureAwait(true);
-                    break;
-                case "backlight" when
-                    output.TryGetProperty("flag", out var flag) &&
-                    flag.TryGetInt32(out var flagValue) &&
-                    flagValue == 0 &&
-                    output.TryGetProperty("name", out var name) &&
-                    name.ValueKind == JsonValueKind.String:
-                    await viewModel.StepBladeBrightnessAsync(
-                        name.GetString() == "BrightnessUp").ConfigureAwait(true);
-                    break;
-            }
-        }
-        catch (Exception exception) when (
-            exception is JsonException or InvalidDataException or InvalidOperationException or
-            IOException or ArgumentOutOfRangeException or AggregateException or
-            System.Runtime.InteropServices.COMException)
-        {
-            _diagnosticLog.TryWrite("blade-fn", $"unsupported mapping failed: {exception}");
-            viewModel.ReportApplicationError(AppStrings.Format("FnKeyError", "Fn 组合键：{0}", exception.Message));
-        }
-    }
-
-    private static BladeMappingEngineNativeRuntime CreateInstalledMappingEngineRuntime()
-    {
-        var root = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            "Razer",
-            "RazerAppEngine");
-        if (Directory.Exists(root))
-        {
-            foreach (var directory in Directory.EnumerateDirectories(root, "app-*")
-                         .OrderByDescending(path => path, StringComparer.OrdinalIgnoreCase))
-            {
-                var candidate = Path.Combine(directory, "CommonDLL", "mapping_engine.dll");
-                if (!File.Exists(candidate))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    return BladeMappingEngineNativeRuntime.CreateVerified(candidate);
-                }
-                catch (InvalidOperationException)
-                {
-                    // Try another installed version; only the verified ABI is allowed.
-                }
-            }
-        }
-
-        throw new FileNotFoundException(
-            AppStrings.Get("未找到已安装的已验证 Razer MappingEngine；Fn 和静音灯同步保持禁用。"),
-            "mapping_engine.dll");
-    }
-
-    private static (string StorageKey, string StorageValueJson) LoadInstalledBladeMappingStorage()
-    {
-        const string marker = "device local storage data ";
-        var containerId = BladeMappingEngineProtocol.DefaultBladeContainerId;
-        var logDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Razer",
-            "RazerAppEngine",
-            "User Data",
-            "Logs");
-        if (Directory.Exists(logDirectory))
-        {
-            foreach (var path in Directory.EnumerateFiles(logDirectory, "products_710_ui*.log")
-                         .OrderByDescending(File.GetLastWriteTimeUtc))
-            {
-                string? candidate = null;
-                try
-                {
-                    foreach (var line in File.ReadLines(path))
-                    {
-                        var markerIndex = line.IndexOf(marker, StringComparison.Ordinal);
-                        if (markerIndex >= 0)
-                        {
-                            var value = line[(markerIndex + marker.Length)..];
-                            try
-                            {
-                                BladeMappingEngineProtocol.ValidateCompleteProduct710Storage(value);
-                                candidate = value;
-                            }
-                            catch (ArgumentException)
-                            {
-                                // Continue to a later valid record in this or another rotated log.
-                            }
-                        }
-                    }
-                }
-                catch (Exception exception) when (
-                    exception is IOException or UnauthorizedAccessException)
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(candidate))
-                {
-                    return ($"synapse_{BladeMappingEngineProtocol.BladeProduct710Id}_{containerId}", candidate);
-                }
-            }
-        }
-
-        var bundled = Path.Combine(
-            AppContext.BaseDirectory,
-            "Native",
-            "Razer",
-            "Product710Mapping.json");
-        if (File.Exists(bundled))
-        {
-            var candidate = File.ReadAllText(bundled);
-            BladeMappingEngineProtocol.ValidateCompleteProduct710Storage(candidate);
-            return ($"synapse_{BladeMappingEngineProtocol.BladeProduct710Id}_{containerId}", candidate);
-        }
-
-        throw new FileNotFoundException(AppStrings.Get(
-            "没有找到包含完整 64 条 Product 710 默认映射的官方存储；为避免破坏 Fn 组合键，拒绝进入 Driver Mode。"));
-    }
-
-    private static string? ReadBladeMappingSessionMarker()
-    {
-        try
-        {
-            if (!File.Exists(BladeMappingSessionMarkerPath))
-            {
-                return null;
-            }
-
-            var value = File.ReadAllText(BladeMappingSessionMarkerPath);
-            using var document = JsonDocument.Parse(value);
-            return document.RootElement.ValueKind == JsonValueKind.Object
-                ? value
-                : null;
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or JsonException)
-        {
-            _ = exception;
-            return null;
-        }
-    }
-
-    private static void WriteBladeMappingSessionMarker(string deviceInfoJson)
-    {
-        var directory = Path.GetDirectoryName(BladeMappingSessionMarkerPath);
-        if (directory is not null)
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var temporaryPath = $"{BladeMappingSessionMarkerPath}.{Environment.ProcessId}.tmp";
-        try
-        {
-            File.WriteAllText(temporaryPath, deviceInfoJson);
-            File.Move(temporaryPath, BladeMappingSessionMarkerPath, overwrite: true);
+            await DisposeBladeAudioStackAsync().ConfigureAwait(false);
         }
         finally
         {
+            _audioMuteRuntimeGate.Release();
+        }
+    }
+
+    private ValueTask ExecuteBladeFnLeafAsync(
+        BladeMappingAction action,
+        int generation,
+        CancellationToken cancellationToken)
+    {
+        var dispatcher = _window?.DispatcherQueue
+            ?? throw new InvalidOperationException("Blade Fn UI dispatcher is unavailable.");
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!dispatcher.TryEnqueue(async () =>
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await ExecuteBladeFnLeafOnUiThreadAsync(
+                        action,
+                        generation,
+                        cancellationToken).ConfigureAwait(true);
+                    completion.TrySetResult();
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    completion.TrySetCanceled(cancellationToken);
+                }
+                catch (Exception exception)
+                {
+                    completion.TrySetException(exception);
+                }
+            }))
+        {
+            throw new InvalidOperationException("Blade Fn action could not enter the UI dispatcher.");
+        }
+
+        return new ValueTask(completion.Task);
+    }
+
+    private async Task ExecuteBladeFnLeafOnUiThreadAsync(
+        BladeMappingAction action,
+        int generation,
+        CancellationToken cancellationToken)
+    {
+        var viewModel = _audioMuteViewModel;
+        if (viewModel is null ||
+            Volatile.Read(ref _closing) != 0 ||
+            generation != Volatile.Read(ref _audioMuteGeneration))
+        {
+            throw new OperationCanceledException("Blade Fn session is no longer current.");
+        }
+
+        switch (action)
+        {
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.GameMode,
+                Command: BladeMappingCommand.Toggle,
+            }:
+                await viewModel.ToggleBladeGamingModeAsync(cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.BladePerformance,
+                Command: BladeMappingCommand.NextPerformanceMode,
+            }:
+                await viewModel.CycleBladePerformanceModeAsync(cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.BladeTrackpad,
+                Command: BladeMappingCommand.Toggle,
+            }:
+                await viewModel.ToggleBladeTouchpadAsync(cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.BladeBattery,
+                Command: BladeMappingCommand.Toggle,
+            }:
+                await viewModel.ToggleBladeOneTimeFullChargeAsync(cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.ScreenRefresh,
+                Command: BladeMappingCommand.NextRefreshRate,
+            }:
+                await viewModel.CycleInternalDisplayRefreshRateAsync(cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.Display,
+                Command: BladeMappingCommand.DriverBrightnessDown,
+            }:
+                await _displayBrightnessController.StepAsync(false, cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.Display,
+                Command: BladeMappingCommand.DriverBrightnessUp,
+            }:
+                await _displayBrightnessController.StepAsync(true, cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeCommandMappingAction
+            {
+                CommandKind: BladeMappingOutputKind.Display,
+                Command: BladeMappingCommand.DriverBrightnessStop,
+            }:
+                break;
+            case BladeBacklightMappingAction
+            {
+                IsDown: true,
+                Command: BladeMappingCommand.BrightnessDown,
+            }:
+                await viewModel.StepBladeBrightnessAsync(false, cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeBacklightMappingAction
+            {
+                IsDown: true,
+                Command: BladeMappingCommand.BrightnessUp,
+            }:
+                await viewModel.StepBladeBrightnessAsync(true, cancellationToken).ConfigureAwait(true);
+                break;
+            case BladeBacklightMappingAction { IsDown: false }:
+                break;
+            case BladeAudioMappingAction
+            {
+                Command: BladeMappingCommand.Microphone,
+                Mute: 2,
+            }:
+                await Task.Run(
+                    WindowsCoreAudioMuteEventSource.ToggleDefaultCaptureMute,
+                    cancellationToken).ConfigureAwait(true);
+                break;
+            default:
+                throw new InvalidOperationException(
+                    $"Unsupported Blade Fn leaf action: {action}.");
+        }
+    }
+
+    private async Task ObserveBladeFnRuntimeAsync(
+        BladeFnRuntime? runtime,
+        string devicePath,
+        int generation)
+    {
+        if (runtime is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await runtime.Completion.ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            if (Volatile.Read(ref _closing) != 0 ||
+                generation != Volatile.Read(ref _audioMuteGeneration))
+            {
+                return;
+            }
+
+            _diagnosticLog.TryWrite("blade-fn", $"runtime failed closed: {exception}");
+            var cleanupSucceeded = true;
+            await _audioMuteRuntimeGate.WaitAsync().ConfigureAwait(false);
             try
             {
-                File.Delete(temporaryPath);
+                if (ReferenceEquals(_bladeFnRuntime, runtime))
+                {
+                    try
+                    {
+                        await DisposeBladeAudioStackAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception cleanupError)
+                    {
+                        cleanupSucceeded = false;
+                        _diagnosticLog.TryWrite("blade-fn", $"fault cleanup failed: {cleanupError}");
+                        ReportBladeFnFailure(cleanupError);
+                    }
+                }
             }
-            catch (IOException)
+            finally
             {
-                // The next startup can ignore an orphaned temporary marker.
+                _audioMuteRuntimeGate.Release();
+            }
+
+            if (Volatile.Read(ref _closing) == 0 &&
+                cleanupSucceeded &&
+                generation == Volatile.Read(ref _audioMuteGeneration))
+            {
+                _ = RetryBladeAudioMuteRuntimeAsync(devicePath, generation);
             }
         }
     }
 
-    private void DeleteBladeMappingSessionMarker()
+    private void ReportBladeFnFailure(Exception exception)
     {
-        try
+        var dispatcher = _window?.DispatcherQueue;
+        var viewModel = _audioMuteViewModel;
+        if (dispatcher is null || viewModel is null)
         {
-            File.Delete(BladeMappingSessionMarkerPath);
+            return;
         }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException)
-        {
-            _diagnosticLog.TryWrite("blade-fn", $"Session marker cleanup failed: {exception.Message}");
-        }
+
+        dispatcher.TryEnqueue(() => viewModel.ReportApplicationError(
+            AppStrings.Format("FnKeyError", "Fn 组合键：{0}", exception.Message)));
     }
 
     private async Task RetryBladeAudioMuteRuntimeAsync(string devicePath, int generation)

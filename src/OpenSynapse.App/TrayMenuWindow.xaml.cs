@@ -19,6 +19,7 @@ public sealed partial class TrayMenuWindow : Window
     private const uint SwpShowWindow = 0x0040;
     private const uint SwpNoOwnerZOrder = 0x0200;
     private static readonly IntPtr HwndTopmost = new(-1);
+    private readonly MainViewModel _viewModel;
     private readonly IntPtr _windowHandle;
     private bool _hostReady;
     private bool _showPending;
@@ -27,7 +28,9 @@ public sealed partial class TrayMenuWindow : Window
 
     public TrayMenuWindow(MainViewModel viewModel)
     {
+        _viewModel = viewModel;
         InitializeComponent();
+        RefreshLocalization();
         MenuAnchor.RequestedTheme = ElementTheme.Dark;
         MenuAnchor.DataContext = viewModel;
         MenuAnchor.Loaded += MenuAnchorLoaded;
@@ -60,6 +63,15 @@ public sealed partial class TrayMenuWindow : Window
     public event Action<string>? NavigationRequested;
     public event Action<bool>? StartupChangeRequested;
 
+    public void RefreshLocalization()
+    {
+        Localized.Refresh(OpenMainPanelMenuItem);
+        Localized.Refresh(DevicesMenuItem);
+        Localized.Refresh(ProfilesMenuItem);
+        Localized.Refresh(StartupMenuItem);
+        Localized.Refresh(ExitMenuItem);
+    }
+
     public void ShowAt(int x, int y)
     {
         if (_closing || !_hostReady || _showPending || TrayMenuFlyout.IsOpen)
@@ -67,6 +79,7 @@ public sealed partial class TrayMenuWindow : Window
             return;
         }
 
+        StartupIcon.Symbol = _viewModel.IsStartupEnabled ? Symbol.Accept : Symbol.Play;
         _showPending = true;
         var workArea = DisplayArea.GetFromPoint(
             new PointInt32(x, y),
@@ -133,10 +146,7 @@ public sealed partial class TrayMenuWindow : Window
 
     private void StartupClick(object sender, RoutedEventArgs e)
     {
-        if (sender is ToggleMenuFlyoutItem item)
-        {
-            StartupChangeRequested?.Invoke(item.IsChecked);
-        }
+        StartupChangeRequested?.Invoke(!_viewModel.IsStartupEnabled);
     }
 
     private void ExitClick(object sender, RoutedEventArgs e)

@@ -4,7 +4,7 @@
 
 OpenSynapse 是一款面向 Windows 11 的轻量级 Razer 设备控制工具。它可以在不让雷云常驻的情况下，管理已验证设备的灯光、性能和常用设置。
 
-当前版本为 `0.1.0`，只支持经过实机验证的具体设备。OpenSynapse 不会根据相近型号猜测协议，也不会向未知设备发送控制命令。
+当前版本为 `1.0.1`，只支持经过实机验证的具体设备。OpenSynapse 不会根据相近型号猜测协议，也不会向未知设备发送控制命令。
 
 ## 支持设备
 
@@ -22,7 +22,7 @@ OpenSynapse 是一款面向 Windows 11 的轻量级 Razer 设备控制工具。�
 - 切换性能模式，并在 Custom 模式下调整 CPU Boost、GPU Boost 和 Max Fan。
 - 设置 `50%` 至 `80%` 的充电上限，或关闭限制。
 - 调整 Windows 内置屏支持的刷新率，切换触控板。
-- 后台处理已验证的 Fn 媒体键、屏幕亮度键、M3 游戏模式和 M5 麦克风静音指示灯。
+- 后台处理已验证的 Fn 组合键、M3 游戏模式、M4 性能模式和 M5 麦克风静音指示灯。
 - 只读显示面板模式、SKU、Local Dimming 等平台状态。
 
 ### Viper V3 HyperSpeed
@@ -47,13 +47,7 @@ OpenSynapse 是一款面向 Windows 11 的轻量级 Razer 设备控制工具。�
 
 首次探测设备时建议退出 Razer Synapse。两者可能争用同一个 HID 控制通道；OpenSynapse 会报告访问失败，但不会结束 Synapse 进程。
 
-Fn 媒体键、M3/M5 指示灯同步依赖本机已安装的 Razer AppEngine。`mapping_engine.dll` 是 Razer 的专有组件，仓库和发布包不分发该文件。安装官方 Razer Synapse 后，应用会自动查找：
-
-```text
-%ProgramFiles%\Razer\RazerAppEngine\app-*\CommonDLL\mapping_engine.dll
-```
-
-缺少该组件时，应用仍可使用其他功能，对应后台同步会保持禁用。
+OpenSynapse 不需要 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 的 Razer 设备驱动；卸载 Synapse 时请保留这些驱动。驱动不属于 OpenSynapse，仓库和发布包均不分发。
 
 ## 明确不在当前范围内
 

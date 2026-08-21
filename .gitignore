@@ -26,11 +26,14 @@ src/OpenSynapse.App/artifacts/
 
 # Local agent/runtime state
 .superpowers/
+__pycache__/
+*.pyc
 
 # Extracted proprietary Synapse application tree
 artifacts/synapse-asar-*/
 
 # Local reverse-engineering projects and captures
+tools/
 *.ghidra
 *.gpr
 *.rep/

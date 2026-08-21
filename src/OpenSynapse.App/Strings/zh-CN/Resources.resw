@@ -465,8 +465,8 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>版本 0.1.0</value>
-    <comment>版本 0.1.0</comment>
+    <value>版本 1.0.1</value>
+    <comment>版本 1.0.1</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
     <value>脱离雷云管理已连接的 Razer 设备，调整灯光、性能和常用设置。</value>
@@ -1403,10 +1403,35 @@
   <data name="Text_36CF587E" xml:space="preserve"><value>配置应用</value><comment>配置应用</comment></data>
   <data name="Text_65811CCB" xml:space="preserve"><value>风扇控制</value><comment>风扇控制</comment></data>
   <data name="Loc_69C8D0D8B7.Text" xml:space="preserve"><value>语言</value><comment>语言</comment></data>
-  <data name="Loc_7F211E0B63.Text" xml:space="preserve"><value>默认跟随 Windows 显示语言；更改将在下次启动时生效。</value><comment>默认跟随 Windows 显示语言；更改将在下次启动时生效。</comment></data>
+  <data name="Loc_7F211E0B63.Text" xml:space="preserve"><value>默认跟随 Windows 显示语言；切换后立即生效。</value><comment>默认跟随 Windows 显示语言；切换后立即生效。</comment></data>
   <data name="Loc_C3B65B0A4F.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>界面语言</value><comment>界面语言</comment></data>
   <data name="Loc_6E1BBAA0E8.Content" xml:space="preserve"><value>跟随系统</value><comment>跟随系统</comment></data>
   <data name="Loc_5C8A32D3B1.Content" xml:space="preserve"><value>简体中文</value><comment>简体中文</comment></data>
   <data name="Loc_F08B7A510E.Content" xml:space="preserve"><value>English</value><comment>English</comment></data>
   <data name="LanguageSettingError" xml:space="preserve"><value>界面语言设置：{0}</value><comment>界面语言设置：{0}</comment></data>
+  <data name="Loc_EED40F9C.Text" xml:space="preserve"><value>游戏模式</value><comment>游戏模式</comment></data>
+  <data name="Text_BBA5B478" xml:space="preserve"><value>共享内存</value><comment>共享内存</comment></data>
+  <data name="Text_D4F79DC8" xml:space="preserve"><value>专用显存</value><comment>专用显存</comment></data>
+  <data name="Text_E68D6CF4" xml:space="preserve"><value>当前设备固件不支持游戏模式写入。</value><comment>当前设备固件不支持游戏模式写入。</comment></data>
+  <data name="Text_02EB2B07" xml:space="preserve"><value>游戏模式设置失败，原状态和 M3 指示灯已恢复。</value><comment>游戏模式设置失败，原状态和 M3 指示灯已恢复。</comment></data>
+  <data name="Text_E55A07AA" xml:space="preserve"><value>游戏模式设置失败，且无法恢复原状态；请在 Synapse 中检查游戏模式。</value><comment>游戏模式设置失败，且无法恢复原状态；请在 Synapse 中检查游戏模式。</comment></data>
+  <data name="Text_43154C61" xml:space="preserve"><value>设备不支持该命令。</value><comment>设备不支持该命令。</comment></data>
+  <data name="Text_9AD006EF" xml:space="preserve"><value>性能与风扇状态</value><comment>性能与风扇状态</comment></data>
+  <data name="Text_5FCEEE13" xml:space="preserve"><value>当前 CPU 风扇转速</value><comment>当前 CPU 风扇转速</comment></data>
+  <data name="Text_737DBF87" xml:space="preserve"><value>当前 GPU 风扇转速</value><comment>当前 GPU 风扇转速</comment></data>
+  <data name="Text_BE0A43ED" xml:space="preserve"><value>CPU 高级风扇模式</value><comment>CPU 高级风扇模式</comment></data>
+  <data name="Text_37B37761" xml:space="preserve"><value>GPU 高级风扇模式</value><comment>GPU 高级风扇模式</comment></data>
+  <data name="Text_1DE2FEA3" xml:space="preserve"><value>CPU/GPU Boost</value><comment>CPU/GPU Boost</comment></data>
+  <data name="Text_1B20F16C" xml:space="preserve"><value>Power Mode Control</value><comment>Power Mode Control</comment></data>
+  <data name="Text_24A8C247" xml:space="preserve"><value>原生显示模式</value><comment>原生显示模式</comment></data>
+  <data name="Text_9D1351CB" xml:space="preserve"><value>SKU 硬件配置</value><comment>SKU 硬件配置</comment></data>
+  <data name="Text_12EF4C04" xml:space="preserve"><value>Blade Logo</value><comment>Blade Logo</comment></data>
+  <data name="Text_8B2E15F8" xml:space="preserve"><value>鼠标电量</value><comment>鼠标电量</comment></data>
+  <data name="Text_B98036FA" xml:space="preserve"><value>鼠标低电量阈值</value><comment>鼠标低电量阈值</comment></data>
+  <data name="Text_AC6D5D5D" xml:space="preserve"><value>设备返回了错误 report ID、错序或校验失败的报告；请关闭 Synapse 后重试。</value><comment>设备返回了错误 report ID、错序或校验失败的报告；请关闭 Synapse 后重试。</comment></data>
+  <data name="Text_76B3B05A" xml:space="preserve"><value>设备正忙（0x01）。</value><comment>设备正忙（0x01）。</comment></data>
+  <data name="Text_46FA9536" xml:space="preserve"><value>设备拒绝了查询（0x03）。</value><comment>设备拒绝了查询（0x03）。</comment></data>
+  <data name="Text_BD97D2B0" xml:space="preserve"><value>设备超时（0x04）；请唤醒设备并关闭 Synapse 后重试。</value><comment>设备超时（0x04）；请唤醒设备并关闭 Synapse 后重试。</comment></data>
+  <data name="Text_04AABB92" xml:space="preserve"><value>Razer feature 查询失败。</value><comment>Razer feature 查询失败。</comment></data>
+  <data name="Text_5DBCDF6D" xml:space="preserve"><value>已关闭</value><comment>已关闭</comment></data>
 </root>
