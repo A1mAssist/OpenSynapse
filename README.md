@@ -67,7 +67,7 @@ Exit Razer Synapse before the first device scan to avoid both applications conte
 
 ### Driver boundary
 
-OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support still requires the Product 710 Razer device drivers; keep those drivers when removing Synapse. OpenSynapse does not redistribute Razer drivers.
+OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support requires the Product 710 Razer device drivers. Install the matching drivers from Razer or your Blade device support package before using those functions; without them, Blade Fn and the related hardware controls remain unavailable. OpenSynapse does not bundle or redistribute the driver files.
 
 ## Out of scope
 

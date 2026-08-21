@@ -18,7 +18,7 @@ Do not commit:
 - `.vs`, `.idea`, `.vscode`, user settings, caches, temporary files, dumps, logs, ETW traces, USB captures, or local diagnostics;
 - Ghidra projects, extracted proprietary application files, reverse-engineering workspaces, or unreviewed protocol captures;
 - API tokens, passwords, private keys, signing certificates, `.env` files, device paths, usernames, or absolute paths tied to one workstation;
-- Razer binaries, drivers, firmware, or other proprietary files that the project is not licensed to redistribute.
+- Razer binaries, drivers, firmware, or other proprietary files. These are external runtime prerequisites for some Blade Fn features, but users must install them from Razer or the device support package; they are not checked into or redistributed by this repository.
 
 Release binaries belong on GitHub Releases, not in Git history.
 
