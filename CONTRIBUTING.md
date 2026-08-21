@@ -27,7 +27,7 @@ Release binaries belong on GitHub Releases, not in Git history.
 - Store README screenshots in `screenshots/`.
 - Use explicit language suffixes such as `-zh.png` and `-en.png`.
 - Remove personal information, notifications, account identifiers, device serial numbers, and unrelated windows before committing.
-- Keep `README.md` and `README.en.md` aligned, while using screenshots from the matching language only.
+- Keep the English `README.md` and Chinese `README.zh-CN.md` aligned, while using screenshots from the matching language only.
 - Reuse `src/OpenSynapse.App/Assets/OpenSynapseLogo.svg` as the canonical product logo.
 
 ## Before every commit
