@@ -262,15 +262,15 @@ public partial class App : Application
             _ => mode.ToString(),
         };
         ShowModeNotification(
-            AppStrings.Format("性能模式已切换", "性能模式已切换"),
-            AppStrings.Format("PerformanceModeNotification", "当前模式：{0}", modeText));
+            AppStrings.Text("性能模式已切换"),
+            AppStrings.FormatText("PerformanceModeNotification", modeText));
     }
 
     private void OnBladeGamingModeChangedByUser(bool enabled) => ShowModeNotification(
-        AppStrings.Format("游戏模式已切换", "游戏模式已切换"),
+        AppStrings.Text("游戏模式已切换"),
         enabled
-            ? AppStrings.Format("游戏模式已启用", "游戏模式已启用")
-            : AppStrings.Format("游戏模式已关闭", "游戏模式已关闭"));
+            ? AppStrings.Text("游戏模式已启用")
+            : AppStrings.Text("游戏模式已关闭"));
 
     private void ShowModeNotification(string title, string body)
     {
@@ -325,7 +325,7 @@ public partial class App : Application
             _trayIcon = null;
             _trayMenuWindow?.CloseMenuHost();
             _trayMenuWindow = null;
-            viewModel.ReportApplicationError(AppStrings.Format("TrayInitializationError", "托盘初始化：{0}", exception.Message));
+            viewModel.ReportApplicationError(AppStrings.FormatText("TrayInitializationError", exception.Message));
         }
     }
 
@@ -420,8 +420,8 @@ public partial class App : Application
                 if (Volatile.Read(ref _closing) != 0 ||
                     generation != Volatile.Read(ref _audioMuteGeneration))
                 {
-                    throw new OperationCanceledException(AppStrings.Get(
-                        "Blade Fn 运行时在音频同步完成前已被安全停止。"));
+                    throw new OperationCanceledException(AppStrings.Text(
+                        "BladeFnRuntimeStoppedBeforeAudioSync"));
                 }
 
                 audioRuntime = new BladeAudioMuteRuntime(
@@ -810,7 +810,7 @@ public partial class App : Application
         }
 
         dispatcher.TryEnqueue(() => viewModel.ReportApplicationError(
-            AppStrings.Format("FnKeyError", "Fn 组合键：{0}", exception.Message)));
+            AppStrings.FormatText("FnKeyError", exception.Message)));
     }
 
     private async Task RetryBladeAudioMuteRuntimeAsync(string devicePath, int generation)

@@ -62,8 +62,8 @@ public sealed partial class AboutWindow : Window
     internal void RefreshLocalization()
     {
         Localized.RefreshTree(RootLayout);
-        Title = AppStrings.Format("AboutWindowTitle", "关于 OpenSynapse");
+        Title = AppStrings.Text("AboutWindowTitle");
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "--";
-        VersionText.Text = AppStrings.Format("AboutVersion", "版本 {0}", version);
+        VersionText.Text = AppStrings.FormatText("AboutVersion", version);
     }
 }

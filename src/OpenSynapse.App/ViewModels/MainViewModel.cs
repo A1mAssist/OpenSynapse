@@ -13,44 +13,12 @@ using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Protocols;
 using OpenSynapse.Windows.Devices;
 using Windows.UI;
+using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
-    private static readonly BladePerformanceMode[] BladePerformanceModes =
-    [
-        BladePerformanceMode.Balanced,
-        BladePerformanceMode.Performance,
-        BladePerformanceMode.Custom,
-        BladePerformanceMode.Silent,
-        BladePerformanceMode.Hyperboost,
-    ];
-    private static readonly int[] BladeChargeLimits = [50, 55, 60, 65, 70, 75, 80, 100];
-    private static readonly BladeCpuBoostMode[] BladeCpuBoostModes =
-        [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High, BladeCpuBoostMode.Boost, BladeCpuBoostMode.Undervolt];
-    private static readonly BladeGpuBoostMode[] BladeGpuBoostModes =
-        [BladeGpuBoostMode.Low, BladeGpuBoostMode.Medium, BladeGpuBoostMode.High];
-    private static readonly BladeLogoMode[] BladeLogoModes =
-        [BladeLogoMode.Off, BladeLogoMode.Static, BladeLogoMode.Breathing];
-    private static readonly BladeLightingMode[] BladeLightingModes =
-        [
-            BladeLightingMode.Off,
-            BladeLightingMode.Static,
-            BladeLightingMode.Breathing,
-            BladeLightingMode.Spectrum,
-            BladeLightingMode.Wave,
-            BladeLightingMode.Fire,
-            BladeLightingMode.Reactive,
-            BladeLightingMode.Ripple,
-            BladeLightingMode.AudioMeter,
-            BladeLightingMode.Ambient,
-            BladeLightingMode.Wheel,
-            BladeLightingMode.Starlight,
-            BladeLightingMode.Tidal,
-        ];
-    private static readonly BladeWaveDirection[] BladeWaveDirections =
-        [BladeWaveDirection.Right, BladeWaveDirection.Left];
     private static readonly TimeSpan BladeBrightnessVerificationDelay =
         TimeSpan.FromMilliseconds(150);
 
@@ -61,6 +29,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private readonly IPowerSourceProvider _powerSourceProvider;
     private readonly IActiveApplicationProvider _activeApplicationProvider;
     private readonly LocalDiagnosticLog _diagnosticLog;
+    private readonly SystemTelemetryViewModel _systemTelemetry = new();
+    private readonly BladeViewModel _blade = new();
+    private readonly ViperViewModel _viper = new();
     private HashSet<BladePerformanceMode> _bladePerformanceCycleModes =
         [.. BladePerformanceModes];
     private HashSet<int>? _internalDisplayRefreshRateCycleHertz;
@@ -98,99 +69,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private string _profileNameInput = string.Empty;
     private bool _isStartupEnabled;
     private bool _isSilentStartupEnabled;
-    private string _telemetryTimeText = "等待采样";
     private string _errorText = string.Empty;
     private bool _isBusy;
-    private string _bladeDeviceName = "Razer Blade 16 2025";
-    private string _bladeStatusText = "未发现";
-    private string _bladeBrightnessText = "--";
-    private string _bladeBrightnessSelectionText = "--";
-    private double _bladeBrightnessPercent;
-    private double _confirmedBladeBrightnessPercent;
-    private bool _canSetBladeBrightness;
-    private string _bladePerformanceModeText = "--";
-    private int _bladePerformanceModeIndex = -1;
-    private int _confirmedBladePerformanceModeIndex = -1;
-    private bool _canSetBladePerformanceMode;
-    private string _bladeFanText = "--";
-    private string _bladeFanModeText = "--";
-    private string _bladeFanTargetRpmText = "--";
-    private string _bladeCurrentFanCpuRpmText = "--";
-    private string _bladeCurrentFanGpuRpmText = "--";
-    private string _bladeAdvancedFanCpuModeRawText = "--";
-    private string _bladeAdvancedFanGpuModeRawText = "--";
-    private string _bladeGameModeText = "--";
-    private byte? _bladeGameModeState;
-    private bool _bladeGameModeWriteSupported = true;
-    private bool _bladeGameModeEnabled;
-    private string _bladeStartupAnimationText = "--";
-    private bool? _bladeStartupAnimationEnabled;
-    private bool _bladeStartupAnimationSelection;
-    private string _bladeNativeDisplayModeText = "--";
-    private string _bladeSkuHardwareText = "--";
-    private string _bladeLocalDimmingText = "--";
-    private string _bladeOneTimeFullChargeText = "--";
-    private bool? _bladeOneTimeFullChargeEnabled;
-    private bool _bladeOneTimeFullChargeSelection;
-    private string _bladeChargeLimitText = "--";
-    private int _bladeChargeLimitIndex = -1;
-    private int _confirmedBladeChargeLimitIndex = -1;
-    private bool _canSetBladeChargeLimit;
-    private string _bladeCpuBoostText = "--";
-    private int _bladeCpuBoostIndex = -1;
-    private int _confirmedBladeCpuBoostIndex = -1;
-    private bool _hasBladeCpuBoost;
-    private string _bladeGpuBoostText = "--";
-    private int _bladeGpuBoostIndex = -1;
-    private int _confirmedBladeGpuBoostIndex = -1;
-    private bool _hasBladeGpuBoost;
-    private string _bladeMaxFanText = "--";
-    private bool _bladeMaxFanEnabled;
-    private bool _confirmedBladeMaxFanEnabled;
-    private bool _hasBladeMaxFan;
-    private string _bladeLogoText = "--";
-    private int _bladeLogoIndex = -1;
-    private int _confirmedBladeLogoIndex = -1;
-    private bool _canSetBladeLogo;
-    private string _bladeTouchpadText = "--";
-    private bool _bladeTouchpadEnabled;
-    private bool _confirmedBladeTouchpadEnabled;
-    private bool _canSetBladeTouchpad;
-    private int _bladeLightingModeIndex = 1;
-    private int _bladeWaveDirectionIndex;
-    private Color _bladeLightingColor = Color.FromArgb(0xFF, 0x99, 0xDD, 0x72);
-    private Color _bladeLightingSecondColor = Color.FromArgb(0xFF, 0x00, 0x66, 0xFF);
     private IReadOnlyList<DeviceDescriptor> _deviceDescriptors = Array.Empty<DeviceDescriptor>();
     private RazerDeviceTelemetry? _lastDeviceTelemetry;
-    private string _viperDeviceName = "Razer Viper V3 HyperSpeed";
-    private Visibility _viperDeviceVisibility = Visibility.Collapsed;
-    private string _viperStatusText = "未发现";
-    private string _viperBatteryText = "--";
-    private string _viperPollingRateText = "--";
-    private int _viperPollingRateIndex = -1;
-    private int _confirmedViperPollingRateIndex = -1;
-    private bool _canSetViperPollingRate;
-    private string _viperDpiText = "--";
-    private double _viperDpiXValue;
-    private double _viperDpiYValue;
-    private double _confirmedViperDpiXValue;
-    private double _confirmedViperDpiYValue;
-    private bool _canSetViperDpi;
-    private string _viperIdleText = "--";
-    private string _viperDpiStagesText = "--";
-    private string _viperLowBatteryThresholdText = "--";
-    private double _viperIdleMinutesValue;
-    private double _confirmedViperIdleMinutesValue;
-    private bool _canSetViperIdle;
-    private int _viperDpiStageCount;
-    private int _viperActiveDpiStage;
-    private bool _canSetViperDpiStages;
-    private ViperDpiStagesTelemetry? _confirmedViperDpiStages;
-    private string _viperButtonMappingsText = "未读取";
-    private int _viperButtonMappingLayerIndex;
-    private bool _canReadViperButtonMappings;
-    private bool _canSetViperButtonMappings;
-    private string _viperMappingProfileFingerprint = string.Empty;
     private string _deviceFingerprint = string.Empty;
     private string _lightingShadowFingerprint = string.Empty;
     private string _bladeLightingDevicePath = string.Empty;
@@ -200,26 +82,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
-    private string _cpuName = "CPU";
-    private string _cpuValue = "--";
-    private double _cpuPercent;
-    private string _cpuTemperatureText = "--";
-    private string _cpuPowerText = "--";
-    private string _cpuClockText = "--";
-    private string _gpuName = "GPU";
-    private string _gpuValue = "--";
-    private double _gpuPercent;
-    private string _gpuTemperatureText = "--";
-    private string _gpuPowerText = "--";
-    private string _gpuClockText = "--";
-    private string _gpuMemoryLabel = "GPU 内存";
-    private string _gpuMemoryText = "--";
-    private string _memoryValue = "--";
-    private string _memoryDetail = "-- / -- GB";
-    private double _memoryPercent;
-    private string _storageValue = "--";
-    private string _storageDetail = "-- / -- GB";
-    private double _storagePercent;
     private string _internalDisplayResolutionText = "--";
     private string _internalDisplayRefreshRateText = "--";
     private IReadOnlyList<int> _internalDisplayRefreshRates = Array.Empty<int>();
@@ -257,6 +119,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
+        _systemTelemetry.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -380,11 +243,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         private set => SetField(ref _lastDeviceRefreshText, value);
     }
 
-    public string TelemetryTimeText
-    {
-        get => AppStrings.Get(_telemetryTimeText);
-        private set => SetField(ref _telemetryTimeText, value);
-    }
+    public string TelemetryTimeText => _systemTelemetry.TelemetryTimeText;
 
     public string DeviceTelemetryTimeText { get => AppStrings.Get(_deviceTelemetryTimeText); private set => SetField(ref _deviceTelemetryTimeText, value); }
 
@@ -444,127 +303,127 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public bool CanRefresh => true;
 
-    public string BladeDeviceName { get => _bladeDeviceName; private set => SetField(ref _bladeDeviceName, value); }
-    public string BladeStatusText { get => AppStrings.Get(_bladeStatusText); private set => SetField(ref _bladeStatusText, value); }
-    public string BladeBrightnessText { get => _bladeBrightnessText; private set => SetField(ref _bladeBrightnessText, value); }
-    public string BladeBrightnessSelectionText { get => _bladeBrightnessSelectionText; private set => SetField(ref _bladeBrightnessSelectionText, value); }
+    public string BladeDeviceName { get => _blade._bladeDeviceName; private set => SetField(ref _blade._bladeDeviceName, value); }
+    public string BladeStatusText { get => AppStrings.Get(_blade._bladeStatusText); private set => SetField(ref _blade._bladeStatusText, value); }
+    public string BladeBrightnessText { get => _blade._bladeBrightnessText; private set => SetField(ref _blade._bladeBrightnessText, value); }
+    public string BladeBrightnessSelectionText { get => _blade._bladeBrightnessSelectionText; private set => SetField(ref _blade._bladeBrightnessSelectionText, value); }
     public double BladeBrightnessPercent
     {
-        get => _bladeBrightnessPercent;
+        get => _blade._bladeBrightnessPercent;
         set
         {
-            if (SetField(ref _bladeBrightnessPercent, Math.Clamp(value, 0, 100)))
+            if (SetField(ref _blade._bladeBrightnessPercent, Math.Clamp(value, 0, 100)))
             {
-                BladeBrightnessSelectionText = $"{_bladeBrightnessPercent:0}%";
+                BladeBrightnessSelectionText = $"{_blade._bladeBrightnessPercent:0}%";
             }
         }
     }
     public bool CanSetBladeBrightness
     {
-        get => _canSetBladeBrightness;
+        get => _blade._canSetBladeBrightness;
         private set
         {
-            if (SetField(ref _canSetBladeBrightness, value))
+            if (SetField(ref _blade._canSetBladeBrightness, value))
             {
                 OnPropertyChanged(nameof(CanSetBladeLighting));
             }
         }
     }
-    public string BladePerformanceModeText { get => AppStrings.Get(_bladePerformanceModeText); private set => SetField(ref _bladePerformanceModeText, value); }
+    public string BladePerformanceModeText { get => AppStrings.Get(_blade._bladePerformanceModeText); private set => SetField(ref _blade._bladePerformanceModeText, value); }
     public IReadOnlyList<string> BladePerformanceModeOptions => AppStrings.Get("平衡", "性能", "自定义", "静音", "HyperBoost");
-    public int BladePerformanceModeIndex { get => _bladePerformanceModeIndex; set => SetField(ref _bladePerformanceModeIndex, value); }
-    public bool CanSetBladePerformanceMode { get => _canSetBladePerformanceMode; private set => SetField(ref _canSetBladePerformanceMode, value); }
-    public string BladeFanText { get => AppStrings.Get(_bladeFanText); private set => SetField(ref _bladeFanText, value); }
-    public string BladeFanModeText { get => AppStrings.Get(_bladeFanModeText); private set => SetField(ref _bladeFanModeText, value); }
-    public string BladeFanTargetRpmText { get => _bladeFanTargetRpmText; private set => SetField(ref _bladeFanTargetRpmText, value); }
-    public string BladeCurrentFanCpuRpmText { get => _bladeCurrentFanCpuRpmText; private set => SetField(ref _bladeCurrentFanCpuRpmText, value); }
-    public string BladeCurrentFanGpuRpmText { get => _bladeCurrentFanGpuRpmText; private set => SetField(ref _bladeCurrentFanGpuRpmText, value); }
-    public string BladeAdvancedFanCpuModeRawText { get => _bladeAdvancedFanCpuModeRawText; private set => SetField(ref _bladeAdvancedFanCpuModeRawText, value); }
-    public string BladeAdvancedFanGpuModeRawText { get => _bladeAdvancedFanGpuModeRawText; private set => SetField(ref _bladeAdvancedFanGpuModeRawText, value); }
-    public string BladeGameModeText { get => AppStrings.Get(_bladeGameModeText); private set => SetField(ref _bladeGameModeText, value); }
+    public int BladePerformanceModeIndex { get => _blade._bladePerformanceModeIndex; set => SetField(ref _blade._bladePerformanceModeIndex, value); }
+    public bool CanSetBladePerformanceMode { get => _blade._canSetBladePerformanceMode; private set => SetField(ref _blade._canSetBladePerformanceMode, value); }
+    public string BladeFanText { get => AppStrings.Get(_blade._bladeFanText); private set => SetField(ref _blade._bladeFanText, value); }
+    public string BladeFanModeText { get => AppStrings.Get(_blade._bladeFanModeText); private set => SetField(ref _blade._bladeFanModeText, value); }
+    public string BladeFanTargetRpmText { get => _blade._bladeFanTargetRpmText; private set => SetField(ref _blade._bladeFanTargetRpmText, value); }
+    public string BladeCurrentFanCpuRpmText { get => _blade._bladeCurrentFanCpuRpmText; private set => SetField(ref _blade._bladeCurrentFanCpuRpmText, value); }
+    public string BladeCurrentFanGpuRpmText { get => _blade._bladeCurrentFanGpuRpmText; private set => SetField(ref _blade._bladeCurrentFanGpuRpmText, value); }
+    public string BladeAdvancedFanCpuModeRawText { get => _blade._bladeAdvancedFanCpuModeRawText; private set => SetField(ref _blade._bladeAdvancedFanCpuModeRawText, value); }
+    public string BladeAdvancedFanGpuModeRawText { get => _blade._bladeAdvancedFanGpuModeRawText; private set => SetField(ref _blade._bladeAdvancedFanGpuModeRawText, value); }
+    public string BladeGameModeText { get => AppStrings.Get(_blade._bladeGameModeText); private set => SetField(ref _blade._bladeGameModeText, value); }
     public bool BladeGameModeEnabled
     {
-        get => _bladeGameModeEnabled;
+        get => _blade._bladeGameModeEnabled;
         set
         {
-            if (SetField(ref _bladeGameModeEnabled, value))
+            if (SetField(ref _blade._bladeGameModeEnabled, value))
             {
                 OnPropertyChanged(nameof(CanApplyBladeGamingMode));
             }
         }
     }
     public bool CanSetBladeGamingMode =>
-        _bladeGameModeWriteSupported && _bladeGameModeState is byte state && state != 2;
+        _blade._bladeGameModeWriteSupported && _blade._bladeGameModeState is byte state && state != 2;
     public bool CanApplyBladeGamingMode =>
-        CanSetBladeGamingMode && BladeGameModeEnabled != (_bladeGameModeState != 0);
-    public string BladeStartupAnimationText { get => AppStrings.Get(_bladeStartupAnimationText); private set => SetField(ref _bladeStartupAnimationText, value); }
+        CanSetBladeGamingMode && BladeGameModeEnabled != (_blade._bladeGameModeState != 0);
+    public string BladeStartupAnimationText { get => AppStrings.Get(_blade._bladeStartupAnimationText); private set => SetField(ref _blade._bladeStartupAnimationText, value); }
     public bool BladeStartupAnimationEnabled
     {
-        get => _bladeStartupAnimationSelection;
+        get => _blade._bladeStartupAnimationSelection;
         set
         {
-            if (SetField(ref _bladeStartupAnimationSelection, value))
+            if (SetField(ref _blade._bladeStartupAnimationSelection, value))
             {
                 OnPropertyChanged(nameof(CanApplyBladeStartupAnimation));
             }
         }
     }
-    public bool CanSetBladeStartupAnimation => _bladeStartupAnimationEnabled is not null;
+    public bool CanSetBladeStartupAnimation => _blade._bladeStartupAnimationEnabled is not null;
     public bool CanApplyBladeStartupAnimation =>
-        CanSetBladeStartupAnimation && BladeStartupAnimationEnabled != _bladeStartupAnimationEnabled;
-    public string BladeNativeDisplayModeText { get => _bladeNativeDisplayModeText; private set => SetField(ref _bladeNativeDisplayModeText, value); }
-    public string BladeSkuHardwareText { get => _bladeSkuHardwareText; private set => SetField(ref _bladeSkuHardwareText, value); }
-    public string BladeLocalDimmingText { get => AppStrings.Get(_bladeLocalDimmingText); private set => SetField(ref _bladeLocalDimmingText, value); }
-    public string BladeOneTimeFullChargeText { get => AppStrings.Get(_bladeOneTimeFullChargeText); private set => SetField(ref _bladeOneTimeFullChargeText, value); }
+        CanSetBladeStartupAnimation && BladeStartupAnimationEnabled != _blade._bladeStartupAnimationEnabled;
+    public string BladeNativeDisplayModeText { get => _blade._bladeNativeDisplayModeText; private set => SetField(ref _blade._bladeNativeDisplayModeText, value); }
+    public string BladeSkuHardwareText { get => _blade._bladeSkuHardwareText; private set => SetField(ref _blade._bladeSkuHardwareText, value); }
+    public string BladeLocalDimmingText { get => AppStrings.Get(_blade._bladeLocalDimmingText); private set => SetField(ref _blade._bladeLocalDimmingText, value); }
+    public string BladeOneTimeFullChargeText { get => AppStrings.Get(_blade._bladeOneTimeFullChargeText); private set => SetField(ref _blade._bladeOneTimeFullChargeText, value); }
     public bool BladeOneTimeFullChargeEnabled
     {
-        get => _bladeOneTimeFullChargeSelection;
+        get => _blade._bladeOneTimeFullChargeSelection;
         set
         {
-            if (SetField(ref _bladeOneTimeFullChargeSelection, value))
+            if (SetField(ref _blade._bladeOneTimeFullChargeSelection, value))
             {
                 OnPropertyChanged(nameof(CanApplyBladeOneTimeFullCharge));
             }
         }
     }
     public bool CanSetBladeOneTimeFullCharge =>
-        _bladeOneTimeFullChargeEnabled is not null && _confirmedBladeChargeLimitIndex >= 0 &&
-        BladeChargeLimits[_confirmedBladeChargeLimitIndex] < 100;
+        _blade._bladeOneTimeFullChargeEnabled is not null && _blade._confirmedBladeChargeLimitIndex >= 0 &&
+        BladeChargeLimits[_blade._confirmedBladeChargeLimitIndex] < 100;
     public bool CanApplyBladeOneTimeFullCharge =>
-        CanSetBladeOneTimeFullCharge && BladeOneTimeFullChargeEnabled != _bladeOneTimeFullChargeEnabled;
-    public string BladeChargeLimitText { get => AppStrings.Get(_bladeChargeLimitText); private set => SetField(ref _bladeChargeLimitText, value); }
+        CanSetBladeOneTimeFullCharge && BladeOneTimeFullChargeEnabled != _blade._bladeOneTimeFullChargeEnabled;
+    public string BladeChargeLimitText { get => AppStrings.Get(_blade._bladeChargeLimitText); private set => SetField(ref _blade._bladeChargeLimitText, value); }
     public IReadOnlyList<string> BladeChargeLimitOptions => AppStrings.Get("50%", "55%", "60%", "65%", "70%", "75%", "80%", "关闭限制（100%）");
-    public int BladeChargeLimitIndex { get => _bladeChargeLimitIndex; set => SetField(ref _bladeChargeLimitIndex, value); }
-    public bool CanSetBladeChargeLimit { get => _canSetBladeChargeLimit; private set => SetField(ref _canSetBladeChargeLimit, value); }
+    public int BladeChargeLimitIndex { get => _blade._bladeChargeLimitIndex; set => SetField(ref _blade._bladeChargeLimitIndex, value); }
+    public bool CanSetBladeChargeLimit { get => _blade._canSetBladeChargeLimit; private set => SetField(ref _blade._canSetBladeChargeLimit, value); }
     public IReadOnlyList<string> BladeCpuBoostOptions => AppStrings.Get("低", "中", "高", "Boost", "降压预设");
-    public string BladeCpuBoostText { get => AppStrings.Get(_bladeCpuBoostText); private set => SetField(ref _bladeCpuBoostText, value); }
-    public int BladeCpuBoostIndex { get => _bladeCpuBoostIndex; set => SetField(ref _bladeCpuBoostIndex, value); }
-    public bool CanSetBladeCpuBoost => _hasBladeCpuBoost && IsBladeCustomMode;
+    public string BladeCpuBoostText { get => AppStrings.Get(_blade._bladeCpuBoostText); private set => SetField(ref _blade._bladeCpuBoostText, value); }
+    public int BladeCpuBoostIndex { get => _blade._bladeCpuBoostIndex; set => SetField(ref _blade._bladeCpuBoostIndex, value); }
+    public bool CanSetBladeCpuBoost => _blade._hasBladeCpuBoost && IsBladeCustomMode;
     public IReadOnlyList<string> BladeGpuBoostOptions => AppStrings.Get("低", "中", "高");
-    public string BladeGpuBoostText { get => AppStrings.Get(_bladeGpuBoostText); private set => SetField(ref _bladeGpuBoostText, value); }
-    public int BladeGpuBoostIndex { get => _bladeGpuBoostIndex; set => SetField(ref _bladeGpuBoostIndex, value); }
-    public bool CanSetBladeGpuBoost => _hasBladeGpuBoost && IsBladeCustomMode;
-    public string BladeMaxFanText { get => AppStrings.Get(_bladeMaxFanText); private set => SetField(ref _bladeMaxFanText, value); }
-    public bool BladeMaxFanEnabled { get => _bladeMaxFanEnabled; set => SetField(ref _bladeMaxFanEnabled, value); }
-    public bool CanSetBladeMaxFan => _hasBladeMaxFan && IsBladeCustomMode;
+    public string BladeGpuBoostText { get => AppStrings.Get(_blade._bladeGpuBoostText); private set => SetField(ref _blade._bladeGpuBoostText, value); }
+    public int BladeGpuBoostIndex { get => _blade._bladeGpuBoostIndex; set => SetField(ref _blade._bladeGpuBoostIndex, value); }
+    public bool CanSetBladeGpuBoost => _blade._hasBladeGpuBoost && IsBladeCustomMode;
+    public string BladeMaxFanText { get => AppStrings.Get(_blade._bladeMaxFanText); private set => SetField(ref _blade._bladeMaxFanText, value); }
+    public bool BladeMaxFanEnabled { get => _blade._bladeMaxFanEnabled; set => SetField(ref _blade._bladeMaxFanEnabled, value); }
+    public bool CanSetBladeMaxFan => _blade._hasBladeMaxFan && IsBladeCustomMode;
     public Visibility BladeCustomPerformanceVisibility => IsBladeCustomMode
         ? Visibility.Visible
         : Visibility.Collapsed;
     public IReadOnlyList<string> BladeLogoOptions => AppStrings.Get("关闭", "常亮", "呼吸");
-    public string BladeLogoText { get => AppStrings.Get(_bladeLogoText); private set => SetField(ref _bladeLogoText, value); }
-    public int BladeLogoIndex { get => _bladeLogoIndex; set => SetField(ref _bladeLogoIndex, value); }
-    public bool CanSetBladeLogo { get => _canSetBladeLogo; private set => SetField(ref _canSetBladeLogo, value); }
-    public string BladeTouchpadText { get => AppStrings.Get(_bladeTouchpadText); private set => SetField(ref _bladeTouchpadText, value); }
-    public bool BladeTouchpadEnabled { get => _bladeTouchpadEnabled; private set => SetField(ref _bladeTouchpadEnabled, value); }
-    public bool CanSetBladeTouchpad => _canSetBladeTouchpad;
+    public string BladeLogoText { get => AppStrings.Get(_blade._bladeLogoText); private set => SetField(ref _blade._bladeLogoText, value); }
+    public int BladeLogoIndex { get => _blade._bladeLogoIndex; set => SetField(ref _blade._bladeLogoIndex, value); }
+    public bool CanSetBladeLogo { get => _blade._canSetBladeLogo; private set => SetField(ref _blade._canSetBladeLogo, value); }
+    public string BladeTouchpadText { get => AppStrings.Get(_blade._bladeTouchpadText); private set => SetField(ref _blade._bladeTouchpadText, value); }
+    public bool BladeTouchpadEnabled { get => _blade._bladeTouchpadEnabled; private set => SetField(ref _blade._bladeTouchpadEnabled, value); }
+    public bool CanSetBladeTouchpad => _blade._canSetBladeTouchpad;
     public IReadOnlyList<string> BladeLightingModeOptions => AppStrings.Get(
         "关闭", "静态", "呼吸", "光谱循环", "波浪", "火焰", "响应", "涟漪", "音频律动", "环境感知", "色轮", "星光", "潮汐");
     public int BladeLightingModeIndex
     {
-        get => _bladeLightingModeIndex;
+        get => _blade._bladeLightingModeIndex;
         set
         {
-            if (SetField(ref _bladeLightingModeIndex, value))
+            if (SetField(ref _blade._bladeLightingModeIndex, value))
             {
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
                 OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
@@ -588,47 +447,47 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         ? Visibility.Visible
         : Visibility.Collapsed;
     public IReadOnlyList<string> BladeWaveDirectionOptions => AppStrings.Get("向右 / 顺时针", "向左 / 逆时针");
-    public int BladeWaveDirectionIndex { get => _bladeWaveDirectionIndex; set => SetField(ref _bladeWaveDirectionIndex, value); }
-    public Color BladeLightingColor { get => _bladeLightingColor; set => SetField(ref _bladeLightingColor, value); }
-    public Color BladeLightingSecondColor { get => _bladeLightingSecondColor; set => SetField(ref _bladeLightingSecondColor, value); }
-    public bool CanSetBladeLighting => _canSetBladeBrightness && _bladeLightingController is not null;
-    public string ViperDeviceName { get => _viperDeviceName; private set => SetField(ref _viperDeviceName, value); }
-    public Visibility ViperDeviceVisibility { get => _viperDeviceVisibility; private set => SetField(ref _viperDeviceVisibility, value); }
-    public string ViperStatusText { get => AppStrings.Get(_viperStatusText); private set => SetField(ref _viperStatusText, value); }
-    public string ViperBatteryText { get => _viperBatteryText; private set => SetField(ref _viperBatteryText, value); }
-    public string ViperPollingRateText { get => _viperPollingRateText; private set => SetField(ref _viperPollingRateText, value); }
-    public int ViperPollingRateIndex { get => _viperPollingRateIndex; set => SetField(ref _viperPollingRateIndex, value); }
-    public bool CanSetViperPollingRate { get => _canSetViperPollingRate; private set => SetField(ref _canSetViperPollingRate, value); }
-    public string ViperDpiText { get => _viperDpiText; private set => SetField(ref _viperDpiText, value); }
-    public double ViperDpiXValue { get => _viperDpiXValue; set => SetField(ref _viperDpiXValue, value); }
-    public double ViperDpiYValue { get => _viperDpiYValue; set => SetField(ref _viperDpiYValue, value); }
-    public bool CanSetViperDpi { get => _canSetViperDpi; private set => SetField(ref _canSetViperDpi, value); }
-    public string ViperIdleText { get => AppStrings.Get(_viperIdleText); private set => SetField(ref _viperIdleText, value); }
-    public string ViperDpiStagesText { get => AppStrings.Get(_viperDpiStagesText); private set => SetField(ref _viperDpiStagesText, value); }
-    public string ViperLowBatteryThresholdText { get => _viperLowBatteryThresholdText; private set => SetField(ref _viperLowBatteryThresholdText, value); }
-    public double ViperIdleMinutesValue { get => _viperIdleMinutesValue; set => SetField(ref _viperIdleMinutesValue, value); }
-    public bool CanSetViperIdle { get => _canSetViperIdle; private set => SetField(ref _canSetViperIdle, value); }
-    public ObservableCollection<ViperDpiStageRowViewModel> ViperDpiStages { get; } = new();
+    public int BladeWaveDirectionIndex { get => _blade._bladeWaveDirectionIndex; set => SetField(ref _blade._bladeWaveDirectionIndex, value); }
+    public Color BladeLightingColor { get => _blade._bladeLightingColor; set => SetField(ref _blade._bladeLightingColor, value); }
+    public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
+    public bool CanSetBladeLighting => _blade._canSetBladeBrightness && _bladeLightingController is not null;
+    public string ViperDeviceName { get => _viper._viperDeviceName; private set => SetField(ref _viper._viperDeviceName, value); }
+    public Visibility ViperDeviceVisibility { get => _viper._viperDeviceVisibility; private set => SetField(ref _viper._viperDeviceVisibility, value); }
+    public string ViperStatusText { get => AppStrings.Get(_viper._viperStatusText); private set => SetField(ref _viper._viperStatusText, value); }
+    public string ViperBatteryText { get => _viper._viperBatteryText; private set => SetField(ref _viper._viperBatteryText, value); }
+    public string ViperPollingRateText { get => _viper._viperPollingRateText; private set => SetField(ref _viper._viperPollingRateText, value); }
+    public int ViperPollingRateIndex { get => _viper._viperPollingRateIndex; set => SetField(ref _viper._viperPollingRateIndex, value); }
+    public bool CanSetViperPollingRate { get => _viper._canSetViperPollingRate; private set => SetField(ref _viper._canSetViperPollingRate, value); }
+    public string ViperDpiText { get => _viper._viperDpiText; private set => SetField(ref _viper._viperDpiText, value); }
+    public double ViperDpiXValue { get => _viper._viperDpiXValue; set => SetField(ref _viper._viperDpiXValue, value); }
+    public double ViperDpiYValue { get => _viper._viperDpiYValue; set => SetField(ref _viper._viperDpiYValue, value); }
+    public bool CanSetViperDpi { get => _viper._canSetViperDpi; private set => SetField(ref _viper._canSetViperDpi, value); }
+    public string ViperIdleText { get => AppStrings.Get(_viper._viperIdleText); private set => SetField(ref _viper._viperIdleText, value); }
+    public string ViperDpiStagesText { get => AppStrings.Get(_viper._viperDpiStagesText); private set => SetField(ref _viper._viperDpiStagesText, value); }
+    public string ViperLowBatteryThresholdText { get => _viper._viperLowBatteryThresholdText; private set => SetField(ref _viper._viperLowBatteryThresholdText, value); }
+    public double ViperIdleMinutesValue { get => _viper._viperIdleMinutesValue; set => SetField(ref _viper._viperIdleMinutesValue, value); }
+    public bool CanSetViperIdle { get => _viper._canSetViperIdle; private set => SetField(ref _viper._canSetViperIdle, value); }
+    public ObservableCollection<ViperDpiStageRowViewModel> ViperDpiStages => _viper.ViperDpiStages;
     public int ViperDpiStageCount
     {
-        get => _viperDpiStageCount;
+        get => _viper._viperDpiStageCount;
         set => ResizeViperDpiStages(Math.Clamp(value, 1, 5));
     }
     public int ViperActiveDpiStage
     {
-        get => _viperActiveDpiStage;
-        set => SetField(ref _viperActiveDpiStage, Math.Clamp(value, 1, Math.Max(1, ViperDpiStages.Count)));
+        get => _viper._viperActiveDpiStage;
+        set => SetField(ref _viper._viperActiveDpiStage, Math.Clamp(value, 1, Math.Max(1, ViperDpiStages.Count)));
     }
-    public bool CanSetViperDpiStages { get => _canSetViperDpiStages; private set => SetField(ref _canSetViperDpiStages, value); }
-    public string ViperButtonMappingsText { get => AppStrings.Get(_viperButtonMappingsText); private set => SetField(ref _viperButtonMappingsText, value); }
-    public ObservableCollection<ViperButtonAssignmentRowViewModel> ViperButtonAssignments { get; } = new();
+    public bool CanSetViperDpiStages { get => _viper._canSetViperDpiStages; private set => SetField(ref _viper._canSetViperDpiStages, value); }
+    public string ViperButtonMappingsText { get => AppStrings.Get(_viper._viperButtonMappingsText); private set => SetField(ref _viper._viperButtonMappingsText, value); }
+    public ObservableCollection<ViperButtonAssignmentRowViewModel> ViperButtonAssignments => _viper.ViperButtonAssignments;
     public IReadOnlyList<string> ViperButtonMappingLayerOptions => AppStrings.Get("普通层", "HyperShift 层");
     public int ViperButtonMappingLayerIndex
     {
-        get => _viperButtonMappingLayerIndex;
+        get => _viper._viperButtonMappingLayerIndex;
         set
         {
-            if (SetField(ref _viperButtonMappingLayerIndex, Math.Clamp(value, 0, 1)))
+            if (SetField(ref _viper._viperButtonMappingLayerIndex, Math.Clamp(value, 0, 1)))
             {
                 OnPropertyChanged(nameof(VisibleViperButtonAssignments));
             }
@@ -638,8 +497,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         ViperButtonAssignments
             .Where(row => (int)row.Assignment.Layer == ViperButtonMappingLayerIndex)
             .ToArray();
-    public bool CanReadViperButtonMappings => _canReadViperButtonMappings;
-    public bool CanSetViperButtonMappings => _canSetViperButtonMappings;
+    public bool CanReadViperButtonMappings => _viper._canReadViperButtonMappings;
+    public bool CanSetViperButtonMappings => _viper._canSetViperButtonMappings;
     public string InternalDisplayResolutionText { get => _internalDisplayResolutionText; private set => SetField(ref _internalDisplayResolutionText, value); }
     public string InternalDisplayRefreshRateText { get => _internalDisplayRefreshRateText; private set => SetField(ref _internalDisplayRefreshRateText, value); }
     public IReadOnlyList<int> InternalDisplayRefreshRates
@@ -685,26 +544,26 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         ? AppStrings.Get("未发现 Blade 16 或 Viper V3 HyperSpeed。")
         : string.Empty;
 
-    public string CpuName { get => _cpuName; private set => SetField(ref _cpuName, value); }
-    public string CpuValue { get => _cpuValue; private set => SetField(ref _cpuValue, value); }
-    public double CpuPercent { get => _cpuPercent; private set => SetField(ref _cpuPercent, value); }
-    public string CpuTemperatureText { get => _cpuTemperatureText; private set => SetField(ref _cpuTemperatureText, value); }
-    public string CpuPowerText { get => _cpuPowerText; private set => SetField(ref _cpuPowerText, value); }
-    public string CpuClockText { get => _cpuClockText; private set => SetField(ref _cpuClockText, value); }
-    public string GpuName { get => _gpuName; private set => SetField(ref _gpuName, value); }
-    public string GpuValue { get => _gpuValue; private set => SetField(ref _gpuValue, value); }
-    public double GpuPercent { get => _gpuPercent; private set => SetField(ref _gpuPercent, value); }
-    public string GpuTemperatureText { get => _gpuTemperatureText; private set => SetField(ref _gpuTemperatureText, value); }
-    public string GpuPowerText { get => _gpuPowerText; private set => SetField(ref _gpuPowerText, value); }
-    public string GpuClockText { get => _gpuClockText; private set => SetField(ref _gpuClockText, value); }
-    public string GpuMemoryLabel { get => AppStrings.Get(_gpuMemoryLabel); private set => SetField(ref _gpuMemoryLabel, value); }
-    public string GpuMemoryText { get => _gpuMemoryText; private set => SetField(ref _gpuMemoryText, value); }
-    public string MemoryValue { get => _memoryValue; private set => SetField(ref _memoryValue, value); }
-    public string MemoryDetail { get => _memoryDetail; private set => SetField(ref _memoryDetail, value); }
-    public double MemoryPercent { get => _memoryPercent; private set => SetField(ref _memoryPercent, value); }
-    public string StorageValue { get => _storageValue; private set => SetField(ref _storageValue, value); }
-    public string StorageDetail { get => _storageDetail; private set => SetField(ref _storageDetail, value); }
-    public double StoragePercent { get => _storagePercent; private set => SetField(ref _storagePercent, value); }
+    public string CpuName => _systemTelemetry.CpuName;
+    public string CpuValue => _systemTelemetry.CpuValue;
+    public double CpuPercent => _systemTelemetry.CpuPercent;
+    public string CpuTemperatureText => _systemTelemetry.CpuTemperatureText;
+    public string CpuPowerText => _systemTelemetry.CpuPowerText;
+    public string CpuClockText => _systemTelemetry.CpuClockText;
+    public string GpuName => _systemTelemetry.GpuName;
+    public string GpuValue => _systemTelemetry.GpuValue;
+    public double GpuPercent => _systemTelemetry.GpuPercent;
+    public string GpuTemperatureText => _systemTelemetry.GpuTemperatureText;
+    public string GpuPowerText => _systemTelemetry.GpuPowerText;
+    public string GpuClockText => _systemTelemetry.GpuClockText;
+    public string GpuMemoryLabel => _systemTelemetry.GpuMemoryLabel;
+    public string GpuMemoryText => _systemTelemetry.GpuMemoryText;
+    public string MemoryValue => _systemTelemetry.MemoryValue;
+    public string MemoryDetail => _systemTelemetry.MemoryDetail;
+    public double MemoryPercent => _systemTelemetry.MemoryPercent;
+    public string StorageValue => _systemTelemetry.StorageValue;
+    public string StorageDetail => _systemTelemetry.StorageDetail;
+    public double StoragePercent => _systemTelemetry.StoragePercent;
 
     public void RequestDeviceRefresh() => Interlocked.Exchange(ref _deviceRefreshRequested, 1);
 
@@ -716,9 +575,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public void RefreshLocalization()
     {
-        ProfileStatusText = AppStrings.Format(
-            "ProfileLoaded",
-            "本地配置已加载 · {0}",
+        ProfileStatusText = AppStrings.FormatText("ProfileLoaded",
             ActiveProfileName);
 
         if (_lastDeviceTelemetry is { } telemetry)
@@ -739,6 +596,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             row.RefreshLocalization();
         }
 
+        _systemTelemetry.RefreshLocalization();
+
         OnPropertyChanged(string.Empty);
     }
 
@@ -746,7 +605,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     {
         await LoadProfileAsync(cancellationToken);
         await RefreshDevicesAsync(cancellationToken);
-        if (_bladeGameModeState is byte gameMode)
+        if (_blade._bladeGameModeState is byte gameMode)
         {
             try
             {
@@ -760,9 +619,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 _diagnosticLog.TryWrite(
                     "device-operation",
                     $"game mode indicator startup sync failed: {exception}");
-                SetDeviceOperationError(AppStrings.Format(
-                    "LabeledError",
-                    "{0}：{1}",
+                SetDeviceOperationError(AppStrings.FormatText("LabeledError",
                     "游戏模式指示灯",
                     exception.Message));
             }
@@ -782,7 +639,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 await _profileStore.SaveAsync(_profile, cancellationToken);
             }
             RefreshStartupState();
-            ProfileStatusText = AppStrings.Format("ProfileLoaded", "本地配置已加载 · {0}", ActiveProfileName);
+            ProfileStatusText = AppStrings.FormatText("ProfileLoaded", ActiveProfileName);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -794,8 +651,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _profile = ProfileDocument.CreateDefault();
             RefreshProfileState();
             RefreshStartupState();
-            ProfileStatusText = AppStrings.Format("DefaultProfileLoaded", "已使用默认本地配置 · {0}", ActiveProfileName);
-            ReportApplicationError(AppStrings.Format("ProfileLoadError", "配置加载：{0}", exception.Message));
+            ProfileStatusText = AppStrings.FormatText("DefaultProfileLoaded", ActiveProfileName);
+            ReportApplicationError(AppStrings.FormatText("ProfileLoadError", exception.Message));
         }
     }
 
@@ -807,7 +664,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             return;
         }
 
-        await RunProfileOperationAsync(AppStrings.Format("SwitchProfile", "切换配置 {0}", name), () =>
+        await RunProfileOperationAsync(AppStrings.FormatText("SwitchProfile", name), () =>
         {
             ProfileCatalog.Select(_profile, name);
             RefreshProfileState();
@@ -823,7 +680,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
 
         var name = ProfileNameInput;
-        await RunProfileOperationAsync(AppStrings.Format("CreateProfile", "新建配置 {0}", name), () =>
+        await RunProfileOperationAsync(AppStrings.FormatText("CreateProfile", name), () =>
         {
             ProfileCatalog.Create(_profile, name);
             ProfileCatalog.Select(_profile, name);
@@ -840,7 +697,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             return;
         }
 
-        await RunProfileOperationAsync(AppStrings.Format("DeleteProfile", "删除配置 {0}", ActiveProfileName), () =>
+        await RunProfileOperationAsync(AppStrings.FormatText("DeleteProfile", ActiveProfileName), () =>
         {
             ProfileCatalog.Delete(_profile, ActiveProfileName);
             RefreshProfileState();
@@ -856,7 +713,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
 
         var name = ProfileNameInput;
-        await RunProfileOperationAsync(AppStrings.Format("CloneProfile", "克隆配置 {0}", name), () =>
+        await RunProfileOperationAsync(AppStrings.FormatText("CloneProfile", name), () =>
         {
             ProfileCatalog.Clone(_profile, ActiveProfileName, name);
             ProfileCatalog.Select(_profile, name);
@@ -874,7 +731,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
 
         var name = ProfileNameInput;
-        await RunProfileOperationAsync(AppStrings.Format("RenameProfile", "重命名配置 {0}", name), () =>
+        await RunProfileOperationAsync(AppStrings.FormatText("RenameProfile", name), () =>
         {
             ProfileCatalog.Rename(_profile, ActiveProfileName, name);
             ProfileNameInput = string.Empty;
@@ -884,7 +741,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     }
 
     public Task BindApplicationAsync(string executablePath, CancellationToken cancellationToken = default) =>
-        RunProfileOperationAsync(AppStrings.Format("BindApplication", "绑定应用 {0}", Path.GetFileName(executablePath)), () =>
+        RunProfileOperationAsync(AppStrings.FormatText("BindApplication", Path.GetFileName(executablePath)), () =>
         {
             ApplicationProfileBinding.Bind(_profile, executablePath, ActiveProfileName);
             RefreshProfileState();
@@ -892,7 +749,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }, cancellationToken);
 
     public Task UnbindApplicationAsync(string executablePath, CancellationToken cancellationToken = default) =>
-        RunProfileOperationAsync(AppStrings.Format("UnbindApplication", "解绑应用 {0}", Path.GetFileName(executablePath)), () =>
+        RunProfileOperationAsync(AppStrings.FormatText("UnbindApplication", Path.GetFileName(executablePath)), () =>
         {
             ApplicationProfileBinding.Unbind(_profile, executablePath);
             RefreshProfileState();
@@ -912,8 +769,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         catch (Exception exception) when (exception is ArgumentException or IOException or UnauthorizedAccessException)
         {
-            SetDeviceOperationError(AppStrings.Format("ProfileImportError", "配置导入：{0}", exception.Message));
-            ProfileStatusText = AppStrings.Format("ProfileImportFailed", "配置导入失败：{0}", exception.Message);
+            SetDeviceOperationError(AppStrings.FormatText("ProfileImportError", exception.Message));
+            ProfileStatusText = AppStrings.FormatText("ProfileImportFailed", exception.Message);
             return;
         }
 
@@ -935,15 +792,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         try
         {
             await ProfileStore.ExportAsync(_profile.Clone(), filePath, cancellationToken);
-            ProfileStatusText = AppStrings.Format("ProfileExported", "配置已导出 · {0}", Path.GetFileName(filePath));
+            ProfileStatusText = AppStrings.FormatText("ProfileExported", Path.GetFileName(filePath));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception exception) when (exception is ArgumentException or IOException or UnauthorizedAccessException)
         {
-            SetDeviceOperationError(AppStrings.Format("ProfileExportError", "配置导出：{0}", exception.Message));
-            ProfileStatusText = AppStrings.Format("ProfileExportFailed", "配置导出失败：{0}", exception.Message);
+            SetDeviceOperationError(AppStrings.FormatText("ProfileExportError", exception.Message));
+            ProfileStatusText = AppStrings.FormatText("ProfileExportFailed", exception.Message);
         }
         finally
         {
@@ -976,8 +833,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException or InvalidOperationException)
         {
-            SetDeviceOperationError(AppStrings.Format("StartupError", "开机启动：{0}", exception.Message));
-            ProfileStatusText = AppStrings.Format("StartupSettingFailed", "开机启动设置失败：{0}", exception.Message);
+            SetDeviceOperationError(AppStrings.FormatText("StartupError", exception.Message));
+            ProfileStatusText = AppStrings.FormatText("StartupSettingFailed", exception.Message);
             RefreshStartupState();
         }
         finally
@@ -1005,14 +862,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             _startupManager!.SetEnabled(true, _executablePath!, enabled);
             IsSilentStartupEnabled = enabled;
-            ProfileStatusText = AppStrings.Format(
-                enabled ? "SilentStartupEnabled" : "SilentStartupDisabled",
-                enabled ? "已启用静默启动" : "已关闭静默启动");
+            ProfileStatusText = AppStrings.Text(
+                enabled ? "SilentStartupEnabled" : "SilentStartupDisabled");
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException or InvalidOperationException)
         {
-            SetDeviceOperationError(AppStrings.Format("StartupError", "开机启动：{0}", exception.Message));
-            ProfileStatusText = AppStrings.Format("StartupSettingFailed", "开机启动设置失败：{0}", exception.Message);
+            SetDeviceOperationError(AppStrings.FormatText("StartupError", exception.Message));
+            ProfileStatusText = AppStrings.FormatText("StartupSettingFailed", exception.Message);
             RefreshStartupState();
         }
         finally
@@ -1038,7 +894,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             await operation();
             await _profileStore.SaveAsync(_profile, cancellationToken);
             RequestProfileApply();
-            ProfileStatusText = AppStrings.Format("ProfileOperationSucceeded", "{0} · {1}", label, ActiveProfileName);
+            ProfileStatusText = AppStrings.FormatText("ProfileOperationSucceeded", label, ActiveProfileName);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -1047,8 +903,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException)
         {
-            SetDeviceOperationError(AppStrings.Format("LabeledError", "{0}：{1}", label, exception.Message));
-            ProfileStatusText = AppStrings.Format("ProfileOperationFailed", "{0}失败：{1}", label, exception.Message);
+            SetDeviceOperationError(AppStrings.FormatText("LabeledError", label, exception.Message));
+            ProfileStatusText = AppStrings.FormatText("ProfileOperationFailed", label, exception.Message);
             _profile = previous;
             RefreshProfileState();
         }
@@ -1171,7 +1027,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             IsStartupEnabled = false;
             IsSilentStartupEnabled = false;
-            SetDeviceOperationError(AppStrings.Format("StartupError", "开机启动：{0}", exception.Message));
+            SetDeviceOperationError(AppStrings.FormatText("StartupError", exception.Message));
         }
         OnPropertyChanged(nameof(CanSetStartup));
     }
@@ -1202,13 +1058,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     {
         if (viper is null || viper.Access != DeviceAccessState.Available)
         {
-            _viperMappingProfileFingerprint = string.Empty;
+            _viper._viperMappingProfileFingerprint = string.Empty;
             return null;
         }
 
         var profile = ProfileResolver.Resolve(_profile, viper, powerState).Viper;
         var fingerprint = CreateViperMappingFingerprint(viper.Id, profile.ButtonAssignments);
-        if (StringComparer.Ordinal.Equals(_viperMappingProfileFingerprint, fingerprint))
+        if (StringComparer.Ordinal.Equals(_viper._viperMappingProfileFingerprint, fingerprint))
         {
             return null;
         }
@@ -1225,7 +1081,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 if (!await SaveProfileAsync(cancellationToken))
                 {
                     _profile.Global.Viper.ButtonAssignments = previous;
-                    return AppStrings.Get("鼠标映射已读取，但活动配置保存失败。");
+                    return AppStrings.Text("ViperMappingReadProfileSaveFailed");
                 }
                 fingerprint = CreateViperMappingFingerprint(
                     viper.Id,
@@ -1240,7 +1096,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             }
 
             SetViperButtonAssignments(actual);
-            _viperMappingProfileFingerprint = fingerprint;
+            _viper._viperMappingProfileFingerprint = fingerprint;
             return null;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -1249,8 +1105,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
         {
-            _viperMappingProfileFingerprint = string.Empty;
-            return AppStrings.Format("ViperMappingProfileError", "鼠标板载映射：{0}", exception.Message);
+            _viper._viperMappingProfileFingerprint = string.Empty;
+            return AppStrings.FormatText("ViperMappingProfileError", exception.Message);
         }
     }
 
@@ -1294,7 +1150,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             {
                 if (!Enum.IsDefined(typeof(BladeFanMode), rawMode))
                 {
-                    return new(AppStrings.Format("InvalidBladeFanMode", "Blade 风扇模式值无效：{0}。", rawMode), Changed: false);
+                    return new(AppStrings.FormatText("InvalidBladeFanMode", rawMode), Changed: false);
                 }
 
                 var mode = (BladeFanMode)rawMode;
@@ -1377,7 +1233,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _profile.Global.Blade.FanMode = (byte)mode;
             _profile.Global.Blade.FanTargetRpm = targetRpm;
             var blade = _deviceDescriptors.FirstOrDefault(device =>
-                device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available);
+                device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
             var result = await ApplyLoadedFanProfileAsync(
                 blade,
                 _powerSourceProvider.IsPluggedIn,
@@ -1412,7 +1268,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _profile.Global.Blade.FanMode = null;
             _profile.Global.Blade.FanTargetRpm = null;
             var blade = _deviceDescriptors.FirstOrDefault(device =>
-                device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available);
+                device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
             var result = await ApplyLoadedFanProfileAsync(
                 blade,
                 _powerSourceProvider.IsPluggedIn,
@@ -1639,7 +1495,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            SetDeviceOperationError(AppStrings.Format("ProfileSaveError", "配置保存：{0}", exception.Message));
+            SetDeviceOperationError(AppStrings.FormatText("ProfileSaveError", exception.Message));
             return false;
         }
     }
@@ -1681,7 +1537,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                         try
                         {
                             await _profileStore.SaveAsync(_profile, cancellationToken);
-                            ProfileStatusText = AppStrings.Format("ProfileAutoSwitched", "已自动切换 · {0}", ActiveProfileName);
+                            ProfileStatusText = AppStrings.FormatText("ProfileAutoSwitched", ActiveProfileName);
                         }
                         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                         {
@@ -1692,9 +1548,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                             _profile = previousProfile;
                             _applicationProfileSwitcher = previousProfileSwitcher;
                             RefreshProfileState();
-                            SetDeviceOperationError(AppStrings.Format(
-                                "AutomaticProfileSaveError",
-                                "配置自动切换保存：{0}",
+                            SetDeviceOperationError(AppStrings.FormatText("AutomaticProfileSaveError",
                                 exception.Message));
                             profileChanged = false;
                         }
@@ -1721,7 +1575,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 }
                 catch (Exception exception) when (IsExpectedRuntimeException(exception))
                 {
-                    SetDeviceQueryError(AppStrings.Format("DeviceWatchError", "设备状态监听：{0}", exception.Message));
+                    SetDeviceQueryError(AppStrings.FormatText("DeviceWatchError", exception.Message));
                 }
             }
         }
@@ -1759,8 +1613,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _deviceDescriptors = snapshot.Devices;
             RefreshInternalDisplay(powerState, applyDisplayProfile);
 
-            var blade = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "blade-710");
-            var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "viper-184");
+            var blade = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             SetBladeControlDevicePath(
                 blade is
                 {
@@ -1783,7 +1637,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 ApplyDeviceTelemetry(telemetry);
             }
             var viperAvailable = viper is not null &&
-                DeviceRowViewModel.CountCapabilities("viper-184", telemetry).Successful > 0;
+                DeviceRowViewModel.CountCapabilities(DeviceProtocolFamilies.Viper, telemetry).Successful > 0;
             var bladeProfileBlocked = profileApply?.Errors.Any(error =>
                 error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
             var fanApply = bladeProfileBlocked
@@ -1808,9 +1662,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 .ToArray() ?? [];
             var profileOperationError = profileOperationErrors.Length == 0
                 ? string.Empty
-                : AppStrings.Format(
-                    "ProfileApplyError",
-                    "配置应用：{0}",
+                : AppStrings.FormatText("ProfileApplyError",
                     string.Join("; ", profileOperationErrors));
             SetDeviceOperationError(string.Join(
                 Environment.NewLine,
@@ -1821,7 +1673,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 }.Where(error => !string.IsNullOrWhiteSpace(error))));
             var visibleDevices = viperAvailable
                 ? snapshot.Devices
-                : snapshot.Devices.Where(device => device.ProtocolFamily != "viper-184").ToArray();
+                : snapshot.Devices.Where(device => device.ProtocolFamily != DeviceProtocolFamilies.Viper).ToArray();
             _deviceDescriptors = visibleDevices;
             ViperDeviceVisibility = viperAvailable ? Visibility.Visible : Visibility.Collapsed;
             if (!viperAvailable)
@@ -1864,13 +1716,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             RebuildDiagnostics(snapshot with { Devices = visibleDevices }, telemetry, errors);
             SetDeviceQueryError(errors.Count == 0
                 ? string.Empty
-                : AppStrings.Format(
-                    "HardwareQueryFailureCount",
-                    "{0} 项硬件查询失败，未成功读回的控制已停用。请在“诊断”页查看详情。",
+                : AppStrings.FormatText("HardwareQueryFailureCount",
                     errors.Count));
-            LastDeviceRefreshText = AppStrings.Format(
-                "DeviceScanTime",
-                "设备探测 {0:HH:mm:ss}",
+            LastDeviceRefreshText = AppStrings.FormatText("DeviceScanTime",
                 snapshot.CapturedAt.ToLocalTime());
             _nextFullDeviceRefresh = DateTimeOffset.UtcNow.AddSeconds(30);
             Interlocked.Exchange(ref _deviceRefreshRequested, 0);
@@ -1881,8 +1729,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
         {
-            var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == "blade-710");
-            var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == "viper-184");
+            var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
             ViperDeviceVisibility = Visibility.Collapsed;
             if (_bladeLightingController is not null && _bladeLightingDevicePath.Length > 0)
@@ -1917,7 +1765,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ApplyBladeBrightnessAsync(CancellationToken cancellationToken = default)
     {
-        if (!_canSetBladeBrightness)
+        if (!_blade._canSetBladeBrightness)
         {
             return;
         }
@@ -1926,7 +1774,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             "键盘亮度",
             () => ApplyBladeBrightnessCoreAsync(cancellationToken),
             cancellationToken,
-            () => BladeBrightnessPercent = _confirmedBladeBrightnessPercent);
+            () => BladeBrightnessPercent = _blade._confirmedBladeBrightnessPercent);
     }
 
     private async Task ApplyBladeBrightnessCoreAsync(CancellationToken cancellationToken)
@@ -1968,7 +1816,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 }
 
                 var blade = _deviceDescriptors.FirstOrDefault(device =>
-                    device.ProtocolFamily == "blade-710" &&
+                    device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
                     device.Access == DeviceAccessState.Available);
                 if (blade is not null)
                 {
@@ -2006,7 +1854,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
-        if (!_canSetBladePerformanceMode ||
+        if (!_blade._canSetBladePerformanceMode ||
             BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= BladePerformanceModes.Length)
         {
             return;
@@ -2022,7 +1870,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
-            BladePerformanceModeIndex = _confirmedBladePerformanceModeIndex);
+            BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex);
     }
 
     public async Task ApplyBladeChargeLimitAsync(CancellationToken cancellationToken = default)
@@ -2041,7 +1889,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _profile.Global.Blade.ChargeLimitPercent = actual;
             await SaveProfileAsync(cancellationToken);
         }, cancellationToken, () =>
-            BladeChargeLimitIndex = _confirmedBladeChargeLimitIndex);
+            BladeChargeLimitIndex = _blade._confirmedBladeChargeLimitIndex);
     }
 
     public async Task ApplyBladeCpuBoostAsync(CancellationToken cancellationToken = default)
@@ -2063,7 +1911,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 _profile = previousProfile;
                 throw new InvalidOperationException(AppStrings.Get("CPU Boost 已写入，但配置保存失败，已恢复内存中的配置。"));
             }
-        }, cancellationToken, () => BladeCpuBoostIndex = _confirmedBladeCpuBoostIndex);
+        }, cancellationToken, () => BladeCpuBoostIndex = _blade._confirmedBladeCpuBoostIndex);
     }
 
     public async Task ApplyBladeGpuBoostAsync(CancellationToken cancellationToken = default)
@@ -2085,7 +1933,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 _profile = previousProfile;
                 throw new InvalidOperationException(AppStrings.Get("GPU Boost 已写入，但配置保存失败，已恢复内存中的配置。"));
             }
-        }, cancellationToken, () => BladeGpuBoostIndex = _confirmedBladeGpuBoostIndex);
+        }, cancellationToken, () => BladeGpuBoostIndex = _blade._confirmedBladeGpuBoostIndex);
     }
 
     public async Task ApplyBladeMaxFanAsync(CancellationToken cancellationToken = default)
@@ -2103,7 +1951,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             SetBladeMaxFan(actual);
             _profile.Global.Blade.MaxFanMode = (byte)actual;
             await SaveProfileAsync(cancellationToken);
-        }, cancellationToken, () => BladeMaxFanEnabled = _confirmedBladeMaxFanEnabled);
+        }, cancellationToken, () => BladeMaxFanEnabled = _blade._confirmedBladeMaxFanEnabled);
     }
 
     public async Task ApplyBladeLogoAsync(CancellationToken cancellationToken = default)
@@ -2125,7 +1973,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 _profile = previousProfile;
                 throw new InvalidOperationException(AppStrings.Get("Logo 已写入，但配置保存失败，已恢复内存中的配置。"));
             }
-        }, cancellationToken, () => BladeLogoIndex = _confirmedBladeLogoIndex);
+        }, cancellationToken, () => BladeLogoIndex = _blade._confirmedBladeLogoIndex);
     }
 
     public async Task ToggleBladeTouchpadAsync(CancellationToken cancellationToken = default)
@@ -2134,7 +1982,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             "触控板",
             async () =>
             {
-                if (!_canSetBladeTouchpad || _touchpadController is null)
+                if (!_blade._canSetBladeTouchpad || _touchpadController is null)
                 {
                     throw new InvalidOperationException(AppStrings.Get("触控板状态不可用。"));
                 }
@@ -2143,14 +1991,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     _touchpadController.ToggleVerified,
                     cancellationToken);
                 BladeTouchpadEnabled = actual;
-                _confirmedBladeTouchpadEnabled = actual;
+                _blade._confirmedBladeTouchpadEnabled = actual;
                 BladeTouchpadText = actual ? "已启用" : "已禁用";
             },
             cancellationToken,
             () =>
             {
-                BladeTouchpadEnabled = _confirmedBladeTouchpadEnabled;
-                BladeTouchpadText = _confirmedBladeTouchpadEnabled ? "已启用" : "已禁用";
+                BladeTouchpadEnabled = _blade._confirmedBladeTouchpadEnabled;
+                BladeTouchpadText = _blade._confirmedBladeTouchpadEnabled ? "已启用" : "已禁用";
             },
             successVerb: "切换并读回",
             failureVerb: "切换");
@@ -2160,13 +2008,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     {
         await RunDeviceOperationAsync("性能模式", async () =>
         {
-            if (!_canSetBladePerformanceMode || _confirmedBladePerformanceModeIndex < 0)
+            if (!_blade._canSetBladePerformanceMode || _blade._confirmedBladePerformanceModeIndex < 0)
             {
                 throw new InvalidOperationException(AppStrings.Get("性能模式状态不可用。"));
             }
 
             var nextMode = BladePerformanceModeCycle.GetNext(
-                BladePerformanceModes[_confirmedBladePerformanceModeIndex],
+                BladePerformanceModes[_blade._confirmedBladePerformanceModeIndex],
                 BladePerformanceModes,
                 _bladePerformanceCycleModes);
             BladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, nextMode);
@@ -2180,7 +2028,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
-            BladePerformanceModeIndex = _confirmedBladePerformanceModeIndex);
+            BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex);
     }
 
     internal async Task ToggleBladeGamingModeAsync(CancellationToken cancellationToken = default)
@@ -2192,7 +2040,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
         await RunDeviceOperationAsync("游戏模式", async () =>
         {
-            var current = _bladeGameModeState is byte state && state != 2
+            var current = _blade._bladeGameModeState is byte state && state != 2
                 ? state
                 : throw new InvalidOperationException(AppStrings.Get("游戏模式状态不可用。"));
             var actual = await SetBladeGameModeCoreAsync(
@@ -2220,7 +2068,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             RequestDeviceRefresh();
             BladeGamingModeChangedByUser?.Invoke(actual.GameMode != 0);
         }, cancellationToken, () =>
-            BladeGameModeEnabled = _bladeGameModeState != 0);
+            BladeGameModeEnabled = _blade._bladeGameModeState != 0);
     }
 
     public async Task ApplyBladeStartupAnimationAsync(CancellationToken cancellationToken = default)
@@ -2234,12 +2082,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             var actual = await _deviceTelemetryReader.SetBladeStartupAnimationAsync(
                 _deviceDescriptors, BladeStartupAnimationEnabled, cancellationToken);
-            _bladeStartupAnimationEnabled = actual;
+            _blade._bladeStartupAnimationEnabled = actual;
             BladeStartupAnimationText = FormatOptionalState(actual);
             BladeStartupAnimationEnabled = actual;
             RequestDeviceRefresh();
         }, cancellationToken, () =>
-            BladeStartupAnimationEnabled = _bladeStartupAnimationEnabled ?? false);
+            BladeStartupAnimationEnabled = _blade._bladeStartupAnimationEnabled ?? false);
     }
 
     internal async Task CycleInternalDisplayRefreshRateAsync(CancellationToken cancellationToken = default)
@@ -2274,7 +2122,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!_canSetBladeBrightness)
+        if (!_blade._canSetBladeBrightness)
         {
             throw new InvalidOperationException(AppStrings.Get("键盘亮度状态不可用。"));
         }
@@ -2337,7 +2185,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 requested = desired;
             }
 
-            var original = ToBladeBrightness(_confirmedBladeBrightnessPercent);
+            var original = ToBladeBrightness(_blade._confirmedBladeBrightnessPercent);
             var applied = false;
             await RunDeviceOperationAsync("键盘亮度", async () =>
             {
@@ -2387,7 +2235,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 {
                     _desiredBladeBrightness = null;
                 }
-                BladeBrightnessPercent = _confirmedBladeBrightnessPercent;
+                BladeBrightnessPercent = _blade._confirmedBladeBrightnessPercent;
             }, successVerb: "即时写入");
 
             if (!applied)
@@ -2449,13 +2297,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     {
         await RunDeviceOperationAsync("一次性充满", async () =>
         {
-            var current = _bladeOneTimeFullChargeEnabled ??
+            var current = _blade._bladeOneTimeFullChargeEnabled ??
                 throw new InvalidOperationException(AppStrings.Get("一次性充满状态不可用。"));
             var actual = await _deviceTelemetryReader.SetBladeOneTimeFullChargeAsync(
                 _deviceDescriptors,
                 !current,
                 cancellationToken);
-            _bladeOneTimeFullChargeEnabled = actual;
+            _blade._bladeOneTimeFullChargeEnabled = actual;
             BladeOneTimeFullChargeEnabled = actual;
             BladeOneTimeFullChargeText = FormatOptionalState(actual);
             RequestDeviceRefresh();
@@ -2473,12 +2321,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             var actual = await _deviceTelemetryReader.SetBladeOneTimeFullChargeAsync(
                 _deviceDescriptors, BladeOneTimeFullChargeEnabled, cancellationToken);
-            _bladeOneTimeFullChargeEnabled = actual;
+            _blade._bladeOneTimeFullChargeEnabled = actual;
             BladeOneTimeFullChargeText = FormatOptionalState(actual);
             BladeOneTimeFullChargeEnabled = actual;
             RequestDeviceRefresh();
         }, cancellationToken, () =>
-            BladeOneTimeFullChargeEnabled = _bladeOneTimeFullChargeEnabled ?? false);
+            BladeOneTimeFullChargeEnabled = _blade._bladeOneTimeFullChargeEnabled ?? false);
     }
 
     public async Task ApplyViperPollingRateAsync(CancellationToken cancellationToken = default)
@@ -2500,10 +2348,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             var actual = await _deviceTelemetryReader.SetViperPollingRateAsync(_deviceDescriptors, hertz, cancellationToken);
             ViperPollingRateText = $"{actual} Hz";
             ViperPollingRateIndex = actual switch { 125 => 0, 500 => 1, _ => 2 };
-            _confirmedViperPollingRateIndex = ViperPollingRateIndex;
+            _viper._confirmedViperPollingRateIndex = ViperPollingRateIndex;
             _profile.Global.Viper.PollingRateHertz = actual;
             await SaveProfileAsync(cancellationToken);
-        }, cancellationToken, () => ViperPollingRateIndex = _confirmedViperPollingRateIndex);
+        }, cancellationToken, () => ViperPollingRateIndex = _viper._confirmedViperPollingRateIndex);
     }
 
     public async Task ApplyViperDpiAsync(CancellationToken cancellationToken = default)
@@ -2520,16 +2368,16 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             var actual = await _deviceTelemetryReader.SetViperDpiAsync(_deviceDescriptors, x, y, cancellationToken);
             ViperDpiXValue = actual.X;
             ViperDpiYValue = actual.Y;
-            _confirmedViperDpiXValue = actual.X;
-            _confirmedViperDpiYValue = actual.Y;
+            _viper._confirmedViperDpiXValue = actual.X;
+            _viper._confirmedViperDpiYValue = actual.Y;
             ViperDpiText = $"{actual.X} × {actual.Y}";
             _profile.Global.Viper.DpiX = actual.X;
             _profile.Global.Viper.DpiY = actual.Y;
             await SaveProfileAsync(cancellationToken);
         }, cancellationToken, () =>
         {
-            ViperDpiXValue = _confirmedViperDpiXValue;
-            ViperDpiYValue = _confirmedViperDpiYValue;
+            ViperDpiXValue = _viper._confirmedViperDpiXValue;
+            ViperDpiYValue = _viper._confirmedViperDpiYValue;
         });
     }
 
@@ -2546,11 +2394,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             var seconds = checked(minutes * 60);
             var actual = await _deviceTelemetryReader.SetViperIdleSecondsAsync(_deviceDescriptors, seconds, cancellationToken);
             ViperIdleMinutesValue = actual / 60d;
-            _confirmedViperIdleMinutesValue = ViperIdleMinutesValue;
+            _viper._confirmedViperIdleMinutesValue = ViperIdleMinutesValue;
             ViperIdleText = FormatDuration(actual);
             _profile.Global.Viper.IdleSeconds = actual;
             await SaveProfileAsync(cancellationToken);
-        }, cancellationToken, () => ViperIdleMinutesValue = _confirmedViperIdleMinutesValue);
+        }, cancellationToken, () => ViperIdleMinutesValue = _viper._confirmedViperIdleMinutesValue);
     }
 
     public async Task ApplyViperDpiStagesAsync(CancellationToken cancellationToken = default)
@@ -2607,14 +2455,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             if (!await SaveProfileAsync(cancellationToken))
             {
                 _profile.Global.Viper.ButtonAssignments = previousProfileAssignments;
-                throw new InvalidOperationException(AppStrings.Get(
-                    "鼠标映射已读取，但活动配置保存失败。"));
+                throw new InvalidOperationException(AppStrings.Text(
+                    "ViperMappingReadProfileSaveFailed"));
             }
         }, cancellationToken, () =>
         {
             ViperButtonAssignments.Clear();
             OnPropertyChanged(nameof(VisibleViperButtonAssignments));
-            _canSetViperButtonMappings = false;
+            _viper._canSetViperButtonMappings = false;
             ViperButtonMappingsText = "读取失败";
             OnPropertyChanged(nameof(CanSetViperButtonMappings));
         });
@@ -2646,8 +2494,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 var restored = await _deviceTelemetryReader.SetViperButtonAssignmentAsync(
                     _deviceDescriptors, previous, CancellationToken.None);
                 row.Apply(restored);
-                throw new InvalidOperationException(AppStrings.Get(
-                    "鼠标映射已写入，但配置保存失败，原映射已恢复。"));
+                throw new InvalidOperationException(AppStrings.Text(
+                    "ViperMappingSaveFailedRestored"));
             }
         }, cancellationToken, row.RestoreSelection);
     }
@@ -2681,8 +2529,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 var restored = await _deviceTelemetryReader.SetViperButtonAssignmentsAsync(
                     _deviceDescriptors, previous, CancellationToken.None);
                 SetViperButtonAssignments(restored);
-                throw new InvalidOperationException(AppStrings.Get(
-                    "鼠标映射已写入，但配置保存失败，整套原映射已恢复。"));
+                throw new InvalidOperationException(AppStrings.Text(
+                    "ViperMappingBatchSaveFailedRestored"));
             }
         }, cancellationToken, () =>
         {
@@ -2703,10 +2551,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             ViperButtonAssignments.Add(new(assignment));
         }
         OnPropertyChanged(nameof(VisibleViperButtonAssignments));
-        _canSetViperButtonMappings = assignments.Count == 16;
-        ViperButtonMappingsText = _canSetViperButtonMappings
+        _viper._canSetViperButtonMappings = assignments.Count == 16;
+        ViperButtonMappingsText = _viper._canSetViperButtonMappings
             ? AppStrings.Get("Profile 1 · 8 个可映射控制")
-            : AppStrings.Format("MappingReadIncomplete", "读取不完整 · {0}/16 条记录", assignments.Count);
+            : AppStrings.FormatText("MappingReadIncomplete", assignments.Count);
         OnPropertyChanged(nameof(CanSetViperButtonMappings));
     }
 
@@ -2761,9 +2609,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         try
         {
             await operation();
-            DeviceTelemetryTimeText = AppStrings.Format(
-                "DeviceOperationSucceeded",
-                "{0}已{1} {2:HH:mm:ss}",
+            DeviceTelemetryTimeText = AppStrings.FormatText("DeviceOperationSucceeded",
                 AppStrings.Get(label),
                 AppStrings.Get(successVerb),
                 DateTimeOffset.Now);
@@ -2773,9 +2619,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             restoreSelection?.Invoke();
             if (!cancellationToken.IsCancellationRequested)
             {
-                SetDeviceOperationError(AppStrings.Format(
-                    "DeviceOperationFailed",
-                    "{0}{1}：{2}",
+                SetDeviceOperationError(AppStrings.FormatText("DeviceOperationFailed",
                     AppStrings.Get(label),
                     AppStrings.Get(failureVerb),
                     FormatOperationException(exception)));
@@ -2784,9 +2628,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException or ArgumentOutOfRangeException or OverflowException or AggregateException or ObjectDisposedException)
         {
             restoreSelection?.Invoke();
-            SetDeviceOperationError(AppStrings.Format(
-                "DeviceOperationFailed",
-                "{0}{1}：{2}",
+            SetDeviceOperationError(AppStrings.FormatText("DeviceOperationFailed",
                 AppStrings.Get(label),
                 AppStrings.Get(failureVerb),
                 FormatOperationException(exception)));
@@ -2826,9 +2668,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             {
                 _lightingShadowFingerprint = string.Empty;
                 _bladeLightingDevicePath = string.Empty;
-                SetDeviceOperationError(AppStrings.Format(
-                    "LightingRuntimeError",
-                    "键盘灯效运行：{0}",
+                SetDeviceOperationError(AppStrings.FormatText("LightingRuntimeError",
                     FormatOperationException(exception)));
             }
         }
@@ -2853,7 +2693,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         try
         {
             var previousProfileValue = _profile.Global.Blade.GamingModeEnabled;
-            var previousEnabled = _bladeGameModeState != 0;
+            var previousEnabled = _blade._bladeGameModeState != 0;
             var actual = await _deviceTelemetryReader.SetBladeGameModeAsync(
                 _deviceDescriptors,
                 enabled,
@@ -2866,8 +2706,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     return actual;
                 }
 
-                throw new InvalidOperationException(AppStrings.Get(
-                    "游戏模式已切换，但配置保存失败。"));
+                throw new InvalidOperationException(AppStrings.Text("GamingModeProfileSaveFailed"));
             }
             catch
             {
@@ -2881,7 +2720,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         catch (NotSupportedException)
         {
-            _bladeGameModeWriteSupported = false;
+            _blade._bladeGameModeWriteSupported = false;
             OnPropertyChanged(nameof(CanSetBladeGamingMode));
             OnPropertyChanged(nameof(CanApplyBladeGamingMode));
             throw;
@@ -2904,78 +2743,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         try
         {
             var snapshot = await _performanceMonitor.SampleAsync(cancellationToken);
-            if (!string.IsNullOrWhiteSpace(snapshot.CpuName)) CpuName = snapshot.CpuName;
-            if (snapshot.CpuUsagePercent is double cpuUsage)
-            {
-                CpuValue = FormatPercent(cpuUsage);
-                CpuPercent = cpuUsage;
-            }
-            if (snapshot.CpuTemperatureCelsius is double cpuTemperature)
-                CpuTemperatureText = FormatNumber<double>(cpuTemperature, "0", "°C");
-            if (snapshot.CpuPowerWatts is double cpuPower)
-                CpuPowerText = FormatNumber<double>(cpuPower, "0.0", " W");
-            if (snapshot.CpuClockMegahertz is int cpuClock)
-                CpuClockText = FormatNumber<int>(cpuClock, "0", " MHz");
-
-            if (!string.IsNullOrWhiteSpace(snapshot.GpuName) &&
-                !StringComparer.Ordinal.Equals(GpuName, snapshot.GpuName))
-            {
-                GpuName = snapshot.GpuName;
-                GpuTemperatureText = "--";
-                GpuPowerText = "--";
-                GpuClockText = "--";
-                GpuMemoryText = "--";
-            }
-            if (snapshot.GpuUsagePercent is double gpuUsage)
-            {
-                GpuValue = FormatPercent(gpuUsage);
-                GpuPercent = gpuUsage;
-            }
-            else
-            {
-                GpuValue = "--";
-                GpuPercent = 0;
-            }
-            GpuTemperatureText = snapshot.GpuTemperatureCelsius is double gpuTemperature
-                ? FormatNumber<double>(gpuTemperature, "0", "°C")
-                : "--";
-            GpuPowerText = snapshot.GpuPowerWatts is double gpuPower
-                ? FormatNumber<double>(gpuPower, "0.0", " W")
-                : "--";
-            GpuClockText = snapshot.GpuClockMegahertz is int gpuClock
-                ? FormatNumber<int>(gpuClock, "0", " MHz")
-                : "--";
-            GpuMemoryLabel = snapshot.GpuMemoryLabel;
-            if (snapshot.GpuMemoryUsedMebibytes is long gpuMemoryUsed &&
-                snapshot.GpuMemoryTotalMebibytes is long gpuMemoryTotal)
-            {
-                GpuMemoryText = $"{gpuMemoryUsed:N0} / {gpuMemoryTotal:N0} MiB";
-            }
-            else
-            {
-                GpuMemoryText = "--";
-            }
-
-            var memoryPercent = CalculatePercent(snapshot.MemoryUsedBytes, snapshot.MemoryTotalBytes);
-            if (memoryPercent is double currentMemoryPercent)
-            {
-                MemoryPercent = currentMemoryPercent;
-                MemoryValue = FormatPercent(currentMemoryPercent);
-                MemoryDetail = FormatBytePair(snapshot.MemoryUsedBytes, snapshot.MemoryTotalBytes);
-            }
-
-            var storagePercent = CalculatePercent(snapshot.StorageUsedBytes, snapshot.StorageTotalBytes);
-            if (storagePercent is double currentStoragePercent)
-            {
-                StoragePercent = currentStoragePercent;
-                StorageValue = FormatPercent(currentStoragePercent);
-                StorageDetail = FormatBytePair(snapshot.StorageUsedBytes, snapshot.StorageTotalBytes);
-            }
-
-            TelemetryTimeText = AppStrings.Format(
-                "LiveSampleTime",
-                "实时采样 {0:HH:mm:ss}",
-                snapshot.CapturedAt.ToLocalTime());
+            _systemTelemetry.Apply(snapshot);
             _performanceErrorText = snapshot.ErrorMessage ?? string.Empty;
             UpdateErrorText();
         }
@@ -3024,12 +2792,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             BladeFanText = fanMode switch
             {
                 BladeFanMode.Automatic when telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu =>
-                    AppStrings.Format("AutomaticFanSpeed", "自动 · CPU {0} / GPU {1} RPM", cpu, gpu),
+                    AppStrings.FormatText("AutomaticFanSpeed", cpu, gpu),
                 BladeFanMode.Automatic => "自动",
                 BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int target && telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu =>
-                    AppStrings.Format("ManualFanCurrentSpeed", "手动 · {0} RPM · 当前 {1} / {2}", target, cpu, gpu),
+                    AppStrings.FormatText("ManualFanCurrentSpeed", target, cpu, gpu),
                 BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int rpm =>
-                    AppStrings.Format("ManualFanSpeed", "手动 · {0} RPM", rpm),
+                    AppStrings.FormatText("ManualFanSpeed", rpm),
                 BladeFanMode.Manual => "手动 · -- RPM",
                 _ => BladeFanText,
             };
@@ -3069,7 +2837,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             SetBladeGameMode(gameMode);
         }
         else if (_deviceDescriptors.FirstOrDefault(device =>
-                     device.ProtocolFamily == "blade-710" &&
+                     device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
                      device.Access == DeviceAccessState.Available) is { } blade)
         {
             var enabled = ProfileResolver
@@ -3079,7 +2847,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         if (telemetry.BladeStartupAnimationEnabled is bool startupAnimationEnabled)
         {
-            _bladeStartupAnimationEnabled = startupAnimationEnabled;
+            _blade._bladeStartupAnimationEnabled = startupAnimationEnabled;
             BladeStartupAnimationEnabled = startupAnimationEnabled;
             BladeStartupAnimationText = FormatOptionalState(startupAnimationEnabled);
             OnPropertyChanged(nameof(CanSetBladeStartupAnimation));
@@ -3104,7 +2872,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         if (telemetry.BladeOneTimeFullChargeEnabled is bool oneTimeFullChargeEnabled)
         {
-            _bladeOneTimeFullChargeEnabled = oneTimeFullChargeEnabled;
+            _blade._bladeOneTimeFullChargeEnabled = oneTimeFullChargeEnabled;
             BladeOneTimeFullChargeEnabled = oneTimeFullChargeEnabled;
             BladeOneTimeFullChargeText = FormatOptionalState(oneTimeFullChargeEnabled);
             OnPropertyChanged(nameof(CanSetBladeOneTimeFullCharge));
@@ -3115,20 +2883,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             SetBladeChargeLimit(chargeLimit);
             CanSetBladeChargeLimit = true;
         }
-        if (_deviceDescriptors.Any(device => device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available))
+        if (_deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available))
         {
             if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
             {
                 BladeTouchpadEnabled = touchpadEnabled;
-                _confirmedBladeTouchpadEnabled = touchpadEnabled;
+                _blade._confirmedBladeTouchpadEnabled = touchpadEnabled;
                 BladeTouchpadText = touchpadEnabled ? "已启用" : "已禁用";
-                _canSetBladeTouchpad = true;
+                _blade._canSetBladeTouchpad = true;
                 OnPropertyChanged(nameof(CanSetBladeTouchpad));
             }
             else
             {
                 BladeTouchpadText = "不可用";
-                _canSetBladeTouchpad = false;
+                _blade._canSetBladeTouchpad = false;
                 OnPropertyChanged(nameof(CanSetBladeTouchpad));
             }
 
@@ -3146,7 +2914,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             ViperPollingRateText = $"{pollingRate} Hz";
             ViperPollingRateIndex = pollingRate switch { 125 => 0, 500 => 1, _ => 2 };
-            _confirmedViperPollingRateIndex = ViperPollingRateIndex;
+            _viper._confirmedViperPollingRateIndex = ViperPollingRateIndex;
             CanSetViperPollingRate = true;
         }
         if (telemetry.ViperDpiX is int dpiX && telemetry.ViperDpiY is int dpiY)
@@ -3154,15 +2922,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             ViperDpiText = $"{dpiX} × {dpiY}";
             ViperDpiXValue = dpiX;
             ViperDpiYValue = dpiY;
-            _confirmedViperDpiXValue = dpiX;
-            _confirmedViperDpiYValue = dpiY;
+            _viper._confirmedViperDpiXValue = dpiX;
+            _viper._confirmedViperDpiYValue = dpiY;
             CanSetViperDpi = true;
         }
         if (telemetry.ViperIdleSeconds is int idleSeconds)
         {
             ViperIdleText = FormatDuration(idleSeconds);
             ViperIdleMinutesValue = idleSeconds / 60d;
-            _confirmedViperIdleMinutesValue = ViperIdleMinutesValue;
+            _viper._confirmedViperIdleMinutesValue = ViperIdleMinutesValue;
             CanSetViperIdle = true;
         }
         if (telemetry.ViperDpiStages is { } stages)
@@ -3174,9 +2942,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             ViperLowBatteryThresholdText = ViperLowBatteryThresholdProtocol.Format(raw);
         }
-        if (_deviceDescriptors.Any(device => device.ProtocolFamily == "viper-184" && device.Access == DeviceAccessState.Available))
+        if (_deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper && device.Access == DeviceAccessState.Available))
         {
-            _canReadViperButtonMappings = true;
+            _viper._canReadViperButtonMappings = true;
             OnPropertyChanged(nameof(CanReadViperButtonMappings));
             ViperStatusText = telemetry.ViperBatteryPercent is not null ||
                               telemetry.ViperPollingRateHertz is not null ||
@@ -3186,9 +2954,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 : "已连接 · 查询失败";
         }
 
-        DeviceTelemetryTimeText = AppStrings.Format(
-            "HardwareQueryTime",
-            "硬件查询 {0:HH:mm:ss}",
+        DeviceTelemetryTimeText = AppStrings.FormatText("HardwareQueryTime",
             telemetry.CapturedAt.ToLocalTime());
     }
 
@@ -3205,7 +2971,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             if (applyProfile)
             {
                 var blade = _deviceDescriptors.FirstOrDefault(
-                    device => device.ProtocolFamily == "blade-710") ?? new DeviceDescriptor(
+                    device => device.ProtocolFamily == DeviceProtocolFamilies.Blade) ?? new DeviceDescriptor(
                         "internal-display",
                         "Windows internal display",
                         0,
@@ -3215,15 +2981,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                         0,
                         0,
                         0,
-                        "blade-710");
+                        DeviceProtocolFamilies.Blade);
                 var requested = ProfileResolver.Resolve(_profile, blade, powerState).Blade.RefreshRateHertz;
                 if (requested is int hertz && hertz != snapshot.RefreshRateHertz)
                 {
                     if (!snapshot.SupportedRefreshRates.Contains(hertz))
                     {
-                        throw new InvalidOperationException(AppStrings.Format(
-                            "UnsupportedDisplayRefreshRate",
-                            "配置请求的 {0} Hz 不受当前内置屏 {1} x {2} 支持。",
+                        throw new InvalidOperationException(AppStrings.FormatText("UnsupportedDisplayRefreshRate",
                             hertz,
                             snapshot.Width,
                             snapshot.Height));
@@ -3239,7 +3003,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or ArgumentOutOfRangeException)
         {
             SetInternalDisplayUnavailable();
-            SetDisplayError(AppStrings.Format("DisplayRefreshRateError", "内置屏刷新率：{0}", exception.Message));
+            SetDisplayError(AppStrings.FormatText("DisplayRefreshRateError", exception.Message));
         }
     }
 
@@ -3269,30 +3033,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 BladeBrightnessPercent = percent;
             }
         }
-        _confirmedBladeBrightnessPercent = percent;
+        _blade._confirmedBladeBrightnessPercent = percent;
     }
 
     private void SetBladePerformanceMode(BladePerformanceMode mode)
     {
-        var modeChanged = _confirmedBladePerformanceModeIndex < 0 ||
-            BladePerformanceModes[_confirmedBladePerformanceModeIndex] != mode;
-        BladePerformanceModeText = mode switch
-        {
-            BladePerformanceMode.Balanced => "平衡",
-            BladePerformanceMode.Performance => "性能",
-            BladePerformanceMode.BatterySaver => "电池节能",
-            BladePerformanceMode.Custom => "自定义",
-            BladePerformanceMode.Silent => "静音",
-            BladePerformanceMode.BalancedDc => "平衡（电池）",
-            BladePerformanceMode.Hyperboost => "HyperBoost",
-            _ => "--",
-        };
-        BladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, mode);
-        _confirmedBladePerformanceModeIndex = BladePerformanceModeIndex;
-        if (modeChanged)
-        {
-            ClearBladeCustomPerformance();
-        }
+        _blade.SetPerformanceMode(mode);
+        OnPropertyChanged(nameof(BladePerformanceModeText));
+        OnPropertyChanged(nameof(BladePerformanceModeIndex));
+        OnPropertyChanged(nameof(BladeCpuBoostText));
+        OnPropertyChanged(nameof(BladeCpuBoostIndex));
+        OnPropertyChanged(nameof(BladeGpuBoostText));
+        OnPropertyChanged(nameof(BladeGpuBoostIndex));
+        OnPropertyChanged(nameof(BladeMaxFanText));
+        OnPropertyChanged(nameof(BladeMaxFanEnabled));
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
         OnPropertyChanged(nameof(CanSetBladeGpuBoost));
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
@@ -3301,165 +3055,100 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     private void SetBladeGameMode(BladeGameModeTelemetry? gameMode)
     {
-        _bladeGameModeState = gameMode?.GameMode;
-        BladeGameModeEnabled = gameMode is { GameMode: not 0 };
+        _blade.SetGameMode(gameMode);
+        OnPropertyChanged(nameof(BladeGameModeText));
+        OnPropertyChanged(nameof(BladeGameModeEnabled));
         OnPropertyChanged(nameof(CanSetBladeGamingMode));
         OnPropertyChanged(nameof(CanApplyBladeGamingMode));
-        BladeGameModeText = gameMode is { GameMode: not 0 }
-            ? "已启用"
-            : gameMode is not null
-                ? "已关闭"
-            : "--";
     }
 
     private void SetBladeChargeLimit(int percent)
     {
-        BladeChargeLimitText = percent == 100 ? "关闭 · 100%" : $"{percent}%";
-        BladeChargeLimitIndex = Array.IndexOf(BladeChargeLimits, percent);
-        _confirmedBladeChargeLimitIndex = BladeChargeLimitIndex;
+        _blade.SetChargeLimit(percent);
+        OnPropertyChanged(nameof(BladeChargeLimitText));
+        OnPropertyChanged(nameof(BladeChargeLimitIndex));
         OnPropertyChanged(nameof(CanSetBladeOneTimeFullCharge));
         OnPropertyChanged(nameof(CanApplyBladeOneTimeFullCharge));
     }
 
-    private bool IsBladeCustomMode =>
-        _confirmedBladePerformanceModeIndex >= 0 &&
-        BladePerformanceModes[_confirmedBladePerformanceModeIndex] == BladePerformanceMode.Custom;
+    private bool IsBladeCustomMode => _blade.IsCustomMode;
 
     private void ClearBladeCustomPerformance()
     {
-        BladeCpuBoostText = "--";
-        BladeCpuBoostIndex = -1;
-        _confirmedBladeCpuBoostIndex = -1;
-        _hasBladeCpuBoost = false;
-        BladeGpuBoostText = "--";
-        BladeGpuBoostIndex = -1;
-        _confirmedBladeGpuBoostIndex = -1;
-        _hasBladeGpuBoost = false;
-        BladeMaxFanText = "--";
-        BladeMaxFanEnabled = false;
-        _confirmedBladeMaxFanEnabled = false;
-        _hasBladeMaxFan = false;
+        _blade.ClearCustomPerformance();
+        OnPropertyChanged(nameof(BladeCpuBoostText));
+        OnPropertyChanged(nameof(BladeCpuBoostIndex));
+        OnPropertyChanged(nameof(BladeGpuBoostText));
+        OnPropertyChanged(nameof(BladeGpuBoostIndex));
+        OnPropertyChanged(nameof(BladeMaxFanText));
+        OnPropertyChanged(nameof(BladeMaxFanEnabled));
     }
 
     private void SetBladeCpuBoost(BladeCpuBoostMode mode)
     {
-        BladeCpuBoostText = mode switch
-        {
-            BladeCpuBoostMode.Low => "低",
-            BladeCpuBoostMode.Medium => "中",
-            BladeCpuBoostMode.High => "高",
-            BladeCpuBoostMode.Boost => "Boost",
-            BladeCpuBoostMode.Undervolt => "降压预设",
-            _ => "--",
-        };
-        BladeCpuBoostIndex = Array.IndexOf(BladeCpuBoostModes, mode);
-        _confirmedBladeCpuBoostIndex = BladeCpuBoostIndex;
-        _hasBladeCpuBoost = BladeCpuBoostIndex >= 0;
+        _blade.SetCpuBoost(mode);
+        OnPropertyChanged(nameof(BladeCpuBoostText));
+        OnPropertyChanged(nameof(BladeCpuBoostIndex));
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
     }
 
     private void SetBladeGpuBoost(BladeGpuBoostMode mode)
     {
-        BladeGpuBoostText = mode switch
-        {
-            BladeGpuBoostMode.Low => "低",
-            BladeGpuBoostMode.Medium => "中",
-            BladeGpuBoostMode.High => "高",
-            _ => "--",
-        };
-        BladeGpuBoostIndex = Array.IndexOf(BladeGpuBoostModes, mode);
-        _confirmedBladeGpuBoostIndex = BladeGpuBoostIndex;
-        _hasBladeGpuBoost = BladeGpuBoostIndex >= 0;
+        _blade.SetGpuBoost(mode);
+        OnPropertyChanged(nameof(BladeGpuBoostText));
+        OnPropertyChanged(nameof(BladeGpuBoostIndex));
         OnPropertyChanged(nameof(CanSetBladeGpuBoost));
     }
 
     private void SetBladeMaxFan(BladeMaxFanMode mode)
     {
-        BladeMaxFanText = mode == BladeMaxFanMode.Enabled ? "开启" : "关闭";
-        BladeMaxFanEnabled = mode == BladeMaxFanMode.Enabled;
-        _confirmedBladeMaxFanEnabled = BladeMaxFanEnabled;
-        _hasBladeMaxFan = true;
+        _blade.SetMaxFan(mode);
+        OnPropertyChanged(nameof(BladeMaxFanText));
+        OnPropertyChanged(nameof(BladeMaxFanEnabled));
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
     }
 
     private void SetBladeLogo(BladeLogoMode mode)
     {
-        BladeLogoText = mode switch
-        {
-            BladeLogoMode.Off => "关闭",
-            BladeLogoMode.Static => "常亮",
-            BladeLogoMode.Breathing => "呼吸",
-            _ => "--",
-        };
-        BladeLogoIndex = Array.IndexOf(BladeLogoModes, mode);
-        _confirmedBladeLogoIndex = BladeLogoIndex;
+        _blade.SetLogo(mode);
+        OnPropertyChanged(nameof(BladeLogoText));
+        OnPropertyChanged(nameof(BladeLogoIndex));
     }
 
     private void SetViperDpiStages(ViperDpiStagesTelemetry stages, bool confirm = true)
     {
-        ViperDpiStages.Clear();
-        foreach (var stage in stages.Stages)
-        {
-            ViperDpiStages.Add(new ViperDpiStageRowViewModel(stage.Number, stage.X, stage.Y));
-        }
-        SetField(ref _viperDpiStageCount, ViperDpiStages.Count, nameof(ViperDpiStageCount));
-        ViperActiveDpiStage = stages.ActiveStage;
-        ViperDpiStagesText = AppStrings.Format(
-            "DpiStageSummary",
-            "DPI 档位 {0}/{1} · {2}",
-            stages.ActiveStage,
-            stages.Stages.Count,
-            string.Join(", ", stages.Stages.Select(stage => $"{stage.X}x{stage.Y}")));
-        if (confirm)
-        {
-            _confirmedViperDpiStages = CopyViperDpiStages(stages);
-        }
+        _viper.SetDpiStages(stages, confirm);
+        OnPropertyChanged(nameof(ViperDpiStageCount));
+        OnPropertyChanged(nameof(ViperActiveDpiStage));
+        OnPropertyChanged(nameof(ViperDpiStagesText));
     }
 
     private void ResizeViperDpiStages(int count)
     {
-        if (ViperDpiStages.Count == 0)
-        {
-            SetField(ref _viperDpiStageCount, 0, nameof(ViperDpiStageCount));
-            return;
-        }
-
-        while (ViperDpiStages.Count > count)
-        {
-            ViperDpiStages.RemoveAt(ViperDpiStages.Count - 1);
-        }
-        while (ViperDpiStages.Count < count)
-        {
-            var previous = ViperDpiStages[^1];
-            ViperDpiStages.Add(new ViperDpiStageRowViewModel(
-                ViperDpiStages.Count + 1, checked((int)previous.X), checked((int)previous.Y)));
-        }
-        SetField(ref _viperDpiStageCount, count, nameof(ViperDpiStageCount));
-        ViperActiveDpiStage = Math.Min(ViperActiveDpiStage, count);
+        _viper.ResizeDpiStages(count);
+        OnPropertyChanged(nameof(ViperDpiStageCount));
+        OnPropertyChanged(nameof(ViperActiveDpiStage));
     }
 
     private void RestoreViperDpiStages()
     {
-        if (_confirmedViperDpiStages is { } confirmed)
-        {
-            SetViperDpiStages(confirmed, confirm: false);
-        }
+        _viper.RestoreDpiStages();
+        OnPropertyChanged(nameof(ViperDpiStageCount));
+        OnPropertyChanged(nameof(ViperActiveDpiStage));
+        OnPropertyChanged(nameof(ViperDpiStagesText));
     }
-
-    private static ViperDpiStagesTelemetry CopyViperDpiStages(ViperDpiStagesTelemetry stages) =>
-        new(stages.ActiveStage, stages.Stages.ToArray());
 
     private void ResetDeviceTelemetry()
     {
         BladeStatusText = "探测中";
         BladeBrightnessText = "--";
         BladeBrightnessPercent = 0;
-        _confirmedBladeBrightnessPercent = 0;
+        _blade._confirmedBladeBrightnessPercent = 0;
         BladeBrightnessSelectionText = "--";
         CanSetBladeBrightness = false;
         BladePerformanceModeText = "--";
         BladePerformanceModeIndex = -1;
-        _confirmedBladePerformanceModeIndex = -1;
+        _blade._confirmedBladePerformanceModeIndex = -1;
         OnPropertyChanged(nameof(BladeCustomPerformanceVisibility));
         CanSetBladePerformanceMode = false;
         BladeFanText = "--";
@@ -3471,27 +3160,27 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         BladeAdvancedFanGpuModeRawText = "--";
         SetBladeGameMode(null);
         BladeStartupAnimationText = "--";
-        _bladeStartupAnimationEnabled = null;
+        _blade._bladeStartupAnimationEnabled = null;
         BladeStartupAnimationEnabled = false;
         BladeNativeDisplayModeText = "--";
         BladeSkuHardwareText = "--";
         BladeLocalDimmingText = "--";
-        _bladeOneTimeFullChargeEnabled = null;
+        _blade._bladeOneTimeFullChargeEnabled = null;
         BladeOneTimeFullChargeEnabled = false;
         BladeOneTimeFullChargeText = "--";
         BladeChargeLimitText = "--";
         BladeChargeLimitIndex = -1;
-        _confirmedBladeChargeLimitIndex = -1;
+        _blade._confirmedBladeChargeLimitIndex = -1;
         CanSetBladeChargeLimit = false;
         ClearBladeCustomPerformance();
         BladeLogoText = "--";
         BladeLogoIndex = -1;
-        _confirmedBladeLogoIndex = -1;
+        _blade._confirmedBladeLogoIndex = -1;
         CanSetBladeLogo = false;
         BladeTouchpadText = "--";
         BladeTouchpadEnabled = false;
-        _confirmedBladeTouchpadEnabled = false;
-        _canSetBladeTouchpad = false;
+        _blade._confirmedBladeTouchpadEnabled = false;
+        _blade._canSetBladeTouchpad = false;
         OnPropertyChanged(nameof(CanSetBladeTouchpad));
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
         OnPropertyChanged(nameof(CanSetBladeGpuBoost));
@@ -3502,37 +3191,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     private void ResetViperTelemetry()
     {
-        ViperStatusText = "探测中";
-        ViperDpiStagesText = "--";
-        ViperLowBatteryThresholdText = "--";
-        ViperBatteryText = "--";
-        ViperPollingRateText = "--";
-        ViperPollingRateIndex = -1;
-        _confirmedViperPollingRateIndex = -1;
-        CanSetViperPollingRate = false;
-        ViperDpiText = "--";
-        ViperDpiXValue = 0;
-        ViperDpiYValue = 0;
-        _confirmedViperDpiXValue = 0;
-        _confirmedViperDpiYValue = 0;
-        CanSetViperDpi = false;
-        ViperIdleText = "--";
-        ViperIdleMinutesValue = 0;
-        _confirmedViperIdleMinutesValue = 0;
-        CanSetViperIdle = false;
-        ViperDpiStages.Clear();
-        SetField(ref _viperDpiStageCount, 0, nameof(ViperDpiStageCount));
-        _viperActiveDpiStage = 0;
-        OnPropertyChanged(nameof(ViperActiveDpiStage));
-        _confirmedViperDpiStages = null;
-        CanSetViperDpiStages = false;
-        ViperButtonAssignments.Clear();
-        OnPropertyChanged(nameof(VisibleViperButtonAssignments));
-        ViperButtonMappingsText = "未读取";
-        _canReadViperButtonMappings = false;
-        _canSetViperButtonMappings = false;
-        OnPropertyChanged(nameof(CanReadViperButtonMappings));
-        OnPropertyChanged(nameof(CanSetViperButtonMappings));
+        _viper.Reset();
+        foreach (var propertyName in new[]
+        {
+            nameof(ViperStatusText), nameof(ViperDpiStagesText), nameof(ViperLowBatteryThresholdText),
+            nameof(ViperBatteryText), nameof(ViperPollingRateText), nameof(ViperPollingRateIndex),
+            nameof(CanSetViperPollingRate), nameof(ViperDpiText), nameof(ViperDpiXValue),
+            nameof(ViperDpiYValue), nameof(CanSetViperDpi), nameof(ViperIdleText),
+            nameof(ViperIdleMinutesValue), nameof(CanSetViperIdle), nameof(ViperDpiStageCount),
+            nameof(ViperActiveDpiStage), nameof(CanSetViperDpiStages), nameof(VisibleViperButtonAssignments),
+            nameof(ViperButtonMappingsText), nameof(CanReadViperButtonMappings), nameof(CanSetViperButtonMappings),
+        })
+        {
+            OnPropertyChanged(propertyName);
+        }
     }
 
     private static string FormatDeviceStatus(DeviceDescriptor? device) => device switch
@@ -3544,9 +3216,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     private static string FormatDuration(int seconds) => seconds switch
     {
-        < 60 => AppStrings.Format("DurationSeconds", "{0} 秒", seconds),
-        _ when seconds % 60 == 0 => AppStrings.Format("DurationMinutes", "{0} 分钟", seconds / 60),
-        _ => AppStrings.Format("DurationMinutesSeconds", "{0} 分 {1} 秒", seconds / 60, seconds % 60),
+        < 60 => AppStrings.FormatText("DurationSeconds", seconds),
+        _ when seconds % 60 == 0 => AppStrings.FormatText("DurationMinutes", seconds / 60),
+        _ => AppStrings.FormatText("DurationMinutesSeconds", seconds / 60, seconds % 60),
     };
 
     private static string FormatOptionalState(bool? value) => value switch
@@ -3602,8 +3274,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     private void SetPerformanceUnavailable(string error)
     {
-        TelemetryTimeText = "采样失败 · 显示上次值";
-        var message = AppStrings.Format("PerformanceSamplingError", "性能采样：{0}", error);
+        _systemTelemetry.MarkUnavailable();
+        var message = AppStrings.FormatText("PerformanceSamplingError", error);
         LogChangedError("performance", _performanceErrorText, message);
         _performanceErrorText = message;
         UpdateErrorText();
@@ -3623,9 +3295,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         IReadOnlyList<string> errors)
     {
         Diagnostics.Clear();
-        var bladeName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "blade-710")?.Name
+        var bladeName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Name
             ?? "Razer Blade";
-        var viperName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == "viper-184")?.Name
+        var viperName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper)?.Name
             ?? "Razer Viper";
         foreach (var device in snapshot.Devices)
         {
@@ -3697,37 +3369,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         IsExpectedRuntimeException(exception) ||
         exception is ArgumentException or AggregateException or ObjectDisposedException;
 
-    private static double? CalculatePercent<T>(T? used, T? total) where T : struct, IConvertible
-    {
-        if (used is null || total is null)
-        {
-            return null;
-        }
-
-        var totalValue = total.Value.ToDouble(null);
-        return totalValue <= 0 ? null : Math.Clamp(used.Value.ToDouble(null) * 100 / totalValue, 0, 100);
-    }
-
-    private static string FormatPercent(double? value) => value is null ? "--" : $"{value:0}%";
-
     private static string FormatRawByte(byte? value) => value is byte raw ? $"0x{raw:X2} ({raw})" : AppStrings.Get("未知");
-
-    private static string FormatNumber<T>(T? value, string format, string suffix) where T : struct, IFormattable =>
-        value is null ? "--" : value.Value.ToString(format, null) + suffix;
-
-    private static string FormatBytePair<T>(T? used, T? total) where T : struct, IConvertible
-    {
-        if (used is null || total is null)
-        {
-            return "-- / -- GB";
-        }
-
-        var usedGibibytes = used.Value.ToDouble(null) / 1024 / 1024 / 1024;
-        var totalGibibytes = total.Value.ToDouble(null) / 1024 / 1024 / 1024;
-        return totalGibibytes >= 1024
-            ? $"{usedGibibytes / 1024:0.00} / {totalGibibytes / 1024:0.00} TB"
-            : $"{usedGibibytes:0.0} / {totalGibibytes:0.0} GB";
-    }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
@@ -3745,449 +3387,4 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private readonly record struct BladeFanProfileApplyResult(string? Error, bool Changed);
-}
-
-internal sealed class UnknownPowerSourceProvider : IPowerSourceProvider
-{
-    public static UnknownPowerSourceProvider Instance { get; } = new();
-
-    public bool? IsPluggedIn => null;
-}
-
-internal sealed class UnknownActiveApplicationProvider : IActiveApplicationProvider
-{
-    public static UnknownActiveApplicationProvider Instance { get; } = new();
-
-    public string? ExecutablePath => null;
-}
-
-public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
-{
-    private static readonly byte[] MouseButtonCodes = [1, 2, 3, 4, 5, 9, 10];
-    private int _selectedActionIndex;
-    private double _keyboardModifierValue;
-    private double _keyboardUsageValue = 4;
-
-    public ViperButtonAssignmentRowViewModel(ViperButtonAssignment assignment)
-    {
-        ArgumentNullException.ThrowIfNull(assignment);
-        Assignment = assignment;
-        RestoreEditorFromAssignment();
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
-
-    public IReadOnlyList<string> ActionOptions => AppStrings.Get(
-        "关闭", "左键", "右键", "滚轮按下", "后退", "前进", "滚轮向上", "滚轮向下", "键盘按键", "双击", "DPI 循环切换", "播放 / 暂停", "HyperShift", "键盘 Turbo", "鼠标 Turbo");
-    public string ButtonText => FormatButton(Assignment.ButtonId);
-    public string LayerText => Assignment.Layer == ViperButtonMappingLayer.Normal ? AppStrings.Get("普通") : "HyperShift";
-    public string CurrentActionText => FormatAction(Assignment);
-    public ViperButtonAssignment Assignment { get; private set; }
-    public int SelectedActionIndex
-    {
-        get => _selectedActionIndex;
-        set
-        {
-            if (_selectedActionIndex == value)
-            {
-                return;
-            }
-            _selectedActionIndex = value;
-            PropertyChanged?.Invoke(this, new(nameof(SelectedActionIndex)));
-            PropertyChanged?.Invoke(this, new(nameof(KeyboardParameterVisibility)));
-            PropertyChanged?.Invoke(this, new(nameof(DoubleClickParameterVisibility)));
-            PropertyChanged?.Invoke(this, new(nameof(CanApply)));
-        }
-    }
-    public double KeyboardModifierValue
-    {
-        get => _keyboardModifierValue;
-        set => SetKeyboardByte(ref _keyboardModifierValue, value);
-    }
-    public double KeyboardUsageValue
-    {
-        get => _keyboardUsageValue;
-        set => SetKeyboardByte(ref _keyboardUsageValue, value);
-    }
-    public Visibility KeyboardParameterVisibility => SelectedActionIndex == 8
-        ? Visibility.Visible
-        : Visibility.Collapsed;
-    public Visibility DoubleClickParameterVisibility => SelectedActionIndex == 9
-        ? Visibility.Visible
-        : Visibility.Collapsed;
-    public bool CanApply => TryCreateAssignment(out var requested) && !AssignmentsEqual(Assignment, requested);
-
-    public ViperButtonAssignment CreateAssignment()
-    {
-        if (!TryCreateAssignment(out var assignment))
-        {
-            throw new InvalidOperationException(AppStrings.Get("请选择已验证的板载映射动作。"));
-        }
-        return assignment;
-    }
-
-    public void Apply(ViperButtonAssignment assignment)
-    {
-        Assignment = assignment;
-        RestoreEditorFromAssignment();
-        NotifyEditorChanged();
-    }
-
-    public void RestoreSelection()
-    {
-        RestoreEditorFromAssignment();
-        NotifyEditorChanged();
-    }
-
-    private bool TryCreateAssignment(out ViperButtonAssignment assignment)
-    {
-        var (function, data) = SelectedActionIndex switch
-        {
-            0 => (ViperButtonMappingFunction.Off, Array.Empty<byte>()),
-            >= 1 and <= 7 => (
-                ViperButtonMappingFunction.MouseButton,
-                new byte[] { MouseButtonCodes[SelectedActionIndex - 1] }),
-            8 => (
-                ViperButtonMappingFunction.KeyboardKey,
-                new byte[] { checked((byte)KeyboardModifierValue), checked((byte)KeyboardUsageValue) }),
-            9 => (ViperButtonMappingFunction.DoubleClick, new byte[] { 1 }),
-            10 => (ViperButtonMappingFunction.Dpi, new byte[] { 6 }),
-            11 => (ViperButtonMappingFunction.MediaKey, new byte[] { 0xCD, 0x00 }),
-            12 => (ViperButtonMappingFunction.HyperShift, new byte[] { 1 }),
-            13 => (ViperButtonMappingFunction.KeyboardTurbo, new byte[] { 0, 4, 100, 0 }),
-            14 => (ViperButtonMappingFunction.MouseTurbo, new byte[] { 1, 100, 0 }),
-            _ => default,
-        };
-        if (SelectedActionIndex is < 0 or > 14)
-        {
-            assignment = Assignment;
-            return false;
-        }
-
-        assignment = Assignment with { Function = function, FunctionData = data };
-        return true;
-    }
-
-    private void RestoreEditorFromAssignment()
-    {
-        _selectedActionIndex = GetActionIndex(Assignment);
-        if (Assignment.Function == ViperButtonMappingFunction.KeyboardKey &&
-            Assignment.FunctionData.Count == 2)
-        {
-            _keyboardModifierValue = Assignment.FunctionData[0];
-            _keyboardUsageValue = Assignment.FunctionData[1];
-        }
-        else
-        {
-            _keyboardModifierValue = 0;
-            _keyboardUsageValue = 4;
-        }
-    }
-
-    private void SetKeyboardByte(ref double field, double value, [CallerMemberName] string? propertyName = null)
-    {
-        var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), byte.MinValue, byte.MaxValue) : field;
-        if (field == normalized)
-        {
-            return;
-        }
-        field = normalized;
-        PropertyChanged?.Invoke(this, new(propertyName));
-        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
-    }
-
-    private void NotifyEditorChanged()
-    {
-        PropertyChanged?.Invoke(this, new(nameof(CurrentActionText)));
-        PropertyChanged?.Invoke(this, new(nameof(SelectedActionIndex)));
-        PropertyChanged?.Invoke(this, new(nameof(KeyboardModifierValue)));
-        PropertyChanged?.Invoke(this, new(nameof(KeyboardUsageValue)));
-        PropertyChanged?.Invoke(this, new(nameof(KeyboardParameterVisibility)));
-        PropertyChanged?.Invoke(this, new(nameof(DoubleClickParameterVisibility)));
-        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
-    }
-
-    private static int GetActionIndex(ViperButtonAssignment assignment)
-    {
-        if (assignment.Function == ViperButtonMappingFunction.Off)
-        {
-            return 0;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.KeyboardKey &&
-            assignment.FunctionData.Count == 2)
-        {
-            return 8;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.DoubleClick &&
-            assignment.FunctionData.Count == 1 && assignment.FunctionData[0] == 1)
-        {
-            return 9;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.Dpi &&
-            assignment.FunctionData.SequenceEqual(new byte[] { 6 }))
-        {
-            return 10;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.MediaKey &&
-            assignment.FunctionData.SequenceEqual(new byte[] { 0xCD, 0x00 }))
-        {
-            return 11;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.HyperShift &&
-            assignment.FunctionData.SequenceEqual(new byte[] { 1 }))
-        {
-            return 12;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.KeyboardTurbo &&
-            assignment.FunctionData.SequenceEqual(new byte[] { 0, 4, 100, 0 }))
-        {
-            return 13;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.MouseTurbo &&
-            assignment.FunctionData.SequenceEqual(new byte[] { 1, 100, 0 }))
-        {
-            return 14;
-        }
-        if (assignment.Function != ViperButtonMappingFunction.MouseButton ||
-            assignment.FunctionData.Count != 1)
-        {
-            return -1;
-        }
-
-        var index = Array.IndexOf(MouseButtonCodes, assignment.FunctionData[0]);
-        return index < 0 ? -1 : index + 1;
-    }
-
-    private static string FormatAction(ViperButtonAssignment assignment) =>
-        assignment.Function switch
-        {
-            ViperButtonMappingFunction.Off => AppStrings.Get("关闭"),
-            ViperButtonMappingFunction.MouseButton when assignment.FunctionData.Count == 1 =>
-                FormatButton(assignment.FunctionData[0]),
-            ViperButtonMappingFunction.Dpi when assignment.FunctionData.SequenceEqual(new byte[] { 6 }) =>
-                AppStrings.Get("DPI 循环切换"),
-            ViperButtonMappingFunction.MediaKey when assignment.FunctionData.SequenceEqual(new byte[] { 0xCD, 0x00 }) =>
-                AppStrings.Get("播放 / 暂停"),
-            ViperButtonMappingFunction.HyperShift when assignment.FunctionData.SequenceEqual(new byte[] { 1 }) =>
-                "HyperShift",
-            ViperButtonMappingFunction.KeyboardKey when assignment.FunctionData.Count == 2 =>
-                AppStrings.Format(
-                    "KeyboardMappingDescription",
-                    "键盘按键 · 修饰 0x{0:X2} · Usage 0x{1:X2}",
-                    assignment.FunctionData[0],
-                    assignment.FunctionData[1]),
-            ViperButtonMappingFunction.DoubleClick when assignment.FunctionData.Count == 1 &&
-                assignment.FunctionData[0] == 1 => AppStrings.Get("双击"),
-            _ => assignment.FunctionData.Count == 0
-                ? assignment.Function.ToString()
-                : $"{assignment.Function} · {Convert.ToHexString(assignment.FunctionData.ToArray())}",
-        };
-
-    private static string FormatButton(byte buttonId) => buttonId switch
-    {
-        1 => AppStrings.Get("左键"),
-        2 => AppStrings.Get("右键"),
-        3 => AppStrings.Get("滚轮按下"),
-        4 => AppStrings.Get("后退"),
-        5 => AppStrings.Get("前进"),
-        9 => AppStrings.Get("滚轮向上"),
-        10 => AppStrings.Get("滚轮向下"),
-        96 => AppStrings.Get("DPI 切换键"),
-        _ => AppStrings.Format("MouseControlNumber", "控制 {0}", buttonId),
-    };
-
-    private static bool AssignmentsEqual(ViperButtonAssignment left, ViperButtonAssignment right) =>
-        left.ProfileId == right.ProfileId &&
-        left.ButtonId == right.ButtonId &&
-        left.Layer == right.Layer &&
-        left.Function == right.Function &&
-        left.FunctionData.SequenceEqual(right.FunctionData);
-}
-
-public sealed class ViperDpiStageRowViewModel : INotifyPropertyChanged
-{
-    private double _x;
-    private double _y;
-
-    public ViperDpiStageRowViewModel(int number, int x, int y)
-    {
-        Number = number;
-        _x = x;
-        _y = y;
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public int Number { get; }
-    public double X
-    {
-        get => _x;
-        set => SetDpi(ref _x, value);
-    }
-    public double Y
-    {
-        get => _y;
-        set => SetDpi(ref _y, value);
-    }
-
-    private void SetDpi(ref double field, double value, [CallerMemberName] string? propertyName = null)
-    {
-        if (!double.IsFinite(value))
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            return;
-        }
-
-        var normalized = Math.Clamp(Math.Round(value / 50, MidpointRounding.AwayFromZero) * 50, 100, 30000);
-        if (field == normalized)
-        {
-            return;
-        }
-
-        field = normalized;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-}
-
-public sealed class DeviceRowViewModel : INotifyPropertyChanged
-{
-    private readonly string _accessSource;
-    private readonly string _iconAutomationSource;
-    private readonly int _capabilityState;
-    private readonly int _successful;
-    private readonly int _total;
-
-    public DeviceRowViewModel(DeviceDescriptor descriptor, RazerDeviceTelemetry telemetry)
-    {
-        Name = descriptor.Name;
-        Identity = $"VID_{descriptor.VendorId:X4} / PID_{descriptor.ProductId:X4}";
-        _accessSource = descriptor.Access == DeviceAccessState.Available
-            ? "HID 控制通道可打开"
-            : "Synapse 占用或访问被拒绝";
-        ReportInfo = descriptor.FeatureReportByteLength > 0
-            ? $"HID {descriptor.UsagePage:X4}:{descriptor.Usage:X4} · Feature {descriptor.FeatureReportByteLength} B"
-            : "Feature report --";
-        (IconGlyph, _iconAutomationSource) = descriptor.ProtocolFamily switch
-        {
-            "blade-710" => ("\uE7F8", "笔记本设备"),
-            "viper-184" => ("\uE962", "鼠标设备"),
-            _ => ("\uE772", "设备"),
-        };
-
-        (_successful, _total) = CountCapabilities(descriptor.ProtocolFamily, telemetry);
-
-        if (descriptor.Access != DeviceAccessState.Available ||
-            descriptor.Capability != DeviceCapabilityState.PendingValidation)
-        {
-            _capabilityState = 0;
-            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 255, 181, 71));
-        }
-        else if (_successful == _total && _total > 0)
-        {
-            _capabilityState = 1;
-            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 93, 219, 66));
-        }
-        else if (_successful > 0)
-        {
-            _capabilityState = 2;
-            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 240, 185, 90));
-        }
-        else
-        {
-            _capabilityState = 3;
-            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
-        }
-
-        IsAvailable = _successful > 0;
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
-
-    internal static (int Successful, int Total) CountCapabilities(
-        string? protocolFamily,
-        RazerDeviceTelemetry telemetry)
-    {
-        var supportsLocalDimming =
-            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true;
-        return protocolFamily switch
-        {
-            "blade-710" => (
-                CountAvailable(
-                    telemetry.BladeKeyboardBrightness,
-                    telemetry.BladePerformanceMode,
-                    telemetry.BladeChargeLimitPercent,
-                    telemetry.BladeCpuBoostMode,
-                    telemetry.BladeGpuBoostMode,
-                    telemetry.BladeMaxFanMode,
-                    telemetry.BladeLogoMode,
-                    telemetry.BladeFanMode,
-                    telemetry.BladeCurrentFanCpuRpm,
-                    telemetry.BladeCurrentFanGpuRpm,
-                    telemetry.BladeAdvancedFanCpuModeRaw,
-                    telemetry.BladeAdvancedFanGpuModeRaw,
-                    telemetry.BladeStartupAnimationEnabled,
-                    telemetry.BladeNativeDisplayMode,
-                    telemetry.BladeSkuHardwareConfiguration,
-                    telemetry.BladeOneTimeFullChargeEnabled) +
-                (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
-                16 + (supportsLocalDimming ? 1 : 0)),
-            "viper-184" => (
-                CountAvailable(
-                    telemetry.ViperBatteryPercent,
-                    telemetry.ViperPollingRateHertz,
-                    telemetry.ViperDpiX,
-                    telemetry.ViperIdleSeconds,
-                    telemetry.ViperDpiStages,
-                    telemetry.ViperLowBatteryThresholdRaw),
-                6),
-            _ => (0, 0),
-        };
-    }
-
-    public string Name { get; }
-    public string Identity { get; }
-    public string Access => AppStrings.Get(_accessSource);
-    public string Capability => _capabilityState switch
-    {
-        0 => AppStrings.Get("控制通道不可用"),
-        1 => AppStrings.Format("ProtocolAvailableCount", "协议可用 {0}/{1}", _successful, _total),
-        2 => AppStrings.Format("ProtocolPartiallyAvailableCount", "部分可用 {0}/{1}", _successful, _total),
-        _ => AppStrings.Get("协议查询失败"),
-    };
-    public string ReportInfo { get; }
-    public string IconGlyph { get; }
-    public string IconAutomationName => AppStrings.Get(_iconAutomationSource);
-    public bool IsAvailable { get; }
-    public Brush StatusBrush { get; }
-
-    private static int CountAvailable(params object?[] values) => values.Count(value => value is not null);
-}
-
-public sealed class DiagnosticRowViewModel(
-    string device,
-    string capability,
-    string status,
-    string detail,
-    Brush statusBrush) : INotifyPropertyChanged
-{
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public string Device => AppStrings.Get(device);
-    public string Capability => AppStrings.Get(capability);
-    public string Status => AppStrings.Get(status);
-    public string Detail => AppStrings.Get(detail);
-    public Brush StatusBrush { get; } = statusBrush;
-
-    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
-}
-
-public sealed class ApplicationBindingRowViewModel(string executablePath, string profileName)
-{
-    public string ExecutablePath { get; } = executablePath;
-    public string ExecutableName { get; } = Path.GetFileName(executablePath);
-    public string ProfileName { get; } = profileName;
 }

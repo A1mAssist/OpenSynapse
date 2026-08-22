@@ -213,9 +213,7 @@ public sealed partial class MainWindow : Window
             catch (Exception exception)
             {
                 _dispatcherQueue.TryEnqueue(() =>
-                    _viewModel.ReportApplicationError(AppStrings.Format(
-                        "SuspendFanRestoreError",
-                        "休眠前恢复风扇：{0}",
+                    _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError",
                         exception.Message)));
             }
         }
@@ -257,9 +255,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            _viewModel.ReportApplicationError(AppStrings.Format(
-                "ApplicationInitializationError",
-                "应用初始化：{0}",
+            _viewModel.ReportApplicationError(AppStrings.FormatText("ApplicationInitializationError",
                 exception.Message));
         }
 
@@ -491,9 +487,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            _viewModel.ReportApplicationError(AppStrings.Format(
-                "WalkthroughStateError",
-                "使用引导状态：{0}",
+            _viewModel.ReportApplicationError(AppStrings.FormatText("WalkthroughStateError",
                 exception.Message));
         }
     }
@@ -699,9 +693,7 @@ public sealed partial class MainWindow : Window
             _languageSelectionReady = false;
             SelectLanguage(AppLanguageSettings.Current);
             _languageSelectionReady = true;
-            _viewModel.ReportApplicationError(AppStrings.Format(
-                "LanguageSettingError",
-                "界面语言设置：{0}",
+            _viewModel.ReportApplicationError(AppStrings.FormatText("LanguageSettingError",
                 exception.Message));
         }
     }
@@ -788,9 +780,7 @@ public sealed partial class MainWindow : Window
             _behaviorUiReady = false;
             toggle.IsOn = previous;
             _behaviorUiReady = true;
-            _viewModel.ReportApplicationError(AppStrings.Format(
-                "BehaviorSettingError",
-                "快捷键与通知设置：{0}",
+            _viewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError",
                 exception.Message));
         }
     }
@@ -856,9 +846,7 @@ public sealed partial class MainWindow : Window
     {
         if (!_updateManager.IsInstalled)
         {
-            UpdateStatusText.Text = AppStrings.Format(
-                "UpdateInstallerRequired",
-                "当前为旧版便携包；安装新版安装包后可使用自动更新。");
+            UpdateStatusText.Text = AppStrings.Text("UpdateInstallerRequired");
             CheckUpdateButton.IsEnabled = false;
             AutomaticUpdatesToggle.IsEnabled = false;
             UpdateActionButton.Visibility = Visibility.Collapsed;
@@ -868,11 +856,9 @@ public sealed partial class MainWindow : Window
         CheckUpdateButton.IsEnabled = !_updateBusy;
         if (_downloadedUpdate is not null)
         {
-            UpdateStatusText.Text = AppStrings.Format(
-                "UpdateReady",
-                "版本 {0} 已下载，可以更新。",
+            UpdateStatusText.Text = AppStrings.FormatText("UpdateReady",
                 _downloadedUpdate.Version);
-            UpdateActionButton.Content = AppStrings.Format("更新并重启", "更新并重启");
+            UpdateActionButton.Content = AppStrings.Text("更新并重启");
             UpdateActionButton.Visibility = Visibility.Visible;
             UpdateActionButton.IsEnabled = !_updateBusy;
             return;
@@ -880,11 +866,9 @@ public sealed partial class MainWindow : Window
 
         if (_availableUpdate is not null)
         {
-            UpdateStatusText.Text = AppStrings.Format(
-                "UpdateAvailable",
-                "发现版本 {0}。",
+            UpdateStatusText.Text = AppStrings.FormatText("UpdateAvailable",
                 _availableUpdate.TargetFullRelease.Version);
-            UpdateActionButton.Content = AppStrings.Format("下载更新", "下载更新");
+            UpdateActionButton.Content = AppStrings.Text("下载更新");
             UpdateActionButton.Visibility = Visibility.Visible;
             UpdateActionButton.IsEnabled = !_updateBusy;
             return;
@@ -892,9 +876,7 @@ public sealed partial class MainWindow : Window
 
         var currentVersion = _updateManager.CurrentVersion?.ToString() ??
             Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "--";
-        UpdateStatusText.Text = AppStrings.Format(
-            "CurrentVersion",
-            "当前版本 {0}。",
+        UpdateStatusText.Text = AppStrings.FormatText("CurrentVersion",
             currentVersion);
         UpdateActionButton.Visibility = Visibility.Collapsed;
     }
@@ -921,9 +903,7 @@ public sealed partial class MainWindow : Window
             _updateUiReady = false;
             toggle.IsOn = AppUpdateSettings.AutomaticUpdatesEnabled;
             _updateUiReady = true;
-            UpdateStatusText.Text = AppStrings.Format(
-                "UpdateSettingError",
-                "更新设置保存失败：{0}",
+            UpdateStatusText.Text = AppStrings.FormatText("UpdateSettingError",
                 exception.Message);
         }
     }
@@ -938,19 +918,19 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        SetUpdateBusy(true, AppStrings.Format("正在检查更新", "正在检查更新"));
+        SetUpdateBusy(true, AppStrings.Text("正在检查更新"));
         try
         {
             _availableUpdate = await _updateManager.CheckForUpdatesAsync();
             AppUpdateSettings.MarkCheckCompleted();
             if (_availableUpdate is null)
             {
-                UpdateStatusText.Text = AppStrings.Format("当前已是最新版本", "当前已是最新版本");
+                UpdateStatusText.Text = AppStrings.Text("当前已是最新版本");
                 UpdateActionButton.Visibility = Visibility.Collapsed;
             }
             else if (downloadAutomatically)
             {
-                UpdateStatusText.Text = AppStrings.Format("正在下载更新", "正在下载更新");
+                UpdateStatusText.Text = AppStrings.Text("正在下载更新");
                 await DownloadUpdateAsync();
             }
 
@@ -965,9 +945,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            UpdateStatusText.Text = AppStrings.Format(
-                "UpdateCheckFailed",
-                "检查更新失败：{0}",
+            UpdateStatusText.Text = AppStrings.FormatText("UpdateCheckFailed",
                 exception.Message);
         }
         finally
@@ -985,7 +963,7 @@ public sealed partial class MainWindow : Window
 
         if (_downloadedUpdate is null)
         {
-            SetUpdateBusy(true, AppStrings.Format("正在下载更新", "正在下载更新"));
+            SetUpdateBusy(true, AppStrings.Text("正在下载更新"));
             try
             {
                 await DownloadUpdateAsync();
@@ -997,9 +975,7 @@ public sealed partial class MainWindow : Window
             }
             catch (Exception exception)
             {
-                UpdateStatusText.Text = AppStrings.Format(
-                    "UpdateDownloadFailed",
-                    "下载更新失败：{0}",
+                UpdateStatusText.Text = AppStrings.FormatText("UpdateDownloadFailed",
                     exception.Message);
             }
             finally
@@ -1009,7 +985,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        SetUpdateBusy(true, AppStrings.Format("正在安全退出并更新", "正在安全退出并更新"));
+        SetUpdateBusy(true, AppStrings.Text("正在安全退出并更新"));
         try
         {
             await ((App)Application.Current).ApplyUpdateAndRestartAsync(
@@ -1019,9 +995,7 @@ public sealed partial class MainWindow : Window
         catch (Exception exception)
         {
             SetUpdateBusy(false);
-            UpdateStatusText.Text = AppStrings.Format(
-                "UpdateApplyFailed",
-                "启动更新失败，请重新打开 OpenSynapse 后重试：{0}",
+            UpdateStatusText.Text = AppStrings.FormatText("UpdateApplyFailed",
                 exception.Message);
         }
     }
@@ -1257,9 +1231,7 @@ public sealed partial class MainWindow : Window
         var dialog = new ContentDialog
         {
             Title = AppStrings.Get("删除当前配置？"),
-            Content = AppStrings.Format(
-                "DeleteProfileMessage",
-                "将删除“{0}”，设备设置不会被卸载。",
+            Content = AppStrings.FormatText("DeleteProfileMessage",
                 _viewModel.ActiveProfileName),
             PrimaryButtonText = AppStrings.Get("删除"),
             CloseButtonText = AppStrings.Get("取消"),

@@ -40,8 +40,10 @@ internal static class AppStrings
     public static IReadOnlyList<string> Get(params string[] values) =>
         values.Select(Get).ToArray();
 
-    public static string Format(string key, string fallback, params object?[] args) =>
-        string.Format(System.Globalization.CultureInfo.CurrentCulture, Load(key, fallback), args);
+    public static string Text(string key) => Load(key, key);
+
+    public static string FormatText(string key, params object?[] args) =>
+        string.Format(System.Globalization.CultureInfo.CurrentCulture, Load(key, key), args);
 
     internal static string? TryGet(string key)
     {

@@ -1506,4 +1506,11 @@
   <data name="SettingsGuideDescription.Text" xml:space="preserve"><value>重新查看 OpenSynapse 的主要页面和设备控制入口。</value><comment>设置页使用引导说明</comment></data>
   <data name="AboutWindowTitle" xml:space="preserve"><value>关于 OpenSynapse</value><comment>关于窗口标题</comment></data>
   <data name="AboutVersion" xml:space="preserve"><value>版本 {0}</value><comment>关于窗口版本</comment></data>
+  <data name="ViperMappingProfileError" xml:space="preserve"><value>鼠标板载映射：{0}</value><comment>板载映射配置错误</comment></data>
+  <data name="ViperMappingReadProfileSaveFailed" xml:space="preserve"><value>鼠标映射已读取，但活动配置保存失败。</value><comment>映射读取后配置保存失败</comment></data>
+  <data name="ViperMappingSaveFailedRestored" xml:space="preserve"><value>鼠标映射已写入，但配置保存失败，原映射已恢复。</value><comment>单项映射保存失败并恢复</comment></data>
+  <data name="ViperMappingBatchSaveFailedRestored" xml:space="preserve"><value>鼠标映射已写入，但配置保存失败，整套原映射已恢复。</value><comment>整套映射保存失败并恢复</comment></data>
+  <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>游戏模式已切换，但配置保存失败。</value><comment>游戏模式配置保存失败</comment></data>
+  <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Blade Fn 运行时在音频同步完成前已被安全停止。</value><comment>Fn 运行时提前停止</comment></data>
+  <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>采样失败 · 显示上次值</value><comment>性能采样不可用</comment></data>
 </root>
