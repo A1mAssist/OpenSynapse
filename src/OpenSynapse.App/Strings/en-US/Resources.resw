@@ -1506,4 +1506,11 @@
   <data name="SettingsGuideDescription.Text" xml:space="preserve"><value>Review the main pages and device controls in OpenSynapse.</value><comment>设置页使用引导说明</comment></data>
   <data name="AboutWindowTitle" xml:space="preserve"><value>About OpenSynapse</value><comment>关于窗口标题</comment></data>
   <data name="AboutVersion" xml:space="preserve"><value>Version {0}</value><comment>关于窗口版本</comment></data>
+  <data name="ViperMappingProfileError" xml:space="preserve"><value>Mouse onboard mappings: {0}</value><comment>板载映射配置错误</comment></data>
+  <data name="ViperMappingReadProfileSaveFailed" xml:space="preserve"><value>The mouse mappings were read, but the active profile could not be saved.</value><comment>映射读取后配置保存失败</comment></data>
+  <data name="ViperMappingSaveFailedRestored" xml:space="preserve"><value>The mouse mapping was written, but the profile could not be saved. The previous mapping was restored.</value><comment>单项映射保存失败并恢复</comment></data>
+  <data name="ViperMappingBatchSaveFailedRestored" xml:space="preserve"><value>The mouse mappings were written, but the profile could not be saved. The previous mapping set was restored.</value><comment>整套映射保存失败并恢复</comment></data>
+  <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>Gaming mode changed, but the profile could not be saved.</value><comment>游戏模式配置保存失败</comment></data>
+  <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>The Blade Fn runtime stopped safely before audio synchronization completed.</value><comment>Fn 运行时提前停止</comment></data>
+  <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>Sampling failed · showing the last value</value><comment>性能采样不可用</comment></data>
 </root>
