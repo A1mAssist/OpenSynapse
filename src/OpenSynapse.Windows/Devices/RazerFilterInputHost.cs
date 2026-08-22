@@ -44,6 +44,7 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
     private bool _hooksEnabled;
     private bool _notifyEnabled;
     private bool _accepting;
+    private ushort _activeConsumerUsage;
     private bool _stopped;
     private bool _started;
     private bool _driverDisposed;
@@ -68,6 +69,39 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
 
     internal static IReadOnlyList<(ushort ScanCode, ushort Flag)> OfficialProduct710Hooks =>
         Product710Hooks;
+
+    public void SendConsumerUsage(ushort usage)
+    {
+        lock (_lifecycleGate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (!_started || _stopped)
+            {
+                throw new InvalidOperationException("Razer filter input host is not running.");
+            }
+
+            var previous = _activeConsumerUsage;
+            if (usage != 0)
+            {
+                _activeConsumerUsage = usage;
+            }
+            try
+            {
+                _driver.WriteControl(
+                    RazerFilterInputProtocol.SubmitInput,
+                    RazerFilterInputProtocol.CreateConsumerInput(usage));
+                _activeConsumerUsage = usage;
+            }
+            catch
+            {
+                if (usage == 0)
+                {
+                    _activeConsumerUsage = previous;
+                }
+                throw;
+            }
+        }
+    }
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
@@ -255,6 +289,15 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
             _accepting = false;
             _stop.Cancel();
             var errors = new List<Exception>();
+            if (_activeConsumerUsage != 0)
+            {
+                TryControl(
+                    () => _driver.WriteControl(
+                        RazerFilterInputProtocol.SubmitInput,
+                        RazerFilterInputProtocol.CreateConsumerInput(0)),
+                    errors);
+                _activeConsumerUsage = 0;
+            }
             for (var index = _installedHooks.Count - 1; index >= 0; index--)
             {
                 var hook = _installedHooks[index];

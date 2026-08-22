@@ -27,7 +27,6 @@ public partial class App : Application
     private BladeLightingController? _bladeLightingController;
     private readonly BladeSoftwareModeCoordinator _bladeModeCoordinator = new();
     private readonly SemaphoreSlim _audioMuteRuntimeGate = new(1, 1);
-    private readonly WindowsDisplayBrightnessController _displayBrightnessController = new();
     private BladeAudioMuteRuntime? _audioMuteRuntime;
     private BladeFnRuntime? _bladeFnRuntime;
     private IRazerFeatureTransport? _razerTransport;
@@ -715,26 +714,6 @@ public partial class App : Application
             }:
                 await viewModel.CycleInternalDisplayRefreshRateAsync(cancellationToken).ConfigureAwait(true);
                 break;
-            case BladeCommandMappingAction
-            {
-                CommandKind: BladeMappingOutputKind.Display,
-                Command: BladeMappingCommand.DriverBrightnessDown,
-            }:
-                await TryStepDisplayBrightnessAsync(false, cancellationToken).ConfigureAwait(true);
-                break;
-            case BladeCommandMappingAction
-            {
-                CommandKind: BladeMappingOutputKind.Display,
-                Command: BladeMappingCommand.DriverBrightnessUp,
-            }:
-                await TryStepDisplayBrightnessAsync(true, cancellationToken).ConfigureAwait(true);
-                break;
-            case BladeCommandMappingAction
-            {
-                CommandKind: BladeMappingOutputKind.Display,
-                Command: BladeMappingCommand.DriverBrightnessStop,
-            }:
-                break;
             case BladeBacklightMappingAction
             {
                 IsDown: true,
@@ -763,33 +742,6 @@ public partial class App : Application
             default:
                 throw new InvalidOperationException(
                     $"Unsupported Blade Fn leaf action: {action}.");
-        }
-    }
-
-    private async Task TryStepDisplayBrightnessAsync(
-        bool increase,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _displayBrightnessController.StepAsync(increase, cancellationToken)
-                .ConfigureAwait(true);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (System.Runtime.InteropServices.COMException exception)
-        {
-            // Some Blade/OLED configurations do not expose the Windows brightness override API.
-            // Brightness is optional; it must not tear down the entire Fn input pipeline.
-            _diagnosticLog.TryWrite("blade-fn", $"display brightness unavailable: {exception.Message}");
-        }
-        catch (InvalidOperationException exception)
-        {
-            // Some Blade/OLED configurations do not expose the Windows brightness override API.
-            // Brightness is optional; it must not tear down the entire Fn input pipeline.
-            _diagnosticLog.TryWrite("blade-fn", $"display brightness unavailable: {exception.Message}");
         }
     }
 

@@ -349,12 +349,12 @@
                   <StackPanel Spacing="14">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_C6BFF9FFC0" Text="开机启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_6048E58A89" Text="仅当前用户，不需要管理员权限。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                      <ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" Grid.Column="1" IsOn="{Binding IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding CanSetStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开机启动" />
+                      <ToggleSwitch local:Localized.Uid="StartupToggle" Grid.Column="1" IsOn="{Binding IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding CanSetStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开机启动" />
                     </Grid>
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_4ED618F72C" Text="静默启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_E40B74CC08" Text="开机启动时仅显示托盘图标。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                      <ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" Grid.Column="1" IsOn="{Binding IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="静默启动" />
+                      <ToggleSwitch local:Localized.Uid="SilentStartupToggle" Grid.Column="1" IsOn="{Binding IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="静默启动" />
                     </Grid>
                   </StackPanel>
                 </Border>

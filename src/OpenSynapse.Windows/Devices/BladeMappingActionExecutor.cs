@@ -1,4 +1,5 @@
 using OpenSynapse.Windows.Protocols;
+using System.Threading.Channels;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -13,8 +14,15 @@ public sealed class BladeMappingActionExecutor : IAsyncDisposable
     private readonly Func<int, CancellationToken, ValueTask> _delay;
     private readonly Action<IReadOnlyList<BladeMappingOutputEvent>>? _syntheticStateChanged;
     private readonly CancellationTokenSource _lifetime = new();
+    private readonly Channel<PendingLeafAction> _leafQueue =
+        Channel.CreateUnbounded<PendingLeafAction>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false,
+        });
     private readonly TaskCompletionSource _fault =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly Task _leafConsumer;
     private readonly object _sync = new();
     private readonly Dictionary<InputOwner, OwnerState> _actionOwners = [];
     private readonly HashSet<OutputKey> _runtimeKeys = [];
@@ -49,6 +57,7 @@ public sealed class BladeMappingActionExecutor : IAsyncDisposable
         _leafExecutor = leafExecutor ?? throw new ArgumentNullException(nameof(leafExecutor));
         _delay = delay ?? throw new ArgumentNullException(nameof(delay));
         _syntheticStateChanged = syntheticStateChanged;
+        _leafConsumer = ConsumeLeafActionsAsync();
     }
 
     /// <summary>
@@ -159,6 +168,23 @@ public sealed class BladeMappingActionExecutor : IAsyncDisposable
         }
     }
 
+    internal void QueueLeafAction(BladeMappingInputEvent input, BladeMappingAction action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        if (action is not (BladeCommandMappingAction or
+            BladeBacklightMappingAction or
+            BladeAudioMappingAction))
+        {
+            throw new ArgumentException("Only direct leaf actions can be queued.", nameof(action));
+        }
+
+        ThrowIfUnavailable();
+        if (!_leafQueue.Writer.TryWrite(new PendingLeafAction(input, action)))
+        {
+            throw new InvalidOperationException("Blade mapping leaf action queue is closed.");
+        }
+    }
+
     public async Task StopAsync()
     {
         List<TurboRun> runs;
@@ -167,6 +193,7 @@ public sealed class BladeMappingActionExecutor : IAsyncDisposable
             if (!_stopping)
             {
                 _stopping = true;
+                _leafQueue.Writer.TryComplete();
                 _lifetime.Cancel();
             }
 
@@ -179,6 +206,14 @@ public sealed class BladeMappingActionExecutor : IAsyncDisposable
         }
 
         var errors = new List<Exception>();
+        try
+        {
+            await _leafConsumer.ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            errors.Add(exception);
+        }
         foreach (var run in runs)
         {
             try
@@ -207,6 +242,27 @@ public sealed class BladeMappingActionExecutor : IAsyncDisposable
         if (errors.Count != 0)
         {
             throw new AggregateException("Blade mapping executor stop failed.", errors);
+        }
+    }
+
+    private async Task ConsumeLeafActionsAsync()
+    {
+        try
+        {
+            await foreach (var pending in _leafQueue.Reader
+                               .ReadAllAsync(_lifetime.Token)
+                               .ConfigureAwait(false))
+            {
+                await ExecuteAsync(pending.Input, pending.Action, _lifetime.Token)
+                    .ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _fault.TrySetException(exception);
         }
     }
 
@@ -598,6 +654,10 @@ public sealed class BladeMappingActionExecutor : IAsyncDisposable
     }
 
     private readonly record struct OutputKey(int ScanCode, bool Extended);
+
+    private readonly record struct PendingLeafAction(
+        BladeMappingInputEvent Input,
+        BladeMappingAction Action);
 
     private sealed class OwnerState
     {

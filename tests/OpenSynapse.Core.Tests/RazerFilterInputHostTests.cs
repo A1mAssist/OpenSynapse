@@ -129,6 +129,42 @@ public sealed class RazerFilterInputHostTests
         Assert.True(driver.Disposed);
     }
 
+    [Fact]
+    public async Task ConsumerUsageUsesOfficialInputIoctlAndIsReleasedOnStop()
+    {
+        var driver = new FakeDriverChannel();
+        var host = new RazerFilterInputHost(driver, static _ => { });
+        await host.StartAsync();
+
+        host.SendConsumerUsage(0x6F);
+        var press = driver.Controls.Last();
+        Assert.Equal(RazerFilterInputProtocol.SubmitInput, press.Code);
+        Assert.Equal(0x6F, BitConverter.ToUInt16(press.Payload, 8));
+
+        await host.DisposeAsync();
+
+        var release = Assert.Single(driver.Controls, static item =>
+            item.Code == RazerFilterInputProtocol.SubmitInput &&
+            BitConverter.ToUInt16(item.Payload, 8) == 0);
+        Assert.Equal(RazerFilterInputProtocol.ConsumerInputLength, release.Payload.Length);
+    }
+
+    [Fact]
+    public async Task FailedConsumerPressIsStillReleasedOnStop()
+    {
+        var driver = new FakeDriverChannel { FailControlAt = 26 };
+        var host = new RazerFilterInputHost(driver, static _ => { });
+        await host.StartAsync();
+
+        await Assert.ThrowsAsync<IOException>(() =>
+            Task.Run(() => host.SendConsumerUsage(0x70)));
+        await host.DisposeAsync();
+
+        Assert.Contains(driver.Controls, static item =>
+            item.Code == RazerFilterInputProtocol.SubmitInput &&
+            BitConverter.ToUInt16(item.Payload, 8) == 0);
+    }
+
     private static byte[] InputFrame(uint eventType, uint kind, ushort code, ushort flag)
     {
         var frame = new byte[RazerFilterInputProtocol.InputFrameLength];

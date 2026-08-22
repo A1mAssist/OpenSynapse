@@ -51,6 +51,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         ];
     private static readonly BladeWaveDirection[] BladeWaveDirections =
         [BladeWaveDirection.Right, BladeWaveDirection.Left];
+    private static readonly TimeSpan BladeBrightnessVerificationDelay =
+        TimeSpan.FromMilliseconds(150);
 
     private readonly IDeviceDiscovery _discovery;
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
@@ -75,6 +77,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly BladeFanCurveRuntime _bladeFanRuntime;
     private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
+    private readonly object _bladeBrightnessGate = new();
+    private Task _bladeBrightnessWriter = Task.CompletedTask;
+    private byte? _desiredBladeBrightness;
+    private bool _bladeBrightnessWriterActive;
+    private Task _bladeBrightnessVerification = Task.CompletedTask;
+    private long _bladeBrightnessVerificationGeneration;
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
     private ProfileDocument _profile = ProfileDocument.CreateDefault();
     private bool? _lastPowerState;
@@ -1184,14 +1192,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             _deviceTelemetryReader,
             _powerSourceProvider.IsPluggedIn,
             cancellationToken);
-        if (result.Errors.Count > 0)
-        {
-            SetDeviceOperationError(AppStrings.Format(
-                "ProfileApplyError",
-                "配置应用：{0}",
-                string.Join("; ", result.Errors)));
-        }
-
         return result;
     }
 
@@ -1523,6 +1523,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             return;
         }
 
+        Task brightnessWriter;
+        lock (_bladeBrightnessGate)
+        {
+            _desiredBladeBrightness = null;
+            brightnessWriter = _bladeBrightnessWriter;
+        }
+        await brightnessWriter.ConfigureAwait(false);
+        Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
+        await _bladeBrightnessVerification.ConfigureAwait(false);
         _ = await StopBladeFanControlAsync("application-exit").ConfigureAwait(false);
         try
         {
@@ -1773,6 +1782,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
                 ApplyDeviceTelemetry(telemetry);
             }
+            var viperAvailable = viper is not null &&
+                DeviceRowViewModel.CountCapabilities("viper-184", telemetry).Successful > 0;
             var bladeProfileBlocked = profileApply?.Errors.Any(error =>
                 error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
             var fanApply = bladeProfileBlocked
@@ -1781,11 +1792,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     Changed: true)
                 : await ApplyLoadedFanProfileAsync(blade, powerState, cancellationToken);
             var viperMappingError = await ApplyLoadedViperMappingProfileAsync(
-                viper, powerState, cancellationToken);
-            if (viperMappingError is not null)
-            {
-                SetDeviceOperationError(viperMappingError);
-            }
+                viperAvailable ? viper : null, powerState, cancellationToken);
             if (fanApply.Changed && blade is { Access: DeviceAccessState.Available })
             {
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
@@ -1795,8 +1802,23 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
                 ? null
                 : await ApplyLoadedLightingProfileAsync(blade, powerState, cancellationToken);
-            var viperAvailable = viper is not null &&
-                DeviceRowViewModel.CountCapabilities("viper-184", telemetry).Successful > 0;
+            var profileOperationErrors = profileApply?.Errors
+                .Where(error => viperAvailable ||
+                    !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
+                .ToArray() ?? [];
+            var profileOperationError = profileOperationErrors.Length == 0
+                ? string.Empty
+                : AppStrings.Format(
+                    "ProfileApplyError",
+                    "配置应用：{0}",
+                    string.Join("; ", profileOperationErrors));
+            SetDeviceOperationError(string.Join(
+                Environment.NewLine,
+                new[]
+                {
+                    profileOperationError,
+                    viperAvailable ? viperMappingError : null,
+                }.Where(error => !string.IsNullOrWhiteSpace(error))));
             var visibleDevices = viperAvailable
                 ? snapshot.Devices
                 : snapshot.Devices.Where(device => device.ProtocolFamily != "viper-184").ToArray();
@@ -2247,25 +2269,180 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             InternalDisplayRefreshRateHertz = _confirmedInternalDisplayRefreshRateHertz);
     }
 
-    internal async Task StepBladeBrightnessAsync(
+    internal Task StepBladeBrightnessAsync(
         bool increase,
         CancellationToken cancellationToken = default)
     {
-        await RunDeviceOperationAsync("键盘亮度", async () =>
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!_canSetBladeBrightness)
         {
-            if (!_canSetBladeBrightness)
+            throw new InvalidOperationException(AppStrings.Get("键盘亮度状态不可用。"));
+        }
+
+        lock (_bladeBrightnessGate)
+        {
+            var current = _desiredBladeBrightness ?? ToBladeBrightness(BladeBrightnessPercent);
+            var requested = (byte)Math.Clamp(current + (increase ? 16 : -16), 0, 255);
+            if (requested == current)
             {
-                throw new InvalidOperationException(AppStrings.Get("键盘亮度状态不可用。"));
+                return Task.CompletedTask;
             }
 
-            BladeBrightnessPercent = Math.Clamp(
-                _confirmedBladeBrightnessPercent + (increase ? 6.25 : -6.25),
-                0,
-                100);
-            await ApplyBladeBrightnessCoreAsync(cancellationToken);
-        }, cancellationToken, () =>
-            BladeBrightnessPercent = _confirmedBladeBrightnessPercent);
+            _desiredBladeBrightness = requested;
+            BladeBrightnessPercent = Math.Round(
+                requested * 100d / 255,
+                MidpointRounding.AwayFromZero);
+            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
+            if (!_bladeBrightnessWriterActive)
+            {
+                _bladeBrightnessWriterActive = true;
+                _bladeBrightnessWriter = WriteDesiredBladeBrightnessAsync();
+            }
+        }
+        return Task.CompletedTask;
     }
+
+    private async Task WriteDesiredBladeBrightnessAsync()
+    {
+        try
+        {
+            await WriteDesiredBladeBrightnessCoreAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (_bladeBrightnessGate)
+            {
+                _bladeBrightnessWriterActive = false;
+                if (_desiredBladeBrightness is not null && Volatile.Read(ref _disposed) == 0)
+                {
+                    _bladeBrightnessWriterActive = true;
+                    _bladeBrightnessWriter = WriteDesiredBladeBrightnessAsync();
+                }
+            }
+        }
+    }
+
+    private async Task WriteDesiredBladeBrightnessCoreAsync()
+    {
+        byte? lastWritten = null;
+        while (Volatile.Read(ref _disposed) == 0)
+        {
+            byte requested;
+            lock (_bladeBrightnessGate)
+            {
+                if (_desiredBladeBrightness is not byte desired)
+                {
+                    break;
+                }
+                requested = desired;
+            }
+
+            var original = ToBladeBrightness(_confirmedBladeBrightnessPercent);
+            var applied = false;
+            await RunDeviceOperationAsync("键盘亮度", async () =>
+            {
+                try
+                {
+                    await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
+                        _deviceDescriptors,
+                        requested,
+                        CancellationToken.None,
+                        verifyReadback: false);
+                }
+                catch (Exception writeError) when (IsExpectedRuntimeException(writeError))
+                {
+                    try
+                    {
+                        var restored = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
+                            _deviceDescriptors,
+                            original,
+                            CancellationToken.None);
+                        lock (_bladeBrightnessGate)
+                        {
+                            _desiredBladeBrightness = null;
+                        }
+                        SetBladeBrightness(restored);
+                    }
+                    catch (Exception restoreError) when (IsExpectedRuntimeException(restoreError))
+                    {
+                        throw new AggregateException(writeError, restoreError);
+                    }
+
+                    throw;
+                }
+
+                lock (_bladeBrightnessGate)
+                {
+                    if (_desiredBladeBrightness == requested)
+                    {
+                        _desiredBladeBrightness = null;
+                    }
+                }
+                SetBladeBrightness(requested);
+                lastWritten = requested;
+                applied = true;
+            }, CancellationToken.None, () =>
+            {
+                lock (_bladeBrightnessGate)
+                {
+                    _desiredBladeBrightness = null;
+                }
+                BladeBrightnessPercent = _confirmedBladeBrightnessPercent;
+            }, successVerb: "即时写入");
+
+            if (!applied)
+            {
+                return;
+            }
+        }
+
+        if (lastWritten is not null && Volatile.Read(ref _disposed) == 0)
+        {
+            ScheduleBladeBrightnessVerification();
+        }
+    }
+
+    private void ScheduleBladeBrightnessVerification()
+    {
+        var generation = Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
+        _bladeBrightnessVerification = VerifyBladeBrightnessAfterIdleAsync(generation);
+    }
+
+    private async Task VerifyBladeBrightnessAfterIdleAsync(long generation)
+    {
+        await Task.Delay(BladeBrightnessVerificationDelay);
+        if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
+            Volatile.Read(ref _disposed) != 0)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync("键盘亮度", async () =>
+        {
+            bool hasPendingBrightness;
+            lock (_bladeBrightnessGate)
+            {
+                hasPendingBrightness = _desiredBladeBrightness is not null;
+            }
+            if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
+                hasPendingBrightness)
+            {
+                return;
+            }
+
+            var actual = await _deviceTelemetryReader.ReadBladeKeyboardBrightnessAsync(
+                _deviceDescriptors,
+                CancellationToken.None);
+            SetBladeBrightness(actual);
+            _profile.Global.Blade.KeyboardBrightness = actual;
+            await SaveProfileAsync(CancellationToken.None);
+        }, CancellationToken.None, () =>
+            RequestDeviceRefresh());
+    }
+
+    private static byte ToBladeBrightness(double percent) => checked((byte)Math.Round(
+        Math.Clamp(percent, 0, 100) * 255 / 100,
+        MidpointRounding.AwayFromZero));
 
     internal async Task ToggleBladeOneTimeFullChargeAsync(
         CancellationToken cancellationToken = default)
@@ -3085,7 +3262,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     {
         var percent = Math.Round(brightness * 100d / 255, MidpointRounding.AwayFromZero);
         BladeBrightnessText = $"{percent:0}%";
-        BladeBrightnessPercent = percent;
+        lock (_bladeBrightnessGate)
+        {
+            if (_desiredBladeBrightness is null)
+            {
+                BladeBrightnessPercent = percent;
+            }
+        }
         _confirmedBladeBrightnessPercent = percent;
     }
 

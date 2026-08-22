@@ -1477,6 +1477,8 @@
   <data name="ModeNotificationTitle.Text" xml:space="preserve"><value>Mode change notifications</value><comment>模式切换通知</comment></data>
   <data name="ModeNotificationDescription.Text" xml:space="preserve"><value>Send a Windows notification after a performance or gaming mode change succeeds.</value><comment>性能模式或游戏模式切换成功后发送 Windows 通知。</comment></data>
   <data name="ModeNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mode change notifications</value><comment>模式切换通知</comment></data>
+  <data name="StartupToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Start with Windows</value><comment>开机启动</comment></data>
+  <data name="SilentStartupToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Silent startup</value><comment>静默启动</comment></data>
   <data name="ActiveProfileShortcutsTitle.Text" xml:space="preserve"><value>Active profile shortcuts</value><comment>活动配置快捷键</comment></data>
   <data name="ActiveProfileShortcutsScope.Text" xml:space="preserve"><value>Saved to the active profile:</value><comment>保存到当前活动配置：</comment></data>
   <data name="ActiveProfileDeviceSettingsDescription.Text" xml:space="preserve"><value>Snap Tap, the verified Blade shortcut preset, and Viper onboard mappings configured on the Devices page are also saved to the active profile.</value><comment>设备页中的 Snap Tap、Blade 已验证快捷键预设和 Viper 板载映射也保存到当前活动配置。</comment></data>

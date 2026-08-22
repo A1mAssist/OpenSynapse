@@ -236,6 +236,64 @@ public sealed class BladeMappingActionExecutorTests
         Assert.Equal(0, callbackCount);
     }
 
+    [Fact]
+    public async Task QueuedLeafActionsDoNotBlockInputAndRemainOrdered()
+    {
+        var trace = new List<BladeMappingOutputKind>();
+        var sent = new List<BladeMappingOutputEvent>();
+        var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirst = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var executor = CreateExecutor(
+            outputs => sent.AddRange(outputs),
+            async (action, cancellationToken) =>
+            {
+                trace.Add(action.Kind);
+                if (trace.Count == 1)
+                {
+                    firstStarted.TrySetResult();
+                    await releaseFirst.Task.WaitAsync(cancellationToken);
+                }
+                else
+                {
+                    secondCompleted.TrySetResult();
+                }
+            });
+
+        executor.QueueLeafAction(
+            Owner(8),
+            new BladeCommandMappingAction(
+                BladeMappingOutputKind.GameMode,
+                BladeMappingCommand.Toggle));
+        await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        await executor.ExecuteAsync(
+            Owner(10),
+            new BladeKeyboardMappingAction(0x20, true, false));
+        await executor.ExecuteAsync(
+            Owner(10),
+            new BladeKeyboardMappingAction(0x20, false, false));
+        Assert.Equal(
+            [
+                new BladeMappingOutputEvent(0x20, true),
+                new BladeMappingOutputEvent(0x20, false),
+            ],
+            sent);
+
+        executor.QueueLeafAction(
+            Owner(9),
+            new BladeCommandMappingAction(
+                BladeMappingOutputKind.BladePerformance,
+                BladeMappingCommand.NextPerformanceMode));
+        Assert.Equal([BladeMappingOutputKind.GameMode], trace);
+
+        releaseFirst.TrySetResult();
+        await secondCompleted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(
+            [BladeMappingOutputKind.GameMode, BladeMappingOutputKind.BladePerformance],
+            trace);
+    }
+
     private static BladeMappingActionExecutor CreateExecutor(
         Action<IReadOnlyList<BladeMappingOutputEvent>> send,
         Func<BladeMappingAction, CancellationToken, ValueTask>? leaf = null,
