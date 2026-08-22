@@ -180,6 +180,7 @@ public sealed class ProfileDefinition
         DpiY = source.DpiY,
         PollingRateHertz = source.PollingRateHertz,
         IdleSeconds = source.IdleSeconds,
+        BatteryChemistry = source.BatteryChemistry,
         DpiStages = source.DpiStages?.Clone(),
         ButtonAssignments = source.ButtonAssignments?.Select(assignment => assignment.Clone()).ToList(),
     };
@@ -382,11 +383,16 @@ public sealed class ViperProfileSettings
     public int? DpiY { get; set; }
     public int? PollingRateHertz { get; set; }
     public int? IdleSeconds { get; set; }
+    public byte? BatteryChemistry { get; set; }
     public ViperDpiStagesProfile? DpiStages { get; set; }
     public List<ViperButtonAssignmentProfile>? ButtonAssignments { get; set; }
 
     internal void ApplySafeDefaults()
     {
+        if (BatteryChemistry is byte chemistry && chemistry > 2)
+        {
+            throw new InvalidDataException("Viper battery chemistry must be 0, 1, or 2.");
+        }
         DpiStages?.ApplySafeDefaults();
         if (ButtonAssignments is null)
         {

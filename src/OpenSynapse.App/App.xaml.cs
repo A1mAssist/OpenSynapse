@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppNotifications;
 using Microsoft.Windows.AppNotifications.Builder;
@@ -25,6 +26,7 @@ public partial class App : Application
     private TrayMenuWindow? _trayMenuWindow;
     private WindowsPerformanceMonitor? _performanceMonitor;
     private BladeLightingController? _bladeLightingController;
+    private ChromaRestHost? _chromaRestHost;
     private readonly BladeSoftwareModeCoordinator _bladeModeCoordinator = new();
     private readonly SemaphoreSlim _audioMuteRuntimeGate = new(1, 1);
     private BladeAudioMuteRuntime? _audioMuteRuntime;
@@ -40,6 +42,7 @@ public partial class App : Application
     private Thread? _mappingWatchdogThread;
     private CancellationTokenSource? _activationCancellation;
     private Task? _shutdownTask;
+    private readonly object _shutdownGate = new();
     private bool _appNotificationsRegistered;
     private AppBehaviorSettings _behaviorSettings = new();
     private readonly LocalDiagnosticLog _diagnosticLog = new();
@@ -148,6 +151,22 @@ public partial class App : Application
         _diagnosticLog.TryWrite("application", "OpenSynapse started.");
         var window = new MainWindow(viewModel, _behaviorSettings, silentLaunch);
         RegisterMainWindow(window, viewModel);
+        try
+        {
+            _chromaRestHost = new ChromaRestHost(
+                () => viewModel.CurrentDeviceDescriptors,
+                _bladeLightingController,
+                () => Volatile.Read(ref _closing) != 0
+                    ? Task.CompletedTask
+                    : viewModel.RestoreBladeLightingAfterExternalAsync());
+            _chromaRestHost.StartAsync();
+            _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
+        }
+        catch (SocketException exception)
+        {
+            _chromaRestHost = null;
+            _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
+        }
         StartMappingWatchdog(window);
         InitializeTray(window, viewModel);
         if (silentLaunch)
@@ -173,7 +192,7 @@ public partial class App : Application
             return;
         }
 
-        await (_shutdownTask ??= ShutdownApplicationAsync(viewModel));
+        await GetShutdownTask(viewModel);
     }
 
     internal async Task ApplyUpdateAndRestartAsync(UpdateManager updateManager, VelopackAsset release)
@@ -183,8 +202,16 @@ public partial class App : Application
             throw new InvalidOperationException("OpenSynapse is not ready to restart for an update.");
         }
 
-        await (_shutdownTask ??= ShutdownApplicationAsync(_audioMuteViewModel));
+        await GetShutdownTask(_audioMuteViewModel);
         updateManager.ApplyUpdatesAndRestart(release);
+    }
+
+    private Task GetShutdownTask(MainViewModel viewModel)
+    {
+        lock (_shutdownGate)
+        {
+            return _shutdownTask ??= ShutdownApplicationAsync(viewModel);
+        }
     }
 
     private async Task ShutdownApplicationAsync(MainViewModel viewModel)
@@ -192,6 +219,19 @@ public partial class App : Application
         Interlocked.Exchange(ref _closing, 1);
         Interlocked.Increment(ref _audioMuteGeneration);
         StopMappingWatchdog();
+        var chromaRestHost = _chromaRestHost;
+        _chromaRestHost = null;
+        if (chromaRestHost is not null)
+        {
+            try
+            {
+                await chromaRestHost.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("chroma-rest", $"stop failed: {exception}");
+            }
+        }
         if (_audioMuteViewModel is not null)
         {
             _audioMuteViewModel.BladeControlDevicePathChanged -= OnBladeControlDevicePathChanged;
@@ -572,9 +612,7 @@ public partial class App : Application
         _mappingWatchdogThread = new Thread(() =>
         {
             var cancellation = watchdogCancellation.Token;
-            try
-            {
-                while (!cancellation.WaitHandle.WaitOne(TimeSpan.FromSeconds(2)))
+            while (!cancellation.WaitHandle.WaitOne(TimeSpan.FromSeconds(2)))
                 {
                     if (Volatile.Read(ref _closing) != 0)
                     {
@@ -596,11 +634,6 @@ public partial class App : Application
                         return;
                     }
                 }
-            }
-            finally
-            {
-                watchdogCancellation.Dispose();
-            }
         })
         {
             IsBackground = true,
@@ -612,8 +645,26 @@ public partial class App : Application
     private void StopMappingWatchdog()
     {
         var cancellation = Interlocked.Exchange(ref _mappingWatchdogCancellation, null);
-        cancellation?.Cancel();
-        _mappingWatchdogThread = null;
+        var thread = Interlocked.Exchange(ref _mappingWatchdogThread, null);
+        if (cancellation is null)
+        {
+            return;
+        }
+
+        try
+        {
+            cancellation.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        var threadStopped = thread is null || thread == Thread.CurrentThread ||
+            thread.Join(TimeSpan.FromSeconds(3));
+        if (threadStopped)
+        {
+            cancellation.Dispose();
+        }
     }
 
     private async Task StopBladeMappingForExitAsync()
@@ -719,14 +770,34 @@ public partial class App : Application
                 IsDown: true,
                 Command: BladeMappingCommand.BrightnessDown,
             }:
-                await viewModel.StepBladeBrightnessAsync(false, cancellationToken).ConfigureAwait(true);
+                try
+                {
+                    await viewModel.StepBladeBrightnessAsync(false, cancellationToken).ConfigureAwait(true);
+                }
+                catch (Exception exception) when (
+                    exception is System.ComponentModel.Win32Exception or
+                    System.Runtime.InteropServices.COMException or
+                    InvalidOperationException)
+                {
+                    _diagnosticLog.TryWrite("blade-fn", $"Keyboard backlight step was rejected: {exception.Message}");
+                }
                 break;
             case BladeBacklightMappingAction
             {
                 IsDown: true,
                 Command: BladeMappingCommand.BrightnessUp,
             }:
-                await viewModel.StepBladeBrightnessAsync(true, cancellationToken).ConfigureAwait(true);
+                try
+                {
+                    await viewModel.StepBladeBrightnessAsync(true, cancellationToken).ConfigureAwait(true);
+                }
+                catch (Exception exception) when (
+                    exception is System.ComponentModel.Win32Exception or
+                    System.Runtime.InteropServices.COMException or
+                    InvalidOperationException)
+                {
+                    _diagnosticLog.TryWrite("blade-fn", $"Keyboard backlight step was rejected: {exception.Message}");
+                }
                 break;
             case BladeBacklightMappingAction { IsDown: false }:
                 break;

@@ -25,13 +25,19 @@ internal static class RecoveryHost
                     var ownerExit = owner.WaitForExitAsync(waitCancellation.Token);
                     var shutdownRequest = WaitOneAsync(shutdown, waitCancellation.Token);
                     var completed = await Task.WhenAny(ownerExit, shutdownRequest).ConfigureAwait(false);
-                    if (completed == shutdownRequest && !File.Exists(options.MarkerPath))
+                    if (completed == shutdownRequest)
                     {
                         waitCancellation.Cancel();
-                        return 0;
+                        if (!File.Exists(options.MarkerPath))
+                        {
+                            return 0;
+                        }
                     }
-                    await ownerExit.ConfigureAwait(false);
-                    waitCancellation.Cancel();
+                    else
+                    {
+                        await ownerExit.ConfigureAwait(false);
+                        waitCancellation.Cancel();
+                    }
                 }
             }
 

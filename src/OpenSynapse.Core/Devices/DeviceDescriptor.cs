@@ -13,6 +13,15 @@ public enum DeviceCapabilityState
     Blocked,
 }
 
+public enum DeviceCategory
+{
+    Unknown,
+    Laptop,
+    Mouse,
+    Keyboard,
+    Headset,
+}
+
 public sealed record DeviceDescriptor(
     string Id,
     string Name,
@@ -23,4 +32,5 @@ public sealed record DeviceDescriptor(
     ushort FeatureReportByteLength,
     ushort UsagePage,
     ushort Usage,
-    string ProtocolFamily);
+    string ProtocolFamily,
+    DeviceCategory Category = DeviceCategory.Unknown);

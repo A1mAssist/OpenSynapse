@@ -77,6 +77,7 @@ public static class ProfileResolver
             DpiY = First(power?.DpiY, device?.DpiY, global?.DpiY),
             PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
             IdleSeconds = First(power?.IdleSeconds, device?.IdleSeconds, global?.IdleSeconds),
+            BatteryChemistry = First(power?.BatteryChemistry, device?.BatteryChemistry, global?.BatteryChemistry),
             DpiStages = (power?.DpiStages ?? device?.DpiStages ?? global?.DpiStages)?.Clone(),
             ButtonAssignments = (power?.ButtonAssignments ??
                 device?.ButtonAssignments ??

@@ -487,8 +487,8 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>版本 1.0.2</value>
-    <comment>版本 1.0.2</comment>
+    <value>版本 1.1.3</value>
+    <comment>关于窗口版本</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
     <value>脱离雷云管理已连接的 Razer 设备，调整灯光、性能和常用设置。</value>

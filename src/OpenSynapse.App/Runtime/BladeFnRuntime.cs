@@ -229,6 +229,12 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     () => new ValueTask(recovery.CompleteNormalShutdownAsync()),
                     errors).ConfigureAwait(false);
             }
+            else
+            {
+                await TryAsync(
+                    () => new ValueTask(recovery.RecoverAndShutdownAsync()),
+                    errors).ConfigureAwait(false);
+            }
             await TryAsync(recovery.DisposeAsync, errors).ConfigureAwait(false);
         }
 
@@ -265,14 +271,23 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                             Kind: BladeMappingOutputKind.Display,
                         } display)
                     {
-                        filter.SendConsumerUsage(display.Command switch
+                        try
                         {
-                            BladeMappingCommand.DriverBrightnessDown => 0x70,
-                            BladeMappingCommand.DriverBrightnessUp => 0x6F,
-                            BladeMappingCommand.DriverBrightnessStop => 0,
-                            _ => throw new InvalidOperationException(
-                                $"Unsupported display command: {display.Command}."),
-                        });
+                            filter.SendConsumerUsage(display.Command switch
+                            {
+                                BladeMappingCommand.DriverBrightnessDown => 0x70,
+                                BladeMappingCommand.DriverBrightnessUp => 0x6F,
+                                BladeMappingCommand.DriverBrightnessStop => 0,
+                                _ => throw new InvalidOperationException(
+                                    $"Unsupported display command: {display.Command}."),
+                            });
+                        }
+                        catch (System.ComponentModel.Win32Exception)
+                        {
+                        }
+                        catch (IOException)
+                        {
+                        }
                     }
                     else if (action is BladeCommandMappingAction or
                         BladeBacklightMappingAction or

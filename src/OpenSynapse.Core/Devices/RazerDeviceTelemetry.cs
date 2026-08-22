@@ -139,6 +139,56 @@ public sealed record ViperButtonAssignment(
     ViperButtonMappingFunction Function,
     IReadOnlyList<byte> FunctionData);
 
+public sealed record DeviceCapabilitySummary(int Available, int Supported);
+
+public static class DeviceCapabilitySummaryCalculator
+{
+    public static DeviceCapabilitySummary Calculate(
+        DeviceDescriptor descriptor,
+        RazerDeviceTelemetry telemetry)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(telemetry);
+        var supportsLocalDimming =
+            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true;
+        return descriptor.ProtocolFamily switch
+        {
+            "blade-710" => new(
+                Count(
+                    telemetry.BladeKeyboardBrightness,
+                    telemetry.BladePerformanceMode,
+                    telemetry.BladeChargeLimitPercent,
+                    telemetry.BladeCpuBoostMode,
+                    telemetry.BladeGpuBoostMode,
+                    telemetry.BladeMaxFanMode,
+                    telemetry.BladeLogoMode,
+                    telemetry.BladeFanMode,
+                    telemetry.BladeCurrentFanCpuRpm,
+                    telemetry.BladeCurrentFanGpuRpm,
+                    telemetry.BladeAdvancedFanCpuModeRaw,
+                    telemetry.BladeAdvancedFanGpuModeRaw,
+                    telemetry.BladeStartupAnimationEnabled,
+                    telemetry.BladeNativeDisplayMode,
+                    telemetry.BladeSkuHardwareConfiguration,
+                    telemetry.BladeOneTimeFullChargeEnabled) +
+                    (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
+                16 + (supportsLocalDimming ? 1 : 0)),
+            "viper-184" => new(
+                Count(
+                    telemetry.ViperBatteryPercent,
+                    telemetry.ViperPollingRateHertz,
+                    telemetry.ViperDpiX,
+                    telemetry.ViperIdleSeconds,
+                    telemetry.ViperDpiStages,
+                    telemetry.ViperLowBatteryThresholdRaw),
+                6),
+            _ => new(0, 0),
+        };
+    }
+
+    private static int Count(params object?[] values) => values.Count(value => value is not null);
+}
+
 public sealed record BladeFanControlState(BladeFanMode Mode, int TargetRpm);
 
 public sealed record BladeFanControlSnapshot(
@@ -175,7 +225,8 @@ public sealed record RazerDeviceTelemetry(
     BladeNativeDisplayMode? BladeNativeDisplayMode = null,
     BladeSkuHardwareConfiguration? BladeSkuHardwareConfiguration = null,
     bool? BladeOneTimeFullChargeEnabled = null,
-    bool? BladeLocalDimmingEnabled = null);
+    bool? BladeLocalDimmingEnabled = null,
+    IReadOnlyDictionary<string, DeviceCapabilitySummary>? CapabilitySummaries = null);
 
 public interface IRazerDeviceTelemetryReader
 {
@@ -299,6 +350,12 @@ public interface IRazerDeviceTelemetryReader
         IReadOnlyList<DeviceDescriptor> devices,
         int seconds,
         CancellationToken cancellationToken = default);
+
+    ValueTask<byte> SetViperBatteryChemistryAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        byte chemistry,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
 
     ValueTask<IReadOnlyList<ViperButtonAssignment>> ReadViperButtonAssignmentsAsync(
         IReadOnlyList<DeviceDescriptor> devices,

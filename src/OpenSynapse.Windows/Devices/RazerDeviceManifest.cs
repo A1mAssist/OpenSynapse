@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -72,7 +73,8 @@ internal sealed class RazerDeviceManifest
         IReadOnlyList<ushort> productIds,
         RazerHidCollection collection,
         string protocolFamily,
-        IReadOnlyDictionary<string, RazerRequestDescriptor> capabilities)
+        IReadOnlyDictionary<string, RazerRequestDescriptor> capabilities,
+        DeviceCategory category)
     {
         SourceName = sourceName;
         Id = id;
@@ -82,6 +84,7 @@ internal sealed class RazerDeviceManifest
         Collection = collection;
         ProtocolFamily = protocolFamily;
         Capabilities = capabilities;
+        Category = category;
     }
 
     internal string SourceName { get; }
@@ -92,6 +95,7 @@ internal sealed class RazerDeviceManifest
     internal RazerHidCollection Collection { get; }
     internal string ProtocolFamily { get; }
     internal IReadOnlyDictionary<string, RazerRequestDescriptor> Capabilities { get; }
+    internal DeviceCategory Category { get; }
 
     internal RazerRequestDescriptor GetRequiredCapability(string capabilityId) =>
         Capabilities.TryGetValue(capabilityId, out var descriptor)

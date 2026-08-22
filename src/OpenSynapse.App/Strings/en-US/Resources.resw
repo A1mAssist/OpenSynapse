@@ -487,8 +487,8 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>Version 1.0.2</value>
-    <comment>版本 1.0.2</comment>
+    <value>Version 1.1.3</value>
+    <comment>About window version</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
     <value>Manage connected Razer devices without Synapse, including lighting, performance, and everyday settings.</value>

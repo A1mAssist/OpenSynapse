@@ -16,7 +16,7 @@
 
 OpenSynapse reads device state and manages hardware-verified lighting, performance, display, battery, and key functions without keeping Razer Synapse running. It never infers protocols from similar model names or sends control commands to unknown devices.
 
-> Current stable release: `v1.1.2`. Only the exact hardware and USB identifiers listed below are supported.
+> Current stable release: `v1.1.3`. Only the exact hardware and USB identifiers listed below are supported.
 
 ## Supported devices
 
@@ -44,8 +44,9 @@ OpenSynapse reads device state and manages hardware-verified lighting, performan
 - Set X/Y DPI from `100..30000` in steps of `50`, with up to five DPI stages.
 - Read and edit Normal / HyperShift onboard mappings in fixed Profile 1.
 - Use verified Off, mouse-button, keyboard-key, and double-click mapping actions.
+- Choose the installed battery chemistry manually (alkaline, NiMH rechargeable, or lithium); the choice is saved to the OpenSynapse profile and written to the mouse for the correct battery curve.
 
-The low-battery threshold remains read only. Viper V3 HyperSpeed does not support `2000 / 4000 / 8000 Hz` HyperPolling.
+Battery chemistry is user-provided and is not guessed or read back from the mouse. The low-battery threshold remains read only. Viper V3 HyperSpeed does not support `2000 / 4000 / 8000 Hz` HyperPolling.
 
 ## Screenshots
 
@@ -106,6 +107,3 @@ Project code is available under the [MIT License](LICENSE). Third-party componen
 Protocol work references and cross-checks [OpenRazer](https://github.com/openrazer/openrazer), [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB), and other public implementations. OpenSynapse is not affiliated with or endorsed by Razer Inc. Razer and related product names are trademarks of their respective owners.
 
 Made with ❤ in C# by [A1mAssist](https://github.com/A1mAssist).
-
-abc def ghi jkl mno pqr stu
-abc def ghi jkl mno pqr stu

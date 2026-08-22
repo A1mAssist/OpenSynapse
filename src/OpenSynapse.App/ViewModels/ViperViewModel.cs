@@ -10,6 +10,8 @@ internal sealed class ViperViewModel
     internal Microsoft.UI.Xaml.Visibility _viperDeviceVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
     internal string _viperStatusText = "未发现";
     internal string _viperBatteryText = "--";
+    internal int _viperBatteryChemistryIndex = -1;
+    internal bool _canSetViperBatteryChemistry;
     internal string _viperPollingRateText = "--";
     internal int _viperPollingRateIndex = -1;
     internal int _confirmedViperPollingRateIndex = -1;
@@ -98,6 +100,7 @@ internal sealed class ViperViewModel
         _viperDpiStagesText = "--";
         _viperLowBatteryThresholdText = "--";
         _viperBatteryText = "--";
+        _viperBatteryChemistryIndex = -1;
         _viperPollingRateText = "--";
         _viperPollingRateIndex = -1;
         _confirmedViperPollingRateIndex = -1;

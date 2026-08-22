@@ -96,7 +96,8 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                         probe.FeatureReportByteLength,
                         probe.UsagePage,
                         probe.Usage,
-                        manifest.ProtocolFamily);
+                        manifest.ProtocolFamily,
+                        manifest.Category);
 
                     var deviceKey = (vendorId, productId);
                     if (collapseProductIds && deviceIndexes.TryGetValue(deviceKey, out var existingIndex))
