@@ -117,7 +117,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     }
                 });
 
-            var inputConsumer = ConsumeAsync(_mapping, _executor, _stop.Token);
+            var inputConsumer = ConsumeAsync(_mapping, _executor, _filter, _stop.Token);
             _inputConsumer = inputConsumer;
             if (_recovery.Completion.IsCompleted)
             {
@@ -242,6 +242,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     private async Task ConsumeAsync(
         BladeMappingInputRuntime mapping,
         BladeMappingActionExecutor executor,
+        RazerFilterInputHost filter,
         CancellationToken cancellationToken)
     {
         try
@@ -259,8 +260,31 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 }
                 if (action is not null)
                 {
-                    await executor.ExecuteAsync(input, action, cancellationToken)
-                        .ConfigureAwait(false);
+                    if (action is BladeCommandMappingAction
+                        {
+                            Kind: BladeMappingOutputKind.Display,
+                        } display)
+                    {
+                        filter.SendConsumerUsage(display.Command switch
+                        {
+                            BladeMappingCommand.DriverBrightnessDown => 0x70,
+                            BladeMappingCommand.DriverBrightnessUp => 0x6F,
+                            BladeMappingCommand.DriverBrightnessStop => 0,
+                            _ => throw new InvalidOperationException(
+                                $"Unsupported display command: {display.Command}."),
+                        });
+                    }
+                    else if (action is BladeCommandMappingAction or
+                        BladeBacklightMappingAction or
+                        BladeAudioMappingAction)
+                    {
+                        executor.QueueLeafAction(input, action);
+                    }
+                    else
+                    {
+                        await executor.ExecuteAsync(input, action, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
                 }
             }
         }
@@ -327,7 +351,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             () => new ValueTask(executor.StopAsync()),
             errors).ConfigureAwait(false);
         throw new AggregateException("Blade Fn input failed closed.", errors);
-        }
+    }
 
     private void UpdateRecoveryKeys(IReadOnlyList<BladeMappingOutputEvent> outputs)
     {

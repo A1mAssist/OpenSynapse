@@ -16,7 +16,7 @@
 
 OpenSynapse reads device state and manages hardware-verified lighting, performance, display, battery, and key functions without keeping Razer Synapse running. It never infers protocols from similar model names or sends control commands to unknown devices.
 
-> Current stable release: `v1.1.1`. Only the exact hardware and USB identifiers listed below are supported.
+> Current stable release: `v1.1.2`. Only the exact hardware and USB identifiers listed below are supported.
 
 ## Supported devices
 

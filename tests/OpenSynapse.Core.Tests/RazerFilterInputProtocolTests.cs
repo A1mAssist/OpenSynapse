@@ -8,6 +8,10 @@ public sealed class RazerFilterInputProtocolTests
     [Fact]
     public void BuildersAndCapturedFramesMatchVerifiedDriverLayout()
     {
+        Assert.Equal(
+            "000000000A000000700000000000000000000000AAAAAAAAAAAAAAAAAAAAAAAA",
+            Convert.ToHexString(RazerFilterInputProtocol.CreateConsumerInput(0x70)));
+
         var hook = RazerFilterInputProtocol.CreateKeyboardHook(0x3B, 1);
         Assert.Equal(RazerFilterInputProtocol.InputHookLength, hook.Length);
         Assert.Equal(1, BitConverter.ToInt32(hook, 4));

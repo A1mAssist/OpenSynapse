@@ -949,11 +949,18 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     public async ValueTask<byte> SetBladeKeyboardBrightnessAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         byte brightness,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool verifyReadback = true)
     {
         var blade = FindReadyDevice(devices, "blade-710")
             ?? throw new InvalidOperationException("Blade 键盘控制通道不可用。");
         EnsureValidated(_validatedBladeBrightnessPath, blade.Descriptor.Id, "请先成功读取 Blade 键盘亮度。");
+
+        if (!verifyReadback)
+        {
+            await WriteBladeBrightnessAsync(blade, brightness, cancellationToken);
+            return brightness;
+        }
 
         var original = await ReadBladeBrightnessAsync(blade, cancellationToken);
         if (original == brightness)
@@ -983,6 +990,16 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             }
             throw new InvalidOperationException(message, exception);
         }
+    }
+
+    public async ValueTask<byte> ReadBladeKeyboardBrightnessAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyDevice(devices, "blade-710")
+            ?? throw new InvalidOperationException("Blade 键盘控制通道不可用。");
+        EnsureValidated(_validatedBladeBrightnessPath, blade.Descriptor.Id, "请先成功读取 Blade 键盘亮度。");
+        return await ReadBladeBrightnessAsync(blade, cancellationToken);
     }
 
     private async Task<byte> ReadBladeBrightnessAsync(

@@ -6,10 +6,21 @@ internal static class RazerFilterInputProtocol
 {
     internal const uint ReadInput = 0x88883018;
     internal const uint EnableInputRedirect = 0x8888301C;
+    internal const uint SubmitInput = 0x88883020;
     internal const uint SetInputHook = 0x88883024;
     internal const uint ClearInputHook = 0x8888302C;
     internal const int InputFrameLength = 0x130;
     internal const int InputHookLength = 0x124;
+    internal const int ConsumerInputLength = 0x20;
+
+    internal static byte[] CreateConsumerInput(ushort usage)
+    {
+        var payload = new byte[ConsumerInputLength];
+        payload.AsSpan(20).Fill(0xAA);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(4), 10);
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(8), usage);
+        return payload;
+    }
 
     // Product 710's 23 official hooks all use modifier zero; Fn layering stays host-side.
     internal static byte[] CreateKeyboardHook(ushort scanCode, ushort flag)

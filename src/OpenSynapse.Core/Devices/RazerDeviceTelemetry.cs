@@ -186,6 +186,11 @@ public interface IRazerDeviceTelemetryReader
     ValueTask<byte> SetBladeKeyboardBrightnessAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         byte brightness,
+        CancellationToken cancellationToken = default,
+        bool verifyReadback = true);
+
+    ValueTask<byte> ReadBladeKeyboardBrightnessAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
         CancellationToken cancellationToken = default);
 
     ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
