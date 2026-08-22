@@ -110,6 +110,34 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
         }
     }
 
+    public async Task RecoverAndShutdownAsync(CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.CompareExchange(ref _completed, 1, 0) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            // Keep the marker so RecoveryHost performs Normal Mode and key cleanup
+            // before it exits; this is the failure path, not a normal shutdown.
+            _shutdown.Set();
+            await _host.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            if (_host.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"RecoveryHost exited with code {_host.ExitCode}.");
+            }
+        }
+        catch
+        {
+            if (!_host.HasExited)
+            {
+                Volatile.Write(ref _completed, 0);
+            }
+            throw;
+        }
+    }
+
     public ValueTask DisposeAsync()
     {
         _state.Dispose(); _shutdown.Dispose(); _host.Dispose();

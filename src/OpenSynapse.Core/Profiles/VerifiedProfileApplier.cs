@@ -292,6 +292,26 @@ public sealed class VerifiedProfileApplier
                     (value, token) => reader.SetViperIdleSecondsAsync(devices, value, token));
             }
 
+            if (viperErrors.Count == 0 && profile.Viper.BatteryChemistry is byte chemistry)
+            {
+                try
+                {
+                    await reader.SetViperBatteryChemistryAsync(
+                        devices,
+                        chemistry,
+                        cancellationToken);
+                    applied++;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    viperErrors.Add($"Viper 电池类型：{exception.Message}");
+                }
+            }
+
             errors.AddRange(viperErrors);
         }
 

@@ -10,6 +10,7 @@
     "featureReportLength": 91
   },
   "protocolFamily": "viper-184",
+  "category": "mouse",
   "transport": {
     "waitMilliseconds": 60
   },
@@ -21,6 +22,7 @@
     "current-dpi.set": { "transactionId": "1F", "dataSize": "07", "commandClass": "04", "commandId": "05", "arguments": "" },
     "idle-timeout.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "07", "commandId": "83", "arguments": "" },
     "idle-timeout.set": { "transactionId": "1F", "dataSize": "02", "commandClass": "07", "commandId": "03", "arguments": "" },
+    "battery-chemistry.set": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "14", "arguments": "" },
     "dpi-stages.get": { "transactionId": "1F", "dataSize": "26", "commandClass": "04", "commandId": "86", "arguments": "01" },
     "dpi-stages.set": { "transactionId": "1F", "dataSize": "26", "commandClass": "04", "commandId": "06", "arguments": "" },
     "low-battery-threshold.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "81", "arguments": "" },

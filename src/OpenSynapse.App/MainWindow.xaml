@@ -199,6 +199,22 @@
                   </Grid>
                   <Border Style="{StaticResource CardStyle}" Padding="16"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_76FCF14149" Text="低电量提醒" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding ViperLowBatteryThresholdText}" FontFamily="Cascadia Mono" Foreground="{StaticResource AccentBrush}" /></StackPanel><TextBlock local:Localized.Uid="Loc_AAABCC9222" Grid.Column="1" Text="只读" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" /></Grid></Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="8">
+                      <TextBlock Text="电池类型" Style="{StaticResource MetricLabelStyle}" />
+                      <TextBlock Text="由你告知鼠标使用的电池种类，用于正确计算电量。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <ComboBox PlaceholderText="请选择电池类型" SelectedIndex="{Binding ViperBatteryChemistryIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetViperBatteryChemistry}" AutomationProperties.Name="电池类型">
+                          <ComboBoxItem Content="碱性电池" />
+                          <ComboBoxItem Content="镍氢充电电池" />
+                          <ComboBoxItem Content="锂电池" />
+                        </ComboBox>
+                        <Button Grid.Column="1" Click="ApplyBatteryChemistryClick" IsEnabled="{Binding CanSetViperBatteryChemistry}" Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.Name="保存电池类型">
+                          <StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock Text="保存" /></StackPanel>
+                        </Button>
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
                       <StackPanel Spacing="3">
                         <TextBlock local:Localized.Uid="Loc_FCAB5D1B32" Text="DPI 档位" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />

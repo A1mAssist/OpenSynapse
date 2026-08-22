@@ -303,6 +303,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public bool CanRefresh => true;
 
+    internal IReadOnlyList<DeviceDescriptor> CurrentDeviceDescriptors => _deviceDescriptors;
+
     public string BladeDeviceName { get => _blade._bladeDeviceName; private set => SetField(ref _blade._bladeDeviceName, value); }
     public string BladeStatusText { get => AppStrings.Get(_blade._bladeStatusText); private set => SetField(ref _blade._bladeStatusText, value); }
     public string BladeBrightnessText { get => _blade._bladeBrightnessText; private set => SetField(ref _blade._bladeBrightnessText, value); }
@@ -455,6 +457,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public Visibility ViperDeviceVisibility { get => _viper._viperDeviceVisibility; private set => SetField(ref _viper._viperDeviceVisibility, value); }
     public string ViperStatusText { get => AppStrings.Get(_viper._viperStatusText); private set => SetField(ref _viper._viperStatusText, value); }
     public string ViperBatteryText { get => _viper._viperBatteryText; private set => SetField(ref _viper._viperBatteryText, value); }
+    public int ViperBatteryChemistryIndex { get => _viper._viperBatteryChemistryIndex; set => SetField(ref _viper._viperBatteryChemistryIndex, value); }
+    public IReadOnlyList<string> ViperBatteryChemistryOptions => AppStrings.Get("碱性电池", "镍氢充电电池", "锂电池");
+    public bool CanSetViperBatteryChemistry { get => _viper._canSetViperBatteryChemistry; private set => SetField(ref _viper._canSetViperBatteryChemistry, value); }
     public string ViperPollingRateText { get => _viper._viperPollingRateText; private set => SetField(ref _viper._viperPollingRateText, value); }
     public int ViperPollingRateIndex { get => _viper._viperPollingRateIndex; set => SetField(ref _viper._viperPollingRateIndex, value); }
     public bool CanSetViperPollingRate { get => _viper._canSetViperPollingRate; private set => SetField(ref _viper._canSetViperPollingRate, value); }
@@ -541,7 +546,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public bool CanSetInternalDisplayRefreshRate { get => _canSetInternalDisplayRefreshRate; private set => SetField(ref _canSetInternalDisplayRefreshRate, value); }
 
     public string EmptyStateText => Devices.Count == 0
-        ? AppStrings.Get("未发现 Blade 16 或 Viper V3 HyperSpeed。")
+        ? AppStrings.Get("未发现目标设备")
         : string.Empty;
 
     public string CpuName => _systemTelemetry.CpuName;
@@ -1587,6 +1592,31 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public Task RefreshDevicesAsync(CancellationToken cancellationToken = default) =>
         RefreshDevicesCoreAsync(null, cancellationToken);
 
+    internal async Task RestoreBladeLightingAfterExternalAsync()
+    {
+        if (_bladeLightingController is null)
+        {
+            return;
+        }
+
+        await _deviceOperationGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            _lightingShadowFingerprint = string.Empty;
+            var blade = _deviceDescriptors.FirstOrDefault(device =>
+                device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+                device.Access == DeviceAccessState.Available);
+            await ApplyLoadedLightingProfileAsync(
+                blade,
+                _powerSourceProvider.IsPluggedIn,
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        finally
+        {
+            _deviceOperationGate.Release();
+        }
+    }
+
     private async Task RefreshDevicesCoreAsync(
         DeviceSnapshot? knownSnapshot,
         CancellationToken cancellationToken,
@@ -1637,7 +1667,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 ApplyDeviceTelemetry(telemetry);
             }
             var viperAvailable = viper is not null &&
-                DeviceRowViewModel.CountCapabilities(DeviceProtocolFamilies.Viper, telemetry).Successful > 0;
+                (telemetry.CapabilitySummaries?.GetValueOrDefault(viper.Id)
+                    ?? DeviceCapabilitySummaryCalculator.Calculate(viper, telemetry)).Available > 0;
             var bladeProfileBlocked = profileApply?.Errors.Any(error =>
                 error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
             var fanApply = bladeProfileBlocked
@@ -2401,6 +2432,26 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }, cancellationToken, () => ViperIdleMinutesValue = _viper._confirmedViperIdleMinutesValue);
     }
 
+    public async Task ApplyViperBatteryChemistryAsync(CancellationToken cancellationToken = default)
+    {
+        if (ViperBatteryChemistryIndex is < 0 or > 2)
+        {
+            return;
+        }
+
+        var chemistry = checked((byte)ViperBatteryChemistryIndex);
+        await RunDeviceOperationAsync("鼠标电池类型", async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetViperBatteryChemistryAsync(
+                _deviceDescriptors,
+                chemistry,
+                cancellationToken);
+            ViperBatteryChemistryIndex = actual;
+            _profile.Global.Viper.BatteryChemistry = actual;
+            await SaveProfileAsync(cancellationToken);
+        }, cancellationToken);
+    }
+
     public async Task ApplyViperDpiStagesAsync(CancellationToken cancellationToken = default)
     {
         if (!CanSetViperDpiStages || ViperDpiStages.Count is < 1 or > 5)
@@ -2910,6 +2961,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             ViperBatteryText = $"{battery}%";
         }
+        var viper = _deviceDescriptors.FirstOrDefault(device =>
+            device.ProtocolFamily == DeviceProtocolFamilies.Viper &&
+            device.Access == DeviceAccessState.Available);
+        if (viper is not null)
+        {
+            var chemistry = ProfileResolver.Resolve(
+                _profile,
+                viper,
+                _powerSourceProvider.IsPluggedIn).Viper.BatteryChemistry;
+            ViperBatteryChemistryIndex = chemistry is byte value ? value : -1;
+        }
         if (telemetry.ViperPollingRateHertz is int pollingRate)
         {
             ViperPollingRateText = $"{pollingRate} Hz";
@@ -2944,6 +3006,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         }
         if (_deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper && device.Access == DeviceAccessState.Available))
         {
+            CanSetViperBatteryChemistry = true;
             _viper._canReadViperButtonMappings = true;
             OnPropertyChanged(nameof(CanReadViperButtonMappings));
             ViperStatusText = telemetry.ViperBatteryPercent is not null ||
@@ -3196,6 +3259,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             nameof(ViperStatusText), nameof(ViperDpiStagesText), nameof(ViperLowBatteryThresholdText),
             nameof(ViperBatteryText), nameof(ViperPollingRateText), nameof(ViperPollingRateIndex),
+            nameof(ViperBatteryChemistryIndex),
+            nameof(CanSetViperBatteryChemistry),
             nameof(CanSetViperPollingRate), nameof(ViperDpiText), nameof(ViperDpiXValue),
             nameof(ViperDpiYValue), nameof(CanSetViperDpi), nameof(ViperIdleText),
             nameof(ViperIdleMinutesValue), nameof(CanSetViperIdle), nameof(ViperDpiStageCount),

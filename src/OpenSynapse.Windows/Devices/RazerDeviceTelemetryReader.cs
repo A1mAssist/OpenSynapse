@@ -337,7 +337,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
         }
 
-        return new RazerDeviceTelemetry(
+        var telemetry = new RazerDeviceTelemetry(
             bladeBrightness,
             bladePerformanceMode,
             bladeFanMode,
@@ -366,6 +366,18 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             bladeSkuHardwareConfiguration,
             bladeOneTimeFullChargeEnabled,
             bladeLocalDimmingEnabled);
+        var capabilitySummaries = new Dictionary<string, DeviceCapabilitySummary>(StringComparer.OrdinalIgnoreCase);
+        if (blade is not null)
+        {
+            capabilitySummaries[blade.Descriptor.Id] =
+                DeviceCapabilitySummaryCalculator.Calculate(blade.Descriptor, telemetry);
+        }
+        if (viper is not null)
+        {
+            capabilitySummaries[viper.Descriptor.Id] =
+                DeviceCapabilitySummaryCalculator.Calculate(viper.Descriptor, telemetry);
+        }
+        return telemetry with { CapabilitySummaries = capabilitySummaries };
     }
 
     public async ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
@@ -1894,6 +1906,27 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             }
             throw new InvalidOperationException(message, exception);
         }
+    }
+
+    public async ValueTask<byte> SetViperBatteryChemistryAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        byte chemistry,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(typeof(ViperBatteryChemistry), chemistry))
+        {
+            throw new ArgumentOutOfRangeException(nameof(chemistry));
+        }
+
+        var viper = FindReadyDevice(devices, "viper-184")
+            ?? throw new InvalidOperationException("Viper 控制通道不可用。");
+        await QueryBuiltRequestAsync(
+            viper,
+            "battery-chemistry.set",
+            ViperProduct184Protocol.CreateSetBatteryChemistryRequest(
+                (ViperBatteryChemistry)chemistry),
+            cancellationToken);
+        return chemistry;
     }
 
     private async Task<int> ReadViperPollingRateAsync(

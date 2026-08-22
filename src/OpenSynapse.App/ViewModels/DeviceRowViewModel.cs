@@ -23,14 +23,18 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         ReportInfo = descriptor.FeatureReportByteLength > 0
             ? $"HID {descriptor.UsagePage:X4}:{descriptor.Usage:X4} · Feature {descriptor.FeatureReportByteLength} B"
             : "Feature report --";
-        (IconGlyph, _iconAutomationSource) = descriptor.ProtocolFamily switch
+        (IconGlyph, _iconAutomationSource) = descriptor.Category switch
         {
-            DeviceProtocolFamilies.Blade => ("\uE7F8", "笔记本设备"),
-            DeviceProtocolFamilies.Viper => ("\uE962", "鼠标设备"),
+            DeviceCategory.Laptop => ("\uE7F8", "笔记本设备"),
+            DeviceCategory.Mouse => ("\uE962", "鼠标设备"),
+            DeviceCategory.Keyboard => ("\uE9D3", "键盘设备"),
+            DeviceCategory.Headset => ("\uE7F6", "耳机设备"),
             _ => ("\uE772", "设备"),
         };
 
-        (_successful, _total) = CountCapabilities(descriptor.ProtocolFamily, telemetry);
+        var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
+            ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+        (_successful, _total) = (summary.Available, summary.Supported);
 
         if (descriptor.Access != DeviceAccessState.Available ||
             descriptor.Capability != DeviceCapabilityState.PendingValidation)
@@ -61,47 +65,6 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 
-    internal static (int Successful, int Total) CountCapabilities(
-        string? protocolFamily,
-        RazerDeviceTelemetry telemetry)
-    {
-        var supportsLocalDimming =
-            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true;
-        return protocolFamily switch
-        {
-            DeviceProtocolFamilies.Blade => (
-                CountAvailable(
-                    telemetry.BladeKeyboardBrightness,
-                    telemetry.BladePerformanceMode,
-                    telemetry.BladeChargeLimitPercent,
-                    telemetry.BladeCpuBoostMode,
-                    telemetry.BladeGpuBoostMode,
-                    telemetry.BladeMaxFanMode,
-                    telemetry.BladeLogoMode,
-                    telemetry.BladeFanMode,
-                    telemetry.BladeCurrentFanCpuRpm,
-                    telemetry.BladeCurrentFanGpuRpm,
-                    telemetry.BladeAdvancedFanCpuModeRaw,
-                    telemetry.BladeAdvancedFanGpuModeRaw,
-                    telemetry.BladeStartupAnimationEnabled,
-                    telemetry.BladeNativeDisplayMode,
-                    telemetry.BladeSkuHardwareConfiguration,
-                    telemetry.BladeOneTimeFullChargeEnabled) +
-                (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
-                16 + (supportsLocalDimming ? 1 : 0)),
-            DeviceProtocolFamilies.Viper => (
-                CountAvailable(
-                    telemetry.ViperBatteryPercent,
-                    telemetry.ViperPollingRateHertz,
-                    telemetry.ViperDpiX,
-                    telemetry.ViperIdleSeconds,
-                    telemetry.ViperDpiStages,
-                    telemetry.ViperLowBatteryThresholdRaw),
-                6),
-            _ => (0, 0),
-        };
-    }
-
     public string Name { get; }
     public string Identity { get; }
     public string Access => AppStrings.Get(_accessSource);
@@ -118,5 +81,4 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public bool IsAvailable { get; }
     public Brush StatusBrush { get; }
 
-    private static int CountAvailable(params object?[] values) => values.Count(value => value is not null);
 }

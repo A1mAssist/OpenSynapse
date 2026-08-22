@@ -10,6 +10,7 @@
     "featureReportLength": 91
   },
   "protocolFamily": "blade-710",
+  "category": "laptop",
   "transport": {
     "waitMilliseconds": 2
   },

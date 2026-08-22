@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -64,6 +65,7 @@ internal sealed class RazerDeviceRegistry
                 ["current-dpi.set"] = new(0x07, 0x04, 0x05, ""),
                 ["idle-timeout.get"] = new(0x02, 0x07, 0x83, ""),
                 ["idle-timeout.set"] = new(0x02, 0x07, 0x03, ""),
+                ["battery-chemistry.set"] = new(0x01, 0x07, 0x14, ""),
                 ["dpi-stages.get"] = new(0x26, 0x04, 0x86, "01"),
                 ["dpi-stages.set"] = new(0x26, 0x04, 0x06, ""),
                 ["low-battery-threshold.get"] = new(0x01, 0x07, 0x81, ""),
@@ -315,6 +317,10 @@ internal sealed class RazerDeviceRegistry
                     $"capability '{capabilityId}' 的等待时间短于内置协议族契约。");
             }
         }
+        if (external.Category != builtIn.Category)
+        {
+            throw new InvalidOperationException("设备类别不符合内置协议族契约。");
+        }
     }
 
     private static RazerDeviceManifest Parse(ManifestDocument document)
@@ -452,8 +458,24 @@ internal sealed class RazerDeviceRegistry
                 ParseWord(source.Collection.Usage, "collection.usage"),
                 checked((ushort)source.Collection.FeatureReportLength)),
             source.ProtocolFamily,
-            capabilities);
+            capabilities,
+            ParseCategory(source.Category, source.ProtocolFamily));
     }
+
+    private static DeviceCategory ParseCategory(string? value, string protocolFamily) => value switch
+    {
+        null or "" => protocolFamily switch
+        {
+            "blade-710" => DeviceCategory.Laptop,
+            "viper-184" => DeviceCategory.Mouse,
+            _ => DeviceCategory.Unknown,
+        },
+        "laptop" => DeviceCategory.Laptop,
+        "mouse" => DeviceCategory.Mouse,
+        "keyboard" => DeviceCategory.Keyboard,
+        "headset" => DeviceCategory.Headset,
+        _ => throw new InvalidOperationException($"未知设备类别：'{value}'。"),
+    };
 
     private static byte ParseByte(string value, string field)
     {
@@ -522,6 +544,7 @@ internal sealed class RazerDeviceRegistry
         public required List<string> ProductIds { get; init; }
         public required CollectionJson Collection { get; init; }
         public required string ProtocolFamily { get; init; }
+        public string? Category { get; init; }
         public required TransportJson Transport { get; init; }
         public required Dictionary<string, RequestJson> Capabilities { get; init; }
     }

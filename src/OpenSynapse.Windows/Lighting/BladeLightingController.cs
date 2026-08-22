@@ -42,6 +42,11 @@ public interface IBladeLightingController : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     Task StopAsync();
+
+    Task ApplyExternalAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        ChromaExternalFrameSource source,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class BladeLightingController : IBladeLightingController
@@ -58,6 +63,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private readonly BladeSoftwareModeCoordinator _modeCoordinator;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private SoftwareLightingRuntime? _runtime;
+    private ChromaExternalFrameSource? _externalSource;
     private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;
     private byte _transactionId;
@@ -115,6 +121,10 @@ public sealed class BladeLightingController : IBladeLightingController
         try
         {
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            if (_externalSource is not null && _runtime is not null && !_runtimeCompletion.IsCompleted)
+            {
+                return;
+            }
             var (device, manifest) = FindReadyBlade(devices);
             await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
             await StopCoreAsync().ConfigureAwait(false);
@@ -164,37 +174,69 @@ public sealed class BladeLightingController : IBladeLightingController
                 {
                     source = new EffectFrameSource(effect);
                 }
-                var runtime = inputAdapter is null
-                    ? new SoftwareLightingRuntime(pump, source, FrameInterval)
-                    : new SoftwareLightingRuntime(pump, source, FrameInterval, inputAdapter);
-                _runtime = runtime;
-                _runtimeCompletion = runtime.Completion;
-                _ = runtime.Completion.ContinueWith(
-                    completed =>
-                    {
-                        _ = completed.Exception;
-                        Interlocked.CompareExchange(ref _runtime, null, runtime);
-                    },
-                    CancellationToken.None,
-                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Default);
+                await StartRuntimeAsync(pump, source, inputAdapter, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
                 try
                 {
-                    await pump.FirstFrameApplied.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
                 }
                 catch
                 {
-                    _runtime = null;
-                    try
-                    {
-                        await runtime.DisposeAsync().ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        // The apply failure remains the useful error; runtime completion is still observable.
-                    }
-                    throw;
+                    // Preserve the takeover failure as the primary error.
                 }
+                throw;
+            }
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task ApplyExternalAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        ChromaExternalFrameSource source,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(devices);
+        ArgumentNullException.ThrowIfNull(source);
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (ReferenceEquals(_externalSource, source) &&
+                _runtime is not null &&
+                !_runtimeCompletion.IsCompleted)
+            {
+                return;
+            }
+
+            var (device, manifest) = FindReadyBlade(devices);
+            await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
+            await StopCoreAsync().ConfigureAwait(false);
+            _transactionId = 0;
+            _modeLease = await _modeCoordinator.AcquireAsync(
+                device.Id,
+                token => SendAsync(device.Id,
+                    BladeDeviceModeProtocol.CreateSetSoftwareRequest(NextTransactionId()), token),
+                () => SendAsync(device.Id,
+                    BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
+                    CancellationToken.None),
+                cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await SendAsync(device.Id,
+                    BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
+                    cancellationToken).ConfigureAwait(false);
+                var pump = new BladeMatrixFramePump(
+                    _transport,
+                    device.Id,
+                    token => RestoreAsync(device.Id, token));
+                await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
+                _externalSource = source;
             }
             catch
             {
@@ -251,6 +293,7 @@ public sealed class BladeLightingController : IBladeLightingController
     {
         var runtime = _runtime;
         _runtime = null;
+        _externalSource = null;
         try
         {
             if (runtime is not null)
@@ -272,6 +315,46 @@ public sealed class BladeLightingController : IBladeLightingController
         }
 
         await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    private async Task StartRuntimeAsync(
+        BladeMatrixFramePump pump,
+        ISoftwareLightingFrameSource source,
+        ILightingInputAdapter? inputAdapter,
+        CancellationToken cancellationToken)
+    {
+        var runtime = inputAdapter is null
+            ? new SoftwareLightingRuntime(pump, source, FrameInterval)
+            : new SoftwareLightingRuntime(pump, source, FrameInterval, inputAdapter);
+        _runtime = runtime;
+        _runtimeCompletion = runtime.Completion;
+        _ = runtime.Completion.ContinueWith(
+            completed =>
+            {
+                _ = completed.Exception;
+                Interlocked.CompareExchange(ref _runtime, null, runtime);
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+        try
+        {
+            await pump.FirstFrameApplied.WaitAsync(cancellationToken).ConfigureAwait(false);
+            _externalSource = source as ChromaExternalFrameSource;
+        }
+        catch
+        {
+            _runtime = null;
+            try
+            {
+                await runtime.DisposeAsync().ConfigureAwait(false);
+            }
+            catch
+            {
+                // The apply failure remains the useful error; runtime completion is still observable.
+            }
+            throw;
+        }
     }
 
     private (DeviceDescriptor Device, RazerDeviceManifest Manifest) FindReadyBlade(
