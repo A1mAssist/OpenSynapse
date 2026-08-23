@@ -10,6 +10,10 @@ public sealed class ChromaExternalFrameSource : ISoftwareLightingFrameSource
 {
     private readonly RazerRgb[] _blackFrame = new RazerRgb[QuickLightingEngine.PixelCount];
     private RazerRgb[] _latestFrame;
+    private long _publishedFrames;
+    private long _duplicateFrames;
+    private long _version;
+    private long _lastPublishedAtUnixMilliseconds;
 
     public ChromaExternalFrameSource()
     {
@@ -24,7 +28,19 @@ public sealed class ChromaExternalFrameSource : ISoftwareLightingFrameSource
         return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(Volatile.Read(ref _latestFrame));
     }
 
-    public void Publish(IReadOnlyList<RazerRgb> frame)
+    public long PublishedFrames => Interlocked.Read(ref _publishedFrames);
+    public long DuplicateFrames => Interlocked.Read(ref _duplicateFrames);
+    public long Version => Interlocked.Read(ref _version);
+    public DateTimeOffset? LastPublishedAt
+    {
+        get
+        {
+            var value = Interlocked.Read(ref _lastPublishedAtUnixMilliseconds);
+            return value == 0 ? null : DateTimeOffset.FromUnixTimeMilliseconds(value);
+        }
+    }
+
+    public bool Publish(IReadOnlyList<RazerRgb> frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
         if (frame.Count != QuickLightingEngine.PixelCount)
@@ -32,15 +48,45 @@ public sealed class ChromaExternalFrameSource : ISoftwareLightingFrameSource
             throw new ArgumentException("Chroma 外部帧必须包含完整的 Blade 矩阵。", nameof(frame));
         }
 
-        Volatile.Write(ref _latestFrame, frame.ToArray());
+        var copy = frame.ToArray();
+        var previous = Volatile.Read(ref _latestFrame);
+        if (previous.AsSpan().SequenceEqual(copy))
+        {
+            Interlocked.Increment(ref _duplicateFrames);
+            return false;
+        }
+
+        Volatile.Write(ref _latestFrame, copy);
+        Interlocked.Increment(ref _publishedFrames);
+        Interlocked.Increment(ref _version);
+        Interlocked.Exchange(
+            ref _lastPublishedAtUnixMilliseconds,
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        return true;
     }
 
-    public void Clear() => Publish(_blackFrame);
+    public bool Clear() => Publish(_blackFrame);
 }
 
 public static class ChromaKeyboardFrameMapper
 {
     private const uint KeyActiveMask = 0x01000000;
+    private const int ChromaColumns = 22;
+    private static readonly short[] ChromaToLogicalTarget =
+    [
+        // Chroma row 0: Esc, F1-F12 and Pause in the Blade power-key position.
+        -1, 0, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, -1, -1, 15, -1, -1, -1, -1,
+        // Chroma row 1: grave, number row and Backspace.
+        -1, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, -1, -1, -1, -1, -1, -1, -1,
+        // Chroma row 2: Q row, Insert and Page Up/M1.
+        -1, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 13, -1, 31, -1, -1, -1, -1,
+        // Chroma row 3: home row, Enter, Delete, Page Down/M2 and the far-right M3 key.
+        -1, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, -1, 62, 14, -1, 47, -1, -1, -1, 63,
+        // Chroma row 4: shift row, Up and the far-right M4 key.
+        -1, 64, -1, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, -1, 78, -1, 93, -1, -1, -1, -1, 79,
+        // Chroma row 5: modifiers, Fn, Copilot/Menu, arrows and M5. Space has no LED.
+        -1, 80, 82, 83, -1, -1, -1, -1, -1, -1, -1, 89, 81, 90, 91, 92, 109, 94, -1, -1, -1, 95,
+    ];
 
     public static RazerRgb[] Static(RazerRgb color) =>
         QuickLightingEngine.RenderSolid(color);
@@ -48,13 +94,13 @@ public static class ChromaKeyboardFrameMapper
     public static RazerRgb[] Custom(IReadOnlyList<IReadOnlyList<uint>> matrix)
     {
         ValidateMatrix(matrix, 6, 22, nameof(matrix));
-        return BladeLightingLayout.MapToDeviceFrame(ToLogicalFrame(matrix, ToRgb));
+        return BladeLightingLayout.MapToDeviceFrame(ToSixRowLogicalFrame(matrix, ToRgb));
     }
 
     public static RazerRgb[] Custom2(IReadOnlyList<IReadOnlyList<uint>> matrix)
     {
         ValidateMatrix(matrix, 8, 24, nameof(matrix));
-        return BladeLightingLayout.MapToDeviceFrame(ToLogicalFrame(matrix, ToRgb));
+        return BladeLightingLayout.MapToDeviceFrame(ToExtendedLogicalFrame(matrix, ToRgb));
     }
 
     public static RazerRgb[] Custom2Key(
@@ -63,7 +109,7 @@ public static class ChromaKeyboardFrameMapper
     {
         ValidateMatrix(colors, 8, 24, nameof(colors));
         ValidateMatrix(keys, 6, 22, nameof(keys));
-        var output = ToLogicalFrame(colors, ToRgb);
+        var output = ToExtendedLogicalFrame(colors, ToRgb);
         ApplyKeyOverrides(output, keys);
         return BladeLightingLayout.MapToDeviceFrame(output);
     }
@@ -76,7 +122,7 @@ public static class ChromaKeyboardFrameMapper
         ArgumentNullException.ThrowIfNull(keys);
         ValidateMatrix(colors, 6, 22, nameof(colors));
         ValidateMatrix(keys, 6, 22, nameof(keys));
-        var output = ToLogicalFrame(colors, ToRgb);
+        var output = ToSixRowLogicalFrame(colors, ToRgb);
         ApplyKeyOverrides(output, keys);
         return BladeLightingLayout.MapToDeviceFrame(output);
     }
@@ -85,22 +131,20 @@ public static class ChromaKeyboardFrameMapper
         RazerRgb[] output,
         IReadOnlyList<IReadOnlyList<uint>> keys)
     {
-        for (var row = 0; row < QuickLightingEngine.LogicalRows; row++)
+        for (var row = 0; row < keys.Count; row++)
         {
-            var sourceRow = Math.Min(
-                (int)((long)row * keys.Count / QuickLightingEngine.LogicalRows),
-                keys.Count - 1);
-            var source = keys[sourceRow];
-            for (var column = 0; column < QuickLightingEngine.LogicalColumns; column++)
+            var source = keys[row];
+            for (var column = 0; column < source.Count; column++)
             {
-                var sourceColumn = Math.Min(
-                    (int)((long)column * source.Count / QuickLightingEngine.LogicalColumns),
-                    source.Count - 1);
-                var encoded = source[sourceColumn];
+                var target = GetChromaTarget(row, column);
+                var encoded = source[column];
                 if ((encoded & KeyActiveMask) != 0)
                 {
-                    output[row * QuickLightingEngine.LogicalColumns + column] =
+                    if (target >= 0)
+                    {
+                        output[target] =
                         ToRgb((~encoded) & 0x00FFFFFFu);
+                    }
                 }
             }
         }
@@ -112,29 +156,51 @@ public static class ChromaKeyboardFrameMapper
         (byte)((bgr >> 8) & 0xFF),
         (byte)((bgr >> 16) & 0xFF));
 
-    private static RazerRgb[] ToLogicalFrame(
+    private static RazerRgb[] ToExtendedLogicalFrame(
         IReadOnlyList<IReadOnlyList<uint>> matrix,
         Func<uint, RazerRgb> convert)
     {
         var output = new RazerRgb[BladeLightingLayout.LogicalPixelCount];
-        for (var row = 0; row < QuickLightingEngine.LogicalRows; row++)
+        for (var row = 0; row < 6; row++)
         {
-            var sourceRow = Math.Min(
-                (int)((long)row * matrix.Count / QuickLightingEngine.LogicalRows),
-                matrix.Count - 1);
-            var source = matrix[sourceRow];
-            for (var column = 0; column < QuickLightingEngine.LogicalColumns; column++)
+            for (var column = 0; column < ChromaColumns; column++)
             {
-                var sourceColumn = Math.Min(
-                    (int)((long)column * source.Count / QuickLightingEngine.LogicalColumns),
-                    source.Count - 1);
-                output[row * QuickLightingEngine.LogicalColumns + column] =
-                    convert(source[sourceColumn]);
+                var target = GetChromaTarget(row, column);
+                if (target >= 0)
+                {
+                    output[target] = convert(matrix[row + 1][column + 1]);
+                }
             }
         }
 
         return output;
     }
+
+    private static RazerRgb[] ToSixRowLogicalFrame(
+        IReadOnlyList<IReadOnlyList<uint>> matrix,
+        Func<uint, RazerRgb> convert)
+    {
+        var output = new RazerRgb[BladeLightingLayout.LogicalPixelCount];
+        for (var row = 0; row < matrix.Count; row++)
+        {
+            var source = matrix[row];
+            for (var column = 0; column < source.Count; column++)
+            {
+                var target = GetChromaTarget(row, column);
+                if (target >= 0)
+                {
+                    output[target] = convert(source[column]);
+                }
+            }
+        }
+
+        return output;
+    }
+
+    private static int GetChromaTarget(int row, int column) =>
+        (uint)row < 6 && (uint)column < ChromaColumns
+            ? ChromaToLogicalTarget[row * ChromaColumns + column]
+            : -1;
 
     private static void ValidateMatrix(
         IReadOnlyList<IReadOnlyList<uint>> matrix,

@@ -20,6 +20,8 @@ internal sealed class AppBehaviorSettings
         "behavior.json");
 
     public bool ModeChangeNotificationsEnabled { get; set; } = true;
+    public bool ExperimentalChromaRestEnabled { get; set; } = true;
+    public bool RestoreLightingAfterChromaSession { get; set; } = true;
     public HashSet<BladePerformanceMode> PerformanceCycleModes { get; set; } =
         [.. SupportedPerformanceCycleModes];
     public HashSet<int>? RefreshRateCycleHertz { get; set; }

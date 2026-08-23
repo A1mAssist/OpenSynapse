@@ -5,6 +5,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
+using System.Net.Sockets;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
 using System.Diagnostics;
@@ -36,6 +38,9 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly bool _silentLaunch;
     private readonly AppBehaviorSettings _behaviorSettings;
+    private readonly Func<bool, Task>? _setChromaRestEnabled;
+    private readonly Func<ChromaRestSnapshot>? _getChromaRestSnapshot;
+    private readonly DispatcherQueueTimer _chromaRestStatusTimer;
     private readonly UpdateManager _updateManager = new(
         new GithubSource(UpdateRepositoryUrl, null, prerelease: false));
     private bool _trayLifecycleEnabled;
@@ -55,14 +60,20 @@ public sealed partial class MainWindow : Window
     private int _introductionStep = -1;
     private FrameworkElement? _introductionTarget;
     private AboutWindow? _aboutWindow;
+    private long _lastChromaFrames;
+    private DateTimeOffset _lastChromaSample = DateTimeOffset.UtcNow;
 
     internal MainWindow(
         MainViewModel viewModel,
         AppBehaviorSettings behaviorSettings,
-        bool silentLaunch = false)
+        bool silentLaunch = false,
+        Func<bool, Task>? setChromaRestEnabled = null,
+        Func<ChromaRestSnapshot>? getChromaRestSnapshot = null)
     {
         _viewModel = viewModel;
         _behaviorSettings = behaviorSettings;
+        _setChromaRestEnabled = setChromaRestEnabled;
+        _getChromaRestSnapshot = getChromaRestSnapshot;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException("OpenSynapse 主窗口必须在 DispatcherQueue 线程创建。");
@@ -72,6 +83,10 @@ public sealed partial class MainWindow : Window
         SelectLanguage(AppLanguageSettings.Current);
         _languageSelectionReady = true;
         InitializeBehaviorSettingsUi();
+        _chromaRestStatusTimer = _dispatcherQueue.CreateTimer();
+        _chromaRestStatusTimer.Interval = TimeSpan.FromSeconds(1);
+        _chromaRestStatusTimer.Tick += OnChromaRestStatusTick;
+        _chromaRestStatusTimer.Start();
         InitializeUpdateUi();
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
@@ -654,6 +669,8 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        _chromaRestStatusTimer.Stop();
+        _chromaRestStatusTimer.Tick -= OnChromaRestStatusTick;
         _aboutWindow?.Close();
         _aboutWindow = null;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
@@ -682,6 +699,7 @@ public sealed partial class MainWindow : Window
             AppStrings.Reset();
             _viewModel.RefreshLocalization();
             Localized.RefreshTree(RootLayout);
+            RefreshChromaRestStatus();
             _aboutWindow?.RefreshLocalization();
             ((App)Application.Current).RefreshTrayLocalization();
             RefreshIntroductionLocalization();
@@ -709,6 +727,9 @@ public sealed partial class MainWindow : Window
     private void InitializeBehaviorSettingsUi()
     {
         ModeNotificationToggle.IsOn = _behaviorSettings.ModeChangeNotificationsEnabled;
+        ChromaRestToggle.IsOn = _behaviorSettings.ExperimentalChromaRestEnabled;
+        ChromaRestoreToggle.IsOn = _behaviorSettings.RestoreLightingAfterChromaSession;
+        RefreshChromaRestStatus();
         foreach (var checkBox in PerformanceCycleModesPanel.Children.OfType<CheckBox>())
         {
             checkBox.IsChecked = checkBox.Tag is string tag &&
@@ -717,6 +738,90 @@ public sealed partial class MainWindow : Window
         }
         RebuildRefreshRateCycleOptions();
         _behaviorUiReady = true;
+    }
+
+    private void RefreshChromaRestStatus()
+    {
+        if (!_behaviorSettings.ExperimentalChromaRestEnabled)
+        {
+            ChromaRestStatusText.Text = AppStrings.Get("ChromaRestStatusDisabled");
+            return;
+        }
+
+        var snapshot = _getChromaRestSnapshot?.Invoke() ?? default;
+        if (!snapshot.IsRunning)
+        {
+            ChromaRestStatusText.Text = AppStrings.Get("ChromaRestStatusUnavailable");
+            return;
+        }
+
+        var endpoint = "127.0.0.1:54235";
+        var now = DateTimeOffset.UtcNow;
+        var elapsed = Math.Max((now - _lastChromaSample).TotalSeconds, 0.001);
+        var framesPerSecond = Math.Max(0, snapshot.FramesAccepted - _lastChromaFrames) / elapsed;
+        _lastChromaFrames = snapshot.FramesAccepted;
+        _lastChromaSample = now;
+        ChromaRestStatusText.Text = snapshot.ActiveSessionTitle is { Length: > 0 } title
+            ? AppStrings.FormatText("ChromaRestStatusSession", endpoint, title, framesPerSecond, snapshot.FramesSkipped)
+            : AppStrings.FormatText("ChromaRestStatusReady", endpoint);
+    }
+
+    private void OnChromaRestStatusTick(DispatcherQueueTimer sender, object args) =>
+        RefreshChromaRestStatus();
+
+    private async void ChromaRestToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle)
+        {
+            return;
+        }
+
+        var previous = _behaviorSettings.ExperimentalChromaRestEnabled;
+        try
+        {
+            _behaviorSettings.ExperimentalChromaRestEnabled = toggle.IsOn;
+            _behaviorSettings.Save();
+            if (_setChromaRestEnabled is not null)
+            {
+                await _setChromaRestEnabled(toggle.IsOn);
+            }
+            RefreshChromaRestStatus();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or SocketException or System.Security.SecurityException)
+        {
+            _behaviorSettings.ExperimentalChromaRestEnabled = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            _viewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
+    }
+
+    private void ChromaRestoreToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle)
+        {
+            return;
+        }
+
+        var previous = _behaviorSettings.RestoreLightingAfterChromaSession;
+        try
+        {
+            _behaviorSettings.RestoreLightingAfterChromaSession = toggle.IsOn;
+            _behaviorSettings.Save();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            _behaviorSettings.RestoreLightingAfterChromaSession = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            _viewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
     }
 
     private void RebuildRefreshRateCycleOptions(bool force = false)

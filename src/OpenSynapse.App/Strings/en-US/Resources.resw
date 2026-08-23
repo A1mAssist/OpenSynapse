@@ -487,7 +487,7 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>Version 1.1.3</value>
+    <value>Version 1.1.4</value>
     <comment>About window version</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
@@ -1513,4 +1513,15 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>Gaming mode changed, but the profile could not be saved.</value><comment>游戏模式配置保存失败</comment></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>The Blade Fn runtime stopped safely before audio synchronization completed.</value><comment>Fn 运行时提前停止</comment></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>Sampling failed · showing the last value</value><comment>性能采样不可用</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma REST</value><comment>Chroma REST title</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Allow compatible REST games and integrations to control the Blade keyboard locally. Native Chroma SDK is not supported.</value><comment>Chroma REST description</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma REST</value><comment>Chroma REST toggle</comment></data>
+  <data name="ChromaRestStatus.Text" xml:space="preserve"><value>Disabled</value><comment>Chroma REST 状态</comment></data>
+  <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>Disabled</value><comment>Chroma REST 已禁用</comment></data>
+  <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>Unavailable</value><comment>Chroma REST 不可用</comment></data>
+  <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value><comment>Chroma REST 已就绪</comment></data>
+  <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value><comment>Chroma REST 活动会话与帧统计</comment></data>
+  <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value><comment>恢复灯光标题</comment></data>
+  <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value><comment>恢复灯光说明</comment></data>
+  <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore lighting after external control</value><comment>恢复灯光开关</comment></data>
 </root>

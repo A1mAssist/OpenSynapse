@@ -17,15 +17,19 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private const int NotSupported = 50;
     private const int DeviceNotConnected = 1167;
     private const int ClientLimit = 1152;
-    private static readonly TimeSpan SessionTimeout = TimeSpan.FromSeconds(15);
-    private static readonly TimeSpan SessionSweepInterval = TimeSpan.FromSeconds(1);
+    // Chroma clients heartbeat every second; two seconds bounds recovery without
+    // treating a normal short scheduling pause as a game exit.
+    private static readonly TimeSpan SessionTimeout = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan SessionSweepInterval = TimeSpan.FromMilliseconds(100);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _devices;
     private readonly IBladeLightingController _lighting;
     private readonly Func<Task> _restoreLighting;
+    private readonly Func<bool> _restorePersistentEffect;
     private readonly Dictionary<string, Session> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
+    private readonly SemaphoreSlim _effectGate = new(1, 1);
     private readonly CancellationTokenSource _stop = new();
     private readonly ChromaExternalFrameSource _frameSource = new();
     private TcpListener? _listener;
@@ -34,18 +38,42 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private int _started;
     private int _disposed;
     private int _nextSessionId;
+    private long _framesAccepted;
+    private long _framesSkipped;
+    private long _sessionRecoveryFailures;
 
     internal ChromaRestHost(
         Func<IReadOnlyList<DeviceDescriptor>> devices,
         IBladeLightingController lighting,
-        Func<Task> restoreLighting)
+        Func<Task> restoreLighting,
+        Func<bool>? restorePersistentEffect = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _lighting = lighting ?? throw new ArgumentNullException(nameof(lighting));
         _restoreLighting = restoreLighting ?? throw new ArgumentNullException(nameof(restoreLighting));
+        _restorePersistentEffect = restorePersistentEffect ?? (() => true);
     }
 
     internal bool IsRunning => Volatile.Read(ref _started) != 0;
+    internal long FramesAccepted => Interlocked.Read(ref _framesAccepted);
+    internal long FramesSkipped => Interlocked.Read(ref _framesSkipped);
+    internal ChromaRestSnapshot Snapshot => new(
+        IsRunning,
+        ActiveSessionTitle,
+        FramesAccepted,
+        FramesSkipped);
+    internal long SessionRecoveryFailures => Interlocked.Read(ref _sessionRecoveryFailures);
+
+    internal string? ActiveSessionTitle
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _sessions.Values.FirstOrDefault(session => session.Active)?.Title;
+            }
+        }
+    }
 
     internal Task StartAsync()
     {
@@ -90,6 +118,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
 
         await StopAllSessionsAsync().ConfigureAwait(false);
+        _effectGate.Dispose();
         _stop.Dispose();
     }
 
@@ -175,18 +204,20 @@ internal sealed class ChromaRestHost : IAsyncDisposable
 
     private async Task DispatchAsync(StreamWriter writer, string method, string rawPath, string body)
     {
-        var path = rawPath.Split('?', 2)[0];
+        var path = rawPath.Split('?', 2)[0].TrimEnd('/');
         if (method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
         {
             await WriteResponseAsync(writer, 200, new { result = Success }).ConfigureAwait(false);
             return;
         }
-        if (method.Equals("GET", StringComparison.OrdinalIgnoreCase) && path == "/razer/chromasdk")
+        if (method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
+            path.Equals("/razer/chromasdk", StringComparison.OrdinalIgnoreCase))
         {
             await WriteResponseAsync(writer, 200, new { version = "4.0.0" }).ConfigureAwait(false);
             return;
         }
-        if (method.Equals("POST", StringComparison.OrdinalIgnoreCase) && path == "/razer/chromasdk")
+        if (method.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
+            path.Equals("/razer/chromasdk", StringComparison.OrdinalIgnoreCase))
         {
             await InitializeAsync(writer, body).ConfigureAwait(false);
             return;
@@ -198,7 +229,9 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             await WriteResponseAsync(writer, 404, new { result = DeviceNotConnected }).ConfigureAwait(false);
             return;
         }
-        if (suffix.Equals("heartbeat", StringComparison.OrdinalIgnoreCase) && method.Equals("PUT", StringComparison.OrdinalIgnoreCase))
+        if (suffix.Equals("heartbeat", StringComparison.OrdinalIgnoreCase) &&
+            (method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
+             method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
         {
             int tick;
             lock (_gate)
@@ -211,10 +244,50 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
         if (suffix.Equals("keyboard", StringComparison.OrdinalIgnoreCase) && (method.Equals("PUT", StringComparison.OrdinalIgnoreCase) || method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
         {
-            var result = await ApplyKeyboardAsync(session, body).ConfigureAwait(false);
+            var createEffect = method.Equals("POST", StringComparison.OrdinalIgnoreCase);
+            var result = await ApplyKeyboardAsync(session, body, createEffect).ConfigureAwait(false);
             await WriteResponseAsync(writer, 200, method.Equals("POST", StringComparison.OrdinalIgnoreCase)
                 ? new { result = result.Code, id = result.Id }
                 : new { result = result.Code }).ConfigureAwait(false);
+            return;
+        }
+        // Chroma SDK clients use the generic effect endpoint to activate an
+        // effect created by POST /keyboard. Keep the keyboard endpoint above
+        // as a compatibility path, but accept the standard {"id":"..."}
+        // payload here as well.
+        if (suffix.Equals("effect", StringComparison.OrdinalIgnoreCase) &&
+            (method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
+             method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
+        {
+            var result = await ApplyKeyboardAsync(session, body, createEffect: false).ConfigureAwait(false);
+            await WriteResponseAsync(writer, 200, new { result = result.Code }).ConfigureAwait(false);
+            return;
+        }
+        if (method.Equals("DELETE", StringComparison.OrdinalIgnoreCase) &&
+            (suffix.Equals("keyboard", StringComparison.OrdinalIgnoreCase) ||
+             suffix.StartsWith("keyboard/", StringComparison.OrdinalIgnoreCase)))
+        {
+            var effectId = suffix.Length > "keyboard/".Length
+                ? suffix["keyboard/".Length..]
+                : null;
+            var result = await ClearKeyboardEffectAsync(session, effectId).ConfigureAwait(false);
+            await WriteResponseAsync(writer, 200, new { result }).ConfigureAwait(false);
+            return;
+        }
+        if (method.Equals("DELETE", StringComparison.OrdinalIgnoreCase) &&
+            (suffix.Equals("effect", StringComparison.OrdinalIgnoreCase) ||
+             suffix.StartsWith("effect/", StringComparison.OrdinalIgnoreCase)))
+        {
+            var effectId = suffix.Length > "effect/".Length
+                ? suffix["effect/".Length..]
+                : TryReadEffectId(body, out var validEffectId) ? validEffectId : null;
+            if (suffix.Equals("effect", StringComparison.OrdinalIgnoreCase) && effectId is null)
+            {
+                await WriteResponseAsync(writer, 200, new { result = InvalidParameter }).ConfigureAwait(false);
+                return;
+            }
+            var result = await ClearKeyboardEffectAsync(session, effectId).ConfigureAwait(false);
+            await WriteResponseAsync(writer, 200, new { result }).ConfigureAwait(false);
             return;
         }
         if (method.Equals("DELETE", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(suffix))
@@ -247,34 +320,52 @@ internal sealed class ChromaRestHost : IAsyncDisposable
 
             var id = Interlocked.Increment(ref _nextSessionId);
             var session = new Session(id.ToString(), info.Title);
-            lock (_gate) _sessions[session.Id] = session;
+            var stopping = false;
+            lock (_gate)
+            {
+                stopping = _stop.IsCancellationRequested;
+                if (!stopping) _sessions[session.Id] = session;
+            }
+            if (stopping)
+            {
+                await WriteResponseAsync(writer, 503, new { result = DeviceNotConnected }).ConfigureAwait(false);
+                return;
+            }
             await WriteResponseAsync(writer, 200, new
             {
                 sessionid = id,
                 uri = $"http://localhost:{Port}/razer/chromasdk/{session.Id}"
             }).ConfigureAwait(false);
         }
-        catch (JsonException)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException)
         {
             await WriteResponseAsync(writer, 400, new { result = InvalidParameter }).ConfigureAwait(false);
         }
     }
 
-    private async Task<(int Code, string? Id)> ApplyKeyboardAsync(Session session, string body)
+    private async Task<(int Code, string? Id)> ApplyKeyboardAsync(
+        Session session,
+        string body,
+        bool createEffect)
     {
-        await session.ApplyGate.WaitAsync(_stop.Token).ConfigureAwait(false);
+        await _effectGate.WaitAsync(_stop.Token).ConfigureAwait(false);
         try
         {
-            return await ApplyKeyboardCoreAsync(session, body).ConfigureAwait(false);
+            return await ApplyKeyboardCoreAsync(session, body, createEffect).ConfigureAwait(false);
         }
         finally
         {
-            session.ApplyGate.Release();
+            _effectGate.Release();
         }
     }
 
-    private async Task<(int Code, string? Id)> ApplyKeyboardCoreAsync(Session session, string body)
+    private async Task<(int Code, string? Id)> ApplyKeyboardCoreAsync(
+        Session session,
+        string body,
+        bool createEffect)
     {
+        var claimedSession = false;
+        string? effectId = null;
         try
         {
             lock (_gate)
@@ -288,63 +379,236 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                     return (ClientLimit, null);
                 }
             }
-            using var document = JsonDocument.Parse(body);
+            using var document = JsonDocument.Parse(body, new JsonDocumentOptions { MaxDepth = 16 });
             var root = document.RootElement;
-            var effect = root.GetProperty("effect").GetString();
-            RazerRgb[] frame;
-            switch (effect)
+            if (root.ValueKind != JsonValueKind.Object)
             {
-                case "CHROMA_NONE":
-                    frame = new RazerRgb[QuickLightingEngine.PixelCount];
-                    break;
-                case "CHROMA_STATIC":
-                    frame = ChromaKeyboardFrameMapper.Static(
-                        ChromaKeyboardFrameMapper.ToRgb(root.GetProperty("param").GetProperty("color").GetUInt32()));
-                    break;
-                case "CHROMA_CUSTOM":
-                    frame = ChromaKeyboardFrameMapper.Custom(ParseMatrix(
-                        root.GetProperty("param")));
-                    break;
-                case "CHROMA_CUSTOM2":
-                    var custom2 = root.GetProperty("param");
-                    frame = ChromaKeyboardFrameMapper.Custom2Key(
-                        ParseMatrix(custom2.GetProperty("color")),
-                        ParseMatrix(custom2.GetProperty("key")));
-                    break;
-                case "CHROMA_CUSTOM_KEY":
-                    var parameter = root.GetProperty("param");
-                    frame = ChromaKeyboardFrameMapper.CustomKey(
-                        ParseMatrix(parameter.GetProperty("color")),
-                        ParseMatrix(parameter.GetProperty("key")));
-                    break;
-                default:
-                    return (NotSupported, null);
+                return (InvalidParameter, null);
             }
-            _frameSource.Publish(frame);
+
+            RazerRgb[] frame;
+            if (!createEffect && root.TryGetProperty("id", out var idElement))
+            {
+                if (idElement.ValueKind != JsonValueKind.String ||
+                    string.IsNullOrWhiteSpace(effectId = idElement.GetString()) ||
+                    !session.Effects.TryGetValue(effectId, out frame!))
+                {
+                    return (InvalidParameter, null);
+                }
+            }
+            else
+            {
+                if (!root.TryGetProperty("effect", out var effectElement) ||
+                    effectElement.ValueKind != JsonValueKind.String)
+                {
+                    return (InvalidParameter, null);
+                }
+                var parsed = ParseFrame(root, effectElement.GetString());
+                if (parsed.Code != Success)
+                {
+                    return (parsed.Code, null);
+                }
+                frame = parsed.Frame!;
+                if (createEffect)
+                {
+                    if (session.Effects.Count >= 256)
+                    {
+                        return (ClientLimit, null);
+                    }
+                    effectId = Guid.NewGuid().ToString();
+                }
+            }
+
+            lock (_gate)
+            {
+                if (!_sessions.TryGetValue(session.Id, out var current) || !ReferenceEquals(current, session))
+                {
+                    return (DeviceNotConnected, null);
+                }
+                if (_sessions.Values.Any(item => item.Active && !ReferenceEquals(item, session)))
+                {
+                    return (ClientLimit, null);
+                }
+
+                session.Active = true;
+                session.LastHeartbeat = DateTimeOffset.UtcNow;
+                session.ApplyInProgress = true;
+                claimedSession = true;
+            }
+            if (createEffect)
+            {
+                session.Effects[effectId!] = frame;
+            }
+
+            var changed = _frameSource.Publish(frame);
+            if (!changed && !_lighting.RuntimeCompletion.IsCompleted)
+            {
+                Interlocked.Increment(ref _framesSkipped);
+                session.ActiveEffectId = effectId;
+                return (Success, effectId);
+            }
+
             // Re-assert ownership on every frame. If the user changed the
             // normal effect while a game is alive, the next game frame takes
             // the device back without restarting an already active runtime.
-            await _lighting.ApplyExternalAsync(_devices(), _frameSource, _stop.Token).ConfigureAwait(false);
-            lock (_gate)
+            await _lighting.ApplyExternalAsync(
+                _devices(),
+                _frameSource,
+                restorePersistentEffect: false,
+                _stop.Token).ConfigureAwait(false);
+            if (changed)
             {
-                session.LastHeartbeat = DateTimeOffset.UtcNow;
-                session.Active = true;
+                Interlocked.Increment(ref _framesAccepted);
             }
-            return (Success, Guid.NewGuid().ToString());
+            session.ActiveEffectId = effectId;
+            return (Success, effectId);
         }
         catch (InvalidOperationException)
         {
             return (InvalidParameter, null);
         }
+        catch (JsonException)
+        {
+            return (InvalidParameter, null);
+        }
+        catch (FormatException)
+        {
+            return (InvalidParameter, null);
+        }
+        catch (OverflowException)
+        {
+            return (InvalidParameter, null);
+        }
         catch (Exception) when (!_stop.IsCancellationRequested)
         {
+            if (createEffect && effectId is not null)
+            {
+                session.Effects.Remove(effectId);
+            }
+            if (claimedSession)
+            {
+                lock (_gate)
+                {
+                    if (_sessions.TryGetValue(session.Id, out var current) && ReferenceEquals(current, session))
+                    {
+                        session.Active = false;
+                        if (string.Equals(session.ActiveEffectId, effectId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            session.ActiveEffectId = null;
+                        }
+                    }
+                }
+            }
             return (DeviceNotConnected, null);
+        }
+        finally
+        {
+            if (claimedSession)
+            {
+                lock (_gate)
+                {
+                    if (_sessions.TryGetValue(session.Id, out var current) && ReferenceEquals(current, session))
+                    {
+                        session.ApplyInProgress = false;
+                        session.LastHeartbeat = DateTimeOffset.UtcNow;
+                    }
+                }
+            }
         }
     }
 
-    private static List<List<uint>> ParseMatrix(JsonElement element)
+    private static JsonElement RequireObject(JsonElement parent, string propertyName)
     {
-        if (element.ValueKind != JsonValueKind.Array)
+        if (!parent.TryGetProperty(propertyName, out var element) || element.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException();
+        }
+        return element;
+    }
+
+    private static bool TryReadEffectId(string body, out string? effectId)
+    {
+        effectId = null;
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(body, new JsonDocumentOptions { MaxDepth = 4 });
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("id", out var id) ||
+                id.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            effectId = id.GetString();
+            return !string.IsNullOrWhiteSpace(effectId);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static (int Code, RazerRgb[]? Frame) ParseFrame(JsonElement root, string? effect)
+    {
+        switch (effect?.ToUpperInvariant())
+        {
+            case "CHROMA_NONE":
+                return (Success, new RazerRgb[QuickLightingEngine.PixelCount]);
+            case "CHROMA_STATIC":
+                var staticParam = RequireObject(root, "param");
+                return (Success, ChromaKeyboardFrameMapper.Static(
+                    ChromaKeyboardFrameMapper.ToRgb(ParseColor(staticParam, "color"))));
+            case "CHROMA_CUSTOM":
+                if (!root.TryGetProperty("param", out var custom))
+                {
+                    throw new InvalidOperationException();
+                }
+                return (Success, ChromaKeyboardFrameMapper.Custom(ParseMatrix(custom, 6, 22)));
+            case "CHROMA_CUSTOM2":
+                var custom2 = RequireObject(root, "param");
+                return (Success, ChromaKeyboardFrameMapper.Custom2Key(
+                    ParseMatrix(custom2, "color", 8, 24),
+                    ParseMatrix(custom2, "key", 6, 22)));
+            case "CHROMA_CUSTOM_KEY":
+                var parameter = RequireObject(root, "param");
+                return (Success, ChromaKeyboardFrameMapper.CustomKey(
+                    ParseMatrix(parameter, "color", 6, 22),
+                    ParseMatrix(parameter, "key", 6, 22)));
+            default:
+                return (NotSupported, null);
+        }
+    }
+
+    private static uint ParseColor(JsonElement parent, string propertyName)
+    {
+        if (!parent.TryGetProperty(propertyName, out var element) ||
+            element.ValueKind != JsonValueKind.Number ||
+            !element.TryGetUInt32(out var value) ||
+            value > 0x00FF_FFFFu)
+        {
+            throw new InvalidOperationException();
+        }
+        return value;
+    }
+
+    private static List<List<uint>> ParseMatrix(JsonElement parent, string propertyName, int rows, int columns)
+    {
+        if (!parent.TryGetProperty(propertyName, out var element))
+        {
+            throw new InvalidOperationException();
+        }
+        return ParseMatrix(element, rows, columns);
+    }
+
+    private static List<List<uint>> ParseMatrix(JsonElement element, int rows, int columns)
+    {
+        if (element.ValueKind != JsonValueKind.Array || element.GetArrayLength() != rows)
         {
             throw new InvalidOperationException();
         }
@@ -352,7 +616,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         var matrix = new List<List<uint>>();
         foreach (var row in element.EnumerateArray())
         {
-            if (row.ValueKind != JsonValueKind.Array)
+            if (row.ValueKind != JsonValueKind.Array || row.GetArrayLength() != columns)
             {
                 throw new InvalidOperationException();
             }
@@ -360,7 +624,11 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             var values = new List<uint>();
             foreach (var value in row.EnumerateArray())
             {
-                values.Add(value.GetUInt32());
+                if (value.ValueKind != JsonValueKind.Number || !value.TryGetUInt32(out var color))
+                {
+                    throw new InvalidOperationException();
+                }
+                values.Add(color);
             }
             matrix.Add(values);
         }
@@ -390,8 +658,20 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             while (await timer.WaitForNextTickAsync(_stop.Token).ConfigureAwait(false))
             {
                 Session[] expired;
-                lock (_gate) expired = _sessions.Values.Where(item => DateTimeOffset.UtcNow - item.LastHeartbeat > SessionTimeout).ToArray();
-                foreach (var session in expired) await RemoveSessionAsync(session).ConfigureAwait(false);
+                lock (_gate) expired = _sessions.Values
+                    .Where(item => !item.ApplyInProgress && DateTimeOffset.UtcNow - item.LastHeartbeat > SessionTimeout)
+                    .ToArray();
+                foreach (var session in expired)
+                {
+                    try
+                    {
+                        await RemoveSessionAsync(session).ConfigureAwait(false);
+                    }
+                    catch when (!_stop.IsCancellationRequested)
+                    {
+                        Interlocked.Increment(ref _sessionRecoveryFailures);
+                    }
+                }
             }
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
@@ -399,53 +679,100 @@ internal sealed class ChromaRestHost : IAsyncDisposable
 
     private async Task RemoveSessionAsync(Session session)
     {
-        await session.ApplyGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
-        bool removed;
-        bool wasActive;
+        await _effectGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         try
         {
+            bool removed;
+            bool wasActive;
             lock (_gate)
             {
                 removed = _sessions.Remove(session.Id);
                 wasActive = session.Active;
                 session.Active = false;
             }
+            if (!removed)
+            {
+                return;
+            }
+            // Keep cleanup under the same gate as activation. Otherwise a new
+            // session can claim the device between removal and StopAsync and
+            // then be stopped by this stale cleanup.
+            if (wasActive && !HasActiveSession())
+            {
+                await _lighting.StopAsync().ConfigureAwait(false);
+                await _restoreLighting().ConfigureAwait(false);
+            }
         }
         finally
         {
-            session.ApplyGate.Release();
+            _effectGate.Release();
         }
-        if (!removed)
+    }
+
+    private async Task<int> ClearKeyboardEffectAsync(Session session, string? effectId)
+    {
+        await _effectGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+        try
         {
-            return;
+            bool removed;
+            bool wasActive;
+            lock (_gate)
+            {
+                removed = _sessions.ContainsKey(session.Id);
+                if (!removed)
+                {
+                    return DeviceNotConnected;
+                }
+                if (effectId is not null && !session.Effects.Remove(effectId))
+                {
+                    return InvalidParameter;
+                }
+                if (effectId is null)
+                {
+                    session.Effects.Clear();
+                }
+                if (effectId is not null && !string.Equals(session.ActiveEffectId, effectId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Success;
+                }
+                wasActive = session.Active;
+                session.Active = false;
+                session.ActiveEffectId = null;
+                _frameSource.Clear();
+            }
+            if (removed && wasActive && !HasActiveSession())
+            {
+                await _lighting.StopAsync().ConfigureAwait(false);
+                await _restoreLighting().ConfigureAwait(false);
+            }
         }
-        if (wasActive && !HasActiveSession())
+        finally
         {
-            await _lighting.StopAsync().ConfigureAwait(false);
-            await _restoreLighting().ConfigureAwait(false);
+            _effectGate.Release();
         }
+        return Success;
     }
 
     private async Task StopAllSessionsAsync()
     {
-        Session[] sessions;
-        lock (_gate) sessions = _sessions.Values.ToArray();
-        foreach (var session in sessions)
+        await _effectGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+        try
         {
-            await session.ApplyGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+            bool hadActiveSession;
+            lock (_gate)
+            {
+                hadActiveSession = _sessions.Values.Any(session => session.Active);
+                _sessions.Clear();
+            }
+            if (hadActiveSession)
+            {
+                await _lighting.StopAsync().ConfigureAwait(false);
+                await _restoreLighting().ConfigureAwait(false);
+            }
         }
-        bool hadActiveSession;
-        lock (_gate)
+        finally
         {
-            hadActiveSession = sessions.Any(session => session.Active);
-            _sessions.Clear();
-            foreach (var session in sessions) session.Active = false;
-        }
-        foreach (var session in sessions) session.ApplyGate.Release();
-        if (hadActiveSession)
-        {
-            await _lighting.StopAsync().ConfigureAwait(false);
-            await _restoreLighting().ConfigureAwait(false);
+            _effectGate.Release();
         }
     }
 
@@ -473,10 +800,18 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private static async Task WriteResponseAsync(StreamWriter writer, int status, object payload)
     {
         var json = JsonSerializer.Serialize(payload, JsonOptions);
-        await writer.WriteAsync($"HTTP/1.1 {status} {Reason(status)}\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type\r\nContent-Length: {Encoding.UTF8.GetByteCount(json)}\r\nConnection: close\r\n\r\n{json}").ConfigureAwait(false);
+        await writer.WriteAsync($"HTTP/1.1 {status} {Reason(status)}\r\nContent-Type: application/json; charset=utf-8\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type, Accept\r\nContent-Length: {Encoding.UTF8.GetByteCount(json)}\r\nConnection: close\r\n\r\n{json}").ConfigureAwait(false);
     }
 
-    private static string Reason(int status) => status switch { 200 => "OK", 400 => "Bad Request", 404 => "Not Found", 413 => "Payload Too Large", _ => "Internal Server Error" };
+    private static string Reason(int status) => status switch
+    {
+        200 => "OK",
+        400 => "Bad Request",
+        404 => "Not Found",
+        413 => "Payload Too Large",
+        503 => "Service Unavailable",
+        _ => "Internal Server Error",
+    };
 
     private sealed class Session(string id, string title)
     {
@@ -485,7 +820,9 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         public DateTimeOffset LastHeartbeat { get; set; } = DateTimeOffset.UtcNow;
         public int Tick { get; set; }
         public bool Active { get; set; }
-        public SemaphoreSlim ApplyGate { get; } = new(1, 1);
+        public bool ApplyInProgress { get; set; }
+        public string? ActiveEffectId { get; set; }
+        public Dictionary<string, RazerRgb[]> Effects { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
     private sealed class ChromaAppInfo
@@ -505,3 +842,9 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     }
 
 }
+
+internal readonly record struct ChromaRestSnapshot(
+    bool IsRunning,
+    string? ActiveSessionTitle,
+    long FramesAccepted,
+    long FramesSkipped);
