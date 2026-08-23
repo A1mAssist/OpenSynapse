@@ -46,6 +46,7 @@ public interface IBladeLightingController : IAsyncDisposable
     Task ApplyExternalAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         ChromaExternalFrameSource source,
+        bool restorePersistentEffect = true,
         CancellationToken cancellationToken = default);
 }
 
@@ -198,6 +199,7 @@ public sealed class BladeLightingController : IBladeLightingController
     public async Task ApplyExternalAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         ChromaExternalFrameSource source,
+        bool restorePersistentEffect = true,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(devices);
@@ -234,7 +236,9 @@ public sealed class BladeLightingController : IBladeLightingController
                 var pump = new BladeMatrixFramePump(
                     _transport,
                     device.Id,
-                    token => RestoreAsync(device.Id, token));
+                    restorePersistentEffect
+                        ? token => RestoreAsync(device.Id, token)
+                        : token => ReleaseModeLeaseAsync(CancellationToken.None));
                 await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
                 _externalSource = source;
             }

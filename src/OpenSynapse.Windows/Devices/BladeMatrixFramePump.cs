@@ -26,7 +26,10 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     private readonly TaskCompletionSource _firstFrameApplied =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Task _worker;
+    private RazerRgb[]? _lastSentFrame;
     private int _stopped;
+    private long _framesSent;
+    private long _framesSkipped;
 
     public BladeMatrixFramePump(
         IRazerFeatureTransport transport,
@@ -45,6 +48,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
 
     public Task Completion => _worker;
     public Task FirstFrameApplied => _firstFrameApplied.Task;
+    public long FramesSent => Interlocked.Read(ref _framesSent);
+    public long FramesSkipped => Interlocked.Read(ref _framesSkipped);
 
     public bool TryPublish(IReadOnlyList<RazerRgb> frame)
     {
@@ -100,8 +105,16 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
                     frame = newerFrame;
                 }
 
+                if (_lastSentFrame is not null && _lastSentFrame.AsSpan().SequenceEqual(frame))
+                {
+                    Interlocked.Increment(ref _framesSkipped);
+                    continue;
+                }
+
                 restoreRequired = true;
                 await SendFrameAsync(frame, session, _stop.Token).ConfigureAwait(false);
+                _lastSentFrame = frame;
+                Interlocked.Increment(ref _framesSent);
 
                 _firstFrameApplied.TrySetResult();
             }

@@ -384,6 +384,26 @@
                   </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="ChromaRestTitle" Text="Chroma REST" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaRestDescription" Text="Allow compatible games and integrations to control the Blade keyboard locally." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="ChromaRestToggle" x:Name="ChromaRestToggle" Grid.Column="1" Toggled="ChromaRestToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Chroma REST" />
+                    </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="ChromaRestoreTitle" Text="Restore lighting after external control" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaRestoreDescription" Text="Return to the OpenSynapse effect after the session ends or times out." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="ChromaRestoreToggle" x:Name="ChromaRestoreToggle" Grid.Column="1" Toggled="ChromaRestoreToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Restore lighting after external control" />
+                    </Grid>
+                    <TextBlock local:Localized.Uid="ChromaRestStatus" x:Name="ChromaRestStatusText" Text="Disabled" FontFamily="Cascadia Mono" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="Loc_69C8D0D8B7" Text="语言" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />

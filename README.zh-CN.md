@@ -16,7 +16,7 @@
 
 OpenSynapse 可以在不让 Razer Synapse 常驻的情况下，读取设备状态并管理经过实机验证的灯光、性能、显示、电池和按键功能。它不会根据相近型号猜测协议，也不会向未知设备发送控制命令。
 
-> 当前稳定版本：`v1.1.3`。仅支持下方列出的具体硬件与 USB 标识。
+> 当前稳定版本：`v1.1.4`。仅支持下方列出的具体硬件与 USB 标识。
 
 ## 支持设备
 
@@ -48,6 +48,10 @@ OpenSynapse 可以在不让 Razer Synapse 常驻的情况下，读取设备状�
 
 电池类型由用户提供，软件不会猜测，也不会把设备读回值当作设置来源。低电量阈值保持只读；Viper V3 HyperSpeed 不支持 `2000 / 4000 / 8000 Hz` HyperPolling。
 
+### Chroma REST 支持
+
+OpenSynapse 提供本地 Chroma REST 兼容端点：`127.0.0.1:54235`。兼容的游戏或外部集成可以提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧；帧会映射到经过实机验证的 Blade 16 实体键位，外部控制结束后会恢复 OpenSynapse 当前配置的灯效。目前仅适配 Chroma REST 协议，不支持原生 Chroma SDK / `RzChromaConnectAPI` DLL 接口。
+
 ## 界面预览
 
 | 概览 | 设备 |
@@ -60,9 +64,9 @@ OpenSynapse 可以在不让 Razer Synapse 常驻的情况下，读取设备状�
 
 ## 安装
 
-1. 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载 `OpenSynapse-win-Setup.exe`。
+1. 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载 `OpenSynapse-1.1.4-win-Setup.exe`。
 2. 运行安装包。应用安装到当前用户目录，不需要管理员权限。
-3. 如需免安装使用，可下载 `OpenSynapse-win-Portable.zip`；自动更新功能仅面向安装版。
+3. 如需免安装使用，可下载 `OpenSynapse-1.1.4-win-Portable.zip`；自动更新功能仅面向安装版。
 
 首次探测设备前建议退出 Razer Synapse，避免两个程序争用同一个 HID 控制通道。OpenSynapse 会报告访问失败，但不会结束 Synapse 进程。
 

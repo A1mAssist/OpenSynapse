@@ -16,7 +16,7 @@
 
 OpenSynapse reads device state and manages hardware-verified lighting, performance, display, battery, and key functions without keeping Razer Synapse running. It never infers protocols from similar model names or sends control commands to unknown devices.
 
-> Current stable release: `v1.1.3`. Only the exact hardware and USB identifiers listed below are supported.
+> Current stable release: `v1.1.4`. Only the exact hardware and USB identifiers listed below are supported.
 
 ## Supported devices
 
@@ -48,6 +48,10 @@ OpenSynapse reads device state and manages hardware-verified lighting, performan
 
 Battery chemistry is user-provided and is not guessed or read back from the mouse. The low-battery threshold remains read only. Viper V3 HyperSpeed does not support `2000 / 4000 / 8000 Hz` HyperPolling.
 
+### Chroma REST support
+
+OpenSynapse provides a local Chroma REST-compatible endpoint at `127.0.0.1:54235`. Compatible games and integrations can submit static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames; frames are mapped to the verified Blade 16 physical key layout, and the configured OpenSynapse effect is restored when external control ends. Only the Chroma REST protocol is supported. The native Chroma SDK / `RzChromaConnectAPI` DLL interface is not implemented.
+
 ## Screenshots
 
 | Overview | Devices |
@@ -60,9 +64,9 @@ Battery chemistry is user-provided and is not guessed or read back from the mous
 
 ## Installation
 
-1. Download `OpenSynapse-win-Setup.exe` from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
+1. Download `OpenSynapse-1.1.4-win-Setup.exe` from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 2. Run the installer. OpenSynapse installs for the current user and does not require administrator privileges.
-3. For a no-install build, download `OpenSynapse-win-Portable.zip`. Automatic updates are intended for the installed build.
+3. For a no-install build, download `OpenSynapse-1.1.4-win-Portable.zip`. Automatic updates are intended for the installed build.
 
 Exit Razer Synapse before the first device scan to avoid both applications contending for the same HID control channel. OpenSynapse reports access failures but never terminates the Synapse process.
 

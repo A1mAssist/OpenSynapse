@@ -149,24 +149,14 @@ public partial class App : Application
             "audio-mute-sync",
             "Blade Fn and speaker/microphone mute synchronization enabled.");
         _diagnosticLog.TryWrite("application", "OpenSynapse started.");
-        var window = new MainWindow(viewModel, _behaviorSettings, silentLaunch);
+        var window = new MainWindow(
+            viewModel,
+            _behaviorSettings,
+            silentLaunch,
+            SetChromaRestEnabledAsync,
+            GetChromaRestSnapshot);
         RegisterMainWindow(window, viewModel);
-        try
-        {
-            _chromaRestHost = new ChromaRestHost(
-                () => viewModel.CurrentDeviceDescriptors,
-                _bladeLightingController,
-                () => Volatile.Read(ref _closing) != 0
-                    ? Task.CompletedTask
-                    : viewModel.RestoreBladeLightingAfterExternalAsync());
-            _chromaRestHost.StartAsync();
-            _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
-        }
-        catch (SocketException exception)
-        {
-            _chromaRestHost = null;
-            _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
-        }
+        StartChromaRestHost(viewModel);
         StartMappingWatchdog(window);
         InitializeTray(window, viewModel);
         if (silentLaunch)
@@ -204,6 +194,66 @@ public partial class App : Application
 
         await GetShutdownTask(_audioMuteViewModel);
         updateManager.ApplyUpdatesAndRestart(release);
+    }
+
+    internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
+
+    internal ChromaRestSnapshot GetChromaRestSnapshot() =>
+        _chromaRestHost?.Snapshot ?? default;
+
+    internal string ChromaRestStatus => _chromaRestHost?.ActiveSessionTitle is { } title
+        ? $"127.0.0.1:54235 · {title}"
+        : _chromaRestHost?.IsRunning == true
+            ? "127.0.0.1:54235 · Ready"
+            : "Disabled";
+
+    internal async Task SetChromaRestEnabledAsync(bool enabled)
+    {
+        _behaviorSettings.ExperimentalChromaRestEnabled = enabled;
+        if (_audioMuteViewModel is null)
+        {
+            return;
+        }
+
+        if (enabled)
+        {
+            StartChromaRestHost(_audioMuteViewModel);
+            return;
+        }
+
+        var host = Interlocked.Exchange(ref _chromaRestHost, null);
+        if (host is not null)
+        {
+            await host.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    private void StartChromaRestHost(MainViewModel viewModel)
+    {
+        if (!_behaviorSettings.ExperimentalChromaRestEnabled ||
+            _chromaRestHost is not null ||
+            _bladeLightingController is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _chromaRestHost = new ChromaRestHost(
+                () => viewModel.CurrentDeviceDescriptors,
+                _bladeLightingController,
+                () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
+                    ? Task.CompletedTask
+                    : viewModel.RestoreBladeLightingAfterExternalAsync(),
+                () => _behaviorSettings.RestoreLightingAfterChromaSession);
+            _chromaRestHost.StartAsync();
+            _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
+        }
+        catch (SocketException exception)
+        {
+            _chromaRestHost = null;
+            _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
+        }
     }
 
     private Task GetShutdownTask(MainViewModel viewModel)
