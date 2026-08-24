@@ -4,6 +4,7 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Lighting;
 
@@ -37,6 +38,8 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
     private static readonly IReadOnlyDictionary<byte, (int Row, int Column)> RazerKeyMap =
         new Dictionary<byte, (int Row, int Column)>
         {
+            [0x0A] = (1, 15),
+            [0x0B] = (2, 15),
             [0x03] = (3, 15),
             [0xD3] = (4, 15),
             [0xD4] = (5, 15),
@@ -46,7 +49,7 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
         new BoundedChannelOptions(64)
         {
             SingleReader = true,
-            SingleWriter = true,
+            SingleWriter = false,
             FullMode = BoundedChannelFullMode.DropOldest,
         });
     private readonly Dictionary<(uint ScanCode, bool Extended), TimeSpan> _lastByKey = [];
@@ -184,6 +187,33 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
         }
         _pressedRazerKeys.Clear();
         _pressedRazerKeys.UnionWith(current);
+    }
+
+    internal void ObserveMappingInput(BladeMappingInputEvent input)
+    {
+        if (!input.IsDown)
+        {
+            return;
+        }
+
+        (int Row, int Column) position;
+        var found = false;
+        if (input.Kind == BladeMappingInputKind.RazerKey && (uint)input.Code <= byte.MaxValue)
+        {
+            found = RazerKeyMap.TryGetValue((byte)input.Code, out position);
+        }
+        else if (input.Kind == BladeMappingInputKind.Keyboard && input.Code >= 0)
+        {
+            found = ScanCodeMap.TryGetValue(((uint)input.Code, input.Extended), out position);
+        }
+        else
+        {
+            position = default;
+        }
+        if (found && BladeLightingLayout.TryGetDevicePosition(position.Row, position.Column, out _, out _))
+        {
+            _events.Writer.TryWrite(new QuickLightingKeyEvent(position.Row, position.Column, _clock.Elapsed));
+        }
     }
 
     internal static bool IsBladeKeyboardDevice(string deviceName) =>
@@ -454,7 +484,9 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
             [(0x33, false)] = (4, 9), [(0x34, false)] = (4, 10), [(0x35, false)] = (4, 11), [(0x36, false)] = (4, 14),
             [(0x1D, false)] = (5, 0), [(0x5B, true)] = (5, 2), [(0x38, false)] = (5, 3), [(0x39, false)] = (5, 6),
             [(0x38, true)] = (5, 9), [(0x5D, true)] = (5, 11), [(0x1D, true)] = (5, 12),
-            [(0x4B, true)] = (5, 13), [(0x48, true)] = (5, 14), [(0x4D, true)] = (5, 15), [(0x50, true)] = (6, 13),
+            [(0x5E, true)] = (0, 15),
+            // Direction keys use the logical 7 x 16 canvas, not the Chroma 6 x 22 source columns.
+            [(0x4B, true)] = (5, 12), [(0x48, true)] = (5, 13), [(0x4D, true)] = (5, 14), [(0x50, true)] = (6, 13),
         };
         for (uint scanCode = 0x3B; scanCode <= 0x44; scanCode++)
         {

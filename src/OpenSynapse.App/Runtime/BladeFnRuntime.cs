@@ -25,6 +25,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     private readonly string _featureDevicePath;
     private readonly BladeSoftwareModeCoordinator _modeCoordinator;
     private readonly Func<BladeMappingAction, CancellationToken, ValueTask> _leafExecutor;
+    private readonly Action<BladeMappingInputEvent> _inputObserver;
     private readonly string _mappingPreset;
     private readonly bool _initialSnapTapEnabled;
     private readonly Action<bool> _snapTapChanged;
@@ -51,6 +52,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         string featureDevicePath,
         BladeSoftwareModeCoordinator modeCoordinator,
         Func<BladeMappingAction, CancellationToken, ValueTask> leafExecutor,
+        Action<BladeMappingInputEvent> inputObserver,
         string mappingPreset,
         bool initialSnapTapEnabled,
         Action<bool> snapTapChanged)
@@ -60,6 +62,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         _featureDevicePath = featureDevicePath;
         _modeCoordinator = modeCoordinator ?? throw new ArgumentNullException(nameof(modeCoordinator));
         _leafExecutor = leafExecutor ?? throw new ArgumentNullException(nameof(leafExecutor));
+        _inputObserver = inputObserver ?? throw new ArgumentNullException(nameof(inputObserver));
         ArgumentException.ThrowIfNullOrWhiteSpace(mappingPreset);
         _mappingPreset = mappingPreset;
         _initialSnapTapEnabled = initialSnapTapEnabled;
@@ -257,6 +260,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                                .ReadAllAsync(cancellationToken)
                                .ConfigureAwait(false))
             {
+                _inputObserver(input);
                 var snapTapBefore = mapping.SnapTapEnabled;
                 var outputs = mapping.Process(input, out var action);
                 executor.SendRuntimeOutputs(outputs);

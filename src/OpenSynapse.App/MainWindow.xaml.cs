@@ -695,6 +695,8 @@ public sealed partial class MainWindow : Window
 
         try
         {
+            var comboSelections = CaptureComboBoxSelections();
+            _languageSelectionReady = false;
             AppLanguageSettings.Save(language);
             AppStrings.Reset();
             _viewModel.RefreshLocalization();
@@ -705,6 +707,8 @@ public sealed partial class MainWindow : Window
             RefreshIntroductionLocalization();
             RefreshUpdateUiText();
             SelectLanguage(language);
+            RestoreComboBoxSelections(comboSelections);
+            _languageSelectionReady = true;
         }
         catch (Exception exception)
         {
@@ -713,6 +717,40 @@ public sealed partial class MainWindow : Window
             _languageSelectionReady = true;
             _viewModel.ReportApplicationError(AppStrings.FormatText("LanguageSettingError",
                 exception.Message));
+        }
+    }
+
+    private List<(ComboBox ComboBox, int SelectedIndex)> CaptureComboBoxSelections()
+    {
+        var selections = new List<(ComboBox, int)>();
+        CaptureComboBoxSelections(RootLayout, selections);
+        return selections;
+    }
+
+    private void CaptureComboBoxSelections(
+        DependencyObject element,
+        ICollection<(ComboBox ComboBox, int SelectedIndex)> selections)
+    {
+        if (element is ComboBox comboBox && comboBox != AppLanguageComboBox && comboBox.SelectedIndex >= 0)
+        {
+            selections.Add((comboBox, comboBox.SelectedIndex));
+        }
+
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(element); index++)
+        {
+            CaptureComboBoxSelections(VisualTreeHelper.GetChild(element, index), selections);
+        }
+    }
+
+    private static void RestoreComboBoxSelections(
+        IEnumerable<(ComboBox ComboBox, int SelectedIndex)> selections)
+    {
+        foreach (var (comboBox, selectedIndex) in selections)
+        {
+            if (selectedIndex < comboBox.Items.Count)
+            {
+                comboBox.SelectedIndex = selectedIndex;
+            }
         }
     }
 

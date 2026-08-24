@@ -126,6 +126,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     internal event Action<string?>? BladeControlDevicePathChanged;
     internal event Action<BladePerformanceMode>? BladePerformanceModeChangedByUser;
     internal event Action<bool>? BladeGamingModeChangedByUser;
+    internal event Action<bool>? BladeTouchpadChangedByUser;
+    internal event Action<bool>? BladeOneTimeFullChargeChangedByUser;
+    internal event Action<int>? InternalDisplayRefreshRateChangedByUser;
     internal event Action? BladeInputProfileChanged;
 
     internal IReadOnlySet<BladePerformanceMode> BladePerformanceCycleModes =>
@@ -2024,6 +2027,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 BladeTouchpadEnabled = actual;
                 _blade._confirmedBladeTouchpadEnabled = actual;
                 BladeTouchpadText = actual ? "已启用" : "已禁用";
+                BladeTouchpadChangedByUser?.Invoke(actual);
             },
             cancellationToken,
             () =>
@@ -2144,6 +2148,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             ApplyInternalDisplaySnapshot(snapshot);
             _profile.Global.Blade.RefreshRateHertz = snapshot.RefreshRateHertz;
             await SaveProfileAsync(cancellationToken);
+            InternalDisplayRefreshRateChangedByUser?.Invoke(snapshot.RefreshRateHertz);
         }, cancellationToken, () =>
             InternalDisplayRefreshRateHertz = _confirmedInternalDisplayRefreshRateHertz);
     }
@@ -2338,6 +2343,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             BladeOneTimeFullChargeEnabled = actual;
             BladeOneTimeFullChargeText = FormatOptionalState(actual);
             RequestDeviceRefresh();
+            BladeOneTimeFullChargeChangedByUser?.Invoke(actual);
         }, cancellationToken);
     }
 
@@ -2356,6 +2362,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             BladeOneTimeFullChargeText = FormatOptionalState(actual);
             BladeOneTimeFullChargeEnabled = actual;
             RequestDeviceRefresh();
+            BladeOneTimeFullChargeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
             BladeOneTimeFullChargeEnabled = _blade._bladeOneTimeFullChargeEnabled ?? false);
     }

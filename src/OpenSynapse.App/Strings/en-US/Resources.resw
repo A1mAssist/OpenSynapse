@@ -487,7 +487,7 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>Version 1.1.4</value>
+    <value>Version 1.1.5</value>
     <comment>About window version</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
@@ -1490,11 +1490,19 @@
   <data name="PerformanceCycleSilent.Content" xml:space="preserve"><value>Silent</value><comment>静音</comment></data>
   <data name="RefreshRateCycleTitle.Text" xml:space="preserve"><value>Refresh rates in the Fn+R cycle</value><comment>Fn+R 循环包含的刷新率</comment></data>
   <data name="RefreshRateCycleDescription.Text" xml:space="preserve"><value>Clear refresh rates you do not want Fn+R to select. Manual selection is unaffected.</value><comment>取消不想通过 Fn+R 切换到的刷新率；手动选择不受影响。</comment></data>
-  <data name="性能模式已切换" xml:space="preserve"><value>Performance mode changed</value><comment>性能模式已切换</comment></data>
-  <data name="PerformanceModeNotification" xml:space="preserve"><value>Current mode: {0}</value><comment>当前模式：{0}</comment></data>
-  <data name="游戏模式已切换" xml:space="preserve"><value>Gaming mode changed</value><comment>游戏模式已切换</comment></data>
-  <data name="游戏模式已启用" xml:space="preserve"><value>Gaming mode is on</value><comment>游戏模式已启用</comment></data>
-  <data name="游戏模式已关闭" xml:space="preserve"><value>Gaming mode is off</value><comment>游戏模式已关闭</comment></data>
+  <data name="性能模式已切换" xml:space="preserve"><value>Performance Mode Changed</value><comment>性能模式已切换</comment></data>
+  <data name="PerformanceModeNotification" xml:space="preserve"><value>Current Mode: {0}</value><comment>当前模式：{0}</comment></data>
+  <data name="游戏模式已切换" xml:space="preserve"><value>Gaming Mode Changed</value><comment>游戏模式已切换</comment></data>
+  <data name="游戏模式已启用" xml:space="preserve"><value>Gaming Mode Is On</value><comment>游戏模式已启用</comment></data>
+  <data name="游戏模式已关闭" xml:space="preserve"><value>Gaming Mode Is Off</value><comment>游戏模式已关闭</comment></data>
+  <data name="触控板已切换" xml:space="preserve"><value>Touchpad Changed</value><comment>触控板通知标题</comment></data>
+  <data name="触控板已启用" xml:space="preserve"><value>Touchpad Is On</value><comment>触控板已启用</comment></data>
+  <data name="触控板已禁用" xml:space="preserve"><value>Touchpad Is Off</value><comment>触控板已禁用</comment></data>
+  <data name="一次性充满已切换" xml:space="preserve"><value>One-Time Full Charge Changed</value><comment>一次性充满通知标题</comment></data>
+  <data name="一次性充满已启用" xml:space="preserve"><value>One-Time Full Charge Is On</value><comment>一次性充满已启用</comment></data>
+  <data name="一次性充满已关闭" xml:space="preserve"><value>One-Time Full Charge Is Off</value><comment>一次性充满已关闭</comment></data>
+  <data name="刷新率已切换" xml:space="preserve"><value>Refresh Rate Changed</value><comment>刷新率通知标题</comment></data>
+  <data name="RefreshRateNotification" xml:space="preserve"><value>Current Refresh Rate: {0} Hz</value><comment>刷新率通知内容</comment></data>
   <data name="BehaviorSettingError" xml:space="preserve"><value>Shortcut and notification settings: {0}</value><comment>快捷键与通知设置：{0}</comment></data>
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>Settings</value><comment>设置导航项</comment></data>
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>Settings</value><comment>设置页面标题</comment></data>

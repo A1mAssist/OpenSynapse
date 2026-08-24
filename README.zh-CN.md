@@ -16,7 +16,7 @@
 
 OpenSynapse 可以在不让 Razer Synapse 常驻的情况下，读取设备状态并管理经过实机验证的灯光、性能、显示、电池和按键功能。它不会根据相近型号猜测协议，也不会向未知设备发送控制命令。
 
-> 当前稳定版本：`v1.1.4`。仅支持下方列出的具体硬件与 USB 标识。
+> 当前稳定版本：`v1.1.5`。仅支持下方列出的具体硬件与 USB 标识。
 
 ## 支持设备
 
@@ -64,9 +64,9 @@ OpenSynapse 提供本地 Chroma REST 兼容端点：`127.0.0.1:54235`。兼容�
 
 ## 安装
 
-1. 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载 `OpenSynapse-1.1.4-win-Setup.exe`。
+1. 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载 `OpenSynapse-1.1.5-win-Setup.exe`。
 2. 运行安装包。应用安装到当前用户目录，不需要管理员权限。
-3. 如需免安装使用，可下载 `OpenSynapse-1.1.4-win-Portable.zip`；自动更新功能仅面向安装版。
+3. 如需免安装使用，可下载 `OpenSynapse-1.1.5-win-Portable.zip`；自动更新功能仅面向安装版。
 
 首次探测设备前建议退出 Razer Synapse，避免两个程序争用同一个 HID 控制通道。OpenSynapse 会报告访问失败，但不会结束 Synapse 进程。
 
