@@ -74,17 +74,18 @@ public static class ChromaKeyboardFrameMapper
     private const int ChromaColumns = 22;
     private static readonly short[] ChromaToLogicalTarget =
     [
-        // Chroma row 0: Esc, F1-F12 and Pause in the Blade power-key position.
+        // Chroma source row 0. Blade physical row 0 is completed by Insert/Delete below.
         -1, 0, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, -1, -1, 15, -1, -1, -1, -1,
-        // Chroma row 1: grave, number row and Backspace.
+        // Chroma source row 1. Page Up/M1 is appended to Blade physical row 1 below.
         -1, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, -1, -1, -1, -1, -1, -1, -1,
-        // Chroma row 2: Q row, Insert and Page Up/M1.
+        // Chroma source row 2: Insert targets physical row 0; Page Up/M1 targets physical row 1.
         -1, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 13, -1, 31, -1, -1, -1, -1,
-        // Chroma row 3: home row, Enter, Delete, Page Down/M2 and the far-right M3 key.
+        // Chroma source row 3: Delete targets physical row 0; Page Down/M2 targets physical row 2.
         -1, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, -1, 62, 14, -1, 47, -1, -1, -1, 63,
-        // Chroma row 4: shift row, Up and the far-right M4 key.
+        // Chroma source row 4: Up targets the half-height arrow position in physical row 5.
         -1, 64, -1, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, -1, 78, -1, 93, -1, -1, -1, -1, 79,
-        // Chroma row 5: modifiers, Fn, Copilot/Menu, arrows and M5. Space has no LED.
+        // Chroma source row 5: physical order is LCtrl, Fn, Win, LAlt, Space, RAlt,
+        // Copilot, RCtrl, Left, stacked Up/Down, Right, M5. Space has no LED.
         -1, 80, 82, 83, -1, -1, -1, -1, -1, -1, -1, 89, 81, 90, 91, 92, 109, 94, -1, -1, -1, 95,
     ];
 

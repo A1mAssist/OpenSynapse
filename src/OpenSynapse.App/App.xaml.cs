@@ -141,6 +141,9 @@ public partial class App : Application
         viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
         viewModel.BladePerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
         viewModel.BladeGamingModeChangedByUser += OnBladeGamingModeChangedByUser;
+        viewModel.BladeTouchpadChangedByUser += OnBladeTouchpadChangedByUser;
+        viewModel.BladeOneTimeFullChargeChangedByUser += OnBladeOneTimeFullChargeChangedByUser;
+        viewModel.InternalDisplayRefreshRateChangedByUser += OnInternalDisplayRefreshRateChangedByUser;
         viewModel.BladeInputProfileChanged += OnBladeInputProfileChanged;
         viewModel.SetLegacyShortcutCycleDefaults(
             _behaviorSettings.PerformanceCycleModes,
@@ -287,6 +290,9 @@ public partial class App : Application
             _audioMuteViewModel.BladeControlDevicePathChanged -= OnBladeControlDevicePathChanged;
             _audioMuteViewModel.BladePerformanceModeChangedByUser -= OnBladePerformanceModeChangedByUser;
             _audioMuteViewModel.BladeGamingModeChangedByUser -= OnBladeGamingModeChangedByUser;
+            _audioMuteViewModel.BladeTouchpadChangedByUser -= OnBladeTouchpadChangedByUser;
+            _audioMuteViewModel.BladeOneTimeFullChargeChangedByUser -= OnBladeOneTimeFullChargeChangedByUser;
+            _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
             _audioMuteViewModel.BladeInputProfileChanged -= OnBladeInputProfileChanged;
             _audioMuteViewModel = null;
         }
@@ -361,6 +367,18 @@ public partial class App : Application
         enabled
             ? AppStrings.Text("游戏模式已启用")
             : AppStrings.Text("游戏模式已关闭"));
+
+    private void OnBladeTouchpadChangedByUser(bool enabled) => ShowModeNotification(
+        AppStrings.Text("触控板已切换"),
+        enabled ? AppStrings.Text("触控板已启用") : AppStrings.Text("触控板已禁用"));
+
+    private void OnBladeOneTimeFullChargeChangedByUser(bool enabled) => ShowModeNotification(
+        AppStrings.Text("一次性充满已切换"),
+        enabled ? AppStrings.Text("一次性充满已启用") : AppStrings.Text("一次性充满已关闭"));
+
+    private void OnInternalDisplayRefreshRateChangedByUser(int hertz) => ShowModeNotification(
+        AppStrings.Text("刷新率已切换"),
+        AppStrings.FormatText("RefreshRateNotification", hertz));
 
     private void ShowModeNotification(string title, string body)
     {
@@ -501,6 +519,7 @@ public partial class App : Application
                     devicePath,
                     _bladeModeCoordinator,
                     (action, token) => ExecuteBladeFnLeafAsync(action, generation, token),
+                    input => _bladeLightingController?.ObserveMappingInput(input),
                     _audioMuteViewModel?.ActiveBladeMappingPreset ??
                         OpenSynapse.Core.Profiles.BladeProfileSettings.Product710DefaultMappingPreset,
                     _audioMuteViewModel?.ActiveSnapTapEnabled == true,

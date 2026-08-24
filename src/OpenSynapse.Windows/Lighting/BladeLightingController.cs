@@ -65,6 +65,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private readonly SemaphoreSlim _gate = new(1, 1);
     private SoftwareLightingRuntime? _runtime;
     private ChromaExternalFrameSource? _externalSource;
+    private WindowsKeyboardLightingAdapter? _keyboardInput;
     private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;
     private byte _transactionId;
@@ -122,10 +123,6 @@ public sealed class BladeLightingController : IBladeLightingController
         try
         {
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-            if (_externalSource is not null && _runtime is not null && !_runtimeCompletion.IsCompleted)
-            {
-                return;
-            }
             var (device, manifest) = FindReadyBlade(devices);
             await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
             await StopCoreAsync().ConfigureAwait(false);
@@ -176,6 +173,7 @@ public sealed class BladeLightingController : IBladeLightingController
                     source = new EffectFrameSource(effect);
                 }
                 await StartRuntimeAsync(pump, source, inputAdapter, cancellationToken).ConfigureAwait(false);
+                _keyboardInput = inputAdapter as WindowsKeyboardLightingAdapter;
             }
             catch
             {
@@ -298,6 +296,7 @@ public sealed class BladeLightingController : IBladeLightingController
         var runtime = _runtime;
         _runtime = null;
         _externalSource = null;
+        _keyboardInput = null;
         try
         {
             if (runtime is not null)
@@ -319,6 +318,11 @@ public sealed class BladeLightingController : IBladeLightingController
         }
 
         await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    internal void ObserveMappingInput(BladeMappingInputEvent input)
+    {
+        _keyboardInput?.ObserveMappingInput(input);
     }
 
     private async Task StartRuntimeAsync(

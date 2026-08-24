@@ -75,21 +75,24 @@ public sealed class ChromaLightingTests
     }
 
     [Fact]
-    public void ChromaCoordinatesCoverTheBladePhysicalKeyboardLayout()
+    public void ChromaSourceCoordinatesMapToTheBladePhysicalKeyboardLayout()
     {
         AssertMapping(0, 1, 1, "Esc");
         for (var index = 0; index < 12; index++)
         {
             AssertMapping(0, 3 + index, 2 + index, $"F{index + 1}");
         }
-        AssertMapping(0, 17, 16, "Power");
+        AssertMapping(2, 15, 14, "Insert on physical row 0");
+        AssertMapping(3, 15, 15, "Delete on physical row 0");
+        AssertMapping(0, 17, 16, "Power on physical row 0");
 
         AssertMapping(1, 1, 18, "Grave");
         for (var index = 0; index < 12; index++)
         {
             AssertMapping(1, 2 + index, 19 + index, $"Number row {index}");
         }
-        AssertMapping(1, 14, 32, "Backspace");
+        AssertMapping(1, 14, 32, "Backspace on physical row 1");
+        AssertMapping(2, 17, 33, "Page Up/M1 on physical row 1");
 
         AssertMapping(2, 1, 35, "Tab");
         for (var index = 0; index < 12; index++)
@@ -97,8 +100,7 @@ public sealed class ChromaLightingTests
             AssertMapping(2, 2 + index, 36 + index, $"Q row {index}");
         }
         AssertMapping(2, 14, 49, "Backslash");
-        AssertMapping(2, 15, 14, "Insert");
-        AssertMapping(2, 17, 33, "Page Up/M1");
+        AssertMapping(3, 17, 50, "Page Down/M2 on physical row 2");
 
         AssertMapping(3, 1, 52, "Caps Lock");
         for (var index = 0; index < 11; index++)
@@ -106,9 +108,7 @@ public sealed class ChromaLightingTests
             AssertMapping(3, 2 + index, 53 + index, $"Home row {index}");
         }
         AssertMapping(3, 14, 66, "Enter");
-        AssertMapping(3, 15, 15, "Delete");
-        AssertMapping(3, 17, 50, "Page Down/M2");
-        AssertMapping(3, 21, 67, "M3");
+        AssertMapping(3, 21, 67, "M3 after Enter on physical row 3");
 
         AssertMapping(4, 1, 69, "Left Shift");
         for (var index = 0; index < 10; index++)
@@ -116,18 +116,18 @@ public sealed class ChromaLightingTests
             AssertMapping(4, 3 + index, 71 + index, $"Z row {index}");
         }
         AssertMapping(4, 14, 83, "Right Shift");
-        AssertMapping(4, 16, 98, "Up");
         AssertMapping(4, 21, 84, "M4");
 
-        AssertMapping(5, 1, 86, "Left Ctrl");
-        AssertMapping(5, 2, 88, "Windows");
-        AssertMapping(5, 3, 90, "Left Alt");
-        AssertMapping(5, 11, 94, "Right Alt");
-        AssertMapping(5, 12, 87, "Fn");
+        AssertMapping(5, 1, 86, "Left Ctrl on physical row 5");
+        AssertMapping(5, 12, 87, "Fn after Left Ctrl on physical row 5");
+        AssertMapping(5, 2, 88, "Windows after Fn on physical row 5");
+        AssertMapping(5, 3, 90, "Left Alt on physical row 5");
+        AssertMapping(5, 11, 94, "Right Alt after the unlit Space on physical row 5");
         AssertMapping(5, 13, 95, "Copilot");
         AssertMapping(5, 14, 96, "Right Ctrl");
         AssertMapping(5, 15, 97, "Left");
-        AssertMapping(5, 16, 100, "Down");
+        AssertMapping(4, 16, 98, "Up in the stacked physical row 5 arrow slot");
+        AssertMapping(5, 16, 100, "Down in the stacked physical row 5 arrow slot");
         AssertMapping(5, 17, 99, "Right");
         AssertMapping(5, 21, 101, "M5");
 
@@ -170,6 +170,68 @@ public sealed class ChromaLightingTests
         var frame = ChromaKeyboardFrameMapper.Custom(matrix);
 
         Assert.All(frame, color => Assert.Equal(default, color));
+    }
+
+    [Fact]
+    public async Task RippleDirectionScanCodesUseTheBottomLogicalArrowPositions()
+    {
+        await using var adapter = new WindowsKeyboardLightingAdapter();
+        var at = TimeSpan.Zero;
+
+        AssertKey(0x4B, (5, 12), "Left");
+        AssertKey(0x48, (5, 13), "Up");
+        AssertKey(0x4D, (5, 14), "Right");
+        AssertKey(0x50, (6, 13), "Down");
+
+        void AssertKey(uint scanCode, (int Row, int Column) expected, string name)
+        {
+            Assert.True(adapter.TryTranslate(
+                scanCode,
+                WindowsKeyboardLightingAdapter.ExtendedFlag,
+                at += TimeSpan.FromMilliseconds(25),
+                out var keyEvent), name);
+            Assert.Equal(expected.Row, keyEvent.Row);
+            Assert.Equal(expected.Column, keyEvent.Column);
+        }
+    }
+
+    [Fact]
+    public async Task FilterDriverInputsReachRippleAndReactiveSpecialKeyPositions()
+    {
+        await using var adapter = new WindowsKeyboardLightingAdapter();
+
+        AssertInput(new(BladeMappingInputKind.RazerKey, 0x0A, true), (1, 15), "M1");
+        AssertInput(new(BladeMappingInputKind.RazerKey, 0x0B, true), (2, 15), "M2");
+        AssertInput(new(BladeMappingInputKind.RazerKey, 0x03, true), (3, 15), "M3");
+        AssertInput(new(BladeMappingInputKind.RazerKey, 0xD3, true), (4, 15), "M4");
+        AssertInput(new(BladeMappingInputKind.RazerKey, 0xD4, true), (5, 15), "M5");
+        AssertInput(new(BladeMappingInputKind.Keyboard, 0x4B, true, true), (5, 12), "Left");
+        AssertInput(new(BladeMappingInputKind.Keyboard, 0x48, true, true), (5, 13), "Up");
+        AssertInput(new(BladeMappingInputKind.Keyboard, 0x4D, true, true), (5, 14), "Right");
+        AssertInput(new(BladeMappingInputKind.Keyboard, 0x50, true, true), (6, 13), "Down");
+
+        void AssertInput(BladeMappingInputEvent input, (int Row, int Column) expected, string name)
+        {
+            adapter.ObserveMappingInput(input);
+            var events = new List<QuickLightingKeyEvent>();
+            adapter.DrainTo(events);
+            var keyEvent = Assert.Single(events);
+            Assert.Equal(expected.Row, keyEvent.Row);
+            Assert.Equal(expected.Column, keyEvent.Column);
+        }
+    }
+
+    [Fact]
+    public async Task PowerKeyUsesTheTopRightLogicalPosition()
+    {
+        await using var adapter = new WindowsKeyboardLightingAdapter();
+
+        Assert.True(adapter.TryTranslate(
+            0x5E,
+            WindowsKeyboardLightingAdapter.ExtendedFlag,
+            TimeSpan.Zero,
+            out var keyEvent));
+        Assert.Equal((0, 15), (keyEvent.Row, keyEvent.Column));
     }
 
     [Fact]
