@@ -30,31 +30,31 @@ public static class ViperDpiStagesProtocol
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, DataSize))
         {
-            throw new InvalidOperationException("Viper DPI 档位返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Viper DPI stages returned an invalid or out-of-order feature report.");
         }
 
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != VariableStorage)
         {
-            throw new InvalidOperationException($"Viper DPI 档位返回了错误的存储区 0x{arguments[0]:X2}。");
+            throw new InvalidOperationException($"Viper DPI stages returned an incorrect storage ID: 0x{arguments[0]:X2}.");
         }
 
         var activeStage = arguments[1];
         var count = arguments[2];
         if (count is < 1 or > MaximumStages)
         {
-            throw new InvalidOperationException($"Viper 返回了无效的 DPI 档位数量 {count}。");
+            throw new InvalidOperationException($"Viper returned an invalid DPI stage count: {count}.");
         }
         if (activeStage is < 1 || activeStage > count)
         {
-            throw new InvalidOperationException($"Viper 返回了无效的当前 DPI 档位 {activeStage}/{count}。");
+            throw new InvalidOperationException($"Viper returned an invalid active DPI stage: {activeStage}/{count}.");
         }
 
         var stages = new ViperDpiStage[count];
         var rawNumberBase = arguments[3];
         if (rawNumberBase is not (0x00 or 0x01))
         {
-            throw new InvalidOperationException($"Viper 返回了未知的 DPI 档位编号基数 {rawNumberBase}。");
+            throw new InvalidOperationException($"Viper returned an unknown DPI stage number base: {rawNumberBase}.");
         }
         for (var index = 0; index < count; index++)
         {
@@ -64,11 +64,11 @@ public static class ViperDpiStagesProtocol
             if (arguments[offset] != expectedRawNumber)
             {
                 throw new InvalidOperationException(
-                    $"Viper DPI 档位编号不连续：预期 {expectedRawNumber}，收到 {arguments[offset]}。");
+                    $"Viper DPI stage numbers are not contiguous: expected {expectedRawNumber}, received {arguments[offset]}.");
             }
             if (arguments[offset + 5] != 0x00 || arguments[offset + 6] != 0x00)
             {
-                throw new InvalidOperationException($"Viper DPI 档位 {number} 的保留字段非零。");
+                throw new InvalidOperationException($"Viper DPI stage {number} has a nonzero reserved field.");
             }
 
             var x = (arguments[offset + 1] << 8) | arguments[offset + 2];
@@ -76,7 +76,7 @@ public static class ViperDpiStagesProtocol
             if (!IsValidDpi(x) || !IsValidDpi(y))
             {
                 throw new InvalidOperationException(
-                    $"Viper DPI 档位 {number} 不符合 100..30000、步进 50：{x} x {y}。");
+                    $"Viper DPI stage {number} is outside 100..30000 with a step of 50: {x} x {y}.");
             }
 
             stages[index] = new ViperDpiStage(number, x, y);

@@ -44,7 +44,7 @@ public static class BladeLightingProtocol
         ArgumentNullException.ThrowIfNull(frame);
         if (frame.Count != Rows * Columns)
         {
-            throw new ArgumentException("Blade 灯光帧必须正好包含 6 x 17 个颜色。", nameof(frame));
+            throw new ArgumentException("A Blade lighting frame must contain exactly 6 x 17 colors.", nameof(frame));
         }
 
         var requests = new byte[Rows + 1][];

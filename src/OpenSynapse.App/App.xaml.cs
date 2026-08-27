@@ -136,7 +136,9 @@ public partial class App : Application
             new WindowsStartupManager(),
             Environment.ProcessPath,
             registryLoad.Errors,
-            new WindowsTouchpadController());
+            new WindowsTouchpadController(),
+            new OpenRazerDeviceService(),
+            new OpenRazerSpecialLightingService());
         _audioMuteViewModel = viewModel;
         viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
         viewModel.BladePerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
@@ -576,7 +578,6 @@ public partial class App : Application
             _diagnosticLog.TryWrite("audio-mute-sync", $"switch failed: {exception}");
             ReportBladeFnFailure(exception);
             if (exception is not FileNotFoundException &&
-                exception is not AggregateException &&
                 !string.IsNullOrWhiteSpace(devicePath) &&
                 Volatile.Read(ref _closing) == 0 &&
                 generation == Volatile.Read(ref _audioMuteGeneration))
@@ -908,7 +909,6 @@ public partial class App : Application
             }
 
             _diagnosticLog.TryWrite("blade-fn", $"runtime failed closed: {exception}");
-            var cleanupSucceeded = true;
             await _audioMuteRuntimeGate.WaitAsync().ConfigureAwait(false);
             try
             {
@@ -920,7 +920,6 @@ public partial class App : Application
                     }
                     catch (Exception cleanupError)
                     {
-                        cleanupSucceeded = false;
                         _diagnosticLog.TryWrite("blade-fn", $"fault cleanup failed: {cleanupError}");
                         ReportBladeFnFailure(cleanupError);
                     }
@@ -932,7 +931,6 @@ public partial class App : Application
             }
 
             if (Volatile.Read(ref _closing) == 0 &&
-                cleanupSucceeded &&
                 generation == Volatile.Read(ref _audioMuteGeneration))
             {
                 _ = RetryBladeAudioMuteRuntimeAsync(devicePath, generation);

@@ -22,7 +22,7 @@ public static class BladeThermalProtocol
         var count = response[RazerFeatureReport.ArgumentsOffset];
         if (count is 0 or > 16 || RazerFeatureReport.ArgumentsOffset + 1 + count > 89)
         {
-            throw new InvalidOperationException("Blade 返回了无效的风扇 ID 数量。");
+            throw new InvalidOperationException("Blade returned an invalid fan ID count.");
         }
 
         return response.Slice(RazerFeatureReport.ArgumentsOffset + 1, count).ToArray();
@@ -41,7 +41,7 @@ public static class BladeThermalProtocol
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != ProfileId || arguments[1] != expectedFanId)
         {
-            throw new InvalidOperationException("Blade 返回了错误的当前风扇对象。");
+            throw new InvalidOperationException("Blade returned an incorrect current-fan object.");
         }
 
         return checked(arguments[2] * 100);
@@ -60,7 +60,7 @@ public static class BladeThermalProtocol
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != ProfileId || arguments[1] != expectedFanId)
         {
-            throw new InvalidOperationException("Blade 返回了错误的高级风扇对象。");
+            throw new InvalidOperationException("Blade returned an incorrect advanced-fan object.");
         }
 
         return arguments[2];
@@ -73,7 +73,7 @@ public static class BladeThermalProtocol
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, expectedArguments))
         {
-            throw new InvalidOperationException("Blade 热控返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Blade thermal control returned an invalid or out-of-order feature report.");
         }
     }
 

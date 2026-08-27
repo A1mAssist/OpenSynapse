@@ -45,7 +45,7 @@ public sealed class ChromaExternalFrameSource : ISoftwareLightingFrameSource
         ArgumentNullException.ThrowIfNull(frame);
         if (frame.Count != QuickLightingEngine.PixelCount)
         {
-            throw new ArgumentException("Chroma 外部帧必须包含完整的 Blade 矩阵。", nameof(frame));
+            throw new ArgumentException("A Chroma external frame must contain the complete Blade matrix.", nameof(frame));
         }
 
         var copy = frame.ToArray();
@@ -212,7 +212,7 @@ public static class ChromaKeyboardFrameMapper
         ArgumentNullException.ThrowIfNull(matrix, parameterName);
         if (matrix.Count != rows || matrix.Any(row => row is null || row.Count != columns))
         {
-            throw new ArgumentException($"Chroma 键盘矩阵必须是 {rows} x {columns}。", parameterName);
+            throw new ArgumentException($"The Chroma keyboard matrix must be {rows} x {columns}.", parameterName);
         }
     }
 }

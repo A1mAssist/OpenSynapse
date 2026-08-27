@@ -43,7 +43,7 @@ public sealed class VerifiedProfileApplier
         {
             if (current is not T currentValue)
             {
-                deviceErrors.Add($"{label}未成功读回，已跳过配置应用。");
+                deviceErrors.Add($"{label} was not read back successfully; profile application was skipped.");
                 return;
             }
             if (EqualityComparer<T>.Default.Equals(requested, currentValue))
@@ -62,7 +62,7 @@ public sealed class VerifiedProfileApplier
             }
             catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
-                deviceErrors.Add($"{label}：{exception.Message}");
+                deviceErrors.Add($"{label}: {exception.Message}");
             }
         }
 
@@ -80,11 +80,11 @@ public sealed class VerifiedProfileApplier
                 {
                     performanceValueInvalid = true;
                     effectivePerformanceMode = null;
-                    bladeErrors.Add($"Blade 性能模式值无效：{rawPerformanceMode}。");
+                    bladeErrors.Add($"Blade performance mode value is invalid: {rawPerformanceMode}.");
                 }
                 else if (telemetry.BladePerformanceMode is not BladePerformanceMode current)
                 {
-                    bladeErrors.Add("Blade 性能模式未成功读回，已跳过配置应用。");
+                    bladeErrors.Add("Blade performance mode was not read back successfully; profile application was skipped.");
                 }
                 else
                 {
@@ -105,7 +105,7 @@ public sealed class VerifiedProfileApplier
                     }
                     catch (Exception exception) when (IsExpectedHardwareException(exception))
                     {
-                        bladeErrors.Add($"Blade 性能模式：{exception.Message}");
+                        bladeErrors.Add($"Blade performance mode: {exception.Message}");
                     }
                 }
             }
@@ -114,7 +114,7 @@ public sealed class VerifiedProfileApplier
                 profile.Blade.GpuBoostMode is not null || profile.Blade.MaxFanMode is not null;
             if (hasCustomOnlySetting && effectivePerformanceMode is null && !performanceValueInvalid)
             {
-                bladeErrors.Add("Blade 性能模式未成功读回，已跳过 CPU/GPU Boost 和 Max Fan 配置应用。");
+                bladeErrors.Add("Blade performance mode was not read back successfully; CPU/GPU Boost and Max Fan profile settings were skipped.");
             }
             else if (bladeErrors.Count == 0 && effectivePerformanceMode == BladePerformanceMode.Custom)
             {
@@ -122,7 +122,7 @@ public sealed class VerifiedProfileApplier
                 {
                     if (!Enum.IsDefined(typeof(BladeCpuBoostMode), rawCpuBoost))
                     {
-                        bladeErrors.Add($"Blade CPU Boost 值无效：{rawCpuBoost}。");
+                        bladeErrors.Add($"Blade CPU Boost value is invalid: {rawCpuBoost}.");
                     }
                     else
                     {
@@ -139,7 +139,7 @@ public sealed class VerifiedProfileApplier
                 {
                     if (!Enum.IsDefined(typeof(BladeGpuBoostMode), rawGpuBoost))
                     {
-                        bladeErrors.Add($"Blade GPU Boost 值无效：{rawGpuBoost}。");
+                        bladeErrors.Add($"Blade GPU Boost value is invalid: {rawGpuBoost}.");
                     }
                     else
                     {
@@ -156,7 +156,7 @@ public sealed class VerifiedProfileApplier
                 {
                     if (!Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
                     {
-                        bladeErrors.Add($"Blade Max Fan 值无效：{rawMaxFan}。");
+                        bladeErrors.Add($"Blade Max Fan value is invalid: {rawMaxFan}.");
                     }
                     else
                     {
@@ -174,7 +174,7 @@ public sealed class VerifiedProfileApplier
             {
                 await ApplyValueAsync(
                     bladeErrors,
-                    "Blade 键盘亮度",
+                    "Blade keyboard brightness",
                     brightness,
                     telemetry.BladeKeyboardBrightness,
                     (value, token) => reader.SetBladeKeyboardBrightnessAsync(devices, value, token));
@@ -183,7 +183,7 @@ public sealed class VerifiedProfileApplier
             {
                 await ApplyValueAsync(
                     bladeErrors,
-                    "Blade 充电上限",
+                    "Blade charge limit",
                     chargeLimit,
                     telemetry.BladeChargeLimitPercent,
                     (value, token) => reader.SetBladeChargeLimitAsync(devices, value, token));
@@ -193,7 +193,7 @@ public sealed class VerifiedProfileApplier
                 var requested = (BladeLogoMode)rawLogoMode;
                 if (!Enum.IsDefined(typeof(BladeLogoMode), requested))
                 {
-                    bladeErrors.Add($"Blade Logo 模式值无效或未经验证：{rawLogoMode}。");
+                    bladeErrors.Add($"Blade Logo mode value is invalid or unverified: {rawLogoMode}.");
                 }
                 else
                 {
@@ -218,7 +218,7 @@ public sealed class VerifiedProfileApplier
             {
                 if (telemetry.ViperDpiStages is not ViperDpiStagesTelemetry current)
                 {
-                    viperErrors.Add("Viper DPI 档位未成功读回，已跳过配置应用。");
+                    viperErrors.Add("Viper DPI stages were not read back successfully; profile application was skipped.");
                 }
                 else
                 {
@@ -236,7 +236,7 @@ public sealed class VerifiedProfileApplier
                         }
                         catch (Exception exception) when (IsExpectedHardwareException(exception))
                         {
-                            viperErrors.Add($"Viper DPI 档位：{exception.Message}");
+                            viperErrors.Add($"Viper DPI stages: {exception.Message}");
                         }
                     }
                 }
@@ -247,7 +247,7 @@ public sealed class VerifiedProfileApplier
             {
                 if (telemetry.ViperDpiX is not int currentX || telemetry.ViperDpiY is not int currentY)
                 {
-                    viperErrors.Add("Viper DPI 未成功读回，已跳过配置应用。");
+                    viperErrors.Add("Viper DPI was not read back successfully; profile application was skipped.");
                 }
                 else
                 {
@@ -266,7 +266,7 @@ public sealed class VerifiedProfileApplier
                         }
                         catch (Exception exception) when (IsExpectedHardwareException(exception))
                         {
-                            viperErrors.Add($"Viper DPI：{exception.Message}");
+                    viperErrors.Add($"Viper DPI: {exception.Message}");
                         }
                     }
                 }
@@ -276,7 +276,7 @@ public sealed class VerifiedProfileApplier
             {
                 await ApplyValueAsync(
                     viperErrors,
-                    "Viper 轮询率",
+                    "Viper polling rate",
                     pollingRate,
                     telemetry.ViperPollingRateHertz,
                     (value, token) => reader.SetViperPollingRateAsync(devices, value, token));
@@ -286,7 +286,7 @@ public sealed class VerifiedProfileApplier
             {
                 await ApplyValueAsync(
                     viperErrors,
-                    "Viper 休眠时间",
+                    "Viper idle timeout",
                     idleSeconds,
                     telemetry.ViperIdleSeconds,
                     (value, token) => reader.SetViperIdleSecondsAsync(devices, value, token));
@@ -308,7 +308,7 @@ public sealed class VerifiedProfileApplier
                 }
                 catch (Exception exception) when (IsExpectedHardwareException(exception))
                 {
-                    viperErrors.Add($"Viper 电池类型：{exception.Message}");
+                    viperErrors.Add($"Viper battery type: {exception.Message}");
                 }
             }
 

@@ -487,7 +487,7 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>Version 1.1.5</value>
+    <value>Version 1.2.0</value>
     <comment>About window version</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
@@ -870,9 +870,8 @@
     <value>HyperShift layer</value>
     <comment>HyperShift 层</comment>
   </data>
-  <data name="Text_14FD1E92" xml:space="preserve">
+  <data name="GpuMemoryLabel" xml:space="preserve">
     <value>GPU memory</value>
-    <comment>GPU 内存</comment>
   </data>
   <data name="Text_8F4E16B7" xml:space="preserve">
     <value>Select a verified onboard mapping action.</value>
@@ -1532,4 +1531,103 @@
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value><comment>恢复灯光说明</comment></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore lighting after external control</value><comment>恢复灯光开关</comment></data>
+  <data name="OpenRazerInformationTitle.Text" xml:space="preserve"><value>Device information</value></data>
+  <data name="OpenRazerFirmwareLabel.Text" xml:space="preserve"><value>Firmware</value></data>
+  <data name="OpenRazerSerialLabel.Text" xml:space="preserve"><value>Serial number</value></data>
+  <data name="OpenRazerModeLabel.Text" xml:space="preserve"><value>Device mode</value></data>
+  <data name="OpenRazerBatteryLabel.Text" xml:space="preserve"><value>Battery</value></data>
+  <data name="OpenRazerPollingTitle.Text" xml:space="preserve"><value>Polling rate</value></data>
+  <data name="OpenRazerPowerTitle.Text" xml:space="preserve"><value>Power management</value></data>
+  <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
+  <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>Low battery warning (%)</value></data>
+  <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
+  <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
+  <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
+  <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="OpenRazerLightingSpeed.Header" xml:space="preserve"><value>Speed</value></data>
+  <data name="OpenRazerLightingDirection.Header" xml:space="preserve"><value>Direction</value></data>
+  <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>
+  <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>Left / counterclockwise</value></data>
+  <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>Save</value></data>
+  <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>Apply effect</value></data>
+  <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>
+  <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
+  <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>Scroll acceleration</value></data>
+  <data name="OpenRazerKeyswitchExpander.Header" xml:space="preserve"><value>Keyswitch optimization</value></data>
+  <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>Choose function keys or media keys as the primary layer.</value></data>
+  <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>Function keys first</value></data>
+  <data name="OpenRazerMediaPrimaryButton.Content" xml:space="preserve"><value>Media keys first</value></data>
+  <data name="Text_4B32CEE8" xml:space="preserve"><value>Mouse</value></data>
+  <data name="Text_66E7127F" xml:space="preserve"><value>Laptop</value></data>
+  <data name="Text_7D4E2D8B" xml:space="preserve"><value>Keyboard</value></data>
+  <data name="Text_A3A74479" xml:space="preserve"><value>Mouse mat</value></data>
+  <data name="Text_2E486BCB" xml:space="preserve"><value>Monitor</value></data>
+  <data name="Text_71E692AA" xml:space="preserve"><value>Accessory</value></data>
+  <data name="Text_C0E6F3C9" xml:space="preserve"><value>Rescan required</value></data>
+  <data name="Text_C097B416" xml:space="preserve"><value>Resolved</value></data>
+  <data name="Text_242E08F4" xml:space="preserve"><value>Control endpoint unresolved</value></data>
+  <data name="Text_D3632B96" xml:space="preserve"><value>Busy or unavailable</value></data>
+  <data name="Text_4366F0BC" xml:space="preserve"><value>Software mode</value></data>
+  <data name="Text_B252C327" xml:space="preserve"><value>Hardware mode</value></data>
+  <data name="Text_8FF04F66" xml:space="preserve"><value>Charging</value></data>
+  <data name="Text_EC17E7E7" xml:space="preserve"><value>Not charging</value></data>
+  <data name="OpenRazerDpiStagesExpander.Header" xml:space="preserve"><value>DPI stages</value></data>
+  <data name="OpenRazerActiveDpiStage.Header" xml:space="preserve"><value>Active stage</value></data>
+  <data name="OpenRazerDpiStageLabel" xml:space="preserve"><value>Stage {0}</value></data>
+  <data name="OpenRazerHyperPollingDescription.Text" xml:space="preserve"><value>Manage the receiver indicator and mouse pairing. Pairing actions require confirmation.</value></data>
+  <data name="OpenRazerHyperPollingIndicator.Header" xml:space="preserve"><value>Indicator mode</value></data>
+  <data name="OpenRazerApplyIndicatorButton.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="OpenRazerPairButton.Content" xml:space="preserve"><value>Pair</value></data>
+  <data name="OpenRazerUnpairButton.Content" xml:space="preserve"><value>Unpair</value></data>
+  <data name="OpenRazerMouseProductIdLabel" xml:space="preserve"><value>Mouse PID (hex)</value></data>
+  <data name="OpenRazerPairTitle" xml:space="preserve"><value>Confirm HyperPolling pairing</value></data>
+  <data name="OpenRazerUnpairTitle" xml:space="preserve"><value>Confirm HyperPolling unpairing</value></data>
+  <data name="OpenRazerPairAction" xml:space="preserve"><value>Pair</value></data>
+  <data name="OpenRazerUnpairAction" xml:space="preserve"><value>Unpair</value></data>
+  <data name="OpenRazerInvalidProductId" xml:space="preserve"><value>Enter a four-digit hexadecimal mouse PID.</value></data>
+  <data name="OpenRazerKeyswitchTyping" xml:space="preserve"><value>Typing</value></data>
+  <data name="OpenRazerKeyswitchGaming" xml:space="preserve"><value>Gaming</value></data>
+  <data name="OpenRazerZoneAll" xml:space="preserve"><value>All</value></data>
+  <data name="OpenRazerZoneScrollWheel" xml:space="preserve"><value>Scroll wheel</value></data>
+  <data name="OpenRazerZoneBattery" xml:space="preserve"><value>Battery</value></data>
+  <data name="OpenRazerZoneLogo" xml:space="preserve"><value>Logo</value></data>
+  <data name="OpenRazerZoneBacklight" xml:space="preserve"><value>Backlight</value></data>
+  <data name="OpenRazerZoneMacro" xml:space="preserve"><value>Macro keys</value></data>
+  <data name="OpenRazerZoneGame" xml:space="preserve"><value>Gaming mode</value></data>
+  <data name="OpenRazerZoneProfileRed" xml:space="preserve"><value>Profile red</value></data>
+  <data name="OpenRazerZoneProfileGreen" xml:space="preserve"><value>Profile green</value></data>
+  <data name="OpenRazerZoneProfileBlue" xml:space="preserve"><value>Profile blue</value></data>
+  <data name="OpenRazerZoneRightSide" xml:space="preserve"><value>Right side</value></data>
+  <data name="OpenRazerZoneLeftSide" xml:space="preserve"><value>Left side</value></data>
+  <data name="OpenRazerZoneCharging" xml:space="preserve"><value>Charging</value></data>
+  <data name="OpenRazerZoneFastCharging" xml:space="preserve"><value>Fast charging</value></data>
+  <data name="OpenRazerZoneFullyCharged" xml:space="preserve"><value>Fully charged</value></data>
+  <data name="OpenRazerEffectOff" xml:space="preserve"><value>Off</value></data>
+  <data name="OpenRazerEffectStatic" xml:space="preserve"><value>Static</value></data>
+  <data name="OpenRazerEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
+  <data name="OpenRazerEffectWave" xml:space="preserve"><value>Wave</value></data>
+  <data name="OpenRazerEffectReactive" xml:space="preserve"><value>Reactive</value></data>
+  <data name="OpenRazerEffectBlinking" xml:space="preserve"><value>Blinking</value></data>
+  <data name="OpenRazerEffectBreathingRandom" xml:space="preserve"><value>Random breathing</value></data>
+  <data name="OpenRazerEffectBreathingSingle" xml:space="preserve"><value>Single-color breathing</value></data>
+  <data name="OpenRazerEffectBreathingDual" xml:space="preserve"><value>Dual-color breathing</value></data>
+  <data name="OpenRazerEffectBreathingTriple" xml:space="preserve"><value>Triple-color breathing</value></data>
+  <data name="OpenRazerEffectStarlightRandom" xml:space="preserve"><value>Random starlight</value></data>
+  <data name="OpenRazerEffectStarlightSingle" xml:space="preserve"><value>Single-color starlight</value></data>
+  <data name="OpenRazerEffectStarlightDual" xml:space="preserve"><value>Dual-color starlight</value></data>
+  <data name="OpenRazerEffectWheel" xml:space="preserve"><value>Wheel</value></data>
+  <data name="OpenRazerEffectCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>Zone lighting</value></data>
+  <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
+  <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
+  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>Select a swatch to edit one pixel, then apply the complete frame.</value></data>
+  <data name="OpenRazerApplyMatrixButton.Content" xml:space="preserve"><value>Apply frame</value></data>
+  <data name="OpenRazerMatrixCellLabel" xml:space="preserve"><value>Row {0}, column {1}</value></data>
+  <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>Headset</value></data>
+  <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>Headset lighting</value></data>
+  <data name="OpenRazerKrakenLightingTitle.Text" xml:space="preserve"><value>Lighting effect</value></data>
+  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>Color 1</value></data>
+  <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>Color 2</value></data>
+  <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>Color 3</value></data>
+  <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>Apply effect</value></data>
 </root>

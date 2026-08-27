@@ -42,13 +42,13 @@ public static class BladeSynapsePolicyProtocol
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: 2))
         {
-            throw new InvalidOperationException("Blade Fn 主功能返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Blade Fn primary function returned an invalid or out-of-order feature report.");
         }
 
         var offset = RazerFeatureReport.ArgumentsOffset;
         if (response[offset] != request[offset])
         {
-            throw new InvalidOperationException("Blade Fn 主功能返回了错误的 classId。");
+            throw new InvalidOperationException("Blade Fn primary function returned an incorrect class ID.");
         }
 
         var state = response[offset + 1];
@@ -57,7 +57,7 @@ public static class BladeSynapsePolicyProtocol
             0x00 => new BladeFnKeyState(response[offset], false),
             0x01 => new BladeFnKeyState(response[offset], true),
             _ => throw new InvalidOperationException(
-                $"Blade Fn 主功能返回了未知 alternateState 0x{state:X2}。"),
+                $"Blade Fn primary function returned an unknown alternate state: 0x{state:X2}."),
         };
     }
 
@@ -139,7 +139,7 @@ public static class BladeSynapsePolicyProtocol
             !RazerFeatureReport.Matches(request, response))
         {
             throw new InvalidOperationException(
-                "Blade 启动动画返回了无效或错序的 feature report。");
+                "Blade startup animation returned an invalid or out-of-order feature report.");
         }
 
         var offset = RazerFeatureReport.ArgumentsOffset;
@@ -148,7 +148,7 @@ public static class BladeSynapsePolicyProtocol
         if (disabled is not (0x00 or 0x01))
         {
             throw new InvalidOperationException(
-                $"Blade 启动动画返回了未知 disableAnimation 0x{disabled:X2}。");
+                $"Blade startup animation returned an unknown disable-animation value: 0x{disabled:X2}.");
         }
 
         return new BladeStartupAnimationState(
@@ -181,7 +181,7 @@ public static class BladeSynapsePolicyProtocol
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: 3))
         {
             throw new InvalidOperationException(
-                "Blade 音频静音指示灯返回了无效或错序的 feature report。");
+                "Blade audio mute indicator returned an invalid or out-of-order feature report.");
         }
 
         var offset = RazerFeatureReport.ArgumentsOffset;
@@ -193,7 +193,7 @@ public static class BladeSynapsePolicyProtocol
             !Enum.IsDefined(target) ||
             muted is not (0x00 or 0x01))
         {
-            throw new InvalidOperationException("Blade 音频静音指示灯返回了无效状态。");
+            throw new InvalidOperationException("Blade audio mute indicator returned an invalid state.");
         }
 
         return new BladeAudioMuteState(target, muted == 0x01);

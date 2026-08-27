@@ -18,7 +18,7 @@ public static class ViperLowBatteryThresholdProtocol
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, 1))
         {
-            throw new InvalidOperationException("Viper 低电量阈值返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Viper low-battery threshold returned an invalid or out-of-order feature report.");
         }
 
         return response[RazerFeatureReport.ArgumentsOffset];
@@ -32,7 +32,7 @@ public static class ViperLowBatteryThresholdProtocol
         {
             throw new ArgumentOutOfRangeException(
                 nameof(percent),
-                $"Viper 低电量阈值必须在 {MinimumPercent}% 到 {MaximumPercent}% 之间，并且是 {PercentStep}% 的倍数。");
+                $"Viper low-battery threshold must be between {MinimumPercent}% and {MaximumPercent}% and divisible by {PercentStep}%.");
         }
 
         // Official Product 184 SET: ceil(percent / 100 * 255).

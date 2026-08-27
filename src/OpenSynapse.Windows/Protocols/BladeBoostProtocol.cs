@@ -15,7 +15,7 @@ public static class BladeBoostProtocol
             0x02 => BladeCpuBoostMode.High,
             0x03 => BladeCpuBoostMode.Boost,
             0x04 => BladeCpuBoostMode.Undervolt,
-            var value => throw new InvalidOperationException($"Blade 返回了未知 CPU Boost 值 0x{value:X2}。"),
+            var value => throw new InvalidOperationException($"Blade returned an unknown CPU Boost value: 0x{value:X2}."),
         };
 
     public static BladeGpuBoostMode ParseGpu(ReadOnlySpan<byte> response) =>
@@ -24,25 +24,25 @@ public static class BladeBoostProtocol
             0x00 => BladeGpuBoostMode.Low,
             0x01 => BladeGpuBoostMode.Medium,
             0x02 => BladeGpuBoostMode.High,
-            var value => throw new InvalidOperationException($"Blade 返回了未知 GPU Boost 值 0x{value:X2}。"),
+            var value => throw new InvalidOperationException($"Blade returned an unknown GPU Boost value: 0x{value:X2}."),
         };
 
     private static byte ParseValue(ReadOnlySpan<byte> response, byte expectedCluster, string name)
     {
         if (response.Length != RazerFeatureReport.Length)
         {
-            throw new InvalidOperationException($"Blade {name} Boost 响应长度不是 {RazerFeatureReport.Length} 字节。");
+            throw new InvalidOperationException($"Blade {name} Boost response length is not {RazerFeatureReport.Length} bytes.");
         }
         if (response[6] < 3)
         {
-            throw new InvalidOperationException($"Blade {name} Boost 响应长度不足：{response[6]} < 3。");
+            throw new InvalidOperationException($"Blade {name} Boost response is too short: {response[6]} < 3.");
         }
 
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != 0x00 || arguments[1] != expectedCluster)
         {
             throw new InvalidOperationException(
-                $"Blade 返回了错误的 {name} Boost 分组：{arguments[0]:X2}/{arguments[1]:X2}。");
+                $"Blade returned an incorrect {name} Boost group: {arguments[0]:X2}/{arguments[1]:X2}.");
         }
 
         return arguments[2];

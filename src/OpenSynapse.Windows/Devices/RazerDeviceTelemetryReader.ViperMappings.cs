@@ -28,7 +28,7 @@ public sealed partial class RazerDeviceTelemetryReader
         {
             _validatedViperButtonMappingsPath = null;
             var viper = FindReadyDevice(devices, "viper-184")
-                ?? throw new InvalidOperationException("Viper 控制通道不可用。");
+                ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
 
             await ValidateViperProduct184MetadataAsync(viper, cancellationToken);
             var assignments = await ReadAllViperObmAssignmentsAsync(viper, cancellationToken);
@@ -54,11 +54,11 @@ public sealed partial class RazerDeviceTelemetryReader
         try
         {
             var viper = FindReadyDevice(devices, "viper-184")
-                ?? throw new InvalidOperationException("Viper 控制通道不可用。");
+                ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
             EnsureValidated(
                 _validatedViperButtonMappingsPath,
                 viper.Descriptor.Id,
-                "请先完整读取当前鼠标的 Profile、Button ID 和全部 16 条板载映射。");
+                "Read the current mouse profile, button IDs, and all 16 onboard mappings first.");
 
             var original = await ReadViperObmAssignmentAsync(
                 viper, requested.ButtonId, requested.Mode, cancellationToken);
@@ -78,11 +78,11 @@ public sealed partial class RazerDeviceTelemetryReader
                 await WriteViperObmAssignmentAsync(viper, requested, cancellationToken);
                 var actual = await ReadViperObmAssignmentAsync(
                     viper, requested.ButtonId, requested.Mode, cancellationToken);
-                EnsureAssignmentsEqual(requested, actual, "目标");
+                EnsureAssignmentsEqual(requested, actual, "target");
 
                 var actualSibling = await ReadViperObmAssignmentAsync(
                     viper, requested.ButtonId, siblingMode, cancellationToken);
-                EnsureAssignmentsEqual(originalSibling, actualSibling, "另一层隔离");
+                EnsureAssignmentsEqual(originalSibling, actualSibling, "sibling-layer isolation");
                 return ToPublicAssignment(actual);
             }
             catch (Exception exception) when (
@@ -94,10 +94,10 @@ public sealed partial class RazerDeviceTelemetryReader
                 {
                     _validatedViperButtonMappingsPath = null;
                 }
-                var message = "鼠标板载映射设置失败：" + exception.Message + " " +
+                var message = "Viper onboard mapping update failed: " + exception.Message + " " +
                     (restorationError is null
-                        ? "原映射及另一层已恢复并读回确认。"
-                        : "原映射恢复失败：" + restorationError + " 请立即在 Synapse 中检查该按键。");
+                        ? "The original mapping and sibling layer were restored and verified by readback."
+                        : "Original mapping restoration failed: " + restorationError + " Check the button mapping immediately.");
                 if (exception is OperationCanceledException)
                 {
                     throw new OperationCanceledException(message, exception, cancellationToken);
@@ -124,7 +124,7 @@ public sealed partial class RazerDeviceTelemetryReader
         {
             _validatedViperButtonMappingsPath = null;
             var viper = FindReadyDevice(devices, "viper-184")
-                ?? throw new InvalidOperationException("Viper 控制通道不可用。");
+                ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
             await ValidateViperProduct184MetadataAsync(viper, cancellationToken);
 
             var original = await ReadAllViperObmAssignmentsAsync(viper, cancellationToken);
@@ -144,14 +144,14 @@ public sealed partial class RazerDeviceTelemetryReader
                     await WriteViperObmAssignmentAsync(viper, target, cancellationToken);
                     var actual = await ReadViperObmAssignmentAsync(
                         viper, target.ButtonId, target.Mode, cancellationToken);
-                    EnsureAssignmentsEqual(target, actual, "批量目标");
+                    EnsureAssignmentsEqual(target, actual, "batch target");
                 }
 
                 var final = await ReadAllViperObmAssignmentsAsync(viper, cancellationToken);
                 foreach (var target in requested)
                 {
                     EnsureAssignmentsEqual(target, final.Single(item =>
-                        AssignmentKey(item) == AssignmentKey(target)), "批量最终");
+                        AssignmentKey(item) == AssignmentKey(target)), "final batch");
                 }
                 _validatedViperButtonMappingsPath = viper.Descriptor.Id;
                 return final.Select(ToPublicAssignment).ToArray();
@@ -166,10 +166,10 @@ public sealed partial class RazerDeviceTelemetryReader
                     _validatedViperButtonMappingsPath = viper.Descriptor.Id;
                 }
 
-                var message = "鼠标板载映射批量设置失败：" + exception.Message + " " +
+                var message = "Viper onboard mapping batch update failed: " + exception.Message + " " +
                     (restorationError is null
-                        ? "完整原映射已恢复并读回确认。"
-                        : "完整原映射恢复失败：" + restorationError + " 请立即检查鼠标映射。");
+                        ? "The complete original mapping was restored and verified by readback."
+                        : "Complete original mapping restoration failed: " + restorationError + " Check the mouse mappings immediately.");
                 if (exception is OperationCanceledException)
                 {
                     throw new OperationCanceledException(message, exception, cancellationToken);
@@ -217,9 +217,9 @@ public sealed partial class RazerDeviceTelemetryReader
             !buttonIds.Order().SequenceEqual(ViperProduct184ButtonIds))
         {
             throw new InvalidOperationException(
-                "Product 184 板载元数据与已验证范围不一致，已拒绝开放映射写入：" +
+                "Product 184 onboard metadata does not match the verified scope; mapping writes were rejected: " +
                 $"max={maximumProfiles},count={profileCount}," +
-                $"profiles={Convert.ToHexString(profileIds)},buttons={Convert.ToHexString(buttonIds)}。");
+                $"profiles={Convert.ToHexString(profileIds)},buttons={Convert.ToHexString(buttonIds)}.");
         }
     }
 
@@ -317,29 +317,29 @@ public sealed partial class RazerDeviceTelemetryReader
         }
         catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
-            errors.Add("恢复写入失败：" + exception.Message);
+            errors.Add("Restore write failed: " + exception.Message);
         }
 
         try
         {
             var restored = await ReadViperObmAssignmentAsync(
                 device, original.ButtonId, original.Mode, CancellationToken.None);
-            EnsureAssignmentsEqual(original, restored, "恢复目标层");
+            EnsureAssignmentsEqual(original, restored, "restored target layer");
         }
         catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
-            errors.Add("恢复目标层读回失败：" + exception.Message);
+            errors.Add("Restored target-layer readback failed: " + exception.Message);
         }
 
         try
         {
             var sibling = await ReadViperObmAssignmentAsync(
                 device, originalSibling.ButtonId, originalSibling.Mode, CancellationToken.None);
-            EnsureAssignmentsEqual(originalSibling, sibling, "恢复另一层隔离");
+            EnsureAssignmentsEqual(originalSibling, sibling, "restored sibling-layer isolation");
         }
         catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
-            errors.Add("另一层读回失败：" + exception.Message);
+            errors.Add("Sibling-layer readback failed: " + exception.Message);
         }
 
         return errors.Count == 0 ? null : string.Join(" ", errors);
@@ -359,7 +359,7 @@ public sealed partial class RazerDeviceTelemetryReader
             }
             catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
-                errors.Add($"恢复 {FormatAssignment(assignment)} 写入失败：{exception.Message}");
+                errors.Add($"Restore write for {FormatAssignment(assignment)} failed: {exception.Message}");
             }
         }
 
@@ -372,12 +372,12 @@ public sealed partial class RazerDeviceTelemetryReader
                 EnsureAssignmentsEqual(
                     expected,
                     restoredByKey[AssignmentKey(expected)],
-                    "批量恢复");
+                    "batch restore");
             }
         }
         catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
-            errors.Add("完整恢复读回失败：" + exception.Message);
+            errors.Add("Complete restore readback failed: " + exception.Message);
         }
 
         return errors.Count == 0 ? null : string.Join(" ", errors);
@@ -389,7 +389,7 @@ public sealed partial class RazerDeviceTelemetryReader
         ArgumentNullException.ThrowIfNull(assignments);
         if (assignments.Count != ViperProduct184ButtonIds.Length * 2)
         {
-            throw new ArgumentException("Product 184 批量映射必须恰好包含 16 条记录。", nameof(assignments));
+            throw new ArgumentException("A Product 184 mapping batch must contain exactly 16 records.", nameof(assignments));
         }
 
         var converted = assignments.Select(assignment =>
@@ -404,7 +404,7 @@ public sealed partial class RazerDeviceTelemetryReader
                 !converted.Any(item => item.ButtonId == buttonId && item.Mode == ViperObmMappingMode.HyperShift)))
         {
             throw new ArgumentException(
-                "Product 184 批量映射必须为每个按钮各包含唯一的普通层和 HyperShift 层。",
+                "A Product 184 mapping batch must contain one unique normal-layer and HyperShift-layer record for each button.",
                 nameof(assignments));
         }
 
@@ -418,20 +418,20 @@ public sealed partial class RazerDeviceTelemetryReader
     {
         if (assignment.ProfileId != ViperProduct184ProfileId)
         {
-            throw new ArgumentOutOfRangeException(nameof(assignment), "Product 184 只允许 Profile 1。");
+            throw new ArgumentOutOfRangeException(nameof(assignment), "Product 184 supports Profile 1 only.");
         }
         if (!ViperProduct184ButtonIds.Contains(assignment.ButtonId))
         {
             throw new ArgumentOutOfRangeException(
                 nameof(assignment),
-                $"Product 184 不存在 button ID {assignment.ButtonId}。");
+                $"Product 184 does not define button ID {assignment.ButtonId}.");
         }
 
         var mode = assignment.Layer switch
         {
             ViperButtonMappingLayer.Normal => ViperObmMappingMode.Normal,
             ViperButtonMappingLayer.HyperShift => ViperObmMappingMode.HyperShift,
-            _ => throw new ArgumentOutOfRangeException(nameof(assignment), "未知的 Viper 映射层。"),
+            _ => throw new ArgumentOutOfRangeException(nameof(assignment), "Unknown Viper mapping layer."),
         };
         var function = assignment.Function switch
         {
@@ -444,7 +444,7 @@ public sealed partial class RazerDeviceTelemetryReader
             ViperButtonMappingFunction.HyperShift => ViperObmFunctionId.ModeButtonKey,
             ViperButtonMappingFunction.KeyboardTurbo => ViperObmFunctionId.TurboModeKey,
             ViperButtonMappingFunction.MouseTurbo => ViperObmFunctionId.TurboModeButton,
-            _ => throw new ArgumentOutOfRangeException(nameof(assignment), "Product 184 不支持该映射 function。"),
+            _ => throw new ArgumentOutOfRangeException(nameof(assignment), "Product 184 does not support this mapping function."),
         };
         var snapshot = new ViperObmAssignment(
             assignment.ProfileId,
@@ -472,7 +472,7 @@ public sealed partial class RazerDeviceTelemetryReader
         if (!verified)
         {
             throw new NotSupportedException(
-                "该 Product 184 映射类型只有静态协议证据，尚未完成实机写入/读回/恢复验证。");
+                "This Product 184 mapping type has static protocol evidence only and has not passed physical write/readback/restore validation.");
         }
         return snapshot;
     }
@@ -485,7 +485,7 @@ public sealed partial class RazerDeviceTelemetryReader
             {
                 ViperObmMappingMode.Normal => ViperButtonMappingLayer.Normal,
                 ViperObmMappingMode.HyperShift => ViperButtonMappingLayer.HyperShift,
-                _ => throw new InvalidOperationException("设备返回了未知的 Viper 映射层。"),
+                _ => throw new InvalidOperationException("The device returned an unknown Viper mapping layer."),
             },
             assignment.Function switch
             {
@@ -499,7 +499,7 @@ public sealed partial class RazerDeviceTelemetryReader
                 ViperObmFunctionId.TurboModeKey => ViperButtonMappingFunction.KeyboardTurbo,
                 ViperObmFunctionId.TurboModeButton => ViperButtonMappingFunction.MouseTurbo,
                 _ => throw new InvalidOperationException(
-                    $"设备返回了 Product 184 未开放的映射 function {(byte)assignment.Function}。"),
+                    $"The device returned Product 184 mapping function {(byte)assignment.Function}, which is not enabled."),
             },
             assignment.FunctionData.ToArray());
 
@@ -521,8 +521,8 @@ public sealed partial class RazerDeviceTelemetryReader
         if (!AssignmentsEqual(expected, actual))
         {
             throw new InvalidOperationException(
-                $"{phase}映射读回不一致：写入 {FormatAssignment(expected)}，" +
-                $"读回 {FormatAssignment(actual)}。");
+                $"{phase} mapping readback mismatch: wrote {FormatAssignment(expected)}, " +
+                $"read {FormatAssignment(actual)}.");
         }
     }
 

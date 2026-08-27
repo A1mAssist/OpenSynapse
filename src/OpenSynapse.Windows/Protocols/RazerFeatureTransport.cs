@@ -18,6 +18,14 @@ public interface IRazerFeatureTransport
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch = false);
 
+    Task<byte[]> QueryPreparedAsync(
+        string devicePath,
+        ReadOnlyMemory<byte> request,
+        TimeSpan deviceWait,
+        CancellationToken cancellationToken,
+        bool allowRemainingPacketsMismatch = false) =>
+        throw new NotSupportedException("This transport does not support prepared feature requests.");
+
     Task<IRazerFeatureSession> OpenSessionAsync(
         string devicePath,
         CancellationToken cancellationToken) =>
@@ -131,6 +139,24 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             allowRemainingPacketsMismatch);
     }
 
+    public Task<byte[]> QueryPreparedAsync(
+        string devicePath,
+        ReadOnlyMemory<byte> request,
+        TimeSpan deviceWait,
+        CancellationToken cancellationToken,
+        bool allowRemainingPacketsMismatch = false)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        RazerFeatureReport.ValidatePreparedRequest(request.Span);
+        return ExecuteAsync(
+            devicePath,
+            request.ToArray(),
+            deviceWait,
+            responseReportId: 0,
+            cancellationToken,
+            allowRemainingPacketsMismatch);
+    }
+
     public Task SendBatchAsync(
         string devicePath,
         IReadOnlyList<byte[]> requests,
@@ -140,9 +166,9 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         ArgumentNullException.ThrowIfNull(requests);
         if (requests.Count == 0)
-            throw new ArgumentException("批量 HID 报告不能为空。", nameof(requests));
+            throw new ArgumentException("The HID report batch cannot be empty.", nameof(requests));
         if (requests.Any(request => request.Length != RazerFeatureReport.Length))
-            throw new ArgumentException("批量 HID 报告必须都是 91 字节。", nameof(requests));
+            throw new ArgumentException("Every HID report in the batch must be 91 bytes.", nameof(requests));
 
         return ExecuteBatchAsync(devicePath, requests, rowDelay, cancellationToken);
     }
@@ -171,13 +197,13 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 using (handle)
                 {
                     if (handle.IsInvalid)
-                        throw new Win32Exception(openError, "无法打开 Razer feature collection。");
+                        throw new Win32Exception(openError, "Could not open the Razer feature collection.");
 
                     foreach (var request in requests)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         if (!NativeMethods.HidD_SetFeature(handle, request, request.Length))
-                            throw new Win32Exception(Marshal.GetLastWin32Error(), "Razer 矩阵批量写入失败。");
+                            throw new Win32Exception(Marshal.GetLastWin32Error(), "Razer matrix batch write failed.");
                         if (rowDelay > TimeSpan.Zero)
                             Thread.Sleep(rowDelay);
                     }
@@ -241,7 +267,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         }
 
         openResult.Handle.Dispose();
-        throw new Win32Exception(openResult.Error, "无法打开 Razer feature collection。");
+        throw new Win32Exception(openResult.Error, "Could not open the Razer feature collection.");
     }
 
     private static async Task<byte[]> ExecuteOnHandleAsync(
@@ -286,7 +312,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             if (!RazerFeatureReport.MatchesReportId(response, responseReportId) ||
                 !RazerFeatureReport.Matches(request, response, allowRemainingPacketsMismatch))
             {
-                lastError = "设备返回了错误 report ID、错序或校验失败的报告；请关闭 Synapse 后重试。";
+                lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
             }
             else if (response[1] == 0x02)
             {
@@ -294,23 +320,23 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             }
             else if (response[1] == 0x05)
             {
-                throw new NotSupportedException("设备不支持该命令。");
+                throw new NotSupportedException("The device does not support this command.");
             }
             else
             {
                 lastError = response[1] switch
                 {
-                    0x01 => "设备正忙（0x01）。",
-                    0x03 => "设备拒绝了查询（0x03）。",
-                    0x04 => "设备超时（0x04）；请唤醒设备并关闭 Synapse 后重试。",
-                    _ => $"设备响应状态 0x{response[1]:X2}。",
+                    0x01 => "The device is busy (0x01).",
+                    0x03 => "The device rejected the query (0x03).",
+                    0x04 => "The device timed out (0x04); wake the device, close Synapse, and retry.",
+                    _ => $"Device response status: 0x{response[1]:X2}.",
                 };
             }
 
             await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
         }
 
-        throw new InvalidOperationException(lastError ?? "Razer feature 查询失败。");
+        throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
     }
 
     private sealed class RazerFeatureSession(
@@ -339,7 +365,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (request.Length != RazerFeatureReport.Length)
             {
-                throw new ArgumentException("Razer feature report 必须是 91 字节。", nameof(request));
+                throw new ArgumentException("A Razer feature report must be 91 bytes.", nameof(request));
             }
 
             var report = request.ToArray();
@@ -353,7 +379,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 }, cancellationToken).ConfigureAwait(false);
                 if (!result.Success)
                 {
-                    throw new Win32Exception(result.Error, "Razer feature 会话握手失败。");
+                    throw new Win32Exception(result.Error, "Razer feature session handshake failed.");
                 }
             }
             finally
@@ -371,7 +397,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             ArgumentNullException.ThrowIfNull(requests);
             if (requests.Count == 0 || requests.Any(request => request.Length != RazerFeatureReport.Length))
             {
-                throw new ArgumentException("Razer feature 批量报告必须包含至少一个 91 字节报告。", nameof(requests));
+                throw new ArgumentException("A Razer feature report batch must contain at least one 91-byte report.", nameof(requests));
             }
 
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -386,7 +412,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                         {
                             throw new Win32Exception(
                                 Marshal.GetLastWin32Error(),
-                                "Razer feature 批量写入失败。");
+                                "Razer feature batch write failed.");
                         }
                         if (rowDelay > TimeSpan.Zero)
                         {

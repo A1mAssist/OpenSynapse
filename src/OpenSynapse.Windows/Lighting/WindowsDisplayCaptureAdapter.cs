@@ -93,7 +93,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
                 ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
                 if (_worker is not null)
                 {
-                    throw new InvalidOperationException("Ambient Awareness 已经启动。");
+                    throw new InvalidOperationException("Ambient Awareness is already running.");
                 }
 
                 _frames = CreateFrameChannel();
@@ -130,7 +130,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
         Task worker;
         lock (_lifecycleGate)
         {
-            worker = _worker ?? throw new InvalidOperationException("Ambient Awareness 尚未启动。");
+            worker = _worker ?? throw new InvalidOperationException("Ambient Awareness is not running.");
         }
         if (worker.IsFaulted)
         {
@@ -253,13 +253,13 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
         {
             throw new AmbientCaptureException(
                 AmbientCaptureFailure.TopologyUnavailable,
-                "Windows 返回了无效的显示器捕获尺寸。");
+                "Windows returned invalid display capture dimensions.");
         }
         if (bitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8)
         {
             throw new AmbientCaptureException(
                 AmbientCaptureFailure.CaptureFailed,
-                "Windows 返回了非 BGRA8 的显示器捕获帧。");
+                "Windows returned a display capture frame that is not BGRA8.");
         }
 
         var stride = checked(width * 4);
@@ -368,7 +368,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
     private static async ValueTask<AmbientCaptureFrame> FaultedFrameAsync(Task worker)
     {
         await worker.ConfigureAwait(false);
-        throw new InvalidOperationException("显示器捕获已停止。");
+        throw new InvalidOperationException("Display capture has stopped.");
     }
 
     private static (int Start, int End) Segment(int index, int segments, int length)
@@ -480,7 +480,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             {
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.Unsupported,
-                    "当前 Windows 版本或显卡驱动不支持 Graphics Capture。");
+                    "The current Windows version or graphics driver does not support Graphics Capture.");
             }
 
             string sourceName;
@@ -492,7 +492,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             {
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.TopologyUnavailable,
-                    "无法唯一确定当前内置显示器。",
+                    "Could not uniquely identify the current internal display.",
                     exception);
             }
 
@@ -506,14 +506,14 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             {
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.PermissionDenied,
-                    "Windows 拒绝了内置显示器捕获权限。",
+                    "Windows denied internal display capture permission.",
                     exception);
             }
             catch (COMException exception)
             {
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.CaptureFailed,
-                    "Windows 无法创建内置显示器捕获项。",
+                    "Windows could not create an internal display capture item.",
                     exception);
             }
 
@@ -567,7 +567,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             {
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.CaptureFailed,
-                    "Windows 无法启动内置显示器捕获。",
+                    "Windows could not start internal display capture.",
                     exception);
             }
             finally
@@ -595,7 +595,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
                 {
                     throw new AmbientCaptureException(
                         AmbientCaptureFailure.TopologyUnavailable,
-                        "内置显示器捕获已因拓扑变化关闭。",
+                        "Internal display capture closed because the display topology changed.",
                         exception.InnerException ?? exception);
                 }
 
@@ -634,7 +634,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
                     {
                         throw new AmbientCaptureException(
                             AmbientCaptureFailure.CaptureFailed,
-                            "读取内置显示器捕获帧失败。",
+                            "Failed to read an internal display capture frame.",
                             exception);
                     }
                 }
@@ -676,7 +676,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             {
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.TopologyUnavailable,
-                    "Windows 无法枚举显示器。",
+                    "Windows could not enumerate displays.",
                     new Win32Exception(Marshal.GetLastWin32Error()));
             }
             if (matches.Count != 1)
@@ -684,8 +684,8 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.TopologyUnavailable,
                     matches.Count == 0
-                        ? "找不到内置显示器对应的 HMONITOR。"
-                        : "内置显示器映射到多个 HMONITOR。");
+                        ? "No HMONITOR was found for the internal display."
+                        : "The internal display maps to multiple HMONITOR handles.");
             }
             return matches[0];
         }
@@ -759,7 +759,7 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
         private void OnItemClosed(GraphicsCaptureItem sender, object args) =>
             _arrivals.Writer.TryComplete(new AmbientCaptureException(
                 AmbientCaptureFailure.TopologyUnavailable,
-                "内置显示器捕获项已关闭。"));
+                "The internal display capture item has closed."));
 
         private static void ThrowIfFailed(int result)
         {

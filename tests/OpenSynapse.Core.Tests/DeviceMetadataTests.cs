@@ -44,7 +44,7 @@ public sealed class DeviceMetadataTests
         var exception = Assert.Throws<InvalidOperationException>(() =>
             RazerDeviceRegistry.LoadJson([root.ToJsonString()]));
 
-        Assert.Contains("未知设备类别", exception.Message);
+        Assert.Contains("Unknown device category", exception.Message);
     }
 
     [Fact]
@@ -62,8 +62,100 @@ public sealed class DeviceMetadataTests
 
             var result = RazerDeviceRegistry.Load(directory);
 
-            Assert.Contains(result.Errors, error => error.Contains("设备类别不符合", StringComparison.Ordinal));
+            Assert.Contains(result.Errors, error => error.Contains("category does not match", StringComparison.Ordinal));
             Assert.DoesNotContain(result.Registry.Manifests, manifest => manifest.Id == "viper-compatible-test");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void OpenRazerStandardManifestMayDeclareOnlyItsVerifiedCapabilities()
+    {
+        var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
+        root["id"] = "openrazer-standard-test";
+        root["displayName"] = "OpenRazer test device";
+        root["productIds"] = new JsonArray("0BAD");
+        root["protocolFamily"] = "openrazer-standard";
+        root["category"] = "keyboard";
+        root["collection"]!["featureReportLength"] = 91;
+        root["capabilities"] = new JsonObject();
+
+        var registry = RazerDeviceRegistry.LoadJson([root.ToJsonString()]);
+
+        var manifest = Assert.Single(registry.Manifests);
+        Assert.Equal("openrazer-standard", manifest.ProtocolFamily);
+        Assert.Empty(manifest.Capabilities);
+        Assert.Equal(DeviceCategory.Keyboard, manifest.Category);
+    }
+
+    [Fact]
+    public void OpenRazerStandardManifestCannotUseTheLinuxLogicalLengthAsWindowsFeatureLength()
+    {
+        var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
+        root["id"] = "openrazer-linux-length-test";
+        root["productIds"] = new JsonArray("0BAD");
+        root["protocolFamily"] = "openrazer-standard";
+        root["category"] = "keyboard";
+        root["collection"]!["featureReportLength"] = 90;
+        root["capabilities"] = new JsonObject();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            RazerDeviceRegistry.LoadJson([root.ToJsonString()]));
+
+        Assert.Contains("permits only 91-byte feature reports", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("02C6")]
+    [InlineData("00B8")]
+    public void OpenRazerStandardCannotClaimCompletedDevice(string productId)
+    {
+        var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
+        root["id"] = "openrazer-reserved-test";
+        root["displayName"] = "OpenRazer reserved test device";
+        root["productIds"] = new JsonArray(productId);
+        root["protocolFamily"] = "openrazer-standard";
+        root["category"] = "keyboard";
+        root["collection"]!["featureReportLength"] = 91;
+        root["capabilities"] = new JsonObject();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            RazerDeviceRegistry.LoadJson([root.ToJsonString()]));
+
+        Assert.Contains("is reserved for protocol family", exception.Message);
+    }
+
+    [Fact]
+    public void CompletedDevicesRemainOwnedByTheirOriginalProtocolFamilies()
+    {
+        Assert.Equal("blade-710", RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x02C6)?.ProtocolFamily);
+        Assert.Equal("viper-184", RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x00B8)?.ProtocolFamily);
+    }
+
+    [Fact]
+    public void ExternalOpenRazerStandardManifestIsRejectedUntilAudited()
+    {
+        var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
+        root["id"] = "external-openrazer-test";
+        root["displayName"] = "External OpenRazer test device";
+        root["productIds"] = new JsonArray("0BAD");
+        root["protocolFamily"] = "openrazer-standard";
+        root["category"] = "keyboard";
+        root["collection"]!["featureReportLength"] = 91;
+        root["capabilities"] = new JsonObject();
+        var directory = Path.Combine(Path.GetTempPath(), $"OpenSynapse-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "device.json"), root.ToJsonString());
+
+            var result = RazerDeviceRegistry.Load(directory);
+
+            Assert.Contains(result.Errors, error => error.Contains("permits only reviewed built-in manifests", StringComparison.Ordinal));
+            Assert.DoesNotContain(result.Registry.Manifests, manifest => manifest.Id == "external-openrazer-test");
         }
         finally
         {

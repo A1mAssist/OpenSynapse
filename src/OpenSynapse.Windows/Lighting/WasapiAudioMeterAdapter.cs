@@ -91,7 +91,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (_worker is not null)
             {
-                throw new InvalidOperationException("Audio Meter 已经启动。");
+                throw new InvalidOperationException("Audio Meter is already running.");
             }
 
             _latest = AudioMeterSample.Silence;
@@ -126,7 +126,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
         {
             if (_worker is null)
             {
-                throw new InvalidOperationException("Audio Meter 尚未启动。");
+                throw new InvalidOperationException("Audio Meter is not running.");
             }
         }
         while (_samples.Reader.TryRead(out var sample))
@@ -167,21 +167,21 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
         if (format.Encoding == AudioSampleEncoding.IeeeFloat &&
             format.BitsPerSample is not 32 and not 64)
         {
-            throw new NotSupportedException($"不支持 {format.BitsPerSample} 位浮点音频。");
+            throw new NotSupportedException($"{format.BitsPerSample}-bit floating-point audio is not supported.");
         }
         if (format.Encoding == AudioSampleEncoding.Pcm &&
             format.BitsPerSample is not 8 and not 16 and not 24 and not 32)
         {
-            throw new NotSupportedException($"不支持 {format.BitsPerSample} 位 PCM 音频。");
+            throw new NotSupportedException($"{format.BitsPerSample}-bit PCM audio is not supported.");
         }
         if (format.ValidBitsPerSample == 0 || format.ValidBitsPerSample > format.BitsPerSample)
         {
-            throw new NotSupportedException("音频有效位数无效。");
+            throw new NotSupportedException("The valid audio bit count is invalid.");
         }
         if (format.Encoding == AudioSampleEncoding.IeeeFloat &&
             format.ValidBitsPerSample != format.BitsPerSample)
         {
-            throw new NotSupportedException("浮点音频有效位数与容器位数不一致。");
+            throw new NotSupportedException("Floating-point valid bits do not match the container bit count.");
         }
 
         double sumOfSquares = 0;
@@ -266,7 +266,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                         session = _openSession(endpointId);
                         if (!StringComparer.Ordinal.Equals(endpointId, session.EndpointId))
                         {
-                            throw new InvalidOperationException("打开的音频端点与请求端点不一致。");
+                            throw new InvalidOperationException("The opened audio endpoint does not match the requested endpoint.");
                         }
                         nextEndpointPoll = _clock() + _endpointPollInterval;
                     }
@@ -332,7 +332,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                     System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(data)),
                 64 => BitConverter.Int64BitsToDouble(
                     System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(data)),
-                _ => throw new NotSupportedException($"不支持 {format.BitsPerSample} 位浮点音频。"),
+                _ => throw new NotSupportedException($"{format.BitsPerSample}-bit floating-point audio is not supported."),
             };
         }
 
@@ -341,7 +341,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
             : format.ValidBitsPerSample;
         if (validBits == 0 || validBits > format.BitsPerSample)
         {
-            throw new NotSupportedException("PCM 有效位数无效。");
+            throw new NotSupportedException("The PCM valid bit count is invalid.");
         }
 
         if (format.BitsPerSample == 8)
@@ -355,7 +355,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
             16 => System.Buffers.Binary.BinaryPrimitives.ReadInt16LittleEndian(data),
             24 => ReadInt24(data),
             32 => System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(data),
-            _ => throw new NotSupportedException($"不支持 {format.BitsPerSample} 位 PCM 音频。"),
+            _ => throw new NotSupportedException($"{format.BitsPerSample}-bit PCM audio is not supported."),
         };
         value >>= format.BitsPerSample - validBits;
         return value / Math.Pow(2, validBits - 1);
@@ -560,7 +560,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                 var extraSize = unchecked((ushort)Marshal.ReadInt16(format, 16));
                 if (extraSize < 22)
                 {
-                    throw new NotSupportedException("WAVEFORMATEXTENSIBLE 长度无效。");
+                    throw new NotSupportedException("WAVEFORMATEXTENSIBLE length is invalid.");
                 }
                 validBits = unchecked((ushort)Marshal.ReadInt16(format, 18));
                 var subFormat = Marshal.PtrToStructure<Guid>(format + 24);
@@ -568,11 +568,11 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                     ? AudioSampleEncoding.Pcm
                     : subFormat == FloatSubFormat
                         ? AudioSampleEncoding.IeeeFloat
-                        : throw new NotSupportedException($"不支持的 WASAPI 子格式 {subFormat}。");
+                        : throw new NotSupportedException($"Unsupported WASAPI subformat: {subFormat}.");
             }
             else
             {
-                throw new NotSupportedException($"不支持的 WASAPI 格式标签 0x{tag:X4}。");
+                throw new NotSupportedException($"Unsupported WASAPI format tag: 0x{tag:X4}.");
             }
 
             var result = new AudioSampleFormat(encoding, channels, bits, validBits, blockAlign);

@@ -134,7 +134,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         ArgumentNullException.ThrowIfNull(graph);
         if (graph["mappings"] is not JsonArray mappings)
         {
-            throw new ArgumentException("MappingEngine graph 缺少 mappings 数组。", nameof(graph));
+            throw new ArgumentException("MappingEngine graph is missing the mappings array.", nameof(graph));
         }
 
         var builders = new Dictionary<RuleKey, RuleBuilder>();
@@ -144,7 +144,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
                 mapping["input"] is not JsonObject input ||
                 mapping["output"] is not JsonObject output)
             {
-                throw new ArgumentException("MappingEngine mapping 必须包含 input/output 对象。", nameof(graph));
+                throw new ArgumentException("MappingEngine mapping must contain input/output objects.", nameof(graph));
             }
 
             var inputKey = ParseInputKey(input, out var flag);
@@ -153,7 +153,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             {
                 if (builder.Press is not null)
                 {
-                    throw new ArgumentException("MappingEngine graph 包含重复的按下映射。", nameof(graph));
+                    throw new ArgumentException("MappingEngine graph contains a duplicate press mapping.", nameof(graph));
                 }
 
                 builders[inputKey] = new RuleBuilder(input, output, null, null);
@@ -162,14 +162,14 @@ public sealed class BladeMappingInputRuntime : IDisposable
             {
                 if (builder.Press is null || builder.Release is not null)
                 {
-                    throw new ArgumentException("MappingEngine graph 的释放映射没有唯一的按下映射。", nameof(graph));
+                    throw new ArgumentException("MappingEngine graph release mapping does not have a unique press mapping.", nameof(graph));
                 }
 
                 builders[inputKey] = builder with { ReleaseInput = input, Release = output };
             }
             else
             {
-                throw new ArgumentException($"MappingEngine input flag 无效：{flag}。", nameof(graph));
+                throw new ArgumentException($"Invalid MappingEngine input flag: {flag}.", nameof(graph));
             }
         }
 
@@ -179,7 +179,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             if (builder.Press is null || builder.ReleaseInput is null || builder.Release is null)
             {
                 throw new ArgumentException(
-                    $"MappingEngine graph 缺少 {key.Kind}:{key.Code} 的 press/release 对。",
+                    $"MappingEngine graph is missing the press/release pair for {key.Kind}:{key.Code}.",
                     nameof(graph));
             }
 
@@ -201,7 +201,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
                 .Count() != 23)
         {
             runtime.Dispose();
-            throw new ArgumentException("Product 710 默认映射必须包含完整的 64 条记录。", nameof(graph));
+            throw new ArgumentException("The Product 710 default mapping must contain all 64 records.", nameof(graph));
         }
 
         return runtime;
@@ -222,7 +222,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             if (!_rules.TryAdd(key, rule))
             {
                 throw new ArgumentException(
-                    $"重复的 Blade 映射输入 {rule.InputKind}:{rule.InputCode}（HyperShift={rule.HyperShiftLayer}）。",
+                    $"Duplicate Blade mapping input {rule.InputKind}:{rule.InputCode} (HyperShift={rule.HyperShiftLayer}).",
                     nameof(rules));
             }
         }
@@ -296,7 +296,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         if (!allowAppAction && RequiresAppExecutor(rule.Value.OutputKind))
         {
             throw new InvalidOperationException(
-                $"映射动作 {rule.Value.OutputKind} 已编译，但必须由 App 动作执行器处理。");
+                $"Mapping action {rule.Value.OutputKind} is compiled but must be handled by the app action executor.");
         }
 
         if (input.IsDown)
@@ -447,11 +447,11 @@ public sealed class BladeMappingInputRuntime : IDisposable
                 if (action is null)
                 {
                     throw new InvalidOperationException(
-                        $"映射动作 {rule.OutputKind} 缺少已编译的按下/释放动作。");
+                        $"Mapping action {rule.OutputKind} is missing compiled press/release actions.");
                 }
                 return [];
             default:
-                throw new InvalidOperationException($"未定义的映射输出类型：{rule.OutputKind}。");
+                throw new InvalidOperationException($"Undefined mapping output type: {rule.OutputKind}.");
         }
     }
 
@@ -522,7 +522,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
     {
         if (scanCode is < 0 or > ushort.MaxValue)
         {
-            throw new InvalidOperationException($"映射输出 scanCode 无效：{scanCode}。");
+            throw new InvalidOperationException($"Invalid mapping output scanCode: {scanCode}.");
         }
 
         var outputKey = new OutputKey(scanCode, extended);
@@ -556,41 +556,41 @@ public sealed class BladeMappingInputRuntime : IDisposable
     {
         if (!Enum.IsDefined(rule.InputKind))
         {
-            throw new ArgumentOutOfRangeException(nameof(rule), "未定义的映射输入类型。");
+            throw new ArgumentOutOfRangeException(nameof(rule), "Undefined mapping input type.");
         }
         if (!Enum.IsDefined(rule.OutputKind))
         {
-            throw new ArgumentOutOfRangeException(nameof(rule), "未定义的映射输出类型。");
+            throw new ArgumentOutOfRangeException(nameof(rule), "Undefined mapping output type.");
         }
         if (rule.InputCode is < 0 or > ushort.MaxValue)
         {
-            throw new ArgumentOutOfRangeException(nameof(rule), "输入代码必须是 0..65535。");
+            throw new ArgumentOutOfRangeException(nameof(rule), "Input code must be in the range 0..65535.");
         }
         if (rule.InputKind != BladeMappingInputKind.Keyboard && rule.InputExtended)
         {
-            throw new ArgumentException("只有键盘输入可以携带 extended 标志。", nameof(rule));
+            throw new ArgumentException("Only keyboard input can carry the extended flag.", nameof(rule));
         }
         if (rule.OutputKind == BladeMappingOutputKind.Keyboard &&
             rule.OutputCode is < 0 or > ushort.MaxValue)
         {
-            throw new ArgumentOutOfRangeException(nameof(rule), "输出 scanCode 必须是 0..65535。");
+            throw new ArgumentOutOfRangeException(nameof(rule), "Output scanCode must be in the range 0..65535.");
         }
         if (rule.OutputKind != BladeMappingOutputKind.Keyboard &&
             (rule.OutputCode != 0 || rule.OutputExtended))
         {
-            throw new ArgumentException("非键盘映射不能携带 scanCode 或 extended 标志。", nameof(rule));
+            throw new ArgumentException("Non-keyboard mappings cannot carry a scanCode or extended flag.", nameof(rule));
         }
         if (rule.SnapTapId is <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(rule), "Snap Tap id 必须为正数。");
+            throw new ArgumentOutOfRangeException(nameof(rule), "Snap Tap id must be positive.");
         }
         if (rule.OutputKind != BladeMappingOutputKind.Keyboard && rule.SnapTapId is not null)
         {
-            throw new ArgumentException("只有键盘输出可以携带 Snap Tap id。", nameof(rule));
+            throw new ArgumentException("Only keyboard output can carry a Snap Tap id.", nameof(rule));
         }
         if ((rule.PressAction is null) != (rule.ReleaseAction is null))
         {
-            throw new ArgumentException("映射动作必须同时包含按下和释放。", nameof(rule));
+            throw new ArgumentException("Mapping actions must contain both press and release actions.", nameof(rule));
         }
         if (rule.OutputKind is not (
                 BladeMappingOutputKind.Keyboard or
@@ -599,7 +599,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
                 BladeMappingOutputKind.SnapTapToggle) &&
             rule.PressAction is null)
         {
-            throw new ArgumentException("高级映射必须包含已编译的按下和释放动作。", nameof(rule));
+            throw new ArgumentException("Advanced mappings must contain compiled press and release actions.", nameof(rule));
         }
         if (rule.PressAction is not null && rule.ReleaseAction is not null)
         {
@@ -607,12 +607,12 @@ public sealed class BladeMappingInputRuntime : IDisposable
             ValidateAction(rule.ReleaseAction);
             if (GetPairedOutputKind(rule.PressAction, rule.ReleaseAction) != rule.OutputKind)
             {
-                throw new ArgumentException("映射动作与输出类型不一致。", nameof(rule));
+                throw new ArgumentException("Mapping actions do not match the output type.", nameof(rule));
             }
             if (rule.PressAction is BladeKeyboardMappingAction keyboard &&
                 (keyboard.ScanCode != rule.OutputCode || keyboard.Extended != rule.OutputExtended))
             {
-                throw new ArgumentException("键盘动作与规则输出不一致。", nameof(rule));
+                throw new ArgumentException("Keyboard actions do not match the rule output.", nameof(rule));
             }
         }
     }
@@ -632,7 +632,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
                 !pressKeyboard.IsDown || releaseKeyboard.IsDown ||
                 pressKeyboard.Extended != releaseKeyboard.Extended)
             {
-                throw new ArgumentException("MappingEngine press/release 键盘输出不匹配。");
+                throw new ArgumentException("MappingEngine press/release keyboard outputs do not match.");
             }
 
             return new(
@@ -680,7 +680,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         if (outputKind == BladeMappingOutputKind.Disable &&
             (GetString(press, "type") != "disabled" || GetString(release, "type") != "disabled"))
         {
-            throw new ArgumentException("Product 710 的空映射必须使用 disabled/disabled 配对。");
+            throw new ArgumentException("Product 710 empty mappings must use a disabled/disabled pair.");
         }
 
         return new(
@@ -703,7 +703,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             builder.Input["modifiers"] is not null ||
             builder.ReleaseInput!["modifiers"] is not null)
         {
-            throw new ArgumentException("MappingEngine press/release 输入不匹配。");
+            throw new ArgumentException("MappingEngine press/release inputs do not match.");
         }
     }
 
@@ -758,7 +758,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         (BladeBacklightMappingAction down, BladeBacklightMappingAction up)
             when down.IsDown && !up.IsDown && down.Command == up.Command => BladeMappingOutputKind.Backlight,
         _ => throw new ArgumentException(
-            $"不支持的 MappingEngine 输出配对：{press.Kind}/{release.Kind}。"),
+            $"Unsupported MappingEngine output pair: {press.Kind}/{release.Kind}."),
     };
 
     private static bool IsKeyTap(BladeMultiMappingAction action) => action.Actions is
@@ -820,7 +820,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             "audio" => ParseAudioAction(action),
             "hypershift" => new BladeHyperShiftMappingAction(ParseDownFlag(action)),
             "snapTap" => ParseSnapTapAction(action),
-            _ => throw new ArgumentException($"不支持的 MappingEngine 输出类型：{type}。"),
+            _ => throw new ArgumentException($"Unsupported MappingEngine output type: {type}."),
         };
     }
 
@@ -842,7 +842,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         var id = GetString(action, "id");
         if (!string.Equals(id, expectedId, StringComparison.Ordinal))
         {
-            throw new ArgumentException($"MappingEngine {kind} id 无效：{id}。");
+            throw new ArgumentException($"Invalid MappingEngine {kind} id: {id}.");
         }
 
         return new(kind, command);
@@ -852,13 +852,13 @@ public sealed class BladeMappingInputRuntime : IDisposable
     {
         if (action["outputs"] is not JsonArray { Count: > 0 } outputs)
         {
-            throw new ArgumentException("MappingEngine multi 缺少非空 outputs 数组。");
+            throw new ArgumentException("MappingEngine multi is missing a non-empty outputs array.");
         }
 
         return new(outputs.Select(node =>
             node is JsonObject child
                 ? ParseAction(child)
-                : throw new ArgumentException("MappingEngine multi outputs 必须是对象。")).ToArray());
+                : throw new ArgumentException("MappingEngine multi outputs must be objects.")).ToArray());
     }
 
     private static BladeTurboMappingAction ParseTurboAction(JsonObject action)
@@ -866,11 +866,11 @@ public sealed class BladeMappingInputRuntime : IDisposable
         var guidText = GetString(action, "guid");
         if (!Guid.TryParseExact(guidText, "D", out var id))
         {
-            throw new ArgumentException($"MappingEngine turbo guid 无效：{guidText}。");
+            throw new ArgumentException($"Invalid MappingEngine turbo guid: {guidText}.");
         }
         if (!BladeProduct710TurboCatalog.TryGet(id, out _))
         {
-            throw new ArgumentException($"Product 710 turbo guid 未知：{guidText}。");
+            throw new ArgumentException($"Unknown Product 710 turbo guid: {guidText}.");
         }
 
         return new(
@@ -888,7 +888,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             "driverBrightnessDown" => BladeMappingCommand.DriverBrightnessDown,
             "driverBrightnessUp" => BladeMappingCommand.DriverBrightnessUp,
             "driverBrightnessStop" => BladeMappingCommand.DriverBrightnessStop,
-            _ => throw new ArgumentException($"MappingEngine display id 无效：{id}。"),
+            _ => throw new ArgumentException($"Invalid MappingEngine display id: {id}."),
         };
         return new(BladeMappingOutputKind.Display, command);
     }
@@ -900,7 +900,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         {
             "BrightnessDown" => BladeMappingCommand.BrightnessDown,
             "BrightnessUp" => BladeMappingCommand.BrightnessUp,
-            _ => throw new ArgumentException($"MappingEngine backlight name 无效：{name}。"),
+            _ => throw new ArgumentException($"Invalid MappingEngine backlight name: {name}."),
         };
         return new(command, ParseDownFlag(action));
     }
@@ -910,7 +910,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         var id = GetString(action, "id");
         if (!string.Equals(id, "mic", StringComparison.Ordinal))
         {
-            throw new ArgumentException($"MappingEngine audio id 无效：{id}。");
+            throw new ArgumentException($"Invalid MappingEngine audio id: {id}.");
         }
 
         return new(
@@ -924,7 +924,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         var id = GetString(action, "id");
         if (!string.Equals(id, "toggle", StringComparison.Ordinal))
         {
-            throw new ArgumentException($"MappingEngine snapTap id 无效：{id}。");
+            throw new ArgumentException($"Invalid MappingEngine snapTap id: {id}.");
         }
 
         return new(BladeMappingCommand.Toggle);
@@ -935,15 +935,15 @@ public sealed class BladeMappingInputRuntime : IDisposable
         ArgumentNullException.ThrowIfNull(action);
         if (!Enum.IsDefined(action.Kind))
         {
-            throw new ArgumentOutOfRangeException(nameof(action), "未定义的映射动作类型。");
+            throw new ArgumentOutOfRangeException(nameof(action), "Undefined mapping action type.");
         }
 
         switch (action)
         {
             case BladeKeyboardMappingAction { ScanCode: < 0 or > ushort.MaxValue }:
-                throw new ArgumentOutOfRangeException(nameof(action), "输出 scanCode 必须是 0..65535。");
+                throw new ArgumentOutOfRangeException(nameof(action), "Output scanCode must be in the range 0..65535.");
             case BladeMultiMappingAction { Actions.Count: 0 }:
-                throw new ArgumentException("Multi 动作不能为空。", nameof(action));
+                throw new ArgumentException("Multi actions cannot be empty.", nameof(action));
             case BladeMultiMappingAction multi:
                 foreach (var child in multi.Actions)
                 {
@@ -951,26 +951,26 @@ public sealed class BladeMappingInputRuntime : IDisposable
                 }
                 break;
             case BladeCommandMappingAction command when !IsValidCommand(command):
-                throw new ArgumentException("命令与映射动作类型不匹配。", nameof(action));
+                throw new ArgumentException("The command does not match the mapping action type.", nameof(action));
             case BladeDelayMappingAction { Milliseconds: < 0 }:
-                throw new ArgumentOutOfRangeException(nameof(action), "Delay 必须非负。");
+                throw new ArgumentOutOfRangeException(nameof(action), "Delay must be non-negative.");
             case BladeTurboMappingAction { Id: var id } when id == Guid.Empty:
-                throw new ArgumentException("Turbo guid 不能为空。", nameof(action));
+                throw new ArgumentException("Turbo guid cannot be empty.", nameof(action));
             case BladeTurboMappingAction { DelayMilliseconds: < 0 }:
-                throw new ArgumentOutOfRangeException(nameof(action), "Turbo delay 必须非负。");
+                throw new ArgumentOutOfRangeException(nameof(action), "Turbo delay must be non-negative.");
             case BladeTurboMappingAction { Repeat: <= 0 }:
-                throw new ArgumentOutOfRangeException(nameof(action), "Turbo repeat 必须为正数。");
+                throw new ArgumentOutOfRangeException(nameof(action), "Turbo repeat must be positive.");
             case BladeAudioMappingAction { Mute: < 0 }:
-                throw new ArgumentOutOfRangeException(nameof(action), "Audio mute 必须非负。");
+                throw new ArgumentOutOfRangeException(nameof(action), "Audio mute must be non-negative.");
             case BladeAudioMappingAction { Repeat: <= 0 }:
-                throw new ArgumentOutOfRangeException(nameof(action), "Audio repeat 必须为正数。");
+                throw new ArgumentOutOfRangeException(nameof(action), "Audio repeat must be positive.");
             case BladeBacklightMappingAction { Command: not (
                 BladeMappingCommand.BrightnessDown or BladeMappingCommand.BrightnessUp) }:
-                throw new ArgumentException("Backlight 命令无效。", nameof(action));
+                throw new ArgumentException("Invalid backlight command.", nameof(action));
             case BladeAudioMappingAction { Command: not BladeMappingCommand.Microphone }:
-                throw new ArgumentException("Audio 命令无效。", nameof(action));
+                throw new ArgumentException("Invalid audio command.", nameof(action));
             case BladeSnapTapMappingAction { Command: not BladeMappingCommand.Toggle }:
-                throw new ArgumentException("Snap Tap 命令无效。", nameof(action));
+                throw new ArgumentException("Invalid Snap Tap command.", nameof(action));
             case not (BladeKeyboardMappingAction or
                       BladeDisabledMappingAction or
                       BladeCommandMappingAction or
@@ -981,7 +981,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
                       BladeAudioMappingAction or
                       BladeHyperShiftMappingAction or
                       BladeSnapTapMappingAction):
-                throw new ArgumentException("未知的映射动作实现。", nameof(action));
+                throw new ArgumentException("Unknown mapping action implementation.", nameof(action));
         }
     }
 
@@ -1007,7 +1007,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         var flag = GetRequiredInt(value, "flag");
         return flag is 0 or 1 or 2 or 3
             ? flag
-            : throw new ArgumentException($"MappingEngine flag 无效：{flag}。");
+            : throw new ArgumentException($"Invalid MappingEngine flag: {flag}.");
     }
 
     private static bool ParseDownFlag(JsonObject value)
@@ -1017,7 +1017,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         {
             0 => true,
             1 => false,
-            _ => throw new ArgumentException($"MappingEngine 动作 flag 无效：{flag}。"),
+            _ => throw new ArgumentException($"Invalid MappingEngine action flag: {flag}."),
         };
     }
 
@@ -1026,7 +1026,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         var result = GetRequiredInt(value, name);
         return result >= 0
             ? result
-            : throw new ArgumentException($"MappingEngine {name} 必须非负。");
+            : throw new ArgumentException($"MappingEngine {name} must be non-negative.");
     }
 
     private static int? GetOptionalNonNegativeInt(JsonObject value, string name) =>
@@ -1042,7 +1042,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         var result = GetRequiredInt(value, name);
         return result > 0
             ? result
-            : throw new ArgumentException($"MappingEngine {name} 必须为正数。");
+            : throw new ArgumentException($"MappingEngine {name} must be positive.");
     }
 
     private static RuleKey ParseInputKey(JsonObject input, out int flag)
@@ -1052,7 +1052,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         {
             "keyboard" => BladeMappingInputKind.Keyboard,
             "razerKey" => BladeMappingInputKind.RazerKey,
-            _ => throw new ArgumentException($"不支持的 MappingEngine 输入类型：{type}。"),
+            _ => throw new ArgumentException($"Unsupported MappingEngine input type: {type}."),
         };
         var code = kind == BladeMappingInputKind.Keyboard
             ? GetRequiredInt(input, "scancode")
@@ -1060,7 +1060,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         flag = GetFlag(input);
         if (kind == BladeMappingInputKind.RazerKey && flag is 2 or 3)
         {
-            throw new ArgumentException("Product 710 RazerKey 不支持扩展 flag。", nameof(input));
+            throw new ArgumentException("Product 710 RazerKey does not support the extended flag.", nameof(input));
         }
         return new(kind, code, GetOptionalBool(input, "hypershift"), IsExtendedFlag(flag));
     }
@@ -1082,7 +1082,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
 
     private static string GetString(JsonObject value, string name) =>
         value[name]?.GetValue<string>()
-            ?? throw new ArgumentException($"MappingEngine 对象缺少字符串字段 {name}。");
+            ?? throw new ArgumentException($"MappingEngine object is missing string field {name}.");
 
     private static int GetRequiredInt(JsonObject value, string name)
     {
@@ -1107,7 +1107,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             }
         }
 
-        throw new ArgumentException($"MappingEngine 对象缺少有效整数字段 {name}。");
+        throw new ArgumentException($"MappingEngine object is missing valid integer field {name}.");
     }
 
     private static int? GetOptionalInt(JsonObject value, string name) =>

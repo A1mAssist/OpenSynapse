@@ -64,7 +64,7 @@ public sealed class WindowsTouchpadController
         var before = GetEnabled();
         if (before is null)
         {
-            throw new InvalidOperationException("无法读取 Windows 精确式触摸板状态；未发送切换输入。");
+            throw new InvalidOperationException("Could not read the Windows precision touchpad state; no toggle input was sent.");
         }
 
         var inputs = BuildToggleInputs();
@@ -73,7 +73,7 @@ public sealed class WindowsTouchpadController
         {
             throw new Win32Exception(
                 result.Error,
-                $"SendInput 只发送了 {result.Sent}/{inputs.Length} 个触摸板切换事件（Win32 错误 {result.Error}）。");
+                $"SendInput sent only {result.Sent}/{inputs.Length} touchpad toggle events (Win32 error {result.Error}).");
         }
 
         for (var attempt = 0; attempt < _readbackAttempts; attempt++)
@@ -91,7 +91,7 @@ public sealed class WindowsTouchpadController
         }
 
         throw new InvalidOperationException(
-            $"触摸板切换后回读未变化或不可用；原状态为 {(before.Value ? "启用" : "禁用")}。");
+            $"Touchpad readback was unchanged or unavailable after toggling; previous state was {(before.Value ? "enabled" : "disabled")}.");
     }
 
     internal static Input[] BuildToggleInputs()

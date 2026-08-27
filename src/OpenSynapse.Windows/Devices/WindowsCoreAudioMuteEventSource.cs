@@ -64,7 +64,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (_worker is not null)
             {
-                throw new InvalidOperationException("Core Audio 静音事件源已经启动。");
+                throw new InvalidOperationException("Core Audio mute event source is already running.");
             }
 
             _worker = new Thread(Worker)

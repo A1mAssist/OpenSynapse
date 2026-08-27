@@ -20,6 +20,9 @@ public enum DeviceCategory
     Mouse,
     Keyboard,
     Headset,
+    Accessory,
+    MouseMat,
+    Monitor,
 }
 
 public sealed record DeviceDescriptor(

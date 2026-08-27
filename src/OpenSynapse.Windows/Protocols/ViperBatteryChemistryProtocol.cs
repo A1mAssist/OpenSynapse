@@ -33,12 +33,12 @@ public static class ViperBatteryChemistryProtocol
         var request = CreateGetRequest();
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, 1))
         {
-            throw new InvalidOperationException("Viper 电池类型返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Viper battery chemistry returned an invalid or out-of-order feature report.");
         }
 
         var chemistry = (ViperBatteryChemistry)response[RazerFeatureReport.ArgumentsOffset];
         return Enum.IsDefined(chemistry)
             ? chemistry
-            : throw new InvalidOperationException($"Viper 返回了未知电池类型 0x{(byte)chemistry:X2}。");
+            : throw new InvalidOperationException($"Viper returned an unknown battery chemistry: 0x{(byte)chemistry:X2}.");
     }
 }

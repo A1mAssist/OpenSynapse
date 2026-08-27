@@ -12,7 +12,7 @@ internal static class BladeLightingProfileCodec
     {
         ArgumentNullException.ThrowIfNull(profile);
         var mode = profile.Effect?.Trim().ToLowerInvariant()
-            ?? throw new InvalidOperationException("键盘灯效不能为空。");
+            ?? throw new InvalidOperationException("Keyboard lighting effect cannot be null.");
         var parameters = profile.Parameters ?? new Dictionary<string, string>();
         string[] allowed = mode switch
         {
@@ -20,11 +20,11 @@ internal static class BladeLightingProfileCodec
             "tidal" => ["color", "color2"],
             "wave" or "wheel" => ["direction"],
             "off" or "spectrum" or "fire" or "audiometer" or "ambient" => [],
-            _ => throw new InvalidOperationException($"不支持的键盘灯效：{profile.Effect}。"),
+            _ => throw new InvalidOperationException($"Unsupported keyboard lighting effect: {profile.Effect}."),
         };
         if (parameters.Keys.Any(key => !allowed.Contains(key, StringComparer.OrdinalIgnoreCase)))
         {
-            throw new InvalidOperationException($"灯效 {profile.Effect} 包含不支持的参数。");
+            throw new InvalidOperationException($"Lighting effect {profile.Effect} contains unsupported parameters.");
         }
 
         var color = parameters.TryGetValue("color", out var hex) ? ParseColor(hex) : DefaultColor;
@@ -94,7 +94,7 @@ internal static class BladeLightingProfileCodec
         {
             "left" => BladeWaveDirection.Left,
             "right" => BladeWaveDirection.Right,
-            _ => throw new InvalidOperationException("灯效方向必须是 left 或 right。"),
+            _ => throw new InvalidOperationException("Lighting effect direction must be left or right."),
         };
     }
 
@@ -109,7 +109,7 @@ internal static class BladeLightingProfileCodec
         }
         catch (FormatException exception)
         {
-            throw new InvalidOperationException("灯效颜色必须是六位 RRGGBB。", exception);
+            throw new InvalidOperationException("Lighting effect color must be a six-digit RRGGBB value.", exception);
         }
     }
 }

@@ -29,7 +29,7 @@ public sealed class WindowsDisplayBrightnessController
             brightness.StopOverride();
             if (!await BrightnessOverride.SaveForSystemAsync(brightness))
             {
-                throw new InvalidOperationException("Windows 拒绝保存内置屏亮度。");
+                throw new InvalidOperationException("Windows rejected the internal display brightness setting.");
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -69,7 +69,7 @@ public sealed class WindowsDisplayBrightnessController
         var sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>());
         if (sent != inputs.Length)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows 未接受显示亮度按键。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows did not accept the display brightness key input.");
         }
     }
 

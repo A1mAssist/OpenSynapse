@@ -70,7 +70,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         }
         else if (targetRpm is not null)
         {
-            throw new ArgumentException("自动风扇模式不能指定固定转速。", nameof(targetRpm));
+            throw new ArgumentException("Automatic fan mode cannot specify a fixed speed.", nameof(targetRpm));
         }
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
 
@@ -107,7 +107,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
                 catch (Exception restoreException)
                 {
                     throw new AggregateException(
-                        "固定风扇写入失败，且原状态恢复失败。",
+                        "Fixed fan write failed and the previous state could not be restored.",
                         exception,
                         restoreException);
                 }
@@ -237,7 +237,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
                     if (missingSamples >= MaximumConsecutiveMissingSamples)
                     {
                         throw new InvalidOperationException(
-                            $"连续 {missingSamples} 次无法读取风扇曲线所需温度，已停止并恢复原状态。",
+                            $"Temperature required by the fan curve could not be read for {missingSamples} consecutive samples; the curve was stopped and the previous state restored.",
                             exception);
                     }
                     continue;
@@ -281,8 +281,8 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             catch (Exception restoreException)
             {
                 failure = failure is null
-                    ? new InvalidOperationException("风扇曲线停止后无法恢复原状态。", restoreException)
-                    : new AggregateException("风扇曲线运行失败，且原状态恢复失败。", failure, restoreException);
+                    ? new InvalidOperationException("The previous state could not be restored after stopping the fan curve.", restoreException)
+                    : new AggregateException("Fan curve execution failed and the previous state could not be restored.", failure, restoreException);
             }
         }
 
@@ -316,7 +316,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         }
         catch (Exception exception)
         {
-            throw new InvalidOperationException("固定风扇停止后无法恢复原状态。", exception);
+            throw new InvalidOperationException("The previous state could not be restored after stopping fixed fan control.", exception);
         }
     }
 
@@ -324,7 +324,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     {
         if (_worker is not null)
         {
-            throw new InvalidOperationException("风扇控制已经启动。");
+            throw new InvalidOperationException("Fan control is already running.");
         }
     }
 

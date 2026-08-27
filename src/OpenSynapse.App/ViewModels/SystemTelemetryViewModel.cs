@@ -19,7 +19,6 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _gpuTemperatureText = "--";
     private string _gpuPowerText = "--";
     private string _gpuClockText = "--";
-    private string _gpuMemoryLabel = "GPU 内存";
     private string _gpuMemoryText = "--";
     private string _memoryValue = "--";
     private string _memoryDetail = "-- / -- GB";
@@ -43,7 +42,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string GpuTemperatureText { get => _gpuTemperatureText; private set => SetField(ref _gpuTemperatureText, value); }
     public string GpuPowerText { get => _gpuPowerText; private set => SetField(ref _gpuPowerText, value); }
     public string GpuClockText { get => _gpuClockText; private set => SetField(ref _gpuClockText, value); }
-    public string GpuMemoryLabel { get => AppStrings.Get(_gpuMemoryLabel); private set => SetField(ref _gpuMemoryLabel, value); }
+    public string GpuMemoryLabel => AppStrings.Text("GpuMemoryLabel");
     public string GpuMemoryText { get => _gpuMemoryText; private set => SetField(ref _gpuMemoryText, value); }
     public string MemoryValue { get => _memoryValue; private set => SetField(ref _memoryValue, value); }
     public string MemoryDetail { get => _memoryDetail; private set => SetField(ref _memoryDetail, value); }
@@ -76,7 +75,6 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
         GpuTemperatureText = FormatNumber(snapshot.GpuTemperatureCelsius, "0", "°C");
         GpuPowerText = FormatNumber(snapshot.GpuPowerWatts, "0.0", " W");
         GpuClockText = FormatNumber(snapshot.GpuClockMegahertz, "0", " MHz");
-        GpuMemoryLabel = snapshot.GpuMemoryLabel;
         GpuMemoryText = snapshot.GpuMemoryUsedMebibytes is long used &&
                         snapshot.GpuMemoryTotalMebibytes is long total
             ? $"{used:N0} / {total:N0} MiB"

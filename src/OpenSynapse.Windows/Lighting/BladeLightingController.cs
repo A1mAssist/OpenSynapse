@@ -382,7 +382,7 @@ public sealed class BladeLightingController : IBladeLightingController
             }
         }
 
-        throw new InvalidOperationException("未找到可写入的 Blade 键盘灯光 feature collection。");
+        throw new InvalidOperationException("No writable Blade keyboard lighting feature collection was found.");
     }
 
     private async Task ValidateCurrentPathAsync(
@@ -403,7 +403,7 @@ public sealed class BladeLightingController : IBladeLightingController
             request.AllowRemainingPacketsMismatch).ConfigureAwait(false);
         if (response[6] < 2)
         {
-            throw new InvalidOperationException("键盘亮度读回长度不足，拒绝启动矩阵灯光。");
+            throw new InvalidOperationException("Keyboard brightness readback is too short; matrix lighting will not start.");
         }
     }
 
@@ -525,7 +525,7 @@ public sealed class BladeLightingController : IBladeLightingController
                 BladeLightingMode.Starlight => _starlight!.Render(elapsed),
                 BladeLightingMode.Tidal => QuickLightingEngine.RenderTidal(
                     elapsed, _effect.Color, _effect.SecondColor),
-                _ => throw new InvalidOperationException("不支持的 Blade 灯光模式。"),
+                _ => throw new InvalidOperationException("Unsupported Blade lighting mode."),
             };
             return ValueTask.FromResult(frame);
         }
@@ -551,7 +551,7 @@ public sealed class BladeLightingController : IBladeLightingController
                     QuickLightingEngine.RenderReactive(elapsed, _events, effect.Color, Duration),
                 BladeLightingMode.Ripple =>
                     QuickLightingEngine.RenderRipple(elapsed, _events, effect.Color, Duration),
-                _ => throw new InvalidOperationException("键盘输入源仅支持 Reactive 或 Ripple。"),
+                _ => throw new InvalidOperationException("The keyboard input source supports only Reactive or Ripple."),
             };
             return ValueTask.FromResult(frame);
         }

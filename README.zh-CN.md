@@ -4,7 +4,7 @@
 
 <h1 align="center">OpenSynapse</h1>
 
-<p align="center">面向 Windows 11 的轻量级 Razer 设备控制工具。</p>
+<p align="center">在 Windows 11 上管理受支持的 Razer 硬件，不用让雷云一直留在后台。</p>
 
 <p align="center">
   <a href="https://github.com/A1mAssist/OpenSynapse/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/A1mAssist/OpenSynapse?style=flat-square"></a>
@@ -14,43 +14,49 @@
 
 <p align="center">简体中文 · <a href="README.md">English</a></p>
 
-OpenSynapse 可以在不让 Razer Synapse 常驻的情况下，读取设备状态并管理经过实机验证的灯光、性能、显示、电池和按键功能。它不会根据相近型号猜测协议，也不会向未知设备发送控制命令。
+OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。Blade 和 Viper 继续使用各自的产品专用实现，OpenRazer 设备走按能力判断的通用页面。
 
-> 当前稳定版本：`v1.1.5`。仅支持下方列出的具体硬件与 USB 标识。
+> 当前版本 `v1.2.0` · Windows 11 x64 · 未签名
 
-## 支持设备
+## 支持范围
 
-| 设备 | USB VID:PID | 已验证能力 |
+### 产品专用设备
+
+| 设备 | USB VID:PID | 可用功能 |
 |---|---|---|
-| Razer Blade 16 (2025) | `1532:02C6` | 遥测、灯光、性能、风扇、显示、电池、Fn/M3/M4/M5 |
-| Razer Viper V3 HyperSpeed | `1532:00B8` | 电量、DPI、轮询率、休眠、板载按键映射 |
+| Razer Blade 16 (2025) | `1532:02C6` | 遥测、键盘灯光、性能、风扇、显示、电池、Fn/M3/M4/M5 |
+| Razer Viper V3 HyperSpeed | `1532:00B8` | 电量、DPI、轮询率、休眠、电池类型、板载映射 |
 
-## 功能
+Blade 灯光支持关闭、静态、呼吸、光谱循环、波浪、火焰、响应、涟漪、音频律动、环境感知、色轮、星光和双色潮汐。自定义性能模式可以调整 CPU Boost、GPU Boost 和 Max Fan。风扇控制、充电上限、内屏刷新率、触控板以及经过验证的 Fn 功能仍在 Blade 页面中管理。
 
-### Razer Blade 16 (2025)
+Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y DPI、最多 5 档 DPI，以及固定 Profile 1 的 Normal/HyperShift 板载映射。鼠标无法可靠读回电池类型，因此该设置由用户选择。低电量阈值继续保持只读。
 
-- 读取 CPU、GPU、内存、磁盘、风扇和设备状态。
-- 调整键盘亮度，并使用关闭、静态、呼吸、光谱循环、波浪、火焰、响应、涟漪、音频律动、环境感知、色轮、星光和双色潮汐灯效。
-- 切换性能模式；在自定义模式下调整 CPU Boost、GPU Boost 和 Max Fan。
-- 使用自动风扇或手动风扇控制，设置 `50%` 至 `80%` 的充电上限。
-- 切换内置显示器支持的刷新率和触控板状态。
-- 后台处理已验证的 Fn 组合键、M3 游戏模式、M4 性能模式以及 M5 麦克风静音指示灯。
-- 显示面板模式、SKU 等只读平台状态。
+### OpenRazer 设备
 
-### Razer Viper V3 HyperSpeed
+1.2.0 加入了基于固定 OpenRazer 设备目录的通用支持。目录包含使用标准 91-byte Razer HID 报告的鼠标、键盘、笔记本和配件。软件只为当前连接的设备创建页面，后端确认端点和事务以后，对应控件才会出现。
 
-- 读取电量、低电量阈值、轮询率、当前 DPI、休眠时间和 DPI 档位。
-- 设置 `125 / 500 / 1000 Hz` 轮询率。
-- 设置 `100..30000`、步进 `50` 的 X/Y DPI，并配置最多 5 档 DPI。
-- 读取和编辑固定 Profile 1 的 Normal / HyperShift 板载映射。
-- 支持关闭、鼠标键、键盘按键和双击等已验证映射动作。
-- 手动选择鼠标使用的电池类型（碱性、镍氢充电或锂电池）；选择会保存到 OpenSynapse 配置，并写入鼠标以使用正确的电量计算曲线。
+不同型号可能提供设备信息、电池状态、轮询率、DPI 与 DPI 档位、省电设置、低电量警告、灯光亮度与效果、分区 LED、矩阵灯光、滚轮设置、键轴优化、Fn 优先行为或 HyperPolling 接收器控制。
 
-电池类型由用户提供，软件不会猜测，也不会把设备读回值当作设置来源。低电量阈值保持只读；Viper V3 HyperSpeed 不支持 `2000 / 4000 / 8000 Hz` HyperPolling。
+设备出现在目录中，不代表每个控制项都已在该型号上完成真机验证。端点无法解析或正被占用时，页面会保持只读，直到重新扫描。OpenSynapse 不会按产品名称猜测能力，也不会改用另一个 HID 接口强行写入。
 
-### Chroma REST 支持
+### Kraken 灯光
 
-OpenSynapse 提供本地 Chroma REST 兼容端点：`127.0.0.1:54235`。兼容的游戏或外部集成可以提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧；帧会映射到经过实机验证的 Blade 16 实体键位，外部控制结束后会恢复 OpenSynapse 当前配置的灯效。目前仅适配 Chroma REST 协议，不支持原生 Chroma SDK / `RzChromaConnectAPI` DLL 接口。
+以下 Kraken USB 耳机使用独立的 37-byte Output Report 通道。OpenSynapse 只管理它们的灯光。
+
+| 型号 | USB PID |
+|---|---|
+| Kraken 7.1 | `0501`、`0506` |
+| Kraken 7.1 Chroma | `0504` |
+| Kraken 7.1 V2 | `0510` |
+| Kraken Tournament Edition | `0520` |
+| Kraken Ultimate | `0527` |
+| Kraken Kitty V2 | `0560` |
+
+软件会按匹配到的设备定义显示灯效。不同型号可能支持关闭、静态、光谱、单色/双色/三色呼吸和自定义。这里不包含音频、麦克风、EQ 或 THX 控制。
+
+### Chroma REST
+
+兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用经过验证的 Blade 16 实体键位，外部控制结束后会恢复当前选择的灯效。原生 Chroma SDK 和 `RzChromaConnectAPI` DLL 接口尚未实现。
 
 ## 界面预览
 
@@ -64,23 +70,27 @@ OpenSynapse 提供本地 Chroma REST 兼容端点：`127.0.0.1:54235`。兼容�
 
 ## 安装
 
-1. 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载 `OpenSynapse-1.1.5-win-Setup.exe`。
-2. 运行安装包。应用安装到当前用户目录，不需要管理员权限。
-3. 如需免安装使用，可下载 `OpenSynapse-1.1.5-win-Portable.zip`；自动更新功能仅面向安装版。
+从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载其中一种安装文件。
 
-首次探测设备前建议退出 Razer Synapse，避免两个程序争用同一个 HID 控制通道。OpenSynapse 会报告访问失败，但不会结束 Synapse 进程。
+- `OpenSynapse-1.2.0-win-Setup.exe` 安装到当前用户目录并支持自动更新。
+- `OpenSynapse-1.2.0-win-Portable.zip` 解压后即可运行。
 
-### 驱动边界
+扫描设备前请先退出 Razer Synapse，避免两个程序争用同一个 HID 端点。OpenSynapse 会报告访问失败，不会自行结束雷云进程。
 
-OpenSynapse 不需要 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能需要 Product 710 的 Razer 设备驱动。使用这些功能前，请从 Razer 或 Blade 对应的设备支持包安装匹配驱动；未安装驱动时，Blade Fn 和相关硬件控制会保持不可用。
+发布文件没有代码签名，第一次运行时 Windows SmartScreen 可能显示警告。
+
+### 驱动要求
+
+应用本身不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 Razer 设备驱动，使用前需要安装 Razer 提供的对应驱动包。
+
 ## 当前不包含
 
-- 固件更新、Razer 账号和云服务。
-- THX Spatial Audio、EQ、音量均衡和语音清晰度。
-- Chroma Studio、高级宏编辑器、GPU MUX 和 AMD Curve Optimizer。
-- 未经实机验证的设备或协议写入。
+- 固件更新、Razer 账号、云服务和 Chroma Studio。
+- THX Spatial Audio、EQ、音量均衡、语音清晰度和高级宏编辑器。
+- AMD Curve Optimizer、GPU MUX 和未经验证的硬件写入。
+- ARGB Controller，以及缺少 Windows 传输实现的旧式固定报告设备。
 
-## 从源码构建
+## 构建
 
 需要 Windows 11 x64、[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) 和 Windows SDK `10.0.26100`。
 
@@ -91,25 +101,20 @@ dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
 ```
 
-运行本地构建：
+本地构建完成后可以这样启动。
 
 ```powershell
 & '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
 
-发布包没有代码签名证书，Windows SmartScreen 可能显示警告。
-
 ## 参与贡献
 
-提交源码、测试或文档前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。构建输出、日志、抓包、逆向工程目录、私钥、令牌和本机配置不得提交到仓库。
+提交代码或文档前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。生成的二进制文件、日志、抓包、逆向工程目录、凭据和本机配置不应进入 Git。
 
-## 许可与致谢
+## 许可
 
-项目代码采用 [MIT License](LICENSE)。第三方组件和随附资源遵循各自的许可证与分发条款。
+OpenSynapse 采用 [MIT License](LICENSE)。第三方组件和随附资源继续遵循各自的许可证与分发条款。
 
-协议实现参考并交叉验证了 [OpenRazer](https://github.com/openrazer/openrazer)、[OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) 及其他公开实现。OpenSynapse 与 Razer Inc. 无隶属或认可关系，Razer 及相关产品名称是其各自所有者的商标。
+协议实现参考了 [OpenRazer](https://github.com/openrazer/openrazer)、[OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) 及其他公开实现。OpenSynapse 与 Razer Inc. 没有隶属或认可关系，Razer 及相关产品名称是其各自所有者的商标。
 
 Made with ❤ in C# by [A1mAssist](https://github.com/A1mAssist).
-
-abc def ghi jkl mno pqr stu
-abc def ghi jkl mno pqr stu

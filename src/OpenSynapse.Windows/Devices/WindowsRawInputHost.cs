@@ -51,7 +51,7 @@ public sealed class WindowsRawInputHost : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_started)
         {
-            throw new InvalidOperationException("Raw Input 宿主已经启动。");
+            throw new InvalidOperationException("Raw Input host is already running.");
         }
 
         var devices = new[]
@@ -69,7 +69,7 @@ public sealed class WindowsRawInputHost : IDisposable
         };
         if (!RegisterRawInputDevices(devices, (uint)devices.Length, (uint)Marshal.SizeOf<RawInputDevice>()))
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法注册 Blade Raw Input 键盘设备。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not register the Blade Raw Input keyboard device.");
         }
 
         var procedure = Marshal.GetFunctionPointerForDelegate(_wndProc);
@@ -80,7 +80,7 @@ public sealed class WindowsRawInputHost : IDisposable
                 [new RawInputDevice { UsagePage = 0x01, Usage = 0x00, Flags = RidevRemove }],
                 1,
                 (uint)Marshal.SizeOf<RawInputDevice>());
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法安装 Blade Raw Input 窗口回调。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not install the Blade Raw Input window callback.");
         }
 
         _started = true;
@@ -133,7 +133,7 @@ public sealed class WindowsRawInputHost : IDisposable
         if (GetRawInputData(rawInputHandle, RidInput, 0, ref size, headerSize) == uint.MaxValue ||
             size == 0 || size > 64 * 1024)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法读取 Blade Raw Input 大小。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not read the Blade Raw Input size.");
         }
 
         var rawInput = new byte[size];
@@ -148,7 +148,7 @@ public sealed class WindowsRawInputHost : IDisposable
                 headerSize);
             if (actual == uint.MaxValue)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "无法读取 Blade Raw Input 数据。");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not read the Blade Raw Input data.");
             }
 
             Marshal.Copy(buffer, rawInput, 0, (int)Math.Min(actual, (uint)rawInput.Length));
@@ -174,13 +174,13 @@ public sealed class WindowsRawInputHost : IDisposable
         uint size = 0;
         if (GetRawInputDeviceInfo(device, RidiDeviceName, null, ref size) == uint.MaxValue || size == 0)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法读取 Blade Raw Input 设备路径大小。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not read the Blade Raw Input device-path size.");
         }
 
         var path = new StringBuilder((int)size);
         if (GetRawInputDeviceInfo(device, RidiDeviceName, path, ref size) == uint.MaxValue)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法读取 Blade Raw Input 设备路径。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not read the Blade Raw Input device path.");
         }
 
         return path.ToString();

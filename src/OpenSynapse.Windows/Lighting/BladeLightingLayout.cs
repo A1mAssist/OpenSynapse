@@ -31,7 +31,7 @@ public static class BladeLightingLayout
         ArgumentNullException.ThrowIfNull(logicalFrame);
         if (logicalFrame.Count != LogicalPixelCount)
         {
-            throw new ArgumentException("Blade 逻辑灯光帧必须正好包含 7 x 16 个颜色。", nameof(logicalFrame));
+            throw new ArgumentException("A logical Blade lighting frame must contain exactly 7 x 16 colors.", nameof(logicalFrame));
         }
 
         var deviceFrame = new RazerRgb[DevicePixelCount];

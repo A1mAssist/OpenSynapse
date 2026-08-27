@@ -43,6 +43,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly WindowsStartupManager? _startupManager;
     private readonly WindowsTouchpadController? _touchpadController;
+    private readonly OpenRazerDeviceService? _openRazerDeviceService;
+    private readonly OpenRazerSpecialLightingService? _openRazerSpecialLightingService;
+    private CancellationTokenSource? _openRazerSelectionCancellation;
+    private OpenRazerDeviceViewModel? _selectedOpenRazerDevice;
+    private OpenRazerKrakenViewModel? _selectedOpenRazerKraken;
     private readonly string? _executablePath;
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly VerifiedProfileApplier _profileApplier = new();
@@ -103,7 +108,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         WindowsStartupManager? startupManager = null,
         string? executablePath = null,
         IReadOnlyList<string>? startupDiagnostics = null,
-        WindowsTouchpadController? touchpadController = null)
+        WindowsTouchpadController? touchpadController = null,
+        OpenRazerDeviceService? openRazerDeviceService = null,
+        OpenRazerSpecialLightingService? openRazerSpecialLightingService = null)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -116,6 +123,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         _bladeLightingController = bladeLightingController;
         _startupManager = startupManager;
         _touchpadController = touchpadController;
+        _openRazerDeviceService = openRazerDeviceService;
+        _openRazerSpecialLightingService = openRazerSpecialLightingService;
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
@@ -236,6 +245,18 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     }
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
+    public ObservableCollection<OpenRazerDeviceRowViewModel> OpenRazerDevices { get; } = new();
+    public ObservableCollection<OpenRazerKrakenDeviceRowViewModel> OpenRazerKrakenDevices { get; } = new();
+    public OpenRazerDeviceViewModel? SelectedOpenRazerDevice
+    {
+        get => _selectedOpenRazerDevice;
+        private set => SetField(ref _selectedOpenRazerDevice, value);
+    }
+    public OpenRazerKrakenViewModel? SelectedOpenRazerKraken
+    {
+        get => _selectedOpenRazerKraken;
+        private set => SetField(ref _selectedOpenRazerKraken, value);
+    }
     public ObservableCollection<DiagnosticRowViewModel> Diagnostics { get; } = new();
     public ObservableCollection<string> ProfileNames { get; } = new();
     public ObservableCollection<ApplicationBindingRowViewModel> ApplicationBindings { get; } = new();
@@ -595,6 +616,16 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             row.RefreshLocalization();
         }
+        foreach (var row in OpenRazerDevices)
+        {
+            row.RefreshLocalization();
+        }
+        foreach (var row in OpenRazerKrakenDevices)
+        {
+            row.RefreshLocalization();
+        }
+        SelectedOpenRazerDevice?.RefreshLocalization();
+        SelectedOpenRazerKraken?.RefreshLocalization();
         foreach (var row in Diagnostics)
         {
             row.RefreshLocalization();
@@ -1387,6 +1418,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             return;
         }
 
+        _openRazerSelectionCancellation?.Cancel();
+        _openRazerSelectionCancellation?.Dispose();
+
         Task brightnessWriter;
         lock (_bladeBrightnessGate)
         {
@@ -1595,6 +1629,35 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public Task RefreshDevicesAsync(CancellationToken cancellationToken = default) =>
         RefreshDevicesCoreAsync(null, cancellationToken);
 
+    public async Task SelectOpenRazerDeviceAsync(
+        OpenRazerDeviceRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        if (_openRazerDeviceService is null)
+        {
+            return;
+        }
+
+        _openRazerSelectionCancellation?.Cancel();
+        _openRazerSelectionCancellation?.Dispose();
+        _openRazerSelectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var selected = new OpenRazerDeviceViewModel(_openRazerDeviceService, row.Connection);
+        SelectedOpenRazerKraken = null;
+        SelectedOpenRazerDevice = selected;
+        await selected.LoadBasicStateAsync(_openRazerSelectionCancellation.Token);
+    }
+
+    public void SelectOpenRazerKraken(OpenRazerKrakenDeviceRowViewModel row)
+    {
+        if (_openRazerSpecialLightingService is null) return;
+        _openRazerSelectionCancellation?.Cancel();
+        _openRazerSelectionCancellation?.Dispose();
+        _openRazerSelectionCancellation = null;
+        SelectedOpenRazerDevice = null;
+        SelectedOpenRazerKraken = new OpenRazerKrakenViewModel(
+            _openRazerSpecialLightingService, row.Connection);
+    }
+
     internal async Task RestoreBladeLightingAfterExternalAsync()
     {
         if (_bladeLightingController is null)
@@ -1637,6 +1700,45 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         try
         {
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
+            if (_openRazerDeviceService is not null)
+            {
+                var selectedInstanceId = SelectedOpenRazerDevice?.InstanceId;
+                _openRazerSelectionCancellation?.Cancel();
+                _openRazerSelectionCancellation?.Dispose();
+                _openRazerSelectionCancellation = null;
+                var openRazerConnections = await _openRazerDeviceService.DiscoverAsync(cancellationToken);
+                OpenRazerDevices.Clear();
+                foreach (var connection in openRazerConnections)
+                {
+                    OpenRazerDevices.Add(new OpenRazerDeviceRowViewModel(connection));
+                }
+                var selectedRow = OpenRazerDevices.FirstOrDefault(row =>
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedInstanceId));
+                if (selectedRow is null)
+                {
+                    SelectedOpenRazerDevice = null;
+                }
+                else
+                {
+                    await SelectOpenRazerDeviceAsync(selectedRow, cancellationToken);
+                }
+            }
+            if (_openRazerSpecialLightingService is not null)
+            {
+                var selectedKrakenId = SelectedOpenRazerKraken?.InstanceId;
+                var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
+                OpenRazerKrakenDevices.Clear();
+                foreach (var connection in connections.Where(connection =>
+                    connection.Kind == OpenRazerSpecialLightingKind.Kraken37))
+                {
+                    OpenRazerKrakenDevices.Add(new OpenRazerKrakenDeviceRowViewModel(connection));
+                }
+                var selectedKraken = OpenRazerKrakenDevices.FirstOrDefault(row =>
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedKrakenId));
+                SelectedOpenRazerKraken = selectedKraken is null
+                    ? null
+                    : new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, selectedKraken.Connection);
+            }
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
             {

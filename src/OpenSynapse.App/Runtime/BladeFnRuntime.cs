@@ -197,10 +197,6 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
 
         var mapping = Interlocked.Exchange(ref _mapping, null);
         var executor = Interlocked.Exchange(ref _executor, null);
-        if (mapping is not null && executor is not null)
-        {
-            Try(() => executor.SendRuntimeOutputs(mapping.Stop()), errors);
-        }
         if (executor is not null)
         {
             await TryAsync(executor.DisposeAsync, errors).ConfigureAwait(false);
@@ -329,10 +325,24 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     executor.Completion,
                     recovery.Completion)
                 .ConfigureAwait(false);
-            await completed.ConfigureAwait(false);
+            var component = ReferenceEquals(completed, inputConsumer)
+                ? "input consumer"
+                : ReferenceEquals(completed, filter.Completion)
+                    ? "filter input"
+                    : ReferenceEquals(completed, executor.Completion)
+                        ? "mapping executor"
+                        : "RecoveryHost";
+            try
+            {
+                await completed.ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException($"Blade Fn {component} failed.", exception);
+            }
             if (!cancellationToken.IsCancellationRequested)
             {
-                throw new InvalidOperationException("Blade Fn input pipeline stopped unexpectedly.");
+                throw new InvalidOperationException($"Blade Fn {component} stopped unexpectedly.");
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

@@ -51,7 +51,7 @@ internal sealed class RazerRequestDescriptor
         var actualDataSize = dataSize ?? MaximumDataSize;
         if (actualDataSize > MaximumDataSize || arguments.Length > actualDataSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(dataSize), "请求参数超过 manifest 声明的最大 dataSize。");
+            throw new ArgumentOutOfRangeException(nameof(dataSize), "Request arguments exceed the maximum data size declared by the manifest.");
         }
 
         return RazerFeatureReport.CreateRequest(
@@ -101,5 +101,5 @@ internal sealed class RazerDeviceManifest
         Capabilities.TryGetValue(capabilityId, out var descriptor)
             ? descriptor
             : throw new InvalidOperationException(
-                $"设备 manifest '{Id}' 缺少必需 capability '{capabilityId}'。");
+                $"Device manifest '{Id}' is missing required capability '{capabilityId}'.");
 }

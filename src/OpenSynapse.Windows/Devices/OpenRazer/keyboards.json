@@ -1,0 +1,5621 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "openrazer/openrazer",
+    "commit": "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+  },
+  "capabilitySets": {
+    "keyboards-001": [
+      "add_macro",
+      "bw_set_pulsate",
+      "bw_set_static",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_game_mode",
+      "set_macro_effect",
+      "set_macro_mode"
+    ],
+    "keyboards-002": [
+      "add_macro",
+      "bw_set_pulsate",
+      "bw_set_static",
+      "delete_macro",
+      "get_device_type_keypad",
+      "get_macros",
+      "keypad_get_mode_modifier",
+      "keypad_get_profile_led_blue",
+      "keypad_get_profile_led_green",
+      "keypad_get_profile_led_red",
+      "keypad_set_mode_modifier",
+      "keypad_set_profile_led_blue",
+      "keypad_set_profile_led_green",
+      "keypad_set_profile_led_red",
+      "set_none_effect"
+    ],
+    "keyboards-003": [
+      "add_macro",
+      "bw_set_pulsate",
+      "delete_macro",
+      "get_device_type_keypad",
+      "get_macros",
+      "keypad_get_mode_modifier",
+      "keypad_get_profile_led_blue",
+      "keypad_get_profile_led_green",
+      "keypad_get_profile_led_red",
+      "keypad_set_mode_modifier",
+      "keypad_set_profile_led_blue",
+      "keypad_set_profile_led_green",
+      "keypad_set_profile_led_red",
+      "set_static_effect"
+    ],
+    "keyboards-004": [
+      "add_macro",
+      "delete_macro",
+      "get_battery",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_low_battery_threshold",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "is_charging",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_charge_colour",
+      "set_charge_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_low_battery_threshold",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-005": [
+      "add_macro",
+      "delete_macro",
+      "get_battery",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_low_battery_threshold",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "is_charging",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_charge_colour",
+      "set_charge_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_low_battery_threshold",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-006": [
+      "add_macro",
+      "delete_macro",
+      "get_battery",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "is_charging",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-007": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_keyswitch_optimization",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "get_poll_rate",
+      "get_supported_poll_rates",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_keyswitch_optimization",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_poll_rate",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-008": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "get_poll_rate",
+      "get_supported_poll_rates",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_poll_rate",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect",
+      "set_wheel_effect"
+    ],
+    "keyboards-009": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-010": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect",
+      "set_wheel_effect"
+    ],
+    "keyboards-011": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-012": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_starlight_random_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-013": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-014": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_spectrum_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-015": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_game_mode",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_spectrum_effect",
+      "set_static_effect"
+    ],
+    "keyboards-016": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_dual_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_spectrum_effect",
+      "set_static_effect"
+    ],
+    "keyboards-017": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-018": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-019": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_breath_single_effect",
+      "set_game_mode",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_static_effect"
+    ],
+    "keyboards-020": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "set_game_mode",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_spectrum_effect",
+      "set_static_effect"
+    ],
+    "keyboards-021": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keypad",
+      "get_game_mode",
+      "get_macro_effect",
+      "get_macro_mode",
+      "get_macros",
+      "keypad_get_mode_modifier",
+      "keypad_get_profile_led_blue",
+      "keypad_get_profile_led_green",
+      "keypad_get_profile_led_red",
+      "keypad_set_mode_modifier",
+      "keypad_set_profile_led_blue",
+      "keypad_set_profile_led_green",
+      "keypad_set_profile_led_red",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-022": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keypad",
+      "get_macros",
+      "keypad_get_mode_modifier",
+      "keypad_get_profile_led_blue",
+      "keypad_get_profile_led_green",
+      "keypad_get_profile_led_red",
+      "keypad_set_mode_modifier",
+      "keypad_set_profile_led_blue",
+      "keypad_set_profile_led_green",
+      "keypad_set_profile_led_red"
+    ],
+    "keyboards-023": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keypad",
+      "get_macros",
+      "keypad_get_mode_modifier",
+      "keypad_get_profile_led_blue",
+      "keypad_get_profile_led_green",
+      "keypad_get_profile_led_red",
+      "keypad_set_mode_modifier",
+      "keypad_set_profile_led_blue",
+      "keypad_set_profile_led_green",
+      "keypad_set_profile_led_red",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_key_row",
+      "set_none_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-024": [
+      "add_macro",
+      "delete_macro",
+      "get_device_type_keypad",
+      "get_macros",
+      "keypad_get_mode_modifier",
+      "keypad_get_profile_led_blue",
+      "keypad_get_profile_led_green",
+      "keypad_get_profile_led_red",
+      "keypad_set_mode_modifier",
+      "keypad_set_profile_led_blue",
+      "keypad_set_profile_led_green",
+      "keypad_set_profile_led_red",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_none_effect",
+      "set_spectrum_effect",
+      "set_static_effect"
+    ],
+    "keyboards-025": [
+      "get_battery",
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_poll_rate",
+      "get_supported_poll_rates",
+      "is_charging",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_none_effect",
+      "set_poll_rate",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-026": [
+      "get_brightness",
+      "get_device_type_keypad",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_brightness",
+      "set_custom_effect",
+      "set_key_row",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_ripple_effect",
+      "set_ripple_effect_random_colour",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-027": [
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_keyboard_layout",
+      "get_macro_effect",
+      "get_macro_mode",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_spectrum_effect",
+      "set_starlight_dual_effect",
+      "set_starlight_random_effect",
+      "set_starlight_single_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ],
+    "keyboards-028": [
+      "get_device_type_keyboard",
+      "get_game_mode",
+      "get_keyboard_layout",
+      "get_macro_effect",
+      "get_macro_mode",
+      "set_breath_dual_effect",
+      "set_breath_random_effect",
+      "set_breath_single_effect",
+      "set_custom_effect",
+      "set_game_mode",
+      "set_key_row",
+      "set_macro_effect",
+      "set_macro_mode",
+      "set_none_effect",
+      "set_reactive_effect",
+      "set_spectrum_effect",
+      "set_static_effect",
+      "set_wave_effect"
+    ]
+  },
+  "devices": [
+    {
+      "productId": "010D",
+      "displayName": "Razer BlackWidow Ultimate 2012",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF"
+      },
+      "builderArgumentPrefixes": {},
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "010E",
+      "displayName": "Razer BlackWidow Stealth Edition",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0104",
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "04",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "010F",
+      "displayName": "Razer Anansi",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-020",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0105",
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0111",
+      "displayName": "Razer Nostromo",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-022",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "01"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0113",
+      "displayName": "Razer Orbweaver",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-002",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "01"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0118",
+      "displayName": "Razer DeathStalker/DeathStalker Essential",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0105",
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "011A",
+      "displayName": "Razer BlackWidow Ultimate 2013",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0104",
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "04",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "011B",
+      "displayName": "Razer BlackWidow (Classic)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0104",
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "04",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "011C",
+      "displayName": "Razer BlackWidow Tournament Edition 2014",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0104"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0104",
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "04",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0201",
+      "displayName": "Razer Tartarus",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-003",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "01"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0202",
+      "displayName": "Razer DeathStalker Expert",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0105",
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0203",
+      "displayName": "Razer BlackWidow Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-011",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0204",
+      "displayName": "Razer DeathStalker Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-014",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        12
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0207",
+      "displayName": "Razer Orbweaver Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-023",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "3F",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "01"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "01"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0208",
+      "displayName": "Razer Tartarus Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-024",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "01"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0209",
+      "displayName": "Razer BlackWidow Tournament Edition Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-011",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0211",
+      "displayName": "Razer BlackWidow Chroma (Overwatch)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-011",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0214",
+      "displayName": "Razer BlackWidow Ultimate 2016",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-012",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_starlight_single": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_matrix_effect_starlight_single": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0216",
+      "displayName": "Razer BlackWidow X Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-011",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0217",
+      "displayName": "Razer BlackWidow X Ultimate",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-012",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_starlight_single": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_matrix_effect_starlight_single": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "021A",
+      "displayName": "Razer BlackWidow X Tournament Edition Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-011",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "021E",
+      "displayName": "Razer Ornata Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "021F",
+      "displayName": "Razer Ornata",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-017",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0221",
+      "displayName": "BlackWidow Chroma V2",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "3F",
+        "razer_chroma_standard_matrix_effect_custom_frame": "3F",
+        "razer_chroma_standard_matrix_effect_none": "3F",
+        "razer_chroma_standard_matrix_effect_reactive": "3F",
+        "razer_chroma_standard_matrix_effect_spectrum": "3F",
+        "razer_chroma_standard_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_standard_matrix_effect_wave": "3F",
+        "razer_chroma_standard_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0226",
+      "displayName": "Razer Huntsman Elite",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        9,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0227",
+      "displayName": "Razer Huntsman",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0228",
+      "displayName": "Razer BlackWidow Elite",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "022A",
+      "displayName": "Razer Cynosa Chroma",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "022B",
+      "displayName": "Razer Tartarus V2",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-021",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        4,
+        6
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0100"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "01",
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "01",
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "022C",
+      "displayName": "Razer Cynosa Chroma Pro",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-013",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0235",
+      "displayName": "Razer BlackWidow Lite",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-019",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0237",
+      "displayName": "Razer BlackWidow Essential",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-018",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_starlight_single": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_matrix_effect_starlight_single": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "023F",
+      "displayName": "Razer Cynosa Lite",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-015",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": null,
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0241",
+      "displayName": "Razer BlackWidow 2019",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0243",
+      "displayName": "Razer Huntsman Tournament Edition",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        18
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0244",
+      "displayName": "Razer Tartarus Pro",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-026",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        21
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_set_led_effect": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0100"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "024E",
+      "displayName": "Razer BlackWidow V3",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0257",
+      "displayName": "Razer Huntsman Mini",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        15
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0258",
+      "displayName": "Razer BlackWidow V3 Mini HyperSpeed (Wired)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        16
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "025A",
+      "displayName": "Razer BlackWidow V3 Pro Wired",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-004",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_misc_get_low_battery_threshold": "FF",
+        "razer_chroma_misc_set_low_battery_threshold": "FF",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "025C",
+      "displayName": "Razer BlackWidow V3 Pro 2.4 Ghz Wireless",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-005",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 4900,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_misc_get_low_battery_threshold": "FF",
+        "razer_chroma_misc_set_low_battery_threshold": "FF",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "9F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "9F",
+        "razer_chroma_extended_matrix_effect_none": "9F",
+        "razer_chroma_extended_matrix_effect_reactive": "9F",
+        "razer_chroma_extended_matrix_effect_spectrum": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "9F",
+        "razer_chroma_extended_matrix_effect_wave": "9F",
+        "razer_chroma_extended_matrix_get_brightness": "9F",
+        "razer_chroma_extended_matrix_set_custom_frame": "9F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "025D",
+      "displayName": "Razer Ornata V2",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "025E",
+      "displayName": "Razer Cynosa V2",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0266",
+      "displayName": "Razer Huntsman V2 Analog",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-028",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        8,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0269",
+      "displayName": "Razer Huntsman Mini JP",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        15
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "026B",
+      "displayName": "Razer Huntsman V2 Tenkeyless",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-007",
+      "maximumDpi": null,
+      "pollRates": [
+        125,
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000
+      ],
+      "matrixDimensions": [
+        6,
+        18
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_set_keyswitch_optimization_command2": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_keyswitch_optimization": "1F",
+        "razer_chroma_misc_get_polling_rate2": "1F",
+        "razer_chroma_misc_set_keyswitch_optimization_command1": "1F",
+        "razer_chroma_misc_set_polling_rate2": "1F",
+        "razer_chroma_standard_get_led_state": "1F",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0008"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0008"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "026C",
+      "displayName": "Razer Huntsman V2",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-007",
+      "maximumDpi": null,
+      "pollRates": [
+        125,
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000
+      ],
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_set_keyswitch_optimization_command2": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_keyswitch_optimization": "1F",
+        "razer_chroma_misc_get_polling_rate2": "1F",
+        "razer_chroma_misc_set_keyswitch_optimization_command1": "1F",
+        "razer_chroma_misc_set_polling_rate2": "1F",
+        "razer_chroma_standard_get_led_state": "1F",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0008"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0008"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0271",
+      "displayName": "Razer BlackWidow V3 Mini HyperSpeed (Wireless)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        16
+      ],
+      "waitMicroseconds": 4900,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "9F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "9F",
+        "razer_chroma_extended_matrix_effect_none": "9F",
+        "razer_chroma_extended_matrix_effect_reactive": "9F",
+        "razer_chroma_extended_matrix_effect_spectrum": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "9F",
+        "razer_chroma_extended_matrix_effect_wave": "9F",
+        "razer_chroma_extended_matrix_get_brightness": "9F",
+        "razer_chroma_extended_matrix_set_custom_frame": "9F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0282",
+      "displayName": "Razer Huntsman Mini Analog",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-028",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        15
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0287",
+      "displayName": "Razer BlackWidow V4",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-008",
+      "maximumDpi": null,
+      "pollRates": [
+        125,
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000
+      ],
+      "matrixDimensions": [
+        8,
+        23
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_effect_wheel": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_polling_rate2": "1F",
+        "razer_chroma_misc_set_polling_rate2": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wheel": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "028D",
+      "displayName": "Razer BlackWidow V4 Pro",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-008",
+      "maximumDpi": null,
+      "pollRates": [
+        125,
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000
+      ],
+      "matrixDimensions": [
+        8,
+        23
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_effect_wheel": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_polling_rate2": "1F",
+        "razer_chroma_misc_set_polling_rate2": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wheel": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "028F",
+      "displayName": "Razer Ornata V3 (Alternate)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-014",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        10
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0290",
+      "displayName": "Razer DeathStalker V2 Pro (Wireless)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 4900,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "9F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "9F",
+        "razer_chroma_extended_matrix_effect_none": "9F",
+        "razer_chroma_extended_matrix_effect_reactive": "9F",
+        "razer_chroma_extended_matrix_effect_spectrum": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "9F",
+        "razer_chroma_extended_matrix_effect_wave": "9F",
+        "razer_chroma_extended_matrix_get_brightness": "9F",
+        "razer_chroma_extended_matrix_set_custom_frame": "9F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0292",
+      "displayName": "Razer DeathStalker V2 Pro (Wired)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0293",
+      "displayName": "Razer BlackWidow V4 X",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-010",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_effect_wheel": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wheel": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0294",
+      "displayName": "Razer Ornata V3 X",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-016",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        1
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0295",
+      "displayName": "Razer DeathStalker V2",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0296",
+      "displayName": "Razer DeathStalker V2 Pro TKL (Wireless)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        17
+      ],
+      "waitMicroseconds": 4900,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "9F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "9F",
+        "razer_chroma_extended_matrix_effect_none": "9F",
+        "razer_chroma_extended_matrix_effect_reactive": "9F",
+        "razer_chroma_extended_matrix_effect_spectrum": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "9F",
+        "razer_chroma_extended_matrix_effect_wave": "9F",
+        "razer_chroma_extended_matrix_get_brightness": "9F",
+        "razer_chroma_extended_matrix_set_custom_frame": "9F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0298",
+      "displayName": "Razer DeathStalker V2 Pro TKL (Wired)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        17
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "3F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02A1",
+      "displayName": "Razer Ornata V3",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-014",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        10
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02A2",
+      "displayName": "Razer Ornata V3 X (Alternate)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-016",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        1
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02A3",
+      "displayName": "Razer Ornata V3 Tenkeyless",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-011",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        8
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02A5",
+      "displayName": "Razer BlackWidow V4 75%",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-008",
+      "maximumDpi": null,
+      "pollRates": [
+        125,
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000
+      ],
+      "matrixDimensions": [
+        6,
+        16
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_effect_wheel": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_polling_rate2": "1F",
+        "razer_chroma_misc_set_polling_rate2": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wheel": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02A6",
+      "displayName": "Razer Huntsman V3 Pro",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-027",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02A7",
+      "displayName": "Razer Huntsman V3 Pro TKL",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-027",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02B0",
+      "displayName": "Razer Huntsman V3 Pro Mini",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-027",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        15
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02B9",
+      "displayName": "Razer BlackWidow V4 Mini HyperSpeed (Wired)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        14
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02BA",
+      "displayName": "Razer BlackWidow V4 Mini HyperSpeed (Wireless)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        14
+      ],
+      "waitMicroseconds": 4900,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "9F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "9F",
+        "razer_chroma_extended_matrix_effect_none": "9F",
+        "razer_chroma_extended_matrix_effect_reactive": "9F",
+        "razer_chroma_extended_matrix_effect_spectrum": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "9F",
+        "razer_chroma_extended_matrix_effect_wave": "9F",
+        "razer_chroma_extended_matrix_get_brightness": "9F",
+        "razer_chroma_extended_matrix_set_custom_frame": "9F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02CF",
+      "displayName": "Razer Huntsman V3 Pro 8KHz",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-027",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        22
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02D5",
+      "displayName": "Razer BlackWidow V4 Tenkeyless HyperSpeed (Wireless)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-025",
+      "maximumDpi": null,
+      "pollRates": [
+        125,
+        250,
+        500,
+        1000
+      ],
+      "matrixDimensions": [
+        6,
+        18
+      ],
+      "waitMicroseconds": 4900,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "9F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "9F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "9F",
+        "razer_chroma_extended_matrix_effect_none": "9F",
+        "razer_chroma_extended_matrix_effect_reactive": "9F",
+        "razer_chroma_extended_matrix_effect_spectrum": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "9F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "9F",
+        "razer_chroma_extended_matrix_effect_wave": "9F",
+        "razer_chroma_extended_matrix_get_brightness": "9F",
+        "razer_chroma_extended_matrix_set_custom_frame": "9F",
+        "razer_chroma_misc_get_polling_rate2": "9F",
+        "razer_chroma_misc_set_polling_rate2": "9F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02D7",
+      "displayName": "Razer BlackWidow V4 Tenkeyless HyperSpeed (Wired)",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-025",
+      "maximumDpi": null,
+      "pollRates": [
+        125,
+        250,
+        500,
+        1000
+      ],
+      "matrixDimensions": [
+        6,
+        18
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_misc_get_battery_level": "1F",
+        "razer_chroma_misc_get_charging_status": "1F",
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_polling_rate2": "1F",
+        "razer_chroma_misc_set_polling_rate2": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0A24",
+      "displayName": "Razer BlackWidow V3 TK",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        18
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "3F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "3F",
+        "razer_chroma_extended_matrix_effect_none": "3F",
+        "razer_chroma_extended_matrix_effect_reactive": "3F",
+        "razer_chroma_extended_matrix_effect_spectrum": "3F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "3F",
+        "razer_chroma_extended_matrix_effect_wave": "3F",
+        "razer_chroma_extended_matrix_get_brightness": "3F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_effect": "3F",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    }
+  ]
+}
