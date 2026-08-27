@@ -9,6 +9,7 @@ coverage/
 
 # Local build and release bundles
 artifacts/
+docs/
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/
