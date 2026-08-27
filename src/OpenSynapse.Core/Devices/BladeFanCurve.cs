@@ -73,7 +73,7 @@ public sealed class BladeFanCurve
                     : SelectHigherCpuOutput(
                         EvaluateCurve(cpuBoth, CpuPoints, MinimumCpuTemperatureCelsius),
                         EvaluateCurve(gpuBoth, GpuPoints, MinimumGpuTemperatureCelsius)),
-            _ => throw new InvalidOperationException("未知的风扇曲线温度模式。"),
+            _ => throw new InvalidOperationException("Unknown fan curve temperature mode."),
         };
     }
 
@@ -134,7 +134,7 @@ public sealed class BladeFanCurve
         ArgumentNullException.ThrowIfNull(points, parameterName);
         if (points.Count is < 1 or > MaximumPoints)
         {
-            throw new ArgumentException($"风扇曲线必须包含 1 到 {MaximumPoints} 个节点。", parameterName);
+            throw new ArgumentException($"Fan curve must contain between 1 and {MaximumPoints} points.", parameterName);
         }
 
         var copy = points.ToArray();
@@ -145,13 +145,13 @@ public sealed class BladeFanCurve
             {
                 throw new ArgumentOutOfRangeException(
                     parameterName,
-                    $"温度节点必须大于低温基线 {minimumTemperature} C，且不超过 120 C。");
+                    $"Temperature point must be greater than the low-temperature baseline of {minimumTemperature} C and no greater than 120 C.");
             }
             ValidatePointSpeed(point.CpuFanSpeedRpm, parameterName);
             ValidatePointSpeed(point.GpuFanSpeedRpm, parameterName);
             if (index > 0 && point.TemperatureCelsius <= copy[index - 1].TemperatureCelsius)
             {
-                throw new ArgumentException("温度节点必须严格递增。", parameterName);
+                throw new ArgumentException("Temperature points must be strictly increasing.", parameterName);
             }
         }
         return Array.AsReadOnly(copy);
@@ -171,7 +171,7 @@ public sealed class BladeFanCurve
         {
             throw new ArgumentOutOfRangeException(
                 parameterName,
-                $"曲线节点风扇转速必须为 {MinimumPointFanSpeedRpm}..{MaximumPointFanSpeedRpm} RPM。");
+                $"Curve point fan speed must be between {MinimumPointFanSpeedRpm} and {MaximumPointFanSpeedRpm} RPM.");
         }
     }
 
@@ -190,7 +190,7 @@ public sealed class BladeFanCurve
         start + (end - start) * factor;
 
     private static InvalidOperationException MissingTemperature(string sensor) =>
-        new($"风扇曲线缺少有效的 {sensor} 温度。");
+        new($"Fan curve requires a valid {sensor} temperature.");
 }
 
 public static class BladeFanLimits
@@ -205,7 +205,7 @@ public static class BladeFanLimits
         {
             throw new ArgumentOutOfRangeException(
                 nameof(rpm),
-                $"风扇转速必须为 {MinimumRpm}..{MaximumRpm} RPM，步进 {StepRpm} RPM。");
+                $"Fan speed must be between {MinimumRpm} and {MaximumRpm} RPM in increments of {StepRpm} RPM.");
         }
     }
 }

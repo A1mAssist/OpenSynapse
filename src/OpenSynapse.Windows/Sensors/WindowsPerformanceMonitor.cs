@@ -61,11 +61,11 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             storageTotal,
             DateTimeOffset.UtcNow,
             windowsGpus.Count == 0
-                ? "无法读取 Windows GPU 性能计数器；其余指标仍在刷新。"
+                ? "Could not read Windows GPU performance counters; other metrics are still updating."
                 : nvidiaActive && nvidia is null
-                    ? "NVIDIA 正在工作，但详细温度、功耗和频率暂时不可用。"
+                    ? "NVIDIA is active, but detailed temperature, power, and frequency data are temporarily unavailable."
                     : null,
-            selected?.IsIntegrated == true ? "共享内存" : "专用显存");
+            selected?.IsIntegrated == true ? "Shared memory" : "Dedicated memory");
     }
 
     public void Dispose()

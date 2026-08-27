@@ -26,7 +26,7 @@ public static class BladeMaxFanProtocol
         if (!RazerFeatureReport.IsSuccessfulResponse(
                 request, response, 1, allowRemainingPacketsMismatch: true))
         {
-            throw new InvalidOperationException("Blade Max Fan 返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Blade Max Fan returned an invalid or out-of-order feature report.");
         }
 
         return response[RazerFeatureReport.ArgumentsOffset];

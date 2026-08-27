@@ -487,7 +487,7 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>版本 1.1.5</value>
+    <value>版本 1.2.0</value>
     <comment>关于窗口版本</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
@@ -870,9 +870,8 @@
     <value>HyperShift 层</value>
     <comment>HyperShift 层</comment>
   </data>
-  <data name="Text_14FD1E92" xml:space="preserve">
+  <data name="GpuMemoryLabel" xml:space="preserve">
     <value>GPU 内存</value>
-    <comment>GPU 内存</comment>
   </data>
   <data name="Text_8F4E16B7" xml:space="preserve">
     <value>请选择已验证的板载映射动作。</value>
@@ -1532,4 +1531,103 @@
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>会话结束或超时后恢复 OpenSynapse 当前配置的灯效。</value><comment>恢复灯光说明</comment></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光开关</comment></data>
+  <data name="OpenRazerInformationTitle.Text" xml:space="preserve"><value>设备信息</value></data>
+  <data name="OpenRazerFirmwareLabel.Text" xml:space="preserve"><value>固件</value></data>
+  <data name="OpenRazerSerialLabel.Text" xml:space="preserve"><value>序列号</value></data>
+  <data name="OpenRazerModeLabel.Text" xml:space="preserve"><value>设备模式</value></data>
+  <data name="OpenRazerBatteryLabel.Text" xml:space="preserve"><value>电池</value></data>
+  <data name="OpenRazerPollingTitle.Text" xml:space="preserve"><value>轮询率</value></data>
+  <data name="OpenRazerPowerTitle.Text" xml:space="preserve"><value>电源管理</value></data>
+  <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
+  <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>低电量提醒（%）</value></data>
+  <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
+  <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>区域</value></data>
+  <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>效果</value></data>
+  <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="OpenRazerLightingSpeed.Header" xml:space="preserve"><value>速度</value></data>
+  <data name="OpenRazerLightingDirection.Header" xml:space="preserve"><value>方向</value></data>
+  <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
+  <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>向左 / 逆时针</value></data>
+  <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
+  <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
+  <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>滚轮加速</value></data>
+  <data name="OpenRazerKeyswitchExpander.Header" xml:space="preserve"><value>键轴优化</value></data>
+  <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>选择功能键或媒体键作为第一层。</value></data>
+  <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>功能键优先</value></data>
+  <data name="OpenRazerMediaPrimaryButton.Content" xml:space="preserve"><value>媒体键优先</value></data>
+  <data name="Text_4B32CEE8" xml:space="preserve"><value>鼠标</value></data>
+  <data name="Text_66E7127F" xml:space="preserve"><value>笔记本</value></data>
+  <data name="Text_7D4E2D8B" xml:space="preserve"><value>键盘</value></data>
+  <data name="Text_A3A74479" xml:space="preserve"><value>鼠标垫</value></data>
+  <data name="Text_2E486BCB" xml:space="preserve"><value>显示器</value></data>
+  <data name="Text_71E692AA" xml:space="preserve"><value>配件</value></data>
+  <data name="Text_C0E6F3C9" xml:space="preserve"><value>需要重新扫描</value></data>
+  <data name="Text_C097B416" xml:space="preserve"><value>已解析</value></data>
+  <data name="Text_242E08F4" xml:space="preserve"><value>控制通道未解析</value></data>
+  <data name="Text_D3632B96" xml:space="preserve"><value>忙或不可用</value></data>
+  <data name="Text_4366F0BC" xml:space="preserve"><value>软件模式</value></data>
+  <data name="Text_B252C327" xml:space="preserve"><value>硬件模式</value></data>
+  <data name="Text_8FF04F66" xml:space="preserve"><value>充电中</value></data>
+  <data name="Text_EC17E7E7" xml:space="preserve"><value>未充电</value></data>
+  <data name="OpenRazerDpiStagesExpander.Header" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="OpenRazerActiveDpiStage.Header" xml:space="preserve"><value>当前档位</value></data>
+  <data name="OpenRazerDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>
+  <data name="OpenRazerHyperPollingDescription.Text" xml:space="preserve"><value>管理接收器指示灯和鼠标配对。配对操作会再次确认。</value></data>
+  <data name="OpenRazerHyperPollingIndicator.Header" xml:space="preserve"><value>指示灯模式</value></data>
+  <data name="OpenRazerApplyIndicatorButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="OpenRazerPairButton.Content" xml:space="preserve"><value>配对</value></data>
+  <data name="OpenRazerUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
+  <data name="OpenRazerMouseProductIdLabel" xml:space="preserve"><value>鼠标 PID（十六进制）</value></data>
+  <data name="OpenRazerPairTitle" xml:space="preserve"><value>确认配对 HyperPolling</value></data>
+  <data name="OpenRazerUnpairTitle" xml:space="preserve"><value>确认取消 HyperPolling 配对</value></data>
+  <data name="OpenRazerPairAction" xml:space="preserve"><value>确认配对</value></data>
+  <data name="OpenRazerUnpairAction" xml:space="preserve"><value>确认取消配对</value></data>
+  <data name="OpenRazerInvalidProductId" xml:space="preserve"><value>请输入四位十六进制鼠标 PID。</value></data>
+  <data name="OpenRazerKeyswitchTyping" xml:space="preserve"><value>输入优化</value></data>
+  <data name="OpenRazerKeyswitchGaming" xml:space="preserve"><value>游戏优化</value></data>
+  <data name="OpenRazerZoneAll" xml:space="preserve"><value>全部</value></data>
+  <data name="OpenRazerZoneScrollWheel" xml:space="preserve"><value>滚轮</value></data>
+  <data name="OpenRazerZoneBattery" xml:space="preserve"><value>电量指示</value></data>
+  <data name="OpenRazerZoneLogo" xml:space="preserve"><value>Logo</value></data>
+  <data name="OpenRazerZoneBacklight" xml:space="preserve"><value>背光</value></data>
+  <data name="OpenRazerZoneMacro" xml:space="preserve"><value>宏键</value></data>
+  <data name="OpenRazerZoneGame" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="OpenRazerZoneProfileRed" xml:space="preserve"><value>配置红灯</value></data>
+  <data name="OpenRazerZoneProfileGreen" xml:space="preserve"><value>配置绿灯</value></data>
+  <data name="OpenRazerZoneProfileBlue" xml:space="preserve"><value>配置蓝灯</value></data>
+  <data name="OpenRazerZoneRightSide" xml:space="preserve"><value>右侧</value></data>
+  <data name="OpenRazerZoneLeftSide" xml:space="preserve"><value>左侧</value></data>
+  <data name="OpenRazerZoneCharging" xml:space="preserve"><value>充电</value></data>
+  <data name="OpenRazerZoneFastCharging" xml:space="preserve"><value>快速充电</value></data>
+  <data name="OpenRazerZoneFullyCharged" xml:space="preserve"><value>已充满</value></data>
+  <data name="OpenRazerEffectOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="OpenRazerEffectStatic" xml:space="preserve"><value>静态</value></data>
+  <data name="OpenRazerEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
+  <data name="OpenRazerEffectWave" xml:space="preserve"><value>波浪</value></data>
+  <data name="OpenRazerEffectReactive" xml:space="preserve"><value>响应</value></data>
+  <data name="OpenRazerEffectBlinking" xml:space="preserve"><value>闪烁</value></data>
+  <data name="OpenRazerEffectBreathingRandom" xml:space="preserve"><value>随机呼吸</value></data>
+  <data name="OpenRazerEffectBreathingSingle" xml:space="preserve"><value>单色呼吸</value></data>
+  <data name="OpenRazerEffectBreathingDual" xml:space="preserve"><value>双色呼吸</value></data>
+  <data name="OpenRazerEffectBreathingTriple" xml:space="preserve"><value>三色呼吸</value></data>
+  <data name="OpenRazerEffectStarlightRandom" xml:space="preserve"><value>随机星光</value></data>
+  <data name="OpenRazerEffectStarlightSingle" xml:space="preserve"><value>单色星光</value></data>
+  <data name="OpenRazerEffectStarlightDual" xml:space="preserve"><value>双色星光</value></data>
+  <data name="OpenRazerEffectWheel" xml:space="preserve"><value>色轮</value></data>
+  <data name="OpenRazerEffectCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
+  <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
+  <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
+  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>选择色块调整单个像素，然后应用整帧。</value></data>
+  <data name="OpenRazerApplyMatrixButton.Content" xml:space="preserve"><value>应用整帧</value></data>
+  <data name="OpenRazerMatrixCellLabel" xml:space="preserve"><value>第 {0} 行，第 {1} 列</value></data>
+  <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>耳机</value></data>
+  <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>耳机灯光</value></data>
+  <data name="OpenRazerKrakenLightingTitle.Text" xml:space="preserve"><value>灯光效果</value></data>
+  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>颜色 1</value></data>
+  <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>颜色 2</value></data>
+  <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>颜色 3</value></data>
+  <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>应用灯效</value></data>
 </root>

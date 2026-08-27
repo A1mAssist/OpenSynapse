@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="src/OpenSynapse.App/Assets/OpenSynapseLogo.svg" width="112" height="112" alt="OpenSynapse Logo">
+  <img src="src/OpenSynapse.App/Assets/OpenSynapseLogo.svg" width="112" height="112" alt="OpenSynapse logo">
 </p>
 
 <h1 align="center">OpenSynapse</h1>
 
-<p align="center">A lightweight Razer device controller for Windows 11.</p>
+<p align="center">Control supported Razer hardware on Windows 11 without keeping Razer Synapse open.</p>
 
 <p align="center">
   <a href="https://github.com/A1mAssist/OpenSynapse/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/A1mAssist/OpenSynapse?style=flat-square"></a>
@@ -14,43 +14,49 @@
 
 <p align="center"><a href="README.zh-CN.md">简体中文</a> · English</p>
 
-OpenSynapse reads device state and manages hardware-verified lighting, performance, display, battery, and key functions without keeping Razer Synapse running. It never infers protocols from similar model names or sends control commands to unknown devices.
+OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
 
-> Current stable release: `v1.1.5`. Only the exact hardware and USB identifiers listed below are supported.
+> Current release `v1.2.0` · Windows 11 x64 · unsigned
 
-## Supported devices
+## What it supports
 
-| Device | USB VID:PID | Verified capabilities |
+### Product-specific devices
+
+| Device | USB VID:PID | Available controls |
 |---|---|---|
-| Razer Blade 16 (2025) | `1532:02C6` | Telemetry, lighting, performance, fans, display, battery, Fn/M3/M4/M5 |
-| Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep, onboard button mappings |
+| Razer Blade 16 (2025) | `1532:02C6` | Telemetry, keyboard lighting, performance, fans, display, battery, Fn/M3/M4/M5 |
+| Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, onboard mappings |
 
-## Features
+Blade lighting includes Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal. Custom performance mode exposes CPU Boost, GPU Boost, and Max Fan. Fan control, charge limits, internal-display refresh rates, the touchpad, and verified Fn behavior remain on the Blade page.
 
-### Razer Blade 16 (2025)
+The Viper page supports `125 / 500 / 1000 Hz` polling, X/Y DPI from `100` to `30000`, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1. Battery type is selected by the user because the mouse does not provide a reliable readback value. The low-battery threshold remains read only.
 
-- Read CPU, GPU, memory, storage, fan, and device status.
-- Adjust keyboard brightness and use Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal effects.
-- Select performance modes and configure CPU Boost, GPU Boost, and Max Fan in Custom mode.
-- Use automatic or manual fan control and set a charge limit from `50%` to `80%`.
-- Select a refresh rate supported by the internal display and toggle the touchpad.
-- Handle verified Fn shortcuts, M3 Gaming Mode, M4 performance mode, and the M5 microphone-mute indicator in the background.
-- Show panel mode, SKU, and other platform fields as read-only state.
+### OpenRazer devices
 
-### Razer Viper V3 HyperSpeed
+Version 1.2.0 adds capability-driven support based on a pinned OpenRazer device catalog. The catalog contains mice, keyboards, laptops, and accessories that use the standard 91-byte Razer HID report. OpenSynapse creates a page only for connected devices and shows a control only when the backend resolves its endpoint and transaction.
 
-- Read battery level, low-battery threshold, polling rate, current DPI, sleep timeout, and DPI stages.
-- Set `125 / 500 / 1000 Hz` polling.
-- Set X/Y DPI from `100..30000` in steps of `50`, with up to five DPI stages.
-- Read and edit Normal / HyperShift onboard mappings in fixed Profile 1.
-- Use verified Off, mouse-button, keyboard-key, and double-click mapping actions.
-- Choose the installed battery chemistry manually (alkaline, NiMH rechargeable, or lithium); the choice is saved to the OpenSynapse profile and written to the mouse for the correct battery curve.
+Depending on the connected model, the page may provide device information, battery state, polling rate, DPI and DPI stages, power saving, low-battery warning, lighting brightness and effects, per-zone LEDs, matrix lighting, scroll-wheel settings, keyswitch optimization, Fn-primary behavior, or HyperPolling receiver controls.
 
-Battery chemistry is user-provided and is not guessed or read back from the mouse. The low-battery threshold remains read only. Viper V3 HyperSpeed does not support `2000 / 4000 / 8000 Hz` HyperPolling.
+Catalog presence does not mean every control has been tested on every model. An unresolved or busy endpoint stays read only until the next scan. OpenSynapse does not guess support from a product name or send a write through another HID collection.
 
-### Chroma REST support
+### Kraken lighting
 
-OpenSynapse provides a local Chroma REST-compatible endpoint at `127.0.0.1:54235`. Compatible games and integrations can submit static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames; frames are mapped to the verified Blade 16 physical key layout, and the configured OpenSynapse effect is restored when external control ends. Only the Chroma REST protocol is supported. The native Chroma SDK / `RzChromaConnectAPI` DLL interface is not implemented.
+The following Kraken USB headsets use a separate 37-byte Output Report path. OpenSynapse supports their lighting only.
+
+| Model | USB PID |
+|---|---|
+| Kraken 7.1 | `0501`, `0506` |
+| Kraken 7.1 Chroma | `0504` |
+| Kraken 7.1 V2 | `0510` |
+| Kraken Tournament Edition | `0520` |
+| Kraken Ultimate | `0527` |
+| Kraken Kitty V2 | `0560` |
+
+Available effects are read from the matched device definition. Models may expose Off, Static, Spectrum, one-, two-, or three-color Breathing, and Custom. Audio, microphone, EQ, and THX controls are not included.
+
+### Chroma REST
+
+Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified Blade 16 key layout, and OpenSynapse restores the selected lighting effect after external control ends. The native Chroma SDK and `RzChromaConnectAPI` DLL interface are not implemented.
 
 ## Screenshots
 
@@ -62,26 +68,29 @@ OpenSynapse provides a local Chroma REST-compatible endpoint at `127.0.0.1:54235
 |---|---|
 | ![OpenSynapse English Blade controls](screenshots/blade-en.png) | ![OpenSynapse English settings page](screenshots/settings-en.png) |
 
-## Installation
+## Install
 
-1. Download `OpenSynapse-1.1.5-win-Setup.exe` from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
-2. Run the installer. OpenSynapse installs for the current user and does not require administrator privileges.
-3. For a no-install build, download `OpenSynapse-1.1.5-win-Portable.zip`. Automatic updates are intended for the installed build.
+Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-Exit Razer Synapse before the first device scan to avoid both applications contending for the same HID control channel. OpenSynapse reports access failures but never terminates the Synapse process.
+- `OpenSynapse-1.2.0-win-Setup.exe` installs for the current user and supports automatic updates.
+- `OpenSynapse-1.2.0-win-Portable.zip` runs without installation.
 
-### Driver boundary
+Exit Razer Synapse before scanning devices so both applications do not contend for the same HID endpoint. OpenSynapse reports access failures and does not terminate Synapse itself.
 
-OpenSynapse does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support requires the Product 710 Razer device drivers. Install the matching drivers from Razer or your Blade device support package before using those functions; without them, Blade Fn and the related hardware controls remain unavailable. 
+The release is not code signed. Windows SmartScreen may show a warning on first launch.
 
-## Out of scope
+### Driver requirements
 
-- Firmware updates, Razer accounts, and cloud services.
-- THX Spatial Audio, EQ, volume leveling, and voice clarity.
-- Chroma Studio, advanced macro editing, GPU MUX, and AMD Curve Optimizer.
-- Writes for devices or protocols that have not passed hardware validation.
+The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support still depends on the Product 710 Razer device drivers. Install the matching driver package from Razer before using those functions.
 
-## Build from source
+## Not included
+
+- Firmware updates, Razer accounts, cloud services, and Chroma Studio.
+- THX Spatial Audio, EQ, volume leveling, voice clarity, and advanced macro editing.
+- AMD Curve Optimizer, GPU MUX controls, and unverified hardware writes.
+- ARGB Controller and legacy fixed-report devices whose Windows transport is unavailable.
+
+## Build
 
 Building requires Windows 11 x64, the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), and Windows SDK `10.0.26100`.
 
@@ -92,22 +101,20 @@ dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
 ```
 
-Run the local build:
+Run the local build with:
 
 ```powershell
 & '.\src\OpenSynapse.App\bin\x64\Release\net10.0-windows10.0.26100.0\OpenSynapse.App.exe'
 ```
 
-Release packages are not code signed, so Windows SmartScreen may display a warning.
-
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting source, tests, or documentation. Build output, logs, captures, reverse-engineering workspaces, private keys, tokens, and machine-local configuration must never be committed.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting code or documentation. Keep generated binaries, logs, captures, reverse-engineering workspaces, credentials, and machine-local configuration out of Git.
 
-## License and acknowledgements
+## License
 
-Project code is available under the [MIT License](LICENSE). Third-party components and bundled resources remain subject to their own licenses and distribution terms.
+OpenSynapse is available under the [MIT License](LICENSE). Third-party components and bundled resources keep their own licenses and distribution terms.
 
-Protocol work references and cross-checks [OpenRazer](https://github.com/openrazer/openrazer), [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB), and other public implementations. OpenSynapse is not affiliated with or endorsed by Razer Inc. Razer and related product names are trademarks of their respective owners.
+The protocol implementation references [OpenRazer](https://github.com/openrazer/openrazer), [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB), and other public implementations. OpenSynapse is not affiliated with or endorsed by Razer Inc. Razer and related product names are trademarks of their respective owners.
 
 Made with ❤ in C# by [A1mAssist](https://github.com/A1mAssist).

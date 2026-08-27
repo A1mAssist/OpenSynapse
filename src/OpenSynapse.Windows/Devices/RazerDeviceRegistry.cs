@@ -76,6 +76,22 @@ internal sealed class RazerDeviceRegistry
                 ["obm-assignment.get"] = new(0x50, 0x02, 0x8C, ""),
                 ["obm-assignment.set"] = new(0x50, 0x02, 0x0C, ""),
             },
+            // Future OpenRazer devices need an audited built-in manifest and
+            // verified Windows transport before any capability is admitted.
+            ["openrazer-standard"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal),
+        };
+    private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> FamilyRequiredCapabilities =
+        new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
+        {
+            ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["openrazer-standard"] = new HashSet<string>(StringComparer.Ordinal),
+        };
+    private static readonly IReadOnlyDictionary<(ushort VendorId, ushort ProductId), string> ReservedProductFamilies =
+        new Dictionary<(ushort VendorId, ushort ProductId), string>
+        {
+            [(0x1532, 0x02C6)] = "blade-710",
+            [(0x1532, 0x00B8)] = "viper-184",
         };
 
     private readonly IReadOnlyDictionary<(ushort VendorId, ushort ProductId), RazerDeviceManifest> _devices;
@@ -127,18 +143,18 @@ internal sealed class RazerDeviceRegistry
             }
             catch (UnauthorizedAccessException)
             {
-                errors.Add("外部 manifest 目录：无权枚举文件。");
+                errors.Add("External manifest directory: access denied while enumerating files.");
                 files = [];
             }
             catch (IOException)
             {
-                errors.Add("外部 manifest 目录：枚举文件失败。");
+                errors.Add("External manifest directory: failed to enumerate files.");
                 files = [];
             }
 
             if (files.Length > MaximumExternalManifestFiles)
             {
-                errors.Add($"外部 manifest 超过 {MaximumExternalManifestFiles} 个，已拒绝全部外部配置。");
+                errors.Add($"External manifest count exceeds {MaximumExternalManifestFiles}; all external configurations were rejected.");
             }
             else
             {
@@ -154,15 +170,15 @@ internal sealed class RazerDeviceRegistry
                     }
                     catch (UnauthorizedAccessException)
                     {
-                        errors.Add($"{name}：无权读取文件。");
+                        errors.Add($"{name}: access denied while reading the file.");
                     }
                     catch (IOException)
                     {
-                        errors.Add($"{name}：读取文件失败。");
+                        errors.Add($"{name}: failed to read the file.");
                     }
                     catch (InvalidOperationException exception)
                     {
-                        errors.Add($"{name}：{exception.Message}");
+                        errors.Add($"{name}: {exception.Message}");
                     }
                 }
             }
@@ -180,7 +196,7 @@ internal sealed class RazerDeviceRegistry
             FileShare.Read);
         if (stream.Length > MaximumExternalManifestBytes)
         {
-            throw new InvalidOperationException("文件超过 65536 字节。");
+            throw new InvalidOperationException("File exceeds 65536 bytes.");
         }
 
         using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
@@ -196,7 +212,7 @@ internal sealed class RazerDeviceRegistry
         {
             if (!ids.Add(manifest.Id))
             {
-                throw new InvalidOperationException($"重复的设备 manifest ID：'{manifest.Id}'。");
+                throw new InvalidOperationException($"Duplicate device manifest ID: '{manifest.Id}'.");
             }
 
             foreach (var productId in manifest.ProductIds)
@@ -204,7 +220,7 @@ internal sealed class RazerDeviceRegistry
                 if (!devices.TryAdd((manifest.VendorId, productId), manifest))
                 {
                     throw new InvalidOperationException(
-                        $"重复的 VID/PID：{manifest.VendorId:X4}:{productId:X4}。");
+                        $"Duplicate VID/PID: {manifest.VendorId:X4}:{productId:X4}.");
                 }
             }
         }
@@ -228,13 +244,13 @@ internal sealed class RazerDeviceRegistry
             .ToArray();
         if (resourceNames.Length == 0)
         {
-            throw new InvalidOperationException("未找到内置 Razer 设备 manifest。");
+            throw new InvalidOperationException("No built-in Razer device manifests were found.");
         }
 
         return resourceNames.Select(name =>
         {
             using var stream = assembly.GetManifestResourceStream(name)
-                ?? throw new InvalidOperationException($"无法读取内置资源 '{name}'。");
+                ?? throw new InvalidOperationException($"Unable to read built-in resource '{name}'.");
             using var reader = new StreamReader(stream);
             return new ManifestDocument(name, reader.ReadToEnd(), true);
         }).ToArray();
@@ -257,13 +273,18 @@ internal sealed class RazerDeviceRegistry
             try
             {
                 var manifest = Parse(document);
+                if (manifest.ProtocolFamily == "openrazer-standard")
+                {
+                    throw new InvalidOperationException(
+                        "openrazer-standard permits only reviewed built-in manifests; devices cannot be registered through external configuration.");
+                }
                 var familyTemplate = manifests.First(item =>
                     item.ProtocolFamily == manifest.ProtocolFamily &&
                     builtInDocuments.Any(builtIn => builtIn.SourceName == item.SourceName));
                 EnsureExternalContract(manifest, familyTemplate);
                 if (ids.Contains(manifest.Id))
                 {
-                    throw new InvalidOperationException($"重复的设备 manifest ID：'{manifest.Id}'。");
+                    throw new InvalidOperationException($"Duplicate device manifest ID: '{manifest.Id}'.");
                 }
 
                 ushort? conflict = null;
@@ -278,7 +299,7 @@ internal sealed class RazerDeviceRegistry
                 if (conflict is { } conflictingProductId)
                 {
                     throw new InvalidOperationException(
-                        $"重复的 VID/PID：{manifest.VendorId:X4}:{conflictingProductId:X4}。");
+                        $"Duplicate VID/PID: {manifest.VendorId:X4}:{conflictingProductId:X4}.");
                 }
 
                 ids.Add(manifest.Id);
@@ -290,7 +311,7 @@ internal sealed class RazerDeviceRegistry
             }
             catch (InvalidOperationException exception)
             {
-                errors.Add($"{document.SourceName}：{exception.Message}");
+                errors.Add($"{document.SourceName}: {exception.Message}");
             }
         }
 
@@ -309,17 +330,17 @@ internal sealed class RazerDeviceRegistry
             if (descriptor.TransactionId != contract.TransactionId)
             {
                 throw new InvalidOperationException(
-                    $"capability '{capabilityId}' 的 transaction ID 不符合内置协议族契约。");
+                    $"Capability '{capabilityId}' transaction ID does not match the built-in protocol family contract.");
             }
             if (descriptor.Wait < contract.Wait)
             {
                 throw new InvalidOperationException(
-                    $"capability '{capabilityId}' 的等待时间短于内置协议族契约。");
+                    $"Capability '{capabilityId}' wait time is shorter than the built-in protocol family contract.");
             }
         }
         if (external.Category != builtIn.Category)
         {
-            throw new InvalidOperationException("设备类别不符合内置协议族契约。");
+            throw new InvalidOperationException("Device category does not match the built-in protocol family contract.");
         }
     }
 
@@ -327,7 +348,7 @@ internal sealed class RazerDeviceRegistry
     {
         if (string.IsNullOrWhiteSpace(document.Json))
         {
-            throw new InvalidOperationException("设备 manifest 不能为空。");
+            throw new InvalidOperationException("Device manifest cannot be empty.");
         }
 
         try
@@ -335,12 +356,12 @@ internal sealed class RazerDeviceRegistry
             using var parsed = JsonDocument.Parse(document.Json);
             EnsureNoDuplicateProperties(parsed.RootElement);
             var source = JsonSerializer.Deserialize<ManifestJson>(document.Json, JsonOptions)
-                ?? throw new InvalidOperationException("设备 manifest 反序列化结果为空。");
+                ?? throw new InvalidOperationException("Device manifest deserialized to null.");
             return Validate(source, document.SourceName);
         }
         catch (JsonException exception)
         {
-            throw new InvalidOperationException($"设备 manifest JSON 无效：{exception.Message}", exception);
+            throw new InvalidOperationException($"Invalid device manifest JSON: {exception.Message}", exception);
         }
     }
 
@@ -349,40 +370,49 @@ internal sealed class RazerDeviceRegistry
         if (source is null || source.ProductIds is null || source.Collection is null ||
             source.Transport is null || source.Capabilities is null)
         {
-            throw new InvalidOperationException("manifest 的必需对象或集合不能为 null。");
+            throw new InvalidOperationException("Required manifest objects or collections cannot be null.");
         }
         if (source.SchemaVersion != SchemaVersion)
         {
-            throw new InvalidOperationException($"不支持 manifest schemaVersion {source.SchemaVersion}。");
+            throw new InvalidOperationException($"Unsupported manifest schemaVersion {source.SchemaVersion}.");
         }
         if (string.IsNullOrWhiteSpace(source.Id) || string.IsNullOrWhiteSpace(source.DisplayName))
         {
-            throw new InvalidOperationException("manifest id 和 displayName 不能为空。");
+            throw new InvalidOperationException("Manifest id and displayName cannot be empty.");
         }
         if (string.IsNullOrWhiteSpace(source.ProtocolFamily) ||
             !FamilyCapabilities.TryGetValue(source.ProtocolFamily, out var admittedCapabilities))
         {
-            throw new InvalidOperationException($"未知协议族：'{source.ProtocolFamily}'。");
+            throw new InvalidOperationException($"Unknown protocol family: '{source.ProtocolFamily}'.");
         }
         if (source.ProductIds.Count == 0)
         {
-            throw new InvalidOperationException($"manifest '{source.Id}' 至少需要一个 PID。");
+            throw new InvalidOperationException($"Manifest '{source.Id}' requires at least one PID.");
         }
         if (source.Collection.FeatureReportLength != RazerFeatureReport.Length)
         {
             throw new InvalidOperationException(
-                $"manifest '{source.Id}' 只允许 {RazerFeatureReport.Length} 字节 feature report。");
+                $"Manifest '{source.Id}' permits only {RazerFeatureReport.Length}-byte feature reports.");
         }
         if (source.Transport.WaitMilliseconds is < 1 or > 1000)
         {
-            throw new InvalidOperationException($"manifest '{source.Id}' 的等待时间无效。");
+            throw new InvalidOperationException($"Manifest '{source.Id}' has an invalid wait time.");
         }
 
         var vendorId = ParseWord(source.VendorId, "vendorId");
         var productIds = source.ProductIds.Select(value => ParseWord(value, "productIds")).ToArray();
         if (productIds.Distinct().Count() != productIds.Length)
         {
-            throw new InvalidOperationException($"manifest '{source.Id}' 包含重复 PID。");
+            throw new InvalidOperationException($"Manifest '{source.Id}' contains duplicate PIDs.");
+        }
+        foreach (var productId in productIds)
+        {
+            if (ReservedProductFamilies.TryGetValue((vendorId, productId), out var reservedFamily) &&
+                !StringComparer.Ordinal.Equals(source.ProtocolFamily, reservedFamily))
+            {
+                throw new InvalidOperationException(
+                    $"VID/PID {vendorId:X4}:{productId:X4} is reserved for protocol family '{reservedFamily}' and cannot be registered to '{source.ProtocolFamily}'.");
+            }
         }
 
         var capabilities = new Dictionary<string, RazerRequestDescriptor>(StringComparer.Ordinal);
@@ -391,13 +421,13 @@ internal sealed class RazerDeviceRegistry
             if (!admittedCapabilities.TryGetValue(capabilityId, out var contract))
             {
                 throw new InvalidOperationException(
-                    $"协议族 '{source.ProtocolFamily}' 不允许 capability '{capabilityId}'。");
+                    $"Protocol family '{source.ProtocolFamily}' does not permit capability '{capabilityId}'.");
             }
 
             if (request is null)
             {
                 throw new InvalidOperationException(
-                    $"manifest '{source.Id}' 的 capability '{capabilityId}' 不能为 null。");
+                    $"Manifest '{source.Id}' capability '{capabilityId}' cannot be null.");
             }
 
             var transactionId = ParseByte(request.TransactionId, $"{capabilityId}.transactionId");
@@ -411,7 +441,7 @@ internal sealed class RazerDeviceRegistry
                 waitMilliseconds is < 1 or > 1000)
             {
                 throw new InvalidOperationException(
-                    $"manifest '{source.Id}' 的 capability '{capabilityId}' 参数无效。");
+                    $"Manifest '{source.Id}' capability '{capabilityId}' has invalid parameters.");
             }
             if (request.AllowRemainingPacketsMismatch &&
                 (source.ProtocolFamily != "blade-710" ||
@@ -419,7 +449,7 @@ internal sealed class RazerDeviceRegistry
                      "native-display-mode.get" or "sku-hardware-configuration.get")))
             {
                 throw new InvalidOperationException(
-                    $"capability '{capabilityId}' 不允许 remaining-packets mismatch 例外。");
+                    $"Capability '{capabilityId}' does not permit a remaining-packets mismatch exception.");
             }
             if (dataSize != contract.DataSize || commandClass != contract.CommandClass ||
                 commandId != contract.CommandId ||
@@ -427,7 +457,7 @@ internal sealed class RazerDeviceRegistry
                 request.AllowRemainingPacketsMismatch != contract.AllowRemainingPacketsMismatch)
             {
                 throw new InvalidOperationException(
-                    $"capability '{capabilityId}' 的报文语义不符合协议族 '{source.ProtocolFamily}' 契约。");
+                    $"Capability '{capabilityId}' report semantics do not match protocol family '{source.ProtocolFamily}'.");
             }
 
             capabilities.Add(capabilityId, new RazerRequestDescriptor(
@@ -440,11 +470,12 @@ internal sealed class RazerDeviceRegistry
                 request.AllowRemainingPacketsMismatch));
         }
 
-        var missing = admittedCapabilities.Keys.Except(capabilities.Keys, StringComparer.Ordinal).ToArray();
+        var requiredCapabilities = FamilyRequiredCapabilities[source.ProtocolFamily];
+        var missing = requiredCapabilities.Except(capabilities.Keys, StringComparer.Ordinal).ToArray();
         if (missing.Length > 0)
         {
             throw new InvalidOperationException(
-                $"manifest '{source.Id}' 缺少协议族必需 capability：{string.Join(", ", missing)}。");
+                $"Manifest '{source.Id}' is missing required protocol family capabilities: {string.Join(", ", missing)}.");
         }
 
         return new RazerDeviceManifest(
@@ -474,7 +505,7 @@ internal sealed class RazerDeviceRegistry
         "mouse" => DeviceCategory.Mouse,
         "keyboard" => DeviceCategory.Keyboard,
         "headset" => DeviceCategory.Headset,
-        _ => throw new InvalidOperationException($"未知设备类别：'{value}'。"),
+        _ => throw new InvalidOperationException($"Unknown device category: '{value}'."),
     };
 
     private static byte ParseByte(string value, string field)
@@ -499,7 +530,7 @@ internal sealed class RazerDeviceRegistry
             value.Any(character => !char.IsAsciiHexDigit(character) ||
                                    (character is >= 'a' and <= 'f')))
         {
-            throw new InvalidOperationException($"manifest 字段 '{field}' 不是有效的大写十六进制字符串。");
+            throw new InvalidOperationException($"Manifest field '{field}' is not a valid uppercase hexadecimal string.");
         }
 
         try
@@ -508,7 +539,7 @@ internal sealed class RazerDeviceRegistry
         }
         catch (FormatException exception)
         {
-            throw new InvalidOperationException($"manifest 字段 '{field}' 不是有效的十六进制字符串。", exception);
+            throw new InvalidOperationException($"Manifest field '{field}' is not a valid hexadecimal string.", exception);
         }
     }
 
@@ -521,7 +552,7 @@ internal sealed class RazerDeviceRegistry
             {
                 if (!names.Add(property.Name))
                 {
-                    throw new InvalidOperationException($"manifest 包含重复属性 '{property.Name}'。");
+                    throw new InvalidOperationException($"Manifest contains duplicate property '{property.Name}'.");
                 }
                 EnsureNoDuplicateProperties(property.Value);
             }

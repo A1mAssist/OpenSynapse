@@ -42,14 +42,14 @@ public sealed class BladeHardwareEventHidHost : IAsyncDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_started)
         {
-            throw new InvalidOperationException("Blade hardware-event HID 宿主已经启动。");
+            throw new InvalidOperationException("Blade hardware-event HID host is already running.");
         }
 
         var snapshot = await WindowsHidDiscovery.DiscoverAllAsync(cancellationToken).ConfigureAwait(false);
         var endpoints = SelectProduct710Endpoints(snapshot.Devices);
         if (!endpoints.Any(static endpoint => IsCollection(endpoint.Id, Col04PathFragment)))
         {
-            throw new InvalidOperationException("未找到 Blade Product 710 MI_01 Col04 HID collection。");
+            throw new InvalidOperationException("Blade Product 710 MI_01 Col04 HID collection was not found.");
         }
 
         try
@@ -148,7 +148,7 @@ public sealed class BladeHardwareEventHidHost : IAsyncDisposable
                 var length = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
                 if (length == 0)
                 {
-                    throw new EndOfStreamException("Blade hardware-event HID collection 已断开。");
+                    throw new EndOfStreamException("Blade hardware-event HID collection was disconnected.");
                 }
 
                 var report = buffer.AsMemory(0, length).ToArray();
@@ -181,7 +181,7 @@ public sealed class BladeHardwareEventHidHost : IAsyncDisposable
         {
             var error = Marshal.GetLastWin32Error();
             handle.Dispose();
-            throw new Win32Exception(error, "无法打开 Blade hardware-event HID collection。");
+            throw new Win32Exception(error, "Could not open the Blade hardware-event HID collection.");
         }
 
         return new FileStream(handle, FileAccess.Read, ReportLength, isAsync: true);

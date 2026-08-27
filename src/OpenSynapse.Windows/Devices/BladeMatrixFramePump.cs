@@ -56,7 +56,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(frame);
         if (frame.Count != BladeLightingProtocol.Rows * BladeLightingProtocol.Columns)
         {
-            throw new ArgumentException("Blade 灯光帧必须正好包含 6 x 17 个颜色。", nameof(frame));
+            throw new ArgumentException("A Blade lighting frame must contain exactly 6 x 17 colors.", nameof(frame));
         }
 
         return Volatile.Read(ref _stopped) == 0 && _frames.Writer.TryWrite(frame.ToArray());

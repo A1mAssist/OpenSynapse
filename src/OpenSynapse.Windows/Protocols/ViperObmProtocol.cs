@@ -96,12 +96,12 @@ public static class ViperObmProtocol
     }
 
     public static byte ParseMaximumProfiles(ReadOnlySpan<byte> response) =>
-        ParseNonZeroByte(response, CreateGetMaximumProfilesRequest(), "最大 Profile 数");
+        ParseNonZeroByte(response, CreateGetMaximumProfilesRequest(), "maximum profile count");
 
     public static byte ParseMaximumProfiles(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request) =>
-        ParseNonZeroByte(response, request, "最大 Profile 数");
+        ParseNonZeroByte(response, request, "maximum profile count");
 
     public static byte ParseProfileCount(ReadOnlySpan<byte> response) =>
         ParseByte(response, CreateGetProfileCountRequest());
@@ -148,12 +148,12 @@ public static class ViperObmProtocol
         if (response[6] != 0x0A)
         {
             throw new InvalidOperationException(
-                $"Viper OBM 映射响应长度不是 Product 184 的固定 0x0A：0x{response[6]:X2}。");
+                $"Viper OBM mapping response length is not the Product 184 fixed length 0x0A: 0x{response[6]:X2}.");
         }
         var offset = RazerFeatureReport.ArgumentsOffset;
         if (response[offset] != profileId || response[offset + 1] != buttonId)
         {
-            throw new InvalidOperationException("Viper OBM 映射响应与请求的 Profile 或 Button 不一致。");
+            throw new InvalidOperationException("Viper OBM mapping response does not match the requested profile or button.");
         }
 
         // Product 184 returns 1 in the mode byte even for a Normal request.
@@ -162,19 +162,19 @@ public static class ViperObmProtocol
         var function = (ViperObmFunctionId)response[offset + 3];
         if (!Enum.IsDefined(function))
         {
-            throw new InvalidOperationException($"Viper OBM 返回了未知 functionId 0x{(byte)function:X2}。");
+            throw new InvalidOperationException($"Viper OBM returned an unknown function ID: 0x{(byte)function:X2}.");
         }
 
         var dataSize = response[offset + 4];
         if (dataSize > 5)
         {
-            throw new InvalidOperationException($"Viper OBM 返回了超出官方五字节布局的 functionDataSize {dataSize}。");
+            throw new InvalidOperationException($"Viper OBM returned function data size {dataSize}, exceeding the official five-byte layout.");
         }
 
         var functionData = response.Slice(offset + 5, dataSize).ToArray();
         if (response.Slice(offset + 5 + dataSize, 5 - dataSize).ContainsAnyExcept((byte)0))
         {
-            throw new InvalidOperationException("Viper OBM 映射响应包含非零的未声明 functionData 尾部。");
+            throw new InvalidOperationException("Viper OBM mapping response contains a nonzero undeclared function-data tail.");
         }
         try
         {
@@ -182,7 +182,7 @@ public static class ViperObmProtocol
         }
         catch (ArgumentException exception)
         {
-            throw new InvalidOperationException("Viper OBM 返回了无效的 function/payload 组合。", exception);
+            throw new InvalidOperationException("Viper OBM returned an invalid function/payload combination.", exception);
         }
 
         return new ViperObmAssignment(
@@ -209,7 +209,7 @@ public static class ViperObmProtocol
         var value = ParseByte(response, request);
         return value != 0
             ? value
-            : throw new InvalidOperationException($"Viper OBM 返回了无效的{field} 0。");
+            : throw new InvalidOperationException($"Viper OBM returned invalid {field} 0.");
     }
 
     private static byte ParseByte(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
@@ -217,7 +217,7 @@ public static class ViperObmProtocol
         ValidateResponse(response, request, 1);
         if (response[6] != 1)
         {
-            throw new InvalidOperationException("Viper OBM 标量响应的数据长度不是固定 1 字节。");
+            throw new InvalidOperationException("Viper OBM scalar response data length is not the fixed one byte.");
         }
 
         return response[RazerFeatureReport.ArgumentsOffset];
@@ -233,7 +233,7 @@ public static class ViperObmProtocol
         var count = response[offset];
         if (count == 0 || count > response[6] - 1)
         {
-            throw new InvalidOperationException($"Viper OBM {field} ID 数量为空或超出响应长度。");
+            throw new InvalidOperationException($"Viper OBM {field} ID count is zero or exceeds the response length.");
         }
 
         var ids = response.Slice(offset + 1, count).ToArray();
@@ -241,7 +241,7 @@ public static class ViperObmProtocol
         if (trailing.ContainsAnyExcept((byte)0) ||
             ids.Contains((byte)0) || ids.Distinct().Count() != ids.Length)
         {
-            throw new InvalidOperationException($"Viper OBM 返回了无效、重复或带有非零尾随字段的 {field} ID。");
+            throw new InvalidOperationException($"Viper OBM returned an invalid or duplicate {field} ID, or a nonzero trailing field.");
         }
 
         return ids;
@@ -251,7 +251,7 @@ public static class ViperObmProtocol
     {
         if (value == 0)
         {
-            throw new ArgumentOutOfRangeException(parameterName, "OBM ID 不能为 0。");
+            throw new ArgumentOutOfRangeException(parameterName, "OBM ID cannot be zero.");
         }
     }
 
@@ -277,7 +277,7 @@ public static class ViperObmProtocol
         if (!valid)
         {
             throw new ArgumentException(
-                $"Product 184 不支持该 function/payload 组合：{function}，长度 {data.Count}。",
+                $"Product 184 does not support the function/payload combination {function} with length {data.Count}.",
                 nameof(data));
         }
     }
@@ -293,7 +293,7 @@ public static class ViperObmProtocol
             response[6] > 80 ||
             !RazerFeatureReport.Matches(request, response))
         {
-            throw new InvalidOperationException("Viper OBM 返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Viper OBM returned an invalid or out-of-order feature report.");
         }
     }
 }

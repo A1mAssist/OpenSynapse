@@ -37,7 +37,7 @@ public sealed class WindowsTrayIcon : IDisposable
     {
         if (windowHandle == IntPtr.Zero)
         {
-            throw new ArgumentException("托盘图标需要有效的窗口句柄。", nameof(windowHandle));
+            throw new ArgumentException("The tray icon requires a valid window handle.", nameof(windowHandle));
         }
 
         ArgumentException.ThrowIfNullOrWhiteSpace(toolTip);
@@ -47,7 +47,7 @@ public sealed class WindowsTrayIcon : IDisposable
         _taskbarCreatedMessage = RegisterWindowMessageW("TaskbarCreated");
         if (_taskbarCreatedMessage == 0)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法注册 Explorer 重启通知。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not register the Explorer restart notification.");
         }
 
         if (!string.IsNullOrWhiteSpace(iconPath) && File.Exists(iconPath))
@@ -69,20 +69,20 @@ public sealed class WindowsTrayIcon : IDisposable
 
         if (_iconHandle == IntPtr.Zero)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法加载托盘图标。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not load the tray icon.");
         }
 
         if (!SetWindowSubclass(_windowHandle, _subclassProcedure, IconId, UIntPtr.Zero))
         {
             ReleaseOwnedIcon();
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法注册托盘窗口消息。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not register the tray window message.");
         }
 
         if (!AddIcon())
         {
             RemoveWindowSubclass(_windowHandle, _subclassProcedure, IconId);
             ReleaseOwnedIcon();
-            throw new InvalidOperationException("Windows 未能创建 OpenSynapse 托盘图标。");
+            throw new InvalidOperationException("Windows could not create the OpenSynapse tray icon.");
         }
     }
 

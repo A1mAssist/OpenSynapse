@@ -645,7 +645,7 @@ internal sealed class StarlightLightingRenderer
         var targetFrame = (long)(elapsed.TotalMilliseconds * 25 / 1000);
         if (targetFrame < _nextFrame - 1)
         {
-            throw new InvalidOperationException("Starlight 时间必须单调递增。");
+            throw new InvalidOperationException("Starlight timestamps must increase monotonically.");
         }
         while (_nextFrame <= targetFrame)
         {

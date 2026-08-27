@@ -47,7 +47,7 @@ public static class BladeLogoProtocol
             0x00 => false,
             0x01 => true,
             var value => throw new InvalidOperationException(
-                $"Blade Logo 返回了未知电源状态 0x{value:X2}。"),
+                $"Blade Logo returned an unknown power state: 0x{value:X2}."),
         };
     }
 
@@ -65,7 +65,7 @@ public static class BladeLogoProtocol
             0x00 => BladeLogoMode.Static,
             0x02 => BladeLogoMode.Breathing,
             var value => throw new InvalidOperationException(
-                $"Blade Logo 返回了未知灯效模式 0x{value:X2}。"),
+                $"Blade Logo returned an unknown lighting mode: 0x{value:X2}."),
         };
     }
 
@@ -92,19 +92,19 @@ public static class BladeLogoProtocol
         }
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, 3))
         {
-            throw new InvalidOperationException("Blade Logo 返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Blade Logo returned an invalid or out-of-order feature report.");
         }
 
         if (response[6] < 3)
         {
-            throw new InvalidOperationException($"Blade Logo 响应长度不足：{response[6]} < 3。");
+            throw new InvalidOperationException($"Blade Logo response is too short: {response[6]} < 3.");
         }
 
         var arguments = response[
             RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 3)];
         if (arguments[0] != profileId || arguments[1] != LogoLedId)
         {
-            throw new InvalidOperationException("Blade Logo 返回了错误的对象标识。");
+            throw new InvalidOperationException("Blade Logo returned an incorrect object identifier.");
         }
 
         return arguments;

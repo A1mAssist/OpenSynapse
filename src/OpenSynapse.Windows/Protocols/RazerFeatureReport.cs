@@ -4,6 +4,7 @@ public static class RazerFeatureReport
 {
     public const int Length = 91;
     public const int ArgumentsOffset = 9;
+    internal const int OpenRazerLogicalLength = Length - 1;
 
     public static byte[] CreateRequest(
         byte transactionId,
@@ -33,11 +34,38 @@ public static class RazerFeatureReport
             arguments,
             allowArgumentsBeyondDeclaredSize: true);
 
+    internal static byte[] CreateRequestFromOpenRazerLogical(
+        ReadOnlySpan<byte> logicalReport,
+        byte reportId = 0)
+    {
+        if (logicalReport.Length != OpenRazerLogicalLength)
+        {
+            throw new ArgumentException(
+                $"OpenRazer logical reports must be {OpenRazerLogicalLength} bytes.",
+                nameof(logicalReport));
+        }
+        if (logicalReport[0] != 0 ||
+            logicalReport[2] != 0 ||
+            logicalReport[3] != 0 ||
+            logicalReport[4] != 0 ||
+            logicalReport[5] > 80 ||
+            logicalReport[89] != 0 ||
+            logicalReport[88] != CalculateOpenRazerCrc(logicalReport))
+        {
+            throw new ArgumentException("OpenRazer logical request header or CRC is invalid.", nameof(logicalReport));
+        }
+
+        // Linux report/response indexes select its USB transport path; they are not report bytes.
+        var windowsReport = new byte[Length];
+        windowsReport[0] = reportId;
+        logicalReport.CopyTo(windowsReport.AsSpan(1));
+        return windowsReport;
+    }
+
     internal static void ValidatePreparedStarlightRequest(ReadOnlySpan<byte> report)
     {
-        if (report.Length != Length ||
-            report[0] != 0x00 ||
-            report[1] != 0x00 ||
+        ValidatePreparedRequest(report);
+        if (report[1] != 0x00 ||
             report[2] != 0xFF ||
             report[3] != 0x00 ||
             report[4] != 0x00 ||
@@ -52,7 +80,7 @@ public static class RazerFeatureReport
             report[90] != 0x00 ||
             report[89] != CalculateCrc(report))
         {
-            throw new ArgumentException("预制 Starlight 报文无效。", nameof(report));
+            throw new ArgumentException("The prebuilt Starlight report is invalid.", nameof(report));
         }
 
         var colorMode = report[ArgumentsOffset + 1];
@@ -60,7 +88,17 @@ public static class RazerFeatureReport
         if ((colorMode == 0x03 && colors.ContainsAnyExcept((byte)0x00)) ||
             (colorMode == 0x01 && colors[3..].ContainsAnyExcept((byte)0x00)))
         {
-            throw new ArgumentException("预制 Starlight 报文的颜色模式无效。", nameof(report));
+            throw new ArgumentException("The prebuilt Starlight report has an invalid color mode.", nameof(report));
+        }
+    }
+
+    internal static void ValidatePreparedRequest(ReadOnlySpan<byte> report)
+    {
+        if (report.Length != Length || report[0] != 0x00 || report[1] != 0x00 ||
+            report[3] != 0x00 || report[4] != 0x00 || report[5] != 0x00 ||
+            report[6] > 80 || report[90] != 0x00 || report[89] != CalculateCrc(report))
+        {
+            throw new ArgumentException("Prepared Razer feature request is invalid.", nameof(report));
         }
     }
 
@@ -99,6 +137,17 @@ public static class RazerFeatureReport
         for (var index = 3; index <= 88; index++)
         {
             crc ^= report[index];
+        }
+
+        return crc;
+    }
+
+    private static byte CalculateOpenRazerCrc(ReadOnlySpan<byte> logicalReport)
+    {
+        byte crc = 0;
+        for (var index = 2; index <= 87; index++)
+        {
+            crc ^= logicalReport[index];
         }
 
         return crc;

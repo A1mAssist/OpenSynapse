@@ -51,7 +51,7 @@ public sealed class BladeAudioMuteRuntime : IAsyncDisposable
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (Interlocked.Exchange(ref _started, 1) != 0)
             {
-                throw new InvalidOperationException("Blade 音频静音灯同步已经启动。");
+                throw new InvalidOperationException("Blade audio mute indicator synchronization is already running.");
             }
 
             IRazerFeatureSession? session = null;
@@ -207,7 +207,7 @@ public sealed class BladeAudioMuteRuntime : IAsyncDisposable
             cancellationToken).ConfigureAwait(false);
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: 2))
         {
-            throw new InvalidOperationException("Blade 设备模式切换未收到成功响应。");
+            throw new InvalidOperationException("Blade device mode switch did not receive a successful response.");
         }
     }
 }

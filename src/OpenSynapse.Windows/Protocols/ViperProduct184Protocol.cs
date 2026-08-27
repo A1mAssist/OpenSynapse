@@ -21,7 +21,7 @@ public static class ViperProduct184Protocol
             125 => 0x08,
             500 => 0x02,
             1000 => 0x01,
-            _ => throw new ArgumentOutOfRangeException(nameof(hertz), "Viper 轮询率只支持 125、500 或 1000 Hz。"),
+            _ => throw new ArgumentOutOfRangeException(nameof(hertz), "Viper polling rate only supports 125, 500, or 1000 Hz."),
         });
 
     public static byte[] CreateGetDpiRequest() =>
@@ -41,7 +41,7 @@ public static class ViperProduct184Protocol
     {
         if (seconds is < 60 or > 900)
         {
-            throw new ArgumentOutOfRangeException(nameof(seconds), "Viper 休眠时间必须在 60 到 900 秒之间。");
+            throw new ArgumentOutOfRangeException(nameof(seconds), "Viper sleep timeout must be between 60 and 900 seconds.");
         }
 
         return Create(0x02, 0x07, 0x03, High(seconds), Low(seconds));
@@ -61,11 +61,11 @@ public static class ViperProduct184Protocol
         ArgumentNullException.ThrowIfNull(state);
         if (state.Stages is null || state.Stages.Count is < 1 or > 5)
         {
-            throw new ArgumentOutOfRangeException(nameof(state), "Viper DPI 档位数量必须在 1 到 5 之间。");
+            throw new ArgumentOutOfRangeException(nameof(state), "Viper DPI stage count must be between 1 and 5.");
         }
         if (state.ActiveStage is < 1 || state.ActiveStage > state.Stages.Count)
         {
-            throw new ArgumentOutOfRangeException(nameof(state), "Viper 当前 DPI 档位必须在档位表范围内。");
+            throw new ArgumentOutOfRangeException(nameof(state), "The active Viper DPI stage must be within the stage table.");
         }
 
         var arguments = new byte[3 + (7 * state.Stages.Count)];
@@ -77,7 +77,7 @@ public static class ViperProduct184Protocol
             var stage = state.Stages[index];
             if (stage.Number != index + 1)
             {
-                throw new ArgumentException("Viper DPI 档位编号必须从 1 开始且连续。", nameof(state));
+                throw new ArgumentException("Viper DPI stage numbers must start at 1 and be contiguous.", nameof(state));
             }
             ValidateDpi(stage.X, nameof(state));
             ValidateDpi(stage.Y, nameof(state));
@@ -129,7 +129,7 @@ public static class ViperProduct184Protocol
             0x01 => 1000,
             0x02 => 500,
             0x08 => 125,
-            var raw => throw new InvalidOperationException($"Viper 返回了未知轮询率代码 0x{raw:X2}。"),
+            var raw => throw new InvalidOperationException($"Viper returned an unknown polling-rate code: 0x{raw:X2}."),
         };
     }
 
@@ -141,7 +141,7 @@ public static class ViperProduct184Protocol
         ValidateResponse(response, request, 5);
         if (response[RazerFeatureReport.ArgumentsOffset] != 0x00)
         {
-            throw new InvalidOperationException("Viper DPI 返回了错误的 profile。");
+            throw new InvalidOperationException("Viper DPI returned an incorrect profile.");
         }
 
         var x = (response[RazerFeatureReport.ArgumentsOffset + 1] << 8) |
@@ -150,7 +150,7 @@ public static class ViperProduct184Protocol
             response[RazerFeatureReport.ArgumentsOffset + 4];
         if (!IsValidDpi(x) || !IsValidDpi(y))
         {
-            throw new InvalidOperationException($"Viper 返回了无效 DPI：{x} x {y}。");
+            throw new InvalidOperationException($"Viper returned invalid DPI: {x} x {y}.");
         }
         return (x, y);
     }
@@ -165,7 +165,7 @@ public static class ViperProduct184Protocol
             response[RazerFeatureReport.ArgumentsOffset + 1];
         if (seconds is < 60 or > 900 || seconds % 60 != 0)
         {
-            throw new InvalidOperationException($"Viper 返回了无效休眠时间 {seconds} 秒。");
+            throw new InvalidOperationException($"Viper returned an invalid sleep timeout: {seconds} seconds.");
         }
 
         return seconds;
@@ -182,7 +182,7 @@ public static class ViperProduct184Protocol
     {
         if (value is < 100 or > 30000 || value % 50 != 0)
         {
-            throw new ArgumentOutOfRangeException(parameterName, "Viper DPI 必须在 100 到 30000 之间，并且是 50 的倍数。");
+            throw new ArgumentOutOfRangeException(parameterName, "Viper DPI must be between 100 and 30000 and divisible by 50.");
         }
     }
 
@@ -195,7 +195,7 @@ public static class ViperProduct184Protocol
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments))
         {
-            throw new InvalidOperationException("Viper Product 184 返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Viper Product 184 returned an invalid or out-of-order feature report.");
         }
     }
 }

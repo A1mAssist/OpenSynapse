@@ -33,11 +33,11 @@ public static class BladeProduct710Protocol
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request)
     {
-        Validate(response, request, 1, "Blade 原生显示模式", allowRemainingPacketsMismatch: true);
+        Validate(response, request, 1, "Blade native display mode", allowRemainingPacketsMismatch: true);
         var mode = (BladeNativeDisplayMode)response[RazerFeatureReport.ArgumentsOffset];
         return Enum.IsDefined(mode)
             ? mode
-            : throw new InvalidOperationException($"Blade 返回了未知原生显示模式 0x{(byte)mode:X2}。");
+            : throw new InvalidOperationException($"Blade returned an unknown native display mode: 0x{(byte)mode:X2}.");
     }
 
     public static BladeSkuHardwareConfiguration ParseSkuHardwareConfiguration(
@@ -48,7 +48,7 @@ public static class BladeProduct710Protocol
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request)
     {
-        Validate(response, request, 1, "Blade SKU 硬件配置", allowRemainingPacketsMismatch: true);
+        Validate(response, request, 1, "Blade SKU hardware configuration", allowRemainingPacketsMismatch: true);
         var raw = response[RazerFeatureReport.ArgumentsOffset];
         return new(
             (raw & 0x01) != 0,
@@ -70,7 +70,7 @@ public static class BladeProduct710Protocol
                 minimumArguments,
                 allowRemainingPacketsMismatch))
         {
-            throw new InvalidOperationException($"{feature}返回了无效或错序的 feature report。");
+            throw new InvalidOperationException($"{feature} returned an invalid or out-of-order feature report.");
         }
     }
 }

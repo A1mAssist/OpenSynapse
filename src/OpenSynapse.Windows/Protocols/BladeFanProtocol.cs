@@ -75,21 +75,21 @@ public static class BladeFanProtocol
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, DataSize))
         {
-            throw new InvalidOperationException("Blade 风扇目标返回了无效或错序的 feature report。");
+            throw new InvalidOperationException("Blade fan target returned an invalid or out-of-order feature report.");
         }
 
         if (response[RazerFeatureReport.ArgumentsOffset + 1] != expectedZone)
         {
             throw new InvalidOperationException(
-                $"Blade 返回了错误的风扇分区 0x{response[RazerFeatureReport.ArgumentsOffset + 1]:X2}，期望 0x{expectedZone:X2}。");
+                $"Blade returned an incorrect fan zone: 0x{response[RazerFeatureReport.ArgumentsOffset + 1]:X2}; expected 0x{expectedZone:X2}.");
         }
 
         var rpm = response[RazerFeatureReport.ArgumentsOffset + 2] * StepRpm;
         if (rpm < minimumRpm || rpm > MaximumRpm || rpm % StepRpm != 0)
         {
-            var kind = minimumRpm == MinimumRpm ? "固定风扇转速" : "风扇曲线转速";
+            var kind = minimumRpm == MinimumRpm ? "fixed fan speed" : "fan-curve speed";
             throw new InvalidOperationException(
-                $"Blade 返回了不支持的{kind} {rpm} RPM；允许范围为 {minimumRpm}..{MaximumRpm} RPM，步进 {StepRpm} RPM。");
+                $"Blade returned an unsupported {kind} of {rpm} RPM; allowed range is {minimumRpm}..{MaximumRpm} RPM in {StepRpm} RPM steps.");
         }
         return rpm;
     }
@@ -97,7 +97,7 @@ public static class BladeFanProtocol
     private static byte ValidateZone(byte zone) => zone switch
     {
         ZoneCpu or ZoneGpu => zone,
-        _ => throw new ArgumentOutOfRangeException(nameof(zone), "Blade 风扇分区必须为 CPU(0x01) 或 GPU(0x02)。"),
+        _ => throw new ArgumentOutOfRangeException(nameof(zone), "Blade fan zone must be CPU (0x01) or GPU (0x02)."),
     };
 
     public static void ValidateTargetRpm(int rpm)
@@ -109,7 +109,7 @@ public static class BladeFanProtocol
         {
             throw new ArgumentOutOfRangeException(
                 nameof(rpm),
-                $"Blade 曲线目标必须为 {MinimumCurveRpm}..{MaximumRpm} RPM，步进 {StepRpm} RPM。");
+                $"Blade curve target must be {MinimumCurveRpm}..{MaximumRpm} RPM in {StepRpm} RPM steps.");
         }
     }
 }

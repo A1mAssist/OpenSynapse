@@ -53,14 +53,14 @@ public sealed class WindowsKeyboardInputSink
                 : _sendInput(rollback, Marshal.SizeOf<Input>());
             var original = new Win32Exception(
                 result.Error,
-                $"SendInput 只发送了 {result.Sent}/{inputs.Length} 个映射事件。");
+                $"SendInput sent only {result.Sent}/{inputs.Length} mapped events.");
             if (rollbackResult.Sent != rollback.Length)
             {
                 throw new AggregateException(
                     original,
                     new Win32Exception(
                         rollbackResult.Error,
-                        $"SendInput 回滚只发送了 {rollbackResult.Sent}/{rollback.Length} 个释放事件。"));
+                        $"SendInput rollback sent only {rollbackResult.Sent}/{rollback.Length} release events."));
             }
 
             throw original;

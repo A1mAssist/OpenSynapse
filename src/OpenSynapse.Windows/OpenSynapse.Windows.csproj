@@ -23,5 +23,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Devices\Manifests\*.json" />
+    <EmbeddedResource Include="Devices\OpenRazer\*.json" />
   </ItemGroup>
 </Project>
