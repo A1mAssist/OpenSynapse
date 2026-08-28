@@ -31,8 +31,10 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
     internal static Task<IReadOnlyList<HidInterfaceDescriptor>> FindVendorFeatureInterfacesAsync(
         ushort vendorId,
         ushort featureReportLength,
-        CancellationToken cancellationToken = default) =>
-        Task.Run(() => FindVendorFeatureInterfaces(vendorId, featureReportLength, cancellationToken), cancellationToken);
+        CancellationToken cancellationToken = default,
+        Action<HidInterfaceDescriptor>? observeInterface = null) =>
+        Task.Run(() => FindVendorFeatureInterfaces(
+            vendorId, featureReportLength, cancellationToken, observeInterface), cancellationToken);
 
     internal static Task<IReadOnlyList<HidInterfaceDescriptor>> FindVendorInterfacesAsync(
         ushort vendorId,
@@ -42,7 +44,8 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
     private static IReadOnlyList<HidInterfaceDescriptor> FindVendorFeatureInterfaces(
         ushort vendorId,
         ushort? featureReportLength,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<HidInterfaceDescriptor>? observeInterface = null)
     {
         var interfaces = new List<HidInterfaceDescriptor>();
         NativeMethods.HidD_GetHidGuid(out var hidGuid);
@@ -84,19 +87,21 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                 }
 
                 var probe = ProbeInterfaceMetadata(path);
+                var descriptor = new HidInterfaceDescriptor(
+                    path,
+                    GetPhysicalDeviceKey(path, containerId),
+                    candidateVendorId,
+                    candidateProductId,
+                    probe.InputReportByteLength,
+                    probe.OutputReportByteLength,
+                    probe.FeatureReportByteLength,
+                    probe.UsagePage,
+                    probe.Usage,
+                    probe.Access);
+                observeInterface?.Invoke(descriptor);
                 if (featureReportLength is null || probe.FeatureReportByteLength == featureReportLength)
                 {
-                    interfaces.Add(new HidInterfaceDescriptor(
-                        path,
-                        GetPhysicalDeviceKey(path, containerId),
-                        candidateVendorId,
-                        candidateProductId,
-                        probe.InputReportByteLength,
-                        probe.OutputReportByteLength,
-                        probe.FeatureReportByteLength,
-                        probe.UsagePage,
-                        probe.Usage,
-                        probe.Access));
+                    interfaces.Add(descriptor);
                 }
             }
         }

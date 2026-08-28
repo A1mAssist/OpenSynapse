@@ -367,6 +367,14 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void DiagnosticDevicePathOmitsInstanceSpecificSuffix()
+    {
+        const string path = @"\\?\hid#vid_1532&pid_027a&mi_00&col01#8&2d946264&0&0000#{guid}";
+
+        Assert.Equal("vid_1532&pid_027a&mi_00&col01", RazerFeatureTransport.DescribeDevicePath(path));
+    }
+
+    [Fact]
     public void EveryPublishedBackendCapabilityHasAtLeastOneResolvedDeviceDefinition()
     {
         var published = OpenRazerDeviceCatalog.BuiltIn.Devices

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Core.Diagnostics;
 
 namespace OpenSynapse.Windows.Protocols;
 
@@ -88,8 +89,14 @@ public interface IRazerFeatureSession : IAsyncDisposable
 
 public sealed class RazerFeatureTransport : IRazerFeatureTransport
 {
+    private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public RazerFeatureTransport(LocalDiagnosticLog? diagnosticLog = null)
+    {
+        _diagnosticLog = diagnosticLog;
+    }
 
     public Task<byte[]> QueryAsync(
         string devicePath,
@@ -230,14 +237,23 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         await gate.WaitAsync(cancellationToken);
         try
         {
-            using var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
-            return await ExecuteOnHandleAsync(
-                handle,
-                request,
-                deviceWait,
-                responseReportId,
-                cancellationToken,
-                allowRemainingPacketsMismatch).ConfigureAwait(false);
+            try
+            {
+                using var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
+                return await ExecuteOnHandleAsync(
+                    handle,
+                    request,
+                    deviceWait,
+                    responseReportId,
+                    cancellationToken,
+                    allowRemainingPacketsMismatch,
+                    message => WriteDiagnostic(devicePath, request, message)).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException)
+            {
+                WriteDiagnostic(devicePath, request, $"failed: {exception.GetType().Name}: {exception.Message}");
+                throw;
+            }
         }
         finally
         {
@@ -276,7 +292,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         TimeSpan deviceWait,
         byte responseReportId,
         CancellationToken cancellationToken,
-        bool allowRemainingPacketsMismatch)
+        bool allowRemainingPacketsMismatch,
+        Action<string>? diagnostic = null)
     {
         string? lastError = null;
         for (var attempt = 1; attempt <= 5; attempt++)
@@ -290,6 +307,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             if (!setResult.Success)
             {
                 lastError = new Win32Exception(setResult.Error).Message;
+                diagnostic?.Invoke($"attempt {attempt}: HidD_SetFeature failed, win32={setResult.Error} ({lastError})");
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
                 continue;
             }
@@ -305,6 +323,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             if (!getResult.Success)
             {
                 lastError = new Win32Exception(getResult.Error).Message;
+                diagnostic?.Invoke($"attempt {attempt}: HidD_GetFeature failed, win32={getResult.Error} ({lastError})");
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
                 continue;
             }
@@ -313,9 +332,17 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 !RazerFeatureReport.Matches(request, response, allowRemainingPacketsMismatch))
             {
                 lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
+                diagnostic?.Invoke($"attempt {attempt}: response validation failed, status=0x{response[1]:X2}, txn=0x{response[2]:X2}, class=0x{response[7]:X2}, command=0x{response[8]:X2}");
             }
             else if (response[1] == 0x02)
             {
+                diagnostic?.Invoke($"attempt {attempt}: success, status=0x02");
+                return response;
+            }
+            else if (response[1] == 0x01)
+            {
+                // OpenRazer treats BUSY as an accepted command for these devices.
+                diagnostic?.Invoke($"attempt {attempt}: accepted, status=0x01 (busy)");
                 return response;
             }
             else if (response[1] == 0x05)
@@ -331,12 +358,30 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     0x04 => "The device timed out (0x04); wake the device, close Synapse, and retry.",
                     _ => $"Device response status: 0x{response[1]:X2}.",
                 };
+                diagnostic?.Invoke($"attempt {attempt}: {lastError}");
             }
 
             await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
         }
 
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
+    }
+
+    private void WriteDiagnostic(string devicePath, byte[] request, string message)
+    {
+        if (!devicePath.Contains("pid_027a", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+        _diagnosticLog?.TryWrite(
+            "openrazer-hid",
+            $"path={DescribeDevicePath(devicePath)}, txn=0x{request[2]:X2}, size={request[6]}, class=0x{request[7]:X2}, command=0x{request[8]:X2}: {message}");
+    }
+
+    internal static string DescribeDevicePath(string devicePath)
+    {
+        var parts = devicePath.Split('#');
+        return parts.Length > 1 ? parts[1] : "<redacted>";
     }
 
     private sealed class RazerFeatureSession(

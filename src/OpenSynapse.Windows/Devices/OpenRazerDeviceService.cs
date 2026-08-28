@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.ComponentModel;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -16,17 +17,22 @@ public sealed class OpenRazerDeviceService
 {
     private readonly OpenRazerDeviceCatalog _catalog;
     private readonly IRazerFeatureTransport _transport;
+    private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
 
-    public OpenRazerDeviceService()
-        : this(OpenRazerDeviceCatalog.BuiltIn, new RazerFeatureTransport())
+    public OpenRazerDeviceService(LocalDiagnosticLog? diagnosticLog = null)
+        : this(OpenRazerDeviceCatalog.BuiltIn, new RazerFeatureTransport(diagnosticLog), diagnosticLog)
     {
     }
 
-    internal OpenRazerDeviceService(OpenRazerDeviceCatalog catalog, IRazerFeatureTransport transport)
+    internal OpenRazerDeviceService(
+        OpenRazerDeviceCatalog catalog,
+        IRazerFeatureTransport transport,
+        LocalDiagnosticLog? diagnosticLog = null)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _diagnosticLog = diagnosticLog;
     }
 
     public async Task<IReadOnlyList<OpenRazerDeviceConnection>> DiscoverAsync(
@@ -35,7 +41,8 @@ public sealed class OpenRazerDeviceService
         var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
             OpenRazerDeviceDefinition.VendorId,
             RazerFeatureReport.Length,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            LogObservedInterface).ConfigureAwait(false);
         var results = new List<OpenRazerDeviceConnection>();
         foreach (var group in interfaces
             .Where(item => _catalog.Find(item.VendorId, item.ProductId) is not null)
@@ -45,6 +52,8 @@ public sealed class OpenRazerDeviceService
         {
             var definition = _catalog.Find(OpenRazerDeviceDefinition.VendorId, group.Key.ProductId)!;
             var candidates = group.ToArray();
+            WriteDiagnostic(definition.ProductId,
+                $"scan found {candidates.Length} matching 91-byte HID collection(s)");
             var available = candidates.Where(candidate => candidate.Access == DeviceAccessState.Available).ToArray();
             if (available.Length == 0)
             {
@@ -62,11 +71,15 @@ public sealed class OpenRazerDeviceService
             string? resolvedPath = null;
             foreach (var candidate in ordered)
             {
+                WriteDiagnostic(definition.ProductId,
+                    $"probing path={RazerFeatureTransport.DescribeDevicePath(candidate.DevicePath)}, access={candidate.Access}, usage=0x{candidate.UsagePage:X4}:0x{candidate.Usage:X4}");
                 try
                 {
                     if (await ProbeEndpointAsync(definition, candidate.DevicePath, cancellationToken).ConfigureAwait(false))
                     {
                         resolvedPath = candidate.DevicePath;
+                        WriteDiagnostic(definition.ProductId,
+                            $"resolved path={RazerFeatureTransport.DescribeDevicePath(candidate.DevicePath)}");
                         break;
                     }
                     lastError = "No side-effect-free GET with a known transaction is available for endpoint probing.";
@@ -75,6 +88,8 @@ public sealed class OpenRazerDeviceService
                     InvalidOperationException or NotSupportedException)
                 {
                     lastError = exception.Message;
+                    WriteDiagnostic(definition.ProductId,
+                        $"probe failed path={RazerFeatureTransport.DescribeDevicePath(candidate.DevicePath)}: {exception.GetType().Name}: {exception.Message}");
                 }
             }
 
@@ -126,6 +141,8 @@ public sealed class OpenRazerDeviceService
                 InvalidOperationException or NotSupportedException)
             {
                 errors[key] = exception.Message;
+                WriteDiagnostic(connection.Definition.ProductId,
+                    $"state read '{key}' failed: {exception.GetType().Name}: {exception.Message}");
             }
         }
 
@@ -505,6 +522,8 @@ public sealed class OpenRazerDeviceService
         }
         foreach (var probe in probes)
         {
+            WriteDiagnostic(definition.ProductId,
+                $"safe probe builder={probe.BuilderName}, txn=0x{probe.Report[2]:X2}, class=0x{probe.Report[7]:X2}, command=0x{probe.Report[8]:X2}");
             try
             {
                 await _transport.QueryPreparedAsync(devicePath, probe.Report, definition.DeviceWait,
@@ -519,6 +538,24 @@ public sealed class OpenRazerDeviceService
             }
         }
         return false;
+    }
+
+    private void LogObservedInterface(WindowsHidDiscovery.HidInterfaceDescriptor item)
+    {
+        if (_catalog.Find(item.VendorId, item.ProductId) is null)
+        {
+            return;
+        }
+        WriteDiagnostic(item.ProductId,
+            $"interface path={RazerFeatureTransport.DescribeDevicePath(item.DevicePath)}, input={item.InputReportByteLength}, output={item.OutputReportByteLength}, feature={item.FeatureReportByteLength}, usage=0x{item.UsagePage:X4}:0x{item.Usage:X4}, access={item.Access}");
+    }
+
+    private void WriteDiagnostic(ushort productId, string message)
+    {
+        if (productId == 0x027A)
+        {
+            _diagnosticLog?.TryWrite("openrazer-027a", message);
+        }
     }
 
     private static IReadOnlyList<OpenRazerRequest> CreateSafeProbes(OpenRazerDeviceDefinition definition)
