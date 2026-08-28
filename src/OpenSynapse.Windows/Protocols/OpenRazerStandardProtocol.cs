@@ -123,7 +123,7 @@ internal static class OpenRazerStandardProtocol
 
     internal static ReadOnlySpan<byte> Arguments(ReadOnlySpan<byte> response, byte minimumLength)
     {
-        if (response.Length != RazerFeatureReport.Length || response[1] != 0x02 ||
+        if (response.Length != RazerFeatureReport.Length || !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
             response[6] < minimumLength || response[6] > 80 ||
             response[89] != RazerFeatureReport.CalculateCrc(response))
         {

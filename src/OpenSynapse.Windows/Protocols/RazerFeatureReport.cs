@@ -178,8 +178,10 @@ public static class RazerFeatureReport
         bool allowRemainingPacketsMismatch = false) =>
         request.Length == Length &&
         response.Length == Length &&
-        response[1] == 0x02 &&
+        IsAcceptedStatus(response[1]) &&
         response[6] == request[6] &&
         minimumArguments <= response[6] &&
         Matches(request, response, allowRemainingPacketsMismatch);
+
+    internal static bool IsAcceptedStatus(byte status) => status is 0x01 or 0x02;
 }

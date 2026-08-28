@@ -16,7 +16,7 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
 
-> Current release `v1.2.0` · Windows 11 x64 · unsigned
+> Current release `v1.2.1` · Windows 11 x64 · unsigned
 
 ## What it supports
 
@@ -33,7 +33,7 @@ The Viper page supports `125 / 500 / 1000 Hz` polling, X/Y DPI from `100` to `30
 
 ### OpenRazer devices
 
-Version 1.2.0 adds capability-driven support based on a pinned OpenRazer device catalog. The catalog contains mice, keyboards, laptops, and accessories that use the standard 91-byte Razer HID report. OpenSynapse creates a page only for connected devices and shows a control only when the backend resolves its endpoint and transaction.
+Version 1.2.1 adds capability-driven support based on a pinned OpenRazer device catalog. The catalog contains mice, keyboards, laptops, and accessories that use the standard 91-byte Razer HID report. OpenSynapse creates a page only for connected devices and shows a control only when the backend resolves its endpoint and transaction.
 
 Depending on the connected model, the page may provide device information, battery state, polling rate, DPI and DPI stages, power saving, low-battery warning, lighting brightness and effects, per-zone LEDs, matrix lighting, scroll-wheel settings, keyswitch optimization, Fn-primary behavior, or HyperPolling receiver controls.
 
@@ -72,8 +72,8 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-1.2.0-win-Setup.exe` installs for the current user and supports automatic updates.
-- `OpenSynapse-1.2.0-win-Portable.zip` runs without installation.
+- `OpenSynapse-1.2.1-win-Setup.exe` installs for the current user and supports automatic updates.
+- `OpenSynapse-1.2.1-win-Portable.zip` runs without installation.
 
 Exit Razer Synapse before scanning devices so both applications do not contend for the same HID endpoint. OpenSynapse reports access failures and does not terminate Synapse itself.
 
