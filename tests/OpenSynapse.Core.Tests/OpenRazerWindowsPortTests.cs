@@ -53,6 +53,14 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public void BusyResponsesAreAcceptedLikeOpenRazer()
+    {
+        Assert.True(RazerFeatureReport.IsAcceptedStatus(0x01));
+        Assert.True(RazerFeatureReport.IsAcceptedStatus(0x02));
+        Assert.False(RazerFeatureReport.IsAcceptedStatus(0x03));
+    }
+
+    [Fact]
     public void WindowsReportIdIsTransportMetadataOutsideTheLogicalReport()
     {
         var logical = CreateOpenRazerLogicalRequest(0xFF, 0x01, 0x03, 0x0A, 0x00);

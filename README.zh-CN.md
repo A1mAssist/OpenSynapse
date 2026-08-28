@@ -16,7 +16,7 @@
 
 OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。Blade 和 Viper 继续使用各自的产品专用实现，OpenRazer 设备走按能力判断的通用页面。
 
-> 当前版本 `v1.2.0` · Windows 11 x64 · 未签名
+> 当前版本 `v1.2.1` · Windows 11 x64 · 未签名
 
 ## 支持范围
 
@@ -33,7 +33,7 @@ Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y D
 
 ### OpenRazer 设备
 
-1.2.0 加入了基于固定 OpenRazer 设备目录的通用支持。目录包含使用标准 91-byte Razer HID 报告的鼠标、键盘、笔记本和配件。软件只为当前连接的设备创建页面，后端确认端点和事务以后，对应控件才会出现。
+1.2.1 加入了基于固定 OpenRazer 设备目录的通用支持。目录包含使用标准 91-byte Razer HID 报告的鼠标、键盘、笔记本和配件。软件只为当前连接的设备创建页面，后端确认端点和事务以后，对应控件才会出现。
 
 不同型号可能提供设备信息、电池状态、轮询率、DPI 与 DPI 档位、省电设置、低电量警告、灯光亮度与效果、分区 LED、矩阵灯光、滚轮设置、键轴优化、Fn 优先行为或 HyperPolling 接收器控制。
 
@@ -72,8 +72,8 @@ Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y D
 
 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载其中一种安装文件。
 
-- `OpenSynapse-1.2.0-win-Setup.exe` 安装到当前用户目录并支持自动更新。
-- `OpenSynapse-1.2.0-win-Portable.zip` 解压后即可运行。
+- `OpenSynapse-1.2.1-win-Setup.exe` 安装到当前用户目录并支持自动更新。
+- `OpenSynapse-1.2.1-win-Portable.zip` 解压后即可运行。
 
 扫描设备前请先退出 Razer Synapse，避免两个程序争用同一个 HID 端点。OpenSynapse 会报告访问失败，不会自行结束雷云进程。
 
