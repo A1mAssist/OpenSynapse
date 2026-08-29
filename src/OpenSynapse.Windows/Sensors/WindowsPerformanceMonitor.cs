@@ -8,10 +8,19 @@ namespace OpenSynapse.Windows.Sensors;
 
 public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
 {
+    private static readonly TimeSpan NvidiaSampleCacheInterval = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan StorageSampleCacheInterval = TimeSpan.FromSeconds(30);
     private readonly string _cpuName;
     private readonly CpuHardwareMonitor _cpuHardware = new();
     private readonly WindowsGpuActivityReader _gpuActivity = new();
     private readonly AmdAdlTelemetryReader _amdGpu = new();
+    private readonly SemaphoreSlim _nvidiaSampleGate = new(1, 1);
+    private NvidiaGpuSample? _nvidiaSample;
+    private DateTimeOffset _nvidiaSampleAt = DateTimeOffset.MinValue;
+    private readonly object _storageGate = new();
+    private DateTimeOffset _storageSampleAt = DateTimeOffset.MinValue;
+    private long? _storageUsed;
+    private long? _storageTotal;
     private ulong _previousIdle;
     private ulong _previousKernel;
     private ulong _previousUser;
@@ -31,10 +40,10 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var cpuUsage = ReadCpuUsage();
         var cpu = _cpuHardware.Read();
         ReadMemory(out var memoryUsed, out var memoryTotal);
-        ReadStorage(out var storageUsed, out var storageTotal);
+        ReadStorageThrottled(out var storageUsed, out var storageTotal);
         var windowsGpus = _gpuActivity.Read();
         var nvidiaActive = WindowsGpuActivityReader.IsNvidiaActive(windowsGpus);
-        var nvidia = nvidiaActive ? await ReadNvidiaGpuAsync(cancellationToken) : null;
+        var nvidia = nvidiaActive ? await ReadNvidiaGpuThrottledAsync(cancellationToken) : null;
         var integrated = WindowsGpuActivityReader.SelectIntegrated(windowsGpus);
         var windowsNvidia = WindowsGpuActivityReader.SelectNvidia(windowsGpus);
         var selected = nvidiaActive ? windowsNvidia : integrated;
@@ -73,6 +82,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         _gpuActivity.Dispose();
         _amdGpu.Dispose();
         _cpuHardware.Dispose();
+        _nvidiaSampleGate.Dispose();
     }
 
     private double? ReadCpuUsage()
@@ -136,6 +146,25 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         }
     }
 
+    private void ReadStorageThrottled(out long? used, out long? total)
+    {
+        lock (_storageGate)
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (now - _storageSampleAt < StorageSampleCacheInterval)
+            {
+                used = _storageUsed;
+                total = _storageTotal;
+                return;
+            }
+
+            ReadStorage(out _storageUsed, out _storageTotal);
+            _storageSampleAt = now;
+            used = _storageUsed;
+            total = _storageTotal;
+        }
+    }
+
     private static async Task<NvidiaGpuSample?> ReadNvidiaGpuAsync(CancellationToken cancellationToken)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -171,6 +200,27 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             }
 
             return null;
+        }
+    }
+
+    private async Task<NvidiaGpuSample?> ReadNvidiaGpuThrottledAsync(CancellationToken cancellationToken)
+    {
+        await _nvidiaSampleGate.WaitAsync(cancellationToken);
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (now - _nvidiaSampleAt < NvidiaSampleCacheInterval)
+            {
+                return _nvidiaSample;
+            }
+
+            _nvidiaSample = await ReadNvidiaGpuAsync(cancellationToken);
+            _nvidiaSampleAt = DateTimeOffset.UtcNow;
+            return _nvidiaSample;
+        }
+        finally
+        {
+            _nvidiaSampleGate.Release();
         }
     }
 

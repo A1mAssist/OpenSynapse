@@ -30,6 +30,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private readonly Dictionary<string, Session> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private readonly SemaphoreSlim _effectGate = new(1, 1);
+    private readonly SemaphoreSlim _sessionAvailable = new(0, 1);
     private readonly CancellationTokenSource _stop = new();
     private readonly ChromaExternalFrameSource _frameSource = new();
     private TcpListener? _listener;
@@ -119,6 +120,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
 
         await StopAllSessionsAsync().ConfigureAwait(false);
         _effectGate.Dispose();
+        _sessionAvailable.Dispose();
         _stop.Dispose();
     }
 
@@ -321,10 +323,28 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             var id = Interlocked.Increment(ref _nextSessionId);
             var session = new Session(id.ToString(), info.Title);
             var stopping = false;
+            var signalSweep = false;
             lock (_gate)
             {
                 stopping = _stop.IsCancellationRequested;
-                if (!stopping) _sessions[session.Id] = session;
+                if (!stopping)
+                {
+                    signalSweep = _sessions.Count == 0;
+                    _sessions[session.Id] = session;
+                }
+            }
+            if (signalSweep)
+            {
+                try
+                {
+                    _sessionAvailable.Release();
+                }
+                catch (SemaphoreFullException)
+                {
+                }
+                catch (ObjectDisposedException) when (_stop.IsCancellationRequested)
+                {
+                }
             }
             if (stopping)
             {
@@ -652,24 +672,37 @@ internal sealed class ChromaRestHost : IAsyncDisposable
 
     private async Task SweepLoopAsync()
     {
-        using var timer = new PeriodicTimer(SessionSweepInterval);
         try
         {
-            while (await timer.WaitForNextTickAsync(_stop.Token).ConfigureAwait(false))
+            while (!_stop.IsCancellationRequested)
             {
-                Session[] expired;
-                lock (_gate) expired = _sessions.Values
-                    .Where(item => !item.ApplyInProgress && DateTimeOffset.UtcNow - item.LastHeartbeat > SessionTimeout)
-                    .ToArray();
-                foreach (var session in expired)
+                await _sessionAvailable.WaitAsync(_stop.Token).ConfigureAwait(false);
+                using var timer = new PeriodicTimer(SessionSweepInterval);
+                while (await timer.WaitForNextTickAsync(_stop.Token).ConfigureAwait(false))
                 {
-                    try
+                    Session[] expired;
+                    lock (_gate)
                     {
-                        await RemoveSessionAsync(session).ConfigureAwait(false);
+                        if (_sessions.Count == 0)
+                        {
+                            break;
+                        }
+
+                        expired = _sessions.Values
+                            .Where(item => !item.ApplyInProgress && DateTimeOffset.UtcNow - item.LastHeartbeat > SessionTimeout)
+                            .ToArray();
                     }
-                    catch when (!_stop.IsCancellationRequested)
+
+                    foreach (var session in expired)
                     {
-                        Interlocked.Increment(ref _sessionRecoveryFailures);
+                        try
+                        {
+                            await RemoveSessionAsync(session).ConfigureAwait(false);
+                        }
+                        catch when (!_stop.IsCancellationRequested)
+                        {
+                            Interlocked.Increment(ref _sessionRecoveryFailures);
+                        }
                     }
                 }
             }
