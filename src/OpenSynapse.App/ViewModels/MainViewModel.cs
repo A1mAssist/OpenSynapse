@@ -1409,6 +1409,23 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             _diagnosticLog.TryWrite("blade-fan", $"suspend restore incomplete: {error}");
         }
+
+        if (_bladeLightingController is not null)
+        {
+            try
+            {
+                await _bladeLightingController.PrepareForSuspendAsync().ConfigureAwait(false);
+            }
+            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            {
+                _diagnosticLog.TryWrite("keyboard-lighting", $"suspend lighting shutdown failed: {exception}");
+            }
+            finally
+            {
+                _bladeLightingDevicePath = string.Empty;
+                _lightingShadowFingerprint = string.Empty;
+            }
+        }
     }
 
     public async ValueTask DisposeAsync()
