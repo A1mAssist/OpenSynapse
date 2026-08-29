@@ -154,6 +154,10 @@ public sealed class ProfileDefinition
         Blade = CloneBlade(source.Blade),
         Viper = CloneViper(source.Viper),
         Lighting = CloneLighting(source.Lighting),
+        OpenRazerLighting = source.OpenRazerLighting.ToDictionary(
+            pair => pair.Key,
+            pair => CloneLighting(pair.Value),
+            StringComparer.OrdinalIgnoreCase),
     };
 
     private static BladeProfileSettings CloneBlade(BladeProfileSettings source) => new()
@@ -279,12 +283,15 @@ public sealed class PowerProfileOverrides
     public BladeProfileSettings Blade { get; set; } = new();
     public ViperProfileSettings Viper { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
+    public Dictionary<string, LightingProfile> OpenRazerLighting { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
 
     internal void ApplySafeDefaults()
     {
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
         Lighting ??= new LightingProfile();
+        OpenRazerLighting = ProfileDictionary.Normalize(OpenRazerLighting);
         Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
@@ -482,16 +489,12 @@ public sealed class ViperDpiStageProfile
 
 public sealed class LightingProfile
 {
-    public string Effect { get; set; } = "off";
+    // Empty means inherit the global/device profile; "off" is an explicit setting.
+    public string Effect { get; set; } = string.Empty;
     public Dictionary<string, string> Parameters { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     internal void ApplySafeDefaults()
     {
-        if (string.IsNullOrWhiteSpace(Effect))
-        {
-            Effect = "off";
-        }
-
         Parameters = ProfileDictionary.Normalize(Parameters);
     }
 }

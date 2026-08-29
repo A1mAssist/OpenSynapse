@@ -36,8 +36,8 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     public string Name => Connection.DisplayName;
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string StatusText => RequiresRescan
-        ? AppStrings.Get("需要重新扫描")
-        : Connection.IsReady ? AppStrings.Get("已解析") : AppStrings.Get("控制通道未解析");
+        ? AppStrings.Text("Text_C0E6F3C9")
+        : Connection.IsReady ? AppStrings.Text("Text_C097B416") : AppStrings.Text("Text_242E08F4");
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool RequiresRescan { get => _requiresRescan; private set => SetField(ref _requiresRescan, value); }

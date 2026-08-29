@@ -22,8 +22,8 @@ public sealed class OpenRazerKrakenDeviceRowViewModel : INotifyPropertyChanged
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string IconGlyph => "\uE95B";
     public string Status => Connection.IsReady
-        ? AppStrings.Get("已解析")
-        : AppStrings.Get("控制通道未解析");
+        ? AppStrings.Text("Text_C097B416")
+        : AppStrings.Text("Text_242E08F4");
     public Brush StatusBrush { get; }
     public string Error => Connection.Error ?? string.Empty;
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));

@@ -39,6 +39,35 @@ public static class ProfileResolver
         return $"{device.VendorId:X4}:{device.ProductId:X4}";
     }
 
+    public static LightingProfile? ResolveOpenRazerLighting(
+        ProfileDocument document,
+        DeviceDescriptor device,
+        bool? isPluggedIn)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(device);
+
+        var active = document.GetActiveProfileDefinition();
+        var key = GetDeviceKey(device);
+        var globalLighting = active.Global.Lighting;
+        var deviceLighting = FindDeviceSettings(active.Devices, key)?.Lighting;
+        var powerLighting = isPluggedIn switch
+        {
+            true => FindLighting(active.PluggedIn.OpenRazerLighting, key),
+            false => FindLighting(active.OnBattery.OpenRazerLighting, key),
+            _ => null,
+        };
+
+        if (!HasLightingSettings(globalLighting) &&
+            !HasLightingSettings(deviceLighting) &&
+            !HasLightingSettings(powerLighting))
+        {
+            return null;
+        }
+
+        return MergeLighting(globalLighting, deviceLighting, powerLighting);
+    }
+
     private static BladeProfileSettings ResolveBlade(
         BladeProfileSettings? global,
         BladeProfileSettings? device,
@@ -95,9 +124,15 @@ public static class ProfileResolver
         CopyParameters(parameters, device?.Parameters);
         CopyParameters(parameters, power?.Parameters);
 
+        var effect = ResolveEffect(global, device, power);
+        if (StringComparer.OrdinalIgnoreCase.Equals(effect, "off"))
+        {
+            parameters.Clear();
+        }
+
         return new LightingProfile
         {
-            Effect = ResolveEffect(global, device, power),
+            Effect = effect,
             Parameters = parameters,
         };
     }
@@ -122,8 +157,39 @@ public static class ProfileResolver
 
     private static bool HasLightingOverride(LightingProfile? lighting) =>
         lighting is not null &&
-        !string.IsNullOrWhiteSpace(lighting.Effect) &&
-        !StringComparer.OrdinalIgnoreCase.Equals(lighting.Effect, "off");
+        !string.IsNullOrWhiteSpace(lighting.Effect);
+
+    private static bool HasLightingSettings(LightingProfile? lighting) =>
+        lighting is not null &&
+        (!string.IsNullOrWhiteSpace(lighting.Effect) || lighting.Parameters.Count > 0);
+
+    private static LightingProfile? FindLighting(
+        IReadOnlyDictionary<string, LightingProfile>? values,
+        string key)
+    {
+        if (values is null)
+        {
+            return null;
+        }
+
+        return values.FirstOrDefault(pair =>
+            StringComparer.OrdinalIgnoreCase.Equals(pair.Key, key)).Value;
+    }
+
+    private static LightingProfile MergeLighting(
+        LightingProfile? global,
+        LightingProfile? device,
+        LightingProfile? power)
+    {
+        var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        CopyParameters(parameters, global?.Parameters);
+        CopyParameters(parameters, device?.Parameters);
+        CopyParameters(parameters, power?.Parameters);
+        var effect = string.IsNullOrWhiteSpace(power?.Effect)
+            ? string.IsNullOrWhiteSpace(device?.Effect) ? global?.Effect ?? string.Empty : device.Effect
+            : power.Effect;
+        return new LightingProfile { Effect = effect, Parameters = parameters };
+    }
 
     private static void CopyParameters(
         IDictionary<string, string> destination,

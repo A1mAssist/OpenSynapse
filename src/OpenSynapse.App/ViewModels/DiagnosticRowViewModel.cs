@@ -12,10 +12,10 @@ public sealed class DiagnosticRowViewModel(
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public string Device => AppStrings.Get(device);
-    public string Capability => AppStrings.Get(capability);
-    public string Status => AppStrings.Get(status);
-    public string Detail => AppStrings.Get(detail);
+    public string Device => device;
+    public string Capability => capability;
+    public string Status => status;
+    public string Detail => detail;
     public Brush StatusBrush { get; } = statusBrush;
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));

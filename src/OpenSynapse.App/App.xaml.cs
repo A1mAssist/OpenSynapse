@@ -353,34 +353,34 @@ public partial class App : Application
     {
         var modeText = mode switch
         {
-            OpenSynapse.Core.Devices.BladePerformanceMode.Balanced => AppStrings.Get("平衡"),
-            OpenSynapse.Core.Devices.BladePerformanceMode.Performance => AppStrings.Get("性能"),
-            OpenSynapse.Core.Devices.BladePerformanceMode.Custom => AppStrings.Get("自定义"),
-            OpenSynapse.Core.Devices.BladePerformanceMode.Silent => AppStrings.Get("静音"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Balanced => AppStrings.Text("Text_9753B259"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Performance => AppStrings.Text("Text_C1DB7AE1"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Custom => AppStrings.Text("Text_598C5804"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Silent => AppStrings.Text("Text_60E54E25"),
             OpenSynapse.Core.Devices.BladePerformanceMode.Hyperboost => "HyperBoost",
             _ => mode.ToString(),
         };
         ShowModeNotification(
-            AppStrings.Text("性能模式已切换"),
+            AppStrings.Text("Text_B5DCD004"),
             AppStrings.FormatText("PerformanceModeNotification", modeText));
     }
 
     private void OnBladeGamingModeChangedByUser(bool enabled) => ShowModeNotification(
-        AppStrings.Text("游戏模式已切换"),
+        AppStrings.Text("Text_F5627AEF"),
         enabled
-            ? AppStrings.Text("游戏模式已启用")
-            : AppStrings.Text("游戏模式已关闭"));
+            ? AppStrings.Text("Text_4D59EFD5")
+            : AppStrings.Text("Text_7D9D5842"));
 
     private void OnBladeTouchpadChangedByUser(bool enabled) => ShowModeNotification(
-        AppStrings.Text("触控板已切换"),
-        enabled ? AppStrings.Text("触控板已启用") : AppStrings.Text("触控板已禁用"));
+        AppStrings.Text("Text_0A982CB6"),
+        enabled ? AppStrings.Text("Text_B56E2FE0") : AppStrings.Text("Text_F21C10DE"));
 
     private void OnBladeOneTimeFullChargeChangedByUser(bool enabled) => ShowModeNotification(
-        AppStrings.Text("一次性充满已切换"),
-        enabled ? AppStrings.Text("一次性充满已启用") : AppStrings.Text("一次性充满已关闭"));
+        AppStrings.Text("Text_5BE3EA9C"),
+        enabled ? AppStrings.Text("Text_0B549ED2") : AppStrings.Text("Text_E0468C2D"));
 
     private void OnInternalDisplayRefreshRateChangedByUser(int hertz) => ShowModeNotification(
-        AppStrings.Text("刷新率已切换"),
+        AppStrings.Text("Text_8A7CE3A6"),
         AppStrings.FormatText("RefreshRateNotification", hertz));
 
     private void ShowModeNotification(string title, string body)
@@ -425,7 +425,7 @@ public partial class App : Application
             _trayMenuWindow.ExitRequested += window.RequestExit;
             _trayIcon.Unavailable += () =>
             {
-                viewModel.ReportApplicationError(AppStrings.Get("托盘图标恢复失败，已切换为普通窗口关闭模式。"));
+                viewModel.ReportApplicationError(AppStrings.Text("Text_57D50118"));
                 window.DisableTrayLifecycle();
             };
             window.EnableTrayLifecycle();
@@ -450,7 +450,7 @@ public partial class App : Application
         }
         catch (Exception exception)
         {
-            _diagnosticLog.TryWrite("application", $"退出前恢复风扇失败：{exception}");
+            _diagnosticLog.TryWrite("application", $"Fan recovery before exit failed: {exception}");
         }
 
         var lightingController = _bladeLightingController;

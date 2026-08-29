@@ -40,7 +40,7 @@ public sealed partial class MainWindow
         {
             UpdateStatusText.Text = AppStrings.FormatText("UpdateReady",
                 _downloadedUpdate.Version);
-            UpdateActionButton.Content = AppStrings.Text("更新并重启");
+            UpdateActionButton.Content = AppStrings.Text("Text_8EA990FD");
             UpdateActionButton.Visibility = Visibility.Visible;
             UpdateActionButton.IsEnabled = !_updateBusy;
             return;
@@ -50,7 +50,7 @@ public sealed partial class MainWindow
         {
             UpdateStatusText.Text = AppStrings.FormatText("UpdateAvailable",
                 _availableUpdate.TargetFullRelease.Version);
-            UpdateActionButton.Content = AppStrings.Text("下载更新");
+            UpdateActionButton.Content = AppStrings.Text("Text_B7E1FDB9");
             UpdateActionButton.Visibility = Visibility.Visible;
             UpdateActionButton.IsEnabled = !_updateBusy;
             return;
@@ -100,19 +100,19 @@ public sealed partial class MainWindow
             return;
         }
 
-        SetUpdateBusy(true, AppStrings.Text("正在检查更新"));
+        SetUpdateBusy(true, AppStrings.Text("Text_68AA1281"));
         try
         {
             _availableUpdate = await _updateManager.CheckForUpdatesAsync();
             AppUpdateSettings.MarkCheckCompleted();
             if (_availableUpdate is null)
             {
-                UpdateStatusText.Text = AppStrings.Text("当前已是最新版本");
+                UpdateStatusText.Text = AppStrings.Text("Text_98A8DE82");
                 UpdateActionButton.Visibility = Visibility.Collapsed;
             }
             else if (downloadAutomatically)
             {
-                UpdateStatusText.Text = AppStrings.Text("正在下载更新");
+                UpdateStatusText.Text = AppStrings.Text("Text_07BF2232");
                 await DownloadUpdateAsync();
             }
 
@@ -145,7 +145,7 @@ public sealed partial class MainWindow
 
         if (_downloadedUpdate is null)
         {
-            SetUpdateBusy(true, AppStrings.Text("正在下载更新"));
+            SetUpdateBusy(true, AppStrings.Text("Text_07BF2232"));
             try
             {
                 await DownloadUpdateAsync();
@@ -167,7 +167,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        SetUpdateBusy(true, AppStrings.Text("正在安全退出并更新"));
+        SetUpdateBusy(true, AppStrings.Text("Text_B1A6427D"));
         try
         {
             await ((App)Application.Current).ApplyUpdateAndRestartAsync(

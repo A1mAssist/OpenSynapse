@@ -19,6 +19,7 @@ Do not commit:
 - API tokens, passwords, private keys, signing certificates, `.env` files, device paths, usernames, or absolute paths tied to one workstation;
 - Razer binaries, drivers, firmware, or other proprietary files. These are external runtime prerequisites for some Blade Fn features, but users must install them from Razer or the device support package; they are not checked into or redistributed by this repository.
 - repository-local build or release automation under `scripts/`; keep such scripts outside the repository.
+- new user-visible strings hard-coded in C# or XAML. Add a stable English PascalCase key to both locale resource files and use `AppStrings.Text`, `AppStrings.Texts`, or `AppStrings.FormatText`; XAML fallback text is allowed only with `Localized.Uid`. Do not add new `AppStrings.Get("中文文案")` calls.
 
 Release binaries belong on GitHub Releases, not in Git history.
 
@@ -60,5 +61,6 @@ If the list contains a generated binary, capture, log, secret, local tool direct
 - Use an imperative, specific subject such as `fix: preserve Fn key release state`.
 - Do not commit an unverified hardware write as production-ready.
 - Do not silently ignore unknown protocol fields or unsupported device identifiers.
+- Keep `DESIGN_SPECIFICATION.md` resource-key rules and both `Resources.resw` files synchronized with localization changes.
 - Preserve unrelated user changes in a dirty worktree.
 - Do not rewrite public history or move a published version tag unless correcting a confirmed release error.

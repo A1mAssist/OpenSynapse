@@ -8,6 +8,7 @@ internal static class AppStrings
     private static ResourceMap? _resources;
     private static ResourceContext? _context;
     private static bool _enabled;
+    private static readonly Dictionary<string, string> ResolvedKeys = new(StringComparer.Ordinal);
 
     public static void Enable() => _enabled = true;
 
@@ -23,6 +24,11 @@ internal static class AppStrings
         if (!_enabled)
         {
             return source;
+        }
+
+        if (ResolvedKeys.TryGetValue(source, out var resolvedKey))
+        {
+            return Load(resolvedKey, source);
         }
 
         unchecked
@@ -41,6 +47,9 @@ internal static class AppStrings
         values.Select(Get).ToArray();
 
     public static string Text(string key) => Load(key, key);
+
+    public static IReadOnlyList<string> Texts(params string[] keys) =>
+        keys.Select(Text).ToArray();
 
     public static string FormatText(string key, params object?[] args) =>
         string.Format(System.Globalization.CultureInfo.CurrentCulture, Load(key, key), args);
@@ -69,6 +78,12 @@ internal static class AppStrings
     private static string Load(string key, string fallback)
     {
         var value = TryGet(key);
-        return string.IsNullOrEmpty(value) ? fallback : value;
+        if (string.IsNullOrEmpty(value))
+        {
+            return fallback;
+        }
+
+        ResolvedKeys[value] = key;
+        return value;
     }
 }

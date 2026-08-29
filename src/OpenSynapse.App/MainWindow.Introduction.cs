@@ -378,13 +378,13 @@ public sealed partial class MainWindow
 
         (IntroductionTip.Title, IntroductionBodyText.Text) = _introductionStep switch
         {
-            0 => (AppStrings.Get("切换页面"), AppStrings.Get("从左侧进入设备、配置和诊断。")),
-            1 => (AppStrings.Get("查看系统状态"), AppStrings.Get("CPU、GPU、内存和硬盘状态都在概览顶部。")),
-            2 => (AppStrings.Get("选择设备"), AppStrings.Get("在笔记本和鼠标之间切换，下面会显示对应设置。")),
-            _ => (AppStrings.Get("保存鼠标设置"), AppStrings.Get("鼠标改动不会直接写入。确认无误后点“保存”。")),
+            0 => (AppStrings.Text("Text_5B78D29B"), AppStrings.Text("Text_4033519A")),
+            1 => (AppStrings.Text("Text_2B6750FA"), AppStrings.Text("Text_B7B42866")),
+            2 => (AppStrings.Text("Text_47A60744"), AppStrings.Text("Text_C777B66A")),
+            _ => (AppStrings.Text("Text_C796738D"), AppStrings.Text("Text_67AB4301")),
         };
         IntroductionNextButton.Content = _introductionStep == IntroductionStepCount - 1
-            ? AppStrings.Get("完成")
-            : AppStrings.Get("下一步");
+            ? AppStrings.Text("Text_1E13BD21")
+            : AppStrings.Text("Text_10C83C81");
     }
 }
