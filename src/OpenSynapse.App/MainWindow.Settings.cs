@@ -113,14 +113,14 @@ public sealed partial class MainWindow
     {
         if (!_behaviorSettings.ExperimentalChromaRestEnabled)
         {
-            ChromaRestStatusText.Text = AppStrings.Get("ChromaRestStatusDisabled");
+            ChromaRestStatusText.Text = AppStrings.Text("ChromaRestStatusDisabled");
             return;
         }
 
         var snapshot = _getChromaRestSnapshot?.Invoke() ?? default;
         if (!snapshot.IsRunning)
         {
-            ChromaRestStatusText.Text = AppStrings.Get("ChromaRestStatusUnavailable");
+            ChromaRestStatusText.Text = AppStrings.Text("ChromaRestStatusUnavailable");
             return;
         }
 

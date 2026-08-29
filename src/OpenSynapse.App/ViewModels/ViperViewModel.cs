@@ -8,7 +8,7 @@ internal sealed class ViperViewModel
 {
     internal string _viperDeviceName = "Razer Viper V3 HyperSpeed";
     internal Microsoft.UI.Xaml.Visibility _viperDeviceVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
-    internal string _viperStatusText = "未发现";
+    internal string _viperStatusText = AppStrings.Text("Text_DB0974DC");
     internal string _viperBatteryText = "--";
     internal int _viperBatteryChemistryIndex = -1;
     internal bool _canSetViperBatteryChemistry;
@@ -32,7 +32,7 @@ internal sealed class ViperViewModel
     internal int _viperActiveDpiStage;
     internal bool _canSetViperDpiStages;
     internal ViperDpiStagesTelemetry? _confirmedViperDpiStages;
-    internal string _viperButtonMappingsText = "未读取";
+    internal string _viperButtonMappingsText = AppStrings.Text("Text_C409646C");
     internal int _viperButtonMappingLayerIndex;
     internal bool _canReadViperButtonMappings;
     internal bool _canSetViperButtonMappings;
@@ -96,7 +96,7 @@ internal sealed class ViperViewModel
 
     internal void Reset()
     {
-        _viperStatusText = "探测中";
+        _viperStatusText = AppStrings.Text("Text_4626A505");
         _viperDpiStagesText = "--";
         _viperLowBatteryThresholdText = "--";
         _viperBatteryText = "--";
@@ -121,7 +121,7 @@ internal sealed class ViperViewModel
         _confirmedViperDpiStages = null;
         _canSetViperDpiStages = false;
         ViperButtonAssignments.Clear();
-        _viperButtonMappingsText = "未读取";
+        _viperButtonMappingsText = AppStrings.Text("Text_C409646C");
         _canReadViperButtonMappings = false;
         _canSetViperButtonMappings = false;
     }

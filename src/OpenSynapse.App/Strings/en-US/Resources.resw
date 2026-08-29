@@ -1630,4 +1630,39 @@
   <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>Color 2</value></data>
   <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>Color 3</value></data>
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>Apply effect</value></data>
+  <data name="BladeLightingPowerProfile.Header" xml:space="preserve"><value>Power source</value></data>
+  <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>Current power source</value></data>
+  <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>Plugged in</value></data>
+  <data name="BladeLightingPowerBattery" xml:space="preserve"><value>Battery</value></data>
++  <data name="Text_046A57B8" xml:space="preserve"><value>Keyboard device</value></data>
+  <data name="Text_07BF2232" xml:space="preserve"><value>Downloading update</value></data>
+  <data name="Text_0A982CB6" xml:space="preserve"><value>Touchpad switched</value></data>
+  <data name="Text_0B549ED2" xml:space="preserve"><value>One-time full charge enabled</value></data>
+  <data name="Text_4D59EFD5" xml:space="preserve"><value>Gaming mode enabled</value></data>
+  <data name="Text_54C45B90" xml:space="preserve"><value>Lithium battery</value></data>
+  <data name="Text_5BE3EA9C" xml:space="preserve"><value>One-time full charge switched</value></data>
+  <data name="Text_621A8231" xml:space="preserve"><value>OK</value></data>
+  <data name="Text_68AA1281" xml:space="preserve"><value>Checking for updates</value></data>
+  <data name="Text_693F327E" xml:space="preserve"><value>OpenSynapse main window must be created on the DispatcherQueue thread.</value></data>
+  <data name="Text_781EA0FF" xml:space="preserve"><value>Headset device</value></data>
+  <data name="Text_7D9D5842" xml:space="preserve"><value>Gaming mode disabled</value></data>
+  <data name="Text_8A7CE3A6" xml:space="preserve"><value>Refresh rate switched</value></data>
+  <data name="Text_8EA990FD" xml:space="preserve"><value>Update and restart</value></data>
+  <data name="Text_94C31F83" xml:space="preserve"><value>Mouse battery chemistry</value></data>
+  <data name="Text_98A8DE82" xml:space="preserve"><value>You are up to date</value></data>
+  <data name="Text_9A87CD0C" xml:space="preserve"><value>Lighting settings could not be saved; in-memory settings restored.</value></data>
+  <data name="Text_B1A6427D" xml:space="preserve"><value>Exiting safely to update</value></data>
+  <data name="Text_B56E2FE0" xml:space="preserve"><value>Touchpad enabled</value></data>
+  <data name="Text_B5DCD004" xml:space="preserve"><value>Performance mode switched</value></data>
+  <data name="Text_B7E1FDB9" xml:space="preserve"><value>Download update</value></data>
+  <data name="Text_BF98AC8A" xml:space="preserve"><value>Gaming mode indicator</value></data>
+  <data name="Text_CC12A6F5" xml:space="preserve"><value>Performance mode settings could not be saved; in-memory settings restored.</value></data>
+  <data name="Text_D25102CE" xml:space="preserve"><value>Applied immediately</value></data>
+  <data name="Text_DC5115A1" xml:space="preserve"><value>NiMH rechargeable battery</value></data>
+  <data name="Text_E0468C2D" xml:space="preserve"><value>One-time full charge disabled</value></data>
+  <data name="Text_E43748D4" xml:space="preserve"><value>Alkaline battery</value></data>
+  <data name="Text_F21C10DE" xml:space="preserve"><value>Touchpad disabled</value></data>
+  <data name="Text_F5627AEF" xml:space="preserve"><value>Gaming mode switched</value></data>
+  <data name="LightingError" xml:space="preserve"><value>Lighting: {0}</value></data>
+  <data name="FanControlError" xml:space="preserve"><value>Fan control: {0}</value></data>
 </root>

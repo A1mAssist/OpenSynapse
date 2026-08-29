@@ -23,10 +23,10 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 
-    public IReadOnlyList<string> ActionOptions => AppStrings.Get(
-        "关闭", "左键", "右键", "滚轮按下", "后退", "前进", "滚轮向上", "滚轮向下", "键盘按键", "双击");
+    public IReadOnlyList<string> ActionOptions => AppStrings.Texts(
+        AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_794A1C95"), AppStrings.Text("Text_78980344"), AppStrings.Text("Text_6D40E761"), AppStrings.Text("Text_61DF3243"), AppStrings.Text("Text_290DA6F9"), AppStrings.Text("Text_10DDDE56"), AppStrings.Text("Text_11DDDFE9"), AppStrings.Text("Text_80A48F18"), AppStrings.Text("Text_45977270"));
     public string ButtonText => FormatButton(Assignment.ButtonId);
-    public string LayerText => Assignment.Layer == ViperButtonMappingLayer.Normal ? AppStrings.Get("普通") : "HyperShift";
+    public string LayerText => Assignment.Layer == ViperButtonMappingLayer.Normal ? AppStrings.Text("Text_190B5DB1") : "HyperShift";
     public string CurrentActionText => FormatAction(Assignment);
     public ViperButtonAssignment Assignment { get; private set; }
     public int SelectedActionIndex
@@ -67,7 +67,7 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
     {
         if (!TryCreateAssignment(out var assignment))
         {
-            throw new InvalidOperationException(AppStrings.Get("请选择已验证的板载映射动作。"));
+            throw new InvalidOperationException(AppStrings.Text("Text_8F4E16B7"));
         }
         return assignment;
     }
@@ -177,7 +177,7 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
     private static string FormatAction(ViperButtonAssignment assignment) =>
         assignment.Function switch
         {
-            ViperButtonMappingFunction.Off => AppStrings.Get("关闭"),
+            ViperButtonMappingFunction.Off => AppStrings.Text("Text_39B523BD"),
             ViperButtonMappingFunction.MouseButton when assignment.FunctionData.Count == 1 =>
                 FormatButton(assignment.FunctionData[0]),
             ViperButtonMappingFunction.KeyboardKey when assignment.FunctionData.Count == 2 =>
@@ -185,7 +185,7 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
                     assignment.FunctionData[0],
                     assignment.FunctionData[1]),
             ViperButtonMappingFunction.DoubleClick when assignment.FunctionData.Count == 1 &&
-                assignment.FunctionData[0] == 1 => AppStrings.Get("双击"),
+                assignment.FunctionData[0] == 1 => AppStrings.Text("Text_45977270"),
             _ => assignment.FunctionData.Count == 0
                 ? assignment.Function.ToString()
                 : $"{assignment.Function} · {Convert.ToHexString(assignment.FunctionData.ToArray())}",
@@ -193,14 +193,14 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
 
     private static string FormatButton(byte buttonId) => buttonId switch
     {
-        1 => AppStrings.Get("左键"),
-        2 => AppStrings.Get("右键"),
-        3 => AppStrings.Get("滚轮按下"),
-        4 => AppStrings.Get("后退"),
-        5 => AppStrings.Get("前进"),
-        9 => AppStrings.Get("滚轮向上"),
-        10 => AppStrings.Get("滚轮向下"),
-        96 => AppStrings.Get("DPI 切换键"),
+        1 => AppStrings.Text("Text_794A1C95"),
+        2 => AppStrings.Text("Text_78980344"),
+        3 => AppStrings.Text("Text_6D40E761"),
+        4 => AppStrings.Text("Text_61DF3243"),
+        5 => AppStrings.Text("Text_290DA6F9"),
+        9 => AppStrings.Text("Text_10DDDE56"),
+        10 => AppStrings.Text("Text_11DDDFE9"),
+        96 => AppStrings.Text("Text_3A5819C1"),
         _ => AppStrings.FormatText("MouseControlNumber", buttonId),
     };
 

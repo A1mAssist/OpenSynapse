@@ -8,7 +8,7 @@ namespace OpenSynapse.App.ViewModels;
 internal sealed class BladeViewModel
 {
     internal string _bladeDeviceName = "Razer Blade 16 2025";
-    internal string _bladeStatusText = "未发现";
+    internal string _bladeStatusText = AppStrings.Text("Text_DB0974DC");
     internal string _bladeBrightnessText = "--";
     internal string _bladeBrightnessSelectionText = "--";
     internal double _bladeBrightnessPercent;
@@ -77,12 +77,12 @@ internal sealed class BladeViewModel
             BladePerformanceModes[_confirmedBladePerformanceModeIndex] != mode;
         _bladePerformanceModeText = mode switch
         {
-            BladePerformanceMode.Balanced => "平衡",
-            BladePerformanceMode.Performance => "性能",
-            BladePerformanceMode.BatterySaver => "电池节能",
-            BladePerformanceMode.Custom => "自定义",
-            BladePerformanceMode.Silent => "静音",
-            BladePerformanceMode.BalancedDc => "平衡（电池）",
+            BladePerformanceMode.Balanced => AppStrings.Text("Text_9753B259"),
+            BladePerformanceMode.Performance => AppStrings.Text("Text_C1DB7AE1"),
+            BladePerformanceMode.BatterySaver => AppStrings.Text("Text_EE43F0B1"),
+            BladePerformanceMode.Custom => AppStrings.Text("Text_598C5804"),
+            BladePerformanceMode.Silent => AppStrings.Text("Text_60E54E25"),
+            BladePerformanceMode.BalancedDc => AppStrings.Text("Text_A8CF66DD"),
             BladePerformanceMode.Hyperboost => "HyperBoost",
             _ => "--",
         };
@@ -99,15 +99,15 @@ internal sealed class BladeViewModel
         _bladeGameModeState = gameMode?.GameMode;
         _bladeGameModeEnabled = gameMode is { GameMode: not 0 };
         _bladeGameModeText = gameMode is { GameMode: not 0 }
-            ? "已启用"
+            ? AppStrings.Text("Text_F55AD712")
             : gameMode is not null
-                ? "已关闭"
+                ? AppStrings.Text("Text_5DBCDF6D")
                 : "--";
     }
 
     internal void SetChargeLimit(int percent)
     {
-        _bladeChargeLimitText = percent == 100 ? "关闭 · 100%" : $"{percent}%";
+        _bladeChargeLimitText = percent == 100 ? AppStrings.Text("Text_C85491EA") : $"{percent}%";
         _bladeChargeLimitIndex = Array.IndexOf(BladeChargeLimits, percent);
         _confirmedBladeChargeLimitIndex = _bladeChargeLimitIndex;
     }
@@ -132,11 +132,11 @@ internal sealed class BladeViewModel
     {
         _bladeCpuBoostText = mode switch
         {
-            BladeCpuBoostMode.Low => "低",
-            BladeCpuBoostMode.Medium => "中",
-            BladeCpuBoostMode.High => "高",
+            BladeCpuBoostMode.Low => AppStrings.Text("Text_CB5F70D1"),
+            BladeCpuBoostMode.Medium => AppStrings.Text("Text_28619638"),
+            BladeCpuBoostMode.High => AppStrings.Text("Text_5C1F32A7"),
             BladeCpuBoostMode.Boost => "Boost",
-            BladeCpuBoostMode.Undervolt => "降压预设",
+            BladeCpuBoostMode.Undervolt => AppStrings.Text("Text_BAA7D10B"),
             _ => "--",
         };
         _bladeCpuBoostIndex = Array.IndexOf(BladeCpuBoostModes, mode);
@@ -148,9 +148,9 @@ internal sealed class BladeViewModel
     {
         _bladeGpuBoostText = mode switch
         {
-            BladeGpuBoostMode.Low => "低",
-            BladeGpuBoostMode.Medium => "中",
-            BladeGpuBoostMode.High => "高",
+            BladeGpuBoostMode.Low => AppStrings.Text("Text_CB5F70D1"),
+            BladeGpuBoostMode.Medium => AppStrings.Text("Text_28619638"),
+            BladeGpuBoostMode.High => AppStrings.Text("Text_5C1F32A7"),
             _ => "--",
         };
         _bladeGpuBoostIndex = Array.IndexOf(BladeGpuBoostModes, mode);
@@ -160,7 +160,7 @@ internal sealed class BladeViewModel
 
     internal void SetMaxFan(BladeMaxFanMode mode)
     {
-        _bladeMaxFanText = mode == BladeMaxFanMode.Enabled ? "开启" : "关闭";
+        _bladeMaxFanText = mode == BladeMaxFanMode.Enabled ? AppStrings.Text("Text_7E6D2390") : AppStrings.Text("Text_39B523BD");
         _bladeMaxFanEnabled = mode == BladeMaxFanMode.Enabled;
         _confirmedBladeMaxFanEnabled = _bladeMaxFanEnabled;
         _hasBladeMaxFan = true;
@@ -170,9 +170,9 @@ internal sealed class BladeViewModel
     {
         _bladeLogoText = mode switch
         {
-            BladeLogoMode.Off => "关闭",
-            BladeLogoMode.Static => "常亮",
-            BladeLogoMode.Breathing => "呼吸",
+            BladeLogoMode.Off => AppStrings.Text("Text_39B523BD"),
+            BladeLogoMode.Static => AppStrings.Text("Text_6295D9CB"),
+            BladeLogoMode.Breathing => AppStrings.Text("Text_7EDA32B9"),
             _ => "--",
         };
         _bladeLogoIndex = Array.IndexOf(BladeLogoModes, mode);

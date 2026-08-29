@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -60,13 +62,23 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private byte _activeDpiStage = 1;
     private byte _hyperPollingIndicatorMode = 1;
     private bool _ledEnabled = true;
+    private readonly Func<bool?>? _powerStateProvider;
+    private readonly Func<bool?, LightingProfile?>? _lightingProfileResolver;
+    private readonly Func<bool?, LightingProfile, CancellationToken, Task<bool>>? _lightingProfileSaver;
+    private int _lightingPowerProfileIndex;
 
     public OpenRazerDeviceViewModel(
         OpenRazerDeviceService service,
-        OpenRazerDeviceConnection connection)
+        OpenRazerDeviceConnection connection,
+        Func<bool?>? powerStateProvider = null,
+        Func<bool?, LightingProfile?>? lightingProfileResolver = null,
+        Func<bool?, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        _powerStateProvider = powerStateProvider;
+        _lightingProfileResolver = lightingProfileResolver;
+        _lightingProfileSaver = lightingProfileSaver;
         _errorText = connection.Error ?? string.Empty;
         LightingZones = connection.LightingZones.Keys.Order().ToArray();
         _selectedLightingZone = LightingZones.FirstOrDefault();
@@ -88,22 +100,22 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public string Name => Connection.Definition.DisplayName;
     public string CategoryText => Connection.Definition.Category switch
     {
-        DeviceCategory.Mouse => AppStrings.Get("鼠标"),
-        DeviceCategory.Laptop => AppStrings.Get("笔记本"),
-        DeviceCategory.Keyboard => AppStrings.Get("键盘"),
-        DeviceCategory.MouseMat => AppStrings.Get("鼠标垫"),
-        DeviceCategory.Monitor => AppStrings.Get("显示器"),
-        DeviceCategory.Accessory => AppStrings.Get("配件"),
-        _ => AppStrings.Get("设备"),
+        DeviceCategory.Mouse => AppStrings.Text("Text_4B32CEE8"),
+        DeviceCategory.Laptop => AppStrings.Text("Text_66E7127F"),
+        DeviceCategory.Keyboard => AppStrings.Text("Text_7D4E2D8B"),
+        DeviceCategory.MouseMat => AppStrings.Text("Text_A3A74479"),
+        DeviceCategory.Monitor => AppStrings.Text("Text_2E486BCB"),
+        DeviceCategory.Accessory => AppStrings.Text("Text_71E692AA"),
+        _ => AppStrings.Text("Text_CAF15352"),
     };
     public string Identity => $"VID_1532 / PID_{Connection.Definition.ProductId:X4}";
     public string StatusText => RequiresRescan
-        ? AppStrings.Get("需要重新扫描")
+        ? AppStrings.Text("Text_C0E6F3C9")
         : Connection.EndpointState switch
         {
-            OpenRazerEndpointState.Resolved => AppStrings.Get("已解析"),
-            OpenRazerEndpointState.RecognizedButUnresolved => AppStrings.Get("控制通道未解析"),
-            _ => AppStrings.Get("忙或不可用"),
+            OpenRazerEndpointState.Resolved => AppStrings.Text("Text_C097B416"),
+            OpenRazerEndpointState.RecognizedButUnresolved => AppStrings.Text("Text_242E08F4"),
+            _ => AppStrings.Text("Text_D3632B96"),
         };
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
@@ -125,15 +137,15 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public string SerialText => _basicState?.Serial ?? "--";
     public string SoftwareModeText => _basicState?.SoftwareMode switch
     {
-        true => AppStrings.Get("软件模式"),
-        false => AppStrings.Get("硬件模式"),
+        true => AppStrings.Text("Text_4366F0BC"),
+        false => AppStrings.Text("Text_B252C327"),
         null => "--",
     };
     public string BatteryText => _basicState?.BatteryPercent is { } value ? $"{value}%" : "--";
     public string ChargingText => _basicState?.IsCharging switch
     {
-        true => AppStrings.Get("充电中"),
-        false => AppStrings.Get("未充电"),
+        true => AppStrings.Text("Text_8FF04F66"),
+        false => AppStrings.Text("Text_EC17E7E7"),
         null => "--",
     };
 
@@ -252,6 +264,24 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
         !IsLowBatteryBusy && LowBatteryThresholdPercent is >= 5 and <= 25 && LowBatteryThresholdPercent % 5 == 0;
 
     public Visibility LightingVisibility => VisibleWhen(LightingZones.Count > 0);
+    public IReadOnlyList<string> LightingPowerProfileOptions =>
+        [
+            AppStrings.Text("BladeLightingPowerCurrent"),
+            AppStrings.Text("BladeLightingPowerPluggedIn"),
+            AppStrings.Text("BladeLightingPowerBattery"),
+        ];
+    public int LightingPowerProfileIndex
+    {
+        get => _lightingPowerProfileIndex;
+        set
+        {
+            var next = Math.Clamp(value, 0, 2);
+            if (SetField(ref _lightingPowerProfileIndex, next))
+            {
+                ApplyConfiguredLightingToEditor();
+            }
+        }
+    }
     public IReadOnlyList<OpenRazerLedZone> LightingZones { get; }
     public IReadOnlyList<string> LightingZoneOptions => LightingZones.Select(FormatZone).ToArray();
     public int SelectedLightingZoneIndex
@@ -624,6 +654,38 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
         }
     }
 
+    public async Task ApplyConfiguredLightingAsync(CancellationToken cancellationToken = default)
+    {
+        if (_lightingProfileResolver is null || !IsReady || RequiresRescan)
+        {
+            return;
+        }
+
+        var profile = _lightingProfileResolver(SelectedLightingPowerState);
+        if (profile is null)
+        {
+            return;
+        }
+
+        ApplyLightingProfileToEditor(profile);
+        if (!IsSelectedLightingPowerActive)
+        {
+            return;
+        }
+
+        try
+        {
+            await ApplyLightingProfileToHardwareAsync(profile, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            HandleFailure(exception);
+        }
+    }
+
     public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default)
     {
         var zone = SelectedLightingZone;
@@ -633,11 +695,15 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
             () => IsBrightnessBusy, value => IsBrightnessBusy = value,
             async () =>
             {
-                await _service.SetBrightnessAsync(Connection, Brightness,
-                    Connection.Definition.DefaultStorage, zone, cancellationToken);
-                if (capabilities?.CanReadBrightness == true)
-                    Brightness = await _service.GetBrightnessAsync(Connection,
+                if (IsSelectedLightingPowerActive)
+                {
+                    await _service.SetBrightnessAsync(Connection, Brightness,
                         Connection.Definition.DefaultStorage, zone, cancellationToken);
+                    if (capabilities?.CanReadBrightness == true)
+                        Brightness = await _service.GetBrightnessAsync(Connection,
+                            Connection.Definition.DefaultStorage, zone, cancellationToken);
+                }
+                await SaveLightingProfileAsync(cancellationToken);
                 OnPropertyChanged(nameof(BrightnessText));
             }, cancellationToken,
             () =>
@@ -658,9 +724,13 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
             () => IsLedStateBusy, value => IsLedStateBusy = value,
             async () =>
             {
-                await _service.SetLedStateAsync(Connection, Connection.Definition.DefaultStorage, zone, enabled, cancellationToken);
-                if (Connection.LightingZones.GetValueOrDefault(zone)?.CanReadState == true)
-                    LedEnabled = await _service.GetLedStateAsync(Connection, Connection.Definition.DefaultStorage, zone, cancellationToken);
+                if (IsSelectedLightingPowerActive)
+                {
+                    await _service.SetLedStateAsync(Connection, Connection.Definition.DefaultStorage, zone, enabled, cancellationToken);
+                    if (Connection.LightingZones.GetValueOrDefault(zone)?.CanReadState == true)
+                        LedEnabled = await _service.GetLedStateAsync(Connection, Connection.Definition.DefaultStorage, zone, cancellationToken);
+                }
+                await SaveLightingProfileAsync(cancellationToken);
             }, cancellationToken,
             () =>
             {
@@ -696,14 +766,21 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 Connection.LightingZones.TryGetValue(zone, out var capability) &&
                 capability.LightingEffects.Contains(effect) && !_unsupportedLighting.Contains((zone, effect)),
             () => IsLightingBusy, value => IsLightingBusy = value,
-            () => _service.SetLightingAsync(Connection, new OpenRazerLightingSettings(
-                effect,
-                LightingSpeed,
-                LightingDirection,
-                ToOpenRazerColor(PrimaryColor),
-                ToOpenRazerColor(SecondaryColor),
-                null,
-                zone), cancellationToken),
+            async () =>
+            {
+                if (IsSelectedLightingPowerActive)
+                {
+                    await _service.SetLightingAsync(Connection, new OpenRazerLightingSettings(
+                        effect,
+                        LightingSpeed,
+                        LightingDirection,
+                        ToOpenRazerColor(PrimaryColor),
+                        ToOpenRazerColor(SecondaryColor),
+                        null,
+                        zone), cancellationToken);
+                }
+                await SaveLightingProfileAsync(cancellationToken);
+            },
             cancellationToken,
             () =>
             {
@@ -846,6 +923,152 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
 
     private OpenRazerLightingZoneCapabilities? SelectedZoneCapabilities =>
         Connection.LightingZones.GetValueOrDefault(SelectedLightingZone);
+
+    private bool? SelectedLightingPowerState => _lightingPowerProfileIndex switch
+    {
+        1 => true,
+        2 => false,
+        _ => _powerStateProvider?.Invoke(),
+    };
+
+    private bool IsSelectedLightingPowerActive =>
+        _lightingPowerProfileIndex == 0 ||
+        SelectedLightingPowerState == _powerStateProvider?.Invoke();
+
+    public bool IsLightingPowerProfileActive => IsSelectedLightingPowerActive;
+
+    private void ApplyConfiguredLightingToEditor()
+    {
+        var profile = _lightingProfileResolver?.Invoke(SelectedLightingPowerState);
+        if (profile is not null)
+        {
+            ApplyLightingProfileToEditor(profile);
+        }
+    }
+
+    private void ApplyLightingProfileToEditor(LightingProfile profile)
+    {
+        if (profile.Parameters.TryGetValue("zone", out var rawZone) &&
+            byte.TryParse(rawZone, NumberStyles.Integer, CultureInfo.InvariantCulture, out var zoneValue) &&
+            Enum.IsDefined(typeof(OpenRazerLedZone), zoneValue) &&
+            LightingZones.Contains((OpenRazerLedZone)zoneValue))
+        {
+            SelectedLightingZone = (OpenRazerLedZone)zoneValue;
+        }
+
+        if (Enum.TryParse<OpenRazerLightingEffect>(profile.Effect, true, out var effect) &&
+            LightingEffects.Contains(effect))
+        {
+            SelectedLightingEffect = effect;
+            if (effect == OpenRazerLightingEffect.Off)
+            {
+                LedEnabled = false;
+            }
+        }
+
+        if (TryGetByte(profile, "brightness", out var brightness)) Brightness = brightness;
+        if (TryGetByte(profile, "speed", out var speed)) LightingSpeed = speed;
+        if (TryGetByte(profile, "direction", out var direction)) LightingDirection = direction;
+        if (TryGetColor(profile, "color", out var primary)) PrimaryColor = ToColor(primary);
+        if (TryGetColor(profile, "color2", out var secondary)) SecondaryColor = ToColor(secondary);
+        if (profile.Parameters.TryGetValue("enabled", out var rawEnabled) &&
+            bool.TryParse(rawEnabled, out var enabled)) LedEnabled = enabled;
+    }
+
+    private async Task ApplyLightingProfileToHardwareAsync(
+        LightingProfile profile,
+        CancellationToken cancellationToken)
+    {
+        var zone = SelectedLightingZone;
+        if (Enum.TryParse<OpenRazerLightingEffect>(profile.Effect, true, out var effect) &&
+            Connection.LightingZones.TryGetValue(zone, out var capabilities) &&
+            capabilities.LightingEffects.Contains(effect) &&
+            Connection.Capabilities.Contains(OpenRazerBackendCapability.LightingEffectWrite))
+        {
+            await _service.SetLightingAsync(Connection, new OpenRazerLightingSettings(
+                effect,
+                LightingSpeed,
+                LightingDirection,
+                ToOpenRazerColor(PrimaryColor),
+                ToOpenRazerColor(SecondaryColor),
+                null,
+                zone), cancellationToken);
+        }
+
+        if (TryGetByte(profile, "brightness", out var brightness) &&
+            Connection.LightingZones.GetValueOrDefault(zone)?.CanWriteBrightness == true)
+        {
+            await _service.SetBrightnessAsync(Connection, brightness,
+                Connection.Definition.DefaultStorage, zone, cancellationToken);
+        }
+
+        var stateEnabled = effect == OpenRazerLightingEffect.Off
+            ? false
+            : profile.Parameters.TryGetValue("enabled", out var rawEnabled) &&
+                bool.TryParse(rawEnabled, out var enabled)
+                ? enabled
+                : (bool?)null;
+        if (stateEnabled is bool enabledState &&
+            Connection.LightingZones.GetValueOrDefault(zone)?.CanWriteState == true)
+        {
+            await _service.SetLedStateAsync(Connection,
+                Connection.Definition.DefaultStorage, zone, enabledState, cancellationToken);
+        }
+    }
+
+    private async Task SaveLightingProfileAsync(CancellationToken cancellationToken)
+    {
+        if (_lightingProfileSaver is not null)
+        {
+            if (!await _lightingProfileSaver(
+                SelectedLightingPowerState,
+                CreateLightingProfile(),
+                cancellationToken))
+            {
+                throw new IOException("OpenRazer lighting profile could not be saved.");
+            }
+        }
+    }
+
+    private LightingProfile CreateLightingProfile()
+    {
+        var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["zone"] = ((byte)SelectedLightingZone).ToString(CultureInfo.InvariantCulture),
+            ["brightness"] = Brightness.ToString(CultureInfo.InvariantCulture),
+            ["speed"] = LightingSpeed.ToString(CultureInfo.InvariantCulture),
+            ["direction"] = LightingDirection.ToString(CultureInfo.InvariantCulture),
+            ["color"] = FormatColor(ToOpenRazerColor(PrimaryColor)),
+            ["color2"] = FormatColor(ToOpenRazerColor(SecondaryColor)),
+            ["enabled"] = LedEnabled.ToString(CultureInfo.InvariantCulture),
+        };
+        return new LightingProfile { Effect = SelectedLightingEffect.ToString(), Parameters = parameters };
+    }
+
+    private static bool TryGetByte(LightingProfile profile, string key, out byte value)
+    {
+        value = 0;
+        return profile.Parameters.TryGetValue(key, out var raw) &&
+            byte.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+    }
+
+    private static bool TryGetColor(LightingProfile profile, string key, out OpenRazerColor color)
+    {
+        color = default;
+        if (!profile.Parameters.TryGetValue(key, out var raw) || raw.Length != 6 ||
+            !byte.TryParse(raw[..2], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var red) ||
+            !byte.TryParse(raw[2..4], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var green) ||
+            !byte.TryParse(raw[4..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var blue))
+        {
+            return false;
+        }
+
+        color = new OpenRazerColor(red, green, blue);
+        return true;
+    }
+
+    private static string FormatColor(OpenRazerColor color) =>
+        $"{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
 
     private bool Has(OpenRazerBackendCapability capability) =>
         Connection.Capabilities.Contains(capability) && !_unsupported.Contains(capability);

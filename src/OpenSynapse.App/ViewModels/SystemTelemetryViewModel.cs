@@ -6,7 +6,7 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
 {
-    private string _telemetryTimeText = "等待采样";
+    private string _telemetryTimeText = AppStrings.Text("Text_E63FBFB1");
     private string _cpuName = "CPU";
     private string _cpuValue = "--";
     private double _cpuPercent;
@@ -29,7 +29,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public string TelemetryTimeText { get => AppStrings.Get(_telemetryTimeText); private set => SetField(ref _telemetryTimeText, value); }
+    public string TelemetryTimeText { get => _telemetryTimeText; private set => SetField(ref _telemetryTimeText, value); }
     public string CpuName { get => _cpuName; private set => SetField(ref _cpuName, value); }
     public string CpuValue { get => _cpuValue; private set => SetField(ref _cpuValue, value); }
     public double CpuPercent { get => _cpuPercent; private set => SetField(ref _cpuPercent, value); }

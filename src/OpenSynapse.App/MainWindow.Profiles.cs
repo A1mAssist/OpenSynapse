@@ -27,11 +27,11 @@ public sealed partial class MainWindow
     {
         var dialog = new ContentDialog
         {
-            Title = AppStrings.Get("删除当前配置？"),
+            Title = AppStrings.Text("Text_4BC87173"),
             Content = AppStrings.FormatText("DeleteProfileMessage",
                 _viewModel.ActiveProfileName),
-            PrimaryButtonText = AppStrings.Get("删除"),
-            CloseButtonText = AppStrings.Get("取消"),
+            PrimaryButtonText = AppStrings.Text("Text_EA8D5381"),
+            CloseButtonText = AppStrings.Text("Text_949856B3"),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = RootNavigationView.XamlRoot,
         };
@@ -86,7 +86,7 @@ public sealed partial class MainWindow
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
             SuggestedFileName = $"OpenSynapse-{_viewModel.ActiveProfileName}",
         };
-        picker.FileTypeChoices.Add(AppStrings.Get("OpenSynapse 配置"), [".json"]);
+        picker.FileTypeChoices.Add(AppStrings.Text("Text_07E747F7"), [".json"]);
         InitializePicker(picker);
         var file = await picker.PickSaveFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))

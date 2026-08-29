@@ -11,8 +11,9 @@ internal static class BladeLightingProfileCodec
     internal static BladeLightingEffect Parse(LightingProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
-        var mode = profile.Effect?.Trim().ToLowerInvariant()
-            ?? throw new InvalidOperationException("Keyboard lighting effect cannot be null.");
+        var mode = string.IsNullOrWhiteSpace(profile.Effect)
+            ? "off"
+            : profile.Effect.Trim().ToLowerInvariant();
         var parameters = profile.Parameters ?? new Dictionary<string, string>();
         string[] allowed = mode switch
         {

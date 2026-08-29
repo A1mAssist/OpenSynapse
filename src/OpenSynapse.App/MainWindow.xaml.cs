@@ -38,7 +38,7 @@ public sealed partial class MainWindow : Window
         _getChromaRestSnapshot = getChromaRestSnapshot;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
-            ?? throw new InvalidOperationException("OpenSynapse 主窗口必须在 DispatcherQueue 线程创建。");
+            ?? throw new InvalidOperationException(AppStrings.Text("Text_693F327E"));
         _viewModel.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
@@ -181,7 +181,7 @@ public sealed partial class MainWindow : Window
         }
         ResizeForCurrentDisplay();
         var launchStarted = Stopwatch.GetTimestamp();
-        LaunchStatusText.Text = AppStrings.Get("正在读取配置与设备状态");
+        LaunchStatusText.Text = AppStrings.Text("Text_528DF7D8");
         try
         {
             await _viewModel.InitializeAsync(_lifetime.Token);
@@ -189,10 +189,10 @@ public sealed partial class MainWindow : Window
             _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunPerformanceLoopAsync(_lifetime.Token),
-                AppStrings.Get("性能刷新"));
+                AppStrings.Text("Text_79DA5816"));
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
-                AppStrings.Get("设备监听"));
+                AppStrings.Text("Text_C2463C0F"));
             if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
             {
                 _ = CheckForUpdatesAsync(downloadAutomatically: true);
@@ -227,7 +227,7 @@ public sealed partial class MainWindow : Window
         }
         if (File.Exists(IntroductionMarkerPath))
         {
-            LaunchStatusText.Text = AppStrings.Get("已就绪");
+            LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             HideLaunchOverlay();
         }
         else
@@ -248,7 +248,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            _viewModel.ReportApplicationError($"{label}：{exception.Message}");
+            _viewModel.ReportApplicationError($"{label}: {exception.Message}");
         }
     }
 

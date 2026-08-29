@@ -74,8 +74,8 @@ public sealed partial class MainWindow
             XamlRoot = RootLayout.XamlRoot,
             Title = cell.AutomationName,
             Content = picker,
-            PrimaryButtonText = AppStrings.Get("确定"),
-            CloseButtonText = AppStrings.Get("取消"),
+            PrimaryButtonText = AppStrings.Text("Text_621A8231"),
+            CloseButtonText = AppStrings.Text("Text_949856B3"),
             DefaultButton = ContentDialogButton.Primary,
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary) cell.Color = picker.Color;
@@ -84,8 +84,16 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyMatrixClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyMatrixAsync(_lifetime.Token) ?? Task.CompletedTask);
 
-    private async void OpenRazerLightingSelectionChanged(object sender, SelectionChangedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.LoadLightingAsync(_lifetime.Token) ?? Task.CompletedTask);
+    private async void OpenRazerLightingSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var device = SelectedOpenRazerDevice;
+        if (device?.IsLightingPowerProfileActive != true)
+        {
+            return;
+        }
+
+        await device.LoadLightingAsync(_lifetime.Token);
+    }
 
     private async void OpenRazerScrollExpanding(Expander sender, ExpanderExpandingEventArgs args) =>
         await (SelectedOpenRazerDevice?.LoadScrollAsync(_lifetime.Token) ?? Task.CompletedTask);
@@ -135,7 +143,7 @@ public sealed partial class MainWindow
             Title = AppStrings.Text(pair ? "OpenRazerPairTitle" : "OpenRazerUnpairTitle"),
             Content = productId,
             PrimaryButtonText = AppStrings.Text(pair ? "OpenRazerPairAction" : "OpenRazerUnpairAction"),
-            CloseButtonText = AppStrings.Get("取消"),
+            CloseButtonText = AppStrings.Text("Text_949856B3"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
