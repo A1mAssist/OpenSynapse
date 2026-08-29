@@ -1541,6 +1541,7 @@
   <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
   <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>低电量提醒（%）</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
+  <data name="OpenRazerLightingPowerLabel.Text" xml:space="preserve"><value>供电配置</value></data>
   <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>区域</value></data>
   <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>效果</value></data>
   <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>亮度</value></data>
@@ -1630,10 +1631,11 @@
   <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>颜色 2</value></data>
   <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>颜色 3</value></data>
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>应用灯效</value></data>
-  <data name="BladeLightingPowerProfile.Header" xml:space="preserve"><value>供电配置</value></data>
   <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>当前供电</value></data>
   <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>插电</value></data>
   <data name="BladeLightingPowerBattery" xml:space="preserve"><value>电池</value></data>
+  <data name="BladePerformancePowerProfileLabel.Text" xml:space="preserve"><value>性能模式供电配置</value></data>
+  <data name="BladeLightingPowerProfileLabel.Text" xml:space="preserve"><value>灯光供电配置</value></data>
 +  <data name="Text_046A57B8" xml:space="preserve"><value>键盘设备</value></data>
   <data name="Text_07BF2232" xml:space="preserve"><value>正在下载更新</value></data>
   <data name="Text_0A982CB6" xml:space="preserve"><value>触控板已切换</value></data>

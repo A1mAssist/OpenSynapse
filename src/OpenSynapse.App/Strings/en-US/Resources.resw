@@ -1541,6 +1541,7 @@
   <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
   <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>Low battery warning (%)</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
+  <data name="OpenRazerLightingPowerLabel.Text" xml:space="preserve"><value>Power profile</value></data>
   <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
   <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
   <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
@@ -1630,10 +1631,11 @@
   <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>Color 2</value></data>
   <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>Color 3</value></data>
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>Apply effect</value></data>
-  <data name="BladeLightingPowerProfile.Header" xml:space="preserve"><value>Power source</value></data>
   <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>Current power source</value></data>
   <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>Plugged in</value></data>
   <data name="BladeLightingPowerBattery" xml:space="preserve"><value>Battery</value></data>
+  <data name="BladePerformancePowerProfileLabel.Text" xml:space="preserve"><value>Performance power profile</value></data>
+  <data name="BladeLightingPowerProfileLabel.Text" xml:space="preserve"><value>Lighting power profile</value></data>
 +  <data name="Text_046A57B8" xml:space="preserve"><value>Keyboard device</value></data>
   <data name="Text_07BF2232" xml:space="preserve"><value>Downloading update</value></data>
   <data name="Text_0A982CB6" xml:space="preserve"><value>Touchpad switched</value></data>

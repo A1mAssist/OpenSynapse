@@ -84,6 +84,39 @@ public sealed class ProfileExtendedSettingsTests
     }
 
     [Fact]
+    public void LightingEffectOverrideDoesNotInheritParametersFromAnotherEffect()
+    {
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Lighting.Effect = "wave";
+        document.Global.Lighting.Parameters["direction"] = "right";
+        document.OnBattery.Lighting.Effect = "static";
+        document.OnBattery.Lighting.Parameters["color"] = "99DD72";
+
+        var key = ProfileResolver.GetDeviceKey(OpenRazerLaptop);
+        document.Devices[key] = new DeviceProfileSettings
+        {
+            Lighting = new LightingProfile
+            {
+                Effect = "wave",
+                Parameters = new Dictionary<string, string> { ["direction"] = "left" },
+            },
+        };
+        document.OnBattery.OpenRazerLighting[key] = new LightingProfile
+        {
+            Effect = "static",
+            Parameters = new Dictionary<string, string> { ["color"] = "FFFFFF" },
+        };
+
+        var blade = ProfileResolver.Resolve(document, Blade, false).Lighting;
+        var openRazer = ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, false)!;
+
+        Assert.Equal("static", blade.Effect);
+        Assert.Equal(new Dictionary<string, string> { ["color"] = "99DD72" }, blade.Parameters);
+        Assert.Equal("static", openRazer.Effect);
+        Assert.Equal(new Dictionary<string, string> { ["color"] = "FFFFFF" }, openRazer.Parameters);
+    }
+
+    [Fact]
     public void OpenRazerLightingUsesPerDevicePowerOverride()
     {
         var document = ProfileDocument.CreateDefault();

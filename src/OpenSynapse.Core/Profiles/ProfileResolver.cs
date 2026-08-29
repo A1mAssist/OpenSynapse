@@ -117,43 +117,8 @@ public static class ProfileResolver
     private static LightingProfile ResolveLighting(
         LightingProfile? global,
         LightingProfile? device,
-        LightingProfile? power)
-    {
-        var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        CopyParameters(parameters, global?.Parameters);
-        CopyParameters(parameters, device?.Parameters);
-        CopyParameters(parameters, power?.Parameters);
-
-        var effect = ResolveEffect(global, device, power);
-        if (StringComparer.OrdinalIgnoreCase.Equals(effect, "off"))
-        {
-            parameters.Clear();
-        }
-
-        return new LightingProfile
-        {
-            Effect = effect,
-            Parameters = parameters,
-        };
-    }
-
-    private static string ResolveEffect(
-        LightingProfile? global,
-        LightingProfile? device,
-        LightingProfile? power)
-    {
-        var effect = string.IsNullOrWhiteSpace(global?.Effect) ? "off" : global.Effect;
-        if (HasLightingOverride(device))
-        {
-            effect = device!.Effect!;
-        }
-        if (HasLightingOverride(power))
-        {
-            effect = power!.Effect!;
-        }
-
-        return effect;
-    }
+        LightingProfile? power) =>
+        MergeLighting(global, device, power, defaultEffect: "off");
 
     private static bool HasLightingOverride(LightingProfile? lighting) =>
         lighting is not null &&
@@ -179,16 +144,34 @@ public static class ProfileResolver
     private static LightingProfile MergeLighting(
         LightingProfile? global,
         LightingProfile? device,
-        LightingProfile? power)
+        LightingProfile? power,
+        string defaultEffect = "")
     {
-        var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        CopyParameters(parameters, global?.Parameters);
-        CopyParameters(parameters, device?.Parameters);
-        CopyParameters(parameters, power?.Parameters);
-        var effect = string.IsNullOrWhiteSpace(power?.Effect)
-            ? string.IsNullOrWhiteSpace(device?.Effect) ? global?.Effect ?? string.Empty : device.Effect
-            : power.Effect;
-        return new LightingProfile { Effect = effect, Parameters = parameters };
+        var result = new LightingProfile { Effect = defaultEffect };
+        ApplyLightingLayer(result, global);
+        ApplyLightingLayer(result, device);
+        ApplyLightingLayer(result, power);
+        if (StringComparer.OrdinalIgnoreCase.Equals(result.Effect, "off"))
+        {
+            result.Parameters.Clear();
+        }
+
+        return result;
+    }
+
+    private static void ApplyLightingLayer(LightingProfile destination, LightingProfile? source)
+    {
+        if (source is null)
+        {
+            return;
+        }
+
+        if (HasLightingOverride(source))
+        {
+            destination.Effect = source.Effect;
+            destination.Parameters.Clear();
+        }
+        CopyParameters(destination.Parameters, source.Parameters);
     }
 
     private static void CopyParameters(
