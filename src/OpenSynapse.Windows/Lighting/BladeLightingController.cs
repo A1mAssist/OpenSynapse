@@ -43,6 +43,8 @@ public interface IBladeLightingController : IAsyncDisposable
 
     Task StopAsync();
 
+    Task PrepareForSuspendAsync();
+
     Task ApplyExternalAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         ChromaExternalFrameSource source,
@@ -69,6 +71,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;
     private byte _transactionId;
+    private int _turnOffOnStop;
     private int _disposed;
 
     public BladeLightingController()
@@ -274,6 +277,19 @@ public sealed class BladeLightingController : IBladeLightingController
         }
     }
 
+    public async Task PrepareForSuspendAsync()
+    {
+        Interlocked.Exchange(ref _turnOffOnStop, 1);
+        try
+        {
+            await StopAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _turnOffOnStop, 0);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -421,9 +437,12 @@ public sealed class BladeLightingController : IBladeLightingController
 
     private async Task RestoreAsync(string devicePath, CancellationToken cancellationToken)
     {
+        var frame = Volatile.Read(ref _turnOffOnStop) != 0
+            ? QuickLightingEngine.RenderSolid(default)
+            : _restoreFrame;
         try
         {
-            await SendFrameAsync(devicePath, _restoreFrame, cancellationToken).ConfigureAwait(false);
+            await SendFrameAsync(devicePath, frame, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception frameFailure)
         {
