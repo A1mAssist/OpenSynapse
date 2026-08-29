@@ -87,6 +87,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private string? _bladeControlDevicePath;
     private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _bladeLightingPowerProfileIndex;
+    private int _bladePerformancePowerProfileIndex;
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
     private int _performanceSamplingEnabled = 1;
@@ -259,7 +260,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             if (SetField(ref _blade._canSetBladeBrightness, value))
             {
                 OnPropertyChanged(nameof(CanSetBladeLighting));
-                OnPropertyChanged(nameof(CanSetBladePowerProfile));
+                OnPropertyChanged(nameof(CanSetBladeLightingPowerProfile));
             }
         }
     }
@@ -273,11 +274,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             if (SetField(ref _blade._canSetBladePerformanceMode, value))
             {
-                OnPropertyChanged(nameof(CanSetBladePowerProfile));
+                OnPropertyChanged(nameof(CanSetBladePerformancePowerProfile));
             }
         }
     }
-    public bool CanSetBladePowerProfile => CanSetBladeBrightness || CanSetBladePerformanceMode;
+    public bool CanSetBladeLightingPowerProfile => CanSetBladeBrightness;
+    public bool CanSetBladePerformancePowerProfile => CanSetBladePerformanceMode;
     public string BladeFanText { get => _blade._bladeFanText; private set => SetField(ref _blade._bladeFanText, value); }
     public string BladeFanModeText { get => _blade._bladeFanModeText; private set => SetField(ref _blade._bladeFanModeText, value); }
     public string BladeFanTargetRpmText { get => _blade._bladeFanTargetRpmText; private set => SetField(ref _blade._bladeFanTargetRpmText, value); }
@@ -369,6 +371,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             AppStrings.Text("BladeLightingPowerPluggedIn"),
             AppStrings.Text("BladeLightingPowerBattery"),
         ];
+    public IReadOnlyList<string> BladePerformancePowerProfileOptions => BladeLightingPowerProfileOptions;
     public int BladeLightingPowerProfileIndex
     {
         get => _bladeLightingPowerProfileIndex;
@@ -378,6 +381,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             if (SetField(ref _bladeLightingPowerProfileIndex, next))
             {
                 RefreshBladeLightingEditor();
+            }
+        }
+    }
+    public int BladePerformancePowerProfileIndex
+    {
+        get => _bladePerformancePowerProfileIndex;
+        set
+        {
+            var next = Math.Clamp(value, 0, 2);
+            if (SetField(ref _bladePerformancePowerProfileIndex, next))
+            {
+                RefreshBladePerformanceEditor();
             }
         }
     }
@@ -916,6 +931,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _bladePerformanceCycleModes = shortcuts.PerformanceCycleModes!.ToHashSet();
         _internalDisplayRefreshRateCycleHertz = shortcuts.RefreshRateCycleHertz?.ToHashSet();
         RefreshBladeLightingEditor();
+        RefreshBladePerformanceEditor();
         ApplicationBindings.Clear();
         foreach (var binding in _profile.ApplicationBindings.OrderBy(binding => binding.Key, StringComparer.OrdinalIgnoreCase))
         {
@@ -1473,9 +1489,20 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _ => _powerSourceProvider.IsPluggedIn,
     };
 
+    private bool? SelectedPerformancePowerState => _bladePerformancePowerProfileIndex switch
+    {
+        1 => true,
+        2 => false,
+        _ => _powerSourceProvider.IsPluggedIn,
+    };
+
     private bool IsSelectedLightingPowerActive =>
         _bladeLightingPowerProfileIndex == 0 ||
         SelectedLightingPowerState == _powerSourceProvider.IsPluggedIn;
+
+    private bool IsSelectedPerformancePowerActive =>
+        _bladePerformancePowerProfileIndex == 0 ||
+        SelectedPerformancePowerState == _powerSourceProvider.IsPluggedIn;
 
     private PowerProfileOverrides? SelectedLightingPowerOverrides => _bladeLightingPowerProfileIndex switch
     {
@@ -1495,6 +1522,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     private BladeProfileSettings EditableLightingBladeProfile =>
         SelectedLightingPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
+
+    private PowerProfileOverrides? SelectedPerformancePowerOverrides => _bladePerformancePowerProfileIndex switch
+    {
+        1 => GetActiveProfile().PluggedIn,
+        2 => GetActiveProfile().OnBattery,
+        _ when _powerSourceProvider.IsPluggedIn == true => GetActiveProfile().PluggedIn,
+        _ when _powerSourceProvider.IsPluggedIn == false => GetActiveProfile().OnBattery,
+        _ => null,
+    };
+
+    private BladeProfileSettings EditablePerformanceBladeProfile =>
+        SelectedPerformancePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
 
     private LightingProfile EditableLightingProfile =>
         SelectedLightingPowerOverrides?.Lighting ?? GetActiveProfile().Global.Lighting;
@@ -1526,14 +1565,29 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         var bladeProfile = blade is null
             ? EditableLightingBladeProfile
             : ProfileResolver.Resolve(_profile, blade, powerState).Blade;
+        if (bladeProfile.KeyboardBrightness is byte brightness)
+        {
+            SetBladeBrightness(brightness, confirm: false);
+        }
+    }
+
+    private void RefreshBladePerformanceEditor()
+    {
+        if (_profile.Profiles.Count == 0)
+        {
+            return;
+        }
+
+        var blade = _deviceDescriptors.FirstOrDefault(device =>
+            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+        var powerState = SelectedPerformancePowerState;
+        var bladeProfile = blade is null
+            ? EditablePerformanceBladeProfile
+            : ProfileResolver.Resolve(_profile, blade, powerState).Blade;
         if (bladeProfile.PerformanceMode is byte rawPerformanceMode &&
             Enum.IsDefined(typeof(BladePerformanceMode), rawPerformanceMode))
         {
-            SetBladePerformanceMode((BladePerformanceMode)rawPerformanceMode);
-        }
-        if (bladeProfile.KeyboardBrightness is byte brightness)
-        {
-            SetBladeBrightness(brightness);
+            SetBladePerformanceMode((BladePerformanceMode)rawPerformanceMode, confirm: false);
         }
     }
 
@@ -1706,6 +1760,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             RefreshBladeLightingEditor();
         }
+        if (_bladePerformancePowerProfileIndex == 0)
+        {
+            RefreshBladePerformanceEditor();
+        }
         try
         {
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
@@ -1781,6 +1839,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 ApplyDeviceTelemetry(telemetry);
             }
             RefreshBladeLightingEditor();
+            RefreshBladePerformanceEditor();
             var viperAvailable = viper is not null &&
                 (telemetry.CapabilitySummaries?.GetValueOrDefault(viper.Id)
                     ?? DeviceCapabilitySummaryCalculator.Calculate(viper, telemetry)).Available > 0;
@@ -1932,7 +1991,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         if (!IsSelectedLightingPowerActive)
         {
             EditableLightingBladeProfile.KeyboardBrightness = requested;
-            SetBladeBrightness(requested);
+            SetBladeBrightness(requested, confirm: false);
             await SaveProfileAsync(cancellationToken);
             RefreshBladeLightingEditor();
             return;
@@ -2038,23 +2097,23 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         var requested = BladePerformanceModes[BladePerformanceModeIndex];
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
         {
-            if (!IsSelectedLightingPowerActive)
+            if (!IsSelectedPerformancePowerActive)
             {
-                EditableLightingBladeProfile.PerformanceMode = (byte)requested;
-                SetBladePerformanceMode(requested);
+                EditablePerformanceBladeProfile.PerformanceMode = (byte)requested;
+                SetBladePerformanceMode(requested, confirm: false);
                 if (!await SaveProfileAsync(cancellationToken))
                 {
                     throw new InvalidOperationException(AppStrings.Text("Text_CC12A6F5"));
                 }
 
-                RefreshBladeLightingEditor();
+                RefreshBladePerformanceEditor();
                 return;
             }
 
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 _deviceDescriptors, requested, cancellationToken);
             SetBladePerformanceMode(actual);
-            EditableLightingBladeProfile.PerformanceMode = (byte)actual;
+            EditablePerformanceBladeProfile.PerformanceMode = (byte)actual;
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);
@@ -3249,7 +3308,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         CanSetInternalDisplayRefreshRate = false;
     }
 
-    private void SetBladeBrightness(byte brightness)
+    private void SetBladeBrightness(byte brightness, bool confirm = true)
     {
         var percent = Math.Round(brightness * 100d / 255, MidpointRounding.AwayFromZero);
         BladeBrightnessText = $"{percent:0}%";
@@ -3260,12 +3319,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 BladeBrightnessPercent = percent;
             }
         }
-        _blade._confirmedBladeBrightnessPercent = percent;
+        if (confirm)
+        {
+            _blade._confirmedBladeBrightnessPercent = percent;
+        }
     }
 
-    private void SetBladePerformanceMode(BladePerformanceMode mode)
+    private void SetBladePerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {
-        _blade.SetPerformanceMode(mode);
+        _blade.SetPerformanceMode(mode, confirm);
         OnPropertyChanged(nameof(BladePerformanceModeText));
         OnPropertyChanged(nameof(BladePerformanceModeIndex));
         OnPropertyChanged(nameof(BladeCpuBoostText));

@@ -71,7 +71,7 @@ internal sealed class BladeViewModel
         _confirmedBladePerformanceModeIndex >= 0 &&
         BladePerformanceModes[_confirmedBladePerformanceModeIndex] == BladePerformanceMode.Custom;
 
-    internal void SetPerformanceMode(BladePerformanceMode mode)
+    internal void SetPerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {
         var modeChanged = _confirmedBladePerformanceModeIndex < 0 ||
             BladePerformanceModes[_confirmedBladePerformanceModeIndex] != mode;
@@ -87,10 +87,13 @@ internal sealed class BladeViewModel
             _ => "--",
         };
         _bladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, mode);
-        _confirmedBladePerformanceModeIndex = _bladePerformanceModeIndex;
-        if (modeChanged)
+        if (confirm)
         {
-            ClearCustomPerformance();
+            _confirmedBladePerformanceModeIndex = _bladePerformanceModeIndex;
+            if (modeChanged)
+            {
+                ClearCustomPerformance();
+            }
         }
     }
 
