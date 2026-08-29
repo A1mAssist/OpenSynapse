@@ -16,7 +16,16 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
 
-> Current release `v1.2.2` · Windows 11 x64 · unsigned
+> Current release `v1.3.0` · Windows 11 x64 · unsigned
+
+## What's new in 1.3.0
+
+This release includes targeted performance optimizations:
+
+- Device changes wake discovery immediately, while the background poll backs off when the window is hidden.
+- Chroma REST status refresh sleeps outside the visible Settings page.
+- Software lighting adapts between 60 and 30 FPS when HID frame delivery falls behind, then recovers automatically.
+- Disk capacity sampling is cached for 30 seconds; NVIDIA detailed telemetry remains limited to one `nvidia-smi` query per 5 seconds.
 
 ## What it supports
 
@@ -72,8 +81,8 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-1.2.1-win-Setup.exe` installs for the current user and supports automatic updates.
-- `OpenSynapse-1.2.1-win-Portable.zip` runs without installation.
+- `OpenSynapse-1.3.0-win-Setup.exe` installs for the current user and supports automatic updates.
+- `OpenSynapse-1.3.0-win-Portable.zip` runs without installation.
 
 Exit Razer Synapse before scanning devices so both applications do not contend for the same HID endpoint. OpenSynapse reports access failures and does not terminate Synapse itself.
 

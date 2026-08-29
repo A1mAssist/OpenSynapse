@@ -16,7 +16,16 @@
 
 OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。Blade 和 Viper 继续使用各自的产品专用实现，OpenRazer 设备走按能力判断的通用页面。
 
-> 当前版本 `v1.2.2` · Windows 11 x64 · 未签名
+> 当前版本 `v1.3.0` · Windows 11 x64 · 未签名
+
+## 1.3.0 更新内容
+
+本版本包含针对后台占用和响应速度的性能优化：
+
+- Windows 设备变化会立即唤醒设备探测，窗口隐藏到托盘后自动降低轮询频率。
+- Chroma REST 状态刷新在窗口隐藏或离开设置页后暂停。
+- 灯效 HID 发送出现积压时会在 60 FPS 和 30 FPS 之间自适应，恢复后自动回到 60 FPS。
+- 磁盘容量查询缓存 30 秒；NVIDIA 详细遥测的 `nvidia-smi` 查询最多每 5 秒执行一次。
 
 ## 支持范围
 
@@ -72,8 +81,8 @@ Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y D
 
 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载其中一种安装文件。
 
-- `OpenSynapse-1.2.1-win-Setup.exe` 安装到当前用户目录并支持自动更新。
-- `OpenSynapse-1.2.1-win-Portable.zip` 解压后即可运行。
+- `OpenSynapse-1.3.0-win-Setup.exe` 安装到当前用户目录并支持自动更新。
+- `OpenSynapse-1.3.0-win-Portable.zip` 解压后即可运行。
 
 扫描设备前请先退出 Razer Synapse，避免两个程序争用同一个 HID 端点。OpenSynapse 会报告访问失败，不会自行结束雷云进程。
 

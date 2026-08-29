@@ -53,6 +53,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly BladeFanCurveRuntime _bladeFanRuntime;
     private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
+    private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
     private readonly object _bladeBrightnessGate = new();
     private Task _bladeBrightnessWriter = Task.CompletedTask;
     private byte? _desiredBladeBrightness;
@@ -87,6 +88,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
+    private int _performanceSamplingEnabled = 1;
+    private int _deviceWatchActive = 1;
     private string _internalDisplayResolutionText = "--";
     private string _internalDisplayRefreshRateText = "--";
     private IReadOnlyList<int> _internalDisplayRefreshRates = Array.Empty<int>();
@@ -594,7 +597,36 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public string StorageDetail => _systemTelemetry.StorageDetail;
     public double StoragePercent => _systemTelemetry.StoragePercent;
 
-    public void RequestDeviceRefresh() => Interlocked.Exchange(ref _deviceRefreshRequested, 1);
+    public void RequestDeviceRefresh()
+    {
+        Interlocked.Exchange(ref _deviceRefreshRequested, 1);
+        try
+        {
+            _deviceWatchSignal.Release();
+        }
+        catch (SemaphoreFullException)
+        {
+            // One pending signal is enough; the refresh flag retains the request.
+        }
+    }
+
+    internal void SetPerformanceSamplingEnabled(bool enabled) =>
+        Volatile.Write(ref _performanceSamplingEnabled, enabled ? 1 : 0);
+
+    internal void SetDeviceWatchActive(bool active)
+    {
+        Volatile.Write(ref _deviceWatchActive, active ? 1 : 0);
+        if (active)
+        {
+            try
+            {
+                _deviceWatchSignal.Release();
+            }
+            catch (SemaphoreFullException)
+            {
+            }
+        }
+    }
 
     private void RequestProfileApply()
     {
@@ -663,7 +695,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     exception.Message));
             }
         }
-        await RefreshPerformanceAsync(cancellationToken);
+        if (Volatile.Read(ref _performanceSamplingEnabled) != 0)
+        {
+            await RefreshPerformanceAsync(cancellationToken);
+        }
     }
 
     private async Task LoadProfileAsync(CancellationToken cancellationToken)
@@ -1564,9 +1599,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
         try
         {
-            while (await timer.WaitForNextTickAsync(cancellationToken))
+            if (Volatile.Read(ref _performanceSamplingEnabled) != 0)
             {
                 await RefreshPerformanceAsync(cancellationToken);
+            }
+
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                if (Volatile.Read(ref _performanceSamplingEnabled) != 0)
+                {
+                    await RefreshPerformanceAsync(cancellationToken);
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -1576,11 +1619,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task RunDeviceWatchLoopAsync(CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
         try
         {
-            while (await timer.WaitForNextTickAsync(cancellationToken))
+            while (true)
             {
+                var interval = Volatile.Read(ref _deviceWatchActive) != 0
+                    ? TimeSpan.FromSeconds(3)
+                    : TimeSpan.FromSeconds(10);
+                await _deviceWatchSignal.WaitAsync(interval, cancellationToken);
                 try
                 {
                     var snapshot = await _discovery.DiscoverAsync(cancellationToken);
