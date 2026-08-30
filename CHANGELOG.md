@@ -2,6 +2,18 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.3] - 2026-08-30
+
+### Fixed
+
+- Keyboard lighting now turns off before Windows suspends instead of freezing on the last frame.
+- Lighting resumes normally after wake, including rebuilding the HID channel and restoring the active profile.
+- The app no longer remains unresponsive after a suspend/resume cycle.
+
+### Improved
+
+- Suspend and resume now use the native Windows power notification callback so the timing is aligned with device availability.
+
 ## [1.3.2] - 2026-08-30
 
 ### Added

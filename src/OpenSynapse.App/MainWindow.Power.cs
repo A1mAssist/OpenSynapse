@@ -1,4 +1,3 @@
-using Microsoft.Win32;
 using System.Runtime.InteropServices;
 
 namespace OpenSynapse.App;
@@ -11,27 +10,18 @@ public sealed partial class MainWindow
     private const nuint DbtDeviceRemoveComplete = 0x8004;
     private const nuint DbtDevNodesChanged = 0x0007;
     private const uint PbtPowerSettingChange = 0x8013;
-    private const nuint PbtApmSuspend = 0x0004;
-    private const nuint PbtApmResumeSuspend = 0x0007;
-    private const nuint PbtApmResumeAutomatic = 0x0012;
+    private const uint PbtApmSuspend = 0x0004;
+    private const uint PbtApmResumeSuspend = 0x0007;
+    private const uint PbtApmResumeAutomatic = 0x0012;
+    private const uint DeviceNotifyCallback = 0x00000002;
     private const uint DeviceNotifyWindowHandle = 0;
     private static readonly Guid ConsoleDisplayStateGuid = new("6fe69556-704a-47a0-8f24-c28d936fda47");
     private SubclassProcedure? _powerSubclassProcedure;
+    private SuspendResumeCallback? _suspendResumeCallback;
     private nint _powerNotificationHandle;
+    private nint _suspendResumeNotificationHandle;
     private bool _displaySuspended;
     private int _suspendPreparationInFlight;
-
-    private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs args)
-    {
-        if (args.Mode == PowerModes.Suspend)
-        {
-            PrepareForSuspend();
-        }
-        else if (args.Mode == PowerModes.Resume)
-        {
-            _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
-        }
-    }
 
     private void InitializeDisplayPowerNotification()
     {
@@ -41,6 +31,17 @@ public sealed partial class MainWindow
         var guid = ConsoleDisplayStateGuid;
         _powerNotificationHandle = RegisterPowerSettingNotification(windowHandle, ref guid, DeviceNotifyWindowHandle);
         if (_powerNotificationHandle == 0) RemoveWindowSubclass(windowHandle, _powerSubclassProcedure, 0x4F5350);
+
+        _suspendResumeCallback = HandleSuspendResumeNotification;
+        var parameters = new DeviceNotifySubscribeParameters
+        {
+            Callback = Marshal.GetFunctionPointerForDelegate(_suspendResumeCallback),
+            Context = IntPtr.Zero,
+        };
+        _ = PowerRegisterSuspendResumeNotification(
+            DeviceNotifyCallback,
+            ref parameters,
+            out _suspendResumeNotificationHandle);
     }
 
     private void ShutdownDisplayPowerNotification()
@@ -53,6 +54,12 @@ public sealed partial class MainWindow
         }
         if (_powerSubclassProcedure is not null)
             RemoveWindowSubclass(windowHandle, _powerSubclassProcedure, 0x4F5350);
+        if (_suspendResumeNotificationHandle != 0)
+        {
+            PowerUnregisterSuspendResumeNotification(_suspendResumeNotificationHandle);
+            _suspendResumeNotificationHandle = 0;
+        }
+        _suspendResumeCallback = null;
     }
 
     private nint HandlePowerWindowMessage(nint windowHandle, uint message, nint wParam, nint lParam, nuint subclassId, nuint referenceData)
@@ -82,7 +89,7 @@ public sealed partial class MainWindow
         }
         else if (message == WmPowerBroadcast)
         {
-            switch (unchecked((nuint)wParam.ToInt64()))
+            switch (unchecked((uint)wParam.ToInt64()))
             {
                 case PbtApmSuspend:
                     PrepareForSuspend();
@@ -120,13 +127,44 @@ public sealed partial class MainWindow
         }
     }
 
+    private uint HandleSuspendResumeNotification(nint context, uint eventType, nint setting)
+    {
+        switch (eventType)
+        {
+            case PbtApmSuspend:
+                PrepareForSuspend();
+                break;
+            case PbtApmResumeSuspend:
+            case PbtApmResumeAutomatic:
+                _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
+                break;
+        }
+
+        return 0;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     private struct PowerSettingChange { public Guid PowerSetting; public uint DataLength; public uint Data; }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DeviceNotifySubscribeParameters
+    {
+        public nint Callback;
+        public nint Context;
+    }
+
     private delegate nint SubclassProcedure(nint windowHandle, uint message, nint wParam, nint lParam, nuint subclassId, nuint referenceData);
+    private delegate uint SuspendResumeCallback(nint context, uint eventType, nint setting);
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern nint RegisterPowerSettingNotification(nint recipient, ref Guid powerSettingGuid, uint flags);
+    [DllImport("PowrProf.dll", SetLastError = true)]
+    private static extern uint PowerRegisterSuspendResumeNotification(
+        uint flags,
+        ref DeviceNotifySubscribeParameters recipient,
+        out nint registrationHandle);
+    [DllImport("PowrProf.dll", SetLastError = true)]
+    private static extern uint PowerUnregisterSuspendResumeNotification(nint registrationHandle);
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)] private static extern bool UnregisterPowerSettingNotification(nint handle);
     [DllImport("comctl32.dll", SetLastError = true)]

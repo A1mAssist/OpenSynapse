@@ -16,7 +16,15 @@
 
 OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。Blade 和 Viper 继续使用各自的产品专用实现，OpenRazer 设备走按能力判断的通用页面。
 
-> 当前版本 `v1.3.2` · Windows 11 x64 · 未签名
+> 当前版本 `v1.3.3` · Windows 11 x64 · 未签名
+
+## 1.3.3 更新内容
+
+本补丁修复了 Windows 睡眠和唤醒时的键盘灯光：
+
+- 进入睡眠前主动熄灭灯光，不再停留在最后一帧。
+- 唤醒后重建 HID 通道并恢复当前灯效配置。
+- 睡眠和唤醒往返后应用保持可用，不再卡死。
 
 ## 1.3.2 更新内容
 
@@ -80,8 +88,8 @@ Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y D
 
 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载其中一种安装文件。
 
-- `OpenSynapse-1.3.2-win-Setup.exe` 安装到当前用户目录并支持自动更新。
-- `OpenSynapse-1.3.2-win-Portable.zip` 解压后即可运行。
+- `OpenSynapse-1.3.3-win-Setup.exe` 安装到当前用户目录并支持自动更新。
+- `OpenSynapse-1.3.3-win-Portable.zip` 解压后即可运行。
 
 扫描设备前请先退出 Razer Synapse，避免两个程序争用同一个 HID 端点。OpenSynapse 会报告访问失败，不会自行结束雷云进程。
 
