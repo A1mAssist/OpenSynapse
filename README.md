@@ -16,7 +16,15 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
 
-> Current release `v1.3.2` · Windows 11 x64 · unsigned
+> Current release `v1.3.3` · Windows 11 x64 · unsigned
+
+## What's new in 1.3.3
+
+This patch fixes keyboard lighting across Windows suspend and resume:
+
+- Lighting is turned off before suspend instead of freezing on the last rendered frame.
+- The HID channel and active lighting profile are rebuilt after wake.
+- The app remains responsive after a suspend/resume cycle.
 
 ## What's new in 1.3.2
 
@@ -80,8 +88,8 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-1.3.2-win-Setup.exe` installs for the current user and supports automatic updates.
-- `OpenSynapse-1.3.2-win-Portable.zip` runs without installation.
+- `OpenSynapse-1.3.3-win-Setup.exe` installs for the current user and supports automatic updates.
+- `OpenSynapse-1.3.3-win-Portable.zip` runs without installation.
 
 Exit Razer Synapse before scanning devices so both applications do not contend for the same HID endpoint. OpenSynapse reports access failures and does not terminate Synapse itself.
 

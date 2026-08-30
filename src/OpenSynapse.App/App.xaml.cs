@@ -37,9 +37,6 @@ public partial class App : Application
     private int _audioMuteGeneration;
     private int _closing;
     private int _emergencyMappingCleanupStarted;
-    private long _lastUiHeartbeatTicks;
-    private CancellationTokenSource? _mappingWatchdogCancellation;
-    private Thread? _mappingWatchdogThread;
     private CancellationTokenSource? _activationCancellation;
     private Task? _shutdownTask;
     private readonly object _shutdownGate = new();
@@ -163,7 +160,6 @@ public partial class App : Application
             GetChromaRestSnapshot);
         RegisterMainWindow(window, viewModel);
         StartChromaRestHost(viewModel);
-        StartMappingWatchdog(window);
         InitializeTray(window, viewModel);
         if (silentLaunch)
         {
@@ -274,7 +270,6 @@ public partial class App : Application
     {
         Interlocked.Exchange(ref _closing, 1);
         Interlocked.Increment(ref _audioMuteGeneration);
-        StopMappingWatchdog();
         var chromaRestHost = _chromaRestHost;
         _chromaRestHost = null;
         if (chromaRestHost is not null)
@@ -671,70 +666,6 @@ public partial class App : Application
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("blade-fn", $"Emergency Blade Fn cleanup failed: {exception}");
-        }
-    }
-
-    private void StartMappingWatchdog(MainWindow window)
-    {
-        var dispatcher = window.DispatcherQueue;
-        Interlocked.Exchange(ref _lastUiHeartbeatTicks, Environment.TickCount64);
-        var watchdogCancellation = new CancellationTokenSource();
-        _mappingWatchdogCancellation = watchdogCancellation;
-        _mappingWatchdogThread = new Thread(() =>
-        {
-            var cancellation = watchdogCancellation.Token;
-            while (!cancellation.WaitHandle.WaitOne(TimeSpan.FromSeconds(2)))
-                {
-                    if (Volatile.Read(ref _closing) != 0)
-                    {
-                        return;
-                    }
-
-                    dispatcher.TryEnqueue(() =>
-                        Interlocked.Exchange(ref _lastUiHeartbeatTicks, Environment.TickCount64));
-
-                    var heartbeatAge = Environment.TickCount64 -
-                        Interlocked.Read(ref _lastUiHeartbeatTicks);
-                    if (heartbeatAge > TimeSpan.FromSeconds(12).TotalMilliseconds &&
-                        Volatile.Read(ref _bladeFnRuntime) is not null)
-                    {
-                        _diagnosticLog.TryWrite(
-                            "blade-fn",
-                            "UI thread heartbeat stopped; emergency Blade Fn cleanup started.");
-                        EmergencyStopBladeMapping();
-                        return;
-                    }
-                }
-        })
-        {
-            IsBackground = true,
-            Name = "OpenSynapse Blade Fn watchdog",
-        };
-        _mappingWatchdogThread.Start();
-    }
-
-    private void StopMappingWatchdog()
-    {
-        var cancellation = Interlocked.Exchange(ref _mappingWatchdogCancellation, null);
-        var thread = Interlocked.Exchange(ref _mappingWatchdogThread, null);
-        if (cancellation is null)
-        {
-            return;
-        }
-
-        try
-        {
-            cancellation.Cancel();
-        }
-        catch (ObjectDisposedException)
-        {
-        }
-
-        var threadStopped = thread is null || thread == Thread.CurrentThread ||
-            thread.Join(TimeSpan.FromSeconds(3));
-        if (threadStopped)
-        {
-            cancellation.Dispose();
         }
     }
 

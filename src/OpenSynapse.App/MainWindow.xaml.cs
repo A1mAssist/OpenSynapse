@@ -2,7 +2,6 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.Win32;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
 using System.Diagnostics;
@@ -67,7 +66,6 @@ public sealed partial class MainWindow : Window
         Closed += OnClosed;
         AppWindow.Closing += OnAppWindowClosing;
         AppWindow.Changed += OnAppWindowChanged;
-        SystemEvents.PowerModeChanged += OnPowerModeChanged;
         InitializeDisplayPowerNotification();
         UpdateChromaRestStatusTimer();
     }
@@ -261,7 +259,6 @@ public sealed partial class MainWindow : Window
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
-        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         ShutdownDisplayPowerNotification();
         _lifetime.Cancel();
         _lifetime.Dispose();
