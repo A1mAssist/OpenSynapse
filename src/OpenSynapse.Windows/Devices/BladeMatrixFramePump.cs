@@ -28,6 +28,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     private readonly Task _worker;
     private RazerRgb[]? _lastSentFrame;
     private int _stopped;
+    private int _turnOffOnStop;
     private long _framesSent;
     private long _framesSkipped;
 
@@ -72,6 +73,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
 
         await _worker.ConfigureAwait(false);
     }
+
+    internal void MarkTurnOffOnStop() => Interlocked.Exchange(ref _turnOffOnStop, 1);
 
     public async ValueTask DisposeAsync()
     {
@@ -129,6 +132,21 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
 
         Interlocked.Exchange(ref _stopped, 1);
         _frames.Writer.TryComplete(failure);
+
+        if (Volatile.Read(ref _turnOffOnStop) != 0 && restoreRequired)
+        {
+            try
+            {
+                await SendFrameAsync(
+                    new RazerRgb[BladeLightingProtocol.Rows * BladeLightingProtocol.Columns],
+                    session,
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                failure = failure is null ? exception : new AggregateException(failure, exception);
+            }
+        }
 
         if (session is not null)
         {

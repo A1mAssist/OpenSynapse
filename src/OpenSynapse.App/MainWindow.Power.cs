@@ -6,30 +6,26 @@ namespace OpenSynapse.App;
 public sealed partial class MainWindow
 {
     private const uint WmDeviceChange = 0x0219;
+    private const uint WmPowerBroadcast = 0x0218;
     private const nuint DbtDeviceArrival = 0x8000;
     private const nuint DbtDeviceRemoveComplete = 0x8004;
     private const nuint DbtDevNodesChanged = 0x0007;
     private const uint PbtPowerSettingChange = 0x8013;
+    private const nuint PbtApmSuspend = 0x0004;
+    private const nuint PbtApmResumeSuspend = 0x0007;
+    private const nuint PbtApmResumeAutomatic = 0x0012;
     private const uint DeviceNotifyWindowHandle = 0;
     private static readonly Guid ConsoleDisplayStateGuid = new("6fe69556-704a-47a0-8f24-c28d936fda47");
     private SubclassProcedure? _powerSubclassProcedure;
     private nint _powerNotificationHandle;
     private bool _displaySuspended;
+    private int _suspendPreparationInFlight;
 
     private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs args)
     {
         if (args.Mode == PowerModes.Suspend)
         {
-            try
-            {
-                _viewModel.PrepareForSuspendAsync().GetAwaiter().GetResult();
-            }
-            catch (Exception exception)
-            {
-                _dispatcherQueue.TryEnqueue(() =>
-                    _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError",
-                        exception.Message)));
-            }
+            PrepareForSuspend();
         }
         else if (args.Mode == PowerModes.Resume)
         {
@@ -75,7 +71,7 @@ public sealed partial class MainWindow
                 if (setting.Data == 0 && !_displaySuspended)
                 {
                     _displaySuspended = true;
-                    _ = _viewModel.PrepareForSuspendAsync();
+                    PrepareForSuspend();
                 }
                 else if (setting.Data == 1 && _displaySuspended)
                 {
@@ -84,7 +80,44 @@ public sealed partial class MainWindow
                 }
             }
         }
+        else if (message == WmPowerBroadcast)
+        {
+            switch (unchecked((nuint)wParam.ToInt64()))
+            {
+                case PbtApmSuspend:
+                    PrepareForSuspend();
+                    break;
+                case PbtApmResumeSuspend:
+                case PbtApmResumeAutomatic:
+                    _displaySuspended = false;
+                    _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
+                    break;
+            }
+        }
         return DefSubclassProc(windowHandle, message, wParam, lParam);
+    }
+
+    private void PrepareForSuspend()
+    {
+        if (Interlocked.Exchange(ref _suspendPreparationInFlight, 1) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            _viewModel.PrepareForSuspendAsync().GetAwaiter().GetResult();
+        }
+        catch (Exception exception)
+        {
+            _dispatcherQueue.TryEnqueue(() =>
+                _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError",
+                    exception.Message)));
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _suspendPreparationInFlight, 0);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
