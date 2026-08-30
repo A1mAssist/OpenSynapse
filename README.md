@@ -16,22 +16,15 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
 
-> Current release `v1.3.1` · Windows 11 x64 · unsigned
+> Current release `v1.3.2` · Windows 11 x64 · unsigned
 
-## What's new in 1.3.1
+## What's new in 1.3.2
 
-This patch fixes power-specific Blade lighting and performance profile editing:
+This patch improves keyboard-lighting behavior around display power changes:
 
-- Plugged-in and battery settings are edited independently for keyboard lighting and performance mode.
-- Switching lighting effects no longer carries parameters from another effect into the resolved profile.
-- Hardware-confirmed values remain separate from values being edited for the other power source.
-
-This release also includes the targeted performance optimizations from 1.3.0:
-
-- Device changes wake discovery immediately, while the background poll backs off when the window is hidden.
-- Chroma REST status refresh sleeps outside the visible Settings page.
-- Software lighting adapts between 60 and 30 FPS when HID frame delivery falls behind, then recovers automatically.
-- Disk capacity sampling is cached for 30 seconds; NVIDIA detailed telemetry remains limited to one `nvidia-smi` query per 5 seconds.
+- Keyboard lighting now turns off when Windows enters sleep or turns off the display instead of freezing on the last software-rendered frame.
+- Suspend notifications are handled early enough to send the black matrix frame while the HID session is still available.
+- Duplicate power notifications are coalesced, and Software Mode plus lighting resources are released even when shutdown encounters an error.
 
 ## What it supports
 
@@ -42,7 +35,7 @@ This release also includes the targeted performance optimizations from 1.3.0:
 | Razer Blade 16 (2025) | `1532:02C6` | Telemetry, keyboard lighting, performance, fans, display, battery, Fn/M3/M4/M5 |
 | Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, onboard mappings |
 
-Blade lighting includes Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal. Custom performance mode exposes CPU Boost, GPU Boost, and Max Fan. Fan control, charge limits, internal-display refresh rates, the touchpad, and verified Fn behavior remain on the Blade page.
+Blade lighting includes Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal. Custom performance mode exposes CPU Boost, GPU Boost, and Max Fan. Fan control, charge limits, internal-display refresh rates, the touchpad, and verified Fn behavior remain on the Blade page. System telemetry displays CPU and active-GPU temperature, power, load, and clock data when the corresponding Windows sensor is available.
 
 The Viper page supports `125 / 500 / 1000 Hz` polling, X/Y DPI from `100` to `30000`, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1. Battery type is selected by the user because the mouse does not provide a reliable readback value. The low-battery threshold remains read only.
 
@@ -87,8 +80,8 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-1.3.1-win-Setup.exe` installs for the current user and supports automatic updates.
-- `OpenSynapse-1.3.1-win-Portable.zip` runs without installation.
+- `OpenSynapse-1.3.2-win-Setup.exe` installs for the current user and supports automatic updates.
+- `OpenSynapse-1.3.2-win-Portable.zip` runs without installation.
 
 Exit Razer Synapse before scanning devices so both applications do not contend for the same HID endpoint. OpenSynapse reports access failures and does not terminate Synapse itself.
 

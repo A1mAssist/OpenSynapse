@@ -282,7 +282,36 @@ public sealed class BladeLightingController : IBladeLightingController
         Interlocked.Exchange(ref _turnOffOnStop, 1);
         try
         {
-            await StopAsync().ConfigureAwait(false);
+            await _gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var runtime = _runtime;
+                _runtime = null;
+                _externalSource = null;
+                _keyboardInput = null;
+                try
+                {
+                    if (runtime is not null)
+                    {
+                        try
+                        {
+                            await runtime.PrepareForSuspendAsync().ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            await runtime.DisposeAsync().ConfigureAwait(false);
+                        }
+                    }
+                }
+                finally
+                {
+                    await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                _gate.Release();
+            }
         }
         finally
         {
@@ -437,12 +466,15 @@ public sealed class BladeLightingController : IBladeLightingController
 
     private async Task RestoreAsync(string devicePath, CancellationToken cancellationToken)
     {
-        var frame = Volatile.Read(ref _turnOffOnStop) != 0
-            ? QuickLightingEngine.RenderSolid(default)
-            : _restoreFrame;
+        if (Volatile.Read(ref _turnOffOnStop) != 0)
+        {
+            await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+            return;
+        }
+
         try
         {
-            await SendFrameAsync(devicePath, frame, cancellationToken).ConfigureAwait(false);
+            await SendFrameAsync(devicePath, _restoreFrame, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception frameFailure)
         {

@@ -90,6 +90,17 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
         await _worker.ConfigureAwait(false);
     }
 
+    public async Task PrepareForSuspendAsync()
+    {
+        if (Interlocked.Exchange(ref _stopped, 1) == 0)
+        {
+            _pump.MarkTurnOffOnStop();
+            _stop.Cancel();
+        }
+
+        await _worker.ConfigureAwait(false);
+    }
+
     public async ValueTask DisposeAsync()
     {
         try
