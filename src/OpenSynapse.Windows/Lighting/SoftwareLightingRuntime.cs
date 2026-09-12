@@ -21,8 +21,6 @@ public interface ISoftwareLightingFrameSource
 /// </summary>
 public sealed class SoftwareLightingRuntime : IAsyncDisposable
 {
-    private static readonly TimeSpan AdaptiveSlowInterval = TimeSpan.FromMilliseconds(1000d / 30d);
-    private static readonly TimeSpan AdaptiveRecoveryWindow = TimeSpan.FromSeconds(5);
     private readonly BladeMatrixFramePump _pump;
     private readonly ISoftwareLightingFrameSource _source;
     private readonly TimeSpan _frameInterval;
@@ -119,8 +117,6 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
         var firstFrame = true;
         var nextFrameDeadline = TimeSpan.Zero;
         var activeFrameInterval = _frameInterval;
-        var publishedFrames = 0L;
-        var lastPressureAt = TimeSpan.MinValue;
         try
         {
             if (_inputAdapter is not null)
@@ -139,22 +135,6 @@ public sealed class SoftwareLightingRuntime : IAsyncDisposable
                     // completion preserves that hardware error instead of hiding it.
                     await _pump.Completion.ConfigureAwait(false);
                     break;
-                }
-
-                publishedFrames++;
-                var processedFrames = _pump.FramesSent + _pump.FramesSkipped;
-                var queuedFrames = publishedFrames - processedFrames;
-                var elapsedAfterPublish = Stopwatch.GetElapsedTime(_startedAt, _timestamp());
-                if (_frameInterval <= AdaptiveSlowInterval && queuedFrames >= 3)
-                {
-                    activeFrameInterval = AdaptiveSlowInterval;
-                    lastPressureAt = elapsedAfterPublish;
-                }
-                else if (activeFrameInterval > _frameInterval &&
-                         queuedFrames <= 0 &&
-                         elapsedAfterPublish - lastPressureAt >= AdaptiveRecoveryWindow)
-                {
-                    activeFrameInterval = _frameInterval;
                 }
 
                 // The frame write is part of the cadence. Waiting a full interval
