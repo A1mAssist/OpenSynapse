@@ -18,27 +18,7 @@ OpenSynapse reads connected devices first, then exposes only the controls resolv
 
 > Current release `v1.3.4` · Windows 11 x64 · unsigned
 
-## What's new in 1.3.4
-
-- Blade native lighting now exposes Reactive speed and Starlight speed, color mode, and dual-color parameters.
-- Native effects are cleared before normal or emergency application exit.
-- Blade lighting controls use a consistent labeled layout.
-
-## What's new in 1.3.3
-
-This patch fixes keyboard lighting across Windows suspend and resume:
-
-- Lighting is turned off before suspend instead of freezing on the last rendered frame.
-- The HID channel and active lighting profile are rebuilt after wake.
-- The app remains responsive after a suspend/resume cycle.
-
-## What's new in 1.3.2
-
-This patch improves keyboard-lighting behavior around display power changes:
-
-- Keyboard lighting now turns off when Windows enters sleep or turns off the display instead of freezing on the last software-rendered frame.
-- Suspend notifications are handled early enough to send the black matrix frame while the HID session is still available.
-- Duplicate power notifications are coalesced, and Software Mode plus lighting resources are released even when shutdown encounters an error.
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## What it supports
 
