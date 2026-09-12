@@ -36,6 +36,7 @@ public partial class App : Application
     private string? _activeBladeControlDevicePath;
     private int _audioMuteGeneration;
     private int _closing;
+    private int _emergencyLightingCleanupStarted;
     private int _emergencyMappingCleanupStarted;
     private CancellationTokenSource? _activationCancellation;
     private Task? _shutdownTask;
@@ -59,6 +60,7 @@ public partial class App : Application
         UnhandledException += (_, args) =>
         {
             _diagnosticLog.TryWrite("unhandled", args.Exception.ToString());
+            EmergencyStopBladeLighting();
             EmergencyStopBladeMapping();
         };
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
@@ -68,9 +70,14 @@ public partial class App : Application
                 _diagnosticLog.TryWrite("unhandled", exception.ToString());
             }
 
+            EmergencyStopBladeLighting();
             EmergencyStopBladeMapping();
         };
-        AppDomain.CurrentDomain.ProcessExit += (_, _) => EmergencyStopBladeMapping();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            EmergencyStopBladeLighting();
+            EmergencyStopBladeMapping();
+        };
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
@@ -439,15 +446,6 @@ public partial class App : Application
 
     private async Task DisposeHardwareForExitAsync(MainViewModel viewModel)
     {
-        try
-        {
-            await viewModel.DisposeAsync();
-        }
-        catch (Exception exception)
-        {
-            _diagnosticLog.TryWrite("application", $"Fan recovery before exit failed: {exception}");
-        }
-
         var lightingController = _bladeLightingController;
         _bladeLightingController = null;
         if (lightingController is not null)
@@ -460,6 +458,15 @@ public partial class App : Application
             {
                 _diagnosticLog.TryWrite("keyboard-lighting", $"restore failed: {exception}");
             }
+        }
+
+        try
+        {
+            await viewModel.DisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("application", $"Fan recovery before exit failed: {exception}");
         }
 
         await _audioMuteRuntimeGate.WaitAsync();
@@ -641,6 +648,34 @@ public partial class App : Application
         if (audioError is not null)
         {
             throw audioError;
+        }
+    }
+
+    private void EmergencyStopBladeLighting()
+    {
+        if (Interlocked.Exchange(ref _emergencyLightingCleanupStarted, 1) != 0)
+        {
+            return;
+        }
+
+        var controller = _bladeLightingController;
+        if (controller is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!controller.StopAsync().Wait(ExitCleanupTimeout))
+            {
+                _diagnosticLog.TryWrite(
+                    "keyboard-lighting",
+                    "Emergency lighting cleanup timed out; hardware may retain its last native effect.");
+            }
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("keyboard-lighting", $"Emergency lighting cleanup failed: {exception}");
         }
     }
 
