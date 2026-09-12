@@ -71,8 +71,8 @@ public sealed class BladeLightingController : IBladeLightingController
     private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;
     private byte _transactionId;
-    private bool _nativeBreathingActive;
-    private string? _nativeBreathingDevicePath;
+    private bool _nativeEffectActive;
+    private string? _nativeEffectDevicePath;
     private int _turnOffOnStop;
     private int _disposed;
 
@@ -149,14 +149,14 @@ public sealed class BladeLightingController : IBladeLightingController
                     device.Id,
                     BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
                     cancellationToken).ConfigureAwait(false);
-                if (effect.Mode == BladeLightingMode.Breathing)
+                if (TryCreateNativeEffectRequest(effect, out var nativeRequest))
                 {
                     await SendAsync(
                         device.Id,
-                        BladeLightingProtocol.CreateBreathingSingleRequest(effect.Color),
+                        nativeRequest,
                         cancellationToken).ConfigureAwait(false);
-                    _nativeBreathingActive = true;
-                    _nativeBreathingDevicePath = device.Id;
+                    _nativeEffectActive = true;
+                    _nativeEffectDevicePath = device.Id;
                     _runtimeCompletion = Task.CompletedTask;
                     return;
                 }
@@ -315,19 +315,19 @@ public sealed class BladeLightingController : IBladeLightingController
                             await runtime.DisposeAsync().ConfigureAwait(false);
                         }
                     }
-                    if (_nativeBreathingActive && _nativeBreathingDevicePath is not null)
+                    if (_nativeEffectActive && _nativeEffectDevicePath is not null)
                     {
                         try
                         {
                             await SendAsync(
-                                _nativeBreathingDevicePath,
+                                _nativeEffectDevicePath,
                                 BladeLightingProtocol.CreateOffRequest(),
                                 CancellationToken.None).ConfigureAwait(false);
                         }
                         finally
                         {
-                            _nativeBreathingActive = false;
-                            _nativeBreathingDevicePath = null;
+                            _nativeEffectActive = false;
+                            _nativeEffectDevicePath = null;
                         }
                     }
                 }
@@ -390,19 +390,19 @@ public sealed class BladeLightingController : IBladeLightingController
             throw;
         }
 
-        if (_nativeBreathingActive)
+        if (_nativeEffectActive)
         {
             try
             {
                 await SendAsync(
-                    _nativeBreathingDevicePath ?? throw new InvalidOperationException("Native breathing device path is unavailable."),
+                    _nativeEffectDevicePath ?? throw new InvalidOperationException("Native lighting device path is unavailable."),
                     BladeLightingProtocol.CreateOffRequest(),
                     CancellationToken.None).ConfigureAwait(false);
             }
             finally
             {
-                _nativeBreathingActive = false;
-                _nativeBreathingDevicePath = null;
+                _nativeEffectActive = false;
+                _nativeEffectDevicePath = null;
             }
         }
 
@@ -452,6 +452,30 @@ public sealed class BladeLightingController : IBladeLightingController
             }
             throw;
         }
+    }
+
+    private static bool TryCreateNativeEffectRequest(
+        BladeLightingEffect effect,
+        out byte[] request)
+    {
+        request = effect.Mode switch
+        {
+            BladeLightingMode.Static =>
+                BladeLightingProtocol.CreateStaticRequest(effect.Color),
+            BladeLightingMode.Wave =>
+                BladeLightingProtocol.CreateWaveRequest(effect.Direction),
+            BladeLightingMode.Spectrum =>
+                BladeLightingProtocol.CreateSpectrumRequest(),
+            BladeLightingMode.Reactive =>
+                BladeLightingProtocol.CreateReactiveRequest(2, effect.Color),
+            BladeLightingMode.Starlight =>
+                BladeLightingProtocol.CreateStarlightSingleRequest(2, effect.Color),
+            BladeLightingMode.Breathing =>
+                BladeLightingProtocol.CreateBreathingSingleRequest(effect.Color),
+            _ => Array.Empty<byte>(),
+        };
+
+        return request.Length != 0;
     }
 
     private (DeviceDescriptor Device, RazerDeviceManifest Manifest) FindReadyBlade(
