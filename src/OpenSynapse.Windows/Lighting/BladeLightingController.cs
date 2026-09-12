@@ -71,6 +71,8 @@ public sealed class BladeLightingController : IBladeLightingController
     private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;
     private byte _transactionId;
+    private bool _nativeBreathingActive;
+    private string? _nativeBreathingDevicePath;
     private int _turnOffOnStop;
     private int _disposed;
 
@@ -147,6 +149,17 @@ public sealed class BladeLightingController : IBladeLightingController
                     device.Id,
                     BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
                     cancellationToken).ConfigureAwait(false);
+                if (effect.Mode == BladeLightingMode.Breathing)
+                {
+                    await SendAsync(
+                        device.Id,
+                        BladeLightingProtocol.CreateBreathingSingleRequest(effect.Color),
+                        cancellationToken).ConfigureAwait(false);
+                    _nativeBreathingActive = true;
+                    _nativeBreathingDevicePath = device.Id;
+                    _runtimeCompletion = Task.CompletedTask;
+                    return;
+                }
                 var pump = new BladeMatrixFramePump(
                     _transport,
                     device.Id,
@@ -302,6 +315,21 @@ public sealed class BladeLightingController : IBladeLightingController
                             await runtime.DisposeAsync().ConfigureAwait(false);
                         }
                     }
+                    if (_nativeBreathingActive && _nativeBreathingDevicePath is not null)
+                    {
+                        try
+                        {
+                            await SendAsync(
+                                _nativeBreathingDevicePath,
+                                BladeLightingProtocol.CreateOffRequest(),
+                                CancellationToken.None).ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            _nativeBreathingActive = false;
+                            _nativeBreathingDevicePath = null;
+                        }
+                    }
                 }
                 finally
                 {
@@ -360,6 +388,22 @@ public sealed class BladeLightingController : IBladeLightingController
                 throw new AggregateException(runtimeFailure, modeFailure);
             }
             throw;
+        }
+
+        if (_nativeBreathingActive)
+        {
+            try
+            {
+                await SendAsync(
+                    _nativeBreathingDevicePath ?? throw new InvalidOperationException("Native breathing device path is unavailable."),
+                    BladeLightingProtocol.CreateOffRequest(),
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            finally
+            {
+                _nativeBreathingActive = false;
+                _nativeBreathingDevicePath = null;
+            }
         }
 
         await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
