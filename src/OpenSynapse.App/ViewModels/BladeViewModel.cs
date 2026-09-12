@@ -64,6 +64,9 @@ internal sealed class BladeViewModel
     internal bool _canSetBladeTouchpad;
     internal int _bladeLightingModeIndex = 1;
     internal int _bladeWaveDirectionIndex;
+    internal int _bladeReactiveSpeedIndex = 1;
+    internal int _bladeStarlightSpeedIndex = 1;
+    internal int _bladeStarlightColorModeIndex = 1;
     internal Color _bladeLightingColor = Color.FromArgb(0xFF, 0x99, 0xDD, 0x72);
     internal Color _bladeLightingSecondColor = Color.FromArgb(0xFF, 0x00, 0x66, 0xFF);
 

@@ -216,6 +216,7 @@
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                             <ComboBox local:Localized.Uid="Loc_69EFED8C33" Grid.ColumnSpan="2" Tag="lighting" ItemsSource="{Binding BladeLightingModeOptions}" SelectedIndex="{Binding BladeLightingModeIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" AutomationProperties.Name="键盘灯效" />
                           </Grid>
+                          <StackPanel Spacing="8">
                           <Grid Height="34" ColumnDefinitions="*,*" ColumnSpacing="8">
                             <DropDownButton local:Localized.Uid="Loc_CDBC79C8C5" Visibility="{Binding BladeLightingColorVisibility}" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTipService.ToolTip="选择灯效颜色" AutomationProperties.Name="灯效颜色">
                               <StackPanel Orientation="Horizontal" Spacing="7"><Border Width="18" Height="18" CornerRadius="3" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"><Border.Background><SolidColorBrush Color="{Binding BladeLightingColor}" /></Border.Background></Border><TextBlock local:Localized.Uid="Loc_38C8E58C97" Text="颜色" /></StackPanel>
@@ -227,6 +228,12 @@
                             </DropDownButton>
                             <ComboBox local:Localized.Uid="Loc_EB57417109" Grid.ColumnSpan="2" Tag="lighting" Visibility="{Binding BladeWaveDirectionVisibility}" ItemsSource="{Binding BladeWaveDirectionOptions}" SelectedIndex="{Binding BladeWaveDirectionIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" AutomationProperties.Name="波浪方向" />
                           </Grid>
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <ComboBox local:Localized.Uid="BladeLightingReactiveSpeed" Tag="lighting" Visibility="{Binding BladeReactiveSpeedVisibility}" ItemsSource="{Binding BladeReactiveSpeedOptions}" SelectedIndex="{Binding BladeReactiveSpeedIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" />
+                            <ComboBox local:Localized.Uid="BladeLightingStarlightSpeed" Grid.Column="1" Tag="lighting" Visibility="{Binding BladeStarlightSpeedVisibility}" ItemsSource="{Binding BladeStarlightSpeedOptions}" SelectedIndex="{Binding BladeStarlightSpeedIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" />
+                          </Grid>
+                          <ComboBox local:Localized.Uid="BladeLightingStarlightColorMode" Tag="lighting" Visibility="{Binding BladeStarlightColorModeVisibility}" ItemsSource="{Binding BladeStarlightColorModeOptions}" SelectedIndex="{Binding BladeStarlightColorModeIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" />
+                          </StackPanel>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Spacing="8"><TextBlock local:Localized.Uid="Loc_B4D7460469" Text="机身 Logo" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding BladeLogoText}" Foreground="{StaticResource AccentBrush}" /><ComboBox Tag="logo" ItemsSource="{Binding BladeLogoOptions}" SelectedIndex="{Binding BladeLogoIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeLogo}" HorizontalAlignment="Stretch" /></StackPanel>
                       </Grid>

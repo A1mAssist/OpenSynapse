@@ -1,4 +1,6 @@
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
 
@@ -126,6 +128,37 @@ public sealed class OpenRazerWindowsPortTests
         AssertOpenRazerLogicalReport(blade.GetRequiredCapability("keyboard-brightness.set").CreateRequest([0x01, 0x7F]), 0xFF, 0x02, 0x0E, 0x04, 0x01, 0x7F);
         AssertOpenRazerLogicalReport(BladeLogoProtocol.CreateGetPowerRequest(), 0xFF, 0x03, 0x03, 0x80, 0x01, 0x04, 0x00);
         AssertOpenRazerLogicalReport(BladeLogoProtocol.CreateSetPowerRequest(true), 0xFF, 0x03, 0x03, 0x00, 0x01, 0x04, 0x01);
+    }
+
+    [Fact]
+    public void BladeNativeLightingParametersRoundTripThroughProfiles()
+    {
+        var reactive = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = "reactive",
+            Parameters = new() { ["color"] = "112233", ["speed"] = "4" },
+        });
+        Assert.Equal((byte)4, reactive.ReactiveSpeed);
+
+        var starlight = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = "starlight",
+            Parameters = new()
+            {
+                ["color"] = "112233",
+                ["color2"] = "445566",
+                ["speed"] = "3",
+                ["colorMode"] = "dual",
+            },
+        });
+        Assert.Equal((byte)3, starlight.StarlightSpeed);
+        Assert.Equal(BladeStarlightColorMode.Dual, starlight.StarlightColorMode);
+        Assert.Equal(new RazerRgb(0x44, 0x55, 0x66), starlight.SecondColor);
+
+        var encoded = BladeLightingProfileCodec.Create(starlight);
+        Assert.Equal("3", encoded.Parameters["speed"]);
+        Assert.Equal("dual", encoded.Parameters["colorMode"]);
+        Assert.Equal("445566", encoded.Parameters["color2"]);
     }
 
     [Fact]

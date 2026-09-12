@@ -45,4 +45,9 @@ internal static class DeviceUiCatalog
 
     public static readonly BladeWaveDirection[] BladeWaveDirections =
         [BladeWaveDirection.Right, BladeWaveDirection.Left];
+
+    public static readonly byte[] BladeReactiveSpeeds = [1, 2, 3, 4];
+    public static readonly byte[] BladeStarlightSpeeds = [1, 2, 3];
+    public static readonly BladeStarlightColorMode[] BladeStarlightColorModes =
+        [BladeStarlightColorMode.Random, BladeStarlightColorMode.Single, BladeStarlightColorMode.Dual];
 }

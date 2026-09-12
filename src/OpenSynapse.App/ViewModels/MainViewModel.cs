@@ -420,6 +420,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
                 OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
                 OnPropertyChanged(nameof(BladeWaveDirectionVisibility));
+                OnPropertyChanged(nameof(BladeReactiveSpeedVisibility));
+                OnPropertyChanged(nameof(BladeStarlightSpeedVisibility));
+                OnPropertyChanged(nameof(BladeStarlightColorModeVisibility));
             }
         }
     }
@@ -429,17 +432,34 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             : null;
     public Visibility BladeLightingColorVisibility => SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
-        BladeLightingMode.Ripple or BladeLightingMode.Starlight or BladeLightingMode.Tidal
+        BladeLightingMode.Ripple or BladeLightingMode.Tidal ||
+        (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex != 0)
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingSecondColorVisibility => SelectedBladeLightingMode == BladeLightingMode.Tidal
+    public Visibility BladeLightingSecondColorVisibility => SelectedBladeLightingMode == BladeLightingMode.Tidal ||
+        (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex == 2)
         ? Visibility.Visible
         : Visibility.Collapsed;
     public Visibility BladeWaveDirectionVisibility => SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
         ? Visibility.Visible
         : Visibility.Collapsed;
+    public Visibility BladeReactiveSpeedVisibility => SelectedBladeLightingMode == BladeLightingMode.Reactive
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeStarlightSpeedVisibility => SelectedBladeLightingMode == BladeLightingMode.Starlight
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeStarlightColorModeVisibility => SelectedBladeLightingMode == BladeLightingMode.Starlight
+        ? Visibility.Visible
+        : Visibility.Collapsed;
     public IReadOnlyList<string> BladeWaveDirectionOptions => AppStrings.Texts("Text_FB3FF0D8", "Text_883A50D7");
     public int BladeWaveDirectionIndex { get => _blade._bladeWaveDirectionIndex; set => SetField(ref _blade._bladeWaveDirectionIndex, value); }
+    public IReadOnlyList<byte> BladeReactiveSpeedOptions => BladeReactiveSpeeds;
+    public int BladeReactiveSpeedIndex { get => _blade._bladeReactiveSpeedIndex; set => SetField(ref _blade._bladeReactiveSpeedIndex, value); }
+    public IReadOnlyList<byte> BladeStarlightSpeedOptions => BladeStarlightSpeeds;
+    public int BladeStarlightSpeedIndex { get => _blade._bladeStarlightSpeedIndex; set => SetField(ref _blade._bladeStarlightSpeedIndex, value); }
+    public IReadOnlyList<string> BladeStarlightColorModeOptions => AppStrings.Texts("BladeStarlightRandom", "BladeStarlightSingle", "BladeStarlightDual");
+    public int BladeStarlightColorModeIndex { get => _blade._bladeStarlightColorModeIndex; set { if (SetField(ref _blade._bladeStarlightColorModeIndex, value)) { OnPropertyChanged(nameof(BladeLightingColorVisibility)); OnPropertyChanged(nameof(BladeLightingSecondColorVisibility)); } } }
     public Color BladeLightingColor { get => _blade._bladeLightingColor; set => SetField(ref _blade._bladeLightingColor, value); }
     public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
     public bool CanSetBladeLighting => _blade._canSetBladeBrightness && _bladeLightingController is not null;
@@ -1597,6 +1617,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             BladeLightingColor = Color.FromArgb(0xFF, effect.Color.Red, effect.Color.Green, effect.Color.Blue);
             BladeLightingSecondColor = Color.FromArgb(
                 0xFF, effect.SecondColor.Red, effect.SecondColor.Green, effect.SecondColor.Blue);
+            BladeReactiveSpeedIndex = Array.IndexOf(BladeReactiveSpeeds, effect.ReactiveSpeed);
+            BladeStarlightSpeedIndex = Array.IndexOf(BladeStarlightSpeeds, effect.StarlightSpeed);
+            BladeStarlightColorModeIndex = (int)effect.StarlightColorMode;
         }
 
         var bladeProfile = blade is null
@@ -2135,7 +2158,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             BladeLightingModes[BladeLightingModeIndex],
             color,
             BladeWaveDirections[BladeWaveDirectionIndex],
-            secondColor);
+            secondColor,
+            BladeReactiveSpeeds[Math.Clamp(BladeReactiveSpeedIndex, 0, BladeReactiveSpeeds.Length - 1)],
+            BladeStarlightSpeeds[Math.Clamp(BladeStarlightSpeedIndex, 0, BladeStarlightSpeeds.Length - 1)],
+            BladeStarlightColorModes[Math.Clamp(BladeStarlightColorModeIndex, 0, BladeStarlightColorModes.Length - 1)]);
         return ApplyBladeLightingEffectAsync(effect, cancellationToken);
     }
 
