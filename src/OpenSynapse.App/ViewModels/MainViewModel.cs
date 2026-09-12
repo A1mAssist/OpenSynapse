@@ -1617,6 +1617,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
     }
 
+    internal Task InitializeProfileAsync(CancellationToken cancellationToken = default) =>
+        LoadProfileAsync(cancellationToken);
+
     private void RefreshInternalDisplayRateEditor()
     {
         var configured = EditableRefreshRateBladeProfile.RefreshRateHertz;

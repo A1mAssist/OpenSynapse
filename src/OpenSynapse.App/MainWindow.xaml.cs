@@ -220,9 +220,7 @@ public sealed partial class MainWindow : Window
         await Task.Yield();
         try
         {
-            await Task.Run(
-                () => _viewModel.InitializeAsync(_lifetime.Token),
-                _lifetime.Token);
+            await _viewModel.InitializeProfileAsync(_lifetime.Token);
             _viewModel.SetPerformanceSamplingEnabled(AppWindow.IsVisible);
             _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
@@ -231,6 +229,7 @@ public sealed partial class MainWindow : Window
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
+            _viewModel.RequestDeviceRefresh();
             if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
             {
                 _ = CheckForUpdatesAsync(downloadAutomatically: true);
