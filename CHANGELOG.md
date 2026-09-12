@@ -2,6 +2,20 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.4] - 2026-09-12
+
+### Added
+
+- Blade native firmware lighting controls now expose Reactive speed and Starlight speed, color mode, and dual-color parameters.
+
+### Fixed
+
+- Native Blade lighting effects are explicitly turned off before application shutdown, including emergency exit cleanup.
+
+### Improved
+
+- Blade lighting parameters use a consistent two-column layout and show localized labels.
+
 ## [1.3.3] - 2026-08-30
 
 ### Fixed
