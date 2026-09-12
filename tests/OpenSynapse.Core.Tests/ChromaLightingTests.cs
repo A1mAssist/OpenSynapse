@@ -14,6 +14,23 @@ public sealed class ChromaLightingTests
     }
 
     [Fact]
+    public void BreathingUsesSmoothSymmetricBrightnessTransitions()
+    {
+        var color = new RazerRgb(200, 100, 50);
+        var samples = Enumerable.Range(0, 15)
+            .Select(index => QuickLightingEngine.RenderBreathing(
+                TimeSpan.FromMilliseconds(1750 + index * 250), color)[0].Red)
+            .ToArray();
+
+        Assert.Equal(0, QuickLightingEngine.RenderBreathing(TimeSpan.FromSeconds(1), color)[0].Red);
+        Assert.Equal(0, QuickLightingEngine.RenderBreathing(TimeSpan.FromSeconds(6), color)[0].Red);
+        Assert.Equal(samples[0], samples[^1]);
+        Assert.True(samples[1] - samples[0] < samples[3] - samples[2]);
+        Assert.True(samples[7] > samples[6]);
+        Assert.True(samples[8] < samples[7]);
+    }
+
+    [Fact]
     public async Task ExternalFrameSourceKeepsOnlyTheLatestCompleteFrame()
     {
         var source = new ChromaExternalFrameSource();

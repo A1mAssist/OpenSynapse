@@ -75,11 +75,17 @@ public static class QuickLightingEngine
         var intensity = position switch
         {
             < 0.25 => 0,
-            < 0.50 => (position - 0.25) * 4,
-            < 0.75 => (0.75 - position) * 4,
+            < 0.50 => SmoothStep((position - 0.25) * 4),
+            < 0.75 => SmoothStep((0.75 - position) * 4),
             _ => 0,
         };
-        return RenderSolid(ScaleColorTruncated(color, intensity));
+        return RenderSolid(ScaleColor(color, intensity));
+    }
+
+    private static double SmoothStep(double value)
+    {
+        var clamped = Math.Clamp(value, 0, 1);
+        return clamped * clamped * (3 - 2 * clamped);
     }
 
     public static RazerRgb[] RenderSpectrum(TimeSpan elapsed)
