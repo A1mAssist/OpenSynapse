@@ -1549,6 +1549,12 @@
   <data name="OpenRazerLightingDirection.Header" xml:space="preserve"><value>Direction</value></data>
   <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>
   <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>Left / counterclockwise</value></data>
+  <data name="BladeLightingReactiveSpeed.Header" xml:space="preserve"><value>Reactive speed</value></data>
+  <data name="BladeLightingStarlightSpeed.Header" xml:space="preserve"><value>Starlight speed</value></data>
+  <data name="BladeLightingStarlightColorMode.Header" xml:space="preserve"><value>Starlight color mode</value></data>
+  <data name="BladeStarlightRandom" xml:space="preserve"><value>Random</value></data>
+  <data name="BladeStarlightSingle" xml:space="preserve"><value>Single color</value></data>
+  <data name="BladeStarlightDual" xml:space="preserve"><value>Dual color</value></data>
   <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>Save</value></data>
   <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>Apply effect</value></data>
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>

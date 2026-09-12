@@ -17,7 +17,9 @@ internal static class BladeLightingProfileCodec
         var parameters = profile.Parameters ?? new Dictionary<string, string>();
         string[] allowed = mode switch
         {
-            "static" or "breathing" or "reactive" or "ripple" or "starlight" => ["color"],
+            "static" or "breathing" or "ripple" => ["color"],
+            "reactive" => ["color", "speed"],
+            "starlight" => ["color", "color2", "speed", "colorMode"],
             "tidal" => ["color", "color2"],
             "wave" or "wheel" => ["direction"],
             "off" or "spectrum" or "fire" or "audiometer" or "ambient" => [],
@@ -33,6 +35,13 @@ internal static class BladeLightingProfileCodec
             ? ParseColor(secondHex)
             : DefaultSecondColor;
         var direction = ParseDirection(parameters);
+        var reactiveSpeed = mode == "reactive"
+            ? ParseSpeed(parameters, "speed", 1, 4, 2)
+            : (byte)2;
+        var starlightSpeed = mode == "starlight"
+            ? ParseSpeed(parameters, "speed", 1, 3, 2)
+            : (byte)2;
+        var starlightColorMode = ParseStarlightColorMode(parameters);
         return new BladeLightingEffect(mode switch
         {
             "off" => BladeLightingMode.Off,
@@ -48,7 +57,7 @@ internal static class BladeLightingProfileCodec
             "starlight" => BladeLightingMode.Starlight,
             "tidal" => BladeLightingMode.Tidal,
             _ => BladeLightingMode.Fire,
-        }, color, direction, secondColor);
+        }, color, direction, secondColor, reactiveSpeed, starlightSpeed, starlightColorMode);
     }
 
     internal static LightingProfile Create(BladeLightingEffect effect)
@@ -66,6 +75,25 @@ internal static class BladeLightingProfileCodec
                 profile.Parameters["color2"] =
                     $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}";
             }
+            else if (effect.Mode == BladeLightingMode.Reactive)
+            {
+                profile.Parameters["speed"] = effect.ReactiveSpeed.ToString();
+            }
+            else if (effect.Mode == BladeLightingMode.Starlight)
+            {
+                profile.Parameters["speed"] = effect.StarlightSpeed.ToString();
+                profile.Parameters["colorMode"] = effect.StarlightColorMode switch
+                {
+                    BladeStarlightColorMode.Random => "random",
+                    BladeStarlightColorMode.Dual => "dual",
+                    _ => "single",
+                };
+                if (effect.StarlightColorMode == BladeStarlightColorMode.Dual)
+                {
+                    profile.Parameters["color2"] =
+                        $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}";
+                }
+            }
         }
         else if (effect.Mode is BladeLightingMode.Wave or BladeLightingMode.Wheel)
         {
@@ -81,7 +109,8 @@ internal static class BladeLightingProfileCodec
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         var effect = Parse(profile);
         return $"{devicePath}\n{effect.Mode}\n{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}\n" +
-            $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}\n{effect.Direction}";
+            $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}\n" +
+            $"{effect.Direction}\n{effect.ReactiveSpeed}\n{effect.StarlightSpeed}\n{effect.StarlightColorMode}";
     }
 
     private static BladeWaveDirection ParseDirection(IReadOnlyDictionary<string, string> parameters)
@@ -96,6 +125,40 @@ internal static class BladeLightingProfileCodec
             "left" => BladeWaveDirection.Left,
             "right" => BladeWaveDirection.Right,
             _ => throw new InvalidOperationException("Lighting effect direction must be left or right."),
+        };
+    }
+
+    private static byte ParseSpeed(
+        IReadOnlyDictionary<string, string> parameters,
+        string key,
+        byte minimum,
+        byte maximum,
+        byte defaultValue)
+    {
+        if (!parameters.TryGetValue(key, out var value))
+        {
+            return defaultValue;
+        }
+
+        return byte.TryParse(value, out var speed) && speed >= minimum && speed <= maximum
+            ? speed
+            : throw new InvalidOperationException($"Lighting effect {key} must be between {minimum} and {maximum}.");
+    }
+
+    private static BladeStarlightColorMode ParseStarlightColorMode(
+        IReadOnlyDictionary<string, string> parameters)
+    {
+        if (!parameters.TryGetValue("colorMode", out var value))
+        {
+            return BladeStarlightColorMode.Single;
+        }
+
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "random" => BladeStarlightColorMode.Random,
+            "single" => BladeStarlightColorMode.Single,
+            "dual" => BladeStarlightColorMode.Dual,
+            _ => throw new InvalidOperationException("Starlight colorMode must be random, single, or dual."),
         };
     }
 

@@ -1549,6 +1549,12 @@
   <data name="OpenRazerLightingDirection.Header" xml:space="preserve"><value>方向</value></data>
   <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
   <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>向左 / 逆时针</value></data>
+  <data name="BladeLightingReactiveSpeed.Header" xml:space="preserve"><value>响应速度</value></data>
+  <data name="BladeLightingStarlightSpeed.Header" xml:space="preserve"><value>星光速度</value></data>
+  <data name="BladeLightingStarlightColorMode.Header" xml:space="preserve"><value>星光颜色模式</value></data>
+  <data name="BladeStarlightRandom" xml:space="preserve"><value>随机</value></data>
+  <data name="BladeStarlightSingle" xml:space="preserve"><value>单色</value></data>
+  <data name="BladeStarlightDual" xml:space="preserve"><value>双色</value></data>
   <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>保存</value></data>
   <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>

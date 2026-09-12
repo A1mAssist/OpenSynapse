@@ -21,11 +21,21 @@ public enum BladeLightingMode
     Tidal,
 }
 
+public enum BladeStarlightColorMode
+{
+    Random,
+    Single,
+    Dual,
+}
+
 public sealed record BladeLightingEffect(
     BladeLightingMode Mode,
     RazerRgb Color = default,
     BladeWaveDirection Direction = BladeWaveDirection.Right,
-    RazerRgb SecondColor = default)
+    RazerRgb SecondColor = default,
+    byte ReactiveSpeed = 2,
+    byte StarlightSpeed = 2,
+    BladeStarlightColorMode StarlightColorMode = BladeStarlightColorMode.Single)
 {
     public static BladeLightingEffect Off { get; } = new(BladeLightingMode.Off);
     public static BladeLightingEffect Spectrum { get; } = new(BladeLightingMode.Spectrum);
@@ -467,9 +477,19 @@ public sealed class BladeLightingController : IBladeLightingController
             BladeLightingMode.Spectrum =>
                 BladeLightingProtocol.CreateSpectrumRequest(),
             BladeLightingMode.Reactive =>
-                BladeLightingProtocol.CreateReactiveRequest(2, effect.Color),
+                BladeLightingProtocol.CreateReactiveRequest(effect.ReactiveSpeed, effect.Color),
             BladeLightingMode.Starlight =>
-                BladeLightingProtocol.CreateStarlightSingleRequest(2, effect.Color),
+                effect.StarlightColorMode switch
+                {
+                    BladeStarlightColorMode.Random =>
+                        BladeLightingProtocol.CreateStarlightRandomRequest(effect.StarlightSpeed),
+                    BladeStarlightColorMode.Single =>
+                        BladeLightingProtocol.CreateStarlightSingleRequest(effect.StarlightSpeed, effect.Color),
+                    BladeStarlightColorMode.Dual =>
+                        BladeLightingProtocol.CreateStarlightDualRequest(
+                            effect.StarlightSpeed, effect.Color, effect.SecondColor),
+                    _ => Array.Empty<byte>(),
+                },
             BladeLightingMode.Breathing =>
                 BladeLightingProtocol.CreateBreathingSingleRequest(effect.Color),
             _ => Array.Empty<byte>(),
@@ -604,6 +624,15 @@ public sealed class BladeLightingController : IBladeLightingController
         }
         if (effect.Mode is BladeLightingMode.Wave or BladeLightingMode.Wheel &&
             !Enum.IsDefined(effect.Direction))
+        {
+            throw new ArgumentOutOfRangeException(nameof(effect));
+        }
+        if (effect.Mode == BladeLightingMode.Reactive && effect.ReactiveSpeed is < 1 or > 4)
+        {
+            throw new ArgumentOutOfRangeException(nameof(effect));
+        }
+        if (effect.Mode == BladeLightingMode.Starlight &&
+            (effect.StarlightSpeed is < 1 or > 3 || !Enum.IsDefined(effect.StarlightColorMode)))
         {
             throw new ArgumentOutOfRangeException(nameof(effect));
         }
