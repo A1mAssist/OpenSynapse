@@ -1518,6 +1518,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _bladePerformancePowerProfileIndex == 0 ||
         SelectedPerformancePowerState == _powerSourceProvider.IsPluggedIn;
 
+    private bool IsSelectedRefreshRatePowerActive =>
+        _bladeRefreshRatePowerProfileIndex == 0 ||
+        SelectedRefreshRatePowerState == _powerSourceProvider.IsPluggedIn;
+
+    private bool? SelectedRefreshRatePowerState => _bladeRefreshRatePowerProfileIndex switch
+    {
+        1 => true,
+        2 => false,
+        _ => _powerSourceProvider.IsPluggedIn,
+    };
+
     private PowerProfileOverrides? SelectedLightingPowerOverrides => _bladeLightingPowerProfileIndex switch
     {
         1 => GetActiveProfile().PluggedIn,
@@ -2402,7 +2413,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             var snapshot = _internalDisplayController.SetRefreshRate(
                 InternalDisplayRefreshRateHertz);
             ApplyInternalDisplaySnapshot(snapshot);
-            EditableRefreshRateBladeProfile.RefreshRateHertz = snapshot.RefreshRateHertz;
+            (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).RefreshRateHertz =
+                snapshot.RefreshRateHertz;
             await SaveProfileAsync(cancellationToken);
             InternalDisplayRefreshRateChangedByUser?.Invoke(snapshot.RefreshRateHertz);
         }, cancellationToken, () =>
@@ -2892,6 +2904,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     {
         if (!_canSetInternalDisplayRefreshRate || _internalDisplayController is null)
         {
+            return;
+        }
+
+        if (!IsSelectedRefreshRatePowerActive)
+        {
+            var previous = EditableRefreshRateBladeProfile.RefreshRateHertz;
+            EditableRefreshRateBladeProfile.RefreshRateHertz = InternalDisplayRefreshRateHertz;
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                EditableRefreshRateBladeProfile.RefreshRateHertz = previous;
+            }
             return;
         }
 
