@@ -37,6 +37,7 @@ public static class QuickLightingEngine
     private const double BreathingPeriodMilliseconds = 7000;
     private const double SpectrumPeriodMilliseconds = 37740;
     private const int LightingFramesPerSecond = 25;
+    private static readonly int[] AudioMeterSideKeyIndices = [16, 33, 50, 67, 84, 101];
 
     private static readonly byte[] FireSourceMask = Convert.FromHexString(
         "0806040606040202020406060406080604020204060810");
@@ -192,7 +193,8 @@ public static class QuickLightingEngine
         ValidateNormalized(level, nameof(level));
         ValidateNormalized(colorBoost, nameof(colorBoost));
 
-        var litColumns = (int)Math.Ceiling(Math.Clamp(level * (1 + colorBoost), 0, 1) * LogicalColumns);
+        var adjustedLevel = Math.Clamp(level * (1 + colorBoost), 0, 1);
+        var litColumns = (int)Math.Ceiling(adjustedLevel * LogicalColumns);
         var frame = new RazerRgb[BladeLightingLayout.LogicalPixelCount];
         for (var row = 0; row < LogicalRows; row++)
         {
@@ -211,7 +213,13 @@ public static class QuickLightingEngine
             }
         }
 
-        return BladeLightingLayout.MapToDeviceFrame(frame);
+        var deviceFrame = BladeLightingLayout.MapToDeviceFrame(frame);
+        var sideKeyColor = ScaleColor(new RazerRgb(255, 0, 0), adjustedLevel);
+        foreach (var deviceIndex in AudioMeterSideKeyIndices)
+        {
+            deviceFrame[deviceIndex] = sideKeyColor;
+        }
+        return deviceFrame;
     }
 
     /// <summary>Renders Product 710's native 100-keyframe, five-step fire cycle.</summary>

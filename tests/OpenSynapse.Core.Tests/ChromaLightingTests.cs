@@ -264,6 +264,19 @@ public sealed class ChromaLightingTests
     }
 
     [Fact]
+    public void AudioMeterPulsesPowerAndMacroKeysBelowFullScale()
+    {
+        var active = QuickLightingEngine.RenderAudioMeter(0.5, 0);
+        var silent = QuickLightingEngine.RenderAudioMeter(0, 0);
+
+        Assert.All(new[] { 16, 33, 50, 67, 84, 101 }, index =>
+        {
+            Assert.NotEqual(default, active[index]);
+            Assert.Equal(default, silent[index]);
+        });
+    }
+
+    [Fact]
     public void ChromaMatricesRejectNonProtocolDimensions()
     {
         var invalid = Enumerable.Range(0, 6)

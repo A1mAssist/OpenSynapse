@@ -1635,6 +1635,7 @@
   <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>Plugged in</value></data>
   <data name="BladeLightingPowerBattery" xml:space="preserve"><value>Battery</value></data>
   <data name="BladePerformancePowerProfileLabel.Text" xml:space="preserve"><value>Performance power profile</value></data>
+  <data name="BladeRefreshRatePowerProfileLabel.Text" xml:space="preserve"><value>Refresh rate power profile</value></data>
   <data name="BladeLightingPowerProfileLabel.Text" xml:space="preserve"><value>Lighting power profile</value></data>
 +  <data name="Text_046A57B8" xml:space="preserve"><value>Keyboard device</value></data>
   <data name="Text_07BF2232" xml:space="preserve"><value>Downloading update</value></data>

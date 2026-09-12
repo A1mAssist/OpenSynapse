@@ -21,6 +21,7 @@ public sealed partial class MainWindow
     private nint _powerNotificationHandle;
     private nint _suspendResumeNotificationHandle;
     private bool _displaySuspended;
+    private bool _displayStateOn = true;
     private int _suspendPreparationInFlight;
 
     private void InitializeDisplayPowerNotification()
@@ -75,12 +76,16 @@ public sealed partial class MainWindow
             var setting = Marshal.PtrToStructure<PowerSettingChange>(lParam);
             if (setting.PowerSetting == ConsoleDisplayStateGuid)
             {
-                if (setting.Data == 0 && !_displaySuspended)
+                // Windows may report automatic display timeout as dimmed (2)
+                // before or instead of fully off (0). Keep lighting off for
+                // every state except the explicitly-on state (1).
+                _displayStateOn = setting.Data == 1;
+                if (!_displayStateOn && !_displaySuspended)
                 {
                     _displaySuspended = true;
                     PrepareForSuspend();
                 }
-                else if (setting.Data == 1 && _displaySuspended)
+                else if (_displayStateOn && _displaySuspended)
                 {
                     _displaySuspended = false;
                     _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
@@ -96,8 +101,11 @@ public sealed partial class MainWindow
                     break;
                 case PbtApmResumeSuspend:
                 case PbtApmResumeAutomatic:
-                    _displaySuspended = false;
-                    _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
+                    if (_displayStateOn)
+                    {
+                        _displaySuspended = false;
+                        _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
+                    }
                     break;
             }
         }
@@ -118,8 +126,7 @@ public sealed partial class MainWindow
         catch (Exception exception)
         {
             _dispatcherQueue.TryEnqueue(() =>
-                _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError",
-                    exception.Message)));
+                _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError", exception.Message)));
         }
         finally
         {
@@ -136,7 +143,11 @@ public sealed partial class MainWindow
                 break;
             case PbtApmResumeSuspend:
             case PbtApmResumeAutomatic:
-                _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
+                if (_displayStateOn)
+                {
+                    _displaySuspended = false;
+                    _dispatcherQueue.TryEnqueue(_viewModel.RequestDeviceRefresh);
+                }
                 break;
         }
 
