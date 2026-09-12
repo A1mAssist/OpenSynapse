@@ -85,6 +85,10 @@ public sealed class Localized : DependencyObject
         {
             numberBox.Header = header;
         }
+        if (element is ComboBox comboBox && AppStrings.TryGet($"{uid}/Header") is { } comboHeader)
+        {
+            comboBox.Header = comboHeader;
+        }
         if (element is TextBox textBox && AppStrings.TryGet($"{uid}/PlaceholderText") is { } placeholder)
         {
             textBox.PlaceholderText = placeholder;
