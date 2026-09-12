@@ -88,6 +88,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _bladeLightingPowerProfileIndex;
     private int _bladePerformancePowerProfileIndex;
+    private int _bladeRefreshRatePowerProfileIndex;
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
     private int _performanceSamplingEnabled = 1;
@@ -372,6 +373,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             AppStrings.Text("BladeLightingPowerBattery"),
         ];
     public IReadOnlyList<string> BladePerformancePowerProfileOptions => BladeLightingPowerProfileOptions;
+    public IReadOnlyList<string> BladeRefreshRatePowerProfileOptions => BladeLightingPowerProfileOptions;
     public int BladeLightingPowerProfileIndex
     {
         get => _bladeLightingPowerProfileIndex;
@@ -393,6 +395,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             if (SetField(ref _bladePerformancePowerProfileIndex, next))
             {
                 RefreshBladePerformanceEditor();
+            }
+        }
+    }
+    public int BladeRefreshRatePowerProfileIndex
+    {
+        get => _bladeRefreshRatePowerProfileIndex;
+        set
+        {
+            var next = Math.Clamp(value, 0, 2);
+            if (SetField(ref _bladeRefreshRatePowerProfileIndex, next))
+            {
+                RefreshInternalDisplayRateEditor();
             }
         }
     }
@@ -1532,8 +1546,20 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _ => null,
     };
 
+    private PowerProfileOverrides? SelectedRefreshRatePowerOverrides => _bladeRefreshRatePowerProfileIndex switch
+    {
+        1 => GetActiveProfile().PluggedIn,
+        2 => GetActiveProfile().OnBattery,
+        _ when _powerSourceProvider.IsPluggedIn == true => GetActiveProfile().PluggedIn,
+        _ when _powerSourceProvider.IsPluggedIn == false => GetActiveProfile().OnBattery,
+        _ => null,
+    };
+
     private BladeProfileSettings EditablePerformanceBladeProfile =>
         SelectedPerformancePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
+
+    private BladeProfileSettings EditableRefreshRateBladeProfile =>
+        SelectedRefreshRatePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
 
     private LightingProfile EditableLightingProfile =>
         SelectedLightingPowerOverrides?.Lighting ?? GetActiveProfile().Global.Lighting;
@@ -1588,6 +1614,19 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             Enum.IsDefined(typeof(BladePerformanceMode), rawPerformanceMode))
         {
             SetBladePerformanceMode((BladePerformanceMode)rawPerformanceMode, confirm: false);
+        }
+    }
+
+    private void RefreshInternalDisplayRateEditor()
+    {
+        var configured = EditableRefreshRateBladeProfile.RefreshRateHertz;
+        if (configured is int hertz && InternalDisplayRefreshRates.Contains(hertz))
+        {
+            InternalDisplayRefreshRateHertz = hertz;
+        }
+        else
+        {
+            OnPropertyChanged(nameof(InternalDisplayRefreshRateIndex));
         }
     }
 
@@ -2360,7 +2399,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             var snapshot = _internalDisplayController.SetRefreshRate(
                 InternalDisplayRefreshRateHertz);
             ApplyInternalDisplaySnapshot(snapshot);
-            _profile.Global.Blade.RefreshRateHertz = snapshot.RefreshRateHertz;
+            EditableRefreshRateBladeProfile.RefreshRateHertz = snapshot.RefreshRateHertz;
             await SaveProfileAsync(cancellationToken);
             InternalDisplayRefreshRateChangedByUser?.Invoke(snapshot.RefreshRateHertz);
         }, cancellationToken, () =>
@@ -2857,7 +2896,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             var snapshot = _internalDisplayController.SetRefreshRate(InternalDisplayRefreshRateHertz);
             ApplyInternalDisplaySnapshot(snapshot);
-            _profile.Global.Blade.RefreshRateHertz = snapshot.RefreshRateHertz;
+            EditableRefreshRateBladeProfile.RefreshRateHertz = snapshot.RefreshRateHertz;
             await SaveProfileAsync(cancellationToken);
         }, cancellationToken, () =>
             InternalDisplayRefreshRateHertz = _confirmedInternalDisplayRefreshRateHertz);
@@ -3016,7 +3055,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     {
         try
         {
-            var snapshot = await _performanceMonitor.SampleAsync(cancellationToken);
+            var snapshot = await Task.Run(
+                () => _performanceMonitor.SampleAsync(cancellationToken).AsTask(),
+                cancellationToken);
             _systemTelemetry.Apply(snapshot);
             _performanceErrorText = snapshot.ErrorMessage ?? string.Empty;
             UpdateErrorText();

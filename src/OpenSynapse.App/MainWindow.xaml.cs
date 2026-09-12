@@ -180,30 +180,7 @@ public sealed partial class MainWindow : Window
         ResizeForCurrentDisplay();
         var launchStarted = Stopwatch.GetTimestamp();
         LaunchStatusText.Text = AppStrings.Text("Text_528DF7D8");
-        try
-        {
-            await _viewModel.InitializeAsync(_lifetime.Token);
-            _viewModel.SetPerformanceSamplingEnabled(AppWindow.IsVisible);
-            _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
-            _ = ObserveBackgroundLoopAsync(
-                () => _viewModel.RunPerformanceLoopAsync(_lifetime.Token),
-                AppStrings.Text("Text_79DA5816"));
-            _ = ObserveBackgroundLoopAsync(
-                () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
-                AppStrings.Text("Text_C2463C0F"));
-            if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
-            {
-                _ = CheckForUpdatesAsync(downloadAutomatically: true);
-            }
-        }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            _viewModel.ReportApplicationError(AppStrings.FormatText("ApplicationInitializationError",
-                exception.Message));
-        }
+        var initializationTask = InitializeRuntimeAsync();
 
         var remaining = TimeSpan.FromMilliseconds(MinimumLaunchDurationMilliseconds) -
             Stopwatch.GetElapsedTime(launchStarted);
@@ -232,6 +209,40 @@ public sealed partial class MainWindow : Window
         {
             _introductionPendingAfterLaunch = true;
             HideLaunchOverlay();
+        }
+
+        _ = initializationTask;
+    }
+
+    private async Task InitializeRuntimeAsync()
+    {
+        // Yield before hardware work so activation returns to the UI dispatcher.
+        await Task.Yield();
+        try
+        {
+            await Task.Run(
+                () => _viewModel.InitializeAsync(_lifetime.Token),
+                _lifetime.Token);
+            _viewModel.SetPerformanceSamplingEnabled(AppWindow.IsVisible);
+            _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
+            _ = ObserveBackgroundLoopAsync(
+                () => _viewModel.RunPerformanceLoopAsync(_lifetime.Token),
+                AppStrings.Text("Text_79DA5816"));
+            _ = ObserveBackgroundLoopAsync(
+                () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
+                AppStrings.Text("Text_C2463C0F"));
+            if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
+            {
+                _ = CheckForUpdatesAsync(downloadAutomatically: true);
+            }
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _viewModel.ReportApplicationError(AppStrings.FormatText("ApplicationInitializationError",
+                exception.Message));
         }
     }
 
