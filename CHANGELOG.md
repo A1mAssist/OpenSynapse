@@ -2,6 +2,12 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.5] - 2026-09-13
+
+### Fixed
+
+- Blade Audio Meter now renders the power key and M1-M5 as part of the shared rightmost column instead of pulsing them independently.
+
 ## [1.3.4] - 2026-09-12
 
 ### Added
