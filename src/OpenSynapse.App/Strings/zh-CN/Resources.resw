@@ -1674,4 +1674,7 @@
   <data name="Text_F5627AEF" xml:space="preserve"><value>游戏模式已切换</value></data>
   <data name="LightingError" xml:space="preserve"><value>灯效：{0}</value></data>
   <data name="FanControlError" xml:space="preserve"><value>风扇控制：{0}</value></data>
+  <data name="LightingQuickColors.Text" xml:space="preserve"><value>常用颜色</value></data>
+  <data name="LightingRecentColors.Text" xml:space="preserve"><value>最近使用</value></data>
+  <data name="LightingCustomColor.Header" xml:space="preserve"><value>自定义颜色</value></data>
 </root>
