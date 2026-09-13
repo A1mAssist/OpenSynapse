@@ -21,7 +21,8 @@ public sealed partial class MainWindow
 
     private async void AutoApplyComboSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is not ComboBox { IsDropDownOpen: true, Tag: string setting })
+        if (sender is not ComboBox combo || combo.Tag is not string setting ||
+            (!combo.IsDropDownOpen && combo.FocusState == FocusState.Unfocused))
         {
             return;
         }
