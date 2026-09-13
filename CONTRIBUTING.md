@@ -47,6 +47,18 @@ For application or packaging changes, also run:
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
 ```
 
+For every Velopack application or packaging change, also verify the deployed
+executable with a non-application working directory (the way `Update.exe` can
+restart it). The application entry point must set `Environment.CurrentDirectory`
+to `AppContext.BaseDirectory` before WinUI or native initialization. A publish
+directory smoke test alone is insufficient.
+
+Velopack release assets must be generated as one set. Do not hand-rename setup
+or portable files, or edit `assets.win.json`, `releases.win.json`, or `RELEASES`
+after packing. Before uploading, compare every listed filename, SHA-1, SHA-256,
+and size against the files produced by the same `vpk pack` invocation, then
+launch the exact packaged executable from its deployed `current` directory.
+
 Review the staged file list before committing:
 
 ```powershell

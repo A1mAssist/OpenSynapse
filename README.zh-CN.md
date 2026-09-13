@@ -74,8 +74,8 @@ Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y D
 
 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载其中一种安装文件。
 
-- `OpenSynapse-1.3.6-win-Setup.exe` 安装到当前用户目录并支持自动更新。
-- `OpenSynapse-1.3.6-win-Portable.zip` 解压后即可运行。
+- `OpenSynapse-win-Setup.exe` 安装到当前用户目录并支持自动更新。
+- `OpenSynapse-win-Portable.zip` 解压后即可运行。
 
 扫描设备前请先退出 Razer Synapse，避免两个程序争用同一个 HID 端点。OpenSynapse 会报告访问失败，不会自行结束雷云进程。
 
