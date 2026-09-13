@@ -74,8 +74,8 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-1.3.6-win-Setup.exe` installs for the current user and supports automatic updates.
-- `OpenSynapse-1.3.6-win-Portable.zip` runs without installation.
+- `OpenSynapse-win-Setup.exe` installs for the current user and supports automatic updates.
+- `OpenSynapse-win-Portable.zip` runs without installation.
 
 Exit Razer Synapse before scanning devices so both applications do not contend for the same HID endpoint. OpenSynapse reports access failures and does not terminate Synapse itself.
 

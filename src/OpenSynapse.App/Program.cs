@@ -13,6 +13,10 @@ public static class Program
             .SetAutoApplyOnStartup(false)
             .Run();
 
+        // Velopack can restart the app with its parent directory as the working directory.
+        // WinUI/.NET native probing must stay anchored to the deployed app directory.
+        Environment.CurrentDirectory = AppContext.BaseDirectory;
+
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Application.Start(_ =>
         {
