@@ -1328,4 +1328,7 @@
   <data name="Text_F5627AEF" xml:space="preserve"><value>Gaming mode switched</value></data>
   <data name="LightingError" xml:space="preserve"><value>Lighting: {0}</value></data>
   <data name="FanControlError" xml:space="preserve"><value>Fan control: {0}</value></data>
+  <data name="LightingQuickColors.Text" xml:space="preserve"><value>Quick colors</value></data>
+  <data name="LightingRecentColors.Text" xml:space="preserve"><value>Recently used</value></data>
+  <data name="LightingCustomColor.Header" xml:space="preserve"><value>Custom color</value></data>
 </root>

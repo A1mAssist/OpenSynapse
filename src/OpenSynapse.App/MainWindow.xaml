@@ -220,7 +220,27 @@
                           <Grid Grid.Row="0" Grid.Column="0">
                             <DropDownButton local:Localized.Uid="Loc_CDBC79C8C5" Visibility="{Binding BladeLightingColorVisibility}" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTipService.ToolTip="选择灯效颜色" AutomationProperties.Name="灯效颜色">
                               <StackPanel Orientation="Horizontal" Spacing="7"><Border Width="18" Height="18" CornerRadius="3" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"><Border.Background><SolidColorBrush Color="{Binding BladeLightingColor}" /></Border.Background></Border><TextBlock local:Localized.Uid="Loc_38C8E58C97" Text="颜色" /></StackPanel>
-                              <DropDownButton.Flyout><Flyout Opened="LightingColorFlyoutOpened" Closed="LightingColorFlyoutClosed"><ColorPicker Color="{Binding BladeLightingColor, Mode=TwoWay}" Width="280" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="False" IsHexInputVisible="True" IsMoreButtonVisible="False" /></Flyout></DropDownButton.Flyout>
+                              <DropDownButton.Flyout>
+                                <Flyout x:Name="PrimaryLightingColorFlyout" ShouldConstrainToRootBounds="False" Opened="LightingColorFlyoutOpened" Closed="LightingColorFlyoutClosed">
+                                  <StackPanel Width="280" Spacing="10">
+                                    <TextBlock local:Localized.Uid="LightingQuickColors" Text="常用颜色" Style="{StaticResource MetricLabelStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind LightingPaletteColors}">
+                                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="8" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                      <ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding}" Click="LightingColorSwatchClick" Width="28" Height="28" MinWidth="28" MinHeight="28" Margin="3" Padding="0" Background="{Binding Brush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" CornerRadius="4" ToolTipService.ToolTip="{Binding Hex}" AutomationProperties.Name="{Binding Hex}" /></DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel x:Name="PrimaryRecentLightingColors" Visibility="Collapsed" Spacing="6">
+                                      <TextBlock local:Localized.Uid="LightingRecentColors" Text="最近使用" Style="{StaticResource MetricLabelStyle}" />
+                                      <ItemsControl ItemsSource="{x:Bind RecentLightingColors}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding}" Click="LightingColorSwatchClick" Width="28" Height="28" MinWidth="28" MinHeight="28" Margin="3" Padding="0" Background="{Binding Brush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" CornerRadius="4" ToolTipService.ToolTip="{Binding Hex}" AutomationProperties.Name="{Binding Hex}" /></DataTemplate></ItemsControl.ItemTemplate>
+                                      </ItemsControl>
+                                    </StackPanel>
+                                    <Expander local:Localized.Uid="LightingCustomColor" Header="自定义颜色" HorizontalAlignment="Stretch">
+                                      <ColorPicker x:Name="PrimaryLightingColorPicker" Color="{Binding BladeLightingColor, Mode=TwoWay}" Width="260" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="False" IsHexInputVisible="True" IsMoreButtonVisible="False" />
+                                    </Expander>
+                                  </StackPanel>
+                                </Flyout>
+                              </DropDownButton.Flyout>
                             </DropDownButton>
                           </Grid>
                           <Grid Grid.Row="0" Grid.Column="1">
@@ -230,7 +250,27 @@
                           <Grid Grid.Row="1" Grid.Column="0">
                             <DropDownButton local:Localized.Uid="Loc_5B268F9BA5" Visibility="{Binding BladeLightingSecondColorVisibility}" IsEnabled="{Binding CanSetBladeLighting}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTipService.ToolTip="选择灯效颜色 2" AutomationProperties.Name="灯效颜色 2">
                               <StackPanel Orientation="Horizontal" Spacing="7"><Border Width="18" Height="18" CornerRadius="3" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"><Border.Background><SolidColorBrush Color="{Binding BladeLightingSecondColor}" /></Border.Background></Border><TextBlock local:Localized.Uid="Loc_16D5B1620F" Text="颜色 2" /></StackPanel>
-                              <DropDownButton.Flyout><Flyout Opened="LightingColorFlyoutOpened" Closed="LightingColorFlyoutClosed"><ColorPicker Color="{Binding BladeLightingSecondColor, Mode=TwoWay}" Width="280" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="False" IsHexInputVisible="True" IsMoreButtonVisible="False" /></Flyout></DropDownButton.Flyout>
+                              <DropDownButton.Flyout>
+                                <Flyout x:Name="SecondaryLightingColorFlyout" ShouldConstrainToRootBounds="False" Opened="LightingColorFlyoutOpened" Closed="LightingColorFlyoutClosed">
+                                  <StackPanel Width="280" Spacing="10">
+                                    <TextBlock local:Localized.Uid="LightingQuickColors" Text="常用颜色" Style="{StaticResource MetricLabelStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind LightingPaletteColors}">
+                                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="8" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                      <ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding}" Click="LightingColorSwatchClick" Width="28" Height="28" MinWidth="28" MinHeight="28" Margin="3" Padding="0" Background="{Binding Brush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" CornerRadius="4" ToolTipService.ToolTip="{Binding Hex}" AutomationProperties.Name="{Binding Hex}" /></DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel x:Name="SecondaryRecentLightingColors" Visibility="Collapsed" Spacing="6">
+                                      <TextBlock local:Localized.Uid="LightingRecentColors" Text="最近使用" Style="{StaticResource MetricLabelStyle}" />
+                                      <ItemsControl ItemsSource="{x:Bind RecentLightingColors}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding}" Click="LightingColorSwatchClick" Width="28" Height="28" MinWidth="28" MinHeight="28" Margin="3" Padding="0" Background="{Binding Brush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" CornerRadius="4" ToolTipService.ToolTip="{Binding Hex}" AutomationProperties.Name="{Binding Hex}" /></DataTemplate></ItemsControl.ItemTemplate>
+                                      </ItemsControl>
+                                    </StackPanel>
+                                    <Expander local:Localized.Uid="LightingCustomColor" Header="自定义颜色" HorizontalAlignment="Stretch">
+                                      <ColorPicker x:Name="SecondaryLightingColorPicker" Color="{Binding BladeLightingSecondColor, Mode=TwoWay}" Width="260" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="False" IsHexInputVisible="True" IsMoreButtonVisible="False" />
+                                    </Expander>
+                                  </StackPanel>
+                                </Flyout>
+                              </DropDownButton.Flyout>
                             </DropDownButton>
                           </Grid>
                           <Grid Grid.Row="1" Grid.Column="1">
