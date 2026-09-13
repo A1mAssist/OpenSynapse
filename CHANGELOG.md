@@ -2,6 +2,17 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.6] - 2026-09-13
+
+### Fixed
+
+- Blade Starlight now sends its complete color-mode, speed, and RGB payload, so single-color and dual-color modes no longer fall back to random colors.
+
+### Improved
+
+- Blade lighting colors now use a compact quick palette with recently used colors and an expandable custom picker.
+- The expanded custom color picker can extend beyond the main window instead of being compressed into a scrolling panel.
+
 ## [1.3.5] - 2026-09-13
 
 ### Fixed
