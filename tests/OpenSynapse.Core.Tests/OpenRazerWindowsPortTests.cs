@@ -1,4 +1,5 @@
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
@@ -131,6 +132,49 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public async Task BladeStarlightSendsTheCompletePreparedReport()
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(transport);
+        var device = new DeviceDescriptor(
+            "blade",
+            "Blade 16",
+            0x1532,
+            0x02C6,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-710");
+        var first = new RazerRgb(0x11, 0x22, 0x33);
+        var second = new RazerRgb(0x44, 0x55, 0x66);
+        var effects = new[]
+        {
+            new BladeLightingEffect(BladeLightingMode.Starlight, StarlightSpeed: 2,
+                StarlightColorMode: BladeStarlightColorMode.Random),
+            new BladeLightingEffect(BladeLightingMode.Starlight, first, StarlightSpeed: 2,
+                StarlightColorMode: BladeStarlightColorMode.Single),
+            new BladeLightingEffect(BladeLightingMode.Starlight, first, SecondColor: second,
+                StarlightSpeed: 2, StarlightColorMode: BladeStarlightColorMode.Dual),
+        };
+        var expected = new[]
+        {
+            BladeLightingProtocol.CreateStarlightRandomRequest(2),
+            BladeLightingProtocol.CreateStarlightSingleRequest(2, first),
+            BladeLightingProtocol.CreateStarlightDualRequest(2, first, second),
+        };
+
+        foreach (var effect in effects)
+        {
+            await controller.ApplyAsync([device], effect);
+        }
+        await controller.StopAsync();
+
+        Assert.Equal(expected, transport.PreparedRequests);
+    }
+
+    [Fact]
     public void BladeNativeLightingParametersRoundTripThroughProfiles()
     {
         var reactive = BladeLightingProfileCodec.Parse(new LightingProfile
@@ -176,6 +220,38 @@ public sealed class OpenRazerWindowsPortTests
         Assert.Equal(0x46, windows[6]);
         Assert.Equal(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33 }, windows[9..16]);
         Assert.Equal(RazerFeatureReport.CalculateCrc(windows), windows[89]);
+    }
+
+    private sealed class PreparedReportRecordingTransport : IRazerFeatureTransport
+    {
+        internal List<byte[]> PreparedRequests { get; } = [];
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            var response = new byte[RazerFeatureReport.Length];
+            response[6] = 2;
+            return Task.FromResult(response);
+        }
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            PreparedRequests.Add(request.ToArray());
+            return Task.FromResult(new byte[RazerFeatureReport.Length]);
+        }
     }
 
     private static void AssertOpenRazerLogicalReport(

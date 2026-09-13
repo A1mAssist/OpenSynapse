@@ -597,8 +597,19 @@ public sealed class BladeLightingController : IBladeLightingController
     private Task<byte[]> SendAsync(
         string devicePath,
         byte[] request,
-        CancellationToken cancellationToken) =>
-        _transport.QueryAsync(
+        CancellationToken cancellationToken)
+    {
+        if (request[6] == 0x01 && request[7] == 0x03 && request[8] == 0x0A &&
+            request[RazerFeatureReport.ArgumentsOffset] == 0x19)
+        {
+            return _transport.QueryPreparedAsync(
+                devicePath,
+                request,
+                MatrixWait,
+                cancellationToken);
+        }
+
+        return _transport.QueryAsync(
             devicePath,
             request[2],
             request[6],
@@ -607,6 +618,7 @@ public sealed class BladeLightingController : IBladeLightingController
             request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
             MatrixWait,
             cancellationToken);
+    }
 
     private byte NextTransactionId()
     {
