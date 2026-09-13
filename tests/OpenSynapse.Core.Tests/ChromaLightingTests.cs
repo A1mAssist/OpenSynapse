@@ -281,15 +281,15 @@ public sealed class ChromaLightingTests
     }
 
     [Fact]
-    public void AudioMeterPulsesPowerAndMacroKeysBelowFullScale()
+    public void AudioMeterKeepsPowerAndMacroKeysInTheRightmostColumn()
     {
-        var active = QuickLightingEngine.RenderAudioMeter(0.5, 0);
-        var silent = QuickLightingEngine.RenderAudioMeter(0, 0);
+        var partial = QuickLightingEngine.RenderAudioMeter(0.5, 0);
+        var full = QuickLightingEngine.RenderAudioMeter(1, 0);
 
         Assert.All(new[] { 16, 33, 50, 67, 84, 101 }, index =>
         {
-            Assert.NotEqual(default, active[index]);
-            Assert.Equal(default, silent[index]);
+            Assert.Equal(default, partial[index]);
+            Assert.Equal(new RazerRgb(255, 0, 0), full[index]);
         });
     }
 
