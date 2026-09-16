@@ -21,6 +21,7 @@ public sealed partial class MainWindow
     private nint _suspendResumeNotificationHandle;
     private bool _displaySuspended;
     private bool _displayStateOn = true;
+    private bool _systemSuspended;
     private readonly SemaphoreSlim _powerTransitionGate = new(1, 1);
 
     private void InitializeDisplayPowerNotification()
@@ -116,8 +117,14 @@ public sealed partial class MainWindow
         _powerTransitionGate.Wait();
         try
         {
+            if (_systemSuspended)
+            {
+                return;
+            }
+            _systemSuspended = true;
             _displayStateOn = false;
             _displaySuspended = true;
+            _setBladeIndicatorDisplayAvailable?.Invoke(false).GetAwaiter().GetResult();
             _viewModel.PrepareForSuspendAsync().GetAwaiter().GetResult();
         }
         catch (Exception exception)
@@ -142,7 +149,15 @@ public sealed partial class MainWindow
                 return;
             }
             _displaySuspended = !available;
+            if (!available)
+            {
+                _setBladeIndicatorDisplayAvailable?.Invoke(false).GetAwaiter().GetResult();
+            }
             _viewModel.SetDisplayAvailableAsync(available).GetAwaiter().GetResult();
+            if (available)
+            {
+                _setBladeIndicatorDisplayAvailable?.Invoke(true).GetAwaiter().GetResult();
+            }
         }
         catch (Exception exception)
         {
@@ -160,11 +175,13 @@ public sealed partial class MainWindow
         _powerTransitionGate.Wait();
         try
         {
+            _systemSuspended = false;
             _viewModel.RequestDeviceRefresh();
             if (_displayStateOn && _displaySuspended)
             {
                 _displaySuspended = false;
                 _viewModel.SetDisplayAvailableAsync(true).GetAwaiter().GetResult();
+                _setBladeIndicatorDisplayAvailable?.Invoke(true).GetAwaiter().GetResult();
             }
         }
         catch (Exception exception)

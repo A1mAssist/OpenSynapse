@@ -62,6 +62,26 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
         Assert.True(reader.Disposed);
     }
 
+    [Fact]
+    public void RefreshRepublishesBothCurrentStates()
+    {
+        var reader = new FakeReader
+        {
+            Snapshot = new WindowsAudioMuteSnapshot(true, true),
+        };
+        var published = new ConcurrentQueue<BladeAudioMuteState>();
+        using var source = new WindowsCoreAudioMuteEventSource(
+            published.Enqueue,
+            () => reader,
+            TimeSpan.FromMilliseconds(20));
+
+        source.Start();
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
+        source.Refresh();
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 4, TimeSpan.FromSeconds(2)));
+        Assert.Equal(2, reader.ReadCount);
+    }
+
     private sealed class FakeReader : IWindowsAudioMuteSnapshotReader
     {
         private int _readCount;

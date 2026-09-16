@@ -43,7 +43,12 @@ public sealed class BladeAudioMuteRuntime : IAsyncDisposable
     public event Action<BladeAudioMuteState>? Synchronized;
     public event Action<Exception>? SynchronizationFailed;
 
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    public Task StartAsync(CancellationToken cancellationToken = default) =>
+        StartAsync(displayAvailable: true, cancellationToken);
+
+    public async Task StartAsync(
+        bool displayAvailable,
+        CancellationToken cancellationToken = default)
     {
         await _lifecycleGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -78,6 +83,10 @@ public sealed class BladeAudioMuteRuntime : IAsyncDisposable
                 _synchronizer = synchronizer;
                 session = null;
                 modeLease = null;
+                if (!displayAvailable)
+                {
+                    await synchronizer.SetDisplayAvailableAsync(false).ConfigureAwait(false);
+                }
                 _source.Start();
             }
             catch
@@ -109,6 +118,29 @@ public sealed class BladeAudioMuteRuntime : IAsyncDisposable
                     await session.DisposeAsync().ConfigureAwait(false);
                 }
                 throw;
+            }
+        }
+        finally
+        {
+            _lifecycleGate.Release();
+        }
+    }
+
+    public async Task SetDisplayAvailableAsync(bool available)
+    {
+        await _lifecycleGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            if (Volatile.Read(ref _started) == 0 || _synchronizer is null)
+            {
+                return;
+            }
+
+            await _synchronizer.SetDisplayAvailableAsync(available).ConfigureAwait(false);
+            if (available)
+            {
+                _source.Refresh();
             }
         }
         finally

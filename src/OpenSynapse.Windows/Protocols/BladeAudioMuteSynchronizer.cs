@@ -14,7 +14,9 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
     private readonly SemaphoreSlim _signal = new(0, 1);
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _worker;
+    private readonly List<TaskCompletionSource> _drainWaiters = [];
     private bool _signalPending;
+    private bool _displayAvailable = true;
     private bool _disposed;
     private string? _lastError;
 
@@ -42,6 +44,10 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
             {
                 return false;
             }
+            if (!_displayAvailable)
+            {
+                return false;
+            }
 
             _pending[state.Target] = state.Muted;
             if (_signalPending)
@@ -55,9 +61,36 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
         }
     }
 
+    public Task SetDisplayAvailableAsync(bool available)
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _displayAvailable = available;
+            if (available)
+            {
+                return Task.CompletedTask;
+            }
+
+            _pending.Clear();
+            _pending[BladeAudioMuteTarget.Speaker] = false;
+            _pending[BladeAudioMuteTarget.Microphone] = false;
+            var completion = new TaskCompletionSource(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            _drainWaiters.Add(completion);
+            if (!_signalPending)
+            {
+                _signalPending = true;
+                _signal.Release();
+            }
+            return completion.Task;
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         var wakeWorker = false;
+        TaskCompletionSource[] drainWaiters;
         lock (_sync)
         {
             if (_disposed)
@@ -66,11 +99,18 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
             }
 
             _disposed = true;
+            drainWaiters = _drainWaiters.ToArray();
+            _drainWaiters.Clear();
             if (!_signalPending)
             {
                 _signalPending = true;
                 wakeWorker = true;
             }
+        }
+
+        foreach (var waiter in drainWaiters)
+        {
+            waiter.TrySetCanceled();
         }
 
         _stop.Cancel();
@@ -99,11 +139,18 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
                 while (true)
                 {
                     KeyValuePair<BladeAudioMuteTarget, bool>[] batch;
+                    TaskCompletionSource[] drainWaiters;
                     lock (_sync)
                     {
                         if (_pending.Count == 0)
                         {
                             _signalPending = false;
+                            drainWaiters = _drainWaiters.ToArray();
+                            _drainWaiters.Clear();
+                            foreach (var waiter in drainWaiters)
+                            {
+                                waiter.TrySetResult();
+                            }
                             break;
                         }
 
