@@ -1,7 +1,11 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private static readonly TimeSpan ForegroundDeviceScanInterval = TimeSpan.FromSeconds(10);
+
     public void RequestDeviceRefresh()
     {
         Interlocked.Exchange(ref _deviceRefreshRequested, 1);
@@ -42,9 +46,7 @@ public sealed partial class MainViewModel
                 await _deviceWatchSignal.WaitAsync(interval, cancellationToken);
                 try
                 {
-                    var snapshot = await _discovery.DiscoverAsync(cancellationToken);
                     var powerState = _powerSourceProvider.IsPluggedIn;
-                    var refreshRequested = Volatile.Read(ref _deviceRefreshRequested) != 0;
                     var previousProfile = _profile.Clone();
                     var previousProfileSwitcher = _applicationProfileSwitcher.Clone();
                     var profileChanged = _applicationProfileSwitcher.Update(
@@ -71,16 +73,31 @@ public sealed partial class MainViewModel
                             profileChanged = false;
                         }
                     }
+
+                    if (Volatile.Read(ref _displayAvailable) == 0)
+                    {
+                        if (profileChanged)
+                        {
+                            Interlocked.Exchange(ref _deviceRefreshRequested, 1);
+                        }
+                        continue;
+                    }
+
                     var powerChanged = _lastPowerState != powerState;
+                    var refreshRequested = Volatile.Read(ref _deviceRefreshRequested) != 0;
                     var displayProfileRequested =
                         Interlocked.Exchange(ref _displayProfileApplyRequested, 0) != 0;
-                    if (!StringComparer.Ordinal.Equals(_deviceFingerprint, CreateDeviceFingerprint(snapshot)) ||
+                    var periodicRefreshDue = Volatile.Read(ref _deviceWatchActive) != 0 &&
+                        DateTimeOffset.UtcNow >= _nextFullDeviceRefresh;
+                    if (refreshRequested ||
                         powerChanged ||
                         profileChanged ||
                         displayProfileRequested ||
-                        refreshRequested ||
-                        DateTimeOffset.UtcNow >= _nextFullDeviceRefresh)
+                        periodicRefreshDue)
                     {
+                        var snapshot = refreshRequested || periodicRefreshDue
+                            ? await _discovery.DiscoverAsync(cancellationToken)
+                            : new DeviceSnapshot(_deviceDescriptors, DateTimeOffset.UtcNow);
                         await RefreshDevicesCoreAsync(
                             snapshot,
                             cancellationToken,
