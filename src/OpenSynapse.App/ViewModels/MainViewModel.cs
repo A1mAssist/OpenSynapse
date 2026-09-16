@@ -95,6 +95,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private int _performanceSamplingEnabled = 1;
     private int _deviceWatchActive = 1;
     private int _displayAvailable = 1;
+    private BladeLogoMode? _displaySuspendedLogoMode;
     private string _internalDisplayResolutionText = "--";
     private string _internalDisplayRefreshRateText = "--";
     private IReadOnlyList<int> _internalDisplayRefreshRates = Array.Empty<int>();
@@ -1440,6 +1441,36 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                         _lightingShadowFingerprint = string.Empty;
                     }
                 }
+            }
+
+            try
+            {
+                if (!available &&
+                    _displaySuspendedLogoMode is null &&
+                    _blade._canSetBladeLogo &&
+                    _blade._confirmedBladeLogoIndex >= 0 &&
+                    _blade._confirmedBladeLogoIndex < BladeLogoModes.Length)
+                {
+                    _displaySuspendedLogoMode = BladeLogoModes[_blade._confirmedBladeLogoIndex];
+                    await _deviceTelemetryReader.SetBladeLogoModeAsync(
+                        _deviceDescriptors,
+                        BladeLogoMode.Off,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                else if (available && _displaySuspendedLogoMode is { } logoMode)
+                {
+                    await _deviceTelemetryReader.SetBladeLogoModeAsync(
+                        _deviceDescriptors,
+                        logoMode,
+                        CancellationToken.None).ConfigureAwait(false);
+                    _displaySuspendedLogoMode = null;
+                }
+            }
+            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            {
+                _diagnosticLog.TryWrite(
+                    "blade-logo",
+                    $"display-state Logo transition failed: {exception}");
             }
         }
         finally

@@ -25,6 +25,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
     private readonly AutoResetEvent _changed = new(false);
     private readonly object _sync = new();
     private Thread? _worker;
+    private int _forcePublish;
     private bool _disposed;
     private string? _lastError;
 
@@ -77,6 +78,21 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
         }
     }
 
+    public void Refresh()
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_worker is null)
+            {
+                throw new InvalidOperationException("Core Audio mute event source is not running.");
+            }
+
+            Interlocked.Exchange(ref _forcePublish, 1);
+            _changed.Set();
+        }
+    }
+
     public void Dispose()
     {
         Thread? worker;
@@ -125,7 +141,8 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                         reader.Changed += SignalChanged;
                     }
                     var current = reader.Read();
-                    PublishChanges(previous, current);
+                    var forcePublish = Interlocked.Exchange(ref _forcePublish, 0) != 0;
+                    PublishChanges(forcePublish ? null : previous, current);
                     previous = current;
                     Volatile.Write(ref _lastError, null);
                 }

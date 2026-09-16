@@ -20,6 +20,7 @@ public sealed partial class MainWindow : Window
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly bool _silentLaunch;
+    private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
     private bool _trayLifecycleEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
@@ -29,12 +30,14 @@ public sealed partial class MainWindow : Window
         AppBehaviorSettings behaviorSettings,
         bool silentLaunch = false,
         Func<bool, Task>? setChromaRestEnabled = null,
-        Func<ChromaRestSnapshot>? getChromaRestSnapshot = null)
+        Func<ChromaRestSnapshot>? getChromaRestSnapshot = null,
+        Func<bool, Task>? setBladeIndicatorDisplayAvailable = null)
     {
         _viewModel = viewModel;
         _behaviorSettings = behaviorSettings;
         _setChromaRestEnabled = setChromaRestEnabled;
         _getChromaRestSnapshot = getChromaRestSnapshot;
+        _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException(AppStrings.Text("Text_693F327E"));

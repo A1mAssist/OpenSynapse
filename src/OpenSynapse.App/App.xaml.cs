@@ -35,6 +35,7 @@ public partial class App : Application
     private MainViewModel? _audioMuteViewModel;
     private string? _activeBladeControlDevicePath;
     private int _audioMuteGeneration;
+    private int _displayAvailable = 1;
     private int _closing;
     private int _emergencyLightingCleanupStarted;
     private int _emergencyMappingCleanupStarted;
@@ -164,7 +165,8 @@ public partial class App : Application
             _behaviorSettings,
             silentLaunch,
             SetChromaRestEnabledAsync,
-            GetChromaRestSnapshot);
+            GetChromaRestSnapshot,
+            SetBladeIndicatorDisplayAvailableAsync);
         RegisterMainWindow(window, viewModel);
         StartChromaRestHost(viewModel);
         InitializeTray(window, viewModel);
@@ -548,7 +550,8 @@ public partial class App : Application
                 audioRuntime.SynchronizationFailed += exception => _diagnosticLog.TryWrite(
                     "audio-mute-sync",
                     $"audio indicator synchronization failed: {exception}");
-                await audioRuntime.StartAsync().ConfigureAwait(false);
+                await audioRuntime.StartAsync(
+                    Volatile.Read(ref _displayAvailable) != 0).ConfigureAwait(false);
 
                 fnRuntime = null;
                 _audioMuteRuntime = audioRuntime;
@@ -676,6 +679,29 @@ public partial class App : Application
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("keyboard-lighting", $"Emergency lighting cleanup failed: {exception}");
+        }
+    }
+
+    private async Task SetBladeIndicatorDisplayAvailableAsync(bool available)
+    {
+        Volatile.Write(ref _displayAvailable, available ? 1 : 0);
+        await _audioMuteRuntimeGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_audioMuteRuntime is not null)
+            {
+                await _audioMuteRuntime.SetDisplayAvailableAsync(available).ConfigureAwait(false);
+            }
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite(
+                "audio-mute-sync",
+                $"display-state indicator transition failed: {exception}");
+        }
+        finally
+        {
+            _audioMuteRuntimeGate.Release();
         }
     }
 
