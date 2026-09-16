@@ -18,6 +18,7 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
     private bool _signalPending;
     private bool _displayAvailable = true;
     private bool _disposed;
+    private Exception? _drainError;
     private string? _lastError;
 
     public BladeAudioMuteSynchronizer(IRazerFeatureSession session)
@@ -75,6 +76,10 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
             _pending.Clear();
             _pending[BladeAudioMuteTarget.Speaker] = false;
             _pending[BladeAudioMuteTarget.Microphone] = false;
+            if (_drainWaiters.Count == 0)
+            {
+                _drainError = null;
+            }
             var completion = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             _drainWaiters.Add(completion);
@@ -140,6 +145,7 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
                 {
                     KeyValuePair<BladeAudioMuteTarget, bool>[] batch;
                     TaskCompletionSource[] drainWaiters;
+                    Exception? drainError;
                     lock (_sync)
                     {
                         if (_pending.Count == 0)
@@ -147,9 +153,18 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
                             _signalPending = false;
                             drainWaiters = _drainWaiters.ToArray();
                             _drainWaiters.Clear();
+                            drainError = _drainError;
+                            _drainError = null;
                             foreach (var waiter in drainWaiters)
                             {
-                                waiter.TrySetResult();
+                                if (drainError is null)
+                                {
+                                    waiter.TrySetResult();
+                                }
+                                else
+                                {
+                                    waiter.TrySetException(drainError);
+                                }
                             }
                             break;
                         }
@@ -173,6 +188,16 @@ public sealed class BladeAudioMuteSynchronizer : IAsyncDisposable
                         catch (Exception exception)
                         {
                             Volatile.Write(ref _lastError, exception.Message);
+                            if (!muted)
+                            {
+                                lock (_sync)
+                                {
+                                    if (!_displayAvailable)
+                                    {
+                                        _drainError ??= exception;
+                                    }
+                                }
+                            }
                             NotifySynchronizationFailed(exception);
                         }
                     }
