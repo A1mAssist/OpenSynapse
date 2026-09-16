@@ -16,7 +16,7 @@
 
 OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。Blade 和 Viper 继续使用各自的产品专用实现，OpenRazer 设备走按能力判断的通用页面。
 
-> 当前版本 `v1.3.6` · Windows 11 x64 · 未签名
+> 当前版本 `v1.3.7` · Windows 11 x64 · 未签名
 
 完整版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 
