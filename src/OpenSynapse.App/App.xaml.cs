@@ -698,6 +698,7 @@ public partial class App : Application
             _diagnosticLog.TryWrite(
                 "audio-mute-sync",
                 $"display-state indicator transition failed: {exception}");
+            throw;
         }
         finally
         {

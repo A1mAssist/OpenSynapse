@@ -19,10 +19,10 @@ public sealed partial class MainWindow
     private SuspendResumeCallback? _suspendResumeCallback;
     private nint _powerNotificationHandle;
     private nint _suspendResumeNotificationHandle;
-    private bool _displaySuspended;
     private bool _displayStateOn = true;
     private bool _systemSuspended;
-    private readonly SemaphoreSlim _powerTransitionGate = new(1, 1);
+    private readonly object _powerTransitionGate = new();
+    private Task _powerTransition = Task.CompletedTask;
 
     private void InitializeDisplayPowerNotification()
     {
@@ -114,84 +114,75 @@ public sealed partial class MainWindow
 
     private void PrepareForSuspend()
     {
-        _powerTransitionGate.Wait();
-        try
+        lock (_powerTransitionGate)
         {
             if (_systemSuspended)
             {
                 return;
             }
             _systemSuspended = true;
-            _displayStateOn = false;
-            _displaySuspended = true;
-            _setBladeIndicatorDisplayAvailable?.Invoke(false).GetAwaiter().GetResult();
-            _viewModel.PrepareForSuspendAsync().GetAwaiter().GetResult();
-        }
-        catch (Exception exception)
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-                _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError", exception.Message)));
-        }
-        finally
-        {
-            _powerTransitionGate.Release();
+            QueueDisplayTransition(suspending: true);
         }
     }
 
     private void SetConsoleDisplayState(bool available)
     {
-        _powerTransitionGate.Wait();
-        try
+        lock (_powerTransitionGate)
         {
             _displayStateOn = available;
-            if (_displaySuspended == !available)
-            {
-                return;
-            }
-            _displaySuspended = !available;
-            if (!available)
-            {
-                _setBladeIndicatorDisplayAvailable?.Invoke(false).GetAwaiter().GetResult();
-            }
-            _viewModel.SetDisplayAvailableAsync(available).GetAwaiter().GetResult();
-            if (available)
-            {
-                _setBladeIndicatorDisplayAvailable?.Invoke(true).GetAwaiter().GetResult();
-            }
-        }
-        catch (Exception exception)
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-                _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError", exception.Message)));
-        }
-        finally
-        {
-            _powerTransitionGate.Release();
+            QueueDisplayTransition(suspending: false);
         }
     }
 
     private void ResumeFromSuspend()
     {
-        _powerTransitionGate.Wait();
-        try
+        lock (_powerTransitionGate)
         {
+            if (!_systemSuspended)
+            {
+                return;
+            }
             _systemSuspended = false;
             _viewModel.RequestDeviceRefresh();
-            if (_displayStateOn && _displaySuspended)
+            QueueDisplayTransition(suspending: false);
+        }
+    }
+
+    private void QueueDisplayTransition(bool suspending)
+    {
+        var available = _displayStateOn && !_systemSuspended;
+        _powerTransition = _powerTransition.ContinueWith(
+            _ => RunDisplayTransitionAsync(available, suspending),
+            CancellationToken.None,
+            TaskContinuationOptions.None,
+            TaskScheduler.Default).Unwrap();
+    }
+
+    private async Task RunDisplayTransitionAsync(bool available, bool suspending)
+    {
+        try
+        {
+            if (suspending)
             {
-                _displaySuspended = false;
-                _viewModel.SetDisplayAvailableAsync(true).GetAwaiter().GetResult();
-                _setBladeIndicatorDisplayAvailable?.Invoke(true).GetAwaiter().GetResult();
+                await _viewModel.PrepareForSuspendAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                await _viewModel.SetDisplayAvailableAsync(available).ConfigureAwait(false);
+            }
+
+            if (_setBladeIndicatorDisplayAvailable is not null)
+            {
+                await _setBladeIndicatorDisplayAvailable(available)
+                    .WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
             }
         }
         catch (Exception exception)
         {
             _dispatcherQueue.TryEnqueue(() =>
-                _viewModel.ReportApplicationError(AppStrings.FormatText("SuspendFanRestoreError", exception.Message)));
-        }
-        finally
-        {
-            _powerTransitionGate.Release();
+                _viewModel.ReportApplicationError(AppStrings.FormatText(
+                    "SuspendFanRestoreError",
+                    exception.Message)));
         }
     }
 

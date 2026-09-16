@@ -95,6 +95,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private int _performanceSamplingEnabled = 1;
     private int _deviceWatchActive = 1;
     private int _displayAvailable = 1;
+    private int _displayBrightnessRestorePending;
     private BladeLogoMode? _displaySuspendedLogoMode;
     private string _internalDisplayResolutionText = "--";
     private string _internalDisplayRefreshRateText = "--";
@@ -1389,13 +1390,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public async Task PrepareForSuspendAsync()
     {
+        await SetDisplayAvailableAsync(false).ConfigureAwait(false);
+
         var error = await StopBladeFanControlAsync("suspend").ConfigureAwait(false);
         if (error is not null)
         {
             _diagnosticLog.TryWrite("blade-fan", $"suspend restore incomplete: {error}");
         }
-
-        await SetDisplayAvailableAsync(false).ConfigureAwait(false);
     }
 
     public async Task SetDisplayAvailableAsync(bool available)
@@ -1405,44 +1406,49 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             SignalPerformanceSamplingStateChanged();
         }
-        await _deviceOperationGate.WaitAsync().ConfigureAwait(false);
-        try
+        Interlocked.Exchange(ref _displayBrightnessRestorePending, 1);
+        if (!available)
         {
-            if (_bladeLightingController is not null)
+            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
+        }
+        if (_bladeLightingController is not null)
+        {
+            try
             {
-                try
+                await _bladeLightingController.SetDisplayAvailableAsync(available).ConfigureAwait(false);
+                if (!available)
                 {
-                    await _bladeLightingController.SetDisplayAvailableAsync(available).ConfigureAwait(false);
-                    if (!available)
+                    var blade = _deviceDescriptors.FirstOrDefault(device =>
+                        device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+                        device.Access == DeviceAccessState.Available);
+                    if (blade is not null)
                     {
-                        var blade = _deviceDescriptors.FirstOrDefault(device =>
-                            device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
-                            device.Access == DeviceAccessState.Available);
-                        if (blade is not null)
-                        {
-                            await _bladeLightingController.ApplyAsync(
-                                _deviceDescriptors,
-                                BladeLightingEffect.Off,
-                                CancellationToken.None).ConfigureAwait(false);
-                            _bladeLightingDevicePath = blade.Id;
-                            _lightingShadowFingerprint = $"display-off\n{blade.Id}";
-                        }
-                    }
-                }
-                catch (Exception exception) when (IsExpectedRuntimeException(exception))
-                {
-                    _diagnosticLog.TryWrite("keyboard-lighting", $"display-state lighting transition failed: {exception}");
-                }
-                finally
-                {
-                    if (available)
-                    {
-                        _bladeLightingDevicePath = string.Empty;
-                        _lightingShadowFingerprint = string.Empty;
+                        await _bladeLightingController.ApplyAsync(
+                            _deviceDescriptors,
+                            BladeLightingEffect.Off,
+                            CancellationToken.None).ConfigureAwait(false);
+                        _bladeLightingDevicePath = blade.Id;
+                        _lightingShadowFingerprint = $"display-off\n{blade.Id}";
                     }
                 }
             }
+            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            {
+                _diagnosticLog.TryWrite("keyboard-lighting", $"display-state lighting transition failed: {exception}");
+            }
+            finally
+            {
+                if (available)
+                {
+                    _bladeLightingDevicePath = string.Empty;
+                    _lightingShadowFingerprint = string.Empty;
+                }
+            }
+        }
 
+        await _deviceOperationGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
             try
             {
                 if (!available &&
@@ -2133,6 +2139,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 errors.Insert(0, snapshot.ErrorMessage);
             }
 
+            if (Volatile.Read(ref _displayAvailable) != 0 &&
+                Interlocked.Exchange(ref _displayBrightnessRestorePending, 0) != 0)
+            {
+                RefreshBladeLightingEditor();
+            }
+
             RebuildDiagnostics(snapshot with { Devices = visibleDevices }, telemetry, errors);
             SetDeviceQueryError(errors.Count == 0
                 ? string.Empty
@@ -2687,6 +2699,22 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             var applied = false;
             await RunDeviceOperationAsync(AppStrings.Text("Text_5F0C27DB"), async () =>
             {
+                if (Volatile.Read(ref _displayAvailable) == 0)
+                {
+                    lock (_bladeBrightnessGate)
+                    {
+                        if (_desiredBladeBrightness == requested)
+                        {
+                            _desiredBladeBrightness = null;
+                        }
+                    }
+                    (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade)
+                        .KeyboardBrightness = requested;
+                    SetBladeBrightness(requested, confirm: false);
+                    await SaveProfileAsync(CancellationToken.None);
+                    return;
+                }
+
                 try
                 {
                     await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
@@ -2742,6 +2770,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             }
         }
 
+        if (lastWritten is byte persistedBrightness &&
+            Volatile.Read(ref _displayAvailable) == 0)
+        {
+            (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade)
+                .KeyboardBrightness = persistedBrightness;
+            await SaveProfileAsync(CancellationToken.None);
+            return;
+        }
+
         if (lastWritten is not null && Volatile.Read(ref _disposed) == 0)
         {
             ScheduleBladeBrightnessVerification();
@@ -2758,6 +2795,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     {
         await Task.Delay(BladeBrightnessVerificationDelay);
         if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
+            Volatile.Read(ref _displayAvailable) == 0 ||
             Volatile.Read(ref _disposed) != 0)
         {
             return;
@@ -2771,6 +2809,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 hasPendingBrightness = _desiredBladeBrightness is not null;
             }
             if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
+                Volatile.Read(ref _displayAvailable) == 0 ||
                 hasPendingBrightness)
             {
                 return;
@@ -2779,6 +2818,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             var actual = await _deviceTelemetryReader.ReadBladeKeyboardBrightnessAsync(
                 _deviceDescriptors,
                 CancellationToken.None);
+            if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
+                Volatile.Read(ref _displayAvailable) == 0)
+            {
+                return;
+            }
             SetBladeBrightness(actual);
             _profile.Global.Blade.KeyboardBrightness = actual;
             await SaveProfileAsync(CancellationToken.None);
@@ -3297,7 +3341,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _lastDeviceTelemetry = telemetry;
         if (telemetry.BladeKeyboardBrightness is byte brightness)
         {
-            SetBladeBrightness(brightness);
+            if (Volatile.Read(ref _displayBrightnessRestorePending) == 0)
+            {
+                SetBladeBrightness(brightness);
+            }
             CanSetBladeBrightness = true;
         }
         if (telemetry.BladePerformanceMode is BladePerformanceMode performanceMode)

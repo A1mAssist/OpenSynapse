@@ -25,7 +25,22 @@ public sealed class BladeAudioMuteDisplayTests
         Assert.Equal(2, session.States.Count(state => !state.Muted));
     }
 
-    private sealed class RecordingSession : IRazerFeatureSession
+    [Fact]
+    public async Task DisplayOffReportsAnIndicatorWriteFailure()
+    {
+        var session = new RecordingSession(BladeAudioMuteTarget.Microphone);
+        await using var synchronizer = new BladeAudioMuteSynchronizer(session);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => synchronizer.SetDisplayAvailableAsync(false));
+
+        Assert.Equal("Microphone write failed.", error.Message);
+        Assert.Contains(
+            new BladeAudioMuteState(BladeAudioMuteTarget.Speaker, false),
+            session.States);
+    }
+
+    private sealed class RecordingSession(BladeAudioMuteTarget? failingTarget = null) : IRazerFeatureSession
     {
         private byte _transactionId;
 
@@ -50,6 +65,10 @@ public sealed class BladeAudioMuteDisplayTests
             var state = new BladeAudioMuteState(
                 (BladeAudioMuteTarget)arguments.Span[1],
                 arguments.Span[2] != 0);
+            if (state.Target == failingTarget)
+            {
+                throw new InvalidOperationException($"{state.Target} write failed.");
+            }
             States.Add(state);
             var response = RazerFeatureReport.CreateRequest(
                 transactionId,
