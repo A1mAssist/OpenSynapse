@@ -23,7 +23,8 @@ public sealed class VerifiedProfileApplier
         RazerDeviceTelemetry telemetry,
         IRazerDeviceTelemetryReader reader,
         bool? isPluggedIn,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool applyKeyboardBrightness = true)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(devices);
@@ -170,7 +171,7 @@ public sealed class VerifiedProfileApplier
                 }
             }
 
-            if (bladeErrors.Count == 0 && profile.Blade.KeyboardBrightness is byte brightness)
+            if (applyKeyboardBrightness && bladeErrors.Count == 0 && profile.Blade.KeyboardBrightness is byte brightness)
             {
                 await ApplyValueAsync(
                     bladeErrors,

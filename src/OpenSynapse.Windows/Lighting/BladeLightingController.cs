@@ -53,7 +53,7 @@ public interface IBladeLightingController : IAsyncDisposable
 
     Task StopAsync();
 
-    Task PrepareForSuspendAsync();
+    Task SetDisplayAvailableAsync(bool available);
 
     Task ApplyExternalAsync(
         IReadOnlyList<DeviceDescriptor> devices,
@@ -84,6 +84,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private bool _nativeEffectActive;
     private string? _nativeEffectDevicePath;
     private int _turnOffOnStop;
+    private int _displayAvailable = 1;
     private int _disposed;
 
     public BladeLightingController()
@@ -138,6 +139,10 @@ public sealed class BladeLightingController : IBladeLightingController
         try
         {
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            if (Volatile.Read(ref _displayAvailable) == 0 && effect.Mode != BladeLightingMode.Off)
+            {
+                return;
+            }
             var (device, manifest) = FindReadyBlade(devices);
             await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
             await StopCoreAsync().ConfigureAwait(false);
@@ -165,6 +170,12 @@ public sealed class BladeLightingController : IBladeLightingController
                         device.Id,
                         nativeRequest,
                         cancellationToken).ConfigureAwait(false);
+                    if (effect.Mode == BladeLightingMode.Off)
+                    {
+                        await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+                        _runtimeCompletion = Task.CompletedTask;
+                        return;
+                    }
                     _nativeEffectActive = true;
                     _nativeEffectDevicePath = device.Id;
                     _runtimeCompletion = Task.CompletedTask;
@@ -233,6 +244,10 @@ public sealed class BladeLightingController : IBladeLightingController
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (Volatile.Read(ref _displayAvailable) == 0)
+            {
+                return;
+            }
             if (ReferenceEquals(_externalSource, source) &&
                 _runtime is not null &&
                 !_runtimeCompletion.IsCompleted)
@@ -287,21 +302,14 @@ public sealed class BladeLightingController : IBladeLightingController
 
     public Task RuntimeCompletion => _runtimeCompletion;
 
-    public async Task StopAsync()
+    public async Task SetDisplayAvailableAsync(bool available)
     {
-        await _gate.WaitAsync().ConfigureAwait(false);
-        try
+        Volatile.Write(ref _displayAvailable, available ? 1 : 0);
+        if (available)
         {
-            await StopCoreAsync().ConfigureAwait(false);
+            return;
         }
-        finally
-        {
-            _gate.Release();
-        }
-    }
 
-    public async Task PrepareForSuspendAsync()
-    {
         Interlocked.Exchange(ref _turnOffOnStop, 1);
         try
         {
@@ -354,6 +362,19 @@ public sealed class BladeLightingController : IBladeLightingController
         finally
         {
             Interlocked.Exchange(ref _turnOffOnStop, 0);
+        }
+    }
+
+    public async Task StopAsync()
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await StopCoreAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
         }
     }
 
@@ -470,6 +491,7 @@ public sealed class BladeLightingController : IBladeLightingController
     {
         request = effect.Mode switch
         {
+            BladeLightingMode.Off => BladeLightingProtocol.CreateOffRequest(),
             BladeLightingMode.Static =>
                 BladeLightingProtocol.CreateStaticRequest(effect.Color),
             BladeLightingMode.Wave =>
