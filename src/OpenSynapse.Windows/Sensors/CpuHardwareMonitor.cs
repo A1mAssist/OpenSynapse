@@ -10,9 +10,12 @@ internal sealed class CpuHardwareMonitor : IDisposable
         PdhWildcardCounter.TryCreate(@"\Energy Meter(*)\Power");
 
     internal CpuHardwareSample Read() => new(
-        SelectTemperatureCelsius(_temperature?.Read().Select(sample => sample.Value) ?? []),
+        ReadTemperatureCelsius(),
         SelectPackagePowerWatts(_power?.Read() ?? []),
         ReadWindowsClock());
+
+    internal double? ReadTemperatureCelsius() =>
+        SelectTemperatureCelsius(_temperature?.Read().Select(sample => sample.Value) ?? []);
 
     public void Dispose()
     {

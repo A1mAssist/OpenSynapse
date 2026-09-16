@@ -77,6 +77,25 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             selected?.IsIntegrated == true ? "Shared memory" : "Dedicated memory");
     }
 
+    public async ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)> SampleTemperaturesAsync(
+        bool includeCpu,
+        bool includeGpu,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var cpu = includeCpu ? _cpuHardware.ReadTemperatureCelsius() : null;
+        var selected = includeGpu ? _gpuActivity.ReadSelectedTemperature() : null;
+        var gpu = selected?.VendorId == 0x1002
+            ? _amdGpu.Read().TemperatureCelsius ?? selected?.TemperatureCelsius
+            : selected?.TemperatureCelsius;
+        if (includeGpu && selected is { VendorId: 0x10DE } && gpu is null)
+        {
+            gpu = (await ReadNvidiaGpuThrottledAsync(cancellationToken).ConfigureAwait(false))
+                ?.TemperatureCelsius;
+        }
+        return (cpu, gpu);
+    }
+
     public void Dispose()
     {
         _gpuActivity.Dispose();

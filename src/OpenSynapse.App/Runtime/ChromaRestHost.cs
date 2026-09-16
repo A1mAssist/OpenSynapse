@@ -20,7 +20,6 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     // Chroma clients heartbeat every second; two seconds bounds recovery without
     // treating a normal short scheduling pause as a game exit.
     private static readonly TimeSpan SessionTimeout = TimeSpan.FromSeconds(2);
-    private static readonly TimeSpan SessionSweepInterval = TimeSpan.FromMilliseconds(100);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _devices;
@@ -236,12 +235,26 @@ internal sealed class ChromaRestHost : IAsyncDisposable
              method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
         {
             int tick;
+            var alive = false;
             lock (_gate)
             {
-                session.LastHeartbeat = DateTimeOffset.UtcNow;
-                tick = ++session.Tick;
+                alive = _sessions.TryGetValue(session.Id, out var current) &&
+                    ReferenceEquals(current, session);
+                if (alive)
+                {
+                    session.LastHeartbeat = DateTimeOffset.UtcNow;
+                    tick = ++session.Tick;
+                }
+                else
+                {
+                    tick = 0;
+                }
             }
-            await WriteResponseAsync(writer, 200, new { tick, result = Success }).ConfigureAwait(false);
+            await WriteResponseAsync(writer, 200, new
+            {
+                tick,
+                result = alive ? Success : DeviceNotConnected,
+            }).ConfigureAwait(false);
             return;
         }
         if (suffix.Equals("keyboard", StringComparison.OrdinalIgnoreCase) && (method.Equals("PUT", StringComparison.OrdinalIgnoreCase) || method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
@@ -335,16 +348,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             }
             if (signalSweep)
             {
-                try
-                {
-                    _sessionAvailable.Release();
-                }
-                catch (SemaphoreFullException)
-                {
-                }
-                catch (ObjectDisposedException) when (_stop.IsCancellationRequested)
-                {
-                }
+                SignalSessionSweep();
             }
             if (stopping)
             {
@@ -530,6 +534,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                         session.LastHeartbeat = DateTimeOffset.UtcNow;
                     }
                 }
+                SignalSessionSweep();
             }
         }
     }
@@ -673,33 +678,41 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         {
             while (!_stop.IsCancellationRequested)
             {
-                await _sessionAvailable.WaitAsync(_stop.Token).ConfigureAwait(false);
-                using var timer = new PeriodicTimer(SessionSweepInterval);
-                while (await timer.WaitForNextTickAsync(_stop.Token).ConfigureAwait(false))
+                TimeSpan wait;
+                lock (_gate)
                 {
-                    Session[] expired;
-                    lock (_gate)
-                    {
-                        if (_sessions.Count == 0)
-                        {
-                            break;
-                        }
+                    var nextExpiry = _sessions.Values
+                        .Where(item => !item.ApplyInProgress)
+                        .Select(item => item.LastHeartbeat + SessionTimeout)
+                        .DefaultIfEmpty(DateTimeOffset.MaxValue)
+                        .Min();
+                    wait = nextExpiry == DateTimeOffset.MaxValue
+                        ? Timeout.InfiniteTimeSpan
+                        : TimeSpan.FromTicks(Math.Max(0, (nextExpiry - DateTimeOffset.UtcNow).Ticks));
+                }
 
-                        expired = _sessions.Values
-                            .Where(item => !item.ApplyInProgress && DateTimeOffset.UtcNow - item.LastHeartbeat > SessionTimeout)
-                            .ToArray();
+                if (await _sessionAvailable.WaitAsync(wait, _stop.Token).ConfigureAwait(false))
+                {
+                    continue;
+                }
+
+                Session[] expired;
+                lock (_gate)
+                {
+                    expired = _sessions.Values
+                        .Where(item => !item.ApplyInProgress &&
+                            DateTimeOffset.UtcNow - item.LastHeartbeat >= SessionTimeout)
+                        .ToArray();
+                }
+                foreach (var session in expired)
+                {
+                    try
+                    {
+                        await RemoveSessionAsync(session, requireExpired: true).ConfigureAwait(false);
                     }
-
-                    foreach (var session in expired)
+                    catch when (!_stop.IsCancellationRequested)
                     {
-                        try
-                        {
-                            await RemoveSessionAsync(session).ConfigureAwait(false);
-                        }
-                        catch when (!_stop.IsCancellationRequested)
-                        {
-                            Interlocked.Increment(ref _sessionRecoveryFailures);
-                        }
+                        Interlocked.Increment(ref _sessionRecoveryFailures);
                     }
                 }
             }
@@ -707,7 +720,21 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
     }
 
-    private async Task RemoveSessionAsync(Session session)
+    private void SignalSessionSweep()
+    {
+        try
+        {
+            _sessionAvailable.Release();
+        }
+        catch (SemaphoreFullException)
+        {
+        }
+        catch (ObjectDisposedException) when (_stop.IsCancellationRequested)
+        {
+        }
+    }
+
+    private async Task RemoveSessionAsync(Session session, bool requireExpired = false)
     {
         await _effectGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         try
@@ -716,7 +743,10 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             bool wasActive;
             lock (_gate)
             {
-                removed = _sessions.Remove(session.Id);
+                removed = (!requireExpired ||
+                           !session.ApplyInProgress &&
+                           DateTimeOffset.UtcNow - session.LastHeartbeat >= SessionTimeout) &&
+                    _sessions.Remove(session.Id);
                 wasActive = session.Active;
                 session.Active = false;
             }

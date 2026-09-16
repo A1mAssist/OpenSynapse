@@ -7,44 +7,45 @@ public readonly record struct WindowsAudioMuteSnapshot(bool SpeakerMuted, bool M
 
 internal interface IWindowsAudioMuteSnapshotReader : IDisposable
 {
+    event Action? Changed;
     WindowsAudioMuteSnapshot Read();
 }
 
 /// <summary>
-/// Polls the current default Core Audio endpoints on one COM-initialized thread.
-/// Reopening the reader after a failure also handles default endpoint changes.
+/// Observes default Core Audio endpoints on one COM-initialized thread.
 /// </summary>
 public sealed class WindowsCoreAudioMuteEventSource : IDisposable
 {
-    private static readonly TimeSpan DefaultPollInterval = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan DefaultRetryInterval = TimeSpan.FromSeconds(5);
 
     private readonly Action<BladeAudioMuteState> _publish;
     private readonly Func<IWindowsAudioMuteSnapshotReader> _readerFactory;
-    private readonly TimeSpan _pollInterval;
-    private readonly ManualResetEventSlim _stop = new(false);
+    private readonly TimeSpan _retryInterval;
+    private readonly ManualResetEvent _stop = new(false);
+    private readonly AutoResetEvent _changed = new(false);
     private readonly object _sync = new();
     private Thread? _worker;
     private bool _disposed;
     private string? _lastError;
 
     public WindowsCoreAudioMuteEventSource(Action<BladeAudioMuteState> publish)
-        : this(publish, static () => new CoreAudioMuteSnapshotReader(), DefaultPollInterval)
+        : this(publish, static () => new CoreAudioMuteSnapshotReader(), DefaultRetryInterval)
     {
     }
 
     internal WindowsCoreAudioMuteEventSource(
         Action<BladeAudioMuteState> publish,
         Func<IWindowsAudioMuteSnapshotReader> readerFactory,
-        TimeSpan pollInterval)
+        TimeSpan retryInterval)
     {
         _publish = publish ?? throw new ArgumentNullException(nameof(publish));
         _readerFactory = readerFactory ?? throw new ArgumentNullException(nameof(readerFactory));
-        if (pollInterval <= TimeSpan.Zero)
+        if (retryInterval <= TimeSpan.Zero)
         {
-            throw new ArgumentOutOfRangeException(nameof(pollInterval));
+            throw new ArgumentOutOfRangeException(nameof(retryInterval));
         }
 
-        _pollInterval = pollInterval;
+        _retryInterval = retryInterval;
     }
 
     public string? LastError => Volatile.Read(ref _lastError);
@@ -53,7 +54,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
 
     internal static void ToggleDefaultCaptureMute()
     {
-        using var reader = new CoreAudioMuteSnapshotReader();
+        using var reader = new CoreAudioMuteSnapshotReader(observe: false);
         reader.ToggleMute(1);
     }
 
@@ -92,24 +93,37 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             _stop.Set();
         }
 
-        if (worker is not null && worker != Thread.CurrentThread)
+        if (worker is null)
+        {
+            _stop.Dispose();
+            _changed.Dispose();
+        }
+        else if (worker != Thread.CurrentThread)
         {
             worker.Join();
         }
-        _stop.Dispose();
     }
 
     private void Worker()
     {
         IWindowsAudioMuteSnapshotReader? reader = null;
         WindowsAudioMuteSnapshot? previous = null;
+        WaitHandle[] waitHandles = [_stop, _changed];
         try
         {
-            while (!_stop.IsSet)
+            while (true)
             {
+                if (_stop.WaitOne(0))
+                {
+                    break;
+                }
                 try
                 {
-                    reader ??= _readerFactory();
+                    if (reader is null)
+                    {
+                        reader = _readerFactory();
+                        reader.Changed += SignalChanged;
+                    }
                     var current = reader.Read();
                     PublishChanges(previous, current);
                     previous = current;
@@ -123,16 +137,51 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                     {
                         NotifyReadFailed(exception);
                     }
-                    reader?.Dispose();
+                    if (reader is not null)
+                    {
+                        reader.Changed -= SignalChanged;
+                        reader.Dispose();
+                    }
                     reader = null;
                 }
 
-                _stop.Wait(_pollInterval);
+                if (WaitHandle.WaitAny(waitHandles, reader is null ? _retryInterval : Timeout.InfiniteTimeSpan) == 0)
+                {
+                    break;
+                }
             }
         }
         finally
         {
-            reader?.Dispose();
+            try
+            {
+                if (reader is not null)
+                {
+                    reader.Changed -= SignalChanged;
+                    reader.Dispose();
+                }
+            }
+            finally
+            {
+                _stop.Dispose();
+                _changed.Dispose();
+            }
+        }
+    }
+
+    private void SignalChanged()
+    {
+        if (Volatile.Read(ref _disposed))
+        {
+            return;
+        }
+        try
+        {
+            _changed.Set();
+        }
+        catch (ObjectDisposedException)
+        {
+            // An already-dispatched COM callback may finish after unregistering.
         }
     }
 
@@ -146,7 +195,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             }
             catch
             {
-                // Diagnostics must not stop the Core Audio polling thread.
+                // Diagnostics must not stop Core Audio observation.
             }
         }
     }
@@ -186,9 +235,16 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             new("5CDF2C82-841E-4546-9722-0CF74078229A");
 
         private IMMDeviceEnumerator? _enumerator;
+        private readonly EndpointNotification? _endpointNotification;
+        private readonly VolumeNotification? _volumeNotification;
+        private IAudioEndpointVolume? _speaker;
+        private IAudioEndpointVolume? _microphone;
+        private int _rebind = 1;
         private readonly bool _uninitializeCom;
 
-        internal CoreAudioMuteSnapshotReader()
+        public event Action? Changed;
+
+        internal CoreAudioMuteSnapshotReader(bool observe = true)
         {
             var result = CoInitializeEx(0, CoInitMultithreaded);
             if (result < 0 && result != RpcEChangedMode)
@@ -201,9 +257,17 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             {
                 var type = Type.GetTypeFromCLSID(DeviceEnumeratorClassId, throwOnError: true)!;
                 _enumerator = (IMMDeviceEnumerator)Activator.CreateInstance(type)!;
+                if (observe)
+                {
+                    _endpointNotification = new EndpointNotification(this);
+                    _volumeNotification = new VolumeNotification(this);
+                    ThrowIfFailed(_enumerator.RegisterEndpointNotificationCallback(_endpointNotification));
+                }
             }
             catch
             {
+                Release(_enumerator);
+                _enumerator = null;
                 if (_uninitializeCom)
                 {
                     CoUninitialize();
@@ -212,36 +276,123 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             }
         }
 
-        public WindowsAudioMuteSnapshot Read() => new(ReadMute(ERender), ReadMute(ECapture));
+        public WindowsAudioMuteSnapshot Read()
+        {
+            if (Interlocked.Exchange(ref _rebind, 0) != 0)
+            {
+                BindEndpoints();
+            }
+
+            return new(ReadMute(_speaker), ReadMute(_microphone));
+        }
 
         public void Dispose()
         {
-            Release(Interlocked.Exchange(ref _enumerator, null));
+            var enumerator = Interlocked.Exchange(ref _enumerator, null);
+            if (enumerator is not null && _endpointNotification is not null)
+            {
+                _ = enumerator.UnregisterEndpointNotificationCallback(_endpointNotification);
+            }
+            ReleaseVolume(ref _speaker);
+            ReleaseVolume(ref _microphone);
+            Release(enumerator);
             if (_uninitializeCom)
             {
                 CoUninitialize();
             }
         }
 
-        private bool ReadMute(int dataFlow)
+        private void BindEndpoints()
         {
-            var enumerator = _enumerator ??
-                throw new ObjectDisposedException(nameof(CoreAudioMuteSnapshotReader));
+            ReleaseVolume(ref _speaker);
+            ReleaseVolume(ref _microphone);
+            _speaker = OpenVolume(ERender);
+            _microphone = OpenVolume(ECapture);
+        }
+
+        private IAudioEndpointVolume OpenVolume(int dataFlow)
+        {
+            var enumerator = _enumerator ?? throw new ObjectDisposedException(nameof(CoreAudioMuteSnapshotReader));
             IMMDevice? device = null;
-            IAudioEndpointVolume? volume = null;
             try
             {
                 ThrowIfFailed(enumerator.GetDefaultAudioEndpoint(dataFlow, EMultimedia, out device));
                 var iid = AudioEndpointVolumeInterfaceId;
                 ThrowIfFailed(device.Activate(ref iid, ClsctxAll, 0, out var value));
-                volume = (IAudioEndpointVolume)value;
-                ThrowIfFailed(volume.GetMute(out var muted));
-                return muted;
+                var volume = (IAudioEndpointVolume)value;
+                try
+                {
+                    if (_volumeNotification is not null)
+                    {
+                        ThrowIfFailed(volume.RegisterControlChangeNotify(_volumeNotification));
+                    }
+                    return volume;
+                }
+                catch
+                {
+                    Release(volume);
+                    throw;
+                }
             }
             finally
             {
-                Release(volume);
                 Release(device);
+            }
+        }
+
+        private static bool ReadMute(IAudioEndpointVolume? volume)
+        {
+            if (volume is null)
+            {
+                throw new InvalidOperationException("The default Core Audio endpoint is unavailable.");
+            }
+            ThrowIfFailed(volume.GetMute(out var muted));
+            return muted;
+        }
+
+        private void ReleaseVolume(ref IAudioEndpointVolume? volume)
+        {
+            var current = volume;
+            volume = null;
+            if (current is not null && _volumeNotification is not null)
+            {
+                _ = current.UnregisterControlChangeNotify(_volumeNotification);
+            }
+            Release(current);
+        }
+
+        private void EndpointChanged()
+        {
+            Volatile.Write(ref _rebind, 1);
+            Changed?.Invoke();
+        }
+
+        private void VolumeChanged() => Changed?.Invoke();
+
+        [ComVisible(true)]
+        private sealed class EndpointNotification(CoreAudioMuteSnapshotReader owner) : IMMNotificationClient
+        {
+            public int OnDeviceStateChanged(string deviceId, uint newState) => 0;
+            public int OnDeviceAdded(string deviceId) => 0;
+            public int OnDeviceRemoved(string deviceId) => 0;
+            public int OnDefaultDeviceChanged(int dataFlow, int role, string? deviceId)
+            {
+                if (role == EMultimedia && (dataFlow == ERender || dataFlow == ECapture))
+                {
+                    owner.EndpointChanged();
+                }
+                return 0;
+            }
+            public int OnPropertyValueChanged(string deviceId, PropertyKey propertyKey) => 0;
+        }
+
+        [ComVisible(true)]
+        private sealed class VolumeNotification(CoreAudioMuteSnapshotReader owner) : IAudioEndpointVolumeCallback
+        {
+            public int OnNotify(nint notificationData)
+            {
+                owner.VolumeChanged();
+                return 0;
             }
         }
 
@@ -291,8 +442,35 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
         [PreserveSig] int EnumAudioEndpoints(int dataFlow, uint stateMask, out nint devices);
         [PreserveSig] int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice endpoint);
         [PreserveSig] int GetDevice([MarshalAs(UnmanagedType.LPWStr)] string id, out IMMDevice endpoint);
-        [PreserveSig] int RegisterEndpointNotificationCallback(nint client);
-        [PreserveSig] int UnregisterEndpointNotificationCallback(nint client);
+        [PreserveSig] int RegisterEndpointNotificationCallback(IMMNotificationClient client);
+        [PreserveSig] int UnregisterEndpointNotificationCallback(IMMNotificationClient client);
+    }
+
+    [ComVisible(true)]
+    [Guid("7991EEC9-7E89-4D85-8390-6C703CEC60C0")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IMMNotificationClient
+    {
+        [PreserveSig] int OnDeviceStateChanged([MarshalAs(UnmanagedType.LPWStr)] string deviceId, uint newState);
+        [PreserveSig] int OnDeviceAdded([MarshalAs(UnmanagedType.LPWStr)] string deviceId);
+        [PreserveSig] int OnDeviceRemoved([MarshalAs(UnmanagedType.LPWStr)] string deviceId);
+        [PreserveSig] int OnDefaultDeviceChanged(int dataFlow, int role, [MarshalAs(UnmanagedType.LPWStr)] string? deviceId);
+        [PreserveSig] int OnPropertyValueChanged([MarshalAs(UnmanagedType.LPWStr)] string deviceId, PropertyKey propertyKey);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly struct PropertyKey
+    {
+        public readonly Guid FormatId;
+        public readonly uint PropertyId;
+    }
+
+    [ComVisible(true)]
+    [Guid("657804FA-D6AD-4496-8A60-352752AF4F89")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IAudioEndpointVolumeCallback
+    {
+        [PreserveSig] int OnNotify(nint notificationData);
     }
 
     [ComImport]
@@ -315,8 +493,8 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IAudioEndpointVolume
     {
-        [PreserveSig] int RegisterControlChangeNotify(nint notify);
-        [PreserveSig] int UnregisterControlChangeNotify(nint notify);
+        [PreserveSig] int RegisterControlChangeNotify(IAudioEndpointVolumeCallback notify);
+        [PreserveSig] int UnregisterControlChangeNotify(IAudioEndpointVolumeCallback notify);
         [PreserveSig] int GetChannelCount(out uint count);
         [PreserveSig] int SetMasterVolumeLevel(float level, nint eventContext);
         [PreserveSig] int SetMasterVolumeLevelScalar(float level, nint eventContext);
