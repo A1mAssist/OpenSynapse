@@ -2066,7 +2066,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                     errors.Count));
             LastDeviceRefreshText = AppStrings.FormatText("DeviceScanTime",
                 snapshot.CapturedAt.ToLocalTime());
-            _nextFullDeviceRefresh = DateTimeOffset.UtcNow.AddSeconds(30);
+            _nextFullDeviceRefresh = DateTimeOffset.UtcNow + ForegroundDeviceScanInterval;
             Interlocked.Exchange(ref _deviceRefreshRequested, 0);
             OnPropertyChanged(nameof(EmptyStateText));
         }
