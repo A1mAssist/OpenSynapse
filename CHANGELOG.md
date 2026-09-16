@@ -2,6 +2,22 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.7] - 2026-09-16
+
+### Fixed
+
+- Keyboard lighting now remains off while the console display is unavailable and restores the active profile when the display returns.
+- Velopack restarts now resolve runtime files from the deployed application directory instead of inheriting an unrelated working directory.
+
+### Improved
+
+- Core Audio mute indicators now use Windows endpoint notifications instead of polling every 250 milliseconds.
+- System telemetry runs only while the overview is visible and the display is available.
+- Background device discovery is event-driven; foreground fallback scans avoid full telemetry and UI rebuilds when the device fingerprint is unchanged.
+- Smart fan curves sample only their required CPU or GPU temperatures, with a throttled NVIDIA fallback when native temperature data is unavailable.
+- Chroma REST session cleanup sleeps until the actual expiry deadline instead of polling every 100 milliseconds.
+- Stable OpenRazer connections retain their existing UI state instead of being recreated during refreshes.
+
 ## [1.3.6] - 2026-09-13
 
 ### Fixed
