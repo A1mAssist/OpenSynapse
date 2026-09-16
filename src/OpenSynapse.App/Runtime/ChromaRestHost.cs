@@ -461,13 +461,10 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             }
 
             var changed = _frameSource.Publish(frame);
-            if (!changed && !_lighting.RuntimeCompletion.IsCompleted)
+            if (!changed)
             {
                 Interlocked.Increment(ref _framesSkipped);
-                session.ActiveEffectId = effectId;
-                return (Success, effectId);
             }
-
             // Re-assert ownership on every frame. If the user changed the
             // normal effect while a game is alive, the next game frame takes
             // the device back without restarting an already active runtime.

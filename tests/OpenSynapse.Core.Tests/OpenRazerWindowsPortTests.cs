@@ -175,6 +175,39 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public async Task DisplayOffSendsOffAndBlocksNewLightingWrites()
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(transport);
+        var device = new DeviceDescriptor(
+            "blade",
+            "Blade 16",
+            0x1532,
+            0x02C6,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-710");
+
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Starlight));
+        await controller.SetDisplayAvailableAsync(false);
+        var writesAfterOff = transport.Requests.Count;
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Starlight));
+
+        Assert.Equal(writesAfterOff, transport.Requests.Count);
+        Assert.Contains(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x00 }));
+    }
+
+    [Fact]
     public void BladeNativeLightingParametersRoundTripThroughProfiles()
     {
         var reactive = BladeLightingProfileCodec.Parse(new LightingProfile
@@ -225,6 +258,7 @@ public sealed class OpenRazerWindowsPortTests
     private sealed class PreparedReportRecordingTransport : IRazerFeatureTransport
     {
         internal List<byte[]> PreparedRequests { get; } = [];
+        internal List<(byte CommandClass, byte CommandId, byte[] Arguments)> Requests { get; } = [];
 
         public Task<byte[]> QueryAsync(
             string devicePath,
@@ -237,6 +271,7 @@ public sealed class OpenRazerWindowsPortTests
             CancellationToken cancellationToken,
             bool allowRemainingPacketsMismatch = false)
         {
+            Requests.Add((commandClass, commandId, arguments.ToArray()));
             var response = new byte[RazerFeatureReport.Length];
             response[6] = 2;
             return Task.FromResult(response);
