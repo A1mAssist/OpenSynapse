@@ -9,7 +9,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     private const int MaximumConsecutiveMissingSamples = 3;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, CancellationToken, ValueTask<BladeFanControlSnapshot>> _read;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> _set;
-    private readonly Func<CancellationToken, ValueTask<PerformanceSnapshot>> _sample;
+    private readonly Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> _sample;
     private readonly TimeSpan _interval;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly object _disposeSync = new();
@@ -24,7 +24,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         : this(
             RequireReader(reader).ReadBladeFanControlStateAsync,
             RequireReader(reader).SetBladeFanTargetsAsync,
-            RequireMonitor(monitor).SampleAsync,
+            RequireMonitor(monitor).SampleTemperaturesAsync,
             DefaultInterval)
     {
     }
@@ -32,7 +32,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     internal BladeFanCurveRuntime(
         Func<IReadOnlyList<DeviceDescriptor>, CancellationToken, ValueTask<BladeFanControlSnapshot>> read,
         Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> set,
-        Func<CancellationToken, ValueTask<PerformanceSnapshot>> sample,
+        Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> sample,
         TimeSpan interval)
     {
         _read = read ?? throw new ArgumentNullException(nameof(read));
@@ -222,7 +222,10 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             using var timer = new PeriodicTimer(_interval);
             do
             {
-                var sample = await _sample(cancellationToken).ConfigureAwait(false);
+                var sample = await _sample(
+                    curve.TemperatureMode != BladeFanCurveTemperatureMode.Gpu,
+                    curve.TemperatureMode != BladeFanCurveTemperatureMode.Cpu,
+                    cancellationToken).ConfigureAwait(false);
                 BladeFanTargets targets;
                 try
                 {

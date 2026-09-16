@@ -54,6 +54,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly BladeFanCurveRuntime _bladeFanRuntime;
     private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
+    private readonly SemaphoreSlim _performanceSamplingSignal = new(0, 1);
     private readonly object _bladeBrightnessGate = new();
     private Task _bladeBrightnessWriter = Task.CompletedTask;
     private byte? _desiredBladeBrightness;
@@ -581,8 +582,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public string StorageDetail => _systemTelemetry.StorageDetail;
     public double StoragePercent => _systemTelemetry.StoragePercent;
 
-    internal void SetPerformanceSamplingEnabled(bool enabled) =>
-        Volatile.Write(ref _performanceSamplingEnabled, enabled ? 1 : 0);
+    internal void SetPerformanceSamplingEnabled(bool enabled)
+    {
+        if (Interlocked.Exchange(ref _performanceSamplingEnabled, enabled ? 1 : 0) !=
+            (enabled ? 1 : 0))
+        {
+            SignalPerformanceSamplingStateChanged();
+        }
+    }
 
     private void RequestProfileApply()
     {
@@ -1392,7 +1399,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public async Task SetDisplayAvailableAsync(bool available)
     {
-        Volatile.Write(ref _displayAvailable, available ? 1 : 0);
+        if (Interlocked.Exchange(ref _displayAvailable, available ? 1 : 0) !=
+            (available ? 1 : 0))
+        {
+            SignalPerformanceSamplingStateChanged();
+        }
         await _deviceOperationGate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -1733,23 +1744,36 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public async Task RunPerformanceLoopAsync(CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
         try
         {
-            if (Volatile.Read(ref _performanceSamplingEnabled) != 0)
+            while (true)
             {
-                await RefreshPerformanceAsync(cancellationToken);
-            }
-
-            while (await timer.WaitForNextTickAsync(cancellationToken))
-            {
-                if (Volatile.Read(ref _performanceSamplingEnabled) != 0)
+                while (!IsPerformanceSamplingActive)
                 {
-                    await RefreshPerformanceAsync(cancellationToken);
+                    await _performanceSamplingSignal.WaitAsync(cancellationToken);
                 }
+
+                await RefreshPerformanceAsync(cancellationToken);
+                await _performanceSamplingSignal.WaitAsync(
+                    TimeSpan.FromSeconds(2), cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+    }
+
+    private bool IsPerformanceSamplingActive =>
+        Volatile.Read(ref _performanceSamplingEnabled) != 0 &&
+        Volatile.Read(ref _displayAvailable) != 0;
+
+    private void SignalPerformanceSamplingStateChanged()
+    {
+        try
+        {
+            _performanceSamplingSignal.Release();
+        }
+        catch (SemaphoreFullException)
         {
         }
     }
@@ -1909,42 +1933,61 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
             if (_openRazerDeviceService is not null)
             {
-                var selectedInstanceId = SelectedOpenRazerDevice?.InstanceId;
-                _openRazerSelectionCancellation?.Cancel();
-                _openRazerSelectionCancellation?.Dispose();
-                _openRazerSelectionCancellation = null;
                 var openRazerConnections = await _openRazerDeviceService.DiscoverAsync(cancellationToken);
-                OpenRazerDevices.Clear();
-                foreach (var connection in openRazerConnections)
+                if (OpenRazerDevices.Count != openRazerConnections.Count ||
+                    !OpenRazerDevices.Zip(openRazerConnections)
+                        .All(pair => OpenRazerConnectionMatches(pair.First.Connection, pair.Second)))
                 {
-                    OpenRazerDevices.Add(new OpenRazerDeviceRowViewModel(connection));
+                    var selectedInstanceId = SelectedOpenRazerDevice?.InstanceId;
+                    _openRazerSelectionCancellation?.Cancel();
+                    _openRazerSelectionCancellation?.Dispose();
+                    _openRazerSelectionCancellation = null;
+                    OpenRazerDevices.Clear();
+                    foreach (var connection in openRazerConnections)
+                    {
+                        OpenRazerDevices.Add(new OpenRazerDeviceRowViewModel(connection));
+                    }
+                    var selectedRow = OpenRazerDevices.FirstOrDefault(row =>
+                        StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedInstanceId));
+                    if (selectedRow is null)
+                    {
+                        SelectedOpenRazerDevice = null;
+                    }
+                    else
+                    {
+                        await SelectOpenRazerDeviceAsync(selectedRow, cancellationToken);
+                    }
                 }
-                var selectedRow = OpenRazerDevices.FirstOrDefault(row =>
-                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedInstanceId));
-                if (selectedRow is null)
+                else if (SelectedOpenRazerDevice is { } selectedDevice)
                 {
-                    SelectedOpenRazerDevice = null;
-                }
-                else
-                {
-                    await SelectOpenRazerDeviceAsync(selectedRow, cancellationToken);
+                    await selectedDevice.LoadBasicStateAsync(cancellationToken);
+                    if (applyDisplayProfile)
+                    {
+                        await selectedDevice.ApplyConfiguredLightingAsync(cancellationToken);
+                    }
                 }
             }
             if (_openRazerSpecialLightingService is not null)
             {
-                var selectedKrakenId = SelectedOpenRazerKraken?.InstanceId;
                 var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
-                OpenRazerKrakenDevices.Clear();
-                foreach (var connection in connections.Where(connection =>
-                    connection.Kind == OpenRazerSpecialLightingKind.Kraken37))
+                var krakenConnections = connections.Where(connection =>
+                    connection.Kind == OpenRazerSpecialLightingKind.Kraken37).ToArray();
+                if (OpenRazerKrakenDevices.Count != krakenConnections.Length ||
+                    !OpenRazerKrakenDevices.Zip(krakenConnections)
+                        .All(pair => OpenRazerKrakenConnectionMatches(pair.First.Connection, pair.Second)))
                 {
-                    OpenRazerKrakenDevices.Add(new OpenRazerKrakenDeviceRowViewModel(connection));
+                    var selectedKrakenId = SelectedOpenRazerKraken?.InstanceId;
+                    OpenRazerKrakenDevices.Clear();
+                    foreach (var connection in krakenConnections)
+                    {
+                        OpenRazerKrakenDevices.Add(new OpenRazerKrakenDeviceRowViewModel(connection));
+                    }
+                    var selectedKraken = OpenRazerKrakenDevices.FirstOrDefault(row =>
+                        StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedKrakenId));
+                    SelectedOpenRazerKraken = selectedKraken is null
+                        ? null
+                        : new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, selectedKraken.Connection);
                 }
-                var selectedKraken = OpenRazerKrakenDevices.FirstOrDefault(row =>
-                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedKrakenId));
-                SelectedOpenRazerKraken = selectedKraken is null
-                    ? null
-                    : new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, selectedKraken.Connection);
             }
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
@@ -2108,6 +2151,21 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             _deviceOperationGate.Release();
         }
     }
+
+    private static bool OpenRazerConnectionMatches(
+        OpenRazerDeviceConnection previous,
+        OpenRazerDeviceConnection current) =>
+        StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
+        StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
+        previous.EndpointState == current.EndpointState &&
+        StringComparer.Ordinal.Equals(previous.Error, current.Error);
+
+    private static bool OpenRazerKrakenConnectionMatches(
+        OpenRazerSpecialLightingConnection previous,
+        OpenRazerSpecialLightingConnection current) =>
+        StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
+        StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
+        StringComparer.Ordinal.Equals(previous.Error, current.Error);
 
     public async Task ApplyBladeBrightnessAsync(CancellationToken cancellationToken = default)
     {

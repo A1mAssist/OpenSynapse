@@ -103,7 +103,7 @@ public sealed partial class MainWindow : Window
         ShowWindow(windowHandle, ShowWindowRestore);
         Activate();
         SetForegroundWindow(windowHandle);
-        _viewModel.SetPerformanceSamplingEnabled(true);
+        UpdatePerformanceSamplingState();
         _viewModel.SetDeviceWatchActive(true);
         _viewModel.RequestDeviceRefresh();
     }
@@ -131,7 +131,7 @@ public sealed partial class MainWindow : Window
     {
         if (args.DidVisibilityChange)
         {
-            _viewModel.SetPerformanceSamplingEnabled(sender.IsVisible);
+            UpdatePerformanceSamplingState();
             _viewModel.SetDeviceWatchActive(sender.IsVisible);
             UpdateChromaRestStatusTimer();
             if (sender.IsVisible)
@@ -221,7 +221,7 @@ public sealed partial class MainWindow : Window
         try
         {
             await _viewModel.InitializeProfileAsync(_lifetime.Token);
-            _viewModel.SetPerformanceSamplingEnabled(AppWindow.IsVisible);
+            UpdatePerformanceSamplingState();
             _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunPerformanceLoopAsync(_lifetime.Token),

@@ -5,6 +5,9 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private static readonly TimeSpan ForegroundDeviceScanInterval = TimeSpan.FromSeconds(10);
+    private string? _lastObservedForegroundExecutablePath;
+    private string? _lastObservedApplicationBindings;
+    private string? _lastObservedActiveProfileName;
 
     public void RequestDeviceRefresh()
     {
@@ -40,37 +43,63 @@ public sealed partial class MainViewModel
         {
             while (true)
             {
-                var interval = Volatile.Read(ref _deviceWatchActive) != 0
+                var interval = Volatile.Read(ref _deviceWatchActive) != 0 &&
+                               Volatile.Read(ref _displayAvailable) != 0
                     ? TimeSpan.FromSeconds(3)
-                    : TimeSpan.FromSeconds(10);
+                    : _profile.ApplicationBindings.Count > 0
+                        ? TimeSpan.FromSeconds(10)
+                        : Timeout.InfiniteTimeSpan;
                 await _deviceWatchSignal.WaitAsync(interval, cancellationToken);
                 try
                 {
                     var powerState = _powerSourceProvider.IsPluggedIn;
-                    var previousProfile = _profile.Clone();
-                    var previousProfileSwitcher = _applicationProfileSwitcher.Clone();
-                    var profileChanged = _applicationProfileSwitcher.Update(
-                        _profile, _activeApplicationProvider.ExecutablePath);
-                    if (profileChanged)
+                    var executablePath = _profile.ApplicationBindings.Count == 0
+                        ? null
+                        : _activeApplicationProvider.ExecutablePath;
+                    var applicationBindings = _profile.ApplicationBindings.Count == 0
+                        ? string.Empty
+                        : string.Join(
+                            '\n',
+                            _profile.ApplicationBindings
+                                .OrderBy(binding => binding.Key, StringComparer.OrdinalIgnoreCase)
+                                .Select(binding => $"{binding.Key}\0{binding.Value}"));
+                    var profileChanged = false;
+                    if (_lastObservedApplicationBindings is null ||
+                        !StringComparer.OrdinalIgnoreCase.Equals(
+                            _lastObservedForegroundExecutablePath, executablePath) ||
+                        !StringComparer.Ordinal.Equals(
+                            _lastObservedApplicationBindings, applicationBindings) ||
+                        !StringComparer.OrdinalIgnoreCase.Equals(
+                            _lastObservedActiveProfileName, _profile.ActiveProfileName))
                     {
-                        RefreshProfileState();
-                        try
+                        var previousProfile = _profile.Clone();
+                        var previousProfileSwitcher = _applicationProfileSwitcher.Clone();
+                        profileChanged = _applicationProfileSwitcher.Update(_profile, executablePath);
+                        _lastObservedForegroundExecutablePath = executablePath;
+                        _lastObservedApplicationBindings = applicationBindings;
+                        _lastObservedActiveProfileName = _profile.ActiveProfileName;
+                        if (profileChanged)
                         {
-                            await _profileStore.SaveAsync(_profile, cancellationToken);
-                            ProfileStatusText = AppStrings.FormatText("ProfileAutoSwitched", ActiveProfileName);
-                        }
-                        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                        {
-                            throw;
-                        }
-                        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                        {
-                            _profile = previousProfile;
-                            _applicationProfileSwitcher = previousProfileSwitcher;
                             RefreshProfileState();
-                            SetDeviceOperationError(AppStrings.FormatText("AutomaticProfileSaveError",
-                                exception.Message));
-                            profileChanged = false;
+                            try
+                            {
+                                await _profileStore.SaveAsync(_profile, cancellationToken);
+                                ProfileStatusText = AppStrings.FormatText("ProfileAutoSwitched", ActiveProfileName);
+                            }
+                            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                            {
+                                throw;
+                            }
+                            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                            {
+                                _profile = previousProfile;
+                                _applicationProfileSwitcher = previousProfileSwitcher;
+                                _lastObservedApplicationBindings = null;
+                                RefreshProfileState();
+                                SetDeviceOperationError(AppStrings.FormatText("AutomaticProfileSaveError",
+                                    exception.Message));
+                                profileChanged = false;
+                            }
                         }
                     }
 
@@ -98,6 +127,17 @@ public sealed partial class MainViewModel
                         var snapshot = refreshRequested || periodicRefreshDue
                             ? await _discovery.DiscoverAsync(cancellationToken)
                             : new DeviceSnapshot(_deviceDescriptors, DateTimeOffset.UtcNow);
+                        if (periodicRefreshDue)
+                        {
+                            _nextFullDeviceRefresh = DateTimeOffset.UtcNow + ForegroundDeviceScanInterval;
+                        }
+                        if (periodicRefreshDue && !refreshRequested && !powerChanged &&
+                            !profileChanged && !displayProfileRequested &&
+                            StringComparer.Ordinal.Equals(
+                                _deviceFingerprint, CreateDeviceFingerprint(snapshot)))
+                        {
+                            continue;
+                        }
                         await RefreshDevicesCoreAsync(
                             snapshot,
                             cancellationToken,

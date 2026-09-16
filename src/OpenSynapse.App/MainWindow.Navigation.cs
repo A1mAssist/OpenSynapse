@@ -118,8 +118,13 @@ public sealed partial class MainWindow
         ProfilesPage.Visibility = page == "profiles" ? Visibility.Visible : Visibility.Collapsed;
         SettingsPage.Visibility = page == "settings" ? Visibility.Visible : Visibility.Collapsed;
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
+        UpdatePerformanceSamplingState();
         UpdateChromaRestStatusTimer();
     }
+
+    private void UpdatePerformanceSamplingState() =>
+        _viewModel.SetPerformanceSamplingEnabled(
+            AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible);
 
     private void ApplyDarkTheme()
     {

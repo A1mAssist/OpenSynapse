@@ -65,6 +65,38 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
         }
     }
 
+    internal (uint VendorId, double? TemperatureCelsius)? ReadSelectedTemperature()
+    {
+        try
+        {
+            var engines = ReadEngines();
+            double Usage(GpuAdapter adapter, bool external) =>
+                engines.TryGetValue(adapter.Luid, out var values) && values.Count > 0
+                    ? values.Values.Max(value => external ? value.External : value.Total)
+                    : 0;
+
+            var nvidia = _adapters.Values
+                .Where(adapter => adapter.VendorId == NvidiaVendorId)
+                .OrderByDescending(adapter => Usage(adapter, external: true))
+                .FirstOrDefault();
+            var selected = nvidia is not null && Usage(nvidia, external: true) >= 0.1
+                ? nvidia
+                : _adapters.Values
+                    .Where(adapter => adapter.IsIntegrated)
+                    .OrderByDescending(adapter => Usage(adapter, external: false))
+                    .FirstOrDefault();
+            return selected is null
+                ? null
+                : (selected.VendorId, ReadTemperature(selected.NativeLuid));
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or UnauthorizedAccessException or
+            PlatformNotSupportedException or ExternalException)
+        {
+            return null;
+        }
+    }
+
     internal static bool IsNvidiaActive(IReadOnlyList<WindowsGpuSample> samples) =>
         samples.Any(sample => sample.VendorId == NvidiaVendorId && sample.ExternalUsagePercent >= 0.1);
 
