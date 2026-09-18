@@ -104,9 +104,10 @@ public sealed partial class MainWindow
             var notification = Marshal.PtrToStructure<PowerBroadcastSettingHeader>(setting);
             if (notification.PowerSetting == ConsoleDisplayStateGuid && notification.DataLength == sizeof(uint))
             {
-                // Dimmed (2) is treated as unavailable because some systems use it
-                // instead of Off when the automatic display timeout expires.
-                SetConsoleDisplayState(Marshal.ReadInt32(setting, Marshal.SizeOf<PowerBroadcastSettingHeader>()) == 1);
+                // State 0 is display off; state 1 is on and state 2 is dimmed.
+                // Dimming must not stop the keyboard lighting session.
+                SetConsoleDisplayState(
+                    Marshal.ReadInt32(setting, Marshal.SizeOf<PowerBroadcastSettingHeader>()) != 0);
             }
         }
         return 0;
