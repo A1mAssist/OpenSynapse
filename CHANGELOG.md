@@ -2,6 +2,16 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.8] - 2026-09-19
+
+### Fixed
+
+- Keyboard lighting and mute indicators now follow display availability and restore the active brightness and effect after wake.
+
+### Improved
+
+- Split the main ViewModel into focused Blade, Viper, telemetry, display, lighting, fan, OpenRazer, refresh, operations, and profile partials without changing the runtime contract.
+
 ## [1.3.7] - 2026-09-16
 
 ### Fixed

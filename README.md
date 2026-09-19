@@ -16,7 +16,7 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
 
-> Current release `v1.3.7` · Windows 11 x64 · unsigned
+> Current release `v1.3.8` · Windows 11 x64 · unsigned
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 
