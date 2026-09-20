@@ -67,6 +67,7 @@ public sealed class BladeLightingController : IBladeLightingController
     // The matrix path is seven feature reports per frame. Keep only the latest
     // frame if the device cannot sustain this target; never build a stale queue.
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000d / 60d);
+    private static readonly TimeSpan NativeEffectKeepAliveInterval = TimeSpan.FromSeconds(30);
     private static readonly RazerRgb DefaultRestoreColor = new(0x99, 0xDD, 0x72);
     private static readonly TimeSpan MatrixWait = TimeSpan.FromMilliseconds(1);
 
@@ -74,6 +75,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private readonly RazerDeviceRegistry _registry;
     private readonly RazerRgb[] _restoreFrame;
     private readonly BladeSoftwareModeCoordinator _modeCoordinator;
+    private readonly TimeSpan _nativeEffectKeepAliveInterval;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private SoftwareLightingRuntime? _runtime;
     private ChromaExternalFrameSource? _externalSource;
@@ -83,6 +85,8 @@ public sealed class BladeLightingController : IBladeLightingController
     private byte _transactionId;
     private bool _nativeEffectActive;
     private string? _nativeEffectDevicePath;
+    private CancellationTokenSource? _nativeEffectKeepAliveCancellation;
+    private Task _nativeEffectKeepAliveTask = Task.CompletedTask;
     private int _turnOffOnStop;
     private int _displayAvailable = 1;
     private int _disposed;
@@ -117,13 +121,24 @@ public sealed class BladeLightingController : IBladeLightingController
     internal BladeLightingController(
         IRazerFeatureTransport transport,
         RazerDeviceRegistry registry,
+        BladeSoftwareModeCoordinator modeCoordinator,
+        TimeSpan nativeEffectKeepAliveInterval)
+        : this(transport, registry, DefaultRestoreColor, modeCoordinator, nativeEffectKeepAliveInterval)
+    {
+    }
+
+    internal BladeLightingController(
+        IRazerFeatureTransport transport,
+        RazerDeviceRegistry registry,
         RazerRgb restoreColor,
-        BladeSoftwareModeCoordinator? modeCoordinator = null)
+        BladeSoftwareModeCoordinator? modeCoordinator = null,
+        TimeSpan? nativeEffectKeepAliveInterval = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _restoreFrame = QuickLightingEngine.RenderSolid(restoreColor);
         _modeCoordinator = modeCoordinator ?? new BladeSoftwareModeCoordinator();
+        _nativeEffectKeepAliveInterval = nativeEffectKeepAliveInterval ?? NativeEffectKeepAliveInterval;
     }
 
     public async Task ApplyAsync(
@@ -178,7 +193,12 @@ public sealed class BladeLightingController : IBladeLightingController
                     }
                     _nativeEffectActive = true;
                     _nativeEffectDevicePath = device.Id;
-                    _runtimeCompletion = Task.CompletedTask;
+                    _nativeEffectKeepAliveCancellation = new CancellationTokenSource();
+                    _nativeEffectKeepAliveTask = RunNativeEffectKeepAliveAsync(
+                        device.Id,
+                        manifest,
+                        _nativeEffectKeepAliveCancellation.Token);
+                    _runtimeCompletion = _nativeEffectKeepAliveTask;
                     return;
                 }
                 var pump = new BladeMatrixFramePump(
@@ -335,6 +355,7 @@ public sealed class BladeLightingController : IBladeLightingController
                     }
                     if (_nativeEffectActive && _nativeEffectDevicePath is not null)
                     {
+                        CancelNativeEffectKeepAlive();
                         try
                         {
                             await SendAsync(
@@ -423,6 +444,7 @@ public sealed class BladeLightingController : IBladeLightingController
 
         if (_nativeEffectActive)
         {
+            CancelNativeEffectKeepAlive();
             try
             {
                 await SendAsync(
@@ -438,6 +460,49 @@ public sealed class BladeLightingController : IBladeLightingController
         }
 
         await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    private void CancelNativeEffectKeepAlive()
+    {
+        _nativeEffectKeepAliveCancellation?.Cancel();
+        _nativeEffectKeepAliveCancellation?.Dispose();
+        _nativeEffectKeepAliveCancellation = null;
+    }
+
+    private async Task RunNativeEffectKeepAliveAsync(
+        string devicePath,
+        RazerDeviceManifest manifest,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (true)
+            {
+                await Task.Delay(_nativeEffectKeepAliveInterval, cancellationToken).ConfigureAwait(false);
+                await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    if (!_nativeEffectActive ||
+                        Volatile.Read(ref _displayAvailable) == 0 ||
+                        !StringComparer.OrdinalIgnoreCase.Equals(_nativeEffectDevicePath, devicePath))
+                    {
+                        return;
+                    }
+
+                    await ValidateCurrentPathAsync(
+                        devicePath,
+                        manifest,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    _gate.Release();
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
     }
 
     internal void ObserveMappingInput(BladeMappingInputEvent input)
