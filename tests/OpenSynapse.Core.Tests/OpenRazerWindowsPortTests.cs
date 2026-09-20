@@ -208,6 +208,47 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public async Task NativeBladeLightingUsesReadOnlyKeepAliveUntilStopped()
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(
+            transport,
+            RazerDeviceRegistry.BuiltIn,
+            new BladeSoftwareModeCoordinator(),
+            TimeSpan.FromMilliseconds(10));
+        var device = new DeviceDescriptor(
+            "blade",
+            "Blade 16",
+            0x1532,
+            0x02C6,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-710");
+
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Wave));
+        await Task.Delay(80);
+
+        Assert.Single(transport.Requests, request =>
+            request.CommandClass == 0x0F &&
+            request.CommandId == 0x02 &&
+            request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 }));
+        Assert.True(transport.Requests.Count(request =>
+            request.CommandClass == 0x0E &&
+            request.CommandId == 0x84 &&
+            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x00 })) >= 2);
+
+        await controller.SetDisplayAvailableAsync(false);
+        var writesAfterDisplayOff = transport.Requests.Count;
+        await Task.Delay(40);
+        Assert.Equal(writesAfterDisplayOff, transport.Requests.Count);
+    }
+
+    [Fact]
     public void BladeNativeLightingParametersRoundTripThroughProfiles()
     {
         var reactive = BladeLightingProfileCodec.Parse(new LightingProfile

@@ -2,6 +2,12 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.9] - 2026-09-20
+
+### Fixed
+
+- Firmware-native Blade lighting effects now remain active while the display is on by using a low-frequency read-only keepalive that stops on display-off, suspend, effect changes, and application shutdown.
+
 ## [1.3.8] - 2026-09-19
 
 ### Fixed
