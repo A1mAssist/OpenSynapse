@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -330,6 +331,7 @@ public sealed class BladeLightingController : IBladeLightingController
             return;
         }
 
+        CancelNativeEffectKeepAlive();
         Interlocked.Exchange(ref _turnOffOnStop, 1);
         try
         {
@@ -464,9 +466,9 @@ public sealed class BladeLightingController : IBladeLightingController
 
     private void CancelNativeEffectKeepAlive()
     {
-        _nativeEffectKeepAliveCancellation?.Cancel();
-        _nativeEffectKeepAliveCancellation?.Dispose();
-        _nativeEffectKeepAliveCancellation = null;
+        var cancellation = Interlocked.Exchange(ref _nativeEffectKeepAliveCancellation, null);
+        cancellation?.Cancel();
+        cancellation?.Dispose();
     }
 
     private async Task RunNativeEffectKeepAliveAsync(
@@ -489,10 +491,19 @@ public sealed class BladeLightingController : IBladeLightingController
                         return;
                     }
 
-                    await ValidateCurrentPathAsync(
-                        devicePath,
-                        manifest,
-                        cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        await ValidateCurrentPathAsync(
+                            devicePath,
+                            manifest,
+                            cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception exception) when (
+                        !cancellationToken.IsCancellationRequested &&
+                        exception is Win32Exception or IOException or InvalidOperationException)
+                    {
+                        // A transient HID failure must not permanently disable the keepalive.
+                    }
                 }
                 finally
                 {
