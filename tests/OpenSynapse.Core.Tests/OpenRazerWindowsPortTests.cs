@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
@@ -231,12 +232,16 @@ public sealed class OpenRazerWindowsPortTests
         await controller.ApplyAsync(
             [device],
             new BladeLightingEffect(BladeLightingMode.Wave));
-        await Task.Delay(80);
+        await transport.SecondBrightnessRead.WaitAsync(TimeSpan.FromSeconds(1));
 
         Assert.Single(transport.Requests, request =>
             request.CommandClass == 0x0F &&
             request.CommandId == 0x02 &&
             request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 }));
+        Assert.Single(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x02 }));
         Assert.True(transport.Requests.Count(request =>
             request.CommandClass == 0x0E &&
             request.CommandId == 0x84 &&
@@ -246,6 +251,39 @@ public sealed class OpenRazerWindowsPortTests
         var writesAfterDisplayOff = transport.Requests.Count;
         await Task.Delay(40);
         Assert.Equal(writesAfterDisplayOff, transport.Requests.Count);
+    }
+
+    [Fact]
+    public async Task NativeBladeLightingKeepAliveContinuesAfterTransientReadFailure()
+    {
+        var transport = new PreparedReportRecordingTransport
+        {
+            FailedBrightnessRead = 2,
+        };
+        await using var controller = new BladeLightingController(
+            transport,
+            RazerDeviceRegistry.BuiltIn,
+            new BladeSoftwareModeCoordinator(),
+            TimeSpan.FromMilliseconds(10));
+        var device = new DeviceDescriptor(
+            "blade",
+            "Blade 16",
+            0x1532,
+            0x02C6,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-710");
+
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Wave));
+        await transport.ThirdBrightnessRead.WaitAsync(TimeSpan.FromSeconds(1));
+
+        Assert.False(controller.RuntimeCompletion.IsCompleted);
+        await controller.SetDisplayAvailableAsync(false);
     }
 
     [Fact]
@@ -298,8 +336,17 @@ public sealed class OpenRazerWindowsPortTests
 
     private sealed class PreparedReportRecordingTransport : IRazerFeatureTransport
     {
-        internal List<byte[]> PreparedRequests { get; } = [];
-        internal List<(byte CommandClass, byte CommandId, byte[] Arguments)> Requests { get; } = [];
+        private readonly TaskCompletionSource _secondBrightnessRead =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _thirdBrightnessRead =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _brightnessReadCount;
+
+        internal ConcurrentQueue<byte[]> PreparedRequests { get; } = [];
+        internal ConcurrentQueue<(byte CommandClass, byte CommandId, byte[] Arguments)> Requests { get; } = [];
+        internal int FailedBrightnessRead { get; init; }
+        internal Task SecondBrightnessRead => _secondBrightnessRead.Task;
+        internal Task ThirdBrightnessRead => _thirdBrightnessRead.Task;
 
         public Task<byte[]> QueryAsync(
             string devicePath,
@@ -312,7 +359,23 @@ public sealed class OpenRazerWindowsPortTests
             CancellationToken cancellationToken,
             bool allowRemainingPacketsMismatch = false)
         {
-            Requests.Add((commandClass, commandId, arguments.ToArray()));
+            Requests.Enqueue((commandClass, commandId, arguments.ToArray()));
+            if (commandClass == 0x0E && commandId == 0x84)
+            {
+                var read = Interlocked.Increment(ref _brightnessReadCount);
+                if (read >= 2)
+                {
+                    _secondBrightnessRead.TrySetResult();
+                }
+                if (read >= 3)
+                {
+                    _thirdBrightnessRead.TrySetResult();
+                }
+                if (read == FailedBrightnessRead)
+                {
+                    throw new IOException("Injected transient brightness read failure.");
+                }
+            }
             var response = new byte[RazerFeatureReport.Length];
             response[6] = 2;
             return Task.FromResult(response);
@@ -325,7 +388,7 @@ public sealed class OpenRazerWindowsPortTests
             CancellationToken cancellationToken,
             bool allowRemainingPacketsMismatch = false)
         {
-            PreparedRequests.Add(request.ToArray());
+            PreparedRequests.Enqueue(request.ToArray());
             return Task.FromResult(new byte[RazerFeatureReport.Length]);
         }
     }
