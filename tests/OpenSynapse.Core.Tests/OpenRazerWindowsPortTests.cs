@@ -287,6 +287,41 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public async Task NativeBladeLightingKeepAliveStopsAfterUnsupportedRead()
+    {
+        var transport = new PreparedReportRecordingTransport
+        {
+            UnsupportedBrightnessRead = 2,
+        };
+        await using var controller = new BladeLightingController(
+            transport,
+            RazerDeviceRegistry.BuiltIn,
+            new BladeSoftwareModeCoordinator(),
+            TimeSpan.FromMilliseconds(10));
+        var device = new DeviceDescriptor(
+            "blade",
+            "Blade 16",
+            0x1532,
+            0x02C6,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-710");
+
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Wave));
+        await controller.RuntimeCompletion.WaitAsync(TimeSpan.FromSeconds(1));
+        var writesAfterUnsupported = transport.Requests.Count;
+        await Task.Delay(40);
+
+        Assert.Equal(writesAfterUnsupported, transport.Requests.Count);
+        await controller.SetDisplayAvailableAsync(false);
+    }
+
+    [Fact]
     public void BladeNativeLightingParametersRoundTripThroughProfiles()
     {
         var reactive = BladeLightingProfileCodec.Parse(new LightingProfile
@@ -345,6 +380,7 @@ public sealed class OpenRazerWindowsPortTests
         internal ConcurrentQueue<byte[]> PreparedRequests { get; } = [];
         internal ConcurrentQueue<(byte CommandClass, byte CommandId, byte[] Arguments)> Requests { get; } = [];
         internal int FailedBrightnessRead { get; init; }
+        internal int UnsupportedBrightnessRead { get; init; }
         internal Task SecondBrightnessRead => _secondBrightnessRead.Task;
         internal Task ThirdBrightnessRead => _thirdBrightnessRead.Task;
 
@@ -374,6 +410,10 @@ public sealed class OpenRazerWindowsPortTests
                 if (read == FailedBrightnessRead)
                 {
                     throw new IOException("Injected transient brightness read failure.");
+                }
+                if (read == UnsupportedBrightnessRead)
+                {
+                    throw new NotSupportedException("Injected unsupported brightness read.");
                 }
             }
             var response = new byte[RazerFeatureReport.Length];

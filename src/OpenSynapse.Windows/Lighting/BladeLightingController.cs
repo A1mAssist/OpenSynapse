@@ -68,7 +68,8 @@ public sealed class BladeLightingController : IBladeLightingController
     // The matrix path is seven feature reports per frame. Keep only the latest
     // frame if the device cannot sustain this target; never build a stale queue.
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000d / 60d);
-    private static readonly TimeSpan NativeEffectKeepAliveInterval = TimeSpan.FromSeconds(30);
+    // Stay well below the observed sub-30-second firmware idle window without becoming a frame pump.
+    private static readonly TimeSpan NativeEffectKeepAliveInterval = TimeSpan.FromSeconds(5);
     private static readonly RazerRgb DefaultRestoreColor = new(0x99, 0xDD, 0x72);
     private static readonly TimeSpan MatrixWait = TimeSpan.FromMilliseconds(1);
 
@@ -481,33 +482,40 @@ public sealed class BladeLightingController : IBladeLightingController
             while (true)
             {
                 await Task.Delay(_nativeEffectKeepAliveInterval, cancellationToken).ConfigureAwait(false);
+                var shouldKeepAlive = false;
                 await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    if (!_nativeEffectActive ||
-                        Volatile.Read(ref _displayAvailable) == 0 ||
-                        !StringComparer.OrdinalIgnoreCase.Equals(_nativeEffectDevicePath, devicePath))
-                    {
-                        return;
-                    }
-
-                    try
-                    {
-                        await ValidateCurrentPathAsync(
-                            devicePath,
-                            manifest,
-                            cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception exception) when (
-                        !cancellationToken.IsCancellationRequested &&
-                        exception is Win32Exception or IOException or InvalidOperationException)
-                    {
-                        // A transient HID failure must not permanently disable the keepalive.
-                    }
+                    shouldKeepAlive = _nativeEffectActive &&
+                        Volatile.Read(ref _displayAvailable) != 0 &&
+                        StringComparer.OrdinalIgnoreCase.Equals(_nativeEffectDevicePath, devicePath);
                 }
                 finally
                 {
                     _gate.Release();
+                }
+
+                if (!shouldKeepAlive)
+                {
+                    return;
+                }
+
+                try
+                {
+                    await ValidateCurrentPathAsync(
+                        devicePath,
+                        manifest,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                catch (NotSupportedException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (Exception exception) when (
+                    !cancellationToken.IsCancellationRequested &&
+                    exception is Win32Exception or IOException or InvalidOperationException)
+                {
+                    // A transient HID failure must not permanently disable the keepalive.
                 }
             }
         }
