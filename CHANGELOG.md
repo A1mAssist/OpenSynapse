@@ -2,6 +2,12 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.3.10] - 2026-09-21
+
+### Fixed
+
+- Blade native lighting keepalive now runs every five seconds, survives transient HID read failures, stops on unsupported commands, and no longer holds the lighting controller lock during HID I/O.
+
 ## [1.3.9] - 2026-09-20
 
 ### Fixed
