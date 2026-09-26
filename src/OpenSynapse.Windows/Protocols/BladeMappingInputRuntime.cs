@@ -124,6 +124,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
     private readonly Dictionary<int, InputKey> _snapTapOwners = [];
     private readonly Dictionary<OutputKey, int> _pressedOutputs = [];
     private readonly HashSet<InputKey> _hyperShiftOwners = [];
+    private readonly HashSet<InputKey> _passThroughInputs = [];
     private long _sequence;
     private bool _hyperShift;
     private bool _snapTapEnabled;
@@ -234,20 +235,28 @@ public sealed class BladeMappingInputRuntime : IDisposable
     public IReadOnlyCollection<BladeMappingRule> Rules => _rules.Values;
 
     public IReadOnlyList<BladeMappingOutputEvent> Process(BladeMappingInputEvent input)
-        => ProcessCore(input, false, out _);
+        => ProcessCore(input, false, out _, out _);
 
     internal IReadOnlyList<BladeMappingOutputEvent> Process(
         BladeMappingInputEvent input,
         out BladeMappingAction? action)
-        => ProcessCore(input, true, out action);
+        => Process(input, out action, out _);
+
+    internal IReadOnlyList<BladeMappingOutputEvent> Process(
+        BladeMappingInputEvent input,
+        out BladeMappingAction? action,
+        out bool passThrough)
+        => ProcessCore(input, true, out action, out passThrough);
 
     private IReadOnlyList<BladeMappingOutputEvent> ProcessCore(
         BladeMappingInputEvent input,
         bool allowAppAction,
-        out BladeMappingAction? action)
+        out BladeMappingAction? action,
+        out bool passThrough)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         action = null;
+        passThrough = false;
         if (input.Code < 0 || input.Code > ushort.MaxValue)
         {
             throw new ArgumentOutOfRangeException(nameof(input));
@@ -280,6 +289,8 @@ public sealed class BladeMappingInputRuntime : IDisposable
                     input.Code,
                     OutputExtended: input.Extended,
                     InputExtended: input.Extended);
+                _passThroughInputs.Add(inputKey);
+                passThrough = true;
             }
 
         }
@@ -291,6 +302,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
             }
 
             rule = activeRule;
+            passThrough = _passThroughInputs.Contains(inputKey);
         }
 
         if (!allowAppAction && RequiresAppExecutor(rule.Value.OutputKind))
@@ -308,6 +320,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         {
             _activeRules.Remove(inputKey);
             _activeInputSequence.Remove(inputKey);
+            _passThroughInputs.Remove(inputKey);
         }
 
         return rule.Value.SnapTapId is int snapTapId && _snapTapEnabled
@@ -383,6 +396,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
         _pressedOutputs.Clear();
         _activeRules.Clear();
         _activeInputSequence.Clear();
+        _passThroughInputs.Clear();
         _snapTapPressed.Clear();
         _snapTapOwners.Clear();
         _hyperShiftOwners.Clear();

@@ -37,6 +37,18 @@ internal static class RazerFilterInputProtocol
         return payload;
     }
 
+    internal static byte[] CreateKeyboardInput(ushort scanCode, bool isDown, bool extended)
+    {
+        var payload = new byte[ConsumerInputLength];
+        payload.AsSpan(20).Fill(0xAA);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(4), 1);
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(10), scanCode);
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            payload.AsSpan(12),
+            (ushort)((isDown ? 0 : 1) | (extended ? 2 : 0)));
+        return payload;
+    }
+
     private static void WriteKeyboardKey(Span<byte> payload, ushort scanCode, ushort flag)
     {
         if ((flag & ~3) != 0)

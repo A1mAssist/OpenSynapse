@@ -37,6 +37,7 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         });
     private readonly object _lifecycleGate = new();
     private readonly List<(ushort ScanCode, ushort Flag)> _installedHooks = [];
+    private readonly HashSet<(ushort ScanCode, bool Extended)> _submittedKeyboardKeys = [];
     private Task[] _readers = [];
     private Task? _consumer;
     private Task? _completion;
@@ -99,6 +100,40 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
                     _activeConsumerUsage = previous;
                 }
                 throw;
+            }
+        }
+    }
+
+    public void SendKeyboardInput(BladeMappingInputEvent input)
+    {
+        if (input.Kind != BladeMappingInputKind.Keyboard ||
+            input.Code is < 0 or > ushort.MaxValue)
+        {
+            throw new ArgumentException("Only a valid keyboard input can be submitted.", nameof(input));
+        }
+
+        lock (_lifecycleGate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (!_started || _stopped)
+            {
+                throw new InvalidOperationException("Razer filter input host is not running.");
+            }
+
+            var key = (checked((ushort)input.Code), input.Extended);
+            _driver.WriteControl(
+                RazerFilterInputProtocol.SubmitInput,
+                RazerFilterInputProtocol.CreateKeyboardInput(
+                    key.Item1,
+                    input.IsDown,
+                    key.Extended));
+            if (input.IsDown)
+            {
+                _submittedKeyboardKeys.Add(key);
+            }
+            else
+            {
+                _submittedKeyboardKeys.Remove(key);
             }
         }
     }
@@ -289,6 +324,18 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
             _accepting = false;
             _stop.Cancel();
             var errors = new List<Exception>();
+            foreach (var key in _submittedKeyboardKeys)
+            {
+                TryControl(
+                    () => _driver.WriteControl(
+                        RazerFilterInputProtocol.SubmitInput,
+                        RazerFilterInputProtocol.CreateKeyboardInput(
+                            key.Item1,
+                            isDown: false,
+                            key.Item2)),
+                    errors);
+            }
+            _submittedKeyboardKeys.Clear();
             if (_activeConsumerUsage != 0)
             {
                 TryControl(

@@ -2,6 +2,17 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.4.0] - 2026-09-26
+
+### Fixed
+
+- Blade `R`, `T`, `B`, and `P` input now passes ordinary unmapped keys back through the verified Razer filter-driver path instead of synthetic Win32 input, fixing input methods and applications that rejected the previous injection path.
+- Preserved press/release pairing across Fn and HyperShift layer changes and released any driver-submitted keys during shutdown to prevent stuck keys.
+
+### Improved
+
+- Added protocol, host, mapping-state, and shutdown regression coverage for the filter-driver keyboard pass-through path.
+
 ## [1.3.10] - 2026-09-21
 
 ### Fixed

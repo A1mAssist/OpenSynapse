@@ -258,7 +258,12 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             {
                 _inputObserver(input);
                 var snapTapBefore = mapping.SnapTapEnabled;
-                var outputs = mapping.Process(input, out var action);
+                var outputs = mapping.Process(input, out var action, out var passThrough);
+                if (passThrough)
+                {
+                    filter.SendKeyboardInput(input);
+                    continue;
+                }
                 executor.SendRuntimeOutputs(outputs);
                 if (snapTapBefore != mapping.SnapTapEnabled)
                 {
