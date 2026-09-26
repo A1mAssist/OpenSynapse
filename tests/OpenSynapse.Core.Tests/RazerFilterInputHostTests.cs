@@ -150,6 +150,49 @@ public sealed class RazerFilterInputHostTests
     }
 
     [Fact]
+    public async Task KeyboardInputUsesOfficialSubmitInputIoctl()
+    {
+        var driver = new FakeDriverChannel();
+        await using var host = new RazerFilterInputHost(driver, static _ => { });
+        await host.StartAsync();
+
+        host.SendKeyboardInput(new BladeMappingInputEvent(
+            BladeMappingInputKind.Keyboard, 0x13, true));
+        var press = driver.Controls.Last();
+        Assert.Equal(RazerFilterInputProtocol.SubmitInput, press.Code);
+        Assert.Equal(1u, BitConverter.ToUInt32(press.Payload, 4));
+        Assert.Equal(0x13, BitConverter.ToUInt16(press.Payload, 10));
+        Assert.Equal(0, BitConverter.ToUInt16(press.Payload, 12));
+
+        host.SendKeyboardInput(new BladeMappingInputEvent(
+            BladeMappingInputKind.Keyboard, 0x13, false));
+        host.SendKeyboardInput(new BladeMappingInputEvent(
+            BladeMappingInputKind.Keyboard, 0x50, true, true));
+        host.SendKeyboardInput(new BladeMappingInputEvent(
+            BladeMappingInputKind.Keyboard, 0x50, false, true));
+        var release = driver.Controls.Last();
+        Assert.Equal(0x50, BitConverter.ToUInt16(release.Payload, 10));
+        Assert.Equal(3, BitConverter.ToUInt16(release.Payload, 12));
+    }
+
+    [Fact]
+    public async Task ReleasesSubmittedKeyboardInputOnStop()
+    {
+        var driver = new FakeDriverChannel();
+        var host = new RazerFilterInputHost(driver, static _ => { });
+        await host.StartAsync();
+
+        host.SendKeyboardInput(new BladeMappingInputEvent(
+            BladeMappingInputKind.Keyboard, 0x13, true));
+        await host.DisposeAsync();
+
+        Assert.Contains(driver.Controls, static item =>
+            item.Code == RazerFilterInputProtocol.SubmitInput &&
+            BitConverter.ToUInt16(item.Payload, 10) == 0x13 &&
+            BitConverter.ToUInt16(item.Payload, 12) == 1);
+    }
+
+    [Fact]
     public async Task FailedConsumerPressIsStillReleasedOnStop()
     {
         var driver = new FakeDriverChannel { FailControlAt = 26 };

@@ -28,6 +28,15 @@ public sealed class RazerFilterInputProtocolTests
         Assert.Equal(0x20, clearKey.Length);
         Assert.Equal(extendedHook[..clearKey.Length], clearKey);
 
+        var keyboardDown = RazerFilterInputProtocol.CreateKeyboardInput(0x13, true, false);
+        Assert.Equal(
+            "0000000001000000000013000000000000000000AAAAAAAAAAAAAAAAAAAAAAAA",
+            Convert.ToHexString(keyboardDown));
+        var keyboardUp = RazerFilterInputProtocol.CreateKeyboardInput(0x50, false, true);
+        Assert.Equal(
+            "0000000001000000000050000300000000000000AAAAAAAAAAAAAAAAAAAAAAAA",
+            Convert.ToHexString(keyboardUp));
+
         Assert.Equal([1, 0, 0, 0, 1], RazerFilterInputProtocol.CreateKeyboardRedirect(true));
 
         var keyboard = CapturedFrame("000000000000000002000000000000000100000000003B0000000000100000000000000001000000F6FFFFFF");

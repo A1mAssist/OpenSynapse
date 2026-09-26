@@ -160,6 +160,52 @@ public sealed class BladeMappingInputRuntimeTests
     }
 
     [Fact]
+    public void KeepsPassThroughPairWhenHyperShiftChangesBetweenPressAndRelease()
+    {
+        using var runtime = new BladeMappingInputRuntime(
+        [
+            new(BladeMappingInputKind.RazerKey, 0x10, false,
+                BladeMappingOutputKind.HyperShift, 0),
+        ]);
+
+        var down = runtime.Process(
+            new(BladeMappingInputKind.Keyboard, 0x13, true),
+            out _,
+            out var downPassThrough);
+        Assert.True(downPassThrough);
+        Assert.Equal([new BladeMappingOutputEvent(0x13, true)], down);
+
+        runtime.Process(new(BladeMappingInputKind.RazerKey, 0x10, true));
+        var up = runtime.Process(
+            new(BladeMappingInputKind.Keyboard, 0x13, false),
+            out _,
+            out var upPassThrough);
+        Assert.True(upPassThrough);
+        Assert.Equal([new BladeMappingOutputEvent(0x13, false)], up);
+    }
+
+    [Fact]
+    public void DoesNotPassThroughExplicitHyperShiftMapping()
+    {
+        using var runtime = new BladeMappingInputRuntime(
+        [
+            new(BladeMappingInputKind.RazerKey, 0x10, false,
+                BladeMappingOutputKind.HyperShift, 0),
+            new(BladeMappingInputKind.Keyboard, 0x13, true,
+                BladeMappingOutputKind.Keyboard, 0x20),
+        ]);
+
+        runtime.Process(new(BladeMappingInputKind.RazerKey, 0x10, true));
+        var outputs = runtime.Process(
+            new(BladeMappingInputKind.Keyboard, 0x13, true),
+            out var action,
+            out var passThrough);
+        Assert.False(passThrough);
+        Assert.Null(action);
+        Assert.Equal([new BladeMappingOutputEvent(0x20, true)], outputs);
+    }
+
+    [Fact]
     public void RejectsMismatchedInputFlags()
     {
         var graph = LoadProduct710Graph();
