@@ -15,7 +15,6 @@ public sealed class WindowsRawInputHost : IDisposable
     private const uint RidInput = 0x10000003;
     private const uint RidiDeviceName = 0x20000007;
     private const uint RidevInputSink = 0x00000100;
-    private const uint RidevPageOnly = 0x00000020;
     private const uint RidevRemove = 0x00000001;
     private const int GwlpWndProc = -4;
 
@@ -56,16 +55,8 @@ public sealed class WindowsRawInputHost : IDisposable
 
         var devices = new[]
         {
-            // Register the whole Generic Desktop page. Blade Col04 is exposed
-            // as a non-keyboard top-level collection; the path decoder below
-            // still limits consumption to MI_01&Col04.
-            new RawInputDevice
-            {
-                UsagePage = 0x01,
-                Usage = 0x00,
-                Flags = RidevInputSink | RidevPageOnly,
-                Target = _windowHandle,
-            },
+            new RawInputDevice { UsagePage = 0x01, Usage = 0x06, Flags = RidevInputSink, Target = _windowHandle },
+            new RawInputDevice { UsagePage = 0x01, Usage = 0x02, Flags = RidevInputSink, Target = _windowHandle },
         };
         if (!RegisterRawInputDevices(devices, (uint)devices.Length, (uint)Marshal.SizeOf<RawInputDevice>()))
         {
@@ -77,8 +68,11 @@ public sealed class WindowsRawInputHost : IDisposable
         if (_previousWndProc == 0)
         {
             RegisterRawInputDevices(
-                [new RawInputDevice { UsagePage = 0x01, Usage = 0x00, Flags = RidevRemove }],
-                1,
+                [
+                    new RawInputDevice { UsagePage = 0x01, Usage = 0x06, Flags = RidevRemove },
+                    new RawInputDevice { UsagePage = 0x01, Usage = 0x02, Flags = RidevRemove },
+                ],
+                2,
                 (uint)Marshal.SizeOf<RawInputDevice>());
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not install the Blade Raw Input window callback.");
         }

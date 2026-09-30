@@ -43,10 +43,6 @@ public sealed partial class MainViewModel
                         device.Access == DeviceAccessState.Available);
                     if (blade is not null)
                     {
-                        await _bladeLightingController.ApplyAsync(
-                            _deviceDescriptors,
-                            BladeLightingEffect.Off,
-                            CancellationToken.None).ConfigureAwait(false);
                         _bladeLightingDevicePath = blade.Id;
                         _lightingShadowFingerprint = $"display-off\n{blade.Id}";
                     }

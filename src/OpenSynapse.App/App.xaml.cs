@@ -420,12 +420,11 @@ public partial class App : Application
             var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(window);
             var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
             _trayIcon = new WindowsTrayIcon(windowHandle, "OpenSynapse", iconPath);
-            _trayMenuWindow = new TrayMenuWindow(viewModel);
+            _trayMenuWindow = new TrayMenuWindow();
             _trayIcon.ShowRequested += window.RequestActivation;
             _trayIcon.MenuRequested += _trayMenuWindow.ShowAt;
             _trayMenuWindow.ShowRequested += window.RequestActivation;
             _trayMenuWindow.NavigationRequested += window.RequestNavigation;
-            _trayMenuWindow.StartupChangeRequested += window.RequestStartupChange;
             _trayMenuWindow.ExitRequested += window.RequestExit;
             _trayIcon.Unavailable += () =>
             {

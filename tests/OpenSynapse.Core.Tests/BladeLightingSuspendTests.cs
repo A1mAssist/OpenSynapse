@@ -18,6 +18,7 @@ public sealed class BladeLightingSuspendTests
         Assert.True(pump.TryPublish(Enumerable.Repeat(new RazerRgb(1, 2, 3), 6 * 17).ToArray()));
         await pump.FirstFrameApplied;
         pump.MarkTurnOffOnStop();
+        Assert.False(pump.TryPublish(Enumerable.Repeat(new RazerRgb(4, 5, 6), 6 * 17).ToArray()));
         await pump.StopAsync();
 
         var expected = BladeLightingProtocol.CreateMatrixFrameRequests(new RazerRgb[6 * 17]);

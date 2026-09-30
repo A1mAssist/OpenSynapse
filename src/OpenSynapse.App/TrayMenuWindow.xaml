@@ -49,16 +49,15 @@
           <MenuFlyoutItem.Icon><SymbolIcon Symbol="Library" /></MenuFlyoutItem.Icon>
         </MenuFlyoutItem>
         <MenuFlyoutSeparator />
-        <MenuFlyoutItem local:Localized.Uid="Loc_76EAEA9450" x:Name="StartupMenuItem"
-            Text="开机启动"
+        <MenuFlyoutItem local:Localized.Uid="TrayTurnOffDisplay" x:Name="TurnOffDisplayMenuItem"
+            Text="关闭屏幕"
             Height="34"
             Padding="7,4,6,7"
             FontFamily="Microsoft YaHei UI"
             FontSize="14"
-            IsEnabled="{Binding CanSetStartup}"
-            Click="StartupClick"
-            AutomationProperties.Name="设置开机启动">
-          <MenuFlyoutItem.Icon><SymbolIcon x:Name="StartupIcon" Symbol="Play" /></MenuFlyoutItem.Icon>
+            Click="TurnOffDisplayClick"
+            AutomationProperties.Name="关闭屏幕">
+          <MenuFlyoutItem.Icon><SymbolIcon Symbol="View" /></MenuFlyoutItem.Icon>
         </MenuFlyoutItem>
         <MenuFlyoutSeparator />
         <MenuFlyoutItem local:Localized.Uid="Loc_81394C3DA6" x:Name="ExitMenuItem"
