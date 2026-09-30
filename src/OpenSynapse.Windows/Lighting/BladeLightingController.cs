@@ -339,6 +339,7 @@ public sealed class BladeLightingController : IBladeLightingController
             await _gate.WaitAsync().ConfigureAwait(false);
             try
             {
+                var modeDevicePath = _modeLease?.DevicePath;
                 var runtime = _runtime;
                 _runtime = null;
                 _externalSource = null;
@@ -354,6 +355,14 @@ public sealed class BladeLightingController : IBladeLightingController
                         finally
                         {
                             await runtime.DisposeAsync().ConfigureAwait(false);
+                        }
+
+                        if (modeDevicePath is not null)
+                        {
+                            await SendAsync(
+                                modeDevicePath,
+                                BladeLightingProtocol.CreateOffRequest(),
+                                CancellationToken.None).ConfigureAwait(false);
                         }
                     }
                     if (_nativeEffectActive && _nativeEffectDevicePath is not null)
@@ -662,7 +671,6 @@ public sealed class BladeLightingController : IBladeLightingController
     {
         if (Volatile.Read(ref _turnOffOnStop) != 0)
         {
-            await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
             return;
         }
 

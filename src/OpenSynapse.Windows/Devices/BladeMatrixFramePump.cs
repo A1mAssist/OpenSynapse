@@ -60,7 +60,9 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
             throw new ArgumentException("A Blade lighting frame must contain exactly 6 x 17 colors.", nameof(frame));
         }
 
-        return Volatile.Read(ref _stopped) == 0 && _frames.Writer.TryWrite(frame.ToArray());
+        return Volatile.Read(ref _stopped) == 0 &&
+            Volatile.Read(ref _turnOffOnStop) == 0 &&
+            _frames.Writer.TryWrite(frame.ToArray());
     }
 
     public async Task StopAsync()
@@ -74,7 +76,14 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         await _worker.ConfigureAwait(false);
     }
 
-    internal void MarkTurnOffOnStop() => Interlocked.Exchange(ref _turnOffOnStop, 1);
+    internal void MarkTurnOffOnStop()
+    {
+        Interlocked.Exchange(ref _turnOffOnStop, 1);
+        _stop.Cancel();
+        while (_frames.Reader.TryRead(out _))
+        {
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {
@@ -106,6 +115,11 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
                 while (_frames.Reader.TryRead(out var newerFrame))
                 {
                     frame = newerFrame;
+                }
+
+                if (Volatile.Read(ref _turnOffOnStop) != 0)
+                {
+                    break;
                 }
 
                 if (_lastSentFrame is not null && _lastSentFrame.AsSpan().SequenceEqual(frame))

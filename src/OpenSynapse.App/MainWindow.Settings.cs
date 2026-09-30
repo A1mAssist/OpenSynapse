@@ -20,9 +20,6 @@ public sealed partial class MainWindow
     private long _lastChromaFrames;
     private DateTimeOffset _lastChromaSample = DateTimeOffset.UtcNow;
 
-    internal void RequestStartupChange(bool enabled) => _dispatcherQueue.TryEnqueue(
-        () => _ = _viewModel.SetStartupEnabledAsync(enabled, _lifetime.Token));
-
     private void LanguageSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!_languageSelectionReady ||

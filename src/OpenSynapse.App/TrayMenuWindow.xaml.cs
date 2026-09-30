@@ -1,7 +1,6 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using OpenSynapse.App.ViewModels;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
 
@@ -18,21 +17,22 @@ public sealed partial class TrayMenuWindow : Window
     private const uint SwpNoActivate = 0x0010;
     private const uint SwpShowWindow = 0x0040;
     private const uint SwpNoOwnerZOrder = 0x0200;
+    private const uint WmSysCommand = 0x0112;
+    private const nuint ScMonitorPower = 0xF170;
+    private const nint MonitorPowerOff = 2;
     private static readonly IntPtr HwndTopmost = new(-1);
-    private readonly MainViewModel _viewModel;
+    private static readonly IntPtr HwndBroadcast = new(0xFFFF);
     private readonly IntPtr _windowHandle;
     private bool _hostReady;
     private bool _showPending;
     private bool _menuOpen;
     private bool _closing;
 
-    public TrayMenuWindow(MainViewModel viewModel)
+    public TrayMenuWindow()
     {
-        _viewModel = viewModel;
         InitializeComponent();
         RefreshLocalization();
         MenuAnchor.RequestedTheme = ElementTheme.Dark;
-        MenuAnchor.DataContext = viewModel;
         MenuAnchor.Loaded += MenuAnchorLoaded;
         Activated += TrayMenuActivated;
         AppWindow.IsShownInSwitchers = false;
@@ -61,14 +61,13 @@ public sealed partial class TrayMenuWindow : Window
     public event Action? ShowRequested;
     public event Action? ExitRequested;
     public event Action<string>? NavigationRequested;
-    public event Action<bool>? StartupChangeRequested;
 
     public void RefreshLocalization()
     {
         Localized.Refresh(OpenMainPanelMenuItem);
         Localized.Refresh(DevicesMenuItem);
         Localized.Refresh(ProfilesMenuItem);
-        Localized.Refresh(StartupMenuItem);
+        Localized.Refresh(TurnOffDisplayMenuItem);
         Localized.Refresh(ExitMenuItem);
     }
 
@@ -79,7 +78,6 @@ public sealed partial class TrayMenuWindow : Window
             return;
         }
 
-        StartupIcon.Symbol = _viewModel.IsStartupEnabled ? Symbol.Accept : Symbol.Play;
         _showPending = true;
         var workArea = DisplayArea.GetFromPoint(
             new PointInt32(x, y),
@@ -144,9 +142,10 @@ public sealed partial class TrayMenuWindow : Window
         }
     }
 
-    private void StartupClick(object sender, RoutedEventArgs e)
+    private void TurnOffDisplayClick(object sender, RoutedEventArgs e)
     {
-        StartupChangeRequested?.Invoke(!_viewModel.IsStartupEnabled);
+        DismissMenu();
+        PostMessage(HwndBroadcast, WmSysCommand, ScMonitorPower, MonitorPowerOff);
     }
 
     private void ExitClick(object sender, RoutedEventArgs e)
@@ -163,20 +162,20 @@ public sealed partial class TrayMenuWindow : Window
         Close();
     }
 
-    private void TrayMenuActivated(object sender, WindowActivatedEventArgs args)
-    {
-        if (args.WindowActivationState == WindowActivationState.Deactivated && _menuOpen)
-        {
-            DismissMenu();
-        }
-    }
-
     private void TrayMenuClosed(object sender, object e)
     {
         if (!_closing)
         {
             _menuOpen = false;
             AppWindow.Hide();
+        }
+    }
+
+    private void TrayMenuActivated(object sender, WindowActivatedEventArgs args)
+    {
+        if (args.WindowActivationState == WindowActivationState.Deactivated && _menuOpen)
+        {
+            DismissMenu();
         }
     }
 
@@ -228,4 +227,10 @@ public sealed partial class TrayMenuWindow : Window
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(IntPtr windowHandle);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool PostMessage(
+        IntPtr windowHandle, uint message, nuint wParam, nint lParam);
+
 }

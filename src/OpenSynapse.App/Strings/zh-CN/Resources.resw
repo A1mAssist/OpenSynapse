@@ -550,14 +550,6 @@
     <value>打开配置</value>
     <comment>打开配置</comment>
   </data>
-  <data name="Loc_76EAEA9450.Text" xml:space="preserve">
-    <value>开机启动</value>
-    <comment>开机启动</comment>
-  </data>
-  <data name="Loc_76EAEA9450.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>设置开机启动</value>
-    <comment>设置开机启动</comment>
-  </data>
   <data name="Loc_81394C3DA6.Text" xml:space="preserve">
     <value>退出</value>
     <comment>退出</comment>
@@ -565,6 +557,14 @@
   <data name="Loc_81394C3DA6.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>退出 OpenSynapse</value>
     <comment>退出 OpenSynapse</comment>
+  </data>
+  <data name="TrayTurnOffDisplay.Text" xml:space="preserve">
+    <value>关闭屏幕</value>
+    <comment>关闭屏幕</comment>
+  </data>
+  <data name="TrayTurnOffDisplay.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>关闭屏幕</value>
+    <comment>关闭屏幕</comment>
   </data>
   <data name="Text_0982EC10" xml:space="preserve">
     <value>智能风扇曲线</value>

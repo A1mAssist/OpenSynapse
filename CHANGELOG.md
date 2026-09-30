@@ -2,6 +2,19 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.4.1] - 2026-09-30
+
+### Fixed
+
+- Blade lighting now turns off in one controlled transaction when the display is turned off, without briefly falling back to the firmware's WASD/number-key pattern.
+- Blade lighting restores the active effect after display wake while preserving the HID software-mode lifecycle.
+- Screen-off uses Windows' native input wake path instead of an application-level wake loop, avoiding delayed or repeated wake behavior.
+
+### Improved
+
+- Removed the startup-launch toggle from the tray context menu.
+- Release packaging remains self-contained so the published application can start without a separately installed .NET runtime.
+
 ## [1.4.0] - 2026-09-26
 
 ### Fixed

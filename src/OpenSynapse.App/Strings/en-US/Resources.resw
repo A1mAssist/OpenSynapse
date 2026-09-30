@@ -418,17 +418,17 @@
   <data name="Loc_16444BA5AB.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Open profiles</value>
   </data>
-  <data name="Loc_76EAEA9450.Text" xml:space="preserve">
-    <value>Start with Windows</value>
-  </data>
-  <data name="Loc_76EAEA9450.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Set startup behavior</value>
-  </data>
   <data name="Loc_81394C3DA6.Text" xml:space="preserve">
     <value>Exit</value>
   </data>
   <data name="Loc_81394C3DA6.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Exit OpenSynapse</value>
+  </data>
+  <data name="TrayTurnOffDisplay.Text" xml:space="preserve">
+    <value>Turn off display</value>
+  </data>
+  <data name="TrayTurnOffDisplay.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Turn off display</value>
   </data>
   <data name="Text_0982EC10" xml:space="preserve">
     <value>Smart fan curve</value>
