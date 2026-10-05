@@ -2,11 +2,29 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.App;
 
 public sealed partial class MainWindow
 {
+    private void DeviceCardClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: DeviceRowViewModel row })
+        {
+            return;
+        }
+
+        if (StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Blade))
+        {
+            SelectDevice("blade");
+        }
+        else if (StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Viper))
+        {
+            SelectDevice("viper");
+        }
+    }
+
     private async void OpenRazerDeviceSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: OpenRazerDeviceRowViewModel row })
