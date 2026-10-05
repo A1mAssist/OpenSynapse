@@ -88,8 +88,17 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyBrightnessClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
 
-    private async void OpenRazerApplyLightingClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyLightingAsync(_lifetime.Token) ?? Task.CompletedTask);
+    private async void OpenRazerApplyLightingClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedOpenRazerDevice is not { } device)
+        {
+            return;
+        }
+
+        await device.ApplyLightingAsync(_lifetime.Token);
+        await device.ApplyBrightnessAsync(_lifetime.Token);
+        await device.ApplyLedStateAsync(_lifetime.Token);
+    }
 
     private async void OpenRazerLightingSettingsToggled(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyLightingSettingsAsync(_lifetime.Token) ?? Task.CompletedTask);
