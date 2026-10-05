@@ -60,13 +60,19 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
             var terminator = serial.IndexOf('\0');
             if (terminator >= 0) serial = serial[..terminator];
             serial = serial.Trim();
-            return string.IsNullOrWhiteSpace(serial) || serial.Any(char.IsControl) ? null : serial;
+            return IsUsableSerial(serial) ? serial : null;
         }
         finally
         {
             NativeMethods.CloseHandle(handle);
         }
     }
+
+    internal static bool IsUsableSerial(string? serial) =>
+        !string.IsNullOrWhiteSpace(serial) &&
+        !serial.Any(char.IsControl) &&
+        !serial.All(character => character == '0') &&
+        !serial.All(character => character is 'F' or 'f');
 
     private static IReadOnlyList<HidInterfaceDescriptor> FindVendorFeatureInterfaces(
         ushort vendorId,

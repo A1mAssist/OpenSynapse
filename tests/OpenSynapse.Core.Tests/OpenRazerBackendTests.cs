@@ -180,6 +180,16 @@ public sealed class OpenRazerBackendTests
         Assert.Empty(rejected.Errors);
     }
 
+    [Theory]
+    [InlineData("RAZER-123", true)]
+    [InlineData("000000000000", false)]
+    [InlineData("FFFFFFFF", false)]
+    [InlineData("", false)]
+    public void SerialPlaceholderIsNotShown(string serial, bool expected)
+    {
+        Assert.Equal(expected, WindowsHidDiscovery.IsUsableSerial(serial));
+    }
+
     [Fact]
     public void WideStandardMatrixPreservesBytesBeyondDeclaredSize()
     {
