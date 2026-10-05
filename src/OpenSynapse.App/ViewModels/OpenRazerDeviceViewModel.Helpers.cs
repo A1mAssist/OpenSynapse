@@ -201,6 +201,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     {
         OnPropertyChanged(nameof(BasicErrors));
         OnPropertyChanged(nameof(BasicVisibility));
+        OnPropertyChanged(nameof(BatteryBasicVisibility));
+        OnPropertyChanged(nameof(BatteryPollingVisibility));
         OnPropertyChanged(nameof(SerialVisibility));
         OnPropertyChanged(nameof(FirmwareText));
         OnPropertyChanged(nameof(SerialText));
@@ -282,6 +284,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SerialVisibility));
         OnPropertyChanged(nameof(SoftwareModeVisibility));
         OnPropertyChanged(nameof(BatteryVisibility));
+        OnPropertyChanged(nameof(BatteryBasicVisibility));
+        OnPropertyChanged(nameof(BatteryPollingVisibility));
         OnPropertyChanged(nameof(BatteryPercentVisibility));
         OnPropertyChanged(nameof(ChargingVisibility));
         OnPropertyChanged(nameof(PollingVisibility));
