@@ -45,7 +45,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         else if (_successful == _total && _total > 0)
         {
             _capabilityState = 1;
-            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 93, 219, 66));
+            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
         }
         else if (_successful > 0)
         {
