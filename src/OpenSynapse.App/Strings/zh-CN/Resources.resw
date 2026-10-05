@@ -1250,8 +1250,11 @@
     <comment>OpenRazer 命令不支持</comment>
   </data>
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
-    <value>OpenRazer 设备连接不可用，请重新扫描设备。</value>
-    <comment>OpenRazer 设备需要重新扫描</comment>
+    <value>本设备连接不可用。</value>
+    <comment>本设备连接不可用</comment>
+  </data>
+  <data name="OpenRazerDeviceNotReady" xml:space="preserve">
+    <value>{0}可能未开启或尚未唤醒，请检查设备电源。</value>
   </data>
   <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
     <value>OpenRazer 协议查询失败。</value>
@@ -1594,7 +1597,7 @@
   <data name="Text_A3A74479" xml:space="preserve"><value>鼠标垫</value></data>
   <data name="Text_2E486BCB" xml:space="preserve"><value>显示器</value></data>
   <data name="Text_71E692AA" xml:space="preserve"><value>配件</value></data>
-  <data name="Text_C0E6F3C9" xml:space="preserve"><value>需要重新扫描</value></data>
+  <data name="Text_C0E6F3C9" xml:space="preserve"><value>本设备连接不可用</value></data>
   <data name="Text_C097B416" xml:space="preserve"><value>已解析</value></data>
   <data name="Text_242E08F4" xml:space="preserve"><value>控制通道未解析</value></data>
   <data name="Text_D3632B96" xml:space="preserve"><value>忙或不可用</value></data>

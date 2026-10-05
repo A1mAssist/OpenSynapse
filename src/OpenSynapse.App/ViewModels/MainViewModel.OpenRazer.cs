@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Devices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
 
@@ -6,29 +7,29 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
-    public IReadOnlyList<DeviceRowViewModel> PrimaryDevices => Devices.Take(2).ToArray();
+    public IReadOnlyList<ConnectedDeviceRowViewModel> ConnectedDevices =>
+        Devices.Select(device => new ConnectedDeviceRowViewModel(device))
+            .Concat(OpenRazerDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(OpenRazerKrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .OrderByDescending(device => device.IsReady)
+            .ThenBy(device => device.SortOrder)
+            .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-    public IReadOnlyList<DeviceRowViewModel> AdditionalDevices => Devices.Skip(2).ToArray();
+    public IReadOnlyList<ConnectedDeviceRowViewModel> PrimaryDevices => ConnectedDevices.Take(2).ToArray();
 
-    private int OpenRazerPrimarySlots => Math.Max(0, 2 - PrimaryDevices.Count);
+    public IReadOnlyList<ConnectedDeviceRowViewModel> AdditionalDevices => ConnectedDevices.Skip(2).ToArray();
 
-    private int OpenRazerKrakenPrimarySlots => Math.Max(0,
-        2 - Devices.Count - OpenRazerDevices.Count);
-
-    public IReadOnlyList<OpenRazerDeviceRowViewModel> PrimaryOpenRazerDevices =>
-        OpenRazerDevices.Take(OpenRazerPrimarySlots).ToArray();
-
-    public IReadOnlyList<OpenRazerDeviceRowViewModel> AdditionalOpenRazerDevices =>
-        OpenRazerDevices.Skip(OpenRazerPrimarySlots).ToArray();
-
-    public IReadOnlyList<OpenRazerKrakenDeviceRowViewModel> PrimaryOpenRazerKrakenDevices =>
-        OpenRazerKrakenDevices.Take(OpenRazerKrakenPrimarySlots).ToArray();
-
-    public IReadOnlyList<OpenRazerKrakenDeviceRowViewModel> AdditionalOpenRazerKrakenDevices =>
-        OpenRazerKrakenDevices.Skip(OpenRazerKrakenPrimarySlots).ToArray();
+    private static int DeviceCategoryOrder(DeviceCategory category) => category switch
+    {
+        DeviceCategory.Laptop => 0,
+        DeviceCategory.Keyboard => 1,
+        DeviceCategory.Mouse => 2,
+        _ => 3,
+    };
 
     public Visibility AdditionalDevicesVisibility =>
-        AdditionalOpenRazerDevices.Count > 0 || AdditionalOpenRazerKrakenDevices.Count > 0
+        AdditionalDevices.Count > 0
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -36,14 +37,11 @@ public sealed partial class MainViewModel
     {
         OnPropertyChanged(nameof(PrimaryDevices));
         OnPropertyChanged(nameof(AdditionalDevices));
+        OnPropertyChanged(nameof(ConnectedDevices));
         OnPropertyChanged(nameof(BladeProtocolText));
         OnPropertyChanged(nameof(BladeIdentityText));
         OnPropertyChanged(nameof(ViperProtocolText));
         OnPropertyChanged(nameof(ViperIdentityText));
-        OnPropertyChanged(nameof(PrimaryOpenRazerDevices));
-        OnPropertyChanged(nameof(AdditionalOpenRazerDevices));
-        OnPropertyChanged(nameof(PrimaryOpenRazerKrakenDevices));
-        OnPropertyChanged(nameof(AdditionalOpenRazerKrakenDevices));
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
     }
 
@@ -147,11 +145,13 @@ public sealed partial class MainViewModel
         _openRazerSelectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var selectionToken = _openRazerSelectionCancellation.Token;
         var selected = CreateOpenRazerDeviceViewModel(row.Connection);
+        row.AttachDetail(selected);
         SelectedOpenRazerKraken = null;
         SelectedOpenRazerDevice = selected;
         await selected.LoadBasicStateAsync(selectionToken);
         await selected.LoadDpiStagesAsync(selectionToken);
         await selected.ApplyConfiguredLightingAsync(selectionToken);
+        RefreshDeviceOverviewVisibility();
     }
 
     internal async Task RestoreOpenRazerLightingAfterExternalAsync(
@@ -195,7 +195,8 @@ public sealed partial class MainViewModel
                 connection,
                 lightingEnabled,
                 chromaOverrideEnabled,
-                token));
+                token),
+            _chromaIntegrationEnabled);
 
     private async Task<bool> SaveOpenRazerLightingAsync(
         OpenRazerDeviceConnection connection,

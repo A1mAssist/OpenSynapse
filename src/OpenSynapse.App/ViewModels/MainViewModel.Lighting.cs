@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Lighting;
@@ -8,6 +9,19 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private bool _chromaIntegrationEnabled = true;
+
+    public Visibility BladeChromaOverrideVisibility =>
+        _chromaIntegrationEnabled ? Visibility.Visible : Visibility.Collapsed;
+
+    internal void SetChromaIntegrationEnabled(bool enabled)
+    {
+        if (_chromaIntegrationEnabled == enabled) return;
+        _chromaIntegrationEnabled = enabled;
+        OnPropertyChanged(nameof(BladeChromaOverrideVisibility));
+        SelectedOpenRazerDevice?.SetChromaIntegrationEnabled(enabled);
+    }
+
     public async Task PrepareForSuspendAsync()
     {
         await SetDisplayAvailableAsync(false).ConfigureAwait(false);

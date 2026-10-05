@@ -77,6 +77,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private int _lightingPowerProfileIndex;
     private bool _lightingEnabled;
     private bool _chromaOverrideEnabled;
+    private bool _chromaIntegrationEnabled;
     private bool _isLightingSettingsBusy;
 
     public OpenRazerDeviceViewModel(
@@ -87,7 +88,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         Func<bool?, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null,
         Func<bool>? lightingEnabledResolver = null,
         Func<bool>? chromaOverrideResolver = null,
-        Func<bool, bool, CancellationToken, Task<bool>>? lightingSettingsSaver = null)
+        Func<bool, bool, CancellationToken, Task<bool>>? lightingSettingsSaver = null,
+        bool chromaIntegrationEnabled = true)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -99,9 +101,12 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         _lightingSettingsSaver = lightingSettingsSaver;
         _lightingEnabled = lightingEnabledResolver?.Invoke() ?? true;
         _chromaOverrideEnabled = chromaOverrideResolver?.Invoke() ?? true;
+        _chromaIntegrationEnabled = chromaIntegrationEnabled;
         _errorText = string.IsNullOrWhiteSpace(connection.Error)
             ? string.Empty
-            : AppStrings.Text("OpenRazerProtocolRescanRequired");
+            : connection.EndpointState == OpenRazerEndpointState.RecognizedButUnresolved
+                ? AppStrings.FormatText("OpenRazerDeviceNotReady", CategoryText)
+                : AppStrings.Text("OpenRazerProtocolRescanRequired");
         _selectedLightingZone = LightingZones.Contains(connection.Definition.DefaultLedZone)
             ? connection.Definition.DefaultLedZone : LightingZones.FirstOrDefault();
         _selectedLightingEffect = LightingEffects.FirstOrDefault();
@@ -339,7 +344,14 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         (Has(OpenRazerBackendCapability.LightingEffectWrite) ||
          Has(OpenRazerBackendCapability.MatrixFrameWrite)));
     public Visibility ChromaOverrideVisibility => VisibleWhen(
-        LightingZones.Count > 0 && Has(OpenRazerBackendCapability.MatrixFrameWrite));
+        _chromaIntegrationEnabled && LightingZones.Count > 0 &&
+        Has(OpenRazerBackendCapability.MatrixFrameWrite));
+    internal void SetChromaIntegrationEnabled(bool enabled)
+    {
+        if (_chromaIntegrationEnabled == enabled) return;
+        _chromaIntegrationEnabled = enabled;
+        OnPropertyChanged(nameof(ChromaOverrideVisibility));
+    }
     public bool LightingEnabled
     {
         get => _lightingEnabled;

@@ -9,11 +9,13 @@ namespace OpenSynapse.App.ViewModels;
 public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
 {
     private readonly OpenRazerDeviceConnection _connection;
+    private OpenRazerDeviceViewModel? _detail;
+    private readonly Brush _statusBrush;
 
     public OpenRazerDeviceRowViewModel(OpenRazerDeviceConnection connection)
     {
         _connection = connection;
-        StatusBrush = new SolidColorBrush(connection.EndpointState == OpenRazerEndpointState.Resolved
+        _statusBrush = new SolidColorBrush(connection.EndpointState == OpenRazerEndpointState.Resolved
             ? Color.FromArgb(255, 153, 221, 114)
             : Color.FromArgb(255, 240, 185, 90));
     }
@@ -21,6 +23,7 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public Brush SelectorBackground { get; private set; } = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
     public OpenRazerDeviceConnection Connection => _connection;
+    public DeviceCategory HardwareCategory => _connection.Definition.Category;
     public string Name => _connection.Definition.DisplayName;
     public string Category => _connection.Definition.Category switch
     {
@@ -42,7 +45,7 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
         DeviceCategory.Monitor => "\uE7F4",
         _ => "\uE772",
     };
-    public string Status => _connection.EndpointState switch
+    public string Status => _detail?.StatusText ?? _connection.EndpointState switch
     {
         OpenRazerEndpointState.Resolved when _connection.Capabilities.Count > 0 =>
             AppStrings.FormatText("ProtocolAvailableCount", _connection.Capabilities.Count, _connection.Capabilities.Count),
@@ -50,11 +53,35 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
         OpenRazerEndpointState.RecognizedButUnresolved => AppStrings.Text("Text_242E08F4"),
         _ => AppStrings.Text("Text_D3632B96"),
     };
-    public Brush StatusBrush { get; }
+    public Brush StatusBrush => _detail is { ProtocolTotalCount: > 0 } detail &&
+        detail.ProtocolAvailableCount < detail.ProtocolTotalCount
+            ? new SolidColorBrush(Color.FromArgb(255, 240, 185, 90))
+            : _statusBrush;
     public string Error => string.IsNullOrWhiteSpace(_connection.Error)
         ? string.Empty
-        : AppStrings.Text("OpenRazerProtocolRescanRequired");
+        : _connection.EndpointState == OpenRazerEndpointState.RecognizedButUnresolved
+            ? AppStrings.FormatText("OpenRazerDeviceNotReady", Category)
+            : AppStrings.Text("OpenRazerProtocolRescanRequired");
     public bool HasError => !string.IsNullOrWhiteSpace(Error);
+
+    public void AttachDetail(OpenRazerDeviceViewModel detail)
+    {
+        if (_detail is not null) _detail.PropertyChanged -= DetailPropertyChanged;
+        _detail = detail;
+        _detail.PropertyChanged += DetailPropertyChanged;
+        PropertyChanged?.Invoke(this, new(nameof(Status)));
+        PropertyChanged?.Invoke(this, new(nameof(StatusBrush)));
+    }
+
+    private void DetailPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is nameof(OpenRazerDeviceViewModel.StatusText) or
+            nameof(OpenRazerDeviceViewModel.ProtocolAvailableCount))
+        {
+            PropertyChanged?.Invoke(this, new(nameof(Status)));
+            PropertyChanged?.Invoke(this, new(nameof(StatusBrush)));
+        }
+    }
 
     public void SetSelectorBackground(Brush background)
     {

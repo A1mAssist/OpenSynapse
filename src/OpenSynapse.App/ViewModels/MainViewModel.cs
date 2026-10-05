@@ -253,7 +253,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     internal IReadOnlyList<DeviceDescriptor> CurrentDeviceDescriptors => _deviceDescriptors;
 
-    public string EmptyStateText => Devices.Count == 0
+    public string EmptyStateText => ConnectedDevices.Count == 0
         ? AppStrings.Text("Text_76BEF6E0")
         : string.Empty;
 

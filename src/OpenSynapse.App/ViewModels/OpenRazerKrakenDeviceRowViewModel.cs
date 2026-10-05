@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Microsoft.UI.Xaml.Media;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using Windows.UI;
 
@@ -16,6 +17,7 @@ public sealed class OpenRazerKrakenDeviceRowViewModel : INotifyPropertyChanged
     }
 
     public OpenRazerSpecialLightingConnection Connection { get; }
+    public DeviceCategory HardwareCategory => DeviceCategory.Headset;
     public event PropertyChangedEventHandler? PropertyChanged;
     public Brush SelectorBackground { get; private set; } = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
     public string Name => Connection.DisplayName;
