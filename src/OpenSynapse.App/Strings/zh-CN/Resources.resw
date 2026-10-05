@@ -1237,6 +1237,26 @@
     <value>协议可用 {0}/{1}</value>
     <comment>协议可用 {0}/{1}</comment>
   </data>
+  <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
+    <value>设备返回的协议数据格式错误，已停用该协议能力。</value>
+    <comment>OpenRazer 协议数据格式错误</comment>
+  </data>
+  <data name="OpenRazerDpiStagesMalformedResponse" xml:space="preserve">
+    <value>设备返回的 DPI 档位数据格式错误，已停用 DPI 档位功能。</value>
+    <comment>OpenRazer DPI 档位数据格式错误</comment>
+  </data>
+  <data name="OpenRazerProtocolUnsupported" xml:space="preserve">
+    <value>设备拒绝了 OpenRazer 命令，已停用该协议能力。</value>
+    <comment>OpenRazer 命令不支持</comment>
+  </data>
+  <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
+    <value>OpenRazer 设备连接不可用，请重新扫描设备。</value>
+    <comment>OpenRazer 设备需要重新扫描</comment>
+  </data>
+  <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
+    <value>OpenRazer 协议查询失败。</value>
+    <comment>OpenRazer 协议查询失败</comment>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0}失败：{1}</value>
     <comment>{0}失败：{1}</comment>
@@ -1541,6 +1561,10 @@
   <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
   <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>低电量提醒（%）</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
+  <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>启用灯光</value></data>
+  <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>允许 Chroma 接管</value></data>
+  <data name="BladeLightingEnabled.Header" xml:space="preserve"><value>启用灯光</value></data>
+  <data name="BladeChromaOverride.Header" xml:space="preserve"><value>允许 Chroma 接管</value></data>
   <data name="OpenRazerLightingPowerLabel.Text" xml:space="preserve"><value>供电配置</value></data>
   <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>区域</value></data>
   <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>效果</value></data>
@@ -1578,7 +1602,7 @@
   <data name="Text_B252C327" xml:space="preserve"><value>硬件模式</value></data>
   <data name="Text_8FF04F66" xml:space="preserve"><value>充电中</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>未充电</value></data>
-  <data name="OpenRazerDpiStagesExpander.Header" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="OpenRazerDpiStagesTitle.Text" xml:space="preserve"><value>DPI 档位</value></data>
   <data name="OpenRazerActiveDpiStage.Header" xml:space="preserve"><value>当前档位</value></data>
   <data name="OpenRazerDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>
   <data name="OpenRazerHyperPollingDescription.Text" xml:space="preserve"><value>管理接收器指示灯和鼠标配对。配对操作会再次确认。</value></data>

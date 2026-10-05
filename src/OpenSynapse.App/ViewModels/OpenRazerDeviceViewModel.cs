@@ -11,7 +11,7 @@ using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
+public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 {
     private static readonly Color DefaultPrimaryColor = Color.FromArgb(255, 0, 255, 102);
     private static readonly Color DefaultSecondaryColor = Color.FromArgb(255, 0, 153, 255);
@@ -19,7 +19,11 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private readonly HashSet<OpenRazerBackendCapability> _unsupported = [];
     private readonly HashSet<(OpenRazerLedZone Zone, OpenRazerLightingEffect Effect)> _unsupportedLighting = [];
     private readonly HashSet<OpenRazerLedZone> _unsupportedBrightnessWrites = [];
+    private readonly HashSet<OpenRazerLedZone> _unsupportedBrightnessReads = [];
     private readonly HashSet<OpenRazerLedZone> _unsupportedLedStateWrites = [];
+    private readonly HashSet<OpenRazerLedZone> _unsupportedLedStateReads = [];
+    private readonly HashSet<OpenRazerLedZone> _unsupportedLedColorReads = [];
+    private readonly HashSet<OpenRazerLedZone> _unsupportedLedEffectReads = [];
     private OpenRazerBasicState? _basicState;
     private string _errorText;
     private bool _requiresRescan;
@@ -62,26 +66,44 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private byte _activeDpiStage = 1;
     private byte _hyperPollingIndicatorMode = 1;
     private bool _ledEnabled = true;
+    private bool _ledStateKnown;
+    private bool _brightnessKnown;
     private readonly Func<bool?>? _powerStateProvider;
     private readonly Func<bool?, LightingProfile?>? _lightingProfileResolver;
     private readonly Func<bool?, LightingProfile, CancellationToken, Task<bool>>? _lightingProfileSaver;
+    private readonly Func<bool>? _lightingEnabledResolver;
+    private readonly Func<bool>? _chromaOverrideResolver;
+    private readonly Func<bool, bool, CancellationToken, Task<bool>>? _lightingSettingsSaver;
     private int _lightingPowerProfileIndex;
+    private bool _lightingEnabled;
+    private bool _chromaOverrideEnabled;
+    private bool _isLightingSettingsBusy;
 
     public OpenRazerDeviceViewModel(
         OpenRazerDeviceService service,
         OpenRazerDeviceConnection connection,
         Func<bool?>? powerStateProvider = null,
         Func<bool?, LightingProfile?>? lightingProfileResolver = null,
-        Func<bool?, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null)
+        Func<bool?, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null,
+        Func<bool>? lightingEnabledResolver = null,
+        Func<bool>? chromaOverrideResolver = null,
+        Func<bool, bool, CancellationToken, Task<bool>>? lightingSettingsSaver = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _powerStateProvider = powerStateProvider;
         _lightingProfileResolver = lightingProfileResolver;
         _lightingProfileSaver = lightingProfileSaver;
-        _errorText = connection.Error ?? string.Empty;
-        LightingZones = connection.LightingZones.Keys.Order().ToArray();
-        _selectedLightingZone = LightingZones.FirstOrDefault();
+        _lightingEnabledResolver = lightingEnabledResolver;
+        _chromaOverrideResolver = chromaOverrideResolver;
+        _lightingSettingsSaver = lightingSettingsSaver;
+        _lightingEnabled = lightingEnabledResolver?.Invoke() ?? true;
+        _chromaOverrideEnabled = chromaOverrideResolver?.Invoke() ?? true;
+        _errorText = string.IsNullOrWhiteSpace(connection.Error)
+            ? string.Empty
+            : AppStrings.Text("OpenRazerProtocolRescanRequired");
+        _selectedLightingZone = LightingZones.Contains(connection.Definition.DefaultLedZone)
+            ? connection.Definition.DefaultLedZone : LightingZones.FirstOrDefault();
         _selectedLightingEffect = LightingEffects.FirstOrDefault();
         _selectedPollingRate = PollingOptions.FirstOrDefault();
         if (connection.Definition.MatrixDimensions is { } matrix &&
@@ -113,10 +135,19 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
         ? AppStrings.Text("Text_C0E6F3C9")
         : Connection.EndpointState switch
         {
+            OpenRazerEndpointState.Resolved when ProtocolTotalCount > 0 =>
+                AppStrings.FormatText(
+                    ProtocolAvailableCount == ProtocolTotalCount
+                        ? "ProtocolAvailableCount"
+                        : "ProtocolPartiallyAvailableCount",
+                    ProtocolAvailableCount,
+                    ProtocolTotalCount),
             OpenRazerEndpointState.Resolved => AppStrings.Text("Text_C097B416"),
             OpenRazerEndpointState.RecognizedButUnresolved => AppStrings.Text("Text_242E08F4"),
             _ => AppStrings.Text("Text_D3632B96"),
         };
+    public int ProtocolAvailableCount => Math.Max(0, Connection.Capabilities.Count - _unsupported.Count);
+    public int ProtocolTotalCount => Connection.Capabilities.Count;
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool IsReady => Connection.IsReady;
@@ -125,16 +156,22 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
 
     public bool HasBasicSection => HasAny(
         OpenRazerBackendCapability.FirmwareRead,
-        OpenRazerBackendCapability.SerialRead,
         OpenRazerBackendCapability.DeviceModeRead,
         OpenRazerBackendCapability.BatteryRead,
-        OpenRazerBackendCapability.ChargingRead);
+        OpenRazerBackendCapability.ChargingRead) || !string.IsNullOrWhiteSpace(_basicState?.Serial);
     public Visibility BasicVisibility => VisibleWhen(HasBasicSection);
+    public Visibility FirmwareVisibility => VisibleWhen(Has(OpenRazerBackendCapability.FirmwareRead));
+    public Visibility SerialVisibility => VisibleWhen(!string.IsNullOrWhiteSpace(_basicState?.Serial));
+    public Visibility SoftwareModeVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DeviceModeRead));
+    public Visibility BatteryVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.BatteryRead, OpenRazerBackendCapability.ChargingRead));
+    public Visibility BatteryPercentVisibility => VisibleWhen(Has(OpenRazerBackendCapability.BatteryRead));
+    public Visibility ChargingVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ChargingRead));
     public bool IsBasicBusy { get => _isBasicBusy; private set => SetField(ref _isBasicBusy, value); }
     public IReadOnlyDictionary<string, string> BasicErrors =>
         _basicState?.Errors ?? new Dictionary<string, string>();
     public string FirmwareText => _basicState?.Firmware?.ToString() ?? "--";
-    public string SerialText => _basicState?.Serial ?? "--";
+    public string SerialText => _basicState?.Serial ?? string.Empty;
     public string SoftwareModeText => _basicState?.SoftwareMode switch
     {
         true => AppStrings.Text("Text_4366F0BC"),
@@ -149,9 +186,11 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
         null => "--",
     };
 
-    public Visibility PollingVisibility => VisibleWhen(HasAny(
-        OpenRazerBackendCapability.PollingRateRead,
-        OpenRazerBackendCapability.PollingRateWrite));
+    public Visibility PollingVisibility => VisibleWhen(Has(OpenRazerBackendCapability.PollingRateRead) ||
+        Has(OpenRazerBackendCapability.PollingRateWrite) && PollingOptions.Count > 0);
+    public Visibility PollingReadVisibility => VisibleWhen(Has(OpenRazerBackendCapability.PollingRateRead));
+    public Visibility PollingWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.PollingRateWrite) &&
+        PollingOptions.Count > 0);
     public IReadOnlyList<int> PollingOptions => Connection.Definition.PollingRates;
     public IReadOnlyList<string> PollingOptionTexts => PollingOptions.Select(rate => $"{rate} Hz").ToArray();
     public int SelectedPollingRateIndex
@@ -176,13 +215,17 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     }
     public string PollingRateText => _basicState?.PollingRate is { } value ? $"{value} Hz" : "--";
     public bool IsPollingBusy { get => _isPollingBusy; private set => SetBusy(ref _isPollingBusy, value, nameof(CanEditPolling), nameof(CanWritePolling)); }
-    public bool CanWritePolling => CanUse(OpenRazerBackendCapability.PollingRateWrite) && !IsPollingBusy;
+    public bool CanWritePolling => CanUse(OpenRazerBackendCapability.PollingRateWrite) &&
+        PollingOptions.Count > 0 && !IsPollingBusy;
     public bool CanEditPolling => CanUse(OpenRazerBackendCapability.PollingRateWrite) &&
         !IsPollingBusy && PollingOptions.Contains(SelectedPollingRate);
 
     public Visibility DpiVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.DpiRead,
-        OpenRazerBackendCapability.DpiWrite));
+        OpenRazerBackendCapability.DpiWrite,
+        OpenRazerBackendCapability.DpiStagesRead));
+    public Visibility DpiReadVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DpiRead));
+    public Visibility DpiWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DpiWrite));
     public int DpiX
     {
         get => _dpiX;
@@ -206,9 +249,9 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public bool CanEditDpi => CanUse(OpenRazerBackendCapability.DpiWrite) && !IsDpiBusy &&
         DpiX is >= 100 && DpiY is >= 100 && DpiX <= MaximumDpi && DpiY <= MaximumDpi;
 
-    public Visibility DpiStagesVisibility => VisibleWhen(HasAny(
-        OpenRazerBackendCapability.DpiStagesRead,
-        OpenRazerBackendCapability.DpiStagesWrite));
+    public Visibility DpiStagesVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DpiStagesRead));
+    public Visibility DpiStagesWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DpiStagesRead) &&
+        Has(OpenRazerBackendCapability.DpiStagesWrite));
     public ObservableCollection<OpenRazerDpiStageRowViewModel> DpiStages { get; } = new();
     public byte ActiveDpiStage
     {
@@ -218,9 +261,29 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
             if (SetField(ref _activeDpiStage, value)) OnPropertyChanged(nameof(CanEditDpiStages));
         }
     }
-    public bool IsDpiStagesLoading { get => _isDpiStagesLoading; private set => SetField(ref _isDpiStagesLoading, value); }
-    public bool IsDpiStagesBusy { get => _isDpiStagesBusy; private set => SetBusy(ref _isDpiStagesBusy, value, nameof(CanEditDpiStages), nameof(CanWriteDpiStages)); }
-    public bool CanWriteDpiStages => CanUse(OpenRazerBackendCapability.DpiStagesWrite) && !IsDpiStagesBusy;
+    public bool IsDpiStagesLoading
+    {
+        get => _isDpiStagesLoading;
+        private set
+        {
+            if (SetField(ref _isDpiStagesLoading, value))
+                OnPropertyChanged(nameof(DpiStagesLoadingVisibility));
+        }
+    }
+    public Visibility DpiStagesLoadingVisibility => IsDpiStagesLoading ? Visibility.Visible : Visibility.Collapsed;
+    public bool IsDpiStagesBusy
+    {
+        get => _isDpiStagesBusy;
+        private set
+        {
+            if (!SetField(ref _isDpiStagesBusy, value)) return;
+            OnPropertyChanged(nameof(CanEditDpiStages));
+            OnPropertyChanged(nameof(CanWriteDpiStages));
+            foreach (var row in DpiStages) row.SetEditable(CanWriteDpiStages);
+        }
+    }
+    public bool CanWriteDpiStages => CanUse(OpenRazerBackendCapability.DpiStagesRead) &&
+        CanUse(OpenRazerBackendCapability.DpiStagesWrite) && !IsDpiStagesBusy;
     public bool CanEditDpiStages => CanWriteDpiStages && DpiStages.Count is >= 1 and <= 5 &&
         ActiveDpiStage >= 1 && ActiveDpiStage <= DpiStages.Count &&
         DpiStages.All(stage => stage.X is >= 100 && stage.Y is >= 100 && stage.X <= MaximumDpi && stage.Y <= MaximumDpi);
@@ -233,6 +296,7 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public Visibility IdleVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.IdleTimeoutRead,
         OpenRazerBackendCapability.IdleTimeoutWrite));
+    public Visibility IdleWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.IdleTimeoutWrite));
     public int IdleTimeoutSeconds
     {
         get => _idleTimeoutSeconds;
@@ -249,6 +313,7 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public Visibility LowBatteryVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.LowBatteryThresholdRead,
         OpenRazerBackendCapability.LowBatteryThresholdWrite));
+    public Visibility LowBatteryWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.LowBatteryThresholdWrite));
     public int LowBatteryThresholdPercent
     {
         get => _lowBatteryThresholdPercent;
@@ -264,6 +329,37 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
         !IsLowBatteryBusy && LowBatteryThresholdPercent is >= 5 and <= 25 && LowBatteryThresholdPercent % 5 == 0;
 
     public Visibility LightingVisibility => VisibleWhen(LightingZones.Count > 0);
+    public Visibility LightingControlsVisibility => VisibleWhen(
+        LightingZones.Count > 0 &&
+        (Has(OpenRazerBackendCapability.LightingEffectWrite) ||
+         Has(OpenRazerBackendCapability.MatrixFrameWrite)));
+    public Visibility ChromaOverrideVisibility => VisibleWhen(
+        LightingZones.Count > 0 && Has(OpenRazerBackendCapability.MatrixFrameWrite));
+    public bool LightingEnabled
+    {
+        get => _lightingEnabled;
+        set
+        {
+            if (SetField(ref _lightingEnabled, value))
+            {
+                OnPropertyChanged(nameof(CanEditLightingSettings));
+                OnPropertyChanged(nameof(CanApplyLighting));
+                OnPropertyChanged(nameof(CanApplyMatrix));
+            }
+        }
+    }
+    public bool ChromaOverrideEnabled
+    {
+        get => _chromaOverrideEnabled;
+        set => SetField(ref _chromaOverrideEnabled, value);
+    }
+    public bool IsLightingSettingsBusy
+    {
+        get => _isLightingSettingsBusy;
+        private set => SetField(ref _isLightingSettingsBusy, value);
+    }
+    public bool CanEditLightingSettings => _lightingSettingsSaver is not null &&
+        IsReady && !RequiresRescan && !IsLightingSettingsBusy;
     public IReadOnlyList<string> LightingPowerProfileOptions =>
         [
             AppStrings.Text("BladeLightingPowerCurrent"),
@@ -282,7 +378,8 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
             }
         }
     }
-    public IReadOnlyList<OpenRazerLedZone> LightingZones { get; }
+    public IReadOnlyList<OpenRazerLedZone> LightingZones => Connection.LightingZones.Keys
+        .Where(IsVisibleLightingZone).Order().ToArray();
     public IReadOnlyList<string> LightingZoneOptions => LightingZones.Select(FormatZone).ToArray();
     public int SelectedLightingZoneIndex
     {
@@ -301,15 +398,27 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
             {
                 return;
             }
+            _brightnessKnown = false;
+            _ledStateKnown = false;
             SelectedLightingEffect = LightingEffects.FirstOrDefault();
             OnLightingSelectionChanged();
         }
     }
     public IReadOnlyList<OpenRazerLightingEffect> LightingEffects =>
+        !Has(OpenRazerBackendCapability.LightingEffectWrite) ? [] :
         SelectedZoneCapabilities?.LightingEffects
-            .Where(effect => !_unsupportedLighting.Contains((SelectedLightingZone, effect)))
+            .Where(effect => effect != OpenRazerLightingEffect.Custom &&
+                !_unsupportedLighting.Contains((SelectedLightingZone, effect)))
             .Order()
             .ToArray() ?? [];
+    public Visibility LightingEffectVisibility => VisibleWhen(LightingEffects.Count > 0);
+    public Visibility LightingPowerProfileVisibility => VisibleWhen(LightingZones.Any(zone =>
+        Connection.LightingZones.TryGetValue(zone, out var capabilities) &&
+        (Has(OpenRazerBackendCapability.LightingEffectWrite) &&
+         capabilities.LightingEffects.Any(effect => effect != OpenRazerLightingEffect.Custom &&
+            !_unsupportedLighting.Contains((zone, effect))) ||
+         capabilities.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(zone) ||
+         capabilities.CanWriteState && !_unsupportedLedStateWrites.Contains(zone))));
     public IReadOnlyList<string> LightingEffectOptions => LightingEffects.Select(FormatEffect).ToArray();
     public int SelectedLightingEffectIndex
     {
@@ -355,26 +464,33 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
             if (value is >= 0 and <= 1) LightingDirection = checked((byte)(value + 1));
         }
     }
-    public Visibility PrimaryColorVisibility => VisibleWhen(SelectedLightingEffect is
+    public Visibility PrimaryColorVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
+        SelectedLightingEffect is
         OpenRazerLightingEffect.Static or OpenRazerLightingEffect.Reactive or OpenRazerLightingEffect.Blinking or
         OpenRazerLightingEffect.BreathingSingle or OpenRazerLightingEffect.BreathingDual or
         OpenRazerLightingEffect.StarlightSingle or OpenRazerLightingEffect.StarlightDual);
-    public Visibility SecondaryColorVisibility => VisibleWhen(SelectedLightingEffect is
+    public Visibility SecondaryColorVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
+        SelectedLightingEffect is
         OpenRazerLightingEffect.BreathingDual or OpenRazerLightingEffect.StarlightDual);
-    public Visibility LightingSpeedVisibility => VisibleWhen(SelectedLightingEffect is
-        OpenRazerLightingEffect.Reactive or OpenRazerLightingEffect.BreathingRandom or
-        OpenRazerLightingEffect.BreathingSingle or OpenRazerLightingEffect.BreathingDual or
+    public Visibility LightingSpeedVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
+        SelectedLightingEffect is
+        OpenRazerLightingEffect.Reactive or
         OpenRazerLightingEffect.StarlightRandom or OpenRazerLightingEffect.StarlightSingle or
         OpenRazerLightingEffect.StarlightDual);
     public byte MaximumLightingSpeed => SelectedLightingEffect == OpenRazerLightingEffect.Reactive ? (byte)4 : (byte)3;
-    public Visibility LightingDirectionVisibility => VisibleWhen(SelectedLightingEffect is
+    public Visibility LightingDirectionVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
+        SelectedLightingEffect is
         OpenRazerLightingEffect.Wave or OpenRazerLightingEffect.Wheel);
     public bool IsLightingBusy { get => _isLightingBusy; private set => SetBusy(ref _isLightingBusy, value, nameof(CanApplyLighting), nameof(CanTriggerReactive)); }
     public bool IsLightingLoading { get => _isLightingLoading; private set => SetField(ref _isLightingLoading, value); }
     public bool CanApplyLighting => CanUse(OpenRazerBackendCapability.LightingEffectWrite) &&
-        !IsLightingBusy && LightingEffects.Contains(SelectedLightingEffect);
+        LightingEnabled && !IsLightingBusy && LightingEffects.Contains(SelectedLightingEffect);
     public Visibility BrightnessVisibility => VisibleWhen(SelectedZoneCapabilities is { } zone &&
-        (zone.CanReadBrightness || zone.CanWriteBrightness));
+        (zone.CanReadBrightness && !_unsupportedBrightnessReads.Contains(SelectedLightingZone) ||
+         zone.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(SelectedLightingZone)));
+    public Visibility BrightnessWriteVisibility => VisibleWhen(SelectedZoneCapabilities?.CanWriteBrightness == true &&
+        !_unsupportedBrightnessWrites.Contains(SelectedLightingZone));
+    public Visibility BrightnessEditorVisibility => BrightnessWriteVisibility;
     public byte Brightness
     {
         get => _brightness;
@@ -383,7 +499,9 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
             if (SetField(ref _brightness, value)) OnPropertyChanged(nameof(BrightnessText));
         }
     }
-    public string BrightnessText => $"{Math.Round(Brightness / 255d * 100)}%";
+    public string BrightnessText => _brightnessKnown || BrightnessWriteVisibility == Visibility.Visible
+        ? $"{Math.Round(Brightness / 255d * 100)}%"
+        : "--";
     public bool IsBrightnessBusy { get => _isBrightnessBusy; private set => SetBusy(ref _isBrightnessBusy, value, nameof(CanEditBrightness), nameof(CanWriteBrightness)); }
     public bool CanWriteBrightness => CanWrite && !IsBrightnessBusy &&
         SelectedZoneCapabilities?.CanWriteBrightness == true &&
@@ -392,8 +510,24 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
         SelectedZoneCapabilities?.CanWriteBrightness == true &&
         !_unsupportedBrightnessWrites.Contains(SelectedLightingZone);
     public Visibility LedStateVisibility => VisibleWhen(SelectedZoneCapabilities is { } zone &&
-        (zone.CanReadState || zone.CanWriteState));
-    public bool LedEnabled { get => _ledEnabled; set => SetField(ref _ledEnabled, value); }
+        (zone.CanReadState && !_unsupportedLedStateReads.Contains(SelectedLightingZone) ||
+         zone.CanWriteState && !_unsupportedLedStateWrites.Contains(SelectedLightingZone)));
+    public Visibility LedStateWriteVisibility => VisibleWhen(SelectedZoneCapabilities?.CanWriteState == true &&
+        !_unsupportedLedStateWrites.Contains(SelectedLightingZone));
+    public Visibility LedStateEditorVisibility => LedStateWriteVisibility;
+    public Visibility LedStateReadOnlyVisibility => VisibleWhen(SelectedZoneCapabilities?.CanReadState == true &&
+        _unsupportedLedStateReads.Contains(SelectedLightingZone) == false &&
+        LedStateWriteVisibility == Visibility.Collapsed);
+    public string LedStateText => !_ledStateKnown ? "--" :
+        AppStrings.Text(LedEnabled ? "Text_7E6D2390" : "Text_39B523BD");
+    public bool LedEnabled
+    {
+        get => _ledEnabled;
+        set
+        {
+            if (SetField(ref _ledEnabled, value)) OnPropertyChanged(nameof(LedStateText));
+        }
+    }
     public bool IsLedStateBusy { get => _isLedStateBusy; private set => SetBusy(ref _isLedStateBusy, value, nameof(CanWriteLedState)); }
     public bool CanWriteLedState => CanWrite && !IsLedStateBusy &&
         SelectedZoneCapabilities?.CanWriteState == true &&
@@ -401,19 +535,26 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public Visibility ReactiveTriggerVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ReactiveTriggerWrite));
     public bool CanTriggerReactive => CanUse(OpenRazerBackendCapability.ReactiveTriggerWrite) && !IsLightingBusy;
 
-    public Visibility MatrixVisibility => VisibleWhen(MatrixCells.Count > 0);
+    public Visibility MatrixVisibility => VisibleWhen(MatrixCells.Count > 0 && Has(OpenRazerBackendCapability.MatrixFrameWrite));
     public ObservableCollection<OpenRazerMatrixCellViewModel> MatrixCells { get; } = new();
     public int MatrixColumns => Connection.Definition.MatrixDimensions?.Columns ?? 1;
     public bool IsMatrixBusy { get => _isMatrixBusy; private set => SetBusy(ref _isMatrixBusy, value, nameof(CanApplyMatrix)); }
-    public bool CanApplyMatrix => CanUse(OpenRazerBackendCapability.MatrixFrameWrite) && !IsMatrixBusy;
+    public bool CanApplyMatrix => CanUse(OpenRazerBackendCapability.MatrixFrameWrite) &&
+        LightingEnabled && !IsMatrixBusy;
 
     public Visibility ScrollVisibility => VisibleWhen(HasAny(
-        OpenRazerBackendCapability.ScrollModeRead,
-        OpenRazerBackendCapability.ScrollModeWrite,
         OpenRazerBackendCapability.ScrollAccelerationRead,
         OpenRazerBackendCapability.ScrollAccelerationWrite,
         OpenRazerBackendCapability.SmartReelRead,
         OpenRazerBackendCapability.SmartReelWrite));
+    public Visibility ScrollModeVisibility => Visibility.Collapsed;
+    public Visibility ScrollModeWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ScrollModeWrite));
+    public Visibility ScrollAccelerationVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.ScrollAccelerationRead, OpenRazerBackendCapability.ScrollAccelerationWrite));
+    public Visibility ScrollAccelerationWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ScrollAccelerationWrite));
+    public Visibility SmartReelVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.SmartReelRead, OpenRazerBackendCapability.SmartReelWrite));
+    public Visibility SmartReelWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.SmartReelWrite));
     public bool IsScrollLoading { get => _isScrollLoading; private set => SetField(ref _isScrollLoading, value); }
     public byte ScrollMode { get => _scrollMode; set => SetField(ref _scrollMode, value); }
     public bool ScrollAccelerationEnabled { get => _scrollAccelerationEnabled; set => SetField(ref _scrollAccelerationEnabled, value); }
@@ -431,6 +572,7 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public Visibility KeyswitchVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.KeyswitchOptimizationRead,
         OpenRazerBackendCapability.KeyswitchOptimizationWrite));
+    public Visibility KeyswitchWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.KeyswitchOptimizationWrite));
     public IReadOnlyList<OpenRazerKeyswitchOptimization> KeyswitchOptions { get; } =
         Enum.GetValues<OpenRazerKeyswitchOptimization>();
     public IReadOnlyList<string> KeyswitchOptionTexts =>
@@ -465,6 +607,9 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OpenRazerBackendCapability.HyperPollingIndicatorWrite,
         OpenRazerBackendCapability.HyperPollingPairWrite,
         OpenRazerBackendCapability.HyperPollingUnpairWrite));
+    public Visibility HyperPollingIndicatorVisibility => VisibleWhen(Has(OpenRazerBackendCapability.HyperPollingIndicatorWrite));
+    public Visibility HyperPollingPairVisibility => VisibleWhen(Has(OpenRazerBackendCapability.HyperPollingPairWrite));
+    public Visibility HyperPollingUnpairVisibility => VisibleWhen(Has(OpenRazerBackendCapability.HyperPollingUnpairWrite));
     public byte HyperPollingIndicatorMode { get => _hyperPollingIndicatorMode; set => SetField(ref _hyperPollingIndicatorMode, value); }
     public bool IsHyperPollingBusy
     {
@@ -483,841 +628,4 @@ public sealed class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public bool CanPairHyperPolling => CanUseHyperPolling && Has(OpenRazerBackendCapability.HyperPollingPairWrite);
     public bool CanUnpairHyperPolling => CanUseHyperPolling && Has(OpenRazerBackendCapability.HyperPollingUnpairWrite);
 
-    public async Task LoadBasicStateAsync(CancellationToken cancellationToken = default)
-    {
-        if (!IsReady || RequiresRescan || IsBasicBusy)
-        {
-            return;
-        }
-        IsBasicBusy = true;
-        try
-        {
-            var state = await _service.ReadBasicStateAsync(Connection, cancellationToken);
-            _basicState = state;
-            if (state.PollingRate is { } polling) SelectedPollingRate = polling;
-            if (state.DpiX is { } x) DpiX = x;
-            if (state.DpiY is { } y) DpiY = y;
-            if (state.IdleTimeoutSeconds is { } idle) IdleTimeoutSeconds = idle;
-            if (state.LowBatteryThresholdPercent is { } threshold) LowBatteryThresholdPercent = threshold;
-            if (state.Brightness is { } brightness) Brightness = brightness;
-            if (state.Errors.Count > 0)
-            {
-                MarkRequiresRescan(string.Join(Environment.NewLine, state.Errors.Values));
-            }
-            OnBasicStateChanged();
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception);
-        }
-        finally
-        {
-            IsBasicBusy = false;
-        }
-    }
-
-    public Task LoadAsync(CancellationToken cancellationToken = default) =>
-        LoadBasicStateAsync(cancellationToken);
-
-    public Task ApplyPollingAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.PollingRateWrite,
-            () => IsPollingBusy, value => IsPollingBusy = value,
-            async () =>
-            {
-                if (!PollingOptions.Contains(SelectedPollingRate)) throw new ArgumentOutOfRangeException(nameof(SelectedPollingRate));
-                await _service.SetPollingRateAsync(Connection, SelectedPollingRate, cancellationToken);
-                if (Has(OpenRazerBackendCapability.PollingRateRead))
-                    SelectedPollingRate = await _service.GetPollingRateAsync(Connection, cancellationToken);
-                UpdateBasic(state => state with { PollingRate = SelectedPollingRate });
-            }, cancellationToken);
-
-    public Task ApplyDpiAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.DpiWrite,
-            () => IsDpiBusy, value => IsDpiBusy = value,
-            async () =>
-            {
-                await _service.SetDpiAsync(Connection, DpiX, DpiY, cancellationToken);
-                if (Has(OpenRazerBackendCapability.DpiRead))
-                    (DpiX, DpiY) = await _service.GetDpiAsync(Connection, cancellationToken);
-                UpdateBasic(state => state with { DpiX = DpiX, DpiY = DpiY });
-            }, cancellationToken);
-
-    public async Task LoadDpiStagesAsync(CancellationToken cancellationToken = default)
-    {
-        if (!Has(OpenRazerBackendCapability.DpiStagesRead) || RequiresRescan || IsDpiStagesLoading) return;
-        IsDpiStagesLoading = true;
-        try
-        {
-            ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken));
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception, OpenRazerBackendCapability.DpiStagesRead);
-        }
-        finally
-        {
-            IsDpiStagesLoading = false;
-        }
-    }
-
-    public Task ApplyDpiStagesAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.DpiStagesWrite,
-            () => IsDpiStagesBusy, value => IsDpiStagesBusy = value,
-            async () =>
-            {
-                var state = new OpenRazerDpiStages(ActiveDpiStage,
-                    DpiStages.Select(stage => new OpenRazerDpiStage(stage.Number, stage.X, stage.Y)).ToArray());
-                await _service.SetDpiStagesAsync(Connection, state, cancellationToken);
-                if (Has(OpenRazerBackendCapability.DpiStagesRead))
-                    ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken));
-            }, cancellationToken);
-
-    public Task ApplyIdleTimeoutAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.IdleTimeoutWrite,
-            () => IsIdleBusy, value => IsIdleBusy = value,
-            async () =>
-            {
-                await _service.SetIdleTimeoutAsync(Connection, IdleTimeoutSeconds, cancellationToken);
-                if (Has(OpenRazerBackendCapability.IdleTimeoutRead))
-                    IdleTimeoutSeconds = await _service.GetIdleTimeoutAsync(Connection, cancellationToken);
-                UpdateBasic(state => state with { IdleTimeoutSeconds = IdleTimeoutSeconds });
-            }, cancellationToken);
-
-    public Task ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.LowBatteryThresholdWrite,
-            () => IsLowBatteryBusy, value => IsLowBatteryBusy = value,
-            async () =>
-            {
-                await _service.SetLowBatteryThresholdAsync(Connection, LowBatteryThresholdPercent, cancellationToken);
-                if (Has(OpenRazerBackendCapability.LowBatteryThresholdRead))
-                    LowBatteryThresholdPercent = await _service.GetLowBatteryThresholdAsync(Connection, cancellationToken);
-                UpdateBasic(state => state with { LowBatteryThresholdPercent = LowBatteryThresholdPercent });
-            }, cancellationToken);
-
-    public async Task LoadLightingAsync(CancellationToken cancellationToken = default)
-    {
-        if (!IsReady || RequiresRescan || IsLightingLoading || SelectedZoneCapabilities is null)
-        {
-            return;
-        }
-        IsLightingLoading = true;
-        try
-        {
-            var zone = SelectedZoneCapabilities;
-            if (zone.CanReadBrightness)
-            {
-                Brightness = await _service.GetBrightnessAsync(Connection,
-                    Connection.Definition.DefaultStorage, SelectedLightingZone, cancellationToken);
-            }
-            if (zone.CanReadState)
-            {
-                LedEnabled = await _service.GetLedStateAsync(Connection,
-                    Connection.Definition.DefaultStorage, SelectedLightingZone, cancellationToken);
-            }
-            if (zone.CanReadColor)
-            {
-                var color = await _service.GetLedColorAsync(Connection,
-                    Connection.Definition.DefaultStorage, SelectedLightingZone, cancellationToken);
-                PrimaryColor = ToColor(color);
-            }
-            if (zone.CanReadEffect)
-            {
-                var effect = await _service.GetLedEffectAsync(Connection,
-                    Connection.Definition.DefaultStorage, SelectedLightingZone, cancellationToken);
-                var mapped = effect switch
-                {
-                    OpenRazerClassicLedEffect.Static => OpenRazerLightingEffect.Static,
-                    OpenRazerClassicLedEffect.Blinking => OpenRazerLightingEffect.Blinking,
-                    OpenRazerClassicLedEffect.Breathing => OpenRazerLightingEffect.BreathingSingle,
-                    OpenRazerClassicLedEffect.Spectrum => OpenRazerLightingEffect.Spectrum,
-                    _ => (OpenRazerLightingEffect?)null,
-                };
-                if (mapped is { } value && LightingEffects.Contains(value)) SelectedLightingEffect = value;
-            }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception);
-        }
-        finally
-        {
-            IsLightingLoading = false;
-        }
-    }
-
-    public async Task ApplyConfiguredLightingAsync(CancellationToken cancellationToken = default)
-    {
-        if (_lightingProfileResolver is null || !IsReady || RequiresRescan)
-        {
-            return;
-        }
-
-        var profile = _lightingProfileResolver(SelectedLightingPowerState);
-        if (profile is null)
-        {
-            return;
-        }
-
-        ApplyLightingProfileToEditor(profile);
-        if (!IsSelectedLightingPowerActive)
-        {
-            return;
-        }
-
-        try
-        {
-            await ApplyLightingProfileToHardwareAsync(profile, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception);
-        }
-    }
-
-    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default)
-    {
-        var zone = SelectedLightingZone;
-        var capabilities = SelectedZoneCapabilities;
-        return RunZoneWriteAsync(() => capabilities?.CanWriteBrightness == true &&
-                !_unsupportedBrightnessWrites.Contains(zone),
-            () => IsBrightnessBusy, value => IsBrightnessBusy = value,
-            async () =>
-            {
-                if (IsSelectedLightingPowerActive)
-                {
-                    await _service.SetBrightnessAsync(Connection, Brightness,
-                        Connection.Definition.DefaultStorage, zone, cancellationToken);
-                    if (capabilities?.CanReadBrightness == true)
-                        Brightness = await _service.GetBrightnessAsync(Connection,
-                            Connection.Definition.DefaultStorage, zone, cancellationToken);
-                }
-                await SaveLightingProfileAsync(cancellationToken);
-                OnPropertyChanged(nameof(BrightnessText));
-            }, cancellationToken,
-            () =>
-            {
-                _unsupportedBrightnessWrites.Add(zone);
-                OnPropertyChanged(nameof(CanWriteBrightness));
-                OnPropertyChanged(nameof(CanEditBrightness));
-            });
-    }
-
-    public Task ApplyLedStateAsync(CancellationToken cancellationToken = default)
-    {
-        var zone = SelectedLightingZone;
-        var enabled = LedEnabled;
-        return RunZoneWriteAsync(
-            () => Connection.LightingZones.GetValueOrDefault(zone)?.CanWriteState == true &&
-                !_unsupportedLedStateWrites.Contains(zone),
-            () => IsLedStateBusy, value => IsLedStateBusy = value,
-            async () =>
-            {
-                if (IsSelectedLightingPowerActive)
-                {
-                    await _service.SetLedStateAsync(Connection, Connection.Definition.DefaultStorage, zone, enabled, cancellationToken);
-                    if (Connection.LightingZones.GetValueOrDefault(zone)?.CanReadState == true)
-                        LedEnabled = await _service.GetLedStateAsync(Connection, Connection.Definition.DefaultStorage, zone, cancellationToken);
-                }
-                await SaveLightingProfileAsync(cancellationToken);
-            }, cancellationToken,
-            () =>
-            {
-                _unsupportedLedStateWrites.Add(zone);
-                OnLightingSelectionChanged();
-            });
-    }
-
-    public Task TriggerReactiveAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.ReactiveTriggerWrite,
-            () => IsLightingBusy, value => IsLightingBusy = value,
-            () => _service.TriggerReactiveAsync(Connection, cancellationToken), cancellationToken);
-
-    public Task ApplyMatrixAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.MatrixFrameWrite,
-            () => IsMatrixBusy, value => IsMatrixBusy = value,
-            async () =>
-            {
-                foreach (var row in MatrixCells.GroupBy(cell => cell.Row).OrderBy(group => group.Key))
-                {
-                    var colors = row.OrderBy(cell => cell.Column)
-                        .Select(cell => ToOpenRazerColor(cell.Color)).ToArray();
-                    await _service.SetCustomRowAsync(Connection, row.Key, 0, colors, cancellationToken);
-                }
-            }, cancellationToken);
-
-    public Task ApplyLightingAsync(CancellationToken cancellationToken = default)
-    {
-        var zone = SelectedLightingZone;
-        var effect = SelectedLightingEffect;
-        return RunZoneWriteAsync(
-            () => Connection.Capabilities.Contains(OpenRazerBackendCapability.LightingEffectWrite) &&
-                Connection.LightingZones.TryGetValue(zone, out var capability) &&
-                capability.LightingEffects.Contains(effect) && !_unsupportedLighting.Contains((zone, effect)),
-            () => IsLightingBusy, value => IsLightingBusy = value,
-            async () =>
-            {
-                if (IsSelectedLightingPowerActive)
-                {
-                    await _service.SetLightingAsync(Connection, new OpenRazerLightingSettings(
-                        effect,
-                        LightingSpeed,
-                        LightingDirection,
-                        ToOpenRazerColor(PrimaryColor),
-                        ToOpenRazerColor(SecondaryColor),
-                        null,
-                        zone), cancellationToken);
-                }
-                await SaveLightingProfileAsync(cancellationToken);
-            },
-            cancellationToken,
-            () =>
-            {
-                _unsupportedLighting.Add((zone, effect));
-                if (SelectedLightingZone == zone && SelectedLightingEffect == effect)
-                    _selectedLightingEffect = LightingEffects.FirstOrDefault();
-                OnLightingSelectionChanged();
-            });
-    }
-
-    public async Task LoadScrollAsync(CancellationToken cancellationToken = default)
-    {
-        if (!IsReady || RequiresRescan || IsScrollLoading)
-        {
-            return;
-        }
-        IsScrollLoading = true;
-        try
-        {
-            await ReadOptionalAsync(OpenRazerBackendCapability.ScrollModeRead,
-                async () => ScrollMode = await _service.GetScrollModeAsync(Connection, cancellationToken));
-            await ReadOptionalAsync(OpenRazerBackendCapability.ScrollAccelerationRead,
-                async () => ScrollAccelerationEnabled = await _service.GetScrollAccelerationAsync(Connection, cancellationToken));
-            await ReadOptionalAsync(OpenRazerBackendCapability.SmartReelRead,
-                async () => SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken));
-        }
-        finally
-        {
-            IsScrollLoading = false;
-        }
-    }
-
-    public Task ApplyScrollModeAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.ScrollModeWrite,
-            () => IsScrollModeBusy, value => IsScrollModeBusy = value,
-            async () =>
-            {
-                await _service.SetScrollModeAsync(Connection, ScrollMode, cancellationToken);
-                if (Has(OpenRazerBackendCapability.ScrollModeRead))
-                    ScrollMode = await _service.GetScrollModeAsync(Connection, cancellationToken);
-            }, cancellationToken);
-
-    public Task ApplyScrollAccelerationAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.ScrollAccelerationWrite,
-            () => IsScrollAccelerationBusy, value => IsScrollAccelerationBusy = value,
-            async () =>
-            {
-                await _service.SetScrollAccelerationAsync(Connection, ScrollAccelerationEnabled, cancellationToken);
-                if (Has(OpenRazerBackendCapability.ScrollAccelerationRead))
-                    ScrollAccelerationEnabled = await _service.GetScrollAccelerationAsync(Connection, cancellationToken);
-            }, cancellationToken);
-
-    public Task ApplySmartReelAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.SmartReelWrite,
-            () => IsSmartReelBusy, value => IsSmartReelBusy = value,
-            async () =>
-            {
-                await _service.SetSmartReelAsync(Connection, SmartReelEnabled, cancellationToken);
-                if (Has(OpenRazerBackendCapability.SmartReelRead))
-                    SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken);
-            }, cancellationToken);
-
-    public async Task LoadKeyswitchAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanUse(OpenRazerBackendCapability.KeyswitchOptimizationRead) || IsKeyswitchLoading)
-        {
-            return;
-        }
-        IsKeyswitchLoading = true;
-        try
-        {
-            KeyswitchOptimization = await _service.GetKeyswitchOptimizationAsync(Connection, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception, OpenRazerBackendCapability.KeyswitchOptimizationRead);
-        }
-        finally
-        {
-            IsKeyswitchLoading = false;
-        }
-    }
-
-    public Task ApplyKeyswitchAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.KeyswitchOptimizationWrite,
-            () => IsKeyswitchBusy, value => IsKeyswitchBusy = value,
-            async () =>
-            {
-                await _service.SetKeyswitchOptimizationAsync(Connection, KeyswitchOptimization, cancellationToken);
-                if (Has(OpenRazerBackendCapability.KeyswitchOptimizationRead))
-                    KeyswitchOptimization = await _service.GetKeyswitchOptimizationAsync(Connection, cancellationToken);
-            }, cancellationToken);
-
-    public Task SetFnPrimaryAsync(bool fnFunctionsArePrimary, CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.FnPrimaryWrite,
-            () => IsFnBusy, value => IsFnBusy = value,
-            () => _service.SetFnPrimaryAsync(Connection, fnFunctionsArePrimary, cancellationToken),
-            cancellationToken);
-
-    public Task SetHyperPollingIndicatorAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.HyperPollingIndicatorWrite,
-            () => IsHyperPollingBusy, value => IsHyperPollingBusy = value,
-            () => _service.SetHyperPollingIndicatorAsync(Connection, HyperPollingIndicatorMode, cancellationToken),
-            cancellationToken);
-
-    public Task PairHyperPollingAsync(ushort mouseProductId, CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.HyperPollingPairWrite,
-            () => IsHyperPollingBusy, value => IsHyperPollingBusy = value,
-            () => _service.PairHyperPollingAsync(Connection, mouseProductId, cancellationToken),
-            cancellationToken);
-
-    public Task UnpairHyperPollingAsync(ushort mouseProductId, CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.HyperPollingUnpairWrite,
-            () => IsHyperPollingBusy, value => IsHyperPollingBusy = value,
-            () => _service.UnpairHyperPollingAsync(Connection, mouseProductId, cancellationToken),
-            cancellationToken);
-
-    public void RefreshLocalization()
-    {
-        foreach (var row in DpiStages) row.RefreshLocalization();
-        foreach (var cell in MatrixCells) cell.RefreshLocalization();
-        OnPropertyChanged(string.Empty);
-    }
-
-    private void ReplaceDpiStages(OpenRazerDpiStages state)
-    {
-        DpiStages.Clear();
-        foreach (var stage in state.Stages)
-        {
-            var row = new OpenRazerDpiStageRowViewModel(stage.Number, stage.X, stage.Y, CanWriteDpiStages);
-            row.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CanEditDpiStages));
-            DpiStages.Add(row);
-        }
-        ActiveDpiStage = state.ActiveStage;
-        OnPropertyChanged(nameof(CanEditDpiStages));
-    }
-
-    private OpenRazerLightingZoneCapabilities? SelectedZoneCapabilities =>
-        Connection.LightingZones.GetValueOrDefault(SelectedLightingZone);
-
-    private bool? SelectedLightingPowerState => _lightingPowerProfileIndex switch
-    {
-        1 => true,
-        2 => false,
-        _ => _powerStateProvider?.Invoke(),
-    };
-
-    private bool IsSelectedLightingPowerActive =>
-        _lightingPowerProfileIndex == 0 ||
-        SelectedLightingPowerState == _powerStateProvider?.Invoke();
-
-    public bool IsLightingPowerProfileActive => IsSelectedLightingPowerActive;
-
-    private void ApplyConfiguredLightingToEditor()
-    {
-        var profile = _lightingProfileResolver?.Invoke(SelectedLightingPowerState);
-        if (profile is not null)
-        {
-            ApplyLightingProfileToEditor(profile);
-        }
-    }
-
-    private void ApplyLightingProfileToEditor(LightingProfile profile)
-    {
-        if (profile.Parameters.TryGetValue("zone", out var rawZone) &&
-            byte.TryParse(rawZone, NumberStyles.Integer, CultureInfo.InvariantCulture, out var zoneValue) &&
-            Enum.IsDefined(typeof(OpenRazerLedZone), zoneValue) &&
-            LightingZones.Contains((OpenRazerLedZone)zoneValue))
-        {
-            SelectedLightingZone = (OpenRazerLedZone)zoneValue;
-        }
-
-        if (Enum.TryParse<OpenRazerLightingEffect>(profile.Effect, true, out var effect) &&
-            LightingEffects.Contains(effect))
-        {
-            SelectedLightingEffect = effect;
-            if (effect == OpenRazerLightingEffect.Off)
-            {
-                LedEnabled = false;
-            }
-        }
-
-        if (TryGetByte(profile, "brightness", out var brightness)) Brightness = brightness;
-        if (TryGetByte(profile, "speed", out var speed)) LightingSpeed = speed;
-        if (TryGetByte(profile, "direction", out var direction)) LightingDirection = direction;
-        if (TryGetColor(profile, "color", out var primary)) PrimaryColor = ToColor(primary);
-        if (TryGetColor(profile, "color2", out var secondary)) SecondaryColor = ToColor(secondary);
-        if (profile.Parameters.TryGetValue("enabled", out var rawEnabled) &&
-            bool.TryParse(rawEnabled, out var enabled)) LedEnabled = enabled;
-    }
-
-    private async Task ApplyLightingProfileToHardwareAsync(
-        LightingProfile profile,
-        CancellationToken cancellationToken)
-    {
-        var zone = SelectedLightingZone;
-        if (Enum.TryParse<OpenRazerLightingEffect>(profile.Effect, true, out var effect) &&
-            Connection.LightingZones.TryGetValue(zone, out var capabilities) &&
-            capabilities.LightingEffects.Contains(effect) &&
-            Connection.Capabilities.Contains(OpenRazerBackendCapability.LightingEffectWrite))
-        {
-            await _service.SetLightingAsync(Connection, new OpenRazerLightingSettings(
-                effect,
-                LightingSpeed,
-                LightingDirection,
-                ToOpenRazerColor(PrimaryColor),
-                ToOpenRazerColor(SecondaryColor),
-                null,
-                zone), cancellationToken);
-        }
-
-        if (TryGetByte(profile, "brightness", out var brightness) &&
-            Connection.LightingZones.GetValueOrDefault(zone)?.CanWriteBrightness == true)
-        {
-            await _service.SetBrightnessAsync(Connection, brightness,
-                Connection.Definition.DefaultStorage, zone, cancellationToken);
-        }
-
-        var stateEnabled = effect == OpenRazerLightingEffect.Off
-            ? false
-            : profile.Parameters.TryGetValue("enabled", out var rawEnabled) &&
-                bool.TryParse(rawEnabled, out var enabled)
-                ? enabled
-                : (bool?)null;
-        if (stateEnabled is bool enabledState &&
-            Connection.LightingZones.GetValueOrDefault(zone)?.CanWriteState == true)
-        {
-            await _service.SetLedStateAsync(Connection,
-                Connection.Definition.DefaultStorage, zone, enabledState, cancellationToken);
-        }
-    }
-
-    private async Task SaveLightingProfileAsync(CancellationToken cancellationToken)
-    {
-        if (_lightingProfileSaver is not null)
-        {
-            if (!await _lightingProfileSaver(
-                SelectedLightingPowerState,
-                CreateLightingProfile(),
-                cancellationToken))
-            {
-                throw new IOException("OpenRazer lighting profile could not be saved.");
-            }
-        }
-    }
-
-    private LightingProfile CreateLightingProfile()
-    {
-        var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["zone"] = ((byte)SelectedLightingZone).ToString(CultureInfo.InvariantCulture),
-            ["brightness"] = Brightness.ToString(CultureInfo.InvariantCulture),
-            ["speed"] = LightingSpeed.ToString(CultureInfo.InvariantCulture),
-            ["direction"] = LightingDirection.ToString(CultureInfo.InvariantCulture),
-            ["color"] = FormatColor(ToOpenRazerColor(PrimaryColor)),
-            ["color2"] = FormatColor(ToOpenRazerColor(SecondaryColor)),
-            ["enabled"] = LedEnabled.ToString(CultureInfo.InvariantCulture),
-        };
-        return new LightingProfile { Effect = SelectedLightingEffect.ToString(), Parameters = parameters };
-    }
-
-    private static bool TryGetByte(LightingProfile profile, string key, out byte value)
-    {
-        value = 0;
-        return profile.Parameters.TryGetValue(key, out var raw) &&
-            byte.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
-    }
-
-    private static bool TryGetColor(LightingProfile profile, string key, out OpenRazerColor color)
-    {
-        color = default;
-        if (!profile.Parameters.TryGetValue(key, out var raw) || raw.Length != 6 ||
-            !byte.TryParse(raw[..2], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var red) ||
-            !byte.TryParse(raw[2..4], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var green) ||
-            !byte.TryParse(raw[4..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var blue))
-        {
-            return false;
-        }
-
-        color = new OpenRazerColor(red, green, blue);
-        return true;
-    }
-
-    private static string FormatColor(OpenRazerColor color) =>
-        $"{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
-
-    private bool Has(OpenRazerBackendCapability capability) =>
-        Connection.Capabilities.Contains(capability) && !_unsupported.Contains(capability);
-
-    private bool HasAny(params OpenRazerBackendCapability[] capabilities) => capabilities.Any(Has);
-
-    private bool CanUse(OpenRazerBackendCapability capability) => CanWrite && Has(capability);
-
-    private static Visibility VisibleWhen(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
-
-    private async Task RunWriteAsync(
-        OpenRazerBackendCapability capability,
-        Func<bool> isBusy,
-        Action<bool> setBusy,
-        Func<Task> operation,
-        CancellationToken cancellationToken)
-    {
-        if (!CanUse(capability) || isBusy())
-        {
-            return;
-        }
-        setBusy(true);
-        try
-        {
-            await operation();
-            ErrorText = string.Empty;
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception, capability);
-        }
-        finally
-        {
-            setBusy(false);
-        }
-    }
-
-    private async Task RunZoneWriteAsync(
-        Func<bool> isSupported,
-        Func<bool> isBusy,
-        Action<bool> setBusy,
-        Func<Task> operation,
-        CancellationToken cancellationToken,
-        Action? onNotSupported = null)
-    {
-        if (!CanWrite || !isSupported() || isBusy())
-        {
-            return;
-        }
-        setBusy(true);
-        try
-        {
-            await operation();
-            ErrorText = string.Empty;
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (NotSupportedException exception)
-        {
-            onNotSupported?.Invoke();
-            ErrorText = exception.Message;
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception);
-        }
-        finally
-        {
-            setBusy(false);
-        }
-    }
-
-    private async Task ReadOptionalAsync(OpenRazerBackendCapability capability, Func<Task> read)
-    {
-        if (!Has(capability) || RequiresRescan)
-        {
-            return;
-        }
-        try
-        {
-            await read();
-        }
-        catch (Exception exception)
-        {
-            HandleFailure(exception, capability);
-        }
-    }
-
-    private void HandleFailure(Exception exception, OpenRazerBackendCapability? capability = null)
-    {
-        if (exception is NotSupportedException && capability is { } unsupported)
-        {
-            _unsupported.Add(unsupported);
-            OnCapabilityChanged();
-        }
-        if (exception is IOException or Win32Exception or InvalidOperationException)
-        {
-            MarkRequiresRescan(exception.Message);
-            return;
-        }
-        ErrorText = exception.Message;
-    }
-
-    private void MarkRequiresRescan(string message)
-    {
-        ErrorText = message;
-        RequiresRescan = true;
-        OnCapabilityChanged();
-    }
-
-    private void UpdateBasic(Func<OpenRazerBasicState, OpenRazerBasicState> update)
-    {
-        if (_basicState is not null)
-        {
-            _basicState = update(_basicState);
-            OnBasicStateChanged();
-        }
-    }
-
-    private void OnBasicStateChanged()
-    {
-        OnPropertyChanged(nameof(BasicErrors));
-        OnPropertyChanged(nameof(FirmwareText));
-        OnPropertyChanged(nameof(SerialText));
-        OnPropertyChanged(nameof(SoftwareModeText));
-        OnPropertyChanged(nameof(BatteryText));
-        OnPropertyChanged(nameof(ChargingText));
-        OnPropertyChanged(nameof(PollingRateText));
-        OnPropertyChanged(nameof(DpiText));
-        OnPropertyChanged(nameof(IdleTimeoutText));
-        OnPropertyChanged(nameof(LowBatteryThresholdText));
-        OnPropertyChanged(nameof(BrightnessText));
-    }
-
-    private void OnLightingSelectionChanged()
-    {
-        OnPropertyChanged(nameof(LightingZoneOptions));
-        OnPropertyChanged(nameof(SelectedLightingZoneIndex));
-        OnPropertyChanged(nameof(LightingEffects));
-        OnPropertyChanged(nameof(LightingEffectOptions));
-        OnPropertyChanged(nameof(SelectedLightingEffectIndex));
-        OnPropertyChanged(nameof(SelectedLightingEffect));
-        OnPropertyChanged(nameof(BrightnessVisibility));
-        OnPropertyChanged(nameof(CanWriteBrightness));
-        OnPropertyChanged(nameof(CanEditBrightness));
-        OnPropertyChanged(nameof(LedStateVisibility));
-        OnPropertyChanged(nameof(CanWriteLedState));
-        OnPropertyChanged(nameof(PrimaryColorVisibility));
-        OnPropertyChanged(nameof(SecondaryColorVisibility));
-        OnPropertyChanged(nameof(LightingSpeedVisibility));
-        OnPropertyChanged(nameof(MaximumLightingSpeed));
-        OnPropertyChanged(nameof(LightingDirectionVisibility));
-        OnPropertyChanged(nameof(CanApplyLighting));
-    }
-
-    private static string FormatZone(OpenRazerLedZone zone) => AppStrings.Text($"OpenRazerZone{zone}");
-    private static string FormatEffect(OpenRazerLightingEffect effect) => AppStrings.Text($"OpenRazerEffect{effect}");
-
-    private static int IndexOf<T>(IReadOnlyList<T> values, T value)
-    {
-        for (var index = 0; index < values.Count; index++)
-        {
-            if (EqualityComparer<T>.Default.Equals(values[index], value)) return index;
-        }
-        return -1;
-    }
-
-    private void OnCapabilityChanged()
-    {
-        OnPropertyChanged(nameof(StatusText));
-        OnPropertyChanged(nameof(CanWrite));
-        OnPropertyChanged(nameof(PollingVisibility));
-        OnPropertyChanged(nameof(CanEditPolling));
-        OnPropertyChanged(nameof(CanWritePolling));
-        OnPropertyChanged(nameof(DpiVisibility));
-        OnPropertyChanged(nameof(CanEditDpi));
-        OnPropertyChanged(nameof(CanWriteDpi));
-        OnPropertyChanged(nameof(DpiStagesVisibility));
-        OnPropertyChanged(nameof(CanEditDpiStages));
-        OnPropertyChanged(nameof(CanWriteDpiStages));
-        OnPropertyChanged(nameof(PowerVisibility));
-        OnPropertyChanged(nameof(CanEditIdle));
-        OnPropertyChanged(nameof(CanWriteIdle));
-        OnPropertyChanged(nameof(CanEditLowBattery));
-        OnPropertyChanged(nameof(CanWriteLowBattery));
-        OnPropertyChanged(nameof(CanEditBrightness));
-        OnPropertyChanged(nameof(CanWriteBrightness));
-        OnPropertyChanged(nameof(LedStateVisibility));
-        OnPropertyChanged(nameof(CanWriteLedState));
-        OnPropertyChanged(nameof(ReactiveTriggerVisibility));
-        OnPropertyChanged(nameof(CanTriggerReactive));
-        OnPropertyChanged(nameof(MatrixVisibility));
-        OnPropertyChanged(nameof(CanApplyMatrix));
-        OnPropertyChanged(nameof(CanApplyLighting));
-        OnPropertyChanged(nameof(ScrollVisibility));
-        OnPropertyChanged(nameof(CanEditScrollMode));
-        OnPropertyChanged(nameof(CanWriteScrollMode));
-        OnPropertyChanged(nameof(CanEditScrollAcceleration));
-        OnPropertyChanged(nameof(CanWriteScrollAcceleration));
-        OnPropertyChanged(nameof(CanEditSmartReel));
-        OnPropertyChanged(nameof(CanWriteSmartReel));
-        OnPropertyChanged(nameof(KeyswitchVisibility));
-        OnPropertyChanged(nameof(CanEditKeyswitch));
-        OnPropertyChanged(nameof(CanWriteKeyswitch));
-        OnPropertyChanged(nameof(FnPrimaryVisibility));
-        OnPropertyChanged(nameof(CanSetFnPrimary));
-        OnPropertyChanged(nameof(HyperPollingVisibility));
-        OnPropertyChanged(nameof(CanUseHyperPolling));
-        OnPropertyChanged(nameof(CanSetHyperPollingIndicator));
-        OnPropertyChanged(nameof(CanPairHyperPolling));
-        OnPropertyChanged(nameof(CanUnpairHyperPolling));
-    }
-
-    private static OpenRazerColor ToOpenRazerColor(Color color) => new(color.R, color.G, color.B);
-    private static Color ToColor(OpenRazerColor color) => Color.FromArgb(255, color.Red, color.Green, color.Blue);
-
-    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value))
-        {
-            return false;
-        }
-        field = value;
-        OnPropertyChanged(propertyName);
-        if (propertyName == nameof(ErrorText)) OnPropertyChanged(nameof(HasError));
-        return true;
-    }
-
-    private void SetBusy(ref bool field, bool value, string dependentProperty, [CallerMemberName] string? propertyName = null)
-    {
-        if (SetField(ref field, value, propertyName))
-        {
-            OnPropertyChanged(dependentProperty);
-        }
-    }
-
-    private void SetBusy(ref bool field, bool value, string canEditProperty, string canWriteProperty, [CallerMemberName] string? propertyName = null)
-    {
-        if (SetField(ref field, value, propertyName))
-        {
-            OnPropertyChanged(canEditProperty);
-            OnPropertyChanged(canWriteProperty);
-        }
-    }
-
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }

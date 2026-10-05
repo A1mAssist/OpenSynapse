@@ -143,6 +143,8 @@ public sealed class ProfileDefinition
                 Blade = CloneBlade(settings.Blade),
                 Viper = CloneViper(settings.Viper),
                 Lighting = CloneLighting(settings.Lighting),
+                LightingEnabled = settings.LightingEnabled,
+                ChromaOverrideEnabled = settings.ChromaOverrideEnabled,
             };
         }
 
@@ -176,6 +178,8 @@ public sealed class ProfileDefinition
         GamingModeEnabled = source.GamingModeEnabled,
         SnapTapEnabled = source.SnapTapEnabled,
         MappingPreset = source.MappingPreset,
+        LightingEnabled = source.LightingEnabled,
+        ChromaOverrideEnabled = source.ChromaOverrideEnabled,
     };
 
     private static ViperProfileSettings CloneViper(ViperProfileSettings source) => new()
@@ -266,6 +270,8 @@ public sealed class DeviceProfileSettings
     public BladeProfileSettings Blade { get; set; } = new();
     public ViperProfileSettings Viper { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
+    public bool? LightingEnabled { get; set; }
+    public bool? ChromaOverrideEnabled { get; set; }
 
     internal void ApplySafeDefaults()
     {
@@ -316,6 +322,8 @@ public sealed class BladeProfileSettings
     public bool? GamingModeEnabled { get; set; }
     public bool? SnapTapEnabled { get; set; }
     public string? MappingPreset { get; set; }
+    public bool? LightingEnabled { get; set; }
+    public bool? ChromaOverrideEnabled { get; set; }
 
     internal void ApplySafeDefaults()
     {

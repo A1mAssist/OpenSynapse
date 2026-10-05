@@ -8,6 +8,7 @@ using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Protocols;
@@ -44,6 +45,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly WindowsStartupManager? _startupManager;
     private readonly WindowsTouchpadController? _touchpadController;
     private readonly OpenRazerDeviceService? _openRazerDeviceService;
+    private readonly OpenRazerChromaFrameSink? _openRazerChromaFrameSink;
     private readonly OpenRazerSpecialLightingService? _openRazerSpecialLightingService;
     private CancellationTokenSource? _openRazerSelectionCancellation;
     private OpenRazerDeviceViewModel? _selectedOpenRazerDevice;
@@ -135,6 +137,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _touchpadController = touchpadController;
         _openRazerDeviceService = openRazerDeviceService;
         _openRazerSpecialLightingService = openRazerSpecialLightingService;
+        if (_openRazerDeviceService is not null)
+        {
+            _openRazerChromaFrameSink = new OpenRazerChromaFrameSink(
+                _openRazerDeviceService,
+                () => CurrentOpenRazerConnections,
+                IsOpenRazerLightingEnabled,
+                IsOpenRazerChromaOverrideEnabled);
+        }
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
@@ -447,10 +457,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         var blade = _deviceDescriptors.FirstOrDefault(device =>
             device.ProtocolFamily == DeviceProtocolFamilies.Blade);
         var powerState = SelectedLightingPowerState;
-        var lighting = blade is null
-            ? EditableLightingProfile
-            : ProfileResolver.Resolve(_profile, blade, powerState).Lighting;
-        var effect = BladeLightingProfileCodec.Parse(lighting);
+        var resolved = blade is null
+            ? null
+            : ProfileResolver.Resolve(_profile, blade, powerState);
+        var lighting = resolved?.Lighting ?? EditableLightingProfile;
+        var bladeProfile = resolved?.Blade ?? EditableLightingBladeProfile;
+        BladeLightingEnabled = bladeProfile.LightingEnabled ?? true;
+        BladeChromaOverrideEnabled = bladeProfile.ChromaOverrideEnabled ?? true;
+        var effect = BladeLightingEnabled
+            ? BladeLightingProfileCodec.Parse(lighting)
+            : BladeLightingEffect.Off;
         var lightingIndex = Array.IndexOf(BladeLightingModes, effect.Mode);
         if (lightingIndex >= 0)
         {
@@ -464,9 +480,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             BladeStarlightColorModeIndex = (int)effect.StarlightColorMode;
         }
 
-        var bladeProfile = blade is null
-            ? EditableLightingBladeProfile
-            : ProfileResolver.Resolve(_profile, blade, powerState).Blade;
         if (bladeProfile.KeyboardBrightness is byte brightness)
         {
             SetBladeBrightness(brightness, confirm: false);

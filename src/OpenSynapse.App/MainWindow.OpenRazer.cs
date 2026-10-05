@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using OpenSynapse.App.ViewModels;
 
 namespace OpenSynapse.App;
@@ -15,13 +16,16 @@ public sealed partial class MainWindow
 
         SelectDevice("openrazer");
         await _viewModel.SelectOpenRazerDeviceAsync(row, _lifetime.Token);
+        UpdateDeviceSelector("openrazer");
     }
 
-    private void OpenRazerKrakenSelectorClick(object sender, RoutedEventArgs e)
+    private async void OpenRazerKrakenSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: OpenRazerKrakenDeviceRowViewModel row }) return;
         _viewModel.SelectOpenRazerKraken(row);
         SelectDevice("kraken");
+        if (_viewModel.SelectedOpenRazerKraken is { } kraken)
+            await kraken.LoadSerialAsync(_lifetime.Token);
     }
 
     private async void OpenRazerKrakenApplyClick(object sender, RoutedEventArgs e) =>
@@ -34,9 +38,6 @@ public sealed partial class MainWindow
 
     private async void OpenRazerApplyDpiClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyDpiAsync(_lifetime.Token) ?? Task.CompletedTask);
-
-    private async void OpenRazerDpiStagesExpanding(Expander sender, ExpanderExpandingEventArgs args) =>
-        await (SelectedOpenRazerDevice?.LoadDpiStagesAsync(_lifetime.Token) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyDpiStagesAsync(_lifetime.Token) ?? Task.CompletedTask);
@@ -53,32 +54,92 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyLightingClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyLightingAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void OpenRazerLightingSettingsToggled(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyLightingSettingsAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerApplyLedStateClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyLedStateAsync(_lifetime.Token) ?? Task.CompletedTask);
 
     private async void OpenRazerReactiveTriggerClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.TriggerReactiveAsync(_lifetime.Token) ?? Task.CompletedTask);
 
-    private async void OpenRazerMatrixCellClick(object sender, RoutedEventArgs e)
+    private void OpenRazerMatrixCellClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button { Tag: OpenRazerMatrixCellViewModel cell }) return;
+        if (sender is not Button { Tag: OpenRazerMatrixCellViewModel cell } button) return;
         var picker = new ColorPicker
         {
             Color = cell.Color,
+            Width = 260,
             IsAlphaEnabled = false,
-            IsAlphaSliderVisible = false,
-            IsAlphaTextInputVisible = false,
+            IsColorChannelTextInputVisible = false,
+            IsHexInputVisible = true,
+            IsMoreButtonVisible = false,
         };
-        var dialog = new ContentDialog
+        var content = new StackPanel { Width = 280, Spacing = 10 };
+        content.Children.Add(new TextBlock
         {
-            XamlRoot = RootLayout.XamlRoot,
-            Title = cell.AutomationName,
+            Text = AppStrings.Text("LightingQuickColors.Text"),
+            FontSize = 12,
+        });
+        var flyout = new Flyout { Content = content, ShouldConstrainToRootBounds = false };
+        content.Children.Add(CreateMatrixColorSwatches(LightingPaletteColors, picker, flyout, 8));
+        if (RecentLightingColors.Count > 0)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = AppStrings.Text("LightingRecentColors.Text"),
+                FontSize = 12,
+            });
+            content.Children.Add(CreateMatrixColorSwatches(RecentLightingColors, picker, flyout, 6));
+        }
+        content.Children.Add(new Expander
+        {
+            Header = AppStrings.Text("LightingCustomColor.Header"),
             Content = picker,
-            PrimaryButtonText = AppStrings.Text("Text_621A8231"),
-            CloseButtonText = AppStrings.Text("Text_949856B3"),
-            DefaultButton = ContentDialogButton.Primary,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        });
+        flyout.Closed += (_, _) =>
+        {
+            if (cell.Color == picker.Color) return;
+            cell.Color = picker.Color;
+            AddRecentLightingColor(picker.Color);
         };
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary) cell.Color = picker.Color;
+        flyout.ShowAt(button);
+    }
+
+    private static Grid CreateMatrixColorSwatches(
+        IEnumerable<LightingColorOption> colors, ColorPicker picker, Flyout flyout, int columns)
+    {
+        var grid = new Grid();
+        for (var index = 0; index < columns; index++) grid.ColumnDefinitions.Add(new ColumnDefinition());
+        var options = colors.ToArray();
+        for (var index = 0; index < options.Length; index++)
+        {
+            if (index % columns == 0) grid.RowDefinitions.Add(new RowDefinition());
+            var option = options[index];
+            var button = new Button
+            {
+                Width = 28,
+                Height = 28,
+                MinWidth = 28,
+                MinHeight = 28,
+                Margin = new Thickness(3),
+                Padding = new Thickness(0),
+                Background = option.Brush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+            };
+            ToolTipService.SetToolTip(button, option.Hex);
+            button.Click += (_, _) =>
+            {
+                picker.Color = option.Brush.Color;
+                flyout.Hide();
+            };
+            Grid.SetRow(button, index / columns);
+            Grid.SetColumn(button, index % columns);
+            grid.Children.Add(button);
+        }
+        return grid;
     }
 
     private async void OpenRazerApplyMatrixClick(object sender, RoutedEventArgs e) =>

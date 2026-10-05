@@ -10,6 +10,10 @@ coverage/
 # Local build and release bundles
 artifacts/
 docs/
+!docs/
+docs/*
+!docs/CHROMA_SUPPORTED_DEVICES.md
+!docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/

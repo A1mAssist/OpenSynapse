@@ -92,6 +92,11 @@ public static class ProfileResolver
                 global?.GamingModeEnabled),
             SnapTapEnabled = First(power?.SnapTapEnabled, device?.SnapTapEnabled, global?.SnapTapEnabled),
             MappingPreset = power?.MappingPreset ?? device?.MappingPreset ?? global?.MappingPreset,
+            LightingEnabled = First(power?.LightingEnabled, device?.LightingEnabled, global?.LightingEnabled),
+            ChromaOverrideEnabled = First(
+                power?.ChromaOverrideEnabled,
+                device?.ChromaOverrideEnabled,
+                global?.ChromaOverrideEnabled),
         };
     }
 

@@ -139,20 +139,13 @@ internal static class OpenRazerMouseProtocol
         {
             throw new InvalidDataException("Device returned an invalid DPI stage header.");
         }
-        var rawBase = arguments[3];
-        if (rawBase is not (0 or 1))
-        {
-            throw new InvalidDataException("Device returned an unknown DPI stage number base.");
-        }
 
         var stages = new OpenRazerDpiStage[count];
         for (var index = 0; index < count; index++)
         {
+            // OpenRazer treats the per-stage marker and two trailing bytes as
+            // device payload; only active stage, count, and X/Y are semantic.
             var offset = 3 + (index * 7);
-            if (arguments[offset] != rawBase + index || arguments[offset + 5] != 0 || arguments[offset + 6] != 0)
-            {
-                throw new InvalidDataException("Device returned a malformed DPI stage entry.");
-            }
             var x = (arguments[offset + 1] << 8) | arguments[offset + 2];
             var y = (arguments[offset + 3] << 8) | arguments[offset + 4];
             ValidateDpi(device, x, nameof(response));

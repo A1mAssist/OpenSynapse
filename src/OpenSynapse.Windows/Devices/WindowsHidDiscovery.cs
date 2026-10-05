@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text;
 using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Windows.Devices;
@@ -40,6 +41,32 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         ushort vendorId,
         CancellationToken cancellationToken = default) =>
         Task.Run(() => FindVendorFeatureInterfaces(vendorId, null, cancellationToken), cancellationToken);
+
+    public static Task<string?> TryReadSerialNumberAsync(string devicePath, CancellationToken cancellationToken = default) =>
+        Task.Run(() => TryReadSerialNumber(devicePath), cancellationToken);
+
+    private static string? TryReadSerialNumber(string devicePath)
+    {
+        if (string.IsNullOrWhiteSpace(devicePath)) return null;
+        var handle = NativeMethods.CreateFile(devicePath, 0,
+            NativeMethods.FILE_SHARE_READ | NativeMethods.FILE_SHARE_WRITE,
+            IntPtr.Zero, NativeMethods.OPEN_EXISTING, 0, IntPtr.Zero);
+        if (handle == NativeMethods.INVALID_HANDLE_VALUE) return null;
+        try
+        {
+            var buffer = new byte[256];
+            if (!NativeMethods.HidD_GetSerialNumberString(handle, buffer, buffer.Length)) return null;
+            var serial = Encoding.Unicode.GetString(buffer);
+            var terminator = serial.IndexOf('\0');
+            if (terminator >= 0) serial = serial[..terminator];
+            serial = serial.Trim();
+            return string.IsNullOrWhiteSpace(serial) || serial.Any(char.IsControl) ? null : serial;
+        }
+        finally
+        {
+            NativeMethods.CloseHandle(handle);
+        }
+    }
 
     private static IReadOnlyList<HidInterfaceDescriptor> FindVendorFeatureInterfaces(
         ushort vendorId,
@@ -476,6 +503,10 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool HidD_GetPreparsedData(IntPtr hidDeviceObject, out IntPtr preparsedData);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_GetSerialNumberString(IntPtr hidDeviceObject, [Out] byte[] buffer, int bufferLength);
 
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

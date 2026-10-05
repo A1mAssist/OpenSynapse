@@ -19,6 +19,7 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     private bool _isBusy;
     private bool _requiresRescan;
     private string _errorText;
+    private string? _serial;
 
     public OpenRazerKrakenViewModel(
         OpenRazerSpecialLightingService service,
@@ -26,7 +27,9 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     {
         _service = service;
         Connection = connection;
-        _errorText = connection.Error ?? string.Empty;
+        _errorText = string.IsNullOrWhiteSpace(connection.Error)
+            ? string.Empty
+            : AppStrings.Text("OpenRazerProtocolRescanRequired");
         _selectedEffect = Effects.FirstOrDefault();
     }
 
@@ -34,13 +37,32 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     public OpenRazerSpecialLightingConnection Connection { get; }
     public string InstanceId => Connection.InstanceId;
     public string Name => Connection.DisplayName;
+    public string CategoryText => Connection.Kind == OpenRazerSpecialLightingKind.Kraken37
+        ? AppStrings.Text("OpenRazerKrakenSubtitle.Text")
+        : AppStrings.Text("Text_71E692AA");
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
+    public string? Serial { get => _serial; private set => SetField(ref _serial, value); }
+    public Visibility SerialVisibility => string.IsNullOrWhiteSpace(Serial) ? Visibility.Collapsed : Visibility.Visible;
+
+    public async Task LoadSerialAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Serial = await _service.TryReadSerialAsync(Connection, cancellationToken);
+            OnPropertyChanged(nameof(SerialVisibility));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+    }
     public string StatusText => RequiresRescan
         ? AppStrings.Text("Text_C0E6F3C9")
         : Connection.IsReady ? AppStrings.Text("Text_C097B416") : AppStrings.Text("Text_242E08F4");
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool RequiresRescan { get => _requiresRescan; private set => SetField(ref _requiresRescan, value); }
+    public Visibility ControlsVisibility => VisibleWhen(Connection.IsReady && !RequiresRescan &&
+        Connection.Kind == OpenRazerSpecialLightingKind.Kraken37 && Effects.Count > 0);
     public IReadOnlyList<OpenRazerLightingEffect> Effects => Connection.SupportedEffects
         .Where(effect => !_unsupported.Contains(effect)).Order().ToArray();
     public IReadOnlyList<string> EffectOptions => Effects.Select(FormatEffect).ToArray();
@@ -72,14 +94,16 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     public byte Intensity { get => _intensity; set => SetField(ref _intensity, value); }
     public string IntensityText => $"{Math.Round(Intensity / 255d * 100)}%";
     public Visibility PrimaryVisibility => VisibleWhen(SelectedEffect is
-        OpenRazerLightingEffect.Static or OpenRazerLightingEffect.BreathingSingle or
+        OpenRazerLightingEffect.BreathingSingle or
         OpenRazerLightingEffect.BreathingDual or OpenRazerLightingEffect.BreathingTriple or
-        OpenRazerLightingEffect.Custom);
+        OpenRazerLightingEffect.Custom ||
+        SelectedEffect == OpenRazerLightingEffect.Static && Connection.SupportsStaticColor);
     public Visibility SecondaryVisibility => VisibleWhen(SelectedEffect is
         OpenRazerLightingEffect.BreathingDual or OpenRazerLightingEffect.BreathingTriple);
     public Visibility TertiaryVisibility => VisibleWhen(SelectedEffect == OpenRazerLightingEffect.BreathingTriple);
     public Visibility IntensityVisibility => VisibleWhen(SelectedEffect is
-        OpenRazerLightingEffect.Static or OpenRazerLightingEffect.Custom);
+        OpenRazerLightingEffect.Custom ||
+        SelectedEffect == OpenRazerLightingEffect.Static && Connection.SupportsStaticColor);
     public bool IsBusy { get => _isBusy; private set => SetField(ref _isBusy, value); }
     public bool CanApply => Connection.IsReady && !RequiresRescan && !IsBusy && Effects.Contains(SelectedEffect);
 
@@ -100,11 +124,12 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
-        catch (NotSupportedException exception)
+        catch (NotSupportedException)
         {
             _unsupported.Add(effect);
-            ErrorText = exception.Message;
+            ErrorText = AppStrings.Text("OpenRazerProtocolUnsupported");
             OnPropertyChanged(nameof(Effects));
+            OnPropertyChanged(nameof(ControlsVisibility));
             OnPropertyChanged(nameof(EffectOptions));
             _selectedEffect = Effects.FirstOrDefault();
             OnPropertyChanged(nameof(SelectedEffect));
@@ -116,7 +141,7 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
         }
         catch (Exception exception) when (exception is IOException or InvalidOperationException)
         {
-            ErrorText = exception.Message;
+            ErrorText = AppStrings.Text("OpenRazerProtocolRescanRequired");
             RequiresRescan = true;
         }
         finally
@@ -147,6 +172,7 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
         {
             OnPropertyChanged(nameof(StatusText));
             OnPropertyChanged(nameof(CanApply));
+            OnPropertyChanged(nameof(ControlsVisibility));
         }
         if (name == nameof(Intensity)) OnPropertyChanged(nameof(IntensityText));
         return true;

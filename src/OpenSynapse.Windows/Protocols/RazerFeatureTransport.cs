@@ -87,6 +87,8 @@ public interface IRazerFeatureSession : IAsyncDisposable
         bool allowRemainingPacketsMismatch = false);
 }
 
+internal sealed class RazerCommandRejectedException(string message) : InvalidOperationException(message);
+
 public sealed class RazerFeatureTransport : IRazerFeatureTransport
 {
     private readonly LocalDiagnosticLog? _diagnosticLog;
@@ -296,6 +298,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         Action<string>? diagnostic = null)
     {
         string? lastError = null;
+        var rejectedResponses = 0;
         for (var attempt = 1; attempt <= 5; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -349,12 +352,17 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             {
                 throw new NotSupportedException("The device does not support this command.");
             }
+            else if (response[1] == 0x03)
+            {
+                rejectedResponses++;
+                lastError = "The device rejected the query (0x03).";
+                diagnostic?.Invoke($"attempt {attempt}: {lastError}");
+            }
             else
             {
                 lastError = response[1] switch
                 {
                     0x01 => "The device is busy (0x01).",
-                    0x03 => "The device rejected the query (0x03).",
                     0x04 => "The device timed out (0x04); wake the device, close Synapse, and retry.",
                     _ => $"Device response status: 0x{response[1]:X2}.",
                 };
@@ -364,6 +372,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
         }
 
+        if (rejectedResponses == 5)
+            throw new RazerCommandRejectedException(lastError!);
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
     }
 

@@ -69,6 +69,8 @@ internal sealed class BladeViewModel
     internal int _bladeStarlightColorModeIndex = 1;
     internal Color _bladeLightingColor = Color.FromArgb(0xFF, 0x99, 0xDD, 0x72);
     internal Color _bladeLightingSecondColor = Color.FromArgb(0xFF, 0x00, 0x66, 0xFF);
+    internal bool _bladeLightingEnabled = true;
+    internal bool _bladeChromaOverrideEnabled = true;
 
     internal bool IsCustomMode =>
         _confirmedBladePerformanceModeIndex >= 0 &&

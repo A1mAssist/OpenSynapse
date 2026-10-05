@@ -93,6 +93,94 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void DpiStagesFollowOpenRazerLayoutWithoutOverValidatingReservedBytes()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var arguments = new byte[]
+        {
+            0x01, 0x01, 0x02,
+            0x00, 0x03, 0x20, 0x03, 0x20, 0x7A, 0x55,
+            0x01, 0x05, 0xDC, 0x05, 0xDC, 0x12, 0x34,
+        };
+        var response = RazerFeatureReport.CreateRequest(0x1F, checked((byte)arguments.Length),
+            0x04, 0x86, arguments);
+        response[1] = 0x02;
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+
+        var stages = OpenRazerMouseProtocol.ParseDpiStages(device, response);
+
+        Assert.Equal(1, stages.ActiveStage);
+        Assert.Equal(
+            [new OpenRazerDpiStage(1, 800, 800), new OpenRazerDpiStage(2, 1500, 1500)],
+            stages.Stages);
+    }
+
+    [Fact]
+    public async Task OptionalChargingRejectionDoesNotInvalidateBasiliskState()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var transport = new OptionalChargingRejectionTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.BatteryRead,
+                OpenRazerBackendCapability.ChargingRead,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var state = await service.ReadBasicStateAsync(connection);
+
+        Assert.Equal(96, state.BatteryPercent);
+        Assert.Null(state.IsCharging);
+        Assert.Empty(state.Errors);
+        Assert.Contains(OpenRazerBackendCapability.ChargingRead, state.UnsupportedCapabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.BatteryRead, state.UnsupportedCapabilities);
+
+        await service.ReadBasicStateAsync(connection, excludedCapabilities: state.UnsupportedCapabilities);
+        Assert.Equal(1, transport.ChargingQueries);
+    }
+
+    [Fact]
+    public async Task TransportFailureRemainsARescanError()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn,
+            new FailingReadTransport(new IOException("Device disconnected.")));
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability> { OpenRazerBackendCapability.ChargingRead },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var state = await service.ReadBasicStateAsync(connection);
+
+        Assert.Equal("Device disconnected.", state.Errors["charging"]);
+        Assert.Empty(state.UnsupportedCapabilities);
+    }
+
+    [Fact]
+    public async Task SerialReadIsShownOnlyAfterSuccessfulOptionalQuery()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0203)!;
+        Assert.Contains("razer_chroma_standard_get_serial", device.Transactions.Keys);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>(),
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var read = await new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn,
+            new SerialTransport()).ReadBasicStateAsync(connection);
+        Assert.Equal("RAZER-123", read.Serial);
+        Assert.Empty(read.Errors);
+
+        var rejected = await new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn,
+            new FailingReadTransport(new IOException("Serial unavailable"))).ReadBasicStateAsync(connection);
+        Assert.Null(rejected.Serial);
+        Assert.Empty(rejected.Errors);
+    }
+
+    [Fact]
     public void WideStandardMatrixPreservesBytesBeyondDeclaredSize()
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0225)!;
@@ -289,7 +377,7 @@ public sealed class OpenRazerBackendTests
         var tartarus = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x022B)!;
         var zones = OpenRazerDeviceService.GetLightingZoneCapabilities(tartarus);
 
-        Assert.True(zones[OpenRazerLedZone.All].CanWriteBrightness);
+        Assert.False(zones[OpenRazerLedZone.All].CanWriteBrightness);
         Assert.DoesNotContain(OpenRazerLightingEffect.Spectrum,
             zones[OpenRazerLedZone.All].LightingEffects);
         Assert.Contains(OpenRazerLightingEffect.Spectrum,
@@ -375,13 +463,149 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
-    public void EveryPublishedBackendCapabilityHasAtLeastOneResolvedDeviceDefinition()
+    public void UnlistedGenericTransactionsDoNotBecomeProductCapabilities()
     {
         var published = OpenRazerDeviceCatalog.BuiltIn.Devices
             .SelectMany(OpenRazerDeviceService.GetCapabilities)
             .ToHashSet();
 
-        Assert.Equal(Enum.GetValues<OpenRazerBackendCapability>().Order(), published.Order());
+        Assert.Contains(OpenRazerBackendCapability.BatteryRead, published);
+        Assert.Contains(OpenRazerBackendCapability.LightingEffectWrite, published);
+        Assert.DoesNotContain(OpenRazerBackendCapability.SerialRead, published);
+        Assert.DoesNotContain(OpenRazerBackendCapability.DeviceModeRead, published);
+        Assert.DoesNotContain(OpenRazerBackendCapability.FnPrimaryWrite, published);
+    }
+
+    [Fact]
+    public void EveryPublishedProductControlIsDeclaredByItsOpenRazerCapabilityList()
+    {
+        foreach (var device in OpenRazerDeviceCatalog.BuiltIn.Devices)
+        {
+            var published = OpenRazerDeviceService.GetCapabilities(device);
+            foreach (var (capability, source) in new (OpenRazerBackendCapability Capability, string[] Source)[]
+            {
+                (OpenRazerBackendCapability.FirmwareRead, ["get_firmware"]),
+                (OpenRazerBackendCapability.BatteryRead, ["get_battery"]),
+                (OpenRazerBackendCapability.ChargingRead, ["is_charging"]),
+                (OpenRazerBackendCapability.PollingRateRead, ["get_poll_rate"]),
+                (OpenRazerBackendCapability.PollingRateWrite, ["set_poll_rate"]),
+                (OpenRazerBackendCapability.DpiRead, ["get_dpi_xy", "get_dpi_xy_byte"]),
+                (OpenRazerBackendCapability.DpiWrite, ["set_dpi_xy", "set_dpi_xy_byte"]),
+                (OpenRazerBackendCapability.DpiStagesRead, ["get_dpi_stages"]),
+                (OpenRazerBackendCapability.DpiStagesWrite, ["set_dpi_stages"]),
+                (OpenRazerBackendCapability.IdleTimeoutRead, ["get_idle_time"]),
+                (OpenRazerBackendCapability.IdleTimeoutWrite, ["set_idle_time"]),
+                (OpenRazerBackendCapability.LowBatteryThresholdRead, ["get_low_battery_threshold"]),
+                (OpenRazerBackendCapability.LowBatteryThresholdWrite, ["set_low_battery_threshold"]),
+                (OpenRazerBackendCapability.MatrixFrameWrite, ["set_key_row"]),
+                (OpenRazerBackendCapability.ReactiveTriggerWrite, ["trigger_reactive_effect"]),
+                (OpenRazerBackendCapability.ScrollModeRead, ["get_scroll_mode"]),
+                (OpenRazerBackendCapability.ScrollModeWrite, ["set_scroll_mode"]),
+                (OpenRazerBackendCapability.ScrollAccelerationRead, ["get_scroll_acceleration"]),
+                (OpenRazerBackendCapability.ScrollAccelerationWrite, ["set_scroll_acceleration"]),
+                (OpenRazerBackendCapability.SmartReelRead, ["get_scroll_smart_reel"]),
+                (OpenRazerBackendCapability.SmartReelWrite, ["set_scroll_smart_reel"]),
+                (OpenRazerBackendCapability.KeyswitchOptimizationRead, ["get_keyswitch_optimization"]),
+                (OpenRazerBackendCapability.KeyswitchOptimizationWrite, ["set_keyswitch_optimization"]),
+                (OpenRazerBackendCapability.HyperPollingIndicatorWrite, ["set_hyperpolling_wireless_dongle_indicator_led_mode"]),
+                (OpenRazerBackendCapability.HyperPollingPairWrite, ["set_hyperpolling_wireless_dongle_pair"]),
+                (OpenRazerBackendCapability.HyperPollingUnpairWrite, ["set_hyperpolling_wireless_dongle_unpair"]),
+            })
+            {
+                if (!published.Contains(capability)) continue;
+                Assert.True(source.Any(device.HasSourceCapability),
+                    $"1532:{device.ProductId:X4} published {capability} without an OpenRazer declaration.");
+            }
+
+            Assert.DoesNotContain(published, capability => capability is
+                OpenRazerBackendCapability.SerialRead or OpenRazerBackendCapability.DeviceModeRead or
+                OpenRazerBackendCapability.FnPrimaryWrite);
+            Assert.False(published.Contains(OpenRazerBackendCapability.MatrixFrameWrite) &&
+                device.MatrixDimensions is null,
+                $"1532:{device.ProductId:X4} published a matrix editor without dimensions.");
+
+            var zones = OpenRazerDeviceService.GetLightingZoneCapabilities(device);
+            foreach (var (zone, facts) in zones)
+            {
+                var sourceZone = zone switch
+                {
+                    OpenRazerLedZone.Logo => "logo",
+                    OpenRazerLedZone.ScrollWheel => "scroll",
+                    OpenRazerLedZone.Backlight => "backlight",
+                    OpenRazerLedZone.LeftSide => "left",
+                    OpenRazerLedZone.RightSide => "right",
+                    OpenRazerLedZone.Charging => "charging",
+                    OpenRazerLedZone.FastCharging => "fast_charging",
+                    OpenRazerLedZone.FullyCharged => "fully_charged",
+                    _ => null,
+                };
+                var prefix = zone == device.DefaultLedZone;
+                Assert.False(facts.CanReadBrightness && !(prefix && device.HasSourceCapability("get_brightness")) &&
+                    (sourceZone is null || !device.HasSourceCapability($"get_{sourceZone}_brightness")),
+                    $"1532:{device.ProductId:X4} published unlisted {zone} brightness read.");
+                Assert.False(facts.CanWriteBrightness && !(prefix && device.HasSourceCapability("set_brightness")) &&
+                    (sourceZone is null || !device.HasSourceCapability($"set_{sourceZone}_brightness")),
+                    $"1532:{device.ProductId:X4} published unlisted {zone} brightness write.");
+                Assert.False(facts.CanReadState && (zone != OpenRazerLedZone.Logo ||
+                    !device.HasSourceCapability("get_logo_active")),
+                    $"1532:{device.ProductId:X4} published unlisted {zone} state read.");
+                Assert.False(facts.CanWriteState && (sourceZone is null ||
+                    !device.HasSourceCapability($"set_{sourceZone}_active") &&
+                    !device.HasSourceCapability($"set_{sourceZone}_on")),
+                    $"1532:{device.ProductId:X4} published unlisted {zone} state write.");
+                Assert.False(facts.CanReadEffect && (zone != OpenRazerLedZone.Macro ||
+                    !device.HasSourceCapability("get_macro_effect")),
+                    $"1532:{device.ProductId:X4} published unlisted {zone} effect read.");
+                Assert.False(facts.CanReadColor,
+                    $"1532:{device.ProductId:X4} published an RGB read without a source capability.");
+                Assert.False(facts.CanWriteColor && !facts.LightingEffects.Any(effect => effect is
+                    OpenRazerLightingEffect.Static or OpenRazerLightingEffect.BreathingSingle or
+                    OpenRazerLightingEffect.Blinking),
+                    $"1532:{device.ProductId:X4} published {zone} color write without a color effect.");
+                Assert.False(facts.CanWriteBlinking && !facts.LightingEffects.Contains(OpenRazerLightingEffect.Blinking),
+                    $"1532:{device.ProductId:X4} published {zone} blinking without its effect.");
+                foreach (var effect in facts.LightingEffects)
+                {
+                    var declaredGeneric = device.HasSourceCapability(
+                        OpenRazerLightingProtocol.GetGenericEffectCapability(effect));
+                    var declaredZone = sourceZone is not null && effect switch
+                    {
+                        OpenRazerLightingEffect.Off => device.HasSourceCapability($"set_{sourceZone}_none"),
+                        OpenRazerLightingEffect.Static => device.HasSourceCapability($"set_{sourceZone}_static"),
+                        OpenRazerLightingEffect.Spectrum => device.HasSourceCapability($"set_{sourceZone}_spectrum"),
+                        OpenRazerLightingEffect.Wave => device.HasSourceCapability($"set_{sourceZone}_wave"),
+                        OpenRazerLightingEffect.Reactive => device.HasSourceCapability($"set_{sourceZone}_reactive"),
+                        OpenRazerLightingEffect.BreathingRandom => device.HasSourceCapability($"set_{sourceZone}_breath_random"),
+                        OpenRazerLightingEffect.BreathingSingle =>
+                            device.HasSourceCapability($"set_{sourceZone}_breath_single") ||
+                            device.HasSourceCapability($"set_{sourceZone}_breath_mono"),
+                        OpenRazerLightingEffect.BreathingDual => device.HasSourceCapability($"set_{sourceZone}_breath_dual"),
+                        _ => false,
+                    };
+                    Assert.True(declaredGeneric || declaredZone,
+                        $"1532:{device.ProductId:X4} published unlisted {zone} {effect}.");
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void BasiliskV3XHyperSpeedDoesNotInheritUnlistedGenericControls()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+        var zones = OpenRazerDeviceService.GetLightingZoneCapabilities(device);
+
+        Assert.Empty(device.PollingRates);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.FirmwareRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.SerialRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.DeviceModeRead, capabilities);
+        Assert.Single(zones);
+        Assert.Contains(OpenRazerLedZone.ScrollWheel, zones.Keys);
+        Assert.DoesNotContain(OpenRazerLightingEffect.Custom,
+            zones[OpenRazerLedZone.ScrollWheel].LightingEffects);
     }
 
     [Fact]
@@ -604,5 +828,84 @@ public sealed class OpenRazerBackendTests
             response[1] = 0x02;
             return Task.FromResult(response);
         }
+    }
+
+    private sealed class SerialTransport : IRazerFeatureTransport
+    {
+        public Task<byte[]> QueryAsync(string devicePath, byte transactionId, byte dataSize,
+            byte commandClass, byte commandId, ReadOnlyMemory<byte> arguments, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(string devicePath, ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait, CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            var response = request.ToArray();
+            response[1] = 0x02;
+            "RAZER-123"u8.CopyTo(response.AsSpan(RazerFeatureReport.ArgumentsOffset));
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class OptionalChargingRejectionTransport : IRazerFeatureTransport
+    {
+        internal int ChargingQueries { get; private set; }
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            if (request.Span[8] == 0x84)
+            {
+                ChargingQueries++;
+                throw new NotSupportedException("The device rejected the query (0x03).");
+            }
+
+            var response = request.ToArray();
+            response[1] = 0x02;
+            response[RazerFeatureReport.ArgumentsOffset + 1] = 244;
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class FailingReadTransport(Exception failure) : IRazerFeatureTransport
+    {
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw failure;
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw failure;
     }
 }

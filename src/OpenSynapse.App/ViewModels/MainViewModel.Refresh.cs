@@ -7,6 +7,24 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private readonly Dictionary<string, string> _deviceSerials = new(StringComparer.OrdinalIgnoreCase);
+    private string? _bladeSerial;
+    private string? _viperSerial;
+
+    public string? BladeSerial { get => _bladeSerial; private set => SetField(ref _bladeSerial, value); }
+    public string? ViperSerial { get => _viperSerial; private set => SetField(ref _viperSerial, value); }
+    public Visibility BladeSerialVisibility => string.IsNullOrWhiteSpace(BladeSerial) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility ViperSerialVisibility => string.IsNullOrWhiteSpace(ViperSerial) ? Visibility.Collapsed : Visibility.Visible;
+
+    private async Task<string?> GetDeviceSerialAsync(DeviceDescriptor? device, CancellationToken cancellationToken)
+    {
+        if (device is not { Access: DeviceAccessState.Available }) return null;
+        if (_deviceSerials.TryGetValue(device.Id, out var serial)) return serial;
+        serial = await WindowsHidDiscovery.TryReadSerialNumberAsync(device.Id, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(serial)) _deviceSerials[device.Id] = serial;
+        return serial;
+    }
+
     private async Task RefreshDevicesCoreAsync(
         DeviceSnapshot? knownSnapshot,
         CancellationToken cancellationToken,
@@ -88,12 +106,15 @@ public sealed partial class MainViewModel
                     SelectedOpenRazerKraken = selectedKraken is null
                         ? null
                         : new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, selectedKraken.Connection);
+                    if (SelectedOpenRazerKraken is { } kraken)
+                        await kraken.LoadSerialAsync(cancellationToken);
                 }
             }
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
             {
                 ResetDeviceTelemetry();
+                _deviceSerials.Clear();
             }
             _deviceFingerprint = nextFingerprint;
             _deviceDescriptors = snapshot.Devices;
@@ -111,6 +132,10 @@ public sealed partial class MainViewModel
                     : null);
             BladeDeviceName = blade?.Name ?? "Razer Blade";
             ViperDeviceName = viper?.Name ?? "Razer Viper";
+            BladeSerial = await GetDeviceSerialAsync(blade, cancellationToken);
+            ViperSerial = await GetDeviceSerialAsync(viper, cancellationToken);
+            OnPropertyChanged(nameof(BladeSerialVisibility));
+            OnPropertyChanged(nameof(ViperSerialVisibility));
             BladeStatusText = FormatDeviceStatus(blade);
             ViperStatusText = FormatDeviceStatus(viper);
 
@@ -228,6 +253,10 @@ public sealed partial class MainViewModel
             var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
             var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
+            BladeSerial = null;
+            ViperSerial = null;
+            OnPropertyChanged(nameof(BladeSerialVisibility));
+            OnPropertyChanged(nameof(ViperSerialVisibility));
             ViperDeviceVisibility = Visibility.Collapsed;
             if (_bladeLightingController is not null && _bladeLightingDevicePath.Length > 0)
             {

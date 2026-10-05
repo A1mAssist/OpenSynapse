@@ -68,6 +68,28 @@ public sealed class ProfileExtendedSettingsTests
     }
 
     [Fact]
+    public void BladeLightingTogglesUsePowerOverrideAndDefaultToEnabled()
+    {
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Blade.LightingEnabled = true;
+        document.Global.Blade.ChromaOverrideEnabled = true;
+        document.PluggedIn.Blade.LightingEnabled = false;
+        document.PluggedIn.Blade.ChromaOverrideEnabled = false;
+
+        var pluggedIn = ProfileResolver.Resolve(document, Blade, true).Blade;
+        var onBattery = ProfileResolver.Resolve(document, Blade, false).Blade;
+
+        Assert.False(pluggedIn.LightingEnabled);
+        Assert.False(pluggedIn.ChromaOverrideEnabled);
+        Assert.True(onBattery.LightingEnabled);
+        Assert.True(onBattery.ChromaOverrideEnabled);
+
+        var legacy = ProfileResolver.Resolve(ProfileDocument.CreateDefault(), Blade, true).Blade;
+        Assert.Null(legacy.LightingEnabled);
+        Assert.Null(legacy.ChromaOverrideEnabled);
+    }
+
+    [Fact]
     public void LightingPowerOverrideCanExplicitlyTurnLightingOff()
     {
         var document = ProfileDocument.CreateDefault();

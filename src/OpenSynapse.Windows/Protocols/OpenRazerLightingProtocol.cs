@@ -529,7 +529,7 @@ internal static class OpenRazerLightingProtocol
         return siblingZones;
     }
 
-    private static string GetGenericEffectCapability(OpenRazerLightingEffect effect) => effect switch
+    internal static string GetGenericEffectCapability(OpenRazerLightingEffect effect) => effect switch
     {
         OpenRazerLightingEffect.Off => "set_none_effect",
         OpenRazerLightingEffect.Static => "set_static_effect",

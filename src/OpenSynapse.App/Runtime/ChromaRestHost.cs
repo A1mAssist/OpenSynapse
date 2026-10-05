@@ -25,6 +25,8 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _devices;
     private readonly IBladeLightingController _lighting;
     private readonly Func<Task> _restoreLighting;
+    private readonly Func<bool> _bladeChromaOverrideEnabled;
+    private readonly Func<IReadOnlyList<RazerRgb>, CancellationToken, Task<bool>>? _additionalFrameSink;
     private readonly Func<bool> _restorePersistentEffect;
     private readonly Dictionary<string, Session> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
@@ -46,11 +48,15 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         Func<IReadOnlyList<DeviceDescriptor>> devices,
         IBladeLightingController lighting,
         Func<Task> restoreLighting,
-        Func<bool>? restorePersistentEffect = null)
+        Func<bool>? restorePersistentEffect = null,
+        Func<IReadOnlyList<RazerRgb>, CancellationToken, Task<bool>>? additionalFrameSink = null,
+        Func<bool>? bladeChromaOverrideEnabled = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _lighting = lighting ?? throw new ArgumentNullException(nameof(lighting));
         _restoreLighting = restoreLighting ?? throw new ArgumentNullException(nameof(restoreLighting));
+        _bladeChromaOverrideEnabled = bladeChromaOverrideEnabled ?? (() => true);
+        _additionalFrameSink = additionalFrameSink;
         _restorePersistentEffect = restorePersistentEffect ?? (() => true);
     }
 
@@ -410,7 +416,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 return (InvalidParameter, null);
             }
 
-            RazerRgb[] frame;
+            ParsedFrame frame;
             if (!createEffect && root.TryGetProperty("id", out var idElement))
             {
                 if (idElement.ValueKind != JsonValueKind.String ||
@@ -464,7 +470,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 session.Effects[effectId!] = frame;
             }
 
-            var changed = _frameSource.Publish(frame);
+            var changed = _frameSource.Publish(frame.BladeFrame);
             if (!changed)
             {
                 Interlocked.Increment(ref _framesSkipped);
@@ -472,11 +478,44 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             // Re-assert ownership on every frame. If the user changed the
             // normal effect while a game is alive, the next game frame takes
             // the device back without restarting an already active runtime.
-            await _lighting.ApplyExternalAsync(
-                _devices(),
-                _frameSource,
-                restorePersistentEffect: false,
-                _stop.Token).ConfigureAwait(false);
+            var applied = false;
+            if (_bladeChromaOverrideEnabled())
+            {
+                try
+                {
+                    await _lighting.ApplyExternalAsync(
+                        _devices(),
+                        _frameSource,
+                        restorePersistentEffect: false,
+                        _stop.Token).ConfigureAwait(false);
+                    applied = true;
+                }
+                catch (InvalidOperationException) when (_additionalFrameSink is not null)
+                {
+                    // OpenRazer-only systems do not have a Blade target.
+                }
+            }
+            if (_additionalFrameSink is not null)
+            {
+                applied |= await _additionalFrameSink(frame.ChromaFrame, _stop.Token)
+                    .ConfigureAwait(false);
+            }
+            if (!applied)
+            {
+                if (createEffect && effectId is not null)
+                {
+                    session.Effects.Remove(effectId);
+                }
+                lock (_gate)
+                {
+                    if (_sessions.TryGetValue(session.Id, out var current) && ReferenceEquals(current, session))
+                    {
+                        session.Active = false;
+                        session.ActiveEffectId = null;
+                    }
+                }
+                return (DeviceNotConnected, null);
+            }
             if (changed)
             {
                 Interlocked.Increment(ref _framesAccepted);
@@ -576,34 +615,84 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
     }
 
-    private static (int Code, RazerRgb[]? Frame) ParseFrame(JsonElement root, string? effect)
+    private static (int Code, ParsedFrame? Frame) ParseFrame(JsonElement root, string? effect)
     {
         switch (effect?.ToUpperInvariant())
         {
             case "CHROMA_NONE":
-                return (Success, new RazerRgb[QuickLightingEngine.PixelCount]);
+                return (Success, new ParsedFrame(
+                    new RazerRgb[QuickLightingEngine.PixelCount],
+                    new RazerRgb[6 * 22]));
             case "CHROMA_STATIC":
                 var staticParam = RequireObject(root, "param");
-                return (Success, ChromaKeyboardFrameMapper.Static(
-                    ChromaKeyboardFrameMapper.ToRgb(ParseColor(staticParam, "color"))));
+                var staticColor = ChromaKeyboardFrameMapper.ToRgb(ParseColor(staticParam, "color"));
+                return (Success, new ParsedFrame(
+                    ChromaKeyboardFrameMapper.Static(staticColor),
+                    Enumerable.Repeat(staticColor, 6 * 22).ToArray()));
             case "CHROMA_CUSTOM":
                 if (!root.TryGetProperty("param", out var custom))
                 {
                     throw new InvalidOperationException();
                 }
-                return (Success, ChromaKeyboardFrameMapper.Custom(ParseMatrix(custom, 6, 22)));
+                var customMatrix = ParseMatrix(custom, 6, 22);
+                return (Success, new ParsedFrame(
+                    ChromaKeyboardFrameMapper.Custom(customMatrix),
+                    ToSourceFrame(customMatrix)));
             case "CHROMA_CUSTOM2":
                 var custom2 = RequireObject(root, "param");
-                return (Success, ChromaKeyboardFrameMapper.Custom2Key(
-                    ParseMatrix(custom2, "color", 8, 24),
-                    ParseMatrix(custom2, "key", 6, 22)));
+                var custom2Colors = ParseMatrix(custom2, "color", 8, 24);
+                var custom2Keys = ParseMatrix(custom2, "key", 6, 22);
+                var custom2Source = ToSourceFrame(custom2Colors);
+                ApplySourceKeyOverrides(custom2Source, custom2Keys);
+                return (Success, new ParsedFrame(
+                    ChromaKeyboardFrameMapper.Custom2Key(custom2Colors, custom2Keys),
+                    custom2Source));
             case "CHROMA_CUSTOM_KEY":
                 var parameter = RequireObject(root, "param");
-                return (Success, ChromaKeyboardFrameMapper.CustomKey(
-                    ParseMatrix(parameter, "color", 6, 22),
-                    ParseMatrix(parameter, "key", 6, 22)));
+                var customKeyColors = ParseMatrix(parameter, "color", 6, 22);
+                var customKeyKeys = ParseMatrix(parameter, "key", 6, 22);
+                var customKeySource = ToSourceFrame(customKeyColors);
+                ApplySourceKeyOverrides(customKeySource, customKeyKeys);
+                return (Success, new ParsedFrame(
+                    ChromaKeyboardFrameMapper.CustomKey(customKeyColors, customKeyKeys),
+                    customKeySource));
             default:
                 return (NotSupported, null);
+        }
+    }
+
+    private static RazerRgb[] ToSourceFrame(IReadOnlyList<IReadOnlyList<uint>> matrix)
+    {
+        var frame = new RazerRgb[6 * 22];
+        var rowOffset = matrix.Count == 8 ? 1 : 0;
+        var columnOffset = matrix[0].Count == 24 ? 1 : 0;
+        for (var row = 0; row < 6; row++)
+        {
+            for (var column = 0; column < 22; column++)
+            {
+                frame[row * 22 + column] = ChromaKeyboardFrameMapper.ToRgb(
+                    matrix[row + rowOffset][column + columnOffset]);
+            }
+        }
+        return frame;
+    }
+
+    private static void ApplySourceKeyOverrides(
+        RazerRgb[] frame,
+        IReadOnlyList<IReadOnlyList<uint>> keys)
+    {
+        const uint keyActiveMask = 0x01000000;
+        for (var row = 0; row < 6; row++)
+        {
+            for (var column = 0; column < 22; column++)
+            {
+                var encoded = keys[row][column];
+                if ((encoded & keyActiveMask) != 0)
+                {
+                    frame[row * 22 + column] = ChromaKeyboardFrameMapper.ToRgb(
+                        (~encoded) & 0x00FFFFFFu);
+                }
+            }
         }
     }
 
@@ -759,7 +848,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             // then be stopped by this stale cleanup.
             if (wasActive && !HasActiveSession())
             {
-                await _lighting.StopAsync().ConfigureAwait(false);
+                await StopLightingAsync().ConfigureAwait(false);
                 await _restoreLighting().ConfigureAwait(false);
             }
         }
@@ -802,7 +891,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             }
             if (removed && wasActive && !HasActiveSession())
             {
-                await _lighting.StopAsync().ConfigureAwait(false);
+                await StopLightingAsync().ConfigureAwait(false);
                 await _restoreLighting().ConfigureAwait(false);
             }
         }
@@ -826,7 +915,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             }
             if (hadActiveSession)
             {
-                await _lighting.StopAsync().ConfigureAwait(false);
+                await StopLightingAsync().ConfigureAwait(false);
                 await _restoreLighting().ConfigureAwait(false);
             }
         }
@@ -839,6 +928,18 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private bool HasActiveSession()
     {
         lock (_gate) return _sessions.Values.Any(session => session.Active);
+    }
+
+    private async Task StopLightingAsync()
+    {
+        try
+        {
+            await _lighting.StopAsync().ConfigureAwait(false);
+        }
+        catch (InvalidOperationException) when (_additionalFrameSink is not null)
+        {
+            // An OpenRazer-only session has no Blade runtime to stop.
+        }
     }
 
     private static async Task<string> ReadBodyAsync(StreamReader reader, int length)
@@ -882,8 +983,12 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         public bool Active { get; set; }
         public bool ApplyInProgress { get; set; }
         public string? ActiveEffectId { get; set; }
-        public Dictionary<string, RazerRgb[]> Effects { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, ParsedFrame> Effects { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
+
+    private sealed record ParsedFrame(
+        RazerRgb[] BladeFrame,
+        RazerRgb[] ChromaFrame);
 
     private sealed class ChromaAppInfo
     {

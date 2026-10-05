@@ -131,4 +131,5 @@ public sealed record OpenRazerBasicState(
     int? IdleTimeoutSeconds,
     int? LowBatteryThresholdPercent,
     byte? Brightness,
-    IReadOnlyDictionary<string, string> Errors);
+    IReadOnlyDictionary<string, string> Errors,
+    IReadOnlySet<OpenRazerBackendCapability> UnsupportedCapabilities);
