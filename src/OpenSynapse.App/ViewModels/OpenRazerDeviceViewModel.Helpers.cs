@@ -231,6 +231,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LightingControlsVisibility));
         OnPropertyChanged(nameof(ChromaOverrideVisibility));
         OnPropertyChanged(nameof(LightingZones));
+        OnPropertyChanged(nameof(LightingZoneSelectorVisibility));
         OnPropertyChanged(nameof(LightingPowerProfileVisibility));
         OnPropertyChanged(nameof(LightingEffectVisibility));
         OnPropertyChanged(nameof(LightingZoneOptions));
@@ -257,6 +258,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(MaximumLightingSpeed));
         OnPropertyChanged(nameof(LightingDirectionVisibility));
         OnPropertyChanged(nameof(CanApplyLighting));
+        OnPropertyChanged(nameof(LightingSaveVisibility));
         OnPropertyChanged(nameof(CanEditLightingSettings));
     }
 
@@ -324,6 +326,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LightingVisibility));
         OnPropertyChanged(nameof(LightingControlsVisibility));
         OnPropertyChanged(nameof(ChromaOverrideVisibility));
+        OnPropertyChanged(nameof(LightingZoneSelectorVisibility));
+        OnPropertyChanged(nameof(LightingSaveVisibility));
         OnPropertyChanged(nameof(CanApplyMatrix));
         OnPropertyChanged(nameof(CanApplyLighting));
         OnPropertyChanged(nameof(CanEditLightingSettings));

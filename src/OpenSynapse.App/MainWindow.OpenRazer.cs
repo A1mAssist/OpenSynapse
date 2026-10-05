@@ -88,6 +88,14 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyBrightnessClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private void OpenRazerBrightnessValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (SelectedOpenRazerDevice is { } device && e.NewValue is >= 0 and <= 255)
+        {
+            device.Brightness = (byte)Math.Round(e.NewValue);
+        }
+    }
+
     private async void OpenRazerApplyLightingClick(object sender, RoutedEventArgs e)
     {
         if (SelectedOpenRazerDevice is not { } device)

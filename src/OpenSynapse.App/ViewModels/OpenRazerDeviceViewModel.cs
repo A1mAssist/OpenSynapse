@@ -386,6 +386,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public IReadOnlyList<OpenRazerLedZone> LightingZones => Connection.LightingZones.Keys
         .Where(IsVisibleLightingZone).Order().ToArray();
     public IReadOnlyList<string> LightingZoneOptions => LightingZones.Select(FormatZone).ToArray();
+    public Visibility LightingZoneSelectorVisibility => VisibleWhen(LightingZones.Count > 1);
     public int SelectedLightingZoneIndex
     {
         get => IndexOf(LightingZones, SelectedLightingZone);
@@ -488,8 +489,14 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OpenRazerLightingEffect.Wave or OpenRazerLightingEffect.Wheel);
     public bool IsLightingBusy { get => _isLightingBusy; private set => SetBusy(ref _isLightingBusy, value, nameof(CanApplyLighting), nameof(CanTriggerReactive)); }
     public bool IsLightingLoading { get => _isLightingLoading; private set => SetField(ref _isLightingLoading, value); }
-    public bool CanApplyLighting => CanUse(OpenRazerBackendCapability.LightingEffectWrite) &&
-        LightingEnabled && !IsLightingBusy && LightingEffects.Contains(SelectedLightingEffect);
+    private bool CanApplyLightingEffect => CanUse(OpenRazerBackendCapability.LightingEffectWrite) &&
+        LightingEffects.Contains(SelectedLightingEffect);
+    public Visibility LightingSaveVisibility => VisibleWhen(
+        CanApplyLightingEffect ||
+        BrightnessWriteVisibility == Visibility.Visible ||
+        LedStateWriteVisibility == Visibility.Visible);
+    public bool CanApplyLighting => LightingEnabled && !IsLightingBusy &&
+        (CanApplyLightingEffect || CanWriteBrightness || CanWriteLedState);
     public Visibility BrightnessVisibility => VisibleWhen(SelectedZoneCapabilities is { } zone &&
         (zone.CanReadBrightness && !_unsupportedBrightnessReads.Contains(SelectedLightingZone) ||
          zone.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(SelectedLightingZone)));
