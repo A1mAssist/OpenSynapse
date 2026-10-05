@@ -78,6 +78,18 @@
         <Setter Property="FontFamily" Value="{StaticResource AppFontSemiBoldFamily}" />
         <Setter Property="FontWeight" Value="SemiBold" />
       </Style>
+      <Style x:Key="OpenRazerSaveButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+        <Setter Property="ContentTemplate">
+          <Setter.Value>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <SymbolIcon Symbol="Save" />
+                <TextBlock Text="{Binding}" />
+              </StackPanel>
+            </DataTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
       <Style x:Key="IconButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="34" />
         <Setter Property="Height" Value="34" />

@@ -168,6 +168,10 @@ public sealed class OpenRazerDeviceService
                 try
                 {
                     serial = await GetSerialAsync(connection, cancellationToken).ConfigureAwait(false);
+                    if (!WindowsHidDiscovery.IsUsableSerial(serial))
+                    {
+                        serial = null;
+                    }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {

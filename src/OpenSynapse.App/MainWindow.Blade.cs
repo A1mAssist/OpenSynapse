@@ -184,6 +184,10 @@ public sealed partial class MainWindow
         {
             if (SelectedOpenRazerDevice is { } openRazer)
             {
+                if (ReferenceEquals(sender, OpenRazerPrimaryColorFlyout))
+                    openRazer.PrimaryColor = picker!.Color;
+                else
+                    openRazer.SecondaryColor = picker!.Color;
                 await openRazer.ApplyLightingAsync(_lifetime.Token);
             }
         }
