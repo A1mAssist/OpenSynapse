@@ -5,6 +5,41 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private void RefreshDeviceSelectorItems()
+    {
+        DeviceSelectorItems.Clear();
+        DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+            DeviceSelectorItemKind.Blade,
+            BladeDeviceName,
+            "\uE7F8"));
+        if (ViperDeviceVisibility == Microsoft.UI.Xaml.Visibility.Visible)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Viper,
+                ViperDeviceName,
+                "\uE962"));
+        }
+
+        foreach (var row in OpenRazerDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.OpenRazer,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in OpenRazerKrakenDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Kraken,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+        OnPropertyChanged(nameof(DeviceSelectorItems));
+    }
+
     internal IReadOnlyList<OpenRazerDeviceConnection> CurrentOpenRazerConnections =>
         OpenRazerDevices.Select(row => row.Connection).ToArray();
 

@@ -88,6 +88,13 @@ public sealed partial class MainWindow
         {
             _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
         }
+        if (args.PropertyName == nameof(MainViewModel.DeviceSelectorItems))
+        {
+            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector(
+                ViperDevicePanel.Visibility == Visibility.Visible ? "viper" :
+                OpenRazerDevicePanel.Visibility == Visibility.Visible ? "openrazer" :
+                OpenRazerKrakenPanel.Visibility == Visibility.Visible ? "kraken" : "blade"));
+        }
         if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerDevice) &&
             _viewModel.SelectedOpenRazerDevice is null &&
             OpenRazerDevicePanel.Visibility == Visibility.Visible)
@@ -116,19 +123,21 @@ public sealed partial class MainWindow
     {
         var selected = (Brush)Application.Current.Resources["SurfaceRaisedBrush"];
         var transparent = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
-        BladeDeviceButton.Background = device == "blade" ? selected : transparent;
-        ViperDeviceButton.Background = device == "viper" ? selected : transparent;
-        foreach (var row in _viewModel.OpenRazerDevices)
+        foreach (var item in _viewModel.DeviceSelectorItems)
         {
-            row.SetSelectorBackground(device == "openrazer" &&
-                StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerDevice?.InstanceId)
-                ? selected : transparent);
-        }
-        foreach (var row in _viewModel.OpenRazerKrakenDevices)
-        {
-            row.SetSelectorBackground(device == "kraken" &&
-                StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerKraken?.InstanceId)
-                ? selected : transparent);
+            var isSelected = item.Kind switch
+            {
+                DeviceSelectorItemKind.Blade => device == "blade",
+                DeviceSelectorItemKind.Viper => device == "viper",
+                DeviceSelectorItemKind.OpenRazer => device == "openrazer" &&
+                    item.Source is OpenRazerDeviceRowViewModel row &&
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerDevice?.InstanceId),
+                DeviceSelectorItemKind.Kraken => device == "kraken" &&
+                    item.Source is OpenRazerKrakenDeviceRowViewModel row &&
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerKraken?.InstanceId),
+                _ => false,
+            };
+            item.SetSelectorBackground(isSelected ? selected : transparent);
         }
     }
 

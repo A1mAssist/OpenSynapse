@@ -19,6 +19,43 @@ public sealed partial class MainWindow
         UpdateDeviceSelector("openrazer");
     }
 
+    private async void DeviceSelectorItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: DeviceSelectorItemViewModel item })
+        {
+            return;
+        }
+
+        switch (item.Kind)
+        {
+            case DeviceSelectorItemKind.Blade:
+                SelectDevice("blade");
+                break;
+            case DeviceSelectorItemKind.Viper:
+                SelectDevice("viper");
+                break;
+            case DeviceSelectorItemKind.OpenRazer when item.Source is OpenRazerDeviceRowViewModel row:
+                SelectDevice("openrazer");
+                await _viewModel.SelectOpenRazerDeviceAsync(row, _lifetime.Token);
+                break;
+            case DeviceSelectorItemKind.Kraken when item.Source is OpenRazerKrakenDeviceRowViewModel row:
+                _viewModel.SelectOpenRazerKraken(row);
+                SelectDevice("kraken");
+                if (_viewModel.SelectedOpenRazerKraken is { } kraken)
+                    await kraken.LoadSerialAsync(_lifetime.Token);
+                break;
+        }
+
+        UpdateDeviceSelector(item.Kind switch
+        {
+            DeviceSelectorItemKind.Blade => "blade",
+            DeviceSelectorItemKind.Viper => "viper",
+            DeviceSelectorItemKind.OpenRazer => "openrazer",
+            DeviceSelectorItemKind.Kraken => "kraken",
+            _ => string.Empty,
+        });
+    }
+
     private async void OpenRazerKrakenSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: OpenRazerKrakenDeviceRowViewModel row }) return;
