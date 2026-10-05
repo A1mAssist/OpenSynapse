@@ -1,10 +1,48 @@
 using OpenSynapse.Core.Profiles;
+using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    public IReadOnlyList<DeviceRowViewModel> PrimaryDevices => Devices.Take(2).ToArray();
+
+    public IReadOnlyList<DeviceRowViewModel> AdditionalDevices => Devices.Skip(2).ToArray();
+
+    private int OpenRazerPrimarySlots => Math.Max(0, 2 - PrimaryDevices.Count);
+
+    private int OpenRazerKrakenPrimarySlots => Math.Max(0,
+        2 - Devices.Count - OpenRazerDevices.Count);
+
+    public IReadOnlyList<OpenRazerDeviceRowViewModel> PrimaryOpenRazerDevices =>
+        OpenRazerDevices.Take(OpenRazerPrimarySlots).ToArray();
+
+    public IReadOnlyList<OpenRazerDeviceRowViewModel> AdditionalOpenRazerDevices =>
+        OpenRazerDevices.Skip(OpenRazerPrimarySlots).ToArray();
+
+    public IReadOnlyList<OpenRazerKrakenDeviceRowViewModel> PrimaryOpenRazerKrakenDevices =>
+        OpenRazerKrakenDevices.Take(OpenRazerKrakenPrimarySlots).ToArray();
+
+    public IReadOnlyList<OpenRazerKrakenDeviceRowViewModel> AdditionalOpenRazerKrakenDevices =>
+        OpenRazerKrakenDevices.Skip(OpenRazerKrakenPrimarySlots).ToArray();
+
+    public Visibility AdditionalDevicesVisibility =>
+        AdditionalOpenRazerDevices.Count > 0 || AdditionalOpenRazerKrakenDevices.Count > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    private void RefreshDeviceOverviewVisibility()
+    {
+        OnPropertyChanged(nameof(PrimaryDevices));
+        OnPropertyChanged(nameof(AdditionalDevices));
+        OnPropertyChanged(nameof(PrimaryOpenRazerDevices));
+        OnPropertyChanged(nameof(AdditionalOpenRazerDevices));
+        OnPropertyChanged(nameof(PrimaryOpenRazerKrakenDevices));
+        OnPropertyChanged(nameof(AdditionalOpenRazerKrakenDevices));
+        OnPropertyChanged(nameof(AdditionalDevicesVisibility));
+    }
+
     private void RefreshDeviceSelectorItems()
     {
         DeviceSelectorItems.Clear();

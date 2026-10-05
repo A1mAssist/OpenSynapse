@@ -95,7 +95,7 @@ public sealed partial class MainWindow
                 case 2:
                     RootNavigationView.SelectedItem = DevicesNavigationItem;
                     DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
-                    target = DeviceSelectorBar;
+                    target = DeviceCardsRepeater;
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
                     break;
                 default:

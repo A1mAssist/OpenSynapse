@@ -201,6 +201,7 @@ public sealed partial class MainViewModel
             {
                 Devices.Add(new DeviceRowViewModel(device, telemetry));
             }
+            RefreshDeviceOverviewVisibility();
 
             var errors = telemetry.Errors
                 .Where(error => viperAvailable ||
