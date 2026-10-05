@@ -159,12 +159,16 @@
                         <TextBlock Text="DPI" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                         <TextBlock Text="{Binding DpiText}" Visibility="{Binding DpiReadVisibility}" FontFamily="Cascadia Mono" Foreground="{StaticResource MutedBrush}" />
                         <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Visibility="{Binding DpiWriteVisibility}"><NumberBox Value="{Binding DpiX, Mode=TwoWay}" Minimum="100" Maximum="{Binding MaximumDpi}" SmallChange="100" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanWriteDpi}" /><NumberBox Grid.Column="1" Value="{Binding DpiY, Mode=TwoWay}" Minimum="100" Maximum="{Binding MaximumDpi}" SmallChange="100" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanWriteDpi}" /><Button local:Localized.Uid="OpenRazerSaveButton" Grid.Column="2" Content="保存" Click="OpenRazerApplyDpiClick" IsEnabled="{Binding CanEditDpi}" Style="{StaticResource PrimaryButtonStyle}" /></Grid>
-                        <StackPanel Spacing="12" Visibility="{Binding DpiStagesVisibility}">
-                          <TextBlock local:Localized.Uid="OpenRazerDpiStagesTitle" Text="DPI 档位" FontSize="15" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <Expander IsExpanded="False" Visibility="{Binding DpiStagesVisibility}">
+                          <Expander.Header>
+                            <TextBlock local:Localized.Uid="OpenRazerDpiStagesTitle" Text="DPI 档位" FontSize="15" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                          </Expander.Header>
+                          <StackPanel Spacing="12">
                           <ProgressRing Width="20" Height="20" HorizontalAlignment="Left" IsActive="{Binding IsDpiStagesLoading}" Visibility="{Binding DpiStagesLoadingVisibility}" />
                           <ItemsRepeater ItemsSource="{Binding DpiStages}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout><ItemsRepeater.ItemTemplate><DataTemplate><Grid ColumnDefinitions="100,*,*" ColumnSpacing="8"><TextBlock Text="{Binding Label}" VerticalAlignment="Center" /><NumberBox Grid.Column="1" Header="X" Value="{Binding X, Mode=TwoWay}" Minimum="100" Maximum="100000" SmallChange="100" SpinButtonPlacementMode="Compact" IsEnabled="{Binding IsEditable}" /><NumberBox Grid.Column="2" Header="Y" Value="{Binding Y, Mode=TwoWay}" Minimum="100" Maximum="100000" SmallChange="100" SpinButtonPlacementMode="Compact" IsEnabled="{Binding IsEditable}" /></Grid></DataTemplate></ItemsRepeater.ItemTemplate></ItemsRepeater>
                           <Grid ColumnDefinitions="180,*,Auto" ColumnSpacing="8" Visibility="{Binding DpiStagesWriteVisibility}"><NumberBox local:Localized.Uid="OpenRazerActiveDpiStage" Header="当前档位" Value="{Binding ActiveDpiStage, Mode=TwoWay}" Minimum="1" Maximum="5" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanWriteDpiStages}" /><Button local:Localized.Uid="OpenRazerSaveButton" Grid.Column="2" Content="保存" Click="OpenRazerApplyDpiStagesClick" IsEnabled="{Binding CanEditDpiStages}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" /></Grid>
-                        </StackPanel>
+                          </StackPanel>
+                        </Expander>
                       </StackPanel>
                     </Border>
                   </StackPanel>
