@@ -105,8 +105,8 @@
                   </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Button Tag="{Binding}" Click="DeviceSelectorItemClick" Style="{StaticResource SecondaryButtonStyle}" Background="{Binding SelectorBackground}" Margin="0,0,8,8" HorizontalAlignment="Left" HorizontalContentAlignment="Left" AutomationProperties.Name="{Binding AutomationName}" MaxWidth="340">
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" /><TextBlock Grid.Column="1" Text="{Binding Name}" MaxWidth="270" TextWrapping="WrapWholeWords" /></Grid>
+                      <Button Tag="{Binding}" Click="DeviceSelectorItemClick" Style="{StaticResource SecondaryButtonStyle}" Background="{Binding SelectorBackground}" Margin="0,0,8,8" HorizontalAlignment="Left" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" AutomationProperties.Name="{Binding AutomationName}" Width="340" MinHeight="64">
+                        <Grid Width="308" ColumnDefinitions="Auto,*" ColumnSpacing="8"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" /><TextBlock Grid.Column="1" Text="{Binding Name}" Width="282" TextWrapping="WrapWholeWords" /></Grid>
                       </Button>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
