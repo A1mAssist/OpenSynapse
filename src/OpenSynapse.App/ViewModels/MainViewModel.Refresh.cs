@@ -52,8 +52,11 @@ public sealed partial class MainViewModel
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
             if (_openRazerDeviceService is not null)
             {
-                var openRazerConnections = await _openRazerDeviceService.DiscoverAsync(cancellationToken);
-                if (OpenRazerDevices.Count != openRazerConnections.Count ||
+                var openRazerConnections = (await _openRazerDeviceService.DiscoverAsync(cancellationToken))
+                    .OrderBy(connection => DeviceCategoryOrder(connection.Definition.Category))
+                    .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                if (OpenRazerDevices.Count != openRazerConnections.Length ||
                     !OpenRazerDevices.Zip(openRazerConnections)
                         .All(pair => OpenRazerConnectionMatches(pair.First.Connection, pair.Second)))
                 {
@@ -90,7 +93,9 @@ public sealed partial class MainViewModel
             {
                 var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
                 var krakenConnections = connections.Where(connection =>
-                    connection.Kind == OpenRazerSpecialLightingKind.Kraken37).ToArray();
+                        connection.Kind == OpenRazerSpecialLightingKind.Kraken37)
+                    .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
                 if (OpenRazerKrakenDevices.Count != krakenConnections.Length ||
                     !OpenRazerKrakenDevices.Zip(krakenConnections)
                         .All(pair => OpenRazerKrakenConnectionMatches(pair.First.Connection, pair.Second)))
@@ -197,7 +202,9 @@ public sealed partial class MainViewModel
             }
             RefreshDeviceSelectorItems();
             Devices.Clear();
-            foreach (var device in visibleDevices)
+            foreach (var device in visibleDevices
+                .OrderBy(device => DeviceCategoryOrder(device.Category))
+                .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase))
             {
                 Devices.Add(new DeviceRowViewModel(device, telemetry));
             }

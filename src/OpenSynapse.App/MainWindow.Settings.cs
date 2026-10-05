@@ -94,6 +94,7 @@ public sealed partial class MainWindow
     {
         ModeNotificationToggle.IsOn = _behaviorSettings.ModeChangeNotificationsEnabled;
         ChromaRestToggle.IsOn = _behaviorSettings.ExperimentalChromaRestEnabled;
+        _viewModel.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = _behaviorSettings.RestoreLightingAfterChromaSession;
         RefreshChromaRestStatus();
         foreach (var checkBox in PerformanceCycleModesPanel.Children.OfType<CheckBox>())
@@ -159,6 +160,7 @@ public sealed partial class MainWindow
         {
             _behaviorSettings.ExperimentalChromaRestEnabled = toggle.IsOn;
             _behaviorSettings.Save();
+            _viewModel.SetChromaIntegrationEnabled(toggle.IsOn);
             if (_setChromaRestEnabled is not null)
             {
                 await _setChromaRestEnabled(toggle.IsOn);
@@ -170,6 +172,7 @@ public sealed partial class MainWindow
             InvalidOperationException or SocketException or System.Security.SecurityException)
         {
             _behaviorSettings.ExperimentalChromaRestEnabled = previous;
+            _viewModel.SetChromaIntegrationEnabled(previous);
             _behaviorUiReady = false;
             toggle.IsOn = previous;
             _behaviorUiReady = true;

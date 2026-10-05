@@ -8,6 +8,32 @@ namespace OpenSynapse.App;
 
 public sealed partial class MainWindow
 {
+    private void AdditionalDevicesToggleClick(object sender, RoutedEventArgs e)
+    {
+        var expanded = AdditionalDevicesPanel.Visibility != Visibility.Visible;
+        AdditionalDevicesPanel.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        AdditionalDevicesExpandButton.Visibility = expanded ? Visibility.Collapsed : Visibility.Visible;
+        AdditionalDevicesCollapseButton.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ConnectedDeviceCardClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button) return;
+        RootNavigationView.SelectedItem = DevicesNavigationItem;
+        switch (button.Tag)
+        {
+            case DeviceRowViewModel:
+                DeviceCardClick(sender, e);
+                break;
+            case OpenRazerDeviceRowViewModel:
+                OpenRazerDeviceSelectorClick(sender, e);
+                break;
+            case OpenRazerKrakenDeviceRowViewModel:
+                OpenRazerKrakenSelectorClick(sender, e);
+                break;
+        }
+    }
+
     private void DeviceCardClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: DeviceRowViewModel row })

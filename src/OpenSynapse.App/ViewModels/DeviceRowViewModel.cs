@@ -16,6 +16,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public DeviceRowViewModel(DeviceDescriptor descriptor, RazerDeviceTelemetry telemetry)
     {
         ProtocolFamily = descriptor.ProtocolFamily;
+        HardwareCategory = descriptor.Category;
         Name = descriptor.Name;
         Identity = $"VID_{descriptor.VendorId:X4} / PID_{descriptor.ProductId:X4}";
         _accessSource = descriptor.Access == DeviceAccessState.Available
@@ -67,6 +68,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 
     public string Name { get; }
+    public DeviceCategory HardwareCategory { get; }
     public string ProtocolFamily { get; }
     public string Identity { get; }
     public string Access => _accessSource;
