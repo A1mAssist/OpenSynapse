@@ -169,10 +169,32 @@ public sealed partial class MainWindow
         _lightingColorBeforeEdit = null;
         _activeLightingColorPicker = null;
         _activeLightingColorFlyout = null;
-        if (changed && (ReferenceEquals(sender, PrimaryLightingColorFlyout) ||
-            ReferenceEquals(sender, SecondaryLightingColorFlyout)))
+        if (!changed)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(sender, PrimaryLightingColorFlyout) ||
+            ReferenceEquals(sender, SecondaryLightingColorFlyout))
         {
             await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
+        }
+        else if (ReferenceEquals(sender, OpenRazerPrimaryColorFlyout) ||
+            ReferenceEquals(sender, OpenRazerSecondaryColorFlyout))
+        {
+            if (SelectedOpenRazerDevice is { } openRazer)
+            {
+                await openRazer.ApplyLightingAsync(_lifetime.Token);
+            }
+        }
+        else if (ReferenceEquals(sender, KrakenPrimaryColorFlyout) ||
+            ReferenceEquals(sender, KrakenSecondaryColorFlyout) ||
+            ReferenceEquals(sender, KrakenTertiaryColorFlyout))
+        {
+            if (_viewModel.SelectedOpenRazerKraken is { } kraken)
+            {
+                await kraken.ApplyAsync(_lifetime.Token);
+            }
         }
     }
 
