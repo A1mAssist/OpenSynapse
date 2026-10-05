@@ -154,17 +154,22 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public bool RequiresRescan { get => _requiresRescan; private set => SetField(ref _requiresRescan, value); }
     public bool CanWrite => IsReady && !RequiresRescan;
 
+    private bool IsMouseDevice => Connection.Definition.Category == DeviceCategory.Mouse;
+    private bool HasBatteryData => HasAny(
+        OpenRazerBackendCapability.BatteryRead, OpenRazerBackendCapability.ChargingRead);
+    private bool HasPollingSection => PollingVisibility == Visibility.Visible;
     public bool HasBasicSection => HasAny(
         OpenRazerBackendCapability.FirmwareRead,
-        OpenRazerBackendCapability.DeviceModeRead,
-        OpenRazerBackendCapability.BatteryRead,
-        OpenRazerBackendCapability.ChargingRead) || !string.IsNullOrWhiteSpace(_basicState?.Serial);
+        OpenRazerBackendCapability.DeviceModeRead) ||
+        !string.IsNullOrWhiteSpace(_basicState?.Serial) ||
+        HasBatteryData && (!IsMouseDevice || !HasPollingSection);
     public Visibility BasicVisibility => VisibleWhen(HasBasicSection);
     public Visibility FirmwareVisibility => VisibleWhen(Has(OpenRazerBackendCapability.FirmwareRead));
     public Visibility SerialVisibility => VisibleWhen(!string.IsNullOrWhiteSpace(_basicState?.Serial));
     public Visibility SoftwareModeVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DeviceModeRead));
-    public Visibility BatteryVisibility => VisibleWhen(HasAny(
-        OpenRazerBackendCapability.BatteryRead, OpenRazerBackendCapability.ChargingRead));
+    public Visibility BatteryVisibility => VisibleWhen(HasBatteryData);
+    public Visibility BatteryBasicVisibility => VisibleWhen(!IsMouseDevice || !HasPollingSection);
+    public Visibility BatteryPollingVisibility => VisibleWhen(IsMouseDevice && HasPollingSection && HasBatteryData);
     public Visibility BatteryPercentVisibility => VisibleWhen(Has(OpenRazerBackendCapability.BatteryRead));
     public Visibility ChargingVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ChargingRead));
     public bool IsBasicBusy { get => _isBasicBusy; private set => SetField(ref _isBasicBusy, value); }
