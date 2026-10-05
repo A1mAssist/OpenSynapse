@@ -168,6 +168,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal string ActiveBladeMappingPreset => _activeBladeMappingPreset;
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
+    public ObservableCollection<DeviceSelectorItemViewModel> DeviceSelectorItems { get; } = new();
     public ObservableCollection<OpenRazerDeviceRowViewModel> OpenRazerDevices { get; } = new();
     public ObservableCollection<OpenRazerKrakenDeviceRowViewModel> OpenRazerKrakenDevices { get; } = new();
     public OpenRazerDeviceViewModel? SelectedOpenRazerDevice

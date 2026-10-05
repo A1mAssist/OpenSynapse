@@ -195,6 +195,7 @@ public sealed partial class MainViewModel
                 ResetViperTelemetry();
                 ViperStatusText = AppStrings.Text("Text_DB0974DC");
             }
+            RefreshDeviceSelectorItems();
             Devices.Clear();
             foreach (var device in visibleDevices)
             {
@@ -258,6 +259,7 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(BladeSerialVisibility));
             OnPropertyChanged(nameof(ViperSerialVisibility));
             ViperDeviceVisibility = Visibility.Collapsed;
+            RefreshDeviceSelectorItems();
             if (_bladeLightingController is not null && _bladeLightingDevicePath.Length > 0)
             {
                 try

@@ -99,30 +99,18 @@
                   <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
                   <ItemsRepeater.ItemTemplate><DataTemplate><Button Tag="{Binding}" Click="OpenRazerKrakenSelectorClick" Style="{StaticResource QuickActionButtonStyle}" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}"><Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13"><Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3"><TextBlock Text="{Binding Name}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" /><TextBlock Text="{Binding Category}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="3" MaxWidth="260"><TextBlock Text="{Binding Status}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{Binding StatusBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Error}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="2" /></StackPanel></Grid></Button></DataTemplate></ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
-                <StackPanel x:Name="DeviceSelectorBar" Spacing="8">
-                  <Button x:Name="BladeDeviceButton" Tag="blade" Click="DeviceSelectorClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon local:Localized.Uid="Loc_A89D57B72A" Glyph="&#xE7F8;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="笔记本设备" /><TextBlock Text="{Binding BladeDeviceName}" TextTrimming="CharacterEllipsis" /></StackPanel>
-                  </Button>
-                  <Button x:Name="ViperDeviceButton" Tag="viper" Click="DeviceSelectorClick" Visibility="{Binding ViperDeviceVisibility}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon local:Localized.Uid="Loc_D90B2AACF6" Glyph="&#xE962;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="鼠标设备" /><TextBlock Text="{Binding ViperDeviceName}" TextTrimming="CharacterEllipsis" /></StackPanel>
-                  </Button>
-                  <ItemsRepeater ItemsSource="{Binding OpenRazerDevices}">
-                    <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate><DataTemplate>
-                      <Button Tag="{Binding}" Click="OpenRazerDeviceSelectorClick" Style="{StaticResource SecondaryButtonStyle}" Background="{Binding SelectorBackground}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
-                        <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" /></StackPanel>
+                <ItemsControl x:Name="DeviceSelectorBar" ItemsSource="{Binding DeviceSelectorItems}" HorizontalAlignment="Stretch">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Button Tag="{Binding}" Click="DeviceSelectorItemClick" Style="{StaticResource SecondaryButtonStyle}" Background="{Binding SelectorBackground}" Margin="0,0,8,8" AutomationProperties.Name="{Binding AutomationName}">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="{Binding Name}" MaxWidth="260" TextTrimming="CharacterEllipsis" /></StackPanel>
                       </Button>
-                    </DataTemplate></ItemsRepeater.ItemTemplate>
-                  </ItemsRepeater>
-                  <ItemsRepeater ItemsSource="{Binding OpenRazerKrakenDevices}">
-                    <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate><DataTemplate>
-                      <Button Tag="{Binding}" Click="OpenRazerKrakenSelectorClick" Style="{StaticResource SecondaryButtonStyle}" Background="{Binding SelectorBackground}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
-                        <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" /></StackPanel>
-                      </Button>
-                    </DataTemplate></ItemsRepeater.ItemTemplate>
-                  </ItemsRepeater>
-                </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
                 <StackPanel x:Name="OpenRazerKrakenPanel" DataContext="{Binding SelectedOpenRazerKraken}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="{Binding Name}" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /></StackPanel><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Serial}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
