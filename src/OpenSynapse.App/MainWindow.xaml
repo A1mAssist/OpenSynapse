@@ -108,7 +108,7 @@
                   </StackPanel>
                 </Expander>
                 <StackPanel x:Name="OpenRazerKrakenPanel" DataContext="{Binding SelectedOpenRazerKraken}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /></StackPanel><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Serial}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ControlsVisibility}"><StackPanel Spacing="14"><TextBlock local:Localized.Uid="OpenRazerKrakenLightingTitle" Text="灯光效果" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ComboBox local:Localized.Uid="OpenRazerLightingEffect" Header="效果" ItemsSource="{Binding EffectOptions}" SelectedIndex="{Binding SelectedEffectIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
@@ -123,7 +123,7 @@
                 </StackPanel>
                 <StackPanel x:Name="OpenRazerDevicePanel" DataContext="{Binding SelectedOpenRazerDevice}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
@@ -191,12 +191,9 @@
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding HyperPollingVisibility}"><StackPanel Spacing="12"><TextBlock Text="HyperPolling" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="OpenRazerHyperPollingDescription" Text="管理接收器指示灯和鼠标配对。配对操作会再次确认。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /><Grid ColumnDefinitions="180,Auto,*,Auto,Auto" ColumnSpacing="8"><NumberBox local:Localized.Uid="OpenRazerHyperPollingIndicator" Header="指示灯模式" Visibility="{Binding HyperPollingIndicatorVisibility}" Value="{Binding HyperPollingIndicatorMode, Mode=TwoWay}" Minimum="1" Maximum="3" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanSetHyperPollingIndicator}" /><Button local:Localized.Uid="OpenRazerApplyIndicatorButton" Grid.Column="1" Content="应用" Visibility="{Binding HyperPollingIndicatorVisibility}" Click="OpenRazerApplyHyperPollingIndicatorClick" IsEnabled="{Binding CanSetHyperPollingIndicator}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /><Button local:Localized.Uid="OpenRazerPairButton" Grid.Column="3" Content="配对" Visibility="{Binding HyperPollingPairVisibility}" Click="OpenRazerPairHyperPollingClick" IsEnabled="{Binding CanPairHyperPolling}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" /><Button local:Localized.Uid="OpenRazerUnpairButton" Grid.Column="4" Content="取消配对" Visibility="{Binding HyperPollingUnpairVisibility}" Click="OpenRazerUnpairHyperPollingClick" IsEnabled="{Binding CanUnpairHyperPolling}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid></StackPanel></Border>
                 </StackPanel>
                 <StackPanel x:Name="BladeDevicePanel" Spacing="16">
-                  <TextBlock Text="{Binding BladeDeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_5AADFF0A18" Text="状态、灯光、性能、显示和电池。" Foreground="{StaticResource MutedBrush}" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding BladeDeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding BladeProtocolText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding BladeIdentityText}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding BladeSerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding BladeSerial}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
                   <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Grid.Column="1" Text="{Binding DeviceTelemetryTimeText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                    </Grid>
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
                       <Border Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
                         <StackPanel Spacing="10">
@@ -327,7 +324,7 @@
                   </Border>
                 </StackPanel>
                 <StackPanel x:Name="ViperDevicePanel" Visibility="Collapsed" Spacing="16">
-                  <TextBlock Text="{Binding ViperDeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_0D037A64E0" Text="状态、DPI 与轮询率、电源。" Foreground="{StaticResource MutedBrush}" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding ViperDeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding ViperProtocolText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding ViperIdentityText}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding ViperSerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding ViperSerial}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
                   <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="14">
                     <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_BEA434DB0D" Text="电量" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperBatteryText}" Style="{StaticResource MetricValueStyle}" /><TextBlock local:Localized.Uid="Loc_AAABCC9222" Text="只读" FontFamily="Cascadia Mono" FontSize="9" Foreground="{StaticResource MutedBrush}" /></StackPanel></Border>
@@ -453,7 +450,6 @@
                       </ContentControl>
                     </StackPanel>
                   </Border>
-                  <TextBlock Text="{Binding ViperStatusText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding DeviceTelemetryTimeText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </StackPanel>
               </StackPanel>
             </ScrollViewer>

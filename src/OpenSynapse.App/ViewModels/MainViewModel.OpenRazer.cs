@@ -36,6 +36,10 @@ public sealed partial class MainViewModel
     {
         OnPropertyChanged(nameof(PrimaryDevices));
         OnPropertyChanged(nameof(AdditionalDevices));
+        OnPropertyChanged(nameof(BladeProtocolText));
+        OnPropertyChanged(nameof(BladeIdentityText));
+        OnPropertyChanged(nameof(ViperProtocolText));
+        OnPropertyChanged(nameof(ViperIdentityText));
         OnPropertyChanged(nameof(PrimaryOpenRazerDevices));
         OnPropertyChanged(nameof(AdditionalOpenRazerDevices));
         OnPropertyChanged(nameof(PrimaryOpenRazerKrakenDevices));
