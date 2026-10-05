@@ -694,6 +694,10 @@ public sealed partial class MainViewModel
     }
 
     public string BladeDeviceName { get => _blade._bladeDeviceName; private set => SetField(ref _blade._bladeDeviceName, value); }
+    public string BladeProtocolText => Devices.FirstOrDefault(device =>
+        device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Capability ?? BladeStatusText;
+    public string BladeIdentityText => Devices.FirstOrDefault(device =>
+        device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Identity ?? "VID_1532 / PID_02C6";
     public string BladeStatusText { get => _blade._bladeStatusText; private set => SetField(ref _blade._bladeStatusText, value); }
     public string BladeBrightnessText { get => _blade._bladeBrightnessText; private set => SetField(ref _blade._bladeBrightnessText, value); }
     public string BladeBrightnessSelectionText { get => _blade._bladeBrightnessSelectionText; private set => SetField(ref _blade._bladeBrightnessSelectionText, value); }

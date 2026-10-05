@@ -275,6 +275,10 @@ public sealed partial class MainViewModel
         assignment.FunctionData.ToArray());
 
     public string ViperDeviceName { get => _viper._viperDeviceName; private set => SetField(ref _viper._viperDeviceName, value); }
+    public string ViperProtocolText => Devices.FirstOrDefault(device =>
+        device.ProtocolFamily == DeviceProtocolFamilies.Viper)?.Capability ?? ViperStatusText;
+    public string ViperIdentityText => Devices.FirstOrDefault(device =>
+        device.ProtocolFamily == DeviceProtocolFamilies.Viper)?.Identity ?? "VID_1532 / PID_00B8";
     public Visibility ViperDeviceVisibility { get => _viper._viperDeviceVisibility; private set => SetField(ref _viper._viperDeviceVisibility, value); }
     public string ViperStatusText { get => _viper._viperStatusText; private set => SetField(ref _viper._viperStatusText, value); }
     public string ViperBatteryText { get => _viper._viperBatteryText; private set => SetField(ref _viper._viperBatteryText, value); }
