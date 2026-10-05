@@ -17,6 +17,7 @@ public sealed class OpenRazerKrakenDeviceRowViewModel : INotifyPropertyChanged
 
     public OpenRazerSpecialLightingConnection Connection { get; }
     public event PropertyChangedEventHandler? PropertyChanged;
+    public Brush SelectorBackground { get; private set; } = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
     public string Name => Connection.DisplayName;
     public string Category => AppStrings.Text("OpenRazerHeadsetCategory");
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
@@ -25,6 +26,14 @@ public sealed class OpenRazerKrakenDeviceRowViewModel : INotifyPropertyChanged
         ? AppStrings.Text("Text_C097B416")
         : AppStrings.Text("Text_242E08F4");
     public Brush StatusBrush { get; }
-    public string Error => Connection.Error ?? string.Empty;
+    public string Error => string.IsNullOrWhiteSpace(Connection.Error)
+        ? string.Empty
+        : AppStrings.Text("OpenRazerProtocolRescanRequired");
+    public void SetSelectorBackground(Brush background)
+    {
+        SelectorBackground = background;
+        PropertyChanged?.Invoke(this, new(nameof(SelectorBackground)));
+    }
+
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }

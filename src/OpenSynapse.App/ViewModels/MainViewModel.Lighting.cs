@@ -161,13 +161,23 @@ public sealed partial class MainViewModel
             }
         }
 
-        var profile = ProfileResolver.Resolve(_profile, blade, powerState).Lighting;
+        var resolved = ProfileResolver.Resolve(_profile, blade, powerState);
+        var profile = resolved.Lighting;
+        var lightingEnabled = resolved.Blade.LightingEnabled ?? true;
+        var chromaOverrideEnabled = resolved.Blade.ChromaOverrideEnabled ?? true;
         string fingerprint;
         BladeLightingEffect effect;
         try
         {
-            effect = BladeLightingProfileCodec.Parse(profile);
-            fingerprint = CreateLightingFingerprint(profile, blade.Id, powerState);
+            effect = lightingEnabled
+                ? BladeLightingProfileCodec.Parse(profile)
+                : BladeLightingEffect.Off;
+            fingerprint = CreateLightingFingerprint(
+                profile,
+                blade.Id,
+                powerState,
+                lightingEnabled,
+                chromaOverrideEnabled);
         }
         catch (InvalidOperationException exception)
         {
@@ -212,8 +222,10 @@ public sealed partial class MainViewModel
     private string CreateLightingFingerprint(
         LightingProfile profile,
         string devicePath,
-        bool? powerState) =>
-        $"{_profile.ActiveProfileName}\n{powerState}\n{BladeLightingProfileCodec.Fingerprint(profile, devicePath)}";
+        bool? powerState,
+        bool lightingEnabled = true,
+        bool chromaOverrideEnabled = true) =>
+        $"{_profile.ActiveProfileName}\n{powerState}\n{lightingEnabled}\n{chromaOverrideEnabled}\n{BladeLightingProfileCodec.Fingerprint(profile, devicePath)}";
 
     internal async Task RestoreBladeLightingAfterExternalAsync()
     {
@@ -238,5 +250,18 @@ public sealed partial class MainViewModel
         {
             _deviceOperationGate.Release();
         }
+    }
+
+    internal bool IsBladeChromaOverrideEnabled()
+    {
+        var blade = _deviceDescriptors.FirstOrDefault(device =>
+            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+        if (blade is null)
+        {
+            return true;
+        }
+
+        var resolved = ProfileResolver.Resolve(_profile, blade, _powerSourceProvider.IsPluggedIn).Blade;
+        return (resolved.ChromaOverrideEnabled ?? true) && (resolved.LightingEnabled ?? true);
     }
 }

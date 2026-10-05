@@ -20,6 +20,7 @@ public sealed class OpenRazerSpecialLightingConnection
         string instanceId,
         string? devicePath,
         IReadOnlySet<OpenRazerLightingEffect> effects,
+        bool supportsStaticColor,
         string? error)
     {
         ProductId = productId;
@@ -28,6 +29,7 @@ public sealed class OpenRazerSpecialLightingConnection
         InstanceId = instanceId;
         DevicePath = devicePath;
         SupportedEffects = effects;
+        SupportsStaticColor = supportsStaticColor;
         Error = error;
     }
 
@@ -36,6 +38,7 @@ public sealed class OpenRazerSpecialLightingConnection
     public OpenRazerSpecialLightingKind Kind { get; }
     public string InstanceId { get; }
     public IReadOnlySet<OpenRazerLightingEffect> SupportedEffects { get; }
+    public bool SupportsStaticColor { get; }
     public string? Error { get; }
     public bool IsReady => DevicePath is not null;
     internal string? DevicePath { get; }
@@ -43,6 +46,12 @@ public sealed class OpenRazerSpecialLightingConnection
 
 public sealed class OpenRazerSpecialLightingService
 {
+    public Task<string?> TryReadSerialAsync(
+        OpenRazerSpecialLightingConnection connection,
+        CancellationToken cancellationToken = default) => connection.DevicePath is { } path
+            ? WindowsHidDiscovery.TryReadSerialNumberAsync(path, cancellationToken)
+            : Task.FromResult<string?>(null);
+
     private const ushort ArgbProductId = 0x0F1F;
     private static readonly FrozenDictionary<ushort, KrakenDefinition> KrakenDevices =
         new Dictionary<ushort, KrakenDefinition>
@@ -90,6 +99,7 @@ public sealed class OpenRazerSpecialLightingService
                 group.Key.PhysicalDeviceKey,
                 endpoint?.DevicePath,
                 argb ? Effects(OpenRazerLightingEffect.Custom) : KrakenDevices[group.Key.ProductId].Effects,
+                !argb && KrakenDevices[group.Key.ProductId].WritesColor,
                 endpoint is null
                     ? argb
                         ? "ARGB requires a USB control transfer with wValue 0x0300 and wIndex 1; Windows HID transport is not supported."

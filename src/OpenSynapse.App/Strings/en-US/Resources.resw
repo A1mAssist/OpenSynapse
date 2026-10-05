@@ -936,6 +936,21 @@
   <data name="ProtocolAvailableCount" xml:space="preserve">
     <value>Protocol available {0}/{1}</value>
   </data>
+  <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
+    <value>The device returned malformed protocol data. This capability has been disabled.</value>
+  </data>
+  <data name="OpenRazerDpiStagesMalformedResponse" xml:space="preserve">
+    <value>The device returned malformed DPI stage data. DPI stages have been disabled.</value>
+  </data>
+  <data name="OpenRazerProtocolUnsupported" xml:space="preserve">
+    <value>The device rejected this OpenRazer command. This capability has been disabled.</value>
+  </data>
+  <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
+    <value>The OpenRazer device connection is unavailable. Please rescan the device.</value>
+  </data>
+  <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
+    <value>The OpenRazer protocol query failed.</value>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0} failed: {1}</value>
   </data>
@@ -1195,6 +1210,10 @@
   <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
   <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>Low battery warning (%)</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
+  <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>Lighting enabled</value></data>
+  <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>Allow Chroma override</value></data>
+  <data name="BladeLightingEnabled.Header" xml:space="preserve"><value>Lighting enabled</value></data>
+  <data name="BladeChromaOverride.Header" xml:space="preserve"><value>Allow Chroma override</value></data>
   <data name="OpenRazerLightingPowerLabel.Text" xml:space="preserve"><value>Power profile</value></data>
   <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
   <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
@@ -1232,7 +1251,7 @@
   <data name="Text_B252C327" xml:space="preserve"><value>Hardware mode</value></data>
   <data name="Text_8FF04F66" xml:space="preserve"><value>Charging</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>Not charging</value></data>
-  <data name="OpenRazerDpiStagesExpander.Header" xml:space="preserve"><value>DPI stages</value></data>
+  <data name="OpenRazerDpiStagesTitle.Text" xml:space="preserve"><value>DPI stages</value></data>
   <data name="OpenRazerActiveDpiStage.Header" xml:space="preserve"><value>Active stage</value></data>
   <data name="OpenRazerDpiStageLabel" xml:space="preserve"><value>Stage {0}</value></data>
   <data name="OpenRazerHyperPollingDescription.Text" xml:space="preserve"><value>Manage the receiver indicator and mouse pairing. Pairing actions require confirmation.</value></data>

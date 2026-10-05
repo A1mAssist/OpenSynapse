@@ -5,6 +5,57 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    internal IReadOnlyList<OpenRazerDeviceConnection> CurrentOpenRazerConnections =>
+        OpenRazerDevices.Select(row => row.Connection).ToArray();
+
+    internal Task<bool> ApplyOpenRazerChromaFrameAsync(
+        IReadOnlyList<OpenSynapse.Windows.Protocols.RazerRgb> sourceFrame,
+        CancellationToken cancellationToken = default) =>
+        _openRazerChromaFrameSink?.ApplyAsync(sourceFrame, cancellationToken) ??
+        Task.FromResult(false);
+
+    internal bool IsOpenRazerLightingEnabled(OpenRazerDeviceConnection connection) =>
+        GetOpenRazerDeviceSettings(connection).LightingEnabled ?? true;
+
+    internal bool IsOpenRazerChromaOverrideEnabled(OpenRazerDeviceConnection connection) =>
+        GetOpenRazerDeviceSettings(connection).ChromaOverrideEnabled ?? true;
+
+    internal async Task<bool> SaveOpenRazerLightingSettingsAsync(
+        OpenRazerDeviceConnection connection,
+        bool lightingEnabled,
+        bool chromaOverrideEnabled,
+        CancellationToken cancellationToken)
+    {
+        var active = GetActiveProfile();
+        var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
+        if (!active.Devices.TryGetValue(key, out var settings))
+        {
+            settings = new DeviceProfileSettings();
+            active.Devices[key] = settings;
+        }
+
+        var previousLightingEnabled = settings.LightingEnabled;
+        var previousChromaOverrideEnabled = settings.ChromaOverrideEnabled;
+        settings.LightingEnabled = lightingEnabled;
+        settings.ChromaOverrideEnabled = chromaOverrideEnabled;
+        if (await SaveProfileAsync(cancellationToken))
+        {
+            return true;
+        }
+
+        settings.LightingEnabled = previousLightingEnabled;
+        settings.ChromaOverrideEnabled = previousChromaOverrideEnabled;
+        return false;
+    }
+
+    private DeviceProfileSettings GetOpenRazerDeviceSettings(OpenRazerDeviceConnection connection)
+    {
+        var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
+        return GetActiveProfile().Devices.TryGetValue(key, out var settings)
+            ? settings
+            : new DeviceProfileSettings();
+    }
+
     public async Task SelectOpenRazerDeviceAsync(
         OpenRazerDeviceRowViewModel row,
         CancellationToken cancellationToken = default)
@@ -17,24 +68,57 @@ public sealed partial class MainViewModel
         _openRazerSelectionCancellation?.Cancel();
         _openRazerSelectionCancellation?.Dispose();
         _openRazerSelectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var selected = new OpenRazerDeviceViewModel(
-            _openRazerDeviceService,
-            row.Connection,
+        var selectionToken = _openRazerSelectionCancellation.Token;
+        var selected = CreateOpenRazerDeviceViewModel(row.Connection);
+        SelectedOpenRazerKraken = null;
+        SelectedOpenRazerDevice = selected;
+        await selected.LoadBasicStateAsync(selectionToken);
+        await selected.LoadDpiStagesAsync(selectionToken);
+        await selected.ApplyConfiguredLightingAsync(selectionToken);
+    }
+
+    internal async Task RestoreOpenRazerLightingAfterExternalAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (_openRazerDeviceService is null)
+        {
+            return;
+        }
+
+        foreach (var connection in CurrentOpenRazerConnections)
+        {
+            if (!connection.IsReady)
+            {
+                continue;
+            }
+
+            var device = CreateOpenRazerDeviceViewModel(connection);
+            await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private OpenRazerDeviceViewModel CreateOpenRazerDeviceViewModel(
+        OpenRazerDeviceConnection connection) =>
+        new(
+            _openRazerDeviceService ?? throw new InvalidOperationException("OpenRazer service is unavailable."),
+            connection,
             () => _powerSourceProvider.IsPluggedIn,
             powerState => ProfileResolver.ResolveOpenRazerLighting(
                 _profile,
-                row.Connection.ToDescriptor(),
+                connection.ToDescriptor(),
                 powerState),
             (powerState, profile, token) => SaveOpenRazerLightingAsync(
-                row.Connection,
+                connection,
                 powerState,
                 profile,
+                token),
+            () => IsOpenRazerLightingEnabled(connection),
+            () => IsOpenRazerChromaOverrideEnabled(connection),
+            (lightingEnabled, chromaOverrideEnabled, token) => SaveOpenRazerLightingSettingsAsync(
+                connection,
+                lightingEnabled,
+                chromaOverrideEnabled,
                 token));
-        SelectedOpenRazerKraken = null;
-        SelectedOpenRazerDevice = selected;
-        await selected.LoadBasicStateAsync(_openRazerSelectionCancellation.Token);
-        await selected.ApplyConfiguredLightingAsync(_openRazerSelectionCancellation.Token);
-    }
 
     private async Task<bool> SaveOpenRazerLightingAsync(
         OpenRazerDeviceConnection connection,

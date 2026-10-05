@@ -19,6 +19,7 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public Brush SelectorBackground { get; private set; } = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
     public OpenRazerDeviceConnection Connection => _connection;
     public string Name => _connection.Definition.DisplayName;
     public string Category => _connection.Definition.Category switch
@@ -43,13 +44,23 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
     };
     public string Status => _connection.EndpointState switch
     {
+        OpenRazerEndpointState.Resolved when _connection.Capabilities.Count > 0 =>
+            AppStrings.FormatText("ProtocolAvailableCount", _connection.Capabilities.Count, _connection.Capabilities.Count),
         OpenRazerEndpointState.Resolved => AppStrings.Text("Text_C097B416"),
         OpenRazerEndpointState.RecognizedButUnresolved => AppStrings.Text("Text_242E08F4"),
         _ => AppStrings.Text("Text_D3632B96"),
     };
     public Brush StatusBrush { get; }
-    public string Error => _connection.Error ?? string.Empty;
+    public string Error => string.IsNullOrWhiteSpace(_connection.Error)
+        ? string.Empty
+        : AppStrings.Text("OpenRazerProtocolRescanRequired");
     public bool HasError => !string.IsNullOrWhiteSpace(Error);
+
+    public void SetSelectorBackground(Brush background)
+    {
+        SelectorBackground = background;
+        PropertyChanged?.Invoke(this, new(nameof(SelectorBackground)));
+    }
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }

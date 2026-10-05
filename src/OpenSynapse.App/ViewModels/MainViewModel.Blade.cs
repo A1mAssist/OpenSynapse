@@ -77,6 +77,20 @@ public sealed partial class MainViewModel
                     return;
                 }
 
+                if (!BladeLightingEnabled)
+                {
+                    targetLighting.Effect = encoded.Effect;
+                    targetLighting.Parameters = encoded.Parameters;
+                    if (!await SaveProfileAsync(cancellationToken))
+                    {
+                        _profile = previousProfile;
+                        throw new InvalidOperationException(AppStrings.Text("Text_9A87CD0C"));
+                    }
+
+                    RefreshBladeLightingEditor();
+                    return;
+                }
+
                 await _bladeLightingController.ApplyAsync(
                     _deviceDescriptors, effect, cancellationToken);
                 targetLighting.Effect = encoded.Effect;
@@ -93,11 +107,17 @@ public sealed partial class MainViewModel
                     device.Access == DeviceAccessState.Available);
                 if (blade is not null)
                 {
+                    var resolved = ProfileResolver.Resolve(
+                        _profile,
+                        blade,
+                        _powerSourceProvider.IsPluggedIn);
                     _bladeLightingDevicePath = blade.Id;
                     _lightingShadowFingerprint = CreateLightingFingerprint(
-                        ProfileResolver.Resolve(_profile, blade, _powerSourceProvider.IsPluggedIn).Lighting,
+                        resolved.Lighting,
                         blade.Id,
-                        _powerSourceProvider.IsPluggedIn);
+                        _powerSourceProvider.IsPluggedIn,
+                        resolved.Blade.LightingEnabled ?? true,
+                        resolved.Blade.ChromaOverrideEnabled ?? true);
                 }
                 _ = ObserveBladeLightingRuntimeAsync(
                     _bladeLightingController.RuntimeCompletion);
@@ -697,6 +717,7 @@ public sealed partial class MainViewModel
             {
                 OnPropertyChanged(nameof(CanSetBladeLighting));
                 OnPropertyChanged(nameof(CanSetBladeLightingPowerProfile));
+                OnPropertyChanged(nameof(CanSetBladeLightingSettings));
             }
         }
     }
@@ -809,6 +830,18 @@ public sealed partial class MainViewModel
         ];
     public IReadOnlyList<string> BladePerformancePowerProfileOptions => BladeLightingPowerProfileOptions;
     public IReadOnlyList<string> BladeRefreshRatePowerProfileOptions => BladeLightingPowerProfileOptions;
+    public bool BladeLightingEnabled
+    {
+        get => _blade._bladeLightingEnabled;
+        set => SetField(ref _blade._bladeLightingEnabled, value);
+    }
+    public bool BladeChromaOverrideEnabled
+    {
+        get => _blade._bladeChromaOverrideEnabled;
+        set => SetField(ref _blade._bladeChromaOverrideEnabled, value);
+    }
+    public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
+        _bladeLightingController is not null;
     public int BladeLightingPowerProfileIndex
     {
         get => _bladeLightingPowerProfileIndex;
@@ -898,6 +931,45 @@ public sealed partial class MainViewModel
     public Color BladeLightingColor { get => _blade._bladeLightingColor; set => SetField(ref _blade._bladeLightingColor, value); }
     public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
     public bool CanSetBladeLighting => _blade._canSetBladeBrightness && _bladeLightingController is not null;
+
+    public async Task ApplyBladeLightingSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanSetBladeLightingSettings)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(
+            AppStrings.Text("Text_09707A2C"),
+            async () =>
+            {
+                var previousProfile = _profile.Clone();
+                var target = EditableLightingBladeProfile;
+                target.LightingEnabled = BladeLightingEnabled;
+                target.ChromaOverrideEnabled = BladeChromaOverrideEnabled;
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    _profile = previousProfile;
+                    throw new InvalidOperationException(AppStrings.Text("Text_C7D0CD75"));
+                }
+
+                if (IsSelectedLightingPowerActive && Volatile.Read(ref _displayAvailable) != 0)
+                {
+                    _lightingShadowFingerprint = string.Empty;
+                    var blade = _deviceDescriptors.FirstOrDefault(device =>
+                        device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+                        device.Access == DeviceAccessState.Available);
+                    await ApplyLoadedLightingProfileAsync(
+                        blade,
+                        _powerSourceProvider.IsPluggedIn,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                RefreshBladeLightingEditor();
+            },
+            cancellationToken,
+            () => RefreshBladeLightingEditor(),
+            successVerb: AppStrings.Text("Text_945C2E42"));
+    }
     private async Task<BladeGameModeTelemetry> SetBladeGameModeCoreAsync(
         bool enabled,
         CancellationToken cancellationToken)

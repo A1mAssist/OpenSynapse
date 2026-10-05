@@ -104,10 +104,13 @@ public sealed partial class MainWindow
             var notification = Marshal.PtrToStructure<PowerBroadcastSettingHeader>(setting);
             if (notification.PowerSetting == ConsoleDisplayStateGuid && notification.DataLength == sizeof(uint))
             {
-                // State 0 is display off; state 1 is on and state 2 is dimmed.
-                // Dimming must not stop the keyboard lighting session.
-                SetConsoleDisplayState(
-                    Marshal.ReadInt32(setting, Marshal.SizeOf<PowerBroadcastSettingHeader>()) != 0);
+                // State 0 is off; states 1 and 2 (dimmed) are available.
+                // Ignore repeated availability so dimming does not restart the effect.
+                var state = Marshal.ReadInt32(setting, Marshal.SizeOf<PowerBroadcastSettingHeader>());
+                if (state is >= 0 and <= 2)
+                {
+                    SetConsoleDisplayState(state != 0);
+                }
             }
         }
         return 0;
@@ -130,6 +133,10 @@ public sealed partial class MainWindow
     {
         lock (_powerTransitionGate)
         {
+            if (_displayStateOn == available)
+            {
+                return;
+            }
             _displayStateOn = available;
             QueueDisplayTransition(suspending: false);
         }

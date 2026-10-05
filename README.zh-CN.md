@@ -58,6 +58,8 @@ Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y D
 
 ### Chroma REST
 
+参见 [Chroma 支持设备](docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md) 查看当前设备与传输方式矩阵。
+
 兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用经过验证的 Blade 16 实体键位，外部控制结束后会恢复当前选择的灯效。原生 Chroma SDK 和 `RzChromaConnectAPI` DLL 接口尚未实现。
 
 ## 界面预览

@@ -10,6 +10,7 @@ namespace OpenSynapse.App;
 public sealed partial class MainWindow
 {
     private bool _touchpadToggleInFlight;
+    private bool _bladeLightingSettingsInFlight;
     private Color? _lightingColorBeforeEdit;
     private ColorPicker? _activeLightingColorPicker;
     private Flyout? _activeLightingColorFlyout;
@@ -87,6 +88,24 @@ public sealed partial class MainWindow
         }
     }
 
+    private async void AutoApplyBladeLightingSettingsToggled(object sender, RoutedEventArgs e)
+    {
+        if (_bladeLightingSettingsInFlight || sender is not ToggleSwitch { FocusState: not FocusState.Unfocused })
+        {
+            return;
+        }
+
+        _bladeLightingSettingsInFlight = true;
+        try
+        {
+            await _viewModel.ApplyBladeLightingSettingsAsync(_lifetime.Token);
+        }
+        finally
+        {
+            _bladeLightingSettingsInFlight = false;
+        }
+    }
+
     private async void AutoApplyPlatformToggleToggled(object sender, RoutedEventArgs e)
     {
         if (sender is not ToggleSwitch { FocusState: not FocusState.Unfocused, Tag: string setting })
@@ -123,8 +142,19 @@ public sealed partial class MainWindow
             ? PrimaryLightingColorPicker
             : ReferenceEquals(sender, SecondaryLightingColorFlyout)
                 ? SecondaryLightingColorPicker
+                : ReferenceEquals(sender, OpenRazerPrimaryColorFlyout)
+                    ? OpenRazerPrimaryColorPicker
+                    : ReferenceEquals(sender, OpenRazerSecondaryColorFlyout)
+                        ? OpenRazerSecondaryColorPicker
+                        : ReferenceEquals(sender, KrakenPrimaryColorFlyout)
+                            ? KrakenPrimaryColorPicker
+                            : ReferenceEquals(sender, KrakenSecondaryColorFlyout)
+                                ? KrakenSecondaryColorPicker
+                                : ReferenceEquals(sender, KrakenTertiaryColorFlyout)
+                                    ? KrakenTertiaryColorPicker
                 : null;
         _lightingColorBeforeEdit = _activeLightingColorPicker?.Color;
+        UpdateRecentLightingColorVisibility();
     }
 
     private async void LightingColorFlyoutClosed(object sender, object e)
@@ -139,7 +169,8 @@ public sealed partial class MainWindow
         _lightingColorBeforeEdit = null;
         _activeLightingColorPicker = null;
         _activeLightingColorFlyout = null;
-        if (changed)
+        if (changed && (ReferenceEquals(sender, PrimaryLightingColorFlyout) ||
+            ReferenceEquals(sender, SecondaryLightingColorFlyout)))
         {
             await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
         }
@@ -171,8 +202,19 @@ public sealed partial class MainWindow
         {
             RecentLightingColors.RemoveAt(RecentLightingColors.Count - 1);
         }
-        PrimaryRecentLightingColors.Visibility = Visibility.Visible;
-        SecondaryRecentLightingColors.Visibility = Visibility.Visible;
+        UpdateRecentLightingColorVisibility();
+    }
+
+    private void UpdateRecentLightingColorVisibility()
+    {
+        var visibility = RecentLightingColors.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (PrimaryRecentLightingColors is { } bladePrimary) bladePrimary.Visibility = visibility;
+        if (SecondaryRecentLightingColors is { } bladeSecondary) bladeSecondary.Visibility = visibility;
+        if (OpenRazerPrimaryRecentColors is { } openRazerPrimary) openRazerPrimary.Visibility = visibility;
+        if (OpenRazerSecondaryRecentColors is { } openRazerSecondary) openRazerSecondary.Visibility = visibility;
+        if (KrakenPrimaryRecentColors is { } krakenPrimary) krakenPrimary.Visibility = visibility;
+        if (KrakenSecondaryRecentColors is { } krakenSecondary) krakenSecondary.Visibility = visibility;
+        if (KrakenTertiaryRecentColors is { } krakenTertiary) krakenTertiary.Visibility = visibility;
     }
 
     private static LightingColorOption CreateLightingColor(string hex, byte red, byte green, byte blue) =>

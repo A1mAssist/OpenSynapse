@@ -58,6 +58,8 @@ Available effects are read from the matched device definition. Models may expose
 
 ### Chroma REST
 
+See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.md) for the current device and transport matrix.
+
 Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified Blade 16 key layout, and OpenSynapse restores the selected lighting effect after external control ends. The native Chroma SDK and `RzChromaConnectAPI` DLL interface are not implemented.
 
 ## Screenshots

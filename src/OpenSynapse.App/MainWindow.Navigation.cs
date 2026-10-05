@@ -94,11 +94,21 @@ public sealed partial class MainWindow
         {
             _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
         }
+        else if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerDevice) &&
+            OpenRazerDevicePanel.Visibility == Visibility.Visible)
+        {
+            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("openrazer"));
+        }
         if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerKraken) &&
             _viewModel.SelectedOpenRazerKraken is null &&
             OpenRazerKrakenPanel.Visibility == Visibility.Visible)
         {
             _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
+        }
+        else if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerKraken) &&
+            OpenRazerKrakenPanel.Visibility == Visibility.Visible)
+        {
+            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("kraken"));
         }
     }
 
@@ -108,6 +118,18 @@ public sealed partial class MainWindow
         var transparent = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
         BladeDeviceButton.Background = device == "blade" ? selected : transparent;
         ViperDeviceButton.Background = device == "viper" ? selected : transparent;
+        foreach (var row in _viewModel.OpenRazerDevices)
+        {
+            row.SetSelectorBackground(device == "openrazer" &&
+                StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerDevice?.InstanceId)
+                ? selected : transparent);
+        }
+        foreach (var row in _viewModel.OpenRazerKrakenDevices)
+        {
+            row.SetSelectorBackground(device == "kraken" &&
+                StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerKraken?.InstanceId)
+                ? selected : transparent);
+        }
     }
 
     private void NavigationChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

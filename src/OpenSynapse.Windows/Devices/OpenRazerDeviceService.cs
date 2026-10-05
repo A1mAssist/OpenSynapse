@@ -111,7 +111,8 @@ public sealed class OpenRazerDeviceService
 
     public async Task<OpenRazerBasicState> ReadBasicStateAsync(
         OpenRazerDeviceConnection connection,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlySet<OpenRazerBackendCapability>? excludedCapabilities = null)
     {
         RequireReady(connection);
         Version? firmware = null;
@@ -126,10 +127,11 @@ public sealed class OpenRazerDeviceService
         int? threshold = null;
         byte? brightness = null;
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);
+        var unsupported = new HashSet<OpenRazerBackendCapability>();
 
         async Task ReadAsync<T>(OpenRazerBackendCapability capability, string key, Func<Task<T>> read, Action<T> assign)
         {
-            if (!connection.Capabilities.Contains(capability))
+            if (!connection.Capabilities.Contains(capability) || excludedCapabilities?.Contains(capability) == true)
             {
                 return;
             }
@@ -140,6 +142,17 @@ public sealed class OpenRazerDeviceService
             catch (Exception exception) when (exception is Win32Exception or IOException or
                 InvalidOperationException or NotSupportedException)
             {
+                if (exception is NotSupportedException)
+                {
+                    // A manifest can advertise an optional transaction that a
+                    // particular firmware rejects. Keep the rest of the device
+                    // state usable and let the UI render that field as unknown.
+                    unsupported.Add(capability);
+                    WriteDiagnostic(connection.Definition.ProductId,
+                        $"optional state read '{key}' is unsupported: {exception.Message}");
+                    return;
+                }
+
                 errors[key] = exception.Message;
                 WriteDiagnostic(connection.Definition.ProductId,
                     $"state read '{key}' failed: {exception.GetType().Name}: {exception.Message}");
@@ -148,8 +161,31 @@ public sealed class OpenRazerDeviceService
 
         await ReadAsync(OpenRazerBackendCapability.FirmwareRead, "firmware",
             () => GetFirmwareAsync(connection, cancellationToken), value => firmware = value);
-        await ReadAsync(OpenRazerBackendCapability.SerialRead, "serial",
-            () => GetSerialAsync(connection, cancellationToken), value => serial = value);
+        if (excludedCapabilities?.Contains(OpenRazerBackendCapability.SerialRead) != true)
+        {
+            if (connection.Definition.Transactions.ContainsKey("razer_chroma_standard_get_serial"))
+            {
+                try
+                {
+                    serial = await GetSerialAsync(connection, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception) when (exception is Win32Exception or IOException or
+                    InvalidOperationException or NotSupportedException)
+                {
+                    WriteDiagnostic(connection.Definition.ProductId,
+                        $"optional serial read failed: {exception.GetType().Name}: {exception.Message}");
+                }
+            }
+            if (string.IsNullOrWhiteSpace(serial))
+            {
+                serial = await WindowsHidDiscovery.TryReadSerialNumberAsync(
+                    connection.DevicePath!, cancellationToken).ConfigureAwait(false);
+            }
+        }
         await ReadAsync(OpenRazerBackendCapability.DeviceModeRead, "deviceMode",
             () => GetSoftwareModeAsync(connection, cancellationToken), value => softwareMode = value);
         await ReadAsync(OpenRazerBackendCapability.BatteryRead, "battery",
@@ -168,7 +204,8 @@ public sealed class OpenRazerDeviceService
             () => GetBrightnessAsync(connection, cancellationToken: cancellationToken), value => brightness = value);
 
         return new OpenRazerBasicState(firmware, serial, softwareMode, battery, charging,
-            pollingRate, dpiX, dpiY, idle, threshold, brightness, errors);
+            pollingRate, dpiX, dpiY, idle, threshold, brightness, errors,
+            unsupported.ToFrozenSet());
     }
 
     public async Task<Version> GetFirmwareAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
@@ -224,9 +261,23 @@ public sealed class OpenRazerDeviceService
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetDpiStages(connection.Definition, state), cancellationToken);
 
-    public async Task<OpenRazerDpiStages> GetDpiStagesAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
-        OpenRazerMouseProtocol.ParseDpiStages(connection.Definition, await ExecuteAsync(connection,
-            OpenRazerMouseProtocol.GetDpiStages(connection.Definition), cancellationToken).ConfigureAwait(false));
+    public async Task<OpenRazerDpiStages> GetDpiStagesAsync(
+        OpenRazerDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        var request = OpenRazerMouseProtocol.GetDpiStages(connection.Definition);
+        var response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return OpenRazerMouseProtocol.ParseDpiStages(connection.Definition, response);
+        }
+        catch (InvalidDataException exception)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"DPI stages response rejected: {exception.Message}; report={Convert.ToHexString(response)}");
+            throw;
+        }
+    }
 
     public async Task<int> GetIdleTimeoutAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
         OpenRazerMouseProtocol.ParseIdleSeconds(await ExecuteAsync(connection,
@@ -301,6 +352,32 @@ public sealed class OpenRazerDeviceService
         CancellationToken cancellationToken = default) =>
         ExecuteWithoutResultAsync(connection,
             OpenRazerLightingProtocol.SetCustomRow(connection.Definition, row, startColumn, colors), cancellationToken);
+
+    public async Task SetCustomFrameAsync(
+        OpenRazerDeviceConnection connection,
+        IReadOnlyList<OpenRazerColor> frame,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+        var dimensions = connection.Definition.MatrixDimensions ??
+            throw new NotSupportedException("The OpenRazer device does not expose matrix dimensions.");
+        if (!connection.Capabilities.Contains(OpenRazerBackendCapability.MatrixFrameWrite) ||
+            frame.Count != dimensions.Rows * dimensions.Columns)
+        {
+            throw new NotSupportedException(
+                $"OpenRazer device 1532:{connection.Definition.ProductId:X4} does not support this matrix frame.");
+        }
+
+        for (var row = 0; row < dimensions.Rows; row++)
+        {
+            await SetCustomRowAsync(
+                connection,
+                checked((byte)row),
+                0,
+                frame.Skip(row * dimensions.Columns).Take(dimensions.Columns).ToArray(),
+                cancellationToken).ConfigureAwait(false);
+        }
+    }
 
     public Task SetLedStateAsync(OpenRazerDeviceConnection connection, OpenRazerStorage storage, OpenRazerLedZone ledId, bool enabled, CancellationToken cancellationToken = default)
     {
@@ -643,20 +720,29 @@ public sealed class OpenRazerDeviceService
         foreach (var zone in zones.Order())
         {
             var effects = effectsByZone.GetValueOrDefault(zone) ?? FrozenSet<OpenRazerLightingEffect>.Empty;
-            var canReadBrightness = CanBuild(() => OpenRazerLightingProtocol.GetBrightness(
+            var canReadBrightness = HasSourceBrightness(device, zone, write: false) &&
+                CanBuild(() => OpenRazerLightingProtocol.GetBrightness(
                 device, device.DefaultStorage, zone));
-            var canWriteBrightness = CanBuild(() => OpenRazerLightingProtocol.SetBrightness(
+            var canWriteBrightness = HasSourceBrightness(device, zone, write: true) &&
+                CanBuild(() => OpenRazerLightingProtocol.SetBrightness(
                 device, device.DefaultStorage, zone, 0));
-            var canReadState = CanUseClassicBuilder(device, "razer_chroma_standard_get_led_state", zone);
+            var canReadState = device.HasSourceCapability("get_logo_active") && zone == OpenRazerLedZone.Logo &&
+                CanUseClassicBuilder(device, "razer_chroma_standard_get_led_state", zone);
             var canWriteState = device.Transactions.ContainsKey("razer_chroma_standard_set_led_state") &&
                 HasSourceStateWrite(device, zone) &&
                 SupportsStorageAndZone(device, "razer_chroma_standard_set_led_state",
                     device.DefaultStorage, zone);
-            var canReadEffect = CanUseClassicBuilder(device, "razer_chroma_standard_get_led_effect", zone);
-            var canWriteEffect = CanUseClassicBuilder(device, "razer_chroma_standard_set_led_effect", zone);
-            var canReadColor = CanUseClassicBuilder(device, "razer_chroma_standard_get_led_rgb", zone);
-            var canWriteColor = CanUseClassicBuilder(device, "razer_chroma_standard_set_led_rgb", zone);
-            var canWriteBlinking = CanUseClassicBuilder(device, "razer_chroma_standard_set_led_blinking", zone);
+            var canReadEffect = zone == OpenRazerLedZone.Macro &&
+                device.HasSourceCapability("get_macro_effect") &&
+                CanUseClassicBuilder(device, "razer_chroma_standard_get_led_effect", zone);
+            var canWriteEffect = effects.Count > 0 &&
+                CanUseClassicBuilder(device, "razer_chroma_standard_set_led_effect", zone);
+            var canReadColor = false;
+            var canWriteColor = effects.Any(effect => effect is OpenRazerLightingEffect.Static or
+                OpenRazerLightingEffect.BreathingSingle or OpenRazerLightingEffect.Blinking) &&
+                CanUseClassicBuilder(device, "razer_chroma_standard_set_led_rgb", zone);
+            var canWriteBlinking = effects.Contains(OpenRazerLightingEffect.Blinking) &&
+                CanUseClassicBuilder(device, "razer_chroma_standard_set_led_blinking", zone);
             if (canReadBrightness || canWriteBrightness || canReadState || canWriteState ||
                 canReadEffect || canWriteEffect || canReadColor || canWriteColor || canWriteBlinking ||
                 effects.Count > 0)
@@ -772,6 +858,17 @@ public sealed class OpenRazerDeviceService
             device.HasSourceCapability($"set_{name}_on");
     }
 
+    private static bool HasSourceBrightness(OpenRazerDeviceDefinition device, OpenRazerLedZone zone, bool write)
+    {
+        var operation = write ? "set" : "get";
+        if (zone == device.DefaultLedZone && device.HasSourceCapability($"{operation}_brightness"))
+        {
+            return true;
+        }
+        var name = SourceZones.SingleOrDefault(candidate => candidate.Zone == zone).Name;
+        return name is not null && device.HasSourceCapability($"{operation}_{name}_brightness");
+    }
+
     private static bool SupportsStorageAndZone(
         OpenRazerDeviceDefinition device,
         string builder,
@@ -821,25 +918,23 @@ public sealed class OpenRazerDeviceService
     {
         var result = new HashSet<OpenRazerBackendCapability>();
         var lightingZones = GetLightingZoneCapabilities(device).Values;
-        Add(OpenRazerBackendCapability.FirmwareRead, "razer_chroma_standard_get_firmware_version");
-        Add(OpenRazerBackendCapability.SerialRead, "razer_chroma_standard_get_serial");
-        Add(OpenRazerBackendCapability.DeviceModeRead, "razer_chroma_standard_get_device_mode");
-        Add(OpenRazerBackendCapability.BatteryRead, "razer_chroma_misc_get_battery_level");
-        Add(OpenRazerBackendCapability.ChargingRead, "razer_chroma_misc_get_charging_status");
-        AddAny(OpenRazerBackendCapability.PollingRateRead,
+        Add(OpenRazerBackendCapability.FirmwareRead, "get_firmware", "razer_chroma_standard_get_firmware_version");
+        Add(OpenRazerBackendCapability.BatteryRead, "get_battery", "razer_chroma_misc_get_battery_level");
+        Add(OpenRazerBackendCapability.ChargingRead, "is_charging", "razer_chroma_misc_get_charging_status");
+        AddAnyDeclared(OpenRazerBackendCapability.PollingRateRead, "get_poll_rate",
             "razer_chroma_misc_get_polling_rate", "razer_chroma_misc_get_polling_rate2");
-        AddAny(OpenRazerBackendCapability.PollingRateWrite,
+        AddAnyDeclared(OpenRazerBackendCapability.PollingRateWrite, "set_poll_rate",
             "razer_chroma_misc_set_polling_rate", "razer_chroma_misc_set_polling_rate2");
-        AddAny(OpenRazerBackendCapability.DpiRead,
+        AddAnySource(OpenRazerBackendCapability.DpiRead, ["get_dpi_xy", "get_dpi_xy_byte"],
             "razer_chroma_misc_get_dpi_xy", "razer_chroma_misc_get_dpi_xy_byte");
-        AddAny(OpenRazerBackendCapability.DpiWrite,
+        AddAnySource(OpenRazerBackendCapability.DpiWrite, ["set_dpi_xy", "set_dpi_xy_byte"],
             "razer_chroma_misc_set_dpi_xy", "razer_chroma_misc_set_dpi_xy_byte");
-        Add(OpenRazerBackendCapability.DpiStagesRead, "razer_chroma_misc_get_dpi_stages");
-        Add(OpenRazerBackendCapability.DpiStagesWrite, "razer_chroma_misc_set_dpi_stages");
-        Add(OpenRazerBackendCapability.IdleTimeoutRead, "razer_chroma_misc_get_idle_time");
-        Add(OpenRazerBackendCapability.IdleTimeoutWrite, "razer_chroma_misc_set_idle_time");
-        Add(OpenRazerBackendCapability.LowBatteryThresholdRead, "razer_chroma_misc_get_low_battery_threshold");
-        Add(OpenRazerBackendCapability.LowBatteryThresholdWrite, "razer_chroma_misc_set_low_battery_threshold");
+        Add(OpenRazerBackendCapability.DpiStagesRead, "get_dpi_stages", "razer_chroma_misc_get_dpi_stages");
+        Add(OpenRazerBackendCapability.DpiStagesWrite, "set_dpi_stages", "razer_chroma_misc_set_dpi_stages");
+        Add(OpenRazerBackendCapability.IdleTimeoutRead, "get_idle_time", "razer_chroma_misc_get_idle_time");
+        Add(OpenRazerBackendCapability.IdleTimeoutWrite, "set_idle_time", "razer_chroma_misc_set_idle_time");
+        Add(OpenRazerBackendCapability.LowBatteryThresholdRead, "get_low_battery_threshold", "razer_chroma_misc_get_low_battery_threshold");
+        Add(OpenRazerBackendCapability.LowBatteryThresholdWrite, "set_low_battery_threshold", "razer_chroma_misc_set_low_battery_threshold");
         if (lightingZones.Any(zone => zone.CanReadBrightness)) result.Add(OpenRazerBackendCapability.BrightnessRead);
         if (lightingZones.Any(zone => zone.CanWriteBrightness)) result.Add(OpenRazerBackendCapability.BrightnessWrite);
         if (lightingZones.Any(zone => zone.CanReadState)) result.Add(OpenRazerBackendCapability.LedStateRead);
@@ -850,37 +945,47 @@ public sealed class OpenRazerDeviceService
         if (lightingZones.Any(zone => zone.CanWriteBlinking)) result.Add(OpenRazerBackendCapability.LedBlinkingWrite);
         if (lightingZones.Any(zone => zone.LightingEffects.Count > 0))
             result.Add(OpenRazerBackendCapability.LightingEffectWrite);
-        AddAny(OpenRazerBackendCapability.MatrixFrameWrite,
+        if (device.MatrixDimensions is not null && device.HasSourceCapability("set_key_row"))
+            AddAnyBuilder(OpenRazerBackendCapability.MatrixFrameWrite,
             "razer_chroma_standard_matrix_set_custom_frame",
             "razer_chroma_extended_matrix_set_custom_frame",
             "razer_chroma_extended_matrix_set_custom_frame2");
-        Add(OpenRazerBackendCapability.ReactiveTriggerWrite, "razer_chroma_misc_matrix_reactive_trigger");
-        Add(OpenRazerBackendCapability.ScrollModeRead, "razer_chroma_misc_get_scroll_mode");
-        Add(OpenRazerBackendCapability.ScrollModeWrite, "razer_chroma_misc_set_scroll_mode");
-        Add(OpenRazerBackendCapability.ScrollAccelerationRead, "razer_chroma_misc_get_scroll_acceleration");
-        Add(OpenRazerBackendCapability.ScrollAccelerationWrite, "razer_chroma_misc_set_scroll_acceleration");
-        Add(OpenRazerBackendCapability.SmartReelRead, "razer_chroma_misc_get_scroll_smart_reel");
-        Add(OpenRazerBackendCapability.SmartReelWrite, "razer_chroma_misc_set_scroll_smart_reel");
-        Add(OpenRazerBackendCapability.FnPrimaryWrite, "razer_chroma_misc_fn_key_toggle");
-        Add(OpenRazerBackendCapability.KeyswitchOptimizationRead, "razer_chroma_misc_get_keyswitch_optimization");
-        if (Has("razer_chroma_misc_set_keyswitch_optimization_command1") &&
+        Add(OpenRazerBackendCapability.ReactiveTriggerWrite, "trigger_reactive_effect", "razer_chroma_misc_matrix_reactive_trigger");
+        Add(OpenRazerBackendCapability.ScrollModeRead, "get_scroll_mode", "razer_chroma_misc_get_scroll_mode");
+        Add(OpenRazerBackendCapability.ScrollModeWrite, "set_scroll_mode", "razer_chroma_misc_set_scroll_mode");
+        Add(OpenRazerBackendCapability.ScrollAccelerationRead, "get_scroll_acceleration", "razer_chroma_misc_get_scroll_acceleration");
+        Add(OpenRazerBackendCapability.ScrollAccelerationWrite, "set_scroll_acceleration", "razer_chroma_misc_set_scroll_acceleration");
+        Add(OpenRazerBackendCapability.SmartReelRead, "get_scroll_smart_reel", "razer_chroma_misc_get_scroll_smart_reel");
+        Add(OpenRazerBackendCapability.SmartReelWrite, "set_scroll_smart_reel", "razer_chroma_misc_set_scroll_smart_reel");
+        Add(OpenRazerBackendCapability.KeyswitchOptimizationRead, "get_keyswitch_optimization", "razer_chroma_misc_get_keyswitch_optimization");
+        if (device.HasSourceCapability("set_keyswitch_optimization") &&
+            Has("razer_chroma_misc_set_keyswitch_optimization_command1") &&
             Has("razer_chroma_misc_set_keyswitch_optimization_command2"))
             result.Add(OpenRazerBackendCapability.KeyswitchOptimizationWrite);
-        Add(OpenRazerBackendCapability.HyperPollingIndicatorWrite,
+        Add(OpenRazerBackendCapability.HyperPollingIndicatorWrite, "set_hyperpolling_wireless_dongle_indicator_led_mode",
             "razer_chroma_misc_set_hyperpolling_wireless_dongle_indicator_led_mode");
-        if (Has("razer_chroma_misc_set_hyperpolling_wireless_dongle_pair_step1") &&
+        if (device.HasSourceCapability("set_hyperpolling_wireless_dongle_pair") &&
+            Has("razer_chroma_misc_set_hyperpolling_wireless_dongle_pair_step1") &&
             Has("razer_chroma_misc_set_hyperpolling_wireless_dongle_pair_step2"))
             result.Add(OpenRazerBackendCapability.HyperPollingPairWrite);
-        Add(OpenRazerBackendCapability.HyperPollingUnpairWrite,
+        Add(OpenRazerBackendCapability.HyperPollingUnpairWrite, "set_hyperpolling_wireless_dongle_unpair",
             "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair");
         return result.ToFrozenSet();
 
         bool Has(string builder) => device.Transactions.ContainsKey(builder) || device.CommandSequences.ContainsKey(builder);
-        void Add(OpenRazerBackendCapability capability, string builder)
+        void Add(OpenRazerBackendCapability capability, string sourceCapability, string builder)
         {
-            if (Has(builder)) result.Add(capability);
+            if (device.HasSourceCapability(sourceCapability) && Has(builder)) result.Add(capability);
         }
-        void AddAny(OpenRazerBackendCapability capability, params string[] builders)
+        void AddAnyDeclared(OpenRazerBackendCapability capability, string sourceCapability, params string[] builders)
+        {
+            if (device.HasSourceCapability(sourceCapability) && builders.Any(Has)) result.Add(capability);
+        }
+        void AddAnySource(OpenRazerBackendCapability capability, string[] sourceCapabilities, params string[] builders)
+        {
+            if (sourceCapabilities.Any(device.HasSourceCapability) && builders.Any(Has)) result.Add(capability);
+        }
+        void AddAnyBuilder(OpenRazerBackendCapability capability, params string[] builders)
         {
             if (builders.Any(Has)) result.Add(capability);
         }
@@ -897,6 +1002,10 @@ public sealed class OpenRazerDeviceService
             return await _transport.QueryPreparedAsync(
                 connection.DevicePath!, request.Report, connection.Definition.DeviceWait,
                 cancellationToken).ConfigureAwait(false);
+        }
+        catch (RazerCommandRejectedException exception)
+        {
+            throw new NotSupportedException(exception.Message, exception);
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException)
         {
