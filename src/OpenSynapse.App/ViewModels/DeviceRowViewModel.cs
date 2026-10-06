@@ -23,7 +23,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
             ? AppStrings.Text("Text_5965520A")
             : AppStrings.Text("Text_6555BB41");
         ReportInfo = descriptor.FeatureReportByteLength > 0
-            ? $"HID {descriptor.UsagePage:X4}:{descriptor.Usage:X4} · Feature {descriptor.FeatureReportByteLength} B"
+            ? $"{Identity} · HID {descriptor.UsagePage:X4}:{descriptor.Usage:X4} · Feature {descriptor.FeatureReportByteLength} B"
             : "Feature report --";
         (IconGlyph, _iconAutomationSource) = descriptor.Category switch
         {
