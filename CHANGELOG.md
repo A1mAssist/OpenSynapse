@@ -2,6 +2,13 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.4.3] - 2026-10-06
+
+### Fixed
+
+- The introduction walkthrough now highlights the first complete device card, matching the current full-card click interaction.
+- Updated the Chinese and English walkthrough copy to describe selecting a device card instead of switching between fixed device types.
+
 ## [1.4.2] - 2026-10-06
 
 ### Fixed
