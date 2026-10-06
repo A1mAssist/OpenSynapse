@@ -952,6 +952,9 @@
   <data name="ProtocolAvailableCount" xml:space="preserve">
     <value>Protocol available {0}/{1}</value>
   </data>
+  <data name="DiagnosticIssueCount" xml:space="preserve">
+    <value>Issues: {0}</value>
+  </data>
   <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
     <value>The device returned malformed protocol data. This capability has been disabled.</value>
   </data>
