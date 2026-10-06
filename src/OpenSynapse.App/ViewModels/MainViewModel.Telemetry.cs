@@ -196,6 +196,8 @@ public sealed partial class MainViewModel
                 viper,
                 _powerSourceProvider.IsPluggedIn).Viper.BatteryChemistry;
             ViperBatteryChemistryIndex = chemistry is byte value ? value : -1;
+            _viper._confirmedViperBatteryChemistryIndex = ViperBatteryChemistryIndex;
+            OnPropertyChanged(nameof(ViperBatteryChemistryText));
         }
         if (telemetry.ViperPollingRateHertz is int pollingRate)
         {
@@ -227,7 +229,10 @@ public sealed partial class MainViewModel
         }
         if (telemetry.ViperLowBatteryThresholdRaw is byte raw)
         {
-            ViperLowBatteryThresholdText = ViperLowBatteryThresholdProtocol.Format(raw);
+            ViperLowBatteryThresholdPercent = ViperLowBatteryThresholdProtocol.ToPercent(raw);
+            ViperLowBatteryThresholdText = $"{ViperLowBatteryThresholdPercent}%";
+            _viper._confirmedViperLowBatteryThresholdPercent = ViperLowBatteryThresholdPercent;
+            CanSetViperLowBatteryThreshold = true;
         }
         if (_deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper && device.Access == DeviceAccessState.Available))
         {
@@ -486,8 +491,10 @@ public sealed partial class MainViewModel
         foreach (var propertyName in new[]
         {
             nameof(ViperStatusText), nameof(ViperDpiStagesText), nameof(ViperLowBatteryThresholdText),
+            nameof(ViperLowBatteryThresholdPercent), nameof(CanSetViperLowBatteryThreshold),
             nameof(ViperBatteryText), nameof(ViperPollingRateText), nameof(ViperPollingRateIndex),
             nameof(ViperBatteryChemistryIndex),
+            nameof(ViperBatteryChemistryText),
             nameof(CanSetViperBatteryChemistry),
             nameof(CanSetViperPollingRate), nameof(ViperDpiText), nameof(ViperDpiXValue),
             nameof(ViperDpiYValue), nameof(CanSetViperDpi), nameof(ViperIdleText),

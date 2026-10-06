@@ -1,8 +1,7 @@
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Product 184 low-battery-threshold wire encoding. Production SET remains
-/// unavailable until the current device passes write/readback/restore.
+/// Product 184 low-battery-threshold wire encoding for the direct Viper path.
 /// </summary>
 public static class ViperLowBatteryThresholdProtocol
 {

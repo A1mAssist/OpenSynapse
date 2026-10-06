@@ -44,6 +44,9 @@
         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
         <Setter Property="CharacterSpacing" Value="0" />
       </Style>
+      <DataTemplate x:Key="MetricFieldHeaderTemplate">
+        <TextBlock Text="{Binding}" Style="{StaticResource MetricLabelStyle}" />
+      </DataTemplate>
       <Style x:Key="MetricValueStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Cascadia Mono" />
         <Setter Property="FontSize" Value="26" />

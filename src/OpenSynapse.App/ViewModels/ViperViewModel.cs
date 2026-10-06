@@ -11,6 +11,7 @@ internal sealed class ViperViewModel
     internal string _viperStatusText = AppStrings.Text("Text_DB0974DC");
     internal string _viperBatteryText = "--";
     internal int _viperBatteryChemistryIndex = -1;
+    internal int _confirmedViperBatteryChemistryIndex = -1;
     internal bool _canSetViperBatteryChemistry;
     internal string _viperPollingRateText = "--";
     internal int _viperPollingRateIndex = -1;
@@ -25,6 +26,9 @@ internal sealed class ViperViewModel
     internal string _viperIdleText = "--";
     internal string _viperDpiStagesText = "--";
     internal string _viperLowBatteryThresholdText = "--";
+    internal double _viperLowBatteryThresholdPercent;
+    internal double _confirmedViperLowBatteryThresholdPercent;
+    internal bool _canSetViperLowBatteryThreshold;
     internal double _viperIdleMinutesValue;
     internal double _confirmedViperIdleMinutesValue;
     internal bool _canSetViperIdle;
@@ -99,8 +103,12 @@ internal sealed class ViperViewModel
         _viperStatusText = AppStrings.Text("Text_4626A505");
         _viperDpiStagesText = "--";
         _viperLowBatteryThresholdText = "--";
+        _viperLowBatteryThresholdPercent = 0;
+        _confirmedViperLowBatteryThresholdPercent = 0;
+        _canSetViperLowBatteryThreshold = false;
         _viperBatteryText = "--";
         _viperBatteryChemistryIndex = -1;
+        _confirmedViperBatteryChemistryIndex = -1;
         _viperPollingRateText = "--";
         _viperPollingRateIndex = -1;
         _confirmedViperPollingRateIndex = -1;

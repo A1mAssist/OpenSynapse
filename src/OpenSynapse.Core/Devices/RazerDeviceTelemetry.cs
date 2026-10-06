@@ -351,6 +351,11 @@ public interface IRazerDeviceTelemetryReader
         int seconds,
         CancellationToken cancellationToken = default);
 
+    ValueTask<int> SetViperLowBatteryThresholdAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        int percent,
+        CancellationToken cancellationToken = default);
+
     ValueTask<byte> SetViperBatteryChemistryAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         byte chemistry,

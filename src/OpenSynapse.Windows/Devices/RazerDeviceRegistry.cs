@@ -69,6 +69,7 @@ internal sealed class RazerDeviceRegistry
                 ["dpi-stages.get"] = new(0x26, 0x04, 0x86, "01"),
                 ["dpi-stages.set"] = new(0x26, 0x04, 0x06, ""),
                 ["low-battery-threshold.get"] = new(0x01, 0x07, 0x81, ""),
+                ["low-battery-threshold.set"] = new(0x01, 0x07, 0x01, ""),
                 ["obm-maximum-profiles.get"] = new(0x01, 0x05, 0x8A, ""),
                 ["obm-profile-count.get"] = new(0x01, 0x05, 0x80, ""),
                 ["obm-profile-ids.get"] = new(0x50, 0x05, 0x81, ""),

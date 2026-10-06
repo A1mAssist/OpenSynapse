@@ -272,6 +272,17 @@
     <value>低电量提醒</value>
     <comment>低电量提醒</comment>
   </data>
+  <data name="ViperLowBatteryThresholdInput.Header" xml:space="preserve">
+    <value>百分比</value>
+    <comment>百分比</comment>
+  </data>
+  <data name="ViperBatteryChemistryInput.Header" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="ViperLowBatteryThresholdSave.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>保存低电量提醒</value>
+    <comment>保存低电量提醒</comment>
+  </data>
   <data name="Loc_FCAB5D1B32.Text" xml:space="preserve">
     <value>DPI 档位</value>
     <comment>DPI 档位</comment>
