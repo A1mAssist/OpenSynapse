@@ -2,6 +2,13 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.4.2] - 2026-10-06
+
+### Fixed
+
+- Diagnostics now includes OpenRazer devices again, groups errors by device, and keeps the details collapsed until expanded.
+- Device diagnostics now show VID/PID alongside the HID collection so devices using the same HID usage and feature length remain distinguishable.
+
 ## [1.4.1] - 2026-09-30
 
 ### Fixed
