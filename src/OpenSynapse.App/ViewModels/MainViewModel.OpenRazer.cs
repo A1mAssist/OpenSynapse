@@ -11,6 +11,7 @@ public sealed partial class MainViewModel
         Devices.Select(device => new ConnectedDeviceRowViewModel(device))
             .Concat(OpenRazerDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(OpenRazerKrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
             .ThenBy(device => device.SortOrder)
             .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase)
