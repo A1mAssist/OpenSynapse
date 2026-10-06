@@ -622,6 +622,34 @@ public sealed class OpenRazerBackendTests
             zones[OpenRazerLedZone.ScrollWheel].LightingEffects);
     }
 
+    [Theory]
+    [InlineData(0x0062)]
+    [InlineData(0x0083)]
+    [InlineData(0x0094)]
+    [InlineData(0x0095)]
+    [InlineData(0x009A)]
+    [InlineData(0x009C)]
+    [InlineData(0x00B4)]
+    public void ReplaceableBatteryMiceDoNotAdvertiseCharging(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+
+        Assert.Contains(OpenRazerBackendCapability.BatteryRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.ChargingRead, capabilities);
+    }
+
+    [Theory]
+    [InlineData(0x0077)]
+    [InlineData(0x00A6)]
+    public void OtherMiceSharingTheOriginalCapabilitySetsRetainCharging(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+
+        Assert.Contains(OpenRazerBackendCapability.ChargingRead,
+            OpenRazerDeviceService.GetCapabilities(device));
+    }
+
     [Fact]
     public async Task BasiliskBrightnessReadTargetsTheScrollWheel()
     {
