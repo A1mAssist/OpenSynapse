@@ -606,7 +606,7 @@ public sealed class OpenRazerBackendTests
         var capabilities = OpenRazerDeviceService.GetCapabilities(device);
         var zones = OpenRazerDeviceService.GetLightingZoneCapabilities(device);
 
-        Assert.Empty(device.PollingRates);
+        Assert.Equal([125, 500, 1000], device.PollingRates);
         Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
         Assert.DoesNotContain(OpenRazerBackendCapability.FirmwareRead, capabilities);
@@ -616,6 +616,22 @@ public sealed class OpenRazerBackendTests
         Assert.Contains(OpenRazerLedZone.ScrollWheel, zones.Keys);
         Assert.DoesNotContain(OpenRazerLightingEffect.Custom,
             zones[OpenRazerLedZone.ScrollWheel].LightingEffects);
+    }
+
+    [Theory]
+    [InlineData(125, 0x08)]
+    [InlineData(500, 0x02)]
+    [InlineData(1000, 0x01)]
+    public void BasiliskV3XHyperSpeedPollingRatesUseDeclaredTransaction(int hertz, byte code)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var request = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, hertz));
+
+        Assert.Equal(0x1F, request.Report[2]);
+        Assert.Equal(0x01, request.Report[6]);
+        Assert.Equal(0x00, request.Report[7]);
+        Assert.Equal(0x05, request.Report[8]);
+        Assert.Equal(code, request.Report[RazerFeatureReport.ArgumentsOffset]);
     }
 
     [Fact]
