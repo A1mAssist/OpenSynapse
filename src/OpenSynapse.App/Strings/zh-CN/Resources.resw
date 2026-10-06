@@ -1108,8 +1108,8 @@
     <comment>鼠标改动不会直接写入。确认无误后点“保存”。</comment>
   </data>
   <data name="Text_C777B66A" xml:space="preserve">
-    <value>在笔记本和鼠标之间切换，下面会显示对应设置。</value>
-    <comment>在笔记本和鼠标之间切换，下面会显示对应设置。</comment>
+    <value>点击设备卡片，查看对应设置。</value>
+    <comment>点击设备卡片，查看对应设置。</comment>
   </data>
   <data name="Text_6F8CB285" xml:space="preserve">
     <value>一次性充满</value>

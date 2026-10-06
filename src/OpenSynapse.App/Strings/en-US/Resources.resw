@@ -840,7 +840,7 @@
     <value>Mouse changes are not written immediately. Review them, then select Save.</value>
   </data>
   <data name="Text_C777B66A" xml:space="preserve">
-    <value>Switch between the laptop and mouse to view their settings.</value>
+    <value>Select a device card to view its settings.</value>
   </data>
   <data name="Text_6F8CB285" xml:space="preserve">
     <value>One-time full charge</value>
