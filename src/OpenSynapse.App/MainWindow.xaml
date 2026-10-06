@@ -621,7 +621,7 @@
                       <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
                       <ItemsRepeater.ItemTemplate>
                         <DataTemplate>
-                          <Expander HorizontalAlignment="Stretch">
+                          <Expander HorizontalAlignment="Stretch" IsExpanded="False">
                             <Expander.Header>
                               <Grid ColumnDefinitions="4,*,Auto,Auto" ColumnSpacing="12" MinHeight="32">
                                 <Border Background="{Binding StatusBrush}" CornerRadius="2" />
