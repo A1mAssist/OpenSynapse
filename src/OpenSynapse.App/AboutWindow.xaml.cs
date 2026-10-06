@@ -9,7 +9,7 @@ namespace OpenSynapse.App;
 
 public sealed partial class AboutWindow : Window
 {
-    public AboutWindow()
+    public AboutWindow(AppWindow owner, double scale)
     {
         InitializeComponent();
         SystemBackdrop = new MicaBackdrop();
@@ -20,7 +20,7 @@ public sealed partial class AboutWindow : Window
         }
 
         ApplyTitleBarColors();
-        RootLayout.Loaded += (_, _) => ResizeForCurrentDisplay();
+        PositionOnOwnerDisplay(owner, scale);
         RefreshLocalization();
     }
 
@@ -46,10 +46,9 @@ public sealed partial class AboutWindow : Window
         titleBar.ButtonPressedForegroundColor = foreground;
     }
 
-    private void ResizeForCurrentDisplay()
+    private void PositionOnOwnerDisplay(AppWindow owner, double scale)
     {
-        var workArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
-        var scale = RootLayout.XamlRoot?.RasterizationScale ?? 1d;
+        var workArea = DisplayArea.GetFromWindowId(owner.Id, DisplayAreaFallback.Primary).WorkArea;
         var width = Math.Min((int)Math.Round(520 * scale), workArea.Width);
         var height = Math.Min((int)Math.Round(600 * scale), workArea.Height);
         AppWindow.MoveAndResize(new RectInt32(

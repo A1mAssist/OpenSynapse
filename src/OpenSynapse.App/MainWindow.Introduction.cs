@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Windowing;
 using Windows.UI.ViewManagement;
 
 namespace OpenSynapse.App;
@@ -30,7 +31,7 @@ public sealed partial class MainWindow
     {
         if (_aboutWindow is null)
         {
-            _aboutWindow = new AboutWindow();
+            _aboutWindow = new AboutWindow(AppWindow, RootLayout.XamlRoot?.RasterizationScale ?? 1d);
             _aboutWindow.Closed += (_, _) => _aboutWindow = null;
         }
         _aboutWindow.Activate();
