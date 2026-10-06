@@ -207,6 +207,15 @@
   <data name="Loc_76FCF14149.Text" xml:space="preserve">
     <value>Low-battery alert</value>
   </data>
+  <data name="ViperLowBatteryThresholdInput.Header" xml:space="preserve">
+    <value>Percentage</value>
+  </data>
+  <data name="ViperBatteryChemistryInput.Header" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="ViperLowBatteryThresholdSave.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Save low-battery alert</value>
+  </data>
   <data name="Loc_FCAB5D1B32.Text" xml:space="preserve">
     <value>DPI stages</value>
   </data>

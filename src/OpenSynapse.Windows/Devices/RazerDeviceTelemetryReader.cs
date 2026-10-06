@@ -21,6 +21,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private string? _validatedViperDpiPath;
     private string? _validatedViperDpiStagesPath;
     private string? _validatedViperIdlePath;
+    private string? _validatedViperLowBatteryThresholdPath;
     private readonly SemaphoreSlim _bladePowerModeTransactionGate = new(1, 1);
 
     public RazerDeviceTelemetryReader()
@@ -58,6 +59,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         _validatedViperDpiPath = null;
         _validatedViperDpiStagesPath = null;
         _validatedViperIdlePath = null;
+        _validatedViperLowBatteryThresholdPath = null;
         _validatedViperButtonMappingsPath = null;
         byte? bladeBrightness = null;
         BladePerformanceMode? bladePerformanceMode = null;
@@ -329,6 +331,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                     viper, "low-battery-threshold.get", cancellationToken);
                 lowBatteryThresholdRaw = ViperLowBatteryThresholdProtocol.ParseRaw(
                     response, CreateCapabilityRequest(viper, "low-battery-threshold.get"));
+                _validatedViperLowBatteryThresholdPath = viper.Descriptor.Id;
             }
             catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
@@ -1929,6 +1932,53 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         return chemistry;
     }
 
+    public async ValueTask<int> SetViperLowBatteryThresholdAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        int percent,
+        CancellationToken cancellationToken = default)
+    {
+        _ = ViperLowBatteryThresholdProtocol.ToRaw(percent);
+        var viper = FindReadyDevice(devices, "viper-184")
+            ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
+        EnsureValidated(
+            _validatedViperLowBatteryThresholdPath,
+            viper.Descriptor.Id,
+            "Read the mouse low-battery threshold successfully first.");
+
+        var originalRaw = await ReadViperLowBatteryThresholdAsync(viper, cancellationToken);
+        var originalPercent = ViperLowBatteryThresholdProtocol.ToPercent(originalRaw);
+        if (originalPercent == percent)
+        {
+            return originalPercent;
+        }
+
+        try
+        {
+            await WriteViperLowBatteryThresholdAsync(viper, percent, cancellationToken);
+            var actualRaw = await ReadViperLowBatteryThresholdAsync(viper, cancellationToken);
+            var actualPercent = ViperLowBatteryThresholdProtocol.ToPercent(actualRaw);
+            if (actualPercent != percent)
+            {
+                throw new InvalidOperationException(
+                    $"Low-battery threshold readback mismatch: wrote {percent}%, read {actualPercent}%.");
+            }
+            return actualPercent;
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreViperLowBatteryThresholdAsync(viper, originalPercent);
+            var message = "Low-battery threshold update failed: " + exception.Message + " " +
+                (restored ? "The original value was restored." :
+                    "Original value restoration failed; check the threshold immediately.");
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, exception, cancellationToken);
+            }
+            throw new InvalidOperationException(message, exception);
+        }
+    }
+
     private async Task<int> ReadViperPollingRateAsync(
         ReadyDevice device,
         CancellationToken cancellationToken)
@@ -2003,6 +2053,42 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         var response = await QueryCapabilityAsync(device, "idle-timeout.get", cancellationToken);
         return ViperProduct184Protocol.ParseIdleSeconds(
             response, CreateCapabilityRequest(device, "idle-timeout.get"));
+    }
+
+    private async Task<byte> ReadViperLowBatteryThresholdAsync(
+        ReadyDevice device,
+        CancellationToken cancellationToken)
+    {
+        var response = await QueryCapabilityAsync(
+            device, "low-battery-threshold.get", cancellationToken);
+        return ViperLowBatteryThresholdProtocol.ParseRaw(
+            response, CreateCapabilityRequest(device, "low-battery-threshold.get"));
+    }
+
+    private Task WriteViperLowBatteryThresholdAsync(
+        ReadyDevice device,
+        int percent,
+        CancellationToken cancellationToken) =>
+        QueryBuiltRequestAsync(
+            device,
+            "low-battery-threshold.set",
+            ViperProduct184Protocol.CreateSetLowBatteryThresholdRequest(percent),
+            cancellationToken);
+
+    private async Task<bool> TryRestoreViperLowBatteryThresholdAsync(
+        ReadyDevice device,
+        int originalPercent)
+    {
+        try
+        {
+            await WriteViperLowBatteryThresholdAsync(device, originalPercent, CancellationToken.None);
+            var restoredRaw = await ReadViperLowBatteryThresholdAsync(device, CancellationToken.None);
+            return ViperLowBatteryThresholdProtocol.ToPercent(restoredRaw) == originalPercent;
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
     }
 
     private Task WriteViperIdleSecondsAsync(

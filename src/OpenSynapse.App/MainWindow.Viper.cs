@@ -13,6 +13,9 @@ public sealed partial class MainWindow
     private async void ApplyIdleClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyViperIdleAsync(_lifetime.Token);
 
+    private async void ApplyLowBatteryThresholdClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyViperLowBatteryThresholdAsync(_lifetime.Token);
+
     private async void ApplyBatteryChemistryClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyViperBatteryChemistryAsync(_lifetime.Token);
 

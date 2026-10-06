@@ -81,6 +81,28 @@ public sealed partial class MainViewModel
         }, cancellationToken, () => ViperIdleMinutesValue = _viper._confirmedViperIdleMinutesValue);
     }
 
+    public async Task ApplyViperLowBatteryThresholdAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanSetViperLowBatteryThreshold)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("Text_B98036FA"), async () =>
+        {
+            var percent = checked((int)Math.Round(
+                ViperLowBatteryThresholdPercent, MidpointRounding.AwayFromZero));
+            var actual = await _deviceTelemetryReader.SetViperLowBatteryThresholdAsync(
+                _deviceDescriptors, percent, cancellationToken);
+            ViperLowBatteryThresholdPercent = actual;
+            _viper._confirmedViperLowBatteryThresholdPercent = actual;
+            ViperLowBatteryThresholdText = $"{actual}%";
+        }, cancellationToken, () =>
+        {
+            ViperLowBatteryThresholdPercent = _viper._confirmedViperLowBatteryThresholdPercent;
+        });
+    }
+
     public async Task ApplyViperBatteryChemistryAsync(CancellationToken cancellationToken = default)
     {
         if (ViperBatteryChemistryIndex is < 0 or > 2)
@@ -96,6 +118,8 @@ public sealed partial class MainViewModel
                 chemistry,
                 cancellationToken);
             ViperBatteryChemistryIndex = actual;
+            _viper._confirmedViperBatteryChemistryIndex = actual;
+            OnPropertyChanged(nameof(ViperBatteryChemistryText));
             _profile.Global.Viper.BatteryChemistry = actual;
             await SaveProfileAsync(cancellationToken);
         }, cancellationToken);
@@ -284,6 +308,9 @@ public sealed partial class MainViewModel
     public string ViperBatteryText { get => _viper._viperBatteryText; private set => SetField(ref _viper._viperBatteryText, value); }
     public int ViperBatteryChemistryIndex { get => _viper._viperBatteryChemistryIndex; set => SetField(ref _viper._viperBatteryChemistryIndex, value); }
     public IReadOnlyList<string> ViperBatteryChemistryOptions => AppStrings.Texts("Text_E43748D4", "Text_DC5115A1", "Text_54C45B90");
+    public string ViperBatteryChemistryText => _viper._confirmedViperBatteryChemistryIndex is >= 0 and < 3
+        ? ViperBatteryChemistryOptions[_viper._confirmedViperBatteryChemistryIndex]
+        : "--";
     public bool CanSetViperBatteryChemistry { get => _viper._canSetViperBatteryChemistry; private set => SetField(ref _viper._canSetViperBatteryChemistry, value); }
     public string ViperPollingRateText { get => _viper._viperPollingRateText; private set => SetField(ref _viper._viperPollingRateText, value); }
     public int ViperPollingRateIndex { get => _viper._viperPollingRateIndex; set => SetField(ref _viper._viperPollingRateIndex, value); }
@@ -295,6 +322,8 @@ public sealed partial class MainViewModel
     public string ViperIdleText { get => _viper._viperIdleText; private set => SetField(ref _viper._viperIdleText, value); }
     public string ViperDpiStagesText { get => _viper._viperDpiStagesText; private set => SetField(ref _viper._viperDpiStagesText, value); }
     public string ViperLowBatteryThresholdText { get => _viper._viperLowBatteryThresholdText; private set => SetField(ref _viper._viperLowBatteryThresholdText, value); }
+    public double ViperLowBatteryThresholdPercent { get => _viper._viperLowBatteryThresholdPercent; set => SetField(ref _viper._viperLowBatteryThresholdPercent, value); }
+    public bool CanSetViperLowBatteryThreshold { get => _viper._canSetViperLowBatteryThreshold; private set => SetField(ref _viper._canSetViperLowBatteryThreshold, value); }
     public double ViperIdleMinutesValue { get => _viper._viperIdleMinutesValue; set => SetField(ref _viper._viperIdleMinutesValue, value); }
     public bool CanSetViperIdle { get => _viper._canSetViperIdle; private set => SetField(ref _viper._canSetViperIdle, value); }
     public ObservableCollection<ViperDpiStageRowViewModel> ViperDpiStages => _viper.ViperDpiStages;
