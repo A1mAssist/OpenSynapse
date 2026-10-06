@@ -710,6 +710,45 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             groups.TryAdd(row.Name, group);
         }
 
+        foreach (var row in OpenRazerDevices)
+        {
+            var group = new DiagnosticRowViewModel(
+                row.Name,
+                AppStrings.Text("Text_5EAB9F51"),
+                row.Status,
+                row.Identity,
+                row.StatusBrush);
+            Diagnostics.Add(group);
+            if (row.HasError)
+            {
+                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
+                    AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
+            }
+            if (SelectedOpenRazerDevice?.InstanceId == row.Connection.InstanceId &&
+                SelectedOpenRazerDevice.HasError &&
+                !StringComparer.Ordinal.Equals(SelectedOpenRazerDevice.ErrorText, row.Error))
+            {
+                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
+                    AppStrings.Text("Text_6027BEB0"), SelectedOpenRazerDevice.ErrorText, errorBrush));
+            }
+        }
+
+        foreach (var row in OpenRazerKrakenDevices)
+        {
+            var group = new DiagnosticRowViewModel(
+                row.Name,
+                AppStrings.Text("Text_5EAB9F51"),
+                row.Status,
+                row.Identity,
+                row.StatusBrush);
+            Diagnostics.Add(group);
+            if (!string.IsNullOrWhiteSpace(row.Error))
+            {
+                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
+                    AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
+            }
+        }
+
         foreach (var error in errors)
         {
             var separator = FindDiagnosticSeparator(error);
