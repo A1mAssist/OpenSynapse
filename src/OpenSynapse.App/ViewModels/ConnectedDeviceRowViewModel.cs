@@ -15,6 +15,7 @@ public sealed class ConnectedDeviceRowViewModel
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
         IsReady = source.IsAvailable;
+        IsVisible = true;
     }
 
     public ConnectedDeviceRowViewModel(OpenRazerDeviceRowViewModel source)
@@ -29,6 +30,7 @@ public sealed class ConnectedDeviceRowViewModel
                 : AppStrings.Text("Text_40985721");
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
+        IsVisible = source.Connection.EndpointState != OpenRazerEndpointState.RecognizedButUnresolved;
     }
 
     public ConnectedDeviceRowViewModel(OpenRazerKrakenDeviceRowViewModel source)
@@ -42,6 +44,7 @@ public sealed class ConnectedDeviceRowViewModel
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
         IsReady = source.Connection.IsReady;
+        IsVisible = true;
     }
 
     public object Source { get; }
@@ -51,6 +54,7 @@ public sealed class ConnectedDeviceRowViewModel
     public string IconGlyph { get; }
     public DeviceCategory Category { get; }
     public bool IsReady { get; }
+    public bool IsVisible { get; }
     public string Capability => Source switch
     {
         DeviceRowViewModel row => row.Capability,
