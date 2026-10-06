@@ -667,6 +667,13 @@
   <data name="Text_6027BEB0" xml:space="preserve">
     <value>Query failed</value>
   </data>
+  <data name="DiagnosticPerformanceFan" xml:space="preserve"><value>Performance and fan state</value></data>
+  <data name="DiagnosticPowerModeControl" xml:space="preserve"><value>Power mode control</value></data>
+  <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade logo</value></data>
+  <data name="DiagnosticMousePollingRate" xml:space="preserve"><value>Mouse polling rate</value></data>
+  <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>Mouse idle timeout</value></data>
+  <data name="Text_6D7EF7B5" xml:space="preserve"><value>Mouse DPI stages</value></data>
+  <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>The device timed out (0x04); wake the device, close Synapse, and retry.</value></data>
   <data name="Text_4B4189B0" xml:space="preserve">
     <value>Load failed</value>
   </data>

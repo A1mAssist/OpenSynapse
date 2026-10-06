@@ -709,15 +709,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         foreach (var error in errors)
         {
             var separator = FindDiagnosticSeparator(error);
-            var capability = separator > 0 ? error[..separator] : AppStrings.Text("Text_DA035EAB");
-            var detail = separator > 0 ? error[(separator + 1)..] : error;
-            var device = capability.StartsWith(AppStrings.Text("Text_4B32CEE8"), StringComparison.Ordinal)
-                ? viperName
-                : string.Equals(capability, AppStrings.Text("Text_DA035EAB"), StringComparison.Ordinal)
-                    ? "Windows HID"
-                    : bladeName;
+            var rawCapability = separator > 0 ? error[..separator] : string.Empty;
+            var (capability, deviceName) = LocalizeTelemetryError(rawCapability, bladeName, viperName);
+            var detail = LocalizeDiagnosticDetail(separator > 0 ? error[(separator + 1)..] : error);
             Diagnostics.Add(new DiagnosticRowViewModel(
-                device,
+                deviceName,
                 capability,
                 AppStrings.Text("Text_6027BEB0"),
                 detail,
@@ -747,6 +743,42 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 new SolidColorBrush(Color.FromArgb(255, 255, 181, 71))));
         }
     }
+
+    private static (string Capability, string Device) LocalizeTelemetryError(
+        string rawCapability,
+        string bladeName,
+        string viperName)
+    {
+        var mapping = rawCapability switch
+        {
+            "Keyboard brightness" => ("Text_5F0C27DB", bladeName),
+            "Performance and fan state" => ("DiagnosticPerformanceFan", bladeName),
+            "Current CPU fan speed" => ("Text_5FCEEE13", bladeName),
+            "Current GPU fan speed" => ("Text_737DBF87", bladeName),
+            "CPU advanced fan mode" => ("Text_BE0A43ED", bladeName),
+            "GPU advanced fan mode" => ("Text_37B37761", bladeName),
+            "CPU/GPU Boost" => ("Text_1DE2FEA3", bladeName),
+            "Charge limit" => ("Text_DEE979FD", bladeName),
+            "Power Mode Control" => ("DiagnosticPowerModeControl", bladeName),
+            "Startup animation" => ("Text_AA91A1FF", bladeName),
+            "Native display mode" => ("Text_24A8C247", bladeName),
+            "SKU hardware configuration" => ("Text_9D1351CB", bladeName),
+            "Blade Logo" => ("DiagnosticBladeLogo", bladeName),
+            "Mouse battery" => ("Text_8B2E15F8", viperName),
+            "Mouse polling rate" => ("DiagnosticMousePollingRate", viperName),
+            "Mouse DPI" => ("Text_25083B1F", viperName),
+            "Mouse idle timeout" => ("DiagnosticMouseIdleTimeout", viperName),
+            "Mouse DPI stages" => ("Text_6D7EF7B5", viperName),
+            "Mouse low-battery threshold" => ("Text_B98036FA", viperName),
+            _ => ("Text_DA035EAB", "Windows HID"),
+        };
+        return (AppStrings.Text(mapping.Item1), mapping.Item2);
+    }
+
+    private static string LocalizeDiagnosticDetail(string detail) =>
+        detail.StartsWith("The device timed out", StringComparison.OrdinalIgnoreCase)
+            ? AppStrings.Text("DiagnosticDeviceTimedOut")
+            : detail;
 
     private static string CreateDeviceFingerprint(DeviceSnapshot snapshot) =>
         string.Join(

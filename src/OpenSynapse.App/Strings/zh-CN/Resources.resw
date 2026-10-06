@@ -881,6 +881,13 @@
     <value>查询失败</value>
     <comment>查询失败</comment>
   </data>
+  <data name="DiagnosticPerformanceFan" xml:space="preserve"><value>性能与风扇状态</value></data>
+  <data name="DiagnosticPowerModeControl" xml:space="preserve"><value>性能模式控制</value></data>
+  <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade Logo</value></data>
+  <data name="DiagnosticMousePollingRate" xml:space="preserve"><value>鼠标轮询率</value></data>
+  <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>鼠标空闲休眠</value></data>
+  <data name="Text_6D7EF7B5" xml:space="preserve"><value>鼠标 DPI 档位</value></data>
+  <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>设备查询超时（0x04）；请唤醒设备、关闭雷蛇 Synapse 后重试。</value></data>
   <data name="Text_4B4189B0" xml:space="preserve">
     <value>加载失败</value>
     <comment>加载失败</comment>
