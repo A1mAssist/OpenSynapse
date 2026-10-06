@@ -121,6 +121,13 @@ public sealed partial class MainWindow
 
             await WaitForNextRenderAsync();
             RootLayout.UpdateLayout();
+            if (_introductionStep == 2)
+            {
+                // ItemsRepeater virtualizes its children; resolve the first real card after layout.
+                target = DeviceCardsRepeater.TryGetElement(0) as FrameworkElement
+                    ?? DeviceCardsRepeater;
+            }
+
             if (_introductionStep == IntroductionStepCount - 1)
             {
                 var targetTop = target.TransformToVisual(DevicesPage)
