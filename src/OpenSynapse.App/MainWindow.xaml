@@ -135,7 +135,7 @@
                       <TextBlock local:Localized.Uid="OpenRazerDpiStagesTitle" Text="DPI 档位" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                       <ProgressRing Width="20" Height="20" HorizontalAlignment="Left" IsActive="{Binding IsDpiStagesLoading}" Visibility="{Binding DpiStagesLoadingVisibility}" />
                       <NumberBox local:Localized.Uid="OpenRazerActiveDpiStage" Header="当前档位" Value="{Binding ActiveDpiStage, Mode=TwoWay}" Minimum="1" Maximum="5" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteDpiStages}" Visibility="{Binding DpiStagesWriteVisibility}" />
-                      <Grid ColumnDefinitions="56,*,*" ColumnSpacing="10">
+                      <Grid ColumnDefinitions="56,200,200" ColumnSpacing="10">
                         <TextBlock Text="档位" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="1" Text="X" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="2" Text="Y" Style="{StaticResource MetricLabelStyle}" />
@@ -145,7 +145,7 @@
                           <ItemsRepeater.Layout><StackLayout Spacing="6" /></ItemsRepeater.Layout>
                           <ItemsRepeater.ItemTemplate>
                             <DataTemplate>
-                              <Grid ColumnDefinitions="56,*,*" ColumnSpacing="10" MinHeight="34">
+                              <Grid ColumnDefinitions="56,200,200" ColumnSpacing="10" MinHeight="34">
                                 <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
                                 <NumberBox Grid.Column="1" Minimum="100" Maximum="100000" SmallChange="100" SpinButtonPlacementMode="Inline" Value="{Binding X, Mode=TwoWay}" Height="34" IsEnabled="{Binding IsEditable}" />
                                 <NumberBox Grid.Column="2" Minimum="100" Maximum="100000" SmallChange="100" SpinButtonPlacementMode="Inline" Value="{Binding Y, Mode=TwoWay}" Height="34" IsEnabled="{Binding IsEditable}" />
