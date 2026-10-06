@@ -1255,6 +1255,9 @@
     <value>协议可用 {0}/{1}</value>
     <comment>协议可用 {0}/{1}</comment>
   </data>
+  <data name="DiagnosticIssueCount" xml:space="preserve">
+    <value>异常 {0} 项</value>
+  </data>
   <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
     <value>设备返回的协议数据格式错误，已停用该协议能力。</value>
     <comment>OpenRazer 协议数据格式错误</comment>

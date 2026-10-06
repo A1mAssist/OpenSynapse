@@ -691,6 +691,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         IReadOnlyList<string> errors)
     {
         Diagnostics.Clear();
+        var groups = new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase);
+        var errorBrush = new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
         var bladeName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Name
             ?? "Razer Blade";
         var viperName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper)?.Name
@@ -698,12 +700,53 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         foreach (var device in snapshot.Devices)
         {
             var row = new DeviceRowViewModel(device, telemetry);
-            Diagnostics.Add(new DiagnosticRowViewModel(
+            var group = new DiagnosticRowViewModel(
                 row.Name,
                 AppStrings.Text("Text_5EAB9F51"),
                 row.Capability,
                 $"{row.Access} · {row.ReportInfo}",
-                row.StatusBrush));
+                row.StatusBrush);
+            Diagnostics.Add(group);
+            groups.TryAdd(row.Name, group);
+        }
+
+        foreach (var row in OpenRazerDevices)
+        {
+            var group = new DiagnosticRowViewModel(
+                row.Name,
+                AppStrings.Text("Text_5EAB9F51"),
+                row.Status,
+                row.Identity,
+                row.StatusBrush);
+            Diagnostics.Add(group);
+            if (row.HasError)
+            {
+                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
+                    AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
+            }
+            if (SelectedOpenRazerDevice?.InstanceId == row.Connection.InstanceId &&
+                SelectedOpenRazerDevice.HasError &&
+                !StringComparer.Ordinal.Equals(SelectedOpenRazerDevice.ErrorText, row.Error))
+            {
+                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
+                    AppStrings.Text("Text_6027BEB0"), SelectedOpenRazerDevice.ErrorText, errorBrush));
+            }
+        }
+
+        foreach (var row in OpenRazerKrakenDevices)
+        {
+            var group = new DiagnosticRowViewModel(
+                row.Name,
+                AppStrings.Text("Text_5EAB9F51"),
+                row.Status,
+                row.Identity,
+                row.StatusBrush);
+            Diagnostics.Add(group);
+            if (!string.IsNullOrWhiteSpace(row.Error))
+            {
+                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
+                    AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
+            }
         }
 
         foreach (var error in errors)
@@ -711,26 +754,53 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             var separator = FindDiagnosticSeparator(error);
             var rawCapability = separator > 0 ? error[..separator] : string.Empty;
             var (capability, deviceName) = LocalizeTelemetryError(rawCapability, bladeName, viperName);
+            var profilePrefix = AppStrings.FormatText("ProfileApplyError", string.Empty);
+            var profileDetail = error.StartsWith(profilePrefix, StringComparison.Ordinal)
+                ? error[profilePrefix.Length..].TrimStart()
+                : string.Empty;
+            if (profileDetail.StartsWith("Blade", StringComparison.OrdinalIgnoreCase) ||
+                error.StartsWith(AppStrings.FormatText("LightingError", string.Empty), StringComparison.Ordinal) ||
+                error.StartsWith(AppStrings.FormatText("FanControlError", string.Empty), StringComparison.Ordinal))
+            {
+                deviceName = bladeName;
+                capability = rawCapability;
+            }
+            else if (profileDetail.StartsWith("Viper", StringComparison.OrdinalIgnoreCase) ||
+                error.StartsWith(AppStrings.FormatText("ViperMappingProfileError", string.Empty), StringComparison.Ordinal) ||
+                error == AppStrings.Text("ViperMappingReadProfileSaveFailed"))
+            {
+                deviceName = viperName;
+                capability = string.IsNullOrEmpty(rawCapability)
+                    ? AppStrings.Text("Text_23A7CCBC")
+                    : rawCapability;
+            }
             var detail = LocalizeDiagnosticDetail(separator > 0 ? error[(separator + 1)..] : error);
-            Diagnostics.Add(new DiagnosticRowViewModel(
-                deviceName,
-                capability,
-                AppStrings.Text("Text_6027BEB0"),
-                detail,
-                new SolidColorBrush(Color.FromArgb(255, 255, 107, 107))));
+            if (!groups.TryGetValue(deviceName, out var group))
+            {
+                group = new DiagnosticRowViewModel(deviceName, AppStrings.Text("Text_DA035EAB"),
+                    AppStrings.Text("Text_6027BEB0"), string.Empty, errorBrush);
+                Diagnostics.Add(group);
+                groups.Add(deviceName, group);
+            }
+            group.AddIssue(new DiagnosticRowViewModel(deviceName, capability,
+                AppStrings.Text("Text_6027BEB0"), detail, errorBrush));
         }
 
+        DiagnosticRowViewModel? startupGroup = null;
         foreach (var error in _startupDiagnostics)
         {
             var separator = FindDiagnosticSeparator(error);
             var source = separator > 0 ? error[..separator] : AppStrings.Text("Text_23A7CCBC");
             var detail = separator > 0 ? error[(separator + 1)..] : error;
-            Diagnostics.Add(new DiagnosticRowViewModel(
-                AppStrings.Text("Text_6634ED40"),
-                source,
-                AppStrings.Text("Text_4B4189B0"),
-                detail,
-                new SolidColorBrush(Color.FromArgb(255, 255, 107, 107))));
+            if (startupGroup is null)
+            {
+                startupGroup = new DiagnosticRowViewModel(AppStrings.Text("Text_6634ED40"),
+                    AppStrings.Text("Text_23A7CCBC"), AppStrings.Text("Text_4B4189B0"),
+                    string.Empty, errorBrush);
+                Diagnostics.Add(startupGroup);
+            }
+            startupGroup.AddIssue(new DiagnosticRowViewModel(startupGroup.Device, source,
+                AppStrings.Text("Text_4B4189B0"), detail, errorBrush));
         }
 
         if (Diagnostics.Count == 0)
