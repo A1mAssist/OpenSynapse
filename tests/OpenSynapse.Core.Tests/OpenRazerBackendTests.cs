@@ -606,6 +606,10 @@ public sealed class OpenRazerBackendTests
         var capabilities = OpenRazerDeviceService.GetCapabilities(device);
         var zones = OpenRazerDeviceService.GetLightingZoneCapabilities(device);
 
+        Assert.Equal(OpenRazerLedZone.ScrollWheel, device.DefaultLedZone);
+        Assert.DoesNotContain(OpenRazerBackendCapability.ChargingRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
+        Assert.Equal(14, capabilities.Count);
         Assert.Equal([125, 500, 1000], device.PollingRates);
         Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
@@ -616,6 +620,50 @@ public sealed class OpenRazerBackendTests
         Assert.Contains(OpenRazerLedZone.ScrollWheel, zones.Keys);
         Assert.DoesNotContain(OpenRazerLightingEffect.Custom,
             zones[OpenRazerLedZone.ScrollWheel].LightingEffects);
+    }
+
+    [Fact]
+    public async Task BasiliskBrightnessReadTargetsTheScrollWheel()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var transport = new RecordingTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved, OpenRazerDeviceService.GetCapabilities(device),
+            OpenRazerDeviceService.GetLightingZoneCapabilities(device), null);
+
+        await service.GetBrightnessAsync(connection);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Equal(0x0F, request[7]);
+        Assert.Equal(0x84, request[8]);
+        Assert.Equal(0x01, request[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal((byte)OpenRazerLedZone.ScrollWheel, request[RazerFeatureReport.ArgumentsOffset + 1]);
+    }
+
+    [Fact]
+    public async Task PublishedBrightnessCapabilitiesHaveUsableDefaultZones()
+    {
+        foreach (var device in OpenRazerDeviceCatalog.BuiltIn.Devices)
+        {
+            var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+            var transport = new RecordingTransport();
+            var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+            var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+                OpenRazerEndpointState.Resolved, capabilities,
+                OpenRazerDeviceService.GetLightingZoneCapabilities(device), null);
+
+            if (capabilities.Contains(OpenRazerBackendCapability.BrightnessRead))
+            {
+                var error = await Record.ExceptionAsync(async () => await service.GetBrightnessAsync(connection));
+                Assert.True(error is null, $"1532:{device.ProductId:X4} brightness read: {error}");
+            }
+            if (capabilities.Contains(OpenRazerBackendCapability.BrightnessWrite))
+            {
+                var error = await Record.ExceptionAsync(async () => await service.SetBrightnessAsync(connection, 128));
+                Assert.True(error is null, $"1532:{device.ProductId:X4} brightness write: {error}");
+            }
+        }
     }
 
     [Theory]

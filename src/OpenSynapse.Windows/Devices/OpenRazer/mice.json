@@ -679,7 +679,6 @@
       "get_low_battery_threshold",
       "get_poll_rate",
       "get_scroll_brightness",
-      "is_charging",
       "max_dpi",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -6569,7 +6568,7 @@
         ]
       },
       "defaultStorage": "01",
-      "defaultLedZone": "05",
+      "defaultLedZone": "01",
       "commandSequences": {},
       "ambiguousTransactions": []
     },
