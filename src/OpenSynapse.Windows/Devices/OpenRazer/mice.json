@@ -6504,7 +6504,11 @@
       "category": "mouse",
       "capabilitySet": "mice-019",
       "maximumDpi": 18000,
-      "pollRates": null,
+      "pollRates": [
+        125,
+        500,
+        1000
+      ],
       "matrixDimensions": null,
       "waitMicroseconds": 31000,
       "transactions": {
