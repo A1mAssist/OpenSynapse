@@ -305,7 +305,10 @@ public sealed class OpenRazerDeviceService
         OpenRazerLedZone? ledId = null,
         CancellationToken cancellationToken = default)
     {
-        var zone = OpenRazerLightingProtocol.ResolveBrightnessZone(connection.Definition, write: false, storage, ledId);
+        var selectedZone = ledId ?? (storage is null || storage == connection.Definition.DefaultStorage
+            ? GetDefaultBrightnessZone(connection, write: false) : null);
+        var zone = OpenRazerLightingProtocol.ResolveBrightnessZone(connection.Definition, write: false,
+            storage, selectedZone);
         RequireLightingZone(connection, zone, capability => capability.CanReadBrightness, "brightness read");
         var request = OpenRazerLightingProtocol.GetBrightness(connection.Definition, storage, zone);
         var arguments = OpenRazerStandardProtocol.Arguments(await ExecuteAsync(connection,
@@ -326,7 +329,10 @@ public sealed class OpenRazerDeviceService
         OpenRazerLedZone? ledId = null,
         CancellationToken cancellationToken = default)
     {
-        var zone = OpenRazerLightingProtocol.ResolveBrightnessZone(connection.Definition, write: true, storage, ledId);
+        var selectedZone = ledId ?? (storage is null || storage == connection.Definition.DefaultStorage
+            ? GetDefaultBrightnessZone(connection, write: true) : null);
+        var zone = OpenRazerLightingProtocol.ResolveBrightnessZone(connection.Definition, write: true,
+            storage, selectedZone);
         RequireLightingZone(connection, zone, capability => capability.CanWriteBrightness, "brightness write");
         return ExecuteWithoutResultAsync(connection,
             OpenRazerLightingProtocol.SetBrightness(connection.Definition, storage, zone, brightness), cancellationToken);
@@ -1045,6 +1051,19 @@ public sealed class OpenRazerDeviceService
             throw new NotSupportedException(
                 $"OpenRazer device 1532:{connection.Definition.ProductId:X4} does not support {operation} on zone {zone}.");
         }
+    }
+
+    private static OpenRazerLedZone GetDefaultBrightnessZone(OpenRazerDeviceConnection connection, bool write)
+    {
+        var defaultZone = connection.Definition.DefaultLedZone;
+        bool Supports(OpenRazerLightingZoneCapabilities capabilities) =>
+            write ? capabilities.CanWriteBrightness : capabilities.CanReadBrightness;
+        if (connection.LightingZones.TryGetValue(defaultZone, out var capabilities) && Supports(capabilities))
+        {
+            return defaultZone;
+        }
+        return connection.LightingZones.Values.Where(Supports).Select(item => item.Zone)
+            .Order().FirstOrDefault(defaultZone);
     }
 
     private static void RequireClassicLedOperation(
