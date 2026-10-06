@@ -2,6 +2,12 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.4.4] - 2026-10-06
+
+### Fixed
+
+- Updates now preserve the user's desktop and Start-menu shortcut choices. Existing shortcuts are updated to the new installed version; deleted shortcuts are not recreated.
+
 ## [1.4.3] - 2026-10-06
 
 ### Fixed
