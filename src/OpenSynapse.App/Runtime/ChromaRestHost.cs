@@ -17,6 +17,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private const int NotSupported = 50;
     private const int DeviceNotConnected = 1167;
     private const int ClientLimit = 1152;
+    private const string BladeProtocolFamily = "blade-710";
     // Chroma clients heartbeat every second; two seconds bounds recovery without
     // treating a normal short scheduling pause as a game exit.
     private static readonly TimeSpan SessionTimeout = TimeSpan.FromSeconds(2);
@@ -479,12 +480,15 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             // normal effect while a game is alive, the next game frame takes
             // the device back without restarting an already active runtime.
             var applied = false;
-            if (_bladeChromaOverrideEnabled())
+            var devices = _devices();
+            if (_bladeChromaOverrideEnabled() && devices.Any(device =>
+                    device.ProtocolFamily == BladeProtocolFamily &&
+                    device.Access == DeviceAccessState.Available))
             {
                 try
                 {
                     await _lighting.ApplyExternalAsync(
-                        _devices(),
+                        devices,
                         _frameSource,
                         restorePersistentEffect: false,
                         _stop.Token).ConfigureAwait(false);

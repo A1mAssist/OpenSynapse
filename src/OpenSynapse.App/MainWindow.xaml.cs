@@ -187,16 +187,16 @@ public sealed partial class MainWindow : Window
 
         var remaining = TimeSpan.FromMilliseconds(MinimumLaunchDurationMilliseconds) -
             Stopwatch.GetElapsedTime(launchStarted);
-        if (remaining > TimeSpan.Zero)
+        var minimumDurationTask = remaining > TimeSpan.Zero
+            ? Task.Delay(remaining, _lifetime.Token)
+            : Task.CompletedTask;
+        try
         {
-            try
-            {
-                await Task.Delay(remaining, _lifetime.Token);
-            }
-            catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
-            {
-                return;
-            }
+            await Task.WhenAll(initializationTask, minimumDurationTask);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+            return;
         }
 
         if (_silentLaunch)
@@ -224,6 +224,7 @@ public sealed partial class MainWindow : Window
         try
         {
             await _viewModel.InitializeProfileAsync(_lifetime.Token);
+            LaunchStatusText.Text = AppStrings.Text("Text_C2463C0F");
             UpdatePerformanceSamplingState();
             _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
@@ -233,6 +234,7 @@ public sealed partial class MainWindow : Window
                 () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
             _viewModel.RequestDeviceRefresh();
+            LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
             {
                 _ = CheckForUpdatesAsync(downloadAutomatically: true);

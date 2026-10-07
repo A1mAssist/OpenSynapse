@@ -420,8 +420,8 @@
     <comment>重命名</comment>
   </data>
   <data name="Loc_95B9EC6E0F.Text" xml:space="preserve">
-    <value>前台应用或电源状态变化时会自动应用已验证的设备设置。</value>
-    <comment>前台应用或电源状态变化时会自动应用已验证的设备设置。</comment>
+    <value>前台应用或供电状态变化时会自动应用已验证的设备设置。</value>
+    <comment>前台应用或供电状态变化时会自动应用已验证的设备设置。</comment>
   </data>
   <data name="Loc_2A6762CB42.Text" xml:space="preserve">
     <value>应用绑定</value>
@@ -498,7 +498,7 @@
     <comment>本地设备控制工具</comment>
   </data>
   <data name="Loc_C606F601F7.Text" xml:space="preserve">
-    <value>版本 1.3.6</value>
+    <value>版本 1.4.5</value>
     <comment>关于窗口版本</comment>
   </data>
   <data name="Loc_C3734BA5BC.Text" xml:space="preserve">
@@ -1255,8 +1255,24 @@
     <value>协议可用 {0}/{1}</value>
     <comment>协议可用 {0}/{1}</comment>
   </data>
+  <data name="ActivePowerSource" xml:space="preserve">
+    <value>当前生效供电：{0}</value>
+    <comment>当前生效供电</comment>
+  </data>
   <data name="DiagnosticIssueCount" xml:space="preserve">
     <value>异常 {0} 项</value>
+  </data>
+  <data name="CopyDiagnostics" xml:space="preserve">
+    <value>复制诊断信息</value>
+    <comment>复制诊断信息</comment>
+  </data>
+  <data name="DiagnosticsCopied" xml:space="preserve">
+    <value>诊断信息已复制</value>
+    <comment>诊断信息已复制</comment>
+  </data>
+  <data name="OpenRazerOperationApplied" xml:space="preserve">
+    <value>已应用到设备</value>
+    <comment>已应用到设备</comment>
   </data>
   <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
     <value>设备返回的协议数据格式错误，已停用该协议能力。</value>
@@ -1686,12 +1702,15 @@
   <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>颜色 3</value></data>
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>当前供电</value></data>
-  <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>插电</value></data>
+  <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>电源</value></data>
   <data name="BladeLightingPowerBattery" xml:space="preserve"><value>电池</value></data>
   <data name="BladePerformancePowerProfileLabel.Text" xml:space="preserve"><value>性能模式供电配置</value></data>
   <data name="BladeRefreshRatePowerProfileLabel.Text" xml:space="preserve"><value>刷新率供电配置</value></data>
   <data name="BladeLightingPowerProfileLabel.Text" xml:space="preserve"><value>灯光供电配置</value></data>
-+  <data name="Text_046A57B8" xml:space="preserve"><value>键盘设备</value></data>
+  <data name="Text_046A57B8" xml:space="preserve"><value>键盘设备</value></data>
+  <data name="DiagnosticsReportTitle" xml:space="preserve"><value>OpenSynapse 诊断信息</value></data>
+  <data name="DiagnosticsReportDeviceRefresh" xml:space="preserve"><value>设备刷新：{0}</value></data>
+  <data name="DiagnosticsReportDeviceTelemetry" xml:space="preserve"><value>设备遥测：{0}</value></data>
   <data name="Text_07BF2232" xml:space="preserve"><value>正在下载更新</value></data>
   <data name="Text_0A982CB6" xml:space="preserve"><value>触控板已切换</value></data>
   <data name="Text_0B549ED2" xml:space="preserve"><value>一次性充满已启用</value></data>

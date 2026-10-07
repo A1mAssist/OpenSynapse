@@ -833,13 +833,22 @@ public sealed class BladeLightingController : IBladeLightingController
 
     private sealed class AudioMeterFrameSource(WasapiAudioMeterAdapter adapter) : ISoftwareLightingFrameSource
     {
+        private double _smoothedLevel;
+        private TimeSpan _lastElapsed;
+
         public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
             TimeSpan elapsed,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var level = adapter.ReadLevel();
+            var delta = elapsed - _lastElapsed;
+            _smoothedLevel = _lastElapsed == TimeSpan.Zero
+                ? level
+                : QuickLightingEngine.SmoothAudioLevel(_smoothedLevel, level, delta);
+            _lastElapsed = elapsed;
             return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(
-                QuickLightingEngine.RenderAudioMeter(adapter.ReadLevel(), colorBoost: 0));
+                QuickLightingEngine.RenderAudioMeter(_smoothedLevel, colorBoost: 0));
         }
     }
 

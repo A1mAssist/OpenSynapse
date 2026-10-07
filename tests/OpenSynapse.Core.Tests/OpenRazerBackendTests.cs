@@ -819,6 +819,67 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void EveryPublishedLightingZoneControlCanConstructItsRequest()
+    {
+        var failures = new List<string>();
+        foreach (var device in OpenRazerDeviceCatalog.BuiltIn.Devices)
+        foreach (var (zone, capabilities) in OpenRazerDeviceService.GetLightingZoneCapabilities(device))
+        {
+            var operations = new (bool Enabled, string Name, Func<object> Build)[]
+            {
+                (capabilities.CanReadBrightness, "brightness read", () =>
+                    OpenRazerLightingProtocol.GetBrightness(device, device.DefaultStorage, zone)),
+                (capabilities.CanWriteBrightness, "brightness write", () =>
+                    OpenRazerLightingProtocol.SetBrightness(device, device.DefaultStorage, zone, 128)),
+                (capabilities.CanReadState, "LED state read", () =>
+                    OpenRazerStandardProtocol.GetLedState(device, (byte)device.DefaultStorage, (byte)zone)),
+                (capabilities.CanWriteState, "LED state write", () =>
+                    OpenRazerStandardProtocol.SetLedState(device, (byte)device.DefaultStorage, (byte)zone, true)),
+                (capabilities.CanReadEffect, "LED effect read", () =>
+                    OpenRazerStandardProtocol.GetLedEffect(device, (byte)device.DefaultStorage, (byte)zone)),
+                (capabilities.CanWriteEffect, "LED effect write", () =>
+                    OpenRazerStandardProtocol.SetLedEffect(device, (byte)device.DefaultStorage, (byte)zone,
+                        OpenRazerClassicLedEffect.Static)),
+                (capabilities.CanWriteColor, "LED color write", () =>
+                    OpenRazerStandardProtocol.SetLedColor(device, (byte)device.DefaultStorage, (byte)zone,
+                        new OpenRazerColor(1, 2, 3))),
+                (capabilities.CanWriteBlinking, "LED blinking write", () =>
+                    OpenRazerStandardProtocol.SetLedBlinking(device, (byte)device.DefaultStorage, (byte)zone)),
+            };
+            foreach (var operation in operations.Where(operation => operation.Enabled))
+            {
+                var error = Record.Exception(() => operation.Build());
+                if (error is not null)
+                    failures.Add($"1532:{device.ProductId:X4} {zone} {operation.Name}: {error.Message}");
+            }
+            foreach (var effect in capabilities.LightingEffects)
+            {
+                var error = Record.Exception(() => OpenRazerLightingProtocol.CreateEffectRequests(device,
+                    new OpenRazerLightingSettings(effect, Zone: zone)));
+                if (error is not null)
+                    failures.Add($"1532:{device.ProductId:X4} {zone} {effect}: {error.Message}");
+            }
+        }
+        Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
+    }
+
+    [Theory]
+    [InlineData(0x0044)]
+    [InlineData(0x0203)]
+    public void ExplicitDefaultCustomZoneUsesTheSameSelector(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+        var implicitRequest = Assert.Single(OpenRazerLightingProtocol.CreateEffectRequests(device,
+            new OpenRazerLightingSettings(OpenRazerLightingEffect.Custom)));
+        var explicitRequest = Assert.Single(OpenRazerLightingProtocol.CreateEffectRequests(device,
+            new OpenRazerLightingSettings(OpenRazerLightingEffect.Custom, Zone: device.DefaultLedZone)));
+
+        Assert.Equal(implicitRequest.Report, explicitRequest.Report);
+        Assert.Throws<NotSupportedException>(() => OpenRazerLightingProtocol.CreateEffectRequests(device,
+            new OpenRazerLightingSettings(OpenRazerLightingEffect.Custom, Zone: OpenRazerLedZone.Logo)));
+    }
+
+    [Fact]
     public void EverySupportedGenericSourceEffectHasOneDefaultBinding()
     {
         var mappings = new (string Capability, string BuilderSuffix, OpenRazerLightingEffect Effect)[]

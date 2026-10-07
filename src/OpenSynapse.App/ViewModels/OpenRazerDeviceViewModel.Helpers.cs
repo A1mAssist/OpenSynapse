@@ -71,10 +71,14 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             return;
         }
         setBusy(true);
+        _operationSucceeded = false;
+        OnPropertyChanged(nameof(OperationStatusText));
         try
         {
             await operation();
             ErrorText = string.Empty;
+            _operationSucceeded = true;
+            OnPropertyChanged(nameof(OperationStatusText));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -102,10 +106,14 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             return;
         }
         setBusy(true);
+        _operationSucceeded = false;
+        OnPropertyChanged(nameof(OperationStatusText));
         try
         {
             await operation();
             ErrorText = string.Empty;
+            _operationSucceeded = true;
+            OnPropertyChanged(nameof(OperationStatusText));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -156,6 +164,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 
     private void HandleFailure(Exception exception, OpenRazerBackendCapability? capability = null)
     {
+        _operationSucceeded = false;
+        OnPropertyChanged(nameof(OperationStatusText));
         if (exception is (NotSupportedException or InvalidDataException) && capability is { } unsupported)
         {
             _unsupported.Add(unsupported);

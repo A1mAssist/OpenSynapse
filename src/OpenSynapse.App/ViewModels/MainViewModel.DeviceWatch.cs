@@ -4,7 +4,6 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
-    private static readonly TimeSpan ForegroundDeviceScanInterval = TimeSpan.FromSeconds(10);
     private string? _lastObservedForegroundExecutablePath;
     private string? _lastObservedApplicationBindings;
     private string? _lastObservedActiveProfileName;
@@ -103,9 +102,13 @@ public sealed partial class MainViewModel
                         }
                     }
 
+                    // Discovery is event-driven: startup, device notifications, resume,
+                    // and explicit refresh requests set this flag. A request arriving
+                    // during a scan remains queued for the next loop iteration.
+                    var refreshRequested = Interlocked.Exchange(ref _deviceRefreshRequested, 0) != 0;
                     if (Volatile.Read(ref _displayAvailable) == 0)
                     {
-                        if (profileChanged)
+                        if (refreshRequested || profileChanged)
                         {
                             Interlocked.Exchange(ref _deviceRefreshRequested, 1);
                         }
@@ -113,31 +116,13 @@ public sealed partial class MainViewModel
                     }
 
                     var powerChanged = _lastPowerState != powerState;
-                    var refreshRequested = Volatile.Read(ref _deviceRefreshRequested) != 0;
                     var displayProfileRequested =
                         Interlocked.Exchange(ref _displayProfileApplyRequested, 0) != 0;
-                    var periodicRefreshDue = Volatile.Read(ref _deviceWatchActive) != 0 &&
-                        DateTimeOffset.UtcNow >= _nextFullDeviceRefresh;
-                    if (refreshRequested ||
-                        powerChanged ||
-                        profileChanged ||
-                        displayProfileRequested ||
-                        periodicRefreshDue)
+                    if (refreshRequested || powerChanged || profileChanged || displayProfileRequested)
                     {
-                        var snapshot = refreshRequested || periodicRefreshDue
+                        var snapshot = refreshRequested
                             ? await _discovery.DiscoverAsync(cancellationToken)
                             : new DeviceSnapshot(_deviceDescriptors, DateTimeOffset.UtcNow);
-                        if (periodicRefreshDue)
-                        {
-                            _nextFullDeviceRefresh = DateTimeOffset.UtcNow + ForegroundDeviceScanInterval;
-                        }
-                        if (periodicRefreshDue && !refreshRequested && !powerChanged &&
-                            !profileChanged && !displayProfileRequested &&
-                            StringComparer.Ordinal.Equals(
-                                _deviceFingerprint, CreateDeviceFingerprint(snapshot)))
-                        {
-                            continue;
-                        }
                         await RefreshDevicesCoreAsync(
                             snapshot,
                             cancellationToken,

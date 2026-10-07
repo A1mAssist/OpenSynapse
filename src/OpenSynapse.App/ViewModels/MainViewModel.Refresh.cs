@@ -39,6 +39,7 @@ public sealed partial class MainViewModel
         var powerState = _powerSourceProvider.IsPluggedIn;
         applyDisplayProfile |= _lastPowerState != powerState;
         _lastPowerState = powerState;
+        OnPropertyChanged(nameof(ActivePowerSourceText));
         if (_bladeLightingPowerProfileIndex == 0)
         {
             RefreshBladeLightingEditor();
@@ -237,6 +238,8 @@ public sealed partial class MainViewModel
                 errors.Insert(0, snapshot.ErrorMessage);
             }
 
+            var openRazerErrorCount = CountOpenRazerErrors();
+
             if (Volatile.Read(ref _displayAvailable) != 0 &&
                 Interlocked.Exchange(ref _displayBrightnessRestorePending, 0) != 0)
             {
@@ -244,14 +247,13 @@ public sealed partial class MainViewModel
             }
 
             RebuildDiagnostics(snapshot with { Devices = visibleDevices }, telemetry, errors);
-            SetDeviceQueryError(errors.Count == 0
+            var totalErrorCount = errors.Count + openRazerErrorCount;
+            SetDeviceQueryError(totalErrorCount == 0
                 ? string.Empty
                 : AppStrings.FormatText("HardwareQueryFailureCount",
-                    errors.Count));
+                    totalErrorCount));
             LastDeviceRefreshText = AppStrings.FormatText("DeviceScanTime",
                 snapshot.CapturedAt.ToLocalTime());
-            _nextFullDeviceRefresh = DateTimeOffset.UtcNow + ForegroundDeviceScanInterval;
-            Interlocked.Exchange(ref _deviceRefreshRequested, 0);
             OnPropertyChanged(nameof(EmptyStateText));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -312,5 +314,27 @@ public sealed partial class MainViewModel
         StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
         StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
         StringComparer.Ordinal.Equals(previous.Error, current.Error);
+
+    private int CountOpenRazerErrors()
+    {
+        var count = OpenRazerDevices.Count(row => row.HasError);
+        if (SelectedOpenRazerDevice is { HasError: true } selected &&
+            !OpenRazerDevices.Any(row => StringComparer.OrdinalIgnoreCase.Equals(
+                row.Connection.InstanceId, selected.InstanceId) && row.HasError))
+        {
+            count++;
+        }
+
+        count += OpenRazerKrakenDevices.Count(row => !string.IsNullOrWhiteSpace(row.Error));
+        if (SelectedOpenRazerKraken?.HasError == true &&
+            !OpenRazerKrakenDevices.Any(row => StringComparer.OrdinalIgnoreCase.Equals(
+                row.Connection.InstanceId, SelectedOpenRazerKraken.InstanceId) &&
+                !string.IsNullOrWhiteSpace(row.Error)))
+        {
+            count++;
+        }
+
+        return count;
+    }
 
 }

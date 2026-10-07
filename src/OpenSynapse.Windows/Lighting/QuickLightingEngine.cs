@@ -37,6 +37,9 @@ public static class QuickLightingEngine
     private const double BreathingPeriodMilliseconds = 7000;
     private const double SpectrumPeriodMilliseconds = 37740;
     private const int LightingFramesPerSecond = 25;
+    private const double AudioAttackSeconds = 0.045;
+    private const double AudioReleaseSeconds = 0.12;
+    private const double AudioSilenceThreshold = 0.02;
     private static readonly byte[] FireSourceMask = Convert.FromHexString(
         "0806040606040202020406060406080604020204060810");
 
@@ -197,7 +200,9 @@ public static class QuickLightingEngine
         ValidateNormalized(level, nameof(level));
         ValidateNormalized(colorBoost, nameof(colorBoost));
 
-        var adjustedLevel = Math.Clamp(level * (1 + colorBoost), 0, 1);
+        var adjustedLevel = level < AudioSilenceThreshold
+            ? 0
+            : Math.Clamp(level * (1 + colorBoost), 0, 1);
         var litColumns = (int)Math.Ceiling(adjustedLevel * LogicalColumns);
         var frame = new RazerRgb[BladeLightingLayout.LogicalPixelCount];
         for (var row = 0; row < LogicalRows; row++)
@@ -218,6 +223,28 @@ public static class QuickLightingEngine
         }
 
         return BladeLightingLayout.MapToDeviceFrame(frame);
+    }
+
+    /// <summary>
+    /// Smooths audio-driven brightness without delaying the lighting loop.
+    /// Attack is deliberately faster than release so transients remain visible
+    /// while the meter does not chatter when a sample falls between packets.
+    /// </summary>
+    public static double SmoothAudioLevel(
+        double previous,
+        double current,
+        TimeSpan elapsed)
+    {
+        ValidateNormalized(previous, nameof(previous));
+        ValidateNormalized(current, nameof(current));
+        if (elapsed <= TimeSpan.Zero)
+        {
+            return current;
+        }
+
+        var timeConstant = current >= previous ? AudioAttackSeconds : AudioReleaseSeconds;
+        var factor = 1 - Math.Exp(-elapsed.TotalSeconds / timeConstant);
+        return previous + (current - previous) * factor;
     }
 
     /// <summary>Renders Product 710's native 100-keyframe, five-step fire cycle.</summary>
@@ -330,7 +357,7 @@ public static class QuickLightingEngine
                 continue;
             }
 
-            var factor = 1 - age.TotalMilliseconds / duration.TotalMilliseconds;
+            var factor = SmoothStep(1 - age.TotalMilliseconds / duration.TotalMilliseconds);
             var index = keyEvent.Row * LogicalColumns + keyEvent.Column;
             var candidate = ScaleColor(color, factor);
             frame[index] = MaxColor(frame[index], candidate);
@@ -371,7 +398,7 @@ public static class QuickLightingEngine
 
             var progress = age.TotalMilliseconds / duration.TotalMilliseconds;
             var radius = progress * maxRadius;
-            var fade = 1 - progress;
+            var fade = SmoothStep(1 - progress);
             for (var row = 0; row < LogicalRows; row++)
             {
                 for (var column = 0; column < LogicalColumns; column++)

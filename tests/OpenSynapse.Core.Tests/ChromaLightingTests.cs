@@ -294,6 +294,31 @@ public sealed class ChromaLightingTests
     }
 
     [Fact]
+    public void AudioMeterTurnsOffResidualSilenceNoise()
+    {
+        var frame = QuickLightingEngine.RenderAudioMeter(0.01, 0);
+
+        Assert.All(frame, color => Assert.Equal(default, color));
+    }
+
+    [Fact]
+    public void AudioLevelSmoothingAttacksQuicklyAndReleasesMoreSlowly()
+    {
+        var attack = QuickLightingEngine.SmoothAudioLevel(
+            previous: 0,
+            current: 1,
+            TimeSpan.FromMilliseconds(16));
+        var release = QuickLightingEngine.SmoothAudioLevel(
+            previous: 1,
+            current: 0,
+            TimeSpan.FromMilliseconds(16));
+
+        Assert.InRange(attack, 0.25, 0.35);
+        Assert.InRange(release, 0.85, 0.90);
+        Assert.Equal(1, QuickLightingEngine.SmoothAudioLevel(0, 1, TimeSpan.Zero));
+    }
+
+    [Fact]
     public void ChromaMatricesRejectNonProtocolDimensions()
     {
         var invalid = Enumerable.Range(0, 6)
