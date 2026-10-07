@@ -15,9 +15,24 @@ internal static class OpenRazerLightingProtocol
         var suffix = GetEffectSuffix(settings.Effect);
         var storage = settings.Storage ?? device.DefaultStorage;
         var candidates = GetEffectBuilders(suffix);
-        var selection = settings.Zone is { } requestedZone
-            ? (Builder: SelectBuilder(device, candidates, storage, requestedZone), Zone: requestedZone)
-            : SelectDefaultEffect(device, settings.Effect, candidates, storage);
+        (string Builder, OpenRazerLedZone Zone) selection;
+        if (settings.Effect == OpenRazerLightingEffect.Custom && settings.Zone is { } customZone)
+        {
+            selection = SelectDefaultEffect(device, settings.Effect, candidates, storage);
+            if (selection.Zone != customZone)
+            {
+                throw new NotSupportedException(
+                    $"Device 1532:{device.ProductId:X4} does not expose the custom selector on zone {customZone}.");
+            }
+        }
+        else if (settings.Zone is { } requestedZone)
+        {
+            selection = (SelectBuilder(device, candidates, storage, requestedZone), requestedZone);
+        }
+        else
+        {
+            selection = SelectDefaultEffect(device, settings.Effect, candidates, storage);
+        }
         var (builder, zone) = selection;
 
         if (settings.Effect == OpenRazerLightingEffect.Custom)

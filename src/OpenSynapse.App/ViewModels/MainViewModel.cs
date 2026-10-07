@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Diagnostics;
@@ -88,7 +89,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private string _bladeFanControlFingerprint = string.Empty;
     private Task? _bladeFanControlCompletion;
     private string? _bladeControlDevicePath;
-    private DateTimeOffset _nextFullDeviceRefresh = DateTimeOffset.MinValue;
     private int _bladeLightingPowerProfileIndex;
     private int _bladePerformancePowerProfileIndex;
     private int _bladeRefreshRatePowerProfileIndex;
@@ -256,6 +256,49 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public string EmptyStateText => ConnectedDevices.Count == 0
         ? AppStrings.Text("Text_76BEF6E0")
         : string.Empty;
+
+    public string ActivePowerSourceText => AppStrings.FormatText(
+        "ActivePowerSource",
+        _powerSourceProvider.IsPluggedIn switch
+        {
+            true => AppStrings.Text("BladeLightingPowerPluggedIn"),
+            false => AppStrings.Text("BladeLightingPowerBattery"),
+            _ => "--",
+        });
+
+    public string CreateDiagnosticsReport()
+    {
+        var report = new StringBuilder();
+        report.AppendLine(AppStrings.Text("DiagnosticsReportTitle"));
+        report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceRefresh", LastDeviceRefreshText));
+        report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceTelemetry", DeviceTelemetryTimeText));
+        report.AppendLine();
+        foreach (var row in Diagnostics)
+        {
+            AppendDiagnostic(report, row, 0);
+        }
+
+        return report.ToString().TrimEnd();
+    }
+
+    private static void AppendDiagnostic(
+        StringBuilder report,
+        DiagnosticRowViewModel row,
+        int depth)
+    {
+        report.Append(' ', depth * 2)
+            .Append(row.Device)
+            .Append(" | ")
+            .Append(row.Capability)
+            .Append(" | ")
+            .Append(row.Status)
+            .Append(" | ")
+            .AppendLine(row.Detail);
+        foreach (var issue in row.Issues)
+        {
+            AppendDiagnostic(report, issue, depth + 1);
+        }
+    }
 
     internal void SetPerformanceSamplingEnabled(bool enabled)
     {

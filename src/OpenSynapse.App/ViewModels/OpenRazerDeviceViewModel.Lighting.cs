@@ -133,6 +133,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         }
 
         IsLightingSettingsBusy = true;
+        _operationSucceeded = false;
+        OnPropertyChanged(nameof(OperationStatusText));
         try
         {
             if (!LightingEnabled)
@@ -151,6 +153,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             {
                 throw new IOException("OpenRazer lighting settings could not be saved.");
             }
+            _operationSucceeded = true;
+            OnPropertyChanged(nameof(OperationStatusText));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

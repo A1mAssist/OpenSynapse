@@ -7,7 +7,12 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private IReadOnlyList<ConnectedDeviceRowViewModel>? _connectedDevicesCache;
+
     public IReadOnlyList<ConnectedDeviceRowViewModel> ConnectedDevices =>
+        _connectedDevicesCache ??= BuildConnectedDevices();
+
+    private IReadOnlyList<ConnectedDeviceRowViewModel> BuildConnectedDevices() =>
         Devices.Select(device => new ConnectedDeviceRowViewModel(device))
             .Concat(OpenRazerDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(OpenRazerKrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
@@ -36,6 +41,7 @@ public sealed partial class MainViewModel
 
     private void RefreshDeviceOverviewVisibility()
     {
+        _connectedDevicesCache = null;
         OnPropertyChanged(nameof(PrimaryDevices));
         OnPropertyChanged(nameof(AdditionalDevices));
         OnPropertyChanged(nameof(ConnectedDevices));

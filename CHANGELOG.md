@@ -2,6 +2,21 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.4.5] - 2026-10-07
+
+### Fixed
+
+- OpenRazer and Kraken query failures now participate in the global hardware error summary while remaining grouped by device in Diagnostics.
+- Audio-reactive lighting now turns the keyboard fully off at the silence floor instead of leaving the leftmost column lit by residual smoothing noise.
+- OpenRazer custom lighting validates the requested zone against the device's actual custom-frame endpoint.
+
+### Improved
+
+- OpenRazer Chroma frame output skips unchanged frames and clears stale device state when targets disappear.
+- Device discovery is event-driven during normal operation, with refreshes triggered by startup, device changes, resume, power changes, and explicit requests.
+- Audio meter attack/release smoothing and ripple fade transitions are less abrupt.
+- Power-source wording is consistent across Chinese and English UI (`供电` / `AC power`).
+
 ## [1.4.4] - 2026-10-06
 
 ### Fixed

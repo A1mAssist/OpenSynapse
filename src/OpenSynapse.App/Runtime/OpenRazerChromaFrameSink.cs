@@ -12,6 +12,7 @@ internal sealed class OpenRazerChromaFrameSink
     private readonly Func<OpenRazerDeviceConnection, bool> _lightingEnabled;
     private readonly Func<OpenRazerDeviceConnection, bool> _chromaOverrideEnabled;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly Dictionary<string, FrameState> _lastFrames = new(StringComparer.OrdinalIgnoreCase);
 
     internal OpenRazerChromaFrameSink(
         OpenRazerDeviceService service,
@@ -42,21 +43,52 @@ internal sealed class OpenRazerChromaFrameSink
                 _lightingEnabled(connection) &&
                 _chromaOverrideEnabled(connection))
             .ToArray();
-        if (targets.Length == 0)
-        {
-            return false;
-        }
-
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (targets.Length == 0)
+            {
+                _lastFrames.Clear();
+                return false;
+            }
+
+            var targetIds = targets
+                .Select(target => target.InstanceId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var staleId in _lastFrames.Keys
+                         .Where(id => !targetIds.Contains(id))
+                         .ToArray())
+            {
+                _lastFrames.Remove(staleId);
+            }
+
+            var writes = new List<(OpenRazerDeviceConnection Target, OpenRazerColor[] Frame)>();
             foreach (var target in targets)
             {
                 var dimensions = target.Definition.MatrixDimensions!;
                 var frame = Resize(sourceFrame, dimensions.Rows, dimensions.Columns)
                     .Select(color => new OpenRazerColor(color.Red, color.Green, color.Blue))
                     .ToArray();
+
+                if (_lastFrames.TryGetValue(target.InstanceId, out var previous) &&
+                    ReferenceEquals(previous.Connection, target) &&
+                    previous.Frame.AsSpan().SequenceEqual(frame))
+                {
+                    continue;
+                }
+
+                writes.Add((target, frame));
+            }
+
+            if (writes.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var (target, frame) in writes)
+            {
                 await _service.SetCustomFrameAsync(target, frame, cancellationToken).ConfigureAwait(false);
+                _lastFrames[target.InstanceId] = new FrameState(target, frame);
             }
             return true;
         }
@@ -65,6 +97,10 @@ internal sealed class OpenRazerChromaFrameSink
             _gate.Release();
         }
     }
+
+    private sealed record FrameState(
+        OpenRazerDeviceConnection Connection,
+        OpenRazerColor[] Frame);
 
     private static IReadOnlyList<RazerRgb> Resize(
         IReadOnlyList<RazerRgb> source,
