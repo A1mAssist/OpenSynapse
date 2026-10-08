@@ -2,6 +2,19 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.5.0] - 2026-10-08
+
+### Added
+
+- Added built-in color presets and custom three-color palettes for compatible Blade and OpenRazer keyboard lighting effects.
+- Blade Wave and Spectrum now offer firmware and software-frame rendering; the saved palette determines which path is restored. OpenRazer keyboards show the choice only where both paths are available for the selected lighting zone.
+
+### Improved
+
+- Added speed controls for supported lighting effects and descriptive labels for the four reactive speed levels.
+- Aligned color, speed, direction, and preset controls across Blade and OpenRazer lighting pages. The Blade direction selector now uses the full settings-column width.
+- Firmware rendering hides color controls that the device firmware cannot apply.
+
 ## [1.4.5] - 2026-10-07
 
 ### Fixed
