@@ -115,13 +115,13 @@
     <value>Keyboard lighting effect</value>
   </data>
   <data name="Loc_CDBC79C8C5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Choose effect color</value>
+    <value>Choose effect color 1</value>
   </data>
   <data name="Loc_CDBC79C8C5.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Effect color</value>
+    <value>Effect color 1</value>
   </data>
   <data name="Loc_38C8E58C97.Text" xml:space="preserve">
-    <value>Color</value>
+    <value>Color 1</value>
   </data>
   <data name="Loc_5B268F9BA5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Choose second effect color</value>

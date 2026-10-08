@@ -149,16 +149,16 @@
     <comment>键盘灯效</comment>
   </data>
   <data name="Loc_CDBC79C8C5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>选择灯效颜色</value>
-    <comment>选择灯效颜色</comment>
+    <value>选择灯效颜色 1</value>
+    <comment>选择灯效颜色 1</comment>
   </data>
   <data name="Loc_CDBC79C8C5.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>灯效颜色</value>
-    <comment>灯效颜色</comment>
+    <value>灯效颜色 1</value>
+    <comment>灯效颜色 1</comment>
   </data>
   <data name="Loc_38C8E58C97.Text" xml:space="preserve">
-    <value>颜色</value>
-    <comment>颜色</comment>
+    <value>颜色 1</value>
+    <comment>颜色 1</comment>
   </data>
   <data name="Loc_5B268F9BA5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>选择灯效颜色 2</value>
