@@ -1407,7 +1407,7 @@
   <data name="LightingPresetStarlight" xml:space="preserve"><value>Starlight</value></data>
   <data name="LightingPresetRainbow" xml:space="preserve"><value>Rainbow</value></data>
   <data name="LightingPresetAudio" xml:space="preserve"><value>Audio</value></data>
-  <data name="BladeLightingAnimationSpeed.Text" xml:space="preserve"><value>Speed</value></data>
+  <data name="BladeLightingAnimationSpeed.Header" xml:space="preserve"><value>Speed</value></data>
   <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
     <value>More devices</value>
   </data>

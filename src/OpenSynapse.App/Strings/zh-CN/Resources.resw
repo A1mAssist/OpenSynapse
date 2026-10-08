@@ -1764,7 +1764,7 @@
   <data name="LightingPresetStarlight" xml:space="preserve"><value>星光</value></data>
   <data name="LightingPresetRainbow" xml:space="preserve"><value>彩虹</value></data>
   <data name="LightingPresetAudio" xml:space="preserve"><value>音频</value></data>
-  <data name="BladeLightingAnimationSpeed.Text" xml:space="preserve"><value>速度</value></data>
+  <data name="BladeLightingAnimationSpeed.Header" xml:space="preserve"><value>速度</value></data>
   <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
     <value>更多设备</value>
   </data>
