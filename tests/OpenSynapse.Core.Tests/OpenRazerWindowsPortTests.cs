@@ -379,31 +379,33 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Theory]
-    [InlineData("wave", BladeLightingRenderMode.Firmware)]
-    [InlineData("wave", BladeLightingRenderMode.Software)]
-    [InlineData("spectrum", BladeLightingRenderMode.Firmware)]
-    [InlineData("spectrum", BladeLightingRenderMode.Software)]
-    public void BladeRenderModeRoundTripsAndKeepsLegacyAuto(string mode, BladeLightingRenderMode renderMode)
+    [InlineData("wave", "firmware", false)]
+    [InlineData("wave", "software", true)]
+    [InlineData("spectrum", "software", false)]
+    [InlineData("spectrum", "firmware", true)]
+    public void BladePaletteOverridesLegacyRenderModeField(string mode, string legacyMode, bool hasPalette)
     {
-        Assert.Equal(BladeLightingRenderMode.Auto,
-            BladeLightingProfileCodec.Parse(new LightingProfile { Effect = mode }).RenderMode);
-
-        var effect = BladeLightingProfileCodec.Parse(new LightingProfile
+        var profile = new LightingProfile
         {
             Effect = mode,
-            Parameters = new() { ["renderMode"] = renderMode.ToString().ToLowerInvariant() },
-        });
+            Parameters = new() { ["renderMode"] = legacyMode },
+        };
+        if (hasPalette)
+        {
+            profile.Parameters["palette1"] = "112233";
+            profile.Parameters["palette2"] = "445566";
+            profile.Parameters["palette3"] = "778899";
+        }
+        var effect = BladeLightingProfileCodec.Parse(profile);
 
-        Assert.Equal(renderMode, effect.RenderMode);
-        Assert.Equal(renderMode.ToString().ToLowerInvariant(),
-            BladeLightingProfileCodec.Create(effect).Parameters["renderMode"]);
+        Assert.Equal(hasPalette, effect.Palette is not null);
+        Assert.False(BladeLightingProfileCodec.Create(effect).Parameters.ContainsKey("renderMode"));
     }
 
     [Theory]
-    [InlineData(BladeLightingRenderMode.Firmware, true)]
-    [InlineData(BladeLightingRenderMode.Software, false)]
-    public async Task BladeWaveRenderModeSelectsNativeOrMatrixPath(
-        BladeLightingRenderMode renderMode, bool expectNative)
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BladeWavePaletteSelectsNativeOrMatrixPath(bool hasPalette)
     {
         var transport = new PreparedReportRecordingTransport();
         await using var controller = new BladeLightingController(transport);
@@ -411,18 +413,18 @@ public sealed class OpenRazerWindowsPortTests
             "blade", "Blade 16", 0x1532, 0x02C6,
             DeviceAccessState.Available, DeviceCapabilityState.PendingValidation,
             91, 1, 2, "blade-710");
-        var palette = LightingPalette.Create(
+        var palette = hasPalette ? LightingPalette.Create(
             new RazerRgb(0x11, 0x22, 0x33),
             new RazerRgb(0x44, 0x55, 0x66),
-            new RazerRgb(0x77, 0x88, 0x99));
+            new RazerRgb(0x77, 0x88, 0x99)) : null;
 
         await controller.ApplyAsync([device], new BladeLightingEffect(
-            BladeLightingMode.Wave, Palette: palette, RenderMode: renderMode));
+            BladeLightingMode.Wave, Palette: palette));
 
-        Assert.Equal(expectNative, transport.Requests.Any(request =>
+        Assert.Equal(!hasPalette, transport.Requests.Any(request =>
             request.CommandClass == 0x03 && request.CommandId == 0x0A &&
             request.Arguments.SequenceEqual(new byte[] { 0x01, 0x02 })));
-        if (!expectNative)
+        if (hasPalette)
         {
             Assert.Contains(transport.Requests, request =>
                 request.CommandClass == 0x03 && request.CommandId == 0x0B);
