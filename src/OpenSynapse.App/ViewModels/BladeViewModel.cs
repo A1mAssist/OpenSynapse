@@ -63,6 +63,7 @@ internal sealed class BladeViewModel
     internal bool _confirmedBladeTouchpadEnabled;
     internal bool _canSetBladeTouchpad;
     internal int _bladeLightingModeIndex = 1;
+    internal int _bladeLightingRenderModeIndex;
     internal int _bladeWaveDirectionIndex;
     internal int _bladeReactiveSpeedIndex = 1;
     internal int _bladeStarlightSpeedIndex = 1;

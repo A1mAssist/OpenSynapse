@@ -159,7 +159,8 @@ public sealed partial class MainViewModel
             BladeStarlightSpeeds[Math.Clamp(BladeStarlightSpeedIndex, 0, BladeStarlightSpeeds.Length - 1)],
             BladeStarlightColorModes[Math.Clamp(BladeStarlightColorModeIndex, 0, BladeStarlightColorModes.Length - 1)],
             palette,
-            BladeAnimationSpeeds[Math.Clamp(BladeAnimationSpeedIndex, 0, BladeAnimationSpeeds.Length - 1)]);
+            BladeAnimationSpeeds[Math.Clamp(BladeAnimationSpeedIndex, 0, BladeAnimationSpeeds.Length - 1)],
+            (BladeLightingRenderMode)Math.Clamp(BladeLightingRenderModeIndex, 0, 2));
         return ApplyBladeLightingEffectAsync(effect, cancellationToken);
     }
 
@@ -903,6 +904,7 @@ public sealed partial class MainViewModel
             if (SetField(ref _blade._bladeLightingModeIndex, value))
             {
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
+                OnPropertyChanged(nameof(BladeLightingRenderModeVisibility));
                 OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
                 OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
                 OnPropertyChanged(nameof(BladeWaveDirectionVisibility));
@@ -917,19 +919,42 @@ public sealed partial class MainViewModel
         BladeLightingModeIndex >= 0 && BladeLightingModeIndex < BladeLightingModes.Length
             ? BladeLightingModes[BladeLightingModeIndex]
             : null;
-    public Visibility BladeLightingColorVisibility => SelectedBladeLightingMode is
+    public IReadOnlyList<string> BladeLightingRenderModeOptions => AppStrings.Texts(
+        "LightingRenderAuto", "LightingRenderFirmware", "LightingRenderSoftware");
+    public int BladeLightingRenderModeIndex
+    {
+        get => _blade._bladeLightingRenderModeIndex;
+        set
+        {
+            if (value is < 0 or > 2) return;
+            if (SetField(ref _blade._bladeLightingRenderModeIndex, value))
+            {
+                OnPropertyChanged(nameof(BladeLightingColorVisibility));
+                OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
+                OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
+            }
+        }
+    }
+    public Visibility BladeLightingRenderModeVisibility => SelectedBladeLightingMode is
+        BladeLightingMode.Wave or BladeLightingMode.Spectrum ? Visibility.Visible : Visibility.Collapsed;
+    private bool BladeFirmwarePaletteHidden => BladeLightingRenderModeVisibility == Visibility.Visible &&
+        BladeLightingRenderModeIndex == (int)BladeLightingRenderMode.Firmware;
+    public Visibility BladeLightingColorVisibility => !BladeFirmwarePaletteHidden &&
+        (SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
         BladeLightingMode.Ripple or BladeLightingMode.Tidal or BladeLightingMode.Spectrum or
         BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
-        (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex != 0)
+        (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex != 0))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingSecondColorVisibility => SelectedBladeLightingMode is BladeLightingMode.Tidal or
+    public Visibility BladeLightingSecondColorVisibility => !BladeFirmwarePaletteHidden &&
+        (SelectedBladeLightingMode is BladeLightingMode.Tidal or
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
-        (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex == 2)
+        (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex == 2))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingTertiaryColorVisibility => SelectedBladeLightingMode is
+    public Visibility BladeLightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden &&
+        SelectedBladeLightingMode is
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
         BladeLightingMode.Wheel or BladeLightingMode.AudioMeter
         ? Visibility.Visible

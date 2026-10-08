@@ -530,6 +530,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         if (lightingIndex >= 0)
         {
             BladeLightingModeIndex = lightingIndex;
+            BladeLightingRenderModeIndex = (int)effect.RenderMode;
             BladeWaveDirectionIndex = Array.IndexOf(BladeWaveDirections, effect.Direction);
             BladeLightingColor = Color.FromArgb(0xFF, effect.Color.Red, effect.Color.Green, effect.Color.Blue);
             BladeLightingSecondColor = Color.FromArgb(

@@ -29,6 +29,13 @@ public enum BladeStarlightColorMode
     Dual,
 }
 
+public enum BladeLightingRenderMode
+{
+    Auto,
+    Firmware,
+    Software,
+}
+
 public sealed record BladeLightingEffect(
     BladeLightingMode Mode,
     RazerRgb Color = default,
@@ -38,7 +45,8 @@ public sealed record BladeLightingEffect(
     byte StarlightSpeed = 2,
     BladeStarlightColorMode StarlightColorMode = BladeStarlightColorMode.Single,
     LightingPalette? Palette = null,
-    byte AnimationSpeed = 2)
+    byte AnimationSpeed = 2,
+    BladeLightingRenderMode RenderMode = BladeLightingRenderMode.Auto)
 {
     public static BladeLightingEffect Off { get; } = new(BladeLightingMode.Off);
     public static BladeLightingEffect Spectrum { get; } = new(BladeLightingMode.Spectrum);
@@ -584,8 +592,9 @@ public sealed class BladeLightingController : IBladeLightingController
         BladeLightingEffect effect,
         out byte[] request)
     {
-        if (effect.Palette is not null &&
-            effect.Mode is BladeLightingMode.Spectrum or BladeLightingMode.Wave)
+        if (effect.RenderMode == BladeLightingRenderMode.Software ||
+            (effect.RenderMode == BladeLightingRenderMode.Auto && effect.Palette is not null &&
+             effect.Mode is BladeLightingMode.Spectrum or BladeLightingMode.Wave))
         {
             request = Array.Empty<byte>();
             return false;
@@ -754,6 +763,12 @@ public sealed class BladeLightingController : IBladeLightingController
     {
         ArgumentNullException.ThrowIfNull(effect);
         if (!Enum.IsDefined(effect.Mode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(effect));
+        }
+        if (!Enum.IsDefined(effect.RenderMode) ||
+            effect.RenderMode != BladeLightingRenderMode.Auto &&
+            effect.Mode is not (BladeLightingMode.Wave or BladeLightingMode.Spectrum))
         {
             throw new ArgumentOutOfRangeException(nameof(effect));
         }
