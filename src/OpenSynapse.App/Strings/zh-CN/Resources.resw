@@ -1619,8 +1619,8 @@
   <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>区域</value></data>
   <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>效果</value></data>
   <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>亮度</value></data>
-  <data name="OpenRazerLightingSpeed.Header" xml:space="preserve"><value>速度</value></data>
-  <data name="OpenRazerLightingDirection.Header" xml:space="preserve"><value>方向</value></data>
+  <data name="OpenRazerLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效速度</value></data>
+  <data name="OpenRazerLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效方向</value></data>
   <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
   <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>向左 / 逆时针</value></data>
   <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>响应速度</value></data>
@@ -1716,7 +1716,7 @@
   <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>耳机</value></data>
   <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>耳机灯光</value></data>
   <data name="OpenRazerKrakenLightingTitle.Text" xml:space="preserve"><value>灯光效果</value></data>
-  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>颜色 1</value></data>
+  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>颜色</value></data>
   <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>颜色 2</value></data>
   <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>颜色 3</value></data>
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>应用灯效</value></data>

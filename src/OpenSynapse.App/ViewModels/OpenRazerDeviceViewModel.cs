@@ -527,6 +527,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
                 OnPropertyChanged(nameof(TertiaryColorVisibility));
                 OnPropertyChanged(nameof(LightingSpeedVisibility));
                 OnPropertyChanged(nameof(MaximumLightingSpeed));
+                OnPropertyChanged(nameof(LightingSpeedOptions));
                 OnPropertyChanged(nameof(LightingDirectionVisibility));
                 OnPropertyChanged(nameof(CanApplyLighting));
             }
@@ -535,8 +536,27 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public Color PrimaryColor { get => _primaryColor; set => SetField(ref _primaryColor, value); }
     public Color SecondaryColor { get => _secondaryColor; set => SetField(ref _secondaryColor, value); }
     public Color TertiaryColor { get => _tertiaryColor; set => SetField(ref _tertiaryColor, value); }
-    public byte LightingSpeed { get => _lightingSpeed; set => SetField(ref _lightingSpeed,
-        Math.Clamp(value, (byte)1, MaximumLightingSpeed)); }
+    public byte LightingSpeed
+    {
+        get => _lightingSpeed;
+        set
+        {
+            if (SetField(ref _lightingSpeed, Math.Clamp(value, (byte)1, MaximumLightingSpeed)))
+                OnPropertyChanged(nameof(LightingSpeedIndex));
+        }
+    }
+    public IReadOnlyList<string> LightingSpeedOptions => MaximumLightingSpeed == 4
+        ? AppStrings.Texts("BladeReactiveSpeedLevel1", "BladeReactiveSpeedLevel2", "BladeReactiveSpeedLevel3", "BladeReactiveSpeedLevel4")
+        : AppStrings.Texts("BladeAnimationSpeedSlow", "BladeAnimationSpeedMedium", "BladeAnimationSpeedFast");
+    public int LightingSpeedIndex
+    {
+        get => LightingSpeed - 1;
+        set
+        {
+            if (value >= 0 && value < MaximumLightingSpeed)
+                LightingSpeed = checked((byte)(value + 1));
+        }
+    }
     public byte LightingDirection
     {
         get => _lightingDirection;

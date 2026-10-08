@@ -1262,8 +1262,8 @@
   <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
   <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
   <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
-  <data name="OpenRazerLightingSpeed.Header" xml:space="preserve"><value>Speed</value></data>
-  <data name="OpenRazerLightingDirection.Header" xml:space="preserve"><value>Direction</value></data>
+  <data name="OpenRazerLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting speed</value></data>
+  <data name="OpenRazerLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting direction</value></data>
   <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>
   <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>Left / counterclockwise</value></data>
   <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Reactive speed</value></data>
@@ -1359,7 +1359,7 @@
   <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>Headset</value></data>
   <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>Headset lighting</value></data>
   <data name="OpenRazerKrakenLightingTitle.Text" xml:space="preserve"><value>Lighting effect</value></data>
-  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>Color 1</value></data>
+  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>Color</value></data>
   <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>Color 2</value></data>
   <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>Color 3</value></data>
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>Apply effect</value></data>
