@@ -1262,17 +1262,17 @@
   <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
   <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
   <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
-  <data name="OpenRazerLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting speed</value></data>
+  <data name="OpenRazerLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Effect speed or duration</value></data>
   <data name="OpenRazerLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting direction</value></data>
   <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>
   <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>Left / counterclockwise</value></data>
-  <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Reactive speed</value></data>
+  <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Reactive duration</value></data>
   <data name="BladeLightingStarlightSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Starlight speed</value></data>
   <data name="BladeLightingStarlightColorMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Starlight color mode</value></data>
-  <data name="BladeReactiveSpeedLevel1" xml:space="preserve"><value>Speed level 1</value></data>
-  <data name="BladeReactiveSpeedLevel2" xml:space="preserve"><value>Speed level 2</value></data>
-  <data name="BladeReactiveSpeedLevel3" xml:space="preserve"><value>Speed level 3</value></data>
-  <data name="BladeReactiveSpeedLevel4" xml:space="preserve"><value>Speed level 4</value></data>
+  <data name="BladeReactiveSpeedLevel1" xml:space="preserve"><value>Hold 0.5 s</value></data>
+  <data name="BladeReactiveSpeedLevel2" xml:space="preserve"><value>Hold 1 s</value></data>
+  <data name="BladeReactiveSpeedLevel3" xml:space="preserve"><value>Hold 1.5 s</value></data>
+  <data name="BladeReactiveSpeedLevel4" xml:space="preserve"><value>Hold 2 s</value></data>
   <data name="BladeStarlightRandom" xml:space="preserve"><value>Random</value></data>
   <data name="BladeStarlightSingle" xml:space="preserve"><value>Single color</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>Dual color</value></data>
