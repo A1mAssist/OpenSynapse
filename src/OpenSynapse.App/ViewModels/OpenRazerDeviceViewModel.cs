@@ -205,6 +205,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool IsMouseDevice => Connection.Definition.Category == DeviceCategory.Mouse;
     private bool SupportsSoftwareLighting =>
         Connection.Definition.Category == DeviceCategory.Keyboard &&
+        SelectedLightingZone == Connection.Definition.DefaultLedZone &&
         Connection.Definition.MatrixDimensions is not null &&
         Has(OpenRazerBackendCapability.MatrixFrameWrite) &&
         _chromaIntegrationEnabled &&
@@ -504,13 +505,34 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
             !_unsupportedLighting.Contains((zone, effect))) ||
          capabilities.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(zone) ||
          capabilities.CanWriteState && !_unsupportedLedStateWrites.Contains(zone))));
-    public IReadOnlyList<string> LightingEffectOptions => LightingEffects.Select(FormatEffect).ToArray();
+    private IReadOnlyList<OpenRazerLightingEffect> LightingEffectChoices => LightingEffects
+        .Where(effect => NativeCounterpart(effect) is not { } native || !LightingEffects.Contains(native))
+        .ToArray();
+    public IReadOnlyList<string> LightingEffectOptions => LightingEffectChoices.Select(FormatEffect).ToArray();
     public int SelectedLightingEffectIndex
     {
-        get => IndexOf(LightingEffects, SelectedLightingEffect);
+        get => IndexOf(LightingEffectChoices, NativeCounterpart(SelectedLightingEffect) is { } native &&
+            LightingEffects.Contains(native) ? native : SelectedLightingEffect);
         set
         {
-            if (value >= 0 && value < LightingEffects.Count) SelectedLightingEffect = LightingEffects[value];
+            if (value >= 0 && value < LightingEffectChoices.Count && value != SelectedLightingEffectIndex)
+                SelectedLightingEffect = LightingEffectChoices[value];
+        }
+    }
+    public IReadOnlyList<string> LightingRenderModeOptions => AppStrings.Texts(
+        "LightingRenderFirmware", "LightingRenderSoftware");
+    public Visibility LightingRenderModeVisibility => VisibleWhen(
+        LightingEffects.Contains(NativeCounterpart(SelectedLightingEffect) ?? SelectedLightingEffect) &&
+        SoftwareCounterpart(NativeCounterpart(SelectedLightingEffect) ?? SelectedLightingEffect) is { } software &&
+        LightingEffects.Contains(software));
+    public int LightingRenderModeIndex
+    {
+        get => IsSoftwareLightingEffect(SelectedLightingEffect) ? 1 : 0;
+        set
+        {
+            if (LightingRenderModeVisibility != Visibility.Visible || value is not (0 or 1)) return;
+            var native = NativeCounterpart(SelectedLightingEffect) ?? SelectedLightingEffect;
+            SelectedLightingEffect = value == 0 ? native : SoftwareCounterpart(native)!.Value;
         }
     }
     public OpenRazerLightingEffect SelectedLightingEffect
@@ -522,6 +544,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
             {
                 LightingSpeed = Math.Min(LightingSpeed, MaximumLightingSpeed);
                 OnPropertyChanged(nameof(SelectedLightingEffectIndex));
+                OnPropertyChanged(nameof(LightingRenderModeVisibility));
+                OnPropertyChanged(nameof(LightingRenderModeIndex));
                 OnPropertyChanged(nameof(PrimaryColorVisibility));
                 OnPropertyChanged(nameof(SecondaryColorVisibility));
                 OnPropertyChanged(nameof(TertiaryColorVisibility));

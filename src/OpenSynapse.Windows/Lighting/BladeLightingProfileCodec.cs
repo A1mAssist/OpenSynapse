@@ -22,8 +22,9 @@ internal static class BladeLightingProfileCodec
             "starlight" => ["color", "color2", "speed", "colorMode"],
             "tidal" => ["color", "color2", "speed"],
             "wheel" => ["direction", "speed", "palette1", "palette2", "palette3"],
-            "wave" => ["direction", "palette1", "palette2", "palette3"],
-            "spectrum" or "fire" or "audiometer" => ["palette1", "palette2", "palette3"],
+            "wave" => ["direction", "palette1", "palette2", "palette3", "renderMode"],
+            "spectrum" => ["palette1", "palette2", "palette3", "renderMode"],
+            "fire" or "audiometer" => ["palette1", "palette2", "palette3"],
             "off" or "ambient" => [],
             _ => throw new InvalidOperationException($"Unsupported keyboard lighting effect: {profile.Effect}."),
         };
@@ -48,6 +49,15 @@ internal static class BladeLightingProfileCodec
             : (byte)2;
         var starlightColorMode = ParseStarlightColorMode(parameters);
         var palette = ParsePalette(mode, parameters);
+        var renderMode = parameters.TryGetValue("renderMode", out var rawRenderMode)
+            ? rawRenderMode.Trim().ToLowerInvariant() switch
+            {
+                "firmware" => BladeLightingRenderMode.Firmware,
+                "software" => BladeLightingRenderMode.Software,
+                "auto" => BladeLightingRenderMode.Auto,
+                _ => throw new InvalidOperationException("Lighting render mode must be auto, firmware, or software."),
+            }
+            : BladeLightingRenderMode.Auto;
         return new BladeLightingEffect(mode switch
         {
             "off" => BladeLightingMode.Off,
@@ -63,7 +73,7 @@ internal static class BladeLightingProfileCodec
             "starlight" => BladeLightingMode.Starlight,
             "tidal" => BladeLightingMode.Tidal,
             _ => BladeLightingMode.Fire,
-        }, color, direction, secondColor, reactiveSpeed, starlightSpeed, starlightColorMode, palette, animationSpeed);
+        }, color, direction, secondColor, reactiveSpeed, starlightSpeed, starlightColorMode, palette, animationSpeed, renderMode);
     }
 
     internal static LightingProfile Create(BladeLightingEffect effect)
@@ -123,6 +133,12 @@ internal static class BladeLightingProfileCodec
             }
         }
 
+        if (effect.RenderMode != BladeLightingRenderMode.Auto &&
+            effect.Mode is BladeLightingMode.Wave or BladeLightingMode.Spectrum)
+        {
+            profile.Parameters["renderMode"] = effect.RenderMode.ToString().ToLowerInvariant();
+        }
+
         return profile;
     }
 
@@ -135,7 +151,7 @@ internal static class BladeLightingProfileCodec
             : string.Join(',', effect.Palette.Colors.Select(color => $"{color.Red:X2}{color.Green:X2}{color.Blue:X2}"));
         return $"{devicePath}\n{effect.Mode}\n{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}\n" +
             $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}\n" +
-            $"{effect.Direction}\n{effect.ReactiveSpeed}\n{effect.StarlightSpeed}\n{effect.StarlightColorMode}\n{effect.AnimationSpeed}\n{palette}";
+            $"{effect.Direction}\n{effect.ReactiveSpeed}\n{effect.StarlightSpeed}\n{effect.StarlightColorMode}\n{effect.AnimationSpeed}\n{effect.RenderMode}\n{palette}";
     }
 
     private static LightingPalette? ParsePalette(

@@ -249,6 +249,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LightingEffects));
         OnPropertyChanged(nameof(LightingEffectOptions));
         OnPropertyChanged(nameof(SelectedLightingEffectIndex));
+        OnPropertyChanged(nameof(LightingRenderModeVisibility));
+        OnPropertyChanged(nameof(LightingRenderModeIndex));
         OnPropertyChanged(nameof(SelectedLightingEffect));
         OnPropertyChanged(nameof(BrightnessVisibility));
         OnPropertyChanged(nameof(BrightnessWriteVisibility));
@@ -282,6 +284,22 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OpenRazerLightingEffect.SoftwareFire or
         OpenRazerLightingEffect.SoftwareAudioMeter or
         OpenRazerLightingEffect.SoftwareWheel;
+
+    private static OpenRazerLightingEffect? SoftwareCounterpart(OpenRazerLightingEffect effect) => effect switch
+    {
+        OpenRazerLightingEffect.Spectrum => OpenRazerLightingEffect.SoftwareSpectrum,
+        OpenRazerLightingEffect.Wave => OpenRazerLightingEffect.SoftwareWave,
+        OpenRazerLightingEffect.Wheel => OpenRazerLightingEffect.SoftwareWheel,
+        _ => null,
+    };
+
+    private static OpenRazerLightingEffect? NativeCounterpart(OpenRazerLightingEffect effect) => effect switch
+    {
+        OpenRazerLightingEffect.SoftwareSpectrum => OpenRazerLightingEffect.Spectrum,
+        OpenRazerLightingEffect.SoftwareWave => OpenRazerLightingEffect.Wave,
+        OpenRazerLightingEffect.SoftwareWheel => OpenRazerLightingEffect.Wheel,
+        _ => null,
+    };
 
     private static int IndexOf<T>(IReadOnlyList<T> values, T value)
     {

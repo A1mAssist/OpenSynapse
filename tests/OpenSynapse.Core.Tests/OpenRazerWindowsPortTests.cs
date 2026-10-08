@@ -379,6 +379,58 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Theory]
+    [InlineData("wave", BladeLightingRenderMode.Firmware)]
+    [InlineData("wave", BladeLightingRenderMode.Software)]
+    [InlineData("spectrum", BladeLightingRenderMode.Firmware)]
+    [InlineData("spectrum", BladeLightingRenderMode.Software)]
+    public void BladeRenderModeRoundTripsAndKeepsLegacyAuto(string mode, BladeLightingRenderMode renderMode)
+    {
+        Assert.Equal(BladeLightingRenderMode.Auto,
+            BladeLightingProfileCodec.Parse(new LightingProfile { Effect = mode }).RenderMode);
+
+        var effect = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = mode,
+            Parameters = new() { ["renderMode"] = renderMode.ToString().ToLowerInvariant() },
+        });
+
+        Assert.Equal(renderMode, effect.RenderMode);
+        Assert.Equal(renderMode.ToString().ToLowerInvariant(),
+            BladeLightingProfileCodec.Create(effect).Parameters["renderMode"]);
+    }
+
+    [Theory]
+    [InlineData(BladeLightingRenderMode.Firmware, true)]
+    [InlineData(BladeLightingRenderMode.Software, false)]
+    public async Task BladeWaveRenderModeSelectsNativeOrMatrixPath(
+        BladeLightingRenderMode renderMode, bool expectNative)
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(transport);
+        var device = new DeviceDescriptor(
+            "blade", "Blade 16", 0x1532, 0x02C6,
+            DeviceAccessState.Available, DeviceCapabilityState.PendingValidation,
+            91, 1, 2, "blade-710");
+        var palette = LightingPalette.Create(
+            new RazerRgb(0x11, 0x22, 0x33),
+            new RazerRgb(0x44, 0x55, 0x66),
+            new RazerRgb(0x77, 0x88, 0x99));
+
+        await controller.ApplyAsync([device], new BladeLightingEffect(
+            BladeLightingMode.Wave, Palette: palette, RenderMode: renderMode));
+
+        Assert.Equal(expectNative, transport.Requests.Any(request =>
+            request.CommandClass == 0x03 && request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x02 })));
+        if (!expectNative)
+        {
+            Assert.Contains(transport.Requests, request =>
+                request.CommandClass == 0x03 && request.CommandId == 0x0B);
+        }
+        await controller.StopAsync();
+    }
+
+    [Theory]
     [InlineData("wheel")]
     [InlineData("tidal")]
     public void BladeAnimationSpeedRoundTripsAndDefaultsToCurrentRate(string mode)
