@@ -265,6 +265,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LedStateText));
         OnPropertyChanged(nameof(CanWriteLedState));
         OnPropertyChanged(nameof(PrimaryColorVisibility));
+        OnPropertyChanged(nameof(LightingPresetVisibility));
         OnPropertyChanged(nameof(SecondaryColorVisibility));
         OnPropertyChanged(nameof(TertiaryColorVisibility));
         OnPropertyChanged(nameof(LightingSpeedVisibility));

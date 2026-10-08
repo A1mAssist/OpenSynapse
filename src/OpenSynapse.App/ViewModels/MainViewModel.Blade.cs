@@ -911,6 +911,7 @@ public sealed partial class MainViewModel
                     BladeLightingTertiaryColor = Color.FromArgb(0xFF, defaults[2].Red, defaults[2].Green, defaults[2].Blue);
                 }
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
+                OnPropertyChanged(nameof(BladeLightingPresetVisibility));
                 OnPropertyChanged(nameof(BladeLightingRenderModeVisibility));
                 OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
                 OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
@@ -937,6 +938,7 @@ public sealed partial class MainViewModel
             if (SetField(ref _blade._bladeLightingRenderModeIndex, value))
             {
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
+                OnPropertyChanged(nameof(BladeLightingPresetVisibility));
                 OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
                 OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
             }
@@ -946,6 +948,8 @@ public sealed partial class MainViewModel
         BladeLightingMode.Wave or BladeLightingMode.Spectrum ? Visibility.Visible : Visibility.Collapsed;
     private bool BladeFirmwarePaletteHidden => BladeLightingRenderModeVisibility == Visibility.Visible &&
         BladeLightingRenderModeIndex == 0;
+    public Visibility BladeLightingPresetVisibility => SelectedBladeLightingMode == BladeLightingMode.Static
+        ? Visibility.Collapsed : BladeLightingColorVisibility;
     public Visibility BladeLightingColorVisibility => !BladeFirmwarePaletteHidden &&
         (SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
@@ -990,7 +994,7 @@ public sealed partial class MainViewModel
     public IReadOnlyList<string> BladeStarlightSpeedOptions => BladeAnimationSpeedOptions;
     public int BladeStarlightSpeedIndex { get => _blade._bladeStarlightSpeedIndex; set => SetField(ref _blade._bladeStarlightSpeedIndex, value); }
     public IReadOnlyList<string> BladeStarlightColorModeOptions => AppStrings.Texts("BladeStarlightRandom", "BladeStarlightSingle", "BladeStarlightDual");
-    public int BladeStarlightColorModeIndex { get => _blade._bladeStarlightColorModeIndex; set { if (SetField(ref _blade._bladeStarlightColorModeIndex, value)) { OnPropertyChanged(nameof(BladeLightingColorVisibility)); OnPropertyChanged(nameof(BladeLightingSecondColorVisibility)); } } }
+    public int BladeStarlightColorModeIndex { get => _blade._bladeStarlightColorModeIndex; set { if (SetField(ref _blade._bladeStarlightColorModeIndex, value)) { OnPropertyChanged(nameof(BladeLightingColorVisibility)); OnPropertyChanged(nameof(BladeLightingPresetVisibility)); OnPropertyChanged(nameof(BladeLightingSecondColorVisibility)); } } }
     public Color BladeLightingColor { get => _blade._bladeLightingColor; set => SetField(ref _blade._bladeLightingColor, value); }
     public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
     public Color BladeLightingTertiaryColor { get => _blade._bladeLightingTertiaryColor; set => SetField(ref _blade._bladeLightingTertiaryColor, value); }

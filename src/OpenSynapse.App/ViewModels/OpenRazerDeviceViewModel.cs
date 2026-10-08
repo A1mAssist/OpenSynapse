@@ -547,6 +547,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
                 OnPropertyChanged(nameof(LightingRenderModeVisibility));
                 OnPropertyChanged(nameof(LightingRenderModeIndex));
                 OnPropertyChanged(nameof(PrimaryColorVisibility));
+                OnPropertyChanged(nameof(LightingPresetVisibility));
                 OnPropertyChanged(nameof(SecondaryColorVisibility));
                 OnPropertyChanged(nameof(TertiaryColorVisibility));
                 OnPropertyChanged(nameof(LightingSpeedVisibility));
@@ -597,6 +598,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
             if (value is >= 0 and <= 1) LightingDirection = checked((byte)(value + 1));
         }
     }
+    public Visibility LightingPresetVisibility => SelectedLightingEffect == OpenRazerLightingEffect.Static
+        ? Visibility.Collapsed : PrimaryColorVisibility;
     public Visibility PrimaryColorVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is
         OpenRazerLightingEffect.Static or OpenRazerLightingEffect.Reactive or OpenRazerLightingEffect.Blinking or
