@@ -82,6 +82,7 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
             if (!Effects.Contains(value) || !SetField(ref _selectedEffect, value)) return;
             OnPropertyChanged(nameof(SelectedEffectIndex));
             OnPropertyChanged(nameof(PrimaryVisibility));
+            OnPropertyChanged(nameof(LightingPresetVisibility));
             OnPropertyChanged(nameof(SecondaryVisibility));
             OnPropertyChanged(nameof(TertiaryVisibility));
             OnPropertyChanged(nameof(IntensityVisibility));
@@ -93,6 +94,8 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     public Color Tertiary { get => _tertiary; set => SetField(ref _tertiary, value); }
     public byte Intensity { get => _intensity; set => SetField(ref _intensity, value); }
     public string IntensityText => $"{Math.Round(Intensity / 255d * 100)}%";
+    public Visibility LightingPresetVisibility => SelectedEffect == OpenRazerLightingEffect.Static
+        ? Visibility.Collapsed : PrimaryVisibility;
     public Visibility PrimaryVisibility => VisibleWhen(SelectedEffect is
         OpenRazerLightingEffect.BreathingSingle or
         OpenRazerLightingEffect.BreathingDual or OpenRazerLightingEffect.BreathingTriple or
@@ -135,6 +138,7 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(SelectedEffect));
             OnPropertyChanged(nameof(SelectedEffectIndex));
             OnPropertyChanged(nameof(PrimaryVisibility));
+            OnPropertyChanged(nameof(LightingPresetVisibility));
             OnPropertyChanged(nameof(SecondaryVisibility));
             OnPropertyChanged(nameof(TertiaryVisibility));
             OnPropertyChanged(nameof(IntensityVisibility));
