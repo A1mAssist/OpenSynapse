@@ -949,7 +949,7 @@ public sealed partial class MainViewModel
     public Visibility BladeAnimationSpeedVisibility => SelectedBladeLightingMode is BladeLightingMode.Wheel or BladeLightingMode.Tidal
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public IReadOnlyList<byte> BladeAnimationSpeedOptions => BladeAnimationSpeeds;
+    public IReadOnlyList<string> BladeAnimationSpeedOptions => AppStrings.Texts("BladeAnimationSpeedSlow", "BladeAnimationSpeedMedium", "BladeAnimationSpeedFast");
     public int BladeAnimationSpeedIndex { get => _blade._bladeAnimationSpeedIndex; set => SetField(ref _blade._bladeAnimationSpeedIndex, value); }
     public IReadOnlyList<string> BladeWaveDirectionOptions => AppStrings.Texts("Text_FB3FF0D8", "Text_883A50D7");
     public int BladeWaveDirectionIndex { get => _blade._bladeWaveDirectionIndex; set => SetField(ref _blade._bladeWaveDirectionIndex, value); }
