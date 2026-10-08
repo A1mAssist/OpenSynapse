@@ -157,8 +157,8 @@
     <comment>灯效颜色 1</comment>
   </data>
   <data name="Loc_38C8E58C97.Text" xml:space="preserve">
-    <value>颜色 1</value>
-    <comment>颜色 1</comment>
+    <value>颜色</value>
+    <comment>颜色</comment>
   </data>
   <data name="Loc_5B268F9BA5.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>选择灯效颜色 2</value>
@@ -1764,7 +1764,10 @@
   <data name="LightingPresetStarlight" xml:space="preserve"><value>星光</value></data>
   <data name="LightingPresetRainbow" xml:space="preserve"><value>彩虹</value></data>
   <data name="LightingPresetAudio" xml:space="preserve"><value>音频</value></data>
-  <data name="BladeLightingAnimationSpeed.Header" xml:space="preserve"><value>速度</value></data>
+  <data name="BladeLightingAnimationSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>动画速度</value></data>
+  <data name="BladeAnimationSpeedSlow" xml:space="preserve"><value>低速</value></data>
+  <data name="BladeAnimationSpeedMedium" xml:space="preserve"><value>中速</value></data>
+  <data name="BladeAnimationSpeedFast" xml:space="preserve"><value>高速</value></data>
   <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
     <value>更多设备</value>
   </data>
