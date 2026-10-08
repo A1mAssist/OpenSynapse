@@ -44,6 +44,7 @@ public sealed partial class MainWindow : Window
         _viewModel.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
+        RefreshLightingPresetOptions();
         Localized.RefreshTree(RootLayout);
         RootLayout.Loaded += (_, _) => Localized.RefreshTree(RootLayout);
         SelectLanguage(AppLanguageSettings.Current);

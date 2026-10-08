@@ -157,7 +157,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                     if (reader is not null)
                     {
                         reader.Changed -= SignalChanged;
-                        reader.Dispose();
+                        DisposeReader(reader);
                     }
                     reader = null;
                 }
@@ -175,7 +175,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                 if (reader is not null)
                 {
                     reader.Changed -= SignalChanged;
-                    reader.Dispose();
+                    DisposeReader(reader);
                 }
             }
             finally
@@ -214,6 +214,18 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             {
                 // Diagnostics must not stop Core Audio observation.
             }
+        }
+    }
+
+    private static void DisposeReader(IWindowsAudioMuteSnapshotReader reader)
+    {
+        try
+        {
+            reader.Dispose();
+        }
+        catch (Exception)
+        {
+            // A device endpoint can invalidate its COM wrapper while it is being released.
         }
     }
 
@@ -308,7 +320,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             var enumerator = Interlocked.Exchange(ref _enumerator, null);
             if (enumerator is not null && _endpointNotification is not null)
             {
-                _ = enumerator.UnregisterEndpointNotificationCallback(_endpointNotification);
+                TryComCleanup(() => _ = enumerator.UnregisterEndpointNotificationCallback(_endpointNotification));
             }
             ReleaseVolume(ref _speaker);
             ReleaseVolume(ref _microphone);
@@ -373,7 +385,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             volume = null;
             if (current is not null && _volumeNotification is not null)
             {
-                _ = current.UnregisterControlChangeNotify(_volumeNotification);
+                TryComCleanup(() => _ = current.UnregisterControlChangeNotify(_volumeNotification));
             }
             Release(current);
         }
@@ -446,7 +458,20 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
         {
             if (value is not null && Marshal.IsComObject(value))
             {
-                _ = Marshal.FinalReleaseComObject(value);
+                TryComCleanup(() => _ = Marshal.FinalReleaseComObject(value));
+            }
+        }
+
+        private static void TryComCleanup(Action cleanup)
+        {
+            try
+            {
+                cleanup();
+            }
+            catch (Exception)
+            {
+                // Core Audio may invalidate an RCW during endpoint changes. Cleanup must not
+                // escape the worker thread and become an application-level unhandled exception.
             }
         }
     }

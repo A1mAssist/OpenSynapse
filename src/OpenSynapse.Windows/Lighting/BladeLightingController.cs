@@ -36,7 +36,9 @@ public sealed record BladeLightingEffect(
     RazerRgb SecondColor = default,
     byte ReactiveSpeed = 2,
     byte StarlightSpeed = 2,
-    BladeStarlightColorMode StarlightColorMode = BladeStarlightColorMode.Single)
+    BladeStarlightColorMode StarlightColorMode = BladeStarlightColorMode.Single,
+    LightingPalette? Palette = null,
+    byte AnimationSpeed = 2)
 {
     public static BladeLightingEffect Off { get; } = new(BladeLightingMode.Off);
     public static BladeLightingEffect Spectrum { get; } = new(BladeLightingMode.Spectrum);
@@ -219,7 +221,7 @@ public sealed class BladeLightingController : IBladeLightingController
                 {
                     var audioInput = new WasapiAudioMeterAdapter();
                     inputAdapter = audioInput;
-                    source = new AudioMeterFrameSource(audioInput);
+                    source = new AudioMeterFrameSource(audioInput, effect.Palette);
                 }
                 else if (effect.Mode == BladeLightingMode.Ambient)
                 {
@@ -582,6 +584,13 @@ public sealed class BladeLightingController : IBladeLightingController
         BladeLightingEffect effect,
         out byte[] request)
     {
+        if (effect.Palette is not null &&
+            effect.Mode is BladeLightingMode.Spectrum or BladeLightingMode.Wave)
+        {
+            request = Array.Empty<byte>();
+            return false;
+        }
+
         request = effect.Mode switch
         {
             BladeLightingMode.Off => BladeLightingProtocol.CreateOffRequest(),
@@ -762,6 +771,11 @@ public sealed class BladeLightingController : IBladeLightingController
         {
             throw new ArgumentOutOfRangeException(nameof(effect));
         }
+        if (effect.Mode is BladeLightingMode.Wheel or BladeLightingMode.Tidal &&
+            effect.AnimationSpeed is < 1 or > 3)
+        {
+            throw new ArgumentOutOfRangeException(nameof(effect));
+        }
     }
 
     private sealed class EffectFrameSource : ISoftwareLightingFrameSource
@@ -788,17 +802,22 @@ public sealed class BladeLightingController : IBladeLightingController
                 BladeLightingMode.Off => QuickLightingEngine.RenderSolid(default),
                 BladeLightingMode.Static => QuickLightingEngine.RenderSolid(_effect.Color),
                 BladeLightingMode.Breathing => QuickLightingEngine.RenderBreathing(elapsed, _effect.Color),
-                BladeLightingMode.Spectrum => QuickLightingEngine.RenderSpectrum(elapsed),
-                BladeLightingMode.Wave => QuickLightingEngine.RenderWave(elapsed, _effect.Direction),
-                BladeLightingMode.Fire => QuickLightingEngine.RenderFire(elapsed, 100),
+                BladeLightingMode.Spectrum => QuickLightingEngine.RenderSpectrum(
+                    elapsed, QuickLightingEngine.Rows, QuickLightingEngine.Columns, _effect.Palette),
+                BladeLightingMode.Wave => QuickLightingEngine.RenderWave(
+                    elapsed, _effect.Direction, QuickLightingEngine.Rows, QuickLightingEngine.Columns, _effect.Palette),
+                BladeLightingMode.Fire => QuickLightingEngine.RenderFire(
+                    elapsed, 100, QuickLightingEngine.Rows, QuickLightingEngine.Columns, _effect.Palette),
                 BladeLightingMode.Wheel => QuickLightingEngine.RenderWheel(
                     elapsed,
                     _effect.Direction == BladeWaveDirection.Left
                         ? QuickLightingDirection.CounterClockwise
-                        : QuickLightingDirection.Clockwise),
+                        : QuickLightingDirection.Clockwise,
+                    QuickLightingEngine.Rows, QuickLightingEngine.Columns, _effect.Palette,
+                    _effect.AnimationSpeed),
                 BladeLightingMode.Starlight => _starlight!.Render(elapsed),
                 BladeLightingMode.Tidal => QuickLightingEngine.RenderTidal(
-                    elapsed, _effect.Color, _effect.SecondColor),
+                    elapsed, _effect.Color, _effect.SecondColor, _effect.AnimationSpeed),
                 _ => throw new InvalidOperationException("Unsupported Blade lighting mode."),
             };
             return ValueTask.FromResult(frame);
@@ -831,7 +850,9 @@ public sealed class BladeLightingController : IBladeLightingController
         }
     }
 
-    private sealed class AudioMeterFrameSource(WasapiAudioMeterAdapter adapter) : ISoftwareLightingFrameSource
+    private sealed class AudioMeterFrameSource(
+        WasapiAudioMeterAdapter adapter,
+        LightingPalette? palette) : ISoftwareLightingFrameSource
     {
         private double _smoothedLevel;
         private TimeSpan _lastElapsed;
@@ -848,7 +869,12 @@ public sealed class BladeLightingController : IBladeLightingController
                 : QuickLightingEngine.SmoothAudioLevel(_smoothedLevel, level, delta);
             _lastElapsed = elapsed;
             return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(
-                QuickLightingEngine.RenderAudioMeter(_smoothedLevel, colorBoost: 0));
+                QuickLightingEngine.RenderAudioMeter(
+                    _smoothedLevel,
+                    colorBoost: 0,
+                    QuickLightingEngine.Rows,
+                    QuickLightingEngine.Columns,
+                    palette));
         }
     }
 

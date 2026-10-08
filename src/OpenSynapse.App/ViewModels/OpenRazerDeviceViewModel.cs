@@ -3,18 +3,21 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
+public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
     private static readonly Color DefaultPrimaryColor = Color.FromArgb(255, 0, 255, 102);
     private static readonly Color DefaultSecondaryColor = Color.FromArgb(255, 0, 153, 255);
+    private static readonly Color DefaultTertiaryColor = Color.FromArgb(255, 255, 32, 64);
     private readonly OpenRazerDeviceService _service;
     private readonly HashSet<OpenRazerBackendCapability> _unsupported = [];
     private readonly HashSet<(OpenRazerLedZone Zone, OpenRazerLightingEffect Effect)> _unsupportedLighting = [];
@@ -57,6 +60,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private OpenRazerLightingEffect _selectedLightingEffect;
     private Color _primaryColor = DefaultPrimaryColor;
     private Color _secondaryColor = DefaultSecondaryColor;
+    private Color _tertiaryColor = DefaultTertiaryColor;
     private byte _lightingSpeed = 2;
     private byte _lightingDirection = 1;
     private byte _scrollMode;
@@ -74,12 +78,17 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private readonly Func<bool>? _lightingEnabledResolver;
     private readonly Func<bool>? _chromaOverrideResolver;
     private readonly Func<bool, bool, CancellationToken, Task<bool>>? _lightingSettingsSaver;
+    private readonly OpenRazerSoftwareLightingRuntime? _softwareLightingRuntime;
+    private WasapiAudioMeterAdapter? _softwareAudioInput;
+    private TimeSpan _softwareLightingElapsed;
+    private double _softwareAudioLevel;
     private int _lightingPowerProfileIndex;
     private bool _lightingEnabled;
     private bool _chromaOverrideEnabled;
     private bool _chromaIntegrationEnabled;
     private bool _isLightingSettingsBusy;
     private bool _operationSucceeded;
+    private int _disposed;
 
     public OpenRazerDeviceViewModel(
         OpenRazerDeviceService service,
@@ -94,6 +103,16 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        if (connection.Definition.MatrixDimensions is not null &&
+            connection.Capabilities.Contains(OpenRazerBackendCapability.MatrixFrameWrite))
+        {
+            _softwareLightingRuntime = new OpenRazerSoftwareLightingRuntime(
+                service,
+                () => [Connection],
+                _ => LightingEnabled,
+                _ => ChromaOverrideEnabled,
+                connection.InstanceId);
+        }
         _powerStateProvider = powerStateProvider;
         _lightingProfileResolver = lightingProfileResolver;
         _lightingProfileSaver = lightingProfileSaver;
@@ -122,6 +141,26 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            await StopSoftwareLightingAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (_softwareLightingRuntime is not null)
+            {
+                await _softwareLightingRuntime.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+    }
 
     public OpenRazerDeviceConnection Connection { get; }
     public string InstanceId => Connection.InstanceId;
@@ -164,6 +203,12 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public bool CanWrite => IsReady && !RequiresRescan;
 
     private bool IsMouseDevice => Connection.Definition.Category == DeviceCategory.Mouse;
+    private bool SupportsSoftwareLighting =>
+        Connection.Definition.Category == DeviceCategory.Keyboard &&
+        Connection.Definition.MatrixDimensions is not null &&
+        Has(OpenRazerBackendCapability.MatrixFrameWrite) &&
+        _chromaIntegrationEnabled &&
+        ChromaOverrideEnabled;
     private bool HasBatteryData => HasAny(
         OpenRazerBackendCapability.BatteryRead, OpenRazerBackendCapability.ChargingRead);
     private bool HasPollingSection => PollingVisibility == Visibility.Visible;
@@ -355,6 +400,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         if (_chromaIntegrationEnabled == enabled) return;
         _chromaIntegrationEnabled = enabled;
         OnPropertyChanged(nameof(ChromaOverrideVisibility));
+        OnLightingSelectionChanged();
     }
     public bool LightingEnabled
     {
@@ -372,7 +418,13 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     public bool ChromaOverrideEnabled
     {
         get => _chromaOverrideEnabled;
-        set => SetField(ref _chromaOverrideEnabled, value);
+        set
+        {
+            if (SetField(ref _chromaOverrideEnabled, value))
+            {
+                OnLightingSelectionChanged();
+            }
+        }
     }
     public bool IsLightingSettingsBusy
     {
@@ -427,16 +479,27 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         }
     }
     public IReadOnlyList<OpenRazerLightingEffect> LightingEffects =>
-        !Has(OpenRazerBackendCapability.LightingEffectWrite) ? [] :
-        SelectedZoneCapabilities?.LightingEffects
-            .Where(effect => effect != OpenRazerLightingEffect.Custom &&
-                !_unsupportedLighting.Contains((SelectedLightingZone, effect)))
-            .Order()
-            .ToArray() ?? [];
+        (Has(OpenRazerBackendCapability.LightingEffectWrite)
+            ? SelectedZoneCapabilities?.LightingEffects
+                .Where(effect => effect != OpenRazerLightingEffect.Custom &&
+                    !_unsupportedLighting.Contains((SelectedLightingZone, effect)))
+                .Order()
+                .ToArray() ?? []
+            : [])
+        .Concat(SupportsSoftwareLighting
+            ? [
+                OpenRazerLightingEffect.SoftwareAudioMeter,
+                OpenRazerLightingEffect.SoftwareSpectrum,
+                OpenRazerLightingEffect.SoftwareWave,
+                OpenRazerLightingEffect.SoftwareFire,
+                OpenRazerLightingEffect.SoftwareWheel,
+            ]
+            : [])
+        .ToArray();
     public Visibility LightingEffectVisibility => VisibleWhen(LightingEffects.Count > 0);
     public Visibility LightingPowerProfileVisibility => VisibleWhen(LightingZones.Any(zone =>
         Connection.LightingZones.TryGetValue(zone, out var capabilities) &&
-        (Has(OpenRazerBackendCapability.LightingEffectWrite) &&
+        ((Has(OpenRazerBackendCapability.LightingEffectWrite) || SupportsSoftwareLighting) &&
          capabilities.LightingEffects.Any(effect => effect != OpenRazerLightingEffect.Custom &&
             !_unsupportedLighting.Contains((zone, effect))) ||
          capabilities.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(zone) ||
@@ -457,9 +520,11 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         {
             if (LightingEffects.Contains(value) && SetField(ref _selectedLightingEffect, value))
             {
+                LightingSpeed = Math.Min(LightingSpeed, MaximumLightingSpeed);
                 OnPropertyChanged(nameof(SelectedLightingEffectIndex));
                 OnPropertyChanged(nameof(PrimaryColorVisibility));
                 OnPropertyChanged(nameof(SecondaryColorVisibility));
+                OnPropertyChanged(nameof(TertiaryColorVisibility));
                 OnPropertyChanged(nameof(LightingSpeedVisibility));
                 OnPropertyChanged(nameof(MaximumLightingSpeed));
                 OnPropertyChanged(nameof(LightingDirectionVisibility));
@@ -469,7 +534,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     }
     public Color PrimaryColor { get => _primaryColor; set => SetField(ref _primaryColor, value); }
     public Color SecondaryColor { get => _secondaryColor; set => SetField(ref _secondaryColor, value); }
-    public byte LightingSpeed { get => _lightingSpeed; set => SetField(ref _lightingSpeed, value); }
+    public Color TertiaryColor { get => _tertiaryColor; set => SetField(ref _tertiaryColor, value); }
+    public byte LightingSpeed { get => _lightingSpeed; set => SetField(ref _lightingSpeed,
+        Math.Clamp(value, (byte)1, MaximumLightingSpeed)); }
     public byte LightingDirection
     {
         get => _lightingDirection;
@@ -490,22 +557,37 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         SelectedLightingEffect is
         OpenRazerLightingEffect.Static or OpenRazerLightingEffect.Reactive or OpenRazerLightingEffect.Blinking or
         OpenRazerLightingEffect.BreathingSingle or OpenRazerLightingEffect.BreathingDual or
-        OpenRazerLightingEffect.StarlightSingle or OpenRazerLightingEffect.StarlightDual);
+        OpenRazerLightingEffect.StarlightSingle or OpenRazerLightingEffect.StarlightDual or
+        OpenRazerLightingEffect.SoftwareAudioMeter or OpenRazerLightingEffect.SoftwareSpectrum or
+        OpenRazerLightingEffect.SoftwareWave or OpenRazerLightingEffect.SoftwareFire or
+        OpenRazerLightingEffect.SoftwareWheel);
     public Visibility SecondaryColorVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is
-        OpenRazerLightingEffect.BreathingDual or OpenRazerLightingEffect.StarlightDual);
+        OpenRazerLightingEffect.BreathingDual or OpenRazerLightingEffect.StarlightDual or
+        OpenRazerLightingEffect.SoftwareAudioMeter or OpenRazerLightingEffect.SoftwareSpectrum or
+        OpenRazerLightingEffect.SoftwareWave or OpenRazerLightingEffect.SoftwareFire or
+        OpenRazerLightingEffect.SoftwareWheel);
+    public Visibility TertiaryColorVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
+        SelectedLightingEffect is
+        OpenRazerLightingEffect.SoftwareAudioMeter or OpenRazerLightingEffect.SoftwareSpectrum or
+        OpenRazerLightingEffect.SoftwareWave or OpenRazerLightingEffect.SoftwareFire or
+        OpenRazerLightingEffect.SoftwareWheel);
     public Visibility LightingSpeedVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is
         OpenRazerLightingEffect.Reactive or
         OpenRazerLightingEffect.StarlightRandom or OpenRazerLightingEffect.StarlightSingle or
-        OpenRazerLightingEffect.StarlightDual);
+        OpenRazerLightingEffect.StarlightDual or OpenRazerLightingEffect.SoftwareWheel);
     public byte MaximumLightingSpeed => SelectedLightingEffect == OpenRazerLightingEffect.Reactive ? (byte)4 : (byte)3;
     public Visibility LightingDirectionVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is
-        OpenRazerLightingEffect.Wave or OpenRazerLightingEffect.Wheel);
+        OpenRazerLightingEffect.Wave or OpenRazerLightingEffect.Wheel or
+        OpenRazerLightingEffect.SoftwareWave or OpenRazerLightingEffect.SoftwareWheel);
     public bool IsLightingBusy { get => _isLightingBusy; private set => SetBusy(ref _isLightingBusy, value, nameof(CanApplyLighting), nameof(CanTriggerReactive)); }
     public bool IsLightingLoading { get => _isLightingLoading; private set => SetField(ref _isLightingLoading, value); }
-    private bool CanApplyLightingEffect => CanUse(OpenRazerBackendCapability.LightingEffectWrite) &&
+    private bool CanApplyLightingEffect =>
+        (IsSoftwareLightingEffect(SelectedLightingEffect)
+            ? SupportsSoftwareLighting
+            : CanUse(OpenRazerBackendCapability.LightingEffectWrite)) &&
         LightingEffects.Contains(SelectedLightingEffect);
     public Visibility LightingSaveVisibility => VisibleWhen(
         CanApplyLightingEffect ||

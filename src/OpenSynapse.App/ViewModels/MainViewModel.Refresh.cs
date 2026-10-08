@@ -74,6 +74,10 @@ public sealed partial class MainViewModel
                         StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedInstanceId));
                     if (selectedRow is null)
                     {
+                        if (SelectedOpenRazerDevice is { } removedDevice)
+                        {
+                            await removedDevice.DisposeAsync().ConfigureAwait(false);
+                        }
                         SelectedOpenRazerDevice = null;
                     }
                     else

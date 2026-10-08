@@ -139,14 +139,27 @@ public sealed partial class MainViewModel
             BladeLightingSecondColor.R,
             BladeLightingSecondColor.G,
             BladeLightingSecondColor.B);
+        var tertiaryColor = new RazerRgb(
+            BladeLightingTertiaryColor.R,
+            BladeLightingTertiaryColor.G,
+            BladeLightingTertiaryColor.B);
+        var mode = BladeLightingModes[BladeLightingModeIndex];
+        var palette = BladeLightingPaletteResolver.Resolve(
+            mode,
+            color,
+            secondColor,
+            tertiaryColor,
+            EditableLightingProfile);
         var effect = new BladeLightingEffect(
-            BladeLightingModes[BladeLightingModeIndex],
+            mode,
             color,
             BladeWaveDirections[BladeWaveDirectionIndex],
             secondColor,
             BladeReactiveSpeeds[Math.Clamp(BladeReactiveSpeedIndex, 0, BladeReactiveSpeeds.Length - 1)],
             BladeStarlightSpeeds[Math.Clamp(BladeStarlightSpeedIndex, 0, BladeStarlightSpeeds.Length - 1)],
-            BladeStarlightColorModes[Math.Clamp(BladeStarlightColorModeIndex, 0, BladeStarlightColorModes.Length - 1)]);
+            BladeStarlightColorModes[Math.Clamp(BladeStarlightColorModeIndex, 0, BladeStarlightColorModes.Length - 1)],
+            palette,
+            BladeAnimationSpeeds[Math.Clamp(BladeAnimationSpeedIndex, 0, BladeAnimationSpeeds.Length - 1)]);
         return ApplyBladeLightingEffectAsync(effect, cancellationToken);
     }
 
@@ -891,10 +904,12 @@ public sealed partial class MainViewModel
             {
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
                 OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
+                OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
                 OnPropertyChanged(nameof(BladeWaveDirectionVisibility));
                 OnPropertyChanged(nameof(BladeReactiveSpeedVisibility));
                 OnPropertyChanged(nameof(BladeStarlightSpeedVisibility));
                 OnPropertyChanged(nameof(BladeStarlightColorModeVisibility));
+                OnPropertyChanged(nameof(BladeAnimationSpeedVisibility));
             }
         }
     }
@@ -904,12 +919,19 @@ public sealed partial class MainViewModel
             : null;
     public Visibility BladeLightingColorVisibility => SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
-        BladeLightingMode.Ripple or BladeLightingMode.Tidal ||
+        BladeLightingMode.Ripple or BladeLightingMode.Tidal or BladeLightingMode.Spectrum or
+        BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex != 0)
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingSecondColorVisibility => SelectedBladeLightingMode == BladeLightingMode.Tidal ||
+    public Visibility BladeLightingSecondColorVisibility => SelectedBladeLightingMode is BladeLightingMode.Tidal or
+        BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex == 2)
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeLightingTertiaryColorVisibility => SelectedBladeLightingMode is
+        BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
+        BladeLightingMode.Wheel or BladeLightingMode.AudioMeter
         ? Visibility.Visible
         : Visibility.Collapsed;
     public Visibility BladeWaveDirectionVisibility => SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
@@ -924,6 +946,11 @@ public sealed partial class MainViewModel
     public Visibility BladeStarlightColorModeVisibility => SelectedBladeLightingMode == BladeLightingMode.Starlight
         ? Visibility.Visible
         : Visibility.Collapsed;
+    public Visibility BladeAnimationSpeedVisibility => SelectedBladeLightingMode is BladeLightingMode.Wheel or BladeLightingMode.Tidal
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public IReadOnlyList<byte> BladeAnimationSpeedOptions => BladeAnimationSpeeds;
+    public int BladeAnimationSpeedIndex { get => _blade._bladeAnimationSpeedIndex; set => SetField(ref _blade._bladeAnimationSpeedIndex, value); }
     public IReadOnlyList<string> BladeWaveDirectionOptions => AppStrings.Texts("Text_FB3FF0D8", "Text_883A50D7");
     public int BladeWaveDirectionIndex { get => _blade._bladeWaveDirectionIndex; set => SetField(ref _blade._bladeWaveDirectionIndex, value); }
     public IReadOnlyList<byte> BladeReactiveSpeedOptions => BladeReactiveSpeeds;
@@ -934,6 +961,7 @@ public sealed partial class MainViewModel
     public int BladeStarlightColorModeIndex { get => _blade._bladeStarlightColorModeIndex; set { if (SetField(ref _blade._bladeStarlightColorModeIndex, value)) { OnPropertyChanged(nameof(BladeLightingColorVisibility)); OnPropertyChanged(nameof(BladeLightingSecondColorVisibility)); } } }
     public Color BladeLightingColor { get => _blade._bladeLightingColor; set => SetField(ref _blade._bladeLightingColor, value); }
     public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
+    public Color BladeLightingTertiaryColor { get => _blade._bladeLightingTertiaryColor; set => SetField(ref _blade._bladeLightingTertiaryColor, value); }
     public bool CanSetBladeLighting => _blade._canSetBladeBrightness && _bladeLightingController is not null;
 
     public async Task ApplyBladeLightingSettingsAsync(CancellationToken cancellationToken = default)

@@ -37,6 +37,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
             ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
         (_successful, _total) = (summary.Available, summary.Supported);
+        ProtocolDetails = CreateProtocolDetails(descriptor, telemetry);
 
         if (descriptor.Access != DeviceAccessState.Available ||
             descriptor.Capability != DeviceCapabilityState.PendingValidation)
@@ -84,5 +85,103 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public string IconAutomationName => _iconAutomationSource;
     public bool IsAvailable { get; }
     public Brush StatusBrush { get; }
+    public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails { get; }
 
+    private static IReadOnlyList<DeviceProtocolDetailViewModel> CreateProtocolDetails(
+        DeviceDescriptor descriptor,
+        RazerDeviceTelemetry telemetry)
+    {
+        var details = new List<DeviceProtocolDetailViewModel>();
+
+        void Add(string resourceKey, object? value, string? formattedValue = null)
+        {
+            details.Add(new DeviceProtocolDetailViewModel(
+                resourceKey,
+                value is not null,
+                formattedValue ?? FormatProtocolValue(value)));
+        }
+
+        switch (descriptor.ProtocolFamily)
+        {
+            case "blade-710":
+                Add("Text_5F0C27DB", telemetry.BladeKeyboardBrightness,
+                    telemetry.BladeKeyboardBrightness is byte brightness ? $"{brightness}/255" : null);
+                Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode);
+                Add("Text_DEE979FD", telemetry.BladeChargeLimitPercent,
+                    telemetry.BladeChargeLimitPercent is int charge ? $"{charge}%" : null);
+                Add("DiagnosticCpuBoost", telemetry.BladeCpuBoostMode);
+                Add("DiagnosticGpuBoost", telemetry.BladeGpuBoostMode);
+                Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode);
+                Add("DiagnosticBladeLogo", telemetry.BladeLogoMode);
+                Add("DiagnosticPerformanceFan", telemetry.BladeFanMode);
+                Add("Text_5FCEEE13", telemetry.BladeCurrentFanCpuRpm,
+                    telemetry.BladeCurrentFanCpuRpm is int cpuRpm ? $"{cpuRpm} RPM" : null);
+                Add("Text_737DBF87", telemetry.BladeCurrentFanGpuRpm,
+                    telemetry.BladeCurrentFanGpuRpm is int gpuRpm ? $"{gpuRpm} RPM" : null);
+                Add("Text_BE0A43ED", telemetry.BladeAdvancedFanCpuModeRaw,
+                    telemetry.BladeAdvancedFanCpuModeRaw is byte cpuMode ? FormatRawByte(cpuMode) : null);
+                Add("Text_37B37761", telemetry.BladeAdvancedFanGpuModeRaw,
+                    telemetry.BladeAdvancedFanGpuModeRaw is byte gpuMode ? FormatRawByte(gpuMode) : null);
+                Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled);
+                Add("Text_24A8C247", telemetry.BladeNativeDisplayMode);
+                Add("Text_9D1351CB", telemetry.BladeSkuHardwareConfiguration,
+                    telemetry.BladeSkuHardwareConfiguration is { } sku
+                        ? $"DDS={sku.Dds}, MiniLED={sku.MiniLedResolution}, Raw=0x{sku.Raw:X2}"
+                        : null);
+                Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
+                if (telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true)
+                {
+                    Add("DiagnosticLocalDimming", telemetry.BladeLocalDimmingEnabled);
+                }
+                break;
+
+            case "viper-184":
+                Add("Text_8B2E15F8", telemetry.ViperBatteryPercent,
+                    telemetry.ViperBatteryPercent is int battery ? $"{battery}%" : null);
+                Add("DiagnosticMousePollingRate", telemetry.ViperPollingRateHertz,
+                    telemetry.ViperPollingRateHertz is int polling ? $"{polling} Hz" : null);
+                Add("Text_25083B1F", telemetry.ViperDpiX,
+                    telemetry.ViperDpiX is int dpiX
+                        ? telemetry.ViperDpiY is int dpiY ? $"X {dpiX} · Y {dpiY}" : $"X {dpiX}"
+                        : null);
+                Add("DiagnosticMouseIdleTimeout", telemetry.ViperIdleSeconds,
+                    telemetry.ViperIdleSeconds is int idle ? $"{idle} s" : null);
+                Add("Text_6D7EF7B5", telemetry.ViperDpiStages,
+                    telemetry.ViperDpiStages is { } stages
+                        ? $"{stages.Stages.Count} stages · active {stages.ActiveStage}"
+                        : null);
+                Add("Text_B98036FA", telemetry.ViperLowBatteryThresholdRaw,
+                    telemetry.ViperLowBatteryThresholdRaw is byte threshold ? $"{threshold}%" : null);
+                break;
+        }
+
+        return details;
+    }
+
+    private static string FormatProtocolValue(object? value) => value switch
+    {
+        null => AppStrings.Text("Text_C409646C"),
+        bool enabled => AppStrings.Text(enabled ? "DiagnosticProtocolEnabled" : "DiagnosticProtocolDisabled"),
+        _ => value.ToString() ?? AppStrings.Text("Text_C409646C"),
+    };
+
+    private static string FormatRawByte(byte value) => $"0x{value:X2} ({value})";
+
+}
+
+public sealed class DeviceProtocolDetailViewModel(
+    string capabilityResourceKey,
+    bool isAvailable,
+    string detail) : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string Capability => AppStrings.Text(capabilityResourceKey);
+    public string Status => AppStrings.Text(isAvailable ? "DiagnosticProtocolAvailable" : "DiagnosticProtocolUnavailable");
+    public string Detail => detail;
+    public Brush StatusBrush { get; } = new SolidColorBrush(isAvailable
+        ? Color.FromArgb(255, 153, 221, 114)
+        : Color.FromArgb(255, 255, 181, 71));
+
+    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }

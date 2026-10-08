@@ -334,6 +334,7 @@ public sealed partial class MainWindow
             .OfType<ComboBoxItem>()
             .FirstOrDefault(item => StringComparer.Ordinal.Equals(item.Tag as string, language)) ??
             AppLanguageComboBox.Items[0];
+        RefreshLightingPresetOptions();
     }
 
     private async void StartupToggled(object sender, RoutedEventArgs e)

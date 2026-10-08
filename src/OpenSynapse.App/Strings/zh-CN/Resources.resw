@@ -899,6 +899,16 @@
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>鼠标空闲休眠</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>鼠标 DPI 档位</value></data>
   <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>设备查询超时（0x04）；请唤醒设备、关闭雷蛇 Synapse 后重试。</value></data>
+  <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>协议明细</value></data>
+  <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>已读取</value></data>
+  <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>未读取</value></data>
+  <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>开启</value></data>
+  <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>关闭</value></data>
+  <data name="DiagnosticCpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
+  <data name="DiagnosticGpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
+  <data name="DiagnosticMaxFan" xml:space="preserve"><value>Max Fan</value></data>
+  <data name="DiagnosticOneTimeCharge" xml:space="preserve"><value>一次性充满</value></data>
+  <data name="DiagnosticLocalDimming" xml:space="preserve"><value>局部调光</value></data>
   <data name="Text_4B4189B0" xml:space="preserve">
     <value>加载失败</value>
     <comment>加载失败</comment>
@@ -1688,6 +1698,11 @@
   <data name="OpenRazerEffectStarlightDual" xml:space="preserve"><value>双色星光</value></data>
   <data name="OpenRazerEffectWheel" xml:space="preserve"><value>色轮</value></data>
   <data name="OpenRazerEffectCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="OpenRazerEffectSoftwareSpectrum" xml:space="preserve"><value>软件光谱</value></data>
+  <data name="OpenRazerEffectSoftwareWave" xml:space="preserve"><value>软件波浪</value></data>
+  <data name="OpenRazerEffectSoftwareFire" xml:space="preserve"><value>软件火焰</value></data>
+  <data name="OpenRazerEffectSoftwareAudioMeter" xml:space="preserve"><value>音频律动</value></data>
+  <data name="OpenRazerEffectSoftwareWheel" xml:space="preserve"><value>软件色轮</value></data>
   <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
   <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
   <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
@@ -1744,6 +1759,12 @@
   <data name="LightingQuickColors.Text" xml:space="preserve"><value>常用颜色</value></data>
   <data name="LightingRecentColors.Text" xml:space="preserve"><value>最近使用</value></data>
   <data name="LightingCustomColor.Header" xml:space="preserve"><value>自定义颜色</value></data>
+  <data name="LightingPresetApplyLabel.Text" xml:space="preserve"><value>应用预设</value></data>
+  <data name="LightingPresetFire" xml:space="preserve"><value>火焰</value></data>
+  <data name="LightingPresetStarlight" xml:space="preserve"><value>星光</value></data>
+  <data name="LightingPresetRainbow" xml:space="preserve"><value>彩虹</value></data>
+  <data name="LightingPresetAudio" xml:space="preserve"><value>音频</value></data>
+  <data name="BladeLightingAnimationSpeed.Header" xml:space="preserve"><value>速度</value></data>
   <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
     <value>更多设备</value>
   </data>

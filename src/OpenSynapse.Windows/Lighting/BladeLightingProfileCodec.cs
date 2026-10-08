@@ -20,9 +20,11 @@ internal static class BladeLightingProfileCodec
             "static" or "breathing" or "ripple" => ["color"],
             "reactive" => ["color", "speed"],
             "starlight" => ["color", "color2", "speed", "colorMode"],
-            "tidal" => ["color", "color2"],
-            "wave" or "wheel" => ["direction"],
-            "off" or "spectrum" or "fire" or "audiometer" or "ambient" => [],
+            "tidal" => ["color", "color2", "speed"],
+            "wheel" => ["direction", "speed", "palette1", "palette2", "palette3"],
+            "wave" => ["direction", "palette1", "palette2", "palette3"],
+            "spectrum" or "fire" or "audiometer" => ["palette1", "palette2", "palette3"],
+            "off" or "ambient" => [],
             _ => throw new InvalidOperationException($"Unsupported keyboard lighting effect: {profile.Effect}."),
         };
         if (parameters.Keys.Any(key => !allowed.Contains(key, StringComparer.OrdinalIgnoreCase)))
@@ -41,7 +43,11 @@ internal static class BladeLightingProfileCodec
         var starlightSpeed = mode == "starlight"
             ? ParseSpeed(parameters, "speed", 1, 3, 2)
             : (byte)2;
+        var animationSpeed = mode is "wheel" or "tidal"
+            ? ParseSpeed(parameters, "speed", 1, 3, 2)
+            : (byte)2;
         var starlightColorMode = ParseStarlightColorMode(parameters);
+        var palette = ParsePalette(mode, parameters);
         return new BladeLightingEffect(mode switch
         {
             "off" => BladeLightingMode.Off,
@@ -57,7 +63,7 @@ internal static class BladeLightingProfileCodec
             "starlight" => BladeLightingMode.Starlight,
             "tidal" => BladeLightingMode.Tidal,
             _ => BladeLightingMode.Fire,
-        }, color, direction, secondColor, reactiveSpeed, starlightSpeed, starlightColorMode);
+        }, color, direction, secondColor, reactiveSpeed, starlightSpeed, starlightColorMode, palette, animationSpeed);
     }
 
     internal static LightingProfile Create(BladeLightingEffect effect)
@@ -74,6 +80,7 @@ internal static class BladeLightingProfileCodec
             {
                 profile.Parameters["color2"] =
                     $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}";
+                profile.Parameters["speed"] = effect.AnimationSpeed.ToString();
             }
             else if (effect.Mode == BladeLightingMode.Reactive)
             {
@@ -99,6 +106,21 @@ internal static class BladeLightingProfileCodec
         {
             profile.Parameters["direction"] =
                 effect.Direction == BladeWaveDirection.Left ? "left" : "right";
+            if (effect.Mode == BladeLightingMode.Wheel)
+            {
+                profile.Parameters["speed"] = effect.AnimationSpeed.ToString();
+            }
+        }
+
+        if (effect.Palette is { } palette && effect.Mode is
+            BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
+            BladeLightingMode.Wheel or BladeLightingMode.AudioMeter)
+        {
+            for (var index = 0; index < palette.Colors.Count; index++)
+            {
+                var color = palette.Colors[index];
+                profile.Parameters[$"palette{index + 1}"] = $"{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
+            }
         }
 
         return profile;
@@ -108,9 +130,33 @@ internal static class BladeLightingProfileCodec
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         var effect = Parse(profile);
+        var palette = effect.Palette is null
+            ? string.Empty
+            : string.Join(',', effect.Palette.Colors.Select(color => $"{color.Red:X2}{color.Green:X2}{color.Blue:X2}"));
         return $"{devicePath}\n{effect.Mode}\n{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}\n" +
             $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}\n" +
-            $"{effect.Direction}\n{effect.ReactiveSpeed}\n{effect.StarlightSpeed}\n{effect.StarlightColorMode}";
+            $"{effect.Direction}\n{effect.ReactiveSpeed}\n{effect.StarlightSpeed}\n{effect.StarlightColorMode}\n{effect.AnimationSpeed}\n{palette}";
+    }
+
+    private static LightingPalette? ParsePalette(
+        string mode,
+        IReadOnlyDictionary<string, string> parameters)
+    {
+        if (mode is not ("spectrum" or "wave" or "fire" or "wheel" or "audiometer"))
+        {
+            return null;
+        }
+
+        var colors = new List<RazerRgb>(3);
+        for (var index = 1; index <= 3; index++)
+        {
+            if (!parameters.TryGetValue($"palette{index}", out var value))
+            {
+                continue;
+            }
+            colors.Add(ParseColor(value));
+        }
+        return colors.Count == 0 ? null : new LightingPalette(colors);
     }
 
     private static BladeWaveDirection ParseDirection(IReadOnlyDictionary<string, string> parameters)

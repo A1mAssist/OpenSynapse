@@ -683,6 +683,16 @@
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>Mouse idle timeout</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>Mouse DPI stages</value></data>
   <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>The device timed out (0x04); wake the device, close Synapse, and retry.</value></data>
+  <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>Protocol details</value></data>
+  <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>Read</value></data>
+  <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>Not read</value></data>
+  <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>On</value></data>
+  <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>Off</value></data>
+  <data name="DiagnosticCpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
+  <data name="DiagnosticGpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
+  <data name="DiagnosticMaxFan" xml:space="preserve"><value>Max Fan</value></data>
+  <data name="DiagnosticOneTimeCharge" xml:space="preserve"><value>One-time full charge</value></data>
+  <data name="DiagnosticLocalDimming" xml:space="preserve"><value>Local dimming</value></data>
   <data name="Text_4B4189B0" xml:space="preserve">
     <value>Load failed</value>
   </data>
@@ -1331,6 +1341,11 @@
   <data name="OpenRazerEffectStarlightDual" xml:space="preserve"><value>Dual-color starlight</value></data>
   <data name="OpenRazerEffectWheel" xml:space="preserve"><value>Wheel</value></data>
   <data name="OpenRazerEffectCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="OpenRazerEffectSoftwareSpectrum" xml:space="preserve"><value>Software spectrum</value></data>
+  <data name="OpenRazerEffectSoftwareWave" xml:space="preserve"><value>Software wave</value></data>
+  <data name="OpenRazerEffectSoftwareFire" xml:space="preserve"><value>Software fire</value></data>
+  <data name="OpenRazerEffectSoftwareAudioMeter" xml:space="preserve"><value>Audio reactive</value></data>
+  <data name="OpenRazerEffectSoftwareWheel" xml:space="preserve"><value>Software wheel</value></data>
   <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>Zone lighting</value></data>
   <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
   <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
@@ -1387,6 +1402,12 @@
   <data name="LightingQuickColors.Text" xml:space="preserve"><value>Quick colors</value></data>
   <data name="LightingRecentColors.Text" xml:space="preserve"><value>Recently used</value></data>
   <data name="LightingCustomColor.Header" xml:space="preserve"><value>Custom color</value></data>
+  <data name="LightingPresetApplyLabel.Text" xml:space="preserve"><value>Apply preset</value></data>
+  <data name="LightingPresetFire" xml:space="preserve"><value>Fire</value></data>
+  <data name="LightingPresetStarlight" xml:space="preserve"><value>Starlight</value></data>
+  <data name="LightingPresetRainbow" xml:space="preserve"><value>Rainbow</value></data>
+  <data name="LightingPresetAudio" xml:space="preserve"><value>Audio</value></data>
+  <data name="BladeLightingAnimationSpeed.Header" xml:space="preserve"><value>Speed</value></data>
   <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
     <value>More devices</value>
   </data>

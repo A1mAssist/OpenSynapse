@@ -83,7 +83,7 @@ public sealed partial class MainWindow
                 await _viewModel.SelectOpenRazerDeviceAsync(row, _lifetime.Token);
                 break;
             case DeviceSelectorItemKind.Kraken when item.Source is OpenRazerKrakenDeviceRowViewModel row:
-                _viewModel.SelectOpenRazerKraken(row);
+                await _viewModel.SelectOpenRazerKrakenAsync(row);
                 SelectDevice("kraken");
                 if (_viewModel.SelectedOpenRazerKraken is { } kraken)
                     await kraken.LoadSerialAsync(_lifetime.Token);
@@ -103,7 +103,7 @@ public sealed partial class MainWindow
     private async void OpenRazerKrakenSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: OpenRazerKrakenDeviceRowViewModel row }) return;
-        _viewModel.SelectOpenRazerKraken(row);
+        await _viewModel.SelectOpenRazerKrakenAsync(row);
         SelectDevice("kraken");
         if (_viewModel.SelectedOpenRazerKraken is { } kraken)
             await kraken.LoadSerialAsync(_lifetime.Token);
@@ -113,6 +113,7 @@ public sealed partial class MainWindow
         await (_viewModel.SelectedOpenRazerKraken?.ApplyAsync(_lifetime.Token) ?? Task.CompletedTask);
 
     private OpenRazerDeviceViewModel? SelectedOpenRazerDevice => _viewModel.SelectedOpenRazerDevice;
+    private OpenRazerKrakenViewModel? SelectedOpenRazerKraken => _viewModel.SelectedOpenRazerKraken;
 
     private async void OpenRazerApplyPollingClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyPollingAsync(_lifetime.Token) ?? Task.CompletedTask);

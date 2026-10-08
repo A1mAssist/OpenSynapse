@@ -26,18 +26,27 @@ public sealed class ProfileExtendedSettingsTests
             Effect = "Static",
             Parameters = new Dictionary<string, string> { ["color"] = "FFFFFF" },
         };
+        active.LightingColorPresets.Add(new LightingColorPreset
+        {
+            Name = "test",
+            Primary = "#112233",
+            Secondary = "#445566",
+            Tertiary = "#778899",
+        });
 
         var clone = document.Clone();
         active.Shortcuts.PerformanceCycleModes[0] = BladePerformanceMode.Performance;
         active.Shortcuts.RefreshRateCycleHertz[0] = 60;
         document.Global.Viper.ButtonAssignments[0].FunctionData[0] = 2;
         document.PluggedIn.OpenRazerLighting["1532:0200"].Parameters["color"] = "000000";
+        active.LightingColorPresets[0].Primary = "#000000";
 
         var clonedActive = clone.Profiles[clone.ActiveProfileName];
         Assert.Equal(BladePerformanceMode.Balanced, clonedActive.Shortcuts.PerformanceCycleModes![0]);
         Assert.Equal(240, clonedActive.Shortcuts.RefreshRateCycleHertz![0]);
         Assert.Equal(1, clone.Global.Viper.ButtonAssignments![0].FunctionData[0]);
         Assert.Equal("FFFFFF", clone.PluggedIn.OpenRazerLighting["1532:0200"].Parameters["color"]);
+        Assert.Equal("#112233", clonedActive.LightingColorPresets[0].Primary);
     }
 
     [Fact]
