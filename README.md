@@ -16,7 +16,7 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
 
-> Current release `v1.4.5` · Windows 11 x64 · unsigned
+> Current release `v1.5.0` · Windows 11 x64 · unsigned
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 
@@ -30,6 +30,8 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 | Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, onboard mappings |
 
 Blade lighting includes Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal. Custom performance mode exposes CPU Boost, GPU Boost, and Max Fan. Fan control, charge limits, internal-display refresh rates, the touchpad, and verified Fn behavior remain on the Blade page. System telemetry displays CPU and active-GPU temperature, power, load, and clock data when the corresponding Windows sensor is available.
+
+Blade Wave and Spectrum use firmware rendering when no color palette is saved and software frame rendering when a palette is saved. Where an OpenRazer keyboard supports both native effects and matrix frame output, its lighting page offers the same firmware/software choice.
 
 The Viper page supports `125 / 500 / 1000 Hz` polling, X/Y DPI from `100` to `30000`, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1. Battery type is selected by the user because the mouse does not provide a reliable readback value. The low-battery threshold remains read only.
 
