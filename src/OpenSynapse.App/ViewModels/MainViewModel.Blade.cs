@@ -144,12 +144,12 @@ public sealed partial class MainViewModel
             BladeLightingTertiaryColor.G,
             BladeLightingTertiaryColor.B);
         var mode = BladeLightingModes[BladeLightingModeIndex];
-        var palette = BladeLightingPaletteResolver.Resolve(
-            mode,
-            color,
-            secondColor,
-            tertiaryColor,
-            EditableLightingProfile);
+        var palette = mode is BladeLightingMode.Wave or BladeLightingMode.Spectrum
+            ? BladeLightingRenderModeIndex == 1
+                ? LightingPalette.Create(color, secondColor, tertiaryColor)
+                : null
+            : BladeLightingPaletteResolver.Resolve(
+                mode, color, secondColor, tertiaryColor, EditableLightingProfile);
         var effect = new BladeLightingEffect(
             mode,
             color,
@@ -159,8 +159,7 @@ public sealed partial class MainViewModel
             BladeStarlightSpeeds[Math.Clamp(BladeStarlightSpeedIndex, 0, BladeStarlightSpeeds.Length - 1)],
             BladeStarlightColorModes[Math.Clamp(BladeStarlightColorModeIndex, 0, BladeStarlightColorModes.Length - 1)],
             palette,
-            BladeAnimationSpeeds[Math.Clamp(BladeAnimationSpeedIndex, 0, BladeAnimationSpeeds.Length - 1)],
-            (BladeLightingRenderMode)Math.Clamp(BladeLightingRenderModeIndex, 0, 2));
+            BladeAnimationSpeeds[Math.Clamp(BladeAnimationSpeedIndex, 0, BladeAnimationSpeeds.Length - 1)]);
         return ApplyBladeLightingEffectAsync(effect, cancellationToken);
     }
 
@@ -903,6 +902,14 @@ public sealed partial class MainViewModel
         {
             if (SetField(ref _blade._bladeLightingModeIndex, value))
             {
+                if (SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Spectrum)
+                {
+                    BladeLightingRenderModeIndex = 0;
+                    var defaults = BladeLightingPaletteResolver.GetDefault(SelectedBladeLightingMode.Value).Colors;
+                    BladeLightingColor = Color.FromArgb(0xFF, defaults[0].Red, defaults[0].Green, defaults[0].Blue);
+                    BladeLightingSecondColor = Color.FromArgb(0xFF, defaults[1].Red, defaults[1].Green, defaults[1].Blue);
+                    BladeLightingTertiaryColor = Color.FromArgb(0xFF, defaults[2].Red, defaults[2].Green, defaults[2].Blue);
+                }
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
                 OnPropertyChanged(nameof(BladeLightingRenderModeVisibility));
                 OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
@@ -920,13 +927,13 @@ public sealed partial class MainViewModel
             ? BladeLightingModes[BladeLightingModeIndex]
             : null;
     public IReadOnlyList<string> BladeLightingRenderModeOptions => AppStrings.Texts(
-        "LightingRenderAuto", "LightingRenderFirmware", "LightingRenderSoftware");
+        "LightingRenderFirmware", "LightingRenderSoftware");
     public int BladeLightingRenderModeIndex
     {
         get => _blade._bladeLightingRenderModeIndex;
         set
         {
-            if (value is < 0 or > 2) return;
+            if (value is not (0 or 1)) return;
             if (SetField(ref _blade._bladeLightingRenderModeIndex, value))
             {
                 OnPropertyChanged(nameof(BladeLightingColorVisibility));
@@ -938,7 +945,7 @@ public sealed partial class MainViewModel
     public Visibility BladeLightingRenderModeVisibility => SelectedBladeLightingMode is
         BladeLightingMode.Wave or BladeLightingMode.Spectrum ? Visibility.Visible : Visibility.Collapsed;
     private bool BladeFirmwarePaletteHidden => BladeLightingRenderModeVisibility == Visibility.Visible &&
-        BladeLightingRenderModeIndex == (int)BladeLightingRenderMode.Firmware;
+        BladeLightingRenderModeIndex == 0;
     public Visibility BladeLightingColorVisibility => !BladeFirmwarePaletteHidden &&
         (SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
