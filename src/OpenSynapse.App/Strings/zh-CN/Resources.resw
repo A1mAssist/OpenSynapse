@@ -1623,9 +1623,13 @@
   <data name="OpenRazerLightingDirection.Header" xml:space="preserve"><value>方向</value></data>
   <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
   <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>向左 / 逆时针</value></data>
-  <data name="BladeLightingReactiveSpeed.Header" xml:space="preserve"><value>响应速度</value></data>
-  <data name="BladeLightingStarlightSpeed.Header" xml:space="preserve"><value>星光速度</value></data>
-  <data name="BladeLightingStarlightColorMode.Header" xml:space="preserve"><value>星光颜色模式</value></data>
+  <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>响应速度</value></data>
+  <data name="BladeLightingStarlightSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>星光速度</value></data>
+  <data name="BladeLightingStarlightColorMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>星光颜色模式</value></data>
+  <data name="BladeReactiveSpeedLevel1" xml:space="preserve"><value>速度档位 1</value></data>
+  <data name="BladeReactiveSpeedLevel2" xml:space="preserve"><value>速度档位 2</value></data>
+  <data name="BladeReactiveSpeedLevel3" xml:space="preserve"><value>速度档位 3</value></data>
+  <data name="BladeReactiveSpeedLevel4" xml:space="preserve"><value>速度档位 4</value></data>
   <data name="BladeStarlightRandom" xml:space="preserve"><value>随机</value></data>
   <data name="BladeStarlightSingle" xml:space="preserve"><value>单色</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>双色</value></data>
