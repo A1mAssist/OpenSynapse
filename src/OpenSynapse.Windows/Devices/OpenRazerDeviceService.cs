@@ -772,6 +772,14 @@ public sealed class OpenRazerDeviceService
         var effects = new Dictionary<OpenRazerLedZone, HashSet<OpenRazerLightingEffect>>();
         foreach (var effect in Enum.GetValues<OpenRazerLightingEffect>())
         {
+            if (effect is OpenRazerLightingEffect.SoftwareSpectrum or
+                OpenRazerLightingEffect.SoftwareWave or
+                OpenRazerLightingEffect.SoftwareFire or
+                OpenRazerLightingEffect.SoftwareAudioMeter or
+                OpenRazerLightingEffect.SoftwareWheel)
+            {
+                continue;
+            }
             try
             {
                 var zone = OpenRazerLightingProtocol.ResolveEffectZone(device, effect);

@@ -151,6 +151,11 @@ public sealed partial class MainViewModel
         _openRazerSelectionCancellation?.Dispose();
         _openRazerSelectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var selectionToken = _openRazerSelectionCancellation.Token;
+        var previous = SelectedOpenRazerDevice;
+        if (previous is not null)
+        {
+            await previous.DisposeAsync().ConfigureAwait(false);
+        }
         var selected = CreateOpenRazerDeviceViewModel(row.Connection);
         row.AttachDetail(selected);
         SelectedOpenRazerKraken = null;
@@ -176,7 +181,7 @@ public sealed partial class MainViewModel
                 continue;
             }
 
-            var device = CreateOpenRazerDeviceViewModel(connection);
+            await using var device = CreateOpenRazerDeviceViewModel(connection);
             await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(false);
         }
     }
@@ -266,12 +271,16 @@ public sealed partial class MainViewModel
         Parameters = new Dictionary<string, string>(profile.Parameters, StringComparer.OrdinalIgnoreCase),
     };
 
-    public void SelectOpenRazerKraken(OpenRazerKrakenDeviceRowViewModel row)
+    public async Task SelectOpenRazerKrakenAsync(OpenRazerKrakenDeviceRowViewModel row)
     {
         if (_openRazerSpecialLightingService is null) return;
         _openRazerSelectionCancellation?.Cancel();
         _openRazerSelectionCancellation?.Dispose();
         _openRazerSelectionCancellation = null;
+        if (SelectedOpenRazerDevice is { } previous)
+        {
+            await previous.DisposeAsync().ConfigureAwait(false);
+        }
         SelectedOpenRazerDevice = null;
         SelectedOpenRazerKraken = new OpenRazerKrakenViewModel(
             _openRazerSpecialLightingService, row.Connection);

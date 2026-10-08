@@ -302,6 +302,62 @@ public sealed class ChromaLightingTests
     }
 
     [Fact]
+    public void SoftwareEffectsAcceptCustomPalettesAndMatrixDimensions()
+    {
+        var palette = LightingPalette.Create(
+            new RazerRgb(10, 20, 30),
+            new RazerRgb(110, 120, 130));
+
+        var spectrum = QuickLightingEngine.RenderSpectrum(
+            TimeSpan.FromMilliseconds(18870), 3, 5, palette);
+        var wave = QuickLightingEngine.RenderWave(
+            TimeSpan.FromMilliseconds(250), BladeWaveDirection.Right, 3, 5, palette);
+        var audio = QuickLightingEngine.RenderAudioMeter(1, 0, 3, 5, palette);
+        var fire = QuickLightingEngine.RenderFire(TimeSpan.Zero, 710, 3, 5, palette);
+        var wheel = QuickLightingEngine.RenderWheel(
+            TimeSpan.Zero, QuickLightingDirection.Clockwise, 3, 5, palette);
+
+        Assert.Equal(15, spectrum.Length);
+        Assert.Equal(15, wave.Length);
+        Assert.Equal(15, audio.Length);
+        Assert.Equal(15, fire.Length);
+        Assert.Equal(15, wheel.Length);
+        Assert.Contains(spectrum, color => color == new RazerRgb(60, 70, 80));
+        Assert.All(audio, color => Assert.InRange(color.Red, (byte)0, (byte)110));
+    }
+
+    [Fact]
+    public void DefaultBladeWrappersKeepTheirDeviceFrameSizes()
+    {
+        Assert.Equal(QuickLightingEngine.PixelCount,
+            QuickLightingEngine.RenderSpectrum(TimeSpan.Zero).Length);
+        Assert.Equal(QuickLightingEngine.PixelCount,
+            QuickLightingEngine.RenderWave(TimeSpan.Zero, BladeWaveDirection.Right).Length);
+        Assert.Equal(QuickLightingEngine.PixelCount,
+            QuickLightingEngine.RenderAudioMeter(1, 0).Length);
+        Assert.Equal(QuickLightingEngine.PixelCount,
+            QuickLightingEngine.RenderFire(TimeSpan.Zero, 710).Length);
+        Assert.Equal(QuickLightingEngine.PixelCount,
+            QuickLightingEngine.RenderWheel(TimeSpan.Zero, QuickLightingDirection.Clockwise).Length);
+    }
+
+    [Fact]
+    public void WheelAndTidalSpeedChangeRenderedFrames()
+    {
+        var elapsed = TimeSpan.FromMilliseconds(500);
+        var first = new RazerRgb(255, 32, 0);
+        var second = new RazerRgb(0, 64, 255);
+
+        Assert.False(QuickLightingEngine.RenderWheel(elapsed, QuickLightingDirection.Clockwise,
+            6, 17, speed: 1).SequenceEqual(QuickLightingEngine.RenderWheel(elapsed,
+            QuickLightingDirection.Clockwise, 6, 17, speed: 3)));
+        Assert.False(QuickLightingEngine.RenderTidal(elapsed, first, second, 1)
+            .SequenceEqual(QuickLightingEngine.RenderTidal(elapsed, first, second, 3)));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            QuickLightingEngine.RenderTidal(elapsed, first, second, 0));
+    }
+
+    [Fact]
     public void AudioLevelSmoothingAttacksQuicklyAndReleasesMoreSlowly()
     {
         var attack = QuickLightingEngine.SmoothAudioLevel(

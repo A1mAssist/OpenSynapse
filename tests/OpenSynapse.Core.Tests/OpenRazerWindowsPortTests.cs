@@ -353,6 +353,96 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public void BladeSoftwarePaletteRoundTripsWithoutChangingLegacyProfiles()
+    {
+        var legacy = BladeLightingProfileCodec.Parse(new LightingProfile { Effect = "fire" });
+        Assert.Null(legacy.Palette);
+
+        var custom = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = "spectrum",
+            Parameters = new()
+            {
+                ["palette1"] = "112233",
+                ["palette2"] = "445566",
+                ["palette3"] = "778899",
+            },
+        });
+
+        Assert.Equal(
+            new[] { new RazerRgb(0x11, 0x22, 0x33), new RazerRgb(0x44, 0x55, 0x66), new RazerRgb(0x77, 0x88, 0x99) },
+            custom.Palette!.Colors);
+        var encoded = BladeLightingProfileCodec.Create(custom);
+        Assert.Equal("112233", encoded.Parameters["palette1"]);
+        Assert.Equal("445566", encoded.Parameters["palette2"]);
+        Assert.Equal("778899", encoded.Parameters["palette3"]);
+    }
+
+    [Theory]
+    [InlineData("wheel")]
+    [InlineData("tidal")]
+    public void BladeAnimationSpeedRoundTripsAndDefaultsToCurrentRate(string mode)
+    {
+        var legacy = BladeLightingProfileCodec.Parse(new LightingProfile { Effect = mode });
+        Assert.Equal((byte)2, legacy.AnimationSpeed);
+
+        var custom = BladeLightingProfileCodec.Parse(new LightingProfile
+        {
+            Effect = mode,
+            Parameters = new() { ["speed"] = "3" },
+        });
+        Assert.Equal((byte)3, custom.AnimationSpeed);
+        Assert.Equal("3", BladeLightingProfileCodec.Create(custom).Parameters["speed"]);
+    }
+
+    [Fact]
+    public void LegacyBladePaletteStaysNativeUntilColorsAreCustomized()
+    {
+        var defaults = BladeLightingPaletteResolver.GetDefault(BladeLightingMode.Spectrum);
+        var legacy = new LightingProfile { Effect = "spectrum" };
+
+        Assert.Null(BladeLightingPaletteResolver.Resolve(
+            BladeLightingMode.Spectrum,
+            defaults.Colors[0],
+            defaults.Colors[1],
+            defaults.Colors[2],
+            legacy));
+
+        var custom = BladeLightingPaletteResolver.Resolve(
+            BladeLightingMode.Spectrum,
+            new RazerRgb(0x11, 0x22, 0x33),
+            defaults.Colors[1],
+            defaults.Colors[2],
+            legacy);
+
+        Assert.NotNull(custom);
+        Assert.Equal(new RazerRgb(0x11, 0x22, 0x33), custom!.Colors[0]);
+    }
+
+    [Fact]
+    public void ExplicitBladePaletteRemainsSoftwareOwnedWhenColorsMatchDefaults()
+    {
+        var defaults = BladeLightingPaletteResolver.GetDefault(BladeLightingMode.Wave);
+        var profile = new LightingProfile
+        {
+            Effect = "wave",
+            Parameters = new()
+            {
+                ["palette1"] = $"{defaults.Colors[0].Red:X2}{defaults.Colors[0].Green:X2}{defaults.Colors[0].Blue:X2}",
+                ["palette2"] = $"{defaults.Colors[1].Red:X2}{defaults.Colors[1].Green:X2}{defaults.Colors[1].Blue:X2}",
+                ["palette3"] = $"{defaults.Colors[2].Red:X2}{defaults.Colors[2].Green:X2}{defaults.Colors[2].Blue:X2}",
+            },
+        };
+
+        Assert.NotNull(BladeLightingPaletteResolver.Resolve(
+            BladeLightingMode.Wave,
+            defaults.Colors[0],
+            defaults.Colors[1],
+            defaults.Colors[2],
+            profile));
+    }
+
+    [Fact]
     public void BladeOpenRazerCustomRowPreservesTheDeclaredSizeQuirk()
     {
         var logical = CreateOpenRazerLogicalRequest(

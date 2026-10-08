@@ -40,6 +40,11 @@ public static class QuickLightingEngine
     private const double AudioAttackSeconds = 0.045;
     private const double AudioReleaseSeconds = 0.12;
     private const double AudioSilenceThreshold = 0.02;
+    public static LightingPalette DefaultSpectrumPalette { get; } = LightingPalette.Create(
+        new RazerRgb(255, 0, 0),
+        new RazerRgb(0, 255, 0),
+        new RazerRgb(0, 0, 255),
+        new RazerRgb(255, 0, 0));
     private static readonly byte[] FireSourceMask = Convert.FromHexString(
         "0806040606040202020406060406080604020204060810");
 
@@ -91,36 +96,62 @@ public static class QuickLightingEngine
 
     public static RazerRgb[] RenderSpectrum(TimeSpan elapsed)
     {
+        return RenderSpectrum(elapsed, Rows, Columns);
+    }
+
+    public static RazerRgb[] RenderSpectrum(
+        TimeSpan elapsed,
+        int rows,
+        int columns,
+        LightingPalette? palette = null)
+    {
         ValidateElapsed(elapsed);
+        ValidateMatrixDimensions(rows, columns);
         var position = elapsed.TotalMilliseconds % SpectrumPeriodMilliseconds /
             SpectrumPeriodMilliseconds;
-        return RenderSolid(RenderSpectrumColor(position));
+        var color = palette is null
+            ? RenderSpectrumColor(position)
+            : palette.Sample(position);
+        return Enumerable.Repeat(color, checked(rows * columns)).ToArray();
     }
 
     public static RazerRgb[] RenderWave(TimeSpan elapsed, BladeWaveDirection direction)
+    {
+        return RenderWave(elapsed, direction, Rows, Columns);
+    }
+
+    public static RazerRgb[] RenderWave(
+        TimeSpan elapsed,
+        BladeWaveDirection direction,
+        int rows,
+        int columns,
+        LightingPalette? palette = null)
     {
         ValidateElapsed(elapsed);
         if (!Enum.IsDefined(direction))
         {
             throw new ArgumentOutOfRangeException(nameof(direction));
         }
+        ValidateMatrixDimensions(rows, columns);
 
         const int activeFrames = 25;
         var tick = elapsed.TotalSeconds * LightingFramesPerSecond % activeFrames;
         var cosine = direction == BladeWaveDirection.Right ? 1 : -1;
-        var frame = new RazerRgb[PixelCount];
-        for (var row = 0; row < Rows; row++)
+        var frame = new RazerRgb[checked(rows * columns)];
+        for (var row = 0; row < rows; row++)
         {
-            for (var column = 0; column < Columns; column++)
+            for (var column = 0; column < columns; column++)
             {
-                var projected = (int)(column * cosine / (double)Columns * activeFrames);
+                var projected = (int)(column * cosine / (double)columns * activeFrames);
                 var colorFrame = (projected + activeFrames - tick) % activeFrames;
                 if (colorFrame < 0)
                 {
                     colorFrame += activeFrames;
                 }
-                frame[row * Columns + column] = RenderSpectrumColor(
-                    colorFrame / (double)activeFrames, blueStop: 0.67);
+                var position = colorFrame / (double)activeFrames;
+                frame[row * columns + column] = palette is null
+                    ? RenderSpectrumColor(position, blueStop: 0.67)
+                    : palette.Sample(position);
             }
         }
 
@@ -197,32 +228,48 @@ public static class QuickLightingEngine
     /// </summary>
     public static RazerRgb[] RenderAudioMeter(double level, double colorBoost)
     {
+        var logical = RenderAudioMeter(
+            level,
+            colorBoost,
+            LogicalRows,
+            LogicalColumns);
+        return BladeLightingLayout.MapToDeviceFrame(logical);
+    }
+
+    public static RazerRgb[] RenderAudioMeter(
+        double level,
+        double colorBoost,
+        int rows,
+        int columns,
+        LightingPalette? palette = null)
+    {
         ValidateNormalized(level, nameof(level));
         ValidateNormalized(colorBoost, nameof(colorBoost));
+        ValidateMatrixDimensions(rows, columns);
 
         var adjustedLevel = level < AudioSilenceThreshold
             ? 0
             : Math.Clamp(level * (1 + colorBoost), 0, 1);
-        var litColumns = (int)Math.Ceiling(adjustedLevel * LogicalColumns);
-        var frame = new RazerRgb[BladeLightingLayout.LogicalPixelCount];
-        for (var row = 0; row < LogicalRows; row++)
+        var litColumns = (int)Math.Ceiling(adjustedLevel * columns);
+        var frame = new RazerRgb[checked(rows * columns)];
+        for (var row = 0; row < rows; row++)
         {
-            for (var column = 0; column < LogicalColumns; column++)
+            for (var column = 0; column < columns; column++)
             {
                 if (column >= litColumns)
                 {
                     continue;
                 }
 
-                var position = column * 255d / (LogicalColumns - 1);
-                var color = position <= 127.5
-                    ? new RazerRgb(Scale(255, position / 127.5), 255, 0)
-                    : new RazerRgb(255, Scale(255, (255 - position) / 127.5), 0);
-                frame[row * LogicalColumns + column] = ScaleColor(color, 1 + colorBoost);
+                var position = columns == 1 ? 0 : column / (double)(columns - 1);
+                var color = palette is null
+                    ? RenderAudioMeterColor(position)
+                    : palette.Sample(position);
+                frame[row * columns + column] = ScaleColor(color, 1 + colorBoost);
             }
         }
 
-        return BladeLightingLayout.MapToDeviceFrame(frame);
+        return frame;
     }
 
     /// <summary>
@@ -250,25 +297,49 @@ public static class QuickLightingEngine
     /// <summary>Renders Product 710's native 100-keyframe, five-step fire cycle.</summary>
     public static RazerRgb[] RenderFire(TimeSpan elapsed, int seed)
     {
+        return RenderFire(elapsed, seed, Rows, Columns);
+    }
+
+    public static RazerRgb[] RenderFire(
+        TimeSpan elapsed,
+        int seed,
+        int rows,
+        int columns,
+        LightingPalette? palette = null)
+    {
         ValidateElapsed(elapsed);
+        ValidateMatrixDimensions(rows, columns);
         var keyFrames = BuildFireKeyFrames(seed);
         var animationFrame = elapsed.TotalSeconds * LightingFramesPerSecond %
             (FireKeyFrameCount * FireInterpolationFrames);
         var keyFrame = (int)(animationFrame / FireInterpolationFrames);
         var nextKeyFrame = (keyFrame + 1) % FireKeyFrameCount;
         var interpolation = animationFrame % FireInterpolationFrames / (double)FireInterpolationFrames;
-        var frame = new RazerRgb[PixelCount];
-        for (var outputRow = 0; outputRow < Rows; outputRow++)
+        var frame = new RazerRgb[checked(rows * columns)];
+        for (var outputRow = 0; outputRow < rows; outputRow++)
         {
-            var sourceRow = FireWorkRows - 1 - outputRow;
+            var sourceRow = rows <= FireWorkRows
+                ? FireWorkRows - 1 - outputRow
+                : FireWorkRows - 1 - (int)Math.Round(
+                    outputRow * (FireWorkRows - 1d) / Math.Max(1, rows - 1),
+                    MidpointRounding.AwayFromZero);
+            sourceRow = Math.Clamp(sourceRow, 0, FireWorkRows - 1);
             var lookup = FireColorLookup[sourceRow];
-            for (var column = 0; column < Columns; column++)
+            for (var column = 0; column < columns; column++)
             {
-                var cell = sourceRow * FireWorkColumns + column;
+                var sourceColumn = columns <= FireWorkColumns
+                    ? column
+                    : (int)Math.Round(
+                        column * (FireWorkColumns - 1d) / Math.Max(1, columns - 1),
+                        MidpointRounding.AwayFromZero);
+                sourceColumn = Math.Clamp(sourceColumn, 0, FireWorkColumns - 1);
+                var cell = sourceRow * FireWorkColumns + sourceColumn;
                 var start = keyFrames[keyFrame * FireWorkRows * FireWorkColumns + cell];
                 var end = keyFrames[nextKeyFrame * FireWorkRows * FireWorkColumns + cell];
                 var heat = (byte)(start + (end - start) * interpolation);
-                frame[outputRow * Columns + column] = RenderFireRamp(lookup[column], heat);
+                frame[outputRow * columns + column] = palette is null
+                    ? RenderFireRamp(lookup[sourceColumn], heat)
+                    : ScaleColor(palette.Sample(heat / 255d), heat / 255d);
             }
         }
 
@@ -279,19 +350,21 @@ public static class QuickLightingEngine
     public static RazerRgb[] RenderTidal(
         TimeSpan elapsed,
         RazerRgb firstColor,
-        RazerRgb secondColor)
+        RazerRgb secondColor,
+        byte speed = 2)
     {
         ValidateElapsed(elapsed);
+        if (speed is < 1 or > 3) throw new ArgumentOutOfRangeException(nameof(speed));
         const double angleRadians = 160 * Math.PI / 180;
         const double centerColumn = 8;
         const double centerRow = 3;
-        const double speed = 10;
+        var rate = speed * 5d;
         var cos = Math.Cos(angleRadians);
         var sin = Math.Sin(angleRadians);
         var columnExtent = Math.Max(centerColumn, Columns - centerColumn);
         var rowExtent = Math.Max(centerRow, Rows - centerRow);
         var distance = Math.Abs(columnExtent * cos) + Math.Abs(rowExtent * sin);
-        var spatialStep = ((speed * 2) / 100 * distance) / LightingFramesPerSecond;
+        var spatialStep = ((rate * 2) / 100 * distance) / LightingFramesPerSecond;
         var colorFrameCount = Math.Max(8, (int)(distance / spatialStep));
         var cycleFrames = colorFrameCount * 3;
         var tick = elapsed.TotalSeconds * LightingFramesPerSecond % cycleFrames;
@@ -425,27 +498,44 @@ public static class QuickLightingEngine
     /// <summary>Renders a full-saturation hue wheel, rotating in the requested direction.</summary>
     public static RazerRgb[] RenderWheel(TimeSpan elapsed, QuickLightingDirection direction)
     {
+        return RenderWheel(elapsed, direction, LogicalRows, LogicalColumns);
+    }
+
+    public static RazerRgb[] RenderWheel(
+        TimeSpan elapsed,
+        QuickLightingDirection direction,
+        int rows,
+        int columns,
+        LightingPalette? palette = null,
+        byte speed = 2)
+    {
         ValidateElapsed(elapsed);
+        if (speed is < 1 or > 3) throw new ArgumentOutOfRangeException(nameof(speed));
         if (!Enum.IsDefined(direction))
         {
             throw new ArgumentOutOfRangeException(nameof(direction));
         }
+        ValidateMatrixDimensions(rows, columns);
 
-        var frame = new RazerRgb[BladeLightingLayout.LogicalPixelCount];
-        var phase = elapsed.TotalSeconds / WheelPeriodSeconds * 360 *
+        var frame = new RazerRgb[checked(rows * columns)];
+        var phase = elapsed.TotalSeconds / WheelPeriodSeconds * 360 * (speed / 2d) *
             (direction == QuickLightingDirection.Clockwise ? 1 : -1);
-        var centerRow = (LogicalRows - 1) / 2d;
-        var centerColumn = (LogicalColumns - 1) / 2d;
-        for (var row = 0; row < LogicalRows; row++)
+        var centerRow = (rows - 1) / 2d;
+        var centerColumn = (columns - 1) / 2d;
+        for (var row = 0; row < rows; row++)
         {
-            for (var column = 0; column < LogicalColumns; column++)
+            for (var column = 0; column < columns; column++)
             {
                 var hue = (Math.Atan2(row - centerRow, column - centerColumn) * 180 / Math.PI + phase + 360) % 360;
-                frame[row * LogicalColumns + column] = HsvToRgb(hue, 1, 1);
+                frame[row * columns + column] = palette is null
+                    ? HsvToRgb(hue, 1, 1)
+                    : palette.Sample(hue / 360, wrap: true);
             }
         }
 
-        return BladeLightingLayout.MapToDeviceFrame(frame);
+        return rows == LogicalRows && columns == LogicalColumns
+            ? BladeLightingLayout.MapToDeviceFrame(frame)
+            : frame;
     }
 
     private static byte Average(long total, int count) =>
@@ -472,6 +562,14 @@ public static class QuickLightingEngine
         }
 
         return colors[^1];
+    }
+
+    private static RazerRgb RenderAudioMeterColor(double position)
+    {
+        var scaled = Math.Clamp(position, 0, 1) * 255;
+        return scaled <= 127.5
+            ? new RazerRgb(Scale(255, scaled / 127.5), 255, 0)
+            : new RazerRgb(255, Scale(255, (255 - scaled) / 127.5), 0);
     }
 
     private static RazerRgb RenderTidalColor(
@@ -616,6 +714,21 @@ public static class QuickLightingEngine
         {
             throw new ArgumentOutOfRangeException(nameof(column));
         }
+    }
+
+    private static void ValidateMatrixDimensions(int rows, int columns)
+    {
+        if (rows <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(rows));
+        }
+
+        if (columns <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(columns));
+        }
+
+        _ = checked(rows * columns);
     }
 
     private static void ValidateDuration(TimeSpan duration)

@@ -102,6 +102,7 @@ public sealed class ProfileDefinition
     public PowerProfileOverrides PluggedIn { get; set; } = new();
     public PowerProfileOverrides OnBattery { get; set; } = new();
     public ProfileShortcutSettings Shortcuts { get; set; } = new();
+    public List<LightingColorPreset> LightingColorPresets { get; set; } = [];
 
     internal void ApplySafeDefaults()
     {
@@ -110,6 +111,9 @@ public sealed class ProfileDefinition
         PluggedIn ??= new PowerProfileOverrides();
         OnBattery ??= new PowerProfileOverrides();
         Shortcuts ??= new ProfileShortcutSettings();
+        LightingColorPresets = LightingColorPresets?
+            .Where(preset => preset is not null)
+            .ToList() ?? [];
         Global.ApplySafeDefaults();
         foreach (var settings in Devices.Values)
         {
@@ -135,6 +139,7 @@ public sealed class ProfileDefinition
             PluggedIn = ClonePower(PluggedIn),
             OnBattery = ClonePower(OnBattery),
             Shortcuts = Shortcuts.Clone(),
+            LightingColorPresets = LightingColorPresets.Select(preset => preset.Clone()).ToList(),
         };
         foreach (var (key, settings) in Devices)
         {
@@ -505,6 +510,22 @@ public sealed class LightingProfile
     {
         Parameters = ProfileDictionary.Normalize(Parameters);
     }
+}
+
+public sealed class LightingColorPreset
+{
+    public string Name { get; set; } = string.Empty;
+    public string Primary { get; set; } = "#FFFFFF";
+    public string Secondary { get; set; } = "#FFFFFF";
+    public string Tertiary { get; set; } = "#FFFFFF";
+
+    internal LightingColorPreset Clone() => new()
+    {
+        Name = Name,
+        Primary = Primary,
+        Secondary = Secondary,
+        Tertiary = Tertiary,
+    };
 }
 
 internal static class ProfileDictionary

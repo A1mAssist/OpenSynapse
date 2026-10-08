@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
 
@@ -13,6 +14,9 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 {
+    private static readonly TimeSpan SoftwareLightingFrameInterval =
+        TimeSpan.FromMilliseconds(1000d / 60d);
+
     public async Task LoadLightingAsync(CancellationToken cancellationToken = default)
     {
         if (!IsReady || RequiresRescan || IsLightingLoading || SelectedZoneCapabilities is null)
@@ -242,6 +246,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 
     private async Task DisableLightingAsync(CancellationToken cancellationToken)
     {
+        await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(false);
         var zone = SelectedLightingZone;
         var capabilities = SelectedZoneCapabilities;
         if (capabilities?.CanWriteState == true && !_unsupportedLedStateWrites.Contains(zone))
@@ -280,6 +285,10 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     {
         var zone = SelectedLightingZone;
         var effect = SelectedLightingEffect;
+        if (IsSoftwareLightingEffect(effect))
+        {
+            return ApplySoftwareLightingAsync(effect, cancellationToken);
+        }
         return RunZoneWriteAsync(
             () => Connection.Capabilities.Contains(OpenRazerBackendCapability.LightingEffectWrite) &&
                 Connection.LightingZones.TryGetValue(zone, out var capability) &&
@@ -289,6 +298,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             {
                 if (IsSelectedLightingPowerActive)
                 {
+                    await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(false);
                     await _service.SetLightingAsync(Connection, new OpenRazerLightingSettings(
                         effect,
                         LightingSpeed,
@@ -309,6 +319,126 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 OnLightingSelectionChanged();
             });
     }
+
+    private async Task ApplySoftwareLightingAsync(
+        OpenRazerLightingEffect effect,
+        CancellationToken cancellationToken)
+    {
+        if (_softwareLightingRuntime is null || !SupportsSoftwareLighting || !LightingEnabled)
+        {
+            await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        IsLightingBusy = true;
+        _operationSucceeded = false;
+        OnPropertyChanged(nameof(OperationStatusText));
+        try
+        {
+            if (!IsSelectedLightingPowerActive)
+            {
+                await SaveLightingProfileAsync(cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(false);
+            if (effect == OpenRazerLightingEffect.SoftwareAudioMeter)
+            {
+                _softwareAudioInput = new WasapiAudioMeterAdapter();
+                await _softwareAudioInput.StartAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            _softwareLightingElapsed = TimeSpan.Zero;
+            _softwareAudioLevel = 0;
+            var palette = CreateSoftwarePalette();
+            await _softwareLightingRuntime.StartOrReplaceAsync(
+                token =>
+                {
+                    _softwareLightingElapsed += SoftwareLightingFrameInterval;
+                    var frame = effect switch
+                    {
+                        OpenRazerLightingEffect.SoftwareSpectrum =>
+                            QuickLightingEngine.RenderSpectrum(_softwareLightingElapsed, 6, 22, palette),
+                        OpenRazerLightingEffect.SoftwareWave =>
+                            QuickLightingEngine.RenderWave(
+                                _softwareLightingElapsed,
+                                LightingDirection == 1 ? BladeWaveDirection.Right : BladeWaveDirection.Left,
+                                6, 22, palette),
+                        OpenRazerLightingEffect.SoftwareFire =>
+                            QuickLightingEngine.RenderFire(_softwareLightingElapsed, 710, 6, 22, palette),
+                        OpenRazerLightingEffect.SoftwareWheel =>
+                            QuickLightingEngine.RenderWheel(
+                                _softwareLightingElapsed,
+                                LightingDirection == 1
+                                    ? QuickLightingDirection.Clockwise
+                                    : QuickLightingDirection.CounterClockwise,
+                                6, 22, palette, LightingSpeed),
+                        OpenRazerLightingEffect.SoftwareAudioMeter => RenderSoftwareAudioFrame(palette),
+                        _ => throw new InvalidOperationException("Unsupported software lighting effect."),
+                    };
+                    return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(frame);
+                },
+                6,
+                22,
+                SoftwareLightingFrameInterval,
+                cancellationToken).ConfigureAwait(false);
+
+            await SaveLightingProfileAsync(cancellationToken).ConfigureAwait(false);
+            ErrorText = string.Empty;
+            _operationSucceeded = true;
+            OnPropertyChanged(nameof(OperationStatusText));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            HandleFailure(exception);
+        }
+        finally
+        {
+            IsLightingBusy = false;
+        }
+    }
+
+    private IReadOnlyList<RazerRgb> RenderSoftwareAudioFrame(LightingPalette palette)
+    {
+        var level = _softwareAudioInput?.ReadLevel() ?? 0;
+        _softwareAudioLevel = _softwareLightingElapsed <= SoftwareLightingFrameInterval
+            ? level
+            : QuickLightingEngine.SmoothAudioLevel(
+                _softwareAudioLevel,
+                level,
+                SoftwareLightingFrameInterval);
+        return QuickLightingEngine.RenderAudioMeter(
+            _softwareAudioLevel,
+            0,
+            6,
+            22,
+            palette);
+    }
+
+    private LightingPalette CreateSoftwarePalette() => LightingPalette.Create(
+        ToRazerRgb(PrimaryColor),
+        ToRazerRgb(SecondaryColor),
+        ToRazerRgb(TertiaryColor));
+
+    private static RazerRgb ToRazerRgb(Color color) => new(color.R, color.G, color.B);
+
+    private async Task StopSoftwareLightingAsync(CancellationToken cancellationToken)
+    {
+        if (_softwareLightingRuntime is not null)
+        {
+            await _softwareLightingRuntime.StopAsync(cancellationToken).ConfigureAwait(false);
+        }
+        if (_softwareAudioInput is not null)
+        {
+            await _softwareAudioInput.DisposeAsync().ConfigureAwait(false);
+            _softwareAudioInput = null;
+        }
+    }
+
+    internal Task StopLightingRuntimeAsync(CancellationToken cancellationToken = default) =>
+        StopSoftwareLightingAsync(cancellationToken);
 
 
     private bool? SelectedLightingPowerState => _lightingPowerProfileIndex switch
@@ -358,6 +488,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         if (TryGetByte(profile, "direction", out var direction)) LightingDirection = direction;
         if (TryGetColor(profile, "color", out var primary)) PrimaryColor = ToColor(primary);
         if (TryGetColor(profile, "color2", out var secondary)) SecondaryColor = ToColor(secondary);
+        if (TryGetColor(profile, "color3", out var tertiary)) TertiaryColor = ToColor(tertiary);
         if (profile.Parameters.TryGetValue("enabled", out var rawEnabled) &&
             bool.TryParse(rawEnabled, out var enabled)) LedEnabled = enabled;
     }
@@ -368,6 +499,11 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     {
         var zone = SelectedLightingZone;
         if (Enum.TryParse<OpenRazerLightingEffect>(profile.Effect, true, out var effect) &&
+            IsSoftwareLightingEffect(effect))
+        {
+            await ApplySoftwareLightingAsync(effect, cancellationToken).ConfigureAwait(false);
+        }
+        else if (Enum.TryParse<OpenRazerLightingEffect>(profile.Effect, true, out effect) &&
             Connection.LightingZones.TryGetValue(zone, out var capabilities) &&
             capabilities.LightingEffects.Contains(effect) &&
             Has(OpenRazerBackendCapability.LightingEffectWrite) &&
@@ -456,6 +592,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             ["direction"] = LightingDirection.ToString(CultureInfo.InvariantCulture),
             ["color"] = FormatColor(ToOpenRazerColor(PrimaryColor)),
             ["color2"] = FormatColor(ToOpenRazerColor(SecondaryColor)),
+            ["color3"] = FormatColor(ToOpenRazerColor(TertiaryColor)),
             ["enabled"] = LedEnabled.ToString(CultureInfo.InvariantCulture),
         };
         return new LightingProfile { Effect = SelectedLightingEffect.ToString(), Parameters = parameters };

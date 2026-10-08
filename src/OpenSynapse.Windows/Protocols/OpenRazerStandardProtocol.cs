@@ -217,6 +217,11 @@ public enum OpenRazerLightingEffect
     StarlightDual,
     Wheel,
     Custom,
+    SoftwareSpectrum,
+    SoftwareWave,
+    SoftwareFire,
+    SoftwareAudioMeter,
+    SoftwareWheel,
 }
 
 public sealed record OpenRazerLightingSettings(

@@ -264,6 +264,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanWriteLedState));
         OnPropertyChanged(nameof(PrimaryColorVisibility));
         OnPropertyChanged(nameof(SecondaryColorVisibility));
+        OnPropertyChanged(nameof(TertiaryColorVisibility));
         OnPropertyChanged(nameof(LightingSpeedVisibility));
         OnPropertyChanged(nameof(MaximumLightingSpeed));
         OnPropertyChanged(nameof(LightingDirectionVisibility));
@@ -274,6 +275,13 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 
     private static string FormatZone(OpenRazerLedZone zone) => AppStrings.Text($"OpenRazerZone{zone}");
     private static string FormatEffect(OpenRazerLightingEffect effect) => AppStrings.Text($"OpenRazerEffect{effect}");
+
+    private static bool IsSoftwareLightingEffect(OpenRazerLightingEffect effect) => effect is
+        OpenRazerLightingEffect.SoftwareSpectrum or
+        OpenRazerLightingEffect.SoftwareWave or
+        OpenRazerLightingEffect.SoftwareFire or
+        OpenRazerLightingEffect.SoftwareAudioMeter or
+        OpenRazerLightingEffect.SoftwareWheel;
 
     private static int IndexOf<T>(IReadOnlyList<T> values, T value)
     {

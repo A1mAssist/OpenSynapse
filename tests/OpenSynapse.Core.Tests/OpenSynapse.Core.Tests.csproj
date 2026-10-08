@@ -19,6 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\src\OpenSynapse.App\Runtime\OpenRazerSoftwareLightingRuntime.cs"
+             Link="Runtime\OpenRazerSoftwareLightingRuntime.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\src\OpenSynapse.App\Native\Razer\Product710Mapping.json"
           Link="Product710Mapping.json"
           CopyToOutputDirectory="PreserveNewest" />

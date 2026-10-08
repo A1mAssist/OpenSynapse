@@ -51,6 +51,25 @@ public sealed partial class BottomLayerLocalizationTests
             "en-US and zh-CN resource keys must be identical.");
     }
 
+    [Fact]
+    public void LocaleResourcesIncludeOpenRazerTertiaryColorLabel()
+    {
+        var repository = FindRepositoryRoot();
+        foreach (var locale in new[] { "en-US", "zh-CN" })
+        {
+            var path = Path.Combine(
+                repository,
+                "src",
+                "OpenSynapse.App",
+                "Strings",
+                locale,
+                "Resources.resw");
+            Assert.Contains(
+                "OpenRazerTertiaryColorLabel.Text",
+                ReadResourceKeys(path));
+        }
+    }
+
     private static IReadOnlySet<string> ReadResourceKeys(string path) =>
         XDocument.Load(path)
             .Root?

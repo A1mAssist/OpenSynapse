@@ -294,6 +294,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             .Append(row.Status)
             .Append(" | ")
             .AppendLine(row.Detail);
+        foreach (var protocol in row.ProtocolDetails)
+        {
+            report.Append(' ', (depth + 1) * 2)
+                .Append(protocol.Capability)
+                .Append(" | ")
+                .Append(protocol.Status)
+                .Append(" | ")
+                .AppendLine(protocol.Detail);
+        }
         foreach (var issue in row.Issues)
         {
             AppendDiagnostic(report, issue, depth + 1);
@@ -391,6 +400,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
         _openRazerSelectionCancellation?.Cancel();
         _openRazerSelectionCancellation?.Dispose();
+
+        if (SelectedOpenRazerDevice is { } openRazerDevice)
+        {
+            await openRazerDevice.DisposeAsync().ConfigureAwait(false);
+            SelectedOpenRazerDevice = null;
+        }
 
         Task brightnessWriter;
         lock (_bladeBrightnessGate)
@@ -519,9 +534,26 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             BladeLightingColor = Color.FromArgb(0xFF, effect.Color.Red, effect.Color.Green, effect.Color.Blue);
             BladeLightingSecondColor = Color.FromArgb(
                 0xFF, effect.SecondColor.Red, effect.SecondColor.Green, effect.SecondColor.Blue);
+            var selectedPalette = effect.Palette;
+            if (selectedPalette is null && effect.Mode is
+                BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
+                BladeLightingMode.Wheel or BladeLightingMode.AudioMeter)
+            {
+                selectedPalette = BladeLightingPaletteResolver.GetDefault(effect.Mode);
+            }
+            if (selectedPalette is not null)
+            {
+                var palette = selectedPalette;
+                BladeLightingColor = Color.FromArgb(0xFF, palette.Colors[0].Red, palette.Colors[0].Green, palette.Colors[0].Blue);
+                BladeLightingSecondColor = Color.FromArgb(0xFF, palette.Colors[Math.Min(1, palette.Colors.Count - 1)].Red,
+                    palette.Colors[Math.Min(1, palette.Colors.Count - 1)].Green, palette.Colors[Math.Min(1, palette.Colors.Count - 1)].Blue);
+                BladeLightingTertiaryColor = Color.FromArgb(0xFF, palette.Colors[Math.Min(2, palette.Colors.Count - 1)].Red,
+                    palette.Colors[Math.Min(2, palette.Colors.Count - 1)].Green, palette.Colors[Math.Min(2, palette.Colors.Count - 1)].Blue);
+            }
             BladeReactiveSpeedIndex = Array.IndexOf(BladeReactiveSpeeds, effect.ReactiveSpeed);
             BladeStarlightSpeedIndex = Array.IndexOf(BladeStarlightSpeeds, effect.StarlightSpeed);
             BladeStarlightColorModeIndex = (int)effect.StarlightColorMode;
+            BladeAnimationSpeedIndex = Array.IndexOf(BladeAnimationSpeeds, effect.AnimationSpeed);
         }
 
         if (bladeProfile.KeyboardBrightness is byte brightness)
@@ -749,6 +781,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 row.Capability,
                 $"{row.Access} · {row.ReportInfo}",
                 row.StatusBrush);
+            foreach (var detail in row.ProtocolDetails)
+            {
+                group.AddProtocolDetail(detail);
+            }
             Diagnostics.Add(group);
             groups.TryAdd(row.Name, group);
         }
