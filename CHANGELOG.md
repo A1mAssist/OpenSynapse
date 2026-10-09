@@ -2,6 +2,14 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.5.1] - 2026-10-09
+
+### Fixed
+
+- Blade keyboard brightness now responds while dragging the slider, including pointer events handled by the slider's internal thumb.
+- Pending brightness changes are merged into the latest requested value, and older readback results no longer overwrite newer slider settings.
+- Multi-color lighting presets are hidden for single-color effects across Blade, OpenRazer, and Kraken. Compatible dual-color Starlight presets remain available.
+
 ## [1.5.0] - 2026-10-08
 
 ### Added
