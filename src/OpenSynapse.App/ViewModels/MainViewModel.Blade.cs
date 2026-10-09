@@ -948,8 +948,8 @@ public sealed partial class MainViewModel
         BladeLightingMode.Wave or BladeLightingMode.Spectrum ? Visibility.Visible : Visibility.Collapsed;
     private bool BladeFirmwarePaletteHidden => BladeLightingRenderModeVisibility == Visibility.Visible &&
         BladeLightingRenderModeIndex == 0;
-    public Visibility BladeLightingPresetVisibility => SelectedBladeLightingMode == BladeLightingMode.Static
-        ? Visibility.Collapsed : BladeLightingColorVisibility;
+    public Visibility BladeLightingPresetVisibility => SelectedBladeLightingMode == BladeLightingMode.Starlight
+        ? BladeLightingColorVisibility : BladeLightingSecondColorVisibility;
     public Visibility BladeLightingColorVisibility => !BladeFirmwarePaletteHidden &&
         (SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
