@@ -324,11 +324,11 @@ public sealed partial class MainViewModel
             if (_desiredBladeBrightness is null)
             {
                 BladeBrightnessPercent = percent;
+                if (confirm)
+                {
+                    _blade._confirmedBladeBrightnessPercent = percent;
+                }
             }
-        }
-        if (confirm)
-        {
-            _blade._confirmedBladeBrightnessPercent = percent;
         }
     }
 

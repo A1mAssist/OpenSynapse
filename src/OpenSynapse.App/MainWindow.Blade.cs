@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Windows.Lighting;
@@ -14,6 +15,7 @@ public sealed partial class MainWindow
 {
     private bool _touchpadToggleInFlight;
     private bool _bladeLightingSettingsInFlight;
+    private bool _bladeBrightnessPointerActive;
     private Color? _lightingColorBeforeEdit;
     private ColorPicker? _activeLightingColorPicker;
     private Flyout? _activeLightingColorFlyout;
@@ -202,11 +204,23 @@ public sealed partial class MainWindow
 
     private async void AutoApplyBrightnessValueChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        if (sender is Slider { FocusState: not FocusState.Unfocused })
+        if (_bladeBrightnessPointerActive && sender is Slider)
         {
-            await _viewModel.ApplyBladeBrightnessAsync(_lifetime.Token);
+            await _viewModel.QueueBladeBrightnessAsync(_lifetime.Token);
         }
     }
+
+    private void BladeBrightnessPointerPressed(object sender, PointerRoutedEventArgs e) =>
+        _bladeBrightnessPointerActive = true;
+
+    private async void BladeBrightnessPointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        _bladeBrightnessPointerActive = false;
+        await _viewModel.QueueBladeBrightnessAsync(_lifetime.Token);
+    }
+
+    private void BladeBrightnessPointerCaptureLost(object sender, PointerRoutedEventArgs e) =>
+        _bladeBrightnessPointerActive = false;
 
     private void LightingColorFlyoutOpened(object sender, object e)
     {
