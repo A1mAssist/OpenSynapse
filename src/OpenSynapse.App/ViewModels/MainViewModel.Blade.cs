@@ -26,15 +26,13 @@ public sealed partial class MainViewModel
 
     private async Task ApplyBladeBrightnessCoreAsync(CancellationToken cancellationToken)
     {
-        var requested = checked((byte)Math.Round(
-            BladeBrightnessPercent * 255 / 100,
-            MidpointRounding.AwayFromZero));
+        var requested = ToBladeBrightness(BladeBrightnessPercent);
         if (!IsSelectedLightingPowerActive || Volatile.Read(ref _displayAvailable) == 0)
         {
             EditableLightingBladeProfile.KeyboardBrightness = requested;
             SetBladeBrightness(requested, confirm: false);
-            await SaveProfileAsync(cancellationToken);
             RefreshBladeLightingEditor();
+            await SaveProfileAsync(cancellationToken);
             return;
         }
 
@@ -45,6 +43,36 @@ public sealed partial class MainViewModel
         SetBladeBrightness(actual);
         EditableLightingBladeProfile.KeyboardBrightness = actual;
         await SaveProfileAsync(cancellationToken);
+    }
+
+    internal Task QueueBladeBrightnessAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!_blade._canSetBladeBrightness)
+        {
+            return Task.CompletedTask;
+        }
+
+        var requested = ToBladeBrightness(BladeBrightnessPercent);
+        if (!IsSelectedLightingPowerActive)
+        {
+            EditableLightingBladeProfile.KeyboardBrightness = requested;
+            SetBladeBrightness(requested, confirm: false);
+            RefreshBladeLightingEditor();
+            return SaveProfileAsync(cancellationToken);
+        }
+
+        lock (_bladeBrightnessGate)
+        {
+            _desiredBladeBrightness = requested;
+            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
+            if (!_bladeBrightnessWriterActive)
+            {
+                _bladeBrightnessWriterActive = true;
+                _bladeBrightnessWriter = WriteDesiredBladeBrightnessAsync();
+            }
+        }
+        return Task.CompletedTask;
     }
 
     public async Task ApplyBladeLightingEffectAsync(
@@ -534,12 +562,16 @@ public sealed partial class MainViewModel
             {
                 if (Volatile.Read(ref _displayAvailable) == 0)
                 {
+                    bool isCurrent;
                     lock (_bladeBrightnessGate)
                     {
-                        if (_desiredBladeBrightness == requested)
-                        {
-                            _desiredBladeBrightness = null;
-                        }
+                        isCurrent = _desiredBladeBrightness == requested;
+                        if (isCurrent) _desiredBladeBrightness = null;
+                    }
+                    if (!isCurrent)
+                    {
+                        applied = true;
+                        return;
                     }
                     (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade)
                         .KeyboardBrightness = requested;
@@ -558,17 +590,19 @@ public sealed partial class MainViewModel
                 }
                 catch (Exception writeError) when (IsExpectedRuntimeException(writeError))
                 {
+                    bool hasNewerRequest;
+                    lock (_bladeBrightnessGate)
+                    {
+                        hasNewerRequest = _desiredBladeBrightness is byte pending && pending != requested;
+                        if (!hasNewerRequest) _desiredBladeBrightness = null;
+                    }
                     try
                     {
                         var restored = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
                             _deviceDescriptors,
                             original,
                             CancellationToken.None);
-                        lock (_bladeBrightnessGate)
-                        {
-                            _desiredBladeBrightness = null;
-                        }
-                        SetBladeBrightness(restored);
+                        if (!hasNewerRequest) SetBladeBrightness(restored);
                     }
                     catch (Exception restoreError) when (IsExpectedRuntimeException(restoreError))
                     {
@@ -578,23 +612,27 @@ public sealed partial class MainViewModel
                     throw;
                 }
 
+                bool isCurrentRequest;
                 lock (_bladeBrightnessGate)
                 {
-                    if (_desiredBladeBrightness == requested)
-                    {
-                        _desiredBladeBrightness = null;
-                    }
+                    isCurrentRequest = _desiredBladeBrightness == requested;
+                    if (isCurrentRequest) _desiredBladeBrightness = null;
                 }
-                SetBladeBrightness(requested);
-                lastWritten = requested;
+                if (isCurrentRequest)
+                {
+                    SetBladeBrightness(requested);
+                    lastWritten = requested;
+                }
                 applied = true;
             }, CancellationToken.None, () =>
             {
+                bool restoreSelection;
                 lock (_bladeBrightnessGate)
                 {
-                    _desiredBladeBrightness = null;
+                    restoreSelection = _desiredBladeBrightness == requested;
+                    if (restoreSelection) _desiredBladeBrightness = null;
                 }
-                BladeBrightnessPercent = _blade._confirmedBladeBrightnessPercent;
+                if (restoreSelection) BladeBrightnessPercent = _blade._confirmedBladeBrightnessPercent;
             }, successVerb: AppStrings.Text("Text_D25102CE"));
 
             if (!applied)

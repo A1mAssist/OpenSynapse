@@ -1,6 +1,7 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
@@ -44,6 +45,18 @@ public sealed partial class MainWindow : Window
         _viewModel.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
+        BladeBrightnessSlider.AddHandler(
+            UIElement.PointerPressedEvent,
+            new PointerEventHandler(BladeBrightnessPointerPressed),
+            handledEventsToo: true);
+        BladeBrightnessSlider.AddHandler(
+            UIElement.PointerReleasedEvent,
+            new PointerEventHandler(BladeBrightnessPointerReleased),
+            handledEventsToo: true);
+        BladeBrightnessSlider.AddHandler(
+            UIElement.PointerCaptureLostEvent,
+            new PointerEventHandler(BladeBrightnessPointerCaptureLost),
+            handledEventsToo: true);
         RefreshLightingPresetOptions();
         Localized.RefreshTree(RootLayout);
         RootLayout.Loaded += (_, _) => Localized.RefreshTree(RootLayout);
