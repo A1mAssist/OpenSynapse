@@ -317,10 +317,26 @@ public sealed partial class MainViewModel
         await RunDeviceOperationAsync(AppStrings.Text("Text_7D07A709"), async () =>
         {
             var previousProfile = _profile.Clone();
+            var requested = BladeLogoModes[BladeLogoIndex];
+            var target = EditableLogoBladeProfile;
+            if (!IsSelectedLogoPowerActive)
+            {
+                target.LogoMode = (byte)requested;
+                SetBladeLogo(requested, confirm: false);
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    _profile = previousProfile;
+                    throw new InvalidOperationException(AppStrings.Text("Text_359F8C1A"));
+                }
+
+                RefreshBladeLogoEditor();
+                return;
+            }
+
             var actual = await _deviceTelemetryReader.SetBladeLogoModeAsync(
-                _deviceDescriptors, BladeLogoModes[BladeLogoIndex], cancellationToken);
+                _deviceDescriptors, requested, cancellationToken);
             SetBladeLogo(actual);
-            _profile.Global.Blade.LogoMode = (byte)actual;
+            target.LogoMode = (byte)actual;
             if (!await SaveProfileAsync(cancellationToken))
             {
                 _profile = previousProfile;
@@ -792,6 +808,7 @@ public sealed partial class MainViewModel
     }
     public bool CanSetBladeLightingPowerProfile => CanSetBladeBrightness;
     public bool CanSetBladePerformancePowerProfile => CanSetBladePerformanceMode;
+    public bool CanSetBladeLogoPowerProfile => CanSetBladeLogo;
     public string BladeFanText { get => _blade._bladeFanText; private set => SetField(ref _blade._bladeFanText, value); }
     public string BladeFanModeText { get => _blade._bladeFanModeText; private set => SetField(ref _blade._bladeFanModeText, value); }
     public string BladeFanTargetRpmText { get => _blade._bladeFanTargetRpmText; private set => SetField(ref _blade._bladeFanTargetRpmText, value); }
@@ -871,7 +888,17 @@ public sealed partial class MainViewModel
     public IReadOnlyList<string> BladeLogoOptions => AppStrings.Texts("Text_39B523BD", "Text_6295D9CB", "Text_7EDA32B9");
     public string BladeLogoText { get => _blade._bladeLogoText; private set => SetField(ref _blade._bladeLogoText, value); }
     public int BladeLogoIndex { get => _blade._bladeLogoIndex; set => SetField(ref _blade._bladeLogoIndex, value); }
-    public bool CanSetBladeLogo { get => _blade._canSetBladeLogo; private set => SetField(ref _blade._canSetBladeLogo, value); }
+    public bool CanSetBladeLogo
+    {
+        get => _blade._canSetBladeLogo;
+        private set
+        {
+            if (SetField(ref _blade._canSetBladeLogo, value))
+            {
+                OnPropertyChanged(nameof(CanSetBladeLogoPowerProfile));
+            }
+        }
+    }
     public string BladeTouchpadText { get => _blade._bladeTouchpadText; private set => SetField(ref _blade._bladeTouchpadText, value); }
     public bool BladeTouchpadEnabled { get => _blade._bladeTouchpadEnabled; private set => SetField(ref _blade._bladeTouchpadEnabled, value); }
     public bool CanSetBladeTouchpad => _blade._canSetBladeTouchpad;
@@ -885,6 +912,7 @@ public sealed partial class MainViewModel
         ];
     public IReadOnlyList<string> BladePerformancePowerProfileOptions => BladeLightingPowerProfileOptions;
     public IReadOnlyList<string> BladeRefreshRatePowerProfileOptions => BladeLightingPowerProfileOptions;
+    public IReadOnlyList<string> BladeLogoPowerProfileOptions => BladeLightingPowerProfileOptions;
     public bool BladeLightingEnabled
     {
         get => _blade._bladeLightingEnabled;
@@ -930,6 +958,18 @@ public sealed partial class MainViewModel
             if (SetField(ref _bladeRefreshRatePowerProfileIndex, next))
             {
                 RefreshInternalDisplayRateEditor();
+            }
+        }
+    }
+    public int BladeLogoPowerProfileIndex
+    {
+        get => _bladeLogoPowerProfileIndex;
+        set
+        {
+            var next = Math.Clamp(value, 0, 2);
+            if (SetField(ref _bladeLogoPowerProfileIndex, next))
+            {
+                RefreshBladeLogoEditor();
             }
         }
     }

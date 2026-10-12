@@ -92,6 +92,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private int _bladeLightingPowerProfileIndex;
     private int _bladePerformancePowerProfileIndex;
     private int _bladeRefreshRatePowerProfileIndex;
+    private int _bladeLogoPowerProfileIndex;
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
     private int _performanceSamplingEnabled = 1;
@@ -460,6 +461,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _ => _powerSourceProvider.IsPluggedIn,
     };
 
+    private bool? SelectedLogoPowerState => _bladeLogoPowerProfileIndex switch
+    {
+        1 => true,
+        2 => false,
+        _ => _powerSourceProvider.IsPluggedIn,
+    };
+
+    private bool IsSelectedLogoPowerActive =>
+        _bladeLogoPowerProfileIndex == 0 ||
+        SelectedLogoPowerState == _powerSourceProvider.IsPluggedIn;
+
     private PowerProfileOverrides? SelectedLightingPowerOverrides => _bladeLightingPowerProfileIndex switch
     {
         1 => GetActiveProfile().PluggedIn,
@@ -497,11 +509,23 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _ => null,
     };
 
+    private PowerProfileOverrides? SelectedLogoPowerOverrides => _bladeLogoPowerProfileIndex switch
+    {
+        1 => GetActiveProfile().PluggedIn,
+        2 => GetActiveProfile().OnBattery,
+        _ when _powerSourceProvider.IsPluggedIn == true => GetActiveProfile().PluggedIn,
+        _ when _powerSourceProvider.IsPluggedIn == false => GetActiveProfile().OnBattery,
+        _ => null,
+    };
+
     private BladeProfileSettings EditablePerformanceBladeProfile =>
         SelectedPerformancePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
 
     private BladeProfileSettings EditableRefreshRateBladeProfile =>
         SelectedRefreshRatePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
+
+    private BladeProfileSettings EditableLogoBladeProfile =>
+        SelectedLogoPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
 
     private LightingProfile EditableLightingProfile =>
         SelectedLightingPowerOverrides?.Lighting ?? GetActiveProfile().Global.Lighting;
@@ -580,6 +604,26 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             Enum.IsDefined(typeof(BladePerformanceMode), rawPerformanceMode))
         {
             SetBladePerformanceMode((BladePerformanceMode)rawPerformanceMode, confirm: false);
+        }
+    }
+
+    private void RefreshBladeLogoEditor()
+    {
+        if (_profile.Profiles.Count == 0)
+        {
+            return;
+        }
+
+        var blade = _deviceDescriptors.FirstOrDefault(device =>
+            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+        var powerState = SelectedLogoPowerState;
+        var bladeProfile = blade is null
+            ? EditableLogoBladeProfile
+            : ProfileResolver.Resolve(_profile, blade, powerState).Blade;
+        if (bladeProfile.LogoMode is byte rawLogoMode &&
+            Enum.IsDefined(typeof(BladeLogoMode), rawLogoMode))
+        {
+            SetBladeLogo((BladeLogoMode)rawLogoMode, confirm: false);
         }
     }
 
