@@ -48,6 +48,10 @@ public sealed partial class MainViewModel
         {
             RefreshBladePerformanceEditor();
         }
+        if (_bladeLogoPowerProfileIndex == 0)
+        {
+            RefreshBladeLogoEditor();
+        }
         try
         {
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
@@ -159,6 +163,7 @@ public sealed partial class MainViewModel
             }
             RefreshBladeLightingEditor();
             RefreshBladePerformanceEditor();
+            RefreshBladeLogoEditor();
             var viperAvailable = viper is not null &&
                 (telemetry.CapabilitySummaries?.GetValueOrDefault(viper.Id)
                     ?? DeviceCapabilitySummaryCalculator.Calculate(viper, telemetry)).Available > 0;

@@ -177,7 +177,7 @@ internal sealed class BladeViewModel
         _hasBladeMaxFan = true;
     }
 
-    internal void SetLogo(BladeLogoMode mode)
+    internal void SetLogo(BladeLogoMode mode, bool confirm = true)
     {
         _bladeLogoText = mode switch
         {
@@ -187,6 +187,9 @@ internal sealed class BladeViewModel
             _ => "--",
         };
         _bladeLogoIndex = Array.IndexOf(BladeLogoModes, mode);
-        _confirmedBladeLogoIndex = _bladeLogoIndex;
+        if (confirm)
+        {
+            _confirmedBladeLogoIndex = _bladeLogoIndex;
+        }
     }
 }

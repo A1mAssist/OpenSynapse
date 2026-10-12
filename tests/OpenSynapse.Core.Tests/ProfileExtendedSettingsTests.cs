@@ -99,6 +99,18 @@ public sealed class ProfileExtendedSettingsTests
     }
 
     [Fact]
+    public void BladeLogoModeUsesPowerSpecificOverride()
+    {
+        var document = ProfileDocument.CreateDefault();
+        document.Global.Blade.LogoMode = (byte)BladeLogoMode.Static;
+        document.PluggedIn.Blade.LogoMode = (byte)BladeLogoMode.Breathing;
+        document.OnBattery.Blade.LogoMode = (byte)BladeLogoMode.Off;
+
+        Assert.Equal(BladeLogoMode.Breathing, (BladeLogoMode)ProfileResolver.Resolve(document, Blade, true).Blade.LogoMode!.Value);
+        Assert.Equal(BladeLogoMode.Off, (BladeLogoMode)ProfileResolver.Resolve(document, Blade, false).Blade.LogoMode!.Value);
+    }
+
+    [Fact]
     public void LightingPowerOverrideCanExplicitlyTurnLightingOff()
     {
         var document = ProfileDocument.CreateDefault();

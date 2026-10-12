@@ -404,9 +404,9 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
     }
 
-    private void SetBladeLogo(BladeLogoMode mode)
+    private void SetBladeLogo(BladeLogoMode mode, bool confirm = true)
     {
-        _blade.SetLogo(mode);
+        _blade.SetLogo(mode, confirm);
         OnPropertyChanged(nameof(BladeLogoText));
         OnPropertyChanged(nameof(BladeLogoIndex));
     }
