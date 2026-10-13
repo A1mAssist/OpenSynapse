@@ -16,6 +16,12 @@ public partial class App
         {
             if (previouslyBlocked) _behaviorSettings.ChromaBlockedSources.Add(title);
             else _behaviorSettings.ChromaBlockedSources.Remove(title);
+            try { _behaviorSettings.Save(); }
+            catch (Exception saveException) when (saveException is IOException or UnauthorizedAccessException or
+                InvalidOperationException or System.Security.SecurityException)
+            {
+                _diagnosticLog.TryWrite("chroma-rest", $"source preference rollback failed: {saveException}");
+            }
             throw;
         }
         // A restoration failure must not silently allow a source the user blocked.
