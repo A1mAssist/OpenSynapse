@@ -9,6 +9,8 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    public event Action<DeviceBatteryReading>? BatteryObserved;
+
     private async Task RefreshPerformanceAsync(CancellationToken cancellationToken)
     {
         try
@@ -191,6 +193,11 @@ public sealed partial class MainViewModel
             device.Access == DeviceAccessState.Available);
         if (viper is not null)
         {
+            if (telemetry.ViperBatteryPercent is not null)
+            {
+                BatteryObserved?.Invoke(new DeviceBatteryReading(
+                    $"viper:{viper.Id}", viper.Name, telemetry.ViperBatteryPercent, null));
+            }
             var chemistry = ProfileResolver.Resolve(
                 _profile,
                 viper,

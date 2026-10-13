@@ -615,6 +615,15 @@
                   </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="LowBatteryNotificationTitle" Text="外设低电量通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="LowBatteryNotificationDescription" Text="读到外设电量降至 20% 和 10% 时发送 Windows 通知；不会额外轮询或唤醒设备。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="LowBatteryNotificationToggle" x:Name="LowBatteryNotificationToggle" Grid.Column="1" Toggled="LowBatteryNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="外设低电量通知" />
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
@@ -631,7 +640,14 @@
                       </StackPanel>
                       <ToggleSwitch local:Localized.Uid="ChromaRestoreToggle" x:Name="ChromaRestoreToggle" Grid.Column="1" Toggled="ChromaRestoreToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Restore lighting after external control" />
                     </Grid>
-                    <TextBlock local:Localized.Uid="ChromaRestStatus" x:Name="ChromaRestStatusText" Text="Disabled" FontFamily="Cascadia Mono" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                    <TextBlock local:Localized.Uid="ChromaRestStatus" x:Name="ChromaRestStatusText" Text="Disabled" FontFamily="Cascadia Mono" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <StackPanel x:Name="ChromaSourceSection" Spacing="10">
+                      <Border Height="1" Background="{StaticResource LineBrush}" />
+                      <TextBlock local:Localized.Uid="ChromaSourcesTitle" Text="Chroma sources" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" FontSize="16" />
+                      <TextBlock local:Localized.Uid="ChromaSourcesDescription" Text="Allow or block lighting control by source name. Names are reported by clients, not verified identities." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="ChromaSourcesEmpty" x:Name="ChromaSourcesEmptyText" Text="Sources appear here when a game or integration connects." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <StackPanel x:Name="ChromaSourcesPanel" Spacing="12" />
+                    </StackPanel>
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">

@@ -20,6 +20,8 @@ public sealed class OpenRazerDeviceService
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
 
+    public event Action<DeviceBatteryReading>? BatteryObserved;
+
     public OpenRazerDeviceService(LocalDiagnosticLog? diagnosticLog = null)
         : this(OpenRazerDeviceCatalog.BuiltIn, new RazerFeatureTransport(diagnosticLog), diagnosticLog)
     {
@@ -207,6 +209,11 @@ public sealed class OpenRazerDeviceService
         await ReadAsync(OpenRazerBackendCapability.BrightnessRead, "brightness",
             () => GetBrightnessAsync(connection, cancellationToken: cancellationToken), value => brightness = value);
 
+        if (battery is not null && !errors.ContainsKey("charging"))
+        {
+            BatteryObserved?.Invoke(new DeviceBatteryReading(
+                $"openrazer:{connection.InstanceId}", connection.Definition.DisplayName, battery, charging));
+        }
         return new OpenRazerBasicState(firmware, serial, softwareMode, battery, charging,
             pollingRate, dpiX, dpiY, idle, threshold, brightness, errors,
             unsupported.ToFrozenSet());

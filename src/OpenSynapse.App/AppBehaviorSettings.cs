@@ -20,6 +20,9 @@ internal sealed class AppBehaviorSettings
         "behavior.json");
 
     public bool ModeChangeNotificationsEnabled { get; set; } = true;
+    public bool LowBatteryNotificationsEnabled { get; set; } = true;
+    public Dictionary<string, int> LowBatteryNotifiedLevels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> ChromaBlockedSources { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public bool ExperimentalChromaRestEnabled { get; set; } = true;
     public bool RestoreLightingAfterChromaSession { get; set; } = true;
     public HashSet<BladePerformanceMode> PerformanceCycleModes { get; set; } =
@@ -33,6 +36,13 @@ internal sealed class AppBehaviorSettings
             var settings = File.Exists(SettingsPath)
                 ? JsonSerializer.Deserialize<AppBehaviorSettings>(File.ReadAllText(SettingsPath)) ?? new()
                 : new();
+            settings.LowBatteryNotifiedLevels = (settings.LowBatteryNotifiedLevels ?? [])
+                .Where(item => !string.IsNullOrWhiteSpace(item.Key) && item.Value is 10 or 20)
+                .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Min(item => item.Value), StringComparer.OrdinalIgnoreCase);
+            settings.ChromaBlockedSources = (settings.ChromaBlockedSources ?? [])
+                .Where(title => !string.IsNullOrWhiteSpace(title) && title.Trim().Length <= 64)
+                .Select(title => title.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
             settings.PerformanceCycleModes = settings.PerformanceCycleModes?
                 .Where(SupportedPerformanceCycleModes.Contains)
                 .ToHashSet() ?? [];

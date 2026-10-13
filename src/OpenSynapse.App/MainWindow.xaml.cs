@@ -32,12 +32,14 @@ public sealed partial class MainWindow : Window
         bool silentLaunch = false,
         Func<bool, Task>? setChromaRestEnabled = null,
         Func<ChromaRestSnapshot>? getChromaRestSnapshot = null,
-        Func<bool, Task>? setBladeIndicatorDisplayAvailable = null)
+        Func<bool, Task>? setBladeIndicatorDisplayAvailable = null,
+        Func<string, bool, Task>? setChromaSourceAllowed = null)
     {
         _viewModel = viewModel;
         _behaviorSettings = behaviorSettings;
         _setChromaRestEnabled = setChromaRestEnabled;
         _getChromaRestSnapshot = getChromaRestSnapshot;
+        _setChromaSourceAllowed = setChromaSourceAllowed;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()

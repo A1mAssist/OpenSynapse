@@ -5,6 +5,7 @@ using Microsoft.Windows.AppNotifications.Builder;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Diagnostics;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Devices;
@@ -44,6 +45,8 @@ public partial class App : Application
     private readonly object _shutdownGate = new();
     private bool _appNotificationsRegistered;
     private AppBehaviorSettings _behaviorSettings = new();
+    private LowBatteryNotificationTracker? _lowBatteryNotifications;
+    private OpenRazerDeviceService? _openRazerDeviceService;
     private readonly LocalDiagnosticLog _diagnosticLog = new();
 
     public App()
@@ -97,6 +100,7 @@ public partial class App : Application
         }
 
         _behaviorSettings = AppBehaviorSettings.Load();
+        _lowBatteryNotifications = new LowBatteryNotificationTracker(_behaviorSettings.LowBatteryNotifiedLevels);
         RegisterAppNotifications();
 
         try
@@ -128,6 +132,8 @@ public partial class App : Application
             razerTransport,
             registryLoad.Registry,
             _bladeModeCoordinator);
+        _openRazerDeviceService = new OpenRazerDeviceService(_diagnosticLog);
+        _openRazerDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
         var viewModel = new MainViewModel(
             new WindowsHidDiscovery(registryLoad.Registry),
             new RazerDeviceTelemetryReader(razerTransport, registryLoad.Registry),
@@ -142,7 +148,7 @@ public partial class App : Application
             Environment.ProcessPath,
             registryLoad.Errors,
             new WindowsTouchpadController(),
-            new OpenRazerDeviceService(_diagnosticLog),
+            _openRazerDeviceService,
             new OpenRazerSpecialLightingService());
         _audioMuteViewModel = viewModel;
         viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
@@ -152,6 +158,7 @@ public partial class App : Application
         viewModel.BladeOneTimeFullChargeChangedByUser += OnBladeOneTimeFullChargeChangedByUser;
         viewModel.InternalDisplayRefreshRateChangedByUser += OnInternalDisplayRefreshRateChangedByUser;
         viewModel.BladeInputProfileChanged += OnBladeInputProfileChanged;
+        viewModel.BatteryObserved += OnPeripheralBatteryObserved;
         viewModel.SetLegacyShortcutCycleDefaults(
             _behaviorSettings.PerformanceCycleModes,
             _behaviorSettings.RefreshRateCycleHertz);
@@ -166,7 +173,8 @@ public partial class App : Application
             silentLaunch,
             SetChromaRestEnabledAsync,
             GetChromaRestSnapshot,
-            SetBladeIndicatorDisplayAvailableAsync);
+            SetBladeIndicatorDisplayAvailableAsync,
+            SetChromaSourceAllowedAsync);
         RegisterMainWindow(window, viewModel);
         StartChromaRestHost(viewModel);
         InitializeTray(window, viewModel);
@@ -258,7 +266,8 @@ public partial class App : Application
                     : RestoreLightingAfterChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
                 viewModel.ApplyOpenRazerChromaFrameAsync,
-                viewModel.IsBladeChromaOverrideEnabled);
+                viewModel.IsBladeChromaOverrideEnabled,
+                _behaviorSettings.ChromaBlockedSources);
             _chromaRestHost.StartAsync();
             _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
         }
@@ -309,7 +318,13 @@ public partial class App : Application
             _audioMuteViewModel.BladeOneTimeFullChargeChangedByUser -= OnBladeOneTimeFullChargeChangedByUser;
             _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
             _audioMuteViewModel.BladeInputProfileChanged -= OnBladeInputProfileChanged;
+            _audioMuteViewModel.BatteryObserved -= OnPeripheralBatteryObserved;
             _audioMuteViewModel = null;
+        }
+        if (_openRazerDeviceService is not null)
+        {
+            _openRazerDeviceService.BatteryObserved -= OnPeripheralBatteryObserved;
+            _openRazerDeviceService = null;
         }
         try
         {
@@ -397,10 +412,15 @@ public partial class App : Application
 
     private void ShowModeNotification(string title, string body)
     {
-        if (!_behaviorSettings.ModeChangeNotificationsEnabled || !_appNotificationsRegistered)
+        if (_behaviorSettings.ModeChangeNotificationsEnabled)
         {
-            return;
+            ShowNotification(title, body, "blade-mode");
         }
+    }
+
+    private bool ShowNotification(string title, string body, string tag)
+    {
+        if (!_appNotificationsRegistered || Volatile.Read(ref _closing) != 0) return false;
 
         try
         {
@@ -408,12 +428,14 @@ public partial class App : Application
                 .AddText(title)
                 .AddText(body)
                 .BuildNotification();
-            notification.Tag = "blade-mode";
+            notification.Tag = tag;
             AppNotificationManager.Default.Show(notification);
+            return true;
         }
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("notifications", $"show failed: {exception}");
+            return false;
         }
     }
 
