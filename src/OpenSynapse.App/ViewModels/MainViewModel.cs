@@ -621,7 +621,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             ? EditableLogoBladeProfile
             : ProfileResolver.Resolve(_profile, blade, powerState).Blade;
         if (bladeProfile.LogoMode is byte rawLogoMode &&
-            Enum.IsDefined(typeof(BladeLogoMode), rawLogoMode))
+            Enum.IsDefined(typeof(BladeLogoMode), (int)rawLogoMode))
         {
             SetBladeLogo((BladeLogoMode)rawLogoMode, confirm: false);
         }
