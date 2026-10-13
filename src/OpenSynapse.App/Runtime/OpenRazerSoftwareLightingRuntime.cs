@@ -242,7 +242,9 @@ internal sealed class OpenRazerSoftwareLightingRuntime : IAsyncDisposable
     {
         try
         {
-            using var timer = new PeriodicTimer(frameInterval);
+            // OpenRazer writes one row per HID transaction. Keep small matrices
+            // responsive, but avoid driving large/slow devices at Blade's cadence.
+            using var timer = new PeriodicTimer(GetEffectiveFrameInterval(frameInterval));
             do
             {
                 var pixels = await frameProvider(cancellationToken).ConfigureAwait(false);
@@ -264,7 +266,7 @@ internal sealed class OpenRazerSoftwareLightingRuntime : IAsyncDisposable
     {
         try
         {
-            using var timer = new PeriodicTimer(frameInterval);
+            using var timer = new PeriodicTimer(GetEffectiveFrameInterval(frameInterval));
             do
             {
                 if (await frameProvider(cancellationToken).ConfigureAwait(false) is { } frame)
@@ -275,6 +277,42 @@ internal sealed class OpenRazerSoftwareLightingRuntime : IAsyncDisposable
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
+    }
+
+    private TimeSpan GetEffectiveFrameInterval(TimeSpan requested)
+    {
+        var targets = _connections()
+            .Where(connection => connection.IsReady &&
+                connection.Definition.MatrixDimensions is not null &&
+                connection.Capabilities.Contains(OpenRazerBackendCapability.MatrixFrameWrite) &&
+                _isEnabled(connection) &&
+                _isOverrideEnabled(connection) &&
+                _targetFilter(connection) &&
+                (_instanceId is null || StringComparer.OrdinalIgnoreCase.Equals(connection.InstanceId, _instanceId)))
+            .ToArray();
+        if (targets.Length == 0)
+        {
+            return requested;
+        }
+
+        var largestMatrix = targets.Max(connection =>
+        {
+            var dimensions = connection.Definition.MatrixDimensions!;
+            return dimensions.Rows * dimensions.Columns;
+        });
+        var slowestDeviceWait = targets.Max(connection => connection.Definition.DeviceWait);
+        var targetFps = largestMatrix switch
+        {
+            <= 64 => 60d,
+            <= 132 => 45d,
+            _ => 30d,
+        };
+        var cadence = TimeSpan.FromSeconds(1d / targetFps);
+        var rows = targets.Max(connection => connection.Definition.MatrixDimensions!.Rows);
+        var transportFloor = slowestDeviceWait * Math.Max(1, (int)rows) + TimeSpan.FromMilliseconds(1);
+        return requested > cadence
+            ? requested > transportFloor ? requested : transportFloor
+            : cadence > transportFloor ? cadence : transportFloor;
     }
 
     private async Task ClearStateAsync(CancellationToken cancellationToken)

@@ -36,6 +36,7 @@ public sealed class OpenRazerDeviceDefinition
         MaximumDpi = maximumDpi;
         PollingRates = pollingRates;
         MatrixDimensions = matrixDimensions;
+        LayoutSupport = OpenRazerLayoutCatalog.GetSupport(matrixDimensions, capabilities.Contains("set_key_row"));
         DeviceWait = deviceWait;
         Transactions = transactions;
         BuilderArgumentPrefixes = builderArgumentPrefixes;
@@ -52,6 +53,7 @@ public sealed class OpenRazerDeviceDefinition
     public int? MaximumDpi { get; }
     public IReadOnlyList<int> PollingRates { get; }
     public OpenRazerMatrixDimensions? MatrixDimensions { get; }
+    public OpenRazerLayoutSupport LayoutSupport { get; }
     public TimeSpan DeviceWait { get; }
     public OpenRazerStorage DefaultStorage { get; }
     public OpenRazerLedZone DefaultLedZone { get; }

@@ -172,11 +172,12 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
 public sealed class DeviceProtocolDetailViewModel(
     string capabilityResourceKey,
     bool isAvailable,
-    string detail) : INotifyPropertyChanged
+    string detail,
+    bool capabilityIsLiteral = false) : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public string Capability => AppStrings.Text(capabilityResourceKey);
+    public string Capability => capabilityIsLiteral ? capabilityResourceKey : AppStrings.Text(capabilityResourceKey);
     public string Status => AppStrings.Text(isAvailable ? "DiagnosticProtocolAvailable" : "DiagnosticProtocolUnavailable");
     public string Detail => detail;
     public Brush StatusBrush { get; } = new SolidColorBrush(isAvailable

@@ -317,6 +317,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(ProtocolAvailableCount));
         OnPropertyChanged(nameof(ProtocolTotalCount));
+        OnPropertyChanged(nameof(ProtocolDetails));
         OnPropertyChanged(nameof(CanWrite));
         OnPropertyChanged(nameof(BasicVisibility));
         OnPropertyChanged(nameof(FirmwareVisibility));

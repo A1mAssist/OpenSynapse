@@ -1436,4 +1436,42 @@
   <data name="ChromaSourceConnected" xml:space="preserve"><value>Connected · waiting for control</value></data>
   <data name="ChromaSourceOffline" xml:space="preserve"><value>Not connected</value></data>
   <data name="ChromaSourceAllowName" xml:space="preserve"><value>Allow Chroma lighting from {0}</value></data>
+  <data name="OpenRazerCapabilityFirmwareRead" xml:space="preserve"><value>Firmware read</value></data>
+  <data name="OpenRazerCapabilitySerialRead" xml:space="preserve"><value>Serial number read</value></data>
+  <data name="OpenRazerCapabilityDeviceModeRead" xml:space="preserve"><value>Device mode read</value></data>
+  <data name="OpenRazerCapabilityBatteryRead" xml:space="preserve"><value>Battery read</value></data>
+  <data name="OpenRazerCapabilityChargingRead" xml:space="preserve"><value>Charging state read</value></data>
+  <data name="OpenRazerCapabilityPollingRateRead" xml:space="preserve"><value>Polling rate read</value></data>
+  <data name="OpenRazerCapabilityPollingRateWrite" xml:space="preserve"><value>Polling rate write</value></data>
+  <data name="OpenRazerCapabilityDpiRead" xml:space="preserve"><value>DPI read</value></data>
+  <data name="OpenRazerCapabilityDpiWrite" xml:space="preserve"><value>DPI write</value></data>
+  <data name="OpenRazerCapabilityDpiStagesRead" xml:space="preserve"><value>DPI stages read</value></data>
+  <data name="OpenRazerCapabilityDpiStagesWrite" xml:space="preserve"><value>DPI stages write</value></data>
+  <data name="OpenRazerCapabilityIdleTimeoutRead" xml:space="preserve"><value>Idle timeout read</value></data>
+  <data name="OpenRazerCapabilityIdleTimeoutWrite" xml:space="preserve"><value>Idle timeout write</value></data>
+  <data name="OpenRazerCapabilityLowBatteryThresholdRead" xml:space="preserve"><value>Low-battery threshold read</value></data>
+  <data name="OpenRazerCapabilityLowBatteryThresholdWrite" xml:space="preserve"><value>Low-battery threshold write</value></data>
+  <data name="OpenRazerCapabilityBrightnessRead" xml:space="preserve"><value>Brightness read</value></data>
+  <data name="OpenRazerCapabilityBrightnessWrite" xml:space="preserve"><value>Brightness write</value></data>
+  <data name="OpenRazerCapabilityLedStateRead" xml:space="preserve"><value>LED state read</value></data>
+  <data name="OpenRazerCapabilityLedStateWrite" xml:space="preserve"><value>LED state write</value></data>
+  <data name="OpenRazerCapabilityLedEffectRead" xml:space="preserve"><value>LED effect read</value></data>
+  <data name="OpenRazerCapabilityLedEffectWrite" xml:space="preserve"><value>LED effect write</value></data>
+  <data name="OpenRazerCapabilityLedColorWrite" xml:space="preserve"><value>LED color write</value></data>
+  <data name="OpenRazerCapabilityLedBlinkingWrite" xml:space="preserve"><value>LED blinking write</value></data>
+  <data name="OpenRazerCapabilityLightingEffectWrite" xml:space="preserve"><value>Lighting effect write</value></data>
+  <data name="OpenRazerCapabilityMatrixFrameWrite" xml:space="preserve"><value>Matrix frame write</value></data>
+  <data name="OpenRazerCapabilityReactiveTriggerWrite" xml:space="preserve"><value>Reactive trigger</value></data>
+  <data name="OpenRazerCapabilityScrollModeRead" xml:space="preserve"><value>Scroll mode read</value></data>
+  <data name="OpenRazerCapabilityScrollModeWrite" xml:space="preserve"><value>Scroll mode write</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationRead" xml:space="preserve"><value>Scroll acceleration read</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationWrite" xml:space="preserve"><value>Scroll acceleration write</value></data>
+  <data name="OpenRazerCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel read</value></data>
+  <data name="OpenRazerCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel write</value></data>
+  <data name="OpenRazerCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn primary layer write</value></data>
+  <data name="OpenRazerCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>Keyswitch optimization read</value></data>
+  <data name="OpenRazerCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>Keyswitch optimization write</value></data>
+  <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling indicator write</value></data>
+  <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling pairing</value></data>
+  <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling unpairing</value></data>
 </root>
