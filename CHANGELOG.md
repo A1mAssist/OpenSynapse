@@ -2,6 +2,12 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.5.2] - 2026-10-13
+
+### Fixed
+
+- Fixed device discovery stopping during startup when validating the saved Blade logo mode, restoring OpenRazer device cards and their controls.
+
 ## [1.5.1] - 2026-10-09
 
 ### Fixed
