@@ -40,13 +40,6 @@ internal sealed class OpenRazerChromaFrameSink
         // REST clients can post faster than a device can accept its row writes.
         // Keep only the newest queued frame; an in-flight frame is allowed to finish.
         var frameVersion = Interlocked.Increment(ref _latestFrameVersion);
-        var targets = _connections()
-            .Where(connection => connection.IsReady &&
-                connection.Definition.MatrixDimensions is not null &&
-                connection.Capabilities.Contains(OpenRazerBackendCapability.MatrixFrameWrite) &&
-                _lightingEnabled(connection) &&
-                _chromaOverrideEnabled(connection))
-            .ToArray();
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -54,6 +47,13 @@ internal sealed class OpenRazerChromaFrameSink
             {
                 return false;
             }
+            var targets = _connections()
+                .Where(connection => connection.IsReady &&
+                    connection.Definition.MatrixDimensions is not null &&
+                    connection.Capabilities.Contains(OpenRazerBackendCapability.MatrixFrameWrite) &&
+                    _lightingEnabled(connection) &&
+                    _chromaOverrideEnabled(connection))
+                .ToArray();
             if (targets.Length == 0)
             {
                 _lastFrames.Clear();

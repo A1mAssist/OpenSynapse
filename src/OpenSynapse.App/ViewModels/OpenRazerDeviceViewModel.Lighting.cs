@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
@@ -348,12 +349,17 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             }
 
             _softwareLightingElapsed = TimeSpan.Zero;
+            _softwareLightingDelta = SoftwareLightingFrameInterval;
             _softwareAudioLevel = 0;
             var palette = CreateSoftwarePalette();
+            var previousTimestamp = Stopwatch.GetTimestamp();
             await _softwareLightingRuntime.StartOrReplaceAsync(
                 token =>
                 {
-                    _softwareLightingElapsed += SoftwareLightingFrameInterval;
+                    var timestamp = Stopwatch.GetTimestamp();
+                    _softwareLightingDelta = Stopwatch.GetElapsedTime(previousTimestamp, timestamp);
+                    previousTimestamp = timestamp;
+                    _softwareLightingElapsed += _softwareLightingDelta;
                     var frame = effect switch
                     {
                         OpenRazerLightingEffect.SoftwareSpectrum =>
@@ -408,7 +414,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             : QuickLightingEngine.SmoothAudioLevel(
                 _softwareAudioLevel,
                 level,
-                SoftwareLightingFrameInterval);
+                _softwareLightingDelta);
         return QuickLightingEngine.RenderAudioMeter(
             _softwareAudioLevel,
             0,
