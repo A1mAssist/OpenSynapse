@@ -81,6 +81,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private readonly OpenRazerSoftwareLightingRuntime? _softwareLightingRuntime;
     private WasapiAudioMeterAdapter? _softwareAudioInput;
     private TimeSpan _softwareLightingElapsed;
+    private TimeSpan _softwareLightingDelta = TimeSpan.FromMilliseconds(1000d / 60d);
     private double _softwareAudioLevel;
     private int _lightingPowerProfileIndex;
     private bool _lightingEnabled;
