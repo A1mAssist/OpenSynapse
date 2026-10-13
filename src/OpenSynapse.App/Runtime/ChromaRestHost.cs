@@ -17,6 +17,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private const int NotSupported = 50;
     private const int DeviceNotConnected = 1167;
     private const int ClientLimit = 1152;
+    private const int AccessDenied = 5;
     private const string BladeProtocolFamily = "blade-710";
     // Chroma clients heartbeat every second; two seconds bounds recovery without
     // treating a normal short scheduling pause as a game exit.
@@ -30,6 +31,9 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private readonly Func<IReadOnlyList<RazerRgb>, CancellationToken, Task<bool>>? _additionalFrameSink;
     private readonly Func<bool> _restorePersistentEffect;
     private readonly Dictionary<string, Session> _sessions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _blockedSources;
+    private readonly HashSet<string> _knownSources;
+    private readonly int _port;
     private readonly object _gate = new();
     private readonly SemaphoreSlim _effectGate = new(1, 1);
     private readonly SemaphoreSlim _sessionAvailable = new(0, 1);
@@ -51,7 +55,9 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         Func<Task> restoreLighting,
         Func<bool>? restorePersistentEffect = null,
         Func<IReadOnlyList<RazerRgb>, CancellationToken, Task<bool>>? additionalFrameSink = null,
-        Func<bool>? bladeChromaOverrideEnabled = null)
+        Func<bool>? bladeChromaOverrideEnabled = null,
+        IEnumerable<string>? blockedSources = null,
+        int port = Port)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _lighting = lighting ?? throw new ArgumentNullException(nameof(lighting));
@@ -59,16 +65,64 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         _bladeChromaOverrideEnabled = bladeChromaOverrideEnabled ?? (() => true);
         _additionalFrameSink = additionalFrameSink;
         _restorePersistentEffect = restorePersistentEffect ?? (() => true);
+        _blockedSources = new HashSet<string>(blockedSources ?? [], StringComparer.OrdinalIgnoreCase);
+        _knownSources = new HashSet<string>(_blockedSources, StringComparer.OrdinalIgnoreCase);
+        _port = port;
     }
 
     internal bool IsRunning => Volatile.Read(ref _started) != 0;
+    internal int ListeningPort => (_listener?.LocalEndpoint as IPEndPoint)?.Port ?? _port;
     internal long FramesAccepted => Interlocked.Read(ref _framesAccepted);
     internal long FramesSkipped => Interlocked.Read(ref _framesSkipped);
-    internal ChromaRestSnapshot Snapshot => new(
-        IsRunning,
-        ActiveSessionTitle,
-        FramesAccepted,
-        FramesSkipped);
+    internal ChromaRestSnapshot Snapshot
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return new(IsRunning, _sessions.Values.FirstOrDefault(session => session.Active)?.Title,
+                    FramesAccepted, FramesSkipped, _knownSources.Order(StringComparer.OrdinalIgnoreCase)
+                        .Select(title => new ChromaSourceSnapshot(title, !_blockedSources.Contains(title),
+                            _sessions.Values.Any(session => StringComparer.OrdinalIgnoreCase.Equals(session.Title, title)),
+                            _sessions.Values.Any(session => session.Active && StringComparer.OrdinalIgnoreCase.Equals(session.Title, title))))
+                        .ToArray());
+            }
+        }
+    }
+
+    internal async Task SetSourceAllowedAsync(string title, bool allowed)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        title = title.Trim();
+        if (title.Length > 64) throw new ArgumentOutOfRangeException(nameof(title));
+        await _effectGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+        try
+        {
+            var released = false;
+            lock (_gate)
+            {
+                _knownSources.Add(title);
+                if (allowed) _blockedSources.Remove(title);
+                else _blockedSources.Add(title);
+                foreach (var session in _sessions.Values.Where(session =>
+                    !allowed && StringComparer.OrdinalIgnoreCase.Equals(session.Title, title)))
+                {
+                    released |= session.Active;
+                    session.Active = false;
+                    session.ActiveEffectId = null;
+                }
+            }
+            if (released)
+            {
+                await StopLightingAsync().ConfigureAwait(false);
+                await _restoreLighting().ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _effectGate.Release();
+        }
+    }
     internal long SessionRecoveryFailures => Interlocked.Read(ref _sessionRecoveryFailures);
 
     internal string? ActiveSessionTitle
@@ -92,7 +146,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
 
         try
         {
-            _listener = new TcpListener(IPAddress.Loopback, Port);
+            _listener = new TcpListener(IPAddress.Loopback, _port);
             _listener.Start();
             _acceptLoop = AcceptLoopAsync();
             _sweepLoop = SweepLoopAsync();
@@ -341,14 +395,17 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             }
 
             var id = Interlocked.Increment(ref _nextSessionId);
-            var session = new Session(id.ToString(), info.Title);
+            var session = new Session(id.ToString(), info.Title.Trim());
             var stopping = false;
+            var sourceLimit = false;
             var signalSweep = false;
             lock (_gate)
             {
                 stopping = _stop.IsCancellationRequested;
-                if (!stopping)
+                sourceLimit = !_knownSources.Contains(session.Title) && _knownSources.Count >= 128;
+                if (!stopping && !sourceLimit)
                 {
+                    _knownSources.Add(session.Title);
                     signalSweep = _sessions.Count == 0;
                     _sessions[session.Id] = session;
                 }
@@ -362,10 +419,15 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 await WriteResponseAsync(writer, 503, new { result = DeviceNotConnected }).ConfigureAwait(false);
                 return;
             }
+            if (sourceLimit)
+            {
+                await WriteResponseAsync(writer, 200, new { result = ClientLimit }).ConfigureAwait(false);
+                return;
+            }
             await WriteResponseAsync(writer, 200, new
             {
                 sessionid = id,
-                uri = $"http://localhost:{Port}/razer/chromasdk/{session.Id}"
+                uri = $"http://localhost:{ListeningPort}/razer/chromasdk/{session.Id}"
             }).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is JsonException or InvalidOperationException)
@@ -404,6 +466,10 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 if (!_sessions.TryGetValue(session.Id, out var current) || !ReferenceEquals(current, session))
                 {
                     return (DeviceNotConnected, null);
+                }
+                if (_blockedSources.Contains(session.Title))
+                {
+                    return (AccessDenied, null);
                 }
                 if (_sessions.Values.Any(item => item.Active && !ReferenceEquals(item, session)))
                 {
@@ -1016,4 +1082,7 @@ internal readonly record struct ChromaRestSnapshot(
     bool IsRunning,
     string? ActiveSessionTitle,
     long FramesAccepted,
-    long FramesSkipped);
+    long FramesSkipped,
+    IReadOnlyList<ChromaSourceSnapshot>? Sources = null);
+
+internal sealed record ChromaSourceSnapshot(string Title, bool Allowed, bool Connected, bool Active);

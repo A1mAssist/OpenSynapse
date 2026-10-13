@@ -1423,4 +1423,17 @@
   <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
     <value>More devices</value>
   </data>
+  <data name="LowBatteryNotificationTitle.Text" xml:space="preserve"><value>Peripheral low battery notifications</value></data>
+  <data name="LowBatteryNotificationDescription.Text" xml:space="preserve"><value>Notify at 20% and 10% when fresh peripheral battery readings arrive. No extra polling or device wake-ups.</value></data>
+  <data name="LowBatteryNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Peripheral low battery notifications</value></data>
+  <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>Low peripheral battery</value></data>
+  <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} has {1}% battery remaining.</value></data>
+  <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma sources</value></data>
+  <data name="ChromaSourcesDescription.Text" xml:space="preserve"><value>Allow or block lighting control by source name. New sources are allowed by default. Names are reported by clients, not verified identities.</value></data>
+  <data name="ChromaSourcesEmpty.Text" xml:space="preserve"><value>Sources appear here when a game or integration connects.</value></data>
+  <data name="ChromaSourceBlocked" xml:space="preserve"><value>Blocked</value></data>
+  <data name="ChromaSourceActive" xml:space="preserve"><value>Controlling lighting</value></data>
+  <data name="ChromaSourceConnected" xml:space="preserve"><value>Connected · waiting for control</value></data>
+  <data name="ChromaSourceOffline" xml:space="preserve"><value>Not connected</value></data>
+  <data name="ChromaSourceAllowName" xml:space="preserve"><value>Allow Chroma lighting from {0}</value></data>
 </root>

@@ -1780,4 +1780,17 @@
   <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
     <value>更多设备</value>
   </data>
+  <data name="LowBatteryNotificationTitle.Text" xml:space="preserve"><value>外设低电量通知</value></data>
+  <data name="LowBatteryNotificationDescription.Text" xml:space="preserve"><value>读到外设电量降至 20% 和 10% 时发送 Windows 通知；不会额外轮询或唤醒设备。</value></data>
+  <data name="LowBatteryNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外设低电量通知</value></data>
+  <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>外设电量不足</value></data>
+  <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} 剩余电量为 {1}%。</value></data>
+  <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma 来源</value></data>
+  <data name="ChromaSourcesDescription.Text" xml:space="preserve"><value>按来源名称允许或拒绝灯光接管，新来源默认允许。名称由客户端提供，并非经过验证的身份。</value></data>
+  <data name="ChromaSourcesEmpty.Text" xml:space="preserve"><value>游戏或集成程序连接后，会在这里显示来源。</value></data>
+  <data name="ChromaSourceBlocked" xml:space="preserve"><value>已拒绝</value></data>
+  <data name="ChromaSourceActive" xml:space="preserve"><value>正在接管灯光</value></data>
+  <data name="ChromaSourceConnected" xml:space="preserve"><value>已连接 · 等待接管</value></data>
+  <data name="ChromaSourceOffline" xml:space="preserve"><value>未连接</value></data>
+  <data name="ChromaSourceAllowName" xml:space="preserve"><value>允许 {0} 接管 Chroma 灯光</value></data>
 </root>

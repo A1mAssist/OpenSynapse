@@ -1,4 +1,5 @@
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
 
@@ -121,6 +122,8 @@ public sealed class OpenRazerBackendTests
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
         var transport = new OptionalChargingRejectionTransport();
         var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        DeviceBatteryReading? observed = null;
+        service.BatteryObserved += reading => observed = reading;
         var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
             OpenRazerEndpointState.Resolved,
             new HashSet<OpenRazerBackendCapability>
@@ -133,6 +136,9 @@ public sealed class OpenRazerBackendTests
         var state = await service.ReadBasicStateAsync(connection);
 
         Assert.Equal(96, state.BatteryPercent);
+        Assert.Equal(96, observed?.Percent);
+        Assert.Equal(device.DisplayName, observed?.DeviceName);
+        Assert.Null(observed?.IsCharging);
         Assert.Null(state.IsCharging);
         Assert.Empty(state.Errors);
         Assert.Contains(OpenRazerBackendCapability.ChargingRead, state.UnsupportedCapabilities);
@@ -148,6 +154,8 @@ public sealed class OpenRazerBackendTests
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
         var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn,
             new FailingReadTransport(new IOException("Device disconnected.")));
+        var batteryObservations = 0;
+        service.BatteryObserved += _ => batteryObservations++;
         var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
             OpenRazerEndpointState.Resolved,
             new HashSet<OpenRazerBackendCapability> { OpenRazerBackendCapability.ChargingRead },
@@ -157,6 +165,28 @@ public sealed class OpenRazerBackendTests
 
         Assert.Equal("Device disconnected.", state.Errors["charging"]);
         Assert.Empty(state.UnsupportedCapabilities);
+        Assert.Equal(0, batteryObservations);
+    }
+
+    [Fact]
+    public async Task FailedChargingReadDoesNotEmitAnUnreliableDischargingObservation()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn,
+            new OptionalChargingRejectionTransport(new IOException("Receiver unavailable")));
+        var observations = 0;
+        service.BatteryObserved += _ => observations++;
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.BatteryRead,
+                OpenRazerBackendCapability.ChargingRead,
+            }, new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+        var state = await service.ReadBasicStateAsync(connection);
+        Assert.Equal(96, state.BatteryPercent);
+        Assert.Contains("charging", state.Errors.Keys);
+        Assert.Equal(0, observations);
     }
 
     [Fact]
@@ -1012,7 +1042,7 @@ public sealed class OpenRazerBackendTests
         }
     }
 
-    private sealed class OptionalChargingRejectionTransport : IRazerFeatureTransport
+    private sealed class OptionalChargingRejectionTransport(Exception? chargingFailure = null) : IRazerFeatureTransport
     {
         internal int ChargingQueries { get; private set; }
 
@@ -1038,7 +1068,7 @@ public sealed class OpenRazerBackendTests
             if (request.Span[8] == 0x84)
             {
                 ChargingQueries++;
-                throw new NotSupportedException("The device rejected the query (0x03).");
+                throw chargingFailure ?? new NotSupportedException("The device rejected the query (0x03).");
             }
 
             var response = request.ToArray();

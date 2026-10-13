@@ -13,6 +13,9 @@ public sealed partial class MainWindow
     private readonly AppBehaviorSettings _behaviorSettings;
     private readonly Func<bool, Task>? _setChromaRestEnabled;
     private readonly Func<ChromaRestSnapshot>? _getChromaRestSnapshot;
+    private readonly Func<string, bool, Task>? _setChromaSourceAllowed;
+    private ChromaSourceSnapshot[]? _lastChromaSources;
+    private bool _chromaSourceChangePending;
     private readonly DispatcherQueueTimer _chromaRestStatusTimer;
     private bool _languageSelectionReady;
     private bool _behaviorUiReady;
@@ -37,6 +40,7 @@ public sealed partial class MainWindow
             AppStrings.Reset();
             _viewModel.RefreshLocalization();
             Localized.RefreshTree(RootLayout);
+        _lastChromaSources = null;
             RefreshChromaRestStatus();
             _aboutWindow?.RefreshLocalization();
             ((App)Application.Current).RefreshTrayLocalization();
@@ -93,6 +97,7 @@ public sealed partial class MainWindow
     private void InitializeBehaviorSettingsUi()
     {
         ModeNotificationToggle.IsOn = _behaviorSettings.ModeChangeNotificationsEnabled;
+        LowBatteryNotificationToggle.IsOn = _behaviorSettings.LowBatteryNotificationsEnabled;
         ChromaRestToggle.IsOn = _behaviorSettings.ExperimentalChromaRestEnabled;
         _viewModel.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = _behaviorSettings.RestoreLightingAfterChromaSession;
@@ -109,6 +114,7 @@ public sealed partial class MainWindow
 
     private void RefreshChromaRestStatus()
     {
+        RefreshChromaSources();
         if (!_behaviorSettings.ExperimentalChromaRestEnabled)
         {
             ChromaRestStatusText.Text = AppStrings.Text("ChromaRestStatusDisabled");
@@ -131,6 +137,92 @@ public sealed partial class MainWindow
         ChromaRestStatusText.Text = snapshot.ActiveSessionTitle is { Length: > 0 } title
             ? AppStrings.FormatText("ChromaRestStatusSession", endpoint, title, framesPerSecond, snapshot.FramesSkipped)
             : AppStrings.FormatText("ChromaRestStatusReady", endpoint);
+    }
+
+    private void RefreshChromaSources()
+    {
+        ChromaSourceSection.Visibility = _behaviorSettings.ExperimentalChromaRestEnabled
+            ? Visibility.Visible : Visibility.Collapsed;
+        if (_chromaSourceChangePending) return;
+        var sources = (_getChromaRestSnapshot?.Invoke().Sources ?? [])
+            .Concat(_behaviorSettings.ChromaBlockedSources.Select(title => new ChromaSourceSnapshot(title, false, false, false)))
+            .DistinctBy(source => source.Title, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(source => source.Active)
+            .ThenBy(source => source.Title, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (_lastChromaSources?.SequenceEqual(sources) == true) return;
+        _lastChromaSources = sources;
+        ChromaSourcesPanel.Children.Clear();
+        ChromaSourcesEmptyText.Visibility = sources.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        foreach (var source in sources)
+        {
+            var row = new Grid { ColumnSpacing = 16 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
+            text.Children.Add(new TextBlock { Text = source.Title, TextWrapping = TextWrapping.Wrap });
+            text.Children.Add(new TextBlock
+            {
+                Text = AppStrings.Text(!source.Allowed ? "ChromaSourceBlocked" : source.Active
+                    ? "ChromaSourceActive" : source.Connected ? "ChromaSourceConnected" : "ChromaSourceOffline"),
+                FontSize = 12,
+                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["MutedBrush"],
+            });
+            row.Children.Add(text);
+            var toggle = new ToggleSwitch
+            {
+                IsOn = source.Allowed, OnContent = string.Empty, OffContent = string.Empty,
+                MinWidth = 44, VerticalAlignment = VerticalAlignment.Center,
+                IsEnabled = _setChromaSourceAllowed is not null,
+            };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(toggle,
+                AppStrings.FormatText("ChromaSourceAllowName", source.Title));
+            toggle.Toggled += async (_, _) =>
+            {
+                _chromaSourceChangePending = true;
+                ChromaRestToggle.IsEnabled = false;
+                foreach (var control in ChromaSourcesPanel.Children.OfType<Grid>()
+                    .SelectMany(grid => grid.Children.OfType<ToggleSwitch>())) control.IsEnabled = false;
+                try
+                {
+                    if (_setChromaSourceAllowed is not null)
+                        await _setChromaSourceAllowed(source.Title, toggle.IsOn);
+                }
+                catch (Exception exception)
+                {
+                    _viewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+                }
+                finally
+                {
+                    _chromaSourceChangePending = false;
+                    ChromaRestToggle.IsEnabled = true;
+                    _lastChromaSources = null;
+                    RefreshChromaRestStatus();
+                }
+            };
+            Grid.SetColumn(toggle, 1);
+            row.Children.Add(toggle);
+            ChromaSourcesPanel.Children.Add(row);
+        }
+    }
+
+    private void LowBatteryNotificationToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;
+        var previous = _behaviorSettings.LowBatteryNotificationsEnabled;
+        try
+        {
+            _behaviorSettings.LowBatteryNotificationsEnabled = toggle.IsOn;
+            _behaviorSettings.Save();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            _behaviorSettings.LowBatteryNotificationsEnabled = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            _viewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
     }
 
     private void OnChromaRestStatusTick(DispatcherQueueTimer sender, object args) =>
