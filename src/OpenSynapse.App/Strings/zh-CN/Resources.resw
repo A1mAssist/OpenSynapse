@@ -1793,4 +1793,42 @@
   <data name="ChromaSourceConnected" xml:space="preserve"><value>已连接 · 等待接管</value></data>
   <data name="ChromaSourceOffline" xml:space="preserve"><value>未连接</value></data>
   <data name="ChromaSourceAllowName" xml:space="preserve"><value>允许 {0} 接管 Chroma 灯光</value></data>
+  <data name="OpenRazerCapabilityFirmwareRead" xml:space="preserve"><value>固件读取</value></data>
+  <data name="OpenRazerCapabilitySerialRead" xml:space="preserve"><value>序列号读取</value></data>
+  <data name="OpenRazerCapabilityDeviceModeRead" xml:space="preserve"><value>设备模式读取</value></data>
+  <data name="OpenRazerCapabilityBatteryRead" xml:space="preserve"><value>电池读取</value></data>
+  <data name="OpenRazerCapabilityChargingRead" xml:space="preserve"><value>充电状态读取</value></data>
+  <data name="OpenRazerCapabilityPollingRateRead" xml:space="preserve"><value>轮询率读取</value></data>
+  <data name="OpenRazerCapabilityPollingRateWrite" xml:space="preserve"><value>轮询率写入</value></data>
+  <data name="OpenRazerCapabilityDpiRead" xml:space="preserve"><value>DPI 读取</value></data>
+  <data name="OpenRazerCapabilityDpiWrite" xml:space="preserve"><value>DPI 写入</value></data>
+  <data name="OpenRazerCapabilityDpiStagesRead" xml:space="preserve"><value>DPI 档位读取</value></data>
+  <data name="OpenRazerCapabilityDpiStagesWrite" xml:space="preserve"><value>DPI 档位写入</value></data>
+  <data name="OpenRazerCapabilityIdleTimeoutRead" xml:space="preserve"><value>空闲超时读取</value></data>
+  <data name="OpenRazerCapabilityIdleTimeoutWrite" xml:space="preserve"><value>空闲超时写入</value></data>
+  <data name="OpenRazerCapabilityLowBatteryThresholdRead" xml:space="preserve"><value>低电量阈值读取</value></data>
+  <data name="OpenRazerCapabilityLowBatteryThresholdWrite" xml:space="preserve"><value>低电量阈值写入</value></data>
+  <data name="OpenRazerCapabilityBrightnessRead" xml:space="preserve"><value>亮度读取</value></data>
+  <data name="OpenRazerCapabilityBrightnessWrite" xml:space="preserve"><value>亮度写入</value></data>
+  <data name="OpenRazerCapabilityLedStateRead" xml:space="preserve"><value>灯光状态读取</value></data>
+  <data name="OpenRazerCapabilityLedStateWrite" xml:space="preserve"><value>灯光状态写入</value></data>
+  <data name="OpenRazerCapabilityLedEffectRead" xml:space="preserve"><value>灯效读取</value></data>
+  <data name="OpenRazerCapabilityLedEffectWrite" xml:space="preserve"><value>灯效写入</value></data>
+  <data name="OpenRazerCapabilityLedColorWrite" xml:space="preserve"><value>灯光颜色写入</value></data>
+  <data name="OpenRazerCapabilityLedBlinkingWrite" xml:space="preserve"><value>闪烁灯效写入</value></data>
+  <data name="OpenRazerCapabilityLightingEffectWrite" xml:space="preserve"><value>灯效模式写入</value></data>
+  <data name="OpenRazerCapabilityMatrixFrameWrite" xml:space="preserve"><value>矩阵帧写入</value></data>
+  <data name="OpenRazerCapabilityReactiveTriggerWrite" xml:space="preserve"><value>响应灯效触发</value></data>
+  <data name="OpenRazerCapabilityScrollModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
+  <data name="OpenRazerCapabilityScrollModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationRead" xml:space="preserve"><value>滚轮加速读取</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationWrite" xml:space="preserve"><value>滚轮加速写入</value></data>
+  <data name="OpenRazerCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel 读取</value></data>
+  <data name="OpenRazerCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel 写入</value></data>
+  <data name="OpenRazerCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn 主层写入</value></data>
+  <data name="OpenRazerCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>键轴优化读取</value></data>
+  <data name="OpenRazerCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>键轴优化写入</value></data>
+  <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling 指示灯写入</value></data>
+  <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling 配对</value></data>
+  <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling 取消配对</value></data>
 </root>

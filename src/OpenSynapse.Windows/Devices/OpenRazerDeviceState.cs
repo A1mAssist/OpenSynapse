@@ -66,6 +66,41 @@ public sealed record OpenRazerLightingZoneCapabilities(
     bool CanWriteBlinking,
     IReadOnlySet<OpenRazerLightingEffect> LightingEffects);
 
+public sealed record OpenRazerCapabilitySnapshot(
+    IReadOnlySet<OpenRazerBackendCapability> Protocols,
+    OpenRazerLayoutSupport LayoutSupport,
+    OpenRazerMatrixDimensions? MatrixDimensions,
+    bool SupportsFirmwareLighting,
+    bool SupportsZoneLighting,
+    bool SupportsMatrixFrames,
+    bool SupportsNamedKeyEffects)
+{
+    public bool Has(OpenRazerBackendCapability capability) => Protocols.Contains(capability);
+
+    internal static OpenRazerCapabilitySnapshot Create(
+        OpenRazerDeviceDefinition definition,
+        IReadOnlySet<OpenRazerBackendCapability> protocols,
+        IReadOnlyDictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities> lightingZones)
+    {
+        var supportsFirmwareLighting = lightingZones.Values.Any(zone =>
+            zone.LightingEffects.Count > 0 || zone.CanWriteBrightness || zone.CanWriteState);
+        var supportsZoneLighting = lightingZones.Count > 1 ||
+            lightingZones.Values.Any(zone => zone.Zone != definition.DefaultLedZone);
+        var supportsMatrixFrames = protocols.Contains(OpenRazerBackendCapability.MatrixFrameWrite) &&
+            definition.MatrixDimensions is not null;
+        return new(
+            protocols.ToFrozenSet(),
+            definition.LayoutSupport,
+            definition.MatrixDimensions,
+            supportsFirmwareLighting,
+            supportsZoneLighting,
+            supportsMatrixFrames,
+            definition.LayoutSupport == OpenRazerLayoutSupport.Verified &&
+                supportsMatrixFrames &&
+                protocols.Contains(OpenRazerBackendCapability.ReactiveTriggerWrite));
+    }
+}
+
 public sealed class OpenRazerDeviceConnection
 {
     internal OpenRazerDeviceConnection(
@@ -87,6 +122,7 @@ public sealed class OpenRazerDeviceConnection
         SupportedLightingEffects = lightingZones.Values
             .SelectMany(zone => zone.LightingEffects)
             .ToFrozenSet();
+        CapabilitySnapshot = OpenRazerCapabilitySnapshot.Create(definition, capabilities, lightingZones);
         Error = error;
     }
 
@@ -96,6 +132,7 @@ public sealed class OpenRazerDeviceConnection
     public IReadOnlyDictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities> LightingZones { get; }
     public IReadOnlySet<OpenRazerLedZone> SupportedLedZones { get; }
     public IReadOnlySet<OpenRazerLightingEffect> SupportedLightingEffects { get; }
+    public OpenRazerCapabilitySnapshot CapabilitySnapshot { get; }
     public string? Error { get; }
     public bool IsReady => EndpointState == OpenRazerEndpointState.Resolved;
     public string InstanceId { get; }

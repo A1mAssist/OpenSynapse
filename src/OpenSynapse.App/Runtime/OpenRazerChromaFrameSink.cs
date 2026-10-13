@@ -13,6 +13,7 @@ internal sealed class OpenRazerChromaFrameSink
     private readonly Func<OpenRazerDeviceConnection, bool> _chromaOverrideEnabled;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Dictionary<string, FrameState> _lastFrames = new(StringComparer.OrdinalIgnoreCase);
+    private long _latestFrameVersion;
 
     internal OpenRazerChromaFrameSink(
         OpenRazerDeviceService service,
@@ -36,6 +37,9 @@ internal sealed class OpenRazerChromaFrameSink
             throw new ArgumentException("A Chroma source frame must contain 6 x 22 colors.", nameof(sourceFrame));
         }
 
+        // REST clients can post faster than a device can accept its row writes.
+        // Keep only the newest queued frame; an in-flight frame is allowed to finish.
+        var frameVersion = Interlocked.Increment(ref _latestFrameVersion);
         var targets = _connections()
             .Where(connection => connection.IsReady &&
                 connection.Definition.MatrixDimensions is not null &&
@@ -46,6 +50,10 @@ internal sealed class OpenRazerChromaFrameSink
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (frameVersion != Volatile.Read(ref _latestFrameVersion))
+            {
+                return false;
+            }
             if (targets.Length == 0)
             {
                 _lastFrames.Clear();

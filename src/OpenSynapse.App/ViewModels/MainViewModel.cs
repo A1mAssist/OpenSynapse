@@ -843,6 +843,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 row.Identity,
                 row.StatusBrush);
             Diagnostics.Add(group);
+            var details = SelectedOpenRazerDevice?.InstanceId == row.Connection.InstanceId
+                ? SelectedOpenRazerDevice.ProtocolDetails
+                : OpenRazerDeviceViewModel.BuildProtocolDetails(row.Connection);
+            foreach (var detail in details) group.AddProtocolDetail(detail);
             if (row.HasError)
             {
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,

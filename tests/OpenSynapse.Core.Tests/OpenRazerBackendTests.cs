@@ -517,6 +517,33 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void CapabilitySnapshotDistinguishesUnknownAndMatrixOnlyLayouts()
+    {
+        var unknown = OpenRazerDeviceCatalog.BuiltIn.Devices
+            .First(device => device.MatrixDimensions is null);
+        Assert.Equal(OpenRazerLayoutSupport.None, unknown.LayoutSupport);
+
+        var matrix = OpenRazerDeviceCatalog.BuiltIn.Devices.FirstOrDefault(device =>
+            device.MatrixDimensions is not null && device.HasSourceCapability("set_key_row"));
+        Assert.NotNull(matrix);
+        Assert.Equal(OpenRazerLayoutSupport.MatrixOnly, matrix.LayoutSupport);
+
+        var unknownConnection = new OpenRazerDeviceConnection(
+            unknown, "unknown", "unknown", OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>(),
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+        Assert.False(unknownConnection.CapabilitySnapshot.SupportsMatrixFrames);
+        Assert.False(unknownConnection.CapabilitySnapshot.SupportsNamedKeyEffects);
+
+        var matrixConnection = new OpenRazerDeviceConnection(
+            matrix, "matrix", "matrix", OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability> { OpenRazerBackendCapability.MatrixFrameWrite },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+        Assert.True(matrixConnection.CapabilitySnapshot.SupportsMatrixFrames);
+        Assert.False(matrixConnection.CapabilitySnapshot.SupportsNamedKeyEffects);
+    }
+
+    [Fact]
     public void EveryPublishedProductControlIsDeclaredByItsOpenRazerCapabilityList()
     {
         foreach (var device in OpenRazerDeviceCatalog.BuiltIn.Devices)

@@ -193,6 +193,23 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         };
     public int ProtocolAvailableCount => Math.Max(0, Connection.Capabilities.Count - _unsupported.Count);
     public int ProtocolTotalCount => Connection.Capabilities.Count;
+    public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails =>
+        BuildProtocolDetails(Connection, _unsupported);
+
+    internal static IReadOnlyList<DeviceProtocolDetailViewModel> BuildProtocolDetails(
+        OpenRazerDeviceConnection connection,
+        IReadOnlySet<OpenRazerBackendCapability>? unsupported = null) =>
+        connection.Capabilities
+            .OrderBy(capability => capability.ToString(), StringComparer.Ordinal)
+            .Select(capability => new DeviceProtocolDetailViewModel(
+                $"OpenRazerCapability{capability}",
+                connection.EndpointState == OpenRazerEndpointState.Resolved &&
+                    !(unsupported?.Contains(capability) ?? false),
+                connection.EndpointState == OpenRazerEndpointState.Resolved &&
+                    !(unsupported?.Contains(capability) ?? false)
+                    ? AppStrings.Text("DiagnosticProtocolAvailable")
+                    : AppStrings.Text("DiagnosticProtocolUnavailable")))
+            .ToArray();
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public string OperationStatusText => _operationSucceeded
@@ -508,7 +525,11 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private IReadOnlyList<OpenRazerLightingEffect> LightingEffectChoices => LightingEffects
         .Where(effect => NativeCounterpart(effect) is not { } native || !LightingEffects.Contains(native))
         .ToArray();
-    public IReadOnlyList<string> LightingEffectOptions => LightingEffectChoices.Select(FormatEffect).ToArray();
+    public IReadOnlyList<string> LightingEffectOptions => LightingEffectChoices
+        .Select(effect => $"{FormatEffect(effect)} · {AppStrings.Text(IsSoftwareLightingEffect(effect)
+            ? "LightingRenderSoftware"
+            : "LightingRenderFirmware")}")
+        .ToArray();
     public int SelectedLightingEffectIndex
     {
         get => IndexOf(LightingEffectChoices, NativeCounterpart(SelectedLightingEffect) is { } native &&

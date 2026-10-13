@@ -52,7 +52,9 @@ public sealed class OpenRazerSoftwareLightingRuntimeTests
         await runtime.StopAsync();
 
         Assert.False(runtime.IsRunning);
-        Assert.InRange(calls, 2, 8);
+        // The 6 x 22 matrix is intentionally capped below the requested 100 Hz
+        // cadence so row-wise HID writes do not build pressure on the device.
+        Assert.InRange(calls, 2, 4);
     }
 
     [Fact]
