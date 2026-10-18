@@ -196,6 +196,9 @@ public sealed partial class MainWindow
             case "startupAnimation":
                 await _viewModel.ApplyBladeStartupAnimationAsync(_lifetime.Token);
                 break;
+            case "fnKey":
+                await _viewModel.ApplyBladeFnKeyAsync(_lifetime.Token);
+                break;
             case "oneTimeFullCharge":
                 await _viewModel.ApplyBladeOneTimeFullChargeAsync(_lifetime.Token);
                 break;

@@ -13,6 +13,7 @@ public static class BladeSynapsePolicyProtocol
     public const byte GameModeSetCommandId = 0x08;
     public const byte FnCommandClass = 0x02;
     public const byte FnSetCommandId = 0x06;
+    public const byte FnGetCommandId = 0x86;
     public const byte LedCommandClass = 0x03;
     public const byte LedEffectSetCommandId = 0x02;
     public const byte LedStateSetCommandId = 0x00;
@@ -32,6 +33,14 @@ public static class BladeSynapsePolicyProtocol
             FnCommandClass,
             FnSetCommandId,
             new[] { classId, multiFunctionPrimary ? (byte)0x01 : (byte)0x00 });
+
+    public static byte[] CreateGetFnKeyStateRequest() =>
+        RazerFeatureReport.CreateRequest(
+            SynapseTransactionId,
+            0x02,
+            FnCommandClass,
+            FnGetCommandId,
+            new byte[] { 0x01, 0x00 });
 
     public static BladeFnKeyState ParseFnKeyState(ReadOnlySpan<byte> response) =>
         ParseFnKeyState(response, CreateSetFnKeyStateRequest(multiFunctionPrimary: false));

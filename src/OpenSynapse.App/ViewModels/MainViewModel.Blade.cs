@@ -498,6 +498,23 @@ public sealed partial class MainViewModel
             BladeStartupAnimationEnabled = _blade._bladeStartupAnimationEnabled ?? false);
     }
 
+    public async Task ApplyBladeFnKeyAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyBladeFnKey)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeFnKeyLabel"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeFnKeyStateAsync(
+                _deviceDescriptors, BladeFnKeyMultimediaPrimary, cancellationToken);
+            SetBladeFnKey(actual);
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladeFnKeyMultimediaPrimary = _blade._bladeFnKeyMultimediaPrimary ?? false);
+    }
+
     internal async Task CycleInternalDisplayRefreshRateAsync(CancellationToken cancellationToken = default)
     {
         await RunDeviceOperationAsync(AppStrings.Text("Text_8423206D"), async () =>
@@ -885,6 +902,21 @@ public sealed partial class MainViewModel
     public bool CanSetBladeStartupAnimation => _blade._bladeStartupAnimationEnabled is not null;
     public bool CanApplyBladeStartupAnimation =>
         CanSetBladeStartupAnimation && BladeStartupAnimationEnabled != _blade._bladeStartupAnimationEnabled;
+    public string BladeFnKeyText { get => _blade._bladeFnKeyText; private set => SetField(ref _blade._bladeFnKeyText, value); }
+    public bool BladeFnKeyMultimediaPrimary
+    {
+        get => _blade._bladeFnKeySelection;
+        set
+        {
+            if (SetField(ref _blade._bladeFnKeySelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyBladeFnKey));
+            }
+        }
+    }
+    public bool CanSetBladeFnKey => _blade._bladeFnKeyMultimediaPrimary is not null;
+    public bool CanApplyBladeFnKey =>
+        CanSetBladeFnKey && BladeFnKeyMultimediaPrimary != _blade._bladeFnKeyMultimediaPrimary;
     public string BladeNativeDisplayModeText { get => _blade._bladeNativeDisplayModeText; private set => SetField(ref _blade._bladeNativeDisplayModeText, value); }
     public string BladeSkuHardwareText { get => _blade._bladeSkuHardwareText; private set => SetField(ref _blade._bladeSkuHardwareText, value); }
     public string BladeLocalDimmingText { get => _blade._bladeLocalDimmingText; private set => SetField(ref _blade._bladeLocalDimmingText, value); }

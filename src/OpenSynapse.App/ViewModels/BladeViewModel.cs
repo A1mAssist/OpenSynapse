@@ -32,6 +32,9 @@ internal sealed class BladeViewModel
     internal string _bladeStartupAnimationText = "--";
     internal bool? _bladeStartupAnimationEnabled;
     internal bool _bladeStartupAnimationSelection;
+    internal string _bladeFnKeyText = "--";
+    internal bool? _bladeFnKeyMultimediaPrimary;
+    internal bool _bladeFnKeySelection;
     internal string _bladeNativeDisplayModeText = "--";
     internal string _bladeSkuHardwareText = "--";
     internal string _bladeLocalDimmingText = "--";
@@ -114,6 +117,14 @@ internal sealed class BladeViewModel
             : gameMode is not null
                 ? AppStrings.Text("Text_5DBCDF6D")
                 : "--";
+    }
+
+    internal void SetFnKey(bool multimediaPrimary)
+    {
+        _bladeFnKeyMultimediaPrimary = multimediaPrimary;
+        _bladeFnKeyText = AppStrings.Text(multimediaPrimary
+            ? "BladeFnKeyMultimediaPrimaryText"
+            : "BladeFnKeyFunctionPrimaryText");
     }
 
     internal void SetChargeLimit(int percent)

@@ -140,6 +140,10 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(CanSetBladeStartupAnimation));
             OnPropertyChanged(nameof(CanApplyBladeStartupAnimation));
         }
+        if (telemetry.BladeFnKeyMultimediaPrimary is bool fnKeyMultimediaPrimary)
+        {
+            SetBladeFnKey(fnKeyMultimediaPrimary);
+        }
         if (telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode)
         {
             BladeNativeDisplayModeText = nativeDisplayMode == BladeNativeDisplayMode.Uhd ? "UHD" : "FHD";
@@ -374,6 +378,15 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanApplyBladeGamingMode));
     }
 
+    private void SetBladeFnKey(bool multimediaPrimary)
+    {
+        _blade.SetFnKey(multimediaPrimary);
+        OnPropertyChanged(nameof(BladeFnKeyText));
+        OnPropertyChanged(nameof(BladeFnKeyMultimediaPrimary));
+        OnPropertyChanged(nameof(CanSetBladeFnKey));
+        OnPropertyChanged(nameof(CanApplyBladeFnKey));
+    }
+
     private void SetBladeChargeLimit(int percent)
     {
         _blade.SetChargeLimit(percent);
@@ -474,6 +487,12 @@ public sealed partial class MainViewModel
         BladeStartupAnimationText = "--";
         _blade._bladeStartupAnimationEnabled = null;
         BladeStartupAnimationEnabled = false;
+        _blade._bladeFnKeyMultimediaPrimary = null;
+        _blade._bladeFnKeyText = "--";
+        OnPropertyChanged(nameof(BladeFnKeyText));
+        OnPropertyChanged(nameof(BladeFnKeyMultimediaPrimary));
+        OnPropertyChanged(nameof(CanSetBladeFnKey));
+        OnPropertyChanged(nameof(CanApplyBladeFnKey));
         BladeNativeDisplayModeText = "--";
         BladeSkuHardwareText = "--";
         BladeLocalDimmingText = "--";
