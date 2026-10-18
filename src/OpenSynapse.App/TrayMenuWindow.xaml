@@ -4,75 +4,81 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:OpenSynapse.App"
     Title="OpenSynapse">
-  <Grid x:Name="MenuAnchor" Width="2" Height="2" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent">
-    <Grid.ContextFlyout>
-      <MenuFlyout
-          x:Name="TrayMenuFlyout"
-          Placement="TopEdgeAlignedRight"
-          ShouldConstrainToRootBounds="False"
-          Closed="TrayMenuClosed">
-        <MenuFlyout.MenuFlyoutPresenterStyle>
-          <Style TargetType="MenuFlyoutPresenter">
-            <Setter Property="MinWidth" Value="0" />
-          </Style>
-        </MenuFlyout.MenuFlyoutPresenterStyle>
-        <MenuFlyoutItem local:Localized.Uid="Loc_0CE53A16F8" x:Name="OpenMainPanelMenuItem"
-            Text="打开主面板"
-            Height="34"
-            Padding="7,4,6,7"
-            FontFamily="Microsoft YaHei UI"
-            FontSize="14"
-            Click="OpenMainPanelClick"
-            AutomationProperties.Name="打开 OpenSynapse 主面板">
-          <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE80F;" FontFamily="Segoe Fluent Icons" FontSize="14" Margin="0,1,0,0" /></MenuFlyoutItem.Icon>
-        </MenuFlyoutItem>
-        <MenuFlyoutItem local:Localized.Uid="Loc_ED026FD231" x:Name="DevicesMenuItem"
-            Text="设备控制"
-            Height="34"
-            Padding="7,4,6,7"
-            FontFamily="Microsoft YaHei UI"
-            FontSize="14"
-            Tag="devices"
-            Click="NavigateClick"
-            AutomationProperties.Name="打开设备控制">
-          <MenuFlyoutItem.Icon><SymbolIcon Symbol="AllApps" /></MenuFlyoutItem.Icon>
-        </MenuFlyoutItem>
-        <MenuFlyoutItem local:Localized.Uid="Loc_16444BA5AB" x:Name="ProfilesMenuItem"
-            Text="配置"
-            Height="34"
-            Padding="7,4,6,7"
-            FontFamily="Microsoft YaHei UI"
-            FontSize="14"
-            Tag="profiles"
-            Click="NavigateClick"
-            AutomationProperties.Name="打开配置">
-          <MenuFlyoutItem.Icon><SymbolIcon Symbol="Library" /></MenuFlyoutItem.Icon>
-        </MenuFlyoutItem>
-        <MenuFlyoutSeparator />
-        <MenuFlyoutItem local:Localized.Uid="TrayTurnOffDisplay" x:Name="TurnOffDisplayMenuItem"
-            Text="关闭屏幕"
-            Height="34"
-            Padding="7,4,6,7"
-            FontFamily="Microsoft YaHei UI"
-            FontSize="14"
-            Click="TurnOffDisplayClick"
-            AutomationProperties.Name="关闭屏幕">
-          <MenuFlyoutItem.Icon><SymbolIcon Symbol="View" /></MenuFlyoutItem.Icon>
-        </MenuFlyoutItem>
-        <MenuFlyoutSeparator />
-        <MenuFlyoutItem local:Localized.Uid="Loc_81394C3DA6" x:Name="ExitMenuItem"
-            Text="退出"
-            Height="34"
-            Padding="7,4,6,7"
-            FontFamily="Microsoft YaHei UI"
-            FontSize="14"
-            Click="ExitClick"
-            AutomationProperties.Name="退出 OpenSynapse">
-          <MenuFlyoutItem.Icon>
-            <PathIcon Data="M12.5,17 C12.7761,17 13,16.7761 13,16.5 C13,16.2239 12.7761,16 12.5,16 L6,16 C4.89543,16 4,15.1046 4,14 L4,6 C4,4.89543 4.89543,4 6,4 L12.5,4 C12.7761,4 13,3.77614 13,3.5 C13,3.22386 12.7761,3 12.5,3 L6,3 C4.34315,3 3,4.34315 3,6 L3,14 C3,15.6569 4.34315,17 6,17 Z M13.6464,6.14645 C13.8417,5.95118 14.1583,5.95118 14.3536,6.14645 L17.8536,9.64645 C18.0488,9.84171 18.0488,10.1583 17.8536,10.3536 L14.3536,13.8536 C14.1583,14.0488 13.8417,14.0488 13.6464,13.8536 C13.4512,13.6583 13.4512,13.3417 13.6464,13.1464 L16.2929,10.5 L7.5,10.5 C7.22386,10.5 7,10.2761 7,10 C7,9.72386 7.22386,9.5 7.5,9.5 L16.2929,9.5 L13.6464,6.85355 C13.4512,6.65829 13.4512,6.34171 13.6464,6.14645 Z" />
-          </MenuFlyoutItem.Icon>
-        </MenuFlyoutItem>
-      </MenuFlyout>
-    </Grid.ContextFlyout>
+  <Grid x:Name="MenuRoot" Background="{StaticResource SurfaceBrush}" MinWidth="240">
+    <Grid.Resources>
+      <Style x:Key="TrayMenuButtonStyle" TargetType="Button">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{StaticResource DataBrush}" />
+      </Style>
+    </Grid.Resources>
+    <Border x:Name="MenuPanel"
+            Background="{StaticResource SurfaceBrush}"
+            BorderBrush="{StaticResource LineBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="4">
+      <StackPanel>
+        <Button x:Name="OpenMainPanelMenuItem"
+                local:Localized.Uid="Loc_0CE53A16F8"
+                Click="OpenMainPanelClick"
+                Style="{StaticResource TrayMenuButtonStyle}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <FontIcon Glyph="&#xE80F;" FontFamily="Segoe Fluent Icons" FontSize="14" Width="18" HorizontalAlignment="Center" />
+            <TextBlock x:Name="OpenMainPanelText" local:Localized.Uid="Loc_0CE53A16F8" Text="打开主面板" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="DevicesMenuItem"
+                local:Localized.Uid="Loc_ED026FD231"
+                Tag="devices"
+                Click="NavigateClick"
+                Style="{StaticResource TrayMenuButtonStyle}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <SymbolIcon Symbol="AllApps" Width="18" Height="18" />
+            <TextBlock x:Name="DevicesMenuText" local:Localized.Uid="Loc_ED026FD231" Text="设备控制" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="ProfilesMenuItem"
+                local:Localized.Uid="Loc_16444BA5AB"
+                Tag="profiles"
+                Click="NavigateClick"
+                Style="{StaticResource TrayMenuButtonStyle}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <SymbolIcon Symbol="Library" Width="18" Height="18" />
+            <TextBlock x:Name="ProfilesMenuText" local:Localized.Uid="Loc_16444BA5AB" Text="配置" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Border Height="1" Background="{StaticResource LineBrush}" Margin="6,4" />
+        <Button x:Name="TurnOffDisplayMenuItem"
+                local:Localized.Uid="TrayTurnOffDisplay"
+                Click="TurnOffDisplayClick"
+                Style="{StaticResource TrayMenuButtonStyle}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <SymbolIcon Symbol="View" Width="18" Height="18" />
+            <TextBlock x:Name="TurnOffDisplayText" local:Localized.Uid="TrayTurnOffDisplay" Text="关闭屏幕" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Border Height="1" Background="{StaticResource LineBrush}" Margin="6,4" />
+        <Button x:Name="ExitMenuItem"
+                local:Localized.Uid="Loc_81394C3DA6"
+                Click="ExitClick"
+                Style="{StaticResource TrayMenuButtonStyle}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <PathIcon Width="18" Height="18" Data="M12.5,17 C12.7761,17 13,16.7761 13,16.5 C13,16.2239 12.7761,16 12.5,16 L6,16 C4.89543,16 4,15.1046 4,14 L4,6 C4,4.89543 4.89543,4 6,4 L12.5,4 C12.7761,4 13,3.77614 13,3.5 C13,3.22386 12.7761,3 12.5,3 L6,3 C4.34315,3 3,4.34315 3,6 L3,14 C3,15.6569 4.34315,17 6,17 Z M13.6464,6.14645 C13.8417,5.95118 14.1583,5.95118 14.3536,6.14645 L17.8536,9.64645 C18.0488,9.84171 18.0488,10.1583 17.8536,10.3536 L14.3536,13.8536 C14.1583,14.0488 13.8417,14.0488 13.6464,13.8536 C13.4512,13.6583 13.4512,13.3417 13.6464,13.1464 L16.2929,10.5 L7.5,10.5 C7.22386,10.5 7,10.2761 7,10 C7,9.72386 7.22386,9.5 7.5,9.5 L16.2929,9.5 L13.6464,6.85355 C13.4512,6.65829 13.4512,6.34171 13.6464,6.14645 Z" />
+            <TextBlock x:Name="ExitMenuText" local:Localized.Uid="Loc_81394C3DA6" Text="退出" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </Border>
   </Grid>
 </Window>
