@@ -4,10 +4,12 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using System.Collections.ObjectModel;
 using Windows.Storage.Pickers;
+using Windows.System;
 using Windows.UI;
 
 namespace OpenSynapse.App;
@@ -423,6 +425,9 @@ public sealed partial class MainWindow
 
     private async void CheckFirmwareUpdateClick(object sender, RoutedEventArgs e) =>
         await _viewModel.CheckFirmwareUpdateAsync(_lifetime.Token);
+
+    private async void OpenFirmwareDownloadClick(object sender, RoutedEventArgs e) =>
+        await Launcher.LaunchUriAsync(new Uri(RazerFirmwareUpdateClient.Rz090528SupportPage));
 
     private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
     {

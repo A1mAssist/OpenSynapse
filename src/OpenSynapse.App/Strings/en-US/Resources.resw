@@ -1485,12 +1485,11 @@
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>
   <data name="FirmwareMcuLabel" xml:space="preserve"><value>MCU</value></data>
   <data name="FirmwareVbiosLabel" xml:space="preserve"><value>vBIOS</value></data>
-  <data name="FirmwareUpdateHint" xml:space="preserve"><value>Checks Razer's official support page only; firmware is not flashed.</value></data>
   <data name="FirmwareUpdateChecking" xml:space="preserve"><value>Checking Razer's official support page…</value></data>
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>Firmware is up to date.</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>Update available: {0}.</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>Check failed: {0}</value></data>
-  <data name="FirmwarePublished" xml:space="preserve"><value>Published: {0}</value></data>
+  <data name="FirmwareDownloadButton" xml:space="preserve"><value>Open download page</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn row behavior</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>Multimedia keys first</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>Function keys first</value></data>
