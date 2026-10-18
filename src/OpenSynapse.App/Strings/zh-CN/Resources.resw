@@ -1835,6 +1835,17 @@
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
   <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫：它会提高持续功耗上限，由散热垫负责散热；未连接时无法切换。</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost 需要连接雷蛇笔记本散热垫后才能启用。</value></data>
+  <data name="FirmwareTitle" xml:space="preserve"><value>固件</value></data>
+  <data name="FirmwareCheckButton" xml:space="preserve"><value>检查更新</value></data>
+  <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>
+  <data name="FirmwareMcuLabel" xml:space="preserve"><value>MCU</value></data>
+  <data name="FirmwareVbiosLabel" xml:space="preserve"><value>vBIOS</value></data>
+  <data name="FirmwareUpdateHint" xml:space="preserve"><value>只检查 Razer 官方支持页版本，不执行刷写。</value></data>
+  <data name="FirmwareUpdateChecking" xml:space="preserve"><value>正在检查 Razer 官方支持页…</value></data>
+  <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>已是最新版本。</value></data>
+  <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>有可用更新：{0}。</value></data>
+  <data name="FirmwareUpdateFailed" xml:space="preserve"><value>检查失败：{0}</value></data>
+  <data name="FirmwarePublished" xml:space="preserve"><value>官方最新：{0}</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn 行行为</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>多媒体键优先</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>功能键优先</value></data>

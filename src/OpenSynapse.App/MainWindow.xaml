@@ -404,6 +404,23 @@
                       </Grid>
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock local:Localized.Uid="FirmwareTitle" Text="固件" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <Button Grid.Column="1" local:Localized.Uid="FirmwareCheckButton" Content="检查更新" Click="CheckFirmwareUpdateClick" IsEnabled="{Binding CanCheckFirmwareUpdate}" Style="{StaticResource SecondaryButtonStyle}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
+                        <StackPanel Spacing="4"><TextBlock Text="BIOS" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareBiosText}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4"><TextBlock local:Localized.Uid="FirmwareEcLabel" Text="EC" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareEcText}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="4"><TextBlock local:Localized.Uid="FirmwareMcuLabel" Text="MCU" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareMcuText}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Column="3" Spacing="4"><TextBlock local:Localized.Uid="FirmwareVbiosLabel" Text="vBIOS" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareVbiosText}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
+                      </Grid>
+                      <TextBlock Text="{Binding FirmwareUpdateStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding FirmwarePublishedText}" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono" FontSize="11" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="FirmwareUpdateHint" Text="只检查 Razer 官方支持页版本，不执行刷写。" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
                 <StackPanel x:Name="ViperDevicePanel" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding ViperDeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding ViperProtocolText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding ViperIdentityText}" FontFamily="Cascadia Mono" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>

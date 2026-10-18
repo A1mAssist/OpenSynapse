@@ -311,6 +311,7 @@ public sealed partial class MainViewModel
         finally
         {
             _deviceOperationGate.Release();
+            OnPropertyChanged(nameof(CanCheckFirmwareUpdate));
         }
     }
 

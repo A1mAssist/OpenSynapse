@@ -26,6 +26,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     private readonly IDeviceDiscovery _discovery;
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
+    private readonly RazerFirmwareUpdateClient _firmwareUpdateClient;
     private readonly IPerformanceMonitor _performanceMonitor;
     private readonly ProfileStore _profileStore;
     private readonly IPowerSourceProvider _powerSourceProvider;
@@ -123,10 +124,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         IReadOnlyList<string>? startupDiagnostics = null,
         WindowsTouchpadController? touchpadController = null,
         OpenRazerDeviceService? openRazerDeviceService = null,
-        OpenRazerSpecialLightingService? openRazerSpecialLightingService = null)
+        OpenRazerSpecialLightingService? openRazerSpecialLightingService = null,
+        RazerFirmwareUpdateClient? firmwareUpdateClient = null)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
+        _firmwareUpdateClient = firmwareUpdateClient ?? new RazerFirmwareUpdateClient();
         _performanceMonitor = performanceMonitor;
         _profileStore = profileStore ?? new ProfileStore();
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
@@ -368,6 +371,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         await LoadProfileAsync(cancellationToken);
         await RefreshBatteryHealthAsync(cancellationToken);
         await RefreshDevicesAsync(cancellationToken);
+        RefreshFirmwareVersions();
         if (_blade._bladeGameModeState is byte gameMode)
         {
             try
