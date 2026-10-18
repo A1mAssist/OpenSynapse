@@ -26,6 +26,8 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _storageValue = "--";
     private string _storageDetail = "-- / -- GB";
     private double _storagePercent;
+    private string _batteryHealthValue = "--";
+    private string _batteryHealthDetail = string.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -50,6 +52,8 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string StorageValue { get => _storageValue; private set => SetField(ref _storageValue, value); }
     public string StorageDetail { get => _storageDetail; private set => SetField(ref _storageDetail, value); }
     public double StoragePercent { get => _storagePercent; private set => SetField(ref _storagePercent, value); }
+    public string BatteryHealthValue { get => _batteryHealthValue; private set => SetField(ref _batteryHealthValue, value); }
+    public string BatteryHealthDetail { get => _batteryHealthDetail; private set => SetField(ref _batteryHealthDetail, value); }
 
     public void Apply(PerformanceSnapshot snapshot)
     {
@@ -107,6 +111,25 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
         }
 
         TelemetryTimeText = AppStrings.FormatText("LiveSampleTime", snapshot.CapturedAt.ToLocalTime());
+    }
+
+    public void ApplyBatteryHealth(BatteryHealthSnapshot? snapshot)
+    {
+        if (snapshot is null)
+        {
+            BatteryHealthValue = "--";
+            BatteryHealthDetail = AppStrings.Text("BatteryHealthUnavailable");
+            return;
+        }
+
+        BatteryHealthValue = snapshot.HealthPercent is double percent
+            ? $"{percent:0.0}%"
+            : "--";
+        BatteryHealthDetail = AppStrings.FormatText(
+            "BatteryHealthDetail",
+            snapshot.DesignCapacityMilliwattHours / 1000.0,
+            snapshot.FullChargeCapacityMilliwattHours / 1000.0,
+            snapshot.CycleCount);
     }
 
     public void MarkUnavailable() => TelemetryTimeText = AppStrings.Text("PerformanceSamplingUnavailable");

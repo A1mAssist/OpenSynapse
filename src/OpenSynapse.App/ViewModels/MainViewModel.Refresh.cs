@@ -37,8 +37,13 @@ public sealed partial class MainViewModel
         SetDeviceQueryError(string.Empty);
         SetDeviceOperationError(string.Empty);
         var powerState = _powerSourceProvider.IsPluggedIn;
-        applyDisplayProfile |= _lastPowerState != powerState;
+        var powerChanged = _lastPowerState != powerState;
+        applyDisplayProfile |= powerChanged;
         _lastPowerState = powerState;
+        if (powerChanged)
+        {
+            await RefreshBatteryHealthAsync(cancellationToken);
+        }
         OnPropertyChanged(nameof(ActivePowerSourceText));
         if (_bladeLightingPowerProfileIndex == 0)
         {

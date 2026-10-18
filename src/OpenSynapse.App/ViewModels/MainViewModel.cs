@@ -366,6 +366,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         await LoadProfileAsync(cancellationToken);
+        await RefreshBatteryHealthAsync(cancellationToken);
         await RefreshDevicesAsync(cancellationToken);
         if (_blade._bladeGameModeState is byte gameMode)
         {
