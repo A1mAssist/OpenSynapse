@@ -280,6 +280,10 @@ public sealed partial class MainViewModel
     }
 
     private bool _suppressBladePerformanceApply;
+    private bool _bladeCoolingPadConnected;
+
+    public Visibility HyperboostOptionVisibility =>
+        _bladeCoolingPadConnected ? Visibility.Visible : Visibility.Collapsed;
 
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
@@ -935,7 +939,9 @@ public sealed partial class MainViewModel
         }
     }
     public string BladePerformanceModeText { get => _blade._bladePerformanceModeText; private set => SetField(ref _blade._bladePerformanceModeText, value); }
-    public IReadOnlyList<string> BladePerformanceModeOptions => AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25", "HyperBoost");
+    public IReadOnlyList<string> BladePerformanceModeOptions => _bladeCoolingPadConnected
+        ? AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25", "HyperBoost")
+        : AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25");
     public int BladePerformanceModeIndex { get => _blade._bladePerformanceModeIndex; set => SetField(ref _blade._bladePerformanceModeIndex, value); }
     public bool CanSetBladePerformanceMode
     {

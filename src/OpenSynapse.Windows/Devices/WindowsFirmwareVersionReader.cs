@@ -9,54 +9,64 @@ public static class WindowsFirmwareVersionReader
 
     public static (string Bios, string Ec, string Vbios) Read()
     {
+        var bios = "--";
+        var ec = "--";
         try
         {
             using var biosKey = Registry.LocalMachine.OpenSubKey(BiosRegistryPath, writable: false);
-            var bios = FormatValue(biosKey?.GetValue("BIOSVersion"));
-            var ec = FormatEc(
+            bios = FormatValue(biosKey?.GetValue("BIOSVersion"));
+            ec = FormatEc(
                 biosKey?.GetValue("ECFirmwareMajorRelease"),
                 biosKey?.GetValue("ECFirmwareMinorRelease"));
-            return (bios, ec, ReadVbios());
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            return ("--", "--", "--");
+            // Keep vBIOS readable even when the SMBIOS key is unavailable.
         }
+
+        return (bios, ec, ReadVbios());
     }
 
     private static string ReadVbios()
     {
-        using var videoRoot = Registry.LocalMachine.OpenSubKey(VideoRegistryPath, writable: false);
-        if (videoRoot is null)
+        try
         {
-            return "--";
-        }
-
-        foreach (var adapterKeyName in videoRoot.GetSubKeyNames())
-        {
-            using var adapterKey = videoRoot.OpenSubKey(adapterKeyName, writable: false);
-            if (adapterKey is null)
+            using var videoRoot = Registry.LocalMachine.OpenSubKey(VideoRegistryPath, writable: false);
+            if (videoRoot is null)
             {
-                continue;
+                return "--";
             }
 
-            foreach (var instanceKeyName in adapterKey.GetSubKeyNames())
+            foreach (var adapterKeyName in videoRoot.GetSubKeyNames())
             {
-                using var instanceKey = adapterKey.OpenSubKey(instanceKeyName, writable: false);
-                if (instanceKey?.GetValue("HardwareInformation.AdapterString") is not string adapter ||
-                    !adapter.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) ||
-                    instanceKey.GetValue("HardwareInformation.BiosString") is not string bios ||
-                    string.IsNullOrWhiteSpace(bios))
+                using var adapterKey = videoRoot.OpenSubKey(adapterKeyName, writable: false);
+                if (adapterKey is null)
                 {
                     continue;
                 }
 
-                var value = bios.Trim();
-                return value.StartsWith("Version", StringComparison.OrdinalIgnoreCase)
-                    ? value["Version".Length..].Trim()
-                    : value;
+                foreach (var instanceKeyName in adapterKey.GetSubKeyNames())
+                {
+                    using var instanceKey = adapterKey.OpenSubKey(instanceKeyName, writable: false);
+                    var adapter = FormatValue(instanceKey?.GetValue("HardwareInformation.AdapterString"), keepMissing: true);
+                    var bios = FormatValue(instanceKey?.GetValue("HardwareInformation.BiosString"), keepMissing: true);
+                    if (!adapter.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) ||
+                        string.IsNullOrWhiteSpace(bios) || bios == "--")
+                    {
+                        continue;
+                    }
+
+                    return bios.StartsWith("Version", StringComparison.OrdinalIgnoreCase)
+                        ? bios["Version".Length..].Trim()
+                        : bios;
+                }
             }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            // vBIOS is supplementary; leave it blank rather than failing all firmware fields.
         }
 
         return "--";
@@ -87,11 +97,18 @@ public static class WindowsFirmwareVersionReader
         }
     }
 
-    private static string FormatValue(object? value) => value switch
+    private static string FormatValue(object? value, bool keepMissing = false) => value switch
     {
-        string text when !string.IsNullOrWhiteSpace(text) => text.Trim(),
+        string text when !string.IsNullOrWhiteSpace(text) => text.TrimEnd('\0').Trim(),
         string[] values when values.Any(item => !string.IsNullOrWhiteSpace(item)) =>
             string.Join(" ", values.Where(item => !string.IsNullOrWhiteSpace(item))),
-        _ => "--",
+        byte[] bytes => DecodeUnicode(bytes),
+        _ => keepMissing ? string.Empty : "--",
     };
+
+    private static string DecodeUnicode(byte[] bytes)
+    {
+        var text = System.Text.Encoding.Unicode.GetString(bytes).TrimEnd('\0').Trim();
+        return string.IsNullOrWhiteSpace(text) ? "--" : text;
+    }
 }
