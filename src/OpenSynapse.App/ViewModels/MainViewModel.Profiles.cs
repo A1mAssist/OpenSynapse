@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
@@ -416,6 +417,7 @@ public sealed partial class MainViewModel
 
     private async Task<ProfileApplyResult?> ApplyLoadedProfileAsync(
         RazerDeviceTelemetry telemetry,
+        PowerSourceKind powerState,
         CancellationToken cancellationToken)
     {
         if (_deviceDescriptors.Count == 0)
@@ -428,7 +430,7 @@ public sealed partial class MainViewModel
             _deviceDescriptors,
             telemetry,
             _deviceTelemetryReader,
-            _powerSourceProvider.IsPluggedIn,
+            powerState,
             cancellationToken,
             applyKeyboardBrightness: Volatile.Read(ref _displayAvailable) != 0,
             coolingPadConnected: await RazerCoolingPad.IsConnectedAsync(cancellationToken));
@@ -437,7 +439,7 @@ public sealed partial class MainViewModel
 
     private async Task<string?> ApplyLoadedViperMappingProfileAsync(
         DeviceDescriptor? viper,
-        bool? powerState,
+        PowerSourceKind powerState,
         CancellationToken cancellationToken)
     {
         if (viper is null || viper.Access != DeviceAccessState.Available)
@@ -509,7 +511,7 @@ public sealed partial class MainViewModel
 
     private async Task<BladeFanProfileApplyResult> ApplyLoadedFanProfileAsync(
         DeviceDescriptor? blade,
-        bool? powerState,
+        PowerSourceKind powerState,
         CancellationToken cancellationToken)
     {
         if (blade is null || blade.Access != DeviceAccessState.Available)

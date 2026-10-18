@@ -128,7 +128,7 @@ public sealed partial class MainViewModel
                      device.Access == DeviceAccessState.Available) is { } blade)
         {
             var enabled = ProfileResolver
-                .Resolve(_profile, blade, _powerSourceProvider.IsPluggedIn)
+                .Resolve(_profile, blade, CurrentPowerSource)
                 .Blade.GamingModeEnabled == true;
             SetBladeGameMode(new(enabled ? (byte)1 : (byte)0, 0, 0));
         }
@@ -215,7 +215,7 @@ public sealed partial class MainViewModel
             var chemistry = ProfileResolver.Resolve(
                 _profile,
                 viper,
-                _powerSourceProvider.IsPluggedIn).Viper.BatteryChemistry;
+                CurrentPowerSource).Viper.BatteryChemistry;
             ViperBatteryChemistryIndex = chemistry is byte value ? value : -1;
             _viper._confirmedViperBatteryChemistryIndex = ViperBatteryChemistryIndex;
             OnPropertyChanged(nameof(ViperBatteryChemistryText));
@@ -272,7 +272,7 @@ public sealed partial class MainViewModel
             telemetry.CapturedAt.ToLocalTime());
     }
 
-    private void RefreshInternalDisplay(bool? powerState, bool applyProfile)
+    private void RefreshInternalDisplay(PowerSourceKind powerState, bool applyProfile)
     {
         if (_internalDisplayController is null)
         {

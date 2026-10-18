@@ -146,12 +146,12 @@ public sealed partial class MainViewModel
             var resolved = ProfileResolver.Resolve(
                 _profile,
                 blade,
-                _powerSourceProvider.IsPluggedIn);
+                CurrentPowerSource);
             _bladeLightingDevicePath = blade.Id;
             _lightingShadowFingerprint = CreateLightingFingerprint(
                 resolved.Lighting,
                 blade.Id,
-                _powerSourceProvider.IsPluggedIn,
+                CurrentPowerSource,
                 resolved.Blade.LightingEnabled ?? true,
                 resolved.Blade.ChromaOverrideEnabled ?? true);
         }
@@ -1065,6 +1065,7 @@ public sealed partial class MainViewModel
         [
             AppStrings.Text("BladeLightingPowerCurrent"),
             AppStrings.Text("BladeLightingPowerPluggedIn"),
+            AppStrings.Text("BladeLightingPowerLowAdapter"),
             AppStrings.Text("BladeLightingPowerBattery"),
         ];
     public IReadOnlyList<string> BladePerformancePowerProfileOptions => BladeLightingPowerProfileOptions;
@@ -1103,7 +1104,7 @@ public sealed partial class MainViewModel
         get => _bladeLightingPowerProfileIndex;
         set
         {
-            var next = Math.Clamp(value, 0, 2);
+            var next = Math.Clamp(value, 0, 3);
             if (SetField(ref _bladeLightingPowerProfileIndex, next))
             {
                 RefreshBladeLightingEditor();
@@ -1115,7 +1116,7 @@ public sealed partial class MainViewModel
         get => _bladePerformancePowerProfileIndex;
         set
         {
-            var next = Math.Clamp(value, 0, 2);
+            var next = Math.Clamp(value, 0, 3);
             if (SetField(ref _bladePerformancePowerProfileIndex, next))
             {
                 RefreshBladePerformanceEditor();
@@ -1127,7 +1128,7 @@ public sealed partial class MainViewModel
         get => _bladeRefreshRatePowerProfileIndex;
         set
         {
-            var next = Math.Clamp(value, 0, 2);
+            var next = Math.Clamp(value, 0, 3);
             if (SetField(ref _bladeRefreshRatePowerProfileIndex, next))
             {
                 RefreshInternalDisplayRateEditor();
@@ -1139,7 +1140,7 @@ public sealed partial class MainViewModel
         get => _bladeLogoPowerProfileIndex;
         set
         {
-            var next = Math.Clamp(value, 0, 2);
+            var next = Math.Clamp(value, 0, 3);
             if (SetField(ref _bladeLogoPowerProfileIndex, next))
             {
                 RefreshBladeLogoEditor();
@@ -1280,7 +1281,7 @@ public sealed partial class MainViewModel
                         device.Access == DeviceAccessState.Available);
                     await ApplyLoadedLightingProfileAsync(
                         blade,
-                        _powerSourceProvider.IsPluggedIn,
+                        CurrentPowerSource,
                         cancellationToken).ConfigureAwait(false);
                 }
                 RefreshBladeLightingEditor();

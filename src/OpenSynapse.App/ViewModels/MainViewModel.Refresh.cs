@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Sensors;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -36,26 +37,12 @@ public sealed partial class MainViewModel
         }
         SetDeviceQueryError(string.Empty);
         SetDeviceOperationError(string.Empty);
-        var powerState = _powerSourceProvider.IsPluggedIn;
+        var powerState = CurrentPowerSource;
         var powerChanged = _lastPowerState != powerState;
         applyDisplayProfile |= powerChanged;
-        _lastPowerState = powerState;
         if (powerChanged)
         {
             await RefreshBatteryHealthAsync(cancellationToken);
-        }
-        OnPropertyChanged(nameof(ActivePowerSourceText));
-        if (_bladeLightingPowerProfileIndex == 0)
-        {
-            RefreshBladeLightingEditor();
-        }
-        if (_bladePerformancePowerProfileIndex == 0)
-        {
-            RefreshBladePerformanceEditor();
-        }
-        if (_bladeLogoPowerProfileIndex == 0)
-        {
-            RefreshBladeLogoEditor();
         }
         try
         {
@@ -97,10 +84,6 @@ public sealed partial class MainViewModel
                 else if (SelectedOpenRazerDevice is { } selectedDevice)
                 {
                     await selectedDevice.LoadBasicStateAsync(cancellationToken);
-                    if (applyDisplayProfile)
-                    {
-                        await selectedDevice.ApplyConfiguredLightingAsync(cancellationToken);
-                    }
                 }
             }
             if (_openRazerSpecialLightingService is not null)
@@ -137,7 +120,6 @@ public sealed partial class MainViewModel
             }
             _deviceFingerprint = nextFingerprint;
             _deviceDescriptors = snapshot.Devices;
-            RefreshInternalDisplay(powerState, applyDisplayProfile);
 
             var blade = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
             var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
@@ -160,7 +142,32 @@ public sealed partial class MainViewModel
 
             var telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
             ApplyDeviceTelemetry(telemetry);
-            var profileApply = await ApplyLoadedProfileAsync(telemetry, cancellationToken);
+            var observedPowerState = PowerSourceResolver.Resolve(
+                _powerSourceProvider.IsPluggedIn,
+                telemetry.BladeAdapterPower);
+            var observedPowerChanged = _lastPowerState != observedPowerState;
+            if (observedPowerChanged)
+            {
+                powerState = observedPowerState;
+                powerChanged = true;
+                applyDisplayProfile = true;
+                await RefreshBatteryHealthAsync(cancellationToken);
+            }
+            _lastPowerState = powerState;
+            OnPropertyChanged(nameof(ActivePowerSourceText));
+            RefreshInternalDisplay(powerState, applyDisplayProfile);
+            if (applyDisplayProfile)
+            {
+                if (_openRazerDeviceService is not null)
+                {
+                    await RestoreOpenRazerLightingAfterExternalAsync(cancellationToken);
+                }
+                SelectedOpenRazerDevice?.ApplyConfiguredLightingToEditor();
+            }
+            var profileApply = await ApplyLoadedProfileAsync(
+                telemetry,
+                powerState,
+                cancellationToken);
             if (profileApply is { AppliedCount: > 0 })
             {
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
@@ -301,6 +308,8 @@ public sealed partial class MainViewModel
             SetBladeControlDevicePath(null);
             _lightingShadowFingerprint = string.Empty;
             _bladeLightingDevicePath = string.Empty;
+            _lastPowerState = powerState;
+            OnPropertyChanged(nameof(ActivePowerSourceText));
             RefreshInternalDisplay(powerState, applyDisplayProfile);
             BladeStatusText = hadBlade ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");
             ViperStatusText = hadViper ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");

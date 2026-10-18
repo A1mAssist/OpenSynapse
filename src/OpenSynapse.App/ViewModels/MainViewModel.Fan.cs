@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -20,7 +21,7 @@ public sealed partial class MainViewModel
                 device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
             var result = await ApplyLoadedFanProfileAsync(
                 blade,
-                _powerSourceProvider.IsPluggedIn,
+                CurrentPowerSource,
                 cancellationToken);
             if (result.Error is not null)
             {
@@ -33,7 +34,7 @@ public sealed partial class MainViewModel
                 _profile = previous;
                 await ApplyLoadedFanProfileAsync(
                     blade,
-                    _powerSourceProvider.IsPluggedIn,
+                    CurrentPowerSource,
                     cancellationToken);
                 throw new InvalidOperationException(AppStrings.Text("Text_3D32CBBD"));
             }
@@ -55,7 +56,7 @@ public sealed partial class MainViewModel
                 device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
             var result = await ApplyLoadedFanProfileAsync(
                 blade,
-                _powerSourceProvider.IsPluggedIn,
+                CurrentPowerSource,
                 cancellationToken);
             if (result.Error is not null)
             {
@@ -68,7 +69,7 @@ public sealed partial class MainViewModel
                 _profile = previous;
                 await ApplyLoadedFanProfileAsync(
                     blade,
-                    _powerSourceProvider.IsPluggedIn,
+                    CurrentPowerSource,
                     cancellationToken);
                 throw new InvalidOperationException(AppStrings.Text("Text_BA5FB914"));
             }
@@ -128,7 +129,7 @@ public sealed partial class MainViewModel
     private static string CreateBladeFanFingerprint(
         BladeProfileSettings profile,
         string devicePath,
-        bool? powerState)
+        PowerSourceKind powerState)
     {
         if (profile.FanCurve is { } curve)
         {

@@ -10,6 +10,7 @@ public sealed partial class MainWindow
     private const nuint DbtDeviceRemoveComplete = 0x8004;
     private const nuint DbtDevNodesChanged = 0x0007;
     private const uint PbtApmSuspend = 0x0004;
+    private const uint PbtApmPowerStatusChange = 0x000A;
     private const uint PbtApmResumeSuspend = 0x0007;
     private const uint PbtApmResumeAutomatic = 0x0012;
     private const uint DeviceNotifyCallback = 0x00000002;
@@ -85,6 +86,9 @@ public sealed partial class MainWindow
         {
             switch (unchecked((uint)wParam.ToInt64()))
             {
+                case PbtApmPowerStatusChange:
+                    _viewModel.RequestDeviceRefresh();
+                    break;
                 case PbtApmSuspend:
                     PrepareForSuspend();
                     break;

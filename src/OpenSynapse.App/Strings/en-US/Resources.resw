@@ -1362,6 +1362,7 @@
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>Apply effect</value></data>
   <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>Current power source</value></data>
   <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>AC power</value></data>
+  <data name="BladeLightingPowerLowAdapter" xml:space="preserve"><value>Low-power adapter</value></data>
   <data name="BladeLightingPowerBattery" xml:space="preserve"><value>Battery</value></data>
   <data name="BladePerformancePowerProfileLabel.Text" xml:space="preserve"><value>Performance power profile</value></data>
   <data name="BladeRefreshRatePowerProfileLabel.Text" xml:space="preserve"><value>Refresh rate power profile</value></data>

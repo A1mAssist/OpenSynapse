@@ -192,11 +192,12 @@ public sealed class DeviceMetadataTests
             BladeNativeDisplayMode: BladeNativeDisplayMode.Uhd,
             BladeSkuHardwareConfiguration: new(true, true, false, 1),
             BladeOneTimeFullChargeEnabled: false,
-            BladeLocalDimmingEnabled: true);
+            BladeLocalDimmingEnabled: true,
+            BladeAdapterPower: new(0x0C, 0x0C, 200, 200));
 
         var summary = DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
 
-        Assert.Equal(new DeviceCapabilitySummary(17, 17), summary);
+        Assert.Equal(new DeviceCapabilitySummary(18, 18), summary);
     }
 
     [Fact]

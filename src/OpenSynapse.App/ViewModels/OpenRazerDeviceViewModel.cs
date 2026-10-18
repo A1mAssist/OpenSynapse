@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
@@ -72,9 +73,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool _ledEnabled = true;
     private bool _ledStateKnown;
     private bool _brightnessKnown;
-    private readonly Func<bool?>? _powerStateProvider;
-    private readonly Func<bool?, LightingProfile?>? _lightingProfileResolver;
-    private readonly Func<bool?, LightingProfile, CancellationToken, Task<bool>>? _lightingProfileSaver;
+    private readonly Func<PowerSourceKind>? _powerStateProvider;
+    private readonly Func<PowerSourceKind, LightingProfile?>? _lightingProfileResolver;
+    private readonly Func<PowerSourceKind, LightingProfile, CancellationToken, Task<bool>>? _lightingProfileSaver;
     private readonly Func<bool>? _lightingEnabledResolver;
     private readonly Func<bool>? _chromaOverrideResolver;
     private readonly Func<bool, bool, CancellationToken, Task<bool>>? _lightingSettingsSaver;
@@ -94,9 +95,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public OpenRazerDeviceViewModel(
         OpenRazerDeviceService service,
         OpenRazerDeviceConnection connection,
-        Func<bool?>? powerStateProvider = null,
-        Func<bool?, LightingProfile?>? lightingProfileResolver = null,
-        Func<bool?, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null,
+        Func<PowerSourceKind>? powerStateProvider = null,
+        Func<PowerSourceKind, LightingProfile?>? lightingProfileResolver = null,
+        Func<PowerSourceKind, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null,
         Func<bool>? lightingEnabledResolver = null,
         Func<bool>? chromaOverrideResolver = null,
         Func<bool, bool, CancellationToken, Task<bool>>? lightingSettingsSaver = null,
@@ -456,6 +457,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         [
             AppStrings.Text("BladeLightingPowerCurrent"),
             AppStrings.Text("BladeLightingPowerPluggedIn"),
+            AppStrings.Text("BladeLightingPowerLowAdapter"),
             AppStrings.Text("BladeLightingPowerBattery"),
         ];
     public int LightingPowerProfileIndex
@@ -463,7 +465,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         get => _lightingPowerProfileIndex;
         set
         {
-            var next = Math.Clamp(value, 0, 2);
+            var next = Math.Clamp(value, 0, 3);
             if (SetField(ref _lightingPowerProfileIndex, next))
             {
                 ApplyConfiguredLightingToEditor();

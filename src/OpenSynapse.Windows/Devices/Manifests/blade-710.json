@@ -24,6 +24,7 @@
     "advanced-fan-mode.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "87", "arguments": "" },
     "boost.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "87", "arguments": "" },
     "boost.set": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "07", "arguments": "" },
+    "adapter-power.get": { "transactionId": "00", "dataSize": "02", "commandClass": "07", "commandId": "8C", "arguments": "0000", "allowRemainingPacketsMismatch": true },
     "charge-limit.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "92", "arguments": "00", "allowRemainingPacketsMismatch": true },
     "charge-limit.set": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "12", "arguments": "" },
     "max-fan.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "8F", "arguments": "00", "allowRemainingPacketsMismatch": true },

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
@@ -447,20 +448,21 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         StopSoftwareLightingAsync(cancellationToken);
 
 
-    private bool? SelectedLightingPowerState => _lightingPowerProfileIndex switch
+    private PowerSourceKind SelectedLightingPowerState => _lightingPowerProfileIndex switch
     {
-        1 => true,
-        2 => false,
-        _ => _powerStateProvider?.Invoke(),
+        1 => PowerSourceKind.FullPowerAdapter,
+        2 => PowerSourceKind.LowPowerAdapter,
+        3 => PowerSourceKind.Battery,
+        _ => _powerStateProvider?.Invoke() ?? PowerSourceKind.Unknown,
     };
 
     private bool IsSelectedLightingPowerActive =>
         _lightingPowerProfileIndex == 0 ||
-        SelectedLightingPowerState == _powerStateProvider?.Invoke();
+        SelectedLightingPowerState == (_powerStateProvider?.Invoke() ?? PowerSourceKind.Unknown);
 
     public bool IsLightingPowerProfileActive => IsSelectedLightingPowerActive;
 
-    private void ApplyConfiguredLightingToEditor()
+    internal void ApplyConfiguredLightingToEditor()
     {
         var profile = _lightingProfileResolver?.Invoke(SelectedLightingPowerState);
         if (profile is not null)
