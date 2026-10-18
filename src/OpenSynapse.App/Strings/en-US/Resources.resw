@@ -105,9 +105,6 @@
   <data name="Loc_C78C6041E0.OffContent" xml:space="preserve">
     <value>Off</value>
   </data>
-  <data name="Loc_AE391759C5.Text" xml:space="preserve">
-    <value>CPU/GPU Boost applies to this session only. Max Fan is saved with the profile.</value>
-  </data>
   <data name="Loc_FBA62F56DE.Text" xml:space="preserve">
     <value>Keyboard lighting</value>
   </data>
@@ -1474,4 +1471,10 @@
   <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling indicator write</value></data>
   <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling pairing</value></data>
   <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling unpairing</value></data>
+  <data name="BladeCustomPerformanceTitle" xml:space="preserve"><value>Custom performance</value></data>
+  <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU performance level</value></data>
+  <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU performance level</value></data>
+  <data name="BladeMaxFanLabel" xml:space="preserve"><value>Full fan speed</value></data>
+  <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>Changes are saved to the current profile; full fan speed increases noise.</value></data>
+  <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
 </root>

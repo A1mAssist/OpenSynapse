@@ -136,10 +136,6 @@
     <value>关闭</value>
     <comment>关闭</comment>
   </data>
-  <data name="Loc_AE391759C5.Text" xml:space="preserve">
-    <value>CPU/GPU Boost 仅当前会话，Max Fan 随配置保存。</value>
-    <comment>CPU/GPU Boost 仅当前会话，Max Fan 随配置保存。</comment>
-  </data>
   <data name="Loc_FBA62F56DE.Text" xml:space="preserve">
     <value>键盘灯光</value>
     <comment>键盘灯光</comment>
@@ -1831,4 +1827,10 @@
   <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling 指示灯写入</value></data>
   <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling 配对</value></data>
   <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling 取消配对</value></data>
+  <data name="BladeCustomPerformanceTitle" xml:space="preserve"><value>自定义性能</value></data>
+  <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU 性能档位</value></data>
+  <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU 性能档位</value></data>
+  <data name="BladeMaxFanLabel" xml:space="preserve"><value>风扇全速</value></data>
+  <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>修改会保存到当前配置；风扇全速会增加噪音。</value></data>
+  <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
 </root>

@@ -146,7 +146,7 @@ internal sealed class BladeViewModel
             BladeCpuBoostMode.Low => AppStrings.Text("Text_CB5F70D1"),
             BladeCpuBoostMode.Medium => AppStrings.Text("Text_28619638"),
             BladeCpuBoostMode.High => AppStrings.Text("Text_5C1F32A7"),
-            BladeCpuBoostMode.Boost => "Boost",
+            BladeCpuBoostMode.Boost => AppStrings.Text("BladeCpuBoostHighestOption"),
             BladeCpuBoostMode.Undervolt => AppStrings.Text("Text_BAA7D10B"),
             _ => "--",
         };
