@@ -240,7 +240,7 @@ public sealed partial class MainViewModel
 
                 if (animation.IsUniform)
                 {
-                    _blade._bladeChromaAnimation = null;
+                    SetBladeChromaAnimation(null);
                     await ApplyBladeLightingEffectCoreAsync(
                         new BladeLightingEffect(BladeLightingMode.Static, animation.UniformColor),
                         cancellationToken).ConfigureAwait(false);
@@ -256,7 +256,7 @@ public sealed partial class MainViewModel
                     return;
                 }
 
-                _blade._bladeChromaAnimation = animation;
+                SetBladeChromaAnimation(animation);
                 await ApplyBladeLightingEffectCoreAsync(
                     new BladeLightingEffect(
                         BladeLightingMode.ChromaFile,
@@ -274,7 +274,7 @@ public sealed partial class MainViewModel
             restoreSelection: () =>
             {
                 BladeLightingModeIndex = previousMode;
-                _blade._bladeChromaAnimation = previousAnimation;
+                SetBladeChromaAnimation(previousAnimation);
             },
             successVerb: AppStrings.Text("Text_945C2E42"));
     }
@@ -1065,8 +1065,29 @@ public sealed partial class MainViewModel
     public string BladeTouchpadText { get => _blade._bladeTouchpadText; private set => SetField(ref _blade._bladeTouchpadText, value); }
     public bool BladeTouchpadEnabled { get => _blade._bladeTouchpadEnabled; private set => SetField(ref _blade._bladeTouchpadEnabled, value); }
     public bool CanSetBladeTouchpad => _blade._canSetBladeTouchpad;
-    public IReadOnlyList<string> BladeLightingModeOptions => AppStrings.Texts(
-        AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_8FF9138F"), AppStrings.Text("Text_7EDA32B9"), AppStrings.Text("Text_21BE26F0"), AppStrings.Text("Text_165FCE9D"), AppStrings.Text("Text_5DCB722E"), AppStrings.Text("Text_E2309DE4"), AppStrings.Text("Text_D1D985CC"), AppStrings.Text("Text_F3845B2A"), AppStrings.Text("Text_33F4E277"), AppStrings.Text("Text_2A3A07A1"), AppStrings.Text("Text_51212D25"), AppStrings.Text("Text_388555B3"), AppStrings.Text("BladeLightingModeChromaFile"));
+    public IReadOnlyList<string> BladeLightingModeOptions => _blade._bladeChromaAnimation is null
+        ? AppStrings.Texts(
+            AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_8FF9138F"), AppStrings.Text("Text_7EDA32B9"), AppStrings.Text("Text_21BE26F0"), AppStrings.Text("Text_165FCE9D"), AppStrings.Text("Text_5DCB722E"), AppStrings.Text("Text_E2309DE4"), AppStrings.Text("Text_D1D985CC"), AppStrings.Text("Text_F3845B2A"), AppStrings.Text("Text_33F4E277"), AppStrings.Text("Text_2A3A07A1"), AppStrings.Text("Text_51212D25"), AppStrings.Text("Text_388555B3"))
+        : AppStrings.Texts(
+            AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_8FF9138F"), AppStrings.Text("Text_7EDA32B9"), AppStrings.Text("Text_21BE26F0"), AppStrings.Text("Text_165FCE9D"), AppStrings.Text("Text_5DCB722E"), AppStrings.Text("Text_E2309DE4"), AppStrings.Text("Text_D1D985CC"), AppStrings.Text("Text_F3845B2A"), AppStrings.Text("Text_33F4E277"), AppStrings.Text("Text_2A3A07A1"), AppStrings.Text("Text_51212D25"), AppStrings.Text("Text_388555B3"), AppStrings.Text("BladeLightingModeChromaFile"));
+
+    private void SetBladeChromaAnimation(ChromaFileAnimation? animation)
+    {
+        var hadAnimation = _blade._bladeChromaAnimation is not null;
+        _blade._bladeChromaAnimation = animation;
+        if (hadAnimation == (animation is not null))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(BladeLightingModeOptions));
+        if (animation is null &&
+            BladeLightingModeIndex ==
+            Array.IndexOf(BladeLightingModes, BladeLightingMode.ChromaFile))
+        {
+            BladeLightingModeIndex = -1;
+        }
+    }
     public IReadOnlyList<string> BladeLightingPowerProfileOptions =>
         [
             AppStrings.Text("BladeLightingPowerCurrent"),
