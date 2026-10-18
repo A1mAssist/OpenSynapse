@@ -228,6 +228,14 @@ public sealed partial class MainWindow
         }
     }
 
+    private async void ScreenBrightnessValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (sender is Slider)
+        {
+            await _viewModel.QueueInternalDisplayBrightnessAsync(e.NewValue, _lifetime.Token);
+        }
+    }
+
     private void BladeBrightnessPointerPressed(object sender, PointerRoutedEventArgs e) =>
         _bladeBrightnessPointerActive = true;
 

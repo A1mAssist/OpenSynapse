@@ -154,7 +154,7 @@
     <value>Display</value>
   </data>
   <data name="Loc_6071B823E0.Text" xml:space="preserve">
-    <value>The current refresh rate is read from the Windows display controller.</value>
+    <value>Refresh rate and brightness are read from the Windows internal display controller.</value>
   </data>
   <data name="Loc_26D3C557FF.Text" xml:space="preserve">
     <value>Platform status</value>
@@ -1096,6 +1096,12 @@
   </data>
   <data name="TrayInitializationError" xml:space="preserve">
     <value>Tray initialization: {0}</value>
+  </data>
+  <data name="ScreenBrightnessLabel.Text" xml:space="preserve">
+    <value>Screen brightness</value>
+  </data>
+  <data name="ScreenBrightnessError" xml:space="preserve">
+    <value>Could not set screen brightness: {0}</value>
   </data>
   <data name="DisplayRefreshRateError" xml:space="preserve">
     <value>Internal display refresh rate: {0}</value>

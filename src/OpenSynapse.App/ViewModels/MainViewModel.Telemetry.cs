@@ -329,11 +329,13 @@ public sealed partial class MainViewModel
         InternalDisplayRefreshRateHertz = snapshot.RefreshRateHertz;
         _confirmedInternalDisplayRefreshRateHertz = snapshot.RefreshRateHertz;
         CanSetInternalDisplayRefreshRate = snapshot.CanSetRefreshRate;
+        ApplyInternalDisplayBrightness(snapshot.BrightnessLevel);
     }
 
     private void SetInternalDisplayUnavailable()
     {
         CanSetInternalDisplayRefreshRate = false;
+        CanSetInternalDisplayBrightness = false;
     }
 
     private void SetBladeBrightness(byte brightness, bool confirm = true)

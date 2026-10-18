@@ -201,8 +201,8 @@
     <comment>显示</comment>
   </data>
   <data name="Loc_6071B823E0.Text" xml:space="preserve">
-    <value>当前刷新率由 Windows 本机显示控制器读取。</value>
-    <comment>当前刷新率由 Windows 本机显示控制器读取。</comment>
+    <value>刷新率与亮度由 Windows 本机显示控制器读取。</value>
+    <comment>刷新率与亮度由 Windows 本机显示控制器读取。</comment>
   </data>
   <data name="Loc_26D3C557FF.Text" xml:space="preserve">
     <value>平台状态</value>
@@ -1442,6 +1442,14 @@
   <data name="TrayInitializationError" xml:space="preserve">
     <value>托盘初始化：{0}</value>
     <comment>托盘初始化：{0}</comment>
+  </data>
+  <data name="ScreenBrightnessLabel.Text" xml:space="preserve">
+    <value>屏幕亮度</value>
+    <comment>屏幕亮度</comment>
+  </data>
+  <data name="ScreenBrightnessError" xml:space="preserve">
+    <value>设置屏幕亮度失败：{0}</value>
+    <comment>设置屏幕亮度失败：{0}</comment>
   </data>
   <data name="DisplayRefreshRateError" xml:space="preserve">
     <value>内置屏刷新率：{0}</value>
