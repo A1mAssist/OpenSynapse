@@ -226,7 +226,8 @@ public sealed record RazerDeviceTelemetry(
     BladeSkuHardwareConfiguration? BladeSkuHardwareConfiguration = null,
     bool? BladeOneTimeFullChargeEnabled = null,
     bool? BladeLocalDimmingEnabled = null,
-    IReadOnlyDictionary<string, DeviceCapabilitySummary>? CapabilitySummaries = null);
+    IReadOnlyDictionary<string, DeviceCapabilitySummary>? CapabilitySummaries = null,
+    bool? BladeFnKeyMultimediaPrimary = null);
 
 public interface IRazerDeviceTelemetryReader
 {

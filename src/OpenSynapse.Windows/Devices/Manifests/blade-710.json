@@ -29,6 +29,7 @@
     "max-fan.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "8F", "arguments": "00", "allowRemainingPacketsMismatch": true },
     "max-fan.set": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "0F", "arguments": "" },
     "gaming-mode.set": { "transactionId": "00", "dataSize": "04", "commandClass": "00", "commandId": "08", "arguments": "" },
+    "fn-key.get": { "transactionId": "00", "dataSize": "02", "commandClass": "02", "commandId": "86", "arguments": "0100" },
     "fn-key.set": { "transactionId": "00", "dataSize": "02", "commandClass": "02", "commandId": "06", "arguments": "" },
     "startup-animation.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "0F", "commandId": "98", "arguments": "00" },
     "startup-animation.set": { "transactionId": "1F", "dataSize": "02", "commandClass": "0F", "commandId": "18", "arguments": "" },

@@ -43,6 +43,7 @@ internal sealed class RazerDeviceRegistry
                 ["max-fan.get"] = new(0x01, 0x07, 0x8F, "00", true),
                 ["max-fan.set"] = new(0x01, 0x07, 0x0F, ""),
                 ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                ["fn-key.get"] = new(0x02, 0x02, 0x86, "0100", AllowZeroTransactionId: true),
                 ["fn-key.set"] = new(0x02, 0x02, 0x06, "", AllowZeroTransactionId: true),
                 ["startup-animation.get"] = new(0x01, 0x0F, 0x98, "00"),
                 ["startup-animation.set"] = new(0x02, 0x0F, 0x18, ""),
