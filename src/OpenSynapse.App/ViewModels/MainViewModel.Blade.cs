@@ -871,7 +871,7 @@ public sealed partial class MainViewModel
     public IReadOnlyList<string> BladeChargeLimitOptions => AppStrings.Texts("50%", "55%", "60%", "65%", "70%", "75%", "80%", "Text_0E45FC12");
     public int BladeChargeLimitIndex { get => _blade._bladeChargeLimitIndex; set => SetField(ref _blade._bladeChargeLimitIndex, value); }
     public bool CanSetBladeChargeLimit { get => _blade._canSetBladeChargeLimit; private set => SetField(ref _blade._canSetBladeChargeLimit, value); }
-    public IReadOnlyList<string> BladeCpuBoostOptions => AppStrings.Texts("Text_CB5F70D1", "Text_28619638", "Text_5C1F32A7", "Boost", "Text_BAA7D10B");
+    public IReadOnlyList<string> BladeCpuBoostOptions => AppStrings.Texts("Text_CB5F70D1", "Text_28619638", "Text_5C1F32A7", "BladeCpuBoostHighestOption", "Text_BAA7D10B");
     public string BladeCpuBoostText { get => _blade._bladeCpuBoostText; private set => SetField(ref _blade._bladeCpuBoostText, value); }
     public int BladeCpuBoostIndex { get => _blade._bladeCpuBoostIndex; set => SetField(ref _blade._bladeCpuBoostIndex, value); }
     public bool CanSetBladeCpuBoost => _blade._hasBladeCpuBoost && IsBladeCustomMode;
