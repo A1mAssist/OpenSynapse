@@ -408,6 +408,9 @@ public sealed partial class MainWindow
     private async void ApplyLogoClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
 
+    private async void CheckFirmwareUpdateClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.CheckFirmwareUpdateAsync(_lifetime.Token);
+
     private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
     {
         if (_touchpadToggleInFlight || sender is not ToggleSwitch { FocusState: not FocusState.Unfocused })

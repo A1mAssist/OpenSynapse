@@ -144,6 +144,7 @@ public sealed partial class MainViewModel
         {
             SetBladeFnKey(fnKeyMultimediaPrimary);
         }
+        ApplyFirmwareMcuVersion(telemetry.BladeMcuVersion);
         if (telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode)
         {
             BladeNativeDisplayModeText = nativeDisplayMode == BladeNativeDisplayMode.Uhd ? "UHD" : "FHD";
@@ -489,6 +490,8 @@ public sealed partial class MainViewModel
         BladeStartupAnimationEnabled = false;
         _blade._bladeFnKeyMultimediaPrimary = null;
         _blade._bladeFnKeyText = "--";
+        _firmwareVersions = _firmwareVersions with { Mcu = "--" };
+        ApplyFirmwareTexts();
         OnPropertyChanged(nameof(BladeFnKeyText));
         OnPropertyChanged(nameof(BladeFnKeyMultimediaPrimary));
         OnPropertyChanged(nameof(CanSetBladeFnKey));

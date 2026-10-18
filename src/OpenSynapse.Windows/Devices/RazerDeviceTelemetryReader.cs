@@ -80,6 +80,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         bool? bladeOneTimeFullChargeEnabled = null;
         bool? bladeLocalDimmingEnabled = null;
         bool? bladeFnKeyMultimediaPrimary = null;
+        string? bladeMcuVersion = null;
         int? batteryPercent = null;
         int? pollingRate = null;
         int? dpiX = null;
@@ -225,6 +226,17 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"Fn row behavior: {exception.Message}");
+            }
+
+            try
+            {
+                var response = await QueryCapabilityAsync(blade, "mcu-version.get", cancellationToken);
+                bladeMcuVersion = BladeMcuVersionProtocol.Parse(
+                    response, CreateCapabilityRequest(blade, "mcu-version.get"));
+            }
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
+            {
+                errors.Add($"MCU firmware version: {exception.Message}");
             }
 
             try
@@ -381,7 +393,8 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             bladeSkuHardwareConfiguration,
             bladeOneTimeFullChargeEnabled,
             bladeLocalDimmingEnabled,
-            BladeFnKeyMultimediaPrimary: bladeFnKeyMultimediaPrimary);
+            BladeFnKeyMultimediaPrimary: bladeFnKeyMultimediaPrimary,
+            BladeMcuVersion: bladeMcuVersion);
         var capabilitySummaries = new Dictionary<string, DeviceCapabilitySummary>(StringComparer.OrdinalIgnoreCase);
         if (blade is not null)
         {
