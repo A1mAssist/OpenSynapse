@@ -1477,4 +1477,5 @@
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>Full fan speed</value></data>
   <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>Changes are saved to the current profile; full fan speed increases noise.</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
+  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad: it raises sustained power limits and relies on the pad for cooling. The device may not accept this mode without the pad.</value></data>
 </root>
