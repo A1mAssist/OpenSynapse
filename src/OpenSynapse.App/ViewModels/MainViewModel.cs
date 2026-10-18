@@ -600,8 +600,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
     }
 
-    internal Task InitializeProfileAsync(CancellationToken cancellationToken = default) =>
-        LoadProfileAsync(cancellationToken);
+    internal async Task InitializeProfileAsync(CancellationToken cancellationToken = default)
+    {
+        await LoadProfileAsync(cancellationToken);
+        RefreshFirmwareVersions();
+    }
 
     private void RefreshInternalDisplayRateEditor()
     {

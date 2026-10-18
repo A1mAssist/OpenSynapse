@@ -26,6 +26,25 @@ public sealed partial class MainViewModel
         return serial;
     }
 
+    private async Task RefreshCoolingPadPresenceAsync(CancellationToken cancellationToken)
+    {
+        var connected = await RazerCoolingPad.IsConnectedAsync(cancellationToken);
+        if (_bladeCoolingPadConnected == connected)
+        {
+            return;
+        }
+
+        _bladeCoolingPadConnected = connected;
+        OnPropertyChanged(nameof(HyperboostOptionVisibility));
+        OnPropertyChanged(nameof(BladePerformanceModeOptions));
+        if (!connected &&
+            BladePerformanceModeIndex ==
+            Array.IndexOf(DeviceUiCatalog.BladePerformanceModes, BladePerformanceMode.Hyperboost))
+        {
+            BladePerformanceModeIndex = -1;
+        }
+    }
+
     private async Task RefreshDevicesCoreAsync(
         DeviceSnapshot? knownSnapshot,
         CancellationToken cancellationToken,
@@ -131,6 +150,7 @@ public sealed partial class MainViewModel
                 }
                     ? blade.Id
                     : null);
+            await RefreshCoolingPadPresenceAsync(cancellationToken);
             BladeDeviceName = blade?.Name ?? "Razer Blade";
             ViperDeviceName = viper?.Name ?? "Razer Viper";
             BladeSerial = await GetDeviceSerialAsync(blade, cancellationToken);
