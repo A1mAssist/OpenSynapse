@@ -1,4 +1,5 @@
 using System.Management;
+using System.Runtime.InteropServices;
 
 namespace OpenSynapse.Windows.Displays;
 
@@ -54,7 +55,7 @@ public sealed class WindowsDisplayBrightnessController
             {
                 await Task.Run(() => Apply(percent), cancellationToken);
             }
-            catch (Exception exception) when (exception is ManagementException or UnauthorizedAccessException)
+            catch (Exception exception) when (exception is ManagementException or COMException or UnauthorizedAccessException)
             {
                 throw new InvalidOperationException(
                     "Windows could not write the internal display brightness.",
@@ -94,5 +95,5 @@ public sealed class WindowsDisplayBrightnessController
     }
 
     private static bool IsUnavailable(Exception exception) =>
-        exception is ManagementException or UnauthorizedAccessException or InvalidOperationException;
+        exception is ManagementException or COMException or UnauthorizedAccessException or InvalidOperationException;
 }
