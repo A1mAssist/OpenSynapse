@@ -14,7 +14,7 @@
 
 <p align="center">简体中文 · <a href="README.md">English</a></p>
 
-OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。Blade 和 Viper 继续使用各自的产品专用实现，OpenRazer 设备走按能力判断的通用页面。
+OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。当前支持 254 个 OpenRazer 目录设备，以及 Blade/Viper、Kraken 和 Chroma REST 的专用能力。
 
 > 当前版本 `v1.5.2` · Windows 11 x64 · 未签名
 
@@ -22,41 +22,21 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 ## 支持范围
 
-### 产品专用设备
+OpenSynapse 不只有少数产品专用型号。当前支持 **254 个 OpenRazer 目录设备**，以及 Blade/Viper 产品专用控制、**6 款 Kraken 耳机灯光** 和 Chroma REST 灯光接入。
 
-| 设备 | USB VID:PID | 可用功能 |
-|---|---|---|
-| Razer Blade 16 (2025) | `1532:02C6` | 遥测、键盘灯光、性能、风扇、显示、电池、Fn/M3/M4/M5 |
-| Razer Viper V3 HyperSpeed | `1532:00B8` | 电量、DPI、轮询率、休眠、电池类型、板载映射 |
+**[查看完整设备与能力列表](docs/SUPPORTED_DEVICES.zh-CN.md)**，其中包含型号名称、USB PID、产品专用功能以及明确的验证边界。
 
-Blade 灯光支持关闭、静态、呼吸、光谱循环、波浪、火焰、响应、涟漪、音频律动、环境感知、色轮、星光和双色潮汐。自定义性能模式可以调整 CPU Boost、GPU Boost 和 Max Fan。风扇控制、充电上限、内屏刷新率、触控板以及经过验证的 Fn 功能仍在 Blade 页面中管理。系统遥测会在 Windows 能够读取相应传感器时展示 CPU 和当前活动 GPU 的温度、功耗、负载与频率。
+### 按能力显示控制项
 
-Blade 的波浪和光谱循环在未保存颜色调色板时由固件渲染，保存调色板后改用软件逐帧渲染。OpenRazer 键盘若同时支持原生灯效和矩阵逐帧输出，也可以在灯光页面选择固件或软件实现。
+OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。不同型号可能提供设备信息、电池状态、轮询率、DPI 与 DPI 档位、省电设置、灯光、矩阵输出、滚轮设置、键轴优化、Fn 行为或 HyperPolling 接收器控制。
 
-Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y DPI、最多 5 档 DPI，以及固定 Profile 1 的 Normal/HyperShift 板载映射。鼠标无法可靠读回电池类型，因此该设置由用户选择。低电量阈值继续保持只读。
+固定 OpenRazer 目录包含 110 个鼠标、72 个键盘、46 个笔记本和 26 个配件。设备出现在目录中，不代表每个控制项都已在该型号上完成真机验证。端点无法解析或正被占用时，页面会保持只读，直到重新扫描；OpenSynapse 不会按产品名称猜测能力，也不会通过未经验证的 HID 接口强行写入。
 
-### OpenRazer 设备
+### 产品专用与附加支持
 
-1.2.1 加入了基于固定 OpenRazer 设备目录的通用支持。目录包含使用标准 91-byte Razer HID 报告的鼠标、键盘、笔记本和配件。软件只为当前连接的设备创建页面，后端确认端点和事务以后，对应控件才会出现。
-
-不同型号可能提供设备信息、电池状态、轮询率、DPI 与 DPI 档位、省电设置、低电量警告、灯光亮度与效果、分区 LED、矩阵灯光、滚轮设置、键轴优化、Fn 优先行为或 HyperPolling 接收器控制。
-
-设备出现在目录中，不代表每个控制项都已在该型号上完成真机验证。端点无法解析或正被占用时，页面会保持只读，直到重新扫描。OpenSynapse 不会按产品名称猜测能力，也不会改用另一个 HID 接口强行写入。
-
-### Kraken 灯光
-
-以下 Kraken USB 耳机使用独立的 37-byte Output Report 通道。OpenSynapse 只管理它们的灯光。
-
-| 型号 | USB PID |
-|---|---|
-| Kraken 7.1 | `0501`、`0506` |
-| Kraken 7.1 Chroma | `0504` |
-| Kraken 7.1 V2 | `0510` |
-| Kraken Tournament Edition | `0520` |
-| Kraken Ultimate | `0527` |
-| Kraken Kitty V2 | `0560` |
-
-软件会按匹配到的设备定义显示灯效。不同型号可能支持关闭、静态、光谱、单色/双色/三色呼吸和自定义。这里不包含音频、麦克风、EQ 或 THX 控制。
+- **Blade：** 遥测、键盘灯光、性能、风扇、显示、电池、触控板、充电上限，以及经过验证的 Fn/M3/M4/M5。
+- **Viper：** 电量、DPI、轮询率、休眠、电池类型和板载映射。
+- **Kraken：** 6 款 USB 耳机仅支持灯光；不包含音频、麦克风、EQ 或 THX 控制。
 
 ### Chroma REST
 
@@ -87,7 +67,7 @@ Viper 页面支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y D
 
 ### 驱动要求
 
-应用本身不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 Razer 设备驱动，使用前需要安装 Razer 提供的对应驱动包。
+核心设备控制不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 Razer 设备驱动。
 
 ## 当前不包含
 
