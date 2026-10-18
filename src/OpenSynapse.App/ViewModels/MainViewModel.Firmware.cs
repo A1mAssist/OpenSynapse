@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 
@@ -11,15 +12,27 @@ public sealed partial class MainViewModel
     private string _firmwareMcuText = "--";
     private string _firmwareVbiosText = "--";
     private string _firmwareUpdateStatusText = string.Empty;
-    private string _firmwarePublishedText = string.Empty;
     private bool _isCheckingFirmwareUpdate;
+    private bool _hasFirmwareUpdate;
 
     public string FirmwareBiosText { get => _firmwareBiosText; private set => SetField(ref _firmwareBiosText, value); }
     public string FirmwareEcText { get => _firmwareEcText; private set => SetField(ref _firmwareEcText, value); }
     public string FirmwareMcuText { get => _firmwareMcuText; private set => SetField(ref _firmwareMcuText, value); }
     public string FirmwareVbiosText { get => _firmwareVbiosText; private set => SetField(ref _firmwareVbiosText, value); }
     public string FirmwareUpdateStatusText { get => _firmwareUpdateStatusText; private set => SetField(ref _firmwareUpdateStatusText, value); }
-    public string FirmwarePublishedText { get => _firmwarePublishedText; private set => SetField(ref _firmwarePublishedText, value); }
+    public bool HasFirmwareUpdate
+    {
+        get => _hasFirmwareUpdate;
+        private set
+        {
+            if (SetField(ref _hasFirmwareUpdate, value))
+            {
+                OnPropertyChanged(nameof(FirmwareUpdateAvailableVisibility));
+            }
+        }
+    }
+    public Visibility FirmwareUpdateAvailableVisibility =>
+        HasFirmwareUpdate ? Visibility.Visible : Visibility.Collapsed;
     public bool IsCheckingFirmwareUpdate
     {
         get => _isCheckingFirmwareUpdate;
@@ -72,17 +85,15 @@ public sealed partial class MainViewModel
         }
 
         IsCheckingFirmwareUpdate = true;
+        HasFirmwareUpdate = false;
         FirmwareUpdateStatusText = AppStrings.Text("FirmwareUpdateChecking");
-        FirmwarePublishedText = string.Empty;
         try
         {
             var result = await _firmwareUpdateClient.CheckAsync(_firmwareVersions, cancellationToken);
+            HasFirmwareUpdate = result.HasUpdate;
             FirmwareUpdateStatusText = result.HasUpdate
                 ? AppStrings.FormatText("FirmwareUpdateAvailable", string.Join(", ", result.NewerComponents))
                 : AppStrings.Text("FirmwareUpdateCurrent");
-            FirmwarePublishedText = AppStrings.FormatText(
-                "FirmwarePublished",
-                FormatPublishedVersions(result));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -100,15 +111,5 @@ public sealed partial class MainViewModel
         {
             IsCheckingFirmwareUpdate = false;
         }
-    }
-
-    private static string FormatPublishedVersions(FirmwareUpdateCheckResult result)
-    {
-        var parts = new List<string>();
-        if (result.PublishedBios is not null) parts.Add($"BIOS {result.PublishedBios}");
-        if (result.PublishedEc is not null) parts.Add($"EC {result.PublishedEc}");
-        if (result.PublishedMcu is not null) parts.Add($"MCU {result.PublishedMcu}");
-        if (result.PublishedVbios is not null) parts.Add($"vBIOS {result.PublishedVbios}");
-        return string.Join(" · ", parts);
     }
 }

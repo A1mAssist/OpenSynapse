@@ -416,9 +416,10 @@
                         <StackPanel Grid.Column="2" Spacing="4"><TextBlock local:Localized.Uid="FirmwareMcuLabel" Text="MCU" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareMcuText}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
                         <StackPanel Grid.Column="3" Spacing="4"><TextBlock local:Localized.Uid="FirmwareVbiosLabel" Text="vBIOS" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareVbiosText}" FontFamily="Cascadia Mono" TextWrapping="Wrap" /></StackPanel>
                       </Grid>
-                      <TextBlock Text="{Binding FirmwareUpdateStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding FirmwarePublishedText}" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono" FontSize="11" TextWrapping="Wrap" />
-                      <TextBlock local:Localized.Uid="FirmwareUpdateHint" Text="只检查 Razer 官方支持页版本，不执行刷写。" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <TextBlock Text="{Binding FirmwareUpdateStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" local:Localized.Uid="FirmwareDownloadButton" Content="前往下载" Click="OpenFirmwareDownloadClick" Visibility="{Binding FirmwareUpdateAvailableVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
+                      </Grid>
                     </StackPanel>
                   </Border>
                 </StackPanel>

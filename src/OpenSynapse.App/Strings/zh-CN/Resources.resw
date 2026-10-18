@@ -1841,12 +1841,11 @@
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>
   <data name="FirmwareMcuLabel" xml:space="preserve"><value>MCU</value></data>
   <data name="FirmwareVbiosLabel" xml:space="preserve"><value>vBIOS</value></data>
-  <data name="FirmwareUpdateHint" xml:space="preserve"><value>只检查 Razer 官方支持页版本，不执行刷写。</value></data>
   <data name="FirmwareUpdateChecking" xml:space="preserve"><value>正在检查 Razer 官方支持页…</value></data>
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>已是最新版本。</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>有可用更新：{0}。</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>检查失败：{0}</value></data>
-  <data name="FirmwarePublished" xml:space="preserve"><value>官方最新：{0}</value></data>
+  <data name="FirmwareDownloadButton" xml:space="preserve"><value>前往下载</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn 行行为</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>多媒体键优先</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>功能键优先</value></data>
