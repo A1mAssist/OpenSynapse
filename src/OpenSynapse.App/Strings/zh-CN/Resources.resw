@@ -1718,6 +1718,7 @@
   <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>当前供电</value></data>
   <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>电源</value></data>
+  <data name="BladeLightingPowerLowAdapter" xml:space="preserve"><value>低功率适配器</value></data>
   <data name="BladeLightingPowerBattery" xml:space="preserve"><value>电池</value></data>
   <data name="BladePerformancePowerProfileLabel.Text" xml:space="preserve"><value>性能模式供电配置</value></data>
   <data name="BladeRefreshRatePowerProfileLabel.Text" xml:space="preserve"><value>刷新率供电配置</value></data>

@@ -67,7 +67,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private long _bladeBrightnessVerificationGeneration;
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
     private ProfileDocument _profile = ProfileDocument.CreateDefault();
-    private bool? _lastPowerState;
+    private PowerSourceKind? _lastPowerState;
     private string _lastDeviceRefreshText = AppStrings.Text("Text_E19E170A");
     private string _deviceTelemetryTimeText = AppStrings.Text("Text_CF8B06AA");
     private string _deviceErrorText = string.Empty;
@@ -263,12 +263,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public string ActivePowerSourceText => AppStrings.FormatText(
         "ActivePowerSource",
-        _powerSourceProvider.IsPluggedIn switch
-        {
-            true => AppStrings.Text("BladeLightingPowerPluggedIn"),
-            false => AppStrings.Text("BladeLightingPowerBattery"),
-            _ => "--",
-        });
+        FormatPowerSource(CurrentPowerSource));
+
+    private static string FormatPowerSource(PowerSourceKind source) => source switch
+    {
+        PowerSourceKind.FullPowerAdapter => AppStrings.Text("BladeLightingPowerPluggedIn"),
+        PowerSourceKind.LowPowerAdapter => AppStrings.Text("BladeLightingPowerLowAdapter"),
+        PowerSourceKind.Battery => AppStrings.Text("BladeLightingPowerBattery"),
+        _ => "--",
+    };
 
     public string CreateDiagnosticsReport()
     {
@@ -433,95 +436,59 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
     }
 
-    private bool? SelectedLightingPowerState => _bladeLightingPowerProfileIndex switch
-    {
-        1 => true,
-        2 => false,
-        _ => _powerSourceProvider.IsPluggedIn,
-    };
+    private PowerSourceKind CurrentPowerSource =>
+        PowerSourceResolver.Resolve(
+            _powerSourceProvider.IsPluggedIn,
+            _lastDeviceTelemetry?.BladeAdapterPower);
 
-    private bool? SelectedPerformancePowerState => _bladePerformancePowerProfileIndex switch
+    private PowerSourceKind SelectedLightingPowerState => SelectedPowerSource(_bladeLightingPowerProfileIndex);
+    private PowerSourceKind SelectedPerformancePowerState => SelectedPowerSource(_bladePerformancePowerProfileIndex);
+    private PowerSourceKind SelectedRefreshRatePowerState => SelectedPowerSource(_bladeRefreshRatePowerProfileIndex);
+    private PowerSourceKind SelectedLogoPowerState => SelectedPowerSource(_bladeLogoPowerProfileIndex);
+
+    private PowerSourceKind SelectedPowerSource(int index) => index switch
     {
-        1 => true,
-        2 => false,
-        _ => _powerSourceProvider.IsPluggedIn,
+        1 => PowerSourceKind.FullPowerAdapter,
+        2 => PowerSourceKind.LowPowerAdapter,
+        3 => PowerSourceKind.Battery,
+        _ => CurrentPowerSource,
     };
 
     private bool IsSelectedLightingPowerActive =>
-        _bladeLightingPowerProfileIndex == 0 ||
-        SelectedLightingPowerState == _powerSourceProvider.IsPluggedIn;
+        _bladeLightingPowerProfileIndex == 0 || SelectedLightingPowerState == CurrentPowerSource;
 
     private bool IsSelectedPerformancePowerActive =>
-        _bladePerformancePowerProfileIndex == 0 ||
-        SelectedPerformancePowerState == _powerSourceProvider.IsPluggedIn;
+        _bladePerformancePowerProfileIndex == 0 || SelectedPerformancePowerState == CurrentPowerSource;
 
     private bool IsSelectedRefreshRatePowerActive =>
-        _bladeRefreshRatePowerProfileIndex == 0 ||
-        SelectedRefreshRatePowerState == _powerSourceProvider.IsPluggedIn;
-
-    private bool? SelectedRefreshRatePowerState => _bladeRefreshRatePowerProfileIndex switch
-    {
-        1 => true,
-        2 => false,
-        _ => _powerSourceProvider.IsPluggedIn,
-    };
-
-    private bool? SelectedLogoPowerState => _bladeLogoPowerProfileIndex switch
-    {
-        1 => true,
-        2 => false,
-        _ => _powerSourceProvider.IsPluggedIn,
-    };
+        _bladeRefreshRatePowerProfileIndex == 0 || SelectedRefreshRatePowerState == CurrentPowerSource;
 
     private bool IsSelectedLogoPowerActive =>
-        _bladeLogoPowerProfileIndex == 0 ||
-        SelectedLogoPowerState == _powerSourceProvider.IsPluggedIn;
+        _bladeLogoPowerProfileIndex == 0 || SelectedLogoPowerState == CurrentPowerSource;
 
-    private PowerProfileOverrides? SelectedLightingPowerOverrides => _bladeLightingPowerProfileIndex switch
+    private PowerProfileOverrides? SelectedLightingPowerOverrides => SelectedPowerOverrides(_bladeLightingPowerProfileIndex);
+    private PowerProfileOverrides? SelectedPerformancePowerOverrides => SelectedPowerOverrides(_bladePerformancePowerProfileIndex);
+    private PowerProfileOverrides? SelectedRefreshRatePowerOverrides => SelectedPowerOverrides(_bladeRefreshRatePowerProfileIndex);
+    private PowerProfileOverrides? SelectedLogoPowerOverrides => SelectedPowerOverrides(_bladeLogoPowerProfileIndex);
+
+    private PowerProfileOverrides? SelectedPowerOverrides(int index) => index switch
     {
         1 => GetActiveProfile().PluggedIn,
-        2 => GetActiveProfile().OnBattery,
-        _ when _powerSourceProvider.IsPluggedIn == true => GetActiveProfile().PluggedIn,
-        _ when _powerSourceProvider.IsPluggedIn == false => GetActiveProfile().OnBattery,
-        _ => null,
+        2 => GetActiveProfile().LowPowerAdapter,
+        3 => GetActiveProfile().OnBattery,
+        _ => CurrentPowerOverrides,
     };
 
-    private PowerProfileOverrides? CurrentPowerOverrides => _powerSourceProvider.IsPluggedIn switch
+    private PowerProfileOverrides? CurrentPowerOverrides => CurrentPowerSource switch
     {
-        true => GetActiveProfile().PluggedIn,
-        false => GetActiveProfile().OnBattery,
+        PowerSourceKind.FullPowerAdapter => GetActiveProfile().PluggedIn,
+        PowerSourceKind.LowPowerAdapter => GetActiveProfile().LowPowerAdapter,
+        PowerSourceKind.Battery => GetActiveProfile().OnBattery,
         _ => null,
     };
 
     private BladeProfileSettings EditableLightingBladeProfile =>
         SelectedLightingPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
-
-    private PowerProfileOverrides? SelectedPerformancePowerOverrides => _bladePerformancePowerProfileIndex switch
-    {
-        1 => GetActiveProfile().PluggedIn,
-        2 => GetActiveProfile().OnBattery,
-        _ when _powerSourceProvider.IsPluggedIn == true => GetActiveProfile().PluggedIn,
-        _ when _powerSourceProvider.IsPluggedIn == false => GetActiveProfile().OnBattery,
-        _ => null,
-    };
-
-    private PowerProfileOverrides? SelectedRefreshRatePowerOverrides => _bladeRefreshRatePowerProfileIndex switch
-    {
-        1 => GetActiveProfile().PluggedIn,
-        2 => GetActiveProfile().OnBattery,
-        _ when _powerSourceProvider.IsPluggedIn == true => GetActiveProfile().PluggedIn,
-        _ when _powerSourceProvider.IsPluggedIn == false => GetActiveProfile().OnBattery,
-        _ => null,
-    };
-
-    private PowerProfileOverrides? SelectedLogoPowerOverrides => _bladeLogoPowerProfileIndex switch
-    {
-        1 => GetActiveProfile().PluggedIn,
-        2 => GetActiveProfile().OnBattery,
-        _ when _powerSourceProvider.IsPluggedIn == true => GetActiveProfile().PluggedIn,
-        _ when _powerSourceProvider.IsPluggedIn == false => GetActiveProfile().OnBattery,
-        _ => null,
-    };
 
     private BladeProfileSettings EditablePerformanceBladeProfile =>
         SelectedPerformancePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;

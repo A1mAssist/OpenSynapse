@@ -10,6 +10,7 @@ public sealed class ProfileDocument
     public ProfileSettings Global { get; set; } = new();
     public Dictionary<string, DeviceProfileSettings> Devices { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public PowerProfileOverrides PluggedIn { get; set; } = new();
+    public PowerProfileOverrides LowPowerAdapter { get; set; } = new();
     public PowerProfileOverrides OnBattery { get; set; } = new();
     public Dictionary<string, string> ApplicationBindings { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -43,6 +44,7 @@ public sealed class ProfileDocument
         Global ??= new ProfileSettings();
         Devices = ProfileDictionary.Normalize(Devices);
         PluggedIn ??= new PowerProfileOverrides();
+        LowPowerAdapter ??= new PowerProfileOverrides();
         OnBattery ??= new PowerProfileOverrides();
         ApplicationBindings = ProfileDictionary.Normalize(ApplicationBindings);
         Global.ApplySafeDefaults();
@@ -52,6 +54,7 @@ public sealed class ProfileDocument
         }
 
         PluggedIn.ApplySafeDefaults();
+        LowPowerAdapter.ApplySafeDefaults();
         OnBattery.ApplySafeDefaults();
         EnsureProfileCatalog();
     }
@@ -72,6 +75,7 @@ public sealed class ProfileDocument
                 Global = Global,
                 Devices = Devices,
                 PluggedIn = PluggedIn,
+                LowPowerAdapter = LowPowerAdapter,
                 OnBattery = OnBattery,
             };
         }
@@ -91,6 +95,7 @@ public sealed class ProfileDocument
         Global = active.Global;
         Devices = active.Devices;
         PluggedIn = active.PluggedIn;
+        LowPowerAdapter = active.LowPowerAdapter;
         OnBattery = active.OnBattery;
     }
 }
@@ -100,6 +105,7 @@ public sealed class ProfileDefinition
     public ProfileSettings Global { get; set; } = new();
     public Dictionary<string, DeviceProfileSettings> Devices { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public PowerProfileOverrides PluggedIn { get; set; } = new();
+    public PowerProfileOverrides LowPowerAdapter { get; set; } = new();
     public PowerProfileOverrides OnBattery { get; set; } = new();
     public ProfileShortcutSettings Shortcuts { get; set; } = new();
     public List<LightingColorPreset> LightingColorPresets { get; set; } = [];
@@ -109,6 +115,7 @@ public sealed class ProfileDefinition
         Global ??= new ProfileSettings();
         Devices = ProfileDictionary.Normalize(Devices);
         PluggedIn ??= new PowerProfileOverrides();
+        LowPowerAdapter ??= new PowerProfileOverrides();
         OnBattery ??= new PowerProfileOverrides();
         Shortcuts ??= new ProfileShortcutSettings();
         LightingColorPresets = LightingColorPresets?
@@ -121,6 +128,7 @@ public sealed class ProfileDefinition
         }
 
         PluggedIn.ApplySafeDefaults();
+        LowPowerAdapter.ApplySafeDefaults();
         OnBattery.ApplySafeDefaults();
         Shortcuts.ApplySafeDefaults();
     }
@@ -137,6 +145,7 @@ public sealed class ProfileDefinition
                 Lighting = CloneLighting(Global.Lighting),
             },
             PluggedIn = ClonePower(PluggedIn),
+            LowPowerAdapter = ClonePower(LowPowerAdapter),
             OnBattery = ClonePower(OnBattery),
             Shortcuts = Shortcuts.Clone(),
             LightingColorPresets = LightingColorPresets.Select(preset => preset.Clone()).ToList(),

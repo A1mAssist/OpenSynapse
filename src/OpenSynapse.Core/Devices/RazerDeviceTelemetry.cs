@@ -170,9 +170,10 @@ public static class DeviceCapabilitySummaryCalculator
                     telemetry.BladeStartupAnimationEnabled,
                     telemetry.BladeNativeDisplayMode,
                     telemetry.BladeSkuHardwareConfiguration,
-                    telemetry.BladeOneTimeFullChargeEnabled) +
+                    telemetry.BladeOneTimeFullChargeEnabled,
+                    telemetry.BladeAdapterPower) +
                     (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
-                16 + (supportsLocalDimming ? 1 : 0)),
+                17 + (supportsLocalDimming ? 1 : 0)),
             "viper-184" => new(
                 Count(
                     telemetry.ViperBatteryPercent,
@@ -187,6 +188,17 @@ public static class DeviceCapabilitySummaryCalculator
     }
 
     private static int Count(params object?[] values) => values.Count(value => value is not null);
+}
+
+public sealed record BladeAdapterPowerSnapshot(
+    byte ActualLevel,
+    byte RecommendedLevel,
+    int? ActualWatts,
+    int? RecommendedWatts)
+{
+    public bool IsLimitedAdapter =>
+        ActualWatts is int actual && RecommendedWatts is int recommended &&
+        actual > 0 && recommended > 0 && actual < recommended;
 }
 
 public sealed record BladeFanControlState(BladeFanMode Mode, int TargetRpm);
@@ -228,7 +240,8 @@ public sealed record RazerDeviceTelemetry(
     bool? BladeLocalDimmingEnabled = null,
     IReadOnlyDictionary<string, DeviceCapabilitySummary>? CapabilitySummaries = null,
     bool? BladeFnKeyMultimediaPrimary = null,
-    string? BladeMcuVersion = null);
+    string? BladeMcuVersion = null,
+    BladeAdapterPowerSnapshot? BladeAdapterPower = null);
 
 public interface IRazerDeviceTelemetryReader
 {

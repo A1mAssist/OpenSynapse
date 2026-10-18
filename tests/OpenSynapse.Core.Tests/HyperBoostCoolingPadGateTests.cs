@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using Xunit;
 
 namespace OpenSynapse.Core.Tests;
@@ -62,7 +63,7 @@ public sealed class HyperBoostCoolingPadGateTests
             [device],
             telemetry,
             reader,
-            isPluggedIn: true,
+            powerSource: PowerSourceKind.FullPowerAdapter,
             applyKeyboardBrightness: false,
             coolingPadConnected: coolingPadConnected);
     }

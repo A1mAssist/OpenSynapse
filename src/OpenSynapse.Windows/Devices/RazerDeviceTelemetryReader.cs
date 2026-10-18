@@ -81,6 +81,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         bool? bladeLocalDimmingEnabled = null;
         bool? bladeFnKeyMultimediaPrimary = null;
         string? bladeMcuVersion = null;
+        BladeAdapterPowerSnapshot? bladeAdapterPower = null;
         int? batteryPercent = null;
         int? pollingRate = null;
         int? dpiX = null;
@@ -241,6 +242,17 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
             try
             {
+                var response = await QueryCapabilityAsync(blade, "adapter-power.get", cancellationToken);
+                bladeAdapterPower = BladeAdapterPowerProtocol.Parse(
+                    response, CreateCapabilityRequest(blade, "adapter-power.get"));
+            }
+            catch (Exception exception) when (IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Adapter power: {exception.Message}");
+            }
+
+            try
+            {
                 var response = await QueryCapabilityAsync(
                     blade, "native-display-mode.get", cancellationToken);
                 bladeNativeDisplayMode = BladeProduct710Protocol.ParseNativeDisplayMode(
@@ -394,7 +406,8 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             bladeOneTimeFullChargeEnabled,
             bladeLocalDimmingEnabled,
             BladeFnKeyMultimediaPrimary: bladeFnKeyMultimediaPrimary,
-            BladeMcuVersion: bladeMcuVersion);
+            BladeMcuVersion: bladeMcuVersion,
+            BladeAdapterPower: bladeAdapterPower);
         var capabilitySummaries = new Dictionary<string, DeviceCapabilitySummary>(StringComparer.OrdinalIgnoreCase);
         if (blade is not null)
         {

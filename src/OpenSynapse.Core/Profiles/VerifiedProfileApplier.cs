@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Sensors;
 
 namespace OpenSynapse.Core.Profiles;
 
@@ -22,7 +23,7 @@ public sealed class VerifiedProfileApplier
         IReadOnlyList<DeviceDescriptor> devices,
         RazerDeviceTelemetry telemetry,
         IRazerDeviceTelemetryReader reader,
-        bool? isPluggedIn,
+        PowerSourceKind powerSource,
         CancellationToken cancellationToken = default,
         bool applyKeyboardBrightness = true,
         bool coolingPadConnected = true)
@@ -73,7 +74,7 @@ public sealed class VerifiedProfileApplier
         if (blade is not null)
         {
             var bladeErrors = new List<string>();
-            var profile = ProfileResolver.Resolve(document, blade, isPluggedIn);
+            var profile = ProfileResolver.Resolve(document, blade, powerSource);
             var effectivePerformanceMode = telemetry.BladePerformanceMode;
             var performanceValueInvalid = false;
             if (profile.Blade.PerformanceMode is byte rawPerformanceMode)
@@ -220,7 +221,7 @@ public sealed class VerifiedProfileApplier
         if (viper is not null)
         {
             var viperErrors = new List<string>();
-            var profile = ProfileResolver.Resolve(document, viper, isPluggedIn);
+            var profile = ProfileResolver.Resolve(document, viper, powerSource);
             if (profile.Viper.DpiStages is ViperDpiStagesProfile dpiStages)
             {
                 if (telemetry.ViperDpiStages is not ViperDpiStagesTelemetry current)

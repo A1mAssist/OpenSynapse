@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Sensors;
 
 namespace OpenSynapse.Core.Profiles;
 
@@ -12,7 +13,18 @@ public static class ProfileResolver
     public static ResolvedProfile Resolve(
         ProfileDocument document,
         DeviceDescriptor device,
-        bool? isPluggedIn)
+        bool? isPluggedIn) =>
+        Resolve(document, device, isPluggedIn switch
+        {
+            true => PowerSourceKind.FullPowerAdapter,
+            false => PowerSourceKind.Battery,
+            _ => PowerSourceKind.Unknown,
+        });
+
+    public static ResolvedProfile Resolve(
+        ProfileDocument document,
+        DeviceDescriptor device,
+        PowerSourceKind powerSource)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(device);
@@ -20,11 +32,12 @@ public static class ProfileResolver
         var active = document.GetActiveProfileDefinition();
         var global = active.Global;
         var deviceSettings = FindDeviceSettings(active.Devices, GetDeviceKey(device));
-        var powerSettings = isPluggedIn switch
+        var powerSettings = powerSource switch
         {
-            true => active.PluggedIn,
-            false => active.OnBattery,
-            null => null,
+            PowerSourceKind.FullPowerAdapter => active.PluggedIn,
+            PowerSourceKind.LowPowerAdapter => active.LowPowerAdapter,
+            PowerSourceKind.Battery => active.OnBattery,
+            _ => null,
         };
 
         return new ResolvedProfile(
@@ -42,7 +55,18 @@ public static class ProfileResolver
     public static LightingProfile? ResolveOpenRazerLighting(
         ProfileDocument document,
         DeviceDescriptor device,
-        bool? isPluggedIn)
+        bool? isPluggedIn) =>
+        ResolveOpenRazerLighting(document, device, isPluggedIn switch
+        {
+            true => PowerSourceKind.FullPowerAdapter,
+            false => PowerSourceKind.Battery,
+            _ => PowerSourceKind.Unknown,
+        });
+
+    public static LightingProfile? ResolveOpenRazerLighting(
+        ProfileDocument document,
+        DeviceDescriptor device,
+        PowerSourceKind powerSource)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(device);
@@ -51,10 +75,11 @@ public static class ProfileResolver
         var key = GetDeviceKey(device);
         var globalLighting = active.Global.Lighting;
         var deviceLighting = FindDeviceSettings(active.Devices, key)?.Lighting;
-        var powerLighting = isPluggedIn switch
+        var powerLighting = powerSource switch
         {
-            true => FindLighting(active.PluggedIn.OpenRazerLighting, key),
-            false => FindLighting(active.OnBattery.OpenRazerLighting, key),
+            PowerSourceKind.FullPowerAdapter => FindLighting(active.PluggedIn.OpenRazerLighting, key),
+            PowerSourceKind.LowPowerAdapter => FindLighting(active.LowPowerAdapter.OpenRazerLighting, key),
+            PowerSourceKind.Battery => FindLighting(active.OnBattery.OpenRazerLighting, key),
             _ => null,
         };
 

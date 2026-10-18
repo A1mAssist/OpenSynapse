@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Sensors;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
 
@@ -191,7 +192,7 @@ public sealed partial class MainViewModel
         new(
             _openRazerDeviceService ?? throw new InvalidOperationException("OpenRazer service is unavailable."),
             connection,
-            () => _powerSourceProvider.IsPluggedIn,
+            () => CurrentPowerSource,
             powerState => ProfileResolver.ResolveOpenRazerLighting(
                 _profile,
                 connection.ToDescriptor(),
@@ -212,7 +213,7 @@ public sealed partial class MainViewModel
 
     private async Task<bool> SaveOpenRazerLightingAsync(
         OpenRazerDeviceConnection connection,
-        bool? powerState,
+        PowerSourceKind powerState,
         LightingProfile profile,
         CancellationToken cancellationToken)
     {
@@ -220,8 +221,9 @@ public sealed partial class MainViewModel
         var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
         Dictionary<string, LightingProfile>? target = powerState switch
         {
-            true => active.PluggedIn.OpenRazerLighting,
-            false => active.OnBattery.OpenRazerLighting,
+            PowerSourceKind.FullPowerAdapter => active.PluggedIn.OpenRazerLighting,
+            PowerSourceKind.LowPowerAdapter => active.LowPowerAdapter.OpenRazerLighting,
+            PowerSourceKind.Battery => active.OnBattery.OpenRazerLighting,
             _ => null,
         };
 

@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
@@ -123,7 +124,7 @@ public sealed partial class MainViewModel
 
     private async Task<string?> ApplyLoadedLightingProfileAsync(
         DeviceDescriptor? blade,
-        bool? powerState,
+        PowerSourceKind powerState,
         CancellationToken cancellationToken)
     {
         if (_bladeLightingController is null)
@@ -242,7 +243,7 @@ public sealed partial class MainViewModel
     private string CreateLightingFingerprint(
         LightingProfile profile,
         string devicePath,
-        bool? powerState,
+        PowerSourceKind powerState,
         bool lightingEnabled = true,
         bool chromaOverrideEnabled = true) =>
         $"{_profile.ActiveProfileName}\n{powerState}\n{lightingEnabled}\n{chromaOverrideEnabled}\n{BladeLightingProfileCodec.Fingerprint(profile, devicePath)}";
@@ -263,7 +264,7 @@ public sealed partial class MainViewModel
                 device.Access == DeviceAccessState.Available);
             await ApplyLoadedLightingProfileAsync(
                 blade,
-                _powerSourceProvider.IsPluggedIn,
+                CurrentPowerSource,
                 CancellationToken.None).ConfigureAwait(false);
         }
         finally
@@ -281,7 +282,7 @@ public sealed partial class MainViewModel
             return true;
         }
 
-        var resolved = ProfileResolver.Resolve(_profile, blade, _powerSourceProvider.IsPluggedIn).Blade;
+        var resolved = ProfileResolver.Resolve(_profile, blade, CurrentPowerSource).Blade;
         return (resolved.ChromaOverrideEnabled ?? true) && (resolved.LightingEnabled ?? true);
     }
 }

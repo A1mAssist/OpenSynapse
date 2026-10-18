@@ -38,6 +38,7 @@ internal sealed class RazerDeviceRegistry
                 ["advanced-fan-mode.get"] = new(0x03, 0x0D, 0x87, ""),
                 ["boost.get"] = new(0x03, 0x0D, 0x87, ""),
                 ["boost.set"] = new(0x03, 0x0D, 0x07, ""),
+                ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
                 ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
                 ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
                 ["max-fan.get"] = new(0x01, 0x07, 0x8F, "00", true),
@@ -448,7 +449,7 @@ internal sealed class RazerDeviceRegistry
             }
             if (request.AllowRemainingPacketsMismatch &&
                 (source.ProtocolFamily != "blade-710" ||
-                 capabilityId is not ("charge-limit.get" or "max-fan.get" or
+                 capabilityId is not ("adapter-power.get" or "charge-limit.get" or "max-fan.get" or
                      "native-display-mode.get" or "sku-hardware-configuration.get")))
             {
                 throw new InvalidOperationException(

@@ -51,7 +51,7 @@ public sealed partial class MainViewModel
                 await _deviceWatchSignal.WaitAsync(interval, cancellationToken);
                 try
                 {
-                    var powerState = _powerSourceProvider.IsPluggedIn;
+                    var powerState = CurrentPowerSource;
                     var executablePath = _profile.ApplicationBindings.Count == 0
                         ? null
                         : _activeApplicationProvider.ExecutablePath;
