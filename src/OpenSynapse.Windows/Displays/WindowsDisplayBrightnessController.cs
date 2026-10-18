@@ -1,46 +1,67 @@
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-using Windows.Graphics.Display;
+using System.Management;
 
 namespace OpenSynapse.Windows.Displays;
 
 public sealed class WindowsDisplayBrightnessController
 {
-    private const double Step = 0.1;
+    private const string WmiScope = @"root\WMI";
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    public async Task<double> StepAsync(
-        bool increase,
+    public double? TryGetLevel()
+    {
+        try
+        {
+            using var searcher = new ManagementObjectSearcher(
+                WmiScope,
+                "SELECT CurrentBrightness FROM WmiMonitorBrightness WHERE Active = TRUE");
+            using var results = searcher.Get();
+            foreach (ManagementObject monitor in results)
+            {
+                using (monitor)
+                {
+                    if (monitor["CurrentBrightness"] is not { } value)
+                    {
+                        continue;
+                    }
+
+                    return Math.Clamp(Convert.ToInt32(value) / 100d, 0, 1);
+                }
+            }
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            // Desktops and some OLED panels do not expose WMI backlight control.
+        }
+
+        return null;
+    }
+
+    public async Task<double> SetLevelAsync(
+        double level,
         CancellationToken cancellationToken = default)
     {
+        if (!double.IsFinite(level))
+        {
+            throw new ArgumentOutOfRangeException(nameof(level));
+        }
+
+        var target = Math.Clamp(level, 0, 1);
+        var percent = (byte)Math.Round(target * 100, MidpointRounding.AwayFromZero);
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            var brightness = BrightnessOverride.GetDefaultForSystem();
-            if (!brightness.IsSupported)
+            try
             {
-                SendSystemBrightnessKey(increase);
-                return double.NaN;
+                await Task.Run(() => Apply(percent), cancellationToken);
+            }
+            catch (Exception exception) when (exception is ManagementException or UnauthorizedAccessException)
+            {
+                throw new InvalidOperationException(
+                    "Windows could not write the internal display brightness.",
+                    exception);
             }
 
-            var target = CalculateStep(brightness.BrightnessLevel, increase);
-            brightness.SetBrightnessLevel(target, DisplayBrightnessOverrideOptions.None);
-            brightness.StartOverride();
-            brightness.StopOverride();
-            if (!await BrightnessOverride.SaveForSystemAsync(brightness))
-            {
-                throw new InvalidOperationException("Windows rejected the internal display brightness setting.");
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
             return target;
-        }
-        catch (COMException)
-        {
-            // OLED panels commonly reject BrightnessOverride while still accepting
-            // the Windows display-brightness media keys.
-            SendSystemBrightnessKey(increase);
-            return double.NaN;
         }
         finally
         {
@@ -48,78 +69,30 @@ public sealed class WindowsDisplayBrightnessController
         }
     }
 
-    internal static double CalculateStep(double current, bool increase)
+    private static void Apply(byte percent)
     {
-        if (!double.IsFinite(current))
+        using var methods = new ManagementClass(WmiScope, "WmiMonitorBrightnessMethods", null);
+        using var instances = methods.GetInstances();
+        foreach (ManagementObject monitor in instances)
         {
-            throw new ArgumentOutOfRangeException(nameof(current));
+            using (monitor)
+            {
+                if (monitor["Active"] is false)
+                {
+                    continue;
+                }
+
+                using var input = monitor.GetMethodParameters("WmiSetBrightness");
+                input["Timeout"] = 1u;
+                input["Brightness"] = percent;
+                monitor.InvokeMethod("WmiSetBrightness", input, null);
+                return;
+            }
         }
 
-        return Math.Clamp(current + (increase ? Step : -Step), 0, 1);
+        throw new InvalidOperationException("Windows did not report a writable internal display brightness method.");
     }
 
-    private static void SendSystemBrightnessKey(bool increase)
-    {
-        var virtualKey = (ushort)(increase ? 0x89 : 0x88); // VK_DISPLAY_BRIGHTNESS_UP/DOWN
-        var inputs = new[]
-        {
-            new Input { Type = InputKeyboard, Data = new InputUnion { Keyboard = new KeyboardInput { VirtualKey = virtualKey } } },
-            new Input { Type = InputKeyboard, Data = new InputUnion { Keyboard = new KeyboardInput { VirtualKey = virtualKey, Flags = KeyUpFlag } } },
-        };
-        var sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>());
-        if (sent != inputs.Length)
-        {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows did not accept the display brightness key input.");
-        }
-    }
-
-    private const uint InputKeyboard = 1;
-    private const uint KeyUpFlag = 0x0002;
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint SendInput(uint inputCount, Input[] inputs, int inputSize);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Input
-    {
-        public uint Type;
-        public InputUnion Data;
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    private struct InputUnion
-    {
-        [FieldOffset(0)] public KeyboardInput Keyboard;
-        [FieldOffset(0)] public MouseInput Mouse;
-        [FieldOffset(0)] public HardwareInput Hardware;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct KeyboardInput
-    {
-        public ushort VirtualKey;
-        public ushort ScanCode;
-        public uint Flags;
-        public uint Time;
-        public nuint ExtraInfo;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MouseInput
-    {
-        public int X;
-        public int Y;
-        public uint MouseData;
-        public uint Flags;
-        public uint Time;
-        public nuint ExtraInfo;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct HardwareInput
-    {
-        public uint Message;
-        public ushort ParameterLow;
-        public ushort ParameterHigh;
-    }
+    private static bool IsUnavailable(Exception exception) =>
+        exception is ManagementException or UnauthorizedAccessException or InvalidOperationException;
 }

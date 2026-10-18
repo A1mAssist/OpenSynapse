@@ -7,18 +7,22 @@ namespace OpenSynapse.Windows.Displays;
 public sealed class WindowsInternalDisplayController : IInternalDisplayController
 {
     private readonly IWindowsDisplayApi _api;
+    private readonly WindowsDisplayBrightnessController _brightnessController;
 
     public WindowsInternalDisplayController()
-        : this(new WindowsDisplayApi())
+        : this(new WindowsDisplayApi(), new WindowsDisplayBrightnessController())
     {
     }
 
-    internal WindowsInternalDisplayController(IWindowsDisplayApi api)
+    internal WindowsInternalDisplayController(
+        IWindowsDisplayApi api,
+        WindowsDisplayBrightnessController brightnessController)
     {
         _api = api ?? throw new ArgumentNullException(nameof(api));
+        _brightnessController = brightnessController ?? throw new ArgumentNullException(nameof(brightnessController));
     }
 
-    public InternalDisplaySnapshot Read() => Resolve().ToSnapshot();
+    public InternalDisplaySnapshot Read() => Snapshot(Resolve());
 
     internal string ResolveSourceName() => Resolve().SourceName;
 
@@ -38,7 +42,7 @@ public sealed class WindowsInternalDisplayController : IInternalDisplayControlle
 
         if (original.CurrentMode.RefreshRateHertz == refreshRateHertz)
         {
-            return original.ToSnapshot();
+            return Snapshot(original);
         }
 
         var requested = original.Modes
@@ -80,7 +84,7 @@ public sealed class WindowsInternalDisplayController : IInternalDisplayControlle
                     $"The internal panel did not read back as {refreshRateHertz} Hz after the mode change.");
             }
 
-            return readback.ToSnapshot();
+            return Snapshot(readback);
         }
         catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
         {
@@ -95,6 +99,14 @@ public sealed class WindowsInternalDisplayController : IInternalDisplayControlle
             }
         }
     }
+
+    public Task<double> SetBrightnessAsync(
+        double level,
+        CancellationToken cancellationToken = default) =>
+        _brightnessController.SetLevelAsync(level, cancellationToken);
+
+    private InternalDisplaySnapshot Snapshot(ResolvedInternalDisplay display) =>
+        display.ToSnapshot(_brightnessController.TryGetLevel());
 
     private ResolvedInternalDisplay Resolve()
     {
@@ -196,11 +208,12 @@ public sealed class WindowsInternalDisplayController : IInternalDisplayControlle
         IReadOnlyList<DisplayMode> Modes,
         IReadOnlyList<int> SupportedRefreshRates)
     {
-        public InternalDisplaySnapshot ToSnapshot() => new(
+        public InternalDisplaySnapshot ToSnapshot(double? brightnessLevel) => new(
             CurrentMode.Width,
             CurrentMode.Height,
             CurrentMode.RefreshRateHertz,
-            SupportedRefreshRates);
+            SupportedRefreshRates,
+            brightnessLevel);
     }
 }
 
