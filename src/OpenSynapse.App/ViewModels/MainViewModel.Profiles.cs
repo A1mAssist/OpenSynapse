@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Devices;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
@@ -429,7 +430,8 @@ public sealed partial class MainViewModel
             _deviceTelemetryReader,
             _powerSourceProvider.IsPluggedIn,
             cancellationToken,
-            applyKeyboardBrightness: Volatile.Read(ref _displayAvailable) != 0);
+            applyKeyboardBrightness: Volatile.Read(ref _displayAvailable) != 0,
+            coolingPadConnected: await RazerCoolingPad.IsConnectedAsync(cancellationToken));
         return result;
     }
 

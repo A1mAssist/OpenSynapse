@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Windows.UI;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
@@ -191,15 +192,42 @@ public sealed partial class MainViewModel
         return ApplyBladeLightingEffectAsync(effect, cancellationToken);
     }
 
+    private bool _suppressBladePerformanceApply;
+
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
-        if (!_blade._canSetBladePerformanceMode ||
+        if (_suppressBladePerformanceApply ||
+            !_blade._canSetBladePerformanceMode ||
             BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= BladePerformanceModes.Length)
         {
             return;
         }
 
         var requested = BladePerformanceModes[BladePerformanceModeIndex];
+        bool coolingPadConnected;
+        try
+        {
+            coolingPadConnected = requested != BladePerformanceMode.Hyperboost ||
+                await RazerCoolingPad.IsConnectedAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        if (!coolingPadConnected)
+        {
+            _suppressBladePerformanceApply = true;
+            try
+            {
+                BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex;
+            }
+            finally
+            {
+                _suppressBladePerformanceApply = false;
+            }
+            SetDeviceOperationError(AppStrings.Text("BladeHyperboostRequiresPad"));
+            return;
+        }
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
         {
             if (!IsSelectedPerformancePowerActive)
@@ -383,10 +411,20 @@ public sealed partial class MainViewModel
                 throw new InvalidOperationException(AppStrings.Text("Text_2263C356"));
             }
 
+            var cycleModes = _bladePerformanceCycleModes;
+            if (!await RazerCoolingPad.IsConnectedAsync(cancellationToken))
+            {
+                cycleModes = [.. cycleModes.Where(mode => mode != BladePerformanceMode.Hyperboost)];
+                if (cycleModes.Count == 0)
+                {
+                    cycleModes = [BladePerformanceMode.Performance];
+                }
+            }
+
             var nextMode = BladePerformanceModeCycle.GetNext(
                 BladePerformanceModes[_blade._confirmedBladePerformanceModeIndex],
                 BladePerformanceModes,
-                _bladePerformanceCycleModes);
+                cycleModes);
             BladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, nextMode);
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 _deviceDescriptors,
@@ -883,9 +921,6 @@ public sealed partial class MainViewModel
     public bool BladeMaxFanEnabled { get => _blade._bladeMaxFanEnabled; set => SetField(ref _blade._bladeMaxFanEnabled, value); }
     public bool CanSetBladeMaxFan => _blade._hasBladeMaxFan && IsBladeCustomMode;
     public Visibility BladeCustomPerformanceVisibility => IsBladeCustomMode
-        ? Visibility.Visible
-        : Visibility.Collapsed;
-    public Visibility BladeHyperboostHintVisibility => _blade.IsHyperboostMode
         ? Visibility.Visible
         : Visibility.Collapsed;
     public IReadOnlyList<string> BladeLogoOptions => AppStrings.Texts("Text_39B523BD", "Text_6295D9CB", "Text_7EDA32B9");

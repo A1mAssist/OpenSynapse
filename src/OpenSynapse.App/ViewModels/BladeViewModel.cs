@@ -105,11 +105,6 @@ internal sealed class BladeViewModel
         }
     }
 
-    internal bool IsHyperboostMode =>
-        _bladePerformanceModeIndex >= 0 &&
-        _bladePerformanceModeIndex < BladePerformanceModes.Length &&
-        BladePerformanceModes[_bladePerformanceModeIndex] == BladePerformanceMode.Hyperboost;
-
     internal void SetGameMode(BladeGameModeTelemetry? gameMode)
     {
         _bladeGameModeState = gameMode?.GameMode;
