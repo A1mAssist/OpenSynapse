@@ -24,7 +24,8 @@ public sealed class VerifiedProfileApplier
         IRazerDeviceTelemetryReader reader,
         bool? isPluggedIn,
         CancellationToken cancellationToken = default,
-        bool applyKeyboardBrightness = true)
+        bool applyKeyboardBrightness = true,
+        bool coolingPadConnected = true)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(devices);
@@ -90,6 +91,11 @@ public sealed class VerifiedProfileApplier
                 else
                 {
                     var requested = (BladePerformanceMode)rawPerformanceMode;
+                    if (requested == BladePerformanceMode.Hyperboost && !coolingPadConnected)
+                    {
+                        requested = BladePerformanceMode.Performance;
+                        bladeErrors.Add("HyperBoost requires the Razer Laptop Cooling Pad; Performance mode was applied instead.");
+                    }
                     effectivePerformanceMode = current;
                     try
                     {

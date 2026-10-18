@@ -1833,5 +1833,6 @@
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>风扇全速</value></data>
   <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>修改会保存到当前配置；风扇全速会增加噪音。</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
-  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫使用：它会提高持续功耗上限，由散热垫负责散热；未连接散热垫时设备可能不接受该模式。</value></data>
+  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫：它会提高持续功耗上限，由散热垫负责散热；未连接时无法切换。</value></data>
+  <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost 需要连接雷蛇笔记本散热垫后才能启用。</value></data>
 </root>
