@@ -161,7 +161,7 @@ public sealed class ChromaSourceManagementTests
             CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task StopAsync() { Stops++; return Task.CompletedTask; }
         public Task SetDisplayAvailableAsync(bool available) => Task.CompletedTask;
-        public Task ApplyExternalAsync(IReadOnlyList<DeviceDescriptor> devices, ChromaExternalFrameSource source,
+        public Task ApplyExternalAsync(IReadOnlyList<DeviceDescriptor> devices, ISoftwareLightingFrameSource source,
             bool restorePersistentEffect = true, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }

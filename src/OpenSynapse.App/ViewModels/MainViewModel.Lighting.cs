@@ -186,6 +186,12 @@ public sealed partial class MainViewModel
             effect = lightingEnabled
                 ? BladeLightingProfileCodec.Parse(profile)
                 : BladeLightingEffect.Off;
+            if (effect.Mode == BladeLightingMode.ChromaFile &&
+                effect.ChromaAnimation is null)
+            {
+                _lightingShadowFingerprint = string.Empty;
+                return AppStrings.Text("BladeChromaFileMissing");
+            }
             fingerprint = CreateLightingFingerprint(
                 profile,
                 blade.Id,

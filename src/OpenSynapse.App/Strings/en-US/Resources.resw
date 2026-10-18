@@ -1496,4 +1496,11 @@
   <data name="BatteryHealthLabel" xml:space="preserve"><value>BATTERY HEALTH</value></data>
   <data name="BatteryHealthDetail" xml:space="preserve"><value>Design {0:0.0} Wh / Full {1:0.0} Wh · {2} cycles</value></data>
   <data name="BatteryHealthUnavailable" xml:space="preserve"><value>No battery detected</value></data>
+  <data name="BladeImportChromaButton.Content" xml:space="preserve"><value>Import .chroma</value></data>
+  <data name="BladeLightingModeChromaFile" xml:space="preserve"><value>Chroma animation</value></data>
+  <data name="BladeChromaImportInvalid" xml:space="preserve"><value>This .chroma file could not be imported.</value></data>
+  <data name="BladeChromaImportRequired" xml:space="preserve"><value>Import a .chroma file first.</value></data>
+  <data name="BladeChromaImportApplied" xml:space="preserve"><value>Applied {0} ({1} frames).</value></data>
+  <data name="BladeChromaImportUniform" xml:space="preserve"><value>Imported and applied a static color.</value></data>
+  <data name="BladeChromaFileMissing" xml:space="preserve"><value>The imported .chroma file is unavailable. Import it again.</value></data>
 </root>

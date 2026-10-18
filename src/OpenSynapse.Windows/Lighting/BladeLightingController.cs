@@ -20,6 +20,7 @@ public enum BladeLightingMode
     Wheel,
     Starlight,
     Tidal,
+    ChromaFile,
 }
 
 public enum BladeStarlightColorMode
@@ -38,7 +39,8 @@ public sealed record BladeLightingEffect(
     byte StarlightSpeed = 2,
     BladeStarlightColorMode StarlightColorMode = BladeStarlightColorMode.Single,
     LightingPalette? Palette = null,
-    byte AnimationSpeed = 2)
+    byte AnimationSpeed = 2,
+    ChromaFileAnimation? ChromaAnimation = null)
 {
     public static BladeLightingEffect Off { get; } = new(BladeLightingMode.Off);
     public static BladeLightingEffect Spectrum { get; } = new(BladeLightingMode.Spectrum);
@@ -60,7 +62,7 @@ public interface IBladeLightingController : IAsyncDisposable
 
     Task ApplyExternalAsync(
         IReadOnlyList<DeviceDescriptor> devices,
-        ChromaExternalFrameSource source,
+        ISoftwareLightingFrameSource source,
         bool restorePersistentEffect = true,
         CancellationToken cancellationToken = default);
 }
@@ -82,7 +84,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private readonly TimeSpan _nativeEffectKeepAliveInterval;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private SoftwareLightingRuntime? _runtime;
-    private ChromaExternalFrameSource? _externalSource;
+    private ISoftwareLightingFrameSource? _externalSource;
     private WindowsKeyboardLightingAdapter? _keyboardInput;
     private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;
@@ -229,6 +231,12 @@ public sealed class BladeLightingController : IBladeLightingController
                     inputAdapter = displayInput;
                     source = new AmbientFrameSource(displayInput);
                 }
+                else if (effect.Mode == BladeLightingMode.ChromaFile)
+                {
+                    source = new ChromaFileFrameSource(
+                        effect.ChromaAnimation ??
+                        throw new InvalidOperationException("The Chroma animation is missing."));
+                }
                 else
                 {
                     source = new EffectFrameSource(effect);
@@ -257,7 +265,7 @@ public sealed class BladeLightingController : IBladeLightingController
 
     public async Task ApplyExternalAsync(
         IReadOnlyList<DeviceDescriptor> devices,
-        ChromaExternalFrameSource source,
+        ISoftwareLightingFrameSource source,
         bool restorePersistentEffect = true,
         CancellationToken cancellationToken = default)
     {
@@ -563,7 +571,6 @@ public sealed class BladeLightingController : IBladeLightingController
         try
         {
             await pump.FirstFrameApplied.WaitAsync(cancellationToken).ConfigureAwait(false);
-            _externalSource = source as ChromaExternalFrameSource;
         }
         catch
         {
@@ -775,6 +782,10 @@ public sealed class BladeLightingController : IBladeLightingController
             effect.AnimationSpeed is < 1 or > 3)
         {
             throw new ArgumentOutOfRangeException(nameof(effect));
+        }
+        if (effect.Mode == BladeLightingMode.ChromaFile && effect.ChromaAnimation is null)
+        {
+            throw new ArgumentException("The Chroma animation is missing.", nameof(effect));
         }
     }
 

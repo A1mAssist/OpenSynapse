@@ -41,6 +41,7 @@ internal static class DeviceUiCatalog
         BladeLightingMode.Wheel,
         BladeLightingMode.Starlight,
         BladeLightingMode.Tidal,
+        BladeLightingMode.ChromaFile,
     ];
 
     public static readonly BladeWaveDirection[] BladeWaveDirections =
