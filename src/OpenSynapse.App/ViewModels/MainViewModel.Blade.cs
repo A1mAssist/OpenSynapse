@@ -885,6 +885,9 @@ public sealed partial class MainViewModel
     public Visibility BladeCustomPerformanceVisibility => IsBladeCustomMode
         ? Visibility.Visible
         : Visibility.Collapsed;
+    public Visibility BladeHyperboostHintVisibility => _blade.IsHyperboostMode
+        ? Visibility.Visible
+        : Visibility.Collapsed;
     public IReadOnlyList<string> BladeLogoOptions => AppStrings.Texts("Text_39B523BD", "Text_6295D9CB", "Text_7EDA32B9");
     public string BladeLogoText { get => _blade._bladeLogoText; private set => SetField(ref _blade._bladeLogoText, value); }
     public int BladeLogoIndex { get => _blade._bladeLogoIndex; set => SetField(ref _blade._bladeLogoIndex, value); }

@@ -354,6 +354,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanSetBladeGpuBoost));
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
         OnPropertyChanged(nameof(BladeCustomPerformanceVisibility));
+        OnPropertyChanged(nameof(BladeHyperboostHintVisibility));
     }
 
     private void SetBladeGameMode(BladeGameModeTelemetry? gameMode)
