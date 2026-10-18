@@ -555,6 +555,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         var effect = BladeLightingEnabled
             ? BladeLightingProfileCodec.Parse(lighting)
             : BladeLightingEffect.Off;
+        _blade._bladeChromaAnimation = effect.ChromaAnimation;
         var lightingIndex = Array.IndexOf(BladeLightingModes, effect.Mode);
         if (lightingIndex >= 0)
         {

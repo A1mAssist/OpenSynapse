@@ -1,5 +1,6 @@
 using Windows.UI;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Lighting;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
@@ -77,6 +78,8 @@ internal sealed class BladeViewModel
     internal Color _bladeLightingTertiaryColor = Color.FromArgb(0xFF, 0xFF, 0x20, 0x40);
     internal bool _bladeLightingEnabled = true;
     internal bool _bladeChromaOverrideEnabled = true;
+    internal ChromaFileAnimation? _bladeChromaAnimation;
+    internal string _bladeChromaStatusText = string.Empty;
 
     internal bool IsCustomMode =>
         _confirmedBladePerformanceModeIndex >= 0 &&

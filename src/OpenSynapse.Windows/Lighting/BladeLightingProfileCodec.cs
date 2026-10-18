@@ -25,6 +25,7 @@ internal static class BladeLightingProfileCodec
             "wave" => ["direction", "palette1", "palette2", "palette3", "renderMode"],
             "spectrum" => ["palette1", "palette2", "palette3", "renderMode"],
             "fire" or "audiometer" => ["palette1", "palette2", "palette3"],
+            "chromafile" => ["file"],
             "off" or "ambient" => [],
             _ => throw new InvalidOperationException($"Unsupported keyboard lighting effect: {profile.Effect}."),
         };
@@ -49,6 +50,17 @@ internal static class BladeLightingProfileCodec
             : (byte)2;
         var starlightColorMode = ParseStarlightColorMode(parameters);
         var palette = ParsePalette(mode, parameters);
+        ChromaFileAnimation? chromaAnimation = null;
+        if (mode == "chromafile")
+        {
+            if (!parameters.TryGetValue("file", out var fileName) ||
+                string.IsNullOrWhiteSpace(fileName))
+            {
+                throw new InvalidOperationException("Chroma animation file is not specified.");
+            }
+
+            _ = ChromaFileAnimationStore.TryLoad(fileName, out chromaAnimation);
+        }
         return new BladeLightingEffect(mode switch
         {
             "off" => BladeLightingMode.Off,
@@ -63,13 +75,27 @@ internal static class BladeLightingProfileCodec
             "wheel" => BladeLightingMode.Wheel,
             "starlight" => BladeLightingMode.Starlight,
             "tidal" => BladeLightingMode.Tidal,
+            "chromafile" => BladeLightingMode.ChromaFile,
             _ => BladeLightingMode.Fire,
-        }, color, direction, secondColor, reactiveSpeed, starlightSpeed, starlightColorMode, palette, animationSpeed);
+        }, color, direction, secondColor, reactiveSpeed, starlightSpeed, starlightColorMode, palette, animationSpeed, chromaAnimation);
     }
 
     internal static LightingProfile Create(BladeLightingEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect);
+        if (effect.Mode == BladeLightingMode.ChromaFile)
+        {
+            return new LightingProfile
+            {
+                Effect = "chromafile",
+                Parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["file"] = effect.ChromaAnimation?.FileName ??
+                        throw new InvalidOperationException("Chroma animation is missing."),
+                },
+            };
+        }
+
         var profile = new LightingProfile { Effect = effect.Mode.ToString().ToLowerInvariant() };
         if (effect.Mode is BladeLightingMode.Static or BladeLightingMode.Breathing or
             BladeLightingMode.Reactive or BladeLightingMode.Ripple or BladeLightingMode.Starlight or
@@ -136,7 +162,7 @@ internal static class BladeLightingProfileCodec
             : string.Join(',', effect.Palette.Colors.Select(color => $"{color.Red:X2}{color.Green:X2}{color.Blue:X2}"));
         return $"{devicePath}\n{effect.Mode}\n{effect.Color.Red:X2}{effect.Color.Green:X2}{effect.Color.Blue:X2}\n" +
             $"{effect.SecondColor.Red:X2}{effect.SecondColor.Green:X2}{effect.SecondColor.Blue:X2}\n" +
-            $"{effect.Direction}\n{effect.ReactiveSpeed}\n{effect.StarlightSpeed}\n{effect.StarlightColorMode}\n{effect.AnimationSpeed}\n{palette}";
+            $"{effect.Direction}\n{effect.ReactiveSpeed}\n{effect.StarlightSpeed}\n{effect.StarlightColorMode}\n{effect.AnimationSpeed}\n{palette}\n{effect.ChromaAnimation?.Fingerprint}";
     }
 
     private static LightingPalette? ParsePalette(

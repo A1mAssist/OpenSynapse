@@ -7,6 +7,7 @@ using OpenSynapse.App.ViewModels;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using System.Collections.ObjectModel;
+using Windows.Storage.Pickers;
 using Windows.UI;
 
 namespace OpenSynapse.App;
@@ -68,6 +69,21 @@ public sealed partial class MainWindow
     private async void BladeLightingPresetButtonClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: LightingPresetOption preset }) await ApplyLightingPresetAsync("blade", preset);
+    }
+
+    private async void ImportBladeChromaClick(object sender, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+        };
+        picker.FileTypeFilter.Add(".chroma");
+        InitializePicker(picker);
+        var file = await picker.PickSingleFileAsync();
+        if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
+        {
+            await _viewModel.ImportBladeChromaFileAsync(file.Path, _lifetime.Token);
+        }
     }
 
     private async void KrakenLightingPresetButtonClick(object sender, RoutedEventArgs e)
