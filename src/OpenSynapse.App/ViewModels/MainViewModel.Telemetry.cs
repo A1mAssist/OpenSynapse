@@ -4,6 +4,7 @@ using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Protocols;
+using OpenSynapse.Windows.Sensors;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -30,6 +31,14 @@ public sealed partial class MainViewModel
         {
             SetPerformanceUnavailable(exception.Message);
         }
+    }
+
+    private async Task RefreshBatteryHealthAsync(CancellationToken cancellationToken)
+    {
+        var snapshot = await Task.Run(WindowsBatteryHealthReader.TryRead, cancellationToken);
+        _systemTelemetry.ApplyBatteryHealth(snapshot);
+        OnPropertyChanged(nameof(BatteryHealthValue));
+        OnPropertyChanged(nameof(BatteryHealthDetail));
     }
 
     private void ApplyDeviceTelemetry(RazerDeviceTelemetry telemetry)
@@ -534,4 +543,6 @@ public sealed partial class MainViewModel
     public string StorageValue => _systemTelemetry.StorageValue;
     public string StorageDetail => _systemTelemetry.StorageDetail;
     public double StoragePercent => _systemTelemetry.StoragePercent;
+    public string BatteryHealthValue => _systemTelemetry.BatteryHealthValue;
+    public string BatteryHealthDetail => _systemTelemetry.BatteryHealthDetail;
 }

@@ -1835,4 +1835,7 @@
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
   <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫：它会提高持续功耗上限，由散热垫负责散热；未连接时无法切换。</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost 需要连接雷蛇笔记本散热垫后才能启用。</value></data>
+  <data name="BatteryHealthLabel" xml:space="preserve"><value>电池健康</value></data>
+  <data name="BatteryHealthDetail" xml:space="preserve"><value>设计 {0:0.0} Wh / 满充 {1:0.0} Wh · 循环 {2} 次</value></data>
+  <data name="BatteryHealthUnavailable" xml:space="preserve"><value>未检测到电池</value></data>
 </root>

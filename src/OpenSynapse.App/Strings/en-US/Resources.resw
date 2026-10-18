@@ -1479,4 +1479,7 @@
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
   <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad: it raises sustained power limits and relies on the pad for cooling. The mode cannot be selected without the pad.</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad.</value></data>
+  <data name="BatteryHealthLabel" xml:space="preserve"><value>BATTERY HEALTH</value></data>
+  <data name="BatteryHealthDetail" xml:space="preserve"><value>Design {0:0.0} Wh / Full {1:0.0} Wh · {2} cycles</value></data>
+  <data name="BatteryHealthUnavailable" xml:space="preserve"><value>No battery detected</value></data>
 </root>
