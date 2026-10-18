@@ -14,7 +14,7 @@
 
 <p align="center"><a href="README.zh-CN.md">简体中文</a> · English</p>
 
-OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Product-specific Blade and Viper support remains separate from the capability-driven OpenRazer path.
+OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It supports 254 OpenRazer catalog models plus dedicated Blade/Viper, Kraken, and Chroma REST integrations.
 
 > Current release `v1.5.2` · Windows 11 x64 · unsigned
 
@@ -22,41 +22,21 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## What it supports
 
-### Product-specific devices
+OpenSynapse is not limited to a small list of product-specific models. The current support surface includes **254 OpenRazer catalog devices**, dedicated Blade and Viper controls, **six Kraken headsets**, and Chroma REST lighting integrations.
 
-| Device | USB VID:PID | Available controls |
-|---|---|---|
-| Razer Blade 16 (2025) | `1532:02C6` | Telemetry, keyboard lighting, performance, fans, display, battery, Fn/M3/M4/M5 |
-| Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, onboard mappings |
+**[Browse the complete device and capability list](docs/SUPPORTED_DEVICES.md)** for model names, USB PIDs, product-specific features, and the exact support boundaries.
 
-Blade lighting includes Off, Static, Breathing, Spectrum, Wave, Fire, Reactive, Ripple, Audio Meter, Ambient, Wheel, Starlight, and two-color Tidal. Custom performance mode exposes CPU Boost, GPU Boost, and Max Fan. Fan control, charge limits, internal-display refresh rates, the touchpad, and verified Fn behavior remain on the Blade page. System telemetry displays CPU and active-GPU temperature, power, load, and clock data when the corresponding Windows sensor is available.
+### Capability-driven controls
 
-Blade Wave and Spectrum use firmware rendering when no color palette is saved and software frame rendering when a palette is saved. Where an OpenRazer keyboard supports both native effects and matrix frame output, its lighting page offers the same firmware/software choice.
+OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Depending on the model, a device page may include device information, battery state, polling rate, DPI and DPI stages, power saving, lighting, matrix output, scroll settings, keyswitch optimization, Fn behavior, or HyperPolling receiver controls.
 
-The Viper page supports `125 / 500 / 1000 Hz` polling, X/Y DPI from `100` to `30000`, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1. Battery type is selected by the user because the mouse does not provide a reliable readback value. The low-battery threshold remains read only.
+The pinned OpenRazer catalog covers 110 mice, 72 keyboards, 46 laptops, and 26 accessories. Catalog presence does not mean every control has been physically verified on every model. An unresolved or busy endpoint stays read only until the next scan; OpenSynapse does not guess support from a product name or send a write through an unverified HID collection.
 
-### OpenRazer devices
+### Product-specific and additional support
 
-Version 1.2.1 adds capability-driven support based on a pinned OpenRazer device catalog. The catalog contains mice, keyboards, laptops, and accessories that use the standard 91-byte Razer HID report. OpenSynapse creates a page only for connected devices and shows a control only when the backend resolves its endpoint and transaction.
-
-Depending on the connected model, the page may provide device information, battery state, polling rate, DPI and DPI stages, power saving, low-battery warning, lighting brightness and effects, per-zone LEDs, matrix lighting, scroll-wheel settings, keyswitch optimization, Fn-primary behavior, or HyperPolling receiver controls.
-
-Catalog presence does not mean every control has been tested on every model. An unresolved or busy endpoint stays read only until the next scan. OpenSynapse does not guess support from a product name or send a write through another HID collection.
-
-### Kraken lighting
-
-The following Kraken USB headsets use a separate 37-byte Output Report path. OpenSynapse supports their lighting only.
-
-| Model | USB PID |
-|---|---|
-| Kraken 7.1 | `0501`, `0506` |
-| Kraken 7.1 Chroma | `0504` |
-| Kraken 7.1 V2 | `0510` |
-| Kraken Tournament Edition | `0520` |
-| Kraken Ultimate | `0527` |
-| Kraken Kitty V2 | `0560` |
-
-Available effects are read from the matched device definition. Models may expose Off, Static, Spectrum, one-, two-, or three-color Breathing, and Custom. Audio, microphone, EQ, and THX controls are not included.
+- **Blade:** telemetry, keyboard lighting, performance, fans, display, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior.
+- **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
+- **Kraken:** lighting only for six USB headsets; audio, microphone, EQ, and THX controls are not included.
 
 ### Chroma REST
 
@@ -87,7 +67,7 @@ The release is not code signed. Windows SmartScreen may show a warning on first 
 
 ### Driver requirements
 
-The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll`. Blade Fn, M3, M4, and M5 support still depends on the Product 710 Razer device drivers. Install the matching driver package from Razer before using those functions.
+The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll` for its core device controls. Blade Fn, M3, M4, and M5 support still depends on the Product 710 Razer device drivers.
 
 ## Not included
 
