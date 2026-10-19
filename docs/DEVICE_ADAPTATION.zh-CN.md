@@ -1,113 +1,95 @@
 # 设备适配协作指南
 
-这份指南用于让其他设备拥有者协助 OpenSynapse 适配新设备或补全已有设备。目标是拿到可审查的协议证据，而不是收集完整的雷云安装包、猜测 HID 命令或公开用户的私人数据。
+这份指南分成“设备拥有者三步”和“维护者参考”两部分。普通用户不需要看懂协议部分也能帮忙。
 
-## 1. 先确认设备是否已经支持
+## 设备拥有者：三步
 
-先查 [SUPPORTED_DEVICES.md](SUPPORTED_DEVICES.md)。如果型号已经在列表里，应该按“缺少某个能力”处理，不要当成全新设备。
+### 1. 提交设备支持请求
 
-OpenRazer 目录里有设备记录，只能说明上游已经有实现，不能证明当前固件、当前 Windows HID collection 和每个控制项都已经验证。
+使用[设备支持 issue 模板](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml)，填写：
 
-## 2. 需要设备拥有者提供什么
+- 具体型号和 SKU；
+- USB PID；找不到就写 `unknown`；
+- Windows build 和 Synapse 版本；
+- 最想优先适配的功能；
+- 是否愿意安装临时测试构建。
 
-- 具体型号和 SKU，例如 `Razer Blade 15 (Mid 2019)` / `RZ09-03006`。
-- USB VID/PID，例如 `1532:0246`。
-- Windows 版本和 build 号。
-- Synapse 版本。
-- 希望优先适配的功能，按优先级排列。
-- 是否愿意安装临时测试构建并反馈结果。
-- 采集脚本生成的 `manifest.txt`，或采集 ZIP 的临时链接。
+如果型号已经在 [SUPPORTED_DEVICES.md](SUPPORTED_DEVICES.md) 里，说明是哪个能力缺失，不用当成全新设备。
 
-不要在公开 issue 里发布：
+### 2. 方便的话运行采集脚本
 
-- Razer 专有的 JavaScript、DLL、驱动、固件或安装包；
-- 完整的 Razer AppEngine 或 Synapse 安装目录；
-- 序列号、账号标识、token、HID 路径或本机绝对路径；
-- 未检查过的原始抓包和日志。
-
-采集脚本只会打包匹配到的 JavaScript 缓存候选文件。请用临时网盘链接发送 ZIP，并在审查完成后删除。不要执行别人发来的 JavaScript。
-
-## 3. 证据获取顺序
-
-### 3.1 先用 OpenRazer
-
-如果该型号已经有上游实现，优先复用 OpenRazer 的报文定义、设备 manifest、能力边界和测试。这是成本最低、最容易审查的路径。
-
-### 3.2 再看本地 Synapse 产品 JavaScript
-
-当产品专属能力没有 OpenRazer 覆盖时，使用本地 Synapse 缓存里的产品主 bundle 和 `rzDevice25` 或公共协议 chunk。
-
-这条路径通常可以得到：
-
-- Product ID 和设备信息；
-- `[dataSize, class, command]` 报文头；
-- 参数顺序和大小端；
-- 返回布局和枚举；
-- GET/SET 对应关系；
-- transaction、CRC、批量发送和互斥规则；
-- 产品代码实际调用了哪些方法。
-
-它不能直接证明当前设备接受某个写入、设置能否持久化、灯光效果是否真的可见。这些仍然必须通过真机验证。
-
-### 3.3 OpenSynapse 诊断读取/扫描
-
-诊断是确认工具，不是协议来源。如果设备已经能被 OpenSynapse 打开，可以用设备页的读取按钮或诊断页的命令扫描记录当前值，并检查候选 GET 命令是否有响应。这一步适合把 JavaScript 提取出的命令表和真实端点对照，也适合在写入测试前记录 baseline。
-
-它不能发现未知命令的语义，不会自动生成 manifest，也不能升级能力状态。对于 OpenSynapse 还打不开的设备，诊断页可能没有可用路径；这时先做最小只读连接，或者退回有边界的 USB 抓包。
-
-扫描本身也不会让任意写入变安全。只有 GET 响应能证明命令可达；写入语义仍然必须通过完整的读回和恢复测试。
-
-### 3.4 需要时再做 USB 抓包
-
-只有在 JavaScript 和现有源码都没有目标命令时才抓包。一次只改变一个可见设置，抓很短的窗口，操作完恢复原值，原始抓包放在仓库外。
-
-抓到一个写入只证明“发生过这个事务”，不证明 OpenSynapse 可以安全地发送同一条命令。正式接入仍然需要读回或确定性行为验证。
-
-### 3.5 最后才看 Native DLL 或服务
-
-只用于产品 JavaScript 和 HID 抓包都覆盖不到的功能，例如 MappingEngine 输入或灯效算法。每个常量都要记录模块版本、函数或偏移，以及对应的动态观察证据。
-
-## 4. 采集脚本
-
-前置条件：Windows、已安装 Razer Synapse，并且至少打开过一次该设备的页面，让产品 bundle 进入缓存。
-
-在仓库根目录运行：
+脚本是只读的，只会在本地寻找 Synapse 产品 JavaScript，生成 ZIP 和 manifest。下载 [Collect-RazerProductBundle.ps1](https://raw.githubusercontent.com/A1mAssist/OpenSynapse/main/tools/Collect-RazerProductBundle.ps1)，保存到 `Downloads` 文件夹，然后运行：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Collect-RazerProductBundle.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1" `
   -DeviceName "Blade 15" `
   -Sku "RZ09-030" `
   -UsbPid "0246"
 ```
 
-可选参数：
+把示例值换成你的设备。脚本会在 `%TEMP%` 下生成 ZIP，并打印路径。
 
-- `-ProductId 710`：已知 Synapse Product ID 时使用。
-- `-Root <path>`：Razer AppEngine 用户数据不在默认位置时使用。
-- `-MaxFiles 60`：限制打包文件数量。
+如果找不到文件，先在 Synapse 里打开一次该设备页面，等待加载完成后再运行。
 
-脚本会：
+不想运行 PowerShell 也可以跳过，在 issue 里说明即可，维护者会再指导。
 
-- 只读扫描本地 Razer AppEngine 缓存；
-- 匹配设备名、SKU、USB PID、可选 Product ID 和 `rzDevice25` 引用；
-- 只复制匹配到的 JavaScript 候选文件；
-- 生成 `manifest.txt` 和 `README.txt`；
-- 在 `%TEMP%` 下生成 ZIP。
+### 3. 发送结果并测试构建
 
-如果找不到文件，先在 Synapse 里打开该设备页面，等待加载完成后再运行。
+不要把 Razer 专有文件、序列号或账号数据直接发到公开 issue。把 ZIP 放到临时网盘后发链接，或者只粘贴 manifest 摘要。
 
-## 5. 维护者流程
+维护者会提取协议并发送临时构建。先测试只读功能；愿意的话再测试写入。每次写入测试都会包含读回和恢复。
+
+## 接下来会发生什么
+
+1. 维护者先检查 OpenRazer。
+2. OpenRazer 没有覆盖时，再看本地 Synapse 产品文件。
+3. 新功能先以只读候选加入。
+4. 给设备拥有者发送测试构建。
+5. 设备拥有者先测试读取；有写入时，再测试安全写入、读回和恢复。
+6. 全部通过后才开放正式控制。
+
+## 隐私
+
+- 不要把 Razer JavaScript、DLL、驱动、固件、安装包、序列号、token 或账号数据发到公开 issue。
+- 采集脚本只打包匹配到的 JavaScript 缓存候选文件，不执行 JavaScript。
+- 原始产品文件和 USB 抓包留在 Git 外。
+- 仓库只提交审查过的协议常量和测试，不提交原始专有文件。
+
+## 维护者参考
+
+### 证据顺序
+
+按成本从低到高：
+
+1. **OpenRazer 源码或目录**：优先复用已有实现和 manifest。
+2. **本地 Synapse 产品 JavaScript**：产品主 bundle 和 `rzDevice25` 或公共协议 chunk。
+3. **OpenSynapse 诊断读取/扫描**：设备已经能被打开时，用读取按钮或命令扫描记录 baseline，确认候选 GET 是否有响应。
+4. **USB 抓包**：源码和诊断都回答不了时再用；一次只改一个可见设置，操作完恢复原值。
+5. **Native DLL 或服务**：只在产品 JavaScript、诊断和 HID 抓包都覆盖不到时使用。
+
+诊断是确认工具，不会生成 manifest、发现命令语义或升级能力。对于 OpenSynapse 还打不开的设备，先做最小只读连接，或者退回有边界的抓包。
+
+### 采集脚本参数
+
+- `-DeviceName`：必填，零售型号名称。
+- `-Sku`：可选，SKU 或型号编号前缀。
+- `-UsbPid`：可选，`0246` 或 `1532:0246` 两种格式都支持。
+- `-ProductId`：可选，Synapse Product ID。
+- `-Root`：可选，Razer AppEngine 用户数据目录。
+- `-MaxFiles`：可选，限制打包文件数量。
+
+### 维护者流程
 
 1. **分诊**：确认型号、PID、当前支持状态和用户想要的功能。
-2. **收集**：索取 collector manifest 或临时链接，不要索取完整 Synapse 安装包。
-3. **提取**：把产品调用映射成报文头、参数、响应和能力边界，记录来源和日期。
-4. **读取与基线**：如果设备已经能被 OpenSynapse 打开，用设备页读取或诊断命令扫描记录当前值，确认候选 GET 是否有响应。这一步是发现和 baseline 采集，不是状态升级步骤。
+2. **收集**：索取 collector manifest 或临时链接。
+3. **提取**：把产品调用映射成报文头、参数、响应和能力边界。
+4. **读取与基线**：设备能打开时，用诊断读取/扫描记录当前值和候选 GET 响应。
 5. **做候选适配**：加入 manifest 或 protocol builder/parser，新能力标记为 `SourceBacked`，先不开放生产写入。
-6. **测试构建**：让设备拥有者先做只读检查，再做同值写入、最小变化写入、读回和恢复。
+6. **测试构建**：先只读，再做同值写入、最小变化写入、读回和恢复。
 7. **升级状态**：只有当前设备证据和恢复都通过，才标记 `Verified`，并更新设备列表和 changelog。
 8. **保留证据**：保留审查过的常量、测试和简短证据说明；不要提交原始专有文件或未审查抓包。
 
-## 6. 能力状态
+### 能力状态
 
 | 状态 | 含义 |
 |---|---|
@@ -118,9 +100,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Collect-RazerProduct
 
 只有 ACK 不代表 `Verified`。
 
-`SourceBacked` 是开发阶段的证据状态，不是诊断页运行时生成的。诊断页只展示最终的能力或错误状态；要新增候选适配，必须在源码中加入经过审查的 manifest 或 protocol builder/parser。
+`SourceBacked` 是开发阶段的证据状态，不是诊断页运行时生成的。诊断页只展示最终的能力或错误状态。
 
-## 7. 安全与验收
+### 安全与验收
 
 每个写入路径必须具备：
 
@@ -131,34 +113,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Collect-RazerProduct
 - 灯光等可见效果的目视确认；
 - 不提供任意 raw HID 控制台、命令枚举或猜测值域。
 
-适配收尾前确认：
-
-- 型号、SKU、PID 和 HID collection 能准确对应；
-- 页面只展示设备真实支持的控制项；
-- 不支持的功能不显示假按钮；
-- 设备拥有者已经测试对应构建；
-- 文档和 changelog 准确描述支持边界。
-
-## 8. 设备拥有者回报模板
-
-使用仓库的设备支持 issue 模板，或在新 issue 中包含：
-
-```text
-设备型号：
-SKU / 型号编号：
-USB VID:PID：
-Windows build：
-Synapse 版本：
-希望优先适配的功能：
-是否能测试临时构建：
-Collector manifest 或临时链接：
-当前异常表现：
-```
-
-## 9. 隐私与许可
-
-- 不提交、不再分发 Razer 专有文件。
-- 不执行用户提供的 JavaScript，只做静态分析。
-- 原始文件和原始抓包留在 Git 外。
-- 仓库只提交独立编写的协议常量、manifest、测试和审查过的证据说明。
-- 发布前移除序列号、账号名、机器名、HID 路径和无关 USB 流量。
+适配收尾前确认：UI 不展示不支持的控制项，设备拥有者已经测试对应构建，文档和 changelog 准确描述支持边界。

@@ -5,7 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Read [docs/DEVICE_ADAPTATION.md](https://github.com/A1mAssist/OpenSynapse/blob/main/docs/DEVICE_ADAPTATION.md) before submitting.
+        Read [docs/DEVICE_ADAPTATION.md](https://github.com/A1mAssist/OpenSynapse/blob/main/docs/DEVICE_ADAPTATION.md) before submitting. The short owner checklist is at the top; the protocol sections are maintainer reference and are not required to open a request.
+
+        Only the device model, SKU or model number, USB PID, and current behavior are required. If you do not know the PID, write `unknown`. The collector output is optional; leave it empty if you prefer not to run PowerShell.
 
         Do not upload Razer proprietary JavaScript, DLLs, drivers, firmware, installers, serial numbers, account data, or raw captures to this public issue. If you use the collector, send the ZIP through a temporary link and remove it after review.
 
