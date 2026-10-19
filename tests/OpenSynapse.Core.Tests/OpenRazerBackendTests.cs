@@ -476,6 +476,128 @@ public sealed class OpenRazerBackendTests
             transport.Requests.Select(request => request[2]).ToArray());
     }
 
+    [Fact]
+    public async Task EnsureDriverMode_WritesDriverModeOnlyWhenTheDeviceIsInNormalMode()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE)!;
+        var transport = new DeviceModeTransport(0x00);
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.DeviceModeRead,
+                OpenRazerBackendCapability.DeviceModeWrite,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        Assert.True(await service.EnsureDriverModeAsync(connection));
+
+        // read mode, write 0x04 with mode 0x03, read again to confirm
+        Assert.Equal(3, transport.Requests.Count);
+        var write = transport.Requests[1];
+        Assert.Equal(0x1F, write[2]);
+        Assert.Equal(0x00, write[7]);
+        Assert.Equal(0x04, write[8]);
+        Assert.Equal(0x03, write[9]);
+        Assert.Equal(0x00, write[10]);
+    }
+
+    [Fact]
+    public async Task EnsureDriverMode_DoesNotWriteWhenTheDeviceIsAlreadyInDriverMode()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE)!;
+        var transport = new DeviceModeTransport(0x03);
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.DeviceModeRead,
+                OpenRazerBackendCapability.DeviceModeWrite,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        Assert.True(await service.EnsureDriverModeAsync(connection));
+
+        Assert.Single(transport.Requests);
+        Assert.Equal(0x84, transport.Requests[0][8]);
+    }
+
+    [Theory]
+    // 0x02 is upstream's "unknown mode" (razerchromacommon.c) and must never be
+    // overwritten; only an exact 0x00 read is repaired.
+    [InlineData(0x02)]
+    [InlineData(0x01)]
+    [InlineData(0xFF)]
+    public async Task EnsureDriverMode_NeverOverwritesAnUnknownMode(byte mode)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE)!;
+        var transport = new DeviceModeTransport(mode);
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability> { OpenRazerBackendCapability.DeviceModeWrite },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        Assert.False(await service.EnsureDriverModeAsync(connection));
+
+        Assert.Single(transport.Requests);
+    }
+
+    [Fact]
+    public async Task EnsureDriverMode_SkipsDevicesWithoutTheWriteCapability()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE)!;
+        var transport = new DeviceModeTransport(0x00);
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved, new HashSet<OpenRazerBackendCapability>(),
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        Assert.False(await service.EnsureDriverModeAsync(connection));
+
+        Assert.Empty(transport.Requests);
+    }
+
+    private sealed class DeviceModeTransport : IRazerFeatureTransport
+    {
+        private byte _mode;
+
+        internal DeviceModeTransport(byte initialMode) => _mode = initialMode;
+
+        internal List<byte[]> Requests { get; } = [];
+
+        public Task<byte[]> QueryAsync(
+            string devicePath, byte transactionId, byte dataSize, byte commandClass,
+            byte commandId, ReadOnlyMemory<byte> arguments, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath, ReadOnlyMemory<byte> request, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false)
+        {
+            var response = request.ToArray();
+            Requests.Add(response);
+            response[1] = 0x02;
+            if (response[8] == 0x04)
+            {
+                _mode = response[9];
+            }
+            else if (response[8] == 0x84)
+            {
+                response[6] = 0x02;
+                response[9] = _mode;
+                response[10] = 0x00;
+            }
+
+            // Keep the accepted-status response valid: Arguments() rejects a stale CRC.
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+
     [Theory]
     [InlineData(0x0205)]
     [InlineData(0x020F)]
@@ -536,7 +658,6 @@ public sealed class OpenRazerBackendTests
         Assert.Contains(OpenRazerBackendCapability.BatteryRead, published);
         Assert.Contains(OpenRazerBackendCapability.LightingEffectWrite, published);
         Assert.DoesNotContain(OpenRazerBackendCapability.SerialRead, published);
-        Assert.DoesNotContain(OpenRazerBackendCapability.DeviceModeRead, published);
         Assert.DoesNotContain(OpenRazerBackendCapability.FnPrimaryWrite, published);
     }
 
@@ -815,6 +936,7 @@ public sealed class OpenRazerBackendTests
                 OpenRazerBackendCapability.FirmwareRead => OpenRazerStandardProtocol.GetFirmware(device),
                 OpenRazerBackendCapability.SerialRead => OpenRazerStandardProtocol.GetSerial(device),
                 OpenRazerBackendCapability.DeviceModeRead => OpenRazerStandardProtocol.GetDeviceMode(device),
+                OpenRazerBackendCapability.DeviceModeWrite => OpenRazerStandardProtocol.SetDriverDeviceMode(device),
                 OpenRazerBackendCapability.BatteryRead => OpenRazerMouseProtocol.GetBattery(device),
                 OpenRazerBackendCapability.ChargingRead => OpenRazerMouseProtocol.GetCharging(device),
                 OpenRazerBackendCapability.PollingRateRead => OpenRazerMouseProtocol.GetPollingRate(device),

@@ -51,6 +51,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly OpenRazerChromaFrameSink? _openRazerChromaFrameSink;
     private readonly OpenRazerSpecialLightingService? _openRazerSpecialLightingService;
     private CancellationTokenSource? _openRazerSelectionCancellation;
+    // A device whose mode was already repaired must not be rewritten on every device-tree
+    // change; three HID round trips at the 31 ms device wait is not free.
+    private readonly HashSet<string> _openRazerDriverModeChecked = new(StringComparer.OrdinalIgnoreCase);
     private OpenRazerDeviceViewModel? _selectedOpenRazerDevice;
     private OpenRazerKrakenViewModel? _selectedOpenRazerKraken;
     private readonly string? _executablePath;

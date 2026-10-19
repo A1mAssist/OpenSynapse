@@ -180,6 +180,52 @@ public sealed partial class MainViewModel
         RefreshDeviceOverviewVisibility();
     }
 
+    /// <summary>
+    /// A wireless mouse left in normal mode never joins its 2.4 GHz link, so the connection
+    /// stays dead until the mode is written back. Runs on discovery, but only writes once per
+    /// instance: a mouse that keeps reading back normal mode would otherwise take three HID
+    /// round trips on every unrelated device-tree change.
+    /// </summary>
+    internal async Task RestoreOpenRazerDriverModeAsync(
+        IReadOnlyList<OpenRazerDeviceConnection> connections,
+        CancellationToken cancellationToken = default)
+    {
+        if (_openRazerDeviceService is null)
+        {
+            return;
+        }
+
+        foreach (var connection in connections)
+        {
+            if (!connection.IsReady ||
+                !connection.Capabilities.Contains(OpenRazerBackendCapability.DeviceModeWrite) ||
+                _openRazerDriverModeChecked.Contains(connection.InstanceId))
+            {
+                continue;
+            }
+
+            try
+            {
+                await _openRazerDeviceService.EnsureDriverModeAsync(connection, cancellationToken)
+                    .ConfigureAwait(false);
+                _openRazerDriverModeChecked.Add(connection.InstanceId);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (
+                exception is NotSupportedException or InvalidOperationException or
+                System.ComponentModel.Win32Exception or System.IO.IOException)
+            {
+                _diagnosticLog.TryWrite("openrazer-driver-mode",
+                    $"1532:{connection.Definition.ProductId:X4} restore failed: {exception.Message}");
+                SetDeviceOperationError(AppStrings.FormatText("OpenRazerDriverModeRestoreFailed",
+                    connection.Definition.DisplayName, exception.Message));
+            }
+        }
+    }
+
     internal async Task RestoreOpenRazerLightingAfterExternalAsync(
         CancellationToken cancellationToken = default)
     {

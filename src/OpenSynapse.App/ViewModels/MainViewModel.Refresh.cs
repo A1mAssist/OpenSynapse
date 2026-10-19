@@ -72,6 +72,7 @@ public sealed partial class MainViewModel
                     .OrderBy(connection => DeviceCategoryOrder(connection.Definition.Category))
                     .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
                     .ToArray();
+                await RestoreOpenRazerDriverModeAsync(openRazerConnections, cancellationToken);
                 if (OpenRazerDevices.Count != openRazerConnections.Length ||
                     !OpenRazerDevices.Zip(openRazerConnections)
                         .All(pair => OpenRazerConnectionMatches(pair.First.Connection, pair.Second)))

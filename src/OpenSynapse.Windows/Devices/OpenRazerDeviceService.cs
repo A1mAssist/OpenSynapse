@@ -308,6 +308,42 @@ public sealed class OpenRazerDeviceService
         return OpenRazerStandardProtocol.Arguments(response, 2)[0] == 0x03;
     }
 
+    /// <summary>
+    /// Puts a device that is in normal mode back into driver mode. A mouse left in normal
+    /// mode never joins its 2.4 GHz link, so the wireless connection stays dead until the
+    /// mode is written back. Only normal mode is repaired: an unknown mode is left alone
+    /// rather than overwritten blind.
+    /// </summary>
+    public async Task<bool> EnsureDriverModeAsync(
+        OpenRazerDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        if (!connection.Capabilities.Contains(OpenRazerBackendCapability.DeviceModeWrite))
+        {
+            return false;
+        }
+
+        var before = OpenRazerStandardProtocol.ParseDeviceMode(await ExecuteAsync(connection,
+            OpenRazerStandardProtocol.GetDeviceMode(connection.Definition), cancellationToken).ConfigureAwait(false));
+        if (before != OpenRazerStandardProtocol.NormalDeviceMode)
+        {
+            // 0x03 is already correct; 0x02 and anything else is not ours to overwrite.
+            return before == OpenRazerStandardProtocol.DriverDeviceMode;
+        }
+
+        WriteDiagnostic(connection.Definition.ProductId,
+            $"device mode was 0x{before:X2}; writing driver mode to restore the 2.4 GHz link");
+        await ExecuteWithoutResultAsync(connection,
+            OpenRazerStandardProtocol.SetDriverDeviceMode(connection.Definition), cancellationToken)
+            .ConfigureAwait(false);
+
+        var after = OpenRazerStandardProtocol.ParseDeviceMode(await ExecuteAsync(connection,
+            OpenRazerStandardProtocol.GetDeviceMode(connection.Definition), cancellationToken).ConfigureAwait(false));
+        WriteDiagnostic(connection.Definition.ProductId, $"device mode is now 0x{after:X2}");
+        return after == OpenRazerStandardProtocol.DriverDeviceMode;
+    }
+
     public async Task<int> GetBatteryPercentAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
         OpenRazerMouseProtocol.ParseBatteryPercent(await ExecuteAsync(connection,
             OpenRazerMouseProtocol.GetBattery(connection.Definition), cancellationToken).ConfigureAwait(false));
@@ -1013,6 +1049,10 @@ public sealed class OpenRazerDeviceService
         var result = new HashSet<OpenRazerBackendCapability>();
         var lightingZones = GetLightingZoneCapabilities(device).Values;
         Add(OpenRazerBackendCapability.FirmwareRead, "get_firmware", "razer_chroma_standard_get_firmware_version");
+        // Only the two DeathAdder V4 Pro entries declare set_device_mode, so only they
+        // publish a write. DeviceModeRead stays unpublished to avoid a new UI row on
+        // every mouse that merely declares the GET.
+        AddAnyBuilder(OpenRazerBackendCapability.DeviceModeWrite, "razer_chroma_standard_set_device_mode");
         Add(OpenRazerBackendCapability.BatteryRead, "get_battery", "razer_chroma_misc_get_battery_level");
         Add(OpenRazerBackendCapability.ChargingRead, "is_charging", "razer_chroma_misc_get_charging_status");
         AddAnyDeclared(OpenRazerBackendCapability.PollingRateRead, "get_poll_rate",
