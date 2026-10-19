@@ -98,6 +98,9 @@ public sealed class HyperBoostCoolingPadGateTests
             return ValueTask.FromResult(mode);
         }
 
+        public ValueTask<BladeLighting2023Effect> SetBlade2023KeyboardEffectAsync(IReadOnlyList<DeviceDescriptor> devices, BladeLighting2023Effect effect, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
         public ValueTask<BladeCpuBoostMode> SetBladeCpuBoostModeAsync(IReadOnlyList<DeviceDescriptor> devices, BladeCpuBoostMode mode, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 

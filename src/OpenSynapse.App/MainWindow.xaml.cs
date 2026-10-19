@@ -287,6 +287,7 @@ public sealed partial class MainWindow : Window
         _chromaRestStatusTimer.Tick -= OnChromaRestStatusTick;
         _aboutWindow?.Close();
         _aboutWindow = null;
+        CloseThxAudioWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;

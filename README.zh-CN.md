@@ -34,7 +34,8 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 ### 产品专用与附加支持
 
-- **Blade：** 遥测、键盘灯光、性能、风扇、显示、电池、触控板、充电上限，以及经过验证的 Fn/M3/M4/M5。
+- **Blade：** 遥测、键盘灯光、性能、风扇、显示、面板模式、支持机型上的局部调光、电池、触控板、充电上限，以及经过验证的 Fn/M3/M4/M5。
+- **Blade THX 音频：** 受支持的 Blade 16 和 Blade 14 机型提供空间音频、均衡器预设与频段、人声清晰度和扬声器音量标准化。Blade 设备页会打开可重复使用的 THX 控制窗口。带签名的雷蛇原生组件不随安装包分发；检测到缺失时，会提供经过校验的官方下载。
 - **Viper：** 电量、DPI、轮询率、休眠、电池类型和板载映射。
 - **Kraken：** 6 款 USB 耳机仅支持灯光；不包含音频、麦克风、EQ 或 THX 控制。
 
@@ -67,12 +68,12 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 ### 驱动要求
 
-核心设备控制不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 Razer 设备驱动。
+核心设备控制不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 Razer 设备驱动。THX 音频需要匹配的雷蛇 THX 音频栈，以及 Blade 音频窗口提供的带签名原生组件。
 
 ## 当前不包含
 
 - 固件更新、Razer 账号、云服务和 Chroma Studio。
-- THX Spatial Audio、EQ、音量均衡、语音清晰度和高级宏编辑器。
+- 高级宏编辑器。
 - AMD Curve Optimizer、GPU MUX 和未经验证的硬件写入。
 - ARGB Controller，以及缺少 Windows 传输实现的旧式固定报告设备。
 

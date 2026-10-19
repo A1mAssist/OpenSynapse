@@ -151,6 +151,29 @@ public static class DeviceCapabilitySummaryCalculator
         ArgumentNullException.ThrowIfNull(telemetry);
         var supportsLocalDimming =
             telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true;
+        // A shared Power Mode bit reads back on models that never implemented it, so the
+        // Max Fan row is counted only where the model contract admits it.
+        var supportsMaxFan = BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId);
+        if (descriptor.ProtocolFamily == "blade-671")
+        {
+            // Blade 16 (2023): its own uniform lighting reports are admitted, but the
+            // 02C6 matrix lighting and panel reports are not.
+            return new(
+                Count(
+                    telemetry.BladeKeyboardBrightness,
+                    telemetry.BladeKeyboardEffect,
+                    telemetry.BladePerformanceMode,
+                    telemetry.BladeChargeLimitPercent,
+                    telemetry.BladeCpuBoostMode,
+                    telemetry.BladeGpuBoostMode,
+                    supportsMaxFan ? telemetry.BladeMaxFanMode : null,
+                    telemetry.BladeFanMode,
+                    telemetry.BladeCurrentFanCpuRpm,
+                    telemetry.BladeCurrentFanGpuRpm,
+                    telemetry.BladeOneTimeFullChargeEnabled),
+                10 + (supportsMaxFan ? 1 : 0));
+        }
+
         return descriptor.ProtocolFamily switch
         {
             "blade-710" => new(
@@ -160,7 +183,7 @@ public static class DeviceCapabilitySummaryCalculator
                     telemetry.BladeChargeLimitPercent,
                     telemetry.BladeCpuBoostMode,
                     telemetry.BladeGpuBoostMode,
-                    telemetry.BladeMaxFanMode,
+                    supportsMaxFan ? telemetry.BladeMaxFanMode : null,
                     telemetry.BladeLogoMode,
                     telemetry.BladeFanMode,
                     telemetry.BladeCurrentFanCpuRpm,
@@ -173,7 +196,7 @@ public static class DeviceCapabilitySummaryCalculator
                     telemetry.BladeOneTimeFullChargeEnabled,
                     telemetry.BladeAdapterPower) +
                     (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
-                17 + (supportsLocalDimming ? 1 : 0)),
+                16 + (supportsMaxFan ? 1 : 0) + (supportsLocalDimming ? 1 : 0)),
             "viper-184" => new(
                 Count(
                     telemetry.ViperBatteryPercent,
@@ -238,6 +261,7 @@ public sealed record RazerDeviceTelemetry(
     BladeSkuHardwareConfiguration? BladeSkuHardwareConfiguration = null,
     bool? BladeOneTimeFullChargeEnabled = null,
     bool? BladeLocalDimmingEnabled = null,
+    BladeLighting2023Effect? BladeKeyboardEffect = null,
     IReadOnlyDictionary<string, DeviceCapabilitySummary>? CapabilitySummaries = null,
     bool? BladeFnKeyMultimediaPrimary = null,
     string? BladeMcuVersion = null,
@@ -257,6 +281,15 @@ public interface IRazerDeviceTelemetryReader
 
     ValueTask<byte> ReadBladeKeyboardBrightnessAsync(
         IReadOnlyList<DeviceDescriptor> devices,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Selects one of the firmware-rendered uniform effects admitted for the Blade 16 2023.
+    /// Other Blade generations drive their effects through the lighting controller instead.
+    /// </summary>
+    ValueTask<BladeLighting2023Effect> SetBlade2023KeyboardEffectAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeLighting2023Effect effect,
         CancellationToken cancellationToken = default);
 
     ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(

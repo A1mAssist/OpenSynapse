@@ -14,9 +14,10 @@ The OpenRazer portion is pinned to OpenRazer commit `6820f9da169d354bc7e6e93a0aa
 | Device | USB VID:PID | Controls |
 |---|---|---|
 | Razer Blade 16 (2025) | `1532:02C6` | Telemetry, keyboard lighting, performance, fans, display, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior |
+| Razer Blade 16 (2023) | `1532:029F` | Telemetry, keyboard brightness and firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom levels including CPU Boost, Max Fan, fixed fan targets (2000-5000 RPM), charge limit, one-time full charge, and Gaming mode |
 | Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, and onboard mappings |
 
-Blade Wave and Spectrum use firmware rendering when no palette is saved and software frame rendering when a palette is saved. The Viper page supports 125 / 500 / 1000 Hz polling, X/Y DPI from 100 to 30000, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1.
+Blade Wave and Spectrum use firmware rendering when no palette is saved and software frame rendering when a palette is saved. The Blade 16 (2023) has no per-key matrix channel: it exposes brightness plus the four effects its firmware draws on its own (Off, Breathing, Spectrum, Wave), and its stored effect color is not readable. Custom colors, audio-reactive lighting, frame rendering, Chroma takeover, the wave direction selector, and the .chroma import button are therefore not offered on that model. The Viper page supports 125 / 500 / 1000 Hz polling, X/Y DPI from 100 to 30000, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1.
 
 ## Kraken lighting
 

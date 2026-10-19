@@ -2,6 +2,33 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Added THX Spatial Audio controls for supported Blade 16 and Blade 14 models, including speaker/headphone selection, spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization. The vendor native component is not bundled; if missing, the app offers a verified download from Razer's official server.
+- Added panel mode and local dimming cards on supported Blade models. Both cards are hidden when the device does not expose the corresponding capability.
+- Added support for the Razer Blade 16 (2023) `1532:029F`: keyboard brightness and firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom CPU/GPU levels with CPU Boost, Max Fan, fixed fan targets from 2000 to 5000 RPM, charge limit, one-time full charge, and Gaming mode.
+
+### Fixed
+
+- Fixed the Blade 16 (2023) keyboard lighting reports, which used the brightness query command for writes and omitted the store and region selector, so every brightness write failed.
+- Fixed the lighting effect selector picking the wrong effect on the Blade 16 (2023): the selected index is now resolved against the effect list that model actually renders.
+- Fixed the Blade 16 (2023) lighting switch, brightness, and saved profiles having no effect, because they were routed through the per-key matrix lighting path that generation does not have. Screen-off and wake now restore its lighting as well.
+- Saved lighting profiles on the Blade 16 (2023) no longer store an effect key that the profile reader rejects on the next launch.
+- The .chroma import button and the wave direction selector are now hidden on the Blade 16 (2023), which can neither play a .chroma file nor change the wave direction.
+- Blade capabilities are now admitted per exact model instead of per successful readback. Blade 16 (2025) `1532:02C6` no longer offers Max Fan, CPU Boost, or the undervolt level, because its maximum fan is a separate fixed 5400 RPM fan target and no undervolt evidence exists for it.
+- Leaving Custom performance mode on a Max Fan model now turns Max Fan off and confirms it first, so a preset change cannot leave the fans pinned at maximum.
+- Enabling Max Fan is refused while other Power Mode Control settings are on, because the write replaces the whole shared control byte.
+
+### Improved
+
+- THX controls now live behind an Audio card in the Blade device view and open in a reusable popout window instead of occupying a separate navigation page.
+- The tray menu now stays open when the pointer leaves the taskbar. It renders in its own window that never takes focus, and closes only on an outside click, Esc, a menu selection, or app exit.
+
+- Blade game mode, startup animation, and one-time full charge are shown as three separate cards.
+- Raw SKU flags are no longer shown in the device UI; the value is used only for capability detection. Native panel mode is kept in diagnostics instead of crowding the Blade platform status card.
+
 ## [1.5.2] - 2026-10-13
 
 ### Fixed

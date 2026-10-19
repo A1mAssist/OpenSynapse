@@ -140,7 +140,8 @@ public sealed partial class MainViewModel
             _deviceFingerprint = nextFingerprint;
             _deviceDescriptors = snapshot.Devices;
 
-            var blade = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            var blade = snapshot.Devices.FirstOrDefault(device =>
+                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
             var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             SetBladeControlDevicePath(
                 blade is
@@ -152,6 +153,11 @@ public sealed partial class MainViewModel
                     : null);
             await RefreshCoolingPadPresenceAsync(cancellationToken);
             BladeDeviceName = blade?.Name ?? "Razer Blade";
+            if (_blade._bladeProductId != (blade?.ProductId ?? 0))
+            {
+                _blade._bladeProductId = blade?.ProductId ?? 0;
+                RefreshBladeModelCapabilityUi();
+            }
             ViperDeviceName = viper?.Name ?? "Razer Viper";
             BladeSerial = await GetDeviceSerialAsync(blade, cancellationToken);
             ViperSerial = await GetDeviceSerialAsync(viper, cancellationToken);

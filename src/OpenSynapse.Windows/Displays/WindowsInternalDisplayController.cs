@@ -264,7 +264,7 @@ internal sealed class WindowsDisplayApi : IWindowsDisplayApi
 
     private const int ErrorSuccess = 0;
     private const int ErrorInsufficientBuffer = 122;
-    private const uint QueryFlags = 0x00000002 | 0x00000010 | 0x00000040;
+    private const uint QueryFlags = 0x00000002 | 0x00000010;
     private const uint DisplayConfigPathActive = 0x00000001;
     private const uint GetSourceNameType = 1;
     private const uint EnumCurrentSettings = 0xFFFFFFFF;

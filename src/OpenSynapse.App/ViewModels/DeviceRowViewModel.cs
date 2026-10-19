@@ -103,6 +103,31 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
 
         switch (descriptor.ProtocolFamily)
         {
+            case "blade-671":
+                // Only the reports the 671 manifest admits; the matrix lighting and panel
+                // rows are 02C6-only and would otherwise show as unsupported.
+                {
+                    Add("Text_5F0C27DB", telemetry.BladeKeyboardBrightness,
+                        telemetry.BladeKeyboardBrightness is byte lit ? $"{lit}/255" : null);
+                    Add("DiagnosticKeyboardEffect", telemetry.BladeKeyboardEffect);
+                    Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode);
+                Add("Text_DEE979FD", telemetry.BladeChargeLimitPercent,
+                    telemetry.BladeChargeLimitPercent is int limit ? $"{limit}%" : null);
+                Add("DiagnosticCpuBoost", telemetry.BladeCpuBoostMode);
+                Add("DiagnosticGpuBoost", telemetry.BladeGpuBoostMode);
+                if (BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId))
+                {
+                    Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode);
+                }
+                Add("DiagnosticPerformanceFan", telemetry.BladeFanMode);
+                Add("Text_5FCEEE13", telemetry.BladeCurrentFanCpuRpm,
+                    telemetry.BladeCurrentFanCpuRpm is int cpuFanRpm ? $"{cpuFanRpm} RPM" : null);
+                Add("Text_737DBF87", telemetry.BladeCurrentFanGpuRpm,
+                    telemetry.BladeCurrentFanGpuRpm is int gpuFanRpm ? $"{gpuFanRpm} RPM" : null);
+                Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
+                }
+                break;
+
             case "blade-710":
                 Add("Text_5F0C27DB", telemetry.BladeKeyboardBrightness,
                     telemetry.BladeKeyboardBrightness is byte brightness ? $"{brightness}/255" : null);
@@ -111,7 +136,10 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                     telemetry.BladeChargeLimitPercent is int charge ? $"{charge}%" : null);
                 Add("DiagnosticCpuBoost", telemetry.BladeCpuBoostMode);
                 Add("DiagnosticGpuBoost", telemetry.BladeGpuBoostMode);
-                Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode);
+                if (BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId))
+                {
+                    Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode);
+                }
                 Add("DiagnosticBladeLogo", telemetry.BladeLogoMode);
                 Add("DiagnosticPerformanceFan", telemetry.BladeFanMode);
                 Add("Text_5FCEEE13", telemetry.BladeCurrentFanCpuRpm,
@@ -124,10 +152,6 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                     telemetry.BladeAdvancedFanGpuModeRaw is byte gpuMode ? FormatRawByte(gpuMode) : null);
                 Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled);
                 Add("Text_24A8C247", telemetry.BladeNativeDisplayMode);
-                Add("Text_9D1351CB", telemetry.BladeSkuHardwareConfiguration,
-                    telemetry.BladeSkuHardwareConfiguration is { } sku
-                        ? $"DDS={sku.Dds}, MiniLED={sku.MiniLedResolution}, Raw=0x{sku.Raw:X2}"
-                        : null);
                 Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
                 if (telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true)
                 {

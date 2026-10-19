@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenSynapse.Core.Devices;
@@ -14,9 +15,15 @@ internal sealed record RazerDeviceRegistryLoadResult(
 
 internal sealed class RazerDeviceRegistry
 {
-    private const int SchemaVersion = 1;
+    private const int SchemaVersion = 2;
     private const int MaximumExternalManifestFiles = 64;
     private const long MaximumExternalManifestBytes = 64 * 1024;
+    private static readonly IReadOnlyDictionary<string, string> CapabilityRenames =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["max-fan.get"] = "power-mode.get",
+            ["max-fan.set"] = "power-mode.set",
+        };
     private static readonly Lazy<RazerDeviceRegistry> BuiltInValue = new(LoadBuiltIn);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -41,8 +48,8 @@ internal sealed class RazerDeviceRegistry
                 ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
                 ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
                 ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
-                ["max-fan.get"] = new(0x01, 0x07, 0x8F, "00", true),
-                ["max-fan.set"] = new(0x01, 0x07, 0x0F, ""),
+                ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
+                ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
                 ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
                 ["fn-key.get"] = new(0x02, 0x02, 0x86, "0100", AllowZeroTransactionId: true),
                 ["mcu-version.get"] = new(0x04, 0x00, 0x87, "00000000", AllowZeroTransactionId: true),
@@ -58,6 +65,26 @@ internal sealed class RazerDeviceRegistry
                 ["logo-mode.set"] = new(0x03, 0x03, 0x02, ""),
                 ["logo-effect.set"] = new(0x03, 0x03, 0x02, "", AllowZeroTransactionId: true),
                 ["logo-state.set"] = new(0x03, 0x03, 0x00, "", AllowZeroTransactionId: true),
+            },
+            // Blade 16 (2023) RZ09-0483 shares the 710 thermal, power-mode and charge
+            // commands but has its own lighting matrix report, so it stays a separate family.
+            ["blade-671"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
+            {
+                ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
+                ["thermal-state.set"] = new(0x04, 0x0D, 0x02, ""),
+                ["fan-target.get"] = new(0x03, 0x0D, 0x81, ""),
+                ["current-fan-rpm.get"] = new(0x03, 0x0D, 0x88, ""),
+                ["boost.get"] = new(0x03, 0x0D, 0x87, ""),
+                ["boost.set"] = new(0x03, 0x0D, 0x07, ""),
+                ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
+                ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
+                ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
+                ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
+                ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                ["keyboard-brightness.get"] = new(0x03, 0x03, 0x83, "010500", true),
+                ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
+                ["keyboard-effect.get"] = new(0x03, 0x0F, 0x82, "010500", true),
+                ["keyboard-effect.set"] = new(0x03, 0x0F, 0x02, "", true),
             },
             ["viper-184"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {
@@ -88,6 +115,7 @@ internal sealed class RazerDeviceRegistry
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
             ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["blade-671"] = FamilyCapabilities["blade-671"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
             ["openrazer-standard"] = new HashSet<string>(StringComparer.Ordinal),
         };
@@ -95,6 +123,7 @@ internal sealed class RazerDeviceRegistry
         new Dictionary<(ushort VendorId, ushort ProductId), string>
         {
             [(0x1532, 0x02C6)] = "blade-710",
+            [(0x1532, 0x029F)] = "blade-671",
             [(0x1532, 0x00B8)] = "viper-184",
         };
 
@@ -167,10 +196,14 @@ internal sealed class RazerDeviceRegistry
                     var name = Path.GetFileName(file);
                     try
                     {
-                        externalDocuments.Add(new ManifestDocument(
-                            name,
-                            ReadExternalManifest(file),
-                            false));
+                        var raw = ReadExternalManifest(file);
+                        var migrated = MigrateManifestJson(raw);
+                        if (!StringComparer.Ordinal.Equals(raw, migrated))
+                        {
+                            TryPersistMigratedManifest(file, migrated);
+                        }
+
+                        externalDocuments.Add(new ManifestDocument(name, migrated, false));
                     }
                     catch (UnauthorizedAccessException)
                     {
@@ -205,6 +238,26 @@ internal sealed class RazerDeviceRegistry
 
         using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
         return reader.ReadToEnd();
+    }
+
+    /// <summary>
+    /// Rewrites an upgraded manifest in place so the rename is applied once. The
+    /// original file is kept as a sibling backup; a failed write only means the
+    /// migration repeats on the next launch.
+    /// </summary>
+    private static void TryPersistMigratedManifest(string path, string migrated)
+    {
+        try
+        {
+            var temporary = path + ".migrated";
+            File.WriteAllText(temporary, migrated, new UTF8Encoding(false));
+            File.Copy(temporary, path, overwrite: true);
+            File.Delete(temporary);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+        }
     }
 
     private static RazerDeviceRegistry CreateRegistry(IReadOnlyList<RazerDeviceManifest> manifests)
@@ -357,9 +410,10 @@ internal sealed class RazerDeviceRegistry
 
         try
         {
-            using var parsed = JsonDocument.Parse(document.Json);
+            var json = MigrateManifestJson(document.Json);
+            using var parsed = JsonDocument.Parse(json);
             EnsureNoDuplicateProperties(parsed.RootElement);
-            var source = JsonSerializer.Deserialize<ManifestJson>(document.Json, JsonOptions)
+            var source = JsonSerializer.Deserialize<ManifestJson>(json, JsonOptions)
                 ?? throw new InvalidOperationException("Device manifest deserialized to null.");
             return Validate(source, document.SourceName);
         }
@@ -367,6 +421,95 @@ internal sealed class RazerDeviceRegistry
         {
             throw new InvalidOperationException($"Invalid device manifest JSON: {exception.Message}", exception);
         }
+    }
+
+    /// <summary>
+    /// Renames capabilities that were published under a misleading id. Runs before
+    /// deserialization so old built-in and external manifests load without edits.
+    /// </summary>
+    private static string MigrateManifestJson(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            return json;
+        }
+
+        var migrated = false;
+        var buffer = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        {
+            WriteMigratedElement(document.RootElement, writer, ref migrated);
+        }
+
+        return migrated ? Encoding.UTF8.GetString(buffer.ToArray()) : json;
+    }
+
+    private static void WriteMigratedElement(
+        JsonElement element,
+        Utf8JsonWriter writer,
+        ref bool migrated)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            writer.WriteStartObject();
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.NameEquals("capabilities"))
+                {
+                    writer.WritePropertyName(property.Name);
+                    WriteMigratedCapabilities(property.Value, writer, ref migrated);
+                    continue;
+                }
+
+                if (property.NameEquals("schemaVersion") && property.Value.TryGetInt32(out var version) && version < SchemaVersion)
+                {
+                    writer.WriteNumber(property.Name, SchemaVersion);
+                    migrated = true;
+                    continue;
+                }
+
+                writer.WritePropertyName(property.Name);
+                WriteMigratedElement(property.Value, writer, ref migrated);
+            }
+            writer.WriteEndObject();
+            return;
+        }
+
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            writer.WriteStartArray();
+            foreach (var item in element.EnumerateArray())
+            {
+                WriteMigratedElement(item, writer, ref migrated);
+            }
+            writer.WriteEndArray();
+            return;
+        }
+
+        element.WriteTo(writer);
+    }
+
+    private static void WriteMigratedCapabilities(
+        JsonElement capabilities,
+        Utf8JsonWriter writer,
+        ref bool migrated)
+    {
+        writer.WriteStartObject();
+        foreach (var property in capabilities.EnumerateObject())
+        {
+            if (CapabilityRenames.TryGetValue(property.Name, out var renamed))
+            {
+                writer.WritePropertyName(renamed);
+                WriteMigratedElement(property.Value, writer, ref migrated);
+                migrated = true;
+                continue;
+            }
+
+            writer.WritePropertyName(property.Name);
+            WriteMigratedElement(property.Value, writer, ref migrated);
+        }
+        writer.WriteEndObject();
     }
 
     private static RazerDeviceManifest Validate(ManifestJson source, string sourceName)
@@ -448,9 +591,15 @@ internal sealed class RazerDeviceRegistry
                     $"Manifest '{source.Id}' capability '{capabilityId}' has invalid parameters.");
             }
             if (request.AllowRemainingPacketsMismatch &&
-                (source.ProtocolFamily != "blade-710" ||
-                 capabilityId is not ("adapter-power.get" or "charge-limit.get" or "max-fan.get" or
-                     "native-display-mode.get" or "sku-hardware-configuration.get")))
+                (source.ProtocolFamily switch
+                {
+                    "blade-710" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
+                        "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get"),
+                    "blade-671" => capabilityId is not ("charge-limit.get" or "power-mode.get" or
+                        "keyboard-brightness.get" or "keyboard-brightness.set" or
+                        "keyboard-effect.get" or "keyboard-effect.set"),
+                    _ => true,
+                }))
             {
                 throw new InvalidOperationException(
                     $"Capability '{capabilityId}' does not permit a remaining-packets mismatch exception.");
@@ -501,7 +650,7 @@ internal sealed class RazerDeviceRegistry
     {
         null or "" => protocolFamily switch
         {
-            "blade-710" => DeviceCategory.Laptop,
+            "blade-710" or "blade-671" => DeviceCategory.Laptop,
             "viper-184" => DeviceCategory.Mouse,
             _ => DeviceCategory.Unknown,
         },
@@ -615,3 +764,4 @@ internal sealed class RazerDeviceRegistry
         bool AllowRemainingPacketsMismatch = false,
         bool AllowZeroTransactionId = false);
 }
+

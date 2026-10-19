@@ -12,8 +12,22 @@ public sealed partial class MainViewModel
 {
     private bool _chromaIntegrationEnabled = true;
 
+    /// <summary>
+    /// Chroma takes over through the per-key matrix path, which the Blade 16 2023 does
+    /// not have, so the override is hidden there even when Chroma is enabled globally.
+    /// </summary>
     public Visibility BladeChromaOverrideVisibility =>
-        _chromaIntegrationEnabled ? Visibility.Visible : Visibility.Collapsed;
+        _chromaIntegrationEnabled && !IsBlade2023Model
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    /// <summary>
+    /// The 2023 generation has no matrix to hand a .chroma file to, so the import button
+    /// stays hidden rather than accepting a file the device cannot play.
+    /// </summary>
+    public Visibility BladeChromaImportVisibility => IsBlade2023Model
+        ? Visibility.Collapsed
+        : Visibility.Visible;
 
     internal void SetChromaIntegrationEnabled(bool enabled)
     {
@@ -160,10 +174,21 @@ public sealed partial class MainViewModel
             }
             try
             {
-                await _bladeLightingController.ApplyAsync(
-                    _deviceDescriptors,
-                    BladeLightingEffect.Off,
-                    cancellationToken).ConfigureAwait(false);
+                if (IsBlade2023Model)
+                {
+                    await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
+                        _deviceDescriptors,
+                        BladeLighting2023Effect.Off,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await _bladeLightingController.ApplyAsync(
+                        _deviceDescriptors,
+                        BladeLightingEffect.Off,
+                        cancellationToken).ConfigureAwait(false);
+                }
+
                 _bladeLightingDevicePath = blade.Id;
                 _lightingShadowFingerprint = offFingerprint;
                 return null;
@@ -211,6 +236,19 @@ public sealed partial class MainViewModel
             return null;
         }
 
+        if (IsBlade2023Model)
+        {
+            return await ApplyBlade2023LightingProfileAsync(
+                blade,
+                effect,
+                resolved.Blade.KeyboardBrightness,
+                profile,
+                powerState,
+                lightingEnabled,
+                chromaOverrideEnabled,
+                cancellationToken).ConfigureAwait(false);
+        }
+
         if (_bladeLightingDevicePath.Length > 0 &&
             !StringComparer.OrdinalIgnoreCase.Equals(_bladeLightingDevicePath, blade.Id))
         {
@@ -230,6 +268,55 @@ public sealed partial class MainViewModel
             _bladeLightingDevicePath = blade.Id;
             _lightingShadowFingerprint = fingerprint;
             _ = ObserveBladeLightingRuntimeAsync(_bladeLightingController.RuntimeCompletion);
+            return null;
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _bladeLightingDevicePath = string.Empty;
+            _lightingShadowFingerprint = string.Empty;
+            return FormatOperationException(exception);
+        }
+    }
+
+    /// <summary>
+    /// Applies a resolved profile on the Blade 16 2023. That generation has no matrix
+    /// frame path, so brightness and the firmware effect reach the device through the
+    /// telemetry reader instead of the lighting controller.
+    /// </summary>
+    private async Task<string?> ApplyBlade2023LightingProfileAsync(
+        DeviceDescriptor blade,
+        BladeLightingEffect effect,
+        byte? keyboardBrightness,
+        LightingProfile lightingProfile,
+        PowerSourceKind powerState,
+        bool lightingEnabled,
+        bool chromaOverrideEnabled,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (keyboardBrightness is byte brightness)
+            {
+                _ = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
+                    _deviceDescriptors,
+                    brightness,
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            var target = BladeLighting2023Admitted.Allows(effect.Mode)
+                ? BladeLighting2023Admitted.ToWireEffect(effect.Mode)
+                : BladeLighting2023Effect.Off;
+            _blade._bladeKeyboardEffect2023 = await _deviceTelemetryReader
+                .SetBlade2023KeyboardEffectAsync(_deviceDescriptors, target, cancellationToken)
+                .ConfigureAwait(false);
+
+            _bladeLightingDevicePath = blade.Id;
+            _lightingShadowFingerprint = CreateLightingFingerprint(
+                lightingProfile,
+                blade.Id,
+                powerState,
+                lightingEnabled,
+                chromaOverrideEnabled);
             return null;
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
