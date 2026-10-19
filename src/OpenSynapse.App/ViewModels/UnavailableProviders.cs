@@ -9,6 +9,10 @@ internal sealed class UnknownPowerSourceProvider : IPowerSourceProvider
     public static UnknownPowerSourceProvider Instance { get; } = new();
 
     public bool? IsPluggedIn => null;
+
+    public int? BatteryPercent => null;
+
+    public bool? IsCharging => null;
 }
 internal sealed class UnknownActiveApplicationProvider : IActiveApplicationProvider
 {
@@ -16,4 +20,5 @@ internal sealed class UnknownActiveApplicationProvider : IActiveApplicationProvi
 
     public string? ExecutablePath => null;
 }
+
 

@@ -17,6 +17,11 @@ internal static class DeviceUiCatalog
 
     public static readonly int[] BladeChargeLimits = [50, 55, 60, 65, 70, 75, 80, 100];
 
+    /// <summary>
+    /// Every CPU level the protocol can encode. Use
+    /// <see cref="BladeModelCapabilities.CpuBoostModesFor"/> for the levels one exact
+    /// model admits, because the ComboBox index is shared with the apply path.
+    /// </summary>
     public static readonly BladeCpuBoostMode[] BladeCpuBoostModes =
         [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High, BladeCpuBoostMode.Boost, BladeCpuBoostMode.Undervolt];
 

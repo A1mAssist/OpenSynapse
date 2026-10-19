@@ -1,7 +1,11 @@
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using OpenSynapse.Core.Diagnostics;
 using System.Runtime.InteropServices;
+using Windows.Foundation;
 using Windows.Graphics;
 
 namespace OpenSynapse.App;
@@ -9,10 +13,10 @@ namespace OpenSynapse.App;
 public sealed partial class TrayMenuWindow : Window
 {
     private const int AnchorSize = 2;
-    private const int HostSize = 64;
     private const int GwlExStyle = -20;
     private const long WsExLayered = 0x00080000;
     private const long WsExToolWindow = 0x00000080;
+    private const long WsExNoActivate = 0x08000000;
     private const uint LwaAlpha = 0x00000002;
     private const uint SwpNoActivate = 0x0010;
     private const uint SwpShowWindow = 0x0040;
@@ -20,27 +24,48 @@ public sealed partial class TrayMenuWindow : Window
     private const uint WmSysCommand = 0x0112;
     private const nuint ScMonitorPower = 0xF170;
     private const nint MonitorPowerOff = 2;
+    private const int WhMouseLl = 14;
+    private const int WhKeyboardLl = 13;
+    private const uint WmLButtonDown = 0x0201;
+    private const uint WmRButtonDown = 0x0204;
+    private const uint WmMButtonDown = 0x0207;
+    private const uint WmKeyDown = 0x0100;
+    private const uint WmSysKeyDown = 0x0104;
+    private const int VkEscape = 0x1B;
+    private const uint GaRoot = 2;
+    private const int CornerRadius = 8;
+    private const int DwmWindowCornerPreference = 33;
+    private const int DwmWindowCornerDoNotRound = 1;
+    private const int DwmBorderColor = 34;
+    private const int DwmColorNone = unchecked((int)0xFFFFFFFE);
+    private const double PanelContentHeightDip = 5 * 32 + 2 * 5 + 8;
+    private const double PanelLeadingDip = 3 + 4 + 16 + 22;
+    private const double PanelTrailingDip = 3 + 4 + 8;
+    private const double MinPanelWidthDip = 120;
     private static readonly IntPtr HwndTopmost = new(-1);
     private static readonly IntPtr HwndBroadcast = new(0xFFFF);
     private readonly IntPtr _windowHandle;
+    private readonly LocalDiagnosticLog _diagnosticLog = new();
     private bool _hostReady;
     private bool _showPending;
+    private bool _prerendered;
     private bool _menuOpen;
     private bool _closing;
+    private (int X, int Y)? _queuedShow;
+    private IntPtr _mouseHook;
+    private IntPtr _keyboardHook;
+    private LowLevelMouseProc? _mouseHookProc;
+    private LowLevelKeyboardProc? _keyboardHookProc;
 
     public TrayMenuWindow()
     {
         InitializeComponent();
         RefreshLocalization();
-        MenuAnchor.RequestedTheme = ElementTheme.Dark;
-        MenuAnchor.Loaded += MenuAnchorLoaded;
-        Activated += TrayMenuActivated;
+        MenuRoot.RequestedTheme = ElementTheme.Dark;
         AppWindow.IsShownInSwitchers = false;
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.SetBorderAndTitleBar(false, false);
-            presenter.PreferredMinimumWidth = HostSize;
-            presenter.PreferredMinimumHeight = HostSize;
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = false;
@@ -48,14 +73,56 @@ public sealed partial class TrayMenuWindow : Window
         }
 
         _windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+
+        DisableDwmFrame();
         var extendedStyle = GetWindowLongPtr(_windowHandle, GwlExStyle).ToInt64();
         SetWindowLongPtr(
             _windowHandle,
             GwlExStyle,
-            new IntPtr(extendedStyle | WsExLayered | WsExToolWindow));
+            new IntPtr(extendedStyle | WsExLayered | WsExToolWindow | WsExNoActivate));
         SetLayeredWindowAttributes(_windowHandle, 0, 0, LwaAlpha);
 
-        Activate();
+        Closed += (_, _) => RemoveHooks();
+
+        // Load the panel now, but keep the host invisible until the first show.
+        SetWindowPos(
+            _windowHandle,
+            HwndTopmost,
+            0,
+            0,
+            1,
+            1,
+            SwpNoActivate | SwpShowWindow | SwpNoOwnerZOrder);
+        _ = MenuRoot.DispatcherQueue.TryEnqueue(() =>
+        {
+            _hostReady = true;
+            AppWindow.Hide();
+            if (_queuedShow is { } queued)
+            {
+                _queuedShow = null;
+                ShowAt(queued.X, queued.Y);
+            }
+        });
+    }
+    // The labels stretch to the panel, so their DesiredSize is the panel width, not the
+    // text width. Measure the longest string off-tree instead.
+    private readonly TextBlock _widthProbe = new()
+    {
+        FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Microsoft YaHei UI"),
+        FontSize = 14,
+    };
+
+    private double MeasurePanelWidthDip()
+    {
+        var widest = 0d;
+        foreach (var label in new[] { OpenMainPanelText, DevicesText, ProfilesText, TurnOffDisplayText, ExitText })
+        {
+            _widthProbe.Text = label.Text;
+            _widthProbe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            widest = Math.Max(widest, _widthProbe.DesiredSize.Width);
+        }
+
+        return Math.Max(MinPanelWidthDip, Math.Ceiling(PanelLeadingDip + widest + PanelTrailingDip));
     }
 
     public event Action? ShowRequested;
@@ -64,67 +131,167 @@ public sealed partial class TrayMenuWindow : Window
 
     public void RefreshLocalization()
     {
-        Localized.Refresh(OpenMainPanelMenuItem);
-        Localized.Refresh(DevicesMenuItem);
-        Localized.Refresh(ProfilesMenuItem);
-        Localized.Refresh(TurnOffDisplayMenuItem);
-        Localized.Refresh(ExitMenuItem);
+        Localized.Refresh(OpenMainPanelText);
+        Localized.Refresh(DevicesText);
+        Localized.Refresh(ProfilesText);
+        Localized.Refresh(TurnOffDisplayText);
+        Localized.Refresh(ExitText);
+        AutomationProperties.SetName(OpenMainPanelMenuItem, OpenMainPanelText.Text);
+        AutomationProperties.SetName(DevicesMenuItem, DevicesText.Text);
+        AutomationProperties.SetName(ProfilesMenuItem, ProfilesText.Text);
+        AutomationProperties.SetName(TurnOffDisplayMenuItem, TurnOffDisplayText.Text);
+        AutomationProperties.SetName(ExitMenuItem, ExitText.Text);
     }
 
     public void ShowAt(int x, int y)
     {
-        if (_closing || !_hostReady || _showPending || TrayMenuFlyout.IsOpen)
+        if (_closing)
+        {
+            return;
+        }
+        if (!_hostReady)
+        {
+            _queuedShow = (x, y);
+            return;
+        }
+        if (_showPending || _menuOpen)
         {
             return;
         }
 
         _showPending = true;
+        SetLayeredWindowAttributes(_windowHandle, 0, 0, LwaAlpha);
+        if (!SetWindowPos(
+                _windowHandle,
+                HwndTopmost,
+                x,
+                y,
+                1,
+                1,
+                SwpNoActivate | SwpShowWindow | SwpNoOwnerZOrder))
+        {
+            _showPending = false;
+            HideMenu();
+            return;
+        }
+
+        // MenuRoot stretches to the client area, so DesiredSize would feed the previous
+        // window size back in and grow every time. Count the fixed rows instead.
+        var scale = MenuRoot.XamlRoot?.RasterizationScale ?? GetDpiForWindow(_windowHandle) / 96d;
+        if (scale <= 0)
+        {
+            scale = 1;
+        }
+        var desired = new Size(MeasurePanelWidthDip(), PanelContentHeightDip);
+
+        // SetWindowPos takes the outer frame while XAML lays out the smaller client area.
+        GetWindowRect(_windowHandle, out var frameWindow);
+        GetClientRect(_windowHandle, out var frameClient);
+        var frameX = Math.Max(0, (frameWindow.Right - frameWindow.Left) -
+                                (frameClient.Right - frameClient.Left));
+        var frameY = Math.Max(0, (frameWindow.Bottom - frameWindow.Top) -
+                                (frameClient.Bottom - frameClient.Top));
+        var width = Math.Max(1, (int)Math.Ceiling(desired.Width * scale) + frameX);
+        var height = Math.Max(1, (int)Math.Ceiling(desired.Height * scale) + frameY);
         var workArea = DisplayArea.GetFromPoint(
             new PointInt32(x, y),
             DisplayAreaFallback.Primary).WorkArea;
         var anchorX = Math.Clamp(x, workArea.X, workArea.X + workArea.Width - AnchorSize);
         var anchorY = Math.Clamp(y, workArea.Y, workArea.Y + workArea.Height - AnchorSize);
+        var left = anchorX + width <= workArea.X + workArea.Width ? anchorX : anchorX - width;
+        var top = anchorY - height;
+        if (top < workArea.Y)
+        {
+            top = anchorY;
+        }
+        left = Math.Clamp(left, workArea.X, Math.Max(workArea.X, workArea.X + workArea.Width - width));
+        top = Math.Clamp(top, workArea.Y, Math.Max(workArea.Y, workArea.Y + workArea.Height - height));
+
+        SetLayeredWindowAttributes(_windowHandle, 0, 0, LwaAlpha);
         if (!SetWindowPos(
                 _windowHandle,
                 HwndTopmost,
-                anchorX,
-                anchorY,
-                HostSize,
-                HostSize,
-                SwpNoActivate | SwpShowWindow | SwpNoOwnerZOrder) ||
-            !GetWindowRect(_windowHandle, out var bounds) ||
-            bounds.Left != anchorX ||
-            bounds.Top != anchorY)
+                left,
+                top,
+                width,
+                height,
+                SwpNoActivate | SwpShowWindow | SwpNoOwnerZOrder))
         {
             _showPending = false;
-            AppWindow.Hide();
+            HideMenu();
             return;
         }
 
-        MenuAnchor.UpdateLayout();
-        if (!MenuAnchor.DispatcherQueue.TryEnqueue(() =>
-            {
-                _showPending = false;
-                _menuOpen = true;
-                SetForegroundWindow(_windowHandle);
-                TrayMenuFlyout.ShowAt(MenuAnchor);
-            }))
-        {
-            _showPending = false;
-            AppWindow.Hide();
-        }
+        ApplyRoundedRegion(width, height, scale);
+        SetLayeredWindowAttributes(_windowHandle, 0, 255, LwaAlpha);
+        MenuRoot.UpdateLayout();
+        _menuOpen = true;
+        _showPending = false;
+        InstallHooks();
+        // The first show is the offscreen pre-render pass, not a real animation.
+        StartOpenAnimation(animateFrom: _prerendered);
+        _prerendered = true;
     }
 
-    private void MenuAnchorLoaded(object sender, RoutedEventArgs e)
+
+    // Mirrors the system flyout: a short fade plus a rise out of the tray anchor.
+    private const double OpenDurationMs = 110;
+    private const double RiseDistanceDip = 8;
+    private DispatcherQueueTimer? _openTimer;
+
+    private void StartOpenAnimation(bool animateFrom)
     {
-        MenuAnchor.Loaded -= MenuAnchorLoaded;
-        AppWindow.MoveAndResize(new RectInt32(0, 0, HostSize, HostSize));
-        MenuAnchor.DispatcherQueue.TryEnqueue(() =>
+        if (!animateFrom)
         {
-            MenuAnchor.UpdateLayout();
-            _hostReady = true;
-            AppWindow.Hide();
-        });
+            MenuRoot.Opacity = 1d;
+            MenuRoot.Translation = default;
+            return;
+        }
+
+        _openTimer?.Stop();
+        MenuRoot.Opacity = 0d;
+        MenuRoot.Translation = new System.Numerics.Vector3(0f, (float)RiseDistanceDip, 0f);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        _openTimer = MenuRoot.DispatcherQueue.CreateTimer();
+        _openTimer.IsRepeating = true;
+        _openTimer.Tick += (_, _) =>
+        {
+            if (_closing)
+            {
+                _openTimer?.Stop();
+                return;
+            }
+
+            var t = Math.Clamp(stopwatch.Elapsed.TotalMilliseconds / OpenDurationMs, 0d, 1d);
+            var eased = 1d - Math.Pow(1d - t, 3d);
+            MenuRoot.Opacity = eased;
+            MenuRoot.Translation = new System.Numerics.Vector3(
+                0f,
+                (float)(RiseDistanceDip * (1d - eased)),
+                0f);
+            if (t < 1d)
+            {
+                return;
+            }
+
+            ResetOpenAnimation();
+        };
+        _openTimer.Start();
+    }
+
+    private void ResetOpenAnimation()
+    {
+        _openTimer?.Stop();
+        _openTimer = null;
+        MenuRoot.Opacity = 1d;
+        MenuRoot.Translation = default;
+    }
+    public void CloseMenuHost()
+    {
+        _closing = true;
+        DismissMenu();
+        Close();
     }
 
     private void OpenMainPanelClick(object sender, RoutedEventArgs e)
@@ -135,7 +302,7 @@ public sealed partial class TrayMenuWindow : Window
 
     private void NavigateClick(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuFlyoutItem { Tag: string page })
+        if (sender is Button { Tag: string page })
         {
             DismissMenu();
             NavigationRequested?.Invoke(page);
@@ -154,36 +321,135 @@ public sealed partial class TrayMenuWindow : Window
         ExitRequested?.Invoke();
     }
 
-    public void CloseMenuHost()
-    {
-        _closing = true;
-        _menuOpen = false;
-        TrayMenuFlyout.Hide();
-        Close();
-    }
-
-    private void TrayMenuClosed(object sender, object e)
-    {
-        if (!_closing)
-        {
-            _menuOpen = false;
-            AppWindow.Hide();
-        }
-    }
-
-    private void TrayMenuActivated(object sender, WindowActivatedEventArgs args)
-    {
-        if (args.WindowActivationState == WindowActivationState.Deactivated && _menuOpen)
-        {
-            DismissMenu();
-        }
-    }
-
     private void DismissMenu()
     {
+        if (!_menuOpen && !_showPending)
+        {
+            return;
+        }
+        HideMenu();
+    }
+
+    private void HideMenu()
+    {
+        _openTimer?.Stop();
         _menuOpen = false;
-        TrayMenuFlyout.Hide();
+        _showPending = false;
+        RemoveHooks();
+        SetLayeredWindowAttributes(_windowHandle, 0, 0, LwaAlpha);
         AppWindow.Hide();
+    }
+
+    private void DisableDwmFrame()
+    {
+        // DWM paints a border outside the XAML content, so XAML CornerRadius cannot remove it.
+        var noBorder = DwmColorNone;
+        _ = DwmSetWindowAttribute(_windowHandle, DwmBorderColor, ref noBorder, sizeof(int));
+        var doNotRound = DwmWindowCornerDoNotRound;
+        _ = DwmSetWindowAttribute(
+            _windowHandle, DwmWindowCornerPreference, ref doNotRound, sizeof(int));
+    }
+
+    private void ApplyRoundedRegion(int width, int height, double scale)
+    {
+        GetWindowRect(_windowHandle, out var window);
+        GetClientRect(_windowHandle, out var client);
+        var origin = new NativePoint();
+        ClientToScreen(_windowHandle, ref origin);
+        var left = Math.Max(0, origin.X - window.Left);
+        var top = Math.Max(0, origin.Y - window.Top);
+        var clientWidth = Math.Max(0, client.Right - client.Left);
+        var clientHeight = Math.Max(0, client.Bottom - client.Top);
+        if (clientWidth == 0 || clientHeight == 0)
+        {
+            left = 0;
+            top = 0;
+            clientWidth = width;
+            clientHeight = height;
+        }
+        var radius = Math.Max(1, (int)Math.Round(CornerRadius * scale));
+        var region = CreateRoundRectRgn(
+            left, top, left + clientWidth + 1, top + clientHeight + 1, radius * 2, radius * 2);
+        if (region != IntPtr.Zero && SetWindowRgn(_windowHandle, region, true) == 0)
+        {
+            DeleteObject(region);
+        }
+    }
+
+    private void InstallHooks()
+    {
+        RemoveHooks();
+        _mouseHookProc = MouseHookProc;
+        _keyboardHookProc = KeyboardHookProc;
+        _mouseHook = SetWindowsHookEx(WhMouseLl, _mouseHookProc, GetModuleHandle(null), 0);
+        if (_mouseHook == IntPtr.Zero)
+        {
+            _diagnosticLog.TryWrite(
+                "tray-menu",
+                $"mouse hook installation failed: {Marshal.GetLastWin32Error()}");
+        }
+        _keyboardHook = SetWindowsHookEx(WhKeyboardLl, _keyboardHookProc, GetModuleHandle(null), 0);
+        if (_keyboardHook == IntPtr.Zero)
+        {
+            _diagnosticLog.TryWrite(
+                "tray-menu",
+                $"keyboard hook installation failed: {Marshal.GetLastWin32Error()}");
+        }
+    }
+
+    private IntPtr MouseHookProc(int code, IntPtr message, IntPtr data)
+    {
+        var notification = (uint)message.ToInt64();
+        if (_menuOpen && code >= 0 &&
+            (notification == WmLButtonDown ||
+             notification == WmRButtonDown ||
+             notification == WmMButtonDown))
+        {
+            var point = Marshal.PtrToStructure<MouseHookData>(data).Point;
+            var target = WindowFromPoint(point);
+            var root = GetAncestor(target, GaRoot);
+            if (root != _windowHandle)
+            {
+                MenuRoot.DispatcherQueue.TryEnqueue(DismissMenu);
+            }
+        }
+        return CallNextHookEx(_mouseHook, code, message, data);
+    }
+
+    private IntPtr KeyboardHookProc(int code, IntPtr message, IntPtr data)
+    {
+        var notification = (uint)message.ToInt64();
+        if (_menuOpen && code >= 0 &&
+            (notification == WmKeyDown || notification == WmSysKeyDown) &&
+            Marshal.PtrToStructure<KeyboardHookData>(data).VirtualKey == VkEscape)
+        {
+            MenuRoot.DispatcherQueue.TryEnqueue(DismissMenu);
+            return new IntPtr(1);
+        }
+        return CallNextHookEx(_keyboardHook, code, message, data);
+    }
+
+    private void RemoveHooks()
+    {
+        if (_mouseHook != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(_mouseHook);
+            _mouseHook = IntPtr.Zero;
+        }
+        if (_keyboardHook != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(_keyboardHook);
+            _keyboardHook = IntPtr.Zero;
+        }
+        _mouseHookProc = null;
+        _keyboardHookProc = null;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -194,6 +460,32 @@ public sealed partial class TrayMenuWindow : Window
         public int Right;
         public int Bottom;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MouseHookData
+    {
+        public NativePoint Point;
+        public uint MouseData;
+        public uint Flags;
+        public uint Time;
+        public IntPtr ExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KeyboardHookData
+    {
+        public uint VirtualKey;
+        public uint ScanCode;
+        public uint Flags;
+        public uint Time;
+        public IntPtr ExtraInfo;
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    private delegate IntPtr LowLevelMouseProc(int code, IntPtr message, IntPtr data);
+
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    private delegate IntPtr LowLevelKeyboardProc(int code, IntPtr message, IntPtr data);
 
     [DllImport("user32.dll", SetLastError = true, EntryPoint = "GetWindowLongPtrW")]
     private static extern IntPtr GetWindowLongPtr(IntPtr windowHandle, int index);
@@ -221,16 +513,59 @@ public sealed partial class TrayMenuWindow : Window
         uint flags);
 
     [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr windowHandle);
+
+    [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetWindowRect(IntPtr windowHandle, out WindowRect bounds);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetForegroundWindow(IntPtr windowHandle);
+    private static extern bool GetClientRect(IntPtr windowHandle, out WindowRect bounds);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ClientToScreen(IntPtr windowHandle, ref NativePoint point);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr WindowFromPoint(NativePoint point);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetAncestor(IntPtr windowHandle, uint flags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetWindowsHookEx(
+        int hookType, Delegate callback, IntPtr module, uint threadId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hook);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CallNextHookEx(
+        IntPtr hook, int code, IntPtr message, IntPtr data);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr windowHandle, int attribute, ref int value, int size);
+
+    [DllImport("gdi32.dll")]
+    private static extern IntPtr CreateRoundRectRgn(
+        int left, int top, int right, int bottom, int width, int height);
+
+    [DllImport("user32.dll")]
+    private static extern int SetWindowRgn(IntPtr windowHandle, IntPtr region, bool redraw);
+
+    [DllImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeleteObject(IntPtr gdiObject);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr GetModuleHandle(string? moduleName);
 
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool PostMessage(
         IntPtr windowHandle, uint message, nuint wParam, nint lParam);
-
 }
+

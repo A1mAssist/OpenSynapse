@@ -1,0 +1,10 @@
+<Window
+    x:Class="OpenSynapse.App.ThxAudioWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    Title="THX Spatial Audio">
+  <Grid x:Name="RootLayout" Background="{StaticResource CanvasBrush}" RequestedTheme="Dark">
+    <local:ThxAudioView x:Name="AudioView" />
+  </Grid>
+</Window>

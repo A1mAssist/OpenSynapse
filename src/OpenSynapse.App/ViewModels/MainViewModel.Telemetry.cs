@@ -20,6 +20,7 @@ public sealed partial class MainViewModel
                 () => _performanceMonitor.SampleAsync(cancellationToken).AsTask(),
                 cancellationToken);
             _systemTelemetry.Apply(snapshot);
+            ApplyBatteryCharge();
             _performanceErrorText = snapshot.ErrorMessage ?? string.Empty;
             UpdateErrorText();
         }
@@ -39,6 +40,23 @@ public sealed partial class MainViewModel
         _systemTelemetry.ApplyBatteryHealth(snapshot);
         OnPropertyChanged(nameof(BatteryHealthValue));
         OnPropertyChanged(nameof(BatteryHealthDetail));
+        ApplyBatteryCharge();
+    }
+
+    private void ApplyBatteryCharge()
+    {
+        var percent = _powerSourceProvider.BatteryPercent;
+        var charging = _powerSourceProvider.IsCharging;
+        BatteryChargeValue = percent is { } value ? $"{value}%" : "--";
+        BatteryChargeState = percent is null
+            ? AppStrings.Text("BatteryChargeUnavailable")
+            : charging == true
+                ? AppStrings.Text("BatteryChargeCharging")
+                : CurrentPowerSource == PowerSourceKind.Battery
+                    ? AppStrings.Text("BatteryChargeDischarging")
+                    : AppStrings.Text("BatteryChargeIdle");
+        OnPropertyChanged(nameof(BatteryChargeValue));
+        OnPropertyChanged(nameof(BatteryChargeState));
     }
 
     private void ApplyDeviceTelemetry(RazerDeviceTelemetry telemetry)
@@ -147,20 +165,35 @@ public sealed partial class MainViewModel
         ApplyFirmwareMcuVersion(telemetry.BladeMcuVersion);
         if (telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode)
         {
-            BladeNativeDisplayModeText = nativeDisplayMode == BladeNativeDisplayMode.Uhd ? "UHD" : "FHD";
+            _blade._bladeNativeDisplayMode = nativeDisplayMode;
+            BladeNativeDisplayModeIndex = (int)nativeDisplayMode;
+            OnPropertyChanged(nameof(CanSetBladeNativeDisplayMode));
+            OnPropertyChanged(nameof(CanApplyBladeNativeDisplayMode));
+            OnPropertyChanged(nameof(BladeNativeDisplayModeVisibility));
         }
-        if (telemetry.BladeSkuHardwareConfiguration is { } sku)
+        else
         {
-            BladeSkuHardwareText =
-                $"0x{sku.Raw:X2} · DDS {FormatState(sku.Dds)} · MiniLED {FormatState(sku.MiniLedResolution)} · Battery {FormatState(sku.IllegalBatterySupport)}";
-            if (!sku.MiniLedResolution)
-            {
-                BladeLocalDimmingText = AppStrings.Text("Text_BA8E994B");
-            }
-            else if (telemetry.BladeLocalDimmingEnabled is bool localDimmingEnabled)
-            {
-                BladeLocalDimmingText = FormatOptionalState(localDimmingEnabled);
-            }
+            _blade._bladeNativeDisplayMode = null;
+            BladeNativeDisplayModeIndex = -1;
+            OnPropertyChanged(nameof(CanSetBladeNativeDisplayMode));
+            OnPropertyChanged(nameof(CanApplyBladeNativeDisplayMode));
+            OnPropertyChanged(nameof(BladeNativeDisplayModeVisibility));
+        }
+        if (telemetry.BladeLocalDimmingEnabled is bool localDimmingEnabled)
+        {
+            _blade._bladeLocalDimmingEnabled = localDimmingEnabled;
+            BladeLocalDimmingEnabled = localDimmingEnabled;
+            OnPropertyChanged(nameof(CanSetBladeLocalDimming));
+            OnPropertyChanged(nameof(CanApplyBladeLocalDimming));
+            OnPropertyChanged(nameof(BladeLocalDimmingVisibility));
+        }
+        else
+        {
+            _blade._bladeLocalDimmingEnabled = null;
+            BladeLocalDimmingEnabled = false;
+            OnPropertyChanged(nameof(CanSetBladeLocalDimming));
+            OnPropertyChanged(nameof(CanApplyBladeLocalDimming));
+            OnPropertyChanged(nameof(BladeLocalDimmingVisibility));
         }
         if (telemetry.BladeOneTimeFullChargeEnabled is bool oneTimeFullChargeEnabled)
         {
@@ -502,9 +535,16 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeFnKeyMultimediaPrimary));
         OnPropertyChanged(nameof(CanSetBladeFnKey));
         OnPropertyChanged(nameof(CanApplyBladeFnKey));
-        BladeNativeDisplayModeText = "--";
-        BladeSkuHardwareText = "--";
-        BladeLocalDimmingText = "--";
+        _blade._bladeNativeDisplayMode = null;
+        BladeNativeDisplayModeIndex = -1;
+        _blade._bladeLocalDimmingEnabled = null;
+        BladeLocalDimmingEnabled = false;
+        OnPropertyChanged(nameof(CanSetBladeNativeDisplayMode));
+        OnPropertyChanged(nameof(CanApplyBladeNativeDisplayMode));
+        OnPropertyChanged(nameof(BladeNativeDisplayModeVisibility));
+        OnPropertyChanged(nameof(CanSetBladeLocalDimming));
+        OnPropertyChanged(nameof(CanApplyBladeLocalDimming));
+        OnPropertyChanged(nameof(BladeLocalDimmingVisibility));
         _blade._bladeOneTimeFullChargeEnabled = null;
         BladeOneTimeFullChargeEnabled = false;
         BladeOneTimeFullChargeText = "--";
@@ -573,4 +613,10 @@ public sealed partial class MainViewModel
     public double StoragePercent => _systemTelemetry.StoragePercent;
     public string BatteryHealthValue => _systemTelemetry.BatteryHealthValue;
     public string BatteryHealthDetail => _systemTelemetry.BatteryHealthDetail;
+    public string BatteryChargeValue { get; private set; } = "--";
+    public string BatteryChargeState { get; private set; } = string.Empty;
 }
+
+
+
+

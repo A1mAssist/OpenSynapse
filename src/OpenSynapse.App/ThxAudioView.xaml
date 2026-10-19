@@ -1,0 +1,95 @@
+<UserControl
+    x:Class="OpenSynapse.App.ThxAudioView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <Grid Background="{StaticResource CanvasBrush}">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="5">
+                    <TextBlock local:Localized.Uid="AudioPageTitle" Text="音频" Style="{StaticResource PageTitleStyle}" />
+                    <TextBlock local:Localized.Uid="AudioPageDescription" Text="THX Spatial Audio 空间音效、均衡器和增强设置。" Foreground="{StaticResource MutedBrush}" />
+                  </StackPanel>
+                  <Button local:Localized.Uid="ThxRefreshButton" Grid.Column="1" Content="重新读取" Click="RefreshThxAudioClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanRead}" VerticalAlignment="Bottom" />
+                </Grid>
+                <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding StatusText}" />
+                <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding UnavailableVisibility}">
+                  <StackPanel Spacing="10">
+                    <TextBlock Text="THX Spatial Audio" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding UnavailableHint}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button local:Localized.Uid="ThxDownloadComponentButton" Content="下载 THX 控制组件" Click="DownloadThxComponentClick" Style="{StaticResource PrimaryButtonStyle}" IsEnabled="{Binding CanDownloadComponent}" Visibility="{Binding DownloadVisibility}" />
+                      <Button local:Localized.Uid="ThxInstallButton" Content="打开雷蛇下载页" Click="OpenThxInstallClick" Style="{StaticResource SecondaryButtonStyle}" Visibility="{Binding InstallVisibility}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ControlsVisibility}">
+                  <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="THX Spatial Audio" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" />
+                      </StackPanel>
+                      <ComboBox local:Localized.Uid="ThxOutputLabel" Grid.Column="1" Header="输出" ItemsSource="{Binding Endpoints}" DisplayMemberPath="Label" SelectedIndex="{Binding SelectedEndpointIndex, Mode=TwoWay}" MinWidth="180" VerticalAlignment="Bottom" />
+                    </Grid>
+                    <Grid ColumnDefinitions="2*,3*" ColumnSpacing="18">
+                      <StackPanel Spacing="8">
+                        <TextBlock local:Localized.Uid="ThxSpatialLabel" Text="空间音频" Style="{StaticResource MetricLabelStyle}" />
+                        <ToggleSwitch local:Localized.Uid="ThxSpatialToggle" IsOn="{Binding SpatialEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
+                        <TextBlock local:Localized.Uid="ThxEqualizerLabel" Text="均衡器" Style="{StaticResource MetricLabelStyle}" />
+                        <ToggleSwitch local:Localized.Uid="ThxEqualizerToggle" IsOn="{Binding EqualizerEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
+                        <ComboBox local:Localized.Uid="ThxPresetLabel" Header="预设" ItemsSource="{Binding Presets}" DisplayMemberPath="Label" SelectedIndex="{Binding SelectedPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="6">
+                        <TextBlock local:Localized.Uid="ThxEqualizerTitle" Text="频段" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding EqualizerHint}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                        <ItemsRepeater ItemsSource="{Binding Bands}" Visibility="{Binding EqualizerEditVisibility}">
+                          <ItemsRepeater.Layout><StackLayout Spacing="3" /></ItemsRepeater.Layout>
+                          <ItemsRepeater.ItemTemplate>
+                            <DataTemplate>
+                              <Grid ColumnDefinitions="64,*,62" ColumnSpacing="8">
+                                <TextBlock Text="{Binding FrequencyText}" FontFamily="Cascadia Mono" FontSize="11" VerticalAlignment="Center" />
+                                <Slider Grid.Column="1" Minimum="-12" Maximum="12" StepFrequency="0.5" Value="{Binding GainDb, Mode=TwoWay}" IsThumbToolTipEnabled="False" />
+                                <TextBlock Grid.Column="2" Text="{Binding GainText}" FontFamily="Cascadia Mono" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{Binding EqualizerEditVisibility}">
+                          <Button local:Localized.Uid="ThxApplyEqualizerButton" Content="应用均衡器" Click="ApplyThxEqualizerClick" Style="{StaticResource PrimaryButtonStyle}" IsEnabled="{Binding CanApplyEqualizer}" />
+                          <Button local:Localized.Uid="ThxResetEqualizerButton" Content="恢复预设" Click="ResetThxEqualizerClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanResetEqualizer}" />
+                          <Button local:Localized.Uid="ThxFlattenEqualizerButton" Content="全部置零" Click="FlattenThxEqualizerClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEdit}" />
+                        </StackPanel>
+                      </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="18">
+                      <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4" Padding="12">
+                        <StackPanel Spacing="8">
+                          <TextBlock local:Localized.Uid="ThxVoiceClarityLabel" Text="人声清晰度" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                          <ToggleSwitch local:Localized.Uid="ThxVoiceClarityToggle" IsOn="{Binding VoiceClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding VoiceClarityLevel, Mode=TwoWay}" IsThumbToolTipEnabled="False" IsEnabled="{Binding VoiceClarityEnabled}" />
+                            <TextBlock Grid.Column="1" Text="{Binding VoiceClarityLevelText}" FontFamily="Cascadia Mono" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                          </Grid>
+                          <Button local:Localized.Uid="ThxApplyVoiceClarityButton" Content="应用人声清晰度" Click="ApplyThxVoiceClarityClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding VoiceClarityEnabled}" />
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Column="1" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4" Padding="12" Visibility="{Binding SoundNormalizationVisibility}">
+                        <StackPanel Spacing="8">
+                          <TextBlock local:Localized.Uid="ThxSoundNormalizationLabel" Text="音量标准化" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                          <ToggleSwitch local:Localized.Uid="ThxSoundNormalizationToggle" IsOn="{Binding SoundNormalizationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding SoundNormalizationLevel, Mode=TwoWay}" IsThumbToolTipEnabled="False" IsEnabled="{Binding SoundNormalizationEnabled}" />
+                            <TextBlock Grid.Column="1" Text="{Binding SoundNormalizationLevelText}" FontFamily="Cascadia Mono" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                          </Grid>
+                          <Button local:Localized.Uid="ThxApplySoundNormalizationButton" Content="应用音量标准化" Click="ApplyThxSoundNormalizationClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding SoundNormalizationEnabled}" />
+                        </StackPanel>
+                      </Border>
+                    </Grid>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+  </Grid>
+</UserControl>

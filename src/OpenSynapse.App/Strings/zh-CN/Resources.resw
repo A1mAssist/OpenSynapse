@@ -212,10 +212,6 @@
     <value>启动动画</value>
     <comment>启动动画</comment>
   </data>
-  <data name="Loc_8937CB3DA5.Text" xml:space="preserve">
-    <value>面板模式</value>
-    <comment>面板模式</comment>
-  </data>
   <data name="Loc_E426750AB6.Text" xml:space="preserve">
     <value>一次性充满</value>
     <comment>一次性充满</comment>
@@ -890,6 +886,7 @@
   </data>
   <data name="DiagnosticPerformanceFan" xml:space="preserve"><value>性能与风扇状态</value></data>
   <data name="DiagnosticPowerModeControl" xml:space="preserve"><value>性能模式控制</value></data>
+<data name="DiagnosticKeyboardEffect" xml:space="preserve"><value>键盘灯效</value></data>
   <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade Logo</value></data>
   <data name="DiagnosticMousePollingRate" xml:space="preserve"><value>鼠标轮询率</value></data>
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>鼠标空闲休眠</value></data>
@@ -980,10 +977,6 @@
   <data name="Text_76BEF6E0" xml:space="preserve">
     <value>未发现目标设备</value>
     <comment>未发现目标设备</comment>
-  </data>
-  <data name="Text_BA8E994B" xml:space="preserve">
-    <value>不适用（非 MiniLED）</value>
-    <comment>不适用（非 MiniLED）</comment>
   </data>
   <data name="Text_C41C6FC1" xml:space="preserve">
     <value>鼠标休眠</value>
@@ -1840,7 +1833,7 @@
   <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU 性能档位</value></data>
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU 性能档位</value></data>
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>风扇全速</value></data>
-  <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>修改会保存到当前配置；风扇全速会增加噪音。</value></data>
+  <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>修改会保存到当前配置。</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
   <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫：它会提高持续功耗上限，由散热垫负责散热；未连接时无法切换。</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost 需要连接雷蛇笔记本散热垫后才能启用。</value></data>
@@ -1860,6 +1853,11 @@
   <data name="BatteryHealthLabel" xml:space="preserve"><value>电池健康</value></data>
   <data name="BatteryHealthDetail" xml:space="preserve"><value>设计 {0:0.0} Wh / 满充 {1:0.0} Wh · 循环 {2} 次</value></data>
   <data name="BatteryHealthUnavailable" xml:space="preserve"><value>未检测到电池</value></data>
+  <data name="BatteryChargeLabel" xml:space="preserve"><value>电池电量</value></data>
+  <data name="BatteryChargeCharging" xml:space="preserve"><value>正在充电</value></data>
+  <data name="BatteryChargeDischarging" xml:space="preserve"><value>正在放电</value></data>
+  <data name="BatteryChargeIdle" xml:space="preserve"><value>已接通电源</value></data>
+  <data name="BatteryChargeUnavailable" xml:space="preserve"><value>未检测到电池</value></data>
   <data name="BladeImportChromaButton.Content" xml:space="preserve"><value>导入 .chroma</value></data>
   <data name="BladeLightingModeChromaFile" xml:space="preserve"><value>Chroma 动画</value></data>
   <data name="BladeChromaImportInvalid" xml:space="preserve"><value>无法导入该 .chroma 文件。</value></data>
@@ -1867,4 +1865,269 @@
   <data name="BladeChromaImportApplied" xml:space="preserve"><value>已应用 {0}（{1} 帧）。</value></data>
   <data name="BladeChromaImportUniform" xml:space="preserve"><value>已导入并应用静态颜色。</value></data>
   <data name="BladeChromaFileMissing" xml:space="preserve"><value>导入的 .chroma 文件不可用，请重新导入。</value></data>
+
+
+  <data name="AudioPageTitle.Text" xml:space="preserve">
+    <value>音频</value>
+    <comment>音频</comment>
+  </data>
+  <data name="AudioPageDescription.Text" xml:space="preserve">
+    <value>THX Spatial Audio 空间音效、均衡器和增强设置。</value>
+    <comment>THX Spatial Audio 空间音效、均衡器和增强设置。</comment>
+  </data>
+  <data name="ThxRefreshButton.Content" xml:space="preserve">
+    <value>重新读取</value>
+    <comment>重新读取</comment>
+  </data>
+  <data name="ThxHintNativeMissing" xml:space="preserve">
+    <value>缺少雷蛇提供的 THX 控制组件。点击“下载 THX 控制组件”从雷蛇官方服务器获取，下载后会校验完整性；OpenSynapse 安装包不附带该组件。</value>
+  </data>
+  <data name="ThxInstallButton.Content" xml:space="preserve">
+    <value>打开雷蛇下载页</value>
+    <comment>打开雷蛇下载页</comment>
+  </data>
+  <data name="ThxOutputLabel.Header" xml:space="preserve">
+    <value>输出</value>
+    <comment>输出</comment>
+  </data>
+  <data name="ThxSpatialLabel.Text" xml:space="preserve">
+    <value>空间音频</value>
+    <comment>空间音频</comment>
+  </data>
+  <data name="ThxEqualizerLabel.Text" xml:space="preserve">
+    <value>均衡器</value>
+    <comment>均衡器</comment>
+  </data>
+  <data name="ThxPresetLabel.Header" xml:space="preserve">
+    <value>预设</value>
+    <comment>预设</comment>
+  </data>
+  <data name="ThxEqualizerTitle.Text" xml:space="preserve">
+    <value>频段</value>
+    <comment>频段</comment>
+  </data>
+  <data name="ThxApplyEqualizerButton.Content" xml:space="preserve">
+    <value>应用均衡器</value>
+    <comment>应用均衡器</comment>
+  </data>
+  <data name="ThxResetEqualizerButton.Content" xml:space="preserve">
+    <value>恢复预设</value>
+    <comment>恢复预设</comment>
+  </data>
+  <data name="ThxFlattenEqualizerButton.Content" xml:space="preserve">
+    <value>全部置零</value>
+    <comment>全部置零</comment>
+  </data>
+  <data name="ThxVoiceClarityLabel.Text" xml:space="preserve">
+    <value>人声清晰度</value>
+    <comment>人声清晰度</comment>
+  </data>
+  <data name="ThxApplyVoiceClarityButton.Content" xml:space="preserve">
+    <value>应用人声清晰度</value>
+    <comment>应用人声清晰度</comment>
+  </data>
+  <data name="ThxSoundNormalizationLabel.Text" xml:space="preserve">
+    <value>音量标准化</value>
+    <comment>音量标准化</comment>
+  </data>
+  <data name="ThxApplySoundNormalizationButton.Content" xml:space="preserve">
+    <value>应用音量标准化</value>
+    <comment>应用音量标准化</comment>
+  </data>
+  <data name="ThxSpatialToggle.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="ThxSpatialToggle.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="ThxEqualizerToggle.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="ThxEqualizerToggle.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="ThxVoiceClarityToggle.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="ThxVoiceClarityToggle.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="ThxSoundNormalizationToggle.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="ThxSoundNormalizationToggle.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="ThxSpeakers" xml:space="preserve">
+    <value>扬声器</value>
+    <comment>扬声器</comment>
+  </data>
+  <data name="ThxHeadphones" xml:space="preserve">
+    <value>耳机</value>
+    <comment>耳机</comment>
+  </data>
+  <data name="ThxStatusDisabled" xml:space="preserve">
+    <value>THX 音频控制已关闭。</value>
+    <comment>THX 音频控制已关闭。</comment>
+  </data>
+  <data name="ThxStatusReading" xml:space="preserve">
+    <value>正在读取 THX 设置…</value>
+    <comment>正在读取 THX 设置…</comment>
+  </data>
+  <data name="ThxStatusReady" xml:space="preserve">
+    <value>已连接 THX Spatial Audio。</value>
+    <comment>已连接 THX Spatial Audio。</comment>
+  </data>
+  <data name="ThxStatusUnavailable" xml:space="preserve">
+    <value>THX 音频不可用。</value>
+    <comment>THX 音频不可用。</comment>
+  </data>
+  <data name="ThxStatusModelUnknown" xml:space="preserve">
+    <value>未识别到支持的雷蛇 Blade 机型。</value>
+    <comment>未识别到支持的雷蛇 Blade 机型。</comment>
+  </data>
+  <data name="ThxStatusModelUnsupported" xml:space="preserve">
+    <value>当前机型不在 THX 控制支持列表。</value>
+    <comment>当前机型不在 THX 控制支持列表。</comment>
+  </data>
+  <data name="ThxStatusUsbMissing" xml:space="preserve">
+    <value>未检测到对应雷蛇设备的 USB 通道。</value>
+    <comment>未检测到对应雷蛇设备的 USB 通道。</comment>
+  </data>
+  <data name="ThxStatusServiceMissing" xml:space="preserve">
+    <value>THX 服务未运行。</value>
+    <comment>THX 服务未运行。</comment>
+  </data>
+  <data name="ThxStatusNativeMissing" xml:space="preserve">
+    <value>检测到 THX 控制组件缺失。</value>
+    <comment>缺少雷蛇 App Engine 的 THX 控制组件。</comment>
+  </data>
+  <data name="ThxStatusControllerActive" xml:space="preserve">
+    <value>请先关闭 Razer Synapse、Razer App Engine 或 THX 客户端。</value>
+    <comment>请先关闭 Razer Synapse、Razer App Engine 或 THX 客户端。</comment>
+  </data>
+  <data name="ThxStatusHelperMissing" xml:space="preserve">
+    <value>THX 控制进程未随应用部署。</value>
+    <comment>THX 控制进程未随应用部署。</comment>
+  </data>
+  <data name="ThxStatusHelperExited" xml:space="preserve">
+    <value>THX 控制进程已退出。</value>
+    <comment>THX 控制进程已退出。</comment>
+  </data>
+  <data name="ThxStatusHelperFailed" xml:space="preserve">
+    <value>THX 控制进程返回了无效结果。</value>
+    <comment>THX 控制进程返回了无效结果。</comment>
+  </data>
+  <data name="ThxStatusHelperFailedDetail" xml:space="preserve">
+    <value>THX 操作失败：{0}</value>
+    <comment>THX 操作失败：{0}</comment>
+  </data>
+  <data name="ThxPresetGame" xml:space="preserve">
+    <value>游戏</value>
+    <comment>游戏</comment>
+  </data>
+  <data name="ThxPresetMovie" xml:space="preserve">
+    <value>电影</value>
+    <comment>电影</comment>
+  </data>
+  <data name="ThxPresetMusic" xml:space="preserve">
+    <value>音乐</value>
+    <comment>音乐</comment>
+  </data>
+  <data name="ThxPresetVoice" xml:space="preserve">
+    <value>人声</value>
+    <comment>人声</comment>
+  </data>
+  <data name="ThxPresetCustom" xml:space="preserve">
+    <value>自定义</value>
+    <comment>自定义</comment>
+  </data>
+  <data name="ThxPresetDefault" xml:space="preserve">
+    <value>默认</value>
+    <comment>默认</comment>
+  </data>
+  <data name="ThxEqualizerHint" xml:space="preserve">
+    <value>调整频段后点击“应用均衡器”。</value>
+    <comment>调整频段后点击“应用均衡器”。</comment>
+  </data>
+  <data name="ThxEqualizerPresetHint" xml:space="preserve">
+    <value>选择游戏、电影、音乐、人声或自定义后可编辑频段。</value>
+    <comment>选择游戏、电影、音乐、人声或自定义后可编辑频段。</comment>
+  </data>
+  <data name="ThxHintModelUnsupported" xml:space="preserve">
+    <value>当前机型没有可用的 THX 控制接口。</value>
+  </data>
+  <data name="ThxHintControllerActive" xml:space="preserve">
+    <value>关闭雷蛇 Synapse、Razer App Engine 和 THX 客户端后重新读取。</value>
+  </data>
+  <data name="ThxHintServiceMissing" xml:space="preserve">
+    <value>THX 服务未运行，请修复或重新安装雷蛇音频组件。</value>
+  </data>
+  <data name="ThxHintHelperMissing" xml:space="preserve">
+    <value>THX 控制进程没有随应用部署，请重新安装 OpenSynapse。</value>
+  </data>
+  <data name="ThxHintGeneric" xml:space="preserve">
+    <value>当前无法读取或修改 THX 设置。</value>
+  </data>
+  <data name="ThxStatusDeviceChanged" xml:space="preserve">
+    <value>THX 设备状态已变化，请重新读取。</value>
+  </data>
+  <data name="ThxStatusServiceNotReady" xml:space="preserve">
+    <value>THX 服务尚未就绪。</value>
+  </data>
+  <data name="ThxStatusOperationRejected" xml:space="preserve">
+    <value>THX 未接受这次设置。</value>
+  </data>
+  <data name="ThxStatusNativeFailure" xml:space="preserve">
+    <value>THX 控制组件返回了错误。</value>
+  </data>
+  <data name="ThxStatusInvalidRequest" xml:space="preserve">
+    <value>THX 设置参数无效。</value>
+  </data>
+  <data name="ThxDownloadComponentButton.Content" xml:space="preserve">
+    <value>下载 THX 控制组件</value>
+  </data>
+  <data name="ThxStatusDownloading" xml:space="preserve">
+    <value>正在从雷蛇官方服务器下载 THX 控制组件…</value>
+  </data>
+  <data name="ThxStatusDownloadFailed" xml:space="preserve">
+    <value>THX 控制组件下载失败，请检查网络后重试。</value>
+  </data>
+  <data name="ThxStatusDownloadVerificationFailed" xml:space="preserve">
+    <value>下载的 THX 控制组件未通过完整性校验，未写入。</value>
+  </data>
+  <data name="ThxStatusDownloadWriteFailed" xml:space="preserve">
+    <value>无法写入 THX 控制组件，请检查当前用户目录权限。</value>
+  </data>
+  <data name="ThxWindowTitle" xml:space="preserve">
+    <value>THX Spatial Audio</value>
+  </data>
+  <data name="ThxAudioOpenButton.Content" xml:space="preserve">
+    <value>打开音频控制</value>
+  </data>
+  <data name="BladeNativeDisplayModeTitle.Text" xml:space="preserve">
+    <value>面板模式</value>
+    <comment>面板模式</comment>
+  </data>
+  <data name="BladeNativeDisplayModeDescription.Text" xml:space="preserve">
+    <value>切换内屏的 UHD / FHD 原生模式，切换时屏幕可能短暂闪烁。</value>
+    <comment>切换内屏的 UHD / FHD 原生模式。</comment>
+  </data>
+  <data name="BladeLocalDimmingTitle.Text" xml:space="preserve">
+    <value>局部调光</value>
+    <comment>局部调光</comment>
+  </data>
+  <data name="BladeLocalDimmingDescription.Text" xml:space="preserve">
+    <value>控制 MiniLED 面板的局部调光。</value>
+    <comment>控制 MiniLED 面板的局部调光。</comment>
+  </data>
 </root>
+

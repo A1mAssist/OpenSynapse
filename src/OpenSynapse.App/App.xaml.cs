@@ -7,6 +7,7 @@ using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Audio;
 using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lifecycle;
@@ -27,6 +28,7 @@ public partial class App : Application
     private TrayMenuWindow? _trayMenuWindow;
     private WindowsPerformanceMonitor? _performanceMonitor;
     private BladeLightingController? _bladeLightingController;
+    private WindowsThxAudioController? _thxAudioController;
     private ChromaRestHost? _chromaRestHost;
     private readonly BladeSoftwareModeCoordinator _bladeModeCoordinator = new();
     private readonly SemaphoreSlim _audioMuteRuntimeGate = new(1, 1);
@@ -132,6 +134,7 @@ public partial class App : Application
             razerTransport,
             registryLoad.Registry,
             _bladeModeCoordinator);
+        _thxAudioController = new WindowsThxAudioController();
         _openRazerDeviceService = new OpenRazerDeviceService(_diagnosticLog);
         _openRazerDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
         var viewModel = new MainViewModel(
@@ -149,7 +152,9 @@ public partial class App : Application
             registryLoad.Errors,
             new WindowsTouchpadController(),
             _openRazerDeviceService,
-            new OpenRazerSpecialLightingService());
+            new OpenRazerSpecialLightingService(),
+            thxAudioController: _thxAudioController,
+            thxAudioSupported: WindowsThxAudioController.IsSupportedModel());
         _audioMuteViewModel = viewModel;
         viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
         viewModel.BladePerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
@@ -488,6 +493,20 @@ public partial class App : Application
             catch (Exception exception)
             {
                 _diagnosticLog.TryWrite("keyboard-lighting", $"restore failed: {exception}");
+            }
+        }
+
+        var thxAudioController = _thxAudioController;
+        _thxAudioController = null;
+        if (thxAudioController is not null)
+        {
+            try
+            {
+                await thxAudioController.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("thx-audio", $"helper shutdown failed: {exception}");
             }
         }
 

@@ -162,9 +162,6 @@
   <data name="Loc_3ED6955900.Text" xml:space="preserve">
     <value>Startup animation</value>
   </data>
-  <data name="Loc_8937CB3DA5.Text" xml:space="preserve">
-    <value>Panel mode</value>
-  </data>
   <data name="Loc_E426750AB6.Text" xml:space="preserve">
     <value>One-time full charge</value>
   </data>
@@ -675,6 +672,7 @@
   </data>
   <data name="DiagnosticPerformanceFan" xml:space="preserve"><value>Performance and fan state</value></data>
   <data name="DiagnosticPowerModeControl" xml:space="preserve"><value>Power mode control</value></data>
+<data name="DiagnosticKeyboardEffect" xml:space="preserve"><value>Keyboard effect</value></data>
   <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade logo</value></data>
   <data name="DiagnosticMousePollingRate" xml:space="preserve"><value>Mouse polling rate</value></data>
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>Mouse idle timeout</value></data>
@@ -746,9 +744,6 @@
   </data>
   <data name="Text_76BEF6E0" xml:space="preserve">
     <value>No supported device detected</value>
-  </data>
-  <data name="Text_BA8E994B" xml:space="preserve">
-    <value>Not applicable (non-MiniLED)</value>
   </data>
   <data name="Text_C41C6FC1" xml:space="preserve">
     <value>Mouse sleep timeout</value>
@@ -1482,7 +1477,7 @@
   <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU performance level</value></data>
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU performance level</value></data>
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>Full fan speed</value></data>
-  <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>Changes are saved to the current profile; full fan speed increases noise.</value></data>
+  <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>Changes are saved to the current profile.</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
   <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad: it raises sustained power limits and relies on the pad for cooling. The mode cannot be selected without the pad.</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad.</value></data>
@@ -1502,6 +1497,11 @@
   <data name="BatteryHealthLabel" xml:space="preserve"><value>BATTERY HEALTH</value></data>
   <data name="BatteryHealthDetail" xml:space="preserve"><value>Design {0:0.0} Wh / Full {1:0.0} Wh · {2} cycles</value></data>
   <data name="BatteryHealthUnavailable" xml:space="preserve"><value>No battery detected</value></data>
+  <data name="BatteryChargeLabel" xml:space="preserve"><value>BATTERY CHARGE</value></data>
+  <data name="BatteryChargeCharging" xml:space="preserve"><value>Charging</value></data>
+  <data name="BatteryChargeDischarging" xml:space="preserve"><value>Discharging</value></data>
+  <data name="BatteryChargeIdle" xml:space="preserve"><value>On AC power</value></data>
+  <data name="BatteryChargeUnavailable" xml:space="preserve"><value>No battery detected</value></data>
   <data name="BladeImportChromaButton.Content" xml:space="preserve"><value>Import .chroma</value></data>
   <data name="BladeLightingModeChromaFile" xml:space="preserve"><value>Chroma animation</value></data>
   <data name="BladeChromaImportInvalid" xml:space="preserve"><value>This .chroma file could not be imported.</value></data>
@@ -1509,4 +1509,217 @@
   <data name="BladeChromaImportApplied" xml:space="preserve"><value>Applied {0} ({1} frames).</value></data>
   <data name="BladeChromaImportUniform" xml:space="preserve"><value>Imported and applied a static color.</value></data>
   <data name="BladeChromaFileMissing" xml:space="preserve"><value>The imported .chroma file is unavailable. Import it again.</value></data>
+
+
+  <data name="AudioPageTitle.Text" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="AudioPageDescription.Text" xml:space="preserve">
+    <value>THX Spatial Audio, equalizer, and enhancement controls.</value>
+  </data>
+  <data name="ThxRefreshButton.Content" xml:space="preserve">
+    <value>Read again</value>
+  </data>
+  <data name="ThxHintNativeMissing" xml:space="preserve">
+    <value>The Razer THX control component is missing. Download it from Razer's official server with the button below; the file is verified before use. OpenSynapse does not bundle this component.</value>
+  </data>
+  <data name="ThxInstallButton.Content" xml:space="preserve">
+    <value>Open Razer download page</value>
+  </data>
+  <data name="ThxOutputLabel.Header" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="ThxSpatialLabel.Text" xml:space="preserve">
+    <value>Spatial audio</value>
+  </data>
+  <data name="ThxEqualizerLabel.Text" xml:space="preserve">
+    <value>Equalizer</value>
+  </data>
+  <data name="ThxPresetLabel.Header" xml:space="preserve">
+    <value>Preset</value>
+  </data>
+  <data name="ThxEqualizerTitle.Text" xml:space="preserve">
+    <value>Bands</value>
+  </data>
+  <data name="ThxApplyEqualizerButton.Content" xml:space="preserve">
+    <value>Apply equalizer</value>
+  </data>
+  <data name="ThxResetEqualizerButton.Content" xml:space="preserve">
+    <value>Factory preset</value>
+  </data>
+  <data name="ThxFlattenEqualizerButton.Content" xml:space="preserve">
+    <value>Flatten</value>
+  </data>
+  <data name="ThxVoiceClarityLabel.Text" xml:space="preserve">
+    <value>Voice clarity</value>
+  </data>
+  <data name="ThxApplyVoiceClarityButton.Content" xml:space="preserve">
+    <value>Apply voice clarity</value>
+  </data>
+  <data name="ThxSoundNormalizationLabel.Text" xml:space="preserve">
+    <value>Volume normalization</value>
+  </data>
+  <data name="ThxApplySoundNormalizationButton.Content" xml:space="preserve">
+    <value>Apply normalization</value>
+  </data>
+  <data name="ThxSpatialToggle.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="ThxSpatialToggle.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="ThxEqualizerToggle.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="ThxEqualizerToggle.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="ThxVoiceClarityToggle.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="ThxVoiceClarityToggle.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="ThxSoundNormalizationToggle.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="ThxSoundNormalizationToggle.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="ThxSpeakers" xml:space="preserve">
+    <value>Speakers</value>
+  </data>
+  <data name="ThxHeadphones" xml:space="preserve">
+    <value>Headphones</value>
+  </data>
+  <data name="ThxStatusDisabled" xml:space="preserve">
+    <value>THX audio control is off.</value>
+  </data>
+  <data name="ThxStatusReading" xml:space="preserve">
+    <value>Reading THX settings...</value>
+  </data>
+  <data name="ThxStatusReady" xml:space="preserve">
+    <value>Connected to THX Spatial Audio.</value>
+  </data>
+  <data name="ThxStatusUnavailable" xml:space="preserve">
+    <value>THX audio is unavailable.</value>
+  </data>
+  <data name="ThxStatusModelUnknown" xml:space="preserve">
+    <value>Unable to identify a supported Razer Blade model.</value>
+  </data>
+  <data name="ThxStatusModelUnsupported" xml:space="preserve">
+    <value>This model is not in the THX control support list.</value>
+  </data>
+  <data name="ThxStatusUsbMissing" xml:space="preserve">
+    <value>The matching Razer USB identity is not present.</value>
+  </data>
+  <data name="ThxStatusServiceMissing" xml:space="preserve">
+    <value>The THX service is not running.</value>
+  </data>
+  <data name="ThxStatusNativeMissing" xml:space="preserve">
+    <value>The Razer THX control component is missing.</value>
+  </data>
+  <data name="ThxStatusControllerActive" xml:space="preserve">
+    <value>Close Razer Synapse, Razer App Engine, or the THX client first.</value>
+  </data>
+  <data name="ThxStatusHelperMissing" xml:space="preserve">
+    <value>The THX helper is not deployed with the app.</value>
+  </data>
+  <data name="ThxStatusHelperExited" xml:space="preserve">
+    <value>The THX helper exited.</value>
+  </data>
+  <data name="ThxStatusHelperFailed" xml:space="preserve">
+    <value>The THX helper returned an invalid result.</value>
+  </data>
+  <data name="ThxStatusHelperFailedDetail" xml:space="preserve">
+    <value>THX operation failed: {0}</value>
+  </data>
+  <data name="ThxPresetGame" xml:space="preserve">
+    <value>Game</value>
+  </data>
+  <data name="ThxPresetMovie" xml:space="preserve">
+    <value>Movie</value>
+  </data>
+  <data name="ThxPresetMusic" xml:space="preserve">
+    <value>Music</value>
+  </data>
+  <data name="ThxPresetVoice" xml:space="preserve">
+    <value>Voice</value>
+  </data>
+  <data name="ThxPresetCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="ThxPresetDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="ThxEqualizerHint" xml:space="preserve">
+    <value>Adjust the bands, then choose Apply equalizer.</value>
+  </data>
+  <data name="ThxEqualizerPresetHint" xml:space="preserve">
+    <value>Choose Game, Movie, Music, Voice, or Custom to edit bands.</value>
+  </data>
+  <data name="ThxHintModelUnsupported" xml:space="preserve">
+    <value>This model does not expose a supported THX control interface.</value>
+  </data>
+  <data name="ThxHintControllerActive" xml:space="preserve">
+    <value>Close Razer Synapse, Razer App Engine, and the THX client, then read again.</value>
+  </data>
+  <data name="ThxHintServiceMissing" xml:space="preserve">
+    <value>The THX service is not running. Repair or reinstall the Razer audio components.</value>
+  </data>
+  <data name="ThxHintHelperMissing" xml:space="preserve">
+    <value>The THX helper was not deployed with OpenSynapse. Reinstall the app.</value>
+  </data>
+  <data name="ThxHintGeneric" xml:space="preserve">
+    <value>THX settings cannot be read or changed right now.</value>
+  </data>
+  <data name="ThxStatusDeviceChanged" xml:space="preserve">
+    <value>The THX device state changed. Read it again.</value>
+  </data>
+  <data name="ThxStatusServiceNotReady" xml:space="preserve">
+    <value>The THX service is not ready.</value>
+  </data>
+  <data name="ThxStatusOperationRejected" xml:space="preserve">
+    <value>THX did not accept this change.</value>
+  </data>
+  <data name="ThxStatusNativeFailure" xml:space="preserve">
+    <value>The THX control component returned an error.</value>
+  </data>
+  <data name="ThxStatusInvalidRequest" xml:space="preserve">
+    <value>The THX setting is invalid.</value>
+  </data>
+  <data name="ThxDownloadComponentButton.Content" xml:space="preserve">
+    <value>Download THX control component</value>
+  </data>
+  <data name="ThxStatusDownloading" xml:space="preserve">
+    <value>Downloading the THX control component from Razer...</value>
+  </data>
+  <data name="ThxStatusDownloadFailed" xml:space="preserve">
+    <value>The THX control component could not be downloaded. Check the network and try again.</value>
+  </data>
+  <data name="ThxStatusDownloadVerificationFailed" xml:space="preserve">
+    <value>The downloaded THX control component failed verification and was not installed.</value>
+  </data>
+  <data name="ThxStatusDownloadWriteFailed" xml:space="preserve">
+    <value>The THX control component could not be written. Check permissions for the current user profile.</value>
+  </data>
+  <data name="ThxWindowTitle" xml:space="preserve">
+    <value>THX Spatial Audio</value>
+  </data>
+  <data name="ThxAudioOpenButton.Content" xml:space="preserve">
+    <value>Open audio controls</value>
+  </data>
+  <data name="BladeNativeDisplayModeTitle.Text" xml:space="preserve">
+    <value>Panel mode</value>
+  </data>
+  <data name="BladeNativeDisplayModeDescription.Text" xml:space="preserve">
+    <value>Switch the internal panel between UHD and FHD native modes; the screen may briefly flicker.</value>
+  </data>
+  <data name="BladeLocalDimmingTitle.Text" xml:space="preserve">
+    <value>Local dimming</value>
+  </data>
+  <data name="BladeLocalDimmingDescription.Text" xml:space="preserve">
+    <value>Control local dimming on MiniLED panels.</value>
+  </data>
 </root>
+

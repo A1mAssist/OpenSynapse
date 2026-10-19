@@ -2,7 +2,7 @@ using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
 
-public static class BladeMaxFanProtocol
+public static class BladePowerModeProtocol
 {
     public const byte MaxFanBit = 0x02;
     public const byte OneTimeFullChargeBit = 0x04;

@@ -161,10 +161,16 @@ public sealed partial class MainViewModel
 
     public Task ApplySelectedBladeLightingEffectAsync(CancellationToken cancellationToken = default)
     {
-        if (BladeLightingModeIndex < 0 || BladeLightingModeIndex >= BladeLightingModes.Length ||
+        var modes = ActiveBladeLightingModes;
+        if (BladeLightingModeIndex < 0 || BladeLightingModeIndex >= modes.Count ||
             BladeWaveDirectionIndex < 0 || BladeWaveDirectionIndex >= BladeWaveDirections.Length)
         {
             return Task.CompletedTask;
+        }
+
+        if (IsBlade2023Model)
+        {
+            return ApplyBlade2023LightingEffectAsync(modes[BladeLightingModeIndex], cancellationToken);
         }
 
         var color = new RazerRgb(BladeLightingColor.R, BladeLightingColor.G, BladeLightingColor.B);
@@ -176,7 +182,7 @@ public sealed partial class MainViewModel
             BladeLightingTertiaryColor.R,
             BladeLightingTertiaryColor.G,
             BladeLightingTertiaryColor.B);
-        var mode = BladeLightingModes[BladeLightingModeIndex];
+        var mode = modes[BladeLightingModeIndex];
         if (mode == BladeLightingMode.ChromaFile && _blade._bladeChromaAnimation is null)
         {
             SetBladeChromaStatus(AppStrings.Text("BladeChromaImportRequired"));
@@ -245,7 +251,7 @@ public sealed partial class MainViewModel
                         new BladeLightingEffect(BladeLightingMode.Static, animation.UniformColor),
                         cancellationToken).ConfigureAwait(false);
                     BladeLightingModeIndex = Array.IndexOf(
-                        BladeLightingModes,
+                        ActiveBladeLightingModes.ToArray(),
                         BladeLightingMode.Static);
                     BladeLightingColor = Color.FromArgb(
                         0xFF,
@@ -263,7 +269,7 @@ public sealed partial class MainViewModel
                         ChromaAnimation: animation),
                     cancellationToken).ConfigureAwait(false);
                 BladeLightingModeIndex = Array.IndexOf(
-                    BladeLightingModes,
+                    ActiveBladeLightingModes.ToArray(),
                     BladeLightingMode.ChromaFile);
                 SetBladeChromaStatus(AppStrings.FormatText(
                     "BladeChromaImportApplied",
@@ -366,7 +372,9 @@ public sealed partial class MainViewModel
 
     public async Task ApplyBladeCpuBoostAsync(CancellationToken cancellationToken = default)
     {
-        if (!CanSetBladeCpuBoost || BladeCpuBoostIndex < 0 || BladeCpuBoostIndex >= BladeCpuBoostModes.Length)
+        var cpuBoostModes = BladeModelCapabilities.CpuBoostModesFor(_blade._bladeProductId);
+        if (!CanSetBladeCpuBoost || BladeCpuBoostIndex < 0 ||
+            BladeCpuBoostIndex >= cpuBoostModes.Count)
         {
             return;
         }
@@ -375,7 +383,7 @@ public sealed partial class MainViewModel
         {
             var previousProfile = _profile.Clone();
             var actual = await _deviceTelemetryReader.SetBladeCpuBoostModeAsync(
-                _deviceDescriptors, BladeCpuBoostModes[BladeCpuBoostIndex], cancellationToken);
+                _deviceDescriptors, cpuBoostModes[BladeCpuBoostIndex], cancellationToken);
             SetBladeCpuBoost(actual);
             _profile.Global.Blade.CpuBoostMode = (byte)actual;
             if (!await SaveProfileAsync(cancellationToken))
@@ -587,6 +595,50 @@ public sealed partial class MainViewModel
             RequestDeviceRefresh();
         }, cancellationToken, () =>
             BladeStartupAnimationEnabled = _blade._bladeStartupAnimationEnabled ?? false);
+    }
+
+    public async Task ApplyBladeNativeDisplayModeAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyBladeNativeDisplayMode)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeNativeDisplayModeTitle.Text"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeNativeDisplayModeAsync(
+                _deviceDescriptors,
+                (BladeNativeDisplayMode)BladeNativeDisplayModeIndex,
+                cancellationToken);
+            _blade._bladeNativeDisplayMode = actual;
+            BladeNativeDisplayModeIndex = (int)actual;
+            OnPropertyChanged(nameof(CanSetBladeNativeDisplayMode));
+            OnPropertyChanged(nameof(CanApplyBladeNativeDisplayMode));
+            OnPropertyChanged(nameof(BladeNativeDisplayModeVisibility));
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladeNativeDisplayModeIndex = (int)(_blade._bladeNativeDisplayMode ?? BladeNativeDisplayMode.Uhd));
+    }
+
+    public async Task ApplyBladeLocalDimmingAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyBladeLocalDimming)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeLocalDimmingTitle.Text"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeLocalDimmingAsync(
+                _deviceDescriptors, BladeLocalDimmingEnabled, cancellationToken);
+            _blade._bladeLocalDimmingEnabled = actual;
+            BladeLocalDimmingEnabled = actual;
+            OnPropertyChanged(nameof(CanSetBladeLocalDimming));
+            OnPropertyChanged(nameof(CanApplyBladeLocalDimming));
+            OnPropertyChanged(nameof(BladeLocalDimmingVisibility));
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladeLocalDimmingEnabled = _blade._bladeLocalDimmingEnabled ?? false);
     }
 
     public async Task ApplyBladeFnKeyAsync(CancellationToken cancellationToken = default)
@@ -995,6 +1047,25 @@ public sealed partial class MainViewModel
     public bool CanSetBladeStartupAnimation => _blade._bladeStartupAnimationEnabled is not null;
     public bool CanApplyBladeStartupAnimation =>
         CanSetBladeStartupAnimation && BladeStartupAnimationEnabled != _blade._bladeStartupAnimationEnabled;
+    public IReadOnlyList<string> BladeNativeDisplayModeOptions => AppStrings.Texts("UHD", "FHD");
+    public int BladeNativeDisplayModeIndex
+    {
+        get => _blade._bladeNativeDisplayModeIndex;
+        set
+        {
+            if (SetField(ref _blade._bladeNativeDisplayModeIndex, value))
+            {
+                OnPropertyChanged(nameof(CanApplyBladeNativeDisplayMode));
+            }
+        }
+    }
+    public bool CanSetBladeNativeDisplayMode => _blade._bladeNativeDisplayMode is not null;
+    public bool CanApplyBladeNativeDisplayMode =>
+        CanSetBladeNativeDisplayMode &&
+        BladeNativeDisplayModeIndex is >= 0 and <= 1 &&
+        BladeNativeDisplayModeIndex != (int)_blade._bladeNativeDisplayMode!.Value;
+    public Visibility BladeNativeDisplayModeVisibility =>
+        CanSetBladeNativeDisplayMode ? Visibility.Visible : Visibility.Collapsed;
     public string BladeFnKeyText { get => _blade._bladeFnKeyText; private set => SetField(ref _blade._bladeFnKeyText, value); }
     public bool BladeFnKeyMultimediaPrimary
     {
@@ -1010,9 +1081,22 @@ public sealed partial class MainViewModel
     public bool CanSetBladeFnKey => _blade._bladeFnKeyMultimediaPrimary is not null;
     public bool CanApplyBladeFnKey =>
         CanSetBladeFnKey && BladeFnKeyMultimediaPrimary != _blade._bladeFnKeyMultimediaPrimary;
-    public string BladeNativeDisplayModeText { get => _blade._bladeNativeDisplayModeText; private set => SetField(ref _blade._bladeNativeDisplayModeText, value); }
-    public string BladeSkuHardwareText { get => _blade._bladeSkuHardwareText; private set => SetField(ref _blade._bladeSkuHardwareText, value); }
-    public string BladeLocalDimmingText { get => _blade._bladeLocalDimmingText; private set => SetField(ref _blade._bladeLocalDimmingText, value); }
+    public bool BladeLocalDimmingEnabled
+    {
+        get => _blade._bladeLocalDimmingSelection;
+        set
+        {
+            if (SetField(ref _blade._bladeLocalDimmingSelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyBladeLocalDimming));
+            }
+        }
+    }
+    public bool CanSetBladeLocalDimming => _blade._bladeLocalDimmingEnabled is not null;
+    public bool CanApplyBladeLocalDimming =>
+        CanSetBladeLocalDimming && BladeLocalDimmingEnabled != _blade._bladeLocalDimmingEnabled;
+    public Visibility BladeLocalDimmingVisibility =>
+        CanSetBladeLocalDimming ? Visibility.Visible : Visibility.Collapsed;
     public string BladeOneTimeFullChargeText { get => _blade._bladeOneTimeFullChargeText; private set => SetField(ref _blade._bladeOneTimeFullChargeText, value); }
     public bool BladeOneTimeFullChargeEnabled
     {
@@ -1034,7 +1118,23 @@ public sealed partial class MainViewModel
     public IReadOnlyList<string> BladeChargeLimitOptions => AppStrings.Texts("50%", "55%", "60%", "65%", "70%", "75%", "80%", "Text_0E45FC12");
     public int BladeChargeLimitIndex { get => _blade._bladeChargeLimitIndex; set => SetField(ref _blade._bladeChargeLimitIndex, value); }
     public bool CanSetBladeChargeLimit { get => _blade._canSetBladeChargeLimit; private set => SetField(ref _blade._canSetBladeChargeLimit, value); }
-    public IReadOnlyList<string> BladeCpuBoostOptions => AppStrings.Texts("Text_CB5F70D1", "Text_28619638", "Text_5C1F32A7", "BladeCpuBoostHighestOption", "Text_BAA7D10B");
+    public IReadOnlyList<string> BladeCpuBoostOptions
+    {
+        get
+        {
+            var modes = BladeModelCapabilities.CpuBoostModesFor(_blade._bladeProductId);
+            return AppStrings.Texts(
+                [.. modes.Select(mode => mode switch
+                {
+                    BladeCpuBoostMode.Low => "Text_CB5F70D1",
+                    BladeCpuBoostMode.Medium => "Text_28619638",
+                    BladeCpuBoostMode.High => "Text_5C1F32A7",
+                    BladeCpuBoostMode.Boost => "BladeCpuBoostHighestOption",
+                    BladeCpuBoostMode.Undervolt => "Text_BAA7D10B",
+                    _ => throw new ArgumentOutOfRangeException(nameof(mode)),
+                })]);
+        }
+    }
     public string BladeCpuBoostText { get => _blade._bladeCpuBoostText; private set => SetField(ref _blade._bladeCpuBoostText, value); }
     public int BladeCpuBoostIndex { get => _blade._bladeCpuBoostIndex; set => SetField(ref _blade._bladeCpuBoostIndex, value); }
     public bool CanSetBladeCpuBoost => _blade._hasBladeCpuBoost && IsBladeCustomMode;
@@ -1044,7 +1144,39 @@ public sealed partial class MainViewModel
     public bool CanSetBladeGpuBoost => _blade._hasBladeGpuBoost && IsBladeCustomMode;
     public string BladeMaxFanText { get => _blade._bladeMaxFanText; private set => SetField(ref _blade._bladeMaxFanText, value); }
     public bool BladeMaxFanEnabled { get => _blade._bladeMaxFanEnabled; set => SetField(ref _blade._bladeMaxFanEnabled, value); }
-    public bool CanSetBladeMaxFan => _blade._hasBladeMaxFan && IsBladeCustomMode;
+    public bool CanSetBladeMaxFan => _blade._hasBladeMaxFan && _blade.SupportsMaxFan && IsBladeCustomMode;
+
+    /// <summary>
+    /// Raises the view-model properties whose visibility or option list depends on the
+    /// exact Blade product id.
+    /// </summary>
+    public void RefreshBladeModelCapabilityUi()
+    {
+        OnPropertyChanged(nameof(BladeCpuBoostOptions));
+        OnPropertyChanged(nameof(BladeLightingCardVisibility));
+        OnPropertyChanged(nameof(BladeLightingModeOptions));
+        OnPropertyChanged(nameof(BladeLightingRenderModeVisibility));
+        OnPropertyChanged(nameof(BladeLightingPresetVisibility));
+        OnPropertyChanged(nameof(BladeLightingColorVisibility));
+        OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
+        OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
+        OnPropertyChanged(nameof(BladeChromaOverrideVisibility));
+        OnPropertyChanged(nameof(BladeChromaImportVisibility));
+        OnPropertyChanged(nameof(BladeWaveDirectionVisibility));
+        OnPropertyChanged(nameof(BladeLightingColorVisibility));
+        OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
+        OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
+        OnPropertyChanged(nameof(CanSetBladeLighting));
+        OnPropertyChanged(nameof(BladeMaxFanVisibility));
+        OnPropertyChanged(nameof(CanSetBladeMaxFan));
+        OnPropertyChanged(nameof(CanSetBladeCpuBoost));
+        OnPropertyChanged(nameof(CanSetBladeLightingSettings));
+    }
+
+    /// <summary>Collapses the Max Fan column entirely on models without that switch.</summary>
+    public Visibility BladeMaxFanVisibility => _blade.SupportsMaxFan
+        ? Visibility.Visible
+        : Visibility.Collapsed;
     public Visibility BladeCustomPerformanceVisibility => IsBladeCustomMode
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -1065,7 +1197,18 @@ public sealed partial class MainViewModel
     public string BladeTouchpadText { get => _blade._bladeTouchpadText; private set => SetField(ref _blade._bladeTouchpadText, value); }
     public bool BladeTouchpadEnabled { get => _blade._bladeTouchpadEnabled; private set => SetField(ref _blade._bladeTouchpadEnabled, value); }
     public bool CanSetBladeTouchpad => _blade._canSetBladeTouchpad;
-    public IReadOnlyList<string> BladeLightingModeOptions => _blade._bladeChromaAnimation is null
+    /// <summary>
+/// Effect names parallel <see cref="BladeLightingModes"/>, so a model that admits only
+/// firmware-rendered uniform effects gets a matching short list instead of entries that
+/// would not apply to it.
+/// </summary>
+public IReadOnlyList<string> BladeLightingModeOptions => IsBlade2023Model
+    ? AppStrings.Texts(
+        AppStrings.Text("Text_39B523BD"),
+        AppStrings.Text("Text_7EDA32B9"),
+        AppStrings.Text("Text_21BE26F0"),
+        AppStrings.Text("Text_165FCE9D"))
+    : _blade._bladeChromaAnimation is null
         ? AppStrings.Texts(
             AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_8FF9138F"), AppStrings.Text("Text_7EDA32B9"), AppStrings.Text("Text_21BE26F0"), AppStrings.Text("Text_165FCE9D"), AppStrings.Text("Text_5DCB722E"), AppStrings.Text("Text_E2309DE4"), AppStrings.Text("Text_D1D985CC"), AppStrings.Text("Text_F3845B2A"), AppStrings.Text("Text_33F4E277"), AppStrings.Text("Text_2A3A07A1"), AppStrings.Text("Text_51212D25"), AppStrings.Text("Text_388555B3"))
         : AppStrings.Texts(
@@ -1124,8 +1267,12 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeChromaStatusText));
         OnPropertyChanged(nameof(BladeChromaStatusVisibility));
     }
-    public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
-        _bladeLightingController is not null;
+    /// <summary>
+/// The 2023 generation writes brightness and effects through the telemetry reader, so it
+/// needs no lighting controller. Every other generation still requires one.
+/// </summary>
+public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
+        (IsBlade2023Model || _bladeLightingController is not null);
     public int BladeLightingPowerProfileIndex
     {
         get => _bladeLightingPowerProfileIndex;
@@ -1202,10 +1349,20 @@ public sealed partial class MainViewModel
             }
         }
     }
-    private BladeLightingMode? SelectedBladeLightingMode =>
-        BladeLightingModeIndex >= 0 && BladeLightingModeIndex < BladeLightingModes.Length
-            ? BladeLightingModes[BladeLightingModeIndex]
-            : null;
+    /// <summary>
+    /// Resolves the selected index against the list this model actually renders. Indexing
+    /// the full catalog would map the short 2023 list onto the wrong effects.
+    /// </summary>
+    private BladeLightingMode? SelectedBladeLightingMode
+    {
+        get
+        {
+            var modes = ActiveBladeLightingModes;
+            return BladeLightingModeIndex >= 0 && BladeLightingModeIndex < modes.Count
+                ? modes[BladeLightingModeIndex]
+                : null;
+        }
+    }
     public IReadOnlyList<string> BladeLightingRenderModeOptions => AppStrings.Texts(
         "LightingRenderFirmware", "LightingRenderSoftware");
     public int BladeLightingRenderModeIndex
@@ -1223,13 +1380,16 @@ public sealed partial class MainViewModel
             }
         }
     }
-    public Visibility BladeLightingRenderModeVisibility => SelectedBladeLightingMode is
-        BladeLightingMode.Wave or BladeLightingMode.Spectrum ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility BladeLightingRenderModeVisibility => !IsBlade2023Model &&
+        SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Spectrum
+        ? Visibility.Visible
+        : Visibility.Collapsed;
     private bool BladeFirmwarePaletteHidden => BladeLightingRenderModeVisibility == Visibility.Visible &&
         BladeLightingRenderModeIndex == 0;
     public Visibility BladeLightingPresetVisibility => SelectedBladeLightingMode == BladeLightingMode.Starlight
         ? BladeLightingColorVisibility : BladeLightingSecondColorVisibility;
     public Visibility BladeLightingColorVisibility => !BladeFirmwarePaletteHidden &&
+        !IsBlade2023Model &&
         (SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
         BladeLightingMode.Ripple or BladeLightingMode.Tidal or BladeLightingMode.Spectrum or
@@ -1237,19 +1397,24 @@ public sealed partial class MainViewModel
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex != 0))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingSecondColorVisibility => !BladeFirmwarePaletteHidden &&
+    public Visibility BladeLightingSecondColorVisibility => !BladeFirmwarePaletteHidden && !IsBlade2023Model &&
         (SelectedBladeLightingMode is BladeLightingMode.Tidal or
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex == 2))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden &&
+    public Visibility BladeLightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden && !IsBlade2023Model &&
         SelectedBladeLightingMode is
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
         BladeLightingMode.Wheel or BladeLightingMode.AudioMeter
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeWaveDirectionVisibility => SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
+    /// <summary>
+    /// The 2023 generation stores a fixed rightward wave direction, so offering the
+    /// direction selector there would present a control that cannot change anything.
+    /// </summary>
+public Visibility BladeWaveDirectionVisibility => !IsBlade2023Model &&
+        SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
         ? Visibility.Visible
         : Visibility.Collapsed;
     public Visibility BladeReactiveSpeedVisibility => SelectedBladeLightingMode == BladeLightingMode.Reactive
@@ -1277,7 +1442,77 @@ public sealed partial class MainViewModel
     public Color BladeLightingColor { get => _blade._bladeLightingColor; set => SetField(ref _blade._bladeLightingColor, value); }
     public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
     public Color BladeLightingTertiaryColor { get => _blade._bladeLightingTertiaryColor; set => SetField(ref _blade._bladeLightingTertiaryColor, value); }
-    public bool CanSetBladeLighting => _blade._canSetBladeBrightness && _bladeLightingController is not null;
+    /// <summary>
+/// Gate for the effect selector. The 2023 generation selects firmware effects through the
+/// telemetry reader, so the matrix-based lighting controller is not required there.
+/// </summary>
+public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
+        (IsBlade2023Model || _bladeLightingController is not null);
+
+    /// <summary>
+/// Both Blade generations have an admitted keyboard-lighting report, so the card is
+/// always available; only the effect list and color controls differ by model.
+/// </summary>
+public Visibility BladeLightingCardVisibility => Visibility.Visible;
+
+    private const ushort Blade2023ProductId = 0x029F;
+
+    /// <summary>True on the Blade 16 2023, which has no per-key lighting matrix.</summary>
+    private bool IsBlade2023Model => _blade._bladeProductId == Blade2023ProductId;
+
+    /// <summary>
+    /// Effect list for the selected model. A 2023 machine renders a short firmware list;
+    /// every other generation keeps the full effect set with the optional Chroma entry.
+    /// </summary>
+    /// <summary>
+    /// Page-facing view of the selected effect. Controls that need to react to the
+    /// selection resolve it here so the per-model list stays in one place.
+    /// </summary>
+    public BladeLightingMode? SelectedBladeLightingModeForPage => SelectedBladeLightingMode;
+
+    private IReadOnlyList<BladeLightingMode> ActiveBladeLightingModes =>
+        IsBlade2023Model
+            ? BladeLighting2023Admitted.Effects
+            : BladeLightingModes;
+
+    /// <summary>
+    /// The Blade 16 2023 renders these effects in firmware through its own report, so the
+    /// effect and brightness reach the device without the per-key frame path.
+    /// </summary>
+    private async Task ApplyBlade2023LightingEffectAsync(
+        BladeLightingMode mode,
+        CancellationToken cancellationToken)
+    {
+        if (!BladeLighting2023Admitted.Allows(mode))
+        {
+            return;
+        }
+
+        var effect = BladeLighting2023Admitted.ToWireEffect(mode);
+
+        await RunDeviceOperationAsync("Keyboard effect", async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
+                _deviceDescriptors, effect, cancellationToken);
+            _blade._bladeKeyboardEffect2023 = actual;
+
+            // Go through the shared codec so the persisted key matches the one
+            // BladeLightingProfileCodec.Parse accepts on the next read.
+            var previousProfile = _profile.Clone();
+            var target = EditableLightingProfile;
+            var encoded = BladeLightingProfileCodec.Create(new BladeLightingEffect(mode));
+            target.Effect = encoded.Effect;
+            target.Parameters = encoded.Parameters;
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previousProfile;
+                throw new InvalidOperationException(AppStrings.Text("Text_C7D0CD75"));
+            }
+
+            _lightingShadowFingerprint = string.Empty;
+            RequestDeviceRefresh();
+        }, cancellationToken);
+    }
 
     public async Task ApplyBladeLightingSettingsAsync(CancellationToken cancellationToken = default)
     {

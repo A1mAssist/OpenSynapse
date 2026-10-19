@@ -34,7 +34,8 @@ The pinned OpenRazer catalog covers 110 mice, 72 keyboards, 46 laptops, and 26 a
 
 ### Product-specific and additional support
 
-- **Blade:** telemetry, keyboard lighting, performance, fans, display, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior.
+- **Blade:** telemetry, keyboard lighting, performance, fans, display, native panel mode, local dimming where supported, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior.
+- **Blade THX audio:** spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization on supported Blade 16 and Blade 14 models. The Blade device page opens a reusable THX control window. The signed Razer native component is not bundled; if missing, the app offers a verified download from Razer's official server.
 - **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
 - **Kraken:** lighting only for six USB headsets; audio, microphone, EQ, and THX controls are not included.
 
@@ -67,12 +68,12 @@ The release is not code signed. Windows SmartScreen may show a warning on first 
 
 ### Driver requirements
 
-The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll` for its core device controls. Blade Fn, M3, M4, and M5 support still depends on the Product 710 Razer device drivers.
+The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll` for its core device controls. Blade Fn, M3, M4, and M5 support still depends on the Product 710 Razer device drivers. THX audio requires the matching Razer THX stack and the signed native component offered by the Blade audio window.
 
 ## Not included
 
 - Firmware updates, Razer accounts, cloud services, and Chroma Studio.
-- THX Spatial Audio, EQ, volume leveling, voice clarity, and advanced macro editing.
+- Advanced macro editing.
 - AMD Curve Optimizer, GPU MUX controls, and unverified hardware writes.
 - ARGB Controller and legacy fixed-report devices whose Windows transport is unavailable.
 

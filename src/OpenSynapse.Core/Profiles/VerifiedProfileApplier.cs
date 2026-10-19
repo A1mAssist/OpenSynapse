@@ -70,7 +70,8 @@ public sealed class VerifiedProfileApplier
         }
 
         var blade = devices.FirstOrDefault(device =>
-            device.ProtocolFamily == "blade-710" && device.Access == DeviceAccessState.Available);
+            device.ProtocolFamily is "blade-710" or "blade-671" &&
+            device.Access == DeviceAccessState.Available);
         if (blade is not null)
         {
             var bladeErrors = new List<string>();
@@ -160,7 +161,8 @@ public sealed class VerifiedProfileApplier
                     }
                 }
 
-                if (bladeErrors.Count == 0 && profile.Blade.MaxFanMode is byte rawMaxFan)
+                if (bladeErrors.Count == 0 && profile.Blade.MaxFanMode is byte rawMaxFan &&
+                BladeModelCapabilities.SupportsMaxFan(blade.ProductId))
                 {
                     if (!Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
                     {

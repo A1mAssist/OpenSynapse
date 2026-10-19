@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using OpenSynapse.Core.Audio;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
@@ -125,7 +126,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         WindowsTouchpadController? touchpadController = null,
         OpenRazerDeviceService? openRazerDeviceService = null,
         OpenRazerSpecialLightingService? openRazerSpecialLightingService = null,
-        RazerFirmwareUpdateClient? firmwareUpdateClient = null)
+        RazerFirmwareUpdateClient? firmwareUpdateClient = null,
+        IThxAudioController? thxAudioController = null,
+        bool thxAudioSupported = false)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -152,6 +155,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
+        ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
         _systemTelemetry.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
     }
 
@@ -175,6 +179,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public ObservableCollection<DeviceSelectorItemViewModel> DeviceSelectorItems { get; } = new();
     public ObservableCollection<OpenRazerDeviceRowViewModel> OpenRazerDevices { get; } = new();
     public ObservableCollection<OpenRazerKrakenDeviceRowViewModel> OpenRazerKrakenDevices { get; } = new();
+    public ThxAudioViewModel ThxAudio { get; }
     public OpenRazerDeviceViewModel? SelectedOpenRazerDevice
     {
         get => _selectedOpenRazerDevice;
@@ -523,7 +528,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             ? BladeLightingProfileCodec.Parse(lighting)
             : BladeLightingEffect.Off;
         SetBladeChromaAnimation(effect.ChromaAnimation);
-        var lightingIndex = Array.IndexOf(BladeLightingModes, effect.Mode);
+
+        // Index against the list this model actually renders; the full catalog would
+        // select an effect the 2023 generation does not offer.
+        var activeModes = ActiveBladeLightingModes;
+        var lightingIndex = activeModes.ToList().IndexOf(effect.Mode);
         if (effect.Mode == BladeLightingMode.ChromaFile && effect.ChromaAnimation is null)
         {
             BladeLightingModeIndex = -1;

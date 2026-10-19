@@ -97,9 +97,9 @@ public sealed partial class MainWindow
     {
         if (target == "blade")
         {
-            if (_viewModel.BladeLightingModeIndex >= 0 &&
-                _viewModel.BladeLightingModeIndex < DeviceUiCatalog.BladeLightingModes.Length &&
-                DeviceUiCatalog.BladeLightingModes[_viewModel.BladeLightingModeIndex] == BladeLightingMode.Starlight)
+            // Ask the view model which effect is selected; the admitted list differs per
+            // Blade generation, so the page must not index the full catalog itself.
+            if (_viewModel.SelectedBladeLightingModeForPage == BladeLightingMode.Starlight)
             {
                 _viewModel.BladeStarlightColorModeIndex = 2;
             }
@@ -170,6 +170,9 @@ public sealed partial class MainWindow
             case "refreshRate":
                 await _viewModel.ApplyInternalDisplayRefreshRateAsync(_lifetime.Token);
                 break;
+            case "nativeDisplayMode":
+                await _viewModel.ApplyBladeNativeDisplayModeAsync(_lifetime.Token);
+                break;
         }
     }
 
@@ -216,6 +219,9 @@ public sealed partial class MainWindow
                 break;
             case "oneTimeFullCharge":
                 await _viewModel.ApplyBladeOneTimeFullChargeAsync(_lifetime.Token);
+                break;
+            case "localDimming":
+                await _viewModel.ApplyBladeLocalDimmingAsync(_lifetime.Token);
                 break;
         }
     }

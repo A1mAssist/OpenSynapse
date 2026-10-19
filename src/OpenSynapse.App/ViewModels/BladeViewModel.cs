@@ -9,6 +9,7 @@ namespace OpenSynapse.App.ViewModels;
 internal sealed class BladeViewModel
 {
     internal string _bladeDeviceName = "Razer Blade 16 2025";
+    internal ushort _bladeProductId;
     internal string _bladeStatusText = AppStrings.Text("Text_DB0974DC");
     internal string _bladeBrightnessText = "--";
     internal string _bladeBrightnessSelectionText = "--";
@@ -33,12 +34,14 @@ internal sealed class BladeViewModel
     internal string _bladeStartupAnimationText = "--";
     internal bool? _bladeStartupAnimationEnabled;
     internal bool _bladeStartupAnimationSelection;
+    internal BladeNativeDisplayMode? _bladeNativeDisplayMode;
+    internal BladeLighting2023Effect? _bladeKeyboardEffect2023;
+    internal int _bladeNativeDisplayModeIndex = -1;
     internal string _bladeFnKeyText = "--";
     internal bool? _bladeFnKeyMultimediaPrimary;
     internal bool _bladeFnKeySelection;
-    internal string _bladeNativeDisplayModeText = "--";
-    internal string _bladeSkuHardwareText = "--";
-    internal string _bladeLocalDimmingText = "--";
+    internal bool? _bladeLocalDimmingEnabled;
+    internal bool _bladeLocalDimmingSelection;
     internal string _bladeOneTimeFullChargeText = "--";
     internal bool? _bladeOneTimeFullChargeEnabled;
     internal bool _bladeOneTimeFullChargeSelection;
@@ -164,7 +167,9 @@ internal sealed class BladeViewModel
             BladeCpuBoostMode.Undervolt => AppStrings.Text("Text_BAA7D10B"),
             _ => "--",
         };
-        _bladeCpuBoostIndex = Array.IndexOf(BladeCpuBoostModes, mode);
+        // Index into the model-admitted list, because that is what the ComboBox shows.
+        _bladeCpuBoostIndex = BladeModelCapabilities
+            .CpuBoostModesFor(_bladeProductId).ToList().IndexOf(mode);
         _confirmedBladeCpuBoostIndex = _bladeCpuBoostIndex;
         _hasBladeCpuBoost = _bladeCpuBoostIndex >= 0;
     }
@@ -183,12 +188,32 @@ internal sealed class BladeViewModel
         _hasBladeGpuBoost = _bladeGpuBoostIndex >= 0;
     }
 
+    /// <summary>
+    /// True when the exact model has an audited Custom maximum-fan switch. A readable
+    /// Power Mode bit is not enough, so the model contract decides.
+    /// </summary>
+    internal bool SupportsMaxFan => BladeModelCapabilities.SupportsMaxFan(_bladeProductId);
+
     internal void SetMaxFan(BladeMaxFanMode mode)
     {
+        if (!SupportsMaxFan)
+        {
+            ClearMaxFan();
+            return;
+        }
+
         _bladeMaxFanText = mode == BladeMaxFanMode.Enabled ? AppStrings.Text("Text_7E6D2390") : AppStrings.Text("Text_39B523BD");
         _bladeMaxFanEnabled = mode == BladeMaxFanMode.Enabled;
         _confirmedBladeMaxFanEnabled = _bladeMaxFanEnabled;
         _hasBladeMaxFan = true;
+    }
+
+    internal void ClearMaxFan()
+    {
+        _bladeMaxFanText = "--";
+        _bladeMaxFanEnabled = false;
+        _confirmedBladeMaxFanEnabled = false;
+        _hasBladeMaxFan = false;
     }
 
     internal void SetLogo(BladeLogoMode mode, bool confirm = true)
