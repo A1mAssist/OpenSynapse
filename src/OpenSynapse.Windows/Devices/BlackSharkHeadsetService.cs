@@ -66,19 +66,13 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             return null;
         }
 
-        // The control interface is PID 0x0576 on USB and 0x0577 on the
-        // 2.4 GHz receiver. Do not treat audio-only interfaces as controls.
+        // OpenRazer names the wireless PID 0x0577, but this dongle enumerates as
+        // 0x101B and that is the interface the headset answers on.
         var wireless = BlackSharkV3ProProtocol.IsWirelessProductId(chosen.ProductId);
-        var name = chosen.ProductId switch
-        {
-            BlackSharkV3ProProtocol.WirelessProductId => "Razer BlackShark V3 Pro (2.4 GHz)",
-            BlackSharkV3ProProtocol.WiredProductId => "Razer BlackShark V3 Pro (USB)",
-            _ => "Razer BlackShark V3 Pro",
-        };
         return new BlackSharkHeadsetConnection(
             chosen.DevicePath,
             chosen.ProductId,
-            name,
+            BlackSharkV3ProProtocol.DescribeProduct(chosen.ProductId),
             wireless,
             chosen.InputReportByteLength);
     }
@@ -346,11 +340,14 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         }
     }
 
+    // The dongle PID answers on the active link; prefer it so a plugged-in USB
+    // cable cannot make a 2.4 GHz session look wired.
     private static int ProductPriority(ushort productId) => productId switch
     {
-        BlackSharkV3ProProtocol.WirelessProductId => 0,
-        BlackSharkV3ProProtocol.WiredProductId => 1,
-        _ => 2,
+        BlackSharkV3ProProtocol.DongleProductId => 0,
+        BlackSharkV3ProProtocol.WirelessProductId => 1,
+        BlackSharkV3ProProtocol.WiredProductId => 2,
+        _ => 3,
     };
 
     private static bool TryMapAncMode(byte raw, out BlackSharkAncMode mode)
