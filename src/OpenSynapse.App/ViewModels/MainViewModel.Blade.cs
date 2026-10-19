@@ -426,11 +426,34 @@ public sealed partial class MainViewModel
         await RunDeviceOperationAsync("Max Fan", async () =>
         {
             var requested = BladeMaxFanEnabled ? BladeMaxFanMode.Enabled : BladeMaxFanMode.Disabled;
+
+            // Max Fan lives in the Custom performance card, so it follows the performance
+            // power profile the same way the performance mode itself does. Writing the
+            // global slot would silently drop a per-power-source setting.
+            if (!IsSelectedPerformancePowerActive)
+            {
+                EditablePerformanceBladeProfile.MaxFanMode = (byte)requested;
+                SetBladeMaxFan(requested);
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    throw new InvalidOperationException(AppStrings.Text("Text_CC12A6F5"));
+                }
+
+                return;
+            }
+
+            var previousProfile = _profile.Clone();
             var actual = await _deviceTelemetryReader.SetBladeMaxFanModeAsync(
                 _deviceDescriptors, requested, cancellationToken);
             SetBladeMaxFan(actual);
-            _profile.Global.Blade.MaxFanMode = (byte)actual;
-            await SaveProfileAsync(cancellationToken);
+            EditablePerformanceBladeProfile.MaxFanMode = (byte)actual;
+            if (!await SaveProfileAsync(cancellationToken))
+            {
+                _profile = previousProfile;
+                throw new InvalidOperationException(AppStrings.Text("Text_AB07F412"));
+            }
+
+            RequestDeviceRefresh();
         }, cancellationToken, () => BladeMaxFanEnabled = _blade._confirmedBladeMaxFanEnabled);
     }
 
