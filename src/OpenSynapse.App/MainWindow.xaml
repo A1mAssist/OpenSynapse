@@ -577,7 +577,7 @@
                                   <Grid ColumnDefinitions="110,1.2*,1*,1.35*" ColumnSpacing="10" MinHeight="58">
                                     <TextBlock Text="{Binding ButtonText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" TextWrapping="Wrap" ToolTipService.ToolTip="{Binding CurrentActionText}" VerticalAlignment="Center" />
-                                    <ComboBox local:Localized.Uid="Loc_2D72DC9E3F" Grid.Column="2" ItemsSource="{Binding ActionOptions}" SelectedIndex="{Binding SelectedActionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" VerticalAlignment="Center" AutomationProperties.Name="目标板载映射动作" />
+                                    <ComboBox local:Localized.Uid="Loc_2D72DC9E3F" Grid.Column="2" ItemsSource="{Binding ActionOptions}" PlaceholderText="{Binding CurrentActionText}" Loaded="ViperActionComboBoxLoaded" DataContextChanged="ViperActionComboBoxDataContextChanged" SelectionChanged="ViperActionComboBoxSelectionChanged" HorizontalAlignment="Stretch" VerticalAlignment="Center" AutomationProperties.Name="目标板载映射动作" />
                                     <Grid Grid.Column="3" ColumnDefinitions="*,*" ColumnSpacing="8" Visibility="{Binding KeyboardParameterVisibility}">
                                       <NumberBox local:Localized.Uid="Loc_A931F2A16F" Header="修饰键 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding KeyboardModifierValue, Mode=TwoWay}" AutomationProperties.Name="键盘修饰键码" />
                                       <NumberBox local:Localized.Uid="Loc_0E422F6A72" Grid.Column="1" Header="Usage 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding KeyboardUsageValue, Mode=TwoWay}" AutomationProperties.Name="键盘 HID Usage" />
@@ -783,6 +783,7 @@
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                     <Button local:Localized.Uid="Loc_B2441B64DA" Content="重新检查" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" />
                     <Button local:Localized.Uid="CopyDiagnostics" Content="复制诊断信息" Click="CopyDiagnosticsClick" Style="{StaticResource PrimaryButtonStyle}" />
+                    <Button local:Localized.Uid="ScanHidCommands" Content="扫描 HID 命令" Click="ScanHidCommandsClick" IsEnabled="{Binding SelectedOpenRazerDevice}" Style="{StaticResource SecondaryButtonStyle}" />
                     <TextBlock x:Name="DiagnosticsCopyStatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                   </StackPanel>
                 </Grid>
