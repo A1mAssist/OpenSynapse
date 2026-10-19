@@ -43,6 +43,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         try
         {
             ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken));
+            ErrorText = string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

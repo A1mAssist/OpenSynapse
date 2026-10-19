@@ -10,6 +10,7 @@ public enum DeviceSelectorItemKind
     Viper,
     OpenRazer,
     Kraken,
+    BlackShark,
 }
 
 public sealed class DeviceSelectorItemViewModel : INotifyPropertyChanged

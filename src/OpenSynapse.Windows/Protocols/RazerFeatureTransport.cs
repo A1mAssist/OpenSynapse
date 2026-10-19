@@ -379,10 +379,6 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
 
     private void WriteDiagnostic(string devicePath, byte[] request, string message)
     {
-        if (!devicePath.Contains("pid_027a", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
         _diagnosticLog?.TryWrite(
             "openrazer-hid",
             $"path={DescribeDevicePath(devicePath)}, txn=0x{request[2]:X2}, size={request[6]}, class=0x{request[7]:X2}, command=0x{request[8]:X2}: {message}");

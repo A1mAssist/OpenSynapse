@@ -131,6 +131,7 @@ public sealed partial class MainViewModel
                         await kraken.LoadSerialAsync(cancellationToken);
                 }
             }
+            await RefreshBlackSharkAsync(cancellationToken);
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
             {
@@ -311,6 +312,9 @@ public sealed partial class MainViewModel
             var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
             var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
+            BlackSharkDevices.Clear();
+            _selectedBlackSharkDevice = null;
+            SelectedBlackShark = null;
             BladeSerial = null;
             ViperSerial = null;
             OnPropertyChanged(nameof(BladeSerialVisibility));

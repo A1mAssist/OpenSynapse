@@ -47,6 +47,18 @@ public sealed class ConnectedDeviceRowViewModel
         IsVisible = true;
     }
 
+    public ConnectedDeviceRowViewModel(BlackSharkDeviceRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
     public object Source { get; }
     public string Name { get; }
     public string Identity { get; }
@@ -60,12 +72,14 @@ public sealed class ConnectedDeviceRowViewModel
         DeviceRowViewModel row => row.Capability,
         OpenRazerDeviceRowViewModel row => row.Status,
         OpenRazerKrakenDeviceRowViewModel row => row.Status,
+        BlackSharkDeviceRowViewModel row => row.Status,
         _ => string.Empty,
     };
     public string Error => Source switch
     {
         OpenRazerDeviceRowViewModel row => row.Error,
         OpenRazerKrakenDeviceRowViewModel row => row.Error,
+        BlackSharkDeviceRowViewModel row => row.Error,
         _ => string.Empty,
     };
     public Brush StatusBrush => Source switch
@@ -73,6 +87,7 @@ public sealed class ConnectedDeviceRowViewModel
         DeviceRowViewModel row => row.StatusBrush,
         OpenRazerDeviceRowViewModel row => row.StatusBrush,
         OpenRazerKrakenDeviceRowViewModel row => row.StatusBrush,
+        BlackSharkDeviceRowViewModel row => row.StatusBrush,
         _ => throw new InvalidOperationException(),
     };
     public int SortOrder => Category switch

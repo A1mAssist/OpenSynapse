@@ -14,7 +14,7 @@
 
 <p align="center">简体中文 · <a href="README.md">English</a></p>
 
-OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。当前支持 254 个 OpenRazer 目录设备，以及 Blade/Viper、Kraken 和 Chroma REST 的专用能力。
+OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。当前支持 254 个 OpenRazer 目录设备，以及 Blade/Viper、Kraken、BlackShark V3 Pro 和 Chroma REST 的专用能力。
 
 > 当前版本 `v1.5.3` · Windows 11 x64 · 未签名
 
@@ -22,7 +22,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 ## 支持范围
 
-OpenSynapse 不只有少数产品专用型号。当前支持 **254 个 OpenRazer 目录设备**，以及 Blade/Viper 产品专用控制、**6 款 Kraken 耳机灯光** 和 Chroma REST 灯光接入。
+OpenSynapse 不只有少数产品专用型号。当前支持 **254 个 OpenRazer 目录设备**，以及 Blade/Viper 产品专用控制、**6 款 Kraken 耳机灯光**、**BlackShark V3 Pro 音频控制** 和 Chroma REST 灯光接入。
 
 **[查看完整设备与能力列表](docs/SUPPORTED_DEVICES.zh-CN.md)**，其中包含型号名称、USB PID、产品专用功能以及明确的验证边界。
 
@@ -38,6 +38,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 - **Blade THX 音频：** 受支持的 Blade 16 和 Blade 14 机型提供空间音频、均衡器预设与频段、人声清晰度和扬声器音量标准化。Blade 设备页会打开可重复使用的 THX 控制窗口。带签名的雷蛇原生组件不随安装包分发；检测到缺失时，会提供经过校验的官方下载。
 - **Viper：** 电量、DPI、轮询率、休眠、电池类型和板载映射。
 - **Kraken：** 6 款 USB 耳机仅支持灯光；不包含音频、麦克风、EQ 或 THX 控制。
+- **BlackShark V3 Pro：** 通过独立 HID 通道提供电量、充电、侧音、THX、主动降噪和游戏/语音平衡。暂不包含 EQ、麦克风增益、固件更新和指示灯模式。
 
 ### Chroma REST
 

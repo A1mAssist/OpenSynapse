@@ -86,3 +86,10 @@ secrets.json
 # OS metadata
 Thumbs.db
 Desktop.ini
+
+# Local isolated builds and generated promo media
+.isolated-build/
+node_modules/
+videos/
+promo-*.wav
+tmp_read.txt

@@ -149,6 +149,30 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public async Task MalformedOptionalFieldDoesNotInvalidateBasicState()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var transport = new OptionalChargingRejectionTransport(
+            new InvalidDataException("Malformed charging report."));
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.BatteryRead,
+                OpenRazerBackendCapability.ChargingRead,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var state = await service.ReadBasicStateAsync(connection);
+
+        Assert.Equal(96, state.BatteryPercent);
+        Assert.Null(state.IsCharging);
+        Assert.Empty(state.Errors);
+        Assert.Contains(OpenRazerBackendCapability.ChargingRead, state.UnsupportedCapabilities);
+    }
+
+    [Fact]
     public async Task TransportFailureRemainsARescanError()
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;

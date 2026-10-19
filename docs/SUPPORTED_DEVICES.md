@@ -3,8 +3,9 @@
 OpenSynapse is not limited to the product-specific Blade and Viper implementations. The support surface currently includes:
 
 - **254 OpenRazer catalog models**: mice, keyboards, laptops, and accessories.
-- **2 product-specific control sets**: Blade and Viper features that need dedicated protocols.
+- **3 product-specific control sets**: Blade, Viper, and BlackShark V3 Pro features that need dedicated protocols.
 - **6 Kraken headsets** with lighting control.
+- **BlackShark V3 Pro** with battery, sidetone, THX, ANC, and game/chat balance controls.
 - **Chroma REST** for compatible games and integrations.
 
 The OpenRazer portion is pinned to OpenRazer commit `6820f9da169d354bc7e6e93a0aa8683a6bb75792`. OpenSynapse creates a page only for a connected, recognized device and shows a control only after resolving its Windows HID endpoint and transaction.
@@ -16,6 +17,7 @@ The OpenRazer portion is pinned to OpenRazer commit `6820f9da169d354bc7e6e93a0aa
 | Razer Blade 16 (2025) | `1532:02C6` | Telemetry, keyboard lighting, performance, fans, display, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior |
 | Razer Blade 16 (2023) | `1532:029F` | Telemetry, keyboard brightness and firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom levels including CPU Boost, Max Fan, fixed fan targets (2000-5000 RPM), charge limit, one-time full charge, and Gaming mode |
 | Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, and onboard mappings |
+| Razer BlackShark V3 Pro | `1532:0576`, `1532:0577` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
 
 Blade Wave and Spectrum use firmware rendering when no palette is saved and software frame rendering when a palette is saved. The Blade 16 (2023) has no per-key matrix channel: it exposes brightness plus the four effects its firmware draws on its own (Off, Breathing, Spectrum, Wave), and its stored effect color is not readable. Custom colors, audio-reactive lighting, frame rendering, Chroma takeover, the wave direction selector, and the .chroma import button are therefore not offered on that model. The Viper page supports 125 / 500 / 1000 Hz polling, X/Y DPI from 100 to 30000, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1.
 
@@ -31,6 +33,15 @@ Blade Wave and Spectrum use firmware rendering when no palette is saved and soft
 | Kraken Kitty V2 | `0560` | Lighting |
 
 Kraken support uses a separate 37-byte Output Report path. Audio, microphone, EQ, and THX controls are not included.
+
+## BlackShark V3 Pro audio
+
+| Model | USB PID | Controls |
+|---|---|---|
+| BlackShark V3 Pro (USB) | `0576` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
+| BlackShark V3 Pro (2.4 GHz) | `0577` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
+
+The headset uses its own 64-byte Report `0x02` channel. Queries run only when the device page is opened or refreshed; OpenSynapse does not poll battery at a fixed interval. EQ, microphone gain, firmware updates, and indicator-LED modes are outside this first release.
 
 ## OpenRazer catalog
 
