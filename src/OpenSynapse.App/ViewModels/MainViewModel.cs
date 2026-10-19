@@ -591,6 +591,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             SetBladePerformanceMode((BladePerformanceMode)rawPerformanceMode, confirm: false);
         }
+
+        // Restore the Max Fan toggle from the same resolved profile, so the switch shows
+        // the configured value instead of only the last value read back from the device.
+        if (bladeProfile.MaxFanMode is byte rawMaxFan &&
+            Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
+        {
+            SetBladeMaxFan((BladeMaxFanMode)rawMaxFan);
+        }
     }
 
     private void RefreshBladeLogoEditor()
