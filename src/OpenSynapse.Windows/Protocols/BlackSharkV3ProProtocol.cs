@@ -22,6 +22,13 @@ public static class BlackSharkV3ProProtocol
 {
     public const ushort WiredProductId = 0x0576;
     public const ushort WirelessProductId = 0x0577;
+
+    /// <summary>
+    /// The V3 Pro 2.4 GHz dongle enumerates as PID 0x101B, not 0x0577. Only the
+    /// dongle and the wired interface carry the 64-byte control report; OpenRazer
+    /// lists 0x0576/0x0577, so both naming schemes have to be accepted.
+    /// </summary>
+    public const ushort DongleProductId = 0x101B;
     public const int ReportLength = 64;
     public const byte ReportId = 0x02;
     public const byte TransactionId = 0x60;
@@ -37,10 +44,19 @@ public static class BlackSharkV3ProProtocol
     private const byte GameChatSetClass = 0xDC;
 
     public static bool IsSupportedProductId(ushort productId) =>
-        productId is WiredProductId or WirelessProductId;
+        productId is WiredProductId or WirelessProductId or DongleProductId;
 
-    /// <summary>Only the 2.4 GHz receiver uses transport byte 0x80.</summary>
-    public static bool IsWirelessProductId(ushort productId) => productId == WirelessProductId;
+    /// <summary>Only the 2.4 GHz dongle and receiver use transport byte 0x80.</summary>
+    public static bool IsWirelessProductId(ushort productId) =>
+        productId is WirelessProductId or DongleProductId;
+
+    public static string DescribeProduct(ushort productId) => productId switch
+    {
+        WiredProductId => "Razer BlackShark V3 Pro (USB)",
+        DongleProductId => "Razer BlackShark V3 Pro (2.4 GHz dongle)",
+        WirelessProductId => "Razer BlackShark V3 Pro (2.4 GHz receiver)",
+        _ => "Razer BlackShark V3 Pro",
+    };
 
     /// <summary>V3 Pro answers the battery query only after a zero sub-parameter.</summary>
     public static byte[] CreateGetBattery(bool wireless = true) =>
