@@ -2,6 +2,10 @@
 
 OpenSynapse controls real hardware. Keep changes small, traceable, and backed by tests or hardware evidence.
 
+## Device support
+
+If you own a device that needs new or additional support, read [docs/DEVICE_ADAPTATION.md](docs/DEVICE_ADAPTATION.md) and use the [device support issue form](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml). The guide explains the evidence ladder, privacy boundaries, collector script, and the `SourceBacked` → `TestBuild` → `Verified` promotion process.
+
 ## What belongs in Git
 
 Commit only files needed to build, test, document, or license the project:
