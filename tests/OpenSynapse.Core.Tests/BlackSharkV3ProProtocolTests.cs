@@ -102,6 +102,15 @@ public sealed class BlackSharkV3ProProtocolTests
         Assert.True(BlackSharkV3ProProtocol.IsSupportedProductId((ushort)productId));
     }
 
+    [Theory]
+    [InlineData(0x0576, false)]
+    [InlineData(0x0577, true)]
+    [InlineData(0x101B, false)]
+    public void TransportDirection_IsWirelessOnlyForTheReceiverPid(int productId, bool wireless)
+    {
+        Assert.Equal(wireless, BlackSharkV3ProProtocol.IsWirelessProductId((ushort)productId));
+    }
+
     [Fact]
     public void WakeSequence_UsesTheThreeSynapsePrimers()
     {

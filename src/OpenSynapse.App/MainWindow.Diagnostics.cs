@@ -17,7 +17,7 @@ public sealed partial class MainWindow
         DiagnosticsCopyStatusText.Text = AppStrings.Text("HidScanRunning");
         try
         {
-            var path = await _viewModel.ScanFirstOpenRazerDeviceAsync(_lifetime.Token);
+            var path = await _viewModel.ScanSelectedOpenRazerDeviceAsync(_lifetime.Token);
             DiagnosticsCopyStatusText.Text = AppStrings.FormatText("HidScanDone", path);
         }
         catch (OperationCanceledException)

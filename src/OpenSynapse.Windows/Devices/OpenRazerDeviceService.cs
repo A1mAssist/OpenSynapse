@@ -18,7 +18,6 @@ public enum OpenRazerKeyswitchOptimization
 public sealed class OpenRazerDeviceService
 {
     private readonly OpenRazerDeviceCatalog _catalog;
-    private static readonly byte[] ScanClasses = [0x00, 0x03, 0x07, 0x0D, 0x0C, 0x15, 0x1D];
     private readonly IRazerFeatureTransport _transport;
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
@@ -223,9 +222,9 @@ public sealed class OpenRazerDeviceService
     }
 
     /// <summary>
-    /// Sweeps the HID feature command space for commands this catalog does not describe.
+    /// Sweeps the read half of the HID feature command space for commands this catalog does not describe.
     /// The firmware answers 0x02 for a supported command and 0x05 for an unsupported one, so
-    /// the sweep reveals a device's real capability table without a packet capture.
+    /// the sweep reveals a device's real capability table without sending state-changing writes.
     /// </summary>
     public async Task<string> ScanCommandSpaceAsync(
         OpenRazerDeviceConnection connection,
@@ -240,7 +239,9 @@ public sealed class OpenRazerDeviceService
         var accepted = 0;
         foreach (var commandClass in HidCommandScan.ScanClasses)
         {
-            for (var commandId = 0; commandId <= 0xFF; commandId++)
+            // The high bit marks a device-to-host read. Never sweep the write half:
+            // class 00 command 04 alone can change the device mode.
+            for (var commandId = 0x80; commandId <= 0xFF; commandId++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var request = RazerFeatureReport.CreateRequest(
@@ -1177,6 +1178,7 @@ internal static class HidCommandScan
         $"# OpenSynapse HID command scan{Environment.NewLine}" +
         $"device: {displayName}{Environment.NewLine}" +
         $"pid: 1532:{productId:X4}{Environment.NewLine}" +
+        "mode: read-only (device-to-host commands)" + Environment.NewLine +
         $"{StatusLegend}{Environment.NewLine}" +
         $"columns: class command status args{Environment.NewLine}";
 

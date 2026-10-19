@@ -40,6 +40,9 @@ public static class BlackSharkV3ProProtocol
     public static bool IsSupportedProductId(ushort productId) =>
         productId is WiredProductId or WirelessProductId or AudioProductId;
 
+    /// <summary>Only the 2.4 GHz receiver uses transport byte 0x80.</summary>
+    public static bool IsWirelessProductId(ushort productId) => productId == WirelessProductId;
+
     /// <summary>V3 Pro answers the battery query only after a zero sub-parameter.</summary>
     public static byte[] CreateGetBattery(bool wireless = true) =>
         Create(BatteryClass, 0x00, wireless, 0x00);
