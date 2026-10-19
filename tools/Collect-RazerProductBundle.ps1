@@ -11,8 +11,28 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-if (-not $Sku -and -not $UsbPid -and -not $ProductId) {
-    throw 'Specify at least one of -Sku, -UsbPid, or -ProductId.'
+function Get-PidPatterns([string]$value) {
+    $pidText = ($value -replace '^0x', '' -replace ':', '').ToUpperInvariant()
+    if ($pidText.Length -eq 8 -and $pidText.StartsWith('1532')) {
+        $pidText = $pidText.Substring(4)
+    }
+    return @("1532:$pidText", "0x$pidText")
+}
+
+function Get-ConnectedRazerDevices {
+    $ignoredName = '^(Razer Control Device|Razer USB C Dock)$'
+    $devices = @()
+    foreach ($device in (Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue)) {
+        $match = [regex]::Match([string]$device.InstanceId, 'VID_1532&PID_([0-9A-Fa-f]{4})')
+        if (-not $match.Success) { continue }
+        $name = [string]$device.FriendlyName
+        if (-not $name -or $name -notmatch 'Razer' -or $name -match $ignoredName) { continue }
+        $devices += [pscustomobject]@{
+            ProductId = $match.Groups[1].Value.ToUpperInvariant()
+            Name = $name
+        }
+    }
+    return @($devices | Sort-Object ProductId, Name -Unique)
 }
 
 if (-not $Root) {
@@ -31,15 +51,20 @@ if (Test-Path -LiteralPath $OutputDirectory) {
 }
 
 $patterns = @()
-if ($Sku) { $patterns += $Sku }
-if ($UsbPid) {
-    $pidText = ($UsbPid -replace '^0x', '' -replace ':', '').ToUpperInvariant()
-    if ($pidText.Length -eq 8 -and $pidText.StartsWith('1532')) {
-        $pidText = $pidText.Substring(4)
+$detectedDevices = @()
+
+if ($Sku -or $UsbPid -or $ProductId) {
+    if ($Sku) { $patterns += $Sku }
+    if ($UsbPid) { $patterns += Get-PidPatterns $UsbPid }
+} else {
+    $detectedDevices = @(Get-ConnectedRazerDevices)
+    foreach ($device in $detectedDevices) {
+        $patterns += $device.Name
+        $patterns += Get-PidPatterns $device.ProductId
     }
-    $patterns += "1532:$pidText"
-    $patterns += "0x$pidText"
 }
+
+$patterns = @($patterns | Where-Object { $_ } | Select-Object -Unique)
 
 $maxBytes = $MaxFileSizeMB * 1MB
 $filesRoot = Join-Path $OutputDirectory 'files'
@@ -144,6 +169,10 @@ $lines += 'Generated: ' + (Get-Date).ToString('o')
 $lines += 'Sku: ' + $Sku
 $lines += 'UsbPid: ' + $UsbPid
 $lines += 'ProductId: ' + $ProductId
+$lines += 'AutoDetectedDevices: ' + $detectedDevices.Count
+foreach ($device in $detectedDevices) {
+    $lines += 'DEVICE: 1532:' + $device.ProductId + ' ' + $device.Name
+}
 $lines += 'Source: ' + $Root
 $lines += 'Scanned text candidates: ' + $scanned
 $lines += 'Skipped binary candidates: ' + $skipped
@@ -187,4 +216,5 @@ Compress-Archive -LiteralPath $OutputDirectory -DestinationPath $zipPath -Compre
     PackagedFiles = $selected.Count
     ScannedFiles = $scanned
     SkippedBinary = $skipped
+    AutoDetectedDevices = $detectedDevices.Count
 }

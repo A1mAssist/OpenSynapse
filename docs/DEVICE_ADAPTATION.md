@@ -21,12 +21,10 @@ If the model is already in [SUPPORTED_DEVICES.md](SUPPORTED_DEVICES.md), say whi
 The collector is read-only. It finds the local Synapse product JavaScript and creates a ZIP with a manifest. Download [Collect-RazerProductBundle.ps1](https://raw.githubusercontent.com/A1mAssist/OpenSynapse/main/tools/Collect-RazerProductBundle.ps1), save it to your `Downloads` folder, then run:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1" `
-  -Sku "RZ09-030" `
-  -UsbPid "0246"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1"
 ```
 
-Replace the example values with your device. The script prints the ZIP path and creates it under `%TEMP%`.
+No parameters are needed. The script auto-detects connected Razer devices and matches their names and USB PIDs. If detection misses your device, add `-Sku` or `-UsbPid` to the command. The script prints the ZIP path and creates it under `%TEMP%`.
 
 If it finds no files, open the device page in Synapse once, wait for it to finish loading, and run it again.
 
@@ -70,10 +68,10 @@ Diagnostics is a confirmation tool. It does not generate a manifest, discover co
 
 ### Collector parameters
 
-- At least one of `-Sku`, `-UsbPid`, or `-ProductId` is required.
-- `-Sku` — SKU or model-number prefix.
-- `-UsbPid` — PID in `0246` or `1532:0246` form.
-- `-ProductId` — Synapse product ID.
+- No parameters — auto-detect connected Razer devices and match their names and USB PIDs; falls back to files that reference `rzDevice25`.
+- `-Sku` — optional SKU or model-number prefix.
+- `-UsbPid` — optional PID in `0246` or `1532:0246` form.
+- `-ProductId` — optional Synapse product ID.
 - `-Root` — optional Razer AppEngine user-data directory.
 - `-MaxFiles` — optional package-size limit.
 
