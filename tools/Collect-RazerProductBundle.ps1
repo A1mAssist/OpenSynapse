@@ -22,7 +22,15 @@ function Get-PidPatterns([string]$value) {
 function Get-ConnectedRazerDevices {
     $ignoredName = '^(Razer Control Device|Razer USB C Dock)$'
     $devices = @()
-    foreach ($device in (Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue)) {
+    $pnpDevices = if (Get-Command Get-PnpDevice -ErrorAction SilentlyContinue) {
+        @(Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue)
+    }
+    else {
+        @(Get-CimInstance Win32_PnPEntity -ErrorAction SilentlyContinue | ForEach-Object {
+            [pscustomobject]@{ InstanceId = $_.PNPDeviceID; FriendlyName = $_.Name }
+        })
+    }
+    foreach ($device in $pnpDevices) {
         $match = [regex]::Match([string]$device.InstanceId, 'VID_1532&PID_([0-9A-Fa-f]{4})')
         if (-not $match.Success) { continue }
         $name = [string]$device.FriendlyName
@@ -39,11 +47,14 @@ if (-not $Root) {
     $Root = Join-Path $env:LOCALAPPDATA 'Razer\RazerAppEngine\User Data'
 }
 if (-not (Test-Path -LiteralPath $Root)) {
-    throw "Razer AppEngine user data was not found: $Root"
+    Write-Host ''
+    Write-Host "Razer AppEngine user data was not found: $Root" -ForegroundColor Yellow
+    Write-Host 'Open Razer Synapse once so the device page loads, or pass -Root <path>.'
+    exit 2
 }
 
 if (-not $OutputDirectory) {
-    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
     $OutputDirectory = Join-Path $env:TEMP "OpenSynapse-RazerProductBundle-$stamp"
 }
 if (Test-Path -LiteralPath $OutputDirectory) {
@@ -152,7 +163,22 @@ Get-ChildItem -LiteralPath $Root -Recurse -File -ErrorAction SilentlyContinue | 
 }
 
 if ($foundFiles.Count -eq 0) {
-    throw "No matching Razer product files were found. Scanned $scanned text candidates under $Root. Open Synapse once on this device, then run the script again."
+    Write-Host ''
+    Write-Host 'No matching Razer product files were found.' -ForegroundColor Yellow
+    Write-Host "Root: $Root"
+    Write-Host "Scanned text candidates: $scanned"
+    if ($detectedDevices.Count -gt 0) {
+        Write-Host 'Detected devices:'
+        foreach ($device in $detectedDevices) {
+            Write-Host ("  {0} (1532:{1})" -f $device.Name, $device.ProductId)
+        }
+    }
+    elseif (-not ($Sku -or $UsbPid -or $ProductId)) {
+        Write-Host 'No connected Razer devices were detected.'
+    }
+    Write-Host 'Open the device page in Razer Synapse, wait for it to load, then run the script again.'
+    Write-Host 'If your Razer data is in a custom folder, pass -Root <path>.'
+    exit 2
 }
 
 $selected = @($foundFiles | Select-Object -First $MaxFiles)
