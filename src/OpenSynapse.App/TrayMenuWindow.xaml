@@ -80,7 +80,7 @@
             <TextBlock x:Name="OpenMainPanelText"
                        local:Localized.Uid="Loc_0CE53A16F8"
                        Text="打开主面板"
-                       Margin="22,0,0,0"
+                       Margin="28,0,0,0"
                        VerticalAlignment="Center" />
           </Grid>
         </Button>
@@ -95,7 +95,7 @@
             <TextBlock x:Name="DevicesText"
                        local:Localized.Uid="Loc_ED026FD231"
                        Text="设备控制"
-                       Margin="22,0,0,0"
+                       Margin="28,0,0,0"
                        VerticalAlignment="Center" />
           </Grid>
         </Button>
@@ -110,11 +110,11 @@
             <TextBlock x:Name="ProfilesText"
                        local:Localized.Uid="Loc_16444BA5AB"
                        Text="配置"
-                       Margin="22,0,0,0"
+                       Margin="28,0,0,0"
                        VerticalAlignment="Center" />
           </Grid>
         </Button>
-        <Rectangle Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="12,2,12,2" />
+        <Rectangle Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="6,2,6,2" />
         <Button x:Name="TurnOffDisplayMenuItem"
                 Style="{StaticResource TrayMenuButtonStyle}"
                 Click="TurnOffDisplayClick">
@@ -125,11 +125,11 @@
             <TextBlock x:Name="TurnOffDisplayText"
                        local:Localized.Uid="TrayTurnOffDisplay"
                        Text="关闭屏幕"
-                       Margin="22,0,0,0"
+                       Margin="28,0,0,0"
                        VerticalAlignment="Center" />
           </Grid>
         </Button>
-        <Rectangle Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="12,2,12,2" />
+        <Rectangle Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="6,2,6,2" />
         <Button x:Name="ExitMenuItem"
                 Style="{StaticResource TrayMenuButtonStyle}"
                 Click="ExitClick">
@@ -140,7 +140,7 @@
             <TextBlock x:Name="ExitText"
                        local:Localized.Uid="Loc_81394C3DA6"
                        Text="退出"
-                       Margin="22,0,0,0"
+                       Margin="28,0,0,0"
                        VerticalAlignment="Center" />
           </Grid>
         </Button>

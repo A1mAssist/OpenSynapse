@@ -39,7 +39,9 @@ public sealed partial class TrayMenuWindow : Window
     private const int DwmBorderColor = 34;
     private const int DwmColorNone = unchecked((int)0xFFFFFFFE);
     private const double PanelContentHeightDip = 5 * 32 + 2 * 5 + 8;
-    private const double PanelLeadingDip = 3 + 4 + 16 + 22;
+    // Button margin + padding + the text's left offset. The icon sits inside that offset;
+    // adding the icon width again makes the panel too wide and leaves a heavy right gap.
+    private const double PanelLeadingDip = 3 + 4 + 28;
     private const double PanelTrailingDip = 3 + 4 + 8;
     private const double MinPanelWidthDip = 120;
     private static readonly IntPtr HwndTopmost = new(-1);
