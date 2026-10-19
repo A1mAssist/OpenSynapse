@@ -22,7 +22,6 @@
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1" `
-  -DeviceName "Blade 15" `
   -Sku "RZ09-030" `
   -UsbPid "0246"
 ```
@@ -71,10 +70,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-Raz
 
 ### 采集脚本参数
 
-- `-DeviceName`：必填，零售型号名称。
-- `-Sku`：可选，SKU 或型号编号前缀。
-- `-UsbPid`：可选，`0246` 或 `1532:0246` 两种格式都支持。
-- `-ProductId`：可选，Synapse Product ID。
+- `-Sku`、`-UsbPid`、`-ProductId` 至少填写一个。
+- `-Sku`：SKU 或型号编号前缀。
+- `-UsbPid`：`0246` 或 `1532:0246` 两种格式都支持。
+- `-ProductId`：Synapse Product ID。
 - `-Root`：可选，Razer AppEngine 用户数据目录。
 - `-MaxFiles`：可选，限制打包文件数量。
 
