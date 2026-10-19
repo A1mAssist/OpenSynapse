@@ -66,14 +66,13 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             return null;
         }
 
-        // 0x101B is the USB control/audio interface reported by the issue machine.
-        // The 2.4 GHz receiver keeps PID 0x0577.
+        // The control interface is PID 0x0576 on USB and 0x0577 on the
+        // 2.4 GHz receiver. Do not treat audio-only interfaces as controls.
         var wireless = BlackSharkV3ProProtocol.IsWirelessProductId(chosen.ProductId);
         var name = chosen.ProductId switch
         {
             BlackSharkV3ProProtocol.WirelessProductId => "Razer BlackShark V3 Pro (2.4 GHz)",
             BlackSharkV3ProProtocol.WiredProductId => "Razer BlackShark V3 Pro (USB)",
-            BlackSharkV3ProProtocol.AudioProductId => "Razer BlackShark V3 Pro (USB)",
             _ => "Razer BlackShark V3 Pro",
         };
         return new BlackSharkHeadsetConnection(

@@ -22,7 +22,6 @@ public static class BlackSharkV3ProProtocol
 {
     public const ushort WiredProductId = 0x0576;
     public const ushort WirelessProductId = 0x0577;
-    public const ushort AudioProductId = 0x101B;
     public const int ReportLength = 64;
     public const byte ReportId = 0x02;
     public const byte TransactionId = 0x60;
@@ -38,7 +37,7 @@ public static class BlackSharkV3ProProtocol
     private const byte GameChatSetClass = 0xDC;
 
     public static bool IsSupportedProductId(ushort productId) =>
-        productId is WiredProductId or WirelessProductId or AudioProductId;
+        productId is WiredProductId or WirelessProductId;
 
     /// <summary>Only the 2.4 GHz receiver uses transport byte 0x80.</summary>
     public static bool IsWirelessProductId(ushort productId) => productId == WirelessProductId;
