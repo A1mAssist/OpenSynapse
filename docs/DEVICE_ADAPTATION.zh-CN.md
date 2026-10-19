@@ -21,12 +21,10 @@
 脚本是只读的，只会在本地寻找 Synapse 产品 JavaScript，生成 ZIP 和 manifest。下载 [Collect-RazerProductBundle.ps1](https://raw.githubusercontent.com/A1mAssist/OpenSynapse/main/tools/Collect-RazerProductBundle.ps1)，保存到 `Downloads` 文件夹，然后运行：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1" `
-  -Sku "RZ09-030" `
-  -UsbPid "0246"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1"
 ```
 
-把示例值换成你的设备。脚本会在 `%TEMP%` 下生成 ZIP，并打印路径。
+不用填参数。脚本会自动识别当前连接的 Razer 设备，并按设备名称和 USB PID 匹配。如果识别不到你的设备，再加 `-Sku` 或 `-UsbPid`。脚本会在 `%TEMP%` 下生成 ZIP，并打印路径。
 
 如果找不到文件，先在 Synapse 里打开一次该设备页面，等待加载完成后再运行。
 
@@ -70,10 +68,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-Raz
 
 ### 采集脚本参数
 
-- `-Sku`、`-UsbPid`、`-ProductId` 至少填写一个。
-- `-Sku`：SKU 或型号编号前缀。
-- `-UsbPid`：`0246` 或 `1532:0246` 两种格式都支持。
-- `-ProductId`：Synapse Product ID。
+- 不填参数：自动识别当前连接的 Razer 设备，按设备名称和 USB PID 匹配；没有识别结果时回退到包含 `rzDevice25` 的文件。
+- `-Sku`：可选，SKU 或型号编号前缀。
+- `-UsbPid`：可选，`0246` 或 `1532:0246` 两种格式都支持。
+- `-ProductId`：可选，Synapse Product ID。
 - `-Root`：可选，Razer AppEngine 用户数据目录。
 - `-MaxFiles`：可选，限制打包文件数量。
 
