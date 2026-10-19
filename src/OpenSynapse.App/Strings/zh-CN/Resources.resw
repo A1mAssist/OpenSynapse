@@ -1468,6 +1468,10 @@
     <value>设备状态监听：{0}</value>
     <comment>设备状态监听：{0}</comment>
   </data>
+  <data name="OpenRazerDriverModeRestoreFailed" xml:space="preserve">
+    <value>无法恢复 {0} 的无线连接模式：{1}</value>
+    <comment>无法恢复 {0} 的无线连接模式：{1}</comment>
+  </data>
   <data name="LightingRuntimeError" xml:space="preserve">
     <value>键盘灯效运行：{0}</value>
     <comment>键盘灯效运行：{0}</comment>

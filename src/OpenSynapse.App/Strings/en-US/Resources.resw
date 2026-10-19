@@ -1117,6 +1117,9 @@
   <data name="DeviceWatchError" xml:space="preserve">
     <value>Device monitoring: {0}</value>
   </data>
+  <data name="OpenRazerDriverModeRestoreFailed" xml:space="preserve">
+    <value>Could not restore the wireless mode of {0}: {1}</value>
+  </data>
   <data name="LightingRuntimeError" xml:space="preserve">
     <value>Keyboard lighting runtime: {0}</value>
   </data>

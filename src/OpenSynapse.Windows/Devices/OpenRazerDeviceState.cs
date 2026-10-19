@@ -16,6 +16,7 @@ public enum OpenRazerBackendCapability
     FirmwareRead,
     SerialRead,
     DeviceModeRead,
+    DeviceModeWrite,
     BatteryRead,
     ChargingRead,
     PollingRateRead,

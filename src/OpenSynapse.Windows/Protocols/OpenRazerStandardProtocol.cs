@@ -30,8 +30,22 @@ internal static class OpenRazerStandardProtocol
     internal static OpenRazerRequest GetSerial(OpenRazerDeviceDefinition device) =>
         Create(device, "razer_chroma_standard_get_serial", 0x16, 0x00, 0x82, []);
 
+    internal const byte NormalDeviceMode = 0x00;
+    internal const byte DriverDeviceMode = 0x03;
+
     internal static OpenRazerRequest GetDeviceMode(OpenRazerDeviceDefinition device) =>
         Create(device, "razer_chroma_standard_get_device_mode", 0x02, 0x00, 0x84, []);
+
+    /// <summary>
+    /// Writes device mode back to driver mode. OpenRazer sends mode 0x03 with a zero parameter
+    /// for every wireless mouse it drives. A wireless mouse left in normal mode never joins
+    /// the 2.4 GHz link, so this restores it.
+    /// </summary>
+    internal static OpenRazerRequest SetDriverDeviceMode(OpenRazerDeviceDefinition device) =>
+        Create(device, "razer_chroma_standard_set_device_mode", 0x02, 0x00, 0x04,
+            [DriverDeviceMode, NoStore]);
+
+    internal static byte ParseDeviceMode(ReadOnlySpan<byte> response) => Arguments(response, 2)[0];
 
     internal static OpenRazerRequest SetLedState(OpenRazerDeviceDefinition device, byte storage, byte ledId, bool enabled) =>
         Create(device, "razer_chroma_standard_set_led_state", 0x03, 0x03, 0x00,
