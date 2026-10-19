@@ -57,10 +57,13 @@ public sealed partial class MainViewModel
     private void RefreshDeviceSelectorItems()
     {
         DeviceSelectorItems.Clear();
-        DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-            DeviceSelectorItemKind.Blade,
-            BladeDeviceName,
-            "\uE7F8"));
+        if (_deviceDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)))
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Blade,
+                BladeDeviceName,
+                "\uE7F8"));
+        }
         if (ViperDeviceVisibility == Microsoft.UI.Xaml.Visibility.Visible)
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
