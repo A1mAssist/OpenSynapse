@@ -41,6 +41,13 @@ second source of truth.
 7. A resource change is complete only when the two locale files, the calling
    code, and the relevant automated check are committed together.
 
+## Release notes
+
+1. Every GitHub release body and every `CHANGELOG.md` entry is written in both
+   Chinese and English in the same section, Chinese first.
+2. A release is not done until the tag, the changelog entry for that version, and
+   the published release body all carry both languages.
+
 ## Review gate
 
 Before merging:
@@ -52,3 +59,5 @@ Before merging:
   `Platform=x64` and `RuntimeIdentifier=win-x64`;
 - review the staged file list and exclude generated output, captures, local
   tools, secrets, and release bundles.
+- confirm the changelog entry and the release body both carry Chinese and
+  English for the version being released;

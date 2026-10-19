@@ -1,3 +1,50 @@
+## [Unreleased]
+
+## [1.5.3] - 2026-10-19
+
+### 新增 / Added
+
+- 新增 Razer Blade 16 (2023) `1532:029F` 支持：键盘亮度、固件渲染灯效（关闭、呼吸、光谱、波动）、性能模式、自定义 CPU/GPU 档位（含 CPU Boost、Max Fan）、2000–5000 RPM 固定风扇目标、充电上限、一次充满和游戏模式。
+- Added support for the Razer Blade 16 (2023) `1532:029F`: keyboard brightness, firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom CPU/GPU levels with CPU Boost and Max Fan, fixed fan targets from 2000 to 5000 RPM, charge limit, one-time full charge, and Gaming mode.
+- 新增受支持机型的 THX Spatial Audio 控制：扬声器/耳机选择、空间音频、EQ 预设与频段、人声清晰度和扬声器音量标准化。厂商原生组件不随包分发，缺失时应用会提供来自 Razer 官方服务器的可校验下载。
+- Added THX Spatial Audio controls for supported Blade 16 and Blade 14 models: speaker/headphone selection, spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization. The vendor native component is not bundled; if missing, the app offers a verified download from Razer's official server.
+- 新增面板模式和局部调光卡片，仅在设备确实具备对应能力时显示。
+- Added panel mode and local dimming cards, hidden when the device does not expose the corresponding capability.
+
+### 修复 / Fixed
+
+- 修复 Blade 16 (2023) 键盘灯效报文：写入时误用了亮度查询命令，且缺少存储与区域选择器，导致每次亮度写入都失败。
+- Fixed the Blade 16 (2023) keyboard lighting reports, which used the brightness query command for writes and omitted the store and region selector, so every brightness write failed.
+- 修复灯效选择器在 Blade 16 (2023) 上选错效果：现在按该机型实际渲染的效果列表解析所选索引。
+- Fixed the lighting effect selector picking the wrong effect on the Blade 16 (2023): the selected index is now resolved against the effect list that model actually renders.
+- 修复 Blade 16 (2023) 的灯效开关、亮度和已保存配置无效：它们此前走了该代机型不存在的逐键矩阵灯效通道。息屏与唤醒现在同样会恢复其灯效。
+- Fixed the Blade 16 (2023) lighting switch, brightness, and saved profiles having no effect, because they were routed through the per-key matrix lighting path that generation does not have. Screen-off and wake now restore its lighting as well.
+- 修复 Blade 16 (2023) 已保存的灯效配置会写入配置文件读取器拒绝的效果键，导致下次启动失效。
+- Saved lighting profiles on the Blade 16 (2023) no longer store an effect key that the profile reader rejects on the next launch.
+- .chroma 导入按钮和波动方向选择器在 Blade 16 (2023) 上不再显示：该机型既不能播放 .chroma 文件，也不支持改变波动方向。
+- The .chroma import button and the wave direction selector are now hidden on the Blade 16 (2023), which can neither play a .chroma file nor change the wave direction.
+- 设备能力改为按精确机型准入，不再以读取成功与否判断。Blade 16 (2025) `1532:02C6` 不再提供 Max Fan、CPU Boost 和降压档位。
+- Blade capabilities are now admitted per exact model instead of per successful readback. Blade 16 (2025) `1532:02C6` no longer offers Max Fan, CPU Boost, or the undervolt level.
+- 在 Max Fan 机型上退出自定义性能模式时，会先关闭 Max Fan 并确认，避免切换预设后风扇持续保持最高转速。
+- Leaving Custom performance mode on a Max Fan model now turns Max Fan off and confirms it first, so a preset change cannot leave the fans pinned at maximum.
+- 其他电源模式控制项开启时拒绝启用 Max Fan，因为该写入会替换整个共享控制字节。
+- Enabling Max Fan is refused while other Power Mode Control settings are on, because the write replaces the whole shared control byte.
+- 修复托盘菜单左右留白过宽、底部被裁切：菜单项间距已与 AskKey 对齐，窗口高度按实际内容计算。
+- Fixed the tray menu being too wide on the sides and clipped at the bottom: item spacing now matches AskKey and the window height follows the real content.
+- 修复托盘菜单右侧留白过多：宽度改为按当前语言下最宽的一条菜单文案计算，中英文各自贴合。
+- Fixed the tray menu leaving excess space on the right: the width now follows the widest localized label, so Chinese and English both sit flush.
+- 修复托盘菜单在指针离开任务栏时会被关闭；它现在渲染在不抢焦点的独立窗口中，仅在外部点击、Esc、选择菜单项或退出应用时关闭。
+- Fixed the tray menu closing when the pointer left the taskbar. It renders in its own window that never takes focus and closes only on an outside click, Esc, a menu selection, or app exit.
+
+### 改进 / Improved
+
+- THX 控制项移入 Blade 设备页的音频卡片，改用可复用的弹出窗口，不再占用独立导航页。
+- THX controls now live behind an Audio card in the Blade device view and open in a reusable popout window instead of occupying a separate navigation page.
+- 游戏模式、开机动画和一次充满拆分为三张独立卡片；原始 SKU 标志不再显示在设备 UI 中，仅用于能力检测。
+- Blade game mode, startup animation, and one-time full charge are shown as three separate cards. Raw SKU flags are no longer shown in the device UI; the value is used only for capability detection.
+- 新增规则：发版说明与 CHANGELOG 条目必须同时提供中文和英文。
+- Added the rule that release notes and changelog entries must be written in both Chinese and English.
+
 # Changelog
 
 All notable user-visible changes to OpenSynapse are documented here.
