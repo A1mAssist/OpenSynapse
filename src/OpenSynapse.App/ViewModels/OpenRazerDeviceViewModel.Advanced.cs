@@ -123,4 +123,35 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             () => _service.UnpairHyperPollingAsync(Connection, mouseProductId, cancellationToken),
             cancellationToken);
 
+
+    /// <summary>
+    /// Sweeps the device command space and writes the accepted commands to a file, so an
+    /// unlisted device can be mapped without a packet capture.
+    /// </summary>
+    public async Task<string> ExportCommandScanAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsReady)
+        {
+            throw new InvalidOperationException("The device feature endpoint is not resolved.");
+        }
+
+        IsScrollLoading = true;
+        try
+        {
+            var scan = await _service.ScanCommandSpaceAsync(Connection, cancellationToken);
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                "OpenSynapse");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(
+                directory,
+                $"hid-scan-{Connection.Definition.ProductId:X4}-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            await File.WriteAllTextAsync(path, scan, cancellationToken);
+            return path;
+        }
+        finally
+        {
+            IsScrollLoading = false;
+        }
+    }
 }

@@ -358,8 +358,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             row.RefreshLocalization();
         }
+        foreach (var row in BlackSharkDevices)
+        {
+            row.RefreshLocalization();
+        }
         SelectedOpenRazerDevice?.RefreshLocalization();
         SelectedOpenRazerKraken?.RefreshLocalization();
+        SelectedBlackShark?.RefreshLocalization();
         foreach (var row in Diagnostics)
         {
             row.RefreshLocalization();
@@ -420,6 +425,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             await openRazerDevice.DisposeAsync().ConfigureAwait(false);
             SelectedOpenRazerDevice = null;
         }
+
+        SelectedBlackShark = null;
+        _selectedBlackSharkDevice = null;
+        BlackSharkDevices.Clear();
 
         Task brightnessWriter;
         lock (_bladeBrightnessGate)

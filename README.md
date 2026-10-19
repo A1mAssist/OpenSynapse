@@ -14,7 +14,7 @@
 
 <p align="center"><a href="README.zh-CN.md">简体中文</a> · English</p>
 
-OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It supports 254 OpenRazer catalog models plus dedicated Blade/Viper, Kraken, and Chroma REST integrations.
+OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It supports 254 OpenRazer catalog models plus dedicated Blade/Viper, Kraken, BlackShark V3 Pro, and Chroma REST integrations.
 
 > Current release `v1.5.3` · Windows 11 x64 · unsigned
 
@@ -22,7 +22,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## What it supports
 
-OpenSynapse is not limited to a small list of product-specific models. The current support surface includes **254 OpenRazer catalog devices**, dedicated Blade and Viper controls, **six Kraken headsets**, and Chroma REST lighting integrations.
+OpenSynapse is not limited to a small list of product-specific models. The current support surface includes **254 OpenRazer catalog devices**, dedicated Blade and Viper controls, **six Kraken headsets**, **BlackShark V3 Pro audio controls**, and Chroma REST lighting integrations.
 
 **[Browse the complete device and capability list](docs/SUPPORTED_DEVICES.md)** for model names, USB PIDs, product-specific features, and the exact support boundaries.
 
@@ -38,6 +38,7 @@ The pinned OpenRazer catalog covers 110 mice, 72 keyboards, 46 laptops, and 26 a
 - **Blade THX audio:** spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization on supported Blade 16 and Blade 14 models. The Blade device page opens a reusable THX control window. The signed Razer native component is not bundled; if missing, the app offers a verified download from Razer's official server.
 - **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
 - **Kraken:** lighting only for six USB headsets; audio, microphone, EQ, and THX controls are not included.
+- **BlackShark V3 Pro:** battery, charging, sidetone, THX, ANC, and game/chat balance over its own HID channel. EQ, microphone gain, firmware updates, and indicator-LED modes are not included yet.
 
 ### Chroma REST
 

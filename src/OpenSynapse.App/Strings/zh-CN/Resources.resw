@@ -1274,7 +1274,7 @@
     <comment>已应用到设备</comment>
   </data>
   <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
-    <value>设备返回的协议数据格式错误，已停用该协议能力。</value>
+    <value>设备返回的协议数据格式错误。</value>
     <comment>OpenRazer 协议数据格式错误</comment>
   </data>
   <data name="OpenRazerDpiStagesMalformedResponse" xml:space="preserve">
@@ -2129,5 +2129,40 @@
     <value>控制 MiniLED 面板的局部调光。</value>
     <comment>控制 MiniLED 面板的局部调光。</comment>
   </data>
+  <data name="ScanHidCommands" xml:space="preserve">
+    <value>扫描 HID 命令</value>
+  </data>
+  <data name="HidScanRunning" xml:space="preserve">
+    <value>正在扫描设备命令空间…</value>
+  </data>
+  <data name="HidScanDone" xml:space="preserve">
+    <value>扫描完成，已保存到 {0}</value>
+  </data>
+  <data name="HidScanUnavailable" xml:space="preserve">
+    <value>该设备未连接，无法扫描</value>
+  </data>  <data name="HidScanNoService" xml:space="preserve">
+    <value>当前版本未包含 OpenRazer 支持</value>
+  </data>
+  <data name="HidScanNoDevice" xml:space="preserve">
+    <value>未检测到已连接的 OpenRazer 设备</value>
+  </data>  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>游戏耳机</value></data>
+  <data name="BlackSharkStatusConnected" xml:space="preserve"><value>已连接</value></data>
+  <data name="BlackSharkCharging" xml:space="preserve"><value>充电中</value></data>
+  <data name="BlackSharkNotCharging" xml:space="preserve"><value>未充电</value></data>
+  <data name="BlackSharkReadFailed" xml:space="preserve"><value>耳机未返回状态，请确认耳机已开启并靠近接收器。</value></data>
+  <data name="BlackSharkSaved" xml:space="preserve"><value>已保存</value></data>
+  <data name="BlackSharkAncOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="BlackSharkAncOn" xml:space="preserve"><value>主动降噪</value></data>
+  <data name="BlackSharkAncAmbient" xml:space="preserve"><value>环境声</value></data>
+  <data name="BlackSharkRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="BlackSharkBatteryTitle.Text" xml:space="preserve"><value>电量</value></data>
+  <data name="BlackSharkThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="BlackSharkThxToggle.Header" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="BlackSharkSidetoneTitle.Text" xml:space="preserve"><value>侧音</value></data>
+  <data name="BlackSharkSidetoneLabel.Text" xml:space="preserve"><value>侧音强度</value></data>
+  <data name="BlackSharkGameChatTitle.Text" xml:space="preserve"><value>游戏 / 语音平衡</value></data>
+  <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>主动降噪</value></data>
+  <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>模式</value></data>
+  <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>强度</value></data>
 </root>
 

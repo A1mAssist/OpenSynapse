@@ -970,7 +970,7 @@
     <value>Applied to device</value>
   </data>
   <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
-    <value>The device returned malformed protocol data. This capability has been disabled.</value>
+    <value>The device returned malformed protocol data.</value>
   </data>
   <data name="OpenRazerDpiStagesMalformedResponse" xml:space="preserve">
     <value>The device returned malformed DPI stage data. DPI stages have been disabled.</value>
@@ -1721,5 +1721,40 @@
   <data name="BladeLocalDimmingDescription.Text" xml:space="preserve">
     <value>Control local dimming on MiniLED panels.</value>
   </data>
+  <data name="ScanHidCommands" xml:space="preserve">
+    <value>Scan HID commands</value>
+  </data>
+  <data name="HidScanRunning" xml:space="preserve">
+    <value>Scanning the device command space...</value>
+  </data>
+  <data name="HidScanDone" xml:space="preserve">
+    <value>Scan complete, saved to {0}</value>
+  </data>
+  <data name="HidScanUnavailable" xml:space="preserve">
+    <value>This device is not connected</value>
+  </data>  <data name="HidScanNoService" xml:space="preserve">
+    <value>This build does not include OpenRazer support</value>
+  </data>
+  <data name="HidScanNoDevice" xml:space="preserve">
+    <value>No connected OpenRazer device was found</value>
+  </data>  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>Gaming headset</value></data>
+  <data name="BlackSharkStatusConnected" xml:space="preserve"><value>Connected</value></data>
+  <data name="BlackSharkCharging" xml:space="preserve"><value>Charging</value></data>
+  <data name="BlackSharkNotCharging" xml:space="preserve"><value>Not charging</value></data>
+  <data name="BlackSharkReadFailed" xml:space="preserve"><value>The headset did not return a state. Make sure it is powered on and near the receiver.</value></data>
+  <data name="BlackSharkSaved" xml:space="preserve"><value>Saved</value></data>
+  <data name="BlackSharkAncOff" xml:space="preserve"><value>Off</value></data>
+  <data name="BlackSharkAncOn" xml:space="preserve"><value>Active noise cancellation</value></data>
+  <data name="BlackSharkAncAmbient" xml:space="preserve"><value>Ambient</value></data>
+  <data name="BlackSharkRefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="BlackSharkBatteryTitle.Text" xml:space="preserve"><value>Battery</value></data>
+  <data name="BlackSharkThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="BlackSharkThxToggle.Header" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="BlackSharkSidetoneTitle.Text" xml:space="preserve"><value>Sidetone</value></data>
+  <data name="BlackSharkSidetoneLabel.Text" xml:space="preserve"><value>Sidetone level</value></data>
+  <data name="BlackSharkGameChatTitle.Text" xml:space="preserve"><value>Game / chat balance</value></data>
+  <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>Active noise cancellation</value></data>
+  <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>Mode</value></data>
+  <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>Level</value></data>
 </root>
 

@@ -170,7 +170,7 @@ public partial class App : Application
         _diagnosticLog.TryWrite(
             "audio-mute-sync",
             "Blade Fn and speaker/microphone mute synchronization enabled.");
-        _diagnosticLog.TryWrite("diagnostic", "OpenRazer 1532:027A diagnostic logging enabled.");
+        _diagnosticLog.TryWrite("diagnostic", "Razer device discovery diagnostics enabled.");
         _diagnosticLog.TryWrite("application", "OpenSynapse started.");
         var window = new MainWindow(
             viewModel,

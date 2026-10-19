@@ -4,6 +4,11 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ## [Unreleased]
 
+### 新增 / Added
+
+- 新增 Razer BlackShark V3 Pro（`1532:0576` 有线、`1532:0577` 2.4 GHz）支持：电量、充电状态、侧音、THX Spatial Audio、主动降噪和游戏/语音平衡。
+- Added Razer BlackShark V3 Pro support (`1532:0576` wired, `1532:0577` 2.4 GHz): battery, charging state, sidetone, THX Spatial Audio, ANC, and game/chat balance.
+
 ## [1.5.3] - 2026-10-19
 
 ### 新增 / Added

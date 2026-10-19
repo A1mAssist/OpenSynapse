@@ -45,9 +45,13 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             {
                 MarkRequiresRescan();
             }
-            else if (state.UnsupportedCapabilities.Count > 0)
+            else
             {
-                OnCapabilityChanged();
+                ErrorText = string.Empty;
+                if (state.UnsupportedCapabilities.Count > 0)
+                {
+                    OnCapabilityChanged();
+                }
             }
             OnBasicStateChanged();
         }

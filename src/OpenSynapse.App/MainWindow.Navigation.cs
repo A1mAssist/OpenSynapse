@@ -52,6 +52,7 @@ public sealed partial class MainWindow
         ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
         OpenRazerDevicePanel.Visibility = device == "openrazer" ? Visibility.Visible : Visibility.Collapsed;
         OpenRazerKrakenPanel.Visibility = device == "kraken" ? Visibility.Visible : Visibility.Collapsed;
+        BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
     }
 
@@ -93,7 +94,8 @@ public sealed partial class MainWindow
             _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector(
                 ViperDevicePanel.Visibility == Visibility.Visible ? "viper" :
                 OpenRazerDevicePanel.Visibility == Visibility.Visible ? "openrazer" :
-                OpenRazerKrakenPanel.Visibility == Visibility.Visible ? "kraken" : "blade"));
+                OpenRazerKrakenPanel.Visibility == Visibility.Visible ? "kraken" :
+                BlackSharkPanel.Visibility == Visibility.Visible ? "blackshark" : "blade"));
         }
         if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerDevice) &&
             _viewModel.SelectedOpenRazerDevice is null &&
@@ -117,6 +119,17 @@ public sealed partial class MainWindow
         {
             _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("kraken"));
         }
+        if (args.PropertyName == nameof(MainViewModel.SelectedBlackShark) &&
+            _viewModel.SelectedBlackShark is null &&
+            BlackSharkPanel.Visibility == Visibility.Visible)
+        {
+            _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
+        }
+        else if (args.PropertyName == nameof(MainViewModel.SelectedBlackShark) &&
+            BlackSharkPanel.Visibility == Visibility.Visible)
+        {
+            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("blackshark"));
+        }
     }
 
     private void UpdateDeviceSelector(string device)
@@ -135,6 +148,10 @@ public sealed partial class MainWindow
                 DeviceSelectorItemKind.Kraken => device == "kraken" &&
                     item.Source is OpenRazerKrakenDeviceRowViewModel row &&
                     StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerKraken?.InstanceId),
+                DeviceSelectorItemKind.BlackShark => device == "blackshark" &&
+                    item.Source is BlackSharkDeviceRowViewModel blackSharkRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        blackSharkRow.Connection.DevicePath, _viewModel.SelectedBlackShark?.DevicePath),
                 _ => false,
             };
             item.SetSelectorBackground(isSelected ? selected : transparent);
@@ -163,9 +180,11 @@ public sealed partial class MainWindow
         ApplyTitleBarColors();
         UpdateDeviceSelector(OpenRazerKrakenPanel.Visibility == Visibility.Visible
             ? "kraken"
-            : OpenRazerDevicePanel.Visibility == Visibility.Visible
-                ? "openrazer"
-                : BladeDevicePanel.Visibility == Visibility.Visible ? "blade" : "viper");
+            : BlackSharkPanel.Visibility == Visibility.Visible
+                ? "blackshark"
+                : OpenRazerDevicePanel.Visibility == Visibility.Visible
+                    ? "openrazer"
+                    : BladeDevicePanel.Visibility == Visibility.Visible ? "blade" : "viper");
     }
 
     private void ApplyTitleBarColors(bool launchOverlayActive = false)

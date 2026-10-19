@@ -31,6 +31,9 @@ public sealed partial class MainWindow
             case OpenRazerKrakenDeviceRowViewModel:
                 OpenRazerKrakenSelectorClick(sender, e);
                 break;
+            case BlackSharkDeviceRowViewModel:
+                BlackSharkSelectorClick(sender, e);
+                break;
         }
     }
 
@@ -88,6 +91,10 @@ public sealed partial class MainWindow
                 if (_viewModel.SelectedOpenRazerKraken is { } kraken)
                     await kraken.LoadSerialAsync(_lifetime.Token);
                 break;
+            case DeviceSelectorItemKind.BlackShark when item.Source is BlackSharkDeviceRowViewModel blackSharkRow:
+                SelectDevice("blackshark");
+                await _viewModel.SelectBlackSharkAsync(blackSharkRow, _lifetime.Token);
+                break;
         }
 
         UpdateDeviceSelector(item.Kind switch
@@ -96,6 +103,7 @@ public sealed partial class MainWindow
             DeviceSelectorItemKind.Viper => "viper",
             DeviceSelectorItemKind.OpenRazer => "openrazer",
             DeviceSelectorItemKind.Kraken => "kraken",
+            DeviceSelectorItemKind.BlackShark => "blackshark",
             _ => string.Empty,
         });
     }
@@ -107,6 +115,13 @@ public sealed partial class MainWindow
         SelectDevice("kraken");
         if (_viewModel.SelectedOpenRazerKraken is { } kraken)
             await kraken.LoadSerialAsync(_lifetime.Token);
+    }
+
+    private async void BlackSharkSelectorClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: BlackSharkDeviceRowViewModel row }) return;
+        SelectDevice("blackshark");
+        await _viewModel.SelectBlackSharkAsync(row, _lifetime.Token);
     }
 
     private async void OpenRazerKrakenApplyClick(object sender, RoutedEventArgs e) =>

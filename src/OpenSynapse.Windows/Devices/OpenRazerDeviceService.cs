@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Globalization;
+using System.Text;
 using System.ComponentModel;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
@@ -16,6 +18,7 @@ public enum OpenRazerKeyswitchOptimization
 public sealed class OpenRazerDeviceService
 {
     private readonly OpenRazerDeviceCatalog _catalog;
+    private static readonly byte[] ScanClasses = [0x00, 0x03, 0x07, 0x0D, 0x0C, 0x15, 0x1D];
     private readonly IRazerFeatureTransport _transport;
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
@@ -87,7 +90,7 @@ public sealed class OpenRazerDeviceService
                     lastError = "No side-effect-free GET with a known transaction is available for endpoint probing.";
                 }
                 catch (Exception exception) when (exception is Win32Exception or IOException or
-                    InvalidOperationException or NotSupportedException)
+                    InvalidOperationException or NotSupportedException or InvalidDataException)
                 {
                     lastError = exception.Message;
                     WriteDiagnostic(definition.ProductId,
@@ -142,16 +145,16 @@ public sealed class OpenRazerDeviceService
                 assign(await read().ConfigureAwait(false));
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or
-                InvalidOperationException or NotSupportedException)
+                InvalidOperationException or NotSupportedException or InvalidDataException)
             {
-                if (exception is NotSupportedException)
+                if (exception is NotSupportedException or InvalidDataException)
                 {
                     // A manifest can advertise an optional transaction that a
-                    // particular firmware rejects. Keep the rest of the device
+                    // particular firmware rejects or returns malformed data. Keep the rest of the device
                     // state usable and let the UI render that field as unknown.
                     unsupported.Add(capability);
                     WriteDiagnostic(connection.Definition.ProductId,
-                        $"optional state read '{key}' is unsupported: {exception.Message}");
+                        $"optional state read '{key}' is unavailable: {exception.GetType().Name}: {exception.Message}");
                     return;
                 }
 
@@ -180,7 +183,7 @@ public sealed class OpenRazerDeviceService
                     throw;
                 }
                 catch (Exception exception) when (exception is Win32Exception or IOException or
-                    InvalidOperationException or NotSupportedException)
+                    InvalidOperationException or NotSupportedException or InvalidDataException)
                 {
                     WriteDiagnostic(connection.Definition.ProductId,
                         $"optional serial read failed: {exception.GetType().Name}: {exception.Message}");
@@ -218,6 +221,72 @@ public sealed class OpenRazerDeviceService
             pollingRate, dpiX, dpiY, idle, threshold, brightness, errors,
             unsupported.ToFrozenSet());
     }
+
+    /// <summary>
+    /// Sweeps the HID feature command space for commands this catalog does not describe.
+    /// The firmware answers 0x02 for a supported command and 0x05 for an unsupported one, so
+    /// the sweep reveals a device's real capability table without a packet capture.
+    /// </summary>
+    public async Task<string> ScanCommandSpaceAsync(
+        OpenRazerDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        var report = new StringBuilder();
+        report.AppendLine($"generated: {DateTimeOffset.Now:O}");
+        report.Append(HidCommandScan.FormatHeader(
+            connection.Definition.DisplayName, connection.Definition.ProductId));
+
+        var accepted = 0;
+        foreach (var commandClass in HidCommandScan.ScanClasses)
+        {
+            for (var commandId = 0; commandId <= 0xFF; commandId++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var request = RazerFeatureReport.CreateRequest(
+                    0x1F, 0x00, commandClass, (byte)commandId, ReadOnlySpan<byte>.Empty);
+                byte[]? response;
+                try
+                {
+                    response = await _transport.QueryPreparedAsync(
+                        connection.DevicePath!, request, connection.Definition.DeviceWait,
+                        cancellationToken, allowRemainingPacketsMismatch: true).ConfigureAwait(false);
+                }
+                catch (Exception exception) when (
+                    exception is NotSupportedException or RazerCommandRejectedException)
+                {
+                    continue;
+                }
+                catch (Exception exception) when (
+                    exception is InvalidOperationException or Win32Exception or IOException)
+                {
+                    continue;
+                }
+
+                var status = response![1];
+                if (status != 0x05)
+                {
+                    accepted++;
+                }
+
+                report.AppendLine(HidCommandScan.FormatRow(commandClass, (byte)commandId, response));
+
+            }
+        }
+
+        report.AppendLine();
+        report.Append(CultureInfo.InvariantCulture, $"total accepted: {accepted}");
+        report.AppendLine();
+        report.AppendLine("## builders already in the bundled catalog");
+        foreach (var builder in connection.Definition.Transactions.Keys
+                     .OrderBy(static name => name, StringComparer.Ordinal))
+        {
+            report.AppendLine(builder);
+        }
+
+        return report.ToString();
+    }
+
 
     public async Task<Version> GetFirmwareAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
         OpenRazerStandardProtocol.ParseFirmware(await ExecuteAsync(connection,
@@ -644,13 +713,8 @@ public sealed class OpenRazerDeviceService
             $"interface path={RazerFeatureTransport.DescribeDevicePath(item.DevicePath)}, input={item.InputReportByteLength}, output={item.OutputReportByteLength}, feature={item.FeatureReportByteLength}, usage=0x{item.UsagePage:X4}:0x{item.Usage:X4}, access={item.Access}");
     }
 
-    private void WriteDiagnostic(ushort productId, string message)
-    {
-        if (productId == 0x027A)
-        {
-            _diagnosticLog?.TryWrite("openrazer-027a", message);
-        }
-    }
+    private void WriteDiagnostic(ushort productId, string message) =>
+        _diagnosticLog?.TryWrite($"openrazer-{productId:X4}", message);
 
     private static IReadOnlyList<OpenRazerRequest> CreateSafeProbes(OpenRazerDeviceDefinition definition)
     {
@@ -1096,4 +1160,31 @@ public sealed class OpenRazerDeviceService
                 $"OpenRazer device 1532:{connection.Definition.ProductId:X4} does not support {operation} with storage {storage} on zone {zone}.");
         }
     }
+}
+
+/// <summary>
+/// Formats one row of the HID command scan. The status byte is the whole contract: the
+/// firmware answers 0x02 for a command it supports and 0x05 for one it does not.
+/// </summary>
+internal static class HidCommandScan
+{
+    internal static readonly byte[] ScanClasses = [0x00, 0x03, 0x07, 0x0D, 0x0C, 0x15, 0x1D];
+
+    internal const string StatusLegend =
+        "status legend: 0x02 success, 0x01 busy, 0x03 rejected, 0x05 not supported";
+
+    internal static string FormatHeader(string displayName, ushort productId) =>
+        $"# OpenSynapse HID command scan{Environment.NewLine}" +
+        $"device: {displayName}{Environment.NewLine}" +
+        $"pid: 1532:{productId:X4}{Environment.NewLine}" +
+        $"{StatusLegend}{Environment.NewLine}" +
+        $"columns: class command status args{Environment.NewLine}";
+
+    internal static string FormatRow(byte commandClass, byte commandId, byte[] response) =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"{commandClass:x2} {commandId:x2} {response[1]:x2} {Hex(response.AsSpan(RazerFeatureReport.ArgumentsOffset))}");
+
+    internal static string Hex(ReadOnlySpan<byte> payload) =>
+        Convert.ToHexString(payload[..Math.Min(payload.Length, 20)]).ToLowerInvariant();
 }

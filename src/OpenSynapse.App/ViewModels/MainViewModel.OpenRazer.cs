@@ -17,6 +17,7 @@ public sealed partial class MainViewModel
         Devices.Select(device => new ConnectedDeviceRowViewModel(device))
             .Concat(OpenRazerDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(OpenRazerKrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(BlackSharkDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
             .ThenBy(device => device.SortOrder)
@@ -81,6 +82,15 @@ public sealed partial class MainViewModel
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Kraken,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in BlackSharkDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.BlackShark,
                 row.Name,
                 row.IconGlyph,
                 row));
@@ -286,5 +296,37 @@ public sealed partial class MainViewModel
         SelectedOpenRazerDevice = null;
         SelectedOpenRazerKraken = new OpenRazerKrakenViewModel(
             _openRazerSpecialLightingService, row.Connection);
+    }
+
+    /// <summary>
+    /// Scans the first connected OpenRazer device, so a model the catalog does not describe
+    /// can be mapped from the diagnostics page without first selecting it.
+    /// </summary>
+    internal async Task<string> ScanFirstOpenRazerDeviceAsync(CancellationToken cancellationToken = default)
+    {
+        if (_openRazerDeviceService is null)
+        {
+            throw new InvalidOperationException("OpenRazer support is unavailable in this build.");
+        }
+
+        // Discovery is event driven, so the list can still be empty right after a wake.
+        await RefreshDevicesAsync(cancellationToken).ConfigureAwait(false);
+        var connection = CurrentOpenRazerConnections.FirstOrDefault(static device => device.IsReady);
+        if (connection is null)
+        {
+            throw new InvalidOperationException("No OpenRazer device is connected.");
+        }
+
+        var scan = await _openRazerDeviceService
+            .ScanCommandSpaceAsync(connection, cancellationToken).ConfigureAwait(false);
+        var directory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+            "OpenSynapse");
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(
+            directory,
+            $"hid-scan-{connection.Definition.ProductId:X4}-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+        await File.WriteAllTextAsync(path, scan, cancellationToken).ConfigureAwait(false);
+        return path;
     }
 }
