@@ -231,6 +231,10 @@ public sealed class OpenRazerDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
+        if (connection.Definition.Category == DeviceCategory.Mouse)
+        {
+            throw new NotSupportedException("HID command scan is disabled for mice to protect 2.4 GHz receivers.");
+        }
         var report = new StringBuilder();
         report.AppendLine($"generated: {DateTimeOffset.Now:O}");
         report.Append(HidCommandScan.FormatHeader(

@@ -183,8 +183,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public OpenRazerDeviceViewModel? SelectedOpenRazerDevice
     {
         get => _selectedOpenRazerDevice;
-        private set => SetField(ref _selectedOpenRazerDevice, value);
+        private set
+        {
+            if (SetField(ref _selectedOpenRazerDevice, value))
+            {
+                OnPropertyChanged(nameof(CanScanHidCommands));
+            }
+        }
     }
+    public bool CanScanHidCommands =>
+        SelectedOpenRazerDevice is { IsReady: true } selected &&
+        selected.Connection.Definition.Category != DeviceCategory.Mouse;
     public OpenRazerKrakenViewModel? SelectedOpenRazerKraken
     {
         get => _selectedOpenRazerKraken;

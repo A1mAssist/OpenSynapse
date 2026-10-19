@@ -24,6 +24,11 @@ public sealed partial class MainWindow
         {
             DiagnosticsCopyStatusText.Text = string.Empty;
         }
+        catch (NotSupportedException)
+        {
+            _viewModel.ReportApplicationError(AppStrings.Text("HidScanDisabled"));
+            DiagnosticsCopyStatusText.Text = string.Empty;
+        }
         catch (InvalidOperationException)
         {
             _viewModel.ReportApplicationError(AppStrings.Text("HidScanNoDevice"));

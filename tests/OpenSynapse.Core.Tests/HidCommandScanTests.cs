@@ -47,7 +47,7 @@ public sealed class HidCommandScanTests
     [Fact]
     public async Task ScanOnlySendsDeviceToHostReadCommands()
     {
-        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE);
+        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0245);
         Assert.NotNull(definition);
         var transport = new ScanRecordingTransport();
         var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
@@ -60,6 +60,24 @@ public sealed class HidCommandScanTests
 
         Assert.NotEmpty(transport.Requests);
         Assert.All(transport.Requests, request => Assert.True((request[8] & 0x80) != 0));
+    }
+
+    [Fact]
+    public async Task MouseScanIsRefusedBeforeTransport()
+    {
+        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE);
+        Assert.NotNull(definition);
+        var transport = new ScanRecordingTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(
+            definition, "test-path", "test-device", OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>(),
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            service.ScanCommandSpaceAsync(connection));
+
+        Assert.Empty(transport.Requests);
     }
 
     private sealed class ScanRecordingTransport : IRazerFeatureTransport

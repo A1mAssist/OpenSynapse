@@ -799,7 +799,7 @@
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                     <Button local:Localized.Uid="Loc_B2441B64DA" Content="重新检查" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" />
                     <Button local:Localized.Uid="CopyDiagnostics" Content="复制诊断信息" Click="CopyDiagnosticsClick" Style="{StaticResource PrimaryButtonStyle}" />
-                    <Button local:Localized.Uid="ScanHidCommands" Content="扫描 HID 命令" Click="ScanHidCommandsClick" IsEnabled="{Binding SelectedOpenRazerDevice}" Style="{StaticResource SecondaryButtonStyle}" />
+                    <Button local:Localized.Uid="ScanHidCommands" Content="扫描 HID 命令" Click="ScanHidCommandsClick" IsEnabled="{Binding CanScanHidCommands}" Style="{StaticResource SecondaryButtonStyle}" />
                     <TextBlock x:Name="DiagnosticsCopyStatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                   </StackPanel>
                 </Grid>
