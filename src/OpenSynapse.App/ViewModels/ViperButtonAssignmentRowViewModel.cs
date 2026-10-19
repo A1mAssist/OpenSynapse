@@ -24,7 +24,7 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 
     public IReadOnlyList<string> ActionOptions => AppStrings.Texts(
-        AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_794A1C95"), AppStrings.Text("Text_78980344"), AppStrings.Text("Text_6D40E761"), AppStrings.Text("Text_61DF3243"), AppStrings.Text("Text_290DA6F9"), AppStrings.Text("Text_10DDDE56"), AppStrings.Text("Text_11DDDFE9"), AppStrings.Text("Text_80A48F18"), AppStrings.Text("Text_45977270"));
+        AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_794A1C95"), AppStrings.Text("Text_78980344"), AppStrings.Text("Text_6D40E761"), AppStrings.Text("Text_61DF3243"), AppStrings.Text("Text_290DA6F9"), AppStrings.Text("Text_10DDDE56"), AppStrings.Text("Text_11DDDFE9"), AppStrings.Text("Text_80A48F18"), AppStrings.Text("Text_45977270"), AppStrings.Text("Text_D9D5D89A"));
     public string ButtonText => FormatButton(Assignment.ButtonId);
     public string LayerText => Assignment.Layer == ViperButtonMappingLayer.Normal ? AppStrings.Text("Text_190B5DB1") : "HyperShift";
     public string CurrentActionText => FormatAction(Assignment);
@@ -97,9 +97,10 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
                 ViperButtonMappingFunction.KeyboardKey,
                 new byte[] { checked((byte)KeyboardModifierValue), checked((byte)KeyboardUsageValue) }),
             9 => (ViperButtonMappingFunction.DoubleClick, new byte[] { 1 }),
+            10 => (ViperButtonMappingFunction.Dpi, new byte[] { 6 }),
             _ => default,
         };
-        if (SelectedActionIndex is < 0 or > 9)
+        if (SelectedActionIndex is < 0 or > 10)
         {
             assignment = Assignment;
             return false;
@@ -164,6 +165,11 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
         {
             return 9;
         }
+        if (assignment.Function == ViperButtonMappingFunction.Dpi &&
+            assignment.FunctionData.Count == 1 && assignment.FunctionData[0] == 6)
+        {
+            return 10;
+        }
         if (assignment.Function != ViperButtonMappingFunction.MouseButton ||
             assignment.FunctionData.Count != 1)
         {
@@ -186,6 +192,8 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
                     assignment.FunctionData[1]),
             ViperButtonMappingFunction.DoubleClick when assignment.FunctionData.Count == 1 &&
                 assignment.FunctionData[0] == 1 => AppStrings.Text("Text_45977270"),
+            ViperButtonMappingFunction.Dpi when assignment.FunctionData.Count == 1 &&
+                assignment.FunctionData[0] == 6 => AppStrings.Text("Text_D9D5D89A"),
             _ => assignment.FunctionData.Count == 0
                 ? assignment.Function.ToString()
                 : $"{assignment.Function} · {Convert.ToHexString(assignment.FunctionData.ToArray())}",
