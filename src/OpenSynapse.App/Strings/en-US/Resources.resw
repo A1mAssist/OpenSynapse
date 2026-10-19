@@ -1737,6 +1737,9 @@
   </data>
   <data name="HidScanNoDevice" xml:space="preserve">
     <value>No connected OpenRazer device was found</value>
+  </data>
+  <data name="HidScanDisabled" xml:space="preserve">
+    <value>HID command scanning is disabled for mice to protect 2.4 GHz receivers</value>
   </data>  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>Gaming headset</value></data>
   <data name="BlackSharkStatusConnected" xml:space="preserve"><value>Connected</value></data>
   <data name="BlackSharkCharging" xml:space="preserve"><value>Charging</value></data>

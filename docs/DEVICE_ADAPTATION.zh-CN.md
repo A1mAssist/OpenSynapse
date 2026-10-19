@@ -70,6 +70,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-Raz
 
 诊断是确认工具，不会生成 manifest、发现命令语义或升级能力。对于 OpenSynapse 还打不开的设备，先做最小只读连接，或者退回有边界的抓包。
 
+鼠标不再开放 HID 命令扫描。部分无线鼠标会把这些探测当成接收器或配对指令，后续只能使用已记录的 OpenRazer 读取命令，并先恢复 2.4 GHz 连接再测试。
+
 ### 采集脚本参数
 
 - 不填参数：自动识别当前连接的 Razer 设备，按设备名称和 USB PID 匹配；没有识别结果时回退到包含 `rzDevice25` 的文件。

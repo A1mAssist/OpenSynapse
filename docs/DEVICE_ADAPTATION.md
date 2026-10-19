@@ -70,6 +70,8 @@ Use the cheapest source that can answer the question:
 
 Diagnostics is a confirmation tool. It does not generate a manifest, discover command semantics, or promote a capability. For a device OpenSynapse cannot open yet, build a minimal read-only connection or use a bounded capture.
 
+HID command scanning is disabled for mice. Some wireless mice treat those probes as receiver or pairing commands, so use only documented OpenRazer reads and restore the 2.4 GHz connection before further testing.
+
 ### Collector parameters
 
 - No parameters — auto-detect connected Razer devices and match their names and USB PIDs; falls back to files that reference `rzDevice25`.
