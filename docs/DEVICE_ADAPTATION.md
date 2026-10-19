@@ -24,6 +24,10 @@ The collector is read-only. It finds the local Synapse product JavaScript and cr
 powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1"
 ```
 
+If PowerShell shows a `>>` prompt, the trailing line-continuation character was copied too; press Ctrl+C and paste the line again.
+
+If the script path is not found, confirm the file is in `Downloads`; if your browser or OneDrive uses a different folder, replace the path with the actual save location.
+
 No parameters are needed. The script auto-detects connected Razer devices and matches their names and USB PIDs. If detection misses your device, add `-Sku` or `-UsbPid` to the command. The script prints the ZIP path and creates it under `%TEMP%`.
 
 If it finds no files, open the device page in Synapse once, wait for it to finish loading, and run it again.

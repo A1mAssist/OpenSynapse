@@ -24,6 +24,10 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1"
 ```
 
+如果粘贴后出现 `>>` 提示，说明末尾的续行符被一起复制了；按 Ctrl+C，重新复制上面这一行。
+
+如果提示找不到脚本，确认文件确实在 `Downloads`；下载目录被 OneDrive 或浏览器改过时，把路径换成实际保存位置。
+
 不用填参数。脚本会自动识别当前连接的 Razer 设备，并按设备名称和 USB PID 匹配。如果识别不到你的设备，再加 `-Sku` 或 `-UsbPid`。脚本会在 `%TEMP%` 下生成 ZIP，并打印路径。
 
 如果找不到文件，先在 Synapse 里打开一次该设备页面，等待加载完成后再运行。
