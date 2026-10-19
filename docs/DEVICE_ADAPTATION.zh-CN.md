@@ -109,6 +109,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Collect-RazerProduct
 
 只有 ACK 不代表 `Verified`。
 
+`SourceBacked` 是开发阶段的证据状态，不是诊断页运行时生成的。诊断页只展示最终的能力或错误状态；要新增候选适配，必须在源码中加入经过审查的 manifest 或 protocol builder/parser。
+
 ## 7. 安全与验收
 
 每个写入路径必须具备：
