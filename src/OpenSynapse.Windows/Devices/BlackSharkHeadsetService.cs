@@ -53,24 +53,27 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             .Where(item => item.UsagePage == 0xFF14 && item.Usage == 0x0001 &&
                            item.OutputReportByteLength >= BlackSharkV3ProProtocol.ReportLength)
             .OrderByDescending(item => item.Access == DeviceAccessState.Available)
-            .ThenBy(item => item.ProductId == BlackSharkV3ProProtocol.WirelessProductId ? 0 : 1)
+            .ThenBy(item => ProductPriority(item.ProductId))
             .FirstOrDefault()
             ?? candidates
                 .Where(item => item.UsagePage is 0xFF13 or 0xFF14 &&
                                item.OutputReportByteLength >= BlackSharkV3ProProtocol.ReportLength)
                 .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+                .ThenBy(item => ProductPriority(item.ProductId))
                 .FirstOrDefault();
         if (chosen is null)
         {
             return null;
         }
 
-        var wireless = chosen.ProductId is BlackSharkV3ProProtocol.WirelessProductId or
-            BlackSharkV3ProProtocol.AudioProductId;
+        // 0x101B is the USB control/audio interface reported by the issue machine.
+        // The 2.4 GHz receiver keeps PID 0x0577.
+        var wireless = BlackSharkV3ProProtocol.IsWirelessProductId(chosen.ProductId);
         var name = chosen.ProductId switch
         {
             BlackSharkV3ProProtocol.WirelessProductId => "Razer BlackShark V3 Pro (2.4 GHz)",
             BlackSharkV3ProProtocol.WiredProductId => "Razer BlackShark V3 Pro (USB)",
+            BlackSharkV3ProProtocol.AudioProductId => "Razer BlackShark V3 Pro (USB)",
             _ => "Razer BlackShark V3 Pro",
         };
         return new BlackSharkHeadsetConnection(
@@ -343,6 +346,13 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             _diagnostic?.Invoke($"BlackShark restore write failed: {exception.Message}");
         }
     }
+
+    private static int ProductPriority(ushort productId) => productId switch
+    {
+        BlackSharkV3ProProtocol.WirelessProductId => 0,
+        BlackSharkV3ProProtocol.WiredProductId => 1,
+        _ => 2,
+    };
 
     private static bool TryMapAncMode(byte raw, out BlackSharkAncMode mode)
     {

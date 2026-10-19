@@ -125,7 +125,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 
 
     /// <summary>
-    /// Sweeps the device command space and writes the accepted commands to a file, so an
+    /// Sweeps the read-only command space and writes the accepted commands to a file, so an
     /// unlisted device can be mapped without a packet capture.
     /// </summary>
     public async Task<string> ExportCommandScanAsync(CancellationToken cancellationToken = default)

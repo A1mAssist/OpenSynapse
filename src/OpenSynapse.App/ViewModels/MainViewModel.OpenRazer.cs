@@ -299,10 +299,10 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>
-    /// Scans the first connected OpenRazer device, so a model the catalog does not describe
-    /// can be mapped from the diagnostics page without first selecting it.
+    /// Scans the selected OpenRazer device, so a model the catalog does not describe
+    /// can be mapped without touching another connected device.
     /// </summary>
-    internal async Task<string> ScanFirstOpenRazerDeviceAsync(CancellationToken cancellationToken = default)
+    internal async Task<string> ScanSelectedOpenRazerDeviceAsync(CancellationToken cancellationToken = default)
     {
         if (_openRazerDeviceService is null)
         {
@@ -311,10 +311,10 @@ public sealed partial class MainViewModel
 
         // Discovery is event driven, so the list can still be empty right after a wake.
         await RefreshDevicesAsync(cancellationToken).ConfigureAwait(false);
-        var connection = CurrentOpenRazerConnections.FirstOrDefault(static device => device.IsReady);
-        if (connection is null)
+        var connection = SelectedOpenRazerDevice?.Connection;
+        if (connection is null || !connection.IsReady)
         {
-            throw new InvalidOperationException("No OpenRazer device is connected.");
+            throw new InvalidOperationException("No OpenRazer device is selected.");
         }
 
         var scan = await _openRazerDeviceService
