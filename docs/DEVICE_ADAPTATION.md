@@ -22,7 +22,6 @@ The collector is read-only. It finds the local Synapse product JavaScript and cr
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\Downloads\Collect-RazerProductBundle.ps1" `
-  -DeviceName "Blade 15" `
   -Sku "RZ09-030" `
   -UsbPid "0246"
 ```
@@ -71,10 +70,10 @@ Diagnostics is a confirmation tool. It does not generate a manifest, discover co
 
 ### Collector parameters
 
-- `-DeviceName` — required retail model name.
-- `-Sku` — optional SKU or model-number prefix.
-- `-UsbPid` — optional PID in `0246` or `1532:0246` form.
-- `-ProductId` — optional Synapse product ID.
+- At least one of `-Sku`, `-UsbPid`, or `-ProductId` is required.
+- `-Sku` — SKU or model-number prefix.
+- `-UsbPid` — PID in `0246` or `1532:0246` form.
+- `-ProductId` — Synapse product ID.
 - `-Root` — optional Razer AppEngine user-data directory.
 - `-MaxFiles` — optional package-size limit.
 

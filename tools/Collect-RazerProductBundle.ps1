@@ -1,6 +1,5 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)][string]$DeviceName,
     [string]$Sku,
     [string]$UsbPid,
     [string]$ProductId,
@@ -11,6 +10,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $Sku -and -not $UsbPid -and -not $ProductId) {
+    throw 'Specify at least one of -Sku, -UsbPid, or -ProductId.'
+}
 
 if (-not $Root) {
     $Root = Join-Path $env:LOCALAPPDATA 'Razer\RazerAppEngine\User Data'
@@ -27,7 +30,7 @@ if (Test-Path -LiteralPath $OutputDirectory) {
     throw "Output directory already exists: $OutputDirectory"
 }
 
-$patterns = @($DeviceName)
+$patterns = @()
 if ($Sku) { $patterns += $Sku }
 if ($UsbPid) {
     $pidText = ($UsbPid -replace '^0x', '' -replace ':', '').ToUpperInvariant()
@@ -138,7 +141,6 @@ foreach ($match in $selected) {
 $lines = @()
 $lines += 'OpenSynapse Razer product bundle collector'
 $lines += 'Generated: ' + (Get-Date).ToString('o')
-$lines += 'DeviceName: ' + $DeviceName
 $lines += 'Sku: ' + $Sku
 $lines += 'UsbPid: ' + $UsbPid
 $lines += 'ProductId: ' + $ProductId
