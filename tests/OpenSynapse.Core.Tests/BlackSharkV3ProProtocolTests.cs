@@ -96,16 +96,18 @@ public sealed class BlackSharkV3ProProtocolTests
     [Theory]
     [InlineData(0x0576)]
     [InlineData(0x0577)]
-    [InlineData(0x101B)]
-    public void SupportedProductIds_IncludeTheControlAndAudioPids(int productId)
+    public void SupportedProductIds_IncludeOnlyTheControlPids(int productId)
     {
         Assert.True(BlackSharkV3ProProtocol.IsSupportedProductId((ushort)productId));
     }
 
+    [Fact]
+    public void AudioOnlyPidIsNotAControlChannel() =>
+        Assert.False(BlackSharkV3ProProtocol.IsSupportedProductId(0x101B));
+
     [Theory]
     [InlineData(0x0576, false)]
     [InlineData(0x0577, true)]
-    [InlineData(0x101B, false)]
     public void TransportDirection_IsWirelessOnlyForTheReceiverPid(int productId, bool wireless)
     {
         Assert.Equal(wireless, BlackSharkV3ProProtocol.IsWirelessProductId((ushort)productId));
