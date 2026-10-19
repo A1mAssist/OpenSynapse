@@ -98,6 +98,8 @@ dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x
 
 提交代码或文档前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。生成的二进制文件、日志、抓包、逆向工程目录、凭据和本机配置不应进入 Git。
 
+如果需要为新设备补齐支持，请阅读 [设备适配协作指南](docs/DEVICE_ADAPTATION.zh-CN.md)，并使用[设备支持 issue 模板](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml)。不要把 Razer 专有文件或用户设备隐私数据上传到公开 issue。
+
 ## 许可
 
 OpenSynapse 采用 [MIT License](LICENSE)。第三方组件和随附资源继续遵循各自的许可证与分发条款。

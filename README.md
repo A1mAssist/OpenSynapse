@@ -100,6 +100,8 @@ Run the local build with:
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting code or documentation. Keep generated binaries, logs, captures, reverse-engineering workspaces, credentials, and machine-local configuration out of Git.
 
+If you own a device that needs support, follow the [Device Adaptation Guide](docs/DEVICE_ADAPTATION.md) and use the [device support issue form](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml). Never upload Razer proprietary files or personal device data to a public issue.
+
 ## License
 
 OpenSynapse is available under the [MIT License](LICENSE). Third-party components and bundled resources keep their own licenses and distribution terms.
