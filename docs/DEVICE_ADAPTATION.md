@@ -51,13 +51,21 @@ This path can reveal:
 
 It cannot by itself prove that the current device accepts a write, that a setting persists, or that a lighting effect is visible. Those still require hardware verification.
 
-### 3.3 USB capture
+### 3.3 OpenSynapse diagnostics
+
+Diagnostics is a confirmation tool, not a protocol source. If the device is already reachable through OpenSynapse, use the device read action or the diagnostics command scan to record the current values and check whether candidate GET commands respond. This is useful for comparing a JavaScript-derived command list with the real endpoint and for capturing a baseline before any write test.
+
+It does not discover the meaning of an unknown command, does not generate a manifest, and does not promote a capability. For a device OpenSynapse cannot open yet, diagnostics may have no path to the device; build a minimal read-only connection or use a bounded USB capture instead.
+
+The scan also does not make arbitrary writes safe. Only scanned GET responses are evidence of reachability; write semantics still require the full readback and restore test.
+
+### 3.4 USB capture
 
 Use a bounded capture only when the JavaScript and existing source do not expose the required command. Change one visible setting, capture a short window, restore the original setting, and keep raw captures outside the repository.
 
 A captured write is evidence of a transaction, not proof that the same command is safe to send from OpenSynapse. Promotion still requires a readback or deterministic behavior check.
 
-### 3.4 Native DLL or service analysis
+### 3.5 Native DLL or service analysis
 
 Use this only for functionality that is not reachable through the product JavaScript or HID capture, such as mapping-engine input or lighting-effect algorithms. Record the module version, function or offset, and the dynamic observation that justifies each constant.
 
@@ -95,10 +103,11 @@ If no files are found, open the device page in Synapse once, wait for it to fini
 1. **Triage** — confirm the exact model, PID, current support state, and requested controls.
 2. **Collect** — ask for the collector manifest or a private temporary link. Do not ask for a full Synapse installation.
 3. **Extract** — map the product calls to report headers, arguments, responses, and capability boundaries. Record the source and date.
-4. **Build a candidate** — add a manifest or protocol builder/parser and mark new capabilities `SourceBacked`. Do not expose production writes yet.
-5. **Test build** — ask the owner to run read-only checks first, then same-value and minimal-change writes with readback and restore.
-6. **Promote** — mark a capability `Verified` only after current-device evidence and restoration succeed. Update the device list and changelog.
-7. **Retain evidence** — keep reviewed constants, tests, and a short evidence note. Do not commit the original proprietary files or raw captures.
+4. **Probe and baseline** — if the device is already reachable, use the device read action or diagnostics command scan to record current values and confirm candidate GET responses. This is discovery and baseline capture, not a promotion step.
+5. **Build a candidate** — add a manifest or protocol builder/parser and mark new capabilities `SourceBacked`. Do not expose production writes yet.
+6. **Test build** — ask the owner to run read-only checks first, then same-value and minimal-change writes with readback and restore.
+7. **Promote** — mark a capability `Verified` only after current-device evidence and restoration succeed. Update the device list and changelog.
+8. **Retain evidence** — keep reviewed constants, tests, and a short evidence note. Do not commit the original proprietary files or raw captures.
 
 ## 6. Capability states
 
