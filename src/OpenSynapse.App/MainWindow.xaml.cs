@@ -288,6 +288,7 @@ public sealed partial class MainWindow : Window
         _aboutWindow?.Close();
         _aboutWindow = null;
         CloseThxAudioWindow();
+        CloseBladeFanCurveWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;

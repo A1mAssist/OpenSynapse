@@ -1865,6 +1865,7 @@
   <data name="BladeFanCurveColumnGpu" xml:space="preserve"><value>GPU 风扇</value></data>
   <data name="BladeFanCurveAddTier" xml:space="preserve"><value>添加档位</value></data>
   <data name="BladeFanCurveReset" xml:space="preserve"><value>恢复默认</value></data>
+  <data name="BladeFanCurveEdit" xml:space="preserve"><value>编辑</value></data>
   <data name="BladeFanCurveApply" xml:space="preserve"><value>应用</value></data>
   <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU 温度</value></data>
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU 温度</value></data>
