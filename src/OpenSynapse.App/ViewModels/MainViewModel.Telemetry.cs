@@ -164,7 +164,9 @@ public sealed partial class MainViewModel
             SetBladeFnKey(fnKeyMultimediaPrimary);
         }
         ApplyFirmwareMcuVersion(telemetry.BladeMcuVersion);
-        if (telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode)
+        _blade._bladeSkuHardwareConfiguration = telemetry.BladeSkuHardwareConfiguration;
+        if (_blade._bladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
+            telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode)
         {
             _blade._bladeNativeDisplayMode = nativeDisplayMode;
             BladeNativeDisplayModeIndex = (int)nativeDisplayMode;
@@ -546,6 +548,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanSetBladeFnKey));
         OnPropertyChanged(nameof(CanApplyBladeFnKey));
         _blade._bladeNativeDisplayMode = null;
+        _blade._bladeSkuHardwareConfiguration = null;
         BladeNativeDisplayModeIndex = -1;
         _blade._bladeLocalDimmingEnabled = null;
         BladeLocalDimmingEnabled = false;

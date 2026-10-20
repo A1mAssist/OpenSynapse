@@ -105,7 +105,11 @@ public readonly record struct BladeSkuHardwareConfiguration(
     bool Dds,
     bool MiniLedResolution,
     bool IllegalBatterySupport,
-    byte Raw);
+    byte Raw)
+{
+    /// <summary>The UHD/FHD selector belongs to the dual-resolution mini-LED panel.</summary>
+    public bool SupportsNativeDisplayMode => MiniLedResolution;
+}
 
 public sealed record ViperDpiStageTelemetry(byte Number, int X, int Y);
 

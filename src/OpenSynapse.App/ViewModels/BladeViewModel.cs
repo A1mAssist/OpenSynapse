@@ -36,6 +36,7 @@ internal sealed class BladeViewModel
     internal bool? _bladeStartupAnimationEnabled;
     internal bool _bladeStartupAnimationSelection;
     internal BladeNativeDisplayMode? _bladeNativeDisplayMode;
+    internal BladeSkuHardwareConfiguration? _bladeSkuHardwareConfiguration;
     internal BladeLighting2023Effect? _bladeKeyboardEffect2023;
     internal int _bladeNativeDisplayModeIndex = -1;
     internal string _bladeFnKeyText = "--";
