@@ -103,6 +103,51 @@ public sealed class OpenRazerPollingRateTests
         }
     }
 
+    /// <summary>
+    /// The firmware answers a successful write without echoing the payload, so the rate
+    /// read back afterwards is the only evidence that the write landed. A device that
+    /// ignores the write must be reported with the rate it actually holds.
+    /// </summary>
+    [Fact]
+    public async Task PollingRateWriteReportsTheRateTheDeviceHoldsAfterwards()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B2)!;
+        var transport = new PollingRateWriteTransport(storedCode: 0x01);
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.PollingRateRead,
+                OpenRazerBackendCapability.PollingRateWrite,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var reported = await service.SetPollingRateAsync(connection, 8000);
+
+        Assert.Equal(8000, reported);
+    }
+
+    [Fact]
+    public async Task PollingRateWriteReportsTheOldRateWhenTheDeviceIgnoresTheWrite()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B2)!;
+        var transport = new PollingRateWriteTransport(storedCode: 0x04);
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.PollingRateRead,
+                OpenRazerBackendCapability.PollingRateWrite,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var reported = await service.SetPollingRateAsync(connection, 8000);
+
+        Assert.Equal(2000, reported);
+    }
+
     private sealed class ShortPollingRateTransport : IRazerFeatureTransport
     {
         internal List<byte[]> Requests { get; } = [];
@@ -124,6 +169,77 @@ public sealed class OpenRazerPollingRateTests
                 // The firmware declares a one-byte payload and puts the rate in argument 1.
                 response[6] = 0x01;
                 response[RazerFeatureReport.ArgumentsOffset + 1] = 0x04;
+            }
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+
+    /// <summary>
+    /// A device that accepts the write but stays silent on the read-back must not turn a
+    /// completed write into a failure.
+    /// </summary>
+    [Fact]
+    public async Task PollingRateWriteSucceedsWhenTheReadBackGoesUnanswered()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B2)!;
+        var transport = new SilentReadBackTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.PollingRateRead,
+                OpenRazerBackendCapability.PollingRateWrite,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var reported = await service.SetPollingRateAsync(connection, 8000);
+
+        Assert.Null(reported);
+    }
+
+    private sealed class SilentReadBackTransport : IRazerFeatureTransport
+    {
+        public Task<byte[]> QueryAsync(
+            string devicePath, byte transactionId, byte dataSize, byte commandClass, byte commandId,
+            ReadOnlyMemory<byte> arguments, TimeSpan deviceWait, CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) => throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath, ReadOnlyMemory<byte> request, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false)
+        {
+            if (request.Span[8] == 0xC0)
+            {
+                throw new RazerDeviceTimeoutException("The device did not answer this command.");
+            }
+
+            var response = request.ToArray();
+            response[1] = 0x02;
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class PollingRateWriteTransport(byte storedCode) : IRazerFeatureTransport
+    {
+        public Task<byte[]> QueryAsync(
+            string devicePath, byte transactionId, byte dataSize, byte commandClass, byte commandId,
+            ReadOnlyMemory<byte> arguments, TimeSpan deviceWait, CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) => throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath, ReadOnlyMemory<byte> request, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false)
+        {
+            var response = request.ToArray();
+            response[1] = 0x02;
+            if (request.Span[8] == 0xC0)
+            {
+                // The firmware declares a one-byte payload and puts the rate in argument 1.
+                response[6] = 0x01;
+                response[RazerFeatureReport.ArgumentsOffset + 1] = storedCode;
             }
             response[89] = RazerFeatureReport.CalculateCrc(response);
             return Task.FromResult(response);

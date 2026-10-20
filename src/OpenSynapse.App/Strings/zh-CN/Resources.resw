@@ -1278,6 +1278,14 @@
     <value>已应用到设备</value>
     <comment>已应用到设备</comment>
   </data>
+  <data name="OpenRazerPollingRateMismatch" xml:space="preserve">
+    <value>设备报告 {0} Hz，期望 {1} Hz</value>
+    <comment>设备报告的实际轮询率与请求值不一致</comment>
+  </data>
+  <data name="OpenRazerDpiMismatch" xml:space="preserve">
+    <value>设备报告 {0} x {1} DPI，期望 {2} x {3} DPI</value>
+    <comment>设备报告的实际 DPI 与请求值不一致</comment>
+  </data>
   <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
     <value>设备返回的协议数据格式错误。</value>
     <comment>OpenRazer 协议数据格式错误</comment>
