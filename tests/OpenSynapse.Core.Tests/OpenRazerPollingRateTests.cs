@@ -49,5 +49,49 @@ public sealed class OpenRazerPollingRateTests
 
         Assert.Equal(500, OpenRazerMouseProtocol.ParsePollingRate(response, highRate: false));
     }
-}
 
+    /// <summary>
+    /// A DeathAdder V3 that answers the polling-rate query with a one-byte payload must
+    /// still report a rate instead of dropping the capability as malformed.
+    /// </summary>
+    [Fact]
+    public async Task DeathAdderV3ReportsItsPollingRateFromAShortResponse()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B2)!;
+        var transport = new ShortPollingRateTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved, OpenRazerDeviceService.GetCapabilities(device),
+            OpenRazerDeviceService.GetLightingZoneCapabilities(device), null);
+
+        var state = await service.ReadBasicStateAsync(connection);
+
+        Assert.Equal(2000, state.PollingRate);
+        Assert.DoesNotContain(OpenRazerBackendCapability.PollingRateRead, state.UnsupportedCapabilities);
+        Assert.Empty(state.Errors);
+    }
+
+    private sealed class ShortPollingRateTransport : IRazerFeatureTransport
+    {
+        public Task<byte[]> QueryAsync(
+            string devicePath, byte transactionId, byte dataSize, byte commandClass, byte commandId,
+            ReadOnlyMemory<byte> arguments, TimeSpan deviceWait, CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) => throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath, ReadOnlyMemory<byte> request, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false)
+        {
+            var response = request.ToArray();
+            response[1] = 0x02;
+            if (request.Span[8] == 0xC0)
+            {
+                // The firmware declares a one-byte payload and puts the rate in argument 1.
+                response[6] = 0x01;
+                response[RazerFeatureReport.ArgumentsOffset + 1] = 0x04;
+            }
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+}
