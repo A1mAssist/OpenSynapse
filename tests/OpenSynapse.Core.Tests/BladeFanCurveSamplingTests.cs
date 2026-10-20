@@ -35,6 +35,7 @@ public sealed class BladeFanCurveSamplingTests
         await using var runtime = new BladeFanCurveRuntime(
             (_, _) => ValueTask.FromResult(original),
             (_, _, _, _, _) => ValueTask.FromResult(original),
+            (_, _, _, _, _) => ValueTask.CompletedTask,
             (cpu, gpu, _) =>
             {
                 requested.TrySetResult((cpu, gpu));
@@ -48,5 +49,34 @@ public sealed class BladeFanCurveSamplingTests
         var actual = await requested.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal((cpuExpected, gpuExpected), actual);
         await runtime.StopAsync();
+    }
+
+    [Fact]
+    public async Task FixedControlUsesTheFixedSetterAndRestoresBothZones()
+    {
+        var original = new BladeFanControlSnapshot(
+            BladePerformanceMode.Balanced, BladeFanMode.Manual, 3200, 3300);
+        var writes = new List<(BladeFanMode Mode, int? CpuRpm, int? GpuRpm)>();
+        await using var runtime = new BladeFanCurveRuntime(
+            (_, _) => ValueTask.FromResult(original),
+            (_, _, _, _, _) => throw new InvalidOperationException("The curve setter must not drive fixed fan control."),
+            (_, mode, cpu, gpu, _) =>
+            {
+                writes.Add((mode, cpu, gpu));
+                return ValueTask.CompletedTask;
+            },
+            (_, _, _) => ValueTask.FromResult<(double?, double?)>((null, null)),
+            TimeSpan.FromHours(1));
+
+        await runtime.StartFixedAsync([], BladeFanMode.Manual, 3000);
+        Assert.Equal([(BladeFanMode.Manual, (int?)3000, (int?)3000)], writes);
+
+        await runtime.StopAsync();
+        Assert.Equal(
+            [
+                (BladeFanMode.Manual, (int?)3000, (int?)3000),
+                (BladeFanMode.Manual, (int?)3200, (int?)3300),
+            ],
+            writes);
     }
 }
