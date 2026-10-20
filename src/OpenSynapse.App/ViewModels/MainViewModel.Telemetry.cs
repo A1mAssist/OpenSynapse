@@ -94,6 +94,7 @@ public sealed partial class MainViewModel
         }
         if (telemetry.BladeFanMode is BladeFanMode fanMode)
         {
+            CanSetBladeFan = true;
             BladeFanText = fanMode switch
             {
                 BladeFanMode.Automatic when telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu =>
@@ -525,6 +526,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeCustomPerformanceVisibility));
         CanSetBladePerformanceMode = false;
         BladeFanText = "--";
+        CanSetBladeFan = false;
         BladeFanModeText = "--";
         BladeFanTargetRpmText = "--";
         BladeCurrentFanCpuRpmText = "--";

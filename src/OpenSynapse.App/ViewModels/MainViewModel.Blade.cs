@@ -1026,6 +1026,7 @@ public sealed partial class MainViewModel
             if (SetField(ref _blade._canSetBladePerformanceMode, value))
             {
                 OnPropertyChanged(nameof(CanSetBladePerformancePowerProfile));
+                OnPropertyChanged(nameof(BladePerformanceModeCardVisibility));
             }
         }
     }
@@ -1033,6 +1034,17 @@ public sealed partial class MainViewModel
     public bool CanSetBladePerformancePowerProfile => CanSetBladePerformanceMode;
     public bool CanSetBladeLogoPowerProfile => CanSetBladeLogo;
     public string BladeFanText { get => _blade._bladeFanText; private set => SetField(ref _blade._bladeFanText, value); }
+    public bool CanSetBladeFan
+    {
+        get => _blade._canSetBladeFan;
+        private set
+        {
+            if (SetField(ref _blade._canSetBladeFan, value))
+            {
+                OnPropertyChanged(nameof(BladeFanCardVisibility));
+            }
+        }
+    }
     public string BladeFanModeText { get => _blade._bladeFanModeText; private set => SetField(ref _blade._bladeFanModeText, value); }
     public string BladeFanTargetRpmText { get => _blade._bladeFanTargetRpmText; private set => SetField(ref _blade._bladeFanTargetRpmText, value); }
     public string BladeCurrentFanCpuRpmText { get => _blade._bladeCurrentFanCpuRpmText; private set => SetField(ref _blade._bladeCurrentFanCpuRpmText, value); }
@@ -1140,7 +1152,17 @@ public sealed partial class MainViewModel
     public string BladeChargeLimitText { get => _blade._bladeChargeLimitText; private set => SetField(ref _blade._bladeChargeLimitText, value); }
     public IReadOnlyList<string> BladeChargeLimitOptions => AppStrings.Texts("50%", "55%", "60%", "65%", "70%", "75%", "80%", "Text_0E45FC12");
     public int BladeChargeLimitIndex { get => _blade._bladeChargeLimitIndex; set => SetField(ref _blade._bladeChargeLimitIndex, value); }
-    public bool CanSetBladeChargeLimit { get => _blade._canSetBladeChargeLimit; private set => SetField(ref _blade._canSetBladeChargeLimit, value); }
+    public bool CanSetBladeChargeLimit
+    {
+        get => _blade._canSetBladeChargeLimit;
+        private set
+        {
+            if (SetField(ref _blade._canSetBladeChargeLimit, value))
+            {
+                OnPropertyChanged(nameof(BladeChargeLimitCardVisibility));
+            }
+        }
+    }
     public IReadOnlyList<string> BladeCpuBoostOptions
     {
         get
@@ -1193,12 +1215,42 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeMaxFanVisibility));
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
+        OnPropertyChanged(nameof(BladeCpuBoostVisibility));
+        OnPropertyChanged(nameof(BladeGpuBoostVisibility));
+        OnPropertyChanged(nameof(BladePerformanceModeCardVisibility));
+        OnPropertyChanged(nameof(BladeFanCardVisibility));
+        OnPropertyChanged(nameof(BladeChargeLimitCardVisibility));
+        OnPropertyChanged(nameof(BladeLogoCardVisibility));
         OnPropertyChanged(nameof(CanSetBladeLightingSettings));
         OnPropertyChanged(nameof(BladeFanCurveVisibility));
     }
 
     /// <summary>Collapses the Max Fan column entirely on models without that switch.</summary>
     public Visibility BladeMaxFanVisibility => _blade.SupportsMaxFan
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    /// <summary>
+    /// Collapses a whole control when the model answered none of its reads. An OpenRazer-only
+    /// Blade never sees the Power Mode Control bitmask, so these cards would otherwise render
+    /// a row of "--" placeholders that look like a broken device.
+    /// </summary>
+    public Visibility BladePerformanceModeCardVisibility => CanSetBladePerformanceMode
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeFanCardVisibility => CanSetBladeFan
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeChargeLimitCardVisibility => CanSetBladeChargeLimit
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeLogoCardVisibility => CanSetBladeLogo
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeCpuBoostVisibility => _blade._hasBladeCpuBoost
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility BladeGpuBoostVisibility => CanSetBladeGpuBoost
         ? Visibility.Visible
         : Visibility.Collapsed;
     public Visibility BladeCustomPerformanceVisibility => IsBladeCustomMode
@@ -1215,6 +1267,7 @@ public sealed partial class MainViewModel
             if (SetField(ref _blade._canSetBladeLogo, value))
             {
                 OnPropertyChanged(nameof(CanSetBladeLogoPowerProfile));
+                OnPropertyChanged(nameof(BladeLogoCardVisibility));
             }
         }
     }
