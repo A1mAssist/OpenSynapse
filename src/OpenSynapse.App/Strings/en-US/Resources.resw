@@ -907,6 +907,9 @@
   <data name="LiveSampleTime" xml:space="preserve">
     <value>Live sample {0:HH:mm:ss}</value>
   </data>
+  <data name="TelemetryPeakRange" xml:space="preserve">
+    <value>Min {0} / Max {1} while running</value>
+  </data>
   <data name="StartupSettingFailed" xml:space="preserve">
     <value>Startup setting failed: {0}</value>
   </data>
