@@ -176,6 +176,18 @@ public sealed partial class MainWindow
         }
     }
 
+    private async void BladeFanAutomaticModeClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.SelectBladeFanAutomaticModeAsync(_lifetime.Token);
+
+    private void BladeFanFixedModeClick(object sender, RoutedEventArgs e) =>
+        _viewModel.ShowBladeFanFixedMode();
+
+    private void BladeFanCurveModeClick(object sender, RoutedEventArgs e) =>
+        _viewModel.ShowBladeFanCurveMode();
+
+    private async void ApplyBladeFanFixedRpmClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.SelectBladeFanFixedModeAsync(_lifetime.Token);
+
     private async void ApplyBladeFanCurveClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladeFanCurveEditorAsync(_lifetime.Token);
 

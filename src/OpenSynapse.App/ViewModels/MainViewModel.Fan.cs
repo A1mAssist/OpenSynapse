@@ -9,35 +9,55 @@ public sealed partial class MainViewModel
     public async Task ApplyBladeFixedFanAsync(
         BladeFanMode mode,
         int? targetRpm,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        await ApplyBladeFanFixedAsync(mode, targetRpm, cancellationToken);
+
+    /// <summary>
+    /// Writes a fixed fan mode into the performance power profile, the same slot Max Fan and
+    /// the fan curve use, so one power source cannot leave a stale curve behind.
+    /// </summary>
+    private async Task ApplyBladeFanFixedAsync(
+        BladeFanMode mode,
+        int? targetRpm,
+        CancellationToken cancellationToken)
     {
         await RunDeviceOperationAsync(AppStrings.Text("Text_B436A1F2"), async () =>
         {
             var previous = _profile.Clone();
-            _profile.Global.Blade.FanCurve = null;
-            _profile.Global.Blade.FanMode = (byte)mode;
-            _profile.Global.Blade.FanTargetRpm = targetRpm;
+            var target = EditablePerformanceBladeProfile;
+            target.FanCurve = null;
+            target.FanMode = (byte)mode;
+            target.FanTargetRpm = targetRpm;
+
             var blade = _deviceDescriptors.FirstOrDefault(device =>
                 device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
-            var result = await ApplyLoadedFanProfileAsync(
-                blade,
-                CurrentPowerSource,
-                cancellationToken);
-            if (result.Error is not null)
+            if (IsSelectedPerformancePowerActive)
             {
-                _profile = previous;
-                throw new InvalidOperationException(result.Error);
+                var result = await ApplyLoadedFanProfileAsync(blade, CurrentPowerSource, cancellationToken);
+                if (result.Error is not null)
+                {
+                    _profile = previous;
+                    throw new InvalidOperationException(result.Error);
+                }
+
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    _profile = previous;
+                    await ApplyLoadedFanProfileAsync(blade, CurrentPowerSource, cancellationToken);
+                    throw new InvalidOperationException(AppStrings.Text("Text_3D32CBBD"));
+                }
+
+                RefreshBladePerformanceEditor();
+                return;
             }
 
             if (!await SaveProfileAsync(cancellationToken))
             {
                 _profile = previous;
-                await ApplyLoadedFanProfileAsync(
-                    blade,
-                    CurrentPowerSource,
-                    cancellationToken);
-                throw new InvalidOperationException(AppStrings.Text("Text_3D32CBBD"));
+                throw new InvalidOperationException(AppStrings.Text("Text_CC12A6F5"));
             }
+
+            RefreshBladePerformanceEditor();
         }, cancellationToken);
     }
 
