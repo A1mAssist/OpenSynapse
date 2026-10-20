@@ -1042,6 +1042,7 @@ public sealed partial class MainViewModel
             if (SetField(ref _blade._canSetBladeFan, value))
             {
                 OnPropertyChanged(nameof(BladeFanCardVisibility));
+                OnPropertyChanged(nameof(BladeFanControlVisibility));
             }
         }
     }
@@ -1219,9 +1220,11 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeGpuBoostVisibility));
         OnPropertyChanged(nameof(BladePerformanceModeCardVisibility));
         OnPropertyChanged(nameof(BladeFanCardVisibility));
+        OnPropertyChanged(nameof(BladeFanControlVisibility));
         OnPropertyChanged(nameof(BladeChargeLimitCardVisibility));
         OnPropertyChanged(nameof(BladeLogoCardVisibility));
         OnPropertyChanged(nameof(CanSetBladeLightingSettings));
+        OnPropertyChanged(nameof(BladeFanFixedVisibility));
         OnPropertyChanged(nameof(BladeFanCurveVisibility));
     }
 
@@ -1241,6 +1244,12 @@ public sealed partial class MainViewModel
     public Visibility BladeFanCardVisibility => CanSetBladeFan
         ? Visibility.Visible
         : Visibility.Collapsed;
+
+    /// <summary>Only show fan mode controls a model has an admitted write for.</summary>
+    public Visibility BladeFanControlVisibility =>
+        CanSetBladeFan && (_blade.SupportsFixedFan || _blade.SupportsFanCurve)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     public Visibility BladeChargeLimitCardVisibility => CanSetBladeChargeLimit
         ? Visibility.Visible
         : Visibility.Collapsed;

@@ -540,6 +540,10 @@ public sealed partial class MainViewModel
                 }
 
                 var mode = (BladeFanMode)rawMode;
+                if (mode == BladeFanMode.Manual && !_blade.SupportsFixedFan)
+                {
+                    return new(AppStrings.Text("Text_43154C61"), Changed: false);
+                }
                 if (mode == BladeFanMode.Manual && profile.FanTargetRpm is null ||
                     mode == BladeFanMode.Automatic && profile.FanTargetRpm is not null)
                 {
