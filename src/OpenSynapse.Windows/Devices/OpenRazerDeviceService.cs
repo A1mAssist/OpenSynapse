@@ -761,6 +761,13 @@ public sealed class OpenRazerDeviceService
     private void WriteDiagnostic(ushort productId, string message) =>
         _diagnosticLog?.TryWrite($"openrazer-{productId:X4}", message);
 
+    /// <summary>
+    /// Records why a control was skipped before it reached the device, so a write that
+    /// never leaves the app is distinguishable from one the firmware refused.
+    /// </summary>
+    public void LogSkippedControl(ushort productId, string message) =>
+        _diagnosticLog?.TryWrite($"openrazer-{productId:X4}", message);
+
     internal static string DescribeRejected(IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> candidates) =>
         string.Join("; ", candidates.Select(candidate =>
             $"{RazerFeatureTransport.DescribeDevicePath(candidate.DevicePath)} " +
@@ -1141,6 +1148,11 @@ public sealed class OpenRazerDeviceService
         CancellationToken cancellationToken)
     {
         RequireReady(connection);
+        // The transport log only records a request once it reaches the HID layer, so a
+        // command dropped before that point would be invisible. Record the application
+        // side as well to tell "never sent" apart from "sent and refused".
+        WriteDiagnostic(connection.Definition.ProductId,
+            $"send {request.BuilderName}: txn=0x{request.Report[2]:X2}, size={request.Report[6]}, class=0x{request.Report[7]:X2}, command=0x{request.Report[8]:X2}, args={Convert.ToHexString(request.Report.AsSpan(RazerFeatureReport.ArgumentsOffset, request.Report[6]))}");
         try
         {
             return await _transport.QueryPreparedAsync(

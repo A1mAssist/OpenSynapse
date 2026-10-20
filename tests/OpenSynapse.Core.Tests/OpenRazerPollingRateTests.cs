@@ -71,8 +71,42 @@ public sealed class OpenRazerPollingRateTests
         Assert.Empty(state.Errors);
     }
 
+    /// <summary>
+    /// The polling-rate write must reach the device as the two reports OpenRazer sends
+    /// for a DeathAdder V3: the rate in argument 1, once with argument 0 = 0x00 and once
+    /// with argument 0 = 0x01.
+    /// </summary>
+    [Fact]
+    public async Task DeathAdderV3WritesBothPollingRateReports()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B2)!;
+        var transport = new ShortPollingRateTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved, OpenRazerDeviceService.GetCapabilities(device),
+            OpenRazerDeviceService.GetLightingZoneCapabilities(device), null);
+
+        await service.SetPollingRateAsync(connection, 1000);
+
+        var writes = transport.Requests
+            .Where(request => request[8] == 0x40)
+            .ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal(0x00, writes[0][RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x01, writes[1][RazerFeatureReport.ArgumentsOffset]);
+        foreach (var write in writes)
+        {
+            Assert.Equal(0x1F, write[2]);
+            Assert.Equal(0x02, write[6]);
+            Assert.Equal(0x00, write[7]);
+            Assert.Equal(0x08, write[RazerFeatureReport.ArgumentsOffset + 1]);
+        }
+    }
+
     private sealed class ShortPollingRateTransport : IRazerFeatureTransport
     {
+        internal List<byte[]> Requests { get; } = [];
+
         public Task<byte[]> QueryAsync(
             string devicePath, byte transactionId, byte dataSize, byte commandClass, byte commandId,
             ReadOnlyMemory<byte> arguments, TimeSpan deviceWait, CancellationToken cancellationToken,
@@ -83,6 +117,7 @@ public sealed class OpenRazerPollingRateTests
             CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false)
         {
             var response = request.ToArray();
+            Requests.Add(response.ToArray());
             response[1] = 0x02;
             if (request.Span[8] == 0xC0)
             {

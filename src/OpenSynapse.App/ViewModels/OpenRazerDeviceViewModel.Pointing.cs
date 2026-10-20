@@ -13,8 +13,11 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 {
-    public Task ApplyPollingAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(OpenRazerBackendCapability.PollingRateWrite,
+    public Task ApplyPollingAsync(CancellationToken cancellationToken = default)
+    {
+        _service.LogSkippedControl(Connection.Definition.ProductId,
+            $"apply polling rate requested: selected={SelectedPollingRate}, canWrite={CanWritePolling}, canEdit={CanEditPolling}, busy={IsPollingBusy}, options=[{string.Join(",", PollingOptions)}]");
+        return RunWriteAsync(OpenRazerBackendCapability.PollingRateWrite,
             () => IsPollingBusy, value => IsPollingBusy = value,
             async () =>
             {
@@ -24,6 +27,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                     SelectedPollingRate = await _service.GetPollingRateAsync(Connection, cancellationToken);
                 UpdateBasic(state => state with { PollingRate = SelectedPollingRate });
             }, cancellationToken);
+    }
 
     public Task ApplyDpiAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(OpenRazerBackendCapability.DpiWrite,
