@@ -31,6 +31,11 @@ public sealed partial class MainViewModel
 
             var blade = _deviceDescriptors.FirstOrDefault(device =>
                 device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
+            _diagnosticLog.TryWrite(
+                "blade-fan",
+                $"Fixed fan apply: mode={mode}, target={targetRpm?.ToString() ?? "automatic"}, " +
+                $"power={CurrentPowerSource}, active={IsSelectedPerformancePowerActive}, " +
+                $"blade={blade?.Id ?? "none"}.");
             if (IsSelectedPerformancePowerActive)
             {
                 var result = await ApplyLoadedFanProfileAsync(blade, CurrentPowerSource, cancellationToken);

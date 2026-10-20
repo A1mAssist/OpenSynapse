@@ -9,6 +9,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     private const int MaximumConsecutiveMissingSamples = 3;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, CancellationToken, ValueTask<BladeFanControlSnapshot>> _read;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> _set;
+    private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int?, int?, CancellationToken, ValueTask> _setFixed;
     private readonly Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> _sample;
     private readonly TimeSpan _interval;
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -24,6 +25,9 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         : this(
             RequireReader(reader).ReadBladeFanControlStateAsync,
             RequireReader(reader).SetBladeFanTargetsAsync,
+            async (devices, mode, cpu, gpu, cancellationToken) =>
+                await RequireReader(reader).SetBladeFanAsync(
+                    devices, mode, cpu, gpu, cancellationToken),
             RequireMonitor(monitor).SampleTemperaturesAsync,
             DefaultInterval)
     {
@@ -32,11 +36,13 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     internal BladeFanCurveRuntime(
         Func<IReadOnlyList<DeviceDescriptor>, CancellationToken, ValueTask<BladeFanControlSnapshot>> read,
         Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> set,
+        Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int?, int?, CancellationToken, ValueTask> setFixed,
         Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> sample,
         TimeSpan interval)
     {
         _read = read ?? throw new ArgumentNullException(nameof(read));
         _set = set ?? throw new ArgumentNullException(nameof(set));
+        _setFixed = setFixed ?? throw new ArgumentNullException(nameof(setFixed));
         _sample = sample ?? throw new ArgumentNullException(nameof(sample));
         if (interval <= TimeSpan.Zero)
         {
@@ -86,23 +92,20 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             var gpuTarget = targetRpm ?? original.GpuTargetRpm;
             try
             {
-                await _set(
+                // Fixed writes use the fixed-fan gate; SetBladeFanTargetsAsync is
+                // curve-only and rejects models such as the 0245.
+                await _setFixed(
                     deviceSnapshot,
                     mode,
-                    cpuTarget,
-                    gpuTarget,
+                    mode == BladeFanMode.Manual ? cpuTarget : null,
+                    mode == BladeFanMode.Manual ? gpuTarget : null,
                     cancellationToken).ConfigureAwait(false);
             }
             catch (Exception exception)
             {
                 try
                 {
-                    await _set(
-                        deviceSnapshot,
-                        original.Mode,
-                        original.CpuTargetRpm,
-                        original.GpuTargetRpm,
-                        CancellationToken.None).ConfigureAwait(false);
+                    await RestoreFixedAsync(deviceSnapshot, original).ConfigureAwait(false);
                 }
                 catch (Exception restoreException)
                 {
@@ -310,18 +313,23 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
 
         try
         {
-            await _set(
-                devices,
-                original.Mode,
-                original.CpuTargetRpm,
-                original.GpuTargetRpm,
-                CancellationToken.None).ConfigureAwait(false);
+            await RestoreFixedAsync(devices, original).ConfigureAwait(false);
         }
         catch (Exception exception)
         {
             throw new InvalidOperationException("The previous state could not be restored after stopping fixed fan control.", exception);
         }
     }
+
+    private ValueTask RestoreFixedAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeFanControlSnapshot original) =>
+        _setFixed(
+            devices,
+            original.Mode,
+            original.Mode == BladeFanMode.Manual ? original.CpuTargetRpm : null,
+            original.Mode == BladeFanMode.Manual ? original.GpuTargetRpm : null,
+            CancellationToken.None);
 
     private void EnsureStopped()
     {
