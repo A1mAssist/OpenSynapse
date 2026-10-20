@@ -979,7 +979,7 @@
     <value>The device rejected this OpenRazer command. This capability has been disabled.</value>
   </data>
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
-    <value>This device connection is unavailable.</value>
+    <value>Device communication stopped; writes are paused. Rescan the device to restore control.</value>
   </data>
   <data name="OpenRazerDeviceNotReady" xml:space="preserve">
     <value>The {0} may be powered off or asleep. Check the device power.</value>
@@ -1292,7 +1292,7 @@
   <data name="Text_A3A74479" xml:space="preserve"><value>Mouse mat</value></data>
   <data name="Text_2E486BCB" xml:space="preserve"><value>Monitor</value></data>
   <data name="Text_71E692AA" xml:space="preserve"><value>Accessory</value></data>
-  <data name="Text_C0E6F3C9" xml:space="preserve"><value>Device unavailable</value></data>
+  <data name="Text_C0E6F3C9" xml:space="preserve"><value>Communication stopped</value></data>
   <data name="Text_C097B416" xml:space="preserve"><value>Resolved</value></data>
   <data name="Text_242E08F4" xml:space="preserve"><value>Control endpoint unresolved</value></data>
   <data name="Text_D3632B96" xml:space="preserve"><value>Busy or unavailable</value></data>

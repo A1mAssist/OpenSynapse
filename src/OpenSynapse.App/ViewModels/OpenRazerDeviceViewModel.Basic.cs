@@ -68,6 +68,25 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Clears the paused-write state so a rescan can recover a device whose transport
+    /// dropped. Without this the flag survives every rescan because every read path
+    /// returns early while it is set.
+    /// </summary>
+    public void ClearRequiresRescan()
+    {
+        if (!RequiresRescan)
+        {
+            return;
+        }
+
+        RequiresRescan = false;
+        _unsupported.Clear();
+        ErrorText = string.Empty;
+        OnCapabilityChanged();
+        OnBasicStateChanged();
+    }
+
     public Task LoadAsync(CancellationToken cancellationToken = default) =>
         LoadBasicStateAsync(cancellationToken);
 

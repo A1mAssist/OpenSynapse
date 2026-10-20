@@ -912,6 +912,38 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(code, request.Report[RazerFeatureReport.ArgumentsOffset]);
     }
 
+    [Theory]
+    // A mouse that declares get/set_polling_rate must also publish the rate list, otherwise
+    // the polling card stays hidden and takes the battery readout down with it.
+    [InlineData(0x009C)]
+    [InlineData(0x00B9)]
+    [InlineData(0x0080)]
+    public void DeclaredPollingControlAlwaysPublishesRates(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+
+        if (capabilities.Contains(OpenRazerBackendCapability.PollingRateRead) ||
+            capabilities.Contains(OpenRazerBackendCapability.PollingRateWrite))
+        {
+            Assert.NotEmpty(device.PollingRates);
+        }
+    }
+
+    [Fact]
+    public void DeathAdderV2XHyperSpeedPublishesBatteryAndItsPollingRates()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x009C)!;
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+
+        Assert.Equal([125, 500, 1000], device.PollingRates);
+        Assert.Contains(OpenRazerBackendCapability.BatteryRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.DpiRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.DpiWrite, capabilities);
+    }
+
     [Fact]
     public void EveryPublishedDeviceCapabilityCanConstructItsDefaultRequest()
     {

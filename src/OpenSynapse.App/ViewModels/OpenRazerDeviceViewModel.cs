@@ -242,8 +242,10 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public Visibility SerialVisibility => VisibleWhen(!string.IsNullOrWhiteSpace(_basicState?.Serial));
     public Visibility SoftwareModeVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DeviceModeRead));
     public Visibility BatteryVisibility => VisibleWhen(HasBatteryData);
-    public Visibility BatteryBasicVisibility => VisibleWhen(!IsMouseDevice || !HasPollingSection);
-    public Visibility BatteryPollingVisibility => VisibleWhen(IsMouseDevice && HasPollingSection && HasBatteryData);
+    // Battery follows its own data, never the polling card: a mouse whose pollRates list
+    // is empty would otherwise lose the battery readout entirely.
+    public Visibility BatteryBasicVisibility => VisibleWhen(HasBatteryData && (!IsMouseDevice || !HasPollingSection));
+    public Visibility BatteryPollingVisibility => VisibleWhen(IsMouseDevice && HasPollingSection);
     public Visibility BatteryPercentVisibility => VisibleWhen(Has(OpenRazerBackendCapability.BatteryRead));
     public Visibility ChargingVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ChargingRead));
     public bool IsBasicBusy { get => _isBasicBusy; private set => SetField(ref _isBasicBusy, value); }
