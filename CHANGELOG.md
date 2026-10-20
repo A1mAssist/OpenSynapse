@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 系统遥测的 CPU/GPU 温度、功耗和频率现在支持悬停查看本机运行期间的最小值与最大值。
+- The CPU and GPU temperature, power, and frequency readings in the system telemetry card now show the lowest and highest values seen while OpenSynapse was running when hovered.
 - 新增 Razer BlackShark V3 Pro（`1532:0576` 有线、`1532:0577` 2.4 GHz）支持：电量、充电状态、侧音、THX Spatial Audio、主动降噪和游戏/语音平衡。
 - Added Razer BlackShark V3 Pro support (`1532:0576` wired, `1532:0577` 2.4 GHz): battery, charging state, sidetone, THX Spatial Audio, ANC, and game/chat balance.
 
