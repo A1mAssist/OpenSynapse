@@ -44,7 +44,7 @@ public sealed class Blade0245ProbeTests
         {
             Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
             Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
-            Assert.False(BladeModelCapabilities.SupportsFixedFan(productId));
+            Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
             Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
             Assert.Empty(BladeModelCapabilities.CpuBoostModesFor(productId));
             Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Low));
@@ -61,12 +61,17 @@ public sealed class Blade0245ProbeTests
         response[RazerFeatureReport.ArgumentsOffset + 2] = 0x35;
         response[89] = RazerFeatureReport.CalculateCrc(response);
 
+        var maximumRpm = BladeModelCapabilities.MaximumFanTargetRpmFor(0x0245);
         Assert.Equal(
             5300,
-            BladeFanProtocol.ParseTarget(
+            BladeFanProtocol.ParseTarget(response, BladeFanProtocol.ZoneCpu, maximumRpm));
+        Assert.Equal(
+            5300,
+            BladeFanProtocol.ParseCurveTarget(
                 response,
                 BladeFanProtocol.ZoneCpu,
-                BladeModelCapabilities.MaximumFanTargetRpmFor(0x0245)));
+                BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu),
+                maximumRpm));
         Assert.Throws<InvalidOperationException>(() =>
             BladeFanProtocol.ParseTarget(response, BladeFanProtocol.ZoneCpu));
     }
