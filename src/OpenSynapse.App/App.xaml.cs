@@ -630,6 +630,13 @@ public partial class App : Application
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("audio-mute-sync", $"switch failed: {exception}");
+            if (exception is BladeFilterEndpointMissingException)
+            {
+                // No filter driver on this model: neither a retry nor a banner can fix it,
+                // and retrying repainted the banner every retry interval.
+                return;
+            }
+
             ReportBladeFnFailure(exception);
             if (exception is not FileNotFoundException &&
                 !string.IsNullOrWhiteSpace(devicePath) &&
