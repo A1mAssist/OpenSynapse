@@ -583,7 +583,8 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     public async ValueTask<BladeFanControlState> SetBladeFanAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeFanMode mode,
-        int? targetRpm,
+        int? cpuTargetRpm,
+        int? gpuTargetRpm,
         CancellationToken cancellationToken = default)
     {
         if (!Enum.IsDefined(mode))
@@ -592,15 +593,20 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         }
         if (mode == BladeFanMode.Manual)
         {
-            if (targetRpm is null)
+            if (cpuTargetRpm is null)
             {
-                throw new ArgumentNullException(nameof(targetRpm));
+                throw new ArgumentNullException(nameof(cpuTargetRpm));
             }
-            BladeFanProtocol.ValidateTargetRpm(targetRpm.Value);
+            if (gpuTargetRpm is null)
+            {
+                throw new ArgumentNullException(nameof(gpuTargetRpm));
+            }
+            BladeFanProtocol.ValidateTargetRpm(cpuTargetRpm.Value);
+            BladeFanProtocol.ValidateTargetRpm(gpuTargetRpm.Value);
         }
-        else if (targetRpm is not null)
+        else if (cpuTargetRpm is not null || gpuTargetRpm is not null)
         {
-            throw new ArgumentException("Automatic fan mode cannot specify a fixed speed.", nameof(targetRpm));
+            throw new ArgumentException("Automatic fan mode cannot specify a fixed speed.");
         }
 
         var blade = FindReadyBlade(devices)
@@ -612,13 +618,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         }
 
         var original = await ReadBladeFanTransactionStateAsync(blade, cancellationToken, readTachometers: true);
-        var cpuTargetRpm = targetRpm ?? original.CpuTargetRpm;
-        var gpuTargetRpm = targetRpm ?? original.GpuTargetRpm;
         var actual = await SetBladeFanTargetsCoreAsync(
             blade,
             mode,
-            cpuTargetRpm,
-            gpuTargetRpm,
+            cpuTargetRpm ?? original.CpuTargetRpm,
+            gpuTargetRpm ?? original.GpuTargetRpm,
             writeTargets: mode == BladeFanMode.Manual,
             original,
             cancellationToken);
