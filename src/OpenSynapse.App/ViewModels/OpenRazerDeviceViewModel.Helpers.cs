@@ -72,6 +72,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         }
         setBusy(true);
         _operationSucceeded = false;
+        _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
         try
         {
@@ -107,6 +108,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         }
         setBusy(true);
         _operationSucceeded = false;
+        _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
         try
         {
@@ -165,6 +167,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private void HandleFailure(Exception exception, OpenRazerBackendCapability? capability = null)
     {
         _operationSucceeded = false;
+        _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
         if (exception is (NotSupportedException or InvalidDataException) && capability is { } unsupported)
         {

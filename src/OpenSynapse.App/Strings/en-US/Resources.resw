@@ -974,6 +974,12 @@
   <data name="OpenRazerOperationApplied" xml:space="preserve">
     <value>Applied to device</value>
   </data>
+  <data name="OpenRazerPollingRateMismatch" xml:space="preserve">
+    <value>Device reports {0} Hz, expected {1} Hz</value>
+  </data>
+  <data name="OpenRazerDpiMismatch" xml:space="preserve">
+    <value>Device reports {0} x {1} DPI, expected {2} x {3} DPI</value>
+  </data>
   <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
     <value>The device returned malformed protocol data.</value>
   </data>

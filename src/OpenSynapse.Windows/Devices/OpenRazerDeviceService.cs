@@ -363,11 +363,33 @@ public sealed class OpenRazerDeviceService
             OpenRazerMouseProtocol.GetPollingRate(connection.Definition), cancellationToken).ConfigureAwait(false), highRate);
     }
 
-    public async Task SetPollingRateAsync(OpenRazerDeviceConnection connection, int hertz, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Writes the polling rate and reports the rate the firmware holds afterwards. The
+    /// device answers a successful write without echoing the payload, so the value read
+    /// back is the only evidence that the setting landed.
+    /// </summary>
+    /// <returns>The reported rate, or null when the device cannot be read back.</returns>
+    public async Task<int?> SetPollingRateAsync(OpenRazerDeviceConnection connection, int hertz, CancellationToken cancellationToken = default)
     {
         foreach (var request in OpenRazerMouseProtocol.SetPollingRate(connection.Definition, hertz))
         {
             await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (!connection.Capabilities.Contains(OpenRazerBackendCapability.PollingRateRead))
+        {
+            return null;
+        }
+
+        try
+        {
+            return await GetPollingRateAsync(connection, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is RazerDeviceTimeoutException or InvalidDataException)
+        {
+            // The write already landed. A device that cannot answer the read-back must not
+            // turn a completed write into a failure.
+            return null;
         }
     }
 
@@ -378,9 +400,32 @@ public sealed class OpenRazerDeviceService
             OpenRazerMouseProtocol.GetDpi(connection.Definition), cancellationToken).ConfigureAwait(false), byteEncoding);
     }
 
-    public Task SetDpiAsync(OpenRazerDeviceConnection connection, int x, int y, CancellationToken cancellationToken = default) =>
-        ExecuteWithoutResultAsync(connection,
-            OpenRazerMouseProtocol.SetDpi(connection.Definition, x, y), cancellationToken);
+    /// <summary>
+    /// Writes the DPI and reports the values the firmware holds afterwards, so a caller
+    /// can tell a stored setting from a write the device ignored.
+    /// </summary>
+    /// <returns>The reported DPI, or null when the device cannot be read back.</returns>
+    public async Task<(int X, int Y)?> SetDpiAsync(OpenRazerDeviceConnection connection, int x, int y, CancellationToken cancellationToken = default)
+    {
+        await ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetDpi(connection.Definition, x, y), cancellationToken).ConfigureAwait(false);
+
+        if (!connection.Capabilities.Contains(OpenRazerBackendCapability.DpiRead))
+        {
+            return null;
+        }
+
+        try
+        {
+            return await GetDpiAsync(connection, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is RazerDeviceTimeoutException or InvalidDataException)
+        {
+            // The write already landed. A device that cannot answer the read-back must not
+            // turn a completed write into a failure.
+            return null;
+        }
+    }
 
     public Task SetDpiStagesAsync(OpenRazerDeviceConnection connection, OpenRazerDpiStages state, CancellationToken cancellationToken = default) =>
         ExecuteWithoutResultAsync(connection,
