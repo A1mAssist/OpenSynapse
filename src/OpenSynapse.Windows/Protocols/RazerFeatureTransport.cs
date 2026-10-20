@@ -343,7 +343,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 !RazerFeatureReport.Matches(request, response, allowRemainingPacketsMismatch))
             {
                 lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
-                diagnostic?.Invoke($"attempt {attempt}: response validation failed, status=0x{response[1]:X2}, txn=0x{response[2]:X2}, class=0x{response[7]:X2}, command=0x{response[8]:X2}");
+                diagnostic?.Invoke($"attempt {attempt}: response validation failed, status=0x{response[1]:X2}, txn=0x{response[2]:X2} (want 0x{request[2]:X2}), class=0x{response[7]:X2} (want 0x{request[7]:X2}), command=0x{response[8]:X2} (want 0x{request[8]:X2}), len={response[6]} (want {request[6]}), crc=0x{response[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(response):X2}");
             }
             else if (response[1] == 0x02)
             {
