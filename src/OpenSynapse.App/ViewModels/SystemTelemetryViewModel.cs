@@ -13,12 +13,19 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _cpuTemperatureText = "--";
     private string _cpuPowerText = "--";
     private string _cpuClockText = "--";
+    private readonly TelemetryPeakTracker _peaks = new();
+    private string _cpuTemperaturePeakText = "--";
+    private string _cpuPowerPeakText = "--";
+    private string _cpuClockPeakText = "--";
     private string _gpuName = "GPU";
     private string _gpuValue = "--";
     private double _gpuPercent;
     private string _gpuTemperatureText = "--";
     private string _gpuPowerText = "--";
     private string _gpuClockText = "--";
+    private string _gpuTemperaturePeakText = "--";
+    private string _gpuPowerPeakText = "--";
+    private string _gpuClockPeakText = "--";
     private string _gpuMemoryText = "--";
     private string _memoryValue = "--";
     private string _memoryDetail = "-- / -- GB";
@@ -38,12 +45,18 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string CpuTemperatureText { get => _cpuTemperatureText; private set => SetField(ref _cpuTemperatureText, value); }
     public string CpuPowerText { get => _cpuPowerText; private set => SetField(ref _cpuPowerText, value); }
     public string CpuClockText { get => _cpuClockText; private set => SetField(ref _cpuClockText, value); }
+    public string CpuTemperaturePeakText { get => _cpuTemperaturePeakText; private set => SetField(ref _cpuTemperaturePeakText, value); }
+    public string CpuPowerPeakText { get => _cpuPowerPeakText; private set => SetField(ref _cpuPowerPeakText, value); }
+    public string CpuClockPeakText { get => _cpuClockPeakText; private set => SetField(ref _cpuClockPeakText, value); }
     public string GpuName { get => _gpuName; private set => SetField(ref _gpuName, value); }
     public string GpuValue { get => _gpuValue; private set => SetField(ref _gpuValue, value); }
     public double GpuPercent { get => _gpuPercent; private set => SetField(ref _gpuPercent, value); }
     public string GpuTemperatureText { get => _gpuTemperatureText; private set => SetField(ref _gpuTemperatureText, value); }
     public string GpuPowerText { get => _gpuPowerText; private set => SetField(ref _gpuPowerText, value); }
     public string GpuClockText { get => _gpuClockText; private set => SetField(ref _gpuClockText, value); }
+    public string GpuTemperaturePeakText { get => _gpuTemperaturePeakText; private set => SetField(ref _gpuTemperaturePeakText, value); }
+    public string GpuPowerPeakText { get => _gpuPowerPeakText; private set => SetField(ref _gpuPowerPeakText, value); }
+    public string GpuClockPeakText { get => _gpuClockPeakText; private set => SetField(ref _gpuClockPeakText, value); }
     public string GpuMemoryLabel => AppStrings.Text("GpuMemoryLabel");
     public string GpuMemoryText { get => _gpuMemoryText; private set => SetField(ref _gpuMemoryText, value); }
     public string MemoryValue { get => _memoryValue; private set => SetField(ref _memoryValue, value); }
@@ -74,11 +87,27 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
             GpuMemoryText = "--";
         }
 
+        _peaks.Apply(snapshot);
+        CpuTemperaturePeakText = FormatRange(
+            _peaks.CpuTemperatureLowCelsius,
+            _peaks.CpuTemperaturePeakCelsius,
+            "0",
+            "°C");
+        CpuPowerPeakText = FormatRange(_peaks.CpuPowerLowWatts, _peaks.CpuPowerPeakWatts, "0.0", " W");
+        CpuClockPeakText = FormatRange(_peaks.CpuClockLowMegahertz, _peaks.CpuClockPeakMegahertz, "0", " MHz");
+
         GpuValue = FormatPercent(snapshot.GpuUsagePercent);
         GpuPercent = snapshot.GpuUsagePercent ?? 0;
         GpuTemperatureText = FormatNumber(snapshot.GpuTemperatureCelsius, "0", "°C");
         GpuPowerText = FormatNumber(snapshot.GpuPowerWatts, "0.0", " W");
         GpuClockText = FormatNumber(snapshot.GpuClockMegahertz, "0", " MHz");
+        GpuTemperaturePeakText = FormatRange(
+            _peaks.GpuTemperatureLowCelsius,
+            _peaks.GpuTemperaturePeakCelsius,
+            "0",
+            "°C");
+        GpuPowerPeakText = FormatRange(_peaks.GpuPowerLowWatts, _peaks.GpuPowerPeakWatts, "0.0", " W");
+        GpuClockPeakText = FormatRange(_peaks.GpuClockLowMegahertz, _peaks.GpuClockPeakMegahertz, "0", " MHz");
         GpuMemoryText = snapshot.GpuMemoryUsedMebibytes is long used &&
                         snapshot.GpuMemoryTotalMebibytes is long total
             ? $"{used:N0} / {total:N0} MiB"
@@ -143,6 +172,15 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new(propertyName));
         return true;
     }
+
+    private static string FormatRange<T>(T? low, T? peak, string format, string suffix)
+        where T : struct, IFormattable =>
+        low is null || peak is null
+            ? "--"
+            : AppStrings.FormatText(
+                "TelemetryPeakRange",
+                low.Value.ToString(format, null) + suffix,
+                peak.Value.ToString(format, null) + suffix);
 
     private static double? CalculatePercent<T>(T? used, T? total) where T : struct, IConvertible
     {

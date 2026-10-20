@@ -1192,6 +1192,9 @@
     <value>实时采样 {0:HH:mm:ss}</value>
     <comment>实时采样 {0:HH:mm:ss}</comment>
   </data>
+  <data name="TelemetryPeakRange" xml:space="preserve">
+    <value>本机运行期间 最小 {0} / 最大 {1}</value>
+  </data>
   <data name="StartupSettingFailed" xml:space="preserve">
     <value>开机启动设置失败：{0}</value>
     <comment>开机启动设置失败：{0}</comment>
