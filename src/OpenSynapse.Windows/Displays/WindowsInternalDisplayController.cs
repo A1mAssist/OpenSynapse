@@ -115,12 +115,16 @@ public sealed class WindowsInternalDisplayController : IInternalDisplayControlle
             .Where(path => path.IsActive && path.TargetAvailable && IsInternal(path.OutputTechnology))
             .ToArray();
 
+        if (internalPaths.Length == 0)
+        {
+            // An external-display-only laptop is a normal setup, not a failure.
+            throw new NoActiveInternalDisplayException();
+        }
+
         if (internalPaths.Length != 1)
         {
             throw new InvalidOperationException(
-                internalPaths.Length == 0
-                    ? "Windows did not report one active internal display path."
-                    : "Windows reported multiple active internal display paths; refresh-rate writes are disabled.");
+                "Windows reported multiple active internal display paths; refresh-rate writes are disabled.");
         }
 
         var path = internalPaths[0];

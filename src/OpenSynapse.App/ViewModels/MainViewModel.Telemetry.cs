@@ -347,6 +347,12 @@ public sealed partial class MainViewModel
             ApplyInternalDisplaySnapshot(snapshot);
             SetDisplayError(string.Empty);
         }
+        catch (NoActiveInternalDisplayException)
+        {
+            // External-display-only: nothing to drive, and nothing is wrong.
+            SetInternalDisplayUnavailable();
+            SetDisplayError(string.Empty);
+        }
         catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or ArgumentOutOfRangeException)
         {
             SetInternalDisplayUnavailable();
