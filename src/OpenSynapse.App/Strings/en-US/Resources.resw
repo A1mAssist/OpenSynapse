@@ -1505,6 +1505,7 @@
   <data name="BladeFanCurveColumnGpu" xml:space="preserve"><value>GPU fan</value></data>
   <data name="BladeFanCurveAddTier" xml:space="preserve"><value>Add tier</value></data>
   <data name="BladeFanCurveReset" xml:space="preserve"><value>Reset</value></data>
+  <data name="BladeFanCurveEdit" xml:space="preserve"><value>Edit</value></data>
   <data name="BladeFanCurveApply" xml:space="preserve"><value>Apply</value></data>
   <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU temperature</value></data>
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU temperature</value></data>
