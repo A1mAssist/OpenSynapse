@@ -49,30 +49,45 @@ public sealed partial class MainViewModel
         await RunDeviceOperationAsync(AppStrings.Text("Text_0982EC10"), async () =>
         {
             var previous = _profile.Clone();
-            _profile.Global.Blade.FanCurve = BladeFanCurveProfile.FromCurve(curve);
-            _profile.Global.Blade.FanMode = null;
-            _profile.Global.Blade.FanTargetRpm = null;
+
+            // The curve lives in the same card as Max Fan, so it follows the performance
+            // power profile. Writing the global slot would drop a per-power-source curve.
+            var target = EditablePerformanceBladeProfile;
+            target.FanCurve = BladeFanCurveProfile.FromCurve(curve);
+            target.FanMode = null;
+            target.FanTargetRpm = null;
+
             var blade = _deviceDescriptors.FirstOrDefault(device =>
                 device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
-            var result = await ApplyLoadedFanProfileAsync(
-                blade,
-                CurrentPowerSource,
-                cancellationToken);
-            if (result.Error is not null)
+            if (IsSelectedPerformancePowerActive)
             {
-                _profile = previous;
-                throw new InvalidOperationException(result.Error);
+                var result = await ApplyLoadedFanProfileAsync(blade, CurrentPowerSource, cancellationToken);
+                if (result.Error is not null)
+                {
+                    _profile = previous;
+                    throw new InvalidOperationException(result.Error);
+                }
+
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    _profile = previous;
+                    await ApplyLoadedFanProfileAsync(blade, CurrentPowerSource, cancellationToken);
+                    throw new InvalidOperationException(AppStrings.Text("Text_BA5FB914"));
+                }
+
+                RefreshBladePerformanceEditor();
+                return;
             }
 
+            // Editing a power source the machine is not on: store it and let the existing
+            // profile-change path push it when that source becomes active.
             if (!await SaveProfileAsync(cancellationToken))
             {
                 _profile = previous;
-                await ApplyLoadedFanProfileAsync(
-                    blade,
-                    CurrentPowerSource,
-                    cancellationToken);
-                throw new InvalidOperationException(AppStrings.Text("Text_BA5FB914"));
+                throw new InvalidOperationException(AppStrings.Text("Text_CC12A6F5"));
             }
+
+            RefreshBladePerformanceEditor();
         }, cancellationToken);
     }
 

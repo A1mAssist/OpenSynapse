@@ -23,7 +23,7 @@ public static class BladeModelCapabilities
             // Blade 16 (2025) RZ09-0528. Custom CPU/GPU levels are the captured
             // 0x0D:0x07 pairs; its maximum fan is the fixed 5400 RPM fan-target
             // control, not the Custom Power Mode bit, so Max Fan is not admitted here.
-            [0x02C6] = new(MaxFan: false, LowMediumHigh),
+            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true),
 
             // Blade 16 (2023) RZ09-0483. Owner-tested maximum fans plus a CPU Boost level.
             [0x029F] = new(MaxFan: true, [.. LowMediumHigh, BladeCpuBoostMode.Boost]),
@@ -39,7 +39,17 @@ public static class BladeModelCapabilities
             [0x02E0] = new(MaxFan: false, LowMediumHigh),
         }.ToFrozenDictionary();
 
-    private sealed record Contract(bool MaxFan, IReadOnlyList<BladeCpuBoostMode> CpuBoostModes);
+    /// <summary>
+    /// Temperature-driven fan curve admission. BladeFanProtocol stores targets only for
+    /// the 02C6 fan-target control, so no other model has captured curve evidence yet.
+    /// </summary>
+    public static bool SupportsFanCurve(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.FanCurve;
+
+    private sealed record Contract(
+        bool MaxFan,
+        IReadOnlyList<BladeCpuBoostMode> CpuBoostModes,
+        bool FanCurve = false);
 
     public static bool SupportsMaxFan(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.MaxFan;

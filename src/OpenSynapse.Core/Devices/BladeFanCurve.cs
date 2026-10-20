@@ -191,6 +191,26 @@ public sealed class BladeFanCurve
 
     private static InvalidOperationException MissingTemperature(string sensor) =>
         new($"Fan curve requires a valid {sensor} temperature.");
+
+    /// <summary>
+    /// Conservative starting curve: near-idle while the machine is cool, then a steady
+    /// climb to full speed before the chip reaches its thermal limit. Both sensors share
+    /// one shape because the GPU runs hotter than the CPU under the same load.
+    /// </summary>
+    public static BladeFanCurve CreateDefault() => new(
+        BladeFanCurveTemperatureMode.Both,
+        DefaultPoints,
+        DefaultPoints);
+
+    // Temperature, CPU RPM, GPU RPM. The 92 C point keeps fans full before throttling.
+    private static readonly BladeFanCurvePoint[] DefaultPoints =
+    [
+        new(50, 2300, 2300),
+        new(65, 2800, 2900),
+        new(75, 3500, 3700),
+        new(85, 4300, 4600),
+        new(92, 5000, 5000),
+    ];
 }
 
 public static class BladeFanLimits

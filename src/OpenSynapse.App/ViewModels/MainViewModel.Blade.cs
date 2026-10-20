@@ -1194,6 +1194,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
         OnPropertyChanged(nameof(CanSetBladeLightingSettings));
+        OnPropertyChanged(nameof(BladeFanCurveVisibility));
     }
 
     /// <summary>Collapses the Max Fan column entirely on models without that switch.</summary>

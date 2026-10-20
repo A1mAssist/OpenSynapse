@@ -620,6 +620,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             SetBladeMaxFan((BladeMaxFanMode)rawMaxFan);
         }
+
+        RefreshBladeFanCurveEditor();
     }
 
     private void RefreshBladeLogoEditor()

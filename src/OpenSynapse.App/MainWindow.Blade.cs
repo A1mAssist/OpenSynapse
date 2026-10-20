@@ -176,6 +176,24 @@ public sealed partial class MainWindow
         }
     }
 
+    private async void ApplyBladeFanCurveClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyBladeFanCurveEditorAsync(_lifetime.Token);
+
+    private void AddBladeFanCurveTierClick(object sender, RoutedEventArgs e) =>
+        _viewModel.AddBladeFanCurvePoint();
+
+    private void ResetBladeFanCurveClick(object sender, RoutedEventArgs e) =>
+        _viewModel.ResetBladeFanCurveToDefault();
+
+    private void RemoveBladeFanCurveTierClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: BladeFanCurvePointViewModel point })
+        {
+            _viewModel.BladeFanCurveEditor.Select(point);
+            _viewModel.RemoveBladeFanCurvePoint();
+        }
+    }
+
     private async void AutoApplyMaxFanToggled(object sender, RoutedEventArgs e)
     {
         if (sender is ToggleSwitch { FocusState: not FocusState.Unfocused })

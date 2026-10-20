@@ -24,6 +24,10 @@
     <Compile Include="..\..\src\OpenSynapse.App\Runtime\ChromaRestHost.cs" Link="Runtime\ChromaRestHost.cs" />
     <Compile Include="..\..\src\OpenSynapse.App\Runtime\LowBatteryNotificationTracker.cs" Link="Runtime\LowBatteryNotificationTracker.cs" />
     <Compile Include="..\..\src\OpenSynapse.App\AppBehaviorSettings.cs" Link="AppBehaviorSettings.cs" />
+    <Compile Include="..\..\src\OpenSynapse.App\ViewModels\BladeFanCurveViewModel.cs"
+             Link="ViewModels\BladeFanCurveViewModel.cs" />
+    <Compile Include="..\..\src\OpenSynapse.App\ViewModels\BladeFanCurveEditorViewModel.cs"
+             Link="ViewModels\BladeFanCurveEditorViewModel.cs" />
   </ItemGroup>
 
   <ItemGroup>
