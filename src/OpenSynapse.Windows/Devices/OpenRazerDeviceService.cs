@@ -159,7 +159,9 @@ public sealed class OpenRazerDeviceService
                     return;
                 }
 
-                errors[key] = exception.Message;
+                // Key the failure by capability, not by the internal field name, so the UI can
+                // line it up with the protocol detail row that reports the same capability.
+                errors[capability.ToString()] = exception.Message;
                 WriteDiagnostic(connection.Definition.ProductId,
                     $"state read '{key}' failed: {exception.GetType().Name}: {exception.Message}");
             }
@@ -213,7 +215,7 @@ public sealed class OpenRazerDeviceService
         await ReadAsync(OpenRazerBackendCapability.BrightnessRead, "brightness",
             () => GetBrightnessAsync(connection, cancellationToken: cancellationToken), value => brightness = value);
 
-        if (battery is not null && !errors.ContainsKey("charging"))
+        if (battery is not null && !errors.ContainsKey(nameof(OpenRazerBackendCapability.ChargingRead)))
         {
             BatteryObserved?.Invoke(new DeviceBatteryReading(
                 $"openrazer:{connection.InstanceId}", connection.Definition.DisplayName, battery, charging));

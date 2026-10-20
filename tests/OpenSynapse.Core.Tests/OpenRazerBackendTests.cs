@@ -214,7 +214,7 @@ public sealed class OpenRazerBackendTests
 
         var state = await service.ReadBasicStateAsync(connection);
 
-        Assert.Equal("Device disconnected.", state.Errors["charging"]);
+        Assert.Equal("Device disconnected.", state.Errors[nameof(OpenRazerBackendCapability.ChargingRead)]);
         Assert.Empty(state.UnsupportedCapabilities);
         Assert.Equal(0, batteryObservations);
     }
@@ -236,8 +236,26 @@ public sealed class OpenRazerBackendTests
             }, new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
         var state = await service.ReadBasicStateAsync(connection);
         Assert.Equal(96, state.BatteryPercent);
-        Assert.Contains("charging", state.Errors.Keys);
+        Assert.Contains(nameof(OpenRazerBackendCapability.ChargingRead), state.Errors.Keys);
         Assert.Equal(0, observations);
+    }
+
+    [Fact]
+    public async Task FailedReadsAreKeyedByCapabilitySoTheUiCanLineThemUp()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn,
+            new FailingReadTransport(new IOException("Device disconnected.")));
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability> { OpenRazerBackendCapability.ChargingRead },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var state = await service.ReadBasicStateAsync(connection);
+
+        // The diagnostic page lists protocol rows by capability name, so a failure has to
+        // carry the same key or the failing row still reads as "read".
+        Assert.Equal(["ChargingRead"], state.Errors.Keys);
     }
 
     [Fact]
@@ -986,6 +1004,38 @@ public sealed class OpenRazerBackendTests
         Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
         Assert.Contains(OpenRazerBackendCapability.DpiRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.DpiWrite, capabilities);
+    }
+
+    /// <summary>
+    /// The DeathAdder V2 X HyperSpeed answers only the 0x1F transaction family. Sending the
+    /// 0x00 or 0x3F variants this catalog used to carry makes the firmware stay silent, and a
+    /// silent command used to disable the whole device. These ids are taken verbatim from
+    /// OpenRazer's razermouse_driver.c.
+    /// </summary>
+    [Fact]
+    public void DeathAdderV2XHyperSpeedUsesTheTransactionIdsOpenRazerSends()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x009C)!;
+
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_standard_get_firmware_version"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_standard_get_serial"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_battery_level"]);
+        Assert.Equal(0xFF, device.Transactions["razer_chroma_standard_get_device_mode"]);
+        Assert.Equal(0xFF, device.Transactions["razer_chroma_misc_get_low_battery_threshold"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_dpi_xy"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_set_dpi_xy"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_polling_rate"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_set_polling_rate"]);
+    }
+
+    [Fact]
+    public void DeathAdderV2XHyperSpeedDeclaresNoChargingTransaction()
+    {
+        // OpenRazer answers the charging query for this mouse with a hard-coded zero because
+        // the firmware does not implement it.
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x009C)!;
+
+        Assert.False(device.Transactions.ContainsKey("razer_chroma_misc_get_charging_status"));
     }
 
     [Fact]
