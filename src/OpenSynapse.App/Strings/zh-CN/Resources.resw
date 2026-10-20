@@ -895,7 +895,9 @@
   <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>协议明细</value></data>
   <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>已读取</value></data>
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>未读取</value></data>
+  <data name="DiagnosticProtocolReadFailed" xml:space="preserve"><value>读取失败：{0}</value></data>
   <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>开启</value></data>
+  <data name="OpenRazerFailedReadsDetail" xml:space="preserve"><value>失败的读取项：{0}</value></data>
   <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>关闭</value></data>
   <data name="DiagnosticCpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
   <data name="DiagnosticGpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
@@ -1288,6 +1290,10 @@
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
     <value>设备通信中断，已暂停写入。请重新扫描设备以恢复控制。</value>
     <comment>设备通信中断，已暂停写入。请重新扫描设备以恢复控制。</comment>
+  </data>
+  <data name="OpenRazerCapabilityUnanswered" xml:space="preserve">
+    <value>固件未回应「{0}」，已停用该能力，其余功能仍可使用。</value>
+    <comment>固件未回应某个能力，已停用该能力，其余功能仍可使用。</comment>
   </data>
   <data name="OpenRazerDeviceNotReady" xml:space="preserve">
     <value>{0}可能未开启或尚未唤醒，请检查设备电源。</value>

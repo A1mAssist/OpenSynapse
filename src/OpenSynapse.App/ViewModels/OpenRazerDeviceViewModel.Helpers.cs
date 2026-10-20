@@ -171,6 +171,17 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             _unsupported.Add(unsupported);
             OnCapabilityChanged();
         }
+        if (exception is RazerDeviceTimeoutException && capability is { } unanswered)
+        {
+            // One silent command means this firmware does not answer that transaction. A dead
+            // endpoint fails every command on its path, so disabling only the silent capability
+            // keeps the rest of the device controllable.
+            _unsupported.Add(unanswered);
+            ErrorText = AppStrings.FormatText("OpenRazerCapabilityUnanswered",
+                AppStrings.Text($"OpenRazerCapability{unanswered}"));
+            OnCapabilityChanged();
+            return;
+        }
         if (exception is IOException or Win32Exception or InvalidOperationException)
         {
             MarkRequiresRescan();

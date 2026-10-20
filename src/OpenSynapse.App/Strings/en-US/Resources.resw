@@ -681,7 +681,9 @@
   <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>Protocol details</value></data>
   <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>Read</value></data>
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>Not read</value></data>
+  <data name="DiagnosticProtocolReadFailed" xml:space="preserve"><value>Read failed: {0}</value></data>
   <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>On</value></data>
+  <data name="OpenRazerFailedReadsDetail" xml:space="preserve"><value>Failed reads: {0}</value></data>
   <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>Off</value></data>
   <data name="DiagnosticCpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
   <data name="DiagnosticGpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
@@ -980,6 +982,9 @@
   </data>
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
     <value>Device communication stopped; writes are paused. Rescan the device to restore control.</value>
+  </data>
+  <data name="OpenRazerCapabilityUnanswered" xml:space="preserve">
+    <value>The firmware did not answer "{0}"; that capability is disabled and the rest still works.</value>
   </data>
   <data name="OpenRazerDeviceNotReady" xml:space="preserve">
     <value>The {0} may be powered off or asleep. Check the device power.</value>

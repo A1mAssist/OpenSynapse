@@ -196,21 +196,36 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public int ProtocolAvailableCount => Math.Max(0, Connection.Capabilities.Count - _unsupported.Count);
     public int ProtocolTotalCount => Connection.Capabilities.Count;
     public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails =>
-        BuildProtocolDetails(Connection, _unsupported);
+        BuildProtocolDetails(Connection, _unsupported, _basicState?.Errors);
 
     internal static IReadOnlyList<DeviceProtocolDetailViewModel> BuildProtocolDetails(
         OpenRazerDeviceConnection connection,
-        IReadOnlySet<OpenRazerBackendCapability>? unsupported = null) =>
+        IReadOnlySet<OpenRazerBackendCapability>? unsupported = null,
+        IReadOnlyDictionary<string, string>? errors = null) =>
         connection.Capabilities
             .OrderBy(capability => capability.ToString(), StringComparer.Ordinal)
-            .Select(capability => new DeviceProtocolDetailViewModel(
-                $"OpenRazerCapability{capability}",
-                connection.EndpointState == OpenRazerEndpointState.Resolved &&
-                    !(unsupported?.Contains(capability) ?? false),
-                connection.EndpointState == OpenRazerEndpointState.Resolved &&
-                    !(unsupported?.Contains(capability) ?? false)
+            .Select(capability =>
+            {
+                var available = connection.EndpointState == OpenRazerEndpointState.Resolved &&
+                    !(unsupported?.Contains(capability) ?? false);
+                string? reason = null;
+                var failed = errors is not null &&
+                    errors.TryGetValue(capability.ToString(), out reason);
+                var detail = available
                     ? AppStrings.Text("DiagnosticProtocolAvailable")
-                    : AppStrings.Text("DiagnosticProtocolUnavailable")))
+                    : AppStrings.Text("DiagnosticProtocolUnavailable");
+                if (failed)
+                {
+                    // A capability that was read but failed must not read as "available":
+                    // that is what hid the failing item from every diagnostic report so far.
+                    detail = AppStrings.FormatText("DiagnosticProtocolReadFailed", reason);
+                }
+
+                return new DeviceProtocolDetailViewModel(
+                    $"OpenRazerCapability{capability}",
+                    available && !failed,
+                    detail);
+            })
             .ToArray();
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);

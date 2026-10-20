@@ -333,6 +333,19 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
     }
 
+    /// <summary>
+    /// Names the capabilities that actually failed. The generic "writes are paused" text
+    /// alone leaves a device owner with nothing to act on.
+    /// </summary>
+    private static string DescribeFailedReads(OpenRazerDeviceViewModel device)
+    {
+        var failures = device.BasicErrors;
+        return failures.Count == 0
+            ? device.ErrorText
+            : AppStrings.FormatText("OpenRazerFailedReadsDetail",
+                string.Join("; ", failures.Select(read => $"{read.Key}: {read.Value}")));
+    }
+
     internal void SetPerformanceSamplingEnabled(bool enabled)
     {
         if (Interlocked.Exchange(ref _performanceSamplingEnabled, enabled ? 1 : 0) !=
@@ -877,7 +890,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 !StringComparer.Ordinal.Equals(SelectedOpenRazerDevice.ErrorText, row.Error))
             {
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
-                    AppStrings.Text("Text_6027BEB0"), SelectedOpenRazerDevice.ErrorText, errorBrush));
+                    AppStrings.Text("Text_6027BEB0"), DescribeFailedReads(SelectedOpenRazerDevice), errorBrush));
             }
         }
 
