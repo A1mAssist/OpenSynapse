@@ -173,6 +173,33 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public async Task SilentBatteryCommandDoesNotInvalidateTheRestOfTheDevice()
+    {
+        // The DeathAdder V4 Pro answers every command on its 2.4 GHz endpoint except
+        // get_battery_level, which returns status 0x04. That single silence used to land in
+        // Errors, which pauses every write on the device and leaves the card unusable.
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BF)!;
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn,
+            new OptionalChargingRejectionTransport(
+                new RazerDeviceTimeoutException("The device did not answer this command (0x04).")));
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.BatteryRead,
+                OpenRazerBackendCapability.ChargingRead,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var state = await service.ReadBasicStateAsync(connection);
+
+        Assert.Equal(96, state.BatteryPercent);
+        Assert.Null(state.IsCharging);
+        Assert.Empty(state.Errors);
+        Assert.Contains(OpenRazerBackendCapability.ChargingRead, state.UnsupportedCapabilities);
+    }
+
+    [Fact]
     public async Task TransportFailureRemainsARescanError()
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;

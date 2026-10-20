@@ -148,11 +148,11 @@ public sealed class OpenRazerDeviceService
             catch (Exception exception) when (exception is Win32Exception or IOException or
                 InvalidOperationException or NotSupportedException or InvalidDataException)
             {
-                if (exception is NotSupportedException or InvalidDataException)
+                if (exception is NotSupportedException or InvalidDataException or RazerDeviceTimeoutException)
                 {
-                    // A manifest can advertise an optional transaction that a
-                    // particular firmware rejects or returns malformed data. Keep the rest of the device
-                    // state usable and let the UI render that field as unknown.
+                    // A manifest can advertise an optional transaction that a particular firmware
+                    // rejects, returns malformed data for, or simply never answers. Keep the rest of
+                    // the device state usable and let the UI render that field as unknown.
                     unsupported.Add(capability);
                     WriteDiagnostic(connection.Definition.ProductId,
                         $"optional state read '{key}' is unavailable: {exception.GetType().Name}: {exception.Message}");

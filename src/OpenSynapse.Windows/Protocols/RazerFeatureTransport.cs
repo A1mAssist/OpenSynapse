@@ -89,6 +89,13 @@ public interface IRazerFeatureSession : IAsyncDisposable
 
 internal sealed class RazerCommandRejectedException(string message) : InvalidOperationException(message);
 
+/// <summary>
+/// The device stayed silent for one command across the whole retry budget. Callers treat
+/// this as a capability the firmware does not answer rather than a transport failure,
+/// because a disconnected endpoint fails every command on its path, not just one.
+/// </summary>
+internal sealed class RazerDeviceTimeoutException(string message) : InvalidOperationException(message);
+
 public sealed class RazerFeatureTransport : IRazerFeatureTransport
 {
     private readonly LocalDiagnosticLog? _diagnosticLog;
@@ -299,6 +306,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
     {
         string? lastError = null;
         var rejectedResponses = 0;
+        var silentResponses = 0;
         for (var attempt = 1; attempt <= 5; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -360,10 +368,15 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             }
             else
             {
+                if (response[1] == 0x04)
+                {
+                    silentResponses++;
+                }
+
                 lastError = response[1] switch
                 {
                     0x01 => "The device is busy (0x01).",
-                    0x04 => "The device timed out (0x04); wake the device, close Synapse, and retry.",
+                    0x04 => $"The device did not answer this command (0x04).",
                     _ => $"Device response status: 0x{response[1]:X2}.",
                 };
                 diagnostic?.Invoke($"attempt {attempt}: {lastError}");
@@ -374,6 +387,11 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
 
         if (rejectedResponses == 5)
             throw new RazerCommandRejectedException(lastError!);
+
+        // A dead endpoint fails every command on its path, so one silent command means the
+        // firmware does not answer it, not that the transport is gone.
+        if (silentResponses == 5)
+            throw new RazerDeviceTimeoutException(lastError ?? "The device did not answer this command.");
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
     }
 
