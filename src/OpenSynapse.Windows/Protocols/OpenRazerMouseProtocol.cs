@@ -221,18 +221,31 @@ internal static class OpenRazerMouseProtocol
     internal static bool ParseCharging(ReadOnlySpan<byte> response) =>
         OpenRazerStandardProtocol.Arguments(response, 2)[1] != 0;
 
+    /// <summary>
+    /// Reads the polling rate. OpenRazer sends get_polling_rate2 with data_size 1 but
+    /// documents the rate as argument 1, and the firmware returns it in that second byte
+    /// while still declaring a one-byte payload. Upstream reads that byte without checking
+    /// the declared length, so the high-rate path must not reject a short response either.
+    /// </summary>
     internal static int ParsePollingRate(ReadOnlySpan<byte> response, bool highRate)
     {
-        var raw = OpenRazerStandardProtocol.Arguments(response, highRate ? (byte)2 : (byte)1)[highRate ? 1 : 0];
-        return highRate ? raw switch
+        if (!highRate)
+        {
+            var legacy = OpenRazerStandardProtocol.Arguments(response, 1)[0];
+            return legacy switch
+            {
+                0x01 => 1000, 0x02 => 500, 0x08 => 125,
+                _ => throw new InvalidDataException($"Unknown polling-rate code 0x{legacy:X2}."),
+            };
+        }
+
+        var arguments = OpenRazerStandardProtocol.RawArguments(response);
+        var raw = arguments[1];
+        return raw switch
         {
             0x01 => 8000, 0x02 => 4000, 0x04 => 2000, 0x08 => 1000,
             0x10 => 500, 0x20 => 250, 0x40 => 125,
             _ => throw new InvalidDataException($"Unknown high polling-rate code 0x{raw:X2}."),
-        } : raw switch
-        {
-            0x01 => 1000, 0x02 => 500, 0x08 => 125,
-            _ => throw new InvalidDataException($"Unknown polling-rate code 0x{raw:X2}."),
         };
     }
 

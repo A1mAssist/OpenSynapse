@@ -146,6 +146,22 @@ internal static class OpenRazerStandardProtocol
         return response.Slice(RazerFeatureReport.ArgumentsOffset, response[6]);
     }
 
+    /// <summary>
+    /// Validates a response and returns its whole argument area. OpenRazer reads some
+    /// responses at a fixed argument index without trusting the declared data_size, so a
+    /// caller that follows upstream must not be limited to the declared length.
+    /// </summary>
+    internal static ReadOnlySpan<byte> RawArguments(ReadOnlySpan<byte> response)
+    {
+        if (response.Length != RazerFeatureReport.Length || !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
+            response[6] > 80 ||
+            response[89] != RazerFeatureReport.CalculateCrc(response))
+        {
+            throw new InvalidDataException("OpenRazer response is invalid or unsuccessful.");
+        }
+        return response.Slice(RazerFeatureReport.ArgumentsOffset, 80);
+    }
+
     private static ReadOnlySpan<byte> LedArguments(
         ReadOnlySpan<byte> response,
         byte minimumLength,
