@@ -312,7 +312,8 @@ public interface IRazerDeviceTelemetryReader
     ValueTask<BladeFanControlState> SetBladeFanAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeFanMode mode,
-        int? targetRpm,
+        int? cpuTargetRpm,
+        int? gpuTargetRpm,
         CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 
