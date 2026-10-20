@@ -63,6 +63,32 @@ after packing. Before uploading, compare every listed filename, SHA-1, SHA-256,
 and size against the files produced by the same `vpk pack` invocation, then
 launch the exact packaged executable from its deployed `current` directory.
 
+### Test builds
+
+A test build handed to a device owner for verification is always a pre-release.
+It must never be a published release, and it must never be the latest release.
+
+```powershell
+gh release create <tag> <testbuild.zip> --draft --title "<title>" --notes "<notes>"
+# when the issue reporter needs a download, publish it as a pre-release:
+gh release edit <tag> --draft=false --prerelease
+```
+
+Do not attach `Setup.exe`, `*.nupkg`, or anything produced by `vpk pack` to a test
+build: those assets feed the Velopack update channel, and a user would silently
+auto-update onto an unverified build.
+
+GitHub issue comments cannot host file uploads, so the test build has to live in
+a release asset and the issue links to it. Give the tag an issue-specific name
+such as `issue4-test-20261020`, keep the build self-contained so no reporter has
+to install .NET, and verify the download URL returns HTTP 200 and the expected
+content length before posting it. A draft release answers 404 for everyone but
+collaborators, so publish it as a pre-release instead.
+
+State plainly in the issue which parts are verified. A build that compiles and a
+build that passed tests are not evidence that the reporter's hardware behaves
+correctly, and saying so is what makes the report trustworthy.
+
 Review the staged file list before committing:
 
 ```powershell
@@ -76,6 +102,7 @@ If the list contains a generated binary, capture, log, secret, local tool direct
 - One commit should describe one coherent change.
 - Use an imperative, specific subject such as `fix: preserve Fn key release state`.
 - Do not commit an unverified hardware write as production-ready.
+- Do not publish a test build as a release; see [Test builds](#test-builds).
 - Do not silently ignore unknown protocol fields or unsupported device identifiers.
 - Keep `DESIGN_SPECIFICATION.md` resource-key rules and both `Resources.resw` files synchronized with localization changes.
 - Preserve unrelated user changes in a dirty worktree.
