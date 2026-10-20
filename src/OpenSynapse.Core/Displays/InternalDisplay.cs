@@ -11,6 +11,13 @@ public sealed record InternalDisplaySnapshot(
     public bool CanSetBrightness => BrightnessLevel.HasValue;
 }
 
+/// <summary>
+/// The machine has no active internal panel, which is normal when only an external
+/// display is attached. Callers treat this as unavailable rather than as a failure.
+/// </summary>
+public sealed class NoActiveInternalDisplayException()
+    : InvalidOperationException("Windows did not report one active internal display path.");
+
 public interface IInternalDisplayController
 {
     InternalDisplaySnapshot Read();
