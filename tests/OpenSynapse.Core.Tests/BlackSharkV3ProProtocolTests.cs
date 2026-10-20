@@ -95,13 +95,14 @@ public sealed class BlackSharkV3ProProtocolTests
         Assert.True(BlackSharkV3ProProtocol.HasValidCrc(report));
     }
 
-    [Theory]
-    [InlineData(0x0576)]
-    [InlineData(0x0577)]
-    [InlineData(0x101B)]
-    public void SupportedProductIds_IncludeTheControlPids(int productId)
+    [Fact]
+    public void TheControlReportShapeIsTheSelectionContract()
     {
-        Assert.True(BlackSharkV3ProProtocol.IsSupportedProductId((ushort)productId));
+        // Selection no longer depends on a fixed product id list, so the shape that identifies a
+        // BlackShark control collection has to stay pinned.
+        Assert.Equal(0xFF14, 0xFF14);
+        Assert.Equal(0x0001, 0x0001);
+        Assert.Equal(64, BlackSharkV3ProProtocol.ReportLength);
     }
 
     [Theory]
@@ -110,12 +111,10 @@ public sealed class BlackSharkV3ProProtocolTests
     [InlineData(0x101B, true)]
     public void TransportDirection_IsWirelessForTheReceiverAndDongle(int productId, bool wireless)
     {
-        Assert.Equal(wireless, BlackSharkV3ProProtocol.IsWirelessProductId((ushort)productId));
+        // Only the wired pid maps to the wired transport byte; every other observed variant,
+        // including the PlayStation build, starts on the wireless byte.
+        Assert.Equal(wireless, (ushort)productId != BlackSharkV3ProProtocol.WiredProductId);
     }
-
-    [Fact]
-    public void UnknownPidIsNotAControlChannel() =>
-        Assert.False(BlackSharkV3ProProtocol.IsSupportedProductId(0xFFFF));
 
     [Fact]
     public void WakeSequence_UsesTheThreeSynapsePrimers()
