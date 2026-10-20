@@ -63,7 +63,9 @@ public sealed class OpenRazerDeviceService
             {
                 results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
                     OpenRazerEndpointState.BusyOrUnavailable,
-                    "All matching 91-byte HID collections are busy or unavailable."));
+                    // Name the rejected collections: a wireless mouse often leaves a wired
+                    // collection enumerated whose descriptor does not match, and "busy" hides why.
+                    $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
                 continue;
             }
 
@@ -756,6 +758,12 @@ public sealed class OpenRazerDeviceService
 
     private void WriteDiagnostic(ushort productId, string message) =>
         _diagnosticLog?.TryWrite($"openrazer-{productId:X4}", message);
+
+    internal static string DescribeRejected(IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> candidates) =>
+        string.Join("; ", candidates.Select(candidate =>
+            $"{RazerFeatureTransport.DescribeDevicePath(candidate.DevicePath)} " +
+            $"feature={candidate.FeatureReportByteLength} " +
+            $"usage=0x{candidate.UsagePage:X4}:0x{candidate.Usage:X4}"));
 
     private static IReadOnlyList<OpenRazerRequest> CreateSafeProbes(OpenRazerDeviceDefinition definition)
     {
