@@ -5,6 +5,13 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.Runtime;
 
+/// <summary>
+/// The Razer filter driver (Product 710) is absent or not bound to this device, so Fn
+/// remapping cannot work here at all. Retrying cannot change that, so callers must treat
+/// this as unsupported rather than as a transient failure.
+/// </summary>
+internal sealed class BladeFilterEndpointMissingException(string message) : InvalidOperationException(message);
+
 internal sealed class BladeFnRuntime : IAsyncDisposable
 {
     private static readonly TimeSpan RecoveryReadyTimeout = TimeSpan.FromSeconds(5);
@@ -86,7 +93,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     _featureDevicePath,
                     cancellationToken)
                 .ConfigureAwait(false)
-                ?? throw new InvalidOperationException(
+                ?? throw new BladeFilterEndpointMissingException(
                     "Could not uniquely identify the Product 710 RZCONTROL endpoint.");
 
             _mapping = await LoadMappingAsync(_mappingPreset, cancellationToken).ConfigureAwait(false);
