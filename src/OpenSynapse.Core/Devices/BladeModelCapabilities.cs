@@ -32,6 +32,11 @@ public static class BladeModelCapabilities
             // targets were reported ignored, so no fixed target is admitted.
             [0x02A0] = new(MaxFan: true, LowMediumHigh),
 
+            // Blade 14 (2022) RZ09-0427. Owner readings on 028C answered all ten Blade
+            // controls, including both live fan tachometers; maximum fan and the fan
+            // curve were never exercised, so only the baseline CPU levels are admitted.
+            [0x028C] = new(MaxFan: false, LowMediumHigh),
+
             // Blade 14 (2023) RZ09-0482, Blade 14 (2025) RZ09-0530 and Blade 16
             // (2026) RZ09-0581. No maximum-fan evidence on any of them.
             [0x029D] = new(MaxFan: false, LowMediumHigh),
