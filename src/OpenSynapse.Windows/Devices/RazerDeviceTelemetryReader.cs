@@ -1537,13 +1537,10 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         var response = await QueryBuiltRequestAsync(
             device, "fan-target.get", request, cancellationToken);
         var configured = CreateConfiguredRequest(device, "fan-target.get", request);
+        var maximumRpm = BladeModelCapabilities.MaximumFanTargetRpmFor(device.Descriptor.ProductId);
         return curveTarget
-            ? BladeFanProtocol.ParseCurveTarget(response, zone, configured)
-            : BladeFanProtocol.ParseTarget(
-                response,
-                zone,
-                configured,
-                BladeModelCapabilities.MaximumFanTargetRpmFor(device.Descriptor.ProductId));
+            ? BladeFanProtocol.ParseCurveTarget(response, zone, configured, maximumRpm)
+            : BladeFanProtocol.ParseTarget(response, zone, configured, maximumRpm);
     }
 
     private Task WriteBladeFanTargetAsync(
