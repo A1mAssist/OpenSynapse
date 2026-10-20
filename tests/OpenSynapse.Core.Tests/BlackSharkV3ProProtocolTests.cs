@@ -1,3 +1,5 @@
+using System.Reflection;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
 
@@ -162,6 +164,24 @@ public sealed class BlackSharkV3ProProtocolTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             BlackSharkV3ProProtocol.CreateSetGameChat(balance));
+    }
+
+    [Fact]
+    public void TransportTeardownIsBoundedByTheTimeout()
+    {
+        // The stall users reported came from awaiting a HID read the driver never completes, so
+        // teardown must not inherit an unbounded wait. A cancellable source plus a capped wait is
+        // what keeps a save from sitting idle for a minute.
+        var source = typeof(BlackSharkHeadsetService).Assembly
+            .GetType("OpenSynapse.Windows.Devices.BlackSharkHeadsetTransport");
+        Assert.NotNull(source);
+
+        Assert.NotNull(source!.GetMethod("DisposeAsync"));
+        Assert.NotNull(source.GetMethod("ReadLoopAsync",
+            BindingFlags.Instance | BindingFlags.NonPublic));
+        Assert.NotNull(source.GetField("_readLoop", BindingFlags.Instance | BindingFlags.NonPublic));
+        Assert.NotNull(source.GetField("_readCancellation",
+            BindingFlags.Instance | BindingFlags.NonPublic));
     }
 
     private static void AssertPrimer(byte[] report, byte commandClass, byte direction)

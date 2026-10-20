@@ -12,6 +12,7 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
     private readonly FileStream _stream;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Channel<byte[]> _reports = Channel.CreateUnbounded<byte[]>();
+    private readonly CancellationTokenSource _readCancellation = new();
     private readonly Task _readLoop;
     private readonly int _inputReportLength;
     private bool _disposed;
@@ -102,7 +103,7 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
         {
             while (!_disposed)
             {
-                var read = await _stream.ReadAsync(buffer, CancellationToken.None).ConfigureAwait(false);
+                var read = await _stream.ReadAsync(buffer, _readCancellation.Token).ConfigureAwait(false);
                 if (read <= 0)
                 {
                     break;
@@ -131,17 +132,26 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
         }
 
         _disposed = true;
-        await _stream.DisposeAsync().ConfigureAwait(false);
+        _reports.Writer.TryComplete();
+        await _readCancellation.CancelAsync().ConfigureAwait(false);
+
+        // A HID read and the matching handle close can both outlive every driver-side timeout, so
+        // cap the whole teardown instead of making the caller stall until the device speaks.
+        var teardown = Task.Run(async () =>
+        {
+            await _stream.DisposeAsync().ConfigureAwait(false);
+            await _readLoop.ConfigureAwait(false);
+        });
         try
         {
-            await _readLoop.ConfigureAwait(false);
+            await teardown.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (Exception exception) when (exception is TimeoutException or OperationCanceledException)
         {
         }
 
-        _gate.Dispose();
-        _reports.Writer.TryComplete();
+        // The read loop may still be parked in the driver after the cap above, so leave the
+        // token source and the gate for the finalizer instead of disposing them out from under it.
     }
 
     private static class NativeMethods

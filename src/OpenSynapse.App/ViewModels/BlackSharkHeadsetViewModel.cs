@@ -12,6 +12,7 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
         [BlackSharkAncMode.Off, BlackSharkAncMode.Anc, BlackSharkAncMode.Ambient];
 
     private readonly BlackSharkHeadsetConnection _connection;
+    private readonly Action<string>? _diagnostic;
     private bool _isBusy;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
@@ -24,9 +25,12 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
     private double _ancLevel = 1;
     private double _gameChatBalance = 10;
 
-    public BlackSharkHeadsetViewModel(BlackSharkHeadsetConnection connection)
+    public BlackSharkHeadsetViewModel(
+        BlackSharkHeadsetConnection connection,
+        Action<string>? diagnostic = null)
     {
         _connection = connection;
+        _diagnostic = diagnostic;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -131,7 +135,7 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
         try
         {
             await using var service = await BlackSharkHeadsetService.OpenAsync(
-                _connection, cancellationToken: cancellationToken);
+                _connection, _diagnostic, cancellationToken);
             var state = await service.ReadStateAsync(cancellationToken);
             ApplyState(state);
             if (state.BatteryPercent is null && state.Charging is null && state.Sidetone is null &&
@@ -193,7 +197,7 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
         try
         {
             await using var service = await BlackSharkHeadsetService.OpenAsync(
-                _connection, cancellationToken: cancellationToken);
+                _connection, _diagnostic, cancellationToken);
             await write(service, cancellationToken);
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");

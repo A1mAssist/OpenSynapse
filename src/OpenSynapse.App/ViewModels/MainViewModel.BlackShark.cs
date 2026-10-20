@@ -21,7 +21,8 @@ public sealed partial class MainViewModel
         BlackSharkHeadsetConnection? connection;
         try
         {
-            connection = await BlackSharkHeadsetService.FindAsync(cancellationToken);
+            connection = await BlackSharkHeadsetService.FindAsync(
+                message => _diagnosticLog.TryWrite("blackshark", message), cancellationToken);
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
         {
@@ -76,7 +77,8 @@ public sealed partial class MainViewModel
         }
 
         _selectedBlackSharkDevice = row;
-        SelectedBlackShark = new BlackSharkHeadsetViewModel(row.Connection);
+        SelectedBlackShark = new BlackSharkHeadsetViewModel(
+            row.Connection, message => _diagnosticLog.TryWrite("blackshark", message));
         await SelectedBlackShark.LoadAsync(cancellationToken);
     }
 }
