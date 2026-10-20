@@ -53,9 +53,12 @@
 
   <Target Name="CopyRecoveryHost" AfterTargets="Build">
     <PropertyGroup>
-      <_RecoveryHostOutputDir>$(MSBuildProjectDirectory)\..\OpenSynapse.RecoveryHost\bin\$(Platform)\$(Configuration)\net10.0-windows10.0.26100.0\</_RecoveryHostOutputDir>
+      <!-- The helper projects build without a Platform, so their output is bin\$(Configuration)\.
+           Only insert \$(Platform) when this project was actually built for one. -->
+      <_HelperPlatformDir Condition="'$(Platform)' != '' and '$(Platform)' != 'AnyCPU'">$(Platform)\</_HelperPlatformDir>
+      <_RecoveryHostOutputDir>$(MSBuildProjectDirectory)\..\OpenSynapse.RecoveryHost\bin\$(_HelperPlatformDir)$(Configuration)\net10.0-windows10.0.26100.0\</_RecoveryHostOutputDir>
       <_RecoveryHostOutputDir Condition="'$(RuntimeIdentifier)' != ''">$(_RecoveryHostOutputDir)$(RuntimeIdentifier)\</_RecoveryHostOutputDir>
-      <_ThxHelperOutputDir>$(MSBuildProjectDirectory)\..\OpenSynapse.ThxHelper\bin\$(Platform)\$(Configuration)\net10.0-windows10.0.26100.0\</_ThxHelperOutputDir>
+      <_ThxHelperOutputDir>$(MSBuildProjectDirectory)\..\OpenSynapse.ThxHelper\bin\$(_HelperPlatformDir)$(Configuration)\net10.0-windows10.0.26100.0\</_ThxHelperOutputDir>
       <_ThxHelperOutputDir Condition="'$(RuntimeIdentifier)' != ''">$(_ThxHelperOutputDir)$(RuntimeIdentifier)\</_ThxHelperOutputDir>
     </PropertyGroup>
     <ItemGroup>
@@ -67,7 +70,9 @@
       <_ThxHelperFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.dll" />
       <_ThxHelperFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.deps.json" />
       <_ThxHelperFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.runtimeconfig.json" />
-      <_WinAppSdkRuntimeResource Include="$(IntermediateOutputPath)MsixContent\Microsoft.WindowsAppRuntime.Insights.Resource.dll" />
+      <!-- App notifications load this native satellite at runtime, but the MSIX content step that
+           normally emits it is skipped here, so ship the checked-in copy instead. -->
+      <_WinAppSdkRuntimeResource Include="$(MSBuildProjectDirectory)\Native\Microsoft.WindowsAppRuntime.Insights.Resource.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(_RecoveryHostFile)"
           DestinationFolder="$(TargetDir)"
@@ -86,7 +91,7 @@
     <ItemGroup>
       <_WinUiRuntimeResources Include="$(TargetDir)$(AssemblyName).pri" />
       <_WinUiRuntimeResources Include="$(TargetDir)*.xbf" />
-      <_WinUiRuntimeResources Include="$(IntermediateOutputPath)MsixContent\Microsoft.WindowsAppRuntime.Insights.Resource.dll" />
+      <_WinUiRuntimeResources Include="$(MSBuildProjectDirectory)\Native\Microsoft.WindowsAppRuntime.Insights.Resource.dll" />
       <_ThxHelperPublishFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.exe" />
       <_ThxHelperPublishFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.dll" />
       <_ThxHelperPublishFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.deps.json" />
