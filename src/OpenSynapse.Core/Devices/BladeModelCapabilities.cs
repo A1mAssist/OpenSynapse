@@ -23,7 +23,13 @@ public static class BladeModelCapabilities
             // Blade 16 (2025) RZ09-0528. Custom CPU/GPU levels are the captured
             // 0x0D:0x07 pairs; its maximum fan is the fixed 5400 RPM fan-target
             // control, not the Custom Power Mode bit, so Max Fan is not admitted here.
-            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true),
+            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true, FixedFan: true),
+
+            // Blade 15 (Mid 2019) Mercury RZ09-03017. The owner's r4 probe captured a
+            // stored CPU target of 0x35 (5300 RPM), while the firmware still reported
+            // Automatic fan mode. Reads need the model-specific ceiling; fixed writes
+            // remain unadmitted until both zones and a write/readback are confirmed.
+            [0x0245] = new(MaxFan: false, None, FixedFan: false, MaximumFanTargetRpm: 5300),
 
             // Blade 16 (2023) RZ09-0483. Owner-tested maximum fans plus a CPU Boost level.
             [0x029F] = new(MaxFan: true, [.. LowMediumHigh, BladeCpuBoostMode.Boost]),
@@ -51,10 +57,25 @@ public static class BladeModelCapabilities
     public static bool SupportsFanCurve(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.FanCurve;
 
+    /// <summary>True only where a fixed fan-target write has been admitted.</summary>
+    public static bool SupportsFixedFan(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.FixedFan;
+
+    /// <summary>
+    /// Upper bound for parsing a stored fan target. This can exceed the fixed-write
+    /// ceiling when a model reports a higher maximum than OpenSynapse exposes.
+    /// </summary>
+    public static int MaximumFanTargetRpmFor(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract)
+            ? contract.MaximumFanTargetRpm
+            : BladeFanLimits.MaximumRpm;
+
     private sealed record Contract(
         bool MaxFan,
         IReadOnlyList<BladeCpuBoostMode> CpuBoostModes,
-        bool FanCurve = false);
+        bool FanCurve = false,
+        bool FixedFan = false,
+        int MaximumFanTargetRpm = BladeFanLimits.MaximumRpm);
 
     public static bool SupportsMaxFan(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.MaxFan;

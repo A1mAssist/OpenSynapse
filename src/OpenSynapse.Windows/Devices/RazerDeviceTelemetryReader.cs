@@ -605,6 +605,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
         var blade = FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade fan control channel is unavailable.");
+        if (mode == BladeFanMode.Manual &&
+            !BladeModelCapabilities.SupportsFixedFan(blade.Descriptor.ProductId))
+        {
+            throw new InvalidOperationException("Fixed fan control is not admitted for this Blade model.");
+        }
 
         var original = await ReadBladeFanTransactionStateAsync(blade, cancellationToken, readTachometers: true);
         var cpuTargetRpm = targetRpm ?? original.CpuTargetRpm;
@@ -648,6 +653,10 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         BladeFanProtocol.ValidateCurveTargetRpm(gpuTargetRpm);
         var blade = FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade fan control channel is unavailable.");
+        if (!BladeModelCapabilities.SupportsFanCurve(blade.Descriptor.ProductId))
+        {
+            throw new InvalidOperationException("Fan-curve control is not admitted for this Blade model.");
+        }
         var original = await ReadBladeFanTransactionStateAsync(
             blade, cancellationToken, readTachometers: true);
         var actual = await SetBladeFanTargetsCoreAsync(
@@ -1467,14 +1476,27 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         ReadyDevice device,
         CancellationToken cancellationToken)
     {
-        int? rpm = null;
-        foreach (var zone in new[] { BladeFanProtocol.ZoneCpu, BladeFanProtocol.ZoneGpu })
+        // Query both zones before parsing either one. A model-specific target above
+        // the write ceiling must not prevent the second diagnostic read.
+        var zones = new[] { BladeFanProtocol.ZoneCpu, BladeFanProtocol.ZoneGpu };
+        var requests = new byte[zones.Length][];
+        var responses = new byte[zones.Length][];
+        for (var index = 0; index < zones.Length; index++)
         {
-            var request = BladeFanProtocol.CreateGetTargetRequest(zone);
-            var response = await QueryBuiltRequestAsync(
-                device, "fan-target.get", request, cancellationToken);
+            requests[index] = BladeFanProtocol.CreateGetTargetRequest(zones[index]);
+            responses[index] = await QueryBuiltRequestAsync(
+                device, "fan-target.get", requests[index], cancellationToken);
+        }
+
+        int? rpm = null;
+        var maximumRpm = BladeModelCapabilities.MaximumFanTargetRpmFor(device.Descriptor.ProductId);
+        for (var index = 0; index < zones.Length; index++)
+        {
             var current = BladeFanProtocol.ParseTarget(
-                response, zone, CreateConfiguredRequest(device, "fan-target.get", request));
+                responses[index],
+                zones[index],
+                CreateConfiguredRequest(device, "fan-target.get", requests[index]),
+                maximumRpm);
             if (rpm is not null && rpm != current)
             {
                 throw new InvalidOperationException($"Blade fan-zone targets do not match: {rpm} / {current} RPM.");
@@ -1517,7 +1539,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         var configured = CreateConfiguredRequest(device, "fan-target.get", request);
         return curveTarget
             ? BladeFanProtocol.ParseCurveTarget(response, zone, configured)
-            : BladeFanProtocol.ParseTarget(response, zone, configured);
+            : BladeFanProtocol.ParseTarget(
+                response,
+                zone,
+                configured,
+                BladeModelCapabilities.MaximumFanTargetRpmFor(device.Descriptor.ProductId));
     }
 
     private Task WriteBladeFanTargetAsync(

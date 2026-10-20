@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Protocols;
 using Xunit;
 
 namespace OpenSynapse.Core.Tests;
@@ -43,10 +44,30 @@ public sealed class Blade0245ProbeTests
         {
             Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
             Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
+            Assert.False(BladeModelCapabilities.SupportsFixedFan(productId));
+            Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
             Assert.Empty(BladeModelCapabilities.CpuBoostModesFor(productId));
             Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Low));
             Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Medium));
             Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.High));
         }
+    }
+
+    [Fact]
+    public void TheBlade15AcceptsTheCaptured5300RpmStoredTarget()
+    {
+        var response = BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu);
+        response[1] = 0x02;
+        response[RazerFeatureReport.ArgumentsOffset + 2] = 0x35;
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+
+        Assert.Equal(
+            5300,
+            BladeFanProtocol.ParseTarget(
+                response,
+                BladeFanProtocol.ZoneCpu,
+                BladeModelCapabilities.MaximumFanTargetRpmFor(0x0245)));
+        Assert.Throws<InvalidOperationException>(() =>
+            BladeFanProtocol.ParseTarget(response, BladeFanProtocol.ZoneCpu));
     }
 }
