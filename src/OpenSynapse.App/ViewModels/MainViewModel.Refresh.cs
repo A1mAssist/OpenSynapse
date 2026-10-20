@@ -103,6 +103,10 @@ public sealed partial class MainViewModel
                 }
                 else if (SelectedOpenRazerDevice is { } selectedDevice)
                 {
+                    // A device paused after a transport drop stays paused across rescans,
+                    // because every read path returns early while the flag is set. Clear it
+                    // so the rescan the user just asked for can actually recover.
+                    selectedDevice.ClearRequiresRescan();
                     await selectedDevice.LoadBasicStateAsync(cancellationToken);
                 }
             }
