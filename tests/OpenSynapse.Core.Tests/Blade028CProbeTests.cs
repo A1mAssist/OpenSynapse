@@ -32,17 +32,17 @@ public sealed class Blade028CProbeTests
     }
 
     [Fact]
-    public void TheProbeStaysReadOnlyBecauseNoModelContractAdmitsIt()
+    public void TheOwnerReadingsAdmitTheBaselineContractAndKeepTheUnprovenControlsClosed()
     {
-        // The manifest declares the family contract so reads can be attempted, but every write
-        // stays blocked until the 028C power-mode mask and fan behaviour are confirmed on the
-        // owner's hardware. BladeModelCapabilities is the only gate that can unlock them.
-        foreach (var productId in new ushort[] { 0x028C })
-        {
-            Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
-            Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
-            Assert.Empty(BladeModelCapabilities.CpuBoostModesFor(productId));
-        }
-
+        // 028C answered every Blade read on the owner's hardware (thermal state, both fan
+        // tachometers, charge limit, power mode, boost), which admits the baseline CPU levels.
+        // Maximum fan and the fan curve were never exercised, so they stay closed.
+        const ushort productId = 0x028C;
+        Assert.Equal(
+            [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High],
+            BladeModelCapabilities.CpuBoostModesFor(productId));
+        Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.High));
+        Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
+        Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
     }
 }
