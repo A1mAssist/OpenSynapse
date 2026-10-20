@@ -36,7 +36,7 @@ public sealed partial class MainViewModel
     private BladeFanControlMode StoredBladeFanControlMode =>
         EditablePerformanceBladeProfile.FanCurve is not null
             ? BladeFanControlMode.Curve
-            : EditablePerformanceBladeProfile.FanMode is byte
+            : EditablePerformanceBladeProfile.FanMode is byte rawMode && rawMode == (byte)BladeFanMode.Manual
                 ? BladeFanControlMode.Fixed
                 : BladeFanControlMode.Automatic;
 
