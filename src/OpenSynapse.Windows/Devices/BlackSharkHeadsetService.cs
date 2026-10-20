@@ -43,40 +43,38 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
     {
         var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(0x1532, cancellationToken)
             .ConfigureAwait(false);
+        // OpenRazer ships no BlackShark driver at all, so the product ids this code started
+        // from were never verified against upstream. This headset also ships a PlayStation
+        // variant that enumerates under a different id, so select on the control collection
+        // shape instead of a fixed pid list.
         var candidates = interfaces
-            .Where(item => BlackSharkV3ProProtocol.IsSupportedProductId(item.ProductId))
+            .Where(item => item.UsagePage is 0xFF13 or 0xFF14 && item.Usage == 0x0001 &&
+                           item.OutputReportByteLength >= BlackSharkV3ProProtocol.ReportLength)
             .ToArray();
         if (candidates.Length == 0)
         {
             diagnostic?.Invoke(
-                "BlackShark found no 1532 interface with a supported product id; " +
-                "every enumerated interface will be listed in the Razer diagnostics.");
+                $"BlackShark found no 1532 control interface with a " +
+                $"{BlackSharkV3ProProtocol.ReportLength}-byte output report; " +
+                $"enumerated={string.Join(",", interfaces.Select(DescribeInterface))}");
             return null;
         }
 
         var chosen = candidates
-            .Where(item => item.UsagePage == 0xFF14 && item.Usage == 0x0001 &&
-                           item.OutputReportByteLength >= BlackSharkV3ProProtocol.ReportLength)
+            .Where(item => item.UsagePage == 0xFF14)
             .OrderByDescending(item => item.Access == DeviceAccessState.Available)
             .ThenBy(item => ProductPriority(item.ProductId))
             .FirstOrDefault()
             ?? candidates
-                .Where(item => item.UsagePage is 0xFF13 or 0xFF14 &&
-                               item.OutputReportByteLength >= BlackSharkV3ProProtocol.ReportLength)
                 .OrderByDescending(item => item.Access == DeviceAccessState.Available)
                 .ThenBy(item => ProductPriority(item.ProductId))
-                .FirstOrDefault();
-        if (chosen is null)
-        {
-            diagnostic?.Invoke(
-                "BlackShark found supported product ids but no interface with a 64-byte control " +
-                $"output report; candidates={string.Join(",", candidates.Select(item => $"pid_{item.ProductId:X4}:0x{item.UsagePage:X4}:0x{item.Usage:X4}:out{item.OutputReportByteLength}"))}");
-            return null;
-        }
+                .First();
 
-        // OpenRazer names the wireless PID 0x0577, but this dongle enumerates as
-        // 0x101B and that is the interface the headset answers on.
-        var wireless = BlackSharkV3ProProtocol.IsWirelessProductId(chosen.ProductId);
+        // The transport byte differs between the 2.4 GHz link and the wired cable. Only the pids
+        // we have actually observed on hardware map to a direction; an unknown variant such as the
+        // PlayStation build starts on the wireless byte, and the diagnostic below records the
+        // choice so a failing link becomes evidence instead of another guess.
+        var wireless = chosen.ProductId != BlackSharkV3ProProtocol.WiredProductId;
         diagnostic?.Invoke(
             $"BlackShark selected vid_{chosen.VendorId:X4}&pid_{chosen.ProductId:X4} " +
             $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} out={chosen.OutputReportByteLength} " +
@@ -356,7 +354,7 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         }
     }
 
-    // The dongle PID answers on the active link; prefer it so a plugged-in USB
+    // Only the wireless dongle pid answers on the active link; prefer it so a plugged-in USB
     // cable cannot make a 2.4 GHz session look wired.
     private static int ProductPriority(ushort productId) => productId switch
     {
@@ -365,6 +363,10 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         BlackSharkV3ProProtocol.WiredProductId => 2,
         _ => 3,
     };
+
+    private static string DescribeInterface(WindowsHidDiscovery.HidInterfaceDescriptor item) =>
+        $"pid_{item.ProductId:X4}:0x{item.UsagePage:X4}:0x{item.Usage:X4}:" +
+        $"in{item.InputReportByteLength}/out{item.OutputReportByteLength}/{item.Access}";
 
     private static bool TryMapAncMode(byte raw, out BlackSharkAncMode mode)
     {

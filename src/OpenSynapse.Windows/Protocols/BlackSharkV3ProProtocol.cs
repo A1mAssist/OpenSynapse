@@ -43,13 +43,6 @@ public static class BlackSharkV3ProProtocol
     private const byte GameChatReadClass = 0x5C;
     private const byte GameChatSetClass = 0xDC;
 
-    public static bool IsSupportedProductId(ushort productId) =>
-        productId is WiredProductId or WirelessProductId or DongleProductId;
-
-    /// <summary>Only the 2.4 GHz dongle and receiver use transport byte 0x80.</summary>
-    public static bool IsWirelessProductId(ushort productId) =>
-        productId is WirelessProductId or DongleProductId;
-
     public static string DescribeProduct(ushort productId) => productId switch
     {
         WiredProductId => "Razer BlackShark V3 Pro (USB)",
