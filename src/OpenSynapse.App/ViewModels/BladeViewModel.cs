@@ -21,6 +21,7 @@ internal sealed class BladeViewModel
     internal int _confirmedBladePerformanceModeIndex = -1;
     internal bool _canSetBladePerformanceMode;
     internal string _bladeFanText = "--";
+    internal bool _canSetBladeFan;
     internal string _bladeFanModeText = "--";
     internal string _bladeFanTargetRpmText = "--";
     internal string _bladeCurrentFanCpuRpmText = "--";
