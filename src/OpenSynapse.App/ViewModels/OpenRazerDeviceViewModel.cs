@@ -90,6 +90,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool _chromaIntegrationEnabled;
     private bool _isLightingSettingsBusy;
     private bool _operationSucceeded;
+    private string? _operationStatusOverride;
     private int _disposed;
 
     public OpenRazerDeviceViewModel(
@@ -230,7 +231,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public string OperationStatusText => _operationSucceeded
-        ? AppStrings.Text("OpenRazerOperationApplied")
+        ? _operationStatusOverride ?? AppStrings.Text("OpenRazerOperationApplied")
         : string.Empty;
     public bool IsReady => Connection.IsReady;
     public bool RequiresRescan { get => _requiresRescan; private set => SetField(ref _requiresRescan, value); }
