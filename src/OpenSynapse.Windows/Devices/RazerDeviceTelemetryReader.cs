@@ -137,16 +137,34 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 var thermalState = await ReadBladeThermalStateAsync(blade, cancellationToken);
                 bladePerformanceMode = thermalState.PerformanceMode;
                 bladeFanMode = thermalState.FanMode;
-                if (thermalState.FanMode == BladeFanMode.Manual)
-                {
-                    bladeFanTargetRpm = await ReadBladeFanTargetRpmAsync(blade, cancellationToken);
-                }
                 _validatedBladePerformancePath = blade.Descriptor.Id;
                 bladeThermalReadSucceeded = true;
             }
             catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"Performance and fan state: {exception.Message}");
+            }
+
+            if (owns("fan-target.get"))
+            {
+                try
+                {
+                    // Always attempt the target read: some models keep a manual fan target
+                    // without ever reporting the fan mode as manual. The value is only used
+                    // in manual mode, so a failure elsewhere is expected, not an error.
+                    var targetRpm = await ReadBladeFanTargetRpmAsync(blade, cancellationToken);
+                    if (bladeFanMode == BladeFanMode.Manual)
+                    {
+                        bladeFanTargetRpm = targetRpm;
+                    }
+                }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    if (bladeFanMode == BladeFanMode.Manual)
+                    {
+                        errors.Add($"Fan target: {exception.Message}");
+                    }
+                }
             }
 
             try
