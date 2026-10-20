@@ -11,7 +11,7 @@
           <TextBlock local:Localized.Uid="BladeFanCurveHint" Text="拖动圆点调整转速，也可以在下方输入精确数值。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
           <ComboBox Grid.Column="1" ItemsSource="{Binding BladeFanCurveModeOptions}" SelectedIndex="{Binding BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="160" />
         </Grid>
-        <local:BladeFanCurvePlot DataContext="{Binding BladeFanCurveEditor}" Height="240" />
+        <local:BladeFanCurvePlot DataContext="{Binding BladeFanCurveEditor}" Height="280" />
         <StackPanel Spacing="8">
           <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10">
             <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Text="温度" Style="{StaticResource MetricLabelStyle}" />
