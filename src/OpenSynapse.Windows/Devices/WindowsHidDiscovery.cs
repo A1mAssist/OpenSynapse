@@ -8,26 +8,33 @@ namespace OpenSynapse.Windows.Devices;
 public sealed class WindowsHidDiscovery : IDeviceDiscovery
 {
     private readonly RazerDeviceRegistry _registry;
+    private readonly Action<string>? _diagnosticLog;
+    private readonly HashSet<string> _loggedUnmatchedInterfaces = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _diagnosticSync = new();
 
     public WindowsHidDiscovery()
         : this(RazerDeviceRegistry.BuiltIn)
     {
     }
 
-    internal WindowsHidDiscovery(RazerDeviceRegistry registry)
+    internal WindowsHidDiscovery(RazerDeviceRegistry registry, Action<string>? diagnosticLog = null)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _diagnosticLog = diagnosticLog;
     }
 
     public ValueTask<DeviceSnapshot> DiscoverAsync(CancellationToken cancellationToken = default)
     {
         return new ValueTask<DeviceSnapshot>(Task.Run(
-            () => Discover(_registry, cancellationToken, collapseProductIds: true), cancellationToken));
+            () => Discover(cancellationToken, collapseProductIds: true), cancellationToken));
     }
 
-    public static ValueTask<DeviceSnapshot> DiscoverAllAsync(CancellationToken cancellationToken = default) =>
-        new(Task.Run(() => Discover(
-            RazerDeviceRegistry.BuiltIn, cancellationToken, collapseProductIds: false), cancellationToken));
+    public static ValueTask<DeviceSnapshot> DiscoverAllAsync(CancellationToken cancellationToken = default)
+    {
+        var discovery = new WindowsHidDiscovery(RazerDeviceRegistry.BuiltIn);
+        return new ValueTask<DeviceSnapshot>(Task.Run(
+            () => discovery.Discover(cancellationToken, collapseProductIds: false), cancellationToken));
+    }
 
     internal static Task<IReadOnlyList<HidInterfaceDescriptor>> FindVendorFeatureInterfacesAsync(
         ushort vendorId,
@@ -146,8 +153,7 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         return interfaces;
     }
 
-    private static DeviceSnapshot Discover(
-        RazerDeviceRegistry registry,
+    private DeviceSnapshot Discover(
         CancellationToken cancellationToken,
         bool collapseProductIds)
     {
@@ -191,29 +197,63 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                     }
 
                     var path = GetDevicePath(deviceInfoSet, ref interfaceData);
-                    if (path is null || !seenPaths.Add(path) ||
-                        !DeviceIdParser.TryParse(path, out var vendorId, out var productId))
+                    if (path is null || !seenPaths.Add(path))
                     {
                         continue;
                     }
 
-                    var manifest = registry.Find(vendorId, productId);
+                    var parsedPath = DeviceIdParser.TryParse(path, out var vendorId, out var productId);
+                    InterfaceProbe? metadata = null;
+                    if (!parsedPath)
+                    {
+                        // Windows exposes Bluetooth HID devices through BTHLE/BTHENUM
+                        // paths that usually omit USB-style VID_/PID_ tokens.
+                        if (!path.Contains("BTHLE", StringComparison.OrdinalIgnoreCase) &&
+                            !path.Contains("BTHENUM", StringComparison.OrdinalIgnoreCase) &&
+                            !path.Contains("00001812-0000-1000-8000-00805f9b34fb", StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        metadata = ProbeInterfaceMetadata(path);
+                        if (!TryResolveDeviceIdentity(
+                                path,
+                                metadata.VendorId,
+                                metadata.ProductId,
+                                out vendorId,
+                                out productId))
+                        {
+                            LogUnmatchedInterface(path, metadata);
+                            continue;
+                        }
+                    }
+
+                    var manifest = _registry.Find(vendorId, productId);
                     if (manifest is null)
                     {
+                        if (metadata is not null)
+                        {
+                            LogUnmatchedInterface(path, metadata);
+                        }
                         continue;
                     }
 
-                    var probe = ProbeInterface(path, manifest.Collection);
+                    metadata ??= ProbeInterfaceMetadata(path);
+                    var isControlChannel = MatchesCollection(
+                        manifest.Collection,
+                        metadata.UsagePage,
+                        metadata.Usage,
+                        metadata.FeatureReportByteLength);
                     var descriptor = new DeviceDescriptor(
                         path,
                         manifest.DisplayName,
                         vendorId,
                         productId,
-                        probe.Access,
-                        probe.IsControlChannel ? DeviceCapabilityState.PendingValidation : DeviceCapabilityState.Blocked,
-                        probe.FeatureReportByteLength,
-                        probe.UsagePage,
-                        probe.Usage,
+                        isControlChannel ? metadata.Access : DeviceAccessState.BusyOrUnavailable,
+                        isControlChannel ? DeviceCapabilityState.PendingValidation : DeviceCapabilityState.Blocked,
+                        metadata.FeatureReportByteLength,
+                        metadata.UsagePage,
+                        metadata.Usage,
                         manifest.ProtocolFamily,
                         manifest.Category);
 
@@ -297,16 +337,58 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         }
     }
 
-    private static InterfaceProbe ProbeInterface(string path, RazerHidCollection collection)
+    internal static bool TryResolveDeviceIdentity(
+        string path,
+        ushort attributeVendorId,
+        ushort attributeProductId,
+        out ushort vendorId,
+        out ushort productId)
     {
-        var metadata = ProbeInterfaceMetadata(path);
-        var isControlChannel = MatchesCollection(
-            collection, metadata.UsagePage, metadata.Usage, metadata.FeatureReportByteLength);
-        return metadata with
+        if (DeviceIdParser.TryParse(path, out vendorId, out productId))
         {
-            IsControlChannel = isControlChannel,
-            Access = isControlChannel ? metadata.Access : DeviceAccessState.BusyOrUnavailable,
-        };
+            return true;
+        }
+
+        vendorId = attributeVendorId;
+        productId = attributeProductId;
+        return vendorId != 0 && productId != 0;
+    }
+
+    private void LogUnmatchedInterface(string path, InterfaceProbe metadata)
+    {
+        if (_diagnosticLog is null ||
+            (!path.Contains("BTHLE", StringComparison.OrdinalIgnoreCase) &&
+             !path.Contains("BTHENUM", StringComparison.OrdinalIgnoreCase) &&
+             !path.Contains("00001812-0000-1000-8000-00805f9b34fb", StringComparison.OrdinalIgnoreCase) &&
+             metadata.VendorId != 0x1532 &&
+             !metadata.Manufacturer.Contains("Razer", StringComparison.OrdinalIgnoreCase) &&
+             !metadata.Product.Contains("Razer", StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        lock (_diagnosticSync)
+        {
+            if (!_loggedUnmatchedInterfaces.Add(path))
+            {
+                return;
+            }
+        }
+
+        _diagnosticLog(
+            $"unmatched path={DescribeUnmatchedPath(path)}, vendor=0x{metadata.VendorId:X4}, product=0x{metadata.ProductId:X4}, " +
+            $"manufacturer='{metadata.Manufacturer}', productName='{metadata.Product}', " +
+            $"usage=0x{metadata.UsagePage:X4}:0x{metadata.Usage:X4}, " +
+            $"in={metadata.InputReportByteLength}, out={metadata.OutputReportByteLength}, " +
+            $"feature={metadata.FeatureReportByteLength}, access={metadata.Access}");
+    }
+
+    private static string DescribeUnmatchedPath(string path)
+    {
+        var parts = path.Split('#');
+        var description = parts.Length > 1 ? parts[1] : "<redacted>";
+        var revision = description.IndexOf("_REV&", StringComparison.OrdinalIgnoreCase);
+        return revision >= 0 ? description[..revision] : description;
     }
 
     private static InterfaceProbe ProbeInterfaceMetadata(string path)
@@ -314,7 +396,8 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         var queryHandle = NativeMethods.CreateFile(path, 0, NativeMethods.FILE_SHARE_READ | NativeMethods.FILE_SHARE_WRITE, IntPtr.Zero, NativeMethods.OPEN_EXISTING, 0, IntPtr.Zero);
         if (queryHandle == NativeMethods.INVALID_HANDLE_VALUE)
         {
-            return new InterfaceProbe(false, 0, 0, 0, 0, 0, DeviceAccessState.BusyOrUnavailable);
+            return new InterfaceProbe(
+                false, 0, 0, 0, 0, 0, DeviceAccessState.BusyOrUnavailable, 0, 0, string.Empty, string.Empty);
         }
 
         ushort inputReportByteLength = 0;
@@ -322,8 +405,25 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         ushort featureReportByteLength = 0;
         ushort usagePage = 0;
         ushort usage = 0;
+        ushort vendorId = 0;
+        ushort productId = 0;
+        var manufacturer = string.Empty;
+        var product = string.Empty;
         try
         {
+            var attributes = new NativeMethods.HidAttributes
+            {
+                Size = (uint)Marshal.SizeOf<NativeMethods.HidAttributes>(),
+            };
+            if (NativeMethods.HidD_GetAttributes(queryHandle, ref attributes))
+            {
+                vendorId = attributes.VendorId;
+                productId = attributes.ProductId;
+            }
+
+            manufacturer = ReadHidString(queryHandle, NativeMethods.HidD_GetManufacturerString);
+            product = ReadHidString(queryHandle, NativeMethods.HidD_GetProductString);
+
             if (NativeMethods.HidD_GetPreparsedData(queryHandle, out var preparsedData))
             {
                 try
@@ -352,12 +452,29 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         if (controlHandle == NativeMethods.INVALID_HANDLE_VALUE)
         {
             return new InterfaceProbe(false, inputReportByteLength, outputReportByteLength,
-                featureReportByteLength, usagePage, usage, DeviceAccessState.BusyOrUnavailable);
+                featureReportByteLength, usagePage, usage, DeviceAccessState.BusyOrUnavailable,
+                vendorId, productId, manufacturer, product);
         }
 
         NativeMethods.CloseHandle(controlHandle);
         return new InterfaceProbe(false, inputReportByteLength, outputReportByteLength,
-            featureReportByteLength, usagePage, usage, DeviceAccessState.Available);
+            featureReportByteLength, usagePage, usage, DeviceAccessState.Available,
+            vendorId, productId, manufacturer, product);
+    }
+
+    private static string ReadHidString(
+        IntPtr handle,
+        Func<IntPtr, byte[], int, bool> reader)
+    {
+        var buffer = new byte[256];
+        if (!reader(handle, buffer, buffer.Length))
+        {
+            return string.Empty;
+        }
+
+        var text = Encoding.Unicode.GetString(buffer);
+        var terminator = text.IndexOf('\0');
+        return (terminator >= 0 ? text[..terminator] : text).Trim();
     }
 
     internal static bool MatchesCollection(
@@ -376,7 +493,11 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         ushort FeatureReportByteLength,
         ushort UsagePage,
         ushort Usage,
-        DeviceAccessState Access);
+        DeviceAccessState Access,
+        ushort VendorId,
+        ushort ProductId,
+        string Manufacturer,
+        string Product);
 
     internal sealed record HidInterfaceDescriptor(
         string DevicePath,
@@ -482,6 +603,15 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
             new(new Guid("8C7ED206-3F8A-4827-B3AB-AE9E1FAEFC6C"), 2);
 
         [StructLayout(LayoutKind.Sequential)]
+        internal struct HidAttributes
+        {
+            internal uint Size;
+            internal ushort VendorId;
+            internal ushort ProductId;
+            internal ushort VersionNumber;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         internal struct HidpCaps
         {
             internal ushort Usage;
@@ -508,7 +638,19 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
 
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_GetAttributes(IntPtr hidDeviceObject, ref HidAttributes attributes);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool HidD_GetPreparsedData(IntPtr hidDeviceObject, out IntPtr preparsedData);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_GetManufacturerString(IntPtr hidDeviceObject, [Out] byte[] buffer, int bufferLength);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_GetProductString(IntPtr hidDeviceObject, [Out] byte[] buffer, int bufferLength);
 
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

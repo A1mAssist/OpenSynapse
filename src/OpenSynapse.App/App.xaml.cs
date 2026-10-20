@@ -138,7 +138,9 @@ public partial class App : Application
         _openRazerDeviceService = new OpenRazerDeviceService(_diagnosticLog);
         _openRazerDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
         var viewModel = new MainViewModel(
-            new WindowsHidDiscovery(registryLoad.Registry),
+            new WindowsHidDiscovery(
+                registryLoad.Registry,
+                message => _diagnosticLog.TryWrite("razer-hid", message)),
             new RazerDeviceTelemetryReader(razerTransport, registryLoad.Registry),
             _performanceMonitor,
             new ProfileStore(),
