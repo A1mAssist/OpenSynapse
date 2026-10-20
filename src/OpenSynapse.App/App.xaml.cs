@@ -123,7 +123,7 @@ public partial class App : Application
         }
 
         _performanceMonitor = new WindowsPerformanceMonitor();
-        var razerTransport = new RazerFeatureTransport();
+        var razerTransport = new RazerFeatureTransport(_diagnosticLog);
         _razerTransport = razerTransport;
         var registryLoad = RazerDeviceRegistry.Load();
         foreach (var error in registryLoad.Errors)
