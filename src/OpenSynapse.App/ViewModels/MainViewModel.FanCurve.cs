@@ -190,11 +190,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        if (_pendingMode == BladeFanControlMode.Curve)
-        {
-            _pendingMode = null;
-        }
-
+        _pendingMode = BladeFanControlMode.Fixed;
         RaiseBladeFanModeSelection();
     }
 
