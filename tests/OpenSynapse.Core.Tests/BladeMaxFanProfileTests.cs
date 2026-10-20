@@ -116,4 +116,14 @@ public sealed class BladeMaxFanProfileTests
     [InlineData(0x0000, false)]
     public void OnlyAuditedModelsAdmitTheFanCurve(ushort productId, bool expected) =>
         Assert.Equal(expected, BladeModelCapabilities.SupportsFanCurve(productId));
+
+    [Theory]
+    [InlineData(0x02C6, true)]
+    [InlineData(0x0245, false)]
+    [InlineData(0x029F, false)]
+    [InlineData(0x02A0, false)]
+    [InlineData(0x028C, false)]
+    [InlineData(0x0000, false)]
+    public void OnlyAuditedModelsAdmitFixedFanWrites(ushort productId, bool expected) =>
+        Assert.Equal(expected, BladeModelCapabilities.SupportsFixedFan(productId));
 }

@@ -201,6 +201,8 @@ internal sealed class BladeViewModel
     /// </summary>
     internal bool SupportsFanCurve => BladeModelCapabilities.SupportsFanCurve(_bladeProductId);
 
+    internal bool SupportsFixedFan => BladeModelCapabilities.SupportsFixedFan(_bladeProductId);
+
     internal void SetMaxFan(BladeMaxFanMode mode)
     {
         if (!SupportsMaxFan)

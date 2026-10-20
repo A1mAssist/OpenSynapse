@@ -275,11 +275,11 @@
                           </Grid>
                         </StackPanel>
                       </Border>
-                      <Border Grid.Column="1" Visibility="{Binding BladeFanCardVisibility}" Style="{StaticResource CardStyle}" Padding="16">
+                      <Border Grid.Column="1" Visibility="{Binding BladeFanControlVisibility}" Style="{StaticResource CardStyle}" Padding="16">
                         <StackPanel Spacing="12">
                           <TextBlock local:Localized.Uid="Loc_C08649AE15" Text="风扇控制" Style="{StaticResource MetricLabelStyle}" />
                           <RadioButton Content="自动（默认）" local:Localized.Uid="BladeFanModeAutomatic" IsChecked="{Binding BladeFanAutomaticModeSelected, Mode=OneWay}" Click="BladeFanAutomaticModeClick" GroupName="BladeFanControl" />
-                          <RadioButton Content="固定风扇转速" local:Localized.Uid="BladeFanModeFixed" IsChecked="{Binding BladeFanFixedModeSelected, Mode=OneWay}" Click="BladeFanFixedModeClick" GroupName="BladeFanControl" />
+                          <RadioButton Content="固定风扇转速" local:Localized.Uid="BladeFanModeFixed" IsChecked="{Binding BladeFanFixedModeSelected, Mode=OneWay}" Click="BladeFanFixedModeClick" GroupName="BladeFanControl" Visibility="{Binding BladeFanFixedVisibility}" />
                           <RadioButton Content="手动风扇曲线" local:Localized.Uid="BladeFanModeCurve" IsChecked="{Binding BladeFanCurveModeSelected, Mode=OneWay}" Click="BladeFanCurveModeClick" GroupName="BladeFanControl" Visibility="{Binding BladeFanCurveVisibility}" />
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding BladeFanFixedRpmVisibility}">
                             <NumberBox Value="{Binding BladeFanFixedRpm, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Header="目标转速 (RPM)" Minimum="2000" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />

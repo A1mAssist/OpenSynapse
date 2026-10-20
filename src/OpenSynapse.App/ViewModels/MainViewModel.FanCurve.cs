@@ -59,14 +59,21 @@ public sealed partial class MainViewModel
     public IReadOnlyList<string> BladeFanControlModeOptions =>
         _blade.SupportsFanCurve
             ? AppStrings.Texts("BladeFanModeAutomatic", "BladeFanModeFixed", "BladeFanModeCurve")
-            : AppStrings.Texts("BladeFanModeAutomatic", "BladeFanModeFixed");
+            : _blade.SupportsFixedFan
+                ? AppStrings.Texts("BladeFanModeAutomatic", "BladeFanModeFixed")
+                : AppStrings.Texts("BladeFanModeAutomatic");
 
     public bool BladeFanCurveModeSelected => BladeFanControlModeIndex == (int)BladeFanControlMode.Curve;
     public bool BladeFanFixedModeSelected => BladeFanControlModeIndex == (int)BladeFanControlMode.Fixed;
     public bool BladeFanAutomaticModeSelected => BladeFanControlModeIndex == (int)BladeFanControlMode.Automatic;
 
+    public Visibility BladeFanFixedVisibility =>
+        _blade.SupportsFixedFan && CanSetBladeFan ? Visibility.Visible : Visibility.Collapsed;
+
     public Visibility BladeFanFixedRpmVisibility =>
-        BladeFanFixedModeSelected ? Visibility.Visible : Visibility.Collapsed;
+        BladeFanFixedVisibility == Visibility.Visible && BladeFanFixedModeSelected
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     /// <summary>Collapses the curve block on models with no audited fan-target protocol.</summary>
     public Visibility BladeFanCurveVisibility =>
@@ -128,6 +135,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeFanAutomaticModeSelected));
         OnPropertyChanged(nameof(BladeFanFixedModeSelected));
         OnPropertyChanged(nameof(BladeFanCurveModeSelected));
+        OnPropertyChanged(nameof(BladeFanFixedVisibility));
         OnPropertyChanged(nameof(BladeFanFixedRpmVisibility));
         OnPropertyChanged(nameof(BladeFanCurvePanelVisibility));
     }
@@ -177,6 +185,11 @@ public sealed partial class MainViewModel
     /// <summary>Shows the fixed-speed surface without committing a speed yet.</summary>
     public void ShowBladeFanFixedMode()
     {
+        if (!_blade.SupportsFixedFan)
+        {
+            return;
+        }
+
         if (_pendingMode == BladeFanControlMode.Curve)
         {
             _pendingMode = null;
@@ -200,6 +213,11 @@ public sealed partial class MainViewModel
     /// </summary>
     public async Task SelectBladeFanFixedModeAsync(CancellationToken cancellationToken = default)
     {
+        if (!_blade.SupportsFixedFan)
+        {
+            return;
+        }
+
         _pendingMode = null;
         await ApplyBladeFanFixedAsync(BladeFanMode.Manual, BladeFanFixedRpm, cancellationToken);
         RaiseBladeFanModeSelection();

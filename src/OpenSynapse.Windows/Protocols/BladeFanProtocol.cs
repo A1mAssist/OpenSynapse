@@ -53,25 +53,33 @@ public static class BladeFanProtocol
     }
 
     public static int ParseTarget(ReadOnlySpan<byte> response, byte expectedZone) =>
-        ParseTargetCore(response, expectedZone, CreateGetTargetRequest(expectedZone), MinimumRpm);
+        ParseTarget(response, expectedZone, MaximumRpm);
+
+    public static int ParseTarget(
+        ReadOnlySpan<byte> response,
+        byte expectedZone,
+        int maximumRpm) =>
+        ParseTargetCore(response, expectedZone, CreateGetTargetRequest(expectedZone), MinimumRpm, maximumRpm);
 
     internal static int ParseTarget(
         ReadOnlySpan<byte> response,
         byte expectedZone,
-        ReadOnlySpan<byte> request) =>
-        ParseTargetCore(response, expectedZone, request, MinimumRpm);
+        ReadOnlySpan<byte> request,
+        int maximumRpm = MaximumRpm) =>
+        ParseTargetCore(response, expectedZone, request, MinimumRpm, maximumRpm);
 
     internal static int ParseCurveTarget(
         ReadOnlySpan<byte> response,
         byte expectedZone,
         ReadOnlySpan<byte> request) =>
-        ParseTargetCore(response, expectedZone, request, MinimumCurveRpm);
+        ParseTargetCore(response, expectedZone, request, MinimumCurveRpm, MaximumRpm);
 
     private static int ParseTargetCore(
         ReadOnlySpan<byte> response,
         byte expectedZone,
         ReadOnlySpan<byte> request,
-        int minimumRpm)
+        int minimumRpm,
+        int maximumRpm)
     {
         if (!RazerFeatureReport.IsSuccessfulResponse(request, response, DataSize))
         {
@@ -85,11 +93,11 @@ public static class BladeFanProtocol
         }
 
         var rpm = response[RazerFeatureReport.ArgumentsOffset + 2] * StepRpm;
-        if (rpm < minimumRpm || rpm > MaximumRpm || rpm % StepRpm != 0)
+        if (rpm < minimumRpm || rpm > maximumRpm || rpm % StepRpm != 0)
         {
             var kind = minimumRpm == MinimumRpm ? "fixed fan speed" : "fan-curve speed";
             throw new InvalidOperationException(
-                $"Blade returned an unsupported {kind} of {rpm} RPM; allowed range is {minimumRpm}..{MaximumRpm} RPM in {StepRpm} RPM steps.");
+                $"Blade returned an unsupported {kind} of {rpm} RPM; allowed range is {minimumRpm}..{maximumRpm} RPM in {StepRpm} RPM steps.");
         }
         return rpm;
     }
