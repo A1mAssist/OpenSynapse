@@ -673,6 +673,29 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void BluetoothHidIdentityFallsBackToHidAttributes()
+    {
+        const string path =
+            @"\\?\HID#{00001812-0000-1000-8000-00805F9B34FB}_DEV_VID&02A3_PID&008F_REV&0101_AABBCCDDEEFF#a&1&0&0001";
+
+        Assert.True(WindowsHidDiscovery.TryResolveDeviceIdentity(
+            path, 0x1532, 0x008F, out var vendorId, out var productId));
+        Assert.Equal(0x1532, vendorId);
+        Assert.Equal(0x008F, productId);
+    }
+
+    [Fact]
+    public void UsbHidPathTakesPrecedenceOverHidAttributes()
+    {
+        const string path = @"\\?\hid#vid_1532&pid_0090&mi_02&col02#7&1a2b&0&0000#{guid}";
+
+        Assert.True(WindowsHidDiscovery.TryResolveDeviceIdentity(
+            path, 0x1532, 0x008F, out var vendorId, out var productId));
+        Assert.Equal(0x1532, vendorId);
+        Assert.Equal(0x0090, productId);
+    }
+
+    [Fact]
     public void PhysicalDeviceKeyPrefersTheWindowsContainerIdAcrossInterfaces()
     {
         const string mi00 = @"\\?\hid#vid_1532&pid_0091&mi_00&col01#7&123456&0&0000#{guid}";
