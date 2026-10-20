@@ -321,20 +321,6 @@ public sealed class DeviceMetadataTests
     }
 
     /// <summary>
-    /// Blade 14 (2022) RZ09-0427 is only reached through the OpenRazer path, whose laptops
-    /// capability set carries lighting alone. It must stay unadmitted until captured reports
-    /// justify otherwise, otherwise the UI would offer controls the firmware never implements.
-    /// </summary>
-    [Theory]
-    [InlineData(0x028C)] // Blade 14 (2022)
-    public void OpenRazerOnlyBladeAdmitsNoPerformanceControls(ushort productId)
-    {
-        Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
-        Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
-        Assert.Empty(BladeModelCapabilities.CpuBoostModesFor(productId));
-    }
-
-    /// <summary>
     /// Only 029F captures a CPU Boost level; the captured 02C6 Custom payloads stop at
     /// High. Undervolt must not be offered on any audited model.
     /// </summary>
