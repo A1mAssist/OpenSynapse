@@ -672,6 +672,17 @@ public sealed class OpenRazerBackendTests
         Assert.Contains("#7&123456&0&0000#", WindowsHidDiscovery.GetPhysicalDeviceKey(col01));
     }
 
+    [Theory]
+    [InlineData(@"\\?\HID#{00001812-0000-1000-8000-00805F9B34FB}_DEV_VID&02A3_PID&008F#a&1")]
+    [InlineData(@"\\?\BTHLE\DEV_AABBCCDDEEFF\7&1")]
+    [InlineData(@"\\?\BTHENUM\{00001812-0000-1000-8000-00805F9B34FB}_VID&00010000_PID&008F\7&1")]
+    public void BluetoothHidPathsAreRecognized(string path)
+    {
+        Assert.True(WindowsHidDiscovery.IsBluetoothHidPath(path));
+        Assert.False(WindowsHidDiscovery.IsBluetoothHidPath(
+            @"\\?\hid#vid_1532&pid_008F&mi_02&col02#7&1"));
+    }
+
     [Fact]
     public void BluetoothHidIdentityFallsBackToHidAttributes()
     {
