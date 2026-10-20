@@ -151,10 +151,10 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                 Add("Text_37B37761", telemetry.BladeAdvancedFanGpuModeRaw,
                     telemetry.BladeAdvancedFanGpuModeRaw is byte gpuMode ? FormatRawByte(gpuMode) : null);
                 Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled);
-                Add("Text_24A8C247", telemetry.BladeNativeDisplayMode);
                 Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
-                if (telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true)
+                if (telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true)
                 {
+                    Add("Text_24A8C247", telemetry.BladeNativeDisplayMode);
                     Add("DiagnosticLocalDimming", telemetry.BladeLocalDimmingEnabled);
                 }
                 break;

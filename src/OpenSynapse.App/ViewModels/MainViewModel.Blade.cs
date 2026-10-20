@@ -1095,7 +1095,9 @@ public sealed partial class MainViewModel
             }
         }
     }
-    public bool CanSetBladeNativeDisplayMode => _blade._bladeNativeDisplayMode is not null;
+    public bool CanSetBladeNativeDisplayMode =>
+        _blade._bladeNativeDisplayMode is not null &&
+        _blade._bladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true;
     public bool CanApplyBladeNativeDisplayMode =>
         CanSetBladeNativeDisplayMode &&
         BladeNativeDisplayModeIndex is >= 0 and <= 1 &&
