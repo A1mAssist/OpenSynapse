@@ -37,7 +37,9 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
 
     public BlackSharkHeadsetConnection Connection => _connection;
 
-    public static async Task<BlackSharkHeadsetConnection?> FindAsync(CancellationToken cancellationToken = default)
+    public static async Task<BlackSharkHeadsetConnection?> FindAsync(
+        Action<string>? diagnostic = null,
+        CancellationToken cancellationToken = default)
     {
         var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(0x1532, cancellationToken)
             .ConfigureAwait(false);
@@ -46,6 +48,9 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             .ToArray();
         if (candidates.Length == 0)
         {
+            diagnostic?.Invoke(
+                "BlackShark found no 1532 interface with a supported product id; " +
+                "every enumerated interface will be listed in the Razer diagnostics.");
             return null;
         }
 
@@ -63,12 +68,20 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
                 .FirstOrDefault();
         if (chosen is null)
         {
+            diagnostic?.Invoke(
+                "BlackShark found supported product ids but no interface with a 64-byte control " +
+                $"output report; candidates={string.Join(",", candidates.Select(item => $"pid_{item.ProductId:X4}:0x{item.UsagePage:X4}:0x{item.Usage:X4}:out{item.OutputReportByteLength}"))}");
             return null;
         }
 
         // OpenRazer names the wireless PID 0x0577, but this dongle enumerates as
         // 0x101B and that is the interface the headset answers on.
         var wireless = BlackSharkV3ProProtocol.IsWirelessProductId(chosen.ProductId);
+        diagnostic?.Invoke(
+            $"BlackShark selected vid_{chosen.VendorId:X4}&pid_{chosen.ProductId:X4} " +
+            $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} out={chosen.OutputReportByteLength} " +
+            $"in={chosen.InputReportByteLength} access={chosen.Access} direction={(wireless ? "wireless" : "wired")}; " +
+            $"candidates={string.Join(",", candidates.Select(item => $"pid_{item.ProductId:X4}:0x{item.UsagePage:X4}:0x{item.Usage:X4}:out{item.OutputReportByteLength}"))}");
         return new BlackSharkHeadsetConnection(
             chosen.DevicePath,
             chosen.ProductId,
@@ -311,6 +324,9 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             return null;
         }
 
+        _diagnostic?.Invoke(
+            $"BlackShark GET class 0x{expectedClass:X2} answered value=0x{response.Arguments[0]:X2} " +
+            $"direction=0x{request[9]:X2}");
         return response.Arguments[0];
     }
 
