@@ -25,11 +25,11 @@ public static class BladeModelCapabilities
             // control, not the Custom Power Mode bit, so Max Fan is not admitted here.
             [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true, FixedFan: true),
 
-            // Blade 15 (Mid 2019) Mercury RZ09-03017. The owner's r4 probe captured a
-            // stored CPU target of 0x35 (5300 RPM), while the firmware still reported
-            // Automatic fan mode. Reads need the model-specific ceiling; fixed writes
-            // remain unadmitted until both zones and a write/readback are confirmed.
-            [0x0245] = new(MaxFan: false, None, FixedFan: false, MaximumFanTargetRpm: 5300),
+            // Blade 15 (Mid 2019) Mercury RZ09-03017. The r5 probe confirmed both fan
+            // zones return a stored target of 0x35 (5300 RPM) while the firmware still
+            // reports Automatic fan mode. Fixed-target writes are admitted for the next
+            // hardware test; the fan curve remains closed.
+            [0x0245] = new(MaxFan: false, None, FixedFan: true, MaximumFanTargetRpm: 5300),
 
             // Blade 16 (2023) RZ09-0483. Owner-tested maximum fans plus a CPU Boost level.
             [0x029F] = new(MaxFan: true, [.. LowMediumHigh, BladeCpuBoostMode.Boost]),

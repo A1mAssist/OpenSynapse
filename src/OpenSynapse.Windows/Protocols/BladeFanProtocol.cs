@@ -71,8 +71,9 @@ public static class BladeFanProtocol
     internal static int ParseCurveTarget(
         ReadOnlySpan<byte> response,
         byte expectedZone,
-        ReadOnlySpan<byte> request) =>
-        ParseTargetCore(response, expectedZone, request, MinimumCurveRpm, MaximumRpm);
+        ReadOnlySpan<byte> request,
+        int maximumRpm = MaximumRpm) =>
+        ParseTargetCore(response, expectedZone, request, MinimumCurveRpm, maximumRpm);
 
     private static int ParseTargetCore(
         ReadOnlySpan<byte> response,
