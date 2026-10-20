@@ -2,14 +2,59 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
-## [Unreleased]
+## [1.5.4] - 2026-10-21
 
 ### 新增 / Added
 
-- 系统遥测的 CPU/GPU 温度、功耗和频率现在支持悬停查看本机运行期间的最小值与最大值。
+- Blade 16 (2025) 的风扇控制现提供自动、固定转速和手动曲线三种模式。手动曲线在独立窗口中编辑，支持拖拽 CPU/GPU 曲线点、精确输入温度与 RPM、增加或删除档位、恢复默认。
+- Blade 16 (2025) fan control now offers automatic, fixed-RPM, and manual-curve modes. The curve editor opens in a separate window with draggable CPU/GPU points, exact temperature and RPM inputs, tier add/remove, and reset-to-default.
+- 新增 Razer BlackShark V3 Pro 支持（2.4 GHz `1532:101B`、USB `1532:101C`）：电量、充电状态、侧音、THX Spatial Audio、主动降噪和游戏/语音平衡。
+- Added Razer BlackShark V3 Pro support (2.4 GHz `1532:101B`, USB `1532:101C`): battery, charging state, sidetone, THX Spatial Audio, ANC, and game/chat balance.
+- 系统遥测的 CPU/GPU 温度、功耗和频率现在支持悬停查看本次运行期间的最小值与最大值。
 - The CPU and GPU temperature, power, and frequency readings in the system telemetry card now show the lowest and highest values seen while OpenSynapse was running when hovered.
-- 新增 Razer BlackShark V3 Pro（`1532:0576` 有线、`1532:0577` 2.4 GHz）支持：电量、充电状态、侧音、THX Spatial Audio、主动降噪和游戏/语音平衡。
-- Added Razer BlackShark V3 Pro support (`1532:0576` wired, `1532:0577` 2.4 GHz): battery, charging state, sidetone, THX Spatial Audio, ANC, and game/chat balance.
+- 在机型白名单中开放 Blade 15 (Mid 2019) `1532:0245` 的固定风扇目标，并同时读取两路风扇目标值。
+- Fixed fan targets are now admitted for the Blade 15 (Mid 2019) `1532:0245`, with both fan-target channels read back.
+
+### 修复 / Fixed
+
+- 修复自动风扇模式仍显示“目标转速”输入框的问题；输入框和应用按钮现在只在固定转速模式出现，手动曲线模式只显示“编辑”。
+- Fixed the target-RPM input appearing while automatic fan mode was selected. The RPM input and Apply button now appear only in fixed mode, while manual curve mode shows only Edit.
+- 修复面板模式在不支持该能力的机器上仍显示的问题；现在只有 SKU 硬件配置明确报告 Mini-LED 双分辨率面板时才展示。
+- Fixed the panel-mode card appearing on machines without that capability. It now appears only when the SKU hardware configuration explicitly reports a dual-resolution mini-LED panel.
+- 修复 OpenRazer 高回报率鼠标的轮询率读取错误，避免显示错误档位。
+- Fixed polling-rate reads for high-rate OpenRazer mice so the displayed rate no longer lands on the wrong step.
+- 修复 DeathAdder V2 X HyperSpeed 的电量和 DPI 控制缺失，改用与 OpenRazer 一致的事务 ID。
+- Fixed missing battery and DPI controls on the DeathAdder V2 X HyperSpeed by using the transaction IDs OpenRazer sends.
+- 修复 DeathAdder V4 Pro 在 2.4 GHz 链路断开后没有恢复驱动模式的问题。
+- Fixed the DeathAdder V4 Pro not restoring driver mode after its 2.4 GHz link went down.
+- OpenRazer 设备遇到一条无响应命令时不再整台设备变成不可用；已恢复的错误也会从诊断状态中清除。
+- An unanswered OpenRazer command no longer disables the whole device, and recovered errors are cleared from diagnostics.
+- 修复 BlackShark V3 Pro 控制接口选择错误以及部分保存操作卡住的问题，USB 与 2.4 GHz 通道均可正常识别。
+- Fixed BlackShark V3 Pro control-interface selection and saves that could stall; both USB and 2.4 GHz channels are now recognized.
+- 修复只有外接显示器时笔记本被误报为显示错误的问题。
+- Fixed an external-display-only laptop being reported as a display error.
+- 修复 Blade Fn 过滤端点不存在时仍反复重试的问题。
+- Fixed repeated retries when the Blade Fn filter endpoint is absent.
+- 修复 Viper 按键映射选择状态丢失，并补充 DPI 循环操作。
+- Fixed Viper button-mapping selection being lost and added the DPI-cycle action.
+- 修复托盘菜单左右留白过宽、底部裁切和右侧空白过多。
+- Fixed excessive tray-menu side padding, bottom clipping, and empty space on the right.
+- 未获得机型证据的 Blade 控制项现在会隐藏，不再显示无法执行的开关。
+- Blade controls without model evidence are now hidden instead of showing switches that cannot work.
+
+### 改进 / Improved
+
+- 风扇曲线图补充温度横轴、转速纵轴、刻度、网格、单位标签和每个档位的数据点。
+- The fan-curve chart now includes a temperature X axis, RPM Y axis, ticks, grid, unit labels, and a point marker for every tier.
+- 风扇转速与风扇控制卡片恢复等宽布局，底部性能、风扇和充电上限卡片保持三列对齐。
+- The fan-speed and fan-control cards use equal widths again, aligned with the three-column performance, fan, and charge-limit row below.
+- OpenRazer 写入后会显示设备实际保持的值，并在诊断中记录命令、预期响应和实际响应参数。
+- OpenRazer now reports the value the device actually holds after a write, with command, expected-response, and actual-response arguments recorded in diagnostics.
+- 新增设备适配协作指南与支持 issue 模板，便于用户采集证据、协助新增机型。
+- Added a device-adaptation guide and device-support issue template so users can collect evidence and help add new models.
+
+本版本未签名，仅支持 Windows 11 x64。BlackShark V3 Pro 暂不包含 EQ、麦克风增益、固件更新和指示灯模式；手动风扇曲线仅对已适配的 Blade 16 (2025) 开放。
+This release is unsigned and targets Windows 11 x64. BlackShark V3 Pro does not yet include EQ, microphone gain, firmware updates, or indicator-LED modes; the manual fan curve is available only on the admitted Blade 16 (2025).
 
 ## [1.5.3] - 2026-10-19
 
