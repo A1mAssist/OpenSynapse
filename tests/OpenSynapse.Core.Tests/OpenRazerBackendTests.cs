@@ -649,6 +649,23 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void RejectedCollectionDescriptionNamesThePathAndDescriptor()
+    {
+        // Covers the message shown when no 91-byte control collection is usable: a wireless
+        // mouse can leave a wired collection enumerated whose descriptor does not match, and
+        // "busy or unavailable" alone cannot explain the device to its owner.
+        const string path = @"\\?\hid#vid_1532&pid_00bf&mi_02&col02#7&1a2b&0&0000#{guid}";
+        var message = OpenRazerDeviceService.DescribeRejected([
+            new(path, "container:key", 0x1532, 0x00BF, 8, 0, 64, 0x0001, 0x0002,
+                DeviceAccessState.BusyOrUnavailable),
+        ]);
+
+        Assert.Equal(
+            "vid_1532&pid_00bf&mi_02&col02 feature=64 usage=0x0001:0x0002",
+            message);
+    }
+
+    [Fact]
     public void UnlistedGenericTransactionsDoNotBecomeProductCapabilities()
     {
         var published = OpenRazerDeviceCatalog.BuiltIn.Devices
