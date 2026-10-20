@@ -22,10 +22,23 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             async () =>
             {
                 if (!PollingOptions.Contains(SelectedPollingRate)) throw new ArgumentOutOfRangeException(nameof(SelectedPollingRate));
-                await _service.SetPollingRateAsync(Connection, SelectedPollingRate, cancellationToken);
-                if (Has(OpenRazerBackendCapability.PollingRateRead))
-                    SelectedPollingRate = await _service.GetPollingRateAsync(Connection, cancellationToken);
-                UpdateBasic(state => state with { PollingRate = SelectedPollingRate });
+                var requested = SelectedPollingRate;
+                var reported = await _service.SetPollingRateAsync(Connection, requested, cancellationToken);
+                if (reported is not { } rate)
+                {
+                    // The device could not be read back, so the state keeps the value it
+                    // had. Claiming the requested rate would state something unknown.
+                    return;
+                }
+                SelectedPollingRate = rate;
+                UpdateBasic(state => state with { PollingRate = rate });
+                // The firmware reports the stored rate back. A mismatch means the write did
+                // not land, and saying "applied" alone would leave the owner guessing.
+                if (rate != requested)
+                {
+                    _operationStatusOverride = AppStrings.FormatText("OpenRazerPollingRateMismatch", requested, rate);
+                    OnPropertyChanged(nameof(OperationStatusText));
+                }
             }, cancellationToken);
     }
 
@@ -34,10 +47,22 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             () => IsDpiBusy, value => IsDpiBusy = value,
             async () =>
             {
-                await _service.SetDpiAsync(Connection, DpiX, DpiY, cancellationToken);
-                if (Has(OpenRazerBackendCapability.DpiRead))
-                    (DpiX, DpiY) = await _service.GetDpiAsync(Connection, cancellationToken);
-                UpdateBasic(state => state with { DpiX = DpiX, DpiY = DpiY });
+                var requestedX = DpiX;
+                var requestedY = DpiY;
+                var reported = await _service.SetDpiAsync(Connection, DpiX, DpiY, cancellationToken);
+                if (reported is not { } dpi)
+                {
+                    // The device could not be read back, so the state keeps the values it
+                    // had. Claiming the requested DPI would state something unknown.
+                    return;
+                }
+                (DpiX, DpiY) = (dpi.X, dpi.Y);
+                UpdateBasic(state => state with { DpiX = dpi.X, DpiY = dpi.Y });
+                if (dpi.X != requestedX || dpi.Y != requestedY)
+                {
+                    _operationStatusOverride = AppStrings.FormatText("OpenRazerDpiMismatch", requestedX, requestedY, dpi.X, dpi.Y);
+                    OnPropertyChanged(nameof(OperationStatusText));
+                }
             }, cancellationToken);
 
     public async Task LoadDpiStagesAsync(CancellationToken cancellationToken = default)
