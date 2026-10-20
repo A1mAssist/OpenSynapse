@@ -204,6 +204,24 @@ public sealed class DeviceMetadataTests
     }
 
     [Fact]
+    public void NativeDisplayModeRequiresMiniLedPanelResolution()
+    {
+        var unsupported = new BladeSkuHardwareConfiguration(
+            Dds: false,
+            MiniLedResolution: false,
+            IllegalBatterySupport: false,
+            Raw: 0x00);
+        var supported = new BladeSkuHardwareConfiguration(
+            Dds: true,
+            MiniLedResolution: true,
+            IllegalBatterySupport: false,
+            Raw: 0x03);
+
+        Assert.False(unsupported.SupportsNativeDisplayMode);
+        Assert.True(supported.SupportsNativeDisplayMode);
+    }
+
+    [Fact]
     public void ViperCapabilitySummaryKeepsTheExistingCounts()
     {
         var descriptor = Descriptor("viper-184", DeviceCategory.Mouse);
