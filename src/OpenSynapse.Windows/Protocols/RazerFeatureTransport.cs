@@ -347,7 +347,9 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             }
             else if (response[1] == 0x02)
             {
-                diagnostic?.Invoke($"attempt {attempt}: success, status=0x02");
+                // The firmware answers a successful command without echoing the payload, so
+                // the response arguments are the only evidence of what it actually stored.
+                diagnostic?.Invoke($"attempt {attempt}: success, status=0x02, {DescribeResponseArguments(response)}");
                 return response;
             }
             else if (response[1] == 0x01)
@@ -406,6 +408,17 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
     {
         var parts = devicePath.Split('#');
         return parts.Length > 1 ? parts[1] : "<redacted>";
+    }
+
+    /// <summary>
+    /// Formats the response payload for the diagnostic log. Some devices declare a
+    /// one-byte payload but answer in the second byte, so a fixed window is shown
+    /// instead of the declared length.
+    /// </summary>
+    internal static string DescribeResponseArguments(ReadOnlySpan<byte> response)
+    {
+        var length = Math.Min(8, response.Length - RazerFeatureReport.ArgumentsOffset);
+        return $"len={response[6]}, args={Convert.ToHexString(response[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + length)])}";
     }
 
     private sealed class RazerFeatureSession(

@@ -693,6 +693,20 @@ public sealed class OpenRazerBackendTests
         Assert.Equal("vid_1532&pid_027a&mi_00&col01", RazerFeatureTransport.DescribeDevicePath(path));
     }
 
+    /// <summary>
+    /// A mouse that answers the polling-rate query with a one-byte payload puts the rate
+    /// in the second argument byte, so the log must show it even though the declared
+    /// length is one.
+    /// </summary>
+    [Fact]
+    public void DiagnosticResponseArgumentsShowTheByteTheFirmwareActuallyUsed()
+    {
+        var response = RazerFeatureReport.CreateRequest(0x1F, 0x01, 0x00, 0xC0, [0x00]);
+        response[RazerFeatureReport.ArgumentsOffset + 1] = 0x04;
+
+        Assert.Equal("len=1, args=0004000000000000", RazerFeatureTransport.DescribeResponseArguments(response));
+    }
+
     [Fact]
     public void RejectedCollectionDescriptionNamesThePathAndDescriptor()
     {
