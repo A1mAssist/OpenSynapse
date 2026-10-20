@@ -1838,6 +1838,17 @@
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU 性能档位</value></data>
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>风扇全速</value></data>
   <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>修改会保存到当前配置。</value></data>
+  <data name="BladeFanCurveTitle" xml:space="preserve"><value>自定义风扇曲线</value></data>
+  <data name="BladeFanCurveHint" xml:space="preserve"><value>拖动圆点调整转速，也可以在下方输入精确数值。</value></data>
+  <data name="BladeFanCurveColumnTemperature" xml:space="preserve"><value>温度</value></data>
+  <data name="BladeFanCurveColumnCpu" xml:space="preserve"><value>CPU 风扇</value></data>
+  <data name="BladeFanCurveColumnGpu" xml:space="preserve"><value>GPU 风扇</value></data>
+  <data name="BladeFanCurveAddTier" xml:space="preserve"><value>添加档位</value></data>
+  <data name="BladeFanCurveReset" xml:space="preserve"><value>恢复默认</value></data>
+  <data name="BladeFanCurveApply" xml:space="preserve"><value>应用</value></data>
+  <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU 温度</value></data>
+  <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU 温度</value></data>
+  <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>两者取较高值</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
   <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫：它会提高持续功耗上限，由散热垫负责散热；未连接时无法切换。</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost 需要连接雷蛇笔记本散热垫后才能启用。</value></data>

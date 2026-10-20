@@ -453,6 +453,8 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeGpuBoostIndex));
         OnPropertyChanged(nameof(BladeMaxFanText));
         OnPropertyChanged(nameof(BladeMaxFanEnabled));
+        OnPropertyChanged(nameof(BladeFanCurveVisibility));
+        OnPropertyChanged(nameof(BladeFanCurveActive));
     }
 
     private void SetBladeCpuBoost(BladeCpuBoostMode mode)

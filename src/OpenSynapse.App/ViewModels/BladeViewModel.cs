@@ -194,6 +194,12 @@ internal sealed class BladeViewModel
     /// </summary>
     internal bool SupportsMaxFan => BladeModelCapabilities.SupportsMaxFan(_bladeProductId);
 
+    /// <summary>
+    /// True when the exact model has captured evidence for the stored fan-target protocol
+    /// the temperature curve is driven through.
+    /// </summary>
+    internal bool SupportsFanCurve => BladeModelCapabilities.SupportsFanCurve(_bladeProductId);
+
     internal void SetMaxFan(BladeMaxFanMode mode)
     {
         if (!SupportsMaxFan)

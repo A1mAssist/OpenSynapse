@@ -6,6 +6,21 @@ namespace OpenSynapse.Core.Tests;
 
 public sealed class BladeFanCurveSamplingTests
 {
+    [Fact]
+    public void DefaultCurveIsValidAndQuieterWhenCool()
+    {
+        var curve = BladeFanCurve.CreateDefault();
+
+        Assert.Equal(BladeFanCurveTemperatureMode.Both, curve.TemperatureMode);
+        Assert.NotEmpty(curve.CpuPoints);
+        Assert.Equal(curve.CpuPoints.Count, curve.GpuPoints.Count);
+
+        // The whole point of the default: near-idle when cool, full speed before throttling.
+        Assert.True(curve.Evaluate(40, 40).CpuRpm <= 2400);
+        Assert.Equal(5000, curve.Evaluate(95, 95).CpuRpm);
+        Assert.True(curve.Evaluate(70, 70).CpuRpm < curve.Evaluate(85, 85).CpuRpm);
+    }
+
     [Theory]
     [InlineData(BladeFanCurveTemperatureMode.Cpu, true, false)]
     [InlineData(BladeFanCurveTemperatureMode.Gpu, false, true)]

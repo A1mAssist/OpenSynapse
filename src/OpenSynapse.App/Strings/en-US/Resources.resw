@@ -1481,6 +1481,17 @@
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU performance level</value></data>
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>Full fan speed</value></data>
   <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>Changes are saved to the current profile.</value></data>
+  <data name="BladeFanCurveTitle" xml:space="preserve"><value>Custom fan curve</value></data>
+  <data name="BladeFanCurveHint" xml:space="preserve"><value>Drag a handle to change speed, or type exact values in the table below.</value></data>
+  <data name="BladeFanCurveColumnTemperature" xml:space="preserve"><value>Temperature</value></data>
+  <data name="BladeFanCurveColumnCpu" xml:space="preserve"><value>CPU fan</value></data>
+  <data name="BladeFanCurveColumnGpu" xml:space="preserve"><value>GPU fan</value></data>
+  <data name="BladeFanCurveAddTier" xml:space="preserve"><value>Add tier</value></data>
+  <data name="BladeFanCurveReset" xml:space="preserve"><value>Reset</value></data>
+  <data name="BladeFanCurveApply" xml:space="preserve"><value>Apply</value></data>
+  <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU temperature</value></data>
+  <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU temperature</value></data>
+  <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>Higher of the two</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
   <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad: it raises sustained power limits and relies on the pad for cooling. The mode cannot be selected without the pad.</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad.</value></data>

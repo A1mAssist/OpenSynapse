@@ -101,4 +101,19 @@ public sealed class BladeMaxFanProfileTests
     [InlineData(0x029D, false)]
     public void OnlyAuditedModelsAdmitTheSwitch(ushort productId, bool expected) =>
         Assert.Equal(expected, BladeModelCapabilities.SupportsMaxFan(productId));
+
+    /// <summary>
+    /// The curve rides the stored fan-target protocol, which only the 2025 Blade 16 has
+    /// captured. Max Fan admission says nothing about it, so the two gates stay separate.
+    /// </summary>
+    [Theory]
+    [InlineData(0x02C6, true)]
+    [InlineData(0x02C5, false)]
+    [InlineData(0x02E0, false)]
+    [InlineData(0x029F, false)]
+    [InlineData(0x02A0, false)]
+    [InlineData(0x029D, false)]
+    [InlineData(0x0000, false)]
+    public void OnlyAuditedModelsAdmitTheFanCurve(ushort productId, bool expected) =>
+        Assert.Equal(expected, BladeModelCapabilities.SupportsFanCurve(productId));
 }
