@@ -1486,6 +1486,9 @@
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU performance level</value></data>
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>Full fan speed</value></data>
   <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>Changes are saved to the current profile.</value></data>
+  <data name="BladeFanModeAutomatic" xml:space="preserve"><value>Automatic (default)</value></data>
+  <data name="BladeFanModeFixed" xml:space="preserve"><value>Fixed fan speed</value></data>
+  <data name="BladeFanModeCurve" xml:space="preserve"><value>Manual fan curve</value></data>
   <data name="BladeFanCurveTitle" xml:space="preserve"><value>Custom fan curve</value></data>
   <data name="BladeFanCurveHint" xml:space="preserve"><value>Drag a handle to change speed, or type exact values in the table below.</value></data>
   <data name="BladeFanCurveColumnTemperature" xml:space="preserve"><value>Temperature</value></data>

@@ -1844,6 +1844,9 @@
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU 性能档位</value></data>
   <data name="BladeMaxFanLabel" xml:space="preserve"><value>风扇全速</value></data>
   <data name="BladeCustomPerformanceHint" xml:space="preserve"><value>修改会保存到当前配置。</value></data>
+  <data name="BladeFanModeAutomatic" xml:space="preserve"><value>自动（默认）</value></data>
+  <data name="BladeFanModeFixed" xml:space="preserve"><value>固定风扇转速</value></data>
+  <data name="BladeFanModeCurve" xml:space="preserve"><value>手动风扇曲线</value></data>
   <data name="BladeFanCurveTitle" xml:space="preserve"><value>自定义风扇曲线</value></data>
   <data name="BladeFanCurveHint" xml:space="preserve"><value>拖动圆点调整转速，也可以在下方输入精确数值。</value></data>
   <data name="BladeFanCurveColumnTemperature" xml:space="preserve"><value>温度</value></data>

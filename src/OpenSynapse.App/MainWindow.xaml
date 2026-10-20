@@ -275,13 +275,47 @@
                           </Grid>
                         </StackPanel>
                       </Border>
-                      <Border Grid.Column="1" Visibility="{Binding BladeFanCardVisibility}" Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
-                        <StackPanel Spacing="10">
+                      <Border Grid.Column="1" Visibility="{Binding BladeFanCardVisibility}" Style="{StaticResource CardStyle}" Padding="16">
+                        <StackPanel Spacing="12">
                           <TextBlock local:Localized.Uid="Loc_C08649AE15" Text="风扇控制" Style="{StaticResource MetricLabelStyle}" />
-                          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                            <StackPanel Spacing="3"><TextBlock local:Localized.Uid="Loc_3A5FA550D4" Text="模式" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeFanModeText}" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
-                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock local:Localized.Uid="Loc_F6E2342F87" Text="目标" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding BladeFanTargetRpmText}" FontFamily="Cascadia Mono" FontSize="16" FontWeight="SemiBold" TextWrapping="NoWrap" /></StackPanel>
+                          <RadioButton Content="自动（默认）" local:Localized.Uid="BladeFanModeAutomatic" IsChecked="{Binding BladeFanAutomaticModeSelected, Mode=OneWay}" Click="BladeFanAutomaticModeClick" GroupName="BladeFanControl" />
+                          <RadioButton Content="固定风扇转速" local:Localized.Uid="BladeFanModeFixed" IsChecked="{Binding BladeFanFixedModeSelected, Mode=OneWay}" Click="BladeFanFixedModeClick" GroupName="BladeFanControl" />
+                          <RadioButton Content="手动风扇曲线" local:Localized.Uid="BladeFanModeCurve" IsChecked="{Binding BladeFanCurveModeSelected, Mode=OneWay}" Click="BladeFanCurveModeClick" GroupName="BladeFanControl" Visibility="{Binding BladeFanCurveVisibility}" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding BladeFanFixedRpmVisibility}">
+                            <NumberBox Value="{Binding BladeFanFixedRpm, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Header="目标转速 (RPM)" Minimum="2000" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
+                            <Button Grid.Column="1" local:Localized.Uid="BladeFanCurveApply" Content="应用" Click="ApplyBladeFanFixedRpmClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" Margin="0,0,0,26" />
                           </Grid>
+                          <StackPanel Visibility="{Binding BladeFanCurvePanelVisibility}" Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                              <TextBlock local:Localized.Uid="BladeFanCurveHint" Text="拖动圆点调整转速，也可以在下方输入精确数值。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
+                              <ComboBox Grid.Column="1" ItemsSource="{Binding BladeFanCurveModeOptions}" SelectedIndex="{Binding BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="160" />
+                            </Grid>
+                            <local:BladeFanCurvePlot DataContext="{Binding BladeFanCurveEditor}" Height="200" />
+                            <StackPanel Spacing="8">
+                              <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10">
+                                <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Text="温度" Style="{StaticResource MetricLabelStyle}" />
+                                <TextBlock Grid.Column="1" local:Localized.Uid="BladeFanCurveColumnCpu" Text="CPU 风扇" Style="{StaticResource MetricLabelStyle}" />
+                                <TextBlock Grid.Column="2" local:Localized.Uid="BladeFanCurveColumnGpu" Text="GPU 风扇" Style="{StaticResource MetricLabelStyle}" />
+                              </Grid>
+                              <ItemsControl ItemsSource="{Binding BladeFanCurveEditor.Points}">
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate>
+                                    <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10" Padding="0,3">
+                                      <NumberBox Value="{Binding TemperatureInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="35" Maximum="120" SpinButtonPlacementMode="Compact" />
+                                      <NumberBox Grid.Column="1" Value="{Binding CpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
+                                      <NumberBox Grid.Column="2" Value="{Binding GpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
+                                      <Button Grid.Column="3" Content="×" Tag="{Binding}" Click="RemoveBladeFanCurveTierClick" HorizontalAlignment="Right" Padding="0" MinWidth="30" />
+                                    </Grid>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+                            <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                              <Button local:Localized.Uid="BladeFanCurveAddTier" Content="添加档位" Click="AddBladeFanCurveTierClick" Style="{StaticResource SecondaryButtonStyle}" />
+                              <Button Grid.Column="1" local:Localized.Uid="BladeFanCurveReset" Content="恢复默认" Click="ResetBladeFanCurveClick" Style="{StaticResource SecondaryButtonStyle}" />
+                              <Button Grid.Column="2" local:Localized.Uid="BladeFanCurveApply" Content="应用" Click="ApplyBladeFanCurveClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Right" />
+                            </Grid>
+                          </StackPanel>
                         </StackPanel>
                       </Border>
                       <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="16" MinHeight="78">
@@ -315,39 +349,7 @@
                   </Border>
                   <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12"><Border Visibility="{Binding BladePerformanceModeCardVisibility}" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_E45684D3DA" Text="性能模式" Style="{StaticResource MetricLabelStyle}" /><TextBlock local:Localized.Uid="BladePerformancePowerProfileLabel" Text="性能模式供电配置" Foreground="{StaticResource MutedBrush}" FontSize="11" /><ComboBox ItemsSource="{Binding BladePerformancePowerProfileOptions}" SelectedIndex="{Binding BladePerformancePowerProfileIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetBladePerformancePowerProfile}" HorizontalAlignment="Stretch" /><TextBlock Text="{Binding BladePerformanceModeText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ComboBox Tag="performance" ItemsSource="{Binding BladePerformanceModeOptions}" SelectedIndex="{Binding BladePerformanceModeIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladePerformanceMode}" HorizontalAlignment="Stretch" /></StackPanel></Border><Border Grid.Column="1" Visibility="{Binding BladeFanCardVisibility}" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_C229515A4A" Text="风扇" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeFanText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" /></StackPanel></Border><Border Grid.Column="2" Visibility="{Binding BladeChargeLimitCardVisibility}" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_E61D9AFAFA" Text="充电上限" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeChargeLimitText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ComboBox Tag="charge" ItemsSource="{Binding BladeChargeLimitOptions}" SelectedIndex="{Binding BladeChargeLimitIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeChargeLimit}" HorizontalAlignment="Stretch" /></StackPanel></Border></Grid>
                   <Border Visibility="{Binding BladeCustomPerformanceVisibility}" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="14"><TextBlock local:Localized.Uid="BladeCustomPerformanceTitle" Text="自定义性能" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="16"><StackPanel Spacing="8" Visibility="{Binding BladeCpuBoostVisibility}"><TextBlock local:Localized.Uid="BladeCpuPerformanceLabel" Text="CPU 性能档位" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeCpuBoostText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ComboBox Tag="cpuBoost" ItemsSource="{Binding BladeCpuBoostOptions}" SelectedIndex="{Binding BladeCpuBoostIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeCpuBoost}" HorizontalAlignment="Stretch" /></StackPanel><StackPanel Grid.Column="1" Spacing="8" Visibility="{Binding BladeGpuBoostVisibility}"><TextBlock local:Localized.Uid="BladeGpuPerformanceLabel" Text="GPU 性能档位" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeGpuBoostText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ComboBox Tag="gpuBoost" ItemsSource="{Binding BladeGpuBoostOptions}" SelectedIndex="{Binding BladeGpuBoostIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeGpuBoost}" HorizontalAlignment="Stretch" /></StackPanel><StackPanel Grid.Column="2" Spacing="8" Visibility="{Binding BladeMaxFanVisibility}"><TextBlock local:Localized.Uid="BladeMaxFanLabel" Text="风扇全速" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeMaxFanText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" IsOn="{Binding BladeMaxFanEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeMaxFan}" Toggled="AutoApplyMaxFanToggled" OnContent="开启" OffContent="关闭" /></StackPanel></Grid><TextBlock local:Localized.Uid="BladeCustomPerformanceHint" Text="修改会保存到当前配置。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-                  <StackPanel Visibility="{Binding BladeFanCurveVisibility}" Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                      <TextBlock local:Localized.Uid="BladeFanCurveTitle" Text="自定义风扇曲线" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                      <ComboBox Grid.Column="1" SelectionChanged="AutoApplyComboSelectionChanged" ItemsSource="{Binding BladeFanCurveModeOptions}" SelectedIndex="{Binding BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="170" />
-                    </Grid>
-                    <TextBlock local:Localized.Uid="BladeFanCurveHint" Text="拖动圆点调整转速，也可以在下方输入精确数值。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-                    <local:BladeFanCurvePlot DataContext="{Binding BladeFanCurveEditor}" Height="200" />
-                    <StackPanel Spacing="8">
-                      <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10">
-                        <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Text="温度" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="1" local:Localized.Uid="BladeFanCurveColumnCpu" Text="CPU 风扇" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="2" local:Localized.Uid="BladeFanCurveColumnGpu" Text="GPU 风扇" Style="{StaticResource MetricLabelStyle}" />
-                      </Grid>
-                      <ItemsControl ItemsSource="{Binding BladeFanCurveEditor.Points}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate>
-                            <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10" Padding="0,3">
-                              <NumberBox Value="{Binding TemperatureInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="35" Maximum="120" SpinButtonPlacementMode="Compact" />
-                              <NumberBox Grid.Column="1" Value="{Binding CpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
-                              <NumberBox Grid.Column="2" Value="{Binding GpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
-                              <Button Grid.Column="3" Content="×" Tag="{Binding}" Click="RemoveBladeFanCurveTierClick" HorizontalAlignment="Right" Padding="0" MinWidth="30" />
-                            </Grid>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </StackPanel>
-                    <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
-                      <Button local:Localized.Uid="BladeFanCurveAddTier" Content="添加档位" Click="AddBladeFanCurveTierClick" Style="{StaticResource SecondaryButtonStyle}" />
-                      <Button Grid.Column="1" local:Localized.Uid="BladeFanCurveReset" Content="恢复默认" Click="ResetBladeFanCurveClick" Style="{StaticResource SecondaryButtonStyle}" />
-                      <Button Grid.Column="2" local:Localized.Uid="BladeFanCurveApply" Content="应用" Click="ApplyBladeFanCurveClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Right" />
-                    </Grid>
-                  </StackPanel>
-</StackPanel></Border>
+                  </StackPanel></Border>
 
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding BladeLightingCardVisibility}">
                     <StackPanel Spacing="14">
