@@ -119,14 +119,39 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                 }
 
                 var path = GetDevicePath(deviceInfoSet, ref interfaceData, out var containerId);
-                if (path is null ||
-                    !DeviceIdParser.TryParse(path, out var candidateVendorId, out var candidateProductId) ||
-                    candidateVendorId != vendorId)
+                if (path is null)
                 {
                     continue;
                 }
 
-                var probe = ProbeInterfaceMetadata(path);
+                var parsedPath = DeviceIdParser.TryParse(path, out var candidateVendorId, out var candidateProductId);
+                InterfaceProbe? metadata = null;
+                if (!parsedPath)
+                {
+                    // Bluetooth HID paths usually omit USB-style VID_/PID_ tokens.
+                    if (!IsBluetoothHidPath(path))
+                    {
+                        continue;
+                    }
+
+                    metadata = ProbeInterfaceMetadata(path);
+                    if (!TryResolveDeviceIdentity(
+                            path,
+                            metadata.VendorId,
+                            metadata.ProductId,
+                            out candidateVendorId,
+                            out candidateProductId) ||
+                        candidateVendorId != vendorId)
+                    {
+                        continue;
+                    }
+                }
+                else if (candidateVendorId != vendorId)
+                {
+                    continue;
+                }
+
+                var probe = metadata ?? ProbeInterfaceMetadata(path);
                 var descriptor = new HidInterfaceDescriptor(
                     path,
                     GetPhysicalDeviceKey(path, containerId),
@@ -208,9 +233,7 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                     {
                         // Windows exposes Bluetooth HID devices through BTHLE/BTHENUM
                         // paths that usually omit USB-style VID_/PID_ tokens.
-                        if (!path.Contains("BTHLE", StringComparison.OrdinalIgnoreCase) &&
-                            !path.Contains("BTHENUM", StringComparison.OrdinalIgnoreCase) &&
-                            !path.Contains("00001812-0000-1000-8000-00805f9b34fb", StringComparison.OrdinalIgnoreCase))
+                        if (!IsBluetoothHidPath(path))
                         {
                             continue;
                         }
@@ -337,6 +360,11 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         }
     }
 
+    internal static bool IsBluetoothHidPath(string path) =>
+        path.Contains("BTHLE", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("BTHENUM", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("00001812-0000-1000-8000-00805f9b34fb", StringComparison.OrdinalIgnoreCase);
+
     internal static bool TryResolveDeviceIdentity(
         string path,
         ushort attributeVendorId,
@@ -357,9 +385,7 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
     private void LogUnmatchedInterface(string path, InterfaceProbe metadata)
     {
         if (_diagnosticLog is null ||
-            (!path.Contains("BTHLE", StringComparison.OrdinalIgnoreCase) &&
-             !path.Contains("BTHENUM", StringComparison.OrdinalIgnoreCase) &&
-             !path.Contains("00001812-0000-1000-8000-00805f9b34fb", StringComparison.OrdinalIgnoreCase) &&
+            (!IsBluetoothHidPath(path) &&
              metadata.VendorId != 0x1532 &&
              !metadata.Manufacturer.Contains("Razer", StringComparison.OrdinalIgnoreCase) &&
              !metadata.Product.Contains("Razer", StringComparison.OrdinalIgnoreCase)))
