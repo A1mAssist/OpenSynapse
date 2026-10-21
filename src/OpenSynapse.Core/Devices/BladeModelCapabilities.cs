@@ -27,7 +27,10 @@ public static class BladeModelCapabilities
 
             // Blade 15 (Mid 2019) Mercury RZ09-03017. Owner-tested end to end: a fixed
             // target write took effect, both tachometers read back higher without a
-            // restart, and switching back to automatic released the fans. The fan curve
+            // restart, and switching back to automatic released the fans. A 3000 RPM
+            // write also read back as 0x1E on both zones, so the firmware stores the
+            // requested value rather than remapping it; the higher tachometer readings
+            // are the firmware's own speed policy, not a scaling error. The fan curve
             // stays closed because the official Synapse 4 for this model offers only
             // automatic and a fixed-speed slider, so there is no OEM curve to match.
             // Maximum fan stays closed too: never exercised, and the OEM has no such mode.
