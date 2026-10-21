@@ -116,7 +116,7 @@ public sealed partial class MainViewModel
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         var resolved = blade is null
             ? EditablePerformanceBladeProfile
             : ProfileResolver.Resolve(_profile, blade, SelectedPerformancePowerState).Blade;

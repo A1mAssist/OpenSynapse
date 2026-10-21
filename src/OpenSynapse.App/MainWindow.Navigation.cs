@@ -235,9 +235,13 @@ public sealed partial class MainWindow
         UpdateChromaRestStatusTimer();
     }
 
-    private void UpdatePerformanceSamplingState() =>
+    private void UpdatePerformanceSamplingState()
+    {
         _viewModel.SetPerformanceSamplingEnabled(
             AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible);
+        _viewModel.SetDeviceReadoutSamplingEnabled(
+            AppWindow.IsVisible && DevicesPage.Visibility == Visibility.Visible);
+    }
 
     private void ApplyDarkTheme()
     {

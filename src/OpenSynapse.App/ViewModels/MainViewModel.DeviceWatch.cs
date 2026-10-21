@@ -128,6 +128,13 @@ public sealed partial class MainViewModel
                             cancellationToken,
                             applyDisplayProfile: powerChanged || profileChanged || displayProfileRequested);
                     }
+                    else
+                    {
+                        // Nothing asked for a rescan, but the readouts on the device page are
+                        // live numbers such as fan speed, so they still need a periodic read.
+                        // This path only reads; it never writes a setting back to the device.
+                        await RefreshDeviceReadoutsAsync(cancellationToken);
+                    }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
