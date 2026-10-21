@@ -10,8 +10,8 @@
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button x:Name="MacroRecordButton" local:Localized.Uid="MacroRecordButton" MinWidth="104" Style="{StaticResource SecondaryButtonStyle}">
             <StackPanel Orientation="Horizontal" Spacing="7">
-              <TextBlock local:Localized.Uid="MacroRecordMenu" Text="录制" />
-              <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" />
+              <TextBlock local:Localized.Uid="MacroRecordMenu" Text="录制" VerticalAlignment="Center" />
+              <FontIcon Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" VerticalAlignment="Center" />
             </StackPanel>
             <Button.Flyout>
               <MenuFlyout>
@@ -24,8 +24,8 @@
           </Button>
           <Button x:Name="MacroInsertButton" local:Localized.Uid="MacroInsertButton" MinWidth="104" Style="{StaticResource SecondaryButtonStyle}">
             <StackPanel Orientation="Horizontal" Spacing="7">
-              <TextBlock local:Localized.Uid="MacroInsertMenu" Text="插入" />
-              <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" />
+              <TextBlock local:Localized.Uid="MacroInsertMenu" Text="插入" VerticalAlignment="Center" />
+              <FontIcon Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" VerticalAlignment="Center" />
             </StackPanel>
             <Button.Flyout>
               <MenuFlyout>
@@ -150,14 +150,13 @@
         </ScrollViewer>
         <StackPanel Spacing="6">
           <TextBlock local:Localized.Uid="MacroKeyPickerMouse" Text="鼠标" Style="{StaticResource MetricLabelStyle}" />
-          <ItemsControl ItemsSource="{Binding MacroKeyPicker.MouseButtons}">
-            <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" ItemWidth="88" ItemHeight="30" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Label}" Tag="{Binding}" Click="MacroKeyOptionClick" Style="{StaticResource SecondaryButtonStyle}" Height="26" MinHeight="26" Padding="4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" /></DataTemplate></ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <ItemsControl ItemsSource="{Binding MacroKeyPicker.Wheels}">
-            <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" ItemWidth="88" ItemHeight="30" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Label}" Tag="{Binding}" Click="MacroKeyOptionClick" Style="{StaticResource SecondaryButtonStyle}" Height="26" MinHeight="26" Padding="4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" /></DataTemplate></ItemsControl.ItemTemplate>
-          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Grid x:Name="MacroMouseHost" HorizontalAlignment="Left" Height="92" Width="132" />
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+              <TextBlock x:Name="MacroMouseCaption" Text="" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource DataBrush}" />
+              <TextBlock local:Localized.Uid="MacroKeyPickerMouseHint" Text="悬停查看按键，点击即可添加动作。" Style="{StaticResource MetricLabelStyle}" />
+            </StackPanel>
+          </StackPanel>
         </StackPanel>
       </StackPanel>
     </Border>
