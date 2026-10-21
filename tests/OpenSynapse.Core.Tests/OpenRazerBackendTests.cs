@@ -7,13 +7,56 @@ namespace OpenSynapse.Core.Tests;
 
 public sealed class OpenRazerBackendTests
 {
+    /// <summary>
+    /// 1532:005F and 1532:004D are reported as DeathAdder 2000 variants that OpenRazer does not
+    /// catalogue. Their entries exist only so a probe can read the firmware; without this the
+    /// owner gets no device page at all. Every write builder must stay absent until a 005F owner
+    /// returns real evidence, so the probe cannot change a setting even if the UI offers one.
+    /// </summary>
+    [Theory]
+    [InlineData(0x005F)]
+    [InlineData(0x004D)]
+    public void TheLocallyAdmittedDeathAdderProbesExposeReadsAndNoWrites(ushort productId)
+    {
+        var catalog = OpenRazerDeviceCatalog.BuiltIn;
+        var probe = catalog.Find(0x1532, productId);
+        var sibling = catalog.Find(0x1532, 0x004F)!;
+
+        Assert.NotNull(probe);
+        Assert.Contains("read-only probe", probe!.DisplayName, StringComparison.Ordinal);
+        Assert.Equal(sibling.Category, probe.Category);
+        Assert.Equal(2000, probe.MaximumDpi);
+
+        // The read half must reach the firmware, otherwise the probe collects nothing.
+        Assert.Contains("razer_chroma_misc_get_dpi_xy", probe.Transactions.Keys);
+        Assert.Contains("razer_chroma_misc_get_polling_rate", probe.Transactions.Keys);
+        Assert.Contains("razer_chroma_standard_get_led_brightness", probe.Transactions.Keys);
+        Assert.Equal(0xFF, probe.GetRequiredTransaction("razer_chroma_standard_get_led_brightness"));
+        Assert.Equal(0xFF, probe.GetRequiredTransaction("razer_chroma_misc_get_dpi_xy"));
+        Assert.Equal(0x00, probe.GetRequiredFixedArgument("razer_chroma_misc_get_dpi_xy", 0));
+
+        // Every retained builder must be a read. This is the whole safety argument for
+        // shipping the probe, so it is asserted against the names rather than by subtracting
+        // a set of write prefixes, which would silently pass if a new write builder appeared.
+        Assert.NotEmpty(probe.Transactions.Keys);
+        Assert.All(probe.Transactions.Keys, builder => Assert.Contains("_get_", builder, StringComparison.Ordinal));
+        Assert.Empty(probe.CommandSequences.Keys);
+
+        // The sibling's writes must be dropped rather than inherited.
+        Assert.Contains("razer_chroma_misc_set_dpi_xy", sibling.Transactions.Keys);
+        Assert.Contains("razer_chroma_standard_set_led_state", sibling.Transactions.Keys);
+        Assert.DoesNotContain("razer_chroma_misc_set_dpi_xy", probe.Transactions.Keys);
+        Assert.DoesNotContain("razer_chroma_standard_set_led_state", probe.Transactions.Keys);
+    }
+
     [Fact]
-    public void CatalogContainsOnlyThe254NewStandardDevices()
+    public void CatalogCarriesTheUpstreamSnapshotPlusLocallyAdmittedProbes()
     {
         var catalog = OpenRazerDeviceCatalog.BuiltIn;
 
-        Assert.Equal(254, catalog.Devices.Count);
-        Assert.Equal(254, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
+        // 254 upstream entries plus the two locally admitted DeathAdder 2000 probes.
+        Assert.Equal(256, catalog.Devices.Count);
+        Assert.Equal(256, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
         Assert.DoesNotContain(catalog.Devices, device => device.ProductId is 0x00B8 or 0x02C6);
         Assert.Null(catalog.Find(0x1234, catalog.Devices[0].ProductId));
         Assert.All(catalog.Devices, device =>

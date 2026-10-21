@@ -155,6 +155,8 @@ public sealed class OpenRazerDeviceCatalog
             throw new InvalidOperationException("OpenRazer catalog claims an existing Blade or Viper product ID.");
         }
 
+        AddLocallyAdmittedDevices(devices);
+
         return new OpenRazerDeviceCatalog(devices);
     }
 
@@ -267,6 +269,63 @@ public sealed class OpenRazerDeviceCatalog
             {
                 throw new InvalidOperationException($"Duplicate OpenRazer product ID 1532:{productId:X4}.");
             }
+        }
+    }
+
+    /// <summary>
+    /// Admits product ids OpenRazer has not catalogued so a read-only probe can reach the
+    /// firmware and record what it answers. These entries deliberately declare only the
+    /// read half of a known sibling device: no set_* builder is present, so every write
+    /// path stays closed until this exact product id has on-device evidence.
+    /// </summary>
+    private static void AddLocallyAdmittedDevices(IDictionary<ushort, OpenRazerDeviceDefinition> devices)
+    {
+        // DeathAdder 2000 RZ01-0145 ships as 1532:004F, which OpenRazer catalogues. Two
+        // independent USB ID databases also report 1532:005F as the same product, and
+        // 1532:004D as a Cynosa Pro bundle variant. Upstream defines no entry for either,
+        // so a 005F owner currently gets no device page at all.
+        const ushort deathAdder2000 = 0x004F;
+        foreach (var productId in new ushort[] { 0x005F, 0x004D })
+        {
+            if (!devices.TryGetValue(deathAdder2000, out var sibling) ||
+                devices.ContainsKey(productId))
+            {
+                continue;
+            }
+
+            // An explicit read allowlist, not a write denylist. A builder this file has not
+            // seen must default to excluded, so a future OpenRazer entry cannot leak a write
+            // into the probe.
+            string[] readBuilders =
+            [
+                "razer_chroma_standard_get_firmware_version",
+                "razer_chroma_standard_get_serial",
+                "razer_chroma_standard_get_device_mode",
+                "razer_chroma_misc_get_dpi_xy",
+                "razer_chroma_misc_get_polling_rate",
+                "razer_chroma_standard_get_led_brightness",
+            ];
+            var readOnly = sibling.Transactions
+                .Where(entry => readBuilders.Contains(entry.Key, StringComparer.Ordinal))
+                .ToFrozenDictionary(StringComparer.Ordinal);
+            var readOnlyPrefixes = sibling.BuilderArgumentPrefixes
+                .Where(entry => readOnly.ContainsKey(entry.Key))
+                .ToFrozenDictionary(StringComparer.Ordinal);
+
+            devices.Add(productId, new OpenRazerDeviceDefinition(
+                productId,
+                $"{sibling.DisplayName} (read-only probe)",
+                sibling.Category,
+                sibling.SourceCapabilities,
+                sibling.MaximumDpi,
+                sibling.PollingRates,
+                sibling.MatrixDimensions,
+                sibling.DeviceWait,
+                readOnly,
+                readOnlyPrefixes,
+                sibling.DefaultStorage,
+                sibling.DefaultLedZone,
+                new Dictionary<string, IReadOnlyList<OpenRazerCommandStep>>()));
         }
     }
 
