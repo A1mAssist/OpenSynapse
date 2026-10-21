@@ -61,9 +61,13 @@ public sealed class HidCommandScanTests
         Assert.NotEmpty(transport.Requests);
         Assert.All(transport.Requests, request => Assert.True((request[8] & 0x80) != 0));
     }
+    /// <summary>
+    /// A wireless mouse can lose its 2.4 GHz link if the sweep reaches a write command, so the
 
+    /// read-only guarantee has to hold for mice too, not just the other categories.
+    /// </summary>
     [Fact]
-    public async Task MouseScanIsRefusedBeforeTransport()
+    public async Task MouseScanStaysReadOnly()
     {
         var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE);
         Assert.NotNull(definition);
@@ -74,10 +78,10 @@ public sealed class HidCommandScanTests
             new HashSet<OpenRazerBackendCapability>(),
             new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
 
-        await Assert.ThrowsAsync<NotSupportedException>(() =>
-            service.ScanCommandSpaceAsync(connection));
+        await service.ScanCommandSpaceAsync(connection);
 
-        Assert.Empty(transport.Requests);
+        Assert.NotEmpty(transport.Requests);
+        Assert.All(transport.Requests, request => Assert.True((request[8] & 0x80) != 0));
     }
 
     private sealed class ScanRecordingTransport : IRazerFeatureTransport
