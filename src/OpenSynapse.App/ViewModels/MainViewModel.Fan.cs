@@ -30,7 +30,7 @@ public sealed partial class MainViewModel
             target.FanTargetRpm = targetRpm;
 
             var blade = _deviceDescriptors.FirstOrDefault(device =>
-                device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
+                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) && device.Access == DeviceAccessState.Available);
             _diagnosticLog.TryWrite(
                 "blade-fan",
                 $"Fixed fan apply: mode={mode}, target={targetRpm?.ToString() ?? "automatic"}, " +
@@ -83,7 +83,7 @@ public sealed partial class MainViewModel
             target.FanTargetRpm = null;
 
             var blade = _deviceDescriptors.FirstOrDefault(device =>
-                device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available);
+                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) && device.Access == DeviceAccessState.Available);
             if (IsSelectedPerformancePowerActive)
             {
                 var result = await ApplyLoadedFanProfileAsync(blade, CurrentPowerSource, cancellationToken);

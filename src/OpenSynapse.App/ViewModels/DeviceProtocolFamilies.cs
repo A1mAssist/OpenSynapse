@@ -1,6 +1,6 @@
 namespace OpenSynapse.App.ViewModels;
 
-internal static class DeviceProtocolFamilies
+public static class DeviceProtocolFamilies
 {
     /// <summary>Both admitted Blade protocol families.</summary>
     public static bool IsBlade(string protocolFamily) =>
