@@ -43,6 +43,7 @@ public sealed partial class MainWindow
         _lastChromaSources = null;
             RefreshChromaRestStatus();
             _aboutWindow?.RefreshLocalization();
+            _macroEditorWindow?.RefreshLocalization();
             ((App)Application.Current).RefreshTrayLocalization();
             RefreshIntroductionLocalization();
             RefreshUpdateUiText();

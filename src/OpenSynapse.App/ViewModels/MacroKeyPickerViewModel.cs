@@ -6,60 +6,50 @@ using OpenSynapse.Core.Macros;
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>
-/// One pickable key in the macro key picker.
+/// One pickable key in the on-screen key grid.
 /// </summary>
-public sealed class MacroKeyOptionViewModel
+public sealed class MacroKeyOptionViewModel(MacroKeyChoice choice)
 {
-    public MacroKeyOptionViewModel(string label, MacroInput input)
-    {
-        Label = label;
-        Input = input;
-    }
+    public string Label => choice.Label;
 
-    public string Label { get; }
-    public MacroInput Input { get; }
+    public MacroInput Input => choice.Input;
 }
 
 /// <summary>
 /// The on-screen key picker, so a macro step can be added without capturing
-/// global input.
+/// global input. The keyboard is exposed as one board so the page can draw it
+/// the way it sits on the desk.
 /// </summary>
 public sealed class MacroKeyPickerViewModel : INotifyPropertyChanged
 {
-    private readonly ObservableCollection<MacroKeyOptionViewModel> _keyboard = [];
-    private readonly ObservableCollection<MacroKeyOptionViewModel> _mouseButtons = [];
-    private readonly ObservableCollection<MacroKeyOptionViewModel> _wheels = [];
     private MacroKeyOptionViewModel? _selected;
 
     public MacroKeyPickerViewModel()
     {
-        foreach (var choice in MacroKeyCatalog.Keyboard)
-        {
-            _keyboard.Add(new MacroKeyOptionViewModel(choice.Label, choice.Input));
-        }
-
-        foreach (var choice in MacroKeyCatalog.MouseButtons)
-        {
-            _mouseButtons.Add(new MacroKeyOptionViewModel(
-                AppStrings.Text($"MacroMouseButton{choice.Input.MouseButton}"),
-                choice.Input));
-        }
-
-        foreach (var choice in MacroKeyCatalog.Wheels)
-        {
-            _wheels.Add(new MacroKeyOptionViewModel(
-                AppStrings.FormatText(
-                    choice.Input.WheelDelta > 0 ? "MacroWheelUp" : "MacroWheelDown",
-                    Math.Abs(choice.Input.WheelDelta)),
-                choice.Input));
-        }
+        Slots = MacroKeyCatalog.Board.Slots
+            .Select(slot => new MacroKeySlotViewModel(slot))
+            .ToList();
+        Columns = MacroKeyCatalog.Board.Columns;
+        Rows = MacroKeyCatalog.Board.Rows;
+        MouseButtons = MacroKeyCatalog.MouseButtons
+            .Select(choice => new MacroKeyOptionViewModel(choice))
+            .ToList();
+        Wheels = MacroKeyCatalog.Wheels
+            .Select(choice => new MacroKeyOptionViewModel(choice))
+            .ToList();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ObservableCollection<MacroKeyOptionViewModel> Keyboard => _keyboard;
-    public ObservableCollection<MacroKeyOptionViewModel> MouseButtons => _mouseButtons;
-    public ObservableCollection<MacroKeyOptionViewModel> Wheels => _wheels;
+    public IReadOnlyList<MacroKeySlotViewModel> Slots { get; }
+
+    public int Columns { get; }
+
+    public int Rows { get; }
+
+    public IReadOnlyList<MacroKeyOptionViewModel> MouseButtons { get; }
+
+    public IReadOnlyList<MacroKeyOptionViewModel> Wheels { get; }
 
     public MacroKeyOptionViewModel? Selected
     {
@@ -78,4 +68,21 @@ public sealed class MacroKeyPickerViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+
+/// <summary>
+/// One key position on the drawn board. The column span is expressed in
+/// quarter-key units so the wide keys line up with the square ones.
+/// </summary>
+public sealed class MacroKeySlotViewModel(MacroKeySlot slot)
+{
+    public MacroKeyOptionViewModel Key { get; } = new(slot.Key);
+
+    public int Row => slot.Row;
+
+    public int Column => slot.Column;
+
+    public int ColumnSpan => slot.ColumnSpan;
+
+    public int RowSpan => slot.RowSpan;
 }

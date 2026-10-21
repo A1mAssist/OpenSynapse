@@ -2254,10 +2254,6 @@
   <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>按住（毫秒）</value></data>
   <data name="MacroKeyPickerKeyboard" xml:space="preserve"><value>键盘</value></data>
   <data name="MacroKeyPickerMouse" xml:space="preserve"><value>鼠标</value></data>
-  <data name="MacroStepRecaptureButton.Content" xml:space="preserve"><value>重新捕获</value></data>
-  <data name="MacroStepMoveUpButton.Content" xml:space="preserve"><value>上移</value></data>
-  <data name="MacroStepMoveDownButton.Content" xml:space="preserve"><value>下移</value></data>
-  <data name="MacroStepDeleteButton.Content" xml:space="preserve"><value>删除动作</value></data>
   <data name="MacroStepCapturePrompt" xml:space="preserve"><value>请按下要添加的按键或鼠标键。</value></data>
   <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>已取消动作捕获。</value></data>
   <data name="MacroStepAdded" xml:space="preserve"><value>已添加动作。</value></data>
@@ -2272,7 +2268,7 @@
   <data name="MacroRowDeleteItem.Text" xml:space="preserve"><value>删除</value></data>
   <data name="MacroListEmpty.Text" xml:space="preserve"><value>还没有宏，点击 + 新建。</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>未选择宏</value></data>
-  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>点击"录制"开始录制动作序列，或从"插入"菜单里添加单个动作。</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>点击"录制"开始录制动作序列，或直接点击下方键盘添加单个动作。</value></data>
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>键位绑定</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>选择一个宏以查看它的键位绑定。</value></data>
   <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>还没有绑定触发键，点击 + 绑定。</value></data>
@@ -2287,5 +2283,12 @@
   <data name="MacroDurationText" xml:space="preserve"><value>{0} 毫秒</value></data>
   <data name="MacroDelayStepName" xml:space="preserve"><value>等待 {0} 毫秒</value></data>
   <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
+  <data name="MacroWindowTitle" xml:space="preserve"><value>宏编辑器</value></data>
+  <data name="MacroSummaryTitle.Text" xml:space="preserve"><value>当前宏</value></data>
+  <data name="MacroSummaryNoMacro.Text" xml:space="preserve"><value>选择一个宏以查看它的详情。</value></data>
+  <data name="MacroOpenEditorButton.Content" xml:space="preserve"><value>打开编辑器</value></data>
+  <data name="MacroKeyPickerHint.Text" xml:space="preserve"><value>点击按键即可添加一个动作。</value></data>
+  <data name="MacroRecordButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>录制</value></data>
+  <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>插入</value></data>
 </root>
 
