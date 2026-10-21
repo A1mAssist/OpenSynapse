@@ -1878,5 +1878,6 @@
   <data name="MacroKeyPickerHint.Text" xml:space="preserve"><value>Click a key to add one action.</value></data>
   <data name="MacroRecordButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Record</value></data>
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Insert</value></data>
+  <data name="MacroKeyPickerMouseHint" xml:space="preserve"><value>Hover a region to see it, click to add a step.</value></data>
 </root>
 
