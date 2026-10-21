@@ -331,7 +331,24 @@ public sealed class DeviceMetadataTests
         Assert.Equal(expected, BladeModelCapabilities.SupportsMaxFan(productId));
     }
 
+    /// <summary>
+    /// The regression behind #13: the Custom CPU column used to collapse whenever the
+    /// readback did not map to an admitted index, so firmware reporting Boost or
+    /// Undervolt on a Low/Medium/High model hid all three levels.
+    /// </summary>
+    [Theory]
+    [InlineData(0x02C6, true)]
+    [InlineData(0x029F, true)]
+    [InlineData(0x028C, true)]
+    [InlineData(0x0245, false)] // Blade 15 (2019): no audited Custom CPU levels
+    [InlineData(0xFFFF, false)]
+    public void CpuBoostVisibilityFollowsTheModelContract(ushort productId, bool expected)
+    {
+        Assert.Equal(expected, BladeModelCapabilities.SupportsCpuBoost(productId));
+    }
+
     [Fact]
+
     public void UnknownProductIdAdmitsNothing()
     {
         Assert.False(BladeModelCapabilities.SupportsMaxFan(0xFFFF));
