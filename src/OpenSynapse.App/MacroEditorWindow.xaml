@@ -150,8 +150,58 @@
         </ScrollViewer>
         <StackPanel Spacing="6">
           <TextBlock local:Localized.Uid="MacroKeyPickerMouse" Text="鼠标" Style="{StaticResource MetricLabelStyle}" />
-          <StackPanel Orientation="Horizontal" Spacing="12">
-            <Grid x:Name="MacroMouseHost" HorizontalAlignment="Left" Height="92" Width="132" />
+          <StackPanel Orientation="Horizontal" Spacing="14">
+            <Canvas x:Name="MacroMouseHost" Width="140" Height="186" HorizontalAlignment="Left">
+              <!-- Shell drawn from the front, the way the mouse sits under the hand. -->
+              <Path Fill="{StaticResource SurfaceRaisedBrush}" Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                    Data="M70,6 C89,6 103,13 106,30 L113,74 C119,102 116,132 104,154 C95,172 83,182 70,182 C57,182 45,172 36,154 C24,132 21,102 27,74 L34,30 C37,13 51,6 70,6 Z" />
+
+              <!-- Hit regions carry the option index; the code swaps in the option. -->
+              <Button Tag="3" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="16" Canvas.Top="76" Width="24" Height="24"
+                      >
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                      Data="M6,0 L18,0 A6,6 0 0 1 24,6 L24,18 A6,6 0 0 1 18,24 L6,24 A6,6 0 0 1 0,18 L0,6 A6,6 0 0 1 6,0 Z" />
+              </Button>
+              <Button Tag="4" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="16" Canvas.Top="104" Width="24" Height="24"
+                      >
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                      Data="M6,0 L18,0 A6,6 0 0 1 24,6 L24,18 A6,6 0 0 1 18,24 L6,24 A6,6 0 0 1 0,18 L0,6 A6,6 0 0 1 6,0 Z" />
+              </Button>
+
+              <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="33" Canvas.Top="8" Width="37" Height="75"
+                      >
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                      Data="M37,0 C22,0 9,7 6,23 L1,60 C0,68 1,73 2,75 L37,75 Z" />
+              </Button>
+              <Button Tag="1" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="70" Canvas.Top="8" Width="37" Height="75"
+                      >
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                      Data="M0,0 C15,0 28,7 31,23 L36,60 C37,68 36,73 35,75 L0,75 Z" />
+              </Button>
+
+              <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="63" Canvas.Top="33" Width="14" Height="16"
+                      >
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                      Data="M0,7 A7,7 0 0 1 14,7 L14,9 A7,7 0 0 1 0,9 Z" />
+              </Button>
+              <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="63" Canvas.Top="50" Width="14" Height="12"
+                      >
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                      Data="M0,4 A4,4 0 0 1 14,4 L14,8 A4,4 0 0 1 0,8 Z" />
+              </Button>
+              <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="63" Canvas.Top="63" Width="14" Height="16"
+                      >
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                      Data="M0,7 A7,7 0 0 1 14,7 L14,9 A7,7 0 0 1 0,9 Z" />
+              </Button>
+            </Canvas>
             <StackPanel VerticalAlignment="Center" Spacing="2">
               <TextBlock x:Name="MacroMouseCaption" Text="" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource DataBrush}" />
               <TextBlock local:Localized.Uid="MacroKeyPickerMouseHint" Text="悬停查看按键，点击即可添加动作。" Style="{StaticResource MetricLabelStyle}" />
