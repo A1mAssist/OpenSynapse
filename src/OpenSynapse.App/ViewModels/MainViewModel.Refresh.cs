@@ -332,7 +332,10 @@ public sealed partial class MainViewModel
                 RefreshBladeLightingEditor();
             }
 
-            RebuildDiagnostics(snapshot with { Devices = visibleDevices }, telemetry, errors);
+            if (Volatile.Read(ref _diagnosticsRebuildEnabled) != 0)
+            {
+                RebuildDiagnostics(snapshot with { Devices = visibleDevices }, telemetry, errors);
+            }
             var totalErrorCount = errors.Count + openRazerErrorCount;
             SetDeviceQueryError(totalErrorCount == 0
                 ? string.Empty
