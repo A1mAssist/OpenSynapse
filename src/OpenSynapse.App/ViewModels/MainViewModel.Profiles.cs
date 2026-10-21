@@ -340,6 +340,7 @@ public sealed partial class MainViewModel
         {
             ApplicationBindings.Add(new ApplicationBindingRowViewModel(binding.Key, binding.Value));
         }
+        RefreshMacroState();
         OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(CanDeleteProfile));
         OnPropertyChanged(nameof(BladePerformanceCycleModes));

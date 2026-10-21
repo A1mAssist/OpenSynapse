@@ -1,0 +1,25 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-responsive7-20261021\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-responsive7-20261021",
+  "window": { "titleContains": "OpenSynapse" },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-step",
+  "steps": [
+    { "action": "wait", "ms": 5000 },
+    { "action": "waitFor", "controlType": "ListItem", "nameContains": "宏", "timeoutMs": 20000 },
+    { "action": "select", "controlType": "ListItem", "nameContains": "宏" },
+    { "action": "wait", "ms": 1500 },
+    { "action": "click", "nameContains": "新建宏" },
+    { "action": "wait", "ms": 1500 },
+    { "action": "click", "nameContains": "添加延迟" },
+    { "action": "wait", "ms": 1500 },
+    { "action": "resize", "width": 1080, "height": 1067, "x": 0, "y": 0 },
+    { "action": "wait", "ms": 1800 },
+    { "action": "capture", "name": "01-step-selected-narrow" },
+    { "action": "tree", "name": "step-narrow" },
+    { "action": "resize", "width": 1707, "height": 1067, "x": 0, "y": 0 },
+    { "action": "wait", "ms": 1800 },
+    { "action": "capture", "name": "02-step-selected-wide" },
+    { "action": "log", "message": "done" }
+  ]
+}

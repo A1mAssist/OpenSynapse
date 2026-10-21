@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Macros;
 
 namespace OpenSynapse.Core.Profiles;
 
@@ -109,6 +110,7 @@ public sealed class ProfileDefinition
     public PowerProfileOverrides OnBattery { get; set; } = new();
     public ProfileShortcutSettings Shortcuts { get; set; } = new();
     public List<LightingColorPreset> LightingColorPresets { get; set; } = [];
+    public List<MacroDefinition> Macros { get; set; } = [];
 
     internal void ApplySafeDefaults()
     {
@@ -121,6 +123,14 @@ public sealed class ProfileDefinition
         LightingColorPresets = LightingColorPresets?
             .Where(preset => preset is not null)
             .ToList() ?? [];
+        Macros = (Macros ?? [])
+            .Where(macro => macro is not null)
+            .Take(64)
+            .ToList();
+        foreach (var macro in Macros)
+        {
+            macro.ApplySafeDefaults();
+        }
         Global.ApplySafeDefaults();
         foreach (var settings in Devices.Values)
         {
@@ -149,6 +159,7 @@ public sealed class ProfileDefinition
             OnBattery = ClonePower(OnBattery),
             Shortcuts = Shortcuts.Clone(),
             LightingColorPresets = LightingColorPresets.Select(preset => preset.Clone()).ToList(),
+            Macros = Macros.Select(macro => macro.Clone()).ToList(),
         };
         foreach (var (key, settings) in Devices)
         {

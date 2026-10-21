@@ -160,6 +160,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
         _systemTelemetry.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
+        _macroRuntime.Error += SetMacroRuntimeError;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -444,6 +445,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
         _openRazerSelectionCancellation?.Cancel();
         _openRazerSelectionCancellation?.Dispose();
+        _macroRuntime.Dispose();
 
         if (SelectedOpenRazerDevice is { } openRazerDevice)
         {
@@ -660,6 +662,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal async Task InitializeProfileAsync(CancellationToken cancellationToken = default)
     {
         await LoadProfileAsync(cancellationToken);
+        InitializeMacroRuntime();
         RefreshFirmwareVersions();
     }
 

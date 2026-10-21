@@ -47,6 +47,10 @@ public sealed partial class MainWindow : Window
         _viewModel.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
+        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        _viewModel.SetMacroDispatcher(_dispatcherQueue);
+        _viewModel.SetMacroOwnWindowForegroundPredicate(() => GetForegroundWindow() == windowHandle);
+        InitializeMacroLayout();
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(BladeBrightnessPointerPressed),
@@ -134,6 +138,9 @@ public sealed partial class MainWindow : Window
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(nint windowHandle);
+
+    [DllImport("user32.dll")]
+    private static extern nint GetForegroundWindow();
 
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
