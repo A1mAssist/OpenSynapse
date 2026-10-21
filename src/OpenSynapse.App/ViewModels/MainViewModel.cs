@@ -101,6 +101,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
     private int _performanceSamplingEnabled = 1;
+    private int _deviceReadoutSamplingEnabled = 1;
     private int _deviceWatchActive = 1;
     private int _displayAvailable = 1;
     private int _displayBrightnessRestorePending;
@@ -354,6 +355,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SignalPerformanceSamplingStateChanged();
         }
     }
+
+    /// <summary>
+    /// Enables the periodic read-only telemetry poll. It is only worth running while the
+    /// device page is open, because that is where the live readouts are shown.
+    /// </summary>
+    internal void SetDeviceReadoutSamplingEnabled(bool enabled) =>
+        Interlocked.Exchange(ref _deviceReadoutSamplingEnabled, enabled ? 1 : 0);
 
     private void RequestProfileApply()
     {
