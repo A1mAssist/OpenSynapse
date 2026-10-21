@@ -234,6 +234,12 @@ public sealed partial class MainWindow
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
         UpdatePerformanceSamplingState();
         UpdateChromaRestStatusTimer();
+        if (DiagnosticsPage.Visibility == Visibility.Visible)
+        {
+            // The rebuild is skipped while this page is hidden, so entering it must refresh
+            // once or the list would show whatever was captured before the user left.
+            _viewModel.RequestDeviceRefresh();
+        }
     }
 
     private void UpdatePerformanceSamplingState()
@@ -242,6 +248,8 @@ public sealed partial class MainWindow
             AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible);
         _viewModel.SetDeviceReadoutSamplingEnabled(
             AppWindow.IsVisible && DevicesPage.Visibility == Visibility.Visible);
+        _viewModel.SetDiagnosticsRebuildEnabled(
+            AppWindow.IsVisible && DiagnosticsPage.Visibility == Visibility.Visible);
     }
 
     private void ApplyDarkTheme()

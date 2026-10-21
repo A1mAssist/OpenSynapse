@@ -102,6 +102,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private int _displayProfileApplyRequested;
     private int _performanceSamplingEnabled = 1;
     private int _deviceReadoutSamplingEnabled = 1;
+    private int _diagnosticsRebuildEnabled = 1;
     private int _deviceWatchActive = 1;
     private int _displayAvailable = 1;
     private int _displayBrightnessRestorePending;
@@ -363,6 +364,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     /// </summary>
     internal void SetDeviceReadoutSamplingEnabled(bool enabled) =>
         Interlocked.Exchange(ref _deviceReadoutSamplingEnabled, enabled ? 1 : 0);
+
+    /// <summary>
+    /// Rebuilding the diagnostics collection clears it and re-adds every row, which resets the
+    /// bound list. Doing that on every telemetry poll stalled whichever page the user was on,
+    /// so the rebuild is deferred until the diagnostics page is shown again.
+    /// </summary>
+    internal void SetDiagnosticsRebuildEnabled(bool enabled) =>
+        Interlocked.Exchange(ref _diagnosticsRebuildEnabled, enabled ? 1 : 0);
 
     private void RequestProfileApply()
     {
