@@ -1,0 +1,22 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-v2-20261021\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-v2-20261021",
+  "window": { "titleContains": "OpenSynapse" },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-picker",
+  "steps": [
+    { "action": "wait", "ms": 5000 },
+    { "action": "waitFor", "controlType": "ListItem", "nameContains": "宏", "timeoutMs": 20000 },
+    { "action": "select", "controlType": "ListItem", "nameContains": "宏" },
+    { "action": "wait", "ms": 1500 },
+    { "action": "click", "nameContains": "新建宏" },
+    { "action": "wait", "ms": 1500 },
+    { "action": "resize", "width": 1400, "height": 950, "x": 40, "y": 40 },
+    { "action": "wait", "ms": 1500 },
+    { "action": "capture", "name": "01-macro-editor" },
+    { "action": "click", "nameContains": "选择按键" },
+    { "action": "wait", "ms": 2000 },
+    { "action": "capture", "name": "02-key-picker", "includePopups": true },
+    { "action": "log", "message": "done" }
+  ]
+}
