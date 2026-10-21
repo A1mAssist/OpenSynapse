@@ -45,6 +45,39 @@ public sealed partial class MainViewModel
         }
     }
 
+    /// <summary>
+    /// Reads the device telemetry again so the live readouts on the device page keep up.
+    /// This is a read-only path: it never pushes a stored profile back to the hardware,
+    /// so it cannot pin the fans or rewrite a setting the user did not just change.
+    /// </summary>
+    private async Task RefreshDeviceReadoutsAsync(CancellationToken cancellationToken)
+    {
+        if (_deviceDescriptors.Count == 0 ||
+            Volatile.Read(ref _deviceReadoutSamplingEnabled) == 0 ||
+            !await TryEnterOperationAsync(cancellationToken))
+        {
+            return;
+        }
+
+        try
+        {
+            var telemetry = await _deviceTelemetryReader.ReadAsync(_deviceDescriptors, cancellationToken);
+            ApplyDeviceTelemetry(telemetry);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _diagnosticLog.TryWrite("device-readout", $"readout refresh failed: {exception.Message}");
+        }
+        finally
+        {
+            _deviceOperationGate.Release();
+        }
+    }
+
     private async Task RefreshDevicesCoreAsync(
         DeviceSnapshot? knownSnapshot,
         CancellationToken cancellationToken,
@@ -217,7 +250,7 @@ public sealed partial class MainViewModel
                 ? new BladeFanProfileApplyResult(
                     await StopBladeFanControlAsync("profile-error"),
                     Changed: true)
-                : await ApplyLoadedFanProfileAsync(blade, powerState, cancellationToken);
+                : await ApplyLoadedFanProfileAsync(blade, powerState, cancellationToken, writeStoredTarget: false);
             var viperMappingError = await ApplyLoadedViperMappingProfileAsync(
                 viperAvailable ? viper : null, powerState, cancellationToken);
             if (fanApply.Changed && blade is { Access: DeviceAccessState.Available })

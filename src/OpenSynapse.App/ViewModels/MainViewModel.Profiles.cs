@@ -510,10 +510,17 @@ public sealed partial class MainViewModel
                     .ThenBy(item => item.Layer)
                     .Select(item => $"{item.ProfileId:X2}:{item.ButtonId:X2}:{(byte)item.Layer:X2}:{(byte)item.Function:X2}:{Convert.ToHexString(item.FunctionData.ToArray())}")));
 
+    /// <summary>
+    /// Pushes the resolved fan profile to the device. A stored fixed target or automatic
+    /// mode is only written on an explicit user action, because a profile persisted from an
+    /// earlier session must not pin the fans on the next launch. A curve is different: the
+    /// runtime has to keep driving it, so it stays eligible for a profile apply.
+    /// </summary>
     private async Task<BladeFanProfileApplyResult> ApplyLoadedFanProfileAsync(
         DeviceDescriptor? blade,
         PowerSourceKind powerState,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool writeStoredTarget = true)
     {
         if (blade is null || blade.Access != DeviceAccessState.Available)
         {
@@ -559,6 +566,14 @@ public sealed partial class MainViewModel
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
             return new(exception.Message, Changed: false);
+        }
+
+        // A stored fixed target or automatic mode is not a command to the hardware: it only
+        // records what the user last asked for. Pushing it on every refresh would pin the
+        // fans at that speed as soon as the app starts, with no way to tell why.
+        if (!writeStoredTarget && curve is null)
+        {
+            return new(null, Changed: false);
         }
 
         var fingerprint = CreateBladeFanFingerprint(profile, blade.Id, powerState);
