@@ -1842,10 +1842,6 @@
   <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>Hold (ms)</value></data>
   <data name="MacroKeyPickerKeyboard" xml:space="preserve"><value>Keyboard</value></data>
   <data name="MacroKeyPickerMouse" xml:space="preserve"><value>Mouse</value></data>
-  <data name="MacroStepRecaptureButton.Content" xml:space="preserve"><value>Recapture</value></data>
-  <data name="MacroStepMoveUpButton.Content" xml:space="preserve"><value>Move up</value></data>
-  <data name="MacroStepMoveDownButton.Content" xml:space="preserve"><value>Move down</value></data>
-  <data name="MacroStepDeleteButton.Content" xml:space="preserve"><value>Delete action</value></data>
   <data name="MacroStepCapturePrompt" xml:space="preserve"><value>Press the key or mouse button to add.</value></data>
   <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>Action capture canceled.</value></data>
   <data name="MacroStepAdded" xml:space="preserve"><value>Action added.</value></data>
@@ -1860,7 +1856,7 @@
   <data name="MacroRowDeleteItem.Text" xml:space="preserve"><value>Delete</value></data>
   <data name="MacroListEmpty.Text" xml:space="preserve"><value>No macros yet. Use + to add one.</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>No macro selected</value></data>
-  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>Use Record to capture an action sequence, or insert single actions from the Insert menu.</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>Use Record to capture an action sequence, or click the keyboard below to add single actions.</value></data>
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Key binds</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>Select a macro to view its key binds.</value></data>
   <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>No trigger yet. Use + to bind one.</value></data>
@@ -1875,5 +1871,12 @@
   <data name="MacroDurationText" xml:space="preserve"><value>{0} ms</value></data>
   <data name="MacroDelayStepName" xml:space="preserve"><value>Wait {0} ms</value></data>
   <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
+  <data name="MacroWindowTitle" xml:space="preserve"><value>Macro editor</value></data>
+  <data name="MacroSummaryTitle.Text" xml:space="preserve"><value>Selected macro</value></data>
+  <data name="MacroSummaryNoMacro.Text" xml:space="preserve"><value>Select a macro to see its details.</value></data>
+  <data name="MacroOpenEditorButton.Content" xml:space="preserve"><value>Open editor</value></data>
+  <data name="MacroKeyPickerHint.Text" xml:space="preserve"><value>Click a key to add one action.</value></data>
+  <data name="MacroRecordButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Record</value></data>
+  <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Insert</value></data>
 </root>
 

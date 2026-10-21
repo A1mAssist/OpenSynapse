@@ -49,8 +49,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _viewModel.SetMacroDispatcher(_dispatcherQueue);
-        _viewModel.SetMacroOwnWindowForegroundPredicate(() => GetForegroundWindow() == windowHandle);
-        InitializeMacroLayout();
+        _viewModel.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(BladeBrightnessPointerPressed),
@@ -296,6 +295,7 @@ public sealed partial class MainWindow : Window
         _aboutWindow = null;
         CloseThxAudioWindow();
         CloseBladeFanCurveWindow();
+        CloseMacroEditorWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;

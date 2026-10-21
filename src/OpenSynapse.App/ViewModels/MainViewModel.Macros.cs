@@ -678,7 +678,11 @@ public sealed partial class MainViewModel
         }
     }
 
-    private void CancelMacroStepCapture()
+    /// <summary>
+    /// Stops a pending action capture. The editor window calls this when it
+    /// closes, so a capture does not stay armed after the window is gone.
+    /// </summary>
+    public void CancelMacroStepCapture()
     {
         _macroStepCaptureCancellation?.Cancel();
         _macroStepCaptureCancellation = null;
@@ -781,7 +785,26 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(MacroEmptyStepsVisibility));
         OnPropertyChanged(nameof(MacroTotalDurationText));
     }
-    private void CancelMacroCapture()
+    /// <summary>
+    /// Throws away an in-flight recording instead of committing it, so closing
+    /// the editor mid-take does not silently write the take to the macro.
+    /// </summary>
+    public void DiscardMacroRecording()
+    {
+        if (!IsMacroRecording)
+        {
+            return;
+        }
+
+        _macroRuntime.StopRecording();
+        IsMacroRecording = false;
+        MacroStatusText = AppStrings.Text("MacroStatusIdle");
+    }
+    /// <summary>
+    /// Stops a pending trigger capture. The editor window calls this when it
+    /// closes, so a capture does not stay armed after the window is gone.
+    /// </summary>
+    public void CancelMacroCapture()
     {
         _macroCaptureCancellation?.Cancel();
         _macroCaptureCancellation = null;

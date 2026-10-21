@@ -269,4 +269,34 @@ public sealed class MacroTests
         Assert.True(wheel.IsValid(allowPrimaryMouseButton: true));
         Assert.False(wheel.IsValid(allowPrimaryMouseButton: false, allowWheel: false));
     }
+
+    [Fact]
+    public void MacroKeyBoardFitsEverySlotInsideItsGrid()
+    {
+        var board = MacroKeyCatalog.Board;
+
+        Assert.All(board.Slots, slot =>
+        {
+            Assert.InRange(slot.Column, 0, board.Columns - slot.ColumnSpan);
+            Assert.InRange(slot.Row, 0, board.Rows - slot.RowSpan);
+        });
+    }
+
+    [Fact]
+    public void MacroKeyBoardSlotsDoNotOverlap()
+    {
+        var board = MacroKeyCatalog.Board;
+
+        for (var first = 0; first < board.Slots.Count; first++)
+        {
+            for (var second = first + 1; second < board.Slots.Count; second++)
+            {
+                var a = board.Slots[first];
+                var b = board.Slots[second];
+                var columnsOverlap = a.Column < b.Column + b.ColumnSpan && b.Column < a.Column + a.ColumnSpan;
+                var rowsOverlap = a.Row < b.Row + b.RowSpan && b.Row < a.Row + a.RowSpan;
+                Assert.False(columnsOverlap && rowsOverlap, $"{a.Key.Label} overlaps {b.Key.Label}.");
+            }
+        }
+    }
 }
