@@ -85,6 +85,14 @@ public static class BladeModelCapabilities
     public static bool SupportsMaxFan(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.MaxFan;
 
+    /// <summary>
+    /// True when the exact model has audited Custom CPU levels to show. Decided by the
+    /// model contract, not by the last readback: firmware on a Low/Medium/High model can
+    /// report Boost or Undervolt, which maps to no admitted index.
+    /// </summary>
+    public static bool SupportsCpuBoost(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.CpuBoostModes.Count > 0;
+
     public static bool AllowsCpuBoost(ushort productId, BladeCpuBoostMode mode) =>
         Contracts.TryGetValue(productId, out var contract) && contract.CpuBoostModes.Contains(mode);
 
