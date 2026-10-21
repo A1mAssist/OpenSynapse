@@ -365,10 +365,6 @@ public sealed partial class MainViewModel
         {
             throw new InvalidOperationException("No OpenRazer device is selected.");
         }
-        if (connection.Definition.Category == DeviceCategory.Mouse)
-        {
-            throw new NotSupportedException("HID command scan is disabled for mice.");
-        }
 
         var scan = await _openRazerDeviceService
             .ScanCommandSpaceAsync(connection, cancellationToken).ConfigureAwait(false);
