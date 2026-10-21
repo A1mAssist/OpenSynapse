@@ -1796,8 +1796,6 @@
   <data name="MacroPageDescription.Text" xml:space="preserve"><value>Record, edit, and bind keyboard and mouse actions, then let OpenSynapse play them in the background.</value></data>
   <data name="MacroListTitle.Text" xml:space="preserve"><value>Macros</value></data>
   <data name="MacroEnabledLabel.Text" xml:space="preserve"><value>Enabled</value></data>
-  <data name="MacroEnabledToggle.OnContent" xml:space="preserve"><value>On</value></data>
-  <data name="MacroEnabledToggle.OffContent" xml:space="preserve"><value>Off</value></data>
   <data name="MacroNameLabel.Text" xml:space="preserve"><value>Name</value></data>
   <data name="MacroNamePlaceholder.PlaceholderText" xml:space="preserve"><value>Macro name</value></data>
   <data name="MacroSaveButton.Content" xml:space="preserve"><value>Save</value></data>
@@ -1831,8 +1829,6 @@
   <data name="MacroPlayed" xml:space="preserve"><value>Macro playback finished.</value></data>
   <data name="MacroPlayCanceled" xml:space="preserve"><value>Macro playback canceled.</value></data>
   <data name="MacroPlaybackLabel.Text" xml:space="preserve"><value>Playback</value></data>
-  <data name="MacroPlaybackRepeat.OnContent" xml:space="preserve"><value>Repeat</value></data>
-  <data name="MacroPlaybackRepeat.OffContent" xml:space="preserve"><value>Once</value></data>
   <data name="MacroPlaybackRepeatCount.Text" xml:space="preserve"><value>Repeat count</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>Record delays</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>Ignore delays</value></data>

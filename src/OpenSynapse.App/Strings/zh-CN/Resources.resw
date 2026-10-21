@@ -2208,8 +2208,6 @@
   <data name="MacroPageDescription.Text" xml:space="preserve"><value>录制、编辑和绑定键盘与鼠标动作，由 OpenSynapse 在后台播放。</value></data>
   <data name="MacroListTitle.Text" xml:space="preserve"><value>宏列表</value></data>
   <data name="MacroEnabledLabel.Text" xml:space="preserve"><value>启用</value></data>
-  <data name="MacroEnabledToggle.OnContent" xml:space="preserve"><value>开启</value></data>
-  <data name="MacroEnabledToggle.OffContent" xml:space="preserve"><value>关闭</value></data>
   <data name="MacroNameLabel.Text" xml:space="preserve"><value>名称</value></data>
   <data name="MacroNamePlaceholder.PlaceholderText" xml:space="preserve"><value>宏名称</value></data>
   <data name="MacroSaveButton.Content" xml:space="preserve"><value>保存</value></data>
@@ -2243,8 +2241,6 @@
   <data name="MacroPlayed" xml:space="preserve"><value>宏播放完成。</value></data>
   <data name="MacroPlayCanceled" xml:space="preserve"><value>宏播放已取消。</value></data>
   <data name="MacroPlaybackLabel.Text" xml:space="preserve"><value>播放方式</value></data>
-  <data name="MacroPlaybackRepeat.OnContent" xml:space="preserve"><value>循环</value></data>
-  <data name="MacroPlaybackRepeat.OffContent" xml:space="preserve"><value>单次</value></data>
   <data name="MacroPlaybackRepeatCount.Text" xml:space="preserve"><value>重复次数</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>记录间隔</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>不记录间隔</value></data>
