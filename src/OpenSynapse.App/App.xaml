@@ -103,7 +103,25 @@
         <Setter Property="Foreground" Value="{StaticResource DataBrush}" />
         <Setter Property="CornerRadius" Value="4" />
       </Style>
-      <!-- The system menu template hardcodes its own padding and 14pt font,
+      <!-- The mouse picker draws its own shapes, so the region buttons keep the
+           hit target and the automation name but drop every piece of chrome:
+           a control template with no border and no focus rectangle. -->
+      <Style x:Key="MacroMouseRegionStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="UseSystemFocusVisuals" Value="False" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Button">
+              <ContentPresenter Background="{TemplateBinding Background}"
+                                Content="{TemplateBinding Content}"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch" />
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>      <!-- The system menu template hardcodes its own padding and 14pt font,
            so the macro menus carry a compact template of their own instead of
            inheriting the enlarged system look. -->
       <Style x:Key="MacroMenuItemStyle" TargetType="MenuFlyoutItem">

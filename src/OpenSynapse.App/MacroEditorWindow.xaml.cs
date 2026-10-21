@@ -3,8 +3,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Shapes;
+using ShapesPath = Microsoft.UI.Xaml.Shapes.Path;
 using OpenSynapse.App.ViewModels;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
@@ -45,7 +46,7 @@ public sealed partial class MacroEditorWindow : Window
         ApplyTitleBarColors();
         PositionOnOwnerDisplay(owner, scale);
         BuildMacroKeyboard();
-        BuildMacroMouse();
+        InitializeMacroMouse();
         RefreshLocalization();
     }
 
@@ -204,84 +205,55 @@ public sealed partial class MacroEditorWindow : Window
         }
     }
 
+    private static readonly SolidColorBrush MouseRegionFill = new(Color.FromArgb(0xFF, 0x30, 0x30, 0x30));
+    private static readonly SolidColorBrush MouseRegionHoverFill = new(Color.FromArgb(0x3A, 0x99, 0xDD, 0x72));
+
     /// <summary>
-    /// Draws the pick list as a mouse: left and right click on the two halves
-    /// of the shell, the wheel halves on the wheel, the thumb buttons on the
-    /// flank, the way they sit on the device. The region name appears beside
-    /// the shape on hover instead of being crushed into it.
+    /// Binds the drawn mouse to the picker. The art is static, so each region
+    /// carries its option index in XAML; swapping that for the option here lets
+    /// the shared click handler and the hover caption work off the real data.
     /// </summary>
-    private void BuildMacroMouse()
+    private void InitializeMacroMouse()
     {
         var picker = _viewModel.MacroKeyPicker;
-        var canvas = new Canvas { Width = MacroMouseHost.Width, Height = MacroMouseHost.Height };
-
-        var shell = new Border
+        foreach (var button in MacroMouseHost.Children.OfType<Button>())
         {
-            Width = 62,
-            Height = 92,
-            CornerRadius = new CornerRadius(30, 30, 26, 26),
-            Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x2A, 0x2A, 0x2A)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0x4C, 0x4C)),
-            BorderThickness = new Thickness(1),
-        };
-        Canvas.SetLeft(shell, 44);
-        Canvas.SetTop(shell, 4);
-        canvas.Children.Add(shell);
+            if (button.Tag is not string rawIndex || !int.TryParse(rawIndex, out var index))
+            {
+                continue;
+            }
 
-        var split = new Rectangle
-        {
-            Width = 60,
-            Height = 1,
-            Fill = new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0x4C, 0x4C)),
-        };
-        Canvas.SetLeft(split, 45);
-        Canvas.SetTop(split, 46);
-        canvas.Children.Add(split);
-
-        canvas.Children.Add(Region(picker.MouseButtons[0], 45, 5, 30, 40));
-        canvas.Children.Add(Region(picker.MouseButtons[1], 75, 5, 30, 40));
-        canvas.Children.Add(Region(picker.Wheels[0], 71, 22, 7, 15));
-        canvas.Children.Add(Region(picker.Wheels[1], 71, 37, 7, 15));
-        canvas.Children.Add(Region(picker.MouseButtons[2], 58, 50, 34, 20));
-        canvas.Children.Add(Region(picker.MouseButtons[3], 22, 42, 22, 19));
-        canvas.Children.Add(Region(picker.MouseButtons[4], 22, 63, 22, 19));
-
-        MacroMouseHost.Children.Clear();
-        MacroMouseHost.Children.Add(canvas);
+            var option = index < picker.MouseButtons.Count
+                ? picker.MouseButtons[index]
+                : picker.Wheels[index - picker.MouseButtons.Count];
+            button.Tag = option;
+            button.Tag = option;
+            AutomationProperties.SetName(button, option.Label);
+            ToolTipService.SetToolTip(button, option.Label);
+            // Hover and keyboard focus share one cue: the region lights up. That
+            // keeps focus visible without the square focus rectangle the shape
+            // does not want.
+            button.PointerEntered += (_, _) => TintMouseRegion(button);
+            button.PointerExited += (_, _) => TintMouseRegion(button);
+            button.GotFocus += (_, _) => TintMouseRegion(button);
+            button.LostFocus += (_, _) => TintMouseRegion(button);
+            TintMouseRegion(button);
+        }
     }
 
-    private Border Region(MacroKeyOptionViewModel option, double left, double top, double width, double height)
+    private void TintMouseRegion(Button button)
     {
-        var button = new Button
+        var active = button.IsPointerOver || button.FocusState != FocusState.Unfocused;
+        if (button.Content is ShapesPath path)
         {
-            Style = (Style)Application.Current.Resources["IconButtonStyle"],
-            Width = width,
-            Height = height,
-            MinWidth = 0,
-            MinHeight = 0,
-            Padding = new Thickness(0),
-            Margin = new Thickness(0),
-            CornerRadius = new CornerRadius(4),
-            Background = new SolidColorBrush(Color.FromArgb(0x00, 0x99, 0xDD, 0x72)),
-            Tag = option,
-        };
-        AutomationProperties.SetName(button, option.Label);
-        ToolTipService.SetToolTip(button, option.Label);
-        button.Click += MacroKeyOptionClick;
-        button.PointerEntered += (_, _) =>
+            path.Fill = active ? MouseRegionHoverFill : MouseRegionFill;
+        }
+
+        if (active && button.Tag is MacroKeyOptionViewModel option)
         {
             MacroMouseCaption.Text = option.Label;
-            button.Background = new SolidColorBrush(Color.FromArgb(0x66, 0x99, 0xDD, 0x72));
-        };
-        button.PointerExited += (_, _) =>
-            button.Background = new SolidColorBrush(Color.FromArgb(0x00, 0x99, 0xDD, 0x72));
-
-        var host = new Border { Child = button };
-        Canvas.SetLeft(host, left);
-        Canvas.SetTop(host, top);
-        return host;
+        }
     }
-
     private Button CreateMacroKeyButton(MacroKeyOptionViewModel key)
     {
         var button = new Button
