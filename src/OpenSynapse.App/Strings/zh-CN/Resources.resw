@@ -2203,5 +2203,89 @@
   <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>主动降噪</value></data>
   <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>模式</value></data>
   <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>强度</value></data>
+  <data name="MacroNavigationItem.Content" xml:space="preserve"><value>宏</value></data>
+  <data name="MacroPageTitle.Text" xml:space="preserve"><value>宏</value></data>
+  <data name="MacroPageDescription.Text" xml:space="preserve"><value>录制、编辑和绑定键盘与鼠标动作，由 OpenSynapse 在后台播放。</value></data>
+  <data name="MacroListTitle.Text" xml:space="preserve"><value>宏列表</value></data>
+  <data name="MacroEnabledLabel.Text" xml:space="preserve"><value>启用</value></data>
+  <data name="MacroEnabledToggle.OnContent" xml:space="preserve"><value>开启</value></data>
+  <data name="MacroEnabledToggle.OffContent" xml:space="preserve"><value>关闭</value></data>
+  <data name="MacroNameLabel.Text" xml:space="preserve"><value>名称</value></data>
+  <data name="MacroNamePlaceholder.PlaceholderText" xml:space="preserve"><value>宏名称</value></data>
+  <data name="MacroSaveButton.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="MacroDeleteButton.Content" xml:space="preserve"><value>删除</value></data>
+  <data name="MacroStatusIdle" xml:space="preserve"><value>选择一个宏开始编辑。</value></data>
+  <data name="MacroStartRecording" xml:space="preserve"><value>录制动作</value></data>
+  <data name="MacroStopRecording" xml:space="preserve"><value>停止录制</value></data>
+  <data name="MacroCaptureTrigger" xml:space="preserve"><value>捕获触发键</value></data>
+  <data name="MacroCancelCapture" xml:space="preserve"><value>取消捕获</value></data>
+  <data name="MacroDefaultName" xml:space="preserve"><value>宏 {0}</value></data>
+  <data name="MacroTriggerUnset" xml:space="preserve"><value>未设置触发键</value></data>
+  <data name="MacroTriggerValue" xml:space="preserve"><value>触发键：{0}</value></data>
+  <data name="MacroStepCount" xml:space="preserve"><value>{0} 个动作</value></data>
+  <data name="MacroMouseButton1" xml:space="preserve"><value>左键</value></data>
+  <data name="MacroMouseButton2" xml:space="preserve"><value>右键</value></data>
+  <data name="MacroMouseButton3" xml:space="preserve"><value>中键</value></data>
+  <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1</value></data>
+  <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2</value></data>
+  <data name="MacroRuntimeError" xml:space="preserve"><value>宏运行时错误：{0}</value></data>
+  <data name="MacroSaveFailed" xml:space="preserve"><value>宏保存失败。</value></data>
+  <data name="MacroCreated" xml:space="preserve"><value>已创建宏。</value></data>
+  <data name="MacroDeleted" xml:space="preserve"><value>已删除宏。</value></data>
+  <data name="MacroSaved" xml:space="preserve"><value>宏已保存。</value></data>
+  <data name="MacroRecorded" xml:space="preserve"><value>已录制 {0} 个动作。</value></data>
+  <data name="MacroRecording" xml:space="preserve"><value>正在录制动作，按“停止录制”结束。</value></data>
+  <data name="MacroCapturePrompt" xml:space="preserve"><value>请按下要绑定的键或鼠标侧键。</value></data>
+  <data name="MacroCaptureCanceled" xml:space="preserve"><value>已取消触发键捕获。</value></data>
+  <data name="MacroTriggerCaptured" xml:space="preserve"><value>触发键已设为 {0}。</value></data>
+  <data name="MacroEmpty" xml:space="preserve"><value>这个宏还没有动作。</value></data>
+  <data name="MacroPlaying" xml:space="preserve"><value>正在播放宏。</value></data>
+  <data name="MacroPlayed" xml:space="preserve"><value>宏播放完成。</value></data>
+  <data name="MacroPlayCanceled" xml:space="preserve"><value>宏播放已取消。</value></data>
+  <data name="MacroPlaybackLabel.Text" xml:space="preserve"><value>播放方式</value></data>
+  <data name="MacroPlaybackRepeat.OnContent" xml:space="preserve"><value>循环</value></data>
+  <data name="MacroPlaybackRepeat.OffContent" xml:space="preserve"><value>单次</value></data>
+  <data name="MacroPlaybackRepeatCount.Text" xml:space="preserve"><value>重复次数</value></data>
+  <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>记录间隔</value></data>
+  <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>不记录间隔</value></data>
+  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>添加延迟</value></data>
+  <data name="MacroStepEditorTitle.Text" xml:space="preserve"><value>动作编辑</value></data>
+  <data name="MacroStepDelayLabel.Text" xml:space="preserve"><value>延迟（毫秒）</value></data>
+  <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>按住（毫秒）</value></data>
+  <data name="MacroKeyPickerKeyboard" xml:space="preserve"><value>键盘</value></data>
+  <data name="MacroKeyPickerMouse" xml:space="preserve"><value>鼠标</value></data>
+  <data name="MacroStepRecaptureButton.Content" xml:space="preserve"><value>重新捕获</value></data>
+  <data name="MacroStepMoveUpButton.Content" xml:space="preserve"><value>上移</value></data>
+  <data name="MacroStepMoveDownButton.Content" xml:space="preserve"><value>下移</value></data>
+  <data name="MacroStepDeleteButton.Content" xml:space="preserve"><value>删除动作</value></data>
+  <data name="MacroStepCapturePrompt" xml:space="preserve"><value>请按下要添加的按键或鼠标键。</value></data>
+  <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>已取消动作捕获。</value></data>
+  <data name="MacroStepAdded" xml:space="preserve"><value>已添加动作。</value></data>
+  <data name="MacroStepDeleted" xml:space="preserve"><value>已删除动作。</value></data>
+  <data name="MacroStepMoved" xml:space="preserve"><value>已移动动作。</value></data>
+  <data name="MacroStepCaptured" xml:space="preserve"><value>已更新动作：{0}</value></data>
+  <data name="MacroStepLimit" xml:space="preserve"><value>动作数量已达到上限。</value></data>
+  <data name="MacroWheelUp" xml:space="preserve"><value>滚轮上 +{0}</value></data>
+  <data name="MacroWheelDown" xml:space="preserve"><value>滚轮下 -{0}</value></data>
+  <data name="MacroWheelHorizontal" xml:space="preserve"><value>横向滚轮 {0}</value></data>
+  <data name="MacroPlayButton" xml:space="preserve"><value>播放</value></data>
+  <data name="MacroRowDeleteItem.Text" xml:space="preserve"><value>删除</value></data>
+  <data name="MacroListEmpty.Text" xml:space="preserve"><value>还没有宏，点击 + 新建。</value></data>
+  <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>未选择宏</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>点击"录制"开始录制动作序列，或从"插入"菜单里添加单个动作。</value></data>
+  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>键位绑定</value></data>
+  <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>选择一个宏以查看它的键位绑定。</value></data>
+  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>还没有绑定触发键，点击 + 绑定。</value></data>
+  <data name="MacroProperties.Text" xml:space="preserve"><value>属性</value></data>
+  <data name="MacroStepProperties.Text" xml:space="preserve"><value>动作属性</value></data>
+  <data name="MacroRecordMenu.Text" xml:space="preserve"><value>录制</value></data>
+  <data name="MacroRecordStart.Text" xml:space="preserve"><value>开始录制</value></data>
+  <data name="MacroRecordStop.Text" xml:space="preserve"><value>停止录制</value></data>
+  <data name="MacroInsertMenu.Text" xml:space="preserve"><value>插入</value></data>
+  <data name="MacroInsertPickKey.Text" xml:space="preserve"><value>插入按键</value></data>
+  <data name="MacroInsertCapture.Text" xml:space="preserve"><value>捕获按键</value></data>
+  <data name="MacroDurationText" xml:space="preserve"><value>{0} 毫秒</value></data>
+  <data name="MacroDelayStepName" xml:space="preserve"><value>等待 {0} 毫秒</value></data>
+  <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
 </root>
 

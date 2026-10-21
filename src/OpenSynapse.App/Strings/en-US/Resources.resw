@@ -1791,5 +1791,89 @@
   <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>Active noise cancellation</value></data>
   <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>Mode</value></data>
   <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>Level</value></data>
+  <data name="MacroNavigationItem.Content" xml:space="preserve"><value>Macros</value></data>
+  <data name="MacroPageTitle.Text" xml:space="preserve"><value>Macros</value></data>
+  <data name="MacroPageDescription.Text" xml:space="preserve"><value>Record, edit, and bind keyboard and mouse actions, then let OpenSynapse play them in the background.</value></data>
+  <data name="MacroListTitle.Text" xml:space="preserve"><value>Macros</value></data>
+  <data name="MacroEnabledLabel.Text" xml:space="preserve"><value>Enabled</value></data>
+  <data name="MacroEnabledToggle.OnContent" xml:space="preserve"><value>On</value></data>
+  <data name="MacroEnabledToggle.OffContent" xml:space="preserve"><value>Off</value></data>
+  <data name="MacroNameLabel.Text" xml:space="preserve"><value>Name</value></data>
+  <data name="MacroNamePlaceholder.PlaceholderText" xml:space="preserve"><value>Macro name</value></data>
+  <data name="MacroSaveButton.Content" xml:space="preserve"><value>Save</value></data>
+  <data name="MacroDeleteButton.Content" xml:space="preserve"><value>Delete</value></data>
+  <data name="MacroStatusIdle" xml:space="preserve"><value>Select a macro to edit.</value></data>
+  <data name="MacroStartRecording" xml:space="preserve"><value>Record actions</value></data>
+  <data name="MacroStopRecording" xml:space="preserve"><value>Stop recording</value></data>
+  <data name="MacroCaptureTrigger" xml:space="preserve"><value>Capture trigger</value></data>
+  <data name="MacroCancelCapture" xml:space="preserve"><value>Cancel capture</value></data>
+  <data name="MacroDefaultName" xml:space="preserve"><value>Macro {0}</value></data>
+  <data name="MacroTriggerUnset" xml:space="preserve"><value>No trigger</value></data>
+  <data name="MacroTriggerValue" xml:space="preserve"><value>Trigger: {0}</value></data>
+  <data name="MacroStepCount" xml:space="preserve"><value>{0} actions</value></data>
+  <data name="MacroMouseButton1" xml:space="preserve"><value>Left</value></data>
+  <data name="MacroMouseButton2" xml:space="preserve"><value>Right</value></data>
+  <data name="MacroMouseButton3" xml:space="preserve"><value>Middle</value></data>
+  <data name="MacroMouseButton4" xml:space="preserve"><value>Mouse 4</value></data>
+  <data name="MacroMouseButton5" xml:space="preserve"><value>Mouse 5</value></data>
+  <data name="MacroRuntimeError" xml:space="preserve"><value>Macro runtime error: {0}</value></data>
+  <data name="MacroSaveFailed" xml:space="preserve"><value>Could not save the macro.</value></data>
+  <data name="MacroCreated" xml:space="preserve"><value>Macro created.</value></data>
+  <data name="MacroDeleted" xml:space="preserve"><value>Macro deleted.</value></data>
+  <data name="MacroSaved" xml:space="preserve"><value>Macro saved.</value></data>
+  <data name="MacroRecorded" xml:space="preserve"><value>Recorded {0} actions.</value></data>
+  <data name="MacroRecording" xml:space="preserve"><value>Recording actions. Select Stop recording to finish.</value></data>
+  <data name="MacroCapturePrompt" xml:space="preserve"><value>Press the key or mouse side button to bind.</value></data>
+  <data name="MacroCaptureCanceled" xml:space="preserve"><value>Trigger capture canceled.</value></data>
+  <data name="MacroTriggerCaptured" xml:space="preserve"><value>Trigger set to {0}.</value></data>
+  <data name="MacroEmpty" xml:space="preserve"><value>This macro has no actions.</value></data>
+  <data name="MacroPlaying" xml:space="preserve"><value>Playing macro.</value></data>
+  <data name="MacroPlayed" xml:space="preserve"><value>Macro playback finished.</value></data>
+  <data name="MacroPlayCanceled" xml:space="preserve"><value>Macro playback canceled.</value></data>
+  <data name="MacroPlaybackLabel.Text" xml:space="preserve"><value>Playback</value></data>
+  <data name="MacroPlaybackRepeat.OnContent" xml:space="preserve"><value>Repeat</value></data>
+  <data name="MacroPlaybackRepeat.OffContent" xml:space="preserve"><value>Once</value></data>
+  <data name="MacroPlaybackRepeatCount.Text" xml:space="preserve"><value>Repeat count</value></data>
+  <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>Record delays</value></data>
+  <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>Ignore delays</value></data>
+  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>Add delay</value></data>
+  <data name="MacroStepEditorTitle.Text" xml:space="preserve"><value>Action editor</value></data>
+  <data name="MacroStepDelayLabel.Text" xml:space="preserve"><value>Delay (ms)</value></data>
+  <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>Hold (ms)</value></data>
+  <data name="MacroKeyPickerKeyboard" xml:space="preserve"><value>Keyboard</value></data>
+  <data name="MacroKeyPickerMouse" xml:space="preserve"><value>Mouse</value></data>
+  <data name="MacroStepRecaptureButton.Content" xml:space="preserve"><value>Recapture</value></data>
+  <data name="MacroStepMoveUpButton.Content" xml:space="preserve"><value>Move up</value></data>
+  <data name="MacroStepMoveDownButton.Content" xml:space="preserve"><value>Move down</value></data>
+  <data name="MacroStepDeleteButton.Content" xml:space="preserve"><value>Delete action</value></data>
+  <data name="MacroStepCapturePrompt" xml:space="preserve"><value>Press the key or mouse button to add.</value></data>
+  <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>Action capture canceled.</value></data>
+  <data name="MacroStepAdded" xml:space="preserve"><value>Action added.</value></data>
+  <data name="MacroStepDeleted" xml:space="preserve"><value>Action deleted.</value></data>
+  <data name="MacroStepMoved" xml:space="preserve"><value>Action moved.</value></data>
+  <data name="MacroStepCaptured" xml:space="preserve"><value>Action updated: {0}</value></data>
+  <data name="MacroStepLimit" xml:space="preserve"><value>The action limit has been reached.</value></data>
+  <data name="MacroWheelUp" xml:space="preserve"><value>Wheel up +{0}</value></data>
+  <data name="MacroWheelDown" xml:space="preserve"><value>Wheel down -{0}</value></data>
+  <data name="MacroWheelHorizontal" xml:space="preserve"><value>Horizontal wheel {0}</value></data>
+  <data name="MacroPlayButton" xml:space="preserve"><value>Play</value></data>
+  <data name="MacroRowDeleteItem.Text" xml:space="preserve"><value>Delete</value></data>
+  <data name="MacroListEmpty.Text" xml:space="preserve"><value>No macros yet. Use + to add one.</value></data>
+  <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>No macro selected</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>Use Record to capture an action sequence, or insert single actions from the Insert menu.</value></data>
+  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Key binds</value></data>
+  <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>Select a macro to view its key binds.</value></data>
+  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>No trigger yet. Use + to bind one.</value></data>
+  <data name="MacroProperties.Text" xml:space="preserve"><value>Properties</value></data>
+  <data name="MacroStepProperties.Text" xml:space="preserve"><value>Action</value></data>
+  <data name="MacroRecordMenu.Text" xml:space="preserve"><value>Record</value></data>
+  <data name="MacroRecordStart.Text" xml:space="preserve"><value>Start recording</value></data>
+  <data name="MacroRecordStop.Text" xml:space="preserve"><value>Stop recording</value></data>
+  <data name="MacroInsertMenu.Text" xml:space="preserve"><value>Insert</value></data>
+  <data name="MacroInsertPickKey.Text" xml:space="preserve"><value>Pick key</value></data>
+  <data name="MacroInsertCapture.Text" xml:space="preserve"><value>Capture key</value></data>
+  <data name="MacroDurationText" xml:space="preserve"><value>{0} ms</value></data>
+  <data name="MacroDelayStepName" xml:space="preserve"><value>Wait {0} ms</value></data>
+  <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
 </root>
 
