@@ -173,7 +173,7 @@ internal sealed class BladeViewModel
         _bladeCpuBoostIndex = BladeModelCapabilities
             .CpuBoostModesFor(_bladeProductId).ToList().IndexOf(mode);
         _confirmedBladeCpuBoostIndex = _bladeCpuBoostIndex;
-        _hasBladeCpuBoost = _bladeCpuBoostIndex >= 0;
+        _hasBladeCpuBoost = SupportsCpuBoost;
     }
 
     internal void SetGpuBoost(BladeGpuBoostMode mode)
@@ -189,6 +189,13 @@ internal sealed class BladeViewModel
         _confirmedBladeGpuBoostIndex = _bladeGpuBoostIndex;
         _hasBladeGpuBoost = _bladeGpuBoostIndex >= 0;
     }
+
+    /// <summary>
+    /// True when the exact model has audited Custom CPU levels. A readable level is not
+    /// enough: firmware on a Low/Medium/High model reports Boost or Undervolt, which maps
+    /// to no admitted index, and the ComboBox would render an empty selection.
+    /// </summary>
+    internal bool SupportsCpuBoost => BladeModelCapabilities.SupportsCpuBoost(_bladeProductId);
 
     /// <summary>
     /// True when the exact model has an audited Custom maximum-fan switch. A readable
