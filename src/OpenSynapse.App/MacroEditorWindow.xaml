@@ -90,28 +90,28 @@
               <Button x:Name="MacroPropertiesHeader" Click="MacroPropertiesHeaderClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" CornerRadius="0" MinHeight="34" Padding="12,0">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock local:Localized.Uid="MacroProperties" Text="属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-                  <FontIcon Grid.Column="1" x:Name="MacroPropertiesChevron" Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                  <FontIcon Grid.Column="1" x:Name="MacroPropertiesChevron" Glyph="&#xE70E;" FontFamily="Segoe Fluent Icons" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                 </Grid>
               </Button>
               <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10,12,12">
-                <StackPanel Spacing="12" x:Name="MacroPropertiesPanel" Visibility="Collapsed">
+                <StackPanel Spacing="12" x:Name="MacroPropertiesPanel">
                   <StackPanel Spacing="4">
                     <TextBlock local:Localized.Uid="MacroNameLabel" Text="名称" Style="{StaticResource MetricLabelStyle}" />
                     <TextBox local:Localized.Uid="MacroNamePlaceholder" Text="{Binding SelectedMacro.Name, Mode=TwoWay}" PlaceholderText="宏名称" MaxLength="64" />
                   </StackPanel>
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                    <TextBlock local:Localized.Uid="MacroEnabledLabel" Text="启用" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                    <ToggleSwitch Grid.Column="1" local:Localized.Uid="MacroEnabledToggle" IsOn="{Binding SelectedMacro.Enabled, Mode=TwoWay}" OnContent="开启" OffContent="关闭" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <TextBlock x:Name="MacroEnabledLabel" local:Localized.Uid="MacroEnabledLabel" Text="启用" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                    <ToggleSwitch Grid.Column="1" local:Localized.Uid="MacroEnabledToggle" IsOn="{Binding SelectedMacro.Enabled, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroEnabledLabel}" />
                   </Grid>
-                  <StackPanel Spacing="6">
-                    <TextBlock local:Localized.Uid="MacroPlaybackLabel" Text="播放方式" Style="{StaticResource MetricLabelStyle}" />
-                    <ToggleSwitch local:Localized.Uid="MacroPlaybackRepeat" IsOn="{Binding SelectedMacro.IsRepeating, Mode=TwoWay}" OnContent="循环" OffContent="单次" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding SelectedMacro.RepeatCountVisibility, FallbackValue=Collapsed}">
-                      <TextBlock local:Localized.Uid="MacroPlaybackRepeatCount" Text="重复次数" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                      <NumberBox Grid.Column="1" Value="{Binding SelectedMacro.RepeatCount, Mode=TwoWay}" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Compact" Width="88" />
-                    </Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <TextBlock x:Name="MacroPlaybackLabel" local:Localized.Uid="MacroPlaybackLabel" Text="播放方式" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                    <ToggleSwitch Grid.Column="1" local:Localized.Uid="MacroPlaybackRepeat" IsOn="{Binding SelectedMacro.IsRepeating, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroPlaybackLabel}" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding SelectedMacro.RepeatCountVisibility, FallbackValue=Collapsed}">
+                    <TextBlock x:Name="MacroPlaybackRepeatCountLabel" local:Localized.Uid="MacroPlaybackRepeatCount" Text="重复次数" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                    <NumberBox Grid.Column="1" Value="{Binding SelectedMacro.RepeatCount, Mode=TwoWay}" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Compact" Width="88" />
+                  </Grid>
                   </StackPanel>
-                </StackPanel>
               </Border>
             </StackPanel>
           </Border>
