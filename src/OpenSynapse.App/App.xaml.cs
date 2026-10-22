@@ -464,6 +464,7 @@ public partial class App : Application
             _trayMenuWindow.BatteryReader = viewModel.ReadBatteriesAsync;
             _trayMenuWindow.ShowRequested += window.RequestActivation;
             _trayMenuWindow.NavigationRequested += window.RequestNavigation;
+            _trayMenuWindow.DeviceRequested += window.RequestDeviceNavigation;
             _trayMenuWindow.ExitRequested += window.RequestExit;
             _trayIcon.Unavailable += () =>
             {
