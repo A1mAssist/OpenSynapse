@@ -3,7 +3,7 @@ using OpenSynapse.Windows.Devices;
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>One peripheral shown in the tray battery list.</summary>
-public sealed record PeripheralBattery(string Name, int? Percent);
+public sealed record PeripheralBattery(string Name, int? Percent, string Glyph);
 
 public sealed partial class MainViewModel
 {
@@ -14,8 +14,7 @@ public sealed partial class MainViewModel
     /// </summary>
     public IReadOnlyList<PeripheralBattery> ConnectedBatteries =>
         TelemetryBatteries()
-            .Concat(BatteryDevices().Select(connection =>
-                new PeripheralBattery(connection.Definition.DisplayName, null)))
+            .Concat(BatteryDevices().Select(row => new PeripheralBattery(row.Name, null, row.IconGlyph)))
             .ToArray();
 
     /// <summary>
@@ -33,13 +32,13 @@ public sealed partial class MainViewModel
 
         // Telemetry rows keep their polled value; only the OpenRazer rows are read here.
         var results = new List<PeripheralBattery>(TelemetryBatteries());
-        foreach (var connection in BatteryDevices())
+        foreach (var row in BatteryDevices())
         {
             int? percent = null;
             try
             {
                 percent = await _openRazerDeviceService
-                    .GetBatteryPercentAsync(connection, cancellationToken)
+                    .GetBatteryPercentAsync(row.Connection, cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (Exception) when (!cancellationToken.IsCancellationRequested)
@@ -47,7 +46,7 @@ public sealed partial class MainViewModel
                 // No answer means no percentage for this row; the menu still lists it.
             }
 
-            results.Add(new PeripheralBattery(connection.Definition.DisplayName, percent));
+            results.Add(new PeripheralBattery(row.Name, percent, row.IconGlyph));
         }
 
         return results;
@@ -56,12 +55,10 @@ public sealed partial class MainViewModel
     private IReadOnlyList<PeripheralBattery> TelemetryBatteries() =>
         Devices
             .Where(row => row.BatteryPercent is not null)
-            .Select(row => new PeripheralBattery(row.Name, row.BatteryPercent))
+            .Select(row => new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph))
             .ToArray();
 
-    private IEnumerable<OpenRazerDeviceConnection> BatteryDevices() =>
-        OpenRazerDevices
-            .Select(row => row.Connection)
-            .Where(connection => connection.IsReady &&
-                connection.Capabilities.Contains(OpenRazerBackendCapability.BatteryRead));
+    private IEnumerable<OpenRazerDeviceRowViewModel> BatteryDevices() =>
+        OpenRazerDevices.Where(row => row.Connection.IsReady &&
+            row.Connection.Capabilities.Contains(OpenRazerBackendCapability.BatteryRead));
 }

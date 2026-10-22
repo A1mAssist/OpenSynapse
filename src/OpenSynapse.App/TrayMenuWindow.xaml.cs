@@ -131,7 +131,7 @@ public sealed partial class TrayMenuWindow : Window
         {
             _widthProbe.Text = name.Text;
             _widthProbe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            widest = Math.Max(widest, 24 + _widthProbe.DesiredSize.Width + BatteryValueWidthDip);
+            widest = Math.Max(widest, 32 + _widthProbe.DesiredSize.Width + BatteryValueWidthDip);
         }
         _widthProbe.FontSize = 14;
 
@@ -157,6 +157,16 @@ public sealed partial class TrayMenuWindow : Window
         _batteryValues.Clear();
         foreach (var device in devices)
         {
+            var icon = new FontIcon
+            {
+                Glyph = device.Glyph,
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe Fluent Icons"),
+                FontSize = 14,
+                Width = 16,
+                Margin = new Thickness(6, 0, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
             var name = new TextBlock
             {
                 Text = device.Name,
@@ -170,14 +180,18 @@ public sealed partial class TrayMenuWindow : Window
                 FontSize = 13,
                 FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Cascadia Mono"),
                 MinWidth = 34,
+                Margin = new Thickness(0, 0, 10, 0),
                 TextAlignment = TextAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            var row = new Grid { Height = BatteryRowHeightDip, Margin = new Thickness(12, 0, 12, 0) };
+            var row = new Grid { Height = BatteryRowHeightDip, Margin = new Thickness(3, 0, 3, 0) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Children.Add(icon);
+            Grid.SetColumn(name, 1);
             row.Children.Add(name);
-            Grid.SetColumn(value, 1);
+            Grid.SetColumn(value, 2);
             row.Children.Add(value);
             BatteryPanel.Children.Add(row);
             _batteryNames.Add(name);
