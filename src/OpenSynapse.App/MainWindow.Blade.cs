@@ -453,7 +453,7 @@ public sealed partial class MainWindow
         await _viewModel.CheckFirmwareUpdateAsync(_lifetime.Token);
 
     private async void OpenFirmwareDownloadClick(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri(RazerFirmwareUpdateClient.Rz090528SupportPage));
+        await Launcher.LaunchUriAsync(new Uri(RazerFirmwareUpdateClient.Rz090528DownloadPage));
 
     private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
     {
