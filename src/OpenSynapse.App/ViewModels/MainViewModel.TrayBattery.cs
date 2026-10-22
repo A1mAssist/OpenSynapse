@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -58,11 +59,12 @@ public sealed partial class MainViewModel
 
     private IReadOnlyList<PeripheralBattery> TelemetryBatteries() =>
         Devices
-            .Where(row => row.BatteryPercent is not null)
+            .Where(row => row.BatteryPercent is not null && row.HardwareCategory != DeviceCategory.Laptop)
             .Select(row => new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row))
             .ToArray();
 
     private IEnumerable<OpenRazerDeviceRowViewModel> BatteryDevices() =>
         OpenRazerDevices.Where(row => row.Connection.IsReady &&
+            row.HardwareCategory != DeviceCategory.Laptop &&
             row.Connection.Capabilities.Contains(OpenRazerBackendCapability.BatteryRead));
 }
