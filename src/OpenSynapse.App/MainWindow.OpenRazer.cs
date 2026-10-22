@@ -73,41 +73,49 @@ public sealed partial class MainWindow
             return;
         }
 
-        switch (item.Kind)
+        await SelectDeviceSourceAsync(item.Source);
+    }
+
+    /// <summary>
+    /// Opens the device page on one specific device. The tray uses this so a battery
+    /// row lands on that device instead of the first one on the page.
+    /// </summary>
+    internal void RequestDeviceNavigation(object source)
+    {
+        RequestNavigation("devices");
+        _dispatcherQueue.TryEnqueue(async () => await SelectDeviceSourceAsync(source));
+    }
+
+    private async Task SelectDeviceSourceAsync(object? source)
+    {
+        switch (source)
         {
-            case DeviceSelectorItemKind.Blade:
-                SelectDevice("blade");
-                break;
-            case DeviceSelectorItemKind.Viper:
-                SelectDevice("viper");
-                break;
-            case DeviceSelectorItemKind.OpenRazer when item.Source is OpenRazerDeviceRowViewModel row:
+            case OpenRazerDeviceRowViewModel row:
                 SelectDevice("openrazer");
                 await _viewModel.SelectOpenRazerDeviceAsync(row, _lifetime.Token);
                 break;
-            case DeviceSelectorItemKind.Kraken when item.Source is OpenRazerKrakenDeviceRowViewModel row:
-                await _viewModel.SelectOpenRazerKrakenAsync(row);
+            case OpenRazerKrakenDeviceRowViewModel row:
                 SelectDevice("kraken");
+                await _viewModel.SelectOpenRazerKrakenAsync(row);
                 if (_viewModel.SelectedOpenRazerKraken is { } kraken)
+                {
                     await kraken.LoadSerialAsync(_lifetime.Token);
+                }
                 break;
-            case DeviceSelectorItemKind.BlackShark when item.Source is BlackSharkDeviceRowViewModel blackSharkRow:
+            case BlackSharkDeviceRowViewModel row:
                 SelectDevice("blackshark");
-                await _viewModel.SelectBlackSharkAsync(blackSharkRow, _lifetime.Token);
+                await _viewModel.SelectBlackSharkAsync(row, _lifetime.Token);
+                break;
+            case DeviceRowViewModel row
+                when StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Blade):
+                SelectDevice("blade");
+                break;
+            case DeviceRowViewModel row
+                when StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Viper):
+                SelectDevice("viper");
                 break;
         }
-
-        UpdateDeviceSelector(item.Kind switch
-        {
-            DeviceSelectorItemKind.Blade => "blade",
-            DeviceSelectorItemKind.Viper => "viper",
-            DeviceSelectorItemKind.OpenRazer => "openrazer",
-            DeviceSelectorItemKind.Kraken => "kraken",
-            DeviceSelectorItemKind.BlackShark => "blackshark",
-            _ => string.Empty,
-        });
     }
-
     private async void OpenRazerKrakenSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: OpenRazerKrakenDeviceRowViewModel row }) return;

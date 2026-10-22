@@ -29,7 +29,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         {
             DeviceCategory.Laptop => ("\uE7F8", AppStrings.Text("Text_6F38F6BC")),
             DeviceCategory.Mouse => ("\uE962", AppStrings.Text("Text_1EE18BFF")),
-            DeviceCategory.Keyboard => ("\uE9D3", AppStrings.Text("Text_046A57B8")),
+            DeviceCategory.Keyboard => ("\uE765", AppStrings.Text("Text_046A57B8")),
             DeviceCategory.Headset => ("\uE7F6", AppStrings.Text("Text_781EA0FF")),
             _ => ("\uE772", AppStrings.Text("Text_CAF15352")),
         };

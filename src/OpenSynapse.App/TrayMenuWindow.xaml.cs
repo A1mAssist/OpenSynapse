@@ -155,6 +155,7 @@ public sealed partial class TrayMenuWindow : Window
         BatteryPanel.Children.Clear();
         _batteryNames.Clear();
         _batteryValues.Clear();
+        _batteryRows.Clear();
         foreach (var device in devices)
         {
             var icon = new FontIcon
@@ -180,27 +181,48 @@ public sealed partial class TrayMenuWindow : Window
                 FontSize = 13,
                 FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Cascadia Mono"),
                 MinWidth = 34,
-                Margin = new Thickness(0, 0, 10, 0),
+                Margin = new Thickness(0, 0, 8, 0),
                 TextAlignment = TextAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            var row = new Grid { Height = BatteryRowHeightDip, Margin = new Thickness(3, 0, 3, 0) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            row.Children.Add(icon);
+            var layout = new Grid();
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            layout.Children.Add(icon);
             Grid.SetColumn(name, 1);
-            row.Children.Add(name);
+            layout.Children.Add(name);
             Grid.SetColumn(value, 2);
-            row.Children.Add(value);
+            layout.Children.Add(value);
+
+            // The row is a menu item, so clicking it opens that device.
+            var row = new Button
+            {
+                Style = (Style)MenuRoot.Resources["TrayMenuButtonStyle"],
+                Height = BatteryRowHeightDip,
+                Tag = device.Source,
+                Content = layout,
+            };
+            AutomationProperties.SetName(row, $"{device.Name} {value.Text}");
+            row.Click += BatteryRowClick;
             BatteryPanel.Children.Add(row);
             _batteryNames.Add(name);
             _batteryValues.Add(value);
+            _batteryRows.Add(row);
         }
 
         var visibility = devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         BatteryPanel.Visibility = visibility;
         BatterySeparator.Visibility = visibility;
+    }
+
+    private void BatteryRowClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: { } source })
+        {
+            DismissMenu();
+            DeviceRequested?.Invoke(source);
+        }
     }
 
     /// <summary>
@@ -243,7 +265,9 @@ public sealed partial class TrayMenuWindow : Window
                 var percent = results is not null && index < results.Count
                     ? results[index].Percent
                     : null;
-                _batteryValues[index].Text = percent is int value ? $"{value}%" : "\u2014";
+                var text = percent is int value ? $"{value}%" : "\u2014";
+                _batteryValues[index].Text = text;
+                AutomationProperties.SetName(_batteryRows[index], $"{_batteryNames[index].Text} {text}");
             }
         });
     }
@@ -254,16 +278,19 @@ public sealed partial class TrayMenuWindow : Window
     public event Action? ExitRequested;
     public event Action<string>? NavigationRequested;
 
+    public event Action<object>? DeviceRequested;
+
     /// <summary>Names of the battery-capable peripherals, known before any read.</summary>
     public Func<IReadOnlyList<PeripheralBattery>>? BatterySnapshot { get; set; }
 
     /// <summary>Reads those batteries. Called only while the menu is opening.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<PeripheralBattery>>>? BatteryReader { get; set; }
 
-    private const double BatteryRowHeightDip = 24;
+    private const double BatteryRowHeightDip = 28;
     private const double BatteryValueWidthDip = 44;
     private readonly List<TextBlock> _batteryNames = [];
     private readonly List<TextBlock> _batteryValues = [];
+    private readonly List<Button> _batteryRows = [];
     private CancellationTokenSource? _batteryRead;
 
     public void RefreshLocalization()

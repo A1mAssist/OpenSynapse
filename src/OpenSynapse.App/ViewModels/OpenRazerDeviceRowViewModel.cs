@@ -40,7 +40,7 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
     {
         DeviceCategory.Laptop => "\uE7F8",
         DeviceCategory.Mouse => "\uE962",
-        DeviceCategory.Keyboard => "\uE9D3",
+        DeviceCategory.Keyboard => "\uE765",
         DeviceCategory.MouseMat => "\uE7F4",
         DeviceCategory.Monitor => "\uE7F4",
         _ => "\uE772",

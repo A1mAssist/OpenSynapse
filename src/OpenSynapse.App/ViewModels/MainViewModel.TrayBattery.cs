@@ -2,8 +2,11 @@ using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
 
-/// <summary>One peripheral shown in the tray battery list.</summary>
-public sealed record PeripheralBattery(string Name, int? Percent, string Glyph);
+/// <summary>
+/// One peripheral shown in the tray battery list. Source is the row the device page
+/// uses, so clicking the entry can open that exact device.
+/// </summary>
+public sealed record PeripheralBattery(string Name, int? Percent, string Glyph, object Source);
 
 public sealed partial class MainViewModel
 {
@@ -14,7 +17,8 @@ public sealed partial class MainViewModel
     /// </summary>
     public IReadOnlyList<PeripheralBattery> ConnectedBatteries =>
         TelemetryBatteries()
-            .Concat(BatteryDevices().Select(row => new PeripheralBattery(row.Name, null, row.IconGlyph)))
+            .Concat(BatteryDevices()
+                .Select(row => new PeripheralBattery(row.Name, null, row.IconGlyph, row)))
             .ToArray();
 
     /// <summary>
@@ -46,7 +50,7 @@ public sealed partial class MainViewModel
                 // No answer means no percentage for this row; the menu still lists it.
             }
 
-            results.Add(new PeripheralBattery(row.Name, percent, row.IconGlyph));
+            results.Add(new PeripheralBattery(row.Name, percent, row.IconGlyph, row));
         }
 
         return results;
@@ -55,7 +59,7 @@ public sealed partial class MainViewModel
     private IReadOnlyList<PeripheralBattery> TelemetryBatteries() =>
         Devices
             .Where(row => row.BatteryPercent is not null)
-            .Select(row => new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph))
+            .Select(row => new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row))
             .ToArray();
 
     private IEnumerable<OpenRazerDeviceRowViewModel> BatteryDevices() =>
