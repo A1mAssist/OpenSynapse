@@ -5,8 +5,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using ShapesPath = Microsoft.UI.Xaml.Shapes.Path;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Macros;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
 using Windows.UI;
@@ -207,8 +207,10 @@ public sealed partial class MacroEditorWindow : Window
         }
     }
 
-    private static readonly SolidColorBrush MouseRegionFill = new(Color.FromArgb(0xFF, 0x34, 0x34, 0x34));
-    private static readonly SolidColorBrush MouseRegionHoverFill = new(Color.FromArgb(0x3A, 0x99, 0xDD, 0x72));
+    private static readonly SolidColorBrush MouseWheelFill = new(Color.FromArgb(0xFF, 0x24, 0x24, 0x24));
+    private static readonly SolidColorBrush MouseWheelHoverFill = new(Color.FromArgb(0xFF, 0x32, 0x45, 0x2F));
+    private static readonly SolidColorBrush MouseGlyphBrush = new(Color.FromArgb(0xFF, 0x5C, 0x5C, 0x5C));
+    private static readonly SolidColorBrush MouseGlyphHoverBrush = new(Color.FromArgb(0xFF, 0x99, 0xDD, 0x72));
 
     /// <summary>
     /// Binds the drawn mouse to the picker. The art is static, so each region
@@ -247,18 +249,20 @@ public sealed partial class MacroEditorWindow : Window
     private void TintMouseRegion(Button button)
     {
         var active = button.IsPointerOver || button.FocusState != FocusState.Unfocused;
+        var option = button.Tag as MacroKeyOptionViewModel;
+        var insideMouse = ReferenceEquals(button.Parent, MacroMouseHost);
 
-        // The wheel is one shape with three hit bands, so a band tints the wheel.
-        if (button.Content is ShapesPath path)
+        // Left and right share the library glyph; the wheel has its own three hit bands.
+        if (insideMouse && option is { Input.Kind: MacroInputKind.MouseButton })
         {
-            path.Fill = active ? MouseRegionHoverFill : MouseRegionFill;
+            MacroMouseGlyph.Foreground = active ? MouseGlyphHoverBrush : MouseGlyphBrush;
         }
-        else if (button.Content is null)
+        else if (insideMouse && option is { Input.Kind: MacroInputKind.MouseWheel })
         {
-            MacroMouseWheelShape.Fill = active ? MouseRegionHoverFill : MouseRegionFill;
+            MacroMouseWheelShape.Fill = active ? MouseWheelHoverFill : MouseWheelFill;
         }
 
-        if (active && button.Tag is MacroKeyOptionViewModel option)
+        if (active && option is not null)
         {
             MacroMouseCaption.Text = MacroRowViewModel.DescribeInput(option.Input);
         }
