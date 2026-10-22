@@ -9,21 +9,15 @@ public sealed record FirmwareUpdateCheckResult(
     string? PublishedEc,
     string? PublishedMcu,
     string? PublishedVbios,
-    IReadOnlyList<string> NewerComponents)
+    IReadOnlyList<string> NewerComponents,
+    string? DownloadUrl = null)
 {
     public bool HasUpdate => NewerComponents.Count > 0;
 }
 
 public sealed partial class RazerFirmwareUpdateClient
 {
-    public const string Rz090528SupportPage =
-        "https://mysupport.razer.com/app/answers/detail/a_id/19821/~/razer-blade-16-%282025%29-%7C-rz09-0528x-drivers-%26-downloads";
-
-    // Razer's answer page sits behind a pre_page_check gate that returns 401
-    // when launched by an external app. These are the updater links it publishes.
-    public const string Rz090528BiosUpdater = "https://rzr.to/2vxhvx";
-    public const string Rz090528EcUpdater = "https://rzr.to/58kmn2";
-    public const string Rz090528McuUpdater = "https://rzr.to/s6tenp";
+    private const string SupportHost = "https://mysupport.razer.com";
 
     private static readonly HttpClient Client = CreateClient();
 
@@ -32,8 +26,39 @@ public sealed partial class RazerFirmwareUpdateClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installed);
-        var html = await ReadPageAsync(cancellationToken);
-        return Parse(html, installed);
+        var model = RazerHostModel.Read();
+        if (string.IsNullOrWhiteSpace(model))
+        {
+            throw new InvalidOperationException("Could not identify this Razer Blade model.");
+        }
+
+        var query = RazerHostModel.ReadModelCode() ?? model;
+        var html = await ReadDriversPageAsync(query, cancellationToken);
+        var result = Parse(html, installed);
+        if (!result.HasUpdate)
+        {
+            return result;
+        }
+
+        string? downloadUrl = null;
+        try
+        {
+            downloadUrl = await FindUpdaterUrlAsync(
+                html,
+                result.NewerComponents[0],
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or InvalidOperationException or TaskCanceledException)
+        {
+            // The version check is still useful when Razer omits a direct link.
+        }
+
+        return result with { DownloadUrl = downloadUrl };
     }
 
     internal static FirmwareUpdateCheckResult Parse(string html, FirmwareVersions installed)
@@ -63,27 +88,125 @@ public sealed partial class RazerFirmwareUpdateClient
             newer);
     }
 
-    private static async Task<string> ReadPageAsync(CancellationToken cancellationToken)
+    internal static string? FindDriversPageHref(string html)
     {
-        var html = await GetStringAsync(cancellationToken);
+        string? supportPage = null;
+        foreach (Match match in AnswerLinkRegex().Matches(html))
+        {
+            var title = Normalize(match.Groups["body"].Value);
+            var href = WebUtility.HtmlDecode(match.Groups["href"].Value);
+            if (title.Contains("Drivers", StringComparison.OrdinalIgnoreCase) &&
+                title.Contains("Downloads", StringComparison.OrdinalIgnoreCase))
+            {
+                return href;
+            }
+
+            if (supportPage is null &&
+                title.Contains("Support", StringComparison.OrdinalIgnoreCase) &&
+                title.Contains("FAQ", StringComparison.OrdinalIgnoreCase))
+            {
+                supportPage = href;
+            }
+        }
+
+        return supportPage;
+    }
+
+    internal static string? FindUpdaterAnswerHref(string html, string component)
+    {
+        string? fallback = null;
+        foreach (Match match in AnswerLinkRegex().Matches(html))
+        {
+            var title = Normalize(match.Groups["body"].Value);
+            if (!title.Contains(component, StringComparison.OrdinalIgnoreCase) ||
+                !title.Contains("Updater", StringComparison.OrdinalIgnoreCase) ||
+                title.StartsWith("How to", StringComparison.OrdinalIgnoreCase) ||
+                title.Contains("error", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var href = WebUtility.HtmlDecode(match.Groups["href"].Value);
+            if (title.Contains("Razer Blade", StringComparison.OrdinalIgnoreCase))
+            {
+                return href;
+            }
+
+            fallback ??= href;
+        }
+
+        return fallback;
+    }
+
+    internal static string? ExtractDownloadUrl(string html)
+    {
+        foreach (Match match in RzrLinkRegex().Matches(html))
+        {
+            if (!match.Value.EndsWith("/supporte", StringComparison.OrdinalIgnoreCase))
+            {
+                return match.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private static async Task<string> ReadDriversPageAsync(
+        string modelQuery,
+        CancellationToken cancellationToken)
+    {
+        var searchUri = new Uri(
+            $"{SupportHost}/app/answers/list/kw/{Uri.EscapeDataString(modelQuery)}");
+        var searchHtml = await ReadPageAsync(searchUri, cancellationToken);
+        var driversHref = FindDriversPageHref(searchHtml)
+            ?? throw new InvalidOperationException(
+                $"Razer's support search did not find a drivers page for {modelQuery}.");
+        return await ReadPageAsync(ResolveSupportUri(driversHref), cancellationToken);
+    }
+
+    private static async Task<string?> FindUpdaterUrlAsync(
+        string driversHtml,
+        string component,
+        CancellationToken cancellationToken)
+    {
+        var answerHref = FindUpdaterAnswerHref(driversHtml, component)
+            ?? throw new InvalidOperationException(
+                $"Razer's support page did not link the {component} updater.");
+        var answerHtml = await ReadPageAsync(ResolveSupportUri(answerHref), cancellationToken);
+        return ExtractDownloadUrl(answerHtml)
+            ?? throw new InvalidOperationException(
+                $"Razer's {component} updater page did not contain a download link.");
+    }
+
+    private static Uri ResolveSupportUri(string href) =>
+        new(new Uri(SupportHost), href);
+
+    private static async Task<string> ReadPageAsync(
+        Uri uri,
+        CancellationToken cancellationToken)
+    {
+        var html = await GetStringAsync(uri, cancellationToken);
         if (html.Contains("browserEnvironmentDetection", StringComparison.Ordinal))
         {
-            html = await GetStringAsync(cancellationToken);
+            html = await GetStringAsync(uri, cancellationToken);
         }
 
         return html;
     }
 
-    private static async Task<string> GetStringAsync(CancellationToken cancellationToken)
+    private static async Task<string> GetStringAsync(
+        Uri uri,
+        CancellationToken cancellationToken)
     {
         using var response = await Client.GetAsync(
-            Rz090528SupportPage,
+            uri,
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
         response.EnsureSuccessStatusCode();
         var finalHost = response.RequestMessage?.RequestUri?.Host;
         if (finalHost is null ||
-            !finalHost.EndsWith("razer.com", StringComparison.OrdinalIgnoreCase))
+            (!finalHost.Equals("razer.com", StringComparison.OrdinalIgnoreCase) &&
+             !finalHost.EndsWith(".razer.com", StringComparison.OrdinalIgnoreCase)))
         {
             throw new InvalidOperationException(
                 "Razer's support page resolved to an unapproved destination.");
@@ -160,6 +283,14 @@ public sealed partial class RazerFirmwareUpdateClient
 
     [GeneratedRegex("<tr\\b[^>]*>(?<body>.*?)</tr\\s*>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
     private static partial Regex HtmlTableRowRegex();
+
+    [GeneratedRegex(
+        "<a\\b[^>]*href=[\"'](?<href>[^\"']*a_id/\\d+[^\"']*)[\"'][^>]*>(?<body>.*?)</a\\s*>",
+        RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex AnswerLinkRegex();
+
+    [GeneratedRegex("https://rzr\\.to/[A-Za-z0-9]+", RegexOptions.IgnoreCase)]
+    private static partial Regex RzrLinkRegex();
 
     [GeneratedRegex("<[^>]+>", RegexOptions.Singleline)]
     private static partial Regex TagRegex();
