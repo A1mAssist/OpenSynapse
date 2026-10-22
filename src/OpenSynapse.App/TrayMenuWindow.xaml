@@ -114,6 +114,8 @@
                        VerticalAlignment="Center" />
           </Grid>
         </Button>
+        <Rectangle x:Name="BatterySeparator" Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="6,2,6,2" Visibility="Collapsed" />
+        <StackPanel x:Name="BatteryPanel" Visibility="Collapsed" />
         <Rectangle Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="6,2,6,2" />
         <Button x:Name="TurnOffDisplayMenuItem"
                 Style="{StaticResource TrayMenuButtonStyle}"
