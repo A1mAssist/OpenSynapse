@@ -178,6 +178,9 @@
               <Button Tag="1" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
                       Canvas.Left="88" Canvas.Top="8" Width="44" Height="64" CornerRadius="12" />
 
+              <!-- Extend the glyph's centre divider so the left and right buttons read as separate targets. -->
+              <Path Data="M79.5,58 L79.5,108" Stroke="#5C5C5C" StrokeThickness="6"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" IsHitTestVisible="False" />
               <!-- The library glyph has no wheel, so the wheel uses the same line weight and colour. -->
               <Path x:Name="MacroMouseWheelShape" Fill="#242424" Stroke="#5C5C5C" StrokeThickness="1.5"
                     Data="M73.5,32 A6,6 0 0 1 85.5,32 L85.5,58 A6,6 0 0 1 73.5,58 Z" />
