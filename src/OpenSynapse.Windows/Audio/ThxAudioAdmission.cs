@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Microsoft.Win32;
 using OpenSynapse.Core.Audio;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Audio;
 
@@ -28,9 +29,6 @@ internal static class ThxAudioAdmission
     internal const long NativeDllLength = 13_684_872;
     internal const string NativeDllSha256 =
         "8E8F6923624762935D70B72F58BEC00808DB84DF740340047919B53331130A0A";
-    private const string BiosKey = @"HARDWARE\DESCRIPTION\System\BIOS";
-    private const string SystemInformationKey =
-        @"SYSTEM\CurrentControlSet\Control\SystemInformation";
     private static readonly int[] Frequencies = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
     private static readonly IReadOnlyDictionary<string, double[]> HeadphoneCurves =
@@ -208,21 +206,7 @@ internal static class ThxAudioAdmission
             ? [0, 0, 0, .. visibleGains]
             : [.. visibleGains];
 
-    private static string? ReadHostModel()
-    {
-        using var localMachine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-        using var bios = localMachine.OpenSubKey(BiosKey);
-        using var system = localMachine.OpenSubKey(SystemInformationKey);
-        var biosManufacturer = bios?.GetValue("SystemManufacturer") as string;
-        var biosProduct = bios?.GetValue("SystemProductName") as string;
-        var systemManufacturer = system?.GetValue("SystemManufacturer") as string;
-        var systemProduct = system?.GetValue("SystemProductName") as string;
-        return biosManufacturer == "Razer" &&
-               systemManufacturer == "Razer" &&
-               string.Equals(biosProduct, systemProduct, StringComparison.Ordinal)
-            ? biosProduct
-            : null;
-    }
+    private static string? ReadHostModel() => RazerHostModel.Read();
 
     private static bool HasUsbIdentity(ThxAudioProfile profile)
     {

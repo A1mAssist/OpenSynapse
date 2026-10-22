@@ -493,7 +493,7 @@
                       </Grid>
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <TextBlock Text="{Binding FirmwareUpdateStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
-                        <Button Grid.Column="1" local:Localized.Uid="FirmwareDownloadButton" Content="前往下载" Click="OpenFirmwareDownloadClick" Visibility="{Binding FirmwareUpdateAvailableVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button Grid.Column="1" local:Localized.Uid="FirmwareDownloadButton" Content="前往下载" Click="OpenFirmwareDownloadClick" Visibility="{Binding FirmwareDownloadAvailableVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
                       </Grid>
                     </StackPanel>
                   </Border>
