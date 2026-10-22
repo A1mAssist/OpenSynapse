@@ -2286,6 +2286,6 @@
   <data name="MacroKeyPickerHint.Text" xml:space="preserve"><value>点击按键即可添加一个动作。</value></data>
   <data name="MacroRecordButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>录制</value></data>
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>插入</value></data>
-  <data name="MacroKeyPickerMouseHint" xml:space="preserve"><value>悬停查看按键，点击即可添加动作。</value></data>
+  <data name="MacroKeyPickerMouseHint.Text" xml:space="preserve"><value>悬停查看按键，点击即可添加动作。</value></data>
 </root>
 

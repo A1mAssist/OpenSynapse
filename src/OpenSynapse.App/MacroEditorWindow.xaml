@@ -6,7 +6,8 @@
     Title="Macro editor">
   <Grid x:Name="RootLayout" Background="Transparent" RequestedTheme="Dark" Padding="16" RowDefinitions="*,Auto,Auto">
     <Grid Grid.Row="0" ColumnDefinitions="*,16,300">
-      <StackPanel Grid.Column="0" Spacing="10">
+      <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+        <StackPanel Spacing="10">
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button x:Name="MacroRecordButton" local:Localized.Uid="MacroRecordButton" MinWidth="104" Style="{StaticResource SecondaryButtonStyle}">
             <StackPanel Orientation="Horizontal" Spacing="7">
@@ -39,7 +40,7 @@
         <Border Style="{StaticResource CardStyle}" Padding="0" MinHeight="120" VerticalAlignment="Top">
           <Grid RowDefinitions="*,Auto">
             <Grid Grid.Row="0" MinHeight="120">
-              <ListView x:Name="MacroStepList" ItemsSource="{Binding MacroSteps}" SelectedItem="{Binding SelectedMacroStep, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="120" MaxHeight="240">
+              <ListView x:Name="MacroStepList" ItemsSource="{Binding MacroSteps}" SelectedItem="{Binding SelectedMacroStep, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="120" MaxHeight="220" Padding="0,4,0,8">
                 <ListView.ItemTemplate>
                   <DataTemplate>
                     <Grid ColumnDefinitions="56,20,*" ColumnSpacing="10" Padding="2,7">
@@ -52,6 +53,15 @@
               </ListView>
               <TextBlock local:Localized.Uid="MacroNoMacroSelected" Text="未选择宏" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding MacroNoSelectionVisibility}" />
               <TextBlock local:Localized.Uid="MacroEmptyEditorHint" Text="点击“录制”开始录制动作序列，或直接点击下方键盘添加单个动作。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="280" Visibility="{Binding MacroEmptyStepsVisibility}" />
+
+              <Border Height="24" VerticalAlignment="Bottom" IsHitTestVisible="False">
+                <Border.Background>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#00202020" Offset="0" />
+                    <GradientStop Color="#FF202020" Offset="1" />
+                  </LinearGradientBrush>
+                </Border.Background>
+              </Border>
             </Grid>
             <Border Grid.Row="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8">
               <StackPanel x:Name="MacroPlaybackBar" Orientation="Horizontal" Spacing="10" Visibility="{Binding MacroEditorVisibility}">
@@ -82,8 +92,9 @@
           </StackPanel>
         </Border>
       </StackPanel>
+      </ScrollViewer>
 
-      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
         <StackPanel Spacing="10">
           <Border Style="{StaticResource CardStyle}" Padding="0">
             <StackPanel>
@@ -140,75 +151,85 @@
     </Grid>
 
     <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="12" Margin="0,12,0,0">
-      <StackPanel Spacing="8">
-        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-          <TextBlock local:Localized.Uid="MacroKeyPickerKeyboard" Text="键盘" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" local:Localized.Uid="MacroKeyPickerHint" Text="点击按键即可添加一个动作。" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-        </Grid>
-        <ScrollViewer x:Name="MacroKeyboardScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" HorizontalScrollMode="Auto" VerticalScrollMode="Disabled">
-          <Grid x:Name="MacroKeyboardHost" HorizontalAlignment="Left" />
-        </ScrollViewer>
-        <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,248" ColumnSpacing="20">
+        <StackPanel Grid.Column="0" Spacing="8">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <TextBlock local:Localized.Uid="MacroKeyPickerKeyboard" Text="键盘" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" local:Localized.Uid="MacroKeyPickerHint" Text="点击按键即可添加一个动作。" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+          </Grid>
+          <ScrollViewer x:Name="MacroKeyboardScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" HorizontalScrollMode="Auto" VerticalScrollMode="Disabled">
+            <Grid x:Name="MacroKeyboardHost" HorizontalAlignment="Left" />
+          </ScrollViewer>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Spacing="6">
           <TextBlock local:Localized.Uid="MacroKeyPickerMouse" Text="鼠标" Style="{StaticResource MetricLabelStyle}" />
-          <StackPanel Orientation="Horizontal" Spacing="14">
-            <Canvas x:Name="MacroMouseHost" Width="140" Height="186" HorizontalAlignment="Left">
-              <!-- Shell drawn from the front, the way the mouse sits under the hand. -->
-              <Path Fill="{StaticResource SurfaceRaisedBrush}" Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                    Data="M70,6 C89,6 103,13 106,30 L113,74 C119,102 116,132 104,154 C95,172 83,182 70,182 C57,182 45,172 36,154 C24,132 21,102 27,74 L34,30 C37,13 51,6 70,6 Z" />
+          <Canvas x:Name="MacroMouseHost" Width="160" Height="196" HorizontalAlignment="Center">
+            <!-- A soft offset shadow lifts the shell off the card. -->
+            <Path Canvas.Left="2" Canvas.Top="3" Fill="#33000000"
+                  Data="M58,7 C68,4 92,4 102,7 C114,12 120,23 123,38 C129,61 133,84 133,108 C133,137 128,160 118,176 C111,187 98,190 80,190 C62,190 49,187 42,176 C32,160 27,137 27,108 C27,84 31,61 37,38 C40,23 46,12 58,7 Z" />
+            <!-- Shell drawn from the front: broad shoulders, a flat nose and a rounded heel. -->
+            <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round">
+              <Path.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                  <GradientStop Color="#363636" Offset="0" />
+                  <GradientStop Color="#242424" Offset="1" />
+                </LinearGradientBrush>
+              </Path.Fill>
+              <Path.Data>M58,7 C68,4 92,4 102,7 C114,12 120,23 123,38 C129,61 133,84 133,108 C133,137 128,160 118,176 C111,187 98,190 80,190 C62,190 49,187 42,176 C32,160 27,137 27,108 C27,84 31,61 37,38 C40,23 46,12 58,7 Z</Path.Data>
+            </Path>
 
-              <!-- Hit regions carry the option index; the code swaps in the option. -->
-              <Button Tag="3" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="16" Canvas.Top="76" Width="24" Height="24"
-                      >
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                      Data="M6,0 L18,0 A6,6 0 0 1 24,6 L24,18 A6,6 0 0 1 18,24 L6,24 A6,6 0 0 1 0,18 L0,6 A6,6 0 0 1 6,0 Z" />
-              </Button>
-              <Button Tag="4" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="16" Canvas.Top="104" Width="24" Height="24"
-                      >
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                      Data="M6,0 L18,0 A6,6 0 0 1 24,6 L24,18 A6,6 0 0 1 18,24 L6,24 A6,6 0 0 1 0,18 L0,6 A6,6 0 0 1 6,0 Z" />
-              </Button>
+            <!-- Hit regions carry the option index; the code swaps in the option. -->
+            <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                    Canvas.Left="38" Canvas.Top="7" Width="42" Height="80">
+              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
+                    Data="M20,1 C28,-1 36,0 42,1 L42,80 L12,80 C6,65 3,48 0,32 C4,17 13,4 20,1 Z" />
+            </Button>
+            <Button Tag="1" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                    Canvas.Left="80" Canvas.Top="7" Width="53" Height="80">
+              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
+                    Data="M0,1 C8,-1 18,0 22,1 C34,6 40,17 43,33 C46,50 41,67 36,80 L0,80 Z" />
+            </Button>
 
-              <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="33" Canvas.Top="8" Width="37" Height="75"
-                      >
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                      Data="M37,0 C22,0 9,7 6,23 L1,60 C0,68 1,73 2,75 L37,75 Z" />
-              </Button>
-              <Button Tag="1" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="70" Canvas.Top="8" Width="37" Height="75"
-                      >
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                      Data="M0,0 C15,0 28,7 31,23 L36,60 C37,68 36,73 35,75 L0,75 Z" />
-              </Button>
+            <Path Stroke="#5E5E5E" StrokeThickness="1" Data="M80,87 L80,172" />
 
-              <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="63" Canvas.Top="33" Width="14" Height="16"
-                      >
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                      Data="M0,7 A7,7 0 0 1 14,7 L14,9 A7,7 0 0 1 0,9 Z" />
-              </Button>
-              <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="63" Canvas.Top="50" Width="14" Height="12"
-                      >
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                      Data="M0,4 A4,4 0 0 1 14,4 L14,8 A4,4 0 0 1 0,8 Z" />
-              </Button>
-              <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="63" Canvas.Top="63" Width="14" Height="16"
-                      >
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                      Data="M0,7 A7,7 0 0 1 14,7 L14,9 A7,7 0 0 1 0,9 Z" />
-              </Button>
-            </Canvas>
-            <StackPanel VerticalAlignment="Center" Spacing="2">
-              <TextBlock x:Name="MacroMouseCaption" Text="" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource DataBrush}" />
-              <TextBlock local:Localized.Uid="MacroKeyPickerMouseHint" Text="悬停查看按键，点击即可添加动作。" Style="{StaticResource MetricLabelStyle}" />
-            </StackPanel>
+            <Path x:Name="MacroMouseWheelShape" Fill="#171717" Stroke="#606060" StrokeThickness="1"
+                  Data="M71,31 A9,9 0 0 1 89,31 L89,61 A9,9 0 0 1 71,61 Z" />
+            <Path Stroke="#686868" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  Data="M75,39 L85,39 M75,47 L85,47 M75,55 L85,55" />
+
+            <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                    Canvas.Left="71" Canvas.Top="22" Width="18" Height="17" />
+            <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                    Canvas.Left="71" Canvas.Top="39" Width="18" Height="18" />
+            <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                    Canvas.Left="71" Canvas.Top="57" Width="18" Height="17" />
+
+            <Button Tag="3" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                    Canvas.Left="24" Canvas.Top="91" Width="16" Height="26">
+              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                    Data="M14,0 L5,0 A5,5 0 0 0 0,5 L0,21 A5,5 0 0 0 5,26 L14,26 Z" />
+            </Button>
+            <Button Tag="4" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                    Canvas.Left="24" Canvas.Top="121" Width="16" Height="26">
+              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
+                    Data="M14,0 L5,0 A5,5 0 0 0 0,5 L0,21 A5,5 0 0 0 5,26 L14,26 Z" />
+            </Button>
+
+            <!-- A soft palm contour gives the body some volume without turning it into a diagram. -->
+            <Path Stroke="#3D3D3D" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  Data="M48,169 C61,180 99,180 112,169" />
+
+            <!-- Outline last, so the silhouette stays crisp over the regions. -->
+            <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1.2" StrokeLineJoin="Round" Fill="Transparent"
+                  Data="M58,7 C68,4 92,4 102,7 C114,12 120,23 123,38 C129,61 133,84 133,108 C133,137 128,160 118,176 C111,187 98,190 80,190 C62,190 49,187 42,176 C32,160 27,137 27,108 C27,84 31,61 37,38 C40,23 46,12 58,7 Z" />
+          </Canvas>
+          <StackPanel Spacing="2">
+            <TextBlock x:Name="MacroMouseCaption" Text="" MinHeight="18" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
+            <TextBlock local:Localized.Uid="MacroKeyPickerMouseHint" Text="点击即可添加动作。" Style="{StaticResource MetricLabelStyle}" HorizontalAlignment="Center" />
           </StackPanel>
         </StackPanel>
-      </StackPanel>
+      </Grid>
     </Border>
 
     <TextBlock Grid.Row="2" Text="{Binding MacroStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />

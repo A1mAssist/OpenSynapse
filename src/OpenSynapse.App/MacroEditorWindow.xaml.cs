@@ -227,7 +227,6 @@ public sealed partial class MacroEditorWindow : Window
                 ? picker.MouseButtons[index]
                 : picker.Wheels[index - picker.MouseButtons.Count];
             button.Tag = option;
-            button.Tag = option;
             AutomationProperties.SetName(button, option.Label);
             ToolTipService.SetToolTip(button, option.Label);
             // Hover and keyboard focus share one cue: the region lights up. That
@@ -244,9 +243,15 @@ public sealed partial class MacroEditorWindow : Window
     private void TintMouseRegion(Button button)
     {
         var active = button.IsPointerOver || button.FocusState != FocusState.Unfocused;
+
+        // The wheel is one shape with three hit bands, so a band tints the wheel.
         if (button.Content is ShapesPath path)
         {
             path.Fill = active ? MouseRegionHoverFill : MouseRegionFill;
+        }
+        else
+        {
+            MacroMouseWheelShape.Fill = active ? MouseRegionHoverFill : MouseRegionFill;
         }
 
         if (active && button.Tag is MacroKeyOptionViewModel option)
@@ -254,6 +259,7 @@ public sealed partial class MacroEditorWindow : Window
             MacroMouseCaption.Text = option.Label;
         }
     }
+
     private Button CreateMacroKeyButton(MacroKeyOptionViewModel key)
     {
         var button = new Button
