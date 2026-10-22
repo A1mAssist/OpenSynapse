@@ -2287,5 +2287,8 @@
   <data name="MacroRecordButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>录制</value></data>
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>插入</value></data>
   <data name="MacroKeyPickerMouseHint.Text" xml:space="preserve"><value>悬停查看按键，点击即可添加动作。</value></data>
+  <data name="MacroMouseSideButtons.Text" xml:space="preserve"><value>可选侧键</value></data>
+  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>侧键 1</value></data>
+  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>侧键 2</value></data>
 </root>
 

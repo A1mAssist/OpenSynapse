@@ -164,66 +164,77 @@
 
         <StackPanel Grid.Column="1" Spacing="6">
           <TextBlock local:Localized.Uid="MacroKeyPickerMouse" Text="鼠标" Style="{StaticResource MetricLabelStyle}" />
-          <Canvas x:Name="MacroMouseHost" Width="160" Height="196" HorizontalAlignment="Center">
-            <!-- A soft offset shadow lifts the shell off the card. -->
-            <Path Canvas.Left="2" Canvas.Top="3" Fill="#33000000"
-                  Data="M58,7 C68,4 92,4 102,7 C114,12 120,23 123,38 C129,61 133,84 133,108 C133,137 128,160 118,176 C111,187 98,190 80,190 C62,190 49,187 42,176 C32,160 27,137 27,108 C27,84 31,61 37,38 C40,23 46,12 58,7 Z" />
-            <!-- Shell drawn from the front: broad shoulders, a flat nose and a rounded heel. -->
-            <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round">
-              <Path.Fill>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                  <GradientStop Color="#363636" Offset="0" />
-                  <GradientStop Color="#242424" Offset="1" />
-                </LinearGradientBrush>
-              </Path.Fill>
-              <Path.Data>M58,7 C68,4 92,4 102,7 C114,12 120,23 123,38 C129,61 133,84 133,108 C133,137 128,160 118,176 C111,187 98,190 80,190 C62,190 49,187 42,176 C32,160 27,137 27,108 C27,84 31,61 37,38 C40,23 46,12 58,7 Z</Path.Data>
-            </Path>
+          <Grid ColumnDefinitions="168,10,*">
+            <Canvas x:Name="MacroMouseHost" Width="168" Height="200" HorizontalAlignment="Left">
+              <!-- Soft offset shadow keeps the shell off the card without a heavy border. -->
+              <Path Canvas.Left="2" Canvas.Top="3" Fill="#33000000"
+                    Data="M58,7 C66,4 102,4 110,7 C122,12 128,26 131,43 C137,67 141,89 142,115 C143,142 138,166 127,183 C119,195 104,199 84,199 C64,199 49,195 41,183 C30,166 25,142 26,115 C27,89 31,67 37,43 C40,26 46,12 58,7 Z" />
 
-            <!-- Hit regions carry the option index; the code swaps in the option. -->
-            <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                    Canvas.Left="38" Canvas.Top="7" Width="42" Height="80">
-              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
-                    Data="M20,1 C28,-1 36,0 42,1 L42,80 L12,80 C6,65 3,48 0,32 C4,17 13,4 20,1 Z" />
-            </Button>
-            <Button Tag="1" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                    Canvas.Left="80" Canvas.Top="7" Width="53" Height="80">
-              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
-                    Data="M0,1 C8,-1 18,0 22,1 C34,6 40,17 43,33 C46,50 41,67 36,80 L0,80 Z" />
-            </Button>
+              <!-- Common wireless-mouse silhouette: broad shoulders, tapered waist, rounded heel. -->
+              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round">
+                <Path.Fill>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#3B3B3B" Offset="0" />
+                    <GradientStop Color="#222222" Offset="1" />
+                  </LinearGradientBrush>
+                </Path.Fill>
+                <Path.Data>M58,7 C66,4 102,4 110,7 C122,12 128,26 131,43 C137,67 141,89 142,115 C143,142 138,166 127,183 C119,195 104,199 84,199 C64,199 49,195 41,183 C30,166 25,142 26,115 C27,89 31,67 37,43 C40,26 46,12 58,7 Z</Path.Data>
+              </Path>
 
-            <Path Stroke="#5E5E5E" StrokeThickness="1" Data="M80,87 L80,172" />
+              <!-- Side grips are part of the shell, not side buttons. -->
+              <Path Fill="#161616" Opacity="0.72"
+                    Data="M31,65 C31,102 37,140 51,168 C56,178 63,186 72,192 C55,188 43,176 36,159 C28,139 25,102 31,65 Z" />
+              <Path Fill="#161616" Opacity="0.72"
+                    Data="M137,65 C137,102 131,140 117,168 C112,178 105,186 96,192 C113,188 125,176 132,159 C140,139 143,102 137,65 Z" />
+              <Path Fill="#2B2B2B" Stroke="#464646" StrokeThickness="1" StrokeLineJoin="Round"
+                    Data="M84,15 C99,15 110,21 116,36 C122,56 126,81 127,108 C128,135 124,159 115,176 C108,188 98,191 84,191 C70,191 60,188 53,176 C44,159 40,135 41,108 C42,81 46,56 52,36 C58,21 69,15 84,15 Z" />
 
-            <Path x:Name="MacroMouseWheelShape" Fill="#171717" Stroke="#606060" StrokeThickness="1"
-                  Data="M71,31 A9,9 0 0 1 89,31 L89,61 A9,9 0 0 1 71,61 Z" />
-            <Path Stroke="#686868" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                  Data="M75,39 L85,39 M75,47 L85,47 M75,55 L85,55" />
+              <!-- Standard left and right buttons. Side keys are listed separately. -->
+              <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="44" Canvas.Top="4" Width="40" Height="86">
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
+                      Data="M18,3 C25,1 33,2 40,3 L40,83 L12,83 C7,66 4,47 2,31 C5,16 11,6 18,3 Z" />
+              </Button>
+              <Button Tag="1" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="84" Canvas.Top="4" Width="49" Height="86">
+                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
+                      Data="M0,3 C8,1 18,2 22,3 C32,7 38,19 41,34 C43,50 38,69 33,83 L0,83 Z" />
+              </Button>
 
-            <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                    Canvas.Left="71" Canvas.Top="22" Width="18" Height="17" />
-            <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                    Canvas.Left="71" Canvas.Top="39" Width="18" Height="18" />
-            <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                    Canvas.Left="71" Canvas.Top="57" Width="18" Height="17" />
+              <Path Stroke="#525252" StrokeThickness="1" Data="M84,90 L84,180" />
 
-            <Button Tag="3" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                    Canvas.Left="24" Canvas.Top="91" Width="16" Height="26">
-              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                    Data="M14,0 L5,0 A5,5 0 0 0 0,5 L0,21 A5,5 0 0 0 5,26 L14,26 Z" />
-            </Button>
-            <Button Tag="4" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                    Canvas.Left="24" Canvas.Top="121" Width="16" Height="26">
-              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1"
-                    Data="M14,0 L5,0 A5,5 0 0 0 0,5 L0,21 A5,5 0 0 0 5,26 L14,26 Z" />
-            </Button>
+              <Path x:Name="MacroMouseWheelShape" Fill="#141414" Stroke="#606060" StrokeThickness="1"
+                    Data="M76,35 A8,8 0 0 1 92,35 L92,62 A8,8 0 0 1 76,62 Z" />
+              <Path Stroke="#6A6A6A" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                    Data="M79,42 L89,42 M79,49 L89,49 M79,56 L89,56" />
 
-            <!-- A soft palm contour gives the body some volume without turning it into a diagram. -->
-            <Path Stroke="#3D3D3D" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                  Data="M48,169 C61,180 99,180 112,169" />
+              <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="76" Canvas.Top="26" Width="16" Height="16" />
+              <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="76" Canvas.Top="42" Width="16" Height="14" />
+              <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
+                      Canvas.Left="76" Canvas.Top="56" Width="16" Height="16" />
 
-            <!-- Outline last, so the silhouette stays crisp over the regions. -->
-            <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1.2" StrokeLineJoin="Round" Fill="Transparent"
-                  Data="M58,7 C68,4 92,4 102,7 C114,12 120,23 123,38 C129,61 133,84 133,108 C133,137 128,160 118,176 C111,187 98,190 80,190 C62,190 49,187 42,176 C32,160 27,137 27,108 C27,84 31,61 37,38 C40,23 46,12 58,7 Z" />
-          </Canvas>
+              <Path Stroke="#4B4B4B" Opacity="0.45" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                    Data="M37,103 C39,124 44,145 54,162 M41,110 C43,129 48,147 57,160 M131,103 C129,124 124,145 114,162 M127,110 C125,129 120,147 111,160" />
+              <Path Stroke="#161616" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                    Data="M61,190 C74,196 94,196 107,190" />
+
+              <!-- Outline last, so the silhouette stays crisp over the regions. -->
+              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1.2" StrokeLineJoin="Round" Fill="Transparent"
+                    Data="M58,7 C66,4 102,4 110,7 C122,12 128,26 131,43 C137,67 141,89 142,115 C143,142 138,166 127,183 C119,195 104,199 84,199 C64,199 49,195 41,183 C30,166 25,142 26,115 C27,89 31,67 37,43 C40,26 46,12 58,7 Z" />
+            </Canvas>
+
+            <StackPanel x:Name="MacroMouseExtraHost" Grid.Column="2" VerticalAlignment="Center" Spacing="8">
+              <TextBlock local:Localized.Uid="MacroMouseSideButtons" Text="可选侧键" Style="{StaticResource MetricLabelStyle}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+              <Button Tag="3" local:Localized.Uid="MacroMouseSide1" Content="侧键 1" Click="MacroKeyOptionClick"
+                      Style="{StaticResource SecondaryButtonStyle}" MinWidth="0" Height="30" Padding="6,0"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" />
+              <Button Tag="4" local:Localized.Uid="MacroMouseSide2" Content="侧键 2" Click="MacroKeyOptionClick"
+                      Style="{StaticResource SecondaryButtonStyle}" MinWidth="0" Height="30" Padding="6,0"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" />
+            </StackPanel>
+          </Grid>
           <StackPanel Spacing="2">
             <TextBlock x:Name="MacroMouseCaption" Text="" MinHeight="18" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
             <TextBlock local:Localized.Uid="MacroKeyPickerMouseHint" Text="点击即可添加动作。" Style="{StaticResource MetricLabelStyle}" HorizontalAlignment="Center" />
