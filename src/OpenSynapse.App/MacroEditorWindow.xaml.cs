@@ -209,8 +209,8 @@ public sealed partial class MacroEditorWindow : Window
 
     private static readonly SolidColorBrush MouseWheelFill = new(Color.FromArgb(0xFF, 0x24, 0x24, 0x24));
     private static readonly SolidColorBrush MouseWheelHoverFill = new(Color.FromArgb(0xFF, 0x32, 0x45, 0x2F));
-    private static readonly SolidColorBrush MouseGlyphBrush = new(Color.FromArgb(0xFF, 0x5C, 0x5C, 0x5C));
-    private static readonly SolidColorBrush MouseGlyphHoverBrush = new(Color.FromArgb(0xFF, 0x99, 0xDD, 0x72));
+    private static readonly SolidColorBrush MouseWheelStroke = new(Color.FromArgb(0xFF, 0x5C, 0x5C, 0x5C));
+    private static readonly SolidColorBrush MouseWheelHoverStroke = new(Color.FromArgb(0xFF, 0x99, 0xDD, 0x72));
 
     /// <summary>
     /// Binds the drawn mouse to the picker. The art is static, so each region
@@ -238,34 +238,64 @@ public sealed partial class MacroEditorWindow : Window
             // Hover and keyboard focus share one cue: the region lights up. That
             // keeps focus visible without the square focus rectangle the shape
             // does not want.
-            button.PointerEntered += (_, _) => TintMouseRegion(button);
-            button.PointerExited += (_, _) => TintMouseRegion(button);
-            button.GotFocus += (_, _) => TintMouseRegion(button);
-            button.LostFocus += (_, _) => TintMouseRegion(button);
-            TintMouseRegion(button);
+            button.PointerEntered += (_, _) => RefreshMacroMouseHover();
+            button.PointerExited += (_, _) => RefreshMacroMouseHover();
+            button.GotFocus += (_, _) => RefreshMacroMouseHover();
+            button.LostFocus += (_, _) => RefreshMacroMouseHover();
         }
+
+        RefreshMacroMouseHover();
     }
 
-    private void TintMouseRegion(Button button)
+    private void RefreshMacroMouseHover()
     {
-        var active = button.IsPointerOver || button.FocusState != FocusState.Unfocused;
-        var option = button.Tag as MacroKeyOptionViewModel;
-        var insideMouse = ReferenceEquals(button.Parent, MacroMouseHost);
+        MacroKeyOptionViewModel? activeOption = null;
+        var leftActive = false;
+        var rightActive = false;
+        var wheelActive = false;
 
-        // Left and right share the library glyph; the wheel has its own three hit bands.
-        if (insideMouse && option is { Input.Kind: MacroInputKind.MouseButton })
+        foreach (var button in MacroMouseHost.Children.OfType<Button>())
         {
-            MacroMouseGlyph.Foreground = active ? MouseGlyphHoverBrush : MouseGlyphBrush;
-        }
-        else if (insideMouse && option is { Input.Kind: MacroInputKind.MouseWheel })
-        {
-            MacroMouseWheelShape.Fill = active ? MouseWheelHoverFill : MouseWheelFill;
+            var option = button.Tag as MacroKeyOptionViewModel;
+            if (option is null ||
+                (!button.IsPointerOver && button.FocusState is not (FocusState.Keyboard or FocusState.Programmatic)))
+            {
+                continue;
+            }
+
+            activeOption ??= option;
+            switch (option.Input)
+            {
+                case { Kind: MacroInputKind.MouseWheel }:
+                case { Kind: MacroInputKind.MouseButton, MouseButton: 3 }:
+                    wheelActive = true;
+                    break;
+                case { Kind: MacroInputKind.MouseButton, MouseButton: 1 }:
+                    leftActive = true;
+                    break;
+                case { Kind: MacroInputKind.MouseButton, MouseButton: 2 }:
+                    rightActive = true;
+                    break;
+            }
         }
 
-        if (active && option is not null)
+        foreach (var button in MacroMouseExtraHost.Children.OfType<Button>())
         {
-            MacroMouseCaption.Text = MacroRowViewModel.DescribeInput(option.Input);
+            var option = button.Tag as MacroKeyOptionViewModel;
+            if (option is not null &&
+                (button.IsPointerOver || button.FocusState is FocusState.Keyboard or FocusState.Programmatic))
+            {
+                activeOption ??= option;
+            }
         }
+
+        MacroMouseLeftHighlight.Opacity = leftActive ? 1 : 0;
+        MacroMouseRightHighlight.Opacity = rightActive ? 1 : 0;
+        MacroMouseWheelShape.Fill = wheelActive ? MouseWheelHoverFill : MouseWheelFill;
+        MacroMouseWheelShape.Stroke = wheelActive ? MouseWheelHoverStroke : MouseWheelStroke;
+        MacroMouseCaption.Text = activeOption is null
+            ? string.Empty
+            : MacroRowViewModel.DescribeInput(activeOption.Input);
     }
 
     private Button CreateMacroKeyButton(MacroKeyOptionViewModel key)
