@@ -166,63 +166,27 @@
           <TextBlock local:Localized.Uid="MacroKeyPickerMouse" Text="鼠标" Style="{StaticResource MetricLabelStyle}" />
           <Grid ColumnDefinitions="168,10,*">
             <Canvas x:Name="MacroMouseHost" Width="168" Height="200" HorizontalAlignment="Left">
-              <!-- Soft offset shadow keeps the shell off the card without a heavy border. -->
-              <Path Canvas.Left="2" Canvas.Top="3" Fill="#33000000"
-                    Data="M58,7 C66,4 102,4 110,7 C122,12 128,26 131,43 C137,67 141,89 142,115 C143,142 138,166 127,183 C119,195 104,199 84,199 C64,199 49,195 41,183 C30,166 25,142 26,115 C27,89 31,67 37,43 C40,26 46,12 58,7 Z" />
+              <Grid Width="168" Height="200">
+                <FontIcon x:Name="MacroMouseGlyph" Glyph="&#xE962;" FontFamily="Segoe Fluent Icons" FontSize="150"
+                          Foreground="#5C5C5C" HorizontalAlignment="Center" VerticalAlignment="Center"
+                          IsHitTestVisible="False" />
+              </Grid>
 
-              <!-- Common wireless-mouse silhouette: broad shoulders, tapered waist, rounded heel. -->
-              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round">
-                <Path.Fill>
-                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#3B3B3B" Offset="0" />
-                    <GradientStop Color="#222222" Offset="1" />
-                  </LinearGradientBrush>
-                </Path.Fill>
-                <Path.Data>M58,7 C66,4 102,4 110,7 C122,12 128,26 131,43 C137,67 141,89 142,115 C143,142 138,166 127,183 C119,195 104,199 84,199 C64,199 49,195 41,183 C30,166 25,142 26,115 C27,89 31,67 37,43 C40,26 46,12 58,7 Z</Path.Data>
-              </Path>
-
-              <!-- Side grips are part of the shell, not side buttons. -->
-              <Path Fill="#161616" Opacity="0.72"
-                    Data="M31,65 C31,102 37,140 51,168 C56,178 63,186 72,192 C55,188 43,176 36,159 C28,139 25,102 31,65 Z" />
-              <Path Fill="#161616" Opacity="0.72"
-                    Data="M137,65 C137,102 131,140 117,168 C112,178 105,186 96,192 C113,188 125,176 132,159 C140,139 143,102 137,65 Z" />
-              <Path Fill="#2B2B2B" Stroke="#464646" StrokeThickness="1" StrokeLineJoin="Round"
-                    Data="M84,15 C99,15 110,21 116,36 C122,56 126,81 127,108 C128,135 124,159 115,176 C108,188 98,191 84,191 C70,191 60,188 53,176 C44,159 40,135 41,108 C42,81 46,56 52,36 C58,21 69,15 84,15 Z" />
-
-              <!-- Standard left and right buttons. Side keys are listed separately. -->
+              <!-- Invisible click regions sit over the library mouse icon. -->
               <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="44" Canvas.Top="4" Width="40" Height="86">
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
-                      Data="M18,3 C25,1 33,2 40,3 L40,83 L12,83 C7,66 4,47 2,31 C5,16 11,6 18,3 Z" />
-              </Button>
+                      Canvas.Left="48" Canvas.Top="8" Width="44" Height="64" CornerRadius="12" />
               <Button Tag="1" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="84" Canvas.Top="4" Width="49" Height="86">
-                <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1" StrokeLineJoin="Round"
-                      Data="M0,3 C8,1 18,2 22,3 C32,7 38,19 41,34 C43,50 38,69 33,83 L0,83 Z" />
-              </Button>
+                      Canvas.Left="88" Canvas.Top="8" Width="44" Height="64" CornerRadius="12" />
 
-              <Path Stroke="#525252" StrokeThickness="1" Data="M84,90 L84,180" />
-
-              <Path x:Name="MacroMouseWheelShape" Fill="#141414" Stroke="#606060" StrokeThickness="1"
-                    Data="M76,35 A8,8 0 0 1 92,35 L92,62 A8,8 0 0 1 76,62 Z" />
-              <Path Stroke="#6A6A6A" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                    Data="M79,42 L89,42 M79,49 L89,49 M79,56 L89,56" />
-
+              <!-- The library glyph has no wheel, so the wheel uses the same line weight and colour. -->
+              <Path x:Name="MacroMouseWheelShape" Fill="#242424" Stroke="#5C5C5C" StrokeThickness="1.5"
+                    Data="M78,32 A6,6 0 0 1 90,32 L90,58 A6,6 0 0 1 78,58 Z" />
               <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="76" Canvas.Top="26" Width="16" Height="16" />
+                      Canvas.Left="76" Canvas.Top="24" Width="16" Height="17" />
               <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="76" Canvas.Top="42" Width="16" Height="14" />
+                      Canvas.Left="76" Canvas.Top="41" Width="16" Height="17" />
               <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="76" Canvas.Top="56" Width="16" Height="16" />
-
-              <Path Stroke="#4B4B4B" Opacity="0.45" StrokeThickness="1" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                    Data="M37,103 C39,124 44,145 54,162 M41,110 C43,129 48,147 57,160 M131,103 C129,124 124,145 114,162 M127,110 C125,129 120,147 111,160" />
-              <Path Stroke="#161616" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                    Data="M61,190 C74,196 94,196 107,190" />
-
-              <!-- Outline last, so the silhouette stays crisp over the regions. -->
-              <Path Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1.2" StrokeLineJoin="Round" Fill="Transparent"
-                    Data="M58,7 C66,4 102,4 110,7 C122,12 128,26 131,43 C137,67 141,89 142,115 C143,142 138,166 127,183 C119,195 104,199 84,199 C64,199 49,195 41,183 C30,166 25,142 26,115 C27,89 31,67 37,43 C40,26 46,12 58,7 Z" />
+                      Canvas.Left="76" Canvas.Top="58" Width="16" Height="16" />
             </Canvas>
 
             <StackPanel x:Name="MacroMouseExtraHost" Grid.Column="2" VerticalAlignment="Center" Spacing="8">
