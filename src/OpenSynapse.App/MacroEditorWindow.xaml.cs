@@ -158,7 +158,8 @@ public sealed partial class MacroEditorWindow : Window
 
         MacroKeyboardHost.Children.Clear();
         MacroKeyboardHost.Children.Add(grid);
-        MacroKeyboardScroll.SizeChanged += (_, _) => ResizeMacroKeyboard();
+        MacroKeyboardScroll.SizeChanged += (_, _) =>
+            MacroKeyboardScroll.DispatcherQueue.TryEnqueue(ResizeMacroKeyboard);
     }
 
     /// <summary>
@@ -173,7 +174,7 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
-        var available = MacroKeyboardScroll.ViewportWidth;
+        var available = Math.Max(0, MacroKeyboardScroll.ActualWidth - 16);
         if (available <= 0)
         {
             return;
@@ -186,6 +187,7 @@ public sealed partial class MacroEditorWindow : Window
         var row = MacroKeyUnitHeight * scale;
 
         var grid = (Grid)MacroKeyboardHost.Children[0];
+        grid.Width = boardWidth * scale;
         for (var column = 0; column < grid.ColumnDefinitions.Count; column++)
         {
             grid.ColumnDefinitions[column].Width = new GridLength(unit);

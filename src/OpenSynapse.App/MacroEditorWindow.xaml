@@ -94,7 +94,7 @@
       </StackPanel>
       </ScrollViewer>
 
-      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
         <StackPanel Spacing="10">
           <Border Style="{StaticResource CardStyle}" Padding="0">
             <StackPanel>
