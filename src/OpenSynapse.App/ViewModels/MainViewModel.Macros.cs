@@ -42,6 +42,8 @@ public sealed partial class MainViewModel
             CancelMacroCapture();
             CancelMacroStepCapture();
             _selectedMacro = value;
+            // The idle hint belongs to the empty state; a selected macro has its own panel.
+            MacroStatusText = string.Empty;
             _selectedMacroStep = null;
             RefreshMacroSteps(0);
             OnPropertyChanged();
