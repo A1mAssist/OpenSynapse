@@ -180,13 +180,13 @@
 
               <!-- The library glyph has no wheel, so the wheel uses the same line weight and colour. -->
               <Path x:Name="MacroMouseWheelShape" Fill="#242424" Stroke="#5C5C5C" StrokeThickness="1.5"
-                    Data="M78,32 A6,6 0 0 1 90,32 L90,58 A6,6 0 0 1 78,58 Z" />
+                    Data="M73.5,32 A6,6 0 0 1 85.5,32 L85.5,58 A6,6 0 0 1 73.5,58 Z" />
               <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="76" Canvas.Top="24" Width="16" Height="17" />
+                      Canvas.Left="71.5" Canvas.Top="24" Width="16" Height="17" />
               <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="76" Canvas.Top="41" Width="16" Height="17" />
+                      Canvas.Left="71.5" Canvas.Top="41" Width="16" Height="17" />
               <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="76" Canvas.Top="58" Width="16" Height="16" />
+                      Canvas.Left="71.5" Canvas.Top="58" Width="16" Height="16" />
             </Canvas>
 
             <StackPanel x:Name="MacroMouseExtraHost" Grid.Column="2" VerticalAlignment="Center" Spacing="8">
