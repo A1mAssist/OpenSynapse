@@ -20,9 +20,10 @@ public sealed partial class RazerFirmwareUpdateClient
         "https://mysupport.razer.com/app/answers/detail/a_id/19821/~/razer-blade-16-%282025%29-%7C-rz09-0528x-drivers-%26-downloads";
 
     // Razer's answer page sits behind a pre_page_check gate that returns 401
-    // when launched by an external app. Use the public support search instead.
-    public const string Rz090528DownloadPage =
-        "https://www.razer.com/search/RZ09-0528x?sel=support";
+    // when launched by an external app. These are the updater links it publishes.
+    public const string Rz090528BiosUpdater = "https://rzr.to/2vxhvx";
+    public const string Rz090528EcUpdater = "https://rzr.to/58kmn2";
+    public const string Rz090528McuUpdater = "https://rzr.to/s6tenp";
 
     private static readonly HttpClient Client = CreateClient();
 

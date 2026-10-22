@@ -12,6 +12,7 @@ public sealed partial class MainViewModel
     private string _firmwareMcuText = "--";
     private string _firmwareVbiosText = "--";
     private string _firmwareUpdateStatusText = string.Empty;
+    private string _firmwareDownloadUrl = RazerFirmwareUpdateClient.Rz090528BiosUpdater;
     private bool _isCheckingFirmwareUpdate;
     private bool _hasFirmwareUpdate;
 
@@ -20,6 +21,7 @@ public sealed partial class MainViewModel
     public string FirmwareMcuText { get => _firmwareMcuText; private set => SetField(ref _firmwareMcuText, value); }
     public string FirmwareVbiosText { get => _firmwareVbiosText; private set => SetField(ref _firmwareVbiosText, value); }
     public string FirmwareUpdateStatusText { get => _firmwareUpdateStatusText; private set => SetField(ref _firmwareUpdateStatusText, value); }
+    public string FirmwareDownloadUrl { get => _firmwareDownloadUrl; private set => SetField(ref _firmwareDownloadUrl, value); }
     public bool HasFirmwareUpdate
     {
         get => _hasFirmwareUpdate;
@@ -91,6 +93,12 @@ public sealed partial class MainViewModel
         {
             var result = await _firmwareUpdateClient.CheckAsync(_firmwareVersions, cancellationToken);
             HasFirmwareUpdate = result.HasUpdate;
+            FirmwareDownloadUrl = result.NewerComponents.FirstOrDefault() switch
+            {
+                "EC" => RazerFirmwareUpdateClient.Rz090528EcUpdater,
+                "MCU" => RazerFirmwareUpdateClient.Rz090528McuUpdater,
+                _ => RazerFirmwareUpdateClient.Rz090528BiosUpdater,
+            };
             FirmwareUpdateStatusText = result.HasUpdate
                 ? AppStrings.FormatText("FirmwareUpdateAvailable", string.Join(", ", result.NewerComponents))
                 : AppStrings.Text("FirmwareUpdateCurrent");
