@@ -179,17 +179,19 @@
                       Canvas.Left="88" Canvas.Top="8" Width="44" Height="64" CornerRadius="12" />
 
               <!-- Close the button deck so the left and right targets read separately from the palm area. -->
+              <Rectangle Canvas.Left="73" Canvas.Top="76" Width="13" Height="10"
+                         Fill="{StaticResource SurfaceBrush}" IsHitTestVisible="False" />
               <Path Data="M33,76 L126,76" Stroke="#5C5C5C" StrokeThickness="6"
                     StrokeStartLineCap="Round" StrokeEndLineCap="Round" IsHitTestVisible="False" />
               <!-- The library glyph has no wheel, so the wheel uses the same line weight and colour. -->
               <Path x:Name="MacroMouseWheelShape" Fill="#242424" Stroke="#5C5C5C" StrokeThickness="1.5"
-                    Data="M73.5,32 A6,6 0 0 1 85.5,32 L85.5,58 A6,6 0 0 1 73.5,58 Z" />
+                    Data="M73.5,37 A6,6 0 0 1 85.5,37 L85.5,63 A6,6 0 0 1 73.5,63 Z" />
               <Button Tag="5" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="71.5" Canvas.Top="24" Width="16" Height="17" />
+                      Canvas.Left="71.5" Canvas.Top="29" Width="16" Height="17" />
               <Button Tag="2" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="71.5" Canvas.Top="41" Width="16" Height="17" />
+                      Canvas.Left="71.5" Canvas.Top="46" Width="16" Height="17" />
               <Button Tag="6" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"
-                      Canvas.Left="71.5" Canvas.Top="58" Width="16" Height="16" />
+                      Canvas.Left="71.5" Canvas.Top="63" Width="16" Height="16" />
             </Canvas>
 
             <StackPanel x:Name="MacroMouseExtraHost" Grid.Column="2" VerticalAlignment="Center" Spacing="8">
