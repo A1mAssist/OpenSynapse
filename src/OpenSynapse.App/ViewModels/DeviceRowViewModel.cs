@@ -62,6 +62,8 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         }
 
         IsAvailable = _successful > 0;
+        // The Viper reports its charge through telemetry; other families do not.
+        BatteryPercent = descriptor.ProtocolFamily == "viper-184" ? telemetry.ViperBatteryPercent : null;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -84,6 +86,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public string IconGlyph { get; }
     public string IconAutomationName => _iconAutomationSource;
     public bool IsAvailable { get; }
+    public int? BatteryPercent { get; }
     public Brush StatusBrush { get; }
     public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails { get; }
 
