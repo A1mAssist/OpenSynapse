@@ -3,6 +3,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Foundation;
@@ -124,12 +125,132 @@ public sealed partial class TrayMenuWindow : Window
             widest = Math.Max(widest, _widthProbe.DesiredSize.Width);
         }
 
+        // Device names are never abbreviated, so the longest one sets the width.
+        _widthProbe.FontSize = 13;
+        foreach (var name in _batteryNames)
+        {
+            _widthProbe.Text = name.Text;
+            _widthProbe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            widest = Math.Max(widest, 24 + _widthProbe.DesiredSize.Width + BatteryValueWidthDip);
+        }
+        _widthProbe.FontSize = 14;
+
         return Math.Max(MinPanelWidthDip, Math.Ceiling(PanelLeadingDip + widest + PanelTrailingDip));
     }
+
+    private double MeasureContentHeightDip()
+    {
+        // Counted, not measured: MenuRoot stretches to the client area, so DesiredSize
+        // would feed the previous window size back in.
+        var separators = _batteryValues.Count > 0 ? 3 : 2;
+        return 5 * 32 + separators * 5 + 8 + _batteryValues.Count * BatteryRowHeightDip;
+    }
+
+    /// <summary>
+    /// Fills the battery rows from discovery, so the names are on screen before any
+    /// percentage arrives. Rebuilt per open; values start as a placeholder.
+    /// </summary>
+    private void PopulateBatteryRows(IReadOnlyList<PeripheralBattery> devices)
+    {
+        BatteryPanel.Children.Clear();
+        _batteryNames.Clear();
+        _batteryValues.Clear();
+        foreach (var device in devices)
+        {
+            var name = new TextBlock
+            {
+                Text = device.Name,
+                FontSize = 13,
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Microsoft YaHei UI"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var value = new TextBlock
+            {
+                Text = device.Percent is int percent ? $"{percent}%" : "\u2026",
+                FontSize = 13,
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Cascadia Mono"),
+                MinWidth = 34,
+                TextAlignment = TextAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var row = new Grid { Height = BatteryRowHeightDip, Margin = new Thickness(12, 0, 12, 0) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Children.Add(name);
+            Grid.SetColumn(value, 1);
+            row.Children.Add(value);
+            BatteryPanel.Children.Add(row);
+            _batteryNames.Add(name);
+            _batteryValues.Add(value);
+        }
+
+        var visibility = devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        BatteryPanel.Visibility = visibility;
+        BatterySeparator.Visibility = visibility;
+    }
+
+    /// <summary>
+    /// Reads the batteries once per open. The panel is already on screen, so this only
+    /// fills values in; it never delays the menu.
+    /// </summary>
+    private async Task RefreshBatteryAsync()
+    {
+        if (BatteryReader is null || _batteryValues.Count == 0)
+        {
+            return;
+        }
+
+        _batteryRead?.Cancel();
+        var cancellation = new CancellationTokenSource();
+        _batteryRead = cancellation;
+        IReadOnlyList<PeripheralBattery>? results = null;
+        try
+        {
+            results = await BatteryReader(cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception)
+        {
+            // Leave results null: every row falls back to the no-answer mark.
+        }
+
+        MenuRoot.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (cancellation.IsCancellationRequested)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _batteryValues.Count; index++)
+            {
+                var percent = results is not null && index < results.Count
+                    ? results[index].Percent
+                    : null;
+                _batteryValues[index].Text = percent is int value ? $"{value}%" : "\u2014";
+            }
+        });
+    }
+
+
 
     public event Action? ShowRequested;
     public event Action? ExitRequested;
     public event Action<string>? NavigationRequested;
+
+    /// <summary>Names of the battery-capable peripherals, known before any read.</summary>
+    public Func<IReadOnlyList<PeripheralBattery>>? BatterySnapshot { get; set; }
+
+    /// <summary>Reads those batteries. Called only while the menu is opening.</summary>
+    public Func<CancellationToken, Task<IReadOnlyList<PeripheralBattery>>>? BatteryReader { get; set; }
+
+    private const double BatteryRowHeightDip = 24;
+    private const double BatteryValueWidthDip = 44;
+    private readonly List<TextBlock> _batteryNames = [];
+    private readonly List<TextBlock> _batteryValues = [];
+    private CancellationTokenSource? _batteryRead;
 
     public void RefreshLocalization()
     {
@@ -162,6 +283,7 @@ public sealed partial class TrayMenuWindow : Window
         }
 
         _showPending = true;
+        PopulateBatteryRows(BatterySnapshot?.Invoke() ?? []);
         SetLayeredWindowAttributes(_windowHandle, 0, 0, LwaAlpha);
         if (!SetWindowPos(
                 _windowHandle,
@@ -184,7 +306,7 @@ public sealed partial class TrayMenuWindow : Window
         {
             scale = 1;
         }
-        var desired = new Size(MeasurePanelWidthDip(), PanelContentHeightDip);
+        var desired = new Size(MeasurePanelWidthDip(), MeasureContentHeightDip());
 
         // SetWindowPos takes the outer frame while XAML lays out the smaller client area.
         GetWindowRect(_windowHandle, out var frameWindow);
@@ -233,6 +355,7 @@ public sealed partial class TrayMenuWindow : Window
         // The first show is the offscreen pre-render pass, not a real animation.
         StartOpenAnimation(animateFrom: _prerendered);
         _prerendered = true;
+        _ = RefreshBatteryAsync();
     }
 
 
@@ -337,6 +460,7 @@ public sealed partial class TrayMenuWindow : Window
         _openTimer?.Stop();
         _menuOpen = false;
         _showPending = false;
+        _batteryRead?.Cancel();
         RemoveHooks();
         SetLayeredWindowAttributes(_windowHandle, 0, 0, LwaAlpha);
         AppWindow.Hide();
