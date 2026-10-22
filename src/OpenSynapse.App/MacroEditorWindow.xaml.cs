@@ -207,7 +207,7 @@ public sealed partial class MacroEditorWindow : Window
         }
     }
 
-    private static readonly SolidColorBrush MouseRegionFill = new(Color.FromArgb(0xFF, 0x30, 0x30, 0x30));
+    private static readonly SolidColorBrush MouseRegionFill = new(Color.FromArgb(0xFF, 0x34, 0x34, 0x34));
     private static readonly SolidColorBrush MouseRegionHoverFill = new(Color.FromArgb(0x3A, 0x99, 0xDD, 0x72));
 
     /// <summary>
@@ -218,7 +218,8 @@ public sealed partial class MacroEditorWindow : Window
     private void InitializeMacroMouse()
     {
         var picker = _viewModel.MacroKeyPicker;
-        foreach (var button in MacroMouseHost.Children.OfType<Button>())
+        foreach (var button in MacroMouseHost.Children.OfType<Button>()
+            .Concat(MacroMouseExtraHost.Children.OfType<Button>()))
         {
             if (button.Tag is not string rawIndex || !int.TryParse(rawIndex, out var index))
             {
@@ -229,8 +230,9 @@ public sealed partial class MacroEditorWindow : Window
                 ? picker.MouseButtons[index]
                 : picker.Wheels[index - picker.MouseButtons.Count];
             button.Tag = option;
-            AutomationProperties.SetName(button, option.Label);
-            ToolTipService.SetToolTip(button, option.Label);
+            var description = MacroRowViewModel.DescribeInput(option.Input);
+            AutomationProperties.SetName(button, description);
+            ToolTipService.SetToolTip(button, description);
             // Hover and keyboard focus share one cue: the region lights up. That
             // keeps focus visible without the square focus rectangle the shape
             // does not want.
@@ -251,14 +253,14 @@ public sealed partial class MacroEditorWindow : Window
         {
             path.Fill = active ? MouseRegionHoverFill : MouseRegionFill;
         }
-        else
+        else if (button.Content is null)
         {
             MacroMouseWheelShape.Fill = active ? MouseRegionHoverFill : MouseRegionFill;
         }
 
         if (active && button.Tag is MacroKeyOptionViewModel option)
         {
-            MacroMouseCaption.Text = option.Label;
+            MacroMouseCaption.Text = MacroRowViewModel.DescribeInput(option.Input);
         }
     }
 

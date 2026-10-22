@@ -1875,5 +1875,8 @@
   <data name="MacroRecordButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Record</value></data>
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Insert</value></data>
   <data name="MacroKeyPickerMouseHint.Text" xml:space="preserve"><value>Hover a region to see it, click to add a step.</value></data>
+  <data name="MacroMouseSideButtons.Text" xml:space="preserve"><value>Optional side keys</value></data>
+  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>Side 1</value></data>
+  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>Side 2</value></data>
 </root>
 
