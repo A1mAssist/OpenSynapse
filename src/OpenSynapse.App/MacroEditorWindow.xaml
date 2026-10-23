@@ -246,7 +246,10 @@
               </StackPanel>
 
               <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.MousePathVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepMousePathLabel" Text="鼠标轨迹" Style="{StaticResource MetricLabelStyle}" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock local:Localized.Uid="MacroStepMousePathLabel" Text="鼠标轨迹" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                  <Button x:Name="MacroMousePathEditButton" Grid.Column="1" local:Localized.Uid="MacroMousePathEditButton" Content="编辑轨迹" Click="OpenMousePathEditorClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}" />
+                </Grid>
                 <TextBlock Text="{Binding SelectedMacroStep.MousePathText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
               </StackPanel>
 

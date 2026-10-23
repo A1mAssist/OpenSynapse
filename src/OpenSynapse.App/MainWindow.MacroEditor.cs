@@ -16,7 +16,7 @@ public sealed partial class MainWindow
     {
         var foreground = GetForegroundWindow();
         return foreground != nint.Zero &&
-            (foreground == mainWindowHandle || foreground == _macroEditorWindow?.Handle);
+            (foreground == mainWindowHandle || _macroEditorWindow?.OwnsWindow(foreground) == true);
     }
 
     private void OpenMacroEditorWindowClick(object sender, RoutedEventArgs e)

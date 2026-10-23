@@ -2437,5 +2437,26 @@
   <data name="MacroMediaPlayPause" xml:space="preserve"><value>播放/暂停</value></data>
   <data name="MacroMediaNext" xml:space="preserve"><value>下一首</value></data>
   <data name="MacroMediaStop" xml:space="preserve"><value>停止</value></data>
-</root>
-
+  <data name="MacroMousePathEditButton.Content" xml:space="preserve"><value>编辑轨迹</value></data>
+  <data name="MacroMousePathEditButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>编辑鼠标轨迹</value></data>
+  <data name="MacroMousePathEditorTitle" xml:space="preserve"><value>鼠标轨迹编辑</value></data>
+  <data name="MacroMousePathEditorHint.Text" xml:space="preserve"><value>拖动轨迹点，或在右侧精确修改坐标与时间。拖动不会改变动作顺序。</value></data>
+  <data name="MacroMousePathModeLabel.Text" xml:space="preserve"><value>轨迹模式</value></data>
+  <data name="MacroMousePathPointCount" xml:space="preserve"><value>{0} / {1} 个点</value></data>
+  <data name="MacroMousePathColumnX.Text" xml:space="preserve"><value>X</value></data>
+  <data name="MacroMousePathColumnY.Text" xml:space="preserve"><value>Y</value></data>
+  <data name="MacroMousePathColumnTime.Text" xml:space="preserve"><value>时间（ms）</value></data>
+  <data name="MacroMousePathAddPointButton.Content" xml:space="preserve"><value>添加点</value></data>
+  <data name="MacroMousePathRemovePointButton.Content" xml:space="preserve"><value>删除点</value></data>
+  <data name="MacroMousePathApplyButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="MacroMousePathCancelButton.Content" xml:space="preserve"><value>取消</value></data>
+  <data name="MacroMousePathEmpty.Text" xml:space="preserve"><value>没有轨迹点。</value></data>
+  <data name="MacroMousePathPreview.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>鼠标轨迹预览</value></data>
+  <data name="MacroMousePathPointList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>轨迹点列表</value></data>
+  <data name="MacroMousePathHintAbsolute" xml:space="preserve"><value>坐标为屏幕像素。</value></data>
+  <data name="MacroMousePathHintRelative" xml:space="preserve"><value>坐标为相对上一点的位移。</value></data>
+  <data name="MacroMousePathHintStart" xml:space="preserve"><value>坐标为相对首个点的位移。</value></data>
+  <data name="MacroMousePathHintForeground" xml:space="preserve"><value>坐标为前台窗口内 0–10000 的相对位置。</value></data>
+  <data name="MacroMousePathNeedPoint" xml:space="preserve"><value>至少保留一个轨迹点。</value></data>
+  <data name="MacroMousePathPointLimit" xml:space="preserve"><value>轨迹最多 {0} 个点。</value></data>
+  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>时间偏移必须按顺序递增。</value></data></root>

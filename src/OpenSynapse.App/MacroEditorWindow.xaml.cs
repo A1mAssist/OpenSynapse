@@ -30,6 +30,8 @@ public sealed partial class MacroEditorWindow : Window
 
     private readonly MainViewModel _viewModel;
     private readonly CancellationTokenSource _lifetime = new();
+    private readonly double _scale;
+    private MousePathEditorWindow? _mousePathEditorWindow;
     private bool _allowClose;
     private bool _closeSaveInProgress;
 
@@ -37,6 +39,7 @@ public sealed partial class MacroEditorWindow : Window
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _scale = scale;
         RootLayout.DataContext = viewModel;
         SystemBackdrop = new MicaBackdrop();
         var appIconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
@@ -48,6 +51,8 @@ public sealed partial class MacroEditorWindow : Window
         AppWindow.Closing += OnMacroEditorClosing;
         Closed += (_, _) =>
         {
+            _mousePathEditorWindow?.Close();
+            _mousePathEditorWindow = null;
             _lifetime.Cancel();
             _lifetime.Dispose();
         };
@@ -64,6 +69,10 @@ public sealed partial class MacroEditorWindow : Window
     }
 
     internal nint Handle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+
+    internal bool OwnsWindow(nint handle) =>
+        handle != 0 &&
+        (handle == Handle || (_mousePathEditorWindow is not null && handle == _mousePathEditorWindow.Handle));
 
     internal void BringToFront()
     {
@@ -367,6 +376,7 @@ public sealed partial class MacroEditorWindow : Window
     {
         Localized.RefreshTree(RootLayout);
         Title = AppStrings.Text("MacroWindowTitle");
+        _mousePathEditorWindow?.RefreshLocalization();
     }
 
     private async void MacroRecordStartClick(object sender, RoutedEventArgs e)
@@ -456,6 +466,37 @@ public sealed partial class MacroEditorWindow : Window
 
     private async void PlayMacroClick(object sender, RoutedEventArgs e) =>
         await _viewModel.PlaySelectedMacroAsync(_lifetime.Token);
+
+    private void OpenMousePathEditorClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedMacroStep is not { IsMouseMove: true } row)
+        {
+            return;
+        }
+
+        if (_mousePathEditorWindow is not null)
+        {
+            _mousePathEditorWindow.BringToFront();
+            return;
+        }
+
+        var editor = new MousePathEditorViewModel(row.Step.MouseMoveMode, row.Step.MousePath);
+        var window = new MousePathEditorWindow(
+            AppWindow,
+            editor,
+            _scale,
+            points => row.ApplyMousePath(points));
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_mousePathEditorWindow, window))
+            {
+                _mousePathEditorWindow = null;
+            }
+        };
+        _mousePathEditorWindow = window;
+        window.Activate();
+        window.BringToFront();
+    }
 
     private async void SaveMacroClick(object sender, RoutedEventArgs e) =>
         await _viewModel.SaveSelectedMacroAsync(_lifetime.Token);

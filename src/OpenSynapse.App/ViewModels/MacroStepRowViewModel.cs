@@ -366,6 +366,19 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(Index));
     }
 
+    public void ApplyMousePath(IReadOnlyList<MacroMousePoint> points)
+    {
+        Step.MousePath = points.Select(point => new MacroMousePoint
+        {
+            X = point.X,
+            Y = point.Y,
+            OffsetMilliseconds = point.OffsetMilliseconds,
+        }).ToList();
+        OnPropertyChanged(nameof(NameText));
+        OnPropertyChanged(nameof(MousePathText));
+        Changed();
+    }
+
     public void Refresh()
     {
         OnPropertyChanged(nameof(IsInput));
