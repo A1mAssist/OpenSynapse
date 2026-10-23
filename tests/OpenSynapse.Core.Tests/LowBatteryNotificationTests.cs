@@ -86,6 +86,29 @@ public sealed class LowBatteryNotificationTests
         Assert.Contains("Example game", restored.ChromaBlockedSources);
     }
 
+    [Fact]
+    public void WindowSizeDefaultsToZeroAndRoundTrips()
+    {
+        var settings = new AppBehaviorSettings();
+        Assert.Equal(0, settings.WindowWidth);
+        Assert.Equal(0, settings.WindowHeight);
+        settings.WindowWidth = 1440;
+        settings.WindowHeight = 900;
+        var restored = JsonSerializer.Deserialize<AppBehaviorSettings>(JsonSerializer.Serialize(settings))!;
+        Assert.Equal(1440, restored.WindowWidth);
+        Assert.Equal(900, restored.WindowHeight);
+    }
+
+    [Fact]
+    public void TrayBatterySettingDefaultsOnAndRoundTrips()
+    {
+        var old = JsonSerializer.Deserialize<AppBehaviorSettings>("{\"ModeChangeNotificationsEnabled\":false}")!;
+        Assert.True(old.TrayBatteryLevelsEnabled);
+        old.TrayBatteryLevelsEnabled = false;
+        var restored = JsonSerializer.Deserialize<AppBehaviorSettings>(JsonSerializer.Serialize(old))!;
+        Assert.False(restored.TrayBatteryLevelsEnabled);
+    }
+
     private static int? Observe(LowBatteryNotificationTracker tracker, int? percent) =>
         tracker.Observe(new("device", "Mouse", percent, null), true, out _);
 }
