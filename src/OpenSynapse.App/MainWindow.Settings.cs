@@ -99,6 +99,7 @@ public sealed partial class MainWindow
     {
         ModeNotificationToggle.IsOn = _behaviorSettings.ModeChangeNotificationsEnabled;
         LowBatteryNotificationToggle.IsOn = _behaviorSettings.LowBatteryNotificationsEnabled;
+        TrayBatteryToggle.IsOn = _behaviorSettings.TrayBatteryLevelsEnabled;
         ChromaRestToggle.IsOn = _behaviorSettings.ExperimentalChromaRestEnabled;
         _viewModel.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = _behaviorSettings.RestoreLightingAfterChromaSession;
@@ -219,6 +220,26 @@ public sealed partial class MainWindow
             InvalidOperationException or System.Security.SecurityException)
         {
             _behaviorSettings.LowBatteryNotificationsEnabled = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            _viewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
+    }
+
+    private void TrayBatteryToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;
+        var previous = _behaviorSettings.TrayBatteryLevelsEnabled;
+        try
+        {
+            _behaviorSettings.TrayBatteryLevelsEnabled = toggle.IsOn;
+            _behaviorSettings.Save();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            _behaviorSettings.TrayBatteryLevelsEnabled = previous;
             _behaviorUiReady = false;
             toggle.IsOn = previous;
             _behaviorUiReady = true;

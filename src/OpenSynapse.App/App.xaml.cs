@@ -460,7 +460,9 @@ public partial class App : Application
             _trayMenuWindow = new TrayMenuWindow();
             _trayIcon.ShowRequested += window.RequestActivation;
             _trayIcon.MenuRequested += _trayMenuWindow.ShowAt;
-            _trayMenuWindow.BatterySnapshot = () => viewModel.ConnectedBatteries;
+            _trayMenuWindow.BatterySnapshot = () => _behaviorSettings.TrayBatteryLevelsEnabled
+                ? viewModel.ConnectedBatteries
+                : Array.Empty<PeripheralBattery>();
             _trayMenuWindow.BatteryReader = viewModel.ReadBatteriesAsync;
             _trayMenuWindow.ShowRequested += window.RequestActivation;
             _trayMenuWindow.NavigationRequested += window.RequestNavigation;

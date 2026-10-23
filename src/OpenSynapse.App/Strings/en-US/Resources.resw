@@ -1442,6 +1442,9 @@
   <data name="LowBatteryNotificationTitle.Text" xml:space="preserve"><value>Peripheral low battery notifications</value></data>
   <data name="LowBatteryNotificationDescription.Text" xml:space="preserve"><value>Notify at 20% and 10% when fresh peripheral battery readings arrive. No extra polling or device wake-ups.</value></data>
   <data name="LowBatteryNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Peripheral low battery notifications</value></data>
+  <data name="TrayBatteryTitle.Text" xml:space="preserve"><value>Tray menu peripheral battery</value></data>
+  <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>Show battery percentages for connected mice and keyboards in the tray menu. Turning this off removes the battery rows.</value></data>
+  <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tray menu peripheral battery</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>Low peripheral battery</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} has {1}% battery remaining.</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma sources</value></data>

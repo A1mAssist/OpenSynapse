@@ -1802,6 +1802,9 @@
   <data name="LowBatteryNotificationTitle.Text" xml:space="preserve"><value>外设低电量通知</value></data>
   <data name="LowBatteryNotificationDescription.Text" xml:space="preserve"><value>读到外设电量降至 20% 和 10% 时发送 Windows 通知；不会额外轮询或唤醒设备。</value></data>
   <data name="LowBatteryNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外设低电量通知</value></data>
+  <data name="TrayBatteryTitle.Text" xml:space="preserve"><value>托盘菜单外设电量</value></data>
+  <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。</value></data>
+  <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>托盘菜单外设电量</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>外设电量不足</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} 剩余电量为 {1}%。</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma 来源</value></data>

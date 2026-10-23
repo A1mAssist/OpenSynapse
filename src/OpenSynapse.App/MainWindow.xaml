@@ -796,6 +796,15 @@
                   </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="TrayBatteryTitle" Text="托盘菜单外设电量" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="TrayBatteryDescription" Text="在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="TrayBatteryToggle" x:Name="TrayBatteryToggle" Grid.Column="1" Toggled="TrayBatteryToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="托盘菜单外设电量" />
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">

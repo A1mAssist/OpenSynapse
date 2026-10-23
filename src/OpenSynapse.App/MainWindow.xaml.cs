@@ -141,8 +141,31 @@ public sealed partial class MainWindow : Window
     [DllImport("user32.dll")]
     private static extern nint GetForegroundWindow();
 
+    private void SaveWindowSize()
+    {
+        var size = AppWindow.Size;
+        if (size.Width <= 0 || size.Height <= 0 ||
+            (size.Width == _behaviorSettings.WindowWidth && size.Height == _behaviorSettings.WindowHeight))
+        {
+            return;
+        }
+
+        _behaviorSettings.WindowWidth = size.Width;
+        _behaviorSettings.WindowHeight = size.Height;
+        try
+        {
+            _behaviorSettings.Save();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            // Closing the app must not fail because the optional geometry file is unavailable.
+        }
+    }
+
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
+        SaveWindowSize();
         if (!_trayLifecycleEnabled || _exitRequested)
         {
             return;
@@ -289,6 +312,7 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        SaveWindowSize();
         _chromaRestStatusTimer.Stop();
         _chromaRestStatusTimer.Tick -= OnChromaRestStatusTick;
         _aboutWindow?.Close();

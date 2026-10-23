@@ -21,6 +21,9 @@ internal sealed class AppBehaviorSettings
 
     public bool ModeChangeNotificationsEnabled { get; set; } = true;
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
+    public bool TrayBatteryLevelsEnabled { get; set; } = true;
+    public int WindowWidth { get; set; }
+    public int WindowHeight { get; set; }
     public Dictionary<string, int> LowBatteryNotifiedLevels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ChromaBlockedSources { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public bool ExperimentalChromaRestEnabled { get; set; } = true;

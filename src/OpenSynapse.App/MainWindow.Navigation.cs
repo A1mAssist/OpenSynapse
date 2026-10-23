@@ -293,8 +293,14 @@ public sealed partial class MainWindow
         var displayArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
         var workArea = displayArea.WorkArea;
         var scale = (Content as FrameworkElement)?.XamlRoot?.RasterizationScale ?? 1d;
-        var width = Math.Min((int)Math.Round(1180 * scale), Math.Max(800, workArea.Width - 48));
-        var height = Math.Min((int)Math.Round(800 * scale), Math.Max(600, workArea.Height - 48));
+        var maxWidth = Math.Max(800, workArea.Width - 48);
+        var maxHeight = Math.Max(600, workArea.Height - 48);
+        var width = _behaviorSettings.WindowWidth > 0
+            ? Math.Min(_behaviorSettings.WindowWidth, maxWidth)
+            : Math.Min((int)Math.Round(1180 * scale), maxWidth);
+        var height = _behaviorSettings.WindowHeight > 0
+            ? Math.Min(_behaviorSettings.WindowHeight, maxHeight)
+            : Math.Min((int)Math.Round(800 * scale), maxHeight);
         var bounds = new RectInt32(
             workArea.X + Math.Max(0, (workArea.Width - width) / 2),
             workArea.Y + Math.Max(0, (workArea.Height - height) / 2),
