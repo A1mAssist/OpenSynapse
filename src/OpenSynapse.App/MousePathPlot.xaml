@@ -1,0 +1,16 @@
+<UserControl
+    x:Class="OpenSynapse.App.MousePathPlot"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <Grid MinHeight="360">
+    <Canvas x:Name="PlotCanvas" Background="Transparent" local:Localized.Uid="MacroMousePathPreview" AutomationProperties.Name="鼠标轨迹预览" />
+    <TextBlock
+        x:Name="EmptyHint"
+        local:Localized.Uid="MacroMousePathEmpty"
+        Text="没有轨迹点。"
+        Foreground="{StaticResource MutedBrush}"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center" />
+  </Grid>
+</UserControl>

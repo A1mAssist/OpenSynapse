@@ -2025,5 +2025,26 @@
   <data name="MacroMediaPlayPause" xml:space="preserve"><value>Play/Pause</value></data>
   <data name="MacroMediaNext" xml:space="preserve"><value>Next</value></data>
   <data name="MacroMediaStop" xml:space="preserve"><value>Stop</value></data>
-</root>
-
+  <data name="MacroMousePathEditButton.Content" xml:space="preserve"><value>Edit path</value></data>
+  <data name="MacroMousePathEditButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Edit mouse path</value></data>
+  <data name="MacroMousePathEditorTitle" xml:space="preserve"><value>Mouse path editor</value></data>
+  <data name="MacroMousePathEditorHint.Text" xml:space="preserve"><value>Drag path points, or edit coordinates and timing on the right. Dragging does not change action order.</value></data>
+  <data name="MacroMousePathModeLabel.Text" xml:space="preserve"><value>Path mode</value></data>
+  <data name="MacroMousePathPointCount" xml:space="preserve"><value>{0} / {1} points</value></data>
+  <data name="MacroMousePathColumnX.Text" xml:space="preserve"><value>X</value></data>
+  <data name="MacroMousePathColumnY.Text" xml:space="preserve"><value>Y</value></data>
+  <data name="MacroMousePathColumnTime.Text" xml:space="preserve"><value>Time (ms)</value></data>
+  <data name="MacroMousePathAddPointButton.Content" xml:space="preserve"><value>Add point</value></data>
+  <data name="MacroMousePathRemovePointButton.Content" xml:space="preserve"><value>Delete point</value></data>
+  <data name="MacroMousePathApplyButton.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="MacroMousePathCancelButton.Content" xml:space="preserve"><value>Cancel</value></data>
+  <data name="MacroMousePathEmpty.Text" xml:space="preserve"><value>No path points.</value></data>
+  <data name="MacroMousePathPreview.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Mouse path preview</value></data>
+  <data name="MacroMousePathPointList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Path point list</value></data>
+  <data name="MacroMousePathHintAbsolute" xml:space="preserve"><value>Coordinates are screen pixels.</value></data>
+  <data name="MacroMousePathHintRelative" xml:space="preserve"><value>Coordinates are offsets from the previous point.</value></data>
+  <data name="MacroMousePathHintStart" xml:space="preserve"><value>Coordinates are offsets from the first point.</value></data>
+  <data name="MacroMousePathHintForeground" xml:space="preserve"><value>Coordinates are relative positions from 0 to 10000 inside the foreground window.</value></data>
+  <data name="MacroMousePathNeedPoint" xml:space="preserve"><value>Keep at least one path point.</value></data>
+  <data name="MacroMousePathPointLimit" xml:space="preserve"><value>A path can contain at most {0} points.</value></data>
+  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>Time offsets must not decrease.</value></data></root>

@@ -1,0 +1,68 @@
+<Window
+    x:Class="OpenSynapse.App.MousePathEditorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    Title="鼠标轨迹编辑">
+  <Grid x:Name="RootLayout" Background="{StaticResource CanvasBrush}" Padding="20" RequestedTheme="Dark">
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="14">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel Spacing="5">
+          <TextBlock local:Localized.Uid="MacroMousePathEditorHint" Text="拖动轨迹点，或在右侧精确修改坐标与时间。拖动不会改变动作顺序。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock local:Localized.Uid="MacroMousePathModeLabel" Text="轨迹模式" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding ModeText}" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+          </StackPanel>
+        </StackPanel>
+        <Border Grid.Column="1" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="4" Padding="8,4" VerticalAlignment="Top">
+          <TextBlock Text="{Binding PointCountText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+        </Border>
+      </Grid>
+
+      <Grid Grid.Row="1" ColumnDefinitions="*,360" ColumnSpacing="16">
+        <Border Style="{StaticResource CardStyle}" Padding="12">
+          <local:MousePathPlot DataContext="{Binding}" />
+        </Border>
+        <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="12">
+          <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+            <Grid ColumnDefinitions="*,*,*,30" ColumnSpacing="6">
+              <TextBlock local:Localized.Uid="MacroMousePathColumnX" Text="X" Style="{StaticResource MetricLabelStyle}" />
+              <TextBlock Grid.Column="1" local:Localized.Uid="MacroMousePathColumnY" Text="Y" Style="{StaticResource MetricLabelStyle}" />
+              <TextBlock Grid.Column="2" local:Localized.Uid="MacroMousePathColumnTime" Text="时间（ms）" Style="{StaticResource MetricLabelStyle}" />
+            </Grid>
+            <ListView x:Name="MousePathPointList" Grid.Row="1" ItemsSource="{Binding Points}" SelectedItem="{Binding SelectedPoint, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" Padding="0" local:Localized.Uid="MacroMousePathPointList">
+              <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                  <Setter Property="MinHeight" Value="40" />
+                  <Setter Property="Padding" Value="0,2" />
+                </Style>
+              </ListView.ItemContainerStyle>
+              <ListView.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="*,*,*,30" ColumnSpacing="6" Padding="0,2">
+                    <NumberBox Value="{Binding X, Mode=TwoWay}" Minimum="{Binding MinimumCoordinate}" Maximum="{Binding MaximumCoordinate}" SmallChange="1" SpinButtonPlacementMode="Compact" AutomationProperties.Name="X" />
+                    <NumberBox Grid.Column="1" Value="{Binding Y, Mode=TwoWay}" Minimum="{Binding MinimumCoordinate}" Maximum="{Binding MaximumCoordinate}" SmallChange="1" SpinButtonPlacementMode="Compact" AutomationProperties.Name="Y" />
+                    <NumberBox Grid.Column="2" Value="{Binding TimeMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="{Binding MaximumTime}" SmallChange="10" SpinButtonPlacementMode="Compact" AutomationProperties.Name="时间" />
+                    <Button Grid.Column="3" Content="×" Tag="{Binding}" Click="RemovePointRowClick" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="0" MinWidth="28" Height="28" AutomationProperties.Name="删除轨迹点" />
+                  </Grid>
+                </DataTemplate>
+              </ListView.ItemTemplate>
+            </ListView>
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+              <Button x:Name="MousePathAddPointButton" local:Localized.Uid="MacroMousePathAddPointButton" Content="添加点" Click="AddPointClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanAddPoint}" />
+              <Button x:Name="MousePathRemovePointButton" Grid.Column="1" local:Localized.Uid="MacroMousePathRemovePointButton" Content="删除点" Click="RemovePointClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanRemovePoint}" />
+              <TextBlock Grid.Column="2" Text="{Binding ValidationText}" Visibility="{Binding ValidationVisibility}" Foreground="#E39A9A" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </Grid>
+          </Grid>
+        </Border>
+      </Grid>
+
+      <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+        <TextBlock Text="{Binding ModeHint}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
+        <Button x:Name="MousePathCancelButton" Grid.Column="1" local:Localized.Uid="MacroMousePathCancelButton" Content="取消" Click="CancelClick" Style="{StaticResource SecondaryButtonStyle}" />
+        <Button x:Name="MousePathApplyButton" Grid.Column="2" local:Localized.Uid="MacroMousePathApplyButton" Content="应用" Click="ApplyClick" Style="{StaticResource PrimaryButtonStyle}" IsEnabled="{Binding CanApply}" />
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>

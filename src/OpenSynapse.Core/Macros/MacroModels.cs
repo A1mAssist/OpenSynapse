@@ -358,7 +358,7 @@ public sealed class MacroStep
         MacroStepKind.RunCommand => !string.IsNullOrEmpty(Command),
         MacroStepKind.Loop => Children.Count > 0,
         MacroStepKind.MacroReference => !string.IsNullOrWhiteSpace(MacroId) && MacroId.Length <= 64,
-        MacroStepKind.MouseMove => MousePath.Count > 0,
+        MacroStepKind.MouseMove => MacroMousePath.IsValid(MousePath),
         _ => false,
     };
 
