@@ -1,0 +1,22 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\src\\OpenSynapse.App\\bin\\x64\\Release\\net10.0-windows10.0.26100.0\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\src\\OpenSynapse.App\\bin\\x64\\Release\\net10.0-windows10.0.26100.0",
+  "window": { "titleContains": "OpenSynapse" },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-scroll",
+  "steps": [
+    { "action": "wait", "ms": 6000 },
+    { "action": "select", "controlType": "ListItem", "nameContains": "宏", "timeoutMs": 20000 },
+    { "action": "wait", "ms": 1000 },
+    { "action": "select", "controlType": "ListItem", "name": "OpenSynapse.App.ViewModels.MacroRowViewModel", "index": 1 },
+    { "action": "wait", "ms": 800 },
+    { "action": "click", "automationId": "MacroOpenEditorButton" },
+    { "action": "wait", "ms": 2200 },
+    { "action": "select", "controlType": "ListItem", "name": "OpenSynapse.App.ViewModels.MacroStepRowViewModel", "windowTitleContains": "宏编辑器" },
+    { "action": "wait", "ms": 1000 },
+    { "action": "scrollIntoView", "controlType": "ComboBox", "index": 1, "windowTitleContains": "宏编辑器" },
+    { "action": "wait", "ms": 700 },
+    { "action": "tree", "name": "after-scroll", "windowTitleContains": "宏编辑器" },
+    { "action": "log", "message": "done" }
+  ]
+}

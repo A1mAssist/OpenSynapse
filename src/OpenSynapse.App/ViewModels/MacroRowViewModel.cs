@@ -17,6 +17,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? EnabledChanged;
+    public event EventHandler? DefinitionChanged;
 
     public string Id => Definition.Id;
 
@@ -32,6 +33,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
             Definition.Name = value ?? string.Empty;
             OnPropertyChanged();
+            OnDefinitionChanged();
         }
     }
 
@@ -47,15 +49,20 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
             Definition.Enabled = value;
             OnPropertyChanged();
+            OnDefinitionChanged();
             EnabledChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
-    public string TriggerText => Definition.Trigger?.Input is { } input
-        ? AppStrings.FormatText("MacroTriggerValue", DescribeInput(input))
+    public bool HasTrigger => Definition.Trigger is not null;
+
+    public string TriggerText => Definition.Trigger is { } trigger
+        ? AppStrings.FormatText("MacroTriggerValue", DescribeTrigger(trigger))
         : AppStrings.Text("MacroTriggerUnset");
 
-    public string StepsText => AppStrings.FormatText("MacroStepCount", Definition.Steps.Count);
+    public string StepsText => AppStrings.FormatText(
+        "MacroStepCount",
+        MacroStepTree.CountSteps(Definition.Steps));
 
     public bool IsRepeating
     {
@@ -73,9 +80,37 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
             {
                 Definition.RepeatCount = 1;
             }
+
             OnPropertyChanged();
+            OnPropertyChanged(nameof(PlaybackModeIndex));
             OnPropertyChanged(nameof(RepeatCount));
             OnPropertyChanged(nameof(RepeatCountVisibility));
+            OnDefinitionChanged();
+        }
+    }
+
+    public int PlaybackModeIndex
+    {
+        get => (int)Definition.PlaybackMode;
+        set
+        {
+            if (!Enum.IsDefined(typeof(MacroPlaybackMode), value) ||
+                (int)Definition.PlaybackMode == value)
+            {
+                return;
+            }
+
+            Definition.PlaybackMode = (MacroPlaybackMode)value;
+            if (Definition.PlaybackMode != MacroPlaybackMode.Repeat)
+            {
+                Definition.RepeatCount = 1;
+            }
+
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsRepeating));
+            OnPropertyChanged(nameof(RepeatCount));
+            OnPropertyChanged(nameof(RepeatCountVisibility));
+            OnDefinitionChanged();
         }
     }
 
@@ -84,6 +119,11 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         get => Definition.RepeatCount;
         set
         {
+            if (!double.IsFinite(value))
+            {
+                return;
+            }
+
             var count = Math.Clamp(
                 (int)Math.Round(value),
                 1,
@@ -95,16 +135,75 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
             Definition.RepeatCount = count;
             OnPropertyChanged();
+            OnDefinitionChanged();
+        }
+    }
+
+    public double PlaybackSpeed
+    {
+        get => Definition.PlaybackSpeed;
+        set
+        {
+            if (!double.IsFinite(value))
+            {
+                return;
+            }
+
+            var speed = Math.Clamp(
+                Math.Round(value, 2),
+                MacroDefinition.MinPlaybackSpeed,
+                MacroDefinition.MaxPlaybackSpeed);
+            if (Math.Abs(Definition.PlaybackSpeed - speed) < 0.0001)
+            {
+                return;
+            }
+
+            Definition.PlaybackSpeed = speed;
+            OnPropertyChanged();
+            OnDefinitionChanged();
+        }
+    }
+
+    public double TriggerModeIndex
+    {
+        get => Definition.Trigger is { } trigger ? (int)trigger.Mode : -1;
+        set
+        {
+            if (Definition.Trigger is not { } trigger)
+            {
+                return;
+            }
+
+            var index = (int)Math.Round(value);
+            if (!Enum.IsDefined(typeof(MacroTriggerMode), index) ||
+                (int)trigger.Mode == index)
+            {
+                return;
+            }
+
+            trigger.Mode = (MacroTriggerMode)index;
+            OnPropertyChanged();
+            OnDefinitionChanged();
         }
     }
 
     public Visibility RepeatCountVisibility =>
-        IsRepeating ? Visibility.Visible : Visibility.Collapsed;
+        Definition.PlaybackMode == MacroPlaybackMode.Repeat
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public void SetTrigger(MacroTrigger? trigger)
     {
+        if (Definition.Trigger is null && trigger is null)
+        {
+            return;
+        }
+
         Definition.Trigger = trigger;
         OnPropertyChanged(nameof(TriggerText));
+        OnPropertyChanged(nameof(HasTrigger));
+        OnPropertyChanged(nameof(TriggerModeIndex));
+        OnDefinitionChanged();
     }
 
     public void SetSteps(IReadOnlyList<MacroStep> steps)
@@ -118,13 +217,44 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(Enabled));
         OnPropertyChanged(nameof(TriggerText));
+        OnPropertyChanged(nameof(HasTrigger));
         OnPropertyChanged(nameof(StepsText));
         OnPropertyChanged(nameof(IsRepeating));
+        OnPropertyChanged(nameof(PlaybackModeIndex));
         OnPropertyChanged(nameof(RepeatCount));
+        OnPropertyChanged(nameof(PlaybackSpeed));
+        OnPropertyChanged(nameof(TriggerModeIndex));
         OnPropertyChanged(nameof(RepeatCountVisibility));
     }
 
-    internal static string DescribeInput(MacroInput input) =>
+    public static string DescribeTrigger(MacroTrigger trigger)
+    {
+        ArgumentNullException.ThrowIfNull(trigger);
+        var input = DescribeInput(trigger.Input);
+        if (trigger.Modifiers == MacroModifierKeys.None)
+        {
+            return input;
+        }
+
+        var parts = new List<string>(5);
+        AddModifier(MacroModifierKeys.Control, "MacroModifierControl");
+        AddModifier(MacroModifierKeys.Shift, "MacroModifierShift");
+        AddModifier(MacroModifierKeys.Alt, "MacroModifierAlt");
+        AddModifier(MacroModifierKeys.Windows, "MacroModifierWindows");
+
+        parts.Add(input);
+        return string.Join(" + ", parts);
+
+        void AddModifier(MacroModifierKeys modifier, string key)
+        {
+            if ((trigger.Modifiers & modifier) == modifier)
+            {
+                parts.Add(AppStrings.Text(key));
+            }
+        }
+    }
+
+    public static string DescribeInput(MacroInput input) =>
         input.Kind switch
         {
             MacroInputKind.MouseButton => AppStrings.Text($"MacroMouseButton{input.MouseButton}"),
@@ -137,6 +267,11 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
             _ => MacroInputFormatter.Describe(input),
         };
 
+    private void OnDefinitionChanged() =>
+        DefinitionChanged?.Invoke(this, EventArgs.Empty);
+
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
+
+public sealed record MacroReferenceOption(string Id, string Name);

@@ -692,7 +692,18 @@
                     <Grid RowDefinitions="Auto,*,Auto">
                       <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
                         <TextBlock local:Localized.Uid="MacroListTitle" Text="宏列表" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-                        <Button Grid.Column="1" x:Name="MacroNewButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CreateMacroClick" ToolTipService.ToolTip="新建宏" AutomationProperties.Name="新建宏"><FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" /></Button>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
+                          <Button x:Name="MacroMoreButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="更多" AutomationProperties.Name="更多">
+                            <FontIcon Glyph="&#xE712;" FontFamily="Segoe Fluent Icons" FontSize="12" />
+                            <Button.Flyout>
+                              <MenuFlyout>
+                                <MenuFlyoutItem local:Localized.Uid="MacroImportButton" Text="导入…" Click="ImportMacroClick" />
+                                <MenuFlyoutItem local:Localized.Uid="MacroExportButton" Text="导出当前宏…" Click="ExportSelectedMacroClick" />
+                              </MenuFlyout>
+                            </Button.Flyout>
+                          </Button>
+                          <Button x:Name="MacroNewButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CreateMacroClick" ToolTipService.ToolTip="新建宏" AutomationProperties.Name="新建宏"><FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" /></Button>
+                        </StackPanel>
                       </Grid>
                       <ListView x:Name="MacroListView" Grid.Row="1" ItemsSource="{Binding Macros}" SelectedItem="{Binding SelectedMacro, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="150">
                         <ListView.ItemTemplate>
@@ -706,6 +717,9 @@
                               <Button Grid.Column="1" Width="26" Height="26" MinWidth="26" MinHeight="26" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center" ToolTipService.ToolTip="更多" AutomationProperties.Name="更多"><TextBlock Text="&#x2026;" FontSize="14" />
                                 <Button.Flyout>
                                   <MenuFlyout>
+                                    <MenuFlyoutItem local:Localized.Uid="MacroRowCopyItem" Tag="{Binding}" Text="复制" Click="CopyMacroRowClick" />
+                                    <MenuFlyoutItem local:Localized.Uid="MacroRowExportItem" Tag="{Binding}" Text="导出…" Click="ExportMacroRowClick" />
+                                    <MenuFlyoutSeparator />
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowDeleteItem" Tag="{Binding}" Text="删除" Click="DeleteMacroRowClick" />
                                   </MenuFlyout>
                                 </Button.Flyout>
@@ -733,7 +747,7 @@
                             <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Text="{Binding SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
                           </StackPanel>
-                          <Button Grid.Column="1" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding CanEditMacro}" ToolTipService.ToolTip="绑定触发键" AutomationProperties.Name="绑定触发键"><FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" /></Button>
+                          <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" /></Button>
                         </Grid>
                         <Button x:Name="MacroOpenEditorButton" local:Localized.Uid="MacroOpenEditorButton" Content="打开编辑器" Click="OpenMacroEditorWindowClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding CanEditMacro}" />
                       </StackPanel>
@@ -741,7 +755,7 @@
                   </Border>
                 </Grid>
                 <TextBlock Text="{Binding MacroStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
-                <TextBlock local:Localized.Uid="MacroHint" Text="宏仅在 OpenSynapse 运行时生效，触发键会全局拦截；鼠标侧键只有在系统把它上报为标准按键或 XBUTTON 时才能捕获。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock local:Localized.Uid="MacroHint" Text="宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 可停止录制并保存。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
               </StackPanel>
             </ScrollViewer>
             <ScrollViewer x:Name="SettingsPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">

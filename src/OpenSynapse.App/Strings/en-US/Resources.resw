@@ -1800,6 +1800,19 @@
   <data name="MacroNamePlaceholder.PlaceholderText" xml:space="preserve"><value>Macro name</value></data>
   <data name="MacroSaveButton.Content" xml:space="preserve"><value>Save</value></data>
   <data name="MacroDeleteButton.Content" xml:space="preserve"><value>Delete</value></data>
+  <data name="MacroCancelCountdown" xml:space="preserve"><value>Cancel countdown</value></data>
+  <data name="MacroStepNameDown" xml:space="preserve"><value>Down {0}</value></data>
+  <data name="MacroStepNameUp" xml:space="preserve"><value>Up {0}</value></data>
+  <data name="MacroTextStepName" xml:space="preserve"><value>Text: {0}</value></data>
+  <data name="MacroCommandStepName" xml:space="preserve"><value>Command: {0}</value></data>
+  <data name="MacroReferenceStepName" xml:space="preserve"><value>Run macro: {0}</value></data>
+  <data name="MacroMouseMoveStepName" xml:space="preserve"><value>Mouse movement ({0} points)</value></data>
+  <data name="MacroMousePathText" xml:space="preserve"><value>{0} samples, up to {1} ms</value></data>
+  <data name="MacroModifierControl" xml:space="preserve"><value>Ctrl</value></data>
+  <data name="MacroModifierShift" xml:space="preserve"><value>Shift</value></data>
+  <data name="MacroModifierAlt" xml:space="preserve"><value>Alt</value></data>
+  <data name="MacroModifierWindows" xml:space="preserve"><value>Win</value></data>
+  <data name="MacroExported" xml:space="preserve"><value>Exported {0}</value></data>
   <data name="MacroStatusIdle" xml:space="preserve"><value>Select a macro to edit.</value></data>
   <data name="MacroStartRecording" xml:space="preserve"><value>Record actions</value></data>
   <data name="MacroStopRecording" xml:space="preserve"><value>Stop recording</value></data>
@@ -1820,6 +1833,7 @@
   <data name="MacroDeleted" xml:space="preserve"><value>Macro deleted.</value></data>
   <data name="MacroSaved" xml:space="preserve"><value>Macro saved.</value></data>
   <data name="MacroRecorded" xml:space="preserve"><value>Recorded {0} actions.</value></data>
+  <data name="MacroRecordingEmptyTake" xml:space="preserve"><value>No actions were recorded. The macro's existing content was kept.</value></data>
   <data name="MacroRecording" xml:space="preserve"><value>Recording actions. Select Stop recording to finish.</value></data>
   <data name="MacroCapturePrompt" xml:space="preserve"><value>Press the key or mouse side button to bind.</value></data>
   <data name="MacroCaptureCanceled" xml:space="preserve"><value>Trigger capture canceled.</value></data>
@@ -1830,14 +1844,19 @@
   <data name="MacroPlayCanceled" xml:space="preserve"><value>Macro playback canceled.</value></data>
   <data name="MacroPlaybackLabel.Text" xml:space="preserve"><value>Playback</value></data>
   <data name="MacroPlaybackRepeatCount.Text" xml:space="preserve"><value>Repeat count</value></data>
+  <data name="MacroPlaybackModeOnce.Content" xml:space="preserve"><value>Play once</value></data>
+  <data name="MacroPlaybackModeRepeat.Content" xml:space="preserve"><value>Repeat</value></data>
+  <data name="MacroPlaybackModeContinuous.Content" xml:space="preserve"><value>Continuous loop</value></data>
+  <data name="MacroDurationContinuous" xml:space="preserve"><value>Continuous</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>Record delays</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>Ignore delays</value></data>
   <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>Add delay</value></data>
   <data name="MacroStepEditorTitle.Text" xml:space="preserve"><value>Action editor</value></data>
+  <data name="MacroStepDirectionLabel.Text" xml:space="preserve"><value>Direction</value></data>
+  <data name="MacroStepDirectionDown.Content" xml:space="preserve"><value>Down</value></data>
+  <data name="MacroStepDirectionUp.Content" xml:space="preserve"><value>Up</value></data>
   <data name="MacroStepDelayLabel.Text" xml:space="preserve"><value>Delay (ms)</value></data>
   <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>Hold (ms)</value></data>
-  <data name="MacroKeyPickerKeyboard" xml:space="preserve"><value>Keyboard</value></data>
-  <data name="MacroKeyPickerMouse" xml:space="preserve"><value>Mouse</value></data>
   <data name="MacroStepCapturePrompt" xml:space="preserve"><value>Press the key or mouse button to add.</value></data>
   <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>Action capture canceled.</value></data>
   <data name="MacroStepAdded" xml:space="preserve"><value>Action added.</value></data>
@@ -1878,5 +1897,133 @@
   <data name="MacroMouseSideButtons.Text" xml:space="preserve"><value>Optional side keys</value></data>
   <data name="MacroMouseSide1.Content" xml:space="preserve"><value>Side 1</value></data>
   <data name="MacroMouseSide2.Content" xml:space="preserve"><value>Side 2</value></data>
+  <data name="MacroAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="MacroCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="MacroComboDialogTitle" xml:space="preserve"><value>Insert key combination</value></data>
+  <data name="MacroComboKeyLabel" xml:space="preserve"><value>Key</value></data>
+  <data name="MacroComboModifiersLabel" xml:space="preserve"><value>Modifiers</value></data>
+  <data name="MacroCommandDialogTitle" xml:space="preserve"><value>Run command</value></data>
+  <data name="MacroCopied" xml:space="preserve"><value>Macro duplicated.</value></data>
+  <data name="MacroCopyFailed" xml:space="preserve"><value>Could not duplicate the macro: {0}</value></data>
+  <data name="MacroCopySuffix" xml:space="preserve"><value> copy</value></data>
+  <data name="MacroCountdownBlocked" xml:space="preserve"><value>This cannot be done while the recording countdown is running.</value></data>
+  <data name="MacroCountdownCanceled" xml:space="preserve"><value>Recording countdown canceled.</value></data>
+  <data name="MacroCountLimit" xml:space="preserve"><value>The macro limit (64) has been reached.</value></data>
+  <data name="MacroDeleteConfirm" xml:space="preserve"><value>Delete</value></data>
+  <data name="MacroDeleteMacroMessage" xml:space="preserve"><value>Delete "{0}"? This cannot be undone.</value></data>
+  <data name="MacroDeleteMacroTitle" xml:space="preserve"><value>Delete macro</value></data>
+  <data name="MacroDurationUnavailable" xml:space="preserve"><value>Duration unavailable</value></data>
+  <data name="MacroEmptyValue" xml:space="preserve"><value>Empty</value></data>
+  <data name="MacroExportFailed" xml:space="preserve"><value>Could not export the macro: {0}</value></data>
+  <data name="MacroGroupBadge" xml:space="preserve"><value>Group {0}</value></data>
+  <data name="MacroGroupRecaptureBlocked" xml:space="preserve"><value>A key combination cannot be recaptured one action at a time. Delete the group and record it again.</value></data>
+  <data name="MacroImported" xml:space="preserve"><value>Macro imported.</value></data>
+  <data name="MacroBundleImported" xml:space="preserve"><value>Imported {0} macros, including referenced macros.</value></data>
+  <data name="MacroImportedName" xml:space="preserve"><value>Imported macro</value></data>
+  <data name="MacroImportFailed" xml:space="preserve"><value>Could not import the macro: {0}</value></data>
+  <data name="MacroJsonFileType" xml:space="preserve"><value>OpenSynapse macro</value></data>
+  <data name="MacroLoopStepName" xml:space="preserve"><value>Repeat {0} times</value></data>
+  <data name="MacroPaused" xml:space="preserve"><value>Macro paused.</value></data>
+  <data name="MacroPlayStopping" xml:space="preserve"><value>Stopping macro…</value></data>
+  <data name="MacroRecordingBlocked" xml:space="preserve"><value>Macros cannot be edited while recording.</value></data>
+  <data name="MacroRecordOverwriteTitle" xml:space="preserve"><value>Record into existing macro</value></data>
+  <data name="MacroRecordOverwriteMessage" xml:space="preserve"><value>"{0}" already has {1} actions. Replace them, or append this recording to the end.</value></data>
+  <data name="MacroRecordReplace" xml:space="preserve"><value>Replace</value></data>
+  <data name="MacroRecordAppend" xml:space="preserve"><value>Append</value></data>
+  <data name="MacroRecordingCountdown" xml:space="preserve"><value>Recording starts in {0}…</value></data>
+  <data name="MacroPlaybackCountdown" xml:space="preserve"><value>Playback starts in {0}; switch to the target window…</value></data>
+  <data name="MacroPlaybackCountdownCanceled" xml:space="preserve"><value>Playback countdown canceled.</value></data>
+  <data name="MacroRecordingMacroMissing" xml:space="preserve"><value>The macro being recorded could not be found.</value></data>
+  <data name="MacroRecordingStarted" xml:space="preserve"><value>Recording. Press {0} to stop and save.</value></data>
+  <data name="MacroReferenceDialogTitle" xml:space="preserve"><value>Run another macro</value></data>
+  <data name="MacroReferenceEmpty" xml:space="preserve"><value>There are no other macros to reference.</value></data>
+  <data name="MacroReferenceLabel" xml:space="preserve"><value>Target macro</value></data>
+  <data name="MacroReferenceMissing" xml:space="preserve"><value>Target macro is missing</value></data>
+  <data name="MacroReferenceInvalid" xml:space="preserve"><value>Invalid macro reference: the target is missing or the references form a cycle.</value></data>
+  <data name="MacroResumed" xml:space="preserve"><value>Macro resumed.</value></data>
+  <data name="MacroStepDown" xml:space="preserve"><value>Down</value></data>
+  <data name="MacroStepIncomplete" xml:space="preserve"><value>An action is incomplete. Check its command, text, or reference target.</value></data>
+  <data name="MacroStepUnknownName" xml:space="preserve"><value>Unknown action</value></data>
+  <data name="MacroStepUp" xml:space="preserve"><value>Up</value></data>
+  <data name="MacroStopPlaybackFirst" xml:space="preserve"><value>Stop the current macro before continuing.</value></data>
+  <data name="MacroTextDialogLabel" xml:space="preserve"><value>Text</value></data>
+  <data name="MacroTextDialogPlaceholder" xml:space="preserve"><value>Text to send</value></data>
+  <data name="MacroTextDialogTitle" xml:space="preserve"><value>Insert text</value></data>
+  <data name="MacroTriggerCleared" xml:space="preserve"><value>Trigger cleared.</value></data>
+  <data name="MacroTriggerConflict" xml:space="preserve"><value>The trigger conflicts with "{0}".</value></data>
+  <data name="MacroMediaMail" xml:space="preserve"><value>Mail</value></data>
+  <data name="MacroMediaHomePage" xml:space="preserve"><value>Home</value></data>
+  <data name="MacroImportButton.Text" xml:space="preserve"><value>Import…</value></data>
+  <data name="MacroExportButton.Text" xml:space="preserve"><value>Export selected macro…</value></data>
+  <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="MacroRowExportItem.Text" xml:space="preserve"><value>Export…</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; press F10 to stop playback.</value></data>
+  <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Bind trigger key</value></data>
+  <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Bind trigger key</value></data>
+  <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>Keyboard</value></data>
+  <data name="MacroKeyPickerMouse.Text" xml:space="preserve"><value>Mouse</value></data>
+  <data name="MacroMediaKeysTitle.Text" xml:space="preserve"><value>Media keys</value></data>
+  <data name="MacroPlaybackSpeedLabel.Text" xml:space="preserve"><value>Playback speed</value></data>
+  <data name="MacroPlaybackSpeed.Header" xml:space="preserve"><value>Playback speed (×, 1 = original)</value></data>
+  <data name="MacroPlaybackStopShortcut.Text" xml:space="preserve"><value>F10 stops playback</value></data>
+  <data name="MacroRecordingOptions.Text" xml:space="preserve"><value>Recording options</value></data>
+  <data name="MacroRecordDelayMode.Header" xml:space="preserve"><value>Delay</value></data>
+  <data name="MacroRecordDelayRecorded.Content" xml:space="preserve"><value>Record actual interval</value></data>
+  <data name="MacroRecordDelayFixed.Content" xml:space="preserve"><value>Fixed interval</value></data>
+  <data name="MacroRecordDelayNone.Content" xml:space="preserve"><value>Do not record delay</value></data>
+  <data name="MacroRecordFixedDelay.Header" xml:space="preserve"><value>Fixed delay (ms)</value></data>
+  <data name="MacroRecordMouseMode.Header" xml:space="preserve"><value>Mouse tracking</value></data>
+  <data name="MacroRecordMouseNone.Content" xml:space="preserve"><value>Do not record</value></data>
+  <data name="MacroRecordMouseAbsolute.Content" xml:space="preserve"><value>Absolute coordinates</value></data>
+  <data name="MacroRecordMouseRelative.Content" xml:space="preserve"><value>Relative movement</value></data>
+  <data name="MacroRecordMouseStart.Content" xml:space="preserve"><value>Relative to start</value></data>
+  <data name="MacroRecordMouseForeground.Content" xml:space="preserve"><value>Relative to foreground window</value></data>
+  <data name="MacroRecordStopShortcut.Text" xml:space="preserve"><value>Press F9 to stop recording and save.</value></data>
+  <data name="MacroRecordStopShortcutHint.Text" xml:space="preserve"><value>Press F9 while recording to stop and save</value></data>
+  <data name="MacroStepArgumentsLabel.Text" xml:space="preserve"><value>Arguments</value></data>
+  <data name="MacroStepArgumentsInput.PlaceholderText" xml:space="preserve"><value>Arguments</value></data>
+  <data name="MacroStepAutoReleaseLabel.Text" xml:space="preserve"><value>Auto release</value></data>
+  <data name="MacroStepCommandLabel.Text" xml:space="preserve"><value>Command</value></data>
+  <data name="MacroStepCommandInput.PlaceholderText" xml:space="preserve"><value>Command</value></data>
+  <data name="MacroStepDeleteButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Delete action</value></data>
+  <data name="MacroStepDeleteButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Delete action</value></data>
+  <data name="MacroStepLoopCountLabel.Text" xml:space="preserve"><value>Repeat count</value></data>
+  <data name="MacroStepMacroReferenceLabel.Text" xml:space="preserve"><value>Target macro</value></data>
+  <data name="MacroStepMousePathLabel.Text" xml:space="preserve"><value>Mouse path</value></data>
+  <data name="MacroStepMoveDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Move action down</value></data>
+  <data name="MacroStepMoveDownButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Move action down</value></data>
+  <data name="MacroStepMoveUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Move action up</value></data>
+  <data name="MacroStepMoveUpButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Move action up</value></data>
+  <data name="MacroStepRecaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Recapture action</value></data>
+  <data name="MacroStepRecaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Recapture action</value></data>
+  <data name="MacroStepTextLabel.Text" xml:space="preserve"><value>Text</value></data>
+  <data name="MacroStepTextInput.PlaceholderText" xml:space="preserve"><value>Text</value></data>
+  <data name="MacroStepWorkingDirectoryLabel.Text" xml:space="preserve"><value>Working directory</value></data>
+  <data name="MacroStepWorkingDirectoryInput.PlaceholderText" xml:space="preserve"><value>Working directory</value></data>
+  <data name="MacroStopPlaybackButton.Content" xml:space="preserve"><value>Stop</value></data>
+  <data name="MacroTriggerCaptureSingle.Text" xml:space="preserve"><value>Capture single key</value></data>
+  <data name="MacroTriggerCaptureCombo.Text" xml:space="preserve"><value>Capture key combination</value></data>
+  <data name="MacroTriggerClear.Text" xml:space="preserve"><value>Clear binding</value></data>
+  <data name="MacroTriggerMode.Header" xml:space="preserve"><value>Trigger mode</value></data>
+  <data name="MacroTriggerModePress.Content" xml:space="preserve"><value>Press</value></data>
+  <data name="MacroTriggerModeToggle.Content" xml:space="preserve"><value>Toggle</value></data>
+  <data name="MacroTriggerModeHold.Content" xml:space="preserve"><value>Hold</value></data>
+  <data name="MacroTriggerModeSequence.Content" xml:space="preserve"><value>Run one step per press</value></data>
+  <data name="MacroUnsaved.Text" xml:space="preserve"><value>Unsaved</value></data>
+  <data name="MacroAlreadyPlaying" xml:space="preserve"><value>A macro is already playing.</value></data>
+  <data name="MacroInsertText.Text" xml:space="preserve"><value>Insert text</value></data>
+  <data name="MacroInsertCommand.Text" xml:space="preserve"><value>Run command</value></data>
+  <data name="MacroInsertLoop.Text" xml:space="preserve"><value>Loop</value></data>
+  <data name="MacroInsertReference.Text" xml:space="preserve"><value>Run another macro</value></data>
+  <data name="MacroInsertCombo.Text" xml:space="preserve"><value>Key combination</value></data>
+  <data name="MacroPauseButton" xml:space="preserve"><value>Pause</value></data>
+  <data name="MacroResumeButton" xml:space="preserve"><value>Resume</value></data>
+  <data name="MacroMediaMute" xml:space="preserve"><value>Mute</value></data>
+  <data name="MacroMediaVolumeDown" xml:space="preserve"><value>Volume down</value></data>
+  <data name="MacroMediaVolumeUp" xml:space="preserve"><value>Volume up</value></data>
+  <data name="MacroMediaPrevious" xml:space="preserve"><value>Previous</value></data>
+  <data name="MacroMediaPlayPause" xml:space="preserve"><value>Play/Pause</value></data>
+  <data name="MacroMediaNext" xml:space="preserve"><value>Next</value></data>
+  <data name="MacroMediaStop" xml:space="preserve"><value>Stop</value></data>
 </root>
 

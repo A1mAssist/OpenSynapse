@@ -107,3 +107,5 @@ If the list contains a generated binary, capture, log, secret, local tool direct
 - Keep `DESIGN_SPECIFICATION.md` resource-key rules and both `Resources.resw` files synchronized with localization changes.
 - Preserve unrelated user changes in a dirty worktree.
 - Do not rewrite public history or move a published version tag unless correcting a confirmed release error.
+- Commit as the repository owner's own Git identity (`A1mAssist <196530767+A1mAssist@users.noreply.github.com>`). Never invent a project author such as "OpenSynapse Dev": an address that maps to no GitHub account still shows up as a separate contributor with a default avatar.
+- Never add a `Co-Authored-By` trailer for the assistant or any tooling. It registers a second contributor that does not belong to the project.

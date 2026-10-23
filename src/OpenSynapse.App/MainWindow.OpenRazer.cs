@@ -200,7 +200,7 @@ public sealed partial class MainWindow
         var content = new StackPanel { Width = 280, Spacing = 10 };
         content.Children.Add(new TextBlock
         {
-            Text = AppStrings.Text("LightingQuickColors.Text"),
+            Text = AppStrings.Text("LightingQuickColors/Text"),
             FontSize = 12,
         });
         var flyout = new Flyout { Content = content, ShouldConstrainToRootBounds = false };
@@ -209,14 +209,14 @@ public sealed partial class MainWindow
         {
             content.Children.Add(new TextBlock
             {
-                Text = AppStrings.Text("LightingRecentColors.Text"),
+                Text = AppStrings.Text("LightingRecentColors/Text"),
                 FontSize = 12,
             });
             content.Children.Add(CreateMatrixColorSwatches(RecentLightingColors, picker, flyout, 6));
         }
         content.Children.Add(new Expander
         {
-            Header = AppStrings.Text("LightingCustomColor.Header"),
+            Header = AppStrings.Text("LightingCustomColor/Header"),
             Content = picker,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         });

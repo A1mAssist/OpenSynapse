@@ -1,0 +1,28 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\src\\OpenSynapse.App\\bin\\x64\\Release\\net10.0-windows10.0.26100.0\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\src\\OpenSynapse.App\\bin\\x64\\Release\\net10.0-windows10.0.26100.0",
+  "window": { "titleContains": "OpenSynapse" },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-record-prompt",
+  "steps": [
+    { "action": "wait", "ms": 6000 },
+    { "action": "select", "controlType": "ListItem", "nameContains": "宏", "timeoutMs": 20000 },
+    { "action": "wait", "ms": 1000 },
+    { "action": "select", "controlType": "ListItem", "name": "OpenSynapse.App.ViewModels.MacroRowViewModel", "index": 1 },
+    { "action": "wait", "ms": 800 },
+    { "action": "click", "automationId": "MacroOpenEditorButton" },
+    { "action": "wait", "ms": 2000 },
+    { "action": "click", "automationId": "MacroRecordButton", "windowTitleContains": "宏编辑器" },
+    { "action": "wait", "ms": 700 },
+    { "action": "waitFor", "name": "开始录制", "windowTitleContains": "宏编辑器", "timeoutMs": 5000 },
+    { "action": "click", "name": "开始录制", "windowTitleContains": "宏编辑器" },
+    { "action": "wait", "ms": 900 },
+    { "action": "waitFor", "name": "录制到现有宏", "windowTitleContains": "宏编辑器", "timeoutMs": 5000 },
+    { "action": "assertExists", "name": "替换", "windowTitleContains": "宏编辑器", "timeoutMs": 3000 },
+    { "action": "assertExists", "name": "追加", "windowTitleContains": "宏编辑器", "timeoutMs": 3000 },
+    { "action": "tree", "name": "record-prompt", "windowTitleContains": "宏编辑器" },
+    { "action": "click", "name": "取消", "windowTitleContains": "宏编辑器" },
+    { "action": "wait", "ms": 500 },
+    { "action": "log", "message": "done" }
+  ]
+}

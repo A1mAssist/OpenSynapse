@@ -1,0 +1,92 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023g\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023g",
+  "window": {
+    "titleContains": "OpenSynapse"
+  },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-review-g",
+  "steps": [
+    {
+      "action": "wait",
+      "ms": 7000
+    },
+    {
+      "timeoutMs": 20000,
+      "nameContains": "宏",
+      "action": "waitFor",
+      "controlType": "ListItem"
+    },
+    {
+      "nameContains": "宏",
+      "action": "select",
+      "controlType": "ListItem"
+    },
+    {
+      "action": "wait",
+      "ms": 1800
+    },
+    {
+      "action": "click",
+      "nameContains": "新建宏"
+    },
+    {
+      "action": "wait",
+      "ms": 1500
+    },
+    {
+      "height": 680,
+      "width": 1080,
+      "action": "resize",
+      "y": 40,
+      "x": 40
+    },
+    {
+      "action": "wait",
+      "ms": 1200
+    },
+    {
+      "action": "capture",
+      "name": "01-macro-page-small"
+    },
+    {
+      "action": "click",
+      "nameContains": "打开编辑器"
+    },
+    {
+      "action": "wait",
+      "ms": 2500
+    },
+    {
+      "name": "02-editor",
+      "action": "capture",
+      "includePopups": true
+    },
+    {
+      "action": "tree",
+      "name": "editor-tree"
+    },
+    {
+      "windowTitleContains": "宏编辑器",
+      "nameContains": "插入",
+      "action": "click"
+    },
+    {
+      "action": "wait",
+      "ms": 1000
+    },
+    {
+      "name": "03-insert-menu",
+      "action": "capture",
+      "includePopups": true
+    },
+    {
+      "action": "tree",
+      "name": "03-insert-menu-tree"
+    },
+    {
+      "action": "log",
+      "message": "done"
+    }
+  ]
+}

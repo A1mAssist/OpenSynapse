@@ -62,6 +62,11 @@ public sealed partial class MainViewModel
             return;
         }
 
+        if (!await CommitMacroEditsBeforeProfileSwitchAsync(cancellationToken))
+        {
+            return;
+        }
+
         await RunProfileOperationAsync(AppStrings.FormatText("SwitchProfile", name), () =>
         {
             ProfileCatalog.Select(_profile, name);
@@ -78,6 +83,11 @@ public sealed partial class MainViewModel
         }
 
         var name = ProfileNameInput;
+        if (!await CommitMacroEditsBeforeProfileSwitchAsync(cancellationToken))
+        {
+            return;
+        }
+
         await RunProfileOperationAsync(AppStrings.FormatText("CreateProfile", name), () =>
         {
             ProfileCatalog.Create(_profile, name);

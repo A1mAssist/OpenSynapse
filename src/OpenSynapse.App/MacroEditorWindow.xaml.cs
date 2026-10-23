@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
@@ -24,11 +25,13 @@ public sealed partial class MacroEditorWindow : Window
     // The board is drawn in quarter-key units, so one standard key is four
     // columns wide and one row tall.
     private const double MacroKeyUnitWidth = 10.6;
-    private const double MacroKeyUnitHeight = 36;
+    private const double MacroKeyUnitHeight = 30;
     private const double MacroKeyGap = 3;
 
     private readonly MainViewModel _viewModel;
     private readonly CancellationTokenSource _lifetime = new();
+    private bool _allowClose;
+    private bool _closeSaveInProgress;
 
     public MacroEditorWindow(AppWindow owner, MainViewModel viewModel, double scale)
     {
@@ -42,10 +45,20 @@ public sealed partial class MacroEditorWindow : Window
             AppWindow.SetIcon(appIconPath);
         }
 
-        ConfigurePresenter(scale);
+        AppWindow.Closing += OnMacroEditorClosing;
+        Closed += (_, _) =>
+        {
+            _lifetime.Cancel();
+            _lifetime.Dispose();
+        };
+        var workArea = DisplayArea
+            .GetFromWindowId(owner.Id, DisplayAreaFallback.Primary)
+            .WorkArea;
+        ConfigurePresenter(scale, workArea);
         ApplyTitleBarColors();
-        PositionOnOwnerDisplay(owner, scale);
+        PositionOnOwnerDisplay(workArea, scale);
         BuildMacroKeyboard();
+        BuildMacroMediaKeys();
         InitializeMacroMouse();
         RefreshLocalization();
     }
@@ -73,18 +86,26 @@ public sealed partial class MacroEditorWindow : Window
     {
         _viewModel.CancelMacroCapture();
         _viewModel.CancelMacroStepCapture();
+        _viewModel.CancelMacroPlaybackCountdown();
         _viewModel.DiscardMacroRecording();
     }
 
-    private void ConfigurePresenter(double scale)
+    private void ConfigurePresenter(double scale, RectInt32 workArea)
     {
         if (AppWindow.Presenter is not OverlappedPresenter presenter)
         {
             return;
         }
 
-        presenter.PreferredMinimumWidth = (int)Math.Round(1240 * scale);
-        presenter.PreferredMinimumHeight = (int)Math.Round(760 * scale);
+        // A fixed 1080x680 logical minimum can exceed a 125%-scaled 768p
+        // work area. Cap both dimensions so the status bar and keyboard remain
+        // reachable on small displays.
+        presenter.PreferredMinimumWidth = Math.Min(
+            (int)Math.Round(1080 * scale),
+            Math.Max(1, workArea.Width));
+        presenter.PreferredMinimumHeight = Math.Min(
+            (int)Math.Round(680 * scale),
+            Math.Max(1, workArea.Height));
     }
 
     private void ApplyTitleBarColors()
@@ -109,11 +130,10 @@ public sealed partial class MacroEditorWindow : Window
         titleBar.ButtonPressedForegroundColor = foreground;
     }
 
-    private void PositionOnOwnerDisplay(AppWindow owner, double scale)
+    private void PositionOnOwnerDisplay(RectInt32 workArea, double scale)
     {
-        var workArea = DisplayArea.GetFromWindowId(owner.Id, DisplayAreaFallback.Primary).WorkArea;
-        var width = Math.Min((int)Math.Round(1480 * scale), workArea.Width);
-        var height = Math.Min((int)Math.Round(880 * scale), workArea.Height);
+        var width = Math.Min((int)Math.Round(1320 * scale), workArea.Width);
+        var height = Math.Min((int)Math.Round(800 * scale), workArea.Height);
         AppWindow.MoveAndResize(new RectInt32(
             workArea.X + Math.Max(0, (workArea.Width - width) / 2),
             workArea.Y + Math.Max(0, (workArea.Height - height) / 2),
@@ -160,6 +180,7 @@ public sealed partial class MacroEditorWindow : Window
         MacroKeyboardHost.Children.Add(grid);
         MacroKeyboardScroll.SizeChanged += (_, _) =>
             MacroKeyboardScroll.DispatcherQueue.TryEnqueue(ResizeMacroKeyboard);
+        RootLayout.Loaded += (_, _) => ResizeMacroKeyboard();
     }
 
     /// <summary>
@@ -174,7 +195,8 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
-        var available = Math.Max(0, MacroKeyboardScroll.ActualWidth - 16);
+        // Leave room for the ScrollViewer's own padding and the key margin on the right.
+        var available = Math.Max(0, MacroKeyboardScroll.ActualWidth - 24);
         if (available <= 0)
         {
             return;
@@ -217,6 +239,28 @@ public sealed partial class MacroEditorWindow : Window
     /// carries its option index in XAML; swapping that for the option here lets
     /// the shared click handler and the hover caption work off the real data.
     /// </summary>
+    private void BuildMacroMediaKeys()
+    {
+        MacroMediaKeyHost.Children.Clear();
+        foreach (var option in _viewModel.MacroKeyPicker.MediaKeys)
+        {
+            var button = new Button
+            {
+                Content = option.Label,
+                Tag = option,
+                Style = (Style)Application.Current.Resources["SecondaryButtonStyle"],
+                Height = 30,
+                MinWidth = 54,
+                Padding = new Thickness(8, 0, 8, 0),
+                FontSize = 12,
+            };
+            AutomationProperties.SetName(button, option.Label);
+            ToolTipService.SetToolTip(button, option.Label);
+            button.Click += MacroKeyOptionClick;
+            MacroMediaKeyHost.Children.Add(button);
+        }
+    }
+
     private void InitializeMacroMouse()
     {
         var picker = _viewModel.MacroKeyPicker;
@@ -327,10 +371,44 @@ public sealed partial class MacroEditorWindow : Window
 
     private async void MacroRecordStartClick(object sender, RoutedEventArgs e)
     {
-        if (_viewModel.IsMacroRecording)
+        if (_viewModel.IsMacroRecording || _viewModel.IsMacroCountdown)
         {
             await _viewModel.ToggleMacroRecordingAsync(_lifetime.Token);
+            return;
         }
+
+        if (!_viewModel.CanStartMacroRecording)
+        {
+            return;
+        }
+
+        var append = false;
+        if (_viewModel.SelectedMacro is { } selected &&
+            selected.Definition.Steps.Count > 0)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = AppStrings.Text("MacroRecordOverwriteTitle"),
+                Content = AppStrings.FormatText(
+                    "MacroRecordOverwriteMessage",
+                    selected.Name,
+                    MacroStepTree.CountSteps(selected.Definition.Steps)),
+                PrimaryButtonText = AppStrings.Text("MacroRecordReplace"),
+                SecondaryButtonText = AppStrings.Text("MacroRecordAppend"),
+                CloseButtonText = AppStrings.Text("MacroCancel"),
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = RootLayout.XamlRoot,
+            };
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.None)
+            {
+                return;
+            }
+
+            append = result == ContentDialogResult.Secondary;
+        }
+
+        await _viewModel.StartMacroRecordingAsync(append, _lifetime.Token);
     }
 
     private async void MacroRecordStopClick(object sender, RoutedEventArgs e)
@@ -394,9 +472,253 @@ public sealed partial class MacroEditorWindow : Window
     private async void DeleteMacroStepClick(object sender, RoutedEventArgs e) =>
         await _viewModel.DeleteSelectedMacroStepAsync(_lifetime.Token);
 
+    private async void AddMacroTextClick(object sender, RoutedEventArgs e)
+    {
+        var text = new TextBox
+        {
+            Header = AppStrings.Text("MacroTextDialogLabel"),
+            PlaceholderText = AppStrings.Text("MacroTextDialogPlaceholder"),
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MinHeight = 120,
+            MaxLength = MacroStep.MaxTextLength,
+        };
+        AutomationProperties.SetName(text, AppStrings.Text("MacroTextDialogLabel"));
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.Text("MacroTextDialogTitle"),
+            Content = text,
+            PrimaryButtonText = AppStrings.Text("MacroAdd"),
+            CloseButtonText = AppStrings.Text("MacroCancel"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = RootLayout.XamlRoot,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await _viewModel.AddMacroTextStepAsync(text.Text, _lifetime.Token);
+        }
+    }
+
+    private async void AddMacroCommandClick(object sender, RoutedEventArgs e)
+    {
+        var command = CreateCommandTextBox("MacroStepCommandLabel/Text", MacroStep.MaxCommandLength);
+        var arguments = CreateCommandTextBox("MacroStepArgumentsLabel/Text", MacroStep.MaxArgumentsLength);
+        var workingDirectory = CreateCommandTextBox(
+            "MacroStepWorkingDirectoryLabel/Text",
+            MacroStep.MaxWorkingDirectoryLength);
+        var content = new StackPanel { Spacing = 8 };
+        content.Children.Add(command);
+        content.Children.Add(arguments);
+        content.Children.Add(workingDirectory);
+
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.Text("MacroCommandDialogTitle"),
+            Content = content,
+            PrimaryButtonText = AppStrings.Text("MacroAdd"),
+            CloseButtonText = AppStrings.Text("MacroCancel"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = RootLayout.XamlRoot,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await _viewModel.AddMacroRunCommandStepAsync(
+                command.Text,
+                arguments.Text,
+                workingDirectory.Text,
+                _lifetime.Token);
+        }
+    }
+
+    private static TextBox CreateCommandTextBox(string labelKey, int maxLength)
+    {
+        var textBox = new TextBox
+        {
+            Header = AppStrings.Text(labelKey),
+            MaxLength = maxLength,
+        };
+        AutomationProperties.SetName(textBox, AppStrings.Text(labelKey));
+        return textBox;
+    }
+
+    private async void AddMacroReferenceClick(object sender, RoutedEventArgs e)
+    {
+        var options = _viewModel.MacroReferenceCandidates;
+        if (options.Count == 0)
+        {
+            var emptyDialog = new ContentDialog
+            {
+                Title = AppStrings.Text("MacroReferenceDialogTitle"),
+                Content = AppStrings.Text("MacroReferenceEmpty"),
+                CloseButtonText = AppStrings.Text("MacroCancel"),
+                XamlRoot = RootLayout.XamlRoot,
+            };
+            await emptyDialog.ShowAsync();
+            return;
+        }
+
+        var picker = new ComboBox
+        {
+            Header = AppStrings.Text("MacroReferenceLabel"),
+            ItemsSource = options,
+            DisplayMemberPath = nameof(MacroReferenceOption.Name),
+            SelectedValuePath = nameof(MacroReferenceOption.Id),
+            SelectedIndex = 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        AutomationProperties.SetName(picker, AppStrings.Text("MacroReferenceLabel"));
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.Text("MacroReferenceDialogTitle"),
+            Content = picker,
+            PrimaryButtonText = AppStrings.Text("MacroAdd"),
+            CloseButtonText = AppStrings.Text("MacroCancel"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = RootLayout.XamlRoot,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary &&
+            picker.SelectedItem is MacroReferenceOption option)
+        {
+            await _viewModel.AddMacroReferenceStepAsync(option.Id, _lifetime.Token);
+        }
+    }
+
+    private async void AddMacroComboClick(object sender, RoutedEventArgs e)
+    {
+        var control = CreateModifierCheckBox("MacroModifierControl");
+        var shift = CreateModifierCheckBox("MacroModifierShift");
+        var alt = CreateModifierCheckBox("MacroModifierAlt");
+        var windows = CreateModifierCheckBox("MacroModifierWindows");
+        var modifiersPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        modifiersPanel.Children.Add(control);
+        modifiersPanel.Children.Add(shift);
+        modifiersPanel.Children.Add(alt);
+        modifiersPanel.Children.Add(windows);
+
+        var keyPicker = new ComboBox
+        {
+            Header = AppStrings.Text("MacroComboKeyLabel"),
+            ItemsSource = _viewModel.MacroKeyPicker.KeyboardKeys,
+            DisplayMemberPath = nameof(MacroKeyOptionViewModel.Label),
+            SelectedIndex = 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        AutomationProperties.SetName(keyPicker, AppStrings.Text("MacroComboKeyLabel"));
+
+        var content = new StackPanel { Spacing = 10 };
+        content.Children.Add(new TextBlock
+        {
+            Text = AppStrings.Text("MacroComboModifiersLabel"),
+        });
+        content.Children.Add(modifiersPanel);
+        content.Children.Add(keyPicker);
+
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.Text("MacroComboDialogTitle"),
+            Content = content,
+            PrimaryButtonText = AppStrings.Text("MacroAdd"),
+            CloseButtonText = AppStrings.Text("MacroCancel"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = RootLayout.XamlRoot,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary ||
+            keyPicker.SelectedItem is not MacroKeyOptionViewModel key)
+        {
+            return;
+        }
+
+        var modifiers = MacroModifierKeys.None;
+        if (control.IsChecked == true) modifiers |= MacroModifierKeys.Control;
+        if (shift.IsChecked == true) modifiers |= MacroModifierKeys.Shift;
+        if (alt.IsChecked == true) modifiers |= MacroModifierKeys.Alt;
+        if (windows.IsChecked == true) modifiers |= MacroModifierKeys.Windows;
+        await _viewModel.AddMacroComboStepAsync(modifiers, key.Input, _lifetime.Token);
+    }
+
+    private static CheckBox CreateModifierCheckBox(string labelKey)
+    {
+        var checkBox = new CheckBox { Content = AppStrings.Text(labelKey) };
+        AutomationProperties.SetName(checkBox, AppStrings.Text(labelKey));
+        return checkBox;
+    }
+
+    private void MacroRecordFlyoutOpening(object sender, object e)
+    {
+        MacroRecordStartItem.Text = AppStrings.Text(
+            _viewModel.IsMacroCountdown ? "MacroCancelCountdown" : "MacroRecordStart/Text");
+        MacroRecordStartItem.IsEnabled =
+            _viewModel.CanStartMacroRecording || _viewModel.IsMacroCountdown;
+        MacroRecordStopItem.IsEnabled = _viewModel.CanStopMacroRecording;
+    }
+
+    private void MacroTriggerFlyoutOpening(object sender, object e)
+    {
+        MacroClearTriggerItem.IsEnabled =
+            _viewModel.CanEditMacro &&
+            _viewModel.SelectedMacro?.Definition.Trigger is not null;
+    }
+
+    private async void CaptureMacroTriggerComboClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.CaptureMacroTriggerComboAsync(_lifetime.Token);
+
+    private async void ClearMacroTriggerClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ClearMacroTriggerAsync(_lifetime.Token);
+
+    private void TogglePauseMacroClick(object sender, RoutedEventArgs e) =>
+        _viewModel.ToggleMacroPlaybackPause();
+
+    private void StopMacroClick(object sender, RoutedEventArgs e) =>
+        _viewModel.StopMacroPlayback();
+
+    private async void AddMacroLoopClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.AddMacroLoopStepAsync(_lifetime.Token);
+    private async void OnMacroEditorClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (_allowClose)
+        {
+            return;
+        }
+
+        var hasPendingWork = _viewModel.HasUnsavedMacroChanges ||
+            _viewModel.IsMacroRecording ||
+            _viewModel.IsMacroCountdown ||
+            _viewModel.IsMacroStepCapturing ||
+            _viewModel.IsMacroTriggerCapturing;
+        if (!hasPendingWork)
+        {
+            return;
+        }
+
+        args.Cancel = true;
+        if (_closeSaveInProgress)
+        {
+            return;
+        }
+
+        _closeSaveInProgress = true;
+        try
+        {
+            CancelPendingCapture();
+            if (_viewModel.HasUnsavedMacroChanges &&
+                !await _viewModel.SaveMacroChangesOnCloseAsync(CancellationToken.None))
+            {
+                return;
+            }
+
+            _allowClose = true;
+            Close();
+        }
+        finally
+        {
+            _closeSaveInProgress = false;
+        }
+    }
+
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool ShowWindow(nint windowHandle, int command);
+
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

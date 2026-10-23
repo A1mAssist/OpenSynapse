@@ -5,7 +5,7 @@ namespace OpenSynapse.Core.Profiles;
 
 public sealed class ProfileStore
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General)
     {
@@ -56,7 +56,7 @@ public sealed class ProfileStore
             {
                 throw new InvalidDataException("Profile file is empty.");
             }
-            if (document.Version != CurrentVersion)
+            if (!TryUpgrade(document))
             {
                 throw new InvalidDataException(
                     $"Profile version {document.Version} is not supported; expected {CurrentVersion}.");
@@ -96,7 +96,7 @@ public sealed class ProfileStore
                 SerializerOptions,
                 cancellationToken);
 
-            if (document is null || document.Version != CurrentVersion)
+            if (document is null || !TryUpgrade(document))
             {
                 return ProfileDocument.CreateDefault();
             }
@@ -174,5 +174,21 @@ public sealed class ProfileStore
                 // The durable target has already been committed; a stale temp is harmless.
             }
         }
+    }
+
+    private static bool TryUpgrade(ProfileDocument document)
+    {
+        if (document.Version == CurrentVersion)
+        {
+            return true;
+        }
+
+        if (document.Version == 1)
+        {
+            document.Version = CurrentVersion;
+            return true;
+        }
+
+        return false;
     }
 }

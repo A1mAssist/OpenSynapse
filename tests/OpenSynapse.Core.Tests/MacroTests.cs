@@ -48,7 +48,7 @@ public sealed class MacroTests
     }
 
     [Fact]
-    public void MacroDefinitionDropsInvalidTriggerAndNormalizesSteps()
+    public void MacroDefinitionDropsInvalidTriggerAndKeepsIncompleteSteps()
     {
         var macro = new MacroDefinition
         {
@@ -84,9 +84,10 @@ public sealed class MacroTests
 
         Assert.Equal("Example", macro.Name);
         Assert.Null(macro.Trigger);
-        Assert.Single(macro.Steps);
-        Assert.Equal(4, macro.Steps[0].Input!.MouseButton);
-        Assert.Equal(MacroDefinition.MaxDelayMilliseconds, macro.Steps[0].DelayMilliseconds);
+        Assert.Equal(2, macro.Steps.Count);
+        Assert.False(macro.Steps[0].IsValid());
+        Assert.Equal(4, macro.Steps[1].Input!.MouseButton);
+        Assert.Equal(MacroDefinition.MaxDelayMilliseconds, macro.Steps[1].DelayMilliseconds);
     }
 
     [Fact]
@@ -251,10 +252,11 @@ public sealed class MacroTests
 
         Assert.Equal(MacroPlaybackMode.Repeat, macro.PlaybackMode);
         Assert.Equal(MacroDefinition.MaxRepeatCount, macro.RepeatCount);
-        var step = Assert.Single(macro.Steps);
-        Assert.Equal(MacroStepKind.Delay, step.Kind);
-        Assert.Equal(MacroDefinition.MaxDelayMilliseconds, step.DelayMilliseconds);
-        Assert.Null(step.Input);
+        Assert.Equal(2, macro.Steps.Count);
+        Assert.Equal(MacroStepKind.Delay, macro.Steps[0].Kind);
+        Assert.Equal(MacroDefinition.MaxDelayMilliseconds, macro.Steps[0].DelayMilliseconds);
+        Assert.Null(macro.Steps[0].Input);
+        Assert.False(macro.Steps[1].IsValid());
     }
 
     [Fact]
