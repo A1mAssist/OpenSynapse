@@ -2,6 +2,56 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.5.5] - 2026-10-23
+
+### 新增 / Added
+
+- 新增宏页面与全尺寸宏编辑器，按雷云的操作结构提供宏列表、动作序列、触发键绑定、录制、单次/重复/持续循环播放，以及每步延迟和按住时间设置。编辑器支持键盘与鼠标选择器，录制或编辑时按下的键位会捕获为完整动作。
+- Added a macro page and full-size editor with the Synapse-style macro list, action sequence, trigger binding, recording, once/repeat/continuous playback, and per-step delay and hold settings. The editor includes keyboard and mouse pickers; a captured key or mouse button becomes a complete action.
+- 手动宏动作支持鼠标移动轨迹编辑：可在图上添加、拖动和删除轨迹点，精确输入 X/Y 坐标与时间；确认应用前不会修改现有宏。
+- Manual macro steps can include a mouse-move path: add, drag, and delete points on the plot, or enter exact X/Y and time values. The existing macro is unchanged until the edit is applied.
+- 托盘菜单打开时会读取已连接外设的电量，显示鼠标/键盘图标，点击一行可直接打开对应设备页；不显示电脑节点。
+- The tray menu now reads battery levels for connected peripherals when opened, shows mouse/keyboard icons, and opens the clicked device page; the computer itself is not listed.
+- 风扇控制改为自动、固定转速、手动曲线三选一。固定转速输入框只在固定模式下出现，手动曲线仍在独立窗口编辑。
+- Fan control is now a three-way picker for automatic, fixed RPM, and manual curve. The RPM editor appears only in fixed mode; the manual curve remains in its own window.
+- 新增 Razer 蓝牙 HID 设备识别与控制接口回退，覆盖 `BTHLE`、`BTHENUM` 和 GATT HID 路径。
+- Added Razer Bluetooth HID discovery and control-interface fallback for `BTHLE`, `BTHENUM`, and GATT HID paths.
+- 新增 Blade 14 (2022) `1532:028C` 的基线设备页准入和 CPU 性能档位显示；最大风扇与风扇曲线仍未开放。
+- Added baseline device-page admission and CPU performance levels for the Blade 14 (2022) `1532:028C`; maximum fan and the fan curve remain closed.
+- 新增 DeathAdder 2000 `1532:005F` / `1532:004D` 的只读识别入口；在收到对应硬件回报前，不开放写入控制。
+- Added read-only recognition for the DeathAdder 2000 `1532:005F` and `1532:004D`; controls remain read-only until hardware evidence is available.
+
+### 修复 / Fixed
+
+- 修复 Blade 16 (2025) 在自定义性能模式中 CPU 档位整列消失的问题；现在按机型能力显示，不再依赖固件最后一次回报值。
+- Fixed the entire CPU performance column disappearing in Blade 16 (2025) Custom mode; visibility now follows the model capability contract instead of the last firmware readback.
+- 修复风扇固定转速写入、目标读取和手动模式切换的回归，包括 Blade 15 (Mid 2019) `0245` 的固定转速门控。
+- Fixed fan fixed-RPM writes, target readback, and the switch into manual mode, including the fixed-RPM gate on the Blade 15 (Mid 2019) `0245`.
+- 修复蓝牙 HID 设备找不到控制接口，Naga Pro 等蓝牙设备现在可以进入发现流程。
+- Fixed Bluetooth HID devices failing to resolve a control interface; devices such as the Naga Pro can now enter the discovery flow.
+- 修复托盘菜单电量行的图标、点击目标和键盘/鼠标图标显示。
+- Fixed the tray battery row icons, click targets, and keyboard/mouse glyphs.
+- 修复宏编辑器在录制中关闭会误提交录制内容、编辑器内点击被录入宏、步进按钮文案覆盖图标，以及窄窗口下键盘布局不可用的问题。
+- Fixed macro recording being committed when the editor closed mid-recording, editor clicks entering the macro, localized button content replacing step icons, and the keyboard layout becoming unusable in narrow windows.
+- 修复固件更新页面跳转到不稳定的雷蛇下载页或触发 401 页面。
+- Fixed firmware update links opening an unstable Razer download page or a 401 answer page.
+- 修复宏页面和鼠标选择器的布局、滚轮位置、区域高亮与按钮分隔。
+- Fixed macro-page and mouse-picker layout, wheel position, region highlighting, and button separators.
+
+### 改进 / Improved
+
+- OpenRazer 诊断现在在命令到达 HID 层前记录请求，并在失败时记录预期的命令号、事务号、长度和实际响应字段。
+- OpenRazer diagnostics now log requests before they reach the HID layer and record the expected command, transaction, length, and actual response fields on failure.
+- OpenRazer 写入后会显示设备实际保持的值，方便区分“写入成功”和“设备接受但立即回退”。
+- OpenRazer writes now show the value the device actually holds, distinguishing a successful write from one the device accepts and immediately reverts.
+- 宏编辑器使用独立全尺寸窗口，键盘、鼠标和属性面板在较窄的主窗口下仍可编辑。
+- The macro editor uses a full-size window, so the keyboard, mouse, and properties panels remain usable when the main window is narrow.
+- 诊断中的设备查询和恢复状态会随设备刷新更新，已恢复的错误不再一直显示为失败。
+- Device query and recovery state in diagnostics now refresh with the device, so recovered errors stop appearing as permanent failures.
+
+本版本未签名，仅支持 Windows 11 x64。CPU 核心电压偏移、GPU 时钟/显存偏移和 HyperBoost 仍未实现（#6）；手动风扇曲线仍只对已适配的 Blade 16 (2025) 开放；#14 的 1.5.4 风扇调速闪退报告仍在等待用户日志，若复现请附带 `%LOCALAPPDATA%\OpenSynapse\logs\opensynapse.log`。DeathAdder 2000 `005F`/`004D` 目前只有只读识别。
+This release is unsigned and targets Windows 11 x64. CPU core-voltage offset, GPU clock/memory offset, and HyperBoost are not implemented yet (#6); the manual fan curve remains limited to the admitted Blade 16 (2025); the 1.5.4 fan-speed crash report in #14 is still awaiting the reporter's log, and a reproduction should include `%LOCALAPPDATA%\OpenSynapse\logs\opensynapse.log`. DeathAdder 2000 `005F`/`004D` currently have read-only recognition.
+
 ## [1.5.4] - 2026-10-21
 
 ### 新增 / Added

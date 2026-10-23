@@ -16,7 +16,7 @@
 
 OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。当前支持 254 个 OpenRazer 目录设备，以及 Blade/Viper、Kraken、BlackShark V3 Pro 和 Chroma REST 的专用能力。
 
-> 当前版本 `v1.5.4` · Windows 11 x64 · 未签名
+> 当前版本 `v1.5.5` · Windows 11 x64 · 未签名
 
 完整版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 
