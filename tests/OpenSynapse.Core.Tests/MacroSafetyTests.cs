@@ -133,4 +133,4 @@ public sealed class MacroSafetyTests
             point => Assert.Equal((60, 40), (point.X, point.Y)),
             point => Assert.Equal((40, -40), (point.X, point.Y)));
     }
-}\r\n
+}
