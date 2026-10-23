@@ -194,8 +194,12 @@ public sealed partial class MainWindow : Window
         }
 
         var workArea = DisplayArea.GetFromWindowId(sender.Id, DisplayAreaFallback.Primary).WorkArea;
-        var minimumWidth = Math.Min(MinimumWindowWidth, workArea.Width);
-        var minimumHeight = Math.Min(MinimumWindowHeight, workArea.Height);
+        // Size is reported in physical pixels, so a fixed minimum shrinks with DPI. At 200%
+        // the old 1080 px floor was only 540 logical, which is narrower than the devices
+        // page needs, and that page has no horizontal scroll.
+        var scale = (Content as FrameworkElement)?.XamlRoot?.RasterizationScale ?? 1d;
+        var minimumWidth = Math.Min((int)Math.Round(MinimumWindowWidth * scale), workArea.Width);
+        var minimumHeight = Math.Min((int)Math.Round(MinimumWindowHeight * scale), workArea.Height);
         var size = sender.Size;
         var width = Math.Max(size.Width, minimumWidth);
         var height = Math.Max(size.Height, minimumHeight);

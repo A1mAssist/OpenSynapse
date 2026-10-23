@@ -295,12 +295,23 @@ public sealed partial class MainWindow
         var scale = (Content as FrameworkElement)?.XamlRoot?.RasterizationScale ?? 1d;
         var maxWidth = Math.Max(800, workArea.Width - 48);
         var maxHeight = Math.Max(600, workArea.Height - 48);
-        var width = _behaviorSettings.WindowWidth > 0
-            ? Math.Min(_behaviorSettings.WindowWidth, maxWidth)
-            : Math.Min((int)Math.Round(1180 * scale), maxWidth);
-        var height = _behaviorSettings.WindowHeight > 0
-            ? Math.Min(_behaviorSettings.WindowHeight, maxHeight)
-            : Math.Min((int)Math.Round(800 * scale), maxHeight);
+        // Saved geometry is physical pixels. Restoring a size captured on a 100% display
+        // would be too narrow on a 200% one, so it is clamped to the same logical minimum
+        // the resize handler enforces.
+        var minimumWidth = Math.Min((int)Math.Round(MinimumWindowWidth * scale), maxWidth);
+        var minimumHeight = Math.Min((int)Math.Round(MinimumWindowHeight * scale), maxHeight);
+        var width = Math.Clamp(
+            _behaviorSettings.WindowWidth > 0
+                ? _behaviorSettings.WindowWidth
+                : (int)Math.Round(1180 * scale),
+            minimumWidth,
+            maxWidth);
+        var height = Math.Clamp(
+            _behaviorSettings.WindowHeight > 0
+                ? _behaviorSettings.WindowHeight
+                : (int)Math.Round(800 * scale),
+            minimumHeight,
+            maxHeight);
         var bounds = new RectInt32(
             workArea.X + Math.Max(0, (workArea.Width - width) / 2),
             workArea.Y + Math.Max(0, (workArea.Height - height) / 2),
