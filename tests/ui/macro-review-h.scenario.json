@@ -1,0 +1,105 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023g\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023g",
+  "window": {
+    "titleContains": "OpenSynapse"
+  },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-review-h",
+  "steps": [
+    {
+      "action": "wait",
+      "ms": 7000
+    },
+    {
+      "nameContains": "宏",
+      "action": "waitFor",
+      "controlType": "ListItem",
+      "timeoutMs": 20000
+    },
+    {
+      "nameContains": "宏",
+      "action": "select",
+      "controlType": "ListItem"
+    },
+    {
+      "action": "wait",
+      "ms": 1500
+    },
+    {
+      "action": "click",
+      "nameContains": "新建宏"
+    },
+    {
+      "action": "wait",
+      "ms": 1200
+    },
+    {
+      "action": "click",
+      "nameContains": "打开编辑器"
+    },
+    {
+      "action": "wait",
+      "ms": 2200
+    },
+    {
+      "windowTitleContains": "宏编辑器",
+      "action": "click",
+      "controlType": "Button",
+      "name": "A"
+    },
+    {
+      "action": "wait",
+      "ms": 800
+    },
+    {
+      "windowTitleContains": "宏编辑器",
+      "action": "click",
+      "controlType": "Button",
+      "name": "播放"
+    },
+    {
+      "action": "wait",
+      "ms": 700
+    },
+    {
+      "includePopups": true,
+      "action": "capture",
+      "name": "04-play-countdown"
+    },
+    {
+      "windowTitleContains": "宏编辑器",
+      "action": "click",
+      "controlType": "Button",
+      "index": 0,
+      "name": "停止"
+    },
+    {
+      "action": "wait",
+      "ms": 700
+    },
+    {
+      "windowTitleContains": "宏编辑器",
+      "action": "expand",
+      "controlType": "ComboBox",
+      "name": "播放方式"
+    },
+    {
+      "action": "wait",
+      "ms": 700
+    },
+    {
+      "includePopups": true,
+      "action": "capture",
+      "name": "05-playback-modes"
+    },
+    {
+      "action": "tree",
+      "name": "05-playback-modes-tree"
+    },
+    {
+      "action": "log",
+      "message": "done"
+    }
+  ]
+}

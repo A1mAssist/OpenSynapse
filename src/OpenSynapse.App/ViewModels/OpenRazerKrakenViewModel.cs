@@ -38,7 +38,7 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     public string InstanceId => Connection.InstanceId;
     public string Name => Connection.DisplayName;
     public string CategoryText => Connection.Kind == OpenRazerSpecialLightingKind.Kraken37
-        ? AppStrings.Text("OpenRazerKrakenSubtitle.Text")
+        ? AppStrings.Text("OpenRazerKrakenSubtitle/Text")
         : AppStrings.Text("Text_71E692AA");
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string? Serial { get => _serial; private set => SetField(ref _serial, value); }

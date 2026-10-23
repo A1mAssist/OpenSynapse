@@ -74,7 +74,6 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 ## 当前不包含
 
 - 固件更新、Razer 账号、云服务和 Chroma Studio。
-- 高级宏编辑器。
 - AMD Curve Optimizer、GPU MUX 和未经验证的硬件写入。
 - ARGB Controller，以及缺少 Windows 传输实现的旧式固定报告设备。
 

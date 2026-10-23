@@ -1,0 +1,26 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023e\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023e",
+  "window": { "titleContains": "OpenSynapse" },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-review-e",
+  "steps": [
+    { "action": "wait", "ms": 7000 },
+    { "action": "waitFor", "controlType": "ListItem", "nameContains": "宏", "timeoutMs": 20000 },
+    { "action": "select", "controlType": "ListItem", "nameContains": "宏" },
+    { "action": "wait", "ms": 1800 },
+    { "action": "click", "nameContains": "新建宏" },
+    { "action": "wait", "ms": 1500 },
+    { "action": "resize", "width": 1080, "height": 680, "x": 40, "y": 40 },
+    { "action": "wait", "ms": 1200 },
+    { "action": "capture", "name": "01-macro-page-small" },
+    { "action": "click", "nameContains": "打开编辑器" },
+    { "action": "wait", "ms": 2500 },
+    { "action": "tree", "name": "editor-tree" },
+    { "action": "capture", "name": "02-editor", "includePopups": true },
+    { "action": "click", "nameContains": "插入", "windowTitleContains": "宏编辑器" },
+    { "action": "wait", "ms": 1000 },
+    { "action": "capture", "name": "03-insert-menu", "includePopups": true },
+    { "action": "log", "message": "done" }
+  ]
+}

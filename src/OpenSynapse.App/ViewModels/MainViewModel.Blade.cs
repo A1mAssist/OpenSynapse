@@ -221,7 +221,7 @@ public sealed partial class MainViewModel
         var previousMode = BladeLightingModeIndex;
         var previousAnimation = _blade._bladeChromaAnimation;
         await RunDeviceOperationAsync(
-            AppStrings.Text("BladeImportChromaButton"),
+            AppStrings.Text("BladeImportChromaButton/Content"),
             async () =>
             {
                 ChromaFileAnimation animation;
@@ -627,7 +627,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        await RunDeviceOperationAsync(AppStrings.Text("BladeNativeDisplayModeTitle.Text"), async () =>
+        await RunDeviceOperationAsync(AppStrings.Text("BladeNativeDisplayModeTitle/Text"), async () =>
         {
             var actual = await _deviceTelemetryReader.SetBladeNativeDisplayModeAsync(
                 _deviceDescriptors,
@@ -650,7 +650,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        await RunDeviceOperationAsync(AppStrings.Text("BladeLocalDimmingTitle.Text"), async () =>
+        await RunDeviceOperationAsync(AppStrings.Text("BladeLocalDimmingTitle/Text"), async () =>
         {
             var actual = await _deviceTelemetryReader.SetBladeLocalDimmingAsync(
                 _deviceDescriptors, BladeLocalDimmingEnabled, cancellationToken);

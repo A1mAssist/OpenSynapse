@@ -64,7 +64,7 @@ public static class MacroKeyCatalog
         Key("6", 0x36), Key("7", 0x37), Key("8", 0x38), Key("9", 0x39), Key("0", 0x30),
     ];
     private static readonly MacroKeyChoice Minus = Key("-", 0xBD);
-    private static readonly MacroKeyChoice Equals = Key("=", 0xBB);
+    private static readonly MacroKeyChoice EqualsKey = Key("=", 0xBB);
     private static readonly MacroKeyChoice Backspace = Key("Bksp", 0x08);
     private static readonly MacroKeyChoice Tab = Key("Tab", 0x09);
 
@@ -149,6 +149,26 @@ public static class MacroKeyCatalog
     /// </summary>
     public static MacroKeyBoard Board { get; } = BuildBoard();
 
+    public static IReadOnlyList<MacroKeyChoice> ExtendedFunctionKeys { get; } =
+    [
+        Key("F13", 0x7C), Key("F14", 0x7D), Key("F15", 0x7E), Key("F16", 0x7F),
+        Key("F17", 0x80), Key("F18", 0x81), Key("F19", 0x82), Key("F20", 0x83),
+        Key("F21", 0x84), Key("F22", 0x85), Key("F23", 0x86), Key("F24", 0x87),
+    ];
+
+    public static IReadOnlyList<MacroKeyChoice> MediaKeys { get; } =
+    [
+        Key("Mute", 0xAD, extended: true),
+        Key("Vol -", 0xAE, extended: true),
+        Key("Vol +", 0xAF, extended: true),
+        Key("Prev", 0xB1, extended: true),
+        Key("Play", 0xB3, extended: true),
+        Key("Next", 0xB0, extended: true),
+        Key("Stop", 0xB2, extended: true),
+        Key("Mail", 0xB4, extended: true),
+        Key("Home", 0xAC, extended: true),
+    ];
+
     public static IReadOnlyList<MacroKeyChoice> MouseButtons { get; } =
     [
         new("Left", new MacroInput { Kind = MacroInputKind.MouseButton, MouseButton = 1 }),
@@ -195,7 +215,7 @@ public static class MacroKeyCatalog
 
         slots.Add(new(Minus, row, main, U));
         main += U;
-        slots.Add(new(Equals, row, main, U));
+        slots.Add(new(EqualsKey, row, main, U));
         main += U;
         slots.Add(new(Backspace, row, main, 2 * U));
 

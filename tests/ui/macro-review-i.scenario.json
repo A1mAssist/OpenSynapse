@@ -1,0 +1,64 @@
+{
+  "exe": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023g\\OpenSynapse.App.exe",
+  "workingDirectory": "D:\\Workspaces\\OpenSynapse\\artifacts\\publish-macro-review-20261023g",
+  "window": {
+    "titleContains": "OpenSynapse"
+  },
+  "timeoutMs": 40000,
+  "outDir": "D:\\Workspaces\\OpenSynapse\\artifacts\\qa-macro-review-i",
+  "steps": [
+    {
+      "action": "wait",
+      "ms": 7000
+    },
+    {
+      "nameContains": "宏",
+      "action": "waitFor",
+      "timeoutMs": 20000,
+      "controlType": "ListItem"
+    },
+    {
+      "nameContains": "宏",
+      "action": "select",
+      "controlType": "ListItem"
+    },
+    {
+      "action": "wait",
+      "ms": 1500
+    },
+    {
+      "nameContains": "新建宏",
+      "action": "click"
+    },
+    {
+      "action": "wait",
+      "ms": 1200
+    },
+    {
+      "nameContains": "打开编辑器",
+      "action": "click"
+    },
+    {
+      "action": "wait",
+      "ms": 2200
+    },
+    {
+      "action": "expand",
+      "name": "播放方式",
+      "windowTitleContains": "宏编辑器",
+      "controlType": "ComboBox"
+    },
+    {
+      "action": "wait",
+      "ms": 800
+    },
+    {
+      "action": "tree",
+      "name": "playback-modes-tree"
+    },
+    {
+      "message": "done",
+      "action": "log"
+    }
+  ]
+}
