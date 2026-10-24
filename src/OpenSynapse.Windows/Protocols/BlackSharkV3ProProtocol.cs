@@ -24,11 +24,13 @@ public static class BlackSharkV3ProProtocol
     public const ushort WirelessProductId = 0x0577;
 
     /// <summary>
-    /// The V3 Pro 2.4 GHz dongle enumerates as PID 0x101B, not 0x0577. Only the
-    /// dongle and the wired interface carry the 64-byte control report; OpenRazer
-    /// lists 0x0576/0x0577, so both naming schemes have to be accepted.
+    /// Hardware enumerated the 2.4 GHz dongle as 0x101B and the USB cable as 0x101C.
+    /// OpenRazer lists 0x0576/0x0577, so both naming schemes are accepted. The control
+    /// report shape is shared with other Razer headsets, so callers must also check the
+    /// product name or one of the observed PIDs.
     /// </summary>
     public const ushort DongleProductId = 0x101B;
+    public const ushort UsbProductId = 0x101C;
     public const int ReportLength = 64;
     public const byte ReportId = 0x02;
     public const byte TransactionId = 0x60;
@@ -46,6 +48,7 @@ public static class BlackSharkV3ProProtocol
     public static string DescribeProduct(ushort productId) => productId switch
     {
         WiredProductId => "Razer BlackShark V3 Pro (USB)",
+        UsbProductId => "Razer BlackShark V3 Pro (USB)",
         DongleProductId => "Razer BlackShark V3 Pro (2.4 GHz dongle)",
         WirelessProductId => "Razer BlackShark V3 Pro (2.4 GHz receiver)",
         _ => "Razer BlackShark V3 Pro",
