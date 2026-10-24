@@ -163,7 +163,8 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                     probe.FeatureReportByteLength,
                     probe.UsagePage,
                     probe.Usage,
-                    probe.Access);
+                    probe.Access,
+                    probe.Product);
                 observeInterface?.Invoke(descriptor);
                 if (featureReportLength is null || probe.FeatureReportByteLength == featureReportLength)
                 {
@@ -536,7 +537,8 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         ushort FeatureReportByteLength,
         ushort UsagePage,
         ushort Usage,
-        DeviceAccessState Access);
+        DeviceAccessState Access,
+        string ProductName);
 
     internal static string GetPhysicalDeviceKey(string devicePath)
     {

@@ -823,7 +823,7 @@ public sealed class OpenRazerBackendTests
         const string path = @"\\?\hid#vid_1532&pid_00bf&mi_02&col02#7&1a2b&0&0000#{guid}";
         var message = OpenRazerDeviceService.DescribeRejected([
             new(path, "container:key", 0x1532, 0x00BF, 8, 0, 64, 0x0001, 0x0002,
-                DeviceAccessState.BusyOrUnavailable),
+                DeviceAccessState.BusyOrUnavailable, "Razer Viper"),
         ]);
 
         Assert.Equal(
