@@ -1222,7 +1222,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         CancellationToken cancellationToken)
     {
         var response = await QueryCapabilityAsync(device, "keyboard-brightness.get", cancellationToken);
-        if (BladeLighting2023Admitted.IsBlade2023(device.Descriptor.ProductId))
+        if (BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(device.Descriptor.ProductId))
         {
             return BladeLighting2023Protocol.ParseBrightness(response);
         }
@@ -1235,7 +1235,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         ReadyDevice device,
         byte brightness,
         CancellationToken cancellationToken) =>
-        BladeLighting2023Admitted.IsBlade2023(device.Descriptor.ProductId)
+        BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(device.Descriptor.ProductId)
             ? QueryBuiltRequestAsync(
                 device,
                 "keyboard-brightness.set",

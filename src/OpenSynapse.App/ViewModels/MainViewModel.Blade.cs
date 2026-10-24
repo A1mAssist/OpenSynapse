@@ -168,9 +168,9 @@ public sealed partial class MainViewModel
             return Task.CompletedTask;
         }
 
-        if (IsBlade2023Model)
+        if (UsesFirmwareKeyboardLighting)
         {
-            return ApplyBlade2023LightingEffectAsync(modes[BladeLightingModeIndex], cancellationToken);
+            return ApplyFirmwareKeyboardLightingEffectAsync(modes[BladeLightingModeIndex], cancellationToken);
         }
 
         var color = new RazerRgb(BladeLightingColor.R, BladeLightingColor.G, BladeLightingColor.B);
@@ -1290,7 +1290,7 @@ public sealed partial class MainViewModel
 /// firmware-rendered uniform effects gets a matching short list instead of entries that
 /// would not apply to it.
 /// </summary>
-public IReadOnlyList<string> BladeLightingModeOptions => IsBlade2023Model
+public IReadOnlyList<string> BladeLightingModeOptions => UsesFirmwareKeyboardLighting
     ? AppStrings.Texts(
         AppStrings.Text("Text_39B523BD"),
         AppStrings.Text("Text_7EDA32B9"),
@@ -1356,11 +1356,11 @@ public IReadOnlyList<string> BladeLightingModeOptions => IsBlade2023Model
         OnPropertyChanged(nameof(BladeChromaStatusVisibility));
     }
     /// <summary>
-/// The 2023 generation writes brightness and effects through the telemetry reader, so it
-/// needs no lighting controller. Every other generation still requires one.
+/// Firmware-rendered models write brightness and effects through the telemetry reader, so they
+/// need no lighting controller. Every other generation still requires one.
 /// </summary>
 public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
-        (IsBlade2023Model || _bladeLightingController is not null);
+        (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
     public int BladeLightingPowerProfileIndex
     {
         get => _bladeLightingPowerProfileIndex;
@@ -1468,7 +1468,7 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
             }
         }
     }
-    public Visibility BladeLightingRenderModeVisibility => !IsBlade2023Model &&
+    public Visibility BladeLightingRenderModeVisibility => !UsesFirmwareKeyboardLighting &&
         SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Spectrum
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -1477,7 +1477,7 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
     public Visibility BladeLightingPresetVisibility => SelectedBladeLightingMode == BladeLightingMode.Starlight
         ? BladeLightingColorVisibility : BladeLightingSecondColorVisibility;
     public Visibility BladeLightingColorVisibility => !BladeFirmwarePaletteHidden &&
-        !IsBlade2023Model &&
+        !UsesFirmwareKeyboardLighting &&
         (SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
         BladeLightingMode.Ripple or BladeLightingMode.Tidal or BladeLightingMode.Spectrum or
@@ -1485,23 +1485,23 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex != 0))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingSecondColorVisibility => !BladeFirmwarePaletteHidden && !IsBlade2023Model &&
+    public Visibility BladeLightingSecondColorVisibility => !BladeFirmwarePaletteHidden && !UsesFirmwareKeyboardLighting &&
         (SelectedBladeLightingMode is BladeLightingMode.Tidal or
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex == 2))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden && !IsBlade2023Model &&
+    public Visibility BladeLightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden && !UsesFirmwareKeyboardLighting &&
         SelectedBladeLightingMode is
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
         BladeLightingMode.Wheel or BladeLightingMode.AudioMeter
         ? Visibility.Visible
         : Visibility.Collapsed;
     /// <summary>
-    /// The 2023 generation stores a fixed rightward wave direction, so offering the
+    /// Firmware-rendered models store a fixed rightward wave direction, so offering the
     /// direction selector there would present a control that cannot change anything.
     /// </summary>
-public Visibility BladeWaveDirectionVisibility => !IsBlade2023Model &&
+public Visibility BladeWaveDirectionVisibility => !UsesFirmwareKeyboardLighting &&
         SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -1531,25 +1531,27 @@ public Visibility BladeWaveDirectionVisibility => !IsBlade2023Model &&
     public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
     public Color BladeLightingTertiaryColor { get => _blade._bladeLightingTertiaryColor; set => SetField(ref _blade._bladeLightingTertiaryColor, value); }
     /// <summary>
-/// Gate for the effect selector. The 2023 generation selects firmware effects through the
+/// Gate for the effect selector. Firmware-rendered models select effects through the
 /// telemetry reader, so the matrix-based lighting controller is not required there.
 /// </summary>
 public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
-        (IsBlade2023Model || _bladeLightingController is not null);
+        (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
 
     /// <summary>
-/// Both Blade generations have an admitted keyboard-lighting report, so the card is
+/// Every Blade generation has an admitted keyboard-lighting report, so the card is
 /// always available; only the effect list and color controls differ by model.
 /// </summary>
 public Visibility BladeLightingCardVisibility => Visibility.Visible;
 
-    private const ushort Blade2023ProductId = 0x029F;
-
-    /// <summary>True on the Blade 16 2023, which has no per-key lighting matrix.</summary>
-    private bool IsBlade2023Model => _blade._bladeProductId == Blade2023ProductId;
+    /// <summary>
+    /// True where the keyboard is driven through the firmware effect reports instead of
+    /// the 710 matrix controller. This covers the Blade 16 2023 and the Blade 14 2022.
+    /// </summary>
+    private bool UsesFirmwareKeyboardLighting =>
+        BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(_blade._bladeProductId);
 
     /// <summary>
-    /// Effect list for the selected model. A 2023 machine renders a short firmware list;
+    /// Effect list for the selected model. Firmware-rendered models use a short list;
     /// every other generation keeps the full effect set with the optional Chroma entry.
     /// </summary>
     /// <summary>
@@ -1559,15 +1561,15 @@ public Visibility BladeLightingCardVisibility => Visibility.Visible;
     public BladeLightingMode? SelectedBladeLightingModeForPage => SelectedBladeLightingMode;
 
     private IReadOnlyList<BladeLightingMode> ActiveBladeLightingModes =>
-        IsBlade2023Model
+        UsesFirmwareKeyboardLighting
             ? BladeLighting2023Admitted.Effects
             : BladeLightingModes;
 
     /// <summary>
-    /// The Blade 16 2023 renders these effects in firmware through its own report, so the
+    /// Firmware-rendered models apply these effects through their own report, so the
     /// effect and brightness reach the device without the per-key frame path.
     /// </summary>
-    private async Task ApplyBlade2023LightingEffectAsync(
+    private async Task ApplyFirmwareKeyboardLightingEffectAsync(
         BladeLightingMode mode,
         CancellationToken cancellationToken)
     {

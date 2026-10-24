@@ -46,11 +46,10 @@ public static class BladeModelCapabilities
             // Blade 14 (2022) RZ09-0427. Owner readings on 028C answered all ten Blade
             // controls, including both live fan tachometers. The owner then confirmed a
             // fixed-speed write by reading both tachometers back higher, and the write took
-            // effect without restarting, so the baseline CPU levels stay admitted. Maximum
-            // fan and the fan curve stay closed: neither was exercised, and a curve also
-            // needs a verified restore-on-exit path.
-
-            [0x028C] = new(MaxFan: false, LowMediumHigh),
+            // effect without restarting, so the baseline CPU levels and the fixed fan target
+            // are admitted. Maximum fan and the fan curve stay closed: neither was exercised,
+            // and a curve also needs a verified restore-on-exit path.
+            [0x028C] = new(MaxFan: false, LowMediumHigh, FixedFan: true),
             // Blade 14 (2023) RZ09-0482, Blade 14 (2025) RZ09-0530 and Blade 16
             // (2026) RZ09-0581. No maximum-fan evidence on any of them.
             [0x029D] = new(MaxFan: false, LowMediumHigh),

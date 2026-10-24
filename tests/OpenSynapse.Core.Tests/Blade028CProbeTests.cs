@@ -7,14 +7,16 @@ namespace OpenSynapse.Core.Tests;
 public sealed class Blade028CProbeTests
 {
     [Fact]
-    public void TheBlade14_2022ProbeLoadsAndCanReadEveryBladeControl()
+    public void TheBlade14_2022ManifestLoadsAndCanReadEveryBladeControl()
     {
         var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x028C);
 
         Assert.NotNull(manifest);
         Assert.Equal("blade-671", manifest!.ProtocolFamily);
+        Assert.Equal("Razer Blade 14 (2022)", manifest.DisplayName);
+        Assert.DoesNotContain("probe", manifest.Id, StringComparison.OrdinalIgnoreCase);
 
-        // Every read the user asked about must be reachable so the probe can report evidence.
+        // Every report the Blade channel uses must be reachable on this model.
         foreach (var capability in new[]
                  {
                      "thermal-state.get",
@@ -24,7 +26,9 @@ public sealed class Blade028CProbeTests
                      "charge-limit.get",
                      "power-mode.get",
                      "keyboard-brightness.get",
+                     "keyboard-brightness.set",
                      "keyboard-effect.get",
+                     "keyboard-effect.set",
                  })
         {
             Assert.Contains(capability, manifest.Capabilities.Keys);
@@ -32,16 +36,18 @@ public sealed class Blade028CProbeTests
     }
 
     [Fact]
-    public void TheOwnerReadingsAdmitTheBaselineContractAndKeepTheUnprovenControlsClosed()
+    public void TheOwnerReadingsAdmitTheBaselineAndFixedFanContracts()
     {
         // 028C answered every Blade read on the owner's hardware (thermal state, both fan
         // tachometers, charge limit, power mode, boost), which admits the baseline CPU levels.
+        // A fixed-speed write was confirmed by both tachometers, so it is admitted.
         // Maximum fan and the fan curve were never exercised, so they stay closed.
         const ushort productId = 0x028C;
         Assert.Equal(
             [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High],
             BladeModelCapabilities.CpuBoostModesFor(productId));
         Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.High));
+        Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
         Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
         Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
     }

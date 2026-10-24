@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "id": "blade-028c-probe",
-  "displayName": "Razer Blade 14 2022 (read-only probe)",
+  "id": "blade-028c",
+  "displayName": "Razer Blade 14 (2022)",
   "vendorId": "1532",
   "productIds": ["028C"],
   "collection": {
