@@ -5476,7 +5476,7 @@
         "razer_chroma_standard_get_firmware_version": "1F",
         "razer_chroma_standard_get_serial": "1F",
         "razer_chroma_misc_get_battery_level": "1F",
-        "razer_chroma_misc_get_low_battery_threshold": "FF",
+        "razer_chroma_misc_get_low_battery_threshold": "1F",
         "razer_chroma_misc_set_low_battery_threshold": "FF",
         "razer_chroma_standard_get_device_mode": "FF",
         "razer_chroma_misc_get_dpi_stages": "1F",

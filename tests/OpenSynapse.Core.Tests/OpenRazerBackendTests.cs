@@ -1098,13 +1098,13 @@ public sealed class OpenRazerBackendTests
     }
 
     /// <summary>
-    /// The DeathAdder V2 X HyperSpeed answers only the 0x1F transaction family. Sending the
-    /// 0x00 or 0x3F variants this catalog used to carry makes the firmware stay silent, and a
-    /// silent command used to disable the whole device. These ids are taken verbatim from
-    /// OpenRazer's razermouse_driver.c.
+    /// The DeathAdder V2 X HyperSpeed answers the 0x1F read family. OpenRazer sends 0xFF
+    /// for the low-battery threshold, but the device answers that request with status 0x04
+    /// on every attempt, while all working reads use 0x1F. Keep the write on its existing
+    /// transaction until it is tested.
     /// </summary>
     [Fact]
-    public void DeathAdderV2XHyperSpeedUsesTheTransactionIdsOpenRazerSends()
+    public void DeathAdderV2XHyperSpeedUsesTheTransactionIdsThatWorkOnDevice()
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x009C)!;
 
@@ -1112,7 +1112,8 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(0x1F, device.Transactions["razer_chroma_standard_get_serial"]);
         Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_battery_level"]);
         Assert.Equal(0xFF, device.Transactions["razer_chroma_standard_get_device_mode"]);
-        Assert.Equal(0xFF, device.Transactions["razer_chroma_misc_get_low_battery_threshold"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_low_battery_threshold"]);
+        Assert.Equal(0x1F, OpenRazerMouseProtocol.GetLowBatteryThreshold(device).Report[2]);
         Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_dpi_xy"]);
         Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_set_dpi_xy"]);
         Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_polling_rate"]);
