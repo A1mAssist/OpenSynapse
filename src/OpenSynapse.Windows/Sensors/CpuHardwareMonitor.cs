@@ -12,7 +12,7 @@ internal sealed class CpuHardwareMonitor : IDisposable
         PdhWildcardCounter.TryCreate(@"\Processor Information(*)\Processor Frequency");
     private readonly PdhWildcardCounter? _clockPerformance =
         PdhWildcardCounter.TryCreate(@"\Processor Information(*)\% Processor Performance");
-    private readonly HwinfoCpuTemperatureReader _hwinfo = new();
+    private readonly HwinfoSensorReader _hwinfo = new();
     private readonly object _gate = new();
     private double? _lastAcpiTemperature;
     private DateTimeOffset _acpiTemperatureStableSince = DateTimeOffset.UtcNow;
@@ -33,7 +33,7 @@ internal sealed class CpuHardwareMonitor : IDisposable
     {
         lock (_gate)
         {
-            if (_hwinfo.ReadTemperatureCelsius() is double hwinfoTemperature)
+            if (_hwinfo.ReadCpuTemperatureCelsius() is double hwinfoTemperature)
             {
                 _lastAcpiTemperature = null;
                 _acpiTemperatureSuppressed = false;
@@ -65,6 +65,14 @@ internal sealed class CpuHardwareMonitor : IDisposable
             }
 
             return _acpiTemperatureSuppressed ? null : value;
+        }
+    }
+
+    internal double? ReadGpuTemperatureCelsius(string? vendorHint)
+    {
+        lock (_gate)
+        {
+            return _hwinfo.ReadGpuTemperatureCelsius(vendorHint);
         }
     }
 
