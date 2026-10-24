@@ -12,7 +12,7 @@
             <Button x:Name="MacroRecordButton" local:Localized.Uid="MacroRecordButton" MinWidth="112" Style="{StaticResource SecondaryButtonStyle}">
               <StackPanel Orientation="Horizontal" Spacing="7">
                 <TextBlock Text="{Binding MacroRecordButtonText}" VerticalAlignment="Center" />
-                <FontIcon Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" VerticalAlignment="Center" />
+                <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
               </StackPanel>
               <Button.Flyout>
                 <MenuFlyout Opening="MacroRecordFlyoutOpening">
@@ -26,7 +26,7 @@
             <Button x:Name="MacroInsertButton" local:Localized.Uid="MacroInsertButton" MinWidth="104" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}">
               <StackPanel Orientation="Horizontal" Spacing="7">
                 <TextBlock local:Localized.Uid="MacroInsertMenu" Text="插入" VerticalAlignment="Center" />
-                <FontIcon Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" VerticalAlignment="Center" />
+                <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
               </StackPanel>
               <Button.Flyout>
                 <MenuFlyout>
@@ -51,7 +51,7 @@
                     <DataTemplate>
                       <Grid ColumnDefinitions="56,20,Auto,*,Auto" ColumnSpacing="8" Padding="2,7" Margin="{Binding IndentMargin}">
                         <TextBlock Text="{Binding DelayText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                        <FontIcon Grid.Column="1" Glyph="{Binding StepGlyph}" FontFamily="Segoe Fluent Icons" FontSize="13" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                        <FontIcon Grid.Column="1" Glyph="{Binding StepGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                         <Border Grid.Column="2" Visibility="{Binding GroupVisibility}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
                           <TextBlock Text="{Binding GroupText}" FontFamily="Cascadia Mono" FontSize="9" Foreground="{StaticResource AccentBrush}" />
                         </Border>
@@ -80,7 +80,7 @@
                   <Button local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanStopMacro}" />
                   <TextBlock local:Localized.Uid="MacroPlaybackStopShortcut" Text="F10 停止播放" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
                   <StackPanel x:Name="MacroDurationChip" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE823;" FontFamily="Segoe Fluent Icons" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    <FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     <TextBlock Text="{Binding MacroTotalDurationText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                   </StackPanel>
                   <TextBlock local:Localized.Uid="MacroUnsaved" Text="未保存" Foreground="{StaticResource ThermalBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding MacroUnsavedVisibility}" />
@@ -95,7 +95,7 @@
               <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
                 <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                 <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding CanEditMacro}">
-                  <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" />
+                  <FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
                   <Button.Flyout>
                     <MenuFlyout Opening="MacroTriggerFlyoutOpening">
                       <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureSingle" Text="捕获单键" Click="CaptureMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
@@ -109,7 +109,7 @@
               <Grid Padding="12,0,12,10" ColumnDefinitions="*,Auto" ColumnSpacing="10">
                 <StackPanel Spacing="4" VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Spacing="7">
-                    <FontIcon Glyph="&#xE765;" FontFamily="Segoe Fluent Icons" FontSize="13" Foreground="{StaticResource AccentBrush}" />
+                    <FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" />
                     <TextBlock Text="{Binding SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
                   </StackPanel>
                   <TextBlock local:Localized.Uid="MacroKeyBindsNoMacro" Text="选择一个宏以查看它的键位绑定。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding MacroNoSelectionVisibility}" />
@@ -134,7 +134,7 @@
               <Button x:Name="MacroPropertiesHeader" Click="MacroPropertiesHeaderClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" CornerRadius="0" MinHeight="34" Padding="12,0">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock local:Localized.Uid="MacroProperties" Text="属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-                  <FontIcon Grid.Column="1" x:Name="MacroPropertiesChevron" Glyph="&#xE70E;" FontFamily="Segoe Fluent Icons" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                  <FontIcon Grid.Column="1" x:Name="MacroPropertiesChevron" Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                 </Grid>
               </Button>
               <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10,12,12">
@@ -255,10 +255,10 @@
 
               <ContentControl x:Name="MacroStepActionBar" IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Left">
                 <StackPanel Orientation="Horizontal" Spacing="6">
-                  <Button local:Localized.Uid="MacroStepRecaptureButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="RecaptureMacroStepClick" IsEnabled="{Binding SelectedMacroStep.CanRecapture, FallbackValue=False}"><FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="13" /></Button>
-                  <Button local:Localized.Uid="MacroStepMoveUpButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepUpClick"><FontIcon Glyph="&#xE74A;" FontFamily="Segoe Fluent Icons" FontSize="13" /></Button>
-                  <Button local:Localized.Uid="MacroStepMoveDownButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepDownClick"><FontIcon Glyph="&#xE74B;" FontFamily="Segoe Fluent Icons" FontSize="13" /></Button>
-                  <Button local:Localized.Uid="MacroStepDeleteButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="DeleteMacroStepClick"><FontIcon Glyph="&#xE74D;" FontFamily="Segoe Fluent Icons" FontSize="13" /></Button>
+                  <Button local:Localized.Uid="MacroStepRecaptureButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="RecaptureMacroStepClick" IsEnabled="{Binding SelectedMacroStep.CanRecapture, FallbackValue=False}"><FontIcon Glyph="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+                  <Button local:Localized.Uid="MacroStepMoveUpButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepUpClick"><FontIcon Glyph="&#xE74A;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+                  <Button local:Localized.Uid="MacroStepMoveDownButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepDownClick"><FontIcon Glyph="&#xE74B;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+                  <Button local:Localized.Uid="MacroStepDeleteButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="DeleteMacroStepClick"><FontIcon Glyph="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
                 </StackPanel>
               </ContentControl>
               </StackPanel>
@@ -289,7 +289,7 @@
           <Grid ColumnDefinitions="168,10,*">
             <Canvas x:Name="MacroMouseHost" Width="168" Height="200" HorizontalAlignment="Left">
               <Grid Width="168" Height="200">
-                <FontIcon x:Name="MacroMouseGlyph" Glyph="&#xE962;" FontFamily="Segoe Fluent Icons" FontSize="150"
+                <FontIcon x:Name="MacroMouseGlyph" Glyph="&#xE962;" FontFamily="{StaticResource IconFontFamily}" FontSize="150"
                           Foreground="#5C5C5C" HorizontalAlignment="Center" VerticalAlignment="Center"
                           IsHitTestVisible="False" />
               </Grid>
@@ -297,14 +297,14 @@
                 <Grid.Clip>
                   <RectangleGeometry Rect="0,0,79.5,76" />
                 </Grid.Clip>
-                <FontIcon Glyph="&#xE962;" FontFamily="Segoe Fluent Icons" FontSize="150" Foreground="#99DD72"
+                <FontIcon Glyph="&#xE962;" FontFamily="{StaticResource IconFontFamily}" FontSize="150" Foreground="#99DD72"
                           HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Grid>
               <Grid x:Name="MacroMouseRightHighlight" Width="168" Height="200" Opacity="0" IsHitTestVisible="False">
                 <Grid.Clip>
                   <RectangleGeometry Rect="79.5,0,88.5,76" />
                 </Grid.Clip>
-                <FontIcon Glyph="&#xE962;" FontFamily="Segoe Fluent Icons" FontSize="150" Foreground="#99DD72"
+                <FontIcon Glyph="&#xE962;" FontFamily="{StaticResource IconFontFamily}" FontSize="150" Foreground="#99DD72"
                           HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Grid>
               <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"

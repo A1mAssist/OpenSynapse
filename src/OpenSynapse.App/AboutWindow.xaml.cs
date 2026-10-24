@@ -12,7 +12,7 @@ public sealed partial class AboutWindow : Window
     public AboutWindow(AppWindow owner, double scale)
     {
         InitializeComponent();
-        SystemBackdrop = new MicaBackdrop();
+        WindowBackdrop.ApplyMicaIfSupported(this);
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {

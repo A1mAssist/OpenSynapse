@@ -75,7 +75,7 @@
                 Click="OpenMainPanelClick">
           <Grid>
             <Viewbox Width="16" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center">
-              <FontIcon Glyph="&#xE80F;" FontFamily="Segoe Fluent Icons" FontSize="14" />
+              <FontIcon Glyph="&#xE80F;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
             </Viewbox>
             <TextBlock x:Name="OpenMainPanelText"
                        local:Localized.Uid="Loc_0CE53A16F8"

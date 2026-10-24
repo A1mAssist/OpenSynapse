@@ -81,7 +81,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         RootNavigationView.DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        SystemBackdrop = new MicaBackdrop();
+        WindowBackdrop.ApplyMicaIfSupported(this);
         ApplyDarkTheme();
         ApplyTitleBarColors(launchOverlayActive: true);
         Activated += OnActivated;
