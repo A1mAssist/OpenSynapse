@@ -440,7 +440,7 @@ public sealed partial class MousePathPlot : UserControl
     private static TextBlock CreateLabel(TextAlignment alignment) => new()
     {
         FontSize = 9,
-        FontFamily = new FontFamily("Cascadia Mono"),
+        FontFamily = new FontFamily("Cascadia Mono,Consolas"),
         Foreground = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)),
         TextAlignment = alignment,
         IsHitTestVisible = false,

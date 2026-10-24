@@ -16,7 +16,7 @@ public sealed partial class ThxAudioWindow : Window
     {
         InitializeComponent();
         AudioView.DataContext = viewModel;
-        WindowBackdrop.ApplyMicaIfSupported(this);
+        WindowAppearance.Apply(this);
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {

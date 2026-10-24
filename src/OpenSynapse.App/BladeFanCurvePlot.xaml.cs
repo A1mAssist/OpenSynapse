@@ -149,7 +149,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
             Width = 52,
             Height = 16,
             FontSize = 10,
-            FontFamily = new FontFamily("Cascadia Mono"),
+            FontFamily = new FontFamily("Cascadia Mono,Consolas"),
             Foreground = brush,
             TextAlignment = alignment,
             IsHitTestVisible = false,
@@ -164,7 +164,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
         label.Text = text;
         label.Height = 16;
         label.FontSize = 9;
-        label.FontFamily = new FontFamily("Cascadia Mono");
+        label.FontFamily = new FontFamily("Cascadia Mono,Consolas");
         label.Foreground = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF));
         label.TextAlignment = alignment;
         label.IsHitTestVisible = false;

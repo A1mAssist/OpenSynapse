@@ -31,7 +31,7 @@ public sealed partial class MousePathEditorWindow : Window
         _editor = editor;
         _apply = apply;
         RootLayout.DataContext = editor;
-        WindowBackdrop.ApplyMicaIfSupported(this);
+        WindowAppearance.Apply(this);
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {
