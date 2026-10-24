@@ -13,7 +13,7 @@
       <FontFamily x:Key="AppFontFamily">ms-appx:///Assets/Fonts/TitilliumWeb-Regular.ttf#Titillium Web</FontFamily>
       <FontFamily x:Key="AppFontSemiBoldFamily">ms-appx:///Assets/Fonts/TitilliumWeb-SemiBold.ttf#Titillium Web</FontFamily>
       <FontFamily x:Key="AppFontBoldFamily">ms-appx:///Assets/Fonts/TitilliumWeb-Bold.ttf#Titillium Web</FontFamily>
-      <FontFamily x:Key="IconFontFamily">Segoe MDL2 Assets</FontFamily>
+      <FontFamily x:Key="IconFontFamily">Segoe Fluent Icons,Segoe MDL2 Assets</FontFamily>
       <SolidColorBrush x:Key="CanvasBrush" Color="#171717" />
       <SolidColorBrush x:Key="SurfaceBrush" Color="#202020" />
       <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#292929" />

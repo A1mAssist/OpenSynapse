@@ -63,11 +63,6 @@ public partial class App : Application
         }
 
         InitializeComponent();
-        // The XAML default is MDL2 so styles parsed during InitializeComponent also work on Windows 10.
-        Resources["IconFontFamily"] = new Microsoft.UI.Xaml.Media.FontFamily(
-            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)
-                ? "Segoe Fluent Icons"
-                : "Segoe MDL2 Assets");
         UnhandledException += (_, args) =>
         {
             _diagnosticLog.TryWrite("unhandled", args.Exception.ToString());
