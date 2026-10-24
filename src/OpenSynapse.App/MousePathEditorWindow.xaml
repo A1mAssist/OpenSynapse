@@ -15,7 +15,7 @@
           </StackPanel>
         </StackPanel>
         <Border Grid.Column="1" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="4" Padding="8,4" VerticalAlignment="Top">
-          <TextBlock Text="{Binding PointCountText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+          <TextBlock Text="{Binding PointCountText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
         </Border>
       </Grid>
 

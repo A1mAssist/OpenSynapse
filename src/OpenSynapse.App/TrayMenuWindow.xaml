@@ -18,7 +18,7 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI,Segoe UI" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{ThemeResource MenuFlyoutItemForeground}" />
         <Setter Property="Template">

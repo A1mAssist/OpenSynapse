@@ -49,9 +49,9 @@
                           <ItemsRepeater.ItemTemplate>
                             <DataTemplate>
                               <Grid ColumnDefinitions="64,*,62" ColumnSpacing="8">
-                                <TextBlock Text="{Binding FrequencyText}" FontFamily="Cascadia Mono" FontSize="11" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding FrequencyText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" VerticalAlignment="Center" />
                                 <Slider Grid.Column="1" Minimum="-12" Maximum="12" StepFrequency="0.5" Value="{Binding GainDb, Mode=TwoWay}" IsThumbToolTipEnabled="False" />
-                                <TextBlock Grid.Column="2" Text="{Binding GainText}" FontFamily="Cascadia Mono" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding GainText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center" />
                               </Grid>
                             </DataTemplate>
                           </ItemsRepeater.ItemTemplate>
@@ -70,7 +70,7 @@
                           <ToggleSwitch local:Localized.Uid="ThxVoiceClarityToggle" IsOn="{Binding VoiceClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                             <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding VoiceClarityLevel, Mode=TwoWay}" IsThumbToolTipEnabled="False" IsEnabled="{Binding VoiceClarityEnabled}" />
-                            <TextBlock Grid.Column="1" Text="{Binding VoiceClarityLevelText}" FontFamily="Cascadia Mono" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding VoiceClarityLevelText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                           </Grid>
                           <Button local:Localized.Uid="ThxApplyVoiceClarityButton" Content="应用人声清晰度" Click="ApplyThxVoiceClarityClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding VoiceClarityEnabled}" />
                         </StackPanel>
@@ -81,7 +81,7 @@
                           <ToggleSwitch local:Localized.Uid="ThxSoundNormalizationToggle" IsOn="{Binding SoundNormalizationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                             <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding SoundNormalizationLevel, Mode=TwoWay}" IsThumbToolTipEnabled="False" IsEnabled="{Binding SoundNormalizationEnabled}" />
-                            <TextBlock Grid.Column="1" Text="{Binding SoundNormalizationLevelText}" FontFamily="Cascadia Mono" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding SoundNormalizationLevelText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                           </Grid>
                           <Button local:Localized.Uid="ThxApplySoundNormalizationButton" Content="应用音量标准化" Click="ApplyThxSoundNormalizationClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding SoundNormalizationEnabled}" />
                         </StackPanel>

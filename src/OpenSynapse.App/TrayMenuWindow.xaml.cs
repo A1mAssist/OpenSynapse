@@ -111,7 +111,7 @@ public sealed partial class TrayMenuWindow : Window
     // text width. Measure the longest string off-tree instead.
     private readonly TextBlock _widthProbe = new()
     {
-        FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Microsoft YaHei UI"),
+        FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Microsoft YaHei UI,Segoe UI"),
         FontSize = 14,
     };
 
@@ -175,7 +175,7 @@ public sealed partial class TrayMenuWindow : Window
             {
                 Text = device.Name,
                 FontSize = 13,
-                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Microsoft YaHei UI"),
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Microsoft YaHei UI,Segoe UI"),
                 Margin = new Thickness(12, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             };
@@ -183,7 +183,7 @@ public sealed partial class TrayMenuWindow : Window
             {
                 Text = device.Percent is int percent ? $"{percent}%" : "\u2026",
                 FontSize = 13,
-                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Cascadia Mono"),
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Cascadia Mono,Consolas"),
                 MinWidth = 34,
                 Margin = new Thickness(0, 0, 8, 0),
                 TextAlignment = TextAlignment.Right,
@@ -513,6 +513,11 @@ public sealed partial class TrayMenuWindow : Window
 
     private void DisableDwmFrame()
     {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+        {
+            return;
+        }
+
         // DWM paints a border outside the XAML content, so XAML CornerRadius cannot remove it.
         var noBorder = DwmColorNone;
         _ = DwmSetWindowAttribute(_windowHandle, DwmBorderColor, ref noBorder, sizeof(int));

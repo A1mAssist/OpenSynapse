@@ -50,13 +50,13 @@
                   <ListView.ItemTemplate>
                     <DataTemplate>
                       <Grid ColumnDefinitions="56,20,Auto,*,Auto" ColumnSpacing="8" Padding="2,7" Margin="{Binding IndentMargin}">
-                        <TextBlock Text="{Binding DelayText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding DelayText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                         <FontIcon Grid.Column="1" Glyph="{Binding StepGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                         <Border Grid.Column="2" Visibility="{Binding GroupVisibility}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding GroupText}" FontFamily="Cascadia Mono" FontSize="9" Foreground="{StaticResource AccentBrush}" />
+                          <TextBlock Text="{Binding GroupText}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource AccentBrush}" />
                         </Border>
                         <TextBlock Grid.Column="3" Text="{Binding NameText}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="4" Text="{Binding DirectionText}" Visibility="{Binding DirectionVisibility}" FontFamily="Cascadia Mono" FontSize="9" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="{Binding DirectionText}" Visibility="{Binding DirectionVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                       </Grid>
                     </DataTemplate>
                   </ListView.ItemTemplate>
@@ -81,7 +81,7 @@
                   <TextBlock local:Localized.Uid="MacroPlaybackStopShortcut" Text="F10 停止播放" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
                   <StackPanel x:Name="MacroDurationChip" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                    <TextBlock Text="{Binding MacroTotalDurationText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding MacroTotalDurationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                   </StackPanel>
                   <TextBlock local:Localized.Uid="MacroUnsaved" Text="未保存" Foreground="{StaticResource ThermalBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding MacroUnsavedVisibility}" />
                   <Button local:Localized.Uid="MacroSaveButton" Content="保存" Click="SaveMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanEditMacro}" />
@@ -193,7 +193,7 @@
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                 <TextBlock local:Localized.Uid="MacroStepProperties" Text="动作属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                 <Border Grid.Column="1" Visibility="{Binding SelectedMacroStep.GroupVisibility, FallbackValue=Collapsed}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="6,1" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding SelectedMacroStep.GroupText}" FontFamily="Cascadia Mono" FontSize="9" Foreground="{StaticResource AccentBrush}" />
+                  <TextBlock Text="{Binding SelectedMacroStep.GroupText}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource AccentBrush}" />
                 </Border>
               </Grid>
               <TextBlock Text="{Binding SelectedMacroStep.NameText}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="11" />
@@ -250,7 +250,7 @@
                   <TextBlock local:Localized.Uid="MacroStepMousePathLabel" Text="鼠标轨迹" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
                   <Button x:Name="MacroMousePathEditButton" Grid.Column="1" local:Localized.Uid="MacroMousePathEditButton" Content="编辑轨迹" Click="OpenMousePathEditorClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}" />
                 </Grid>
-                <TextBlock Text="{Binding SelectedMacroStep.MousePathText}" FontFamily="Cascadia Mono" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding SelectedMacroStep.MousePathText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
               </StackPanel>
 
               <ContentControl x:Name="MacroStepActionBar" IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Left">
