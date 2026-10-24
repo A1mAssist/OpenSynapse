@@ -13,7 +13,7 @@
       <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
         <Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13">
           <Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
-            <FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <FontIcon Glyph="{Binding IconGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
           </Border>
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
             <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
@@ -55,14 +55,14 @@
         FontFamily="{StaticResource AppFontFamily}"
         SelectionChanged="NavigationChanged">
       <NavigationView.MenuItems>
-        <NavigationViewItem local:Localized.Uid="Loc_70C0B22D6C" x:Name="OverviewNavigationItem" Content="概览" Tag="overview" IsSelected="True"><NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" FontFamily="Segoe Fluent Icons" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="Loc_70C0B22D6C" x:Name="OverviewNavigationItem" Content="概览" Tag="overview" IsSelected="True"><NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
         <NavigationViewItem local:Localized.Uid="Loc_D1F5A968DF" x:Name="DevicesNavigationItem" Content="设备" Tag="devices"><NavigationViewItem.Icon><SymbolIcon Symbol="AllApps" /></NavigationViewItem.Icon></NavigationViewItem>
-        <NavigationViewItem local:Localized.Uid="MacroNavigationItem" Content="宏" Tag="macros"><NavigationViewItem.Icon><FontIcon Glyph="&#xE765;" FontFamily="Segoe Fluent Icons" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="MacroNavigationItem" Content="宏" Tag="macros"><NavigationViewItem.Icon><FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
         <NavigationViewItem local:Localized.Uid="Loc_8C8F3B71B8" Content="配置" Tag="profiles"><NavigationViewItem.Icon><SymbolIcon Symbol="Library" /></NavigationViewItem.Icon></NavigationViewItem>
         <NavigationViewItem local:Localized.Uid="Loc_D1F42581D7" Content="诊断" Tag="diagnostics"><NavigationViewItem.Icon><SymbolIcon Symbol="Document" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.MenuItems>
       <NavigationView.FooterMenuItems>
-        <NavigationViewItem local:Localized.Uid="SettingsNavigationItem" Content="设置" Tag="settings"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontFamily="Segoe Fluent Icons" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="SettingsNavigationItem" Content="设置" Tag="settings"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.FooterMenuItems>
       <NavigationView.Content>
         <Grid>
@@ -104,7 +104,7 @@
                         <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
                           <Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13">
                             <Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
-                              <FontIcon Glyph="{Binding IconGlyph}" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                              <FontIcon Glyph="{Binding IconGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
                               <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
@@ -129,11 +129,11 @@
                 <StackPanel Spacing="8">
                 <ItemsRepeater x:Name="DeviceCardsRepeater" ItemsSource="{Binding PrimaryDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater>
                 <StackPanel x:Name="AdditionalDevicesSection" Visibility="{Binding AdditionalDevicesVisibility}" Spacing="0">
-                  <Button x:Name="AdditionalDevicesExpandButton" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="展开剩余设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="展开剩余设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
+                  <Button x:Name="AdditionalDevicesExpandButton" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="展开剩余设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="展开剩余设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
                   <StackPanel x:Name="AdditionalDevicesPanel" Visibility="Collapsed" Spacing="8">
                   <ItemsRepeater ItemsSource="{Binding AdditionalDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater>
                   </StackPanel>
-                  <Button x:Name="AdditionalDevicesCollapseButton" Visibility="Collapsed" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,8,0,0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="收起设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70E;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="收起设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
+                  <Button x:Name="AdditionalDevicesCollapseButton" Visibility="Collapsed" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,8,0,0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="收起设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="收起设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
                 </StackPanel>
                 </StackPanel>
                 <StackPanel x:Name="OpenRazerKrakenPanel" DataContext="{Binding SelectedOpenRazerKraken}" Visibility="Collapsed" Spacing="16">
@@ -694,7 +694,7 @@
                         <TextBlock local:Localized.Uid="MacroListTitle" Text="宏列表" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
                           <Button x:Name="MacroMoreButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="更多" AutomationProperties.Name="更多">
-                            <FontIcon Glyph="&#xE712;" FontFamily="Segoe Fluent Icons" FontSize="12" />
+                            <FontIcon Glyph="&#xE712;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
                             <Button.Flyout>
                               <MenuFlyout>
                                 <MenuFlyoutItem local:Localized.Uid="MacroImportButton" Text="导入…" Click="ImportMacroClick" />
@@ -702,7 +702,7 @@
                               </MenuFlyout>
                             </Button.Flyout>
                           </Button>
-                          <Button x:Name="MacroNewButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CreateMacroClick" ToolTipService.ToolTip="新建宏" AutomationProperties.Name="新建宏"><FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" /></Button>
+                          <Button x:Name="MacroNewButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CreateMacroClick" ToolTipService.ToolTip="新建宏" AutomationProperties.Name="新建宏"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                         </StackPanel>
                       </Grid>
                       <ListView x:Name="MacroListView" Grid.Row="1" ItemsSource="{Binding Macros}" SelectedItem="{Binding SelectedMacro, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="150">
@@ -747,7 +747,7 @@
                             <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Text="{Binding SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
                           </StackPanel>
-                          <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12" /></Button>
+                          <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                         </Grid>
                         <Button x:Name="MacroOpenEditorButton" local:Localized.Uid="MacroOpenEditorButton" Content="打开编辑器" Click="OpenMacroEditorWindowClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding CanEditMacro}" />
                       </StackPanel>

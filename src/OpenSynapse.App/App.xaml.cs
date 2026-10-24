@@ -63,6 +63,11 @@ public partial class App : Application
         }
 
         InitializeComponent();
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+        {
+            // Segoe Fluent Icons ships with Windows 11; Windows 10 has the older MDL2 set.
+            Resources["IconFontFamily"] = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets");
+        }
         UnhandledException += (_, args) =>
         {
             _diagnosticLog.TryWrite("unhandled", args.Exception.ToString());

@@ -41,7 +41,7 @@ public sealed partial class MacroEditorWindow : Window
         _viewModel = viewModel;
         _scale = scale;
         RootLayout.DataContext = viewModel;
-        SystemBackdrop = new MicaBackdrop();
+        WindowBackdrop.ApplyMicaIfSupported(this);
         var appIconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {
