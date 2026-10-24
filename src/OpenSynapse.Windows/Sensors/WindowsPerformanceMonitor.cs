@@ -14,6 +14,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
     private readonly CpuHardwareMonitor _cpuHardware = new();
     private readonly WindowsGpuActivityReader _gpuActivity = new();
     private readonly AmdAdlTelemetryReader _amdGpu = new();
+    private readonly IntelIgclTelemetryReader _intelGpu = new();
     private readonly SemaphoreSlim _nvidiaSampleGate = new(1, 1);
     private NvidiaGpuSample? _nvidiaSample;
     private DateTimeOffset _nvidiaSampleAt = DateTimeOffset.MinValue;
@@ -48,6 +49,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var windowsNvidia = WindowsGpuActivityReader.SelectNvidia(windowsGpus);
         var selected = nvidiaActive ? windowsNvidia : integrated;
         var amd = selected?.VendorId == 0x1002 ? _amdGpu.Read() : default;
+        var intel = selected?.VendorId == 0x8086 ? _intelGpu.Read() : default;
         var gpuName = nvidia?.Name ?? selected?.Name ?? "GPU";
         var gpuUsage = nvidia?.UsagePercent ?? selected?.UsagePercent;
 
@@ -59,9 +61,9 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             cpu.ClockMegahertz,
             gpuName,
             gpuUsage,
-            nvidia?.TemperatureCelsius ?? amd.TemperatureCelsius ?? selected?.TemperatureCelsius,
-            nvidia?.PowerWatts ?? amd.PowerWatts,
-            nvidia?.ClockMegahertz ?? amd.ClockMegahertz,
+            nvidia?.TemperatureCelsius ?? amd.TemperatureCelsius ?? intel.TemperatureCelsius ?? selected?.TemperatureCelsius,
+            nvidia?.PowerWatts ?? amd.PowerWatts ?? intel.PowerWatts,
+            nvidia?.ClockMegahertz ?? amd.ClockMegahertz ?? intel.ClockMegahertz,
             nvidia?.MemoryUsedMebibytes ?? selected?.MemoryUsedMebibytes,
             nvidia?.MemoryTotalMebibytes ?? selected?.MemoryTotalMebibytes,
             memoryUsed,
@@ -87,7 +89,9 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var selected = includeGpu ? _gpuActivity.ReadSelectedTemperature() : null;
         var gpu = selected?.VendorId == 0x1002
             ? _amdGpu.Read().TemperatureCelsius ?? selected?.TemperatureCelsius
-            : selected?.TemperatureCelsius;
+            : selected?.VendorId == 0x8086
+                ? _intelGpu.Read().TemperatureCelsius ?? selected?.TemperatureCelsius
+                : selected?.TemperatureCelsius;
         if (includeGpu && selected is { VendorId: 0x10DE } && gpu is null)
         {
             gpu = (await ReadNvidiaGpuThrottledAsync(cancellationToken).ConfigureAwait(false))
@@ -100,6 +104,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
     {
         _gpuActivity.Dispose();
         _amdGpu.Dispose();
+        _intelGpu.Dispose();
         _cpuHardware.Dispose();
         _nvidiaSampleGate.Dispose();
     }
