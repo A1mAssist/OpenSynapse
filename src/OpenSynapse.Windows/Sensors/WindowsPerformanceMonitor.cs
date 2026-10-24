@@ -52,6 +52,11 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var intel = selected?.VendorId == 0x8086 ? _intelGpu.Read() : default;
         var gpuName = nvidia?.Name ?? selected?.Name ?? "GPU";
         var gpuUsage = nvidia?.UsagePercent ?? selected?.UsagePercent;
+        var gpuTemperature = nvidia?.TemperatureCelsius ?? amd.TemperatureCelsius ?? intel.TemperatureCelsius;
+        if (gpuTemperature is null)
+        {
+            gpuTemperature = _cpuHardware.ReadGpuTemperatureCelsius(VendorHint(selected?.VendorId));
+        }
 
         return new PerformanceSnapshot(
             _cpuName.Trim(),
@@ -61,7 +66,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             cpu.ClockMegahertz,
             gpuName,
             gpuUsage,
-            nvidia?.TemperatureCelsius ?? amd.TemperatureCelsius ?? intel.TemperatureCelsius ?? selected?.TemperatureCelsius,
+            gpuTemperature ?? selected?.TemperatureCelsius,
             nvidia?.PowerWatts ?? amd.PowerWatts ?? intel.PowerWatts,
             nvidia?.ClockMegahertz ?? amd.ClockMegahertz ?? intel.ClockMegahertz,
             nvidia?.MemoryUsedMebibytes ?? selected?.MemoryUsedMebibytes,
@@ -97,6 +102,10 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             gpu = (await ReadNvidiaGpuThrottledAsync(cancellationToken).ConfigureAwait(false))
                 ?.TemperatureCelsius;
         }
+        if (includeGpu && gpu is null)
+        {
+            gpu = _cpuHardware.ReadGpuTemperatureCelsius(VendorHint(selected?.VendorId));
+        }
         return (cpu, gpu);
     }
 
@@ -108,6 +117,14 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         _cpuHardware.Dispose();
         _nvidiaSampleGate.Dispose();
     }
+
+    private static string? VendorHint(uint? vendorId) => vendorId switch
+    {
+        0x8086 => "Intel",
+        0x10DE => "NVIDIA",
+        0x1002 => "AMD",
+        _ => null,
+    };
 
     private double? ReadCpuUsage()
     {

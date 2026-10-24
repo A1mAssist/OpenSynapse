@@ -63,7 +63,7 @@ public sealed class CpuTemperatureSensorTests
     {
         var cpu = new Sensor(1, 0, "CPU [#0]: Intel Core Ultra 5 225H", "CPU [#0]");
         var gpu = new Sensor(2, 0, "GPU [#0]: Intel Arc 130T", "GPU [#0]");
-        var selected = HwinfoCpuTemperatureReader.SelectCpuTemperature(
+        var selected = HwinfoSensorReader.SelectCpuTemperature(
         [
             new SensorReading(1, SensorType.Temp, "Core Max", "Core Max", "°C", 70, 0, 0, 0, cpu),
             new SensorReading(2, SensorType.Temp, "CPU Package", "CPU Package", "°C", 65, 0, 0, 0, cpu),
@@ -77,12 +77,53 @@ public sealed class CpuTemperatureSensorTests
     public void SelectCpuTemperatureUsesCoreMaxWhenPackageIsMissing()
     {
         var cpu = new Sensor(1, 0, "CPU [#0]: Intel Core Ultra 5 225H", "CPU [#0]");
-        var selected = HwinfoCpuTemperatureReader.SelectCpuTemperature(
+        var selected = HwinfoSensorReader.SelectCpuTemperature(
         [
             new SensorReading(1, SensorType.Temp, "Core 0", "Core 0", "°C", 60, 0, 0, 0, cpu),
             new SensorReading(2, SensorType.Temp, "Core Max", "Core Max", "°C", 72, 0, 0, 0, cpu),
         ]);
 
         Assert.Equal(72, selected);
+    }
+
+    [Fact]
+    public void SelectGpuTemperaturePrefersStandardGpuReadingOverCpuAndHotSpot()
+    {
+        var cpu = new Sensor(1, 0, "CPU [#0]: Intel Core Ultra 5 225H", "CPU [#0]");
+        var gpu = new Sensor(2, 0, "GPU [#0]: Intel Arc 130T", "GPU [#0]");
+        var selected = HwinfoSensorReader.SelectGpuTemperature(
+        [
+            new SensorReading(1, SensorType.Temp, "CPU Package", "CPU Package", "°C", 65, 0, 0, 0, cpu),
+            new SensorReading(2, SensorType.Temp, "GPU Hot Spot", "GPU Hot Spot", "°C", 84, 0, 0, 0, gpu),
+            new SensorReading(3, SensorType.Temp, "GPU Temperature", "GPU Temperature", "°C", 61, 0, 0, 0, gpu),
+        ], "Intel");
+
+        Assert.Equal(61, selected);
+    }
+
+    [Fact]
+    public void SelectGpuTemperaturePrefersTheAdapterWindowsIsDriving()
+    {
+        var intel = new Sensor(1, 0, "GPU [#0]: Intel Arc 130T", "GPU [#0]");
+        var nvidia = new Sensor(2, 0, "GPU [#1]: NVIDIA GeForce RTX 4060", "GPU [#1]");
+        var selected = HwinfoSensorReader.SelectGpuTemperature(
+        [
+            new SensorReading(1, SensorType.Temp, "GPU Temperature", "GPU Temperature", "°C", 58, 0, 0, 0, intel),
+            new SensorReading(2, SensorType.Temp, "GPU Temperature", "GPU Temperature", "°C", 72, 0, 0, 0, nvidia),
+        ], "NVIDIA");
+
+        Assert.Equal(72, selected);
+    }
+
+    [Fact]
+    public void SelectGpuTemperatureReturnsNullWithoutAGpuSensor()
+    {
+        var cpu = new Sensor(1, 0, "CPU [#0]: Intel Core Ultra 5 225H", "CPU [#0]");
+        var selected = HwinfoSensorReader.SelectGpuTemperature(
+        [
+            new SensorReading(1, SensorType.Temp, "CPU Package", "CPU Package", "°C", 65, 0, 0, 0, cpu),
+        ], "Intel");
+
+        Assert.Null(selected);
     }
 }
