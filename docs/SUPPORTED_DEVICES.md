@@ -41,7 +41,7 @@ Kraken support uses a separate 37-byte Output Report path. Audio, microphone, EQ
 | BlackShark V3 Pro (USB) | `101C` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
 | BlackShark V3 Pro (2.4 GHz) | `101B` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
 
-OpenRazer ships no BlackShark driver, so there is no upstream device list to follow. OpenSynapse therefore selects the control collection by shape rather than by a fixed product id: Razer vendor `1532`, collection page `FF13`/`FF14`, usage `1`, and an output report of at least 64 bytes. Verified ids are `101B` for the 2.4 GHz dongle and `101C` for the PlayStation-compatible USB build; the wired build answers on the same single `FF14` collection. The transport byte does not distinguish wired from wireless on these devices, and every observed variant answers on `0x80`.
+OpenRazer ships no BlackShark driver, so there is no upstream device list to follow. The control collection has the shape Razer vendor `1532`, collection page `FF13`/`FF14`, usage `1`, and an output report of at least 64 bytes. That shape is not exclusive to BlackShark: Kraken V4 (`056B`/`056C`) enumerates with the same shape. Selection therefore also requires the HID product name to contain `BlackShark`, or the product id to be one of the verified `101B` (2.4 GHz) / `101C` (USB) values. The transport byte does not distinguish wired from wireless on these devices, and every observed variant answers on `0x80`.
 
 The headset uses its own 64-byte Report `0x02` channel. Queries run only when the device page is opened or refreshed; OpenSynapse does not poll battery at a fixed interval. EQ, microphone gain, firmware updates, and indicator-LED modes are outside this first release.
 
