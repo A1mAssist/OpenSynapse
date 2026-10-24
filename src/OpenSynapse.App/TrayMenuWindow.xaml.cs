@@ -158,21 +158,25 @@ public sealed partial class TrayMenuWindow : Window
         _batteryRows.Clear();
         foreach (var device in devices)
         {
-            var icon = new FontIcon
+            var icon = new Viewbox
             {
-                Glyph = device.Glyph,
-                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe Fluent Icons"),
-                FontSize = 14,
                 Width = 16,
-                Margin = new Thickness(6, 0, 0, 0),
+                Height = 16,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Center,
+                Child = new FontIcon
+                {
+                    Glyph = device.Glyph,
+                    FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["IconFontFamily"],
+                    FontSize = 14,
+                },
             };
             var name = new TextBlock
             {
                 Text = device.Name,
                 FontSize = 13,
                 FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Microsoft YaHei UI"),
+                Margin = new Thickness(12, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var value = new TextBlock
@@ -186,7 +190,7 @@ public sealed partial class TrayMenuWindow : Window
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var layout = new Grid();
-            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             layout.Children.Add(icon);
