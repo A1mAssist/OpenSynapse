@@ -23,6 +23,7 @@ public sealed record RazerHeadsetAudioState(
     bool? NoiseSuppression,
     RazerAncState? AncState,
     byte? AncLevel,
+    byte? BrightnessPercent,
     IReadOnlyList<string> Errors);
 
 /// <summary>
@@ -179,6 +180,11 @@ public sealed class RazerHeadsetAudioService
         var noise = await ProbeAsync(
             "noise suppression", txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
             RazerHeadsetAudioProtocol.ReadNoiseSuppression, errors, cancellationToken).ConfigureAwait(false);
+        // Only the LED-matrix models (Seiren Emote) answer the class 0x10 brightness
+        // command; every other audio device skips it and keeps the card hidden.
+        var brightness = await ProbeAsync(
+            "lighting brightness", RazerChromaStandardProtocol.GetBrightness,
+            RazerChromaStandardProtocol.ReadBrightnessPercent, errors, cancellationToken).ConfigureAwait(false);
 
         IReadOnlyList<byte>? bands = null;
         try
@@ -223,7 +229,52 @@ public sealed class RazerHeadsetAudioService
             noise.Ok ? noise.Value : null,
             ancState,
             ancLevel,
+            brightness.Ok ? brightness.Value : null,
             errors);
+    }
+
+    /// <summary>
+    /// LED brightness of the devices whose microphone body carries a Chroma matrix
+    /// (the Seiren Emote). Class 0x10 stores 0..255 and the middleware shows a percentage.
+    /// </summary>
+    public async Task SetBrightnessAsync(byte percent, CancellationToken cancellationToken = default)
+    {
+        if (percent > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(percent), "Brightness must be between 0 and 100.");
+        }
+
+        var previous = RazerChromaStandardProtocol.ReadBrightnessPercent(
+            await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
+                .ConfigureAwait(false));
+        if (previous == percent)
+        {
+            return;
+        }
+
+        try
+        {
+            await QueryAsync(
+                transaction => RazerChromaStandardProtocol.SetBrightness(
+                    transaction, RazerChromaStandardProtocol.ToBrightnessLevel(percent)),
+                "set brightness",
+                cancellationToken).ConfigureAwait(false);
+            var actual = RazerChromaStandardProtocol.ReadBrightnessPercent(
+                await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read back brightness", cancellationToken)
+                    .ConfigureAwait(false));
+            if (Math.Abs(actual - percent) > 1)
+            {
+                throw new InvalidOperationException($"Brightness readback was {actual}%, expected {percent}%.");
+            }
+        }
+        catch
+        {
+            await TryRestoreAsync(
+                transaction => RazerChromaStandardProtocol.SetBrightness(
+                    transaction, RazerChromaStandardProtocol.ToBrightnessLevel(previous)),
+                "restore brightness").ConfigureAwait(false);
+            throw;
+        }
     }
 
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default)

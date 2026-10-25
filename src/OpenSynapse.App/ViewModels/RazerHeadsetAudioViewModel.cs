@@ -77,6 +77,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     private bool _hasEqBands;
     private bool _hasBass;
     private bool _hasAnc;
+    private bool _hasBrightness;
+    private double _brightness = 100;
 
     public RazerHeadsetAudioViewModel(
         RazerHeadsetAudioConnection connection,
@@ -99,6 +101,22 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     public Microsoft.UI.Xaml.Visibility LightingVisibility => Lighting is null
         ? Microsoft.UI.Xaml.Visibility.Collapsed
         : Microsoft.UI.Xaml.Visibility.Visible;
+
+    /// <summary>Seiren Emote style LED matrix brightness, shown only when the device answers.</summary>
+    public double Brightness
+    {
+        get => _brightness;
+        set
+        {
+            if (!SetField(ref _brightness, Math.Clamp(value, 0, 100))) return;
+            OnPropertyChanged(nameof(BrightnessText));
+        }
+    }
+
+    public string BrightnessText => $"{Math.Round(Brightness)}%";
+
+    public Microsoft.UI.Xaml.Visibility BrightnessVisibility =>
+        _hasBrightness ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public string Name => _connection.Name;
     public string CategoryText => AppStrings.Text(
@@ -270,6 +288,11 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
             : Task.CompletedTask;
     }
 
+    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(
+            (service, token) => service.SetBrightnessAsync((byte)Math.Round(Brightness), token),
+            cancellationToken);
+
     public Task ApplyBassAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync((service, token) => service.SetBassAsync((byte)Math.Round(Bass), token), cancellationToken);
 
@@ -386,11 +409,18 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(AncVisibility));
         }
         if (state.AncLevel is byte level) AncLevel = level;
+        if (state.BrightnessPercent is byte brightness)
+        {
+            Brightness = brightness;
+            _hasBrightness = true;
+            OnPropertyChanged(nameof(BrightnessVisibility));
+        }
     }
 
     private static bool HasAnyValue(RazerHeadsetAudioState state) =>
         state.BatteryPercent is not null || state.EqPreset is not null || state.EqBands is not null ||
-        state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null;
+        state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null ||
+        state.BrightnessPercent is not null;
 
     private bool BeginOperation()
     {
