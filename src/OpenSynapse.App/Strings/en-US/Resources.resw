@@ -2158,6 +2158,7 @@
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>Static</value></data>
   <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>Breathing</value></data>
   <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
+  <data name="RazerMicrophoneCategory" xml:space="preserve"><value>Microphone</value></data>
 </root>
 
 

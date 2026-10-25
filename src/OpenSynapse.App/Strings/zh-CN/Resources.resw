@@ -2570,6 +2570,7 @@
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>
   <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>呼吸</value></data>
   <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
+  <data name="RazerMicrophoneCategory" xml:space="preserve"><value>麦克风</value></data>
 </root>
 
 

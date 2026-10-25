@@ -6,6 +6,10 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 键盘页再扩 12 款：BlackWidow X / V4 Pro 75% / V4 Low-profile（含 TKL）、Huntsman Essential / V3 X / V3 Pro Low-profile、Reclusa Mini 与 Reclusa X Mini、Pro Type Ergo、Tartarus V2 Pro、Turret Keyboard。能应答的功能（固件、序列号、游戏模式、轮询率、电量）自动出现，其余隐藏。
+- 音频页再扩 5 款：Seiren V2 Pro / V2 X / V3 Mini 麦克风、Leviathan V2 Pro 音箱和 Kraken V4 X 耳机，并新增“麦克风”设备分类。
+- The keyboard page now covers 12 more models: BlackWidow X, V4 Pro 75%, V4 Low-profile (including TKL), Huntsman Essential, V3 X and V3 Pro Low-profile, Reclusa Mini and Reclusa X Mini, Pro Type Ergo, Tartarus V2 Pro, and the Turret keyboard. Features the device answers (firmware, serial, game mode, polling rate, battery) appear automatically; the rest stay hidden.
+- The audio page now covers 5 more devices: Seiren V2 Pro / V2 X / V3 Mini microphones, the Leviathan V2 Pro speaker, and the Kraken V4 X headset, plus a new microphone device category.
 - 新增通用灯光页，覆盖 38 款此前没有页面的设备：Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 等鼠标，Key Light、Aether 灯具系列，Chroma ARGB 控制器，Thunderbolt 5 Dock、Core X V2、显示器支架等配件。可选择效果（关闭/静态/呼吸/光谱）、亮度和颜色，写入后读回校验。与 OpenRazer 目录、音频页、键盘页和 320 字节 ARGB 通道自动去重。
 - Added a shared lighting page for 38 devices that had no page: Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 mice, the Key Light and Aether lamp family, Chroma ARGB controllers, and accessories such as Thunderbolt 5 Dock, Core X V2 and monitor stands. It offers effect (off/static/breathing/spectrum), brightness and colour, verified by reading the value back, and skips anything already owned by the OpenRazer catalogue, audio page, keyboard page or the 320-byte ARGB channel.
 - 键盘页新增灯光卡：效果（关闭/静态/呼吸/光谱）、亮度与一到两种颜色，写入后读回校验。底层实现了雷云 class `0x10` 的 Chroma 命令（效果、亮度），这套命令同时被 51 款鼠标、灯具、ARGB 控制器和扩展坞使用，后续页面可以直接复用。

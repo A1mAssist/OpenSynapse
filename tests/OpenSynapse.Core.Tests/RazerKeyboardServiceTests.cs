@@ -65,6 +65,32 @@ public sealed class RazerKeyboardServiceTests
         Assert.Contains(transport.Requests, request => request[8] == 0x0E && request[9] == 0x08);
     }
 
+    [Theory]
+    [InlineData(0x023E)]
+    [InlineData(0x024F)]
+    [InlineData(0x0250)]
+    [InlineData(0x02B1)]
+    [InlineData(0x02B3)]
+    [InlineData(0x02C4)]
+    [InlineData(0x02CC)]
+    [InlineData(0x02D4)]
+    [InlineData(0x02E3)]
+    [InlineData(0x02E6)]
+    [InlineData(0x02EB)]
+    [InlineData(0x02F4)]
+    public void KeyboardPage_CoversTheRemainingKeyboardModels(ushort productId) =>
+        Assert.True(RazerKeyboardService.IsSupported(productId));
+
+    [Fact]
+    public void KeyboardPage_DoesNotClaimWhatAnotherPageOwns()
+    {
+        foreach (var productId in RazerKeyboardService.Products.Keys)
+        {
+            Assert.False(RazerHeadsetAudioService.IsSupported(productId), $"audio 0x{productId:X4}");
+            Assert.Null(OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId));
+        }
+    }
+
     private sealed class FakeTransport(Func<byte[], byte[]> handler) : IRazerFeatureTransport
     {
         public List<byte[]> Requests { get; } = [];
