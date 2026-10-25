@@ -293,14 +293,15 @@ public sealed partial class MainViewModel
 
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
+        var modes = _blade.PerformanceModes;
         if (_suppressBladePerformanceApply ||
             !_blade._canSetBladePerformanceMode ||
-            BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= BladePerformanceModes.Length)
+            BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= modes.Count)
         {
             return;
         }
 
-        var requested = BladePerformanceModes[BladePerformanceModeIndex];
+        var requested = modes[BladePerformanceModeIndex];
         bool coolingPadConnected;
         try
         {
@@ -344,11 +345,30 @@ public sealed partial class MainViewModel
                 _deviceDescriptors, requested, cancellationToken);
             SetBladePerformanceMode(actual);
             EditablePerformanceBladeProfile.PerformanceMode = (byte)actual;
+            ClearFixedFanWhenLeavingCustom(actual);
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
             BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex);
+    }
+
+    private void ClearFixedFanWhenLeavingCustom(BladePerformanceMode mode)
+    {
+        if (mode == BladePerformanceMode.Custom ||
+            !BladeModelCapabilities.FixedFanRequiresCustomMode(_blade._bladeProductId) ||
+            EditablePerformanceBladeProfile.FanMode is null)
+        {
+            return;
+        }
+
+        var target = EditablePerformanceBladeProfile;
+        target.FanMode = null;
+        target.FanTargetRpm = null;
+        target.FanCurve = null;
+        _pendingMode = null;
+        RaiseBladeFanModeSelection();
+        OnPropertyChanged(nameof(BladeFanCurveActive));
     }
 
     public async Task ApplyBladeChargeLimitAsync(CancellationToken cancellationToken = default)
@@ -533,27 +553,29 @@ public sealed partial class MainViewModel
                 throw new InvalidOperationException(AppStrings.Text("Text_2263C356"));
             }
 
-            var cycleModes = _bladePerformanceCycleModes;
+            var modes = _blade.PerformanceModes;
+            var cycleModes = _bladePerformanceCycleModes.Where(modes.Contains).ToHashSet();
             if (!await RazerCoolingPad.IsConnectedAsync(cancellationToken))
             {
-                cycleModes = [.. cycleModes.Where(mode => mode != BladePerformanceMode.Hyperboost)];
-                if (cycleModes.Count == 0)
-                {
-                    cycleModes = [BladePerformanceMode.Performance];
-                }
+                cycleModes.Remove(BladePerformanceMode.Hyperboost);
+            }
+            if (cycleModes.Count == 0)
+            {
+                cycleModes.Add(modes[0]);
             }
 
             var nextMode = BladePerformanceModeCycle.GetNext(
-                BladePerformanceModes[_blade._confirmedBladePerformanceModeIndex],
-                BladePerformanceModes,
+                modes[_blade._confirmedBladePerformanceModeIndex],
+                modes,
                 cycleModes);
-            BladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, nextMode);
+            BladePerformanceModeIndex = modes.ToList().IndexOf(nextMode);
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 _deviceDescriptors,
-                BladePerformanceModes[BladePerformanceModeIndex],
+                modes[BladePerformanceModeIndex],
                 cancellationToken);
             SetBladePerformanceMode(actual);
             (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).PerformanceMode = (byte)actual;
+            ClearFixedFanWhenLeavingCustom(actual);
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);
@@ -1014,9 +1036,23 @@ public sealed partial class MainViewModel
         }
     }
     public string BladePerformanceModeText { get => _blade._bladePerformanceModeText; private set => SetField(ref _blade._bladePerformanceModeText, value); }
-    public IReadOnlyList<string> BladePerformanceModeOptions => _bladeCoolingPadConnected
-        ? AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25", "HyperBoost")
-        : AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25");
+    public IReadOnlyList<string> BladePerformanceModeOptions =>
+        _blade.PerformanceModes
+            .Where(mode => mode != BladePerformanceMode.Hyperboost || _bladeCoolingPadConnected)
+            .Select(mode => AppStrings.Text(BladePerformanceModeTextKey(mode)))
+            .ToArray();
+
+    private static string BladePerformanceModeTextKey(BladePerformanceMode mode) => mode switch
+    {
+        BladePerformanceMode.Balanced => "Text_9753B259",
+        BladePerformanceMode.Performance => "Text_C1DB7AE1",
+        BladePerformanceMode.BatterySaver => "Text_EE43F0B1",
+        BladePerformanceMode.Custom => "Text_598C5804",
+        BladePerformanceMode.Silent => "Text_60E54E25",
+        BladePerformanceMode.BalancedDc => "Text_A8CF66DD",
+        BladePerformanceMode.Hyperboost => "HyperBoost",
+        _ => "Text_C1DB7AE1",
+    };
     public int BladePerformanceModeIndex { get => _blade._bladePerformanceModeIndex; set => SetField(ref _blade._bladePerformanceModeIndex, value); }
     public bool CanSetBladePerformanceMode
     {
@@ -1200,6 +1236,17 @@ public sealed partial class MainViewModel
     /// </summary>
     public void RefreshBladeModelCapabilityUi()
     {
+        var performanceModes = _blade.PerformanceModes;
+        _blade._bladePerformanceModeIndex = -1;
+        _blade._confirmedBladePerformanceModeIndex = -1;
+        OnPropertyChanged(nameof(BladePerformanceModeIndex));
+        _bladePerformanceCycleModes.RemoveWhere(mode => !performanceModes.Contains(mode));
+        if (_bladePerformanceCycleModes.Count == 0)
+        {
+            _bladePerformanceCycleModes = [.. performanceModes];
+        }
+        OnPropertyChanged(nameof(BladePerformanceCycleModes));
+        OnPropertyChanged(nameof(BladePerformanceModeOptions));
         OnPropertyChanged(nameof(BladeCpuBoostOptions));
         OnPropertyChanged(nameof(BladeLightingCardVisibility));
         OnPropertyChanged(nameof(BladeLightingModeOptions));
@@ -1229,6 +1276,9 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeFanFixedVisibility));
         OnPropertyChanged(nameof(BladeFanCurveVisibility));
     }
+
+    internal bool IsBladePerformanceModeAvailable(BladePerformanceMode mode) =>
+        _blade.PerformanceModes.Contains(mode);
 
     /// <summary>Collapses the Max Fan column entirely on models without that switch.</summary>
     public Visibility BladeMaxFanVisibility => _blade.SupportsMaxFan

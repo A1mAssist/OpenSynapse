@@ -50,11 +50,17 @@ public sealed partial class MainViewModel
         set => SetField(ref _bladeFanFixedRpm, SnapBladeFanFixedRpm(value));
     }
 
-    private static int SnapBladeFanFixedRpm(int value)
+    public int BladeFanFixedMinimumRpm =>
+        BladeModelCapabilities.MinimumFanTargetRpmFor(_blade._bladeProductId);
+
+    public int BladeFanFixedMaximumRpm =>
+        BladeModelCapabilities.MaximumFanTargetRpmFor(_blade._bladeProductId);
+
+    private int SnapBladeFanFixedRpm(int value)
     {
-        var clamped = Math.Clamp(value, BladeFanLimits.MinimumRpm, BladeFanLimits.MaximumRpm);
-        return BladeFanLimits.MinimumRpm +
-            ((clamped - BladeFanLimits.MinimumRpm) / BladeFanLimits.StepRpm) * BladeFanLimits.StepRpm;
+        var minimum = BladeFanFixedMinimumRpm;
+        var clamped = Math.Clamp(value, minimum, BladeFanFixedMaximumRpm);
+        return minimum + ((clamped - minimum) / BladeFanLimits.StepRpm) * BladeFanLimits.StepRpm;
     }
 
     public IReadOnlyList<string> BladeFanControlModeOptions =>
@@ -127,8 +133,15 @@ public sealed partial class MainViewModel
         if (resolved.FanTargetRpm is int targetRpm)
         {
             _bladeFanFixedRpm = SnapBladeFanFixedRpm(targetRpm);
-            OnPropertyChanged(nameof(BladeFanFixedRpm));
         }
+        else
+        {
+            _bladeFanFixedRpm = Math.Max(_bladeFanFixedRpm, BladeFanFixedMinimumRpm);
+        }
+
+        OnPropertyChanged(nameof(BladeFanFixedRpm));
+        OnPropertyChanged(nameof(BladeFanFixedMinimumRpm));
+        OnPropertyChanged(nameof(BladeFanFixedMaximumRpm));
 
         _bladeFanCurveEditor = new BladeFanCurveEditorViewModel(TryCreateCurve(resolved));
         OnPropertyChanged(nameof(BladeFanCurveEditor));
