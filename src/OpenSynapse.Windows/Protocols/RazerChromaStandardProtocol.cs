@@ -19,6 +19,7 @@ public static class RazerChromaStandardProtocol
 {
     public const byte CommandClass = 0x10;
     public const byte BatteryCommandClass = 0x07;
+    public const byte DeviceCommandClass = 0x00;
     public const int MaxColors = 2;
 
     public static byte[] GetEffect(byte transactionId) =>
@@ -96,6 +97,32 @@ public static class RazerChromaStandardProtocol
         var data = Arguments(response);
         Require(data, 1);
         return data[0] != 0;
+    }
+    /// <summary>Identity lives on class 0x00, the same commands the keyboard page speaks.</summary>
+    public static byte[] GetFirmware(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(transactionId, 4, DeviceCommandClass, 0x87, ReadOnlySpan<byte>.Empty);
+
+    public static byte[] GetSerialNumber(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(transactionId, 22, DeviceCommandClass, 0x82, ReadOnlySpan<byte>.Empty);
+
+    public static System.Version ReadFirmware(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        Require(data, 2);
+        return new System.Version(data[0], data[1]);
+    }
+
+    public static string ReadSerialNumber(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        Require(data, 1);
+        var end = 0;
+        while (end < data.Length && data[end] != 0 && data[end] is >= 0x20 and < 0x7F)
+        {
+            end++;
+        }
+
+        return System.Text.Encoding.ASCII.GetString(data[..end]).Trim();
     }
     public static byte ToBrightnessLevel(byte percent) =>
         (byte)Math.Round(Math.Clamp(percent, (byte)0, (byte)100) * 255d / 100d);

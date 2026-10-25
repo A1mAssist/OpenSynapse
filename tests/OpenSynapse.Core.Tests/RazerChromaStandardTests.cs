@@ -1,3 +1,4 @@
+using System.Text;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
@@ -130,6 +131,35 @@ public sealed class RazerChromaStandardTests
     }
 
     [Fact]
+    public async Task ReadStateReportsFirmwareAndSerialWhenAnswered()
+    {
+        var service = new RazerChromaStandardService(
+            new FakeTransport(new ChromaSimulator { Brightness = 0x80, Firmware = new Version(1, 2), Serial = "PM123456" }.Handle),
+            "test",
+            TimeSpan.Zero);
+
+        var state = await service.ReadStateAsync();
+
+        Assert.Equal(new Version(1, 2), state.Firmware);
+        Assert.Equal("PM123456", state.SerialNumber);
+        Assert.Empty(state.Errors);
+    }
+
+    [Fact]
+    public async Task ReadStateHidesIdentityWhenTheDeviceDoesNotAnswer()
+    {
+        var service = new RazerChromaStandardService(
+            new FakeTransport(new ChromaSimulator { Brightness = 0x80, SupportsIdentity = false }.Handle),
+            "test",
+            TimeSpan.Zero);
+
+        var state = await service.ReadStateAsync();
+
+        Assert.Null(state.Firmware);
+        Assert.Null(state.SerialNumber);
+        Assert.Empty(state.Errors);
+    }
+    [Fact]
     public async Task ReadStateReportsBatteryWhenTheDeviceAnswers()
     {
         var service = new RazerChromaStandardService(
@@ -213,10 +243,28 @@ public sealed class RazerChromaStandardTests
         public byte BatteryRaw { get; set; } = 0x80;
         public bool Charging { get; set; } = true;
         public bool SupportsBattery { get; set; } = true;
+        public bool SupportsIdentity { get; set; } = true;
+        public Version Firmware { get; set; } = new(1, 2);
+        public string Serial { get; set; } = "PM123456";
         public bool IgnoreWrites { get; init; }
 
         public byte[] Handle(byte[] request)
         {
+            if (request[7] == 0x00)
+            {
+                if (!SupportsIdentity)
+                {
+                    throw new NotSupportedException("This device exposes no identity.");
+                }
+
+                return request[8] switch
+                {
+                    0x87 => Response(request, request[2], (byte)Firmware.Major, (byte)Firmware.Minor, 0, 0),
+                    0x82 => Response(request, request[2], Encoding.ASCII.GetBytes(Serial + "\0")),
+                    _ => throw new NotSupportedException($"Unexpected identity command 0x{request[8]:X2}."),
+                };
+            }
+
             if (request[7] == 0x07)
             {
                 if (!SupportsBattery)
