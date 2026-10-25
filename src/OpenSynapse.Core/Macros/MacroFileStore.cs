@@ -72,6 +72,11 @@ public static class MacroFileStore
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         var fullPath = Path.GetFullPath(filePath);
+        if (string.Equals(Path.GetExtension(fullPath), ".xml", StringComparison.OrdinalIgnoreCase))
+        {
+            return await MacroSynapseXml.ImportAsync(fullPath, cancellationToken);
+        }
+
         try
         {
             await using var stream = new FileStream(
