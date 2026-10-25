@@ -121,60 +121,33 @@ public sealed class RazerHeadsetAudioService
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
-        var firmware = await TryReadAsync(
-            "firmware",
-            txn => RazerHeadsetAudioProtocol.GetFirmware(txn),
-            RazerHeadsetAudioProtocol.ReadFirmware,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var battery = await TryReadAsync(
-            "battery",
-            txn => RazerHeadsetAudioProtocol.GetBatteryLevel(txn),
-            RazerHeadsetAudioProtocol.ReadBatteryLevel,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var charging = await TryReadAsync(
-            "charging",
-            txn => RazerHeadsetAudioProtocol.GetChargingStatus(txn),
-            RazerHeadsetAudioProtocol.ReadChargingStatus,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var preset = await TryReadAsync(
-            "EQ preset",
-            txn => RazerHeadsetAudioProtocol.GetEqPreset(txn),
-            RazerHeadsetAudioProtocol.ReadEqPreset,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var bass = await TryReadAsync(
-            "bass",
-            txn => RazerHeadsetAudioProtocol.GetBass(txn),
-            RazerHeadsetAudioProtocol.ReadBass,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var micMute = await TryReadAsync(
-            "microphone mute",
-            txn => RazerHeadsetAudioProtocol.GetMicMute(txn),
-            RazerHeadsetAudioProtocol.ReadMicMute,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var micVolume = await TryReadAsync(
-            "microphone volume",
-            txn => RazerHeadsetAudioProtocol.GetMicVolume(txn),
-            RazerHeadsetAudioProtocol.ReadMicVolume,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var source = await TryReadAsync(
-            "audio source",
-            txn => RazerHeadsetAudioProtocol.GetAudioSource(txn),
-            RazerHeadsetAudioProtocol.ReadAudioSource,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var noise = await TryReadAsync(
-            "noise suppression",
-            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
-            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
-            errors,
-            cancellationToken).ConfigureAwait(false);
+        var firmware = await ProbeAsync(
+            "firmware", RazerHeadsetAudioProtocol.GetFirmware, RazerHeadsetAudioProtocol.ReadFirmware,
+            errors, cancellationToken).ConfigureAwait(false);
+        var battery = await ProbeAsync(
+            "battery", RazerHeadsetAudioProtocol.GetBatteryLevel, RazerHeadsetAudioProtocol.ReadBatteryPercent,
+            errors, cancellationToken).ConfigureAwait(false);
+        var charging = await ProbeAsync(
+            "charging", RazerHeadsetAudioProtocol.GetChargingStatus, RazerHeadsetAudioProtocol.ReadChargingStatus,
+            errors, cancellationToken).ConfigureAwait(false);
+        var preset = await ProbeAsync(
+            "EQ preset", txn => RazerHeadsetAudioProtocol.GetEqPreset(txn), RazerHeadsetAudioProtocol.ReadEqPreset,
+            errors, cancellationToken).ConfigureAwait(false);
+        var bass = await ProbeAsync(
+            "bass", txn => RazerHeadsetAudioProtocol.GetBass(txn), RazerHeadsetAudioProtocol.ReadBass,
+            errors, cancellationToken).ConfigureAwait(false);
+        var micMute = await ProbeAsync(
+            "microphone mute", txn => RazerHeadsetAudioProtocol.GetMicMute(txn), RazerHeadsetAudioProtocol.ReadMicMute,
+            errors, cancellationToken).ConfigureAwait(false);
+        var micVolume = await ProbeAsync(
+            "microphone volume", txn => RazerHeadsetAudioProtocol.GetMicVolume(txn), RazerHeadsetAudioProtocol.ReadMicVolume,
+            errors, cancellationToken).ConfigureAwait(false);
+        var source = await ProbeAsync(
+            "audio source", txn => RazerHeadsetAudioProtocol.GetAudioSource(txn), RazerHeadsetAudioProtocol.ReadAudioSource,
+            errors, cancellationToken).ConfigureAwait(false);
+        var noise = await ProbeAsync(
+            "noise suppression", txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
+            RazerHeadsetAudioProtocol.ReadNoiseSuppression, errors, cancellationToken).ConfigureAwait(false);
 
         IReadOnlyList<byte>? bands = null;
         try
@@ -207,8 +180,19 @@ public sealed class RazerHeadsetAudioService
         }
 
         return new RazerHeadsetAudioState(
-            firmware, battery, charging, preset, bands, bass, micMute, micVolume,
-            source, noise, ancState, ancLevel, errors);
+            firmware.Ok ? firmware.Value : null,
+            battery.Ok ? battery.Value : null,
+            charging.Ok ? charging.Value : null,
+            preset.Ok ? preset.Value : null,
+            bands,
+            bass.Ok ? bass.Value : null,
+            micMute.Ok ? micMute.Value : null,
+            micVolume.Ok ? micVolume.Value : null,
+            source.Ok ? source.Value : null,
+            noise.Ok ? noise.Value : null,
+            ancState,
+            ancLevel,
+            errors);
     }
 
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default)
@@ -424,7 +408,7 @@ public sealed class RazerHeadsetAudioService
                 cancellationToken).ConfigureAwait(false),
             tenBand);
 
-    private async Task<T?> TryReadAsync<T>(
+    private async Task<(bool Ok, T Value)> ProbeAsync<T>(
         string label,
         Func<byte, byte[]> request,
         Func<ReadOnlySpan<byte>, T> parse,
@@ -433,12 +417,12 @@ public sealed class RazerHeadsetAudioService
     {
         try
         {
-            return parse(await QueryAsync(request, $"read {label}", cancellationToken).ConfigureAwait(false));
+            return (true, parse(await QueryAsync(request, $"read {label}", cancellationToken).ConfigureAwait(false)));
         }
         catch (Exception exception) when (IsExpected(exception))
         {
             errors.Add($"{label}: {exception.Message}");
-            return default;
+            return (false, default!);
         }
     }
 

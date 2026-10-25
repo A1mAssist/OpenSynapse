@@ -134,7 +134,7 @@ public static class RazerHeadsetAudioProtocol
 
     // Class 7 commands carry no profile byte: the value starts at data[0], and the
     // middleware scales the raw battery reading (0..255) to percent.
-    public static byte ReadBatteryLevel(ReadOnlySpan<byte> response)
+    public static byte ReadBatteryPercent(ReadOnlySpan<byte> response)
     {
         var data = Arguments(response);
         Require(data, 1);
