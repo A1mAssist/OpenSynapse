@@ -114,6 +114,22 @@ public sealed class RazerChromaStandardTests
     }
 
     [Fact]
+    public void SelectConnectionsKeepsEveryPhysicalDeviceAndCollapsesCollections()
+    {
+        var interfaces = new[]
+        {
+            Descriptor("\\\\?\\hid#vid_1532&pid_030d&col01#a", "container-a", 0x030D),
+            Descriptor("\\\\?\\hid#vid_1532&pid_030d&col02#a", "container-a", 0x030D),
+            Descriptor("\\\\?\\hid#vid_1532&pid_030e&col01#b", "container-b", 0x030E),
+        };
+
+        var connections = RazerChromaStandardService.SelectConnections(interfaces);
+
+        Assert.Equal([0x030D, 0x030E], connections.Select(item => item.ProductId));
+        Assert.All(connections, item => Assert.True(item.ProductId is 0x030D or 0x030E));
+    }
+
+    [Fact]
     public async Task ReadStateReportsBothValues()
     {
         var service = new RazerChromaStandardService(
@@ -125,6 +141,11 @@ public sealed class RazerChromaStandardTests
         Assert.Equal(RazerChromaEffect.Off, state.Effect);
         Assert.Empty(state.Errors);
     }
+
+    private static WindowsHidDiscovery.HidInterfaceDescriptor Descriptor(
+        string devicePath, string physicalDeviceKey, ushort productId) =>
+        new(devicePath, physicalDeviceKey, 0x1532, productId, 91, 91, 91, 0x0000, 0x0001,
+            OpenSynapse.Core.Devices.DeviceAccessState.Available, "test");
 
     private sealed class FakeTransport(Func<byte[], byte[]> handler) : IRazerFeatureTransport
     {

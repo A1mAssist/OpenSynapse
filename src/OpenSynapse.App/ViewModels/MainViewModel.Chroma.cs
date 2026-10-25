@@ -18,10 +18,10 @@ public sealed partial class MainViewModel
 
     private async Task RefreshChromaAsync(CancellationToken cancellationToken)
     {
-        RazerChromaDeviceConnection? connection;
+        IReadOnlyList<RazerChromaDeviceConnection> connections;
         try
         {
-            connection = await RazerChromaStandardService.FindAsync(
+            connections = await RazerChromaStandardService.FindAllAsync(
                 message => _diagnosticLog.TryWrite("chroma", message), cancellationToken);
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
@@ -30,7 +30,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        if (connection is null)
+        if (connections.Count == 0)
         {
             if (ChromaDevices.Count == 0 && SelectedChroma is null) return;
             ChromaDevices.Clear();
@@ -39,21 +39,26 @@ public sealed partial class MainViewModel
             return;
         }
 
-        if (ChromaDevices.Count == 1 &&
-            StringComparer.OrdinalIgnoreCase.Equals(
-                ChromaDevices[0].Connection.DevicePath, connection.DevicePath) &&
-            ChromaDevices[0].Connection.ProductId == connection.ProductId)
+        if (ChromaDevices.Count == connections.Count &&
+            ChromaDevices.Zip(connections).All(pair =>
+                StringComparer.OrdinalIgnoreCase.Equals(
+                    pair.First.Connection.DevicePath, pair.Second.DevicePath) &&
+                pair.First.Connection.ProductId == pair.Second.ProductId))
         {
             return;
         }
 
+        var selectedPath = _selectedChromaDevice?.Connection.DevicePath;
         ChromaDevices.Clear();
-        ChromaDevices.Add(new RazerChromaDeviceRowViewModel(connection));
-        if (_selectedChromaDevice is null ||
-            !StringComparer.OrdinalIgnoreCase.Equals(
-                _selectedChromaDevice.Connection.DevicePath, connection.DevicePath))
+        foreach (var connection in connections)
         {
-            _selectedChromaDevice = null;
+            ChromaDevices.Add(new RazerChromaDeviceRowViewModel(connection));
+        }
+
+        _selectedChromaDevice = ChromaDevices.FirstOrDefault(row =>
+            StringComparer.OrdinalIgnoreCase.Equals(row.Connection.DevicePath, selectedPath));
+        if (_selectedChromaDevice is null)
+        {
             SelectedChroma = null;
         }
     }

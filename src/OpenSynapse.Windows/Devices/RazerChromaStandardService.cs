@@ -108,6 +108,15 @@ public sealed class RazerChromaStandardService
 
     public static async Task<RazerChromaDeviceConnection?> FindAsync(
         Action<string>? diagnostic = null,
+        CancellationToken cancellationToken = default) =>
+        (await FindAllAsync(diagnostic, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+    /// <summary>
+    /// Every attached device that belongs to this page, one row per physical device.
+    /// Several lamps or mice can be connected at once, so discovery must not stop at the first.
+    /// </summary>
+    public static async Task<IReadOnlyList<RazerChromaDeviceConnection>> FindAllAsync(
+        Action<string>? diagnostic = null,
         CancellationToken cancellationToken = default)
     {
         var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
@@ -115,30 +124,43 @@ public sealed class RazerChromaStandardService
             RazerFeatureReport.Length,
             cancellationToken).ConfigureAwait(false);
 
-        var candidates = interfaces
-            .Where(item => Products.ContainsKey(item.ProductId))
-            .Where(item => OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
-            .Where(item => !RazerHeadsetAudioService.IsSupported(item.ProductId))
-            .Where(item => !RazerKeyboardService.IsSupported(item.ProductId))
-            .OrderByDescending(item => item.Access == DeviceAccessState.Available)
-            .ThenBy(item => item.ProductId)
-            .ToArray();
-        if (candidates.Length == 0)
+        var connections = SelectConnections(interfaces);
+        if (connections.Count == 0)
         {
             diagnostic?.Invoke(
                 "chroma found no admitted 91-byte interface; " +
                 $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}"))}");
-            return null;
+        }
+        else
+        {
+            diagnostic?.Invoke(
+                "chroma selected " + string.Join(", ", connections.Select(item =>
+                    $"pid={item.ProductId:X4} path={RazerFeatureTransport.DescribeDevicePath(item.DevicePath)}")));
         }
 
-        var chosen = candidates[0];
-        var (name, category) = Products[chosen.ProductId];
-        diagnostic?.Invoke(
-            $"chroma selected pid={chosen.ProductId:X4} path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
-            $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} access={chosen.Access}");
-        return new RazerChromaDeviceConnection(
-            chosen.DevicePath, chosen.ProductId, name, category);
+        return connections;
     }
+
+    internal static IReadOnlyList<RazerChromaDeviceConnection> SelectConnections(
+        IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
+        interfaces
+            .Where(item => Products.ContainsKey(item.ProductId))
+            .Where(item => OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            .Where(item => !RazerHeadsetAudioService.IsSupported(item.ProductId))
+            .Where(item => !RazerKeyboardService.IsSupported(item.ProductId))
+            .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group
+                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+                .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
+                .First())
+            .OrderBy(item => item.ProductId)
+            .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
+            .Select(item =>
+            {
+                var (name, category) = Products[item.ProductId];
+                return new RazerChromaDeviceConnection(item.DevicePath, item.ProductId, name, category);
+            })
+            .ToArray();
 
     public async Task<RazerChromaStandardState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
