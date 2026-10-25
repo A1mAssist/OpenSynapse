@@ -31,8 +31,9 @@ Blade Wave and Spectrum use firmware rendering when no palette is saved and soft
 | Kraken Tournament Edition | `0520` | Lighting |
 | Kraken Ultimate | `0527` | Lighting |
 | Kraken Kitty V2 | `0560` | Lighting |
+| Kraken V4 (wired) | `056B` | Lighting: off / static / wave |
 
-Kraken support uses a separate 37-byte Output Report path. Audio, microphone, EQ, and THX controls are not included.
+Kraken 7.1 devices use the separate 37-byte Output Report path. Kraken V4 wired uses the merged OpenRGB 64-byte Report `0x02` path; the 2.4 GHz `056C` receiver does not expose lighting or other controls yet. Audio, microphone, EQ, and THX controls are not included.
 
 ## BlackShark V3 Pro audio
 
