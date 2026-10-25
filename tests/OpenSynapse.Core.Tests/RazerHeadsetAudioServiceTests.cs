@@ -19,7 +19,7 @@ public sealed class RazerHeadsetAudioServiceTests
             NoiseSuppression = true,
             AncState = RazerAncState.On,
             AncLevel = 4,
-            Battery = 88,
+            Battery = 255,
             Charging = true,
         };
         var service = new RazerHeadsetAudioService(new FakeTransport(simulator.Handle), "test", TimeSpan.Zero);
@@ -36,7 +36,7 @@ public sealed class RazerHeadsetAudioServiceTests
         Assert.True(state.NoiseSuppression);
         Assert.Equal(RazerAncState.On, state.AncState);
         Assert.Equal((byte)4, state.AncLevel);
-        Assert.Equal((byte)88, state.BatteryPercent);
+        Assert.Equal((byte)100, state.BatteryPercent);
         Assert.True(state.Charging);
     }
 
@@ -153,7 +153,7 @@ public sealed class RazerHeadsetAudioServiceTests
                         state.Preset = request[10];
                     }
                 }, state.Preset),
-                0x84 when request[7] == 0x07 => Response(request, 2, 0x00, state.Charging ? (byte)1 : (byte)0),
+                0x84 when request[7] == 0x07 => Response(request, 1, state.Charging ? (byte)1 : (byte)0),
                 0x84 => EqBands(request),
                 0x04 => SetEqBands(request),
                 0x87 => Response(request, 2, 0x00, state.Bass),
@@ -166,7 +166,7 @@ public sealed class RazerHeadsetAudioServiceTests
                 0x0A => Write(request, () => state.Source = (RazerAudioSource)request[10], (byte)state.Source),
                 0x9C => Response(request, 2, 0x00, state.NoiseSuppression ? (byte)1 : (byte)0),
                 0x1C => Write(request, () => state.NoiseSuppression = request[10] != 0, state.NoiseSuppression ? (byte)1 : (byte)0),
-                0x80 when request[7] == 0x07 => Response(request, 2, 0x00, state.Battery),
+                0x80 when request[7] == 0x07 => Response(request, 1, state.Battery),
                 0x81 => Response(request, 2, 1, 2),
                 0x86 => Response(request, 3, 0x00, (byte)state.AncState, state.AncLevel),
                 0x06 => Write(request, () =>

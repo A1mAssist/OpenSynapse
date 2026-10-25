@@ -89,8 +89,8 @@ public sealed class RazerHeadsetAudioProtocolTests
         Assert.Equal(RazerAudioSource.Bluetooth,
             RazerHeadsetAudioProtocol.ReadAudioSource(Response(1, 4, 5, 2, 0x00, 3)));
         Assert.True(RazerHeadsetAudioProtocol.ReadNoiseSuppression(Response(1, 4, 5, 2, 0x00, 1)));
-        Assert.True(RazerHeadsetAudioProtocol.ReadChargingStatus(Response(1, 4, 5, 2, 0x00, 1)));
-        Assert.Equal(64, RazerHeadsetAudioProtocol.ReadBatteryLevel(Response(1, 4, 5, 2, 0x00, 64)));
+        Assert.True(RazerHeadsetAudioProtocol.ReadChargingStatus(Response(1, 4, 5, 1, 0x01)));
+        Assert.Equal(25, RazerHeadsetAudioProtocol.ReadBatteryLevel(Response(1, 4, 5, 1, 0x40)));
         Assert.Equal(new Version(1, 2), RazerHeadsetAudioProtocol.ReadFirmware(Response(1, 4, 5, 2, 1, 2)));
         Assert.Equal([1, 2, 3, 4, 5, 6, 7, 8],
             RazerHeadsetAudioProtocol.ReadEqBands(Response(1, 4, 5, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8), tenBand: false));
