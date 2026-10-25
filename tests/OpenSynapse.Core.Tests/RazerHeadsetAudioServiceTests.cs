@@ -85,31 +85,6 @@ public sealed class RazerHeadsetAudioServiceTests
         Assert.Equal((byte)4, state.AncLevel);
         Assert.Equal((byte)100, state.BatteryPercent);
         Assert.True(state.Charging);
-        Assert.Equal((byte)100, state.BrightnessPercent);
-    }
-
-    [Fact]
-    public async Task ReadState_ReportsTheMatrixBrightnessInPercent()
-    {
-        var simulator = new HeadsetSimulator { Brightness = 0x80 };
-        var service = new RazerHeadsetAudioService(new FakeTransport(simulator.Handle), "test", TimeSpan.Zero);
-
-        var state = await service.ReadStateAsync();
-
-        Assert.Equal((byte)51, state.BrightnessPercent);
-    }
-
-    [Fact]
-    public async Task SetBrightness_WritesAndVerifiesTheClass10Level()
-    {
-        var simulator = new HeadsetSimulator();
-        var transport = new FakeTransport(simulator.Handle);
-        var service = new RazerHeadsetAudioService(transport, "test", TimeSpan.Zero);
-
-        await service.SetBrightnessAsync(50);
-
-        Assert.Equal(0x80, simulator.Brightness);
-        Assert.Contains(transport.Requests, request => request[7] == 0x10 && request[8] == 0x05 && request[9] == 0x80);
     }
 
     [Fact]
@@ -210,7 +185,6 @@ public sealed class RazerHeadsetAudioServiceTests
         public byte AncLevel { get; set; } = 1;
         public byte Battery { get; set; } = 100;
         public bool Charging { get; set; }
-        public byte Brightness { get; set; } = 0xFF;
 
         public byte[] Handle(byte[] request)
         {
@@ -239,8 +213,6 @@ public sealed class RazerHeadsetAudioServiceTests
                 0x0A => Write(request, () => state.Source = (RazerAudioSource)request[10], (byte)state.Source),
                 0x9C => Response(request, 2, 0x00, state.NoiseSuppression ? (byte)1 : (byte)0),
                 0x1C => Write(request, () => state.NoiseSuppression = request[10] != 0, state.NoiseSuppression ? (byte)1 : (byte)0),
-                0x85 when request[7] == 0x10 => Response(request, 1, state.Brightness),
-                0x05 when request[7] == 0x10 => Write(request, () => state.Brightness = request[9], state.Brightness),
                 0x80 when request[7] == 0x07 => Response(request, 1, state.Battery),
                 0x81 => Response(request, 2, 1, 2),
                 0x86 => Response(request, 3, 0x00, (byte)state.AncState, state.AncLevel),
