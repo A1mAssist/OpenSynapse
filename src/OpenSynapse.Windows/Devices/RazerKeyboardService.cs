@@ -40,6 +40,18 @@ public sealed class RazerKeyboardService
             [0x0277] = "Razer Pro Type Ultra",
             [0x028E] = "Razer Cynosapro",
             [0x02F0] = "Razer BlackWidow V4 75% Xbox 25th Anniversary Edition",
+            [0x023E] = "Razer Turret Keyboard Xbox One Edition",
+            [0x024F] = "Razer BlackWidow X Tenkeyless",
+            [0x0250] = "Razer Huntsman Essential",
+            [0x02B1] = "Razer Huntsman V3 X Tenkeyless",
+            [0x02B3] = "Razer BlackWidow V4 Pro 75%",
+            [0x02C4] = "Razer Pro Type Ergo",
+            [0x02CC] = "Razer BlackWidow V4 Low-profile HyperSpeed",
+            [0x02D4] = "Razer BlackWidow V4 Low-profile Tenkeyless HyperSpeed",
+            [0x02E3] = "Razer Reclusa X Mini 65%",
+            [0x02E6] = "Razer Huntsman V3 Pro Low-Profile Tenkeyless 8KHz",
+            [0x02EB] = "Razer Tartarus V2 Pro",
+            [0x02F4] = "Razer Reclusa Mini 65%",
         };
 
     private readonly IRazerFeatureTransport _transport;

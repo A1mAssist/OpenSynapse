@@ -18,6 +18,11 @@ public sealed class RazerHeadsetAudioServiceTests
     [InlineData(0x055E)]
     [InlineData(0x0560)]
     [InlineData(0x0562)]
+    [InlineData(0x0542)]
+    [InlineData(0x0543)]
+    [InlineData(0x056A)]
+    [InlineData(0x0548)]
+    [InlineData(0x056D)]
     public void AudioPage_CoversTheKrakenBtAndNommoFamilies(ushort productId) =>
         Assert.True(RazerHeadsetAudioService.IsSupported(productId));
 
@@ -28,6 +33,11 @@ public sealed class RazerHeadsetAudioServiceTests
     [InlineData(0x055E, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
     [InlineData(0x052D, OpenSynapse.Core.Devices.DeviceCategory.Headset)]
     [InlineData(0x0560, OpenSynapse.Core.Devices.DeviceCategory.Headset)]
+    [InlineData(0x0548, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
+    [InlineData(0x0542, OpenSynapse.Core.Devices.DeviceCategory.Microphone)]
+    [InlineData(0x0543, OpenSynapse.Core.Devices.DeviceCategory.Microphone)]
+    [InlineData(0x056A, OpenSynapse.Core.Devices.DeviceCategory.Microphone)]
+    [InlineData(0x056D, OpenSynapse.Core.Devices.DeviceCategory.Headset)]
     public void AudioDevices_ReportTheirRealCategory(ushort productId, OpenSynapse.Core.Devices.DeviceCategory expected) =>
         Assert.Equal(expected, RazerHeadsetAudioService.GetCategory(productId));
 

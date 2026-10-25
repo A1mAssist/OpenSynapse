@@ -65,10 +65,18 @@ public sealed class RazerHeadsetAudioService
             [0x055A] = "Razer Nommo V2 Pro",
             [0x055C] = "Razer Nommo V2",
             [0x055E] = "Razer Nommo V2 X",
+            [0x0542] = "Razer Seiren V2 Pro",
+            [0x0543] = "Razer Seiren V2 X",
+            [0x056A] = "Razer Seiren V3 Mini",
+            [0x0548] = "Razer Leviathan V2 Pro",
+            [0x056D] = "Razer Kraken V4 X",
         };
 
     private static readonly IReadOnlySet<ushort> SpeakerProductIds =
-        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E };
+        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548 };
+
+    private static readonly IReadOnlySet<ushort> MicrophoneProductIds =
+        new HashSet<ushort> { 0x0542, 0x0543, 0x056A };
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -93,7 +101,9 @@ public sealed class RazerHeadsetAudioService
     public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
 
     public static DeviceCategory GetCategory(ushort productId) =>
-        SpeakerProductIds.Contains(productId) ? DeviceCategory.Speaker : DeviceCategory.Headset;
+        MicrophoneProductIds.Contains(productId) ? DeviceCategory.Microphone
+        : SpeakerProductIds.Contains(productId) ? DeviceCategory.Speaker
+        : DeviceCategory.Headset;
 
     public static async Task<RazerHeadsetAudioConnection?> FindAsync(
         Action<string>? diagnostic = null,
