@@ -147,9 +147,14 @@ public sealed partial class MainViewModel
             if (_openRazerSpecialLightingService is not null)
             {
                 var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
-                var krakenConnections = connections.Where(connection =>
+                _krakenConnections = connections.Where(connection =>
                         connection.Kind == OpenRazerSpecialLightingKind.Kraken37)
                     .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                // Headsets that already own an audio page get the lighting card there, so a
+                // second lighting-only row for the same headset would be a duplicate.
+                var krakenConnections = _krakenConnections
+                    .Where(connection => !OpenRazerSpecialLightingService.IsMergedIntoAudioPage(connection.ProductId))
                     .ToArray();
                 if (OpenRazerKrakenDevices.Count != krakenConnections.Length ||
                     !OpenRazerKrakenDevices.Zip(krakenConnections)

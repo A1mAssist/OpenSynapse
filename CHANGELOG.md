@@ -30,6 +30,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 修复 / Fixed
 
+- Kraken Tournament Edition / Ultimate / Kitty V2（`0520`/`0527`/`0560`）此前同时出现在音频页和 37 字节灯光页，现在只保留音频页一张卡片，灯光效果并入音频页；其余 Kraken（7.1、7.1 Chroma 等）仍保留独立灯光页。
+- Kraken Tournament Edition, Ultimate and Kitty V2 (0x0520/0x0527/0x0560) used to appear twice — once on the audio page and once on the 37-byte lighting page. They now keep a single card on the audio page with the lighting merged in; the other Kraken models (7.1, 7.1 Chroma, …) keep their lighting page.
 - 修正耳机与键盘的电量读数：中间件的原始值是 0–255，按比例换算成百分比再显示；充电状态同样从第一个数据字节读取，不再整体偏移一位。
 - Fixed battery readings for headsets and keyboards: the middleware reports 0–255, now scaled to percent, and the charging flag is read from the first data byte instead of being off by one.
 - 窗口最小宽度从 1080 降到 700 逻辑像素，恢复小窗口使用；页面内容下限为 640 像素加 48 像素导航栏，再小需要重排页面布局。

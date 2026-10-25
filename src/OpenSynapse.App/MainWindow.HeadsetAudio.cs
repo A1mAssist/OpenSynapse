@@ -41,4 +41,7 @@ public sealed partial class MainWindow
 
     private async void HeadsetAudioApplyAncClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.ApplyAncAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyLightingClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.Lighting?.ApplyAsync(_lifetime.Token) ?? Task.CompletedTask);
 }
