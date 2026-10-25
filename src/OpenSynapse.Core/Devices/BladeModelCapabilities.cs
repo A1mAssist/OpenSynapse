@@ -24,12 +24,14 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Silent,
     ];
 
-    // Synapse on 028C exposes only these three; 0x02 is not an official fourth mode.
+    // Synapse on 028C exposes the first three. The owner confirmed the firmware also
+    // accepts 0x02 and reads it back, so keep it as an extra mode after the official list.
     private static readonly BladePerformanceMode[] Blade14_2022PerformanceModes =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
         BladePerformanceMode.Custom,
+        BladePerformanceMode.Performance,
     ];
 
     /// <summary>No audited admission. Used when a product id is unknown to this table.</summary>
