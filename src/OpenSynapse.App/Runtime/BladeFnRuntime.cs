@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
+using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -23,10 +24,8 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     private static readonly string RecoveryHostPath = Path.Combine(
         AppContext.BaseDirectory,
         "OpenSynapse.RecoveryHost.exe");
-    private static readonly string RecoveryMarkerPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "blade-mapping-session.json");
+    private static readonly string RecoveryMarkerPath =
+        AppDataPaths.Combine("blade-mapping-session.json");
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _featureDevicePath;

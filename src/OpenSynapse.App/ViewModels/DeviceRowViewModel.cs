@@ -132,6 +132,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                 break;
 
             case "blade-710":
+            case "blade-710-chroma":
                 Add("Text_5F0C27DB", telemetry.BladeKeyboardBrightness,
                     telemetry.BladeKeyboardBrightness is byte brightness ? $"{brightness}/255" : null);
                 Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode);

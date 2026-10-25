@@ -88,10 +88,83 @@ public static class WindowsDedicatedGpuMode
         }
     }
 
+    /// <summary>
+    /// Performs the PnP change in the current process. The GPU service runs this
+    /// as LocalSystem; the UAC helper uses the same path after elevation.
+    /// </summary>
+    public static DedicatedGpuSwitchResult SetEnabledDirect(
+        bool enabled,
+        bool validateDisplayPolicy = true)
+    {
+        try
+        {
+            var adapters = WindowsDisplayAdapters.FindAll();
+            var discrete = adapters
+                .Where(adapter => adapter.IsNvidia)
+                .ToArray();
+            if (discrete.Length != 1)
+            {
+                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.NoDevice);
+            }
+
+            if (discrete[0].Enabled == enabled)
+            {
+                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Success);
+            }
+
+            if (!enabled)
+            {
+                if (validateDisplayPolicy)
+                {
+                    var status = GetStatus();
+                    if (!status.IsSupported ||
+                        status.BlockReason != DedicatedGpuModeBlockReason.None)
+                    {
+                        return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Blocked);
+                    }
+                }
+                else if (adapters.Count(adapter => adapter.IsIntegratedCandidate) != 1)
+                {
+                    return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Blocked);
+                }
+            }
+
+            return WindowsDisplayAdapters.SetEnabled(discrete[0].InstanceId, enabled) switch
+            {
+                0 => new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Success),
+                3010 => new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.RestartRequired),
+                var exitCode => new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed, exitCode),
+            };
+        }
+        catch (Exception exception) when (
+            exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException)
+        {
+            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+        }
+    }
+
     public static async Task<DedicatedGpuSwitchResult> SetEnabledAsync(
         bool enabled,
         CancellationToken cancellationToken = default)
     {
+        if (!enabled)
+        {
+            // LocalSystem cannot read the interactive display topology, so the
+            // user-side process must recheck it immediately before the service call.
+            var status = GetStatus();
+            if (!status.IsSupported ||
+                status.BlockReason != DedicatedGpuModeBlockReason.None)
+            {
+                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Blocked);
+            }
+        }
+
+        if (await DedicatedGpuModeServiceClient.TrySetEnabledAsync(enabled, cancellationToken)
+                .ConfigureAwait(false) is { } serviceResult)
+        {
+            return serviceResult;
+        }
+
         var executablePath = Path.Combine(AppContext.BaseDirectory, "OpenSynapse.App.exe");
         if (!File.Exists(executablePath))
         {
@@ -164,38 +237,14 @@ public static class WindowsDedicatedGpuMode
         }
 
         var enabled = StringComparer.OrdinalIgnoreCase.Equals(args[1], "on");
-        try
+        return SetEnabledDirect(enabled).Outcome switch
         {
-            var discrete = WindowsDisplayAdapters.FindAll()
-                .Where(adapter => adapter.IsNvidia)
-                .ToArray();
-            if (discrete.Length != 1)
-            {
-                return HelperNoDevice;
-            }
-
-            if (!enabled)
-            {
-                var status = GetStatus();
-                if (!status.IsSupported ||
-                    status.BlockReason != DedicatedGpuModeBlockReason.None)
-                {
-                    return HelperBlocked;
-                }
-            }
-
-            return WindowsDisplayAdapters.SetEnabled(discrete[0].InstanceId, enabled) switch
-            {
-                0 => HelperSuccess,
-                3010 => HelperRestartRequired,
-                _ => HelperFailed,
-            };
-        }
-        catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException)
-        {
-            return HelperFailed;
-        }
+            DedicatedGpuSwitchOutcome.Success => HelperSuccess,
+            DedicatedGpuSwitchOutcome.RestartRequired => HelperRestartRequired,
+            DedicatedGpuSwitchOutcome.Blocked => HelperBlocked,
+            DedicatedGpuSwitchOutcome.NoDevice => HelperNoDevice,
+            _ => HelperFailed,
+        };
     }
 
     private static DedicatedGpuModeStatus Unsupported(DedicatedGpuModeBlockReason reason) =>

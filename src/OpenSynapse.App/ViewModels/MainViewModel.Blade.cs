@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Windows.UI;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
@@ -11,6 +12,15 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    public ValueTask<BladeDisplayMuxStatus> ReadBladeDisplayMuxStatusAsync(
+        CancellationToken cancellationToken = default) =>
+        _deviceTelemetryReader.ReadBladeDisplayMuxStatusAsync(_deviceDescriptors, cancellationToken);
+
+    public ValueTask<BladeDisplayMuxSwitchResult> SetBladeDisplayMuxModeAsync(
+        BladeDisplayMuxMode mode,
+        CancellationToken cancellationToken = default) =>
+        _deviceTelemetryReader.SetBladeDisplayMuxModeAsync(_deviceDescriptors, mode, cancellationToken);
+
     public async Task ApplyBladeBrightnessAsync(CancellationToken cancellationToken = default)
     {
         if (!_blade._canSetBladeBrightness)
@@ -139,7 +149,7 @@ public sealed partial class MainViewModel
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
             device.Access == DeviceAccessState.Available);
         if (blade is not null)
         {
@@ -294,7 +304,7 @@ public sealed partial class MainViewModel
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
         if (_suppressBladePerformanceApply ||
-            !_blade._canSetBladePerformanceMode ||
+            !CanWriteBladePerformanceMode ||
             BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= BladePerformanceModes.Length)
         {
             return;
@@ -528,7 +538,7 @@ public sealed partial class MainViewModel
     {
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
         {
-            if (!_blade._canSetBladePerformanceMode || _blade._confirmedBladePerformanceModeIndex < 0)
+            if (!CanWriteBladePerformanceMode || _blade._confirmedBladePerformanceModeIndex < 0)
             {
                 throw new InvalidOperationException(AppStrings.Text("Text_2263C356"));
             }
@@ -983,9 +993,9 @@ public sealed partial class MainViewModel
 
     public string BladeDeviceName { get => _blade._bladeDeviceName; private set => SetField(ref _blade._bladeDeviceName, value); }
     public string BladeProtocolText => Devices.FirstOrDefault(device =>
-        device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Capability ?? BladeStatusText;
+        DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Capability ?? BladeStatusText;
     public string BladeIdentityText => Devices.FirstOrDefault(device =>
-        device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Identity ?? "VID_1532 / PID_02C6";
+        DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Identity ?? "VID_1532 / PID_02C6";
     public string BladeStatusText { get => _blade._bladeStatusText; private set => SetField(ref _blade._bladeStatusText, value); }
     public string BladeBrightnessText { get => _blade._bladeBrightnessText; private set => SetField(ref _blade._bladeBrightnessText, value); }
     public string BladeBrightnessSelectionText { get => _blade._bladeBrightnessSelectionText; private set => SetField(ref _blade._bladeBrightnessSelectionText, value); }
@@ -1010,9 +1020,12 @@ public sealed partial class MainViewModel
                 OnPropertyChanged(nameof(CanSetBladeLighting));
                 OnPropertyChanged(nameof(CanSetBladeLightingPowerProfile));
                 OnPropertyChanged(nameof(CanSetBladeLightingSettings));
+                OnPropertyChanged(nameof(CanWriteBladeBrightness));
             }
         }
     }
+    public bool CanWriteBladeBrightness =>
+        CanSetBladeBrightness && BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId);
     public string BladePerformanceModeText { get => _blade._bladePerformanceModeText; private set => SetField(ref _blade._bladePerformanceModeText, value); }
     public IReadOnlyList<string> BladePerformanceModeOptions => _bladeCoolingPadConnected
         ? AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25", "HyperBoost")
@@ -1027,9 +1040,12 @@ public sealed partial class MainViewModel
             {
                 OnPropertyChanged(nameof(CanSetBladePerformancePowerProfile));
                 OnPropertyChanged(nameof(BladePerformanceModeCardVisibility));
+                OnPropertyChanged(nameof(CanWriteBladePerformanceMode));
             }
         }
     }
+    public bool CanWriteBladePerformanceMode =>
+        CanSetBladePerformanceMode && BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId);
     public bool CanSetBladeLightingPowerProfile => CanSetBladeBrightness;
     public bool CanSetBladePerformancePowerProfile => CanSetBladePerformanceMode;
     public bool CanSetBladeLogoPowerProfile => CanSetBladeLogo;
@@ -1065,7 +1081,9 @@ public sealed partial class MainViewModel
         }
     }
     public bool CanSetBladeGamingMode =>
-        _blade._bladeGameModeWriteSupported && _blade._bladeGameModeState is byte state && state != 2;
+        _blade._bladeGameModeWriteSupported &&
+        BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
+        _blade._bladeGameModeState is byte state && state != 2;
     public bool CanApplyBladeGamingMode =>
         CanSetBladeGamingMode && BladeGameModeEnabled != (_blade._bladeGameModeState != 0);
     public string BladeStartupAnimationText { get => _blade._bladeStartupAnimationText; private set => SetField(ref _blade._bladeStartupAnimationText, value); }
@@ -1200,6 +1218,10 @@ public sealed partial class MainViewModel
     /// </summary>
     public void RefreshBladeModelCapabilityUi()
     {
+        OnPropertyChanged(nameof(CanWriteBladeBrightness));
+        OnPropertyChanged(nameof(CanWriteBladePerformanceMode));
+        OnPropertyChanged(nameof(CanSetBladeGamingMode));
+        OnPropertyChanged(nameof(BladeCustomPerformanceVisibility));
         OnPropertyChanged(nameof(BladeCpuBoostOptions));
         OnPropertyChanged(nameof(BladeLightingCardVisibility));
         OnPropertyChanged(nameof(BladeLightingModeOptions));
@@ -1264,9 +1286,11 @@ public sealed partial class MainViewModel
     public Visibility BladeGpuBoostVisibility => CanSetBladeGpuBoost
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeCustomPerformanceVisibility => IsBladeCustomMode
-        ? Visibility.Visible
-        : Visibility.Collapsed;
+    public Visibility BladeCustomPerformanceVisibility =>
+        IsBladeCustomMode &&
+        (_blade._hasBladeCpuBoost || _blade._hasBladeGpuBoost || _blade._hasBladeMaxFan)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     public IReadOnlyList<string> BladeLogoOptions => AppStrings.Texts("Text_39B523BD", "Text_6295D9CB", "Text_7EDA32B9");
     public string BladeLogoText { get => _blade._bladeLogoText; private set => SetField(ref _blade._bladeLogoText, value); }
     public int BladeLogoIndex { get => _blade._bladeLogoIndex; set => SetField(ref _blade._bladeLogoIndex, value); }
@@ -1360,6 +1384,7 @@ public IReadOnlyList<string> BladeLightingModeOptions => IsBlade2023Model
 /// needs no lighting controller. Every other generation still requires one.
 /// </summary>
 public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
+        BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
         (IsBlade2023Model || _bladeLightingController is not null);
     public int BladeLightingPowerProfileIndex
     {
@@ -1535,6 +1560,7 @@ public Visibility BladeWaveDirectionVisibility => !IsBlade2023Model &&
 /// telemetry reader, so the matrix-based lighting controller is not required there.
 /// </summary>
 public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
+        BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
         (IsBlade2023Model || _bladeLightingController is not null);
 
     /// <summary>
@@ -1627,7 +1653,7 @@ public Visibility BladeLightingCardVisibility => Visibility.Visible;
                 {
                     _lightingShadowFingerprint = string.Empty;
                     var blade = _deviceDescriptors.FirstOrDefault(device =>
-                        device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+                        DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                         device.Access == DeviceAccessState.Available);
                     await ApplyLoadedLightingProfileAsync(
                         blade,

@@ -141,6 +141,7 @@ public sealed partial class MainViewModel
                     // so the rescan the user just asked for can actually recover.
                     selectedDevice.ClearRequiresRescan();
                     await selectedDevice.LoadBasicStateAsync(cancellationToken);
+                    await selectedDevice.LoadSoundbarAsync(cancellationToken);
                 }
             }
             if (_openRazerSpecialLightingService is not null)
@@ -350,7 +351,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
         {
-            var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            var hadBlade = _deviceDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
             var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
             BlackSharkDevices.Clear();
@@ -400,6 +401,7 @@ public sealed partial class MainViewModel
         OpenRazerDeviceConnection current) =>
         StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
         StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
+        StringComparer.Ordinal.Equals(previous.Definition.DisplayName, current.Definition.DisplayName) &&
         previous.EndpointState == current.EndpointState &&
         StringComparer.Ordinal.Equals(previous.Error, current.Error);
 

@@ -1,3 +1,5 @@
+using OpenSynapse.Core.Displays;
+
 namespace OpenSynapse.Core.Devices;
 
 public enum BladePerformanceMode : byte
@@ -201,6 +203,19 @@ public static class DeviceCapabilitySummaryCalculator
                     telemetry.BladeAdapterPower) +
                     (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
                 16 + (supportsMaxFan ? 1 : 0) + (supportsLocalDimming ? 1 : 0)),
+            "blade-597" => new(
+                Count(
+                    telemetry.BladeKeyboardBrightness,
+                    telemetry.BladePerformanceMode,
+                    telemetry.BladeChargeLimitPercent,
+                    telemetry.BladeFanMode,
+                    telemetry.BladeCurrentFanCpuRpm,
+                    telemetry.BladeCurrentFanGpuRpm,
+                    telemetry.BladeNativeDisplayMode,
+                    telemetry.BladeSkuHardwareConfiguration,
+                    telemetry.BladeOneTimeFullChargeEnabled,
+                    telemetry.BladeAdapterPower),
+                10),
             "viper-184" => new(
                 Count(
                     telemetry.ViperBatteryPercent,
@@ -370,6 +385,17 @@ public interface IRazerDeviceTelemetryReader
     ValueTask<BladeNativeDisplayMode> SetBladeNativeDisplayModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeNativeDisplayMode mode,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<BladeDisplayMuxStatus> ReadBladeDisplayMuxStatusAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<BladeDisplayMuxSwitchResult> SetBladeDisplayMuxModeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeDisplayMuxMode mode,
         CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 

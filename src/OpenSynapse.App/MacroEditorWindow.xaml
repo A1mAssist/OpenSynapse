@@ -5,269 +5,302 @@
     xmlns:local="using:OpenSynapse.App"
     Title="Macro editor">
   <Grid x:Name="RootLayout" Background="Transparent" RequestedTheme="Dark" Padding="16" RowDefinitions="*,Auto,Auto">
-    <Grid Grid.Row="0" ColumnDefinitions="*,16,300">
-      <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-        <StackPanel Spacing="10">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button x:Name="MacroRecordButton" local:Localized.Uid="MacroRecordButton" MinWidth="112" Style="{StaticResource SecondaryButtonStyle}">
-              <StackPanel Orientation="Horizontal" Spacing="7">
-                <TextBlock Text="{Binding MacroRecordButtonText}" VerticalAlignment="Center" />
-                <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
-              </StackPanel>
-              <Button.Flyout>
-                <MenuFlyout Opening="MacroRecordFlyoutOpening">
-                  <MenuFlyoutItem x:Name="MacroRecordStartItem" local:Localized.Uid="MacroRecordStart" Text="开始录制" Click="MacroRecordStartClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutItem x:Name="MacroRecordStopItem" local:Localized.Uid="MacroRecordStop" Text="停止录制" Click="MacroRecordStopClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutSeparator />
-                  <MenuFlyoutItem local:Localized.Uid="MacroRecordStopShortcutHint" Text="录制时按 F9 可停止并保存" IsEnabled="False" Style="{StaticResource MacroMenuItemStyle}" />
-                </MenuFlyout>
-              </Button.Flyout>
-            </Button>
-            <Button x:Name="MacroInsertButton" local:Localized.Uid="MacroInsertButton" MinWidth="104" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}">
-              <StackPanel Orientation="Horizontal" Spacing="7">
-                <TextBlock local:Localized.Uid="MacroInsertMenu" Text="插入" VerticalAlignment="Center" />
-                <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
-              </StackPanel>
-              <Button.Flyout>
-                <MenuFlyout>
-                  <MenuFlyoutItem local:Localized.Uid="MacroInsertCapture" Text="捕获按键" Click="MacroInsertCaptureClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutItem local:Localized.Uid="MacroAddDelayButton" Text="添加延迟" Click="AddMacroDelayClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutSeparator />
-                  <MenuFlyoutItem local:Localized.Uid="MacroInsertText" Text="输入文本" Click="AddMacroTextClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutItem local:Localized.Uid="MacroInsertCommand" Text="运行命令" Click="AddMacroCommandClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutItem local:Localized.Uid="MacroInsertLoop" Text="循环" Click="AddMacroLoopClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutItem local:Localized.Uid="MacroInsertReference" Text="运行另一个宏" Click="AddMacroReferenceClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutItem local:Localized.Uid="MacroInsertCombo" Text="组合键" Click="AddMacroComboClick" Style="{StaticResource MacroMenuItemStyle}" />
-                </MenuFlyout>
-              </Button.Flyout>
-            </Button>
-          </StackPanel>
+    <Grid Grid.Row="0" ColumnDefinitions="420,16,*">
+      <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+          <Button x:Name="MacroRecordButton" local:Localized.Uid="MacroRecordButton" MinWidth="112" Style="{StaticResource SecondaryButtonStyle}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <TextBlock Text="{Binding MacroRecordButtonText}" VerticalAlignment="Center" />
+              <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout Opening="MacroRecordFlyoutOpening">
+                <MenuFlyoutItem x:Name="MacroRecordStartItem" local:Localized.Uid="MacroRecordStart" Text="开始录制" Click="MacroRecordStartClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutItem x:Name="MacroRecordStopItem" local:Localized.Uid="MacroRecordStop" Text="停止录制" Click="MacroRecordStopClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem local:Localized.Uid="MacroRecordStopShortcutHint" Text="录制时按 F9 可停止并保存" IsEnabled="False" Style="{StaticResource MacroMenuItemStyle}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+          <Button x:Name="MacroInsertButton" local:Localized.Uid="MacroInsertButton" MinWidth="104" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <TextBlock local:Localized.Uid="MacroInsertMenu" Text="插入" VerticalAlignment="Center" />
+              <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuFlyoutItem local:Localized.Uid="MacroInsertCapture" Text="捕获按键" Click="MacroInsertCaptureClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutItem local:Localized.Uid="MacroAddDelayButton" Text="添加延迟" Click="AddMacroDelayClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem local:Localized.Uid="MacroInsertText" Text="输入文本" Click="AddMacroTextClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutItem local:Localized.Uid="MacroInsertCommand" Text="运行命令" Click="AddMacroCommandClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutItem local:Localized.Uid="MacroInsertLoop" Text="循环" Click="AddMacroLoopClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutItem local:Localized.Uid="MacroInsertReference" Text="运行另一个宏" Click="AddMacroReferenceClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutItem local:Localized.Uid="MacroInsertCombo" Text="组合键" Click="AddMacroComboClick" Style="{StaticResource MacroMenuItemStyle}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
 
-          <Border Style="{StaticResource CardStyle}" Padding="0" MinHeight="120" VerticalAlignment="Top">
-            <Grid RowDefinitions="*,Auto">
-              <Grid Grid.Row="0" MinHeight="120">
-                <ListView x:Name="MacroStepList" ItemsSource="{Binding MacroSteps}" SelectedItem="{Binding SelectedMacroStep, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="120" MaxHeight="230" Padding="0,4,0,8">
-                  <ListView.ItemTemplate>
-                    <DataTemplate>
-                      <Grid ColumnDefinitions="56,20,Auto,*,Auto" ColumnSpacing="8" Padding="2,7" Margin="{Binding IndentMargin}">
-                        <TextBlock Text="{Binding DelayText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                        <FontIcon Grid.Column="1" Glyph="{Binding StepGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-                        <Border Grid.Column="2" Visibility="{Binding GroupVisibility}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding GroupText}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource AccentBrush}" />
-                        </Border>
-                        <TextBlock Grid.Column="3" Text="{Binding NameText}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="4" Text="{Binding DirectionText}" Visibility="{Binding DirectionVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                      </Grid>
-                    </DataTemplate>
-                  </ListView.ItemTemplate>
-                </ListView>
-                <TextBlock local:Localized.Uid="MacroNoMacroSelected" Text="未选择宏" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding MacroNoSelectionVisibility}" />
-                <TextBlock local:Localized.Uid="MacroEmptyEditorHint" Text="点击“录制”开始录制动作序列，或直接点击下方键盘添加单个动作。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="280" Visibility="{Binding MacroEmptyStepsVisibility}" />
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="0" MinHeight="120" Margin="0,10,0,0">
+          <Grid RowDefinitions="*,Auto">
+            <Grid Grid.Row="0" MinHeight="120">
+              <ListView x:Name="MacroStepList" ItemsSource="{Binding MacroSteps}" SelectedItem="{Binding SelectedMacroStep, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="120" Padding="0,4,0,8" KeyDown="MacroStepListKeyDown">
+                <ListView.ItemTemplate>
+                  <DataTemplate>
+                    <Grid ColumnDefinitions="56,20,Auto,*,Auto,Auto" ColumnSpacing="8" Padding="2,7" Margin="{Binding IndentMargin}">
+                      <TextBlock Text="{Binding DelayText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                      <FontIcon Grid.Column="1" Glyph="{Binding StepGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                      <Border Grid.Column="2" Visibility="{Binding GroupVisibility}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding GroupText}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource AccentBrush}" />
+                      </Border>
+                      <TextBlock Grid.Column="3" Text="{Binding NameText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="4" Text="{Binding DirectionText}" Visibility="{Binding DirectionVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                      <Button Grid.Column="5" local:Localized.Uid="MacroStepDeleteButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Tag="{Binding}" Click="DeleteMacroStepRowClick" VerticalAlignment="Center"><FontIcon Glyph="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
+                    </Grid>
+                  </DataTemplate>
+                </ListView.ItemTemplate>
+              </ListView>
+              <TextBlock local:Localized.Uid="MacroNoMacroSelected" Text="未选择宏" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding MacroNoSelectionVisibility}" />
+              <TextBlock local:Localized.Uid="MacroEmptyEditorHint" Text="点击“录制”开始录制动作序列，或直接点击下方键盘添加单个动作。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="280" Visibility="{Binding MacroEmptyStepsVisibility}" />
 
-                <Border Height="24" VerticalAlignment="Bottom" IsHitTestVisible="False">
-                  <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                      <GradientStop Color="#00202020" Offset="0" />
-                      <GradientStop Color="#FF202020" Offset="1" />
-                    </LinearGradientBrush>
-                  </Border.Background>
-                </Border>
-              </Grid>
-              <Border Grid.Row="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8">
-                <StackPanel x:Name="MacroPlaybackBar" Orientation="Horizontal" Spacing="8" Visibility="{Binding MacroEditorVisibility}">
-                  <Button x:Name="MacroPlayButton" Content="{Binding MacroPlayButtonText}" Click="PlayMacroClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanPlayMacro}" />
-                  <Button Content="{Binding MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding IsMacroPlaying}" />
-                  <Button local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanStopMacro}" />
-                  <TextBlock local:Localized.Uid="MacroPlaybackStopShortcut" Text="F10 停止播放" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                  <StackPanel x:Name="MacroDurationChip" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                    <TextBlock Text="{Binding MacroTotalDurationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock local:Localized.Uid="MacroUnsaved" Text="未保存" Foreground="{StaticResource ThermalBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding MacroUnsavedVisibility}" />
-                  <Button local:Localized.Uid="MacroSaveButton" Content="保存" Click="SaveMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanEditMacro}" />
-                </StackPanel>
+              <Border Height="24" VerticalAlignment="Bottom" IsHitTestVisible="False">
+                <Border.Background>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#00202020" Offset="0" />
+                    <GradientStop Color="#FF202020" Offset="1" />
+                  </LinearGradientBrush>
+                </Border.Background>
               </Border>
             </Grid>
-          </Border>
-
-          <Border Style="{StaticResource CardStyle}" Padding="0">
-            <StackPanel>
-              <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
-                <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-                <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding CanEditMacro}">
-                  <FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
-                  <Button.Flyout>
-                    <MenuFlyout Opening="MacroTriggerFlyoutOpening">
-                      <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureSingle" Text="捕获单键" Click="CaptureMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
-                      <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureCombo" Text="捕获组合键" Click="CaptureMacroTriggerComboClick" Style="{StaticResource MacroMenuItemStyle}" />
-                      <MenuFlyoutSeparator />
-                      <MenuFlyoutItem x:Name="MacroClearTriggerItem" local:Localized.Uid="MacroTriggerClear" Text="清除绑定" Click="ClearMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
-                    </MenuFlyout>
-                  </Button.Flyout>
-                </Button>
-              </Grid>
-              <Grid Padding="12,0,12,10" ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                <StackPanel Spacing="4" VerticalAlignment="Center">
-                  <StackPanel Orientation="Horizontal" Spacing="7">
-                    <FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" />
-                    <TextBlock Text="{Binding SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                  </StackPanel>
-                  <TextBlock local:Localized.Uid="MacroKeyBindsNoMacro" Text="选择一个宏以查看它的键位绑定。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding MacroNoSelectionVisibility}" />
-                  <TextBlock local:Localized.Uid="MacroTriggerUnsetHint" Text="还没有绑定触发键，点击 + 绑定。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding MacroTriggerUnsetVisibility}" />
+            <Border Grid.Row="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8">
+              <Grid x:Name="MacroPlaybackBar" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8" Visibility="{Binding MacroEditorVisibility}">
+                <Button x:Name="MacroPlayButton" Content="{Binding MacroPlayButtonText}" Click="PlayMacroClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanPlayMacro}" />
+                <Button Content="{Binding MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding IsMacroPlaying}" />
+                <Button local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanStopMacro}" />
+                <TextBlock Grid.Column="3" local:Localized.Uid="MacroPlaybackStopShortcut" Text="F10 停止播放" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="4,0" />
+                <StackPanel Grid.Column="4" x:Name="MacroDurationChip" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                  <TextBlock Text="{Binding MacroTotalDurationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                 </StackPanel>
-                <ComboBox Grid.Column="1" local:Localized.Uid="MacroTriggerMode" Header="触发方式" MinWidth="108" SelectedIndex="{Binding SelectedMacro.TriggerModeIndex, Mode=TwoWay}" Visibility="{Binding MacroTriggerBoundVisibility}" IsEnabled="{Binding CanEditMacro}">
-                  <ComboBoxItem local:Localized.Uid="MacroTriggerModePress" Content="按下" />
-                  <ComboBoxItem local:Localized.Uid="MacroTriggerModeToggle" Content="切换" />
-                  <ComboBoxItem local:Localized.Uid="MacroTriggerModeHold" Content="按住" />
-                  <ComboBoxItem local:Localized.Uid="MacroTriggerModeSequence" Content="逐条执行" />
-                </ComboBox>
+                <TextBlock Grid.Column="5" local:Localized.Uid="MacroUnsaved" Text="未保存" Foreground="{StaticResource ThermalBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding MacroUnsavedVisibility}" />
+                <Button Grid.Column="6" local:Localized.Uid="MacroSaveButton" Content="保存" Click="SaveMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanEditMacro}" />
               </Grid>
-            </StackPanel>
-          </Border>
-        </StackPanel>
-      </ScrollViewer>
+            </Border>
+          </Grid>
+        </Border>
 
-      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-        <StackPanel Spacing="10">
-          <Border Style="{StaticResource CardStyle}" Padding="0">
-            <StackPanel>
-              <Button x:Name="MacroPropertiesHeader" Click="MacroPropertiesHeaderClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" CornerRadius="0" MinHeight="34" Padding="12,0">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock local:Localized.Uid="MacroProperties" Text="属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-                  <FontIcon Grid.Column="1" x:Name="MacroPropertiesChevron" Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                </Grid>
+        <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0" Margin="0,10,0,0">
+          <StackPanel>
+            <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+              <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+              <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding CanEditMacro}">
+                <FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
+                <Button.Flyout>
+                  <MenuFlyout Opening="MacroTriggerFlyoutOpening">
+                    <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureSingle" Text="捕获单键" Click="CaptureMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
+                    <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureCombo" Text="捕获组合键" Click="CaptureMacroTriggerComboClick" Style="{StaticResource MacroMenuItemStyle}" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem x:Name="MacroClearTriggerItem" local:Localized.Uid="MacroTriggerClear" Text="清除绑定" Click="ClearMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
+                  </MenuFlyout>
+                </Button.Flyout>
               </Button>
-              <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10,12,12">
-                <ContentControl x:Name="MacroPropertiesPanel" IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Stretch">
-                  <StackPanel Spacing="12">
-                  <StackPanel Spacing="4">
-                    <TextBlock local:Localized.Uid="MacroNameLabel" Text="名称" Style="{StaticResource MetricLabelStyle}" />
-                    <TextBox local:Localized.Uid="MacroNamePlaceholder" Text="{Binding SelectedMacro.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="宏名称" MaxLength="64" />
-                  </StackPanel>
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <TextBlock x:Name="MacroEnabledLabel" local:Localized.Uid="MacroEnabledLabel" Text="启用" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                    <ToggleSwitch Grid.Column="1" IsOn="{Binding SelectedMacro.Enabled, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroEnabledLabel}" />
-                  </Grid>
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <TextBlock x:Name="MacroPlaybackLabel" local:Localized.Uid="MacroPlaybackLabel" Text="播放方式" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                    <ComboBox Grid.Column="1" MinWidth="126" SelectedIndex="{Binding SelectedMacro.PlaybackModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanEditMacro}" AutomationProperties.LabeledBy="{Binding ElementName=MacroPlaybackLabel}">
-                      <ComboBoxItem local:Localized.Uid="MacroPlaybackModeOnce" Content="播放一次" />
-                      <ComboBoxItem local:Localized.Uid="MacroPlaybackModeRepeat" Content="重复" />
-                      <ComboBoxItem local:Localized.Uid="MacroPlaybackModeContinuous" Content="持续循环" />
-                    </ComboBox>
-                  </Grid>
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding SelectedMacro.RepeatCountVisibility, FallbackValue=Collapsed}">
-                    <TextBlock x:Name="MacroPlaybackRepeatCountLabel" local:Localized.Uid="MacroPlaybackRepeatCount" Text="重复次数" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                    <NumberBox Grid.Column="1" Value="{Binding SelectedMacro.RepeatCount, Mode=TwoWay}" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Compact" Width="88" />
-                  </Grid>
-                  <NumberBox local:Localized.Uid="MacroPlaybackSpeed" Value="{Binding SelectedMacro.PlaybackSpeed, Mode=TwoWay}" Minimum="0.1" Maximum="4" SmallChange="0.1" SpinButtonPlacementMode="Compact" />
-                  <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <Expander.Header>
-                      <TextBlock local:Localized.Uid="MacroRecordingOptions" Text="录制选项" FontSize="12" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                    </Expander.Header>
-                    <StackPanel Spacing="8">
-                      <ComboBox local:Localized.Uid="MacroRecordDelayMode" Header="延迟" SelectedIndex="{Binding MacroRecordingDelayModeIndex, Mode=TwoWay}">
-                        <ComboBoxItem local:Localized.Uid="MacroRecordDelayRecorded" Content="记录实际间隔" />
-                        <ComboBoxItem local:Localized.Uid="MacroRecordDelayFixed" Content="固定间隔" />
-                        <ComboBoxItem local:Localized.Uid="MacroRecordDelayNone" Content="不记录延迟" />
-                      </ComboBox>
-                      <NumberBox local:Localized.Uid="MacroRecordFixedDelay" Header="固定延迟（毫秒）" Value="{Binding MacroRecordingFixedDelayMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="60000" SmallChange="50" SpinButtonPlacementMode="Compact" IsEnabled="{Binding IsMacroRecordingFixedDelay}" />
-                      <ComboBox local:Localized.Uid="MacroRecordMouseMode" Header="鼠标轨迹" SelectedIndex="{Binding MacroRecordingMouseTrackingModeIndex, Mode=TwoWay}">
-                        <ComboBoxItem local:Localized.Uid="MacroRecordMouseNone" Content="不记录" />
-                        <ComboBoxItem local:Localized.Uid="MacroRecordMouseAbsolute" Content="绝对坐标" />
-                        <ComboBoxItem local:Localized.Uid="MacroRecordMouseRelative" Content="相对移动" />
-                        <ComboBoxItem local:Localized.Uid="MacroRecordMouseStart" Content="相对起点" />
-                        <ComboBoxItem local:Localized.Uid="MacroRecordMouseForeground" Content="相对前台窗口" />
-                      </ComboBox>
-                      <TextBlock local:Localized.Uid="MacroRecordStopShortcut" Text="按 F9 停止录制并保存。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Expander>
-                  </StackPanel>
-                </ContentControl>
-              </Border>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource CardStyle}" Padding="0" Visibility="{Binding MacroStepEditorVisibility}">
-            <ContentControl IsEnabled="{Binding CanEditMacroStep}" Padding="12,10,12,12" HorizontalContentAlignment="Stretch">
-              <StackPanel Spacing="10">
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <TextBlock local:Localized.Uid="MacroStepProperties" Text="动作属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-                <Border Grid.Column="1" Visibility="{Binding SelectedMacroStep.GroupVisibility, FallbackValue=Collapsed}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="6,1" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding SelectedMacroStep.GroupText}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource AccentBrush}" />
-                </Border>
-              </Grid>
-              <TextBlock Text="{Binding SelectedMacroStep.NameText}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="11" />
-
-              <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.InputDirectionVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepDirectionLabel" Text="方向" Style="{StaticResource MetricLabelStyle}" />
-                <ComboBox SelectedIndex="{Binding SelectedMacroStep.DirectionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch">
-                  <ComboBoxItem local:Localized.Uid="MacroStepDirectionDown" Content="按下" />
-                  <ComboBoxItem local:Localized.Uid="MacroStepDirectionUp" Content="松开" />
-                </ComboBox>
-              </StackPanel>
-
-              <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.DelayVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepDelayLabel" Text="延迟（毫秒）" Style="{StaticResource MetricLabelStyle}" />
-                <NumberBox Value="{Binding SelectedMacroStep.DelayMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="60000" SmallChange="50" SpinButtonPlacementMode="Compact" />
-              </StackPanel>
-
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding SelectedMacroStep.AutoReleaseVisibility, FallbackValue=Collapsed}">
-                <TextBlock x:Name="MacroStepAutoReleaseLabel" local:Localized.Uid="MacroStepAutoReleaseLabel" Text="自动松开" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                <ToggleSwitch Grid.Column="1" IsOn="{Binding SelectedMacroStep.AutoRelease, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroStepAutoReleaseLabel}" />
-              </Grid>
-
-              <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.HoldVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepHoldLabel" Text="按住（毫秒）" Style="{StaticResource MetricLabelStyle}" />
-                <NumberBox Value="{Binding SelectedMacroStep.HoldMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="5000" SmallChange="10" SpinButtonPlacementMode="Compact" />
-              </StackPanel>
-
-              <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.TextVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepTextLabel" Text="文本" Style="{StaticResource MetricLabelStyle}" />
-                <TextBox local:Localized.Uid="MacroStepTextInput" Text="{Binding SelectedMacroStep.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="92" MaxLength="4096" />
-              </StackPanel>
-
-              <StackPanel Spacing="6" Visibility="{Binding SelectedMacroStep.CommandVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepCommandLabel" Text="命令" Style="{StaticResource MetricLabelStyle}" />
-                <TextBox local:Localized.Uid="MacroStepCommandInput" Text="{Binding SelectedMacroStep.Command, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="1024" />
-                <TextBlock local:Localized.Uid="MacroStepArgumentsLabel" Text="参数" Style="{StaticResource MetricLabelStyle}" />
-                <TextBox local:Localized.Uid="MacroStepArgumentsInput" Text="{Binding SelectedMacroStep.Arguments, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="2048" />
-                <TextBlock local:Localized.Uid="MacroStepWorkingDirectoryLabel" Text="工作目录" Style="{StaticResource MetricLabelStyle}" />
-                <TextBox local:Localized.Uid="MacroStepWorkingDirectoryInput" Text="{Binding SelectedMacroStep.WorkingDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="1024" />
-              </StackPanel>
-
-              <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.LoopVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepLoopCountLabel" Text="循环次数" Style="{StaticResource MetricLabelStyle}" />
-                <NumberBox Value="{Binding SelectedMacroStep.LoopCount, Mode=TwoWay}" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Compact" />
-              </StackPanel>
-
-              <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.MacroReferenceVisibility, FallbackValue=Collapsed}">
-                <TextBlock local:Localized.Uid="MacroStepMacroReferenceLabel" Text="目标宏" Style="{StaticResource MetricLabelStyle}" />
-                <ComboBox ItemsSource="{Binding MacroReferenceCandidates}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding SelectedMacroStep.MacroId, Mode=TwoWay}" HorizontalAlignment="Stretch" />
-              </StackPanel>
-
-              <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.MousePathVisibility, FallbackValue=Collapsed}">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                  <TextBlock local:Localized.Uid="MacroStepMousePathLabel" Text="鼠标轨迹" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                  <Button x:Name="MacroMousePathEditButton" Grid.Column="1" local:Localized.Uid="MacroMousePathEditButton" Content="编辑轨迹" Click="OpenMousePathEditorClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}" />
-                </Grid>
-                <TextBlock Text="{Binding SelectedMacroStep.MousePathText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-              </StackPanel>
-
-              <ContentControl x:Name="MacroStepActionBar" IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Left">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <Button local:Localized.Uid="MacroStepRecaptureButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="RecaptureMacroStepClick" IsEnabled="{Binding SelectedMacroStep.CanRecapture, FallbackValue=False}"><FontIcon Glyph="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
-                  <Button local:Localized.Uid="MacroStepMoveUpButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepUpClick"><FontIcon Glyph="&#xE74A;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
-                  <Button local:Localized.Uid="MacroStepMoveDownButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepDownClick"><FontIcon Glyph="&#xE74B;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
-                  <Button local:Localized.Uid="MacroStepDeleteButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="DeleteMacroStepClick"><FontIcon Glyph="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+            </Grid>
+            <Grid Padding="12,0,12,10" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+              <StackPanel Spacing="4" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" />
+                  <TextBlock Text="{Binding SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
                 </StackPanel>
-              </ContentControl>
+                <TextBlock local:Localized.Uid="MacroKeyBindsNoMacro" Text="选择一个宏以查看它的键位绑定。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding MacroNoSelectionVisibility}" />
+                <TextBlock local:Localized.Uid="MacroTriggerUnsetHint" Text="还没有绑定触发键，点击 + 绑定。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding MacroTriggerUnsetVisibility}" />
+              </StackPanel>
+              <ComboBox Grid.Column="1" local:Localized.Uid="MacroTriggerMode" Header="触发方式" MinWidth="108" FontSize="13" MinHeight="40" MaxDropDownHeight="240" SelectedIndex="{Binding SelectedMacro.TriggerModeIndex, Mode=TwoWay}" Visibility="{Binding MacroTriggerBoundVisibility}" IsEnabled="{Binding CanEditMacro}">
+                <ComboBoxItem local:Localized.Uid="MacroTriggerModePress" Content="按下" />
+                <ComboBoxItem local:Localized.Uid="MacroTriggerModeToggle" Content="切换" />
+                <ComboBoxItem local:Localized.Uid="MacroTriggerModeHold" Content="按住" />
+                <ComboBoxItem local:Localized.Uid="MacroTriggerModeSequence" Content="逐条执行" />
+              </ComboBox>
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <Grid Grid.Column="2" Grid.ColumnSpan="5" ColumnDefinitions="*,16,*,16,*">
+      <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="0">
+        <StackPanel>
+          <Button x:Name="MacroPropertiesHeader" Click="MacroPropertiesHeaderClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" CornerRadius="0" MinHeight="38" Padding="12,10">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock local:Localized.Uid="MacroProperties" Text="属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+              <FontIcon Grid.Column="1" x:Name="MacroPropertiesChevron" Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+            </Grid>
+          </Button>
+          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10,12,12">
+            <ContentControl x:Name="MacroPropertiesPanel" IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Stretch">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="4">
+                  <TextBlock local:Localized.Uid="MacroNameLabel" Text="名称" Style="{StaticResource MetricLabelStyle}" />
+                  <TextBox local:Localized.Uid="MacroNamePlaceholder" Text="{Binding SelectedMacro.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="宏名称" MaxLength="64" />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                  <TextBlock x:Name="MacroEnabledLabel" local:Localized.Uid="MacroEnabledLabel" Text="启用" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                  <ToggleSwitch Grid.Column="1" IsOn="{Binding SelectedMacro.Enabled, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroEnabledLabel}" />
+                </Grid>
+                <StackPanel Spacing="4">
+                  <TextBlock x:Name="MacroPlaybackLabel" local:Localized.Uid="MacroPlaybackLabel" Text="播放方式" Style="{StaticResource MetricLabelStyle}" />
+                  <ComboBox MinWidth="126" FontSize="13" MinHeight="40" MaxDropDownHeight="240" HorizontalAlignment="Stretch" SelectedIndex="{Binding SelectedMacro.PlaybackModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanEditMacro}" AutomationProperties.LabeledBy="{Binding ElementName=MacroPlaybackLabel}">
+                    <ComboBoxItem local:Localized.Uid="MacroPlaybackModeOnce" Content="播放一次" />
+                    <ComboBoxItem local:Localized.Uid="MacroPlaybackModeRepeat" Content="重复" />
+                    <ComboBoxItem local:Localized.Uid="MacroPlaybackModeContinuous" Content="持续循环" />
+                  </ComboBox>
+                </StackPanel>
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacro.RepeatCountVisibility, FallbackValue=Collapsed}">
+                  <TextBlock x:Name="MacroPlaybackRepeatCountLabel" local:Localized.Uid="MacroPlaybackRepeatCount" Text="重复次数" Style="{StaticResource MetricLabelStyle}" />
+                  <NumberBox Value="{Binding SelectedMacro.RepeatCount, Mode=TwoWay}" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Compact" />
+                </StackPanel>
+                <NumberBox local:Localized.Uid="MacroPlaybackSpeed" Value="{Binding SelectedMacro.PlaybackSpeed, Mode=TwoWay}" Minimum="0.1" Maximum="4" SmallChange="0.1" SpinButtonPlacementMode="Compact" />
               </StackPanel>
             </ContentControl>
           </Border>
         </StackPanel>
-      </ScrollViewer>
-    </Grid>
+      </Border>
 
+      <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="0">
+        <StackPanel>
+          <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+            <TextBlock local:Localized.Uid="MacroRecordingOptions" Text="录制选项" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+          </Grid>
+          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10,12,12">
+            <ContentControl IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Stretch">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="4">
+                  <TextBlock local:Localized.Uid="MacroRecordDelayMode" Text="延迟" Style="{StaticResource MetricLabelStyle}" />
+                  <Button x:Name="MacroRecordDelayModeButton" HorizontalAlignment="Stretch" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}" AutomationProperties.Name="{Binding MacroRecordingDelayModeAutomationName}">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                      <TextBlock Text="{Binding MacroRecordingDelayModeText}" VerticalAlignment="Center" />
+                      <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button.Flyout>
+                      <MenuFlyout Opening="MacroRecordDelayModeFlyoutOpening">
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordDelayRecordedItem" local:Localized.Uid="MacroRecordDelayRecorded" Text="记录实际间隔" Click="MacroRecordDelayModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordDelayFixedItem" local:Localized.Uid="MacroRecordDelayFixed" Text="固定间隔" Click="MacroRecordDelayModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordDelayNoneItem" local:Localized.Uid="MacroRecordDelayNone" Text="不记录延迟" Click="MacroRecordDelayModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                      </MenuFlyout>
+                    </Button.Flyout>
+                  </Button>
+                </StackPanel>
+                <StackPanel Spacing="4">
+                  <TextBlock local:Localized.Uid="MacroRecordFixedDelayLabel" Text="固定延迟（毫秒）" Style="{StaticResource MetricLabelStyle}" TextTrimming="CharacterEllipsis" />
+                  <NumberBox x:Name="MacroRecordFixedDelay" Value="{Binding MacroRecordingFixedDelayMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="60000" SmallChange="50" SpinButtonPlacementMode="Compact" IsEnabled="{Binding IsMacroRecordingFixedDelay}" />
+                </StackPanel>
+                <StackPanel Spacing="4">
+                  <TextBlock local:Localized.Uid="MacroRecordMouseMode" Text="鼠标轨迹" Style="{StaticResource MetricLabelStyle}" />
+                  <Button x:Name="MacroRecordMouseModeButton" HorizontalAlignment="Stretch" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}" AutomationProperties.Name="{Binding MacroRecordingMouseTrackingModeAutomationName}">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                      <TextBlock Text="{Binding MacroRecordingMouseTrackingModeText}" VerticalAlignment="Center" />
+                      <FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="10" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button.Flyout>
+                      <MenuFlyout Opening="MacroRecordMouseModeFlyoutOpening">
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordMouseNoneItem" local:Localized.Uid="MacroRecordMouseNone" Text="不记录" Click="MacroRecordMouseModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordMouseAbsoluteItem" local:Localized.Uid="MacroRecordMouseAbsolute" Text="绝对坐标" Click="MacroRecordMouseModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordMouseRelativeItem" local:Localized.Uid="MacroRecordMouseRelative" Text="相对移动" Click="MacroRecordMouseModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordMouseStartItem" local:Localized.Uid="MacroRecordMouseStart" Text="相对起点" Click="MacroRecordMouseModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                        <ToggleMenuFlyoutItem x:Name="MacroRecordMouseForegroundItem" local:Localized.Uid="MacroRecordMouseForeground" Text="相对前台窗口" Click="MacroRecordMouseModeClick" Style="{StaticResource MacroToggleMenuItemStyle}" />
+                      </MenuFlyout>
+                    </Button.Flyout>
+                  </Button>
+                </StackPanel>
+              </StackPanel>
+            </ContentControl>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Column="4" Style="{StaticResource CardStyle}" Padding="0" Visibility="{Binding MacroStepEditorVisibility}">
+        <StackPanel>
+          <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+            <TextBlock local:Localized.Uid="MacroStepProperties" Text="动作属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+            <Border Grid.Column="1" Visibility="{Binding SelectedMacroStep.GroupVisibility, FallbackValue=Collapsed}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="6,1" VerticalAlignment="Center">
+              <TextBlock Text="{Binding SelectedMacroStep.GroupText}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource AccentBrush}" />
+            </Border>
+          </Grid>
+          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10,12,12">
+            <ContentControl IsEnabled="{Binding CanEditMacroStep}" HorizontalContentAlignment="Stretch">
+              <Grid RowDefinitions="*,Auto">
+                <StackPanel Spacing="6" Grid.Row="0">
+                  <TextBlock Text="{Binding SelectedMacroStep.NameText}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.InputDirectionVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepDirectionLabel" Text="方向" Style="{StaticResource MetricLabelStyle}" />
+                  <ComboBox FontSize="13" MinHeight="40" MaxDropDownHeight="240" SelectedIndex="{Binding SelectedMacroStep.DirectionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch">
+                    <ComboBoxItem local:Localized.Uid="MacroStepDirectionDown" Content="按下" />
+                    <ComboBoxItem local:Localized.Uid="MacroStepDirectionUp" Content="松开" />
+                  </ComboBox>
+                </StackPanel>
+
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.DelayVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepDelayLabel" Text="延迟（毫秒）" Style="{StaticResource MetricLabelStyle}" />
+                  <NumberBox Value="{Binding SelectedMacroStep.DelayMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="60000" SmallChange="50" SpinButtonPlacementMode="Compact" />
+                </StackPanel>
+
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding SelectedMacroStep.AutoReleaseVisibility, FallbackValue=Collapsed}">
+                  <TextBlock x:Name="MacroStepAutoReleaseLabel" local:Localized.Uid="MacroStepAutoReleaseLabel" Text="自动松开" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                  <ToggleSwitch Grid.Column="1" IsOn="{Binding SelectedMacroStep.AutoRelease, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroStepAutoReleaseLabel}" />
+                </Grid>
+
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.HoldVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepHoldLabel" Text="按住（毫秒）" Style="{StaticResource MetricLabelStyle}" />
+                  <NumberBox Value="{Binding SelectedMacroStep.HoldMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="5000" SmallChange="10" SpinButtonPlacementMode="Compact" />
+                </StackPanel>
+
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.TextVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepTextLabel" Text="文本" Style="{StaticResource MetricLabelStyle}" />
+                  <TextBox local:Localized.Uid="MacroStepTextInput" Text="{Binding SelectedMacroStep.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="92" MaxHeight="140" MaxLength="4096" />
+                </StackPanel>
+
+                <StackPanel Spacing="6" Visibility="{Binding SelectedMacroStep.CommandVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepCommandLabel" Text="命令" Style="{StaticResource MetricLabelStyle}" />
+                  <TextBox local:Localized.Uid="MacroStepCommandInput" Text="{Binding SelectedMacroStep.Command, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="1024" />
+                  <TextBlock local:Localized.Uid="MacroStepArgumentsLabel" Text="参数" Style="{StaticResource MetricLabelStyle}" />
+                  <TextBox local:Localized.Uid="MacroStepArgumentsInput" Text="{Binding SelectedMacroStep.Arguments, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="2048" />
+                  <TextBlock local:Localized.Uid="MacroStepWorkingDirectoryLabel" Text="工作目录" Style="{StaticResource MetricLabelStyle}" />
+                  <TextBox local:Localized.Uid="MacroStepWorkingDirectoryInput" Text="{Binding SelectedMacroStep.WorkingDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="1024" />
+                </StackPanel>
+
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.LoopVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepLoopCountLabel" Text="循环次数" Style="{StaticResource MetricLabelStyle}" />
+                  <NumberBox Value="{Binding SelectedMacroStep.LoopCount, Mode=TwoWay}" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Compact" />
+                </StackPanel>
+
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.MacroReferenceVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepMacroReferenceLabel" Text="目标宏" Style="{StaticResource MetricLabelStyle}" />
+                  <ComboBox ItemsSource="{Binding MacroReferenceCandidates}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding SelectedMacroStep.MacroId, Mode=TwoWay}" FontSize="13" MinHeight="40" MaxDropDownHeight="240" HorizontalAlignment="Stretch" />
+                </StackPanel>
+
+                <StackPanel Spacing="4" Visibility="{Binding SelectedMacroStep.MousePathVisibility, FallbackValue=Collapsed}">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock local:Localized.Uid="MacroStepMousePathLabel" Text="鼠标轨迹" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                    <Button x:Name="MacroMousePathEditButton" Grid.Column="1" local:Localized.Uid="MacroMousePathEditButton" Content="编辑轨迹" Click="OpenMousePathEditorClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding CanEditMacro}" />
+                  </Grid>
+                  <TextBlock Text="{Binding SelectedMacroStep.MousePathText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+
+              </StackPanel>
+                <ContentControl x:Name="MacroStepActionBar" Grid.Row="1" IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Left" Margin="0,10,0,0">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button local:Localized.Uid="MacroStepRecaptureButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="RecaptureMacroStepClick" IsEnabled="{Binding SelectedMacroStep.CanRecapture, FallbackValue=False}"><FontIcon Glyph="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+                    <Button local:Localized.Uid="MacroStepMoveUpButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepUpClick"><FontIcon Glyph="&#xE74A;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+                    <Button local:Localized.Uid="MacroStepMoveDownButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="MoveMacroStepDownClick"><FontIcon Glyph="&#xE74B;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+                    <Button local:Localized.Uid="MacroStepDeleteButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" Click="DeleteMacroStepClick"><FontIcon Glyph="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" /></Button>
+                  </StackPanel>
+                </ContentControl>
+              </Grid>
+            </ContentControl>
+          </Border>
+        </StackPanel>
+      </Border>
+      </Grid>
+    </Grid>
     <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="12" Margin="0,12,0,0">
       <Grid ColumnDefinitions="*,248" ColumnSpacing="20">
         <StackPanel Grid.Column="0" Spacing="8">
@@ -337,7 +370,7 @@
             </StackPanel>
           </Grid>
           <StackPanel Spacing="2">
-            <TextBlock x:Name="MacroMouseCaption" Text="" MinHeight="18" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
+            <TextBlock x:Name="MacroMouseCaption" Text="" Height="20" Style="{StaticResource MetricLabelStyle}" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             <TextBlock local:Localized.Uid="MacroKeyPickerMouseHint" Text="点击即可添加动作。" Style="{StaticResource MetricLabelStyle}" HorizontalAlignment="Center" />
           </StackPanel>
         </StackPanel>
@@ -347,3 +380,5 @@
     <TextBlock Grid.Row="2" Text="{Binding MacroStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
   </Grid>
 </Window>
+
+

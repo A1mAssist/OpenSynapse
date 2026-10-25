@@ -1595,7 +1595,7 @@
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>设置</value><comment>设置页面标题</comment></data>
   <data name="SettingsPageDescription.Text" xml:space="preserve"><value>管理 OpenSynapse 的启动、通知、语言和更新。</value><comment>设置页面说明</comment></data>
   <data name="DedicatedGpuModeTitle.Text" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式标题</comment></data>
-  <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>关闭 NVIDIA 独显，让系统和应用只使用核显。切换需要管理员权限；外接屏可能无画面。</value><comment>仅核显模式说明</comment></data>
+  <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>关闭 NVIDIA 独显，让系统和应用只使用核显。机器级安装由后台服务切换；当前用户安装会请求管理员权限。外接屏可能无画面。</value><comment>仅核显模式说明</comment></data>
   <data name="DedicatedGpuModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式开关</comment></data>
   <data name="DedicatedGpuModeStatusInactive" xml:space="preserve"><value>独显当前已启用。</value><comment>仅核显模式关闭状态</comment></data>
   <data name="DedicatedGpuModeStatusActive" xml:space="preserve"><value>独显已停用，系统仅使用核显。</value><comment>仅核显模式开启状态</comment></data>
@@ -1610,6 +1610,25 @@
   <data name="DedicatedGpuModeStatusNoDevice" xml:space="preserve"><value>未找到 NVIDIA 独显。</value><comment>未找到独显</comment></data>
   <data name="DedicatedGpuModeStatusFailed" xml:space="preserve"><value>切换失败（Windows 返回 {0}）。</value><comment>仅核显模式切换失败</comment></data>
   <data name="DedicatedGpuModeError" xml:space="preserve"><value>显卡模式设置：{0}</value><comment>仅核显模式异常</comment></data>
+  <data name="DisplayMuxModeTitle.Text" xml:space="preserve"><value>显示模式（MUX）</value><comment>GPU MUX 显示模式标题</comment></data>
+  <data name="DisplayMuxModeDescription.Text" xml:space="preserve"><value>通过设备固件 HID 命令切换内置屏幕的输出显卡。切换后需要重启。</value><comment>GPU MUX 显示模式说明</comment></data>
+  <data name="DisplayMuxModeHybrid" xml:space="preserve"><value>混合模式（Optimus）</value><comment>MUX 混合模式</comment></data>
+  <data name="DisplayMuxModeDds" xml:space="preserve"><value>DDS 动态切换</value><comment>MUX DDS 模式</comment></data>
+  <data name="DisplayMuxModeDiscrete" xml:space="preserve"><value>独显直连</value><comment>MUX 独显直连</comment></data>
+  <data name="DisplayMuxModeStatusHybrid" xml:space="preserve"><value>当前为混合模式（Optimus）。</value><comment>MUX 当前混合模式</comment></data>
+  <data name="DisplayMuxModeStatusDds" xml:space="preserve"><value>当前为 DDS 动态切换。</value><comment>MUX 当前 DDS 模式</comment></data>
+  <data name="DisplayMuxModeStatusDiscrete" xml:space="preserve"><value>当前为独显直连。</value><comment>MUX 当前独显直连</comment></data>
+  <data name="DisplayMuxModeStatusApplying" xml:space="preserve"><value>正在写入设备 MUX 设置…</value><comment>MUX 写入中</comment></data>
+  <data name="DisplayMuxModeStatusSuccess" xml:space="preserve"><value>当前已是目标显示模式。</value><comment>MUX 无需切换</comment></data>
+  <data name="DisplayMuxModeStatusRestartRequired" xml:space="preserve"><value>显示模式已写入，重启后生效。</value><comment>MUX 需要重启</comment></data>
+  <data name="DisplayMuxModeStatusNoDevice" xml:space="preserve"><value>未找到支持 MUX 的 Blade HID 设备。</value><comment>未找到 Blade MUX 设备</comment></data>
+  <data name="DisplayMuxModeStatusNoPair" xml:space="preserve"><value>设备未报告可切换的动态显示（DDS / Optimus）或独显直连能力。</value><comment>MUX 能力不足</comment></data>
+  <data name="DisplayMuxModeStatusUnavailable" xml:space="preserve"><value>读取设备 MUX 状态失败。</value><comment>MUX 状态读取异常</comment></data>
+  <data name="DisplayMuxModeStatusFailed" xml:space="preserve"><value>MUX 设置失败（错误码 {0}）。</value><comment>MUX 写入失败</comment></data>
+  <data name="DisplayMuxModeStatusRestored" xml:space="preserve"><value>切换失败，已恢复原显示模式。</value><comment>MUX 已恢复</comment></data>
+  <data name="DisplayMuxModeStatusRestoreFailed" xml:space="preserve"><value>切换失败，恢复原模式也失败；请重启并检查 BIOS 显示模式。</value><comment>MUX 恢复失败</comment></data>
+  <data name="DisplayMuxModeStatusDedicatedGpuDisabled" xml:space="preserve"><value>请先关闭“仅核显（禁用独显）”，再切换 MUX。</value><comment>MUX 被仅核显模式阻断</comment></data>
+  <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX 模式设置：{0}</value><comment>MUX 模式异常</comment></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>关于 OpenSynapse</value><comment>设置页关于入口标题</comment></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>查看版本、项目主页和许可信息。</value><comment>设置页关于入口说明</comment></data>
   <data name="SettingsAboutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>打开关于 OpenSynapse</value><comment>打开关于辅助功能名称</comment></data>
@@ -2195,7 +2214,8 @@
   </data>
   <data name="HidScanUnavailable" xml:space="preserve">
     <value>该设备未连接，无法扫描</value>
-  </data>  <data name="HidScanNoService" xml:space="preserve">
+  </data>
+  <data name="HidScanNoService" xml:space="preserve">
     <value>当前版本未包含 OpenRazer 支持</value>
   </data>
   <data name="HidScanNoDevice" xml:space="preserve">
@@ -2203,7 +2223,8 @@
   </data>
   <data name="HidScanDisabled" xml:space="preserve">
     <value>鼠标设备已禁用 HID 命令扫描，避免影响 2.4 GHz 接收器</value>
-  </data>  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>游戏耳机</value></data>
+  </data>
+  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>游戏耳机</value></data>
   <data name="BlackSharkStatusConnected" xml:space="preserve"><value>已连接</value></data>
   <data name="BlackSharkCharging" xml:space="preserve"><value>充电中</value></data>
   <data name="BlackSharkNotCharging" xml:space="preserve"><value>未充电</value></data>
@@ -2384,8 +2405,7 @@
   <data name="MacroTriggerConflict" xml:space="preserve"><value>触发键与“{0}”冲突。</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>邮件</value></data>
   <data name="MacroMediaHomePage" xml:space="preserve"><value>主页</value></data>
-  <data name="MacroImportButton.Text" xml:space="preserve"><value>导入…</value></data>
-  <data name="MacroExportButton.Text" xml:space="preserve"><value>导出当前宏…</value></data>
+  <data name="MacroImportButton.Content" xml:space="preserve"><value>导入…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>复制</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>导出…</value></data>
   <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存，F10 停止播放。</value></data>
@@ -2398,17 +2418,17 @@
   <data name="MacroPlaybackSpeed.Header" xml:space="preserve"><value>播放速度（倍率，1 = 原速）</value></data>
   <data name="MacroPlaybackStopShortcut.Text" xml:space="preserve"><value>F10 停止播放</value></data>
   <data name="MacroRecordingOptions.Text" xml:space="preserve"><value>录制选项</value></data>
-  <data name="MacroRecordDelayMode.Header" xml:space="preserve"><value>延迟</value></data>
-  <data name="MacroRecordDelayRecorded.Content" xml:space="preserve"><value>记录实际间隔</value></data>
-  <data name="MacroRecordDelayFixed.Content" xml:space="preserve"><value>固定间隔</value></data>
-  <data name="MacroRecordDelayNone.Content" xml:space="preserve"><value>不记录延迟</value></data>
-  <data name="MacroRecordFixedDelay.Header" xml:space="preserve"><value>固定延迟（毫秒）</value></data>
-  <data name="MacroRecordMouseMode.Header" xml:space="preserve"><value>鼠标轨迹</value></data>
-  <data name="MacroRecordMouseNone.Content" xml:space="preserve"><value>不记录</value></data>
-  <data name="MacroRecordMouseAbsolute.Content" xml:space="preserve"><value>绝对坐标</value></data>
-  <data name="MacroRecordMouseRelative.Content" xml:space="preserve"><value>相对移动</value></data>
-  <data name="MacroRecordMouseStart.Content" xml:space="preserve"><value>相对起点</value></data>
-  <data name="MacroRecordMouseForeground.Content" xml:space="preserve"><value>相对前台窗口</value></data>
+  <data name="MacroRecordDelayMode.Text" xml:space="preserve"><value>延迟</value></data>
+  <data name="MacroRecordDelayRecorded.Text" xml:space="preserve"><value>记录实际间隔</value></data>
+  <data name="MacroRecordDelayFixed.Text" xml:space="preserve"><value>固定间隔</value></data>
+  <data name="MacroRecordDelayNone.Text" xml:space="preserve"><value>不记录延迟</value></data>
+  <data name="MacroRecordFixedDelayLabel.Text" xml:space="preserve"><value>固定延迟（毫秒）</value></data>
+  <data name="MacroRecordMouseMode.Text" xml:space="preserve"><value>鼠标轨迹</value></data>
+  <data name="MacroRecordMouseNone.Text" xml:space="preserve"><value>不记录</value></data>
+  <data name="MacroRecordMouseAbsolute.Text" xml:space="preserve"><value>绝对坐标</value></data>
+  <data name="MacroRecordMouseRelative.Text" xml:space="preserve"><value>相对移动</value></data>
+  <data name="MacroRecordMouseStart.Text" xml:space="preserve"><value>相对起点</value></data>
+  <data name="MacroRecordMouseForeground.Text" xml:space="preserve"><value>相对前台窗口</value></data>
   <data name="MacroRecordStopShortcut.Text" xml:space="preserve"><value>按 F9 停止录制并保存。</value></data>
   <data name="MacroRecordStopShortcutHint.Text" xml:space="preserve"><value>录制时按 F9 可停止并保存</value></data>
   <data name="MacroStepArgumentsLabel.Text" xml:space="preserve"><value>参数</value></data>
@@ -2478,4 +2498,57 @@
   <data name="MacroMousePathHintForeground" xml:space="preserve"><value>坐标为前台窗口内 0–10000 的相对位置。</value></data>
   <data name="MacroMousePathNeedPoint" xml:space="preserve"><value>至少保留一个轨迹点。</value></data>
   <data name="MacroMousePathPointLimit" xml:space="preserve"><value>轨迹最多 {0} 个点。</value></data>
-  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>时间偏移必须按顺序递增。</value></data></root>
+  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>时间偏移必须按顺序递增。</value></data>
+  <data name="LeviathanAudioTitle.Text" xml:space="preserve"><value>音频</value></data>
+  <data name="LeviathanAudioDescription.Text" xml:space="preserve"><value>通过 1354 中间件协议读取均衡器、低音和输入状态，并可写回均衡器与低音。</value></data>
+  <data name="LeviathanRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="LeviathanEqPresetLabel.Text" xml:space="preserve"><value>均衡器预设</value></data>
+  <data name="LeviathanEqPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
+  <data name="LeviathanBassLabel.Text" xml:space="preserve"><value>低音增强</value></data>
+  <data name="LeviathanBassApply.Content" xml:space="preserve"><value>应用低音</value></data>
+  <data name="LeviathanEqBandsTitle.Text" xml:space="preserve"><value>10 段均衡器</value></data>
+  <data name="LeviathanEqBandsApply.Content" xml:space="preserve"><value>应用自定义 EQ</value></data>
+  <data name="LeviathanInputSourceLabel" xml:space="preserve"><value>输入源</value></data>
+  <data name="LeviathanAudioIoLabel" xml:space="preserve"><value>音频接口</value></data>
+  <data name="LeviathanOptical" xml:space="preserve"><value>光纤</value></data>
+  <data name="LeviathanBluetooth" xml:space="preserve"><value>蓝牙</value></data>
+  <data name="LeviathanSaved" xml:space="preserve"><value>已应用</value></data>
+  <data name="LeviathanPresetDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="LeviathanPresetGame" xml:space="preserve"><value>游戏</value></data>
+  <data name="LeviathanPresetMusic" xml:space="preserve"><value>音乐</value></data>
+  <data name="LeviathanPresetMovie" xml:space="preserve"><value>电影</value></data>
+  <data name="LeviathanPresetTreble" xml:space="preserve"><value>高音</value></data>
+  <data name="LeviathanPresetCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="SystemAudioTitle.Text" xml:space="preserve"><value>系统音频</value></data>
+  <data name="SystemAudioDescription.Text" xml:space="preserve"><value>默认播放与录音端点、音量和静音。实现对应本地雷云 simple_service 的 Core Audio 功能。</value></data>
+  <data name="SystemAudioRefresh.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="SystemAudioPlaybackLabel.Text" xml:space="preserve"><value>播放设备</value></data>
+  <data name="SystemAudioRecordingLabel.Text" xml:space="preserve"><value>录音设备</value></data>
+  <data name="SystemAudioMuteLabel.Text" xml:space="preserve"><value>静音</value></data>
+  <data name="SystemAudioApplyPlayback.Content" xml:space="preserve"><value>应用播放设置</value></data>
+  <data name="SystemAudioApplyRecording.Content" xml:space="preserve"><value>应用录音设置</value></data>
+  <data name="SystemAudioRefreshed" xml:space="preserve"><value>音频设备已刷新</value></data>
+  <data name="SystemAudioLoadFailed" xml:space="preserve"><value>读取系统音频失败：{0}</value></data>
+  <data name="SystemAudioDefaultEndpoint" xml:space="preserve"><value>默认 · {0}</value></data>
+  <data name="SystemAudioMissingEndpoint" xml:space="preserve"><value>Windows 未返回可用的默认播放或录音端点。</value></data>
+  <data name="SystemAudioRenderApplied" xml:space="preserve"><value>默认播放设备与音量已应用</value></data>
+  <data name="SystemAudioCaptureApplied" xml:space="preserve"><value>默认录音设备与音量已应用</value></data>
+  <data name="SystemAudioApplyFailed" xml:space="preserve"><value>应用音频设置失败：{0}</value></data>
+  <data name="MacroExportButtonShort.Content" xml:space="preserve"><value>导出</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>启用宏</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>启用或禁用这个宏</value></data>
+  <data name="MacroRecordDelayRecordedLabel" xml:space="preserve"><value>记录实际间隔</value></data>
+  <data name="MacroRecordDelayFixedLabel" xml:space="preserve"><value>固定间隔</value></data>
+  <data name="MacroRecordDelayNoneLabel" xml:space="preserve"><value>不记录延迟</value></data>
+  <data name="MacroRecordMouseNoneLabel" xml:space="preserve"><value>不记录</value></data>
+  <data name="MacroRecordMouseAbsoluteLabel" xml:space="preserve"><value>绝对坐标</value></data>
+  <data name="MacroRecordMouseRelativeLabel" xml:space="preserve"><value>相对移动</value></data>
+  <data name="MacroRecordMouseStartLabel" xml:space="preserve"><value>相对起点</value></data>
+  <data name="MacroRecordMouseForegroundLabel" xml:space="preserve"><value>相对前台窗口</value></data>
+  <data name="MacroRecordDelayModeLabel" xml:space="preserve"><value>延迟</value></data>
+  <data name="MacroRecordMouseModeLabel" xml:space="preserve"><value>鼠标轨迹</value></data>
+</root>
+
+
+
+

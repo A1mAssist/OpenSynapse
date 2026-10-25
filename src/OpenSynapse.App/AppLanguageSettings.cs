@@ -1,4 +1,5 @@
 using System.Globalization;
+using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.App;
 
@@ -8,10 +9,7 @@ internal static class AppLanguageSettings
     public const string Chinese = "zh-CN";
     public const string English = "en-US";
 
-    private static readonly string SettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "language.txt");
+    private static readonly string SettingsPath = AppDataPaths.Combine("language.txt");
 
     public static string Current { get; private set; } = System;
     public static string Effective => Current == System

@@ -175,6 +175,7 @@ public sealed partial class MainViewModel
         SelectedOpenRazerKraken = null;
         SelectedOpenRazerDevice = selected;
         await selected.LoadBasicStateAsync(selectionToken);
+        await selected.LoadSoundbarAsync(selectionToken);
         await selected.LoadDpiStagesAsync(selectionToken);
         await selected.ApplyConfiguredLightingAsync(selectionToken);
         RefreshDeviceOverviewVisibility();

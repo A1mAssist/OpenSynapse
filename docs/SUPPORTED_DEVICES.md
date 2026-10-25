@@ -2,24 +2,45 @@
 
 OpenSynapse is not limited to the product-specific Blade and Viper implementations. The support surface currently includes:
 
-- **254 OpenRazer catalog models**: mice, keyboards, laptops, and accessories.
-- **3 product-specific control sets**: Blade, Viper, and BlackShark V3 Pro features that need dedicated protocols.
+- **259 OpenRazer catalog models**. Eight Blade PIDs use product-specific manifests: `0255`, `029D`, `02B6`, `02B7`, `02B8`, `02C5`, `02C6`, and `02C7`; the Razer Leviathan V2 X `054A` is also locally admitted.
+- **4 product-specific control sets**: Blade, Viper, BlackShark V3 Pro, and Leviathan V2 X audio features that need dedicated protocols.
 - **6 Kraken headsets** with lighting control.
 - **BlackShark V3 Pro** with battery, sidetone, THX, ANC, and game/chat balance controls.
 - **Chroma REST** for compatible games and integrations.
 
-The OpenRazer portion is pinned to OpenRazer commit `6820f9da169d354bc7e6e93a0aa8683a6bb75792`. OpenSynapse creates a page only for a connected, recognized device and shows a control only after resolving its Windows HID endpoint and transaction.
+The OpenRazer portion is pinned to OpenRazer commit `477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d`. OpenSynapse creates a page only for a connected, recognized device and shows a control only after resolving its Windows HID endpoint and transaction.
 
 ## Product-specific controls
 
 | Device | USB VID:PID | Controls |
 |---|---|---|
 | Razer Blade 16 (2025) | `1532:02C6` | Telemetry, keyboard lighting, performance, fans, display, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior |
+| Razer Blade 14 (2023) | `1532:029D` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, Max Fan, CPU levels, and charge limit |
+| Razer Blade 14 (2024) | `1532:02B6` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, Max Fan, CPU levels, and charge limit |
+| Razer Blade 16 (2024) | `1532:02B7` | Blade 695 middleware control set: telemetry, 6×17 keyboard matrix lighting, performance, fans, display MUX, native panel mode, local dimming, battery, charge limit, and Fn/game-mode reports |
+| Razer Blade 18 (2024) | `1532:02B8` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, Max Fan, and charge limit |
+| Razer Blade 14 (2025) | `1532:02C5` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, and charge limit |
+| Razer Blade 18 (2025) | `1532:02C7` | Telemetry, 6×19 keyboard matrix lighting, performance, fans, and charge limit |
+| Razer Blade Base (Early 2020) | `1532:0255` | Telemetry, keyboard brightness writes, performance/fan-mode writes, adapter power, power-mode bitmap, charge limit, and native panel/SKU reads; the percentage-based fan target is not exposed as an RPM target |
 | Razer Blade 16 (2023) | `1532:029F` | Telemetry, keyboard brightness and firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom levels including CPU Boost, Max Fan, fixed fan targets (2000-5000 RPM), charge limit, one-time full charge, and Gaming mode |
 | Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, and onboard mappings |
 | Razer BlackShark V3 Pro | `1532:101B`, `1532:101C` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
 
 Blade Wave and Spectrum use firmware rendering when no palette is saved and software frame rendering when a palette is saved. The Blade 16 (2023) has no per-key matrix channel: it exposes brightness plus the four effects its firmware draws on its own (Off, Breathing, Spectrum, Wave), and its stored effect color is not readable. Custom colors, audio-reactive lighting, frame rendering, Chroma takeover, the wave direction selector, and the .chroma import button are therefore not offered on that model. The Viper page supports 125 / 500 / 1000 Hz polling, X/Y DPI from 100 to 30000, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1.
+
+## Razer Leviathan V2 X soundbars (054A)
+
+`1532:054A` maps to Synapse product `1354` and covers the following editions that share one protocol build:
+
+| Edition ID | Product |
+|---:|---|
+| 0 | Razer Leviathan V2 X |
+| 128 | Razer \| Pokémon Pikachu Edition Soundbar |
+| 129 | Razer Leviathan V2 X Pokémon AP Edition |
+| 131 | Razer \| Kuromi Limited Edition Soundbar |
+| 132 | Razer Leviathan V2 X Kuromi Edition |
+
+OpenRazer does not catalogue `054A`, so OpenSynapse admits it locally for firmware, serial, brightness read, and brightness write. The soundbar page adds equalizer presets, a 10-band equalizer, bass boost, input source, and audio I/O status. Preset and bass writes read the current value first, read back after writing, and restore the previous value on failure. Custom EQ writes restore the bands only when the previous preset was Custom, because a non-custom preset does not expose the stored custom curve. The app reads the edition information command to label Pikachu and Kuromi units separately, and resolves the first Chroma region before brightness reads or writes. The commands come from the current `1354` middleware's 91-byte feature report (report ID `0x07`) with a cycling `0..31` transaction. This is a source-backed candidate implementation; read/write and restore behavior still needs validation on a physical 054A device. Protocol details are in [LEVIATHAN_V2X_054A.md](LEVIATHAN_V2X_054A.md).
 
 ## Kraken lighting
 
@@ -47,14 +68,14 @@ The headset uses its own 64-byte Report `0x02` channel. Queries run only when th
 
 ## OpenRazer catalog
 
-254 devices are present in the pinned catalog:
+259 devices are present in the pinned catalog:
 
-- Mice: 110
-- Keyboards: 72
-- Laptops: 46
+- Mice: 112
+- Keyboards: 73
+- Laptops: 48
 - Accessories: 26
 
-### Mice (110)
+### Mice (112)
 
 | Device | USB VID:PID | Type |
 |---|---|---|
@@ -82,6 +103,8 @@ The headset uses its own 64-byte Report `0x02` channel. Queries run only when th
 | Razer Basilisk V3 X HyperSpeed | `1532:00B9` | Mouse |
 | Razer Basilisk X HyperSpeed | `1532:0083` | Mouse |
 | Razer Cobra | `1532:00A3` | Mouse |
+| Razer Cobra HyperSpeed (Wired) | `1532:00DA` | Mouse |
+| Razer Cobra HyperSpeed (Wireless) | `1532:00DB` | Mouse |
 | Razer Cobra Pro (Wired) | `1532:00AF` | Mouse |
 | Razer Cobra Pro (Wireless) | `1532:00B0` | Mouse |
 | Razer DeathAdder 1800 | `1532:0038` | Mouse |
@@ -169,7 +192,7 @@ The headset uses its own 64-byte Report `0x02` channel. Queries run only when th
 | Razer Viper V3 Pro (Wireless) | `1532:00C1` | Mouse |
 | RazerBasiliskUltimateReceiver | `1532:0088` | Mouse |
 
-### Keyboards (72)
+### Keyboards (73)
 
 | Device | USB VID:PID | Type |
 |---|---|---|
@@ -230,6 +253,7 @@ The headset uses its own 64-byte Report `0x02` channel. Queries run only when th
 | Razer Huntsman V3 Pro 8KHz | `1532:02CF` | Keyboard |
 | Razer Huntsman V3 Pro Mini | `1532:02B0` | Keyboard |
 | Razer Huntsman V3 Pro TKL | `1532:02A7` | Keyboard |
+| Razer Joro | `1532:02CD` | Keyboard |
 | Razer Nostromo | `1532:0111` | Keyboard |
 | Razer Orbweaver | `1532:0113` | Keyboard |
 | Razer Orbweaver Chroma | `1532:0207` | Keyboard |
@@ -246,7 +270,7 @@ The headset uses its own 64-byte Report `0x02` channel. Queries run only when th
 | Razer Tartarus Pro | `1532:0244` | Keyboard |
 | Razer Tartarus V2 | `1532:022B` | Keyboard |
 
-### Laptops (46)
+### Laptops (48)
 
 | Device | USB VID:PID | Type |
 |---|---|---|
@@ -270,12 +294,14 @@ The headset uses its own 64-byte Report `0x02` channel. Queries run only when th
 | Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | Laptop |
 | Razer Blade 15 Studio Edition (2019) | `1532:024D` | Laptop |
 | Razer Blade 16 (2023) | `1532:029F` | Laptop |
+| Razer Blade 16 (2026) | `1532:02E0` | Laptop |
 | Razer Blade 17 (2022) | `1532:028B` | Laptop |
 | Razer Blade 17 Pro (Early 2021) | `1532:026E` | Laptop |
 | Razer Blade 17 Pro (Mid 2021) | `1532:0279` | Laptop |
 | Razer Blade 18 (2023) | `1532:02A0` | Laptop |
 | Razer Blade 18 (2024) | `1532:02B8` | Laptop |
 | Razer Blade 18 (2025) | `1532:02C7` | Laptop |
+| Razer Blade 18 (2026) | `1532:02E1` | Laptop |
 | Razer Blade Advanced (Late 2019) | `1532:024B` | Laptop |
 | Razer Blade Base (Early 2020) | `1532:0255` | Laptop |
 | Razer Blade Base (Early 2021) | `1532:026F` | Laptop |
@@ -333,6 +359,20 @@ The headset uses its own 64-byte Report `0x02` channel. Queries run only when th
 Catalog presence means the model is recognized by the pinned backend. The actual controls shown depend on the resolved HID endpoint and supported transactions. Depending on the model, the app may expose device information, battery state, polling rate, DPI and DPI stages, power saving, low-battery warning, lighting brightness and effects, per-zone LEDs, matrix lighting, scroll-wheel settings, keyswitch optimization, Fn-primary behavior, or HyperPolling receiver controls.
 
 Catalog presence does not mean every control has been physically tested on every model. An unresolved or busy endpoint stays read only until the next scan. OpenSynapse does not guess support from a product name or send writes through another HID collection.
+
+## Devices not yet supported
+
+Some devices have a confirmed hardware protocol but are not wired into OpenSynapse yet. Their command sets, command numbers, and payload lengths are recorded in the [middleware device protocol reference](MIDDLEWARE_DEVICE_PROTOCOLS.md), grouped into 33 command profiles covering 119 products.
+
+The three highest-value groups:
+
+- **Audio peripherals** (Kraken V3/V4, Nari, Barracuda, BlackShark V2 Pro, Nommo V2, Leviathan V2 Pro, and 12 more): one shared profile of 135 commands covering equalizer, bass, AI noise suppression, microphone compressor/de-esser/reverb/limiter, sidetone, and input source.
+- **2026 keyboards** (Huntsman V3 8KHz series, BlackWidow V4 variants, Reclusa): shared OBM key mapping and matrix lighting.
+- **Desktop peripherals** (laptop cooling pad, PWM fan controller, monitor stands, docks, ARGB controllers): shared thermal and lighting commands.
+
+The protocol evidence comes from static analysis of the Synapse middleware and only covers commands that appear in a product's own handler. A write still needs capability reads, a read-back, and a recovery path.
+The Blade 16 (2026) and Blade 18 (2026) now have standard OpenRazer catalogue lighting entries, but their telemetry, fan, performance, and MUX controls still need a dedicated Blade manifest.
+
 
 For external lighting integrations, see [Chroma-supported devices](CHROMA_SUPPORTED_DEVICES.md).
 

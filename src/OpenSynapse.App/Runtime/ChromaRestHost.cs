@@ -18,7 +18,6 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private const int DeviceNotConnected = 1167;
     private const int ClientLimit = 1152;
     private const int AccessDenied = 5;
-    private const string BladeProtocolFamily = "blade-710";
     // Chroma clients heartbeat every second; two seconds bounds recovery without
     // treating a normal short scheduling pause as a game exit.
     private static readonly TimeSpan SessionTimeout = TimeSpan.FromSeconds(2);
@@ -548,7 +547,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             var applied = false;
             var devices = _devices();
             if (_bladeChromaOverrideEnabled() && devices.Any(device =>
-                    device.ProtocolFamily == BladeProtocolFamily &&
+                    device.ProtocolFamily is "blade-710" or "blade-710-chroma" &&
                     device.Access == DeviceAccessState.Available))
             {
                 try

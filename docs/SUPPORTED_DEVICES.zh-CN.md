@@ -2,24 +2,45 @@
 
 OpenSynapse 的支持范围不只有少数产品专用型号。当前支持范围包括：
 
-- **254 个 OpenRazer 目录设备**：覆盖鼠标、键盘、笔记本和配件。
-- **3 套产品专用控制**：Blade、Viper 和 BlackShark V3 Pro 中需要使用专用协议的功能。
+- **259 个 OpenRazer 目录设备**。其中 8 款 Blade 走产品专用 manifest：`0255`、`029D`、`02B6`、`02B7`、`02B8`、`02C5`、`02C6`、`02C7`；另加本地准入的 Razer Leviathan V2 X `054A`。
+- **4 套产品专用控制**：Blade、Viper、BlackShark V3 Pro 和 Leviathan V2 X 中需要使用专用协议的功能。
 - **6 款 Kraken 耳机**：支持灯光控制。
 - **BlackShark V3 Pro**：支持电量、侧音、THX、主动降噪和游戏/语音平衡。
 - **Chroma REST**：供兼容游戏和外部程序接入灯光。
 
-OpenRazer 部分固定于提交 `6820f9da169d354bc7e6e93a0aa8683a6bb75792`。OpenSynapse 只为已连接且被识别的具体设备创建页面，只有成功解析 Windows HID 端点和事务后才会显示对应控件。
+OpenRazer 部分固定于提交 `477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d`。OpenSynapse 只为已连接且被识别的具体设备创建页面，只有成功解析 Windows HID 端点和事务后才会显示对应控件。
 
 ## 产品专用控制
 
 | 设备 | USB VID:PID | 可用功能 |
 |---|---|---|
 | Razer Blade 16 (2025) | `1532:02C6` | 遥测、键盘灯光、性能、风扇、显示、电池、触控板、充电上限，以及经过验证的 Fn/M3/M4/M5 |
+| Razer Blade 14 (2023) | `1532:029D` | 遥测、6×16 键盘矩阵灯光、性能、风扇、最大风扇、CPU 档位、充电上限 |
+| Razer Blade 14 (2024) | `1532:02B6` | 遥测、6×16 键盘矩阵灯光、性能、风扇、最大风扇、CPU 档位、充电上限 |
+| Razer Blade 16 (2024) | `1532:02B7` | Blade 695 middleware 控制集：遥测、6×17 键盘矩阵灯光、性能、风扇、显示 MUX、原生面板模式、局部调光、电池、充电上限、Fn/游戏模式报告 |
+| Razer Blade 18 (2024) | `1532:02B8` | 遥测、6×16 键盘矩阵灯光、性能、风扇、最大风扇、充电上限 |
+| Razer Blade 14 (2025) | `1532:02C5` | 遥测、6×16 键盘矩阵灯光、性能、风扇、充电上限 |
+| Razer Blade 18 (2025) | `1532:02C7` | 遥测、6×19 键盘矩阵灯光、性能、风扇、充电上限 |
+| Razer Blade Base (Early 2020) | `1532:0255` | 遥测、键盘亮度写入、性能/风扇模式写入、适配器功率、电源模式位图、充电上限、原生面板/SKU 读取；百分比风扇目标不伪装成 RPM 目标 |
 | Razer Blade 16 (2023) | `1532:029F` | 遥测、性能模式、自定义性能档位（含 Boost）、风扇全速、固定风扇转速（2000–5000 RPM）、充电上限、一次性充满、Gaming 模式、键盘亮度与固件原生灯效（关闭、呼吸、光谱、波浪） |
 | Razer Viper V3 HyperSpeed | `1532:00B8` | 电量、DPI、轮询率、休眠、电池类型和板载映射 |
 | Razer BlackShark V3 Pro | `1532:101B`、`1532:101C` | 电量、充电、侧音、THX、主动降噪和游戏/语音平衡 |
 
 Blade 的波浪和光谱循环在未保存颜色调色板时由固件渲染，保存调色板后改用软件逐帧渲染。Blade 16 (2023) 没有逐键矩阵通道，只开放键盘亮度，以及固件能自绘的 4 个灯效（关闭、呼吸、光谱、波浪）；该机型的灯效颜色无法回读，所以自定义颜色、音频律动、逐帧渲染、Chroma 接管、波浪方向选择和导入 .chroma 按钮都不展示。Viper 支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y DPI、最多 5 档 DPI，以及固定 Profile 1 的 Normal/HyperShift 板载映射。
+
+## Razer Leviathan V2 X 声霸（054A）
+
+`1532:054A` 对应 Synapse product `1354`，覆盖以下同协议版本：
+
+| Edition ID | 产品 |
+|---:|---|
+| 0 | Razer Leviathan V2 X |
+| 128 | Razer \| Pokémon Pikachu Edition Soundbar |
+| 129 | Razer Leviathan V2 X Pokémon AP Edition |
+| 131 | Razer \| Kuromi Limited Edition Soundbar |
+| 132 | Razer Leviathan V2 X Kuromi Edition |
+
+OpenRazer 目录没有 `054A`，OpenSynapse 将其作为本地准入条目加入：固件、序列号、亮度读取和亮度写入。声霸页额外提供均衡器预设、10 段均衡器、低音增强、输入源和音频接口状态；预设和低音写入会先读当前值、写后回读，失败时恢复原值；自定义 EQ 只有在原预设就是自定义时才恢复频段，因为非自定义预设不暴露已存的自定义曲线。应用会读取 edition 信息，区分 Pikachu 和 Kuromi 版本，并在亮度读写前解析第一个 Chroma region。命令取自当前 `1354` middleware 的 91-byte feature report（report ID `0x07`）和循环的 `0..31` transaction，属于源码证据支持的候选实现，尚未在 054A 实机完成读写与恢复验证。协议细节见 [LEVIATHAN_V2X_054A.md](LEVIATHAN_V2X_054A.md)。
 
 ## Kraken 灯光
 
@@ -47,14 +68,14 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。Open
 
 ## OpenRazer 目录
 
-固定目录中共有 254 个设备：
+固定目录中共有 259 个设备：
 
-- 鼠标：110
-- 键盘：72
-- 笔记本：46
+- 鼠标：112
+- 键盘：73
+- 笔记本：48
 - 配件：26
 
-### 鼠标（110）
+### 鼠标（112）
 
 | 设备 | USB VID:PID | 类型 |
 |---|---|---|
@@ -82,6 +103,8 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。Open
 | Razer Basilisk V3 X HyperSpeed | `1532:00B9` | 鼠标 |
 | Razer Basilisk X HyperSpeed | `1532:0083` | 鼠标 |
 | Razer Cobra | `1532:00A3` | 鼠标 |
+| Razer Cobra HyperSpeed（有线） | `1532:00DA` | 鼠标 |
+| Razer Cobra HyperSpeed（无线） | `1532:00DB` | 鼠标 |
 | Razer Cobra Pro (Wired) | `1532:00AF` | 鼠标 |
 | Razer Cobra Pro (Wireless) | `1532:00B0` | 鼠标 |
 | Razer DeathAdder 1800 | `1532:0038` | 鼠标 |
@@ -169,7 +192,7 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。Open
 | Razer Viper V3 Pro (Wireless) | `1532:00C1` | 鼠标 |
 | RazerBasiliskUltimateReceiver | `1532:0088` | 鼠标 |
 
-### 键盘（72）
+### 键盘（73）
 
 | 设备 | USB VID:PID | 类型 |
 |---|---|---|
@@ -230,6 +253,7 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。Open
 | Razer Huntsman V3 Pro 8KHz | `1532:02CF` | 键盘 |
 | Razer Huntsman V3 Pro Mini | `1532:02B0` | 键盘 |
 | Razer Huntsman V3 Pro TKL | `1532:02A7` | 键盘 |
+| Razer Joro | `1532:02CD` | 键盘 |
 | Razer Nostromo | `1532:0111` | 键盘 |
 | Razer Orbweaver | `1532:0113` | 键盘 |
 | Razer Orbweaver Chroma | `1532:0207` | 键盘 |
@@ -246,7 +270,7 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。Open
 | Razer Tartarus Pro | `1532:0244` | 键盘 |
 | Razer Tartarus V2 | `1532:022B` | 键盘 |
 
-### 笔记本（46）
+### 笔记本（48）
 
 | 设备 | USB VID:PID | 类型 |
 |---|---|---|
@@ -270,12 +294,14 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。Open
 | Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | 笔记本 |
 | Razer Blade 15 Studio Edition (2019) | `1532:024D` | 笔记本 |
 | Razer Blade 16 (2023) | `1532:029F` | 笔记本 |
+| Razer Blade 16 (2026) | `1532:02E0` | 笔记本 |
 | Razer Blade 17 (2022) | `1532:028B` | 笔记本 |
 | Razer Blade 17 Pro (Early 2021) | `1532:026E` | 笔记本 |
 | Razer Blade 17 Pro (Mid 2021) | `1532:0279` | 笔记本 |
 | Razer Blade 18 (2023) | `1532:02A0` | 笔记本 |
 | Razer Blade 18 (2024) | `1532:02B8` | 笔记本 |
 | Razer Blade 18 (2025) | `1532:02C7` | 笔记本 |
+| Razer Blade 18 (2026) | `1532:02E1` | 笔记本 |
 | Razer Blade Advanced (Late 2019) | `1532:024B` | 笔记本 |
 | Razer Blade Base (Early 2020) | `1532:0255` | 笔记本 |
 | Razer Blade Base (Early 2021) | `1532:026F` | 笔记本 |
@@ -333,6 +359,20 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。Open
 出现在目录中，表示固定后端能够识别该型号。最终显示的控件取决于能否解析实际 HID 端点和对应事务。不同型号可能提供设备信息、电池状态、轮询率、DPI 与 DPI 档位、省电设置、低电量提醒、灯光亮度与效果、分区 LED、矩阵灯光、滚轮设置、键轴优化、Fn 优先行为或 HyperPolling 接收器控制。
 
 设备出现在目录中，不代表每个控制项都已在该型号上完成真机验证。端点无法解析或正被占用时，页面会保持只读，直到重新扫描。OpenSynapse 不会按产品名称猜测能力，也不会改用另一个 HID 接口强行写入。
+
+## 尚未支持的设备
+
+有一部分设备已经能确认硬件协议，但还没有写进 OpenSynapse。它们的命令集、命令号和负载长度记录在 [中间件设备协议参考](MIDDLEWARE_DEVICE_PROTOCOLS.md) 里，按命令 profile 分组，共 33 组、119 个产品。
+
+其中价值最高的三组：
+
+- **音频外设**（Kraken V3/V4、Nari、Barracuda、BlackShark V2 Pro、Nommo V2、Leviathan V2 Pro 等 18 款）：共享一套 135 条命令的 profile，覆盖均衡器、低音、AI 降噪、麦克风压缩器/齿音消除/混响/限制器、侧音和输入源。
+- **2026 键盘**（Huntsman V3 8KHz 系列、BlackWidow V4 变体、Reclusa）：共享 OBM 按键映射和矩阵灯光。
+- **桌面外设**（笔记本散热垫、PWM 风扇控制器、显示器支架、扩展坞、ARGB 控制器）：共享热控和灯光命令。
+
+协议证据来自 Synapse 中间件的静态分析，只覆盖产品自身 handler 里出现的命令；写入前仍需读能力位、写后读回并准备恢复路径。
+Blade 16 (2026) 和 Blade 18 (2026) 已进入 OpenRazer 目录，支持标准灯光；遥测、风扇、性能和 MUX 仍需专用 Blade manifest。
+
 
 外部灯光接入见 [Chroma 支持设备](CHROMA_SUPPORTED_DEVICES.zh-CN.md)。
 

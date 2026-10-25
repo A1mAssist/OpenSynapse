@@ -106,6 +106,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        Soundbar = service.CreateLeviathanV2XAudio(connection) is { } audio
+            ? new LeviathanV2XAudioViewModel(audio)
+            : null;
         if (connection.Definition.MatrixDimensions is not null &&
             connection.Capabilities.Contains(OpenRazerBackendCapability.MatrixFrameWrite))
         {
@@ -166,6 +169,10 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     }
 
     public OpenRazerDeviceConnection Connection { get; }
+    public LeviathanV2XAudioViewModel? Soundbar { get; }
+    public Visibility SoundbarVisibility => Soundbar is null ? Visibility.Collapsed : Visibility.Visible;
+    public Task LoadSoundbarAsync(CancellationToken cancellationToken = default) =>
+        Soundbar?.LoadAsync(cancellationToken) ?? Task.CompletedTask;
     public string InstanceId => Connection.InstanceId;
     public string Name => Connection.Definition.DisplayName;
     public string CategoryText => Connection.Definition.Category switch

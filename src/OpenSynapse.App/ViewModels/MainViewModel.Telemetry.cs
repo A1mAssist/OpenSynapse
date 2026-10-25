@@ -143,7 +143,7 @@ public sealed partial class MainViewModel
             SetBladeGameMode(gameMode);
         }
         else if (_deviceDescriptors.FirstOrDefault(device =>
-                     device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+                     DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                      device.Access == DeviceAccessState.Available) is { } blade)
         {
             var enabled = ProfileResolver
@@ -211,7 +211,7 @@ public sealed partial class MainViewModel
             SetBladeChargeLimit(chargeLimit);
             CanSetBladeChargeLimit = true;
         }
-        if (_deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade && device.Access == DeviceAccessState.Available))
+        if (_deviceDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) && device.Access == DeviceAccessState.Available))
         {
             if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
             {
@@ -321,7 +321,7 @@ public sealed partial class MainViewModel
             if (applyProfile)
             {
                 var blade = _deviceDescriptors.FirstOrDefault(
-                    device => device.ProtocolFamily == DeviceProtocolFamilies.Blade) ?? new DeviceDescriptor(
+                    device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)) ?? new DeviceDescriptor(
                         "internal-display",
                         "Windows internal display",
                         0,

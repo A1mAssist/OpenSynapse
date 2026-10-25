@@ -2,6 +2,35 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [Unreleased]
+
+### 新增 / Added
+
+- 新增“仅核显（禁用独显）”显示开关。机器级 MSI 安装会注册受保护的 GPU 服务，安装时请求一次管理员权限，之后切换不再弹 UAC；当前用户安装和 Portable 仍回退到逐次 UAC。机器级安装会迁移旧的当前用户版本，保留配置并更新开机启动项。用户配置已迁到独立的 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`，不会再被 MSI 升级清理。
+- Added an integrated-graphics-only display switch. The machine-wide MSI install registers a protected GPU service, asks for administrator permission once during installation, and then switches without UAC; per-user and portable installs still fall back to a UAC prompt per change. The machine-wide install migrates an older per-user install, preserving settings and updating its startup entry. User data now lives in `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, outside the directories removed by MSI upgrades.
+
+### 修复 / Fixed
+
+- 窗口最小宽度从 1080 降到 700 逻辑像素，恢复小窗口使用；页面内容下限为 640 像素加 48 像素导航栏，再小需要重排页面布局。
+- The window minimum width is now 700 logical pixels instead of 1080, so the app can be resized small again; page content still has a 640-pixel floor plus the 48-pixel navigation pane, and going smaller would require reflowing the pages.
+- 修复旧版每用户安装目录在机器级安装后长期残留的问题。安装器产物（`Update.exe`、`packages\`）现在在每次启动时清理，不再只在安装那一刻清一次；用户配置、旧备份和日志一律保留。本机残留从 69.75 MB 降到 1.47 MB。
+- Fixed the legacy per-user install directory lingering after a machine-wide install. Installer artifacts (`Update.exe`, `packages\`) are now cleaned on every launch instead of only once during installation; user settings, backups, and logs are always kept.
+- 修复从每用户安装升级到机器级安装后，桌面和开始菜单的快捷方式丢失的问题。仍指向旧目录的快捷方式会被改写到新的机器级启动器，用户主动删除的快捷方式不会被重建。
+- Fixed the desktop and Start-menu shortcuts disappearing when upgrading from a per-user install to a machine-wide install. Shortcuts still pointing at the old directory are redirected to the new launcher; shortcuts the user deleted are not recreated.
+- 修复过渡目录清理过于激进的问题。旧目录里每个文件都迁移到新目录后才删除整个目录，仍有未迁移的文件时保留目录交给下次启动继续搬。
+- Fixed the transitional data root being removed too eagerly. The directory is deleted only once every file in it has been migrated; files still pending are kept for the next launch.
+- 修复 GPU 模式切换在服务刚被唤醒时可能退回 UAC 弹窗的问题。客户端在管道连接失败时重试一次，把常见的唤醒竞态挡在 UAC 之前。
+- Fixed the GPU-mode switch falling back to a UAC prompt when the service was still waking up. The client retries once when the pipe connection fails, so the common wake-up race no longer reaches UAC.
+
+### 改进 / Improved
+
+- OpenRazer 设备目录升级到上游 `477f4d6`，新增 Razer Joro、Cobra HyperSpeed（有线/无线）、Blade 16 (2026) 和 Blade 18 (2026)，目录共 259 款。
+- The OpenRazer catalogue is upgraded to upstream `477f4d6`, adding Razer Joro, Cobra HyperSpeed (wired/wireless), Blade 16 (2026), and Blade 18 (2026), for 259 entries in total.
+- 新增《中间件设备协议参考》文档，列出 119 款雷云产品在自身中间件里实际调用的 HID 命令，按 33 组命令 profile 归类。OpenRazer 目录未收录的设备可以据此判断功能是否可实现。
+- Added the middleware device protocol reference, listing the HID commands 119 Synapse products actually call from their own middleware, grouped into 33 command profiles. It shows what is implementable for devices the OpenRazer catalogue does not cover.
+- 冷却垫协议改用 0F43 实际使用的通用 `rzDevice25` 热控布局：速度是 8 位单字节、风扇信息命令负载为 12 字节、可用范围按固件的 125–2600 RPM 收口。之前的实现套用了 PWM 风扇控制器（0F3C）的 16 位大端布局。
+- The cooling-pad protocol now uses the generic `rzDevice25` thermal layout that 0F43 actually uses: an 8-bit speed byte, a 12-byte fan-information payload, and a 125–2600 RPM range taken from the firmware. The previous implementation applied the 16-bit big-endian layout of the PWM fan controller (0F3C).
+
 ## [1.5.5] - 2026-10-23
 
 ### 新增 / Added

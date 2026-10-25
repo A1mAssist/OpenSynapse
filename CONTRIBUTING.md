@@ -57,6 +57,18 @@ restart it). The application entry point must set `Environment.CurrentDirectory`
 to `AppContext.BaseDirectory` before WinUI or native initialization. A publish
 directory smoke test alone is insufficient.
 
+The machine-wide installer is the MSI built with `vpk 1.2.161` or newer using
+`--msi --instLocation PerMachine --runtime win-x64`. It installs the app under
+`Program Files` and registers the GPU service from the installed
+`current\OpenSynapse.App.exe`. `Setup.exe` remains a per-user installer and does
+not register the service. For an MSI build, verify a silent install, the service
+path and account, one UI toggle without a UAC prompt, and that uninstall removes
+the service. Also upgrade a per-user Setup install and verify that profiles and
+settings survive, the old directory no longer contains `current`, and the HKCU
+startup entry points to the Program Files executable. User data must stay in
+`%LOCALAPPDATA%\A1mAssist\OpenSynapse`, not under the Velopack-managed
+`%LOCALAPPDATA%\OpenSynapse` directory, because MSI cleanup removes the latter.
+
 Velopack release assets must be generated as one set. Do not hand-rename setup
 or portable files, or edit `assets.win.json`, `releases.win.json`, or `RELEASES`
 after packing. Before uploading, compare every listed filename, SHA-1, SHA-256,

@@ -106,6 +106,28 @@ public sealed class DedicatedGpuModePolicyTests
     }
 
     [Fact]
+    public void MachineWideServiceIsOnlyAcceptedFromProgramFiles()
+    {
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var machineExe = Path.Combine(
+            programFiles,
+            "OpenSynapse",
+            "current",
+            "OpenSynapse.App.exe");
+        var portableExe = Path.Combine(
+            localAppData,
+            "OpenSynapse",
+            "current",
+            "OpenSynapse.App.exe");
+        var lookalike = programFiles + "Evil\\OpenSynapse\\OpenSynapse.App.exe";
+
+        Assert.True(DedicatedGpuModeServiceInstaller.IsMachineInstallPath(machineExe));
+        Assert.False(DedicatedGpuModeServiceInstaller.IsMachineInstallPath(portableExe));
+        Assert.False(DedicatedGpuModeServiceInstaller.IsMachineInstallPath(lookalike));
+    }
+
+    [Fact]
     public void TheElevatedHelperDoesNotSwallowNormalStartupOrUnknownStates()
     {
         Assert.Null(WindowsDedicatedGpuMode.TryRunElevatedCommand([]));
