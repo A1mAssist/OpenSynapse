@@ -29,6 +29,8 @@ internal sealed class AppBehaviorSettings
     public HashSet<BladePerformanceMode> PerformanceCycleModes { get; set; } =
         [.. SupportedPerformanceCycleModes];
     public HashSet<int>? RefreshRateCycleHertz { get; set; }
+    public string? HueBridgeHost { get; set; }
+    public string? HueAppKey { get; set; }
 
     public static AppBehaviorSettings Load()
     {

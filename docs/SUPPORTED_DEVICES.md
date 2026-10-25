@@ -362,7 +362,7 @@ Catalog presence does not mean every control has been physically tested on every
 
 ## Devices not yet supported
 
-Every device whose own handler exposes commands now has a page, with one exception: Philips Hue (0x0301) is a network bridge rather than a HID device, so it needs its own network integration and a physical bridge.
+Every device whose own handler exposes commands now has a page. Philips Hue (0x0301) is not a HID device; it is integrated through the bridge HTTPS API, so Settings can pair with the bridge address and the link button, then list lights and control on/off and brightness. Accepting it still needs a physical bridge.
 
 Wireless mice such as the Viper V4 Pro use protocol 30 over Bluetooth LE instead of the 91-byte feature report. The channel is documented in the [BLE protocol 30 reference](PROTOCOL30_BLE.zh-CN.md): GATT UUIDs, the 8-byte request and 20-byte reply headers, polling rates, DPI payloads, and the connection and retry rules. The protocol and a service with read-back verification live in `RazerBleProtocol30`, `RazerBleSession` and `RazerBleDeviceService`; the page that surfaces them still needs a Bluetooth-connected mouse for acceptance.
 

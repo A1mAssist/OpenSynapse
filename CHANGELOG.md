@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
 - Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 灯光页不再只显示一台设备：同时接入多个 Aether 灯具、鼠标或配件时全部列出，同一台设备的多个 HID 接口合并成一行，刷新时保留原来选中的设备。
@@ -66,6 +68,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
 - Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 新增宏页面与全尺寸宏编辑器，按雷云的操作结构提供宏列表、动作序列、触发键绑定、录制、单次/重复/持续循环播放，以及每步延迟和按住时间设置。编辑器支持键盘与鼠标选择器，录制或编辑时按下的键位会捕获为完整动作。
@@ -118,6 +122,8 @@ This release is unsigned and targets Windows 11 x64. CPU core-voltage offset, GP
 
 ### 新增 / Added
 
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
 - Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - Blade 16 (2025) 的风扇控制现提供自动、固定转速和手动曲线三种模式。手动曲线在独立窗口中编辑，支持拖拽 CPU/GPU 曲线点、精确输入温度与 RPM、增加或删除档位、恢复默认。
@@ -174,6 +180,8 @@ This release is unsigned and targets Windows 11 x64. BlackShark V3 Pro does not 
 
 ### 新增 / Added
 
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
 - Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 新增 Razer Blade 16 (2023) `1532:029F` 支持：键盘亮度、固件渲染灯效（关闭、呼吸、光谱、波动）、性能模式、自定义 CPU/GPU 档位（含 CPU Boost、Max Fan）、2000–5000 RPM 固定风扇目标、充电上限、一次充满和游戏模式。
