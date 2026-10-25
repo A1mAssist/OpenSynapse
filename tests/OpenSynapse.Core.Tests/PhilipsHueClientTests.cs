@@ -110,6 +110,18 @@ public sealed class PhilipsHueClientTests
         Assert.Contains("\"on\":false", puts[1].Body);
     }
 
+    [Theory]
+    [InlineData(255, 255, 255, 0.3127, 0.3290)]
+    [InlineData(255, 0, 0, 0.64, 0.33)]
+    [InlineData(0, 255, 0, 0.30, 0.60)]
+    [InlineData(0, 0, 255, 0.15, 0.06)]
+    public void RgbMapsToTheHueChromaticity(byte r, byte g, byte b, double x, double y)
+    {
+        var (actualX, actualY) = PhilipsHueColor.FromRgb(r, g, b);
+
+        Assert.InRange(actualX, x - 0.03, x + 0.03);
+        Assert.InRange(actualY, y - 0.03, y + 0.03);
+    }
     [Fact]
     public void HostsAreNormalisedAndValidated()
     {

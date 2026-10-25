@@ -75,6 +75,8 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
     private string _statusText = string.Empty;
     private string _errorText = string.Empty;
     private bool _isBusy;
+    private PhilipsHueLightRowViewModel? _selectedColorLight;
+    private global::Windows.UI.Color _hueColor = global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
 
     public PhilipsHueViewModel(Action<string>? diagnostic = null)
     {
@@ -128,6 +130,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
         BridgeHost = host ?? string.Empty;
         _appKey = string.IsNullOrWhiteSpace(appKey) ? null : appKey;
         OnPropertyChanged(nameof(IsConfigured));
+        OnPropertyChanged(nameof(CanApplyColor));
     }
 
     public async Task PairAsync(CancellationToken cancellationToken = default)
@@ -142,6 +145,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
                 case PhilipsHuePairingOutcome.Paired:
                     _appKey = result.AppKey;
                     OnPropertyChanged(nameof(IsConfigured));
+        OnPropertyChanged(nameof(CanApplyColor));
                     Persist?.Invoke(client.Host, _appKey);
                     BridgeHost = client.Host;
                     StatusText = AppStrings.Text("HuePaired");
@@ -200,6 +204,47 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
         }
     }
 
+    public PhilipsHueLightRowViewModel? SelectedColorLight
+    {
+        get => _selectedColorLight;
+        set
+        {
+            if (SetField(ref _selectedColorLight, value)) OnPropertyChanged(nameof(CanApplyColor));
+        }
+    }
+
+    public global::Windows.UI.Color HueColor
+    {
+        get => _hueColor;
+        set => SetField(ref _hueColor, value);
+    }
+
+    public bool CanApplyColor => IsConfigured && SelectedColorLight is not null;
+
+    public async Task ApplyColorAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured || SelectedColorLight is not { } light) return;
+        var (x, y) = PhilipsHueColor.FromRgb(HueColor.R, HueColor.G, HueColor.B);
+        if (!BeginOperation()) return;
+        try
+        {
+            using var client = new PhilipsHueClient(BridgeHost, _appKey);
+            await client.SetLightAsync(
+                light.Id,
+                new PhilipsHueLightUpdate(Color: (x, y)),
+                cancellationToken);
+            StatusText = AppStrings.Text("BlackSharkSaved");
+            ErrorText = string.Empty;
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+        }
+        finally
+        {
+            EndOperation();
+        }
+    }
     public async Task ApplyLightAsync(
         PhilipsHueLightRowViewModel light,
         CancellationToken cancellationToken = default)
