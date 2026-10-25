@@ -9,6 +9,7 @@ public enum OpenRazerSpecialLightingKind
 {
     Argb320,
     Kraken37,
+    KrakenV4,
 }
 
 public sealed class OpenRazerSpecialLightingConnection
@@ -68,6 +69,15 @@ public sealed class OpenRazerSpecialLightingService
             [0x0520] = Kylie("Razer Kraken Tournament Edition"),
             [0x0527] = Kylie("Razer Kraken Ultimate"),
             [0x0560] = Kylie("Razer Kraken Kitty V2"),
+            // OpenRGB's merged wired implementation validates the same 64-byte,
+            // report-0x02 protocol on the Kraken V4 cable. The 2.4 GHz receiver is
+            // deliberately not exposed until that path is validated.
+            [0x056B] = new(
+                "Razer Kraken V4 (Wired)",
+                OpenRazerKrakenLayout.Kylie,
+                Effects(OpenRazerLightingEffect.Off, OpenRazerLightingEffect.Static, OpenRazerLightingEffect.Wave),
+                true,
+                OpenRazerSpecialLightingKind.KrakenV4),
         }.ToFrozenDictionary();
 
     private readonly OpenRazerHidReportTransport _transport = new();
@@ -85,25 +95,32 @@ public sealed class OpenRazerSpecialLightingService
             .GroupBy(item => (item.ProductId, item.PhysicalDeviceKey)))
         {
             var argb = group.Key.ProductId == ArgbProductId;
+            var definition = argb ? null : KrakenDevices[group.Key.ProductId];
+            var krakenV4 = definition?.Kind == OpenRazerSpecialLightingKind.KrakenV4;
             var endpoint = group.FirstOrDefault(item => item.Access == DeviceAccessState.Available &&
-                !argb &&
-                item.DevicePath.Contains("&MI_03", StringComparison.OrdinalIgnoreCase) &&
-                item.OutputReportByteLength == OpenRazerKrakenProtocol.ReportLength);
+                (krakenV4
+                    ? item.UsagePage == 0xFF14 && item.Usage == 0x0001 &&
+                      item.OutputReportByteLength == OpenRazerKrakenV4Protocol.ReportLength
+                    : !argb &&
+                      item.DevicePath.Contains("&MI_03", StringComparison.OrdinalIgnoreCase) &&
+                      item.OutputReportByteLength == OpenRazerKrakenProtocol.ReportLength));
             var name = argb
                 ? "Razer Chroma Addressable RGB Controller"
-                : KrakenDevices[group.Key.ProductId].Name;
+                : definition!.Name;
             results.Add(new OpenRazerSpecialLightingConnection(
                 group.Key.ProductId,
                 name,
-                argb ? OpenRazerSpecialLightingKind.Argb320 : OpenRazerSpecialLightingKind.Kraken37,
+                argb ? OpenRazerSpecialLightingKind.Argb320 : definition!.Kind,
                 group.Key.PhysicalDeviceKey,
                 endpoint?.DevicePath,
-                argb ? Effects(OpenRazerLightingEffect.Custom) : KrakenDevices[group.Key.ProductId].Effects,
-                !argb && KrakenDevices[group.Key.ProductId].WritesColor,
+                argb ? Effects(OpenRazerLightingEffect.Custom) : definition!.Effects,
+                !argb && definition!.WritesColor,
                 endpoint is null
                     ? argb
                         ? "ARGB requires a USB control transfer with wValue 0x0300 and wIndex 1; Windows HID transport is not supported."
-                        : "No available MI_03 37-byte Output Report collection was found."
+                        : krakenV4
+                            ? "No available FF14:0001 64-byte Output Report collection was found."
+                            : "No available MI_03 37-byte Output Report collection was found."
                     : null));
         }
         return results;
@@ -129,8 +146,15 @@ public sealed class OpenRazerSpecialLightingService
         byte? intensity = null,
         CancellationToken cancellationToken = default)
     {
-        RequireReady(connection, OpenRazerSpecialLightingKind.Kraken37);
         ArgumentNullException.ThrowIfNull(settings);
+        if (connection.Kind == OpenRazerSpecialLightingKind.KrakenV4)
+        {
+            await SetKrakenV4LightingAsync(connection, settings, intensity, cancellationToken)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        RequireReady(connection, OpenRazerSpecialLightingKind.Kraken37);
         if (!connection.SupportedEffects.Contains(settings.Effect))
         {
             throw new NotSupportedException(
@@ -174,6 +198,43 @@ public sealed class OpenRazerSpecialLightingService
         }
     }
 
+    private async Task SetKrakenV4LightingAsync(
+        OpenRazerSpecialLightingConnection connection,
+        OpenRazerLightingSettings settings,
+        byte? intensity,
+        CancellationToken cancellationToken)
+    {
+        RequireReady(connection, OpenRazerSpecialLightingKind.KrakenV4);
+        if (!connection.SupportedEffects.Contains(settings.Effect))
+        {
+            throw new NotSupportedException(
+                $"OpenRazer Kraken V4 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
+        }
+
+        IReadOnlyList<byte[]> reports = settings.Effect switch
+        {
+            OpenRazerLightingEffect.Off => OpenRazerKrakenV4Protocol.CreateOff(),
+            OpenRazerLightingEffect.Static => OpenRazerKrakenV4Protocol.CreateStatic(settings.Primary, intensity),
+            OpenRazerLightingEffect.Wave => OpenRazerKrakenV4Protocol.CreateWave(intensity),
+            _ => throw new NotSupportedException(),
+        };
+
+        var gate = _gates.GetOrAdd(connection.InstanceId, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var report in reports)
+            {
+                await _transport.SendOutputAsync(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     private static void RequireReady(
         OpenRazerSpecialLightingConnection connection,
         OpenRazerSpecialLightingKind expectedKind)
@@ -202,5 +263,6 @@ public sealed class OpenRazerSpecialLightingService
         string Name,
         OpenRazerKrakenLayout Layout,
         FrozenSet<OpenRazerLightingEffect> Effects,
-        bool WritesColor);
+        bool WritesColor,
+        OpenRazerSpecialLightingKind Kind = OpenRazerSpecialLightingKind.Kraken37);
 }

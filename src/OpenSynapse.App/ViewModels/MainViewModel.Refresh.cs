@@ -147,7 +147,7 @@ public sealed partial class MainViewModel
             {
                 var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
                 var krakenConnections = connections.Where(connection =>
-                        connection.Kind == OpenRazerSpecialLightingKind.Kraken37)
+                        connection.Kind is OpenRazerSpecialLightingKind.Kraken37 or OpenRazerSpecialLightingKind.KrakenV4)
                     .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
                     .ToArray();
                 if (OpenRazerKrakenDevices.Count != krakenConnections.Length ||
