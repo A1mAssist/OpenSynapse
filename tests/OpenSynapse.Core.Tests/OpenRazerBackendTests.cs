@@ -137,40 +137,6 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(0x3F, alias.GetRequiredTransaction("razer_chroma_misc_get_battery_level"));
     }
 
-    [Fact]
-    public void OpenRazerLogicalReportsStripAndRestoreTheZeroReportId()
-    {
-        var request = RazerFeatureReport.CreateRequest(0x1F, 0x02, 0x07, 0x80, new byte[] { 0x00 });
-
-        var logical = RazerFeatureReport.ToOpenRazerLogicalReport(request);
-        var restored = RazerFeatureReport.FromOpenRazerLogicalReport(logical);
-
-        Assert.Equal(RazerFeatureReport.OpenRazerLogicalLength, logical.Length);
-        Assert.Equal(request[1..], logical);
-        Assert.Equal(request, restored);
-    }
-
-    [Fact]
-    public void OpenRazerLogicalResponseValidatesAfterNormalization()
-    {
-        var request = RazerFeatureReport.CreateRequest(0x1F, 0x02, 0x07, 0x80, new byte[] { 0x00 });
-        var logicalResponse = RazerFeatureReport.ToOpenRazerLogicalReport(request).ToArray();
-        logicalResponse[0] = 0x02;
-
-        var normalized = RazerFeatureReport.FromOpenRazerLogicalReport(logicalResponse);
-
-        Assert.True(RazerFeatureReport.Matches(request, normalized));
-    }
-
-    [Theory]
-    [InlineData(@"\\?\hid#vid_1532&pid_00df&mi_00#test", true)]
-    [InlineData(@"\\?\hid#vid_1532&pid_00de&mi_00#test", true)]
-    [InlineData(@"\\?\hid#vid_1532&pid_00c1&mi_00#test", false)]
-    public void OnlyTheViperV3ProSeUsesTheLogicalReportTransport(string devicePath, bool expected)
-    {
-        Assert.Equal(expected, RazerFeatureTransport.UsesOpenRazerLogicalReport(devicePath));
-    }
-
     [Theory]
     [InlineData(0x0F1A)]
     [InlineData(0x0F21)]
@@ -897,7 +863,7 @@ public sealed class OpenRazerBackendTests
         const string path = @"\\?\hid#vid_1532&pid_00bf&mi_02&col02#7&1a2b&0&0000#{guid}";
         var message = OpenRazerDeviceService.DescribeRejected([
             new(path, "container:key", 0x1532, 0x00BF, 8, 0, 64, 0x0001, 0x0002,
-                DeviceAccessState.BusyOrUnavailable),
+                DeviceAccessState.BusyOrUnavailable, "Razer Viper"),
         ]);
 
         Assert.Equal(

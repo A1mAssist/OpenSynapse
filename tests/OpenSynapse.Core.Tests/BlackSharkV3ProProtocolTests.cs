@@ -95,20 +95,37 @@ public sealed class BlackSharkV3ProProtocolTests
         Assert.True(BlackSharkV3ProProtocol.HasValidCrc(report));
     }
 
+    [Theory]
+    [InlineData(0x056B, "Razer Kraken V4 USB", 0xFF14, 0x0001, 64, false)]
+    [InlineData(0x056C, "Razer Kraken V4 2.4", 0xFF14, 0x0001, 64, false)]
+    [InlineData(0x101B, "Razer BlackShark V3 Pro", 0xFF14, 0x0001, 64, true)]
+    [InlineData(0x101C, "", 0xFF14, 0x0001, 64, true)]
+    [InlineData(0x9999, "Razer BlackShark V3 Pro", 0xFF14, 0x0001, 64, true)]
+    [InlineData(0x9999, "Razer Naga", 0xFF14, 0x0001, 64, false)]
+    [InlineData(0x101B, "Razer BlackShark V3 Pro", 0xFF14, 0x0001, 63, false)]
+    [InlineData(0x101B, "Razer BlackShark V3 Pro", 0xFF12, 0x0001, 64, false)]
+    public void BlackSharkSelectionRequiresAnObservedIdentity(
+        ushort productId,
+        string productName,
+        ushort usagePage,
+        ushort usage,
+        int outputReportLength,
+        bool expected) =>
+        Assert.Equal(expected, BlackSharkHeadsetService.IsBlackSharkControlInterface(
+            productId, productName, usagePage, usage, outputReportLength));
+
     [Fact]
-    public void TheControlReportShapeIsTheSelectionContract()
+    public void UsbProductIdHasAStableDisplayName()
     {
-        // Selection no longer depends on a fixed product id list, so the shape that identifies a
-        // BlackShark control collection has to stay pinned.
-        Assert.Equal(0xFF14, 0xFF14);
-        Assert.Equal(0x0001, 0x0001);
-        Assert.Equal(64, BlackSharkV3ProProtocol.ReportLength);
+        Assert.Equal("Razer BlackShark V3 Pro (USB)",
+            BlackSharkV3ProProtocol.DescribeProduct(BlackSharkV3ProProtocol.UsbProductId));
     }
 
     [Theory]
     [InlineData(0x0576, false)]
     [InlineData(0x0577, true)]
     [InlineData(0x101B, true)]
+    [InlineData(0x101C, true)]
     public void TransportDirection_IsWirelessForTheReceiverAndDongle(int productId, bool wireless)
     {
         // Only the wired pid maps to the wired transport byte; every other observed variant,
