@@ -2574,6 +2574,16 @@
   <data name="BleChargingFailed" xml:space="preserve"><value>充电失败</value></data>
   <data name="BleChargingLimit" xml:space="preserve"><value>已达充电上限</value></data>
   <data name="BleIdentity" xml:space="preserve"><value>BLE · 协议 30</value></data>
+  <data name="HueTitle" xml:space="preserve"><value>飞利浦 Hue</value></data>
+  <data name="HueDescription" xml:space="preserve"><value>通过 Hue 桥控制灯光。先按桥上的配对按钮，再点“配对”。</value></data>
+  <data name="HuePairButton" xml:space="preserve"><value>配对</value></data>
+  <data name="HueRefreshButton" xml:space="preserve"><value>刷新</value></data>
+  <data name="HueApplyButton" xml:space="preserve"><value>应用</value></data>
+  <data name="HuePaired" xml:space="preserve"><value>已配对</value></data>
+  <data name="HueLinkButtonHint" xml:space="preserve"><value>请先按下 Hue 桥上的配对按钮。</value></data>
+  <data name="HuePairFailed" xml:space="preserve"><value>配对失败。</value></data>
+  <data name="HuePairFirst" xml:space="preserve"><value>需要先完成配对。</value></data>
+  <data name="HueLightCount" xml:space="preserve"><value>已读取 {0} 盏灯。</value></data>
 </root>
 
 

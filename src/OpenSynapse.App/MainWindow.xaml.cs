@@ -49,6 +49,13 @@ public sealed partial class MainWindow : Window
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
         SystemAudioCard.DataContext = SystemAudio;
+        _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
+        _viewModel.Hue.Persist = (host, appKey) =>
+        {
+            _behaviorSettings.HueBridgeHost = host;
+            _behaviorSettings.HueAppKey = appKey;
+            _behaviorSettings.Save();
+        };
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _viewModel.SetMacroDispatcher(_dispatcherQueue);
         _viewModel.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));

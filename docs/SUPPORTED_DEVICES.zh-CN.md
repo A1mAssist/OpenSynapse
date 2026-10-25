@@ -362,7 +362,7 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。控�
 
 ## 尚未支持的设备
 
-中间件参考里能解析出命令的设备现在都有对应页面，只剩 Philips Hue（`0x0301`）：它走网络桥，不是 HID 设备，需要单独做网络集成，还需要一台实体桥。
+中间件参考里能解析出命令的设备现在都有对应页面。Philips Hue（`0x0301`）不是 HID 设备，已按桥的 HTTPS API 接入：在设置页填桥地址、按桥上的配对按钮后配对，即可列出灯光并控制开关与亮度；真机验收仍需一台实体桥。
 
 Viper V4 Pro 这类无线鼠标改用 BLE 协议 30，不再走 91 字节 feature report。该通道记录在 [BLE 协议 30 规格](PROTOCOL30_BLE.zh-CN.md)：GATT UUID、8 字节请求头与 20 字节响应头、轮询率与 DPI 负载，以及连接和重试规则。协议层与带读回校验的服务已经实现在 `RazerBleProtocol30`、`RazerBleSession`、`RazerBleDeviceService`；页面还需要一台蓝牙连接的鼠标才能验收。
 

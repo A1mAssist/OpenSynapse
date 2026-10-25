@@ -1095,6 +1095,33 @@
                     </StackPanel>
                   </Grid>
                 </Button>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="12" DataContext="{Binding Hue}">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="HueTitle" Text="飞利浦 Hue" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="HueDescription" Text="通过 Hue 桥控制灯光。先按桥上的配对按钮，再点“配对”。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <TextBox Text="{Binding BridgeHost, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" PlaceholderText="192.168.1.2" />
+                      <Button Grid.Column="1" local:Localized.Uid="HuePairButton" Content="配对" Click="HuePairClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource PrimaryButtonStyle}" />
+                      <Button Grid.Column="2" local:Localized.Uid="HueRefreshButton" Content="刷新" Click="HueRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" />
+                    </Grid>
+                    <ListView ItemsSource="{Binding Lights}" SelectionMode="None" Background="Transparent" BorderThickness="0">
+                      <ListView.ItemTemplate>
+                        <DataTemplate>
+                          <Grid ColumnDefinitions="*,Auto,160,Auto" ColumnSpacing="12" MinHeight="36">
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                            <ToggleSwitch Grid.Column="1" IsOn="{Binding IsOn, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" MinWidth="44" />
+                            <Slider Grid.Column="2" Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Brightness, Mode=TwoWay}" IsEnabled="{Binding SupportsBrightness}" />
+                            <Button Grid.Column="3" local:Localized.Uid="HueApplyButton" Content="应用" Click="HueApplyLightClick" Tag="{Binding}" Style="{StaticResource OpenRazerSaveButtonStyle}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ListView.ItemTemplate>
+                    </ListView>
+                  </StackPanel>
+                </Border>
               </StackPanel>
             </ScrollViewer>
             <ScrollViewer x:Name="DiagnosticsPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">

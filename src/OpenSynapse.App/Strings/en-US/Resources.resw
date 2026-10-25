@@ -2162,6 +2162,16 @@
   <data name="BleChargingFailed" xml:space="preserve"><value>Charging failed</value></data>
   <data name="BleChargingLimit" xml:space="preserve"><value>Charging limit reached</value></data>
   <data name="BleIdentity" xml:space="preserve"><value>BLE · protocol 30</value></data>
+  <data name="HueTitle" xml:space="preserve"><value>Philips Hue</value></data>
+  <data name="HueDescription" xml:space="preserve"><value>Control lights through a Hue bridge. Press the link button on the bridge, then choose Pair.</value></data>
+  <data name="HuePairButton" xml:space="preserve"><value>Pair</value></data>
+  <data name="HueRefreshButton" xml:space="preserve"><value>Refresh</value></data>
+  <data name="HueApplyButton" xml:space="preserve"><value>Apply</value></data>
+  <data name="HuePaired" xml:space="preserve"><value>Paired</value></data>
+  <data name="HueLinkButtonHint" xml:space="preserve"><value>Press the link button on the Hue bridge first.</value></data>
+  <data name="HuePairFailed" xml:space="preserve"><value>Pairing failed.</value></data>
+  <data name="HuePairFirst" xml:space="preserve"><value>Pair the bridge first.</value></data>
+  <data name="HueLightCount" xml:space="preserve"><value>Loaded {0} lights.</value></data>
 </root>
 
 
