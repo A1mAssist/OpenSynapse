@@ -2154,6 +2154,10 @@
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>Read failed; the device did not respond.</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>Gaming keyboard</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>Speaker</value></data>
+  <data name="RazerLightingEffectOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerLightingEffectStatic" xml:space="preserve"><value>Static</value></data>
+  <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>Breathing</value></data>
+  <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
 </root>
 
 

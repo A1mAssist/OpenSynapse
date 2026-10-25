@@ -45,6 +45,11 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
     private bool _gameModeEnabled;
     private int _selectedPollingIndex;
     private bool _hasGameMode;
+    private bool _hasLighting;
+    private double _brightness = 100;
+    private int _selectedEffectIndex;
+    private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
+    private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
     private bool _hasPolling;
     private bool _hasBattery;
 
@@ -82,6 +87,59 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
     }
 
     public string PollingRateText => $"{PollingRates[SelectedPollingIndex]} Hz";
+
+    private static readonly RazerChromaEffect[] Effects =
+        [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
+
+    public IReadOnlyList<string> LightingEffectOptions =>
+    [
+        AppStrings.Text("RazerLightingEffectOff"),
+        AppStrings.Text("RazerLightingEffectStatic"),
+        AppStrings.Text("RazerLightingEffectBreathing"),
+        AppStrings.Text("RazerLightingEffectSpectrum"),
+    ];
+
+    public int SelectedLightingEffectIndex
+    {
+        get => _selectedEffectIndex;
+        set
+        {
+            if (!SetField(ref _selectedEffectIndex, Math.Clamp(value, 0, Effects.Length - 1))) return;
+            OnPropertyChanged(nameof(SecondaryColorVisibility));
+        }
+    }
+
+    public double Brightness
+    {
+        get => _brightness;
+        set
+        {
+            if (!SetField(ref _brightness, Math.Clamp(value, 0, 100))) return;
+            OnPropertyChanged(nameof(BrightnessText));
+        }
+    }
+
+    public string BrightnessText => $"{Math.Round(Brightness)}%";
+
+    public Color PrimaryColor
+    {
+        get => _primaryColor;
+        set => SetField(ref _primaryColor, value);
+    }
+
+    public Color SecondaryColor
+    {
+        get => _secondaryColor;
+        set => SetField(ref _secondaryColor, value);
+    }
+
+    public Microsoft.UI.Xaml.Visibility SecondaryColorVisibility =>
+        Effects[_selectedEffectIndex] == RazerChromaEffect.Breathing
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    public Microsoft.UI.Xaml.Visibility LightingVisibility =>
+        _hasLighting ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
     public IReadOnlyList<string> PollingOptions => PollingRates.Select(rate => $"{rate} Hz").ToArray();
 
     public bool IsBusy
@@ -118,6 +176,8 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
         {
             var state = await OpenService().ReadStateAsync(cancellationToken);
             ApplyState(state);
+            var lighting = await OpenChromaService().ReadStateAsync(cancellationToken);
+            ApplyLighting(lighting);
             ErrorText = state.Firmware is null && state.Serial is null && state.BatteryPercent is null &&
                 state.GameModeEnabled is null && state.PollingRate is null
                     ? AppStrings.Text("RazerHeadsetReadFailed")
@@ -139,12 +199,89 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
     public Task ApplyGameModeAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync((service, token) => service.SetGameModeAsync(GameModeEnabled, token), cancellationToken);
 
+    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default) =>
+        RunChromaWriteAsync(
+            (service, token) => service.SetBrightnessAsync((byte)Math.Round(Brightness), token),
+            cancellationToken);
+
+    public Task ApplyLightingAsync(CancellationToken cancellationToken = default) =>
+        RunChromaWriteAsync(async (service, token) =>
+        {
+            var effect = Effects[SelectedLightingEffectIndex];
+            var colors = effect switch
+            {
+                RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
+                RazerChromaEffect.Breathing =>
+                    [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
+                _ => [],
+            };
+            await service.SetEffectAsync(effect, colors, token);
+        }, cancellationToken);
+
     public Task ApplyPollingAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             (service, token) => service.SetPollingRateAsync(PollingRates[SelectedPollingIndex], token),
             cancellationToken);
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
+
+    private RazerChromaStandardService OpenChromaService() =>
+        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+
+    private async Task RunChromaWriteAsync(
+        Func<RazerChromaStandardService, CancellationToken, Task> write,
+        CancellationToken cancellationToken)
+    {
+        if (!BeginOperation()) return;
+        try
+        {
+            await write(OpenChromaService(), cancellationToken);
+            ErrorText = string.Empty;
+            OperationStatusText = AppStrings.Text("BlackSharkSaved");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+            OperationStatusText = string.Empty;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ApplyLighting(RazerChromaStandardState state)
+    {
+        if (state.BrightnessPercent is byte brightness)
+        {
+            Brightness = brightness;
+            _hasLighting = true;
+        }
+
+        if (state.Effect is RazerChromaEffect effect)
+        {
+            var index = Array.IndexOf(Effects, effect);
+            if (index >= 0)
+            {
+                SelectedLightingEffectIndex = index;
+            }
+
+            _hasLighting = true;
+            if (state.Colors.Count >= 3)
+            {
+                PrimaryColor = Color.FromArgb(255, state.Colors[0], state.Colors[1], state.Colors[2]);
+            }
+            if (state.Colors.Count >= 6)
+            {
+                SecondaryColor = Color.FromArgb(255, state.Colors[3], state.Colors[4], state.Colors[5]);
+            }
+        }
+
+        OnPropertyChanged(nameof(LightingVisibility));
+    }
 
     private RazerKeyboardService OpenService() =>
         new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
