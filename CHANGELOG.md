@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 键盘页补上 class `0x0F` 的灯光通道，覆盖 16 款只有这套命令的键盘（Turret、BlackWidow X、Huntsman Essential / V3 X / V3 Pro 系列、BlackWidow V4 Low-profile、Reclusa、Tartarus V2 Pro 等）：可选关闭/静态/呼吸/光谱并写入 1–2 种颜色。这套通道没有亮度命令，亮度控件自动隐藏；设备能应答 `0F:130` 时读回校验，不能应答时按雷云同样的方式直接写入。
+- The keyboard page now drives the class 0x0F lighting channel used by 16 keyboards that have no class 0x10 support (Turret, BlackWidow X, Huntsman Essential / V3 X / V3 Pro series, BlackWidow V4 Low-profile, Reclusa, Tartarus V2 Pro and others): off/static/breathing/spectrum with one or two colours. The channel has no brightness command, so the brightness controls hide themselves; writes are read back when the firmware answers 0F:130 and applied without a readback otherwise, matching the middleware.
 - 补上两台边缘设备：Razer Marci（音频）接入音频页，Razer Wireless Control Pod 接入灯光页。至此中间件里能识别出命令的 119 款设备中，117 款已有对应页面；剩下 Philips Hue（走网络桥，不是 HID）和一款名字为空的 0F1B 原型设备。
 - Two edge cases are now covered: Razer Marci (audio) on the audio page and the Razer Wireless Control Pod on the lighting page. Of the 119 devices with identifiable middleware commands, 117 now have a page; the remaining two are Philips Hue (a network bridge, not HID) and an unnamed 0F1B prototype.
 - 键盘页再扩 12 款：BlackWidow X / V4 Pro 75% / V4 Low-profile（含 TKL）、Huntsman Essential / V3 X / V3 Pro Low-profile、Reclusa Mini 与 Reclusa X Mini、Pro Type Ergo、Tartarus V2 Pro、Turret Keyboard。能应答的功能（固件、序列号、游戏模式、轮询率、电量）自动出现，其余隐藏。

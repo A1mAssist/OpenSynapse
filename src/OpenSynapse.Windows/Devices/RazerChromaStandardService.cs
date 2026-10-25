@@ -17,6 +17,16 @@ public sealed record RazerChromaStandardState(
     IReadOnlyList<string> Errors);
 
 /// <summary>
+/// Class 0x10 carries effect and brightness; the older class 0x0F keyboards carry the
+/// same four UI effects without a brightness command.
+/// </summary>
+public enum RazerChromaChannel
+{
+    Standard,
+    Legacy,
+}
+
+/// <summary>
 /// Brightness and effect control over the class 0x10 Chroma channel shared by mice,
 /// keyboards, lamps, ARGB controllers and docks that the OpenRazer catalogue does not cover.
 /// </summary>
@@ -26,14 +36,17 @@ public sealed class RazerChromaStandardService
     private readonly string _devicePath;
     private readonly TimeSpan _deviceWait;
     private readonly Action<string>? _diagnostic;
+    private readonly RazerChromaChannel _channel;
     private byte _transactionId = 0x1F;
 
     internal RazerChromaStandardService(
         IRazerFeatureTransport transport,
         string devicePath,
         TimeSpan deviceWait,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        RazerChromaChannel channel = RazerChromaChannel.Standard)
     {
+        _channel = channel;
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _devicePath = string.IsNullOrWhiteSpace(devicePath)
             ? throw new ArgumentException("A HID device path is required.", nameof(devicePath))
@@ -131,26 +144,44 @@ public sealed class RazerChromaStandardService
     {
         var errors = new List<string>();
         byte? brightness = null;
-        try
+        if (_channel == RazerChromaChannel.Standard)
         {
-            brightness = RazerChromaStandardProtocol.ReadBrightnessPercent(
-                await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
-                    .ConfigureAwait(false));
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            errors.Add($"brightness: {exception.Message}");
+            try
+            {
+                brightness = RazerChromaStandardProtocol.ReadBrightnessPercent(
+                    await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
+                        .ConfigureAwait(false));
+            }
+            catch (Exception exception) when (IsExpected(exception))
+            {
+                errors.Add($"brightness: {exception.Message}");
+            }
         }
 
         RazerChromaEffect? effect = null;
         IReadOnlyList<byte> colors = [];
         try
         {
-            var current = RazerChromaStandardProtocol.ReadEffect(
-                await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read effect", cancellationToken)
-                    .ConfigureAwait(false));
-            effect = current.Effect;
-            colors = current.Colors;
+            if (_channel == RazerChromaChannel.Legacy)
+            {
+                var legacy = RazerLegacyChromaProtocol.ReadEffect(
+                    await QueryAsync(RazerLegacyChromaProtocol.GetEffect, "read effect", cancellationToken)
+                        .ConfigureAwait(false));
+                // Class 0x0F uses the same ids for the four UI effects; 4 is Wave there,
+                // not the class 0x10 AudioMeter, so anything above 3 stays unknown.
+                effect = legacy.EffectId <= (byte)RazerChromaEffect.Spectrum
+                    ? (RazerChromaEffect)legacy.EffectId
+                    : null;
+                colors = legacy.Colors;
+            }
+            else
+            {
+                var current = RazerChromaStandardProtocol.ReadEffect(
+                    await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read effect", cancellationToken)
+                        .ConfigureAwait(false));
+                effect = current.Effect;
+                colors = current.Colors;
+            }
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -162,6 +193,11 @@ public sealed class RazerChromaStandardService
 
     public async Task SetBrightnessAsync(byte percent, CancellationToken cancellationToken = default)
     {
+        if (_channel == RazerChromaChannel.Legacy)
+        {
+            throw new NotSupportedException("Class 0x0F devices expose no brightness command.");
+        }
+
         if (percent > 100)
         {
             throw new ArgumentOutOfRangeException(nameof(percent), "Brightness must be between 0 and 100.");
@@ -212,6 +248,12 @@ public sealed class RazerChromaStandardService
         }
 
         var payload = colors.ToArray();
+        if (_channel == RazerChromaChannel.Legacy)
+        {
+            await SetLegacyEffectAsync(effect, payload, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         var previous = RazerChromaStandardProtocol.ReadEffect(
             await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read effect", cancellationToken)
                 .ConfigureAwait(false));
@@ -241,6 +283,64 @@ public sealed class RazerChromaStandardService
                 transaction => RazerChromaStandardProtocol.SetEffect(transaction, previous.Effect, previous.Colors.ToArray()),
                 "restore effect").ConfigureAwait(false);
             throw;
+        }
+    }
+
+    private async Task SetLegacyEffectAsync(
+        RazerChromaEffect effect,
+        byte[] payload,
+        CancellationToken cancellationToken)
+    {
+        var previous = await TryReadLegacyEffectAsync(cancellationToken).ConfigureAwait(false);
+        if (previous is { } current &&
+            current.EffectId == (byte)effect && current.Colors.SequenceEqual(payload))
+        {
+            return;
+        }
+
+        await QueryAsync(
+            transaction => RazerLegacyChromaProtocol.SetEffect(transaction, effect, payload),
+            "set effect",
+            cancellationToken).ConfigureAwait(false);
+
+        // Wired keyboards never read the effect in the middleware, so a write is verified
+        // only when this firmware answers the 0F:130 read.
+        if (previous is null)
+        {
+            return;
+        }
+
+        var stored = await TryReadLegacyEffectAsync(cancellationToken).ConfigureAwait(false);
+        if (stored is null || stored.Value.EffectId == (byte)effect)
+        {
+            return;
+        }
+
+        if (previous.Value.EffectId <= (byte)RazerChromaEffect.Spectrum)
+        {
+            await TryRestoreAsync(
+                transaction => RazerLegacyChromaProtocol.SetEffect(
+                    transaction, (RazerChromaEffect)previous.Value.EffectId, previous.Value.Colors),
+                "restore effect").ConfigureAwait(false);
+        }
+
+        throw new InvalidOperationException(
+            $"Effect readback was {stored.Value.EffectId}, expected {(byte)effect}.");
+    }
+
+    private async Task<(byte EffectId, byte Flags, byte Rate, byte[] Colors)?> TryReadLegacyEffectAsync(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return RazerLegacyChromaProtocol.ReadEffect(
+                await QueryAsync(RazerLegacyChromaProtocol.GetEffect, "read effect", cancellationToken)
+                    .ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke($"legacy chroma effect read unavailable: {exception.Message}");
+            return null;
         }
     }
 
