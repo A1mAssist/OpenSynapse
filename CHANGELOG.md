@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 灯光页不再只显示一台设备：同时接入多个 Aether 灯具、鼠标或配件时全部列出，同一台设备的多个 HID 接口合并成一行，刷新时保留原来选中的设备。
+- The lighting page no longer stops at a single device: every attached Aether lamp, mouse or accessory gets its own row, several HID interfaces of one device collapse into one row, and the previous selection survives a refresh.
 - 键盘页补上 class `0x0F` 的灯光通道，覆盖 16 款只有这套命令的键盘（Turret、BlackWidow X、Huntsman Essential / V3 X / V3 Pro 系列、BlackWidow V4 Low-profile、Reclusa、Tartarus V2 Pro 等）：可选关闭/静态/呼吸/光谱并写入 1–2 种颜色。这套通道没有亮度命令，亮度控件自动隐藏；设备能应答 `0F:130` 时读回校验，不能应答时按雷云同样的方式直接写入。
 - The keyboard page now drives the class 0x0F lighting channel used by 16 keyboards that have no class 0x10 support (Turret, BlackWidow X, Huntsman Essential / V3 X / V3 Pro series, BlackWidow V4 Low-profile, Reclusa, Tartarus V2 Pro and others): off/static/breathing/spectrum with one or two colours. The channel has no brightness command, so the brightness controls hide themselves; writes are read back when the firmware answers 0F:130 and applied without a readback otherwise, matching the middleware.
 - 查清此前名字为空的 `0F1B`：它是 Razer Seiren Emote 麦克风（与 `0524` 共用 Camyt3 中间件包）。现已接入音频页，显示 10 段 EQ 与麦克风音量，并归到“麦克风”分类；它的 8×8 LED 表情矩阵要走独立帧通道，暂未开放。
