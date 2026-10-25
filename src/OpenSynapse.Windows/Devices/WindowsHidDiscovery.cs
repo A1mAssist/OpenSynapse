@@ -46,8 +46,9 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
 
     internal static Task<IReadOnlyList<HidInterfaceDescriptor>> FindVendorInterfacesAsync(
         ushort vendorId,
-        CancellationToken cancellationToken = default) =>
-        Task.Run(() => FindVendorFeatureInterfaces(vendorId, null, cancellationToken), cancellationToken);
+        CancellationToken cancellationToken = default,
+        Action<HidInterfaceDescriptor>? observeInterface = null) =>
+        Task.Run(() => FindVendorFeatureInterfaces(vendorId, null, cancellationToken, observeInterface), cancellationToken);
 
     public static Task<string?> TryReadSerialNumberAsync(string devicePath, CancellationToken cancellationToken = default) =>
         Task.Run(() => TryReadSerialNumber(devicePath), cancellationToken);

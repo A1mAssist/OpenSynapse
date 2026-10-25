@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using OpenSynapse.Core.Diagnostics;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
 
@@ -232,6 +233,10 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         }
     }
 
+    internal static bool UsesOpenRazerLogicalReport(string devicePath) =>
+        DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
+        OpenRazerDeviceCatalog.IsViperV3ProSe(productId);
+
     private async Task<byte[]> ExecuteAsync(
         string devicePath,
         byte[] request,
@@ -256,6 +261,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     responseReportId,
                     cancellationToken,
                     allowRemainingPacketsMismatch,
+                    UsesOpenRazerLogicalReport(devicePath),
                     message => WriteDiagnostic(devicePath, request, message)).ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException)
@@ -302,17 +308,24 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         byte responseReportId,
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch,
+        bool useOpenRazerLogicalReport,
         Action<string>? diagnostic = null)
     {
         string? lastError = null;
         var rejectedResponses = 0;
         var silentResponses = 0;
+        var sendReport = useOpenRazerLogicalReport
+            ? RazerFeatureReport.ToOpenRazerLogicalReport(request)
+            : request;
+        var responseLength = useOpenRazerLogicalReport
+            ? RazerFeatureReport.OpenRazerLogicalLength
+            : RazerFeatureReport.Length;
         for (var attempt = 1; attempt <= 5; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var setResult = await Task.Run(() =>
             {
-                var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
+                var success = NativeMethods.HidD_SetFeature(handle, sendReport, sendReport.Length);
                 return (Success: success, Error: Marshal.GetLastWin32Error());
             }, cancellationToken).ConfigureAwait(false);
             if (!setResult.Success)
@@ -324,8 +337,11 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             }
 
             await Task.Delay(deviceWait, cancellationToken).ConfigureAwait(false);
-            var response = new byte[RazerFeatureReport.Length];
-            response[0] = responseReportId;
+            var response = new byte[responseLength];
+            if (!useOpenRazerLogicalReport)
+            {
+                response[0] = responseReportId;
+            }
             var getResult = await Task.Run(() =>
             {
                 var success = NativeMethods.HidD_GetFeature(handle, response, response.Length);
@@ -337,6 +353,11 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 diagnostic?.Invoke($"attempt {attempt}: HidD_GetFeature failed, win32={getResult.Error} ({lastError})");
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
                 continue;
+            }
+
+            if (useOpenRazerLogicalReport)
+            {
+                response = RazerFeatureReport.FromOpenRazerLogicalReport(response);
             }
 
             if (!RazerFeatureReport.MatchesReportId(response, responseReportId) ||
@@ -536,7 +557,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     deviceWait,
                     responseReportId,
                     cancellationToken,
-                    allowRemainingPacketsMismatch).ConfigureAwait(false);
+                    allowRemainingPacketsMismatch,
+                    useOpenRazerLogicalReport: false).ConfigureAwait(false);
             }
             finally
             {
