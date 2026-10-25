@@ -28,7 +28,6 @@ public sealed partial class MainWindow
         }
 
         var window = new MacroEditorWindow(
-            AppWindow,
             _viewModel,
             RootLayout.XamlRoot?.RasterizationScale ?? 1d);
         window.Closed += (_, _) =>

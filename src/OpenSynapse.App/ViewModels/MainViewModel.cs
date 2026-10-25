@@ -568,7 +568,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         var powerState = SelectedLightingPowerState;
         var resolved = blade is null
             ? null
@@ -634,7 +634,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         var powerState = SelectedPerformancePowerState;
         var bladeProfile = blade is null
             ? EditablePerformanceBladeProfile
@@ -664,7 +664,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         var powerState = SelectedLogoPowerState;
         var bladeProfile = blade is null
             ? EditableLogoBladeProfile
@@ -866,7 +866,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         Diagnostics.Clear();
         var groups = new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase);
         var errorBrush = new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
-        var bladeName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Name
+        var bladeName = snapshot.Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Name
             ?? "Razer Blade";
         var viperName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper)?.Name
             ?? "Razer Viper";

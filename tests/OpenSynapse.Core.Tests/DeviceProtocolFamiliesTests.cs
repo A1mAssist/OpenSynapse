@@ -15,7 +15,8 @@ public sealed class DeviceProtocolFamiliesTests
     [Theory]
     [InlineData(DeviceProtocolFamilies.Blade)]
     [InlineData(DeviceProtocolFamilies.Blade2023)]
-    public void IsBladeAdmitsBothBladeFamilies(string protocolFamily) =>
+    [InlineData(DeviceProtocolFamilies.Blade2020)]
+    public void IsBladeAdmitsEveryBladeFamily(string protocolFamily) =>
         Assert.True(DeviceProtocolFamilies.IsBlade(protocolFamily));
 
     [Theory]

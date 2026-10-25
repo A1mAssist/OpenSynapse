@@ -23,6 +23,9 @@ public sealed partial class MainWindow
     private bool _bladeBrightnessPointerActive;
     private bool _dedicatedGpuModeUiReady;
     private bool _dedicatedGpuModeBusy;
+    private bool _displayMuxUiReady;
+    private bool _displayMuxBusy;
+    private int _displayMuxRefreshVersion;
     private Color? _lightingColorBeforeEdit;
     private ColorPicker? _activeLightingColorPicker;
     private Flyout? _activeLightingColorFlyout;
@@ -275,6 +278,165 @@ public sealed partial class MainWindow
         {
             _dedicatedGpuModeUiReady = true;
         }
+
+        RefreshDisplayMuxMode();
+    }
+
+    internal void RefreshDisplayMuxMode() => _ = RefreshDisplayMuxModeAsync();
+
+    private async Task RefreshDisplayMuxModeAsync()
+    {
+        var version = ++_displayMuxRefreshVersion;
+        try
+        {
+            var status = await _viewModel.ReadBladeDisplayMuxStatusAsync(_lifetime.Token);
+            if (_lifetime.IsCancellationRequested || version != _displayMuxRefreshVersion)
+            {
+                return;
+            }
+
+            ApplyDisplayMuxStatus(status);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            DisplayMuxModeCard.Visibility = Visibility.Visible;
+            DisplayMuxModeCombo.Visibility = Visibility.Collapsed;
+            DisplayMuxModeStatusText.Text = AppStrings.FormatText(
+                "DisplayMuxModeStatusFailed",
+                exception.HResult);
+        }
+    }
+
+    private sealed record DisplayMuxModeOption(string Label, BladeDisplayMuxMode Mode);
+
+    private void ApplyDisplayMuxStatus(BladeDisplayMuxStatus status)
+    {
+        DisplayMuxModeCard.Visibility = Visibility.Visible;
+        _displayMuxUiReady = false;
+        try
+        {
+            DisplayMuxModeCombo.Visibility = status.IsSupported
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            DisplayMuxModeStatusText.Text = DisplayMuxModeStatusMessage(status);
+            if (!status.IsSupported)
+            {
+                DisplayMuxModeCombo.ItemsSource = null;
+                DisplayMuxModeCombo.SelectedItem = null;
+                return;
+            }
+
+            var options = BladeDisplayMuxModes.GetSupportedModes(status.Capabilities)
+                .Select(mode => new DisplayMuxModeOption(DisplayMuxModeLabel(mode), mode))
+                .ToArray();
+            DisplayMuxModeCombo.ItemsSource = options;
+            DisplayMuxModeCombo.SelectedItem = options.FirstOrDefault(option => option.Mode == status.Mode);
+            DisplayMuxModeCombo.IsEnabled = !_displayMuxBusy && status.CanChange;
+        }
+        finally
+        {
+            _displayMuxUiReady = true;
+        }
+    }
+
+    private static string DisplayMuxModeLabel(BladeDisplayMuxMode mode) =>
+        mode switch
+        {
+            BladeDisplayMuxMode.Hybrid => AppStrings.Text("DisplayMuxModeHybrid"),
+            BladeDisplayMuxMode.Dds => AppStrings.Text("DisplayMuxModeDds"),
+            _ => AppStrings.Text("DisplayMuxModeDiscrete"),
+        };
+
+    private static string DisplayMuxModeStatusMessage(BladeDisplayMuxStatus status) =>
+        status.BlockReason switch
+        {
+            BladeDisplayMuxBlockReason.NoDevice =>
+                AppStrings.Text("DisplayMuxModeStatusNoDevice"),
+            BladeDisplayMuxBlockReason.MissingCapability =>
+                AppStrings.Text("DisplayMuxModeStatusNoPair"),
+            BladeDisplayMuxBlockReason.ReadFailed =>
+                AppStrings.Text("DisplayMuxModeStatusUnavailable"),
+            _ => status.Mode switch
+            {
+                BladeDisplayMuxMode.Dds => AppStrings.Text("DisplayMuxModeStatusDds"),
+                BladeDisplayMuxMode.Discrete => AppStrings.Text("DisplayMuxModeStatusDiscrete"),
+                _ => AppStrings.Text("DisplayMuxModeStatusHybrid"),
+            },
+        };
+
+    private async void DisplayMuxModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_displayMuxUiReady || _displayMuxBusy ||
+            sender is not ComboBox { SelectedItem: DisplayMuxModeOption option } combo)
+        {
+            return;
+        }
+
+        var mode = option.Mode;
+
+        if (WindowsDedicatedGpuMode.GetStatus().IsActive)
+        {
+            await RefreshDisplayMuxModeAsync();
+            DisplayMuxModeStatusText.Text = AppStrings.Text("DisplayMuxModeStatusDedicatedGpuDisabled");
+            DisplayMuxModeCombo.IsEnabled = false;
+            return;
+        }
+
+        _displayMuxBusy = true;
+        _displayMuxUiReady = false;
+        combo.IsEnabled = false;
+        DisplayMuxModeStatusText.Text = AppStrings.Text("DisplayMuxModeStatusApplying");
+
+        BladeDisplayMuxSwitchResult result;
+        try
+        {
+            result = await _viewModel.SetBladeDisplayMuxModeAsync(mode, _lifetime.Token);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            _viewModel.ReportApplicationError(AppStrings.FormatText(
+                "DisplayMuxModeError",
+                exception.Message));
+            result = new BladeDisplayMuxSwitchResult(
+                BladeDisplayMuxSwitchOutcome.Failed,
+                exception.HResult);
+        }
+        finally
+        {
+            _displayMuxBusy = false;
+            _displayMuxUiReady = true;
+            DisplayMuxModeCombo.IsEnabled =
+                DisplayMuxModeCombo.Visibility == Visibility.Visible;
+        }
+
+        if (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        var message = result.Outcome switch
+        {
+            BladeDisplayMuxSwitchOutcome.Success => AppStrings.Text("DisplayMuxModeStatusSuccess"),
+            BladeDisplayMuxSwitchOutcome.RestartRequired => AppStrings.Text("DisplayMuxModeStatusRestartRequired"),
+            BladeDisplayMuxSwitchOutcome.Restored => AppStrings.Text("DisplayMuxModeStatusRestored"),
+            BladeDisplayMuxSwitchOutcome.RestoreFailed => AppStrings.Text("DisplayMuxModeStatusRestoreFailed"),
+            BladeDisplayMuxSwitchOutcome.Unsupported => AppStrings.Text("DisplayMuxModeStatusNoPair"),
+            BladeDisplayMuxSwitchOutcome.NoDevice => AppStrings.Text("DisplayMuxModeStatusNoDevice"),
+            _ => AppStrings.FormatText("DisplayMuxModeStatusFailed", result.ErrorCode),
+        };
+        if (result.Outcome is not (BladeDisplayMuxSwitchOutcome.Success or BladeDisplayMuxSwitchOutcome.RestartRequired))
+        {
+            await RefreshDisplayMuxModeAsync();
+        }
+
+        DisplayMuxModeStatusText.Text = message;
     }
 
     private static string DedicatedGpuModeStatusMessage(DedicatedGpuModeStatus status)
@@ -317,7 +479,8 @@ public sealed partial class MainWindow
         DedicatedGpuSwitchResult result;
         try
         {
-            result = await WindowsDedicatedGpuMode.SetEnabledAsync(toggle.IsOn, _lifetime.Token);
+            // The switch means "integrated-only mode is active", so on = disable the GPU.
+            result = await WindowsDedicatedGpuMode.SetEnabledAsync(!toggle.IsOn, _lifetime.Token);
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {

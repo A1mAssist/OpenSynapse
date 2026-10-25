@@ -110,10 +110,20 @@ public sealed class Localized : DependencyObject
 
     private static void RefreshDescendants(DependencyObject element)
     {
-        var uid = GetUid(element);
-        if (!string.IsNullOrWhiteSpace(uid))
+        try
         {
-            Apply(element, uid);
+            var uid = GetUid(element);
+            if (!string.IsNullOrWhiteSpace(uid))
+            {
+                Apply(element, uid);
+            }
+        }
+        catch
+        {
+            // A template element whose native peer is already gone must not take the
+            // whole tree down: this runs from a WinRT event callback, where a
+            // managed exception cannot cross the ABI boundary and would kill the app.
+            // Its children are still visited below.
         }
 
         for (var index = 0; index < VisualTreeHelper.GetChildrenCount(element); index++)

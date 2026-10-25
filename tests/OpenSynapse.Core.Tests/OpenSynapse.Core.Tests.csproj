@@ -26,8 +26,10 @@
     <Compile Include="..\..\src\OpenSynapse.App\AppBehaviorSettings.cs" Link="AppBehaviorSettings.cs" />
     <Compile Include="..\..\src\OpenSynapse.App\ViewModels\BladeFanCurveViewModel.cs"
              Link="ViewModels\BladeFanCurveViewModel.cs" />
-    <Compile Include="..\..\src\OpenSynapse.App\ViewModels\DeviceProtocolFamilies.cs"
-             Link="ViewModels\DeviceProtocolFamilies.cs" />
+    <Compile Include="..\\..\\src\\OpenSynapse.App\\ViewModels\\DeviceProtocolFamilies.cs"
+             Link="ViewModels\\DeviceProtocolFamilies.cs" />
+    <Compile Include="..\\..\\src\\OpenSynapse.App\\ViewModels\\SystemAudioViewModel.cs"
+             Link="ViewModels\\SystemAudioViewModel.cs" />
     <Compile Include="..\..\src\OpenSynapse.App\ViewModels\BladeFanCurveEditorViewModel.cs"
              Link="ViewModels\BladeFanCurveEditorViewModel.cs" />
   </ItemGroup>

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -31,11 +32,9 @@ internal sealed class RazerDeviceRegistry
         PropertyNameCaseInsensitive = false,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
     };
-    private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, CapabilityContract>> FamilyCapabilities =
-        new Dictionary<string, IReadOnlyDictionary<string, CapabilityContract>>(StringComparer.Ordinal)
+    private static readonly IReadOnlyDictionary<string, CapabilityContract> Blade710Capabilities =
+        new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
         {
-            ["blade-710"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
-            {
                 ["keyboard-brightness.get"] = new(0x02, 0x0E, 0x84, "0100"),
                 ["keyboard-brightness.set"] = new(0x02, 0x0E, 0x04, ""),
                 ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
@@ -65,6 +64,20 @@ internal sealed class RazerDeviceRegistry
                 ["logo-mode.set"] = new(0x03, 0x03, 0x02, ""),
                 ["logo-effect.set"] = new(0x03, 0x03, 0x02, "", AllowZeroTransactionId: true),
                 ["logo-state.set"] = new(0x03, 0x03, 0x00, "", AllowZeroTransactionId: true),
+                ["display-mux.get"] = new(0x02, 0x0D, 0x89, "0000"),
+                ["display-mux.set"] = new(0x02, 0x0D, 0x09, ""),
+                ["display-mux-capabilities.get"] = new(0x02, 0x0D, 0x8A, "0000"),
+        };
+    private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, CapabilityContract>> FamilyCapabilities =
+        new Dictionary<string, IReadOnlyDictionary<string, CapabilityContract>>(StringComparer.Ordinal)
+        {
+            ["blade-710"] = Blade710Capabilities,
+            // Later Blade middleware moved keyboard brightness from 0E:84/04 to the
+            // 03:83/03 Chroma region command. All other reports remain 710-compatible.
+            ["blade-710-chroma"] = new Dictionary<string, CapabilityContract>(Blade710Capabilities, StringComparer.Ordinal)
+            {
+                ["keyboard-brightness.get"] = new(0x03, 0x03, 0x83, "010500", true),
+                ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
             },
             // Blade 16 (2023) RZ09-0483 shares the 710 thermal, power-mode and charge
             // commands but has its own lighting matrix report, so it stays a separate family.
@@ -85,6 +98,25 @@ internal sealed class RazerDeviceRegistry
                 ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
                 ["keyboard-effect.get"] = new(0x03, 0x0F, 0x82, "010500", true),
                 ["keyboard-effect.set"] = new(0x03, 0x0F, 0x02, "", true),
+            },
+            // Blade 15 Base (Early 2020) reports its keyboard brightness through the
+            // Chroma region command; its 07:8F/92 reports supply power-mode and charge state.
+            // MUX stays out because the product UI does not advertise hasGPUmode.
+            ["blade-597"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
+            {
+                ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
+                ["thermal-state.set"] = new(0x04, 0x0D, 0x02, ""),
+                ["current-fan-rpm.get"] = new(0x03, 0x0D, 0x88, ""),
+                ["keyboard-brightness.get"] = new(0x03, 0x0F, 0x84, "0105", true),
+                ["keyboard-brightness.set"] = new(0x03, 0x0F, 0x04, ""),
+                ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
+                ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
+                ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
+                ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
+                ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
+                ["native-display-mode.get"] = new(0x01, 0x0D, 0x8E, "00", true),
+                ["native-display-mode.set"] = new(0x01, 0x0D, 0x0E, ""),
+                ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
             },
             ["viper-184"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {
@@ -115,7 +147,9 @@ internal sealed class RazerDeviceRegistry
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
             ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys.ToHashSet(StringComparer.Ordinal),
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
             ["openrazer-standard"] = new HashSet<string>(StringComparer.Ordinal),
         };
@@ -123,7 +157,14 @@ internal sealed class RazerDeviceRegistry
         new Dictionary<(ushort VendorId, ushort ProductId), string>
         {
             [(0x1532, 0x02C6)] = "blade-710",
+            [(0x1532, 0x029D)] = "blade-710-chroma",
+            [(0x1532, 0x02B6)] = "blade-710-chroma",
+            [(0x1532, 0x02B7)] = "blade-710-chroma",
+            [(0x1532, 0x02B8)] = "blade-710-chroma",
+            [(0x1532, 0x02C5)] = "blade-710-chroma",
+            [(0x1532, 0x02C7)] = "blade-710-chroma",
             [(0x1532, 0x029F)] = "blade-671",
+            [(0x1532, 0x0255)] = "blade-597",
             [(0x1532, 0x00B8)] = "viper-184",
         };
 
@@ -154,10 +195,7 @@ internal sealed class RazerDeviceRegistry
 
     internal static RazerDeviceRegistryLoadResult Load(string? externalDirectory = null)
     {
-        externalDirectory ??= Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OpenSynapse",
-            "devices");
+        externalDirectory ??= AppDataPaths.Combine("devices");
 
         var errors = new List<string>();
         var externalDocuments = new List<ManifestDocument>();
@@ -545,6 +583,13 @@ internal sealed class RazerDeviceRegistry
         {
             throw new InvalidOperationException($"Manifest '{source.Id}' has an invalid wait time.");
         }
+        if (source.MatrixRows.HasValue != source.MatrixColumns.HasValue ||
+            source.MatrixRows is < 1 or > 6 ||
+            source.MatrixColumns is < 1 or > 25)
+        {
+            throw new InvalidOperationException(
+                $"Manifest '{source.Id}' must declare matrixRows (1..6) and matrixColumns (1..25) together.");
+        }
 
         var vendorId = ParseWord(source.VendorId, "vendorId");
         var productIds = source.ProductIds.Select(value => ParseWord(value, "productIds")).ToArray();
@@ -595,9 +640,15 @@ internal sealed class RazerDeviceRegistry
                 {
                     "blade-710" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
                         "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get"),
+                    "blade-710-chroma" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
+                        "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get" or
+                        "keyboard-brightness.get" or "keyboard-brightness.set"),
                     "blade-671" => capabilityId is not ("charge-limit.get" or "power-mode.get" or
                         "keyboard-brightness.get" or "keyboard-brightness.set" or
                         "keyboard-effect.get" or "keyboard-effect.set"),
+                    "blade-597" => capabilityId is not ("keyboard-brightness.get" or
+                        "adapter-power.get" or "charge-limit.get" or "power-mode.get" or
+                        "native-display-mode.get" or "sku-hardware-configuration.get"),
                     _ => true,
                 }))
             {
@@ -643,14 +694,16 @@ internal sealed class RazerDeviceRegistry
                 checked((ushort)source.Collection.FeatureReportLength)),
             source.ProtocolFamily,
             capabilities,
-            ParseCategory(source.Category, source.ProtocolFamily));
+            ParseCategory(source.Category, source.ProtocolFamily),
+            source.MatrixRows ?? 0,
+            source.MatrixColumns ?? 0);
     }
 
     private static DeviceCategory ParseCategory(string? value, string protocolFamily) => value switch
     {
         null or "" => protocolFamily switch
         {
-            "blade-710" or "blade-671" => DeviceCategory.Laptop,
+            "blade-710" or "blade-710-chroma" or "blade-671" or "blade-597" => DeviceCategory.Laptop,
             "viper-184" => DeviceCategory.Mouse,
             _ => DeviceCategory.Unknown,
         },
@@ -729,6 +782,8 @@ internal sealed class RazerDeviceRegistry
         public required CollectionJson Collection { get; init; }
         public required string ProtocolFamily { get; init; }
         public string? Category { get; init; }
+        public int? MatrixRows { get; init; }
+        public int? MatrixColumns { get; init; }
         public required TransportJson Transport { get; init; }
         public required Dictionary<string, RequestJson> Capabilities { get; init; }
     }

@@ -51,11 +51,34 @@ public static class BladeModelCapabilities
             // needs a verified restore-on-exit path.
 
             [0x028C] = new(MaxFan: false, LowMediumHigh),
-            // Blade 14 (2023) RZ09-0482, Blade 14 (2025) RZ09-0530 and Blade 16
-            // (2026) RZ09-0581. No maximum-fan evidence on any of them.
-            [0x029D] = new(MaxFan: false, LowMediumHigh),
-            [0x02C5] = new(MaxFan: false, LowMediumHigh),
-            [0x02E0] = new(MaxFan: false, LowMediumHigh),
+            // Blade 14 (2023) RZ09-0482 and Blade 14 (2024) RZ09-0509. The middleware
+            // enables both the maximum-fan bit and custom CPU levels.
+            [0x029D] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true),
+            [0x02B6] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true),
+
+            // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
+            // It has no CPU-level flag, so the custom CPU control stays closed.
+            [0x02B8] = new(MaxFan: true, None, FanCurve: true, FixedFan: true),
+
+            // Blade 14 (2025) and Blade 18 (2025) expose the 710 fan-target reports but
+            // do not enable the maximum-fan bit or custom CPU levels in their middleware.
+            [0x02C5] = new(MaxFan: false, None, FanCurve: true, FixedFan: true),
+            [0x02C7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true),
+
+            // Blade 16 (2024) 1532:02B7. The 695 middleware uses the same fan-target,
+            // panel and power reports as 02C6; Max Fan stays off because its injected
+            // configuration does not enable the Custom maximum-fan bit. CPU Boost is
+            // likewise not enabled by its deviceUI configuration.
+            [0x02B7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true),
+
+            // Blade 16 (2026) RZ09-0581 remains read-only until its middleware is audited.
+            [0x02E0] = new(MaxFan: false, None),
+
+            // Blade 15 Base (Early 2020) 1532:0255. Its middleware exposes Chroma
+            // brightness, thermal, charge-limit, adapter-power and power-mode reports.
+            // Fixed RPM targets stay closed because 0x0D:0x81 reports a percentage,
+            // not the newer RPM layout.
+            [0x0255] = new(MaxFan: false, CpuBoostModes: None),
         }.ToFrozenDictionary();
 
     /// <summary>
@@ -83,7 +106,15 @@ public static class BladeModelCapabilities
         IReadOnlyList<BladeCpuBoostMode> CpuBoostModes,
         bool FanCurve = false,
         bool FixedFan = false,
-        int MaximumFanTargetRpm = BladeFanLimits.MaximumRpm);
+        int MaximumFanTargetRpm = BladeFanLimits.MaximumRpm,
+        bool Writes = true);
+
+    /// <summary>
+    /// True only where the exact model has an audited write path. Unknown models stay
+    /// closed so a read-only probe cannot be promoted by a stale profile.
+    /// </summary>
+    public static bool AllowsControlWrites(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.Writes;
 
     public static bool SupportsMaxFan(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.MaxFan;

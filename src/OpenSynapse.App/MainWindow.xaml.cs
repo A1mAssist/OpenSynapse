@@ -13,8 +13,9 @@ namespace OpenSynapse.App;
 
 public sealed partial class MainWindow : Window
 {
-    private const int MinimumWindowWidth = 1080;
-    private const int MinimumWindowHeight = 680;
+    // Logical pixels: 640 px page content + 48 px compact navigation pane.
+    private const int MinimumWindowWidth = 700;
+    private const int MinimumWindowHeight = 480;
     private const int ShowWindowRestore = 9;
     private const int MinimumLaunchDurationMilliseconds = 650;
     private readonly MainViewModel _viewModel;
@@ -47,6 +48,7 @@ public sealed partial class MainWindow : Window
         _viewModel.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
+        SystemAudioCard.DataContext = SystemAudio;
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _viewModel.SetMacroDispatcher(_dispatcherQueue);
         _viewModel.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
@@ -194,9 +196,7 @@ public sealed partial class MainWindow : Window
         }
 
         var workArea = DisplayArea.GetFromWindowId(sender.Id, DisplayAreaFallback.Primary).WorkArea;
-        // Size is reported in physical pixels, so a fixed minimum shrinks with DPI. At 200%
-        // the old 1080 px floor was only 540 logical, which is narrower than the devices
-        // page needs, and that page has no horizontal scroll.
+        // AppWindow.Size is physical pixels; the page floor is logical.
         var scale = (Content as FrameworkElement)?.XamlRoot?.RasterizationScale ?? 1d;
         var minimumWidth = Math.Min((int)Math.Round(MinimumWindowWidth * scale), workArea.Width);
         var minimumHeight = Math.Min((int)Math.Round(MinimumWindowHeight * scale), workArea.Height);

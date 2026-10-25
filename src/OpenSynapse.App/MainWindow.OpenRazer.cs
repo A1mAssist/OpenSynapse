@@ -44,7 +44,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Blade))
+        if (DeviceProtocolFamilies.IsBlade(row.ProtocolFamily))
         {
             SelectDevice("blade");
         }
@@ -107,7 +107,7 @@ public sealed partial class MainWindow
                 await _viewModel.SelectBlackSharkAsync(row, _lifetime.Token);
                 break;
             case DeviceRowViewModel row
-                when StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Blade):
+                when DeviceProtocolFamilies.IsBlade(row.ProtocolFamily):
                 SelectDevice("blade");
                 break;
             case DeviceRowViewModel row

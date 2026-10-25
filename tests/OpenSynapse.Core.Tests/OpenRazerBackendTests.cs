@@ -54,9 +54,10 @@ public sealed class OpenRazerBackendTests
     {
         var catalog = OpenRazerDeviceCatalog.BuiltIn;
 
-        // 254 upstream entries plus two DeathAdder probes and two Viper V3 Pro SE aliases.
-        Assert.Equal(258, catalog.Devices.Count);
-        Assert.Equal(258, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
+        // 259 upstream entries plus two DeathAdder probes, two Viper V3 Pro SE aliases,
+        // and the locally admitted 054A Leviathan V2 X family.
+        Assert.Equal(264, catalog.Devices.Count);
+        Assert.Equal(264, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
         Assert.DoesNotContain(catalog.Devices, device => device.ProductId is 0x00B8 or 0x02C6);
         Assert.Null(catalog.Find(0x1234, catalog.Devices[0].ProductId));
         Assert.All(catalog.Devices, device =>
@@ -65,6 +66,45 @@ public sealed class OpenRazerBackendTests
             Assert.Equal(device.SourceCapabilities.Count, device.SourceCapabilities.Distinct(StringComparer.Ordinal).Count());
             Assert.Empty(device.Transactions.Keys.Intersect(device.CommandSequences.Keys, StringComparer.Ordinal));
         });
+    }
+
+    [Fact]
+    public void LeviathanV2XIsAdmittedForIdentityAndBrightness()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x054A);
+
+        Assert.NotNull(device);
+        Assert.Equal("Razer Leviathan V2 X", device!.DisplayName);
+        Assert.Equal(DeviceCategory.Accessory, device.Category);
+        Assert.Equal(TimeSpan.FromMilliseconds(5), device.DeviceWait);
+        Assert.Equal(OpenRazerStorage.Temporary, device.DefaultStorage);
+        Assert.Contains("razer_chroma_extended_matrix_get_region_ids", device.Transactions.Keys);
+        Assert.Contains("get_firmware", device.SourceCapabilities);
+        Assert.Contains("get_serial", device.SourceCapabilities);
+        Assert.Contains("get_brightness", device.SourceCapabilities);
+        Assert.Contains("set_brightness", device.SourceCapabilities);
+        Assert.DoesNotContain("set_static_effect", device.SourceCapabilities);
+
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+        Assert.Contains(OpenRazerBackendCapability.FirmwareRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.BrightnessWrite, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.LightingEffectWrite, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.MatrixFrameWrite, capabilities);
+
+        var renamed = device.WithDisplayName("Razer | Kuromi Limited Edition Soundbar");
+        Assert.Equal("Razer | Kuromi Limited Edition Soundbar", renamed.DisplayName);
+        Assert.Equal(device.DefaultStorage, renamed.DefaultStorage);
+        Assert.Same(device.Transactions, renamed.Transactions);
+        Assert.True(capabilities.SetEquals(OpenRazerDeviceService.GetCapabilities(renamed)));
+    }
+
+    [Theory]
+    [InlineData(@"\\?\hid#vid_1532&pid_054a&mi_01#test", true)]
+    [InlineData(@"\\?\hid#vid_1532&pid_054b&mi_01#test", false)]
+    public void OnlyLeviathan054AUsesReportIdSeven(string devicePath, bool expected)
+    {
+        Assert.Equal(expected, RazerFeatureTransport.UsesLeviathanReportId(devicePath));
     }
 
     [Theory]

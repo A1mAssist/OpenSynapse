@@ -39,25 +39,36 @@ public static class BladeLightingProtocol
             EffectCommandId,
             new byte[] { 0x05, 0x00 });
 
-    public static byte[][] CreateMatrixFrameRequests(IReadOnlyList<RazerRgb> frame)
+    public static byte[][] CreateMatrixFrameRequests(IReadOnlyList<RazerRgb> frame) =>
+        CreateMatrixFrameRequests(frame, Rows, Columns);
+
+    public static byte[][] CreateMatrixFrameRequests(
+        IReadOnlyList<RazerRgb> frame,
+        int rows,
+        int columns)
     {
         ArgumentNullException.ThrowIfNull(frame);
-        if (frame.Count != Rows * Columns)
+        ValidateMatrixDimensions(rows, columns);
+        if (frame.Count != rows * columns)
         {
-            throw new ArgumentException("A Blade lighting frame must contain exactly 6 x 17 colors.", nameof(frame));
+            throw new ArgumentException(
+                $"A Blade lighting frame must contain exactly {rows} x {columns} colors.",
+                nameof(frame));
         }
 
-        var requests = new byte[Rows + 1][];
-        for (byte row = 0; row < Rows; row++)
+        var requests = new byte[rows + 1][];
+        for (byte row = 0; row < rows; row++)
         {
-            var offset = row * Columns;
+            var offset = row * columns;
             requests[row] = CreateMatrixRowRequest(
                 (byte)(row + 1),
                 row,
                 0,
-                frame.Skip(offset).Take(Columns).ToArray());
+                frame.Skip(offset).Take(columns).ToArray(),
+                rows,
+                columns);
         }
-        requests[Rows] = CreateCustomFrameEffectRequest(Rows + 1);
+        requests[rows] = CreateCustomFrameEffectRequest(checked((byte)(rows + 1)));
         return requests;
     }
 
@@ -128,20 +139,34 @@ public static class BladeLightingProtocol
         byte transactionId,
         byte row,
         byte startColumn,
-        IReadOnlyList<RazerRgb> colors)
+        IReadOnlyList<RazerRgb> colors) =>
+        CreateMatrixRowRequest(transactionId, row, startColumn, colors, Rows, Columns);
+
+    public static byte[] CreateMatrixRowRequest(
+        byte transactionId,
+        byte row,
+        byte startColumn,
+        IReadOnlyList<RazerRgb> colors,
+        int rows,
+        int columns)
     {
         ArgumentNullException.ThrowIfNull(colors);
         ValidateMatrixTransactionId(transactionId);
-        if (row >= Rows)
+        ValidateMatrixDimensions(rows, columns);
+        if (row >= rows)
         {
             throw new ArgumentOutOfRangeException(nameof(row));
         }
-        if (colors.Count == 0 || startColumn >= Columns || startColumn + colors.Count > Columns)
+        if (colors.Count == 0 || startColumn >= columns || startColumn + colors.Count > columns)
         {
             throw new ArgumentOutOfRangeException(nameof(colors));
         }
 
         var arguments = new byte[4 + colors.Count * 3];
+        if (arguments.Length > 80)
+        {
+            throw new ArgumentOutOfRangeException(nameof(colors), "A matrix row cannot exceed the 80-byte HID payload.");
+        }
         arguments[0] = 0xFF;
         arguments[1] = row;
         arguments[2] = startColumn;
@@ -174,6 +199,14 @@ public static class BladeLightingProtocol
         transactionId <= 30
             ? transactionId
             : throw new ArgumentOutOfRangeException(nameof(transactionId));
+
+    private static void ValidateMatrixDimensions(int rows, int columns)
+    {
+        if (rows is < 1 or > 6 || columns is < 1 or > 25)
+        {
+            throw new ArgumentOutOfRangeException(nameof(rows), "Blade matrix dimensions must be 1..6 rows and 1..25 columns.");
+        }
+    }
 
     private static byte[] CreateStarlightRequest(
         byte speed,

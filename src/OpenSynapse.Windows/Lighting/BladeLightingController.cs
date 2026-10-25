@@ -210,7 +210,9 @@ public sealed class BladeLightingController : IBladeLightingController
                 var pump = new BladeMatrixFramePump(
                     _transport,
                     device.Id,
-                    token => RestoreAsync(device.Id, token));
+                    token => RestoreAsync(device.Id, token),
+                    manifest.MatrixRows == 0 ? BladeLightingProtocol.Rows : manifest.MatrixRows,
+                    manifest.MatrixColumns == 0 ? BladeLightingProtocol.Columns : manifest.MatrixColumns);
                 ILightingInputAdapter? inputAdapter = null;
                 ISoftwareLightingFrameSource source;
                 if (effect.Mode is BladeLightingMode.Reactive or BladeLightingMode.Ripple)
@@ -309,7 +311,9 @@ public sealed class BladeLightingController : IBladeLightingController
                     device.Id,
                     restorePersistentEffect
                         ? token => RestoreAsync(device.Id, token)
-                        : token => ReleaseModeLeaseAsync(CancellationToken.None));
+                        : token => ReleaseModeLeaseAsync(CancellationToken.None),
+                    manifest.MatrixRows == 0 ? BladeLightingProtocol.Rows : manifest.MatrixRows,
+                    manifest.MatrixColumns == 0 ? BladeLightingProtocol.Columns : manifest.MatrixColumns);
                 await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
                 _externalSource = source;
             }
@@ -635,7 +639,7 @@ public sealed class BladeLightingController : IBladeLightingController
         foreach (var device in devices)
         {
             var manifest = _registry.Find(device.VendorId, device.ProductId);
-            if (manifest?.ProtocolFamily == "blade-710" &&
+            if (manifest?.ProtocolFamily is "blade-710" or "blade-710-chroma" &&
                 device.Access == DeviceAccessState.Available &&
                 device.Capability == DeviceCapabilityState.PendingValidation &&
                 device.FeatureReportByteLength == manifest.Collection.FeatureReportLength &&

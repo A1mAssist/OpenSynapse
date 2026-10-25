@@ -35,7 +35,7 @@ public sealed partial class MacroEditorWindow : Window
     private bool _allowClose;
     private bool _closeSaveInProgress;
 
-    public MacroEditorWindow(AppWindow owner, MainViewModel viewModel, double scale)
+    public MacroEditorWindow(MainViewModel viewModel, double scale)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -60,9 +60,10 @@ public sealed partial class MacroEditorWindow : Window
             _lifetime.Cancel();
             _lifetime.Dispose();
         };
-        var workArea = DisplayArea
-            .GetFromWindowId(owner.Id, DisplayAreaFallback.Primary)
-            .WorkArea;
+        // The owner can sit on a virtual display whose work area is larger than
+        // the screen the user is looking at, so the editor is sized against the
+        // primary display instead.
+        var workArea = DisplayArea.Primary.WorkArea;
         ConfigurePresenter(scale, workArea);
         ApplyTitleBarColors();
         PositionOnOwnerDisplay(workArea, scale);
@@ -110,9 +111,10 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
-        // A fixed 1080x680 logical minimum can exceed a 125%-scaled 768p
-        // work area. Cap both dimensions so the status bar and keyboard remain
-        // reachable on small displays.
+        // The three property columns share the space next to the action list, so
+        // about 1080 logical pixels keeps every column usable. Cap both
+        // dimensions so the status bar and keyboard stay reachable on small
+        // displays.
         presenter.PreferredMinimumWidth = Math.Min(
             (int)Math.Round(1080 * scale),
             Math.Max(1, workArea.Width));
@@ -145,8 +147,15 @@ public sealed partial class MacroEditorWindow : Window
 
     private void PositionOnOwnerDisplay(RectInt32 workArea, double scale)
     {
-        var width = Math.Min((int)Math.Round(1320 * scale), workArea.Width);
-        var height = Math.Min((int)Math.Round(800 * scale), workArea.Height);
+        // The editor shows the action list, three property columns and the whole
+        // keyboard at once. It opens at a size that fits all of them without
+        // covering the whole display, and the columns shrink together when the
+        // user resizes it narrower. The work area is in physical pixels, so the
+        // requested logical size is clamped against the logical work area.
+        var logicalWorkAreaWidth = workArea.Width / scale;
+        var logicalWorkAreaHeight = workArea.Height / scale;
+        var width = (int)Math.Round(Math.Min(1080, logicalWorkAreaWidth) * scale);
+        var height = (int)Math.Round(Math.Min(760, logicalWorkAreaHeight) * scale);
         AppWindow.MoveAndResize(new RectInt32(
             workArea.X + Math.Max(0, (workArea.Width - width) / 2),
             workArea.Y + Math.Max(0, (workArea.Height - height) / 2),
@@ -217,7 +226,9 @@ public sealed partial class MacroEditorWindow : Window
 
         var picker = _viewModel.MacroKeyPicker;
         var boardWidth = picker.Columns * MacroKeyUnitWidth;
-        var scale = Math.Clamp(available / boardWidth, 0.6, 1.4);
+        // The board is capped so the editor chrome above it keeps its room; a
+        // taller keyboard would push the property column into a scrollbar.
+        var scale = Math.Clamp(available / boardWidth, 0.6, 0.92);
         var unit = MacroKeyUnitWidth * scale;
         var row = MacroKeyUnitHeight * scale;
 
@@ -517,6 +528,26 @@ public sealed partial class MacroEditorWindow : Window
     private async void DeleteMacroStepClick(object sender, RoutedEventArgs e) =>
         await _viewModel.DeleteSelectedMacroStepAsync(_lifetime.Token);
 
+    private async void DeleteMacroStepRowClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: MacroStepRowViewModel row })
+        {
+            await _viewModel.DeleteMacroStepAsync(row, _lifetime.Token);
+        }
+    }
+
+    private async void MacroStepListKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != global::Windows.System.VirtualKey.Delete ||
+            _viewModel.SelectedMacroStep is null)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        await _viewModel.DeleteSelectedMacroStepAsync(_lifetime.Token);
+    }
+
     private async void AddMacroTextClick(object sender, RoutedEventArgs e)
     {
         var text = new TextBox
@@ -704,6 +735,56 @@ public sealed partial class MacroEditorWindow : Window
             _viewModel.SelectedMacro?.Definition.Trigger is not null;
     }
 
+    private void MacroRecordDelayModeFlyoutOpening(object sender, object e)
+    {
+        var index = _viewModel.MacroRecordingDelayModeIndex;
+        MacroRecordDelayRecordedItem.IsChecked = index == 0;
+        MacroRecordDelayFixedItem.IsChecked = index == 1;
+        MacroRecordDelayNoneItem.IsChecked = index == 2;
+    }
+
+    private void MacroRecordMouseModeFlyoutOpening(object sender, object e)
+    {
+        var index = _viewModel.MacroRecordingMouseTrackingModeIndex;
+        MacroRecordMouseNoneItem.IsChecked = index == 0;
+        MacroRecordMouseAbsoluteItem.IsChecked = index == 1;
+        MacroRecordMouseRelativeItem.IsChecked = index == 2;
+        MacroRecordMouseStartItem.IsChecked = index == 3;
+        MacroRecordMouseForegroundItem.IsChecked = index == 4;
+    }
+
+    private void MacroRecordDelayModeClick(object sender, RoutedEventArgs e)
+    {
+        var index = sender switch
+        {
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordDelayRecordedItem) => 0,
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordDelayFixedItem) => 1,
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordDelayNoneItem) => 2,
+            _ => -1,
+        };
+        if (index >= 0)
+        {
+            _viewModel.MacroRecordingDelayModeIndex = index;
+        }
+    }
+
+    private void MacroRecordMouseModeClick(object sender, RoutedEventArgs e)
+    {
+        var index = sender switch
+        {
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordMouseNoneItem) => 0,
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordMouseAbsoluteItem) => 1,
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordMouseRelativeItem) => 2,
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordMouseStartItem) => 3,
+            ToggleMenuFlyoutItem item when ReferenceEquals(item, MacroRecordMouseForegroundItem) => 4,
+            _ => -1,
+        };
+        if (index >= 0)
+        {
+            _viewModel.MacroRecordingMouseTrackingModeIndex = index;
+        }
+    }
+
     private async void CaptureMacroTriggerComboClick(object sender, RoutedEventArgs e) =>
         await _viewModel.CaptureMacroTriggerComboAsync(_lifetime.Token);
 
@@ -773,3 +854,5 @@ public sealed partial class MacroEditorWindow : Window
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(nint windowHandle);
 }
+
+

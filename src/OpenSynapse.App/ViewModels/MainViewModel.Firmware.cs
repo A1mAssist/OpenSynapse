@@ -65,7 +65,7 @@ public sealed partial class MainViewModel
     public bool CanCheckFirmwareUpdate =>
         !IsCheckingFirmwareUpdate &&
         _deviceDescriptors.Any(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
             device.Access == DeviceAccessState.Available);
 
     private void RefreshFirmwareVersions()

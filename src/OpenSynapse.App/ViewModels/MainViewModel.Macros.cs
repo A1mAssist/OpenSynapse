@@ -43,6 +43,7 @@ public sealed partial class MainViewModel
     private MacroMouseTrackingMode _macroRecordingMouseTrackingMode = MacroMouseTrackingMode.None;
     private bool _isMacroPlaying;
     private bool _isMacroPaused;
+    private bool _isSavingMacroEnabled;
     private DispatcherQueue? _macroDispatcherQueue;
 
     public ObservableCollection<MacroRowViewModel> Macros { get; } = new();
@@ -202,8 +203,26 @@ public sealed partial class MainViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsMacroRecordingDelays));
             OnPropertyChanged(nameof(IsMacroRecordingFixedDelay));
+            OnPropertyChanged(nameof(MacroRecordingDelayModeText));
+            OnPropertyChanged(nameof(MacroRecordingDelayModeAutomationName));
         }
     }
+
+    /// <summary>
+    /// Label for the delay-mode menu button; the menu itself carries the options.
+    /// </summary>
+    public string MacroRecordingDelayModeText => _macroRecordingDelayMode switch
+    {
+        MacroDelayMode.Fixed => AppStrings.Text("MacroRecordDelayFixedLabel"),
+        MacroDelayMode.None => AppStrings.Text("MacroRecordDelayNoneLabel"),
+        _ => AppStrings.Text("MacroRecordDelayRecordedLabel"),
+    };
+
+    /// <summary>
+    /// Screen-reader name for the delay-mode button: the option label plus its value.
+    /// </summary>
+    public string MacroRecordingDelayModeAutomationName =>
+        $"{AppStrings.Text("MacroRecordDelayModeLabel")}: {MacroRecordingDelayModeText}";
 
     public bool IsMacroRecordingDelays
     {
@@ -220,6 +239,8 @@ public sealed partial class MainViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(MacroRecordingDelayModeIndex));
             OnPropertyChanged(nameof(IsMacroRecordingFixedDelay));
+            OnPropertyChanged(nameof(MacroRecordingDelayModeText));
+            OnPropertyChanged(nameof(MacroRecordingDelayModeAutomationName));
         }
     }
 
@@ -263,8 +284,28 @@ public sealed partial class MainViewModel
 
             _macroRecordingMouseTrackingMode = (MacroMouseTrackingMode)value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(MacroRecordingMouseTrackingModeText));
+            OnPropertyChanged(nameof(MacroRecordingMouseTrackingModeAutomationName));
         }
     }
+
+    /// <summary>
+    /// Label for the mouse-tracking menu button; the menu itself carries the options.
+    /// </summary>
+    public string MacroRecordingMouseTrackingModeText => _macroRecordingMouseTrackingMode switch
+    {
+        MacroMouseTrackingMode.Absolute => AppStrings.Text("MacroRecordMouseAbsoluteLabel"),
+        MacroMouseTrackingMode.Relative => AppStrings.Text("MacroRecordMouseRelativeLabel"),
+        MacroMouseTrackingMode.StartPoint => AppStrings.Text("MacroRecordMouseStartLabel"),
+        MacroMouseTrackingMode.Foreground => AppStrings.Text("MacroRecordMouseForegroundLabel"),
+        _ => AppStrings.Text("MacroRecordMouseNoneLabel"),
+    };
+
+    /// <summary>
+    /// Screen-reader name for the mouse-tracking button: the option label plus its value.
+    /// </summary>
+    public string MacroRecordingMouseTrackingModeAutomationName =>
+        $"{AppStrings.Text("MacroRecordMouseModeLabel")}: {MacroRecordingMouseTrackingModeText}";
 
     public double NewMacroDelayMilliseconds
     {
@@ -658,6 +699,44 @@ public sealed partial class MainViewModel
         }
 
         MacroStatusText = AppStrings.Text("MacroSaved");
+    }
+
+    public async Task SaveMacroEnabledAsync(
+        MacroRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (_isSavingMacroEnabled)
+        {
+            return;
+        }
+
+        _isSavingMacroEnabled = true;
+        try
+        {
+            var enabled = row.Enabled;
+            var wasDirty = _dirtyMacroIds.Contains(row.Id);
+            if (IsMacroRecording || IsMacroCountdown)
+            {
+                row.Enabled = !enabled;
+                RestoreMacroDirtyState(row.Id, wasDirty);
+                return;
+            }
+
+            MarkMacroDirty(row);
+            if (!await SaveMacroChangesCoreAsync(forceSelected: false, cancellationToken))
+            {
+                row.Enabled = !enabled;
+                RestoreMacroDirtyState(row.Id, wasDirty);
+                return;
+            }
+
+            MacroStatusText = AppStrings.Text("MacroSaved");
+        }
+        finally
+        {
+            _isSavingMacroEnabled = false;
+        }
     }
 
     public async Task<bool> SaveMacroChangesOnCloseAsync(
@@ -1342,6 +1421,19 @@ public sealed partial class MainViewModel
 
         return MacroStepTree.Enumerate(selected.Definition.Steps)
             .Count(step => StringComparer.Ordinal.Equals(step.GroupId, row.Step.GroupId));
+    }
+
+    public Task DeleteMacroStepAsync(
+        MacroStepRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        if (row is null || !MacroSteps.Contains(row))
+        {
+            return Task.CompletedTask;
+        }
+
+        SelectedMacroStep = row;
+        return DeleteSelectedMacroStepAsync(cancellationToken);
     }
 
     public async Task DeleteSelectedMacroStepAsync(CancellationToken cancellationToken = default)
@@ -2341,3 +2433,6 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanPlayMacro));
     }
 }
+
+
+

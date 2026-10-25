@@ -1235,7 +1235,7 @@
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>Settings</value></data>
   <data name="SettingsPageDescription.Text" xml:space="preserve"><value>Manage OpenSynapse startup, notifications, language, and updates.</value></data>
   <data name="DedicatedGpuModeTitle.Text" xml:space="preserve"><value>Integrated graphics only (disable discrete GPU)</value></data>
-  <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>Turn off the NVIDIA GPU so Windows and apps use integrated graphics only. Switching asks for administrator permission; external displays may go dark.</value></data>
+  <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>Turn off the NVIDIA GPU so Windows and apps use integrated graphics only. Machine-wide installs switch through the service; per-user installs ask for administrator permission. External displays may go dark.</value></data>
   <data name="DedicatedGpuModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Integrated graphics only</value></data>
   <data name="DedicatedGpuModeStatusInactive" xml:space="preserve"><value>The discrete GPU is enabled.</value></data>
   <data name="DedicatedGpuModeStatusActive" xml:space="preserve"><value>The discrete GPU is disabled; Windows is using integrated graphics only.</value></data>
@@ -1250,6 +1250,25 @@
   <data name="DedicatedGpuModeStatusNoDevice" xml:space="preserve"><value>No NVIDIA discrete GPU was found.</value></data>
   <data name="DedicatedGpuModeStatusFailed" xml:space="preserve"><value>The switch failed (Windows returned {0}).</value></data>
   <data name="DedicatedGpuModeError" xml:space="preserve"><value>GPU mode: {0}</value></data>
+  <data name="DisplayMuxModeTitle.Text" xml:space="preserve"><value>Display mode (MUX)</value></data>
+  <data name="DisplayMuxModeDescription.Text" xml:space="preserve"><value>Switch the built-in display route through the device's HID firmware command. A restart is required.</value></data>
+  <data name="DisplayMuxModeHybrid" xml:space="preserve"><value>Hybrid (Optimus)</value></data>
+  <data name="DisplayMuxModeDds" xml:space="preserve"><value>DDS dynamic</value></data>
+  <data name="DisplayMuxModeDiscrete" xml:space="preserve"><value>Discrete direct</value></data>
+  <data name="DisplayMuxModeStatusHybrid" xml:space="preserve"><value>The built-in display is using hybrid (Optimus) mode.</value></data>
+  <data name="DisplayMuxModeStatusDds" xml:space="preserve"><value>The built-in display is using DDS dynamic switching.</value></data>
+  <data name="DisplayMuxModeStatusDiscrete" xml:space="preserve"><value>The built-in display is using the discrete GPU directly.</value></data>
+  <data name="DisplayMuxModeStatusApplying" xml:space="preserve"><value>Writing the device MUX setting...</value></data>
+  <data name="DisplayMuxModeStatusSuccess" xml:space="preserve"><value>The requested display mode is already active.</value></data>
+  <data name="DisplayMuxModeStatusRestartRequired" xml:space="preserve"><value>Display mode written. Restart to apply it.</value></data>
+  <data name="DisplayMuxModeStatusNoDevice" xml:space="preserve"><value>No Blade HID device with MUX support was found.</value></data>
+  <data name="DisplayMuxModeStatusNoPair" xml:space="preserve"><value>The device did not report switchable dynamic display (DDS / Optimus) or discrete-direct capability.</value></data>
+  <data name="DisplayMuxModeStatusUnavailable" xml:space="preserve"><value>Could not read the device MUX state.</value></data>
+  <data name="DisplayMuxModeStatusFailed" xml:space="preserve"><value>MUX update failed (error {0}).</value></data>
+  <data name="DisplayMuxModeStatusRestored" xml:space="preserve"><value>The update failed and the previous display mode was restored.</value></data>
+  <data name="DisplayMuxModeStatusRestoreFailed" xml:space="preserve"><value>The update failed and the previous mode could not be restored. Restart and check the BIOS display mode.</value></data>
+  <data name="DisplayMuxModeStatusDedicatedGpuDisabled" xml:space="preserve"><value>Turn off Integrated-only (disable discrete GPU) before changing the MUX mode.</value></data>
+  <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX mode: {0}</value></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>About OpenSynapse</value></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>View the version, project page, and license information.</value></data>
   <data name="SettingsAboutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open About OpenSynapse</value></data>
@@ -1783,7 +1802,8 @@
   </data>
   <data name="HidScanUnavailable" xml:space="preserve">
     <value>This device is not connected</value>
-  </data>  <data name="HidScanNoService" xml:space="preserve">
+  </data>
+  <data name="HidScanNoService" xml:space="preserve">
     <value>This build does not include OpenRazer support</value>
   </data>
   <data name="HidScanNoDevice" xml:space="preserve">
@@ -1791,7 +1811,8 @@
   </data>
   <data name="HidScanDisabled" xml:space="preserve">
     <value>HID command scanning is disabled for mice to protect 2.4 GHz receivers</value>
-  </data>  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>Gaming headset</value></data>
+  </data>
+  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>Gaming headset</value></data>
   <data name="BlackSharkStatusConnected" xml:space="preserve"><value>Connected</value></data>
   <data name="BlackSharkCharging" xml:space="preserve"><value>Charging</value></data>
   <data name="BlackSharkNotCharging" xml:space="preserve"><value>Not charging</value></data>
@@ -1972,8 +1993,7 @@
   <data name="MacroTriggerConflict" xml:space="preserve"><value>The trigger conflicts with "{0}".</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>Mail</value></data>
   <data name="MacroMediaHomePage" xml:space="preserve"><value>Home</value></data>
-  <data name="MacroImportButton.Text" xml:space="preserve"><value>Import…</value></data>
-  <data name="MacroExportButton.Text" xml:space="preserve"><value>Export selected macro…</value></data>
+  <data name="MacroImportButton.Content" xml:space="preserve"><value>Import…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>Duplicate</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>Export…</value></data>
   <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; press F10 to stop playback.</value></data>
@@ -1986,17 +2006,17 @@
   <data name="MacroPlaybackSpeed.Header" xml:space="preserve"><value>Playback speed (×, 1 = original)</value></data>
   <data name="MacroPlaybackStopShortcut.Text" xml:space="preserve"><value>F10 stops playback</value></data>
   <data name="MacroRecordingOptions.Text" xml:space="preserve"><value>Recording options</value></data>
-  <data name="MacroRecordDelayMode.Header" xml:space="preserve"><value>Delay</value></data>
-  <data name="MacroRecordDelayRecorded.Content" xml:space="preserve"><value>Record actual interval</value></data>
-  <data name="MacroRecordDelayFixed.Content" xml:space="preserve"><value>Fixed interval</value></data>
-  <data name="MacroRecordDelayNone.Content" xml:space="preserve"><value>Do not record delay</value></data>
-  <data name="MacroRecordFixedDelay.Header" xml:space="preserve"><value>Fixed delay (ms)</value></data>
-  <data name="MacroRecordMouseMode.Header" xml:space="preserve"><value>Mouse tracking</value></data>
-  <data name="MacroRecordMouseNone.Content" xml:space="preserve"><value>Do not record</value></data>
-  <data name="MacroRecordMouseAbsolute.Content" xml:space="preserve"><value>Absolute coordinates</value></data>
-  <data name="MacroRecordMouseRelative.Content" xml:space="preserve"><value>Relative movement</value></data>
-  <data name="MacroRecordMouseStart.Content" xml:space="preserve"><value>Relative to start</value></data>
-  <data name="MacroRecordMouseForeground.Content" xml:space="preserve"><value>Relative to foreground window</value></data>
+  <data name="MacroRecordDelayMode.Text" xml:space="preserve"><value>Delay</value></data>
+  <data name="MacroRecordDelayRecorded.Text" xml:space="preserve"><value>Record actual interval</value></data>
+  <data name="MacroRecordDelayFixed.Text" xml:space="preserve"><value>Fixed interval</value></data>
+  <data name="MacroRecordDelayNone.Text" xml:space="preserve"><value>Do not record delay</value></data>
+  <data name="MacroRecordFixedDelayLabel.Text" xml:space="preserve"><value>Fixed delay (ms)</value></data>
+  <data name="MacroRecordMouseMode.Text" xml:space="preserve"><value>Mouse tracking</value></data>
+  <data name="MacroRecordMouseNone.Text" xml:space="preserve"><value>Do not record</value></data>
+  <data name="MacroRecordMouseAbsolute.Text" xml:space="preserve"><value>Absolute coordinates</value></data>
+  <data name="MacroRecordMouseRelative.Text" xml:space="preserve"><value>Relative movement</value></data>
+  <data name="MacroRecordMouseStart.Text" xml:space="preserve"><value>Relative to start</value></data>
+  <data name="MacroRecordMouseForeground.Text" xml:space="preserve"><value>Relative to foreground window</value></data>
   <data name="MacroRecordStopShortcut.Text" xml:space="preserve"><value>Press F9 to stop recording and save.</value></data>
   <data name="MacroRecordStopShortcutHint.Text" xml:space="preserve"><value>Press F9 while recording to stop and save</value></data>
   <data name="MacroStepArgumentsLabel.Text" xml:space="preserve"><value>Arguments</value></data>
@@ -2066,4 +2086,57 @@
   <data name="MacroMousePathHintForeground" xml:space="preserve"><value>Coordinates are relative positions from 0 to 10000 inside the foreground window.</value></data>
   <data name="MacroMousePathNeedPoint" xml:space="preserve"><value>Keep at least one path point.</value></data>
   <data name="MacroMousePathPointLimit" xml:space="preserve"><value>A path can contain at most {0} points.</value></data>
-  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>Time offsets must not decrease.</value></data></root>
+  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>Time offsets must not decrease.</value></data>
+  <data name="LeviathanAudioTitle.Text" xml:space="preserve"><value>Audio</value></data>
+  <data name="LeviathanAudioDescription.Text" xml:space="preserve"><value>Reads EQ, bass and input state through the 1354 middleware protocol; EQ and bass can be applied.</value></data>
+  <data name="LeviathanRefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="LeviathanEqPresetLabel.Text" xml:space="preserve"><value>Equalizer preset</value></data>
+  <data name="LeviathanEqPresetApply.Content" xml:space="preserve"><value>Apply preset</value></data>
+  <data name="LeviathanBassLabel.Text" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="LeviathanBassApply.Content" xml:space="preserve"><value>Apply bass</value></data>
+  <data name="LeviathanEqBandsTitle.Text" xml:space="preserve"><value>10-band equalizer</value></data>
+  <data name="LeviathanEqBandsApply.Content" xml:space="preserve"><value>Apply custom EQ</value></data>
+  <data name="LeviathanInputSourceLabel" xml:space="preserve"><value>Input source</value></data>
+  <data name="LeviathanAudioIoLabel" xml:space="preserve"><value>Audio I/O</value></data>
+  <data name="LeviathanOptical" xml:space="preserve"><value>Optical</value></data>
+  <data name="LeviathanBluetooth" xml:space="preserve"><value>Bluetooth</value></data>
+  <data name="LeviathanSaved" xml:space="preserve"><value>Applied</value></data>
+  <data name="LeviathanPresetDefault" xml:space="preserve"><value>Default</value></data>
+  <data name="LeviathanPresetGame" xml:space="preserve"><value>Game</value></data>
+  <data name="LeviathanPresetMusic" xml:space="preserve"><value>Music</value></data>
+  <data name="LeviathanPresetMovie" xml:space="preserve"><value>Movie</value></data>
+  <data name="LeviathanPresetTreble" xml:space="preserve"><value>Treble</value></data>
+  <data name="LeviathanPresetCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="SystemAudioTitle.Text" xml:space="preserve"><value>System audio</value></data>
+  <data name="SystemAudioDescription.Text" xml:space="preserve"><value>Default playback and recording endpoints, volume, and mute. Mirrors Core Audio behavior from the local Razer Synapse simple_service.</value></data>
+  <data name="SystemAudioRefresh.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="SystemAudioPlaybackLabel.Text" xml:space="preserve"><value>Playback device</value></data>
+  <data name="SystemAudioRecordingLabel.Text" xml:space="preserve"><value>Recording device</value></data>
+  <data name="SystemAudioMuteLabel.Text" xml:space="preserve"><value>Mute</value></data>
+  <data name="SystemAudioApplyPlayback.Content" xml:space="preserve"><value>Apply playback settings</value></data>
+  <data name="SystemAudioApplyRecording.Content" xml:space="preserve"><value>Apply recording settings</value></data>
+  <data name="SystemAudioRefreshed" xml:space="preserve"><value>Audio devices refreshed</value></data>
+  <data name="SystemAudioLoadFailed" xml:space="preserve"><value>Failed to read system audio: {0}</value></data>
+  <data name="SystemAudioDefaultEndpoint" xml:space="preserve"><value>Default · {0}</value></data>
+  <data name="SystemAudioMissingEndpoint" xml:space="preserve"><value>Windows did not return a usable default playback or recording endpoint.</value></data>
+  <data name="SystemAudioRenderApplied" xml:space="preserve"><value>Default playback device and volume applied</value></data>
+  <data name="SystemAudioCaptureApplied" xml:space="preserve"><value>Default recording device and volume applied</value></data>
+  <data name="SystemAudioApplyFailed" xml:space="preserve"><value>Failed to apply audio settings: {0}</value></data>
+  <data name="MacroExportButtonShort.Content" xml:space="preserve"><value>Export</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Enable macro</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Enable or disable this macro</value></data>
+  <data name="MacroRecordDelayRecordedLabel" xml:space="preserve"><value>Record actual interval</value></data>
+  <data name="MacroRecordDelayFixedLabel" xml:space="preserve"><value>Fixed interval</value></data>
+  <data name="MacroRecordDelayNoneLabel" xml:space="preserve"><value>Do not record delay</value></data>
+  <data name="MacroRecordMouseNoneLabel" xml:space="preserve"><value>Do not record</value></data>
+  <data name="MacroRecordMouseAbsoluteLabel" xml:space="preserve"><value>Absolute coordinates</value></data>
+  <data name="MacroRecordMouseRelativeLabel" xml:space="preserve"><value>Relative movement</value></data>
+  <data name="MacroRecordMouseStartLabel" xml:space="preserve"><value>Relative to start</value></data>
+  <data name="MacroRecordMouseForegroundLabel" xml:space="preserve"><value>Relative to foreground window</value></data>
+  <data name="MacroRecordDelayModeLabel" xml:space="preserve"><value>Delay</value></data>
+  <data name="MacroRecordMouseModeLabel" xml:space="preserve"><value>Mouse tracking</value></data>
+</root>
+
+
+
+

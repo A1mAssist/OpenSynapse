@@ -68,7 +68,7 @@ public sealed partial class MainViewModel
                 if (!available)
                 {
                     var blade = _deviceDescriptors.FirstOrDefault(device =>
-                        device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+                        DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                         device.Access == DeviceAccessState.Available);
                     if (blade is not null)
                     {
@@ -162,6 +162,12 @@ public sealed partial class MainViewModel
 
             _bladeLightingDevicePath = string.Empty;
             _lightingShadowFingerprint = string.Empty;
+            return null;
+        }
+
+        // The 597 family is read-only until its keyboard write path is exercised.
+        if (blade.ProtocolFamily == "blade-597")
+        {
             return null;
         }
 
@@ -347,7 +353,7 @@ public sealed partial class MainViewModel
         {
             _lightingShadowFingerprint = string.Empty;
             var blade = _deviceDescriptors.FirstOrDefault(device =>
-                device.ProtocolFamily == DeviceProtocolFamilies.Blade &&
+                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                 device.Access == DeviceAccessState.Available);
             await ApplyLoadedLightingProfileAsync(
                 blade,
@@ -363,7 +369,7 @@ public sealed partial class MainViewModel
     internal bool IsBladeChromaOverrideEnabled()
     {
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         if (blade is null)
         {
             return true;
