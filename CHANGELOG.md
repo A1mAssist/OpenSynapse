@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
 - The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
 - 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
@@ -74,6 +76,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
 - The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
 - 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
@@ -134,6 +138,8 @@ This release is unsigned and targets Windows 11 x64. CPU core-voltage offset, GP
 
 ### 新增 / Added
 
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
 - The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
 - 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
@@ -198,6 +204,8 @@ This release is unsigned and targets Windows 11 x64. BlackShark V3 Pro does not 
 
 ### 新增 / Added
 
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
 - The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
 - 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。

@@ -73,6 +73,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
     private string _bridgeHost = string.Empty;
     private string? _appKey;
     private string _statusText = string.Empty;
+    private string _bridgeSummary = string.Empty;
     private string _errorText = string.Empty;
     private bool _isBusy;
     private PhilipsHueLightRowViewModel? _selectedColorLight;
@@ -96,6 +97,11 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
         set => SetField(ref _bridgeHost, value);
     }
 
+    public string BridgeSummary
+    {
+        get => _bridgeSummary;
+        private set => SetField(ref _bridgeSummary, value);
+    }
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_appKey);
 
     public string StatusText
@@ -185,6 +191,9 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
         try
         {
             using var client = new PhilipsHueClient(BridgeHost, _appKey);
+            var bridge = await client.GetBridgeAsync(cancellationToken);
+            BridgeSummary = string.Join(" · ", new[] { bridge.Name, bridge.ModelId, bridge.SoftwareVersion }
+                .Where(part => !string.IsNullOrWhiteSpace(part)));
             var lights = await client.GetLightsAsync(cancellationToken);
             Lights.Clear();
             foreach (var light in lights)
