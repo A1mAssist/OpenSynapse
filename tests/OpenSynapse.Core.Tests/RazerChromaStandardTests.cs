@@ -130,6 +130,35 @@ public sealed class RazerChromaStandardTests
     }
 
     [Fact]
+    public async Task ReadStateReportsBatteryWhenTheDeviceAnswers()
+    {
+        var service = new RazerChromaStandardService(
+            new FakeTransport(new ChromaSimulator { Brightness = 0x80, BatteryRaw = 0xC0, Charging = true }.Handle),
+            "test",
+            TimeSpan.Zero);
+
+        var state = await service.ReadStateAsync();
+
+        Assert.Equal((byte)(0xC0 * 100 / 255), state.BatteryPercent);
+        Assert.True(state.IsCharging);
+        Assert.Empty(state.Errors);
+    }
+
+    [Fact]
+    public async Task ReadStateHidesBatteryWhenTheDeviceDoesNotAnswer()
+    {
+        var service = new RazerChromaStandardService(
+            new FakeTransport(new ChromaSimulator { Brightness = 0x80, SupportsBattery = false }.Handle),
+            "test",
+            TimeSpan.Zero);
+
+        var state = await service.ReadStateAsync();
+
+        Assert.Null(state.BatteryPercent);
+        Assert.Null(state.IsCharging);
+        Assert.Empty(state.Errors);
+    }
+    [Fact]
     public async Task ReadStateReportsBothValues()
     {
         var service = new RazerChromaStandardService(
@@ -181,10 +210,28 @@ public sealed class RazerChromaStandardTests
         public byte Brightness { get; set; } = 0xFF;
         public RazerChromaEffect Effect { get; set; } = RazerChromaEffect.Off;
         public byte[] Colors { get; set; } = [];
+        public byte BatteryRaw { get; set; } = 0x80;
+        public bool Charging { get; set; } = true;
+        public bool SupportsBattery { get; set; } = true;
         public bool IgnoreWrites { get; init; }
 
         public byte[] Handle(byte[] request)
         {
+            if (request[7] == 0x07)
+            {
+                if (!SupportsBattery)
+                {
+                    throw new NotSupportedException("This device has no battery.");
+                }
+
+                return request[8] switch
+                {
+                    0x80 => Response(request, request[2], BatteryRaw),
+                    0x84 => Response(request, request[2], Charging ? (byte)1 : (byte)0),
+                    _ => throw new NotSupportedException($"Unexpected battery command 0x{request[8]:X2}."),
+                };
+            }
+
             switch (request[8])
             {
                 case 0x85:

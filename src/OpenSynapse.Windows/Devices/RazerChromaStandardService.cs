@@ -14,6 +14,8 @@ public sealed record RazerChromaStandardState(
     byte? BrightnessPercent,
     RazerChromaEffect? Effect,
     IReadOnlyList<byte> Colors,
+    byte? BatteryPercent,
+    bool? IsCharging,
     IReadOnlyList<string> Errors);
 
 /// <summary>
@@ -210,7 +212,25 @@ public sealed class RazerChromaStandardService
             errors.Add($"effect: {exception.Message}");
         }
 
-        return new RazerChromaStandardState(brightness, effect, colors, errors);
+        // Battery is optional: lamps, docks and wired mice ignore class 0x07, and that is not an error.
+        byte? battery = null;
+        bool? charging = null;
+        try
+        {
+            battery = RazerChromaStandardProtocol.ReadBatteryPercent(
+                await QueryAsync(RazerChromaStandardProtocol.GetBatteryLevel, "read battery", cancellationToken)
+                    .ConfigureAwait(false));
+            charging = RazerChromaStandardProtocol.ReadCharging(
+                await QueryAsync(RazerChromaStandardProtocol.GetChargingStatus, "read charging", cancellationToken)
+                    .ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            battery = null;
+            charging = null;
+        }
+
+        return new RazerChromaStandardState(brightness, effect, colors, battery, charging, errors);
     }
 
     public async Task SetBrightnessAsync(byte percent, CancellationToken cancellationToken = default)

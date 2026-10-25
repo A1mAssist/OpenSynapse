@@ -18,6 +18,7 @@ public enum RazerChromaEffect : byte
 public static class RazerChromaStandardProtocol
 {
     public const byte CommandClass = 0x10;
+    public const byte BatteryCommandClass = 0x07;
     public const int MaxColors = 2;
 
     public static byte[] GetEffect(byte transactionId) =>
@@ -76,6 +77,26 @@ public static class RazerChromaStandardProtocol
         return (byte)Math.Ceiling(data[0] * 100d / 255d);
     }
 
+    /// <summary>Battery and charging live on class 0x07, the same commands the keyboard page uses.</summary>
+    public static byte[] GetBatteryLevel(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(transactionId, 2, BatteryCommandClass, 0x80, ReadOnlySpan<byte>.Empty);
+
+    public static byte[] GetChargingStatus(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(transactionId, 2, BatteryCommandClass, 0x84, ReadOnlySpan<byte>.Empty);
+
+    public static byte ReadBatteryPercent(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        Require(data, 1);
+        return (byte)(data[0] * 100 / 255);
+    }
+
+    public static bool ReadCharging(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        Require(data, 1);
+        return data[0] != 0;
+    }
     public static byte ToBrightnessLevel(byte percent) =>
         (byte)Math.Round(Math.Clamp(percent, (byte)0, (byte)100) * 255d / 100d);
 

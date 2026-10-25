@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
@@ -48,6 +49,8 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     private double _brightness = 100;
     private int _selectedEffectIndex;
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
+    private byte? _batteryPercent;
+    private bool? _isCharging;
     private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
 
     public RazerChromaViewModel(
@@ -71,6 +74,13 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
 
+    public string BatterySummary => _batteryPercent is { } percent
+        ? _isCharging == true
+            ? $"{percent}% · {AppStrings.Text("BlackSharkCharging")}"
+            : $"{percent}%"
+        : string.Empty;
+
+    public Visibility BatteryVisibility => _batteryPercent is null ? Visibility.Collapsed : Visibility.Visible;
     public IReadOnlyList<string> LightingEffectOptions =>
     [
         AppStrings.Text("RazerLightingEffectOff"),
@@ -158,6 +168,11 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
                     SecondaryColor = Color.FromArgb(255, state.Colors[3], state.Colors[4], state.Colors[5]);
                 }
             }
+
+            _batteryPercent = state.BatteryPercent;
+            _isCharging = state.IsCharging;
+            OnPropertyChanged(nameof(BatterySummary));
+            OnPropertyChanged(nameof(BatteryVisibility));
 
             ErrorText = state.BrightnessPercent is null && state.Effect is null
                 ? AppStrings.Text("RazerHeadsetReadFailed")
