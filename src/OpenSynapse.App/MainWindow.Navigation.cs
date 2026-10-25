@@ -61,6 +61,7 @@ public sealed partial class MainWindow
         BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
         HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
         KeyboardPanel.Visibility = device == "keyboard" ? Visibility.Visible : Visibility.Collapsed;
+        ChromaPanel.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
         if (device == "blade")
         {
@@ -207,6 +208,11 @@ public sealed partial class MainWindow
                 await _viewModel.SelectKeyboardAsync(keyboard, _lifetime.Token);
                 UpdateDeviceSelector("keyboard");
                 break;
+            case DeviceSelectorItemKind.Chroma when first.Source is RazerChromaDeviceRowViewModel chroma:
+                SelectDevice("chroma");
+                await _viewModel.SelectChromaAsync(chroma, _lifetime.Token);
+                UpdateDeviceSelector("chroma");
+                break;
             default:
                 SelectDevice("none");
                 break;
@@ -241,6 +247,10 @@ public sealed partial class MainWindow
                     item.Source is RazerKeyboardDeviceRowViewModel keyboardRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         keyboardRow.Connection.DevicePath, _viewModel.SelectedKeyboard?.DevicePath),
+                DeviceSelectorItemKind.Chroma => device == "chroma" &&
+                    item.Source is RazerChromaDeviceRowViewModel chromaRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        chromaRow.Connection.DevicePath, _viewModel.SelectedChroma?.DevicePath),
                 _ => false,
             };
             item.SetSelectorBackground(isSelected ? selected : transparent);

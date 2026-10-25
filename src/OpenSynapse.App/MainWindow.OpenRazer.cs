@@ -40,6 +40,9 @@ public sealed partial class MainWindow
             case RazerKeyboardDeviceRowViewModel:
                 KeyboardSelectorClick(sender, e);
                 break;
+            case RazerChromaDeviceRowViewModel:
+                ChromaSelectorClick(sender, e);
+                break;
         }
     }
 

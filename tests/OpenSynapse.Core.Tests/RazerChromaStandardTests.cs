@@ -84,6 +84,36 @@ public sealed class RazerChromaStandardTests
     }
 
     [Fact]
+    public void CatalogCoversTheAetherArgbAndMouseFamilies()
+    {
+        foreach (var productId in new ushort[]
+                 {
+                     0x030C, 0x030D, 0x030E, 0x030F, 0x0310, 0x0317,
+                     0x030A, 0x0F2C, 0x0F35, 0x0F52, 0x0F59,
+                     0x00E5, 0x00EF, 0x0093, 0x00E2,
+                 })
+        {
+            Assert.True(RazerChromaStandardService.IsSupported(productId), $"0x{productId:X4}");
+        }
+
+        Assert.Equal(OpenSynapse.Core.Devices.DeviceCategory.Mouse,
+            RazerChromaStandardService.Products[0x00E5].Category);
+        Assert.Equal(OpenSynapse.Core.Devices.DeviceCategory.Monitor,
+            RazerChromaStandardService.Products[0x0F28].Category);
+    }
+
+    [Fact]
+    public void CatalogDoesNotOverlapAPageThatAlreadyOwnsTheDevice()
+    {
+        foreach (var productId in RazerChromaStandardService.Products.Keys)
+        {
+            Assert.False(RazerHeadsetAudioService.IsSupported(productId), $"audio 0x{productId:X4}");
+            Assert.False(RazerKeyboardService.IsSupported(productId), $"keyboard 0x{productId:X4}");
+            Assert.Null(OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId));
+        }
+    }
+
+    [Fact]
     public async Task ReadStateReportsBothValues()
     {
         var service = new RazerChromaStandardService(

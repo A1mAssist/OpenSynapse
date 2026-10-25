@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增通用灯光页，覆盖 38 款此前没有页面的设备：Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 等鼠标，Key Light、Aether 灯具系列，Chroma ARGB 控制器，Thunderbolt 5 Dock、Core X V2、显示器支架等配件。可选择效果（关闭/静态/呼吸/光谱）、亮度和颜色，写入后读回校验。与 OpenRazer 目录、音频页、键盘页和 320 字节 ARGB 通道自动去重。
+- Added a shared lighting page for 38 devices that had no page: Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 mice, the Key Light and Aether lamp family, Chroma ARGB controllers, and accessories such as Thunderbolt 5 Dock, Core X V2 and monitor stands. It offers effect (off/static/breathing/spectrum), brightness and colour, verified by reading the value back, and skips anything already owned by the OpenRazer catalogue, audio page, keyboard page or the 320-byte ARGB channel.
 - 键盘页新增灯光卡：效果（关闭/静态/呼吸/光谱）、亮度与一到两种颜色，写入后读回校验。底层实现了雷云 class `0x10` 的 Chroma 命令（效果、亮度），这套命令同时被 51 款鼠标、灯具、ARGB 控制器和扩展坞使用，后续页面可以直接复用。
 - Added a lighting card to the keyboard page: effect (off/static/breathing/spectrum), brightness, and one or two colors, each verified by reading the value back. The underlying class 0x10 Chroma commands (effect and brightness) are also used by 51 mice, lamps, ARGB controllers, and docks, so later pages can reuse them directly.
 - 音频页扩展到另外 11 款使用同一套 protocol 25 音频命令的设备：Kraken BT（Sanrio / Kitty）、Kraken X USB、Kraken V3 X、Kraken Kitty V2（含 BT Quartz）以及 Leviathan V2、Nommo V2 / V2 Pro / V2 X。音箱现在按音箱分类显示，没有 ANC 的型号会自动隐藏降噪卡片。

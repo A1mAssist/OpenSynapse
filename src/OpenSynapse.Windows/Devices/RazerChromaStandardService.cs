@@ -1,7 +1,14 @@
 using System.ComponentModel;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
+
+public sealed record RazerChromaDeviceConnection(
+    string DevicePath,
+    ushort ProductId,
+    string Name,
+    DeviceCategory Category);
 
 public sealed record RazerChromaStandardState(
     byte? BrightnessPercent,
@@ -33,6 +40,90 @@ public sealed class RazerChromaStandardService
             : devicePath;
         _deviceWait = deviceWait;
         _diagnostic = diagnostic;
+    }
+
+    /// <summary>
+    /// Devices whose only shared capability is the class 0x10 Chroma channel: mice, lamps,
+    /// ARGB controllers, docks and stands. Keyboards, audio devices, the OpenRazer catalogue
+    /// and the 320-byte ARGB controller are excluded because they own a richer page.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<ushort, (string Name, DeviceCategory Category)> Products =
+        new Dictionary<ushort, (string, DeviceCategory)>
+        {
+            [0x0063] = ("Razer Jugan", DeviceCategory.Mouse),
+            [0x0069] = ("Razer Mamba Hyperflux", DeviceCategory.Mouse),
+            [0x0074] = ("Razer Abyssus Lite", DeviceCategory.Mouse),
+            [0x0075] = ("Razer Turret Mouse Xbox One Edition", DeviceCategory.Mouse),
+            [0x0093] = ("Razer Naga Classic Edition", DeviceCategory.Mouse),
+            [0x00B8] = ("Razer Viper V3 HyperSpeed", DeviceCategory.Mouse),
+            [0x00CF] = ("Razer HyperFlux V2", DeviceCategory.Mouse),
+            [0x00DD] = ("Razer Krakoff", DeviceCategory.Mouse),
+            [0x00E0] = ("Razer Orochi V2", DeviceCategory.Mouse),
+            [0x00E2] = ("Razer Basilisk V4 Pro", DeviceCategory.Mouse),
+            [0x00E5] = ("Razer Viper V4 Pro", DeviceCategory.Mouse),
+            [0x00E7] = ("Razer Naga V3 Pro", DeviceCategory.Mouse),
+            [0x00EB] = ("Razer Basilisk V4 HyperSpeed", DeviceCategory.Mouse),
+            [0x00EF] = ("Razer DeathAdder V4 Pro Carbon Fiber Edition", DeviceCategory.Mouse),
+            [0x00F1] = ("Razer Mouse Dock V2 Pro", DeviceCategory.Accessory),
+            [0x030A] = ("Razer Chroma Addressable RGB Controller", DeviceCategory.Accessory),
+            [0x030C] = ("Razer Key Light Chroma", DeviceCategory.Accessory),
+            [0x030D] = ("Razer Aether Lamp Pro", DeviceCategory.Accessory),
+            [0x030E] = ("Razer Aether Lamp", DeviceCategory.Accessory),
+            [0x030F] = ("Razer Aether Light Bulb", DeviceCategory.Accessory),
+            [0x0310] = ("Razer Aether Light Strip", DeviceCategory.Accessory),
+            [0x0316] = ("Razer Aether Monitor Light Bar", DeviceCategory.Accessory),
+            [0x0317] = ("Razer Aether Standing Light Bars", DeviceCategory.Accessory),
+            [0x0F27] = ("Tomahawk Gaming Desktop", DeviceCategory.Accessory),
+            [0x0F28] = ("Razer Raptor 27", DeviceCategory.Monitor),
+            [0x0F2C] = ("Razer Chroma Wireless ARGB Controller", DeviceCategory.Accessory),
+            [0x0F35] = ("Razer Hanbo AIO", DeviceCategory.Accessory),
+            [0x0F36] = ("Razer Head Cushion Chroma", DeviceCategory.Accessory),
+            [0x0F3C] = ("Razer PWM PC Fan Controller", DeviceCategory.Accessory),
+            [0x0F45] = ("Esther", DeviceCategory.Accessory),
+            [0x0F51] = ("Razer Core X V2", DeviceCategory.Accessory),
+            [0x0F52] = ("Razer Thunderbolt 5 Dock Chroma", DeviceCategory.Accessory),
+            [0x0F59] = ("Razer Monitor Stand Chroma", DeviceCategory.Accessory),
+            [0x0F5A] = ("Razer Laptop Monitor Stand Chroma", DeviceCategory.Accessory),
+            [0x0F5C] = ("Razer Handheld Dock Chroma", DeviceCategory.Accessory),
+            [0x0F64] = ("Razer Soma Chroma", DeviceCategory.Accessory),
+            [0x0F6A] = ("Razer Base Station V3 Chroma", DeviceCategory.Accessory),
+            [0x0F6D] = ("MarciT2H", DeviceCategory.Accessory),
+        };
+
+    public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
+
+    public static async Task<RazerChromaDeviceConnection?> FindAsync(
+        Action<string>? diagnostic = null,
+        CancellationToken cancellationToken = default)
+    {
+        var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
+            0x1532,
+            RazerFeatureReport.Length,
+            cancellationToken).ConfigureAwait(false);
+
+        var candidates = interfaces
+            .Where(item => Products.ContainsKey(item.ProductId))
+            .Where(item => OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            .Where(item => !RazerHeadsetAudioService.IsSupported(item.ProductId))
+            .Where(item => !RazerKeyboardService.IsSupported(item.ProductId))
+            .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+            .ThenBy(item => item.ProductId)
+            .ToArray();
+        if (candidates.Length == 0)
+        {
+            diagnostic?.Invoke(
+                "chroma found no admitted 91-byte interface; " +
+                $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}"))}");
+            return null;
+        }
+
+        var chosen = candidates[0];
+        var (name, category) = Products[chosen.ProductId];
+        diagnostic?.Invoke(
+            $"chroma selected pid={chosen.ProductId:X4} path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
+            $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} access={chosen.Access}");
+        return new RazerChromaDeviceConnection(
+            chosen.DevicePath, chosen.ProductId, name, category);
     }
 
     public async Task<RazerChromaStandardState> ReadStateAsync(CancellationToken cancellationToken = default)
