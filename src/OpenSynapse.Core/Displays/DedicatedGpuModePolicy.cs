@@ -27,7 +27,7 @@ public static class DedicatedGpuModePolicy
     public static bool IsSupported(in DedicatedGpuModeSnapshot snapshot) =>
         snapshot.HasDiscreteGraphics &&
         snapshot.HasIntegratedGraphics &&
-        !snapshot.InternalDisplayUsesDiscreteGpu;
+        (!snapshot.DiscreteGpuEnabled || !snapshot.InternalDisplayUsesDiscreteGpu);
 
     public static DedicatedGpuModeBlockReason GetBlockReason(in DedicatedGpuModeSnapshot snapshot)
     {
@@ -41,15 +41,15 @@ public static class DedicatedGpuModePolicy
             return DedicatedGpuModeBlockReason.NoIntegratedGraphics;
         }
 
-        if (snapshot.InternalDisplayUsesDiscreteGpu)
-        {
-            return DedicatedGpuModeBlockReason.InternalDisplayUsesDiscreteGpu;
-        }
-
         if (!snapshot.DiscreteGpuEnabled)
         {
             // Re-enabling the discrete GPU is always safe and is the recovery path.
             return DedicatedGpuModeBlockReason.None;
+        }
+
+        if (snapshot.InternalDisplayUsesDiscreteGpu)
+        {
+            return DedicatedGpuModeBlockReason.InternalDisplayUsesDiscreteGpu;
         }
 
         if (!snapshot.DisplayTopologyKnown)
