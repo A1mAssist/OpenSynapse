@@ -362,13 +362,11 @@ OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。控�
 
 ## 尚未支持的设备
 
-有一部分设备已经能确认硬件协议，但还没有写进 OpenSynapse。它们的命令集、命令号和负载长度记录在 [中间件设备协议参考](MIDDLEWARE_DEVICE_PROTOCOLS.md) 里，按命令 profile 分组，共 33 组、119 个产品。
+中间件参考里能解析出命令的设备现在都有对应页面，只剩 Philips Hue（`0x0301`）：它走网络桥，不是 HID 设备，需要单独做网络集成，还需要一台实体桥。
 
-其中价值最高的三组：
+Viper V4 Pro 这类无线鼠标改用 BLE 协议 30，不再走 91 字节 feature report。该通道记录在 [BLE 协议 30 规格](PROTOCOL30_BLE.zh-CN.md)：GATT UUID、8 字节请求头与 20 字节响应头、轮询率与 DPI 负载，以及连接和重试规则。协议层与带读回校验的服务已经实现在 `RazerBleProtocol30`、`RazerBleSession`、`RazerBleDeviceService`；页面还需要一台蓝牙连接的鼠标才能验收。
 
-- **音频外设**（Kraken V3/V4、Nari、Barracuda、BlackShark V2 Pro、Nommo V2、Leviathan V2 Pro 等 18 款）：共享一套 135 条命令的 profile，覆盖均衡器、低音、AI 降噪、麦克风压缩器/齿音消除/混响/限制器、侧音和输入源。
-- **2026 键盘**（Huntsman V3 8KHz 系列、BlackWidow V4 变体、Reclusa）：共享 OBM 按键映射和矩阵灯光。
-- **桌面外设**（笔记本散热垫、PWM 风扇控制器、显示器支架、扩展坞、ARGB 控制器）：共享热控和灯光命令。
+
 
 协议证据来自 Synapse 中间件的静态分析，只覆盖产品自身 handler 里出现的命令；写入前仍需读能力位、写后读回并准备恢复路径。
 Blade 16 (2026) 和 Blade 18 (2026) 已进入 OpenRazer 目录，支持标准灯光；遥测、风扇、性能和 MUX 仍需专用 Blade manifest。
