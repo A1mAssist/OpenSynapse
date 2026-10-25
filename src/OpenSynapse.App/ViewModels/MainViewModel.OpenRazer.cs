@@ -19,6 +19,7 @@ public sealed partial class MainViewModel
             .Concat(OpenRazerKrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BlackSharkDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
             .ThenBy(device => device.SortOrder)
@@ -104,6 +105,15 @@ public sealed partial class MainViewModel
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.HeadsetAudio,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in KeyboardDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Keyboard,
                 row.Name,
                 row.IconGlyph,
                 row));

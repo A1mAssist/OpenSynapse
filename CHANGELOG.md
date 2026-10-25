@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增 11 款键盘（Huntsman V3 系列、Pro Type 系列、BlackWidow V4 75% Xbox 版等）的设备页：固件、序列号、电量与充电、游戏模式、轮询率（最高 8000 Hz）。每个项目先探测设备是否应答，不支持的命令自动隐藏，避免出现空白控件。
+- Added a device page for 11 keyboards the OpenRazer catalogue does not cover (Huntsman V3 series, Pro Type series, BlackWidow V4 75% Xbox edition): firmware, serial number, battery and charging, game mode, and polling rate up to 8000 Hz. Each item probes the device first, and unsupported commands are hidden instead of leaving an empty control.
 - 新增 18 款 protocol 25 游戏耳机（Nari、Kraken V3/V4、Barracuda、BlackShark V2 Pro、USB 音频控制器等）的音频页：固件、电量、充电状态、EQ 预设与 8/10 段调节、低音、麦克风静音与音量、音频输入源、AI 降噪和 ANC。每次写入都会先读当前值、写完读回校验，失败时自动恢复原值。
 - Added an audio page for the 18 protocol 25 gaming headsets (Nari, Kraken V3/V4, Barracuda, BlackShark V2 Pro, USB audio controllers): firmware, battery, charging state, EQ presets and 8/10-band curves, bass, microphone mute and volume, audio source, AI noise suppression, and ANC. Every write reads the current value first, verifies the readback, and restores the previous value when the device does not accept the change.
 
@@ -14,6 +16,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 修复 / Fixed
 
+- 修正耳机与键盘的电量读数：中间件的原始值是 0–255，按比例换算成百分比再显示；充电状态同样从第一个数据字节读取，不再整体偏移一位。
+- Fixed battery readings for headsets and keyboards: the middleware reports 0–255, now scaled to percent, and the charging flag is read from the first data byte instead of being off by one.
 - 窗口最小宽度从 1080 降到 700 逻辑像素，恢复小窗口使用；页面内容下限为 640 像素加 48 像素导航栏，再小需要重排页面布局。
 - The window minimum width is now 700 logical pixels instead of 1080, so the app can be resized small again; page content still has a 640-pixel floor plus the 48-pixel navigation pane, and going smaller would require reflowing the pages.
 - 修复旧版每用户安装目录在机器级安装后长期残留的问题。安装器产物（`Update.exe`、`packages\`）现在在每次启动时清理，不再只在安装那一刻清一次；用户配置、旧备份和日志一律保留。本机残留从 69.75 MB 降到 1.47 MB。

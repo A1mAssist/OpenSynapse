@@ -60,6 +60,7 @@ public sealed partial class MainWindow
         OpenRazerKrakenPanel.Visibility = device == "kraken" ? Visibility.Visible : Visibility.Collapsed;
         BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
         HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
+        KeyboardPanel.Visibility = device == "keyboard" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
         if (device == "blade")
         {
@@ -201,6 +202,11 @@ public sealed partial class MainWindow
                 await _viewModel.SelectHeadsetAudioAsync(headsetAudio, _lifetime.Token);
                 UpdateDeviceSelector("headsetaudio");
                 break;
+            case DeviceSelectorItemKind.Keyboard when first.Source is RazerKeyboardDeviceRowViewModel keyboard:
+                SelectDevice("keyboard");
+                await _viewModel.SelectKeyboardAsync(keyboard, _lifetime.Token);
+                UpdateDeviceSelector("keyboard");
+                break;
             default:
                 SelectDevice("none");
                 break;
@@ -231,6 +237,10 @@ public sealed partial class MainWindow
                     item.Source is RazerHeadsetAudioDeviceRowViewModel headsetAudioRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         headsetAudioRow.Connection.DevicePath, _viewModel.SelectedHeadsetAudio?.DevicePath),
+                DeviceSelectorItemKind.Keyboard => device == "keyboard" &&
+                    item.Source is RazerKeyboardDeviceRowViewModel keyboardRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        keyboardRow.Connection.DevicePath, _viewModel.SelectedKeyboard?.DevicePath),
                 _ => false,
             };
             item.SetSelectorBackground(isSelected ? selected : transparent);

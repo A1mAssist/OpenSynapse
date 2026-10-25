@@ -37,6 +37,9 @@ public sealed partial class MainWindow
             case RazerHeadsetAudioDeviceRowViewModel:
                 HeadsetAudioSelectorClick(sender, e);
                 break;
+            case RazerKeyboardDeviceRowViewModel:
+                KeyboardSelectorClick(sender, e);
+                break;
         }
     }
 

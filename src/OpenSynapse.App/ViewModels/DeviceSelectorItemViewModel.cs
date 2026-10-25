@@ -12,6 +12,7 @@ public enum DeviceSelectorItemKind
     Kraken,
     BlackShark,
     HeadsetAudio,
+    Keyboard,
 }
 
 public sealed class DeviceSelectorItemViewModel : INotifyPropertyChanged
