@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 补上两台边缘设备：Razer Marci（音频）接入音频页，Razer Wireless Control Pod 接入灯光页。至此中间件里能识别出命令的 119 款设备中，117 款已有对应页面；剩下 Philips Hue（走网络桥，不是 HID）和一款名字为空的 0F1B 原型设备。
+- Two edge cases are now covered: Razer Marci (audio) on the audio page and the Razer Wireless Control Pod on the lighting page. Of the 119 devices with identifiable middleware commands, 117 now have a page; the remaining two are Philips Hue (a network bridge, not HID) and an unnamed 0F1B prototype.
 - 键盘页再扩 12 款：BlackWidow X / V4 Pro 75% / V4 Low-profile（含 TKL）、Huntsman Essential / V3 X / V3 Pro Low-profile、Reclusa Mini 与 Reclusa X Mini、Pro Type Ergo、Tartarus V2 Pro、Turret Keyboard。能应答的功能（固件、序列号、游戏模式、轮询率、电量）自动出现，其余隐藏。
 - 音频页再扩 5 款：Seiren V2 Pro / V2 X / V3 Mini 麦克风、Leviathan V2 Pro 音箱和 Kraken V4 X 耳机，并新增“麦克风”设备分类。
 - The keyboard page now covers 12 more models: BlackWidow X, V4 Pro 75%, V4 Low-profile (including TKL), Huntsman Essential, V3 X and V3 Pro Low-profile, Reclusa Mini and Reclusa X Mini, Pro Type Ergo, Tartarus V2 Pro, and the Turret keyboard. Features the device answers (firmware, serial, game mode, polling rate, battery) appear automatically; the rest stay hidden.

@@ -23,6 +23,7 @@ public sealed class RazerHeadsetAudioServiceTests
     [InlineData(0x056A)]
     [InlineData(0x0548)]
     [InlineData(0x056D)]
+    [InlineData(0x0F66)]
     public void AudioPage_CoversTheKrakenBtAndNommoFamilies(ushort productId) =>
         Assert.True(RazerHeadsetAudioService.IsSupported(productId));
 
