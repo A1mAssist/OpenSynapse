@@ -34,6 +34,9 @@ public sealed partial class MainWindow
             case BlackSharkDeviceRowViewModel:
                 BlackSharkSelectorClick(sender, e);
                 break;
+            case RazerHeadsetAudioDeviceRowViewModel:
+                HeadsetAudioSelectorClick(sender, e);
+                break;
         }
     }
 

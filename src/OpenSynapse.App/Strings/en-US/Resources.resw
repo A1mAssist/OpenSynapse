@@ -2135,6 +2135,23 @@
   <data name="MacroRecordMouseForegroundLabel" xml:space="preserve"><value>Relative to foreground window</value></data>
   <data name="MacroRecordDelayModeLabel" xml:space="preserve"><value>Delay</value></data>
   <data name="MacroRecordMouseModeLabel" xml:space="preserve"><value>Mouse tracking</value></data>
+  <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>Default</value></data>
+  <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>Game</value></data>
+  <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>Music</value></data>
+  <data name="RazerHeadsetPresetMovie" xml:space="preserve"><value>Movie</value></data>
+  <data name="RazerHeadsetPresetTreble" xml:space="preserve"><value>Treble boost</value></data>
+  <data name="RazerHeadsetPresetMicBoost" xml:space="preserve"><value>Mic boost</value></data>
+  <data name="RazerHeadsetPresetPodcast" xml:space="preserve"><value>Podcast</value></data>
+  <data name="RazerHeadsetPresetCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="RazerHeadsetSourceNone" xml:space="preserve"><value>None</value></data>
+  <data name="RazerHeadsetSourceSpdif" xml:space="preserve"><value>Optical</value></data>
+  <data name="RazerHeadsetSourceAux" xml:space="preserve"><value>Aux in</value></data>
+  <data name="RazerHeadsetSourceBluetooth" xml:space="preserve"><value>Bluetooth</value></data>
+  <data name="RazerHeadsetSourceUsb" xml:space="preserve"><value>USB</value></data>
+  <data name="RazerHeadsetAncOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerHeadsetAncOn" xml:space="preserve"><value>On</value></data>
+  <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>Ambient</value></data>
+  <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>Read failed; the device did not respond.</value></data>
 </root>
 
 

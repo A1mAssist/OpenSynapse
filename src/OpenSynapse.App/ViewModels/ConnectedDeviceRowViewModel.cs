@@ -47,6 +47,18 @@ public sealed class ConnectedDeviceRowViewModel
         IsVisible = true;
     }
 
+    public ConnectedDeviceRowViewModel(RazerHeadsetAudioDeviceRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
     public ConnectedDeviceRowViewModel(BlackSharkDeviceRowViewModel source)
     {
         Source = source;

@@ -11,6 +11,7 @@ public enum DeviceSelectorItemKind
     OpenRazer,
     Kraken,
     BlackShark,
+    HeadsetAudio,
 }
 
 public sealed class DeviceSelectorItemViewModel : INotifyPropertyChanged
