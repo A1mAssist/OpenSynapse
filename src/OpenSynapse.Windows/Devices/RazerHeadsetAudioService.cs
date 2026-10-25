@@ -71,13 +71,16 @@ public sealed class RazerHeadsetAudioService
             [0x0548] = "Razer Leviathan V2 Pro",
             [0x056D] = "Razer Kraken V4 X",
             [0x0F66] = "Razer Marci",
+            // The Seiren Emote shares the Camyt3 middleware bundle; its LED matrix uses the
+            // class 0x10 Chroma commands, while EQ and mic volume match this family.
+            [0x0F1B] = "Razer Seiren Emote",
         };
 
     private static readonly IReadOnlySet<ushort> SpeakerProductIds =
         new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548 };
 
     private static readonly IReadOnlySet<ushort> MicrophoneProductIds =
-        new HashSet<ushort> { 0x0542, 0x0543, 0x056A };
+        new HashSet<ushort> { 0x0542, 0x0543, 0x056A, 0x0F1B };
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
