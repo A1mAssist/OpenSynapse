@@ -54,7 +54,21 @@ public sealed class RazerHeadsetAudioService
             [0x0555] = "Razer BlackShark V2 Pro",
             [0x0567] = "Razer Kraken V4 Pro",
             [0x056B] = "Razer Kraken V4",
+            [0x0309] = "Razer Kraken BT Sanrio Limited Edition",
+            [0x0526] = "Razer Kraken X USB",
+            [0x0530] = "Razer Kraken BT Kitty Edition",
+            [0x0537] = "Razer Kraken V3 X",
+            [0x0534] = "Razer Kraken BT Sanrio Limited Edition",
+            [0x0560] = "Razer Kraken Kitty V2",
+            [0x0562] = "Razer Kraken Kitty V2 BT Quartz Edition",
+            [0x0532] = "Razer Leviathan V2",
+            [0x055A] = "Razer Nommo V2 Pro",
+            [0x055C] = "Razer Nommo V2",
+            [0x055E] = "Razer Nommo V2 X",
         };
+
+    private static readonly IReadOnlySet<ushort> SpeakerProductIds =
+        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E };
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -77,6 +91,9 @@ public sealed class RazerHeadsetAudioService
     }
 
     public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
+
+    public static DeviceCategory GetCategory(ushort productId) =>
+        SpeakerProductIds.Contains(productId) ? DeviceCategory.Speaker : DeviceCategory.Headset;
 
     public static async Task<RazerHeadsetAudioConnection?> FindAsync(
         Action<string>? diagnostic = null,

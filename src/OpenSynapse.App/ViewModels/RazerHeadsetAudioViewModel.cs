@@ -89,7 +89,10 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Name => _connection.Name;
-    public string CategoryText => AppStrings.Text("BlackSharkHeadsetCategory");
+    public string CategoryText => AppStrings.Text(
+        RazerHeadsetAudioService.GetCategory(_connection.ProductId) == OpenSynapse.Core.Devices.DeviceCategory.Speaker
+            ? "RazerSpeakerCategory"
+            : "BlackSharkHeadsetCategory");
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");

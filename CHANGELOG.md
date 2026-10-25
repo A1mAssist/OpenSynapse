@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 音频页扩展到另外 11 款使用同一套 protocol 25 音频命令的设备：Kraken BT（Sanrio / Kitty）、Kraken X USB、Kraken V3 X、Kraken Kitty V2（含 BT Quartz）以及 Leviathan V2、Nommo V2 / V2 Pro / V2 X。音箱现在按音箱分类显示，没有 ANC 的型号会自动隐藏降噪卡片。
+- The audio page now covers 11 more devices that use the same protocol 25 audio commands: Kraken BT (Sanrio / Kitty), Kraken X USB, Kraken V3 X, Kraken Kitty V2 (including BT Quartz), plus Leviathan V2 and Nommo V2 / V2 Pro / V2 X. Speakers are labelled as speakers, and models without ANC hide the noise-cancelling card.
 - 新增 11 款键盘（Huntsman V3 系列、Pro Type 系列、BlackWidow V4 75% Xbox 版等）的设备页：固件、序列号、电量与充电、游戏模式、轮询率（最高 8000 Hz）。每个项目先探测设备是否应答，不支持的命令自动隐藏，避免出现空白控件。
 - Added a device page for 11 keyboards the OpenRazer catalogue does not cover (Huntsman V3 series, Pro Type series, BlackWidow V4 75% Xbox edition): firmware, serial number, battery and charging, game mode, and polling rate up to 8000 Hz. Each item probes the device first, and unsupported commands are hidden instead of leaving an empty control.
 - 新增 18 款 protocol 25 游戏耳机（Nari、Kraken V3/V4、Barracuda、BlackShark V2 Pro、USB 音频控制器等）的音频页：固件、电量、充电状态、EQ 预设与 8/10 段调节、低音、麦克风静音与音量、音频输入源、AI 降噪和 ANC。每次写入都会先读当前值、写完读回校验，失败时自动恢复原值。

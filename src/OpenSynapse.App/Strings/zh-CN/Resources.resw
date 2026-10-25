@@ -2565,6 +2565,7 @@
   <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>环境音</value></data>
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>读取失败，设备没有响应。</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>游戏键盘</value></data>
+  <data name="RazerSpeakerCategory" xml:space="preserve"><value>音箱</value></data>
 </root>
 
 
