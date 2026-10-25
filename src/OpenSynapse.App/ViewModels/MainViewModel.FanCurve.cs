@@ -46,14 +46,15 @@ public sealed partial class MainViewModel
     /// </summary>
     public int BladeFanFixedRpm
     {
-        get => EditablePerformanceBladeProfile.FanTargetRpm ?? _bladeFanFixedRpm;
-        set
-        {
-            var clamped = Math.Clamp(value, BladeFanLimits.MinimumRpm, BladeFanLimits.MaximumRpm);
-            var snapped = BladeFanLimits.MinimumRpm +
-                ((clamped - BladeFanLimits.MinimumRpm) / BladeFanLimits.StepRpm) * BladeFanLimits.StepRpm;
-            SetField(ref _bladeFanFixedRpm, snapped);
-        }
+        get => _bladeFanFixedRpm;
+        set => SetField(ref _bladeFanFixedRpm, SnapBladeFanFixedRpm(value));
+    }
+
+    private static int SnapBladeFanFixedRpm(int value)
+    {
+        var clamped = Math.Clamp(value, BladeFanLimits.MinimumRpm, BladeFanLimits.MaximumRpm);
+        return BladeFanLimits.MinimumRpm +
+            ((clamped - BladeFanLimits.MinimumRpm) / BladeFanLimits.StepRpm) * BladeFanLimits.StepRpm;
     }
 
     public IReadOnlyList<string> BladeFanControlModeOptions =>
@@ -120,6 +121,15 @@ public sealed partial class MainViewModel
         var resolved = blade is null
             ? EditablePerformanceBladeProfile
             : ProfileResolver.Resolve(_profile, blade, SelectedPerformancePowerState).Blade;
+
+        // The editor owns the value until Apply. Seeding it from the stored profile must
+        // not override a target the user is currently typing.
+        if (resolved.FanTargetRpm is int targetRpm)
+        {
+            _bladeFanFixedRpm = SnapBladeFanFixedRpm(targetRpm);
+            OnPropertyChanged(nameof(BladeFanFixedRpm));
+        }
+
         _bladeFanCurveEditor = new BladeFanCurveEditorViewModel(TryCreateCurve(resolved));
         OnPropertyChanged(nameof(BladeFanCurveEditor));
         OnPropertyChanged(nameof(BladeFanCurveModeIndex));
