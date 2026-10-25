@@ -46,6 +46,7 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
     private int _selectedPollingIndex;
     private bool _hasGameMode;
     private bool _hasLighting;
+    private bool _hasBrightness;
     private double _brightness = 100;
     private int _selectedEffectIndex;
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
@@ -140,6 +141,8 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
 
     public Microsoft.UI.Xaml.Visibility LightingVisibility =>
         _hasLighting ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+    public Microsoft.UI.Xaml.Visibility BrightnessVisibility =>
+        _hasBrightness ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
     public IReadOnlyList<string> PollingOptions => PollingRates.Select(rate => $"{rate} Hz").ToArray();
 
     public bool IsBusy
@@ -177,6 +180,13 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
             var state = await OpenService().ReadStateAsync(cancellationToken);
             ApplyState(state);
             var lighting = await OpenChromaService().ReadStateAsync(cancellationToken);
+            // Legacy keyboards expose the effect commands even when this firmware will not
+            // answer the read, so the card stays available and starts from the defaults.
+            if (_connection.UsesLegacyChroma)
+            {
+                _hasLighting = true;
+            }
+
             ApplyLighting(lighting);
             ErrorText = state.Firmware is null && state.Serial is null && state.BatteryPercent is null &&
                 state.GameModeEnabled is null && state.PollingRate is null
@@ -226,7 +236,12 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 
     private RazerChromaStandardService OpenChromaService() =>
-        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+        new(
+            new RazerFeatureTransport(),
+            _connection.DevicePath,
+            TimeSpan.FromMilliseconds(20),
+            _diagnostic,
+            _connection.UsesLegacyChroma ? RazerChromaChannel.Legacy : RazerChromaChannel.Standard);
 
     private async Task RunChromaWriteAsync(
         Func<RazerChromaStandardService, CancellationToken, Task> write,
@@ -259,6 +274,8 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
         {
             Brightness = brightness;
             _hasLighting = true;
+            _hasBrightness = true;
+            OnPropertyChanged(nameof(BrightnessVisibility));
         }
 
         if (state.Effect is RazerChromaEffect effect)

@@ -8,7 +8,8 @@ public sealed record RazerKeyboardConnection(
     string DevicePath,
     ushort ProductId,
     string Name,
-    ushort FeatureReportByteLength);
+    ushort FeatureReportByteLength,
+    bool UsesLegacyChroma);
 
 public sealed record RazerKeyboardState(
     Version? Firmware,
@@ -53,6 +54,18 @@ public sealed class RazerKeyboardService
             [0x02EB] = "Razer Tartarus V2 Pro",
             [0x02F4] = "Razer Reclusa Mini 65%",
         };
+
+    /// <summary>
+    /// Keyboards whose lighting runs on the older class 0x0F effect commands, which carry
+    /// no brightness command. The rest of the catalogue uses class 0x10.
+    /// </summary>
+    public static readonly IReadOnlySet<ushort> LegacyChromaProducts = new HashSet<ushort>
+    {
+        0x023E, 0x024F, 0x0250, 0x02B1, 0x02B3, 0x02CC, 0x02D0, 0x02D1,
+        0x02D4, 0x02D8, 0x02E3, 0x02E4, 0x02E5, 0x02EA, 0x02EB, 0x02F4,
+    };
+
+    public static bool UsesLegacyChroma(ushort productId) => LegacyChromaProducts.Contains(productId);
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -108,7 +121,8 @@ public sealed class RazerKeyboardService
             chosen.DevicePath,
             chosen.ProductId,
             Products[chosen.ProductId],
-            chosen.FeatureReportByteLength);
+            chosen.FeatureReportByteLength,
+            UsesLegacyChroma(chosen.ProductId));
     }
 
     public async Task<RazerKeyboardState> ReadStateAsync(CancellationToken cancellationToken = default)
