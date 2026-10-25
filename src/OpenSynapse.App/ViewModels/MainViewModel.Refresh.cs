@@ -173,6 +173,7 @@ public sealed partial class MainViewModel
             await RefreshBlackSharkAsync(cancellationToken);
             await RefreshHeadsetAudioAsync(cancellationToken);
             await RefreshKeyboardsAsync(cancellationToken);
+            await RefreshChromaAsync(cancellationToken);
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
             {
