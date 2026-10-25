@@ -24,6 +24,12 @@ public sealed partial class MainWindow
     private async void KeyboardApplyGameModeClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedKeyboard?.ApplyGameModeAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void KeyboardApplyBrightnessClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedKeyboard?.ApplyBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void KeyboardApplyLightingClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedKeyboard?.ApplyLightingAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void KeyboardApplyPollingClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedKeyboard?.ApplyPollingAsync(_lifetime.Token) ?? Task.CompletedTask);
 }

@@ -2566,6 +2566,10 @@
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>读取失败，设备没有响应。</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>游戏键盘</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>音箱</value></data>
+  <data name="RazerLightingEffectOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>
+  <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>呼吸</value></data>
+  <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
 </root>
 
 
