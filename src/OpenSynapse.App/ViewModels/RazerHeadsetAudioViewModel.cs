@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
+using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -77,8 +78,14 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     private bool _hasEqBands;
     private bool _hasBass;
     private bool _hasAnc;
-    private bool _hasBrightness;
+    private bool _hasLighting;
     private double _brightness = 100;
+    private int _selectedEffectIndex;
+    private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
+    private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
+
+    private static readonly RazerChromaEffect[] LightingEffects =
+        [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
     public RazerHeadsetAudioViewModel(
         RazerHeadsetAudioConnection connection,
@@ -102,7 +109,31 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
         ? Microsoft.UI.Xaml.Visibility.Collapsed
         : Microsoft.UI.Xaml.Visibility.Visible;
 
-    /// <summary>Seiren Emote style LED matrix brightness, shown only when the device answers.</summary>
+    /// <summary>
+    /// Mic-body lighting (the Seiren Emote matrix) uses the shared class 0x10 Chroma
+    /// commands. Devices that do not answer keep the whole card hidden.
+    /// </summary>
+    public Microsoft.UI.Xaml.Visibility MatrixLightingVisibility =>
+        _hasLighting ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    public IReadOnlyList<string> LightingEffectOptions =>
+    [
+        AppStrings.Text("RazerLightingEffectOff"),
+        AppStrings.Text("RazerLightingEffectStatic"),
+        AppStrings.Text("RazerLightingEffectBreathing"),
+        AppStrings.Text("RazerLightingEffectSpectrum"),
+    ];
+
+    public int SelectedLightingEffectIndex
+    {
+        get => _selectedEffectIndex;
+        set
+        {
+            if (!SetField(ref _selectedEffectIndex, Math.Clamp(value, 0, LightingEffects.Length - 1))) return;
+            OnPropertyChanged(nameof(SecondaryColorVisibility));
+        }
+    }
+
     public double Brightness
     {
         get => _brightness;
@@ -115,8 +146,22 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
 
     public string BrightnessText => $"{Math.Round(Brightness)}%";
 
-    public Microsoft.UI.Xaml.Visibility BrightnessVisibility =>
-        _hasBrightness ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+    public Color PrimaryColor
+    {
+        get => _primaryColor;
+        set => SetField(ref _primaryColor, value);
+    }
+
+    public Color SecondaryColor
+    {
+        get => _secondaryColor;
+        set => SetField(ref _secondaryColor, value);
+    }
+
+    public Microsoft.UI.Xaml.Visibility SecondaryColorVisibility =>
+        LightingEffects[_selectedEffectIndex] == RazerChromaEffect.Breathing
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public string Name => _connection.Name;
     public string CategoryText => AppStrings.Text(
@@ -257,7 +302,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
         {
             var state = await OpenService().ReadStateAsync(cancellationToken);
             ApplyState(state);
-            ErrorText = state.Errors.Count > 0 && !HasAnyValue(state)
+            ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
+            ErrorText = state.Errors.Count > 0 && !HasAnyValue(state) && !_hasLighting
                 ? AppStrings.Text("RazerHeadsetReadFailed")
                 : string.Empty;
         }
@@ -288,10 +334,24 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
             : Task.CompletedTask;
     }
 
-    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(
+    public Task ApplyMatrixBrightnessAsync(CancellationToken cancellationToken = default) =>
+        RunChromaWriteAsync(
             (service, token) => service.SetBrightnessAsync((byte)Math.Round(Brightness), token),
             cancellationToken);
+
+    public Task ApplyMatrixLightingAsync(CancellationToken cancellationToken = default) =>
+        RunChromaWriteAsync(async (service, token) =>
+        {
+            var effect = LightingEffects[SelectedLightingEffectIndex];
+            var colors = effect switch
+            {
+                RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
+                RazerChromaEffect.Breathing =>
+                    [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
+                _ => [],
+            };
+            await service.SetEffectAsync(effect, colors, token);
+        }, cancellationToken);
 
     public Task ApplyBassAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync((service, token) => service.SetBassAsync((byte)Math.Round(Bass), token), cancellationToken);
@@ -321,6 +381,60 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     private RazerHeadsetAudioService OpenService() =>
         new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
 
+    private RazerChromaStandardService OpenChromaService() =>
+        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+
+    private async Task RunChromaWriteAsync(
+        Func<RazerChromaStandardService, CancellationToken, Task> write,
+        CancellationToken cancellationToken)
+    {
+        if (!BeginOperation()) return;
+        try
+        {
+            await write(OpenChromaService(), cancellationToken);
+            ErrorText = string.Empty;
+            OperationStatusText = AppStrings.Text("BlackSharkSaved");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+            OperationStatusText = string.Empty;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ApplyMatrixLighting(RazerChromaStandardState state)
+    {
+        if (state.BrightnessPercent is byte brightness)
+        {
+            Brightness = brightness;
+            _hasLighting = true;
+        }
+
+        if (state.Effect is RazerChromaEffect effect && LightingEffects.Contains(effect))
+        {
+            SelectedLightingEffectIndex = Array.IndexOf(LightingEffects, effect);
+            _hasLighting = true;
+        }
+
+        if (state.Colors.Count >= 3)
+        {
+            PrimaryColor = Color.FromArgb(255, state.Colors[0], state.Colors[1], state.Colors[2]);
+        }
+
+        if (state.Colors.Count >= 6)
+        {
+            SecondaryColor = Color.FromArgb(255, state.Colors[3], state.Colors[4], state.Colors[5]);
+        }
+
+        OnPropertyChanged(nameof(MatrixLightingVisibility));
+    }
     private async Task RunWriteAsync(
         Func<RazerHeadsetAudioService, CancellationToken, Task> write,
         CancellationToken cancellationToken)
@@ -409,18 +523,11 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(AncVisibility));
         }
         if (state.AncLevel is byte level) AncLevel = level;
-        if (state.BrightnessPercent is byte brightness)
-        {
-            Brightness = brightness;
-            _hasBrightness = true;
-            OnPropertyChanged(nameof(BrightnessVisibility));
-        }
     }
 
     private static bool HasAnyValue(RazerHeadsetAudioState state) =>
         state.BatteryPercent is not null || state.EqPreset is not null || state.EqBands is not null ||
-        state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null ||
-        state.BrightnessPercent is not null;
+        state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null;
 
     private bool BeginOperation()
     {
