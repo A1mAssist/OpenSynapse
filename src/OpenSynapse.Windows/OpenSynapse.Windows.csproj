@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hwinfo.SharedMemory.Net" Version="4.0.0" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" />
     <PackageReference Include="System.Management" Version="10.0.13" />
   </ItemGroup>
