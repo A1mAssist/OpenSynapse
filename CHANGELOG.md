@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 灯光页不再只显示一台设备：同时接入多个 Aether 灯具、鼠标或配件时全部列出，同一台设备的多个 HID 接口合并成一行，刷新时保留原来选中的设备。
 - The lighting page no longer stops at a single device: every attached Aether lamp, mouse or accessory gets its own row, several HID interfaces of one device collapse into one row, and the previous selection survives a refresh.
 - 键盘页补上 class `0x0F` 的灯光通道，覆盖 16 款只有这套命令的键盘（Turret、BlackWidow X、Huntsman Essential / V3 X / V3 Pro 系列、BlackWidow V4 Low-profile、Reclusa、Tartarus V2 Pro 等）：可选关闭/静态/呼吸/光谱并写入 1–2 种颜色。这套通道没有亮度命令，亮度控件自动隐藏；设备能应答 `0F:130` 时读回校验，不能应答时按雷云同样的方式直接写入。
@@ -64,6 +66,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 新增宏页面与全尺寸宏编辑器，按雷云的操作结构提供宏列表、动作序列、触发键绑定、录制、单次/重复/持续循环播放，以及每步延迟和按住时间设置。编辑器支持键盘与鼠标选择器，录制或编辑时按下的键位会捕获为完整动作。
 - Added a macro page and full-size editor with the Synapse-style macro list, action sequence, trigger binding, recording, once/repeat/continuous playback, and per-step delay and hold settings. The editor includes keyboard and mouse pickers; a captured key or mouse button becomes a complete action.
 - 手动宏动作支持鼠标移动轨迹编辑：可在图上添加、拖动和删除轨迹点，精确输入 X/Y 坐标与时间；确认应用前不会修改现有宏。
@@ -114,6 +118,8 @@ This release is unsigned and targets Windows 11 x64. CPU core-voltage offset, GP
 
 ### 新增 / Added
 
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - Blade 16 (2025) 的风扇控制现提供自动、固定转速和手动曲线三种模式。手动曲线在独立窗口中编辑，支持拖拽 CPU/GPU 曲线点、精确输入温度与 RPM、增加或删除档位、恢复默认。
 - Blade 16 (2025) fan control now offers automatic, fixed-RPM, and manual-curve modes. The curve editor opens in a separate window with draggable CPU/GPU points, exact temperature and RPM inputs, tier add/remove, and reset-to-default.
 - 新增 Razer BlackShark V3 Pro 支持（2.4 GHz `1532:101B`、USB `1532:101C`）：电量、充电状态、侧音、THX Spatial Audio、主动降噪和游戏/语音平衡。
@@ -168,6 +174,8 @@ This release is unsigned and targets Windows 11 x64. BlackShark V3 Pro does not 
 
 ### 新增 / Added
 
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 新增 Razer Blade 16 (2023) `1532:029F` 支持：键盘亮度、固件渲染灯效（关闭、呼吸、光谱、波动）、性能模式、自定义 CPU/GPU 档位（含 CPU Boost、Max Fan）、2000–5000 RPM 固定风扇目标、充电上限、一次充满和游戏模式。
 - Added support for the Razer Blade 16 (2023) `1532:029F`: keyboard brightness, firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom CPU/GPU levels with CPU Boost and Max Fan, fixed fan targets from 2000 to 5000 RPM, charge limit, one-time full charge, and Gaming mode.
 - 新增受支持机型的 THX Spatial Audio 控制：扬声器/耳机选择、空间音频、EQ 预设与频段、人声清晰度和扬声器音量标准化。厂商原生组件不随包分发，缺失时应用会提供来自 Razer 官方服务器的可校验下载。

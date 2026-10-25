@@ -14,6 +14,7 @@ public enum DeviceSelectorItemKind
     HeadsetAudio,
     Keyboard,
     Chroma,
+    Ble,
 }
 
 public sealed class DeviceSelectorItemViewModel : INotifyPropertyChanged
@@ -45,3 +46,4 @@ public sealed class DeviceSelectorItemViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new(nameof(SelectorBackground)));
     }
 }
+

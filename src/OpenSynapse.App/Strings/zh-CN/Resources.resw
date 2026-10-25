@@ -2571,6 +2571,9 @@
   <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>呼吸</value></data>
   <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
   <data name="RazerMicrophoneCategory" xml:space="preserve"><value>麦克风</value></data>
+  <data name="BleChargingFailed" xml:space="preserve"><value>充电失败</value></data>
+  <data name="BleChargingLimit" xml:space="preserve"><value>已达充电上限</value></data>
+  <data name="BleIdentity" xml:space="preserve"><value>BLE · 协议 30</value></data>
 </root>
 
 

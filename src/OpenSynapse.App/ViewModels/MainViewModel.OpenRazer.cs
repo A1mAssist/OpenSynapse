@@ -21,6 +21,7 @@ public sealed partial class MainViewModel
             .Concat(HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(ChromaDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
             .ThenBy(device => device.SortOrder)
@@ -124,6 +125,15 @@ public sealed partial class MainViewModel
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Chroma,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in BleDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Ble,
                 row.Name,
                 row.IconGlyph,
                 row));
@@ -414,3 +424,4 @@ public sealed partial class MainViewModel
         return path;
     }
 }
+

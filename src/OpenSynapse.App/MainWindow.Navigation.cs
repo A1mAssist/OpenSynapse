@@ -62,6 +62,7 @@ public sealed partial class MainWindow
         HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
         KeyboardPanel.Visibility = device == "keyboard" ? Visibility.Visible : Visibility.Collapsed;
         ChromaPanel.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
+        BlePanel.Visibility = device == "ble" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
         if (device == "blade")
         {
@@ -213,6 +214,11 @@ public sealed partial class MainWindow
                 await _viewModel.SelectChromaAsync(chroma, _lifetime.Token);
                 UpdateDeviceSelector("chroma");
                 break;
+            case DeviceSelectorItemKind.Ble when first.Source is RazerBleDeviceRowViewModel ble:
+                SelectDevice("ble");
+                await _viewModel.SelectBleAsync(ble, _lifetime.Token);
+                UpdateDeviceSelector("ble");
+                break;
             default:
                 SelectDevice("none");
                 break;
@@ -247,6 +253,10 @@ public sealed partial class MainWindow
                     item.Source is RazerKeyboardDeviceRowViewModel keyboardRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         keyboardRow.Connection.DevicePath, _viewModel.SelectedKeyboard?.DevicePath),
+                DeviceSelectorItemKind.Ble => device == "ble" &&
+                    item.Source is RazerBleDeviceRowViewModel bleRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        bleRow.Device.Id, _viewModel.SelectedBle?.DeviceId),
                 DeviceSelectorItemKind.Chroma => device == "chroma" &&
                     item.Source is RazerChromaDeviceRowViewModel chromaRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
@@ -363,3 +373,4 @@ public sealed partial class MainWindow
         AppWindow.MoveAndResize(bounds);
     }
 }
+
