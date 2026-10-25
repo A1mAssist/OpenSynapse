@@ -4,21 +4,11 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-public enum RazerAudioSource : byte
-{
-    None = 0,
-    Spdif = 1,
-    Aux = 2,
-    Bluetooth = 3,
-    Usb = 4,
-}
-
 public sealed record RazerHeadsetAudioConnection(
     string DevicePath,
     ushort ProductId,
     string Name,
-    byte ReportId,
-    int InputReportLength);
+    ushort FeatureReportByteLength);
 
 public sealed record RazerHeadsetAudioState(
     Version? Firmware,
@@ -31,18 +21,19 @@ public sealed record RazerHeadsetAudioState(
     byte? MicVolume,
     RazerAudioSource? AudioSource,
     bool? NoiseSuppression,
-    byte? AncState,
+    RazerAncState? AncState,
     byte? AncLevel,
     IReadOnlyList<string> Errors);
 
 /// <summary>
-/// Protocol 25 audio controls for the 18-device P1 profile (Nari, Kraken, Barracuda,
-/// BlackShark V2 Pro, USB Audio Controller). Identity stays in the device row; this service
-/// owns EQ, bass, microphone, audio source and noise-suppression commands.
+/// Audio controls for the 18-device protocol 25 headset family (Nari, Kraken, Barracuda,
+/// BlackShark V2 Pro, USB audio controllers). Identity and lighting stay on the device row;
+/// this service owns the EQ, bass, microphone, audio-source, ANC and noise-suppression
+/// commands that OpenRazer does not model.
 /// </summary>
-public sealed class RazerHeadsetAudioService : IAsyncDisposable
+public sealed class RazerHeadsetAudioService
 {
-    private static readonly IReadOnlyDictionary<ushort, string> Products =
+    public static readonly IReadOnlyDictionary<ushort, string> Products =
         new Dictionary<ushort, string>
         {
             [0x051A] = "Razer Nari Ultimate",
@@ -65,20 +56,25 @@ public sealed class RazerHeadsetAudioService : IAsyncDisposable
             [0x056B] = "Razer Kraken V4",
         };
 
-    private readonly IRazerAudio25Transport _transport;
+    private readonly IRazerFeatureTransport _transport;
+    private readonly string _devicePath;
+    private readonly TimeSpan _deviceWait;
     private readonly Action<string>? _diagnostic;
+    private byte _transactionId = 0x1F;
 
-    private RazerHeadsetAudioService(
-        RazerHeadsetAudioConnection connection,
-        IRazerAudio25Transport transport,
-        Action<string>? diagnostic)
+    internal RazerHeadsetAudioService(
+        IRazerFeatureTransport transport,
+        string devicePath,
+        TimeSpan deviceWait,
+        Action<string>? diagnostic = null)
     {
-        Connection = connection;
-        _transport = transport;
+        _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _devicePath = string.IsNullOrWhiteSpace(devicePath)
+            ? throw new ArgumentException("A HID device path is required.", nameof(devicePath))
+            : devicePath;
+        _deviceWait = deviceWait;
         _diagnostic = diagnostic;
     }
-
-    public RazerHeadsetAudioConnection Connection { get; }
 
     public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
 
@@ -88,12 +84,12 @@ public sealed class RazerHeadsetAudioService : IAsyncDisposable
     {
         var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
             0x1532,
-            RazerAudio25Protocol.ReportLength,
+            RazerFeatureReport.Length,
             cancellationToken,
             item => diagnostic?.Invoke(
-                $"audio25 interface pid={item.ProductId:X4} product='{item.ProductName}' " +
+                $"headset-audio interface pid={item.ProductId:X4} product='{item.ProductName}' " +
                 $"usage=0x{item.UsagePage:X4}:0x{item.Usage:X4} feature={item.FeatureReportByteLength} " +
-                $"out={item.OutputReportByteLength} access={item.Access}"))
+                $"access={item.Access}"))
             .ConfigureAwait(false);
 
         var candidates = interfaces
@@ -105,91 +101,81 @@ public sealed class RazerHeadsetAudioService : IAsyncDisposable
         if (candidates.Length == 0)
         {
             diagnostic?.Invoke(
-                "audio25 found no admitted 65-byte headset interface; " +
-                $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}:0x{item.UsagePage:X4}:0x{item.Usage:X4}"))}");
+                "headset-audio found no admitted 91-byte interface; " +
+                $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}:0x{item.UsagePage:X4}"))}");
             return null;
         }
 
         var chosen = candidates[0];
         diagnostic?.Invoke(
-            $"audio25 selected pid={chosen.ProductId:X4} product='{chosen.ProductName}' " +
+            $"headset-audio selected pid={chosen.ProductId:X4} product='{chosen.ProductName}' " +
             $"path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
             $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} access={chosen.Access}");
         return new RazerHeadsetAudioConnection(
             chosen.DevicePath,
             chosen.ProductId,
             Products[chosen.ProductId],
-            RazerAudio25Protocol.UsbReportId,
-            chosen.InputReportByteLength);
-    }
-
-    public static async Task<RazerHeadsetAudioService> OpenAsync(
-        RazerHeadsetAudioConnection connection,
-        Action<string>? diagnostic = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(connection);
-        var reportIds = connection.ReportId == RazerAudio25Protocol.UsbReportId
-            ? new[] { RazerAudio25Protocol.UsbReportId, RazerAudio25Protocol.BleReportId }
-            : new[] { connection.ReportId, RazerAudio25Protocol.UsbReportId };
-        Exception? lastException = null;
-        foreach (var reportId in reportIds.Distinct())
-        {
-            RazerAudio25Transport? transport = null;
-            try
-            {
-                transport = new RazerAudio25Transport(
-                    connection.DevicePath,
-                    reportId,
-                    TimeSpan.FromMilliseconds(10),
-                    diagnostic);
-                _ = await transport.SendAsync(RazerAudio25Protocol.GetFirmware(), cancellationToken)
-                    .ConfigureAwait(false);
-                return new RazerHeadsetAudioService(
-                    connection with { ReportId = reportId },
-                    transport,
-                    diagnostic);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                lastException = exception;
-                diagnostic?.Invoke($"audio25 report id 0x{reportId:X2} probe failed: {exception.Message}");
-                if (transport is not null)
-                {
-                    await transport.DisposeAsync().ConfigureAwait(false);
-                }
-            }
-        }
-
-        throw new InvalidOperationException("The protocol 25 audio device did not accept either report id.", lastException);
-    }
-
-    internal RazerHeadsetAudioService(
-        RazerHeadsetAudioConnection connection,
-        IRazerAudio25Transport transport,
-        Action<string>? diagnostic,
-        bool _)
-    {
-        Connection = connection;
-        _transport = transport ?? throw new ArgumentNullException(nameof(transport));
-        _diagnostic = diagnostic;
+            chosen.FeatureReportByteLength);
     }
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
         var firmware = await TryReadAsync(
-            "firmware", RazerAudio25Protocol.GetFirmware(),
-            data => RazerAudio25Protocol.ReadFirmware(data), errors, cancellationToken).ConfigureAwait(false);
+            "firmware",
+            txn => RazerHeadsetAudioProtocol.GetFirmware(txn),
+            RazerHeadsetAudioProtocol.ReadFirmware,
+            errors,
+            cancellationToken).ConfigureAwait(false);
         var battery = await TryReadAsync(
-            "battery", RazerAudio25Protocol.GetBatteryLevel(),
-            data => (byte?)RazerAudio25Protocol.ReadBatteryLevel(data), errors, cancellationToken).ConfigureAwait(false);
+            "battery",
+            txn => RazerHeadsetAudioProtocol.GetBatteryLevel(txn),
+            RazerHeadsetAudioProtocol.ReadBatteryLevel,
+            errors,
+            cancellationToken).ConfigureAwait(false);
         var charging = await TryReadAsync(
-            "charging", RazerAudio25Protocol.GetChargingStatus(),
-            data => (bool?)RazerAudio25Protocol.ReadChargingStatus(data), errors, cancellationToken).ConfigureAwait(false);
+            "charging",
+            txn => RazerHeadsetAudioProtocol.GetChargingStatus(txn),
+            RazerHeadsetAudioProtocol.ReadChargingStatus,
+            errors,
+            cancellationToken).ConfigureAwait(false);
         var preset = await TryReadAsync(
-            "EQ preset", RazerAudio25Protocol.GetEqPreset(),
-            data => (byte?)RazerAudio25Protocol.ReadEqPreset(data), errors, cancellationToken).ConfigureAwait(false);
+            "EQ preset",
+            txn => RazerHeadsetAudioProtocol.GetEqPreset(txn),
+            RazerHeadsetAudioProtocol.ReadEqPreset,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var bass = await TryReadAsync(
+            "bass",
+            txn => RazerHeadsetAudioProtocol.GetBass(txn),
+            RazerHeadsetAudioProtocol.ReadBass,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var micMute = await TryReadAsync(
+            "microphone mute",
+            txn => RazerHeadsetAudioProtocol.GetMicMute(txn),
+            RazerHeadsetAudioProtocol.ReadMicMute,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var micVolume = await TryReadAsync(
+            "microphone volume",
+            txn => RazerHeadsetAudioProtocol.GetMicVolume(txn),
+            RazerHeadsetAudioProtocol.ReadMicVolume,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var source = await TryReadAsync(
+            "audio source",
+            txn => RazerHeadsetAudioProtocol.GetAudioSource(txn),
+            RazerHeadsetAudioProtocol.ReadAudioSource,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var noise = await TryReadAsync(
+            "noise suppression",
+            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
+            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+
         IReadOnlyList<byte>? bands = null;
         try
         {
@@ -207,54 +193,39 @@ public sealed class RazerHeadsetAudioService : IAsyncDisposable
             }
         }
 
-        var bass = await TryReadAsync(
-            "bass", RazerAudio25Protocol.GetBass(),
-            data => (byte?)RazerAudio25Protocol.ReadBass(data), errors, cancellationToken).ConfigureAwait(false);
-        var micMute = await TryReadAsync(
-            "microphone mute", RazerAudio25Protocol.GetMicMute(),
-            data => (bool?)RazerAudio25Protocol.ReadMicMute(data), errors, cancellationToken).ConfigureAwait(false);
-        var micVolume = await TryReadAsync(
-            "microphone volume", RazerAudio25Protocol.GetMicVolume(),
-            data => (byte?)RazerAudio25Protocol.ReadMicVolume(data), errors, cancellationToken).ConfigureAwait(false);
-        var source = await TryReadAsync(
-            "audio source", RazerAudio25Protocol.GetAudioSource(),
-            data => (RazerAudioSource?)RazerAudio25Protocol.ReadAudioSource(data), errors, cancellationToken).ConfigureAwait(false);
-        var noise = await TryReadAsync(
-            "noise suppression", RazerAudio25Protocol.GetNoiseSuppression(),
-            data => (bool?)RazerAudio25Protocol.ReadNoiseSuppression(data), errors, cancellationToken).ConfigureAwait(false);
-        var anc = await TryReadAsync(
-            "ANC", RazerAudio25Protocol.GetAnc(),
-            data => RazerAudio25Protocol.ReadAnc(data), errors, cancellationToken).ConfigureAwait(false);
-
-        return new RazerHeadsetAudioState(
-            firmware, battery, charging, preset, bands, bass, micMute, micVolume, source,
-            noise, anc.State, anc.Level, errors);
-    }
-
-    public async Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default)
-    {
-        var previous = RazerAudio25Protocol.ReadEqPreset(
-            await QueryAsync(RazerAudio25Protocol.GetEqPreset(), "read EQ preset", cancellationToken).ConfigureAwait(false));
-        if (previous == preset)
-        {
-            return;
-        }
-
+        RazerAncState? ancState = null;
+        byte? ancLevel = null;
         try
         {
-            await QueryAsync(RazerAudio25Protocol.SetEqPreset(preset), "set EQ preset", cancellationToken).ConfigureAwait(false);
-            var actual = RazerAudio25Protocol.ReadEqPreset(
-                await QueryAsync(RazerAudio25Protocol.GetEqPreset(), "read back EQ preset", cancellationToken).ConfigureAwait(false));
-            if (actual != preset)
-            {
-                throw new InvalidOperationException($"EQ preset readback was 0x{actual:X2}, expected 0x{preset:X2}.");
-            }
+            (ancState, ancLevel) = RazerHeadsetAudioProtocol.ReadAnc(
+                await QueryAsync(txn => RazerHeadsetAudioProtocol.GetAnc(txn), "read ANC", cancellationToken)
+                    .ConfigureAwait(false));
         }
-        catch
+        catch (Exception exception) when (IsExpected(exception))
         {
-            await TryRestoreAsync(RazerAudio25Protocol.SetEqPreset(previous), "restore EQ preset").ConfigureAwait(false);
-            throw;
+            errors.Add($"ANC: {exception.Message}");
         }
+
+        return new RazerHeadsetAudioState(
+            firmware, battery, charging, preset, bands, bass, micMute, micVolume,
+            source, noise, ancState, ancLevel, errors);
+    }
+
+    public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default)
+    {
+        if (preset == 0xFF)
+        {
+            throw new ArgumentOutOfRangeException(nameof(preset));
+        }
+
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetEqPreset(txn),
+            RazerHeadsetAudioProtocol.ReadEqPreset,
+            preset,
+            (value, txn) => RazerHeadsetAudioProtocol.SetEqPreset(txn, value),
+            value => value == preset,
+            "EQ preset",
+            cancellationToken);
     }
 
     public async Task SetEqBandsAsync(
@@ -262,10 +233,10 @@ public sealed class RazerHeadsetAudioService : IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(bands);
-        var tenBand = bands.Count == 10;
-        if (!tenBand && bands.Count != 8)
+        var tenBand = bands.Count == RazerHeadsetAudioProtocol.TenBandCount;
+        if (!tenBand && bands.Count != RazerHeadsetAudioProtocol.EightBandCount)
         {
-            throw new ArgumentException("Equalizer data must contain either 10 or 8 bands.", nameof(bands));
+            throw new ArgumentException("Equalizer data must contain 10 or 8 bands.", nameof(bands));
         }
 
         var previous = await ReadEqBandsRequiredAsync(tenBand, cancellationToken).ConfigureAwait(false);
@@ -277,7 +248,7 @@ public sealed class RazerHeadsetAudioService : IAsyncDisposable
         try
         {
             await QueryAsync(
-                RazerAudio25Protocol.SetEqBands(bands.ToArray(), tenBand: tenBand),
+                txn => RazerHeadsetAudioProtocol.SetEqBands(txn, bands.ToArray()),
                 "set EQ bands",
                 cancellationToken).ConfigureAwait(false);
             var actual = await ReadEqBandsRequiredAsync(tenBand, cancellationToken).ConfigureAwait(false);
@@ -289,208 +260,227 @@ public sealed class RazerHeadsetAudioService : IAsyncDisposable
         catch
         {
             await TryRestoreAsync(
-                RazerAudio25Protocol.SetEqBands(previous.ToArray(), tenBand: tenBand),
+                txn => RazerHeadsetAudioProtocol.SetEqBands(txn, previous.ToArray()),
                 "restore EQ bands").ConfigureAwait(false);
             throw;
         }
     }
 
-    public async Task SetBassAsync(byte level, CancellationToken cancellationToken = default)
+    public Task SetBassAsync(byte level, CancellationToken cancellationToken = default)
     {
         if (level > 100)
         {
             throw new ArgumentOutOfRangeException(nameof(level), "Bass level must be between 0 and 100.");
         }
 
-        var previous = RazerAudio25Protocol.ReadBass(
-            await QueryAsync(RazerAudio25Protocol.GetBass(), "read bass", cancellationToken).ConfigureAwait(false));
-        if (previous == level)
-        {
-            return;
-        }
-
-        try
-        {
-            await QueryAsync(RazerAudio25Protocol.SetBass(level), "set bass", cancellationToken).ConfigureAwait(false);
-            var actual = RazerAudio25Protocol.ReadBass(
-                await QueryAsync(RazerAudio25Protocol.GetBass(), "read back bass", cancellationToken).ConfigureAwait(false));
-            if (actual != level)
-            {
-                throw new InvalidOperationException($"Bass readback was {actual}, expected {level}.");
-            }
-        }
-        catch
-        {
-            await TryRestoreAsync(RazerAudio25Protocol.SetBass(previous), "restore bass").ConfigureAwait(false);
-            throw;
-        }
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetBass(txn),
+            RazerHeadsetAudioProtocol.ReadBass,
+            level,
+            (value, txn) => RazerHeadsetAudioProtocol.SetBass(txn, value),
+            value => value == level,
+            "bass",
+            cancellationToken);
     }
 
-    public async Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default)
-    {
-        var previous = RazerAudio25Protocol.ReadMicMute(
-            await QueryAsync(RazerAudio25Protocol.GetMicMute(), "read microphone mute", cancellationToken).ConfigureAwait(false));
-        if (previous == muted)
-        {
-            return;
-        }
+    public Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetMicMute(txn),
+            RazerHeadsetAudioProtocol.ReadMicMute,
+            muted,
+            (value, txn) => RazerHeadsetAudioProtocol.SetMicMute(txn, value),
+            value => value == muted,
+            "microphone mute",
+            cancellationToken);
 
-        try
-        {
-            await QueryAsync(RazerAudio25Protocol.SetMicMute(muted), "set microphone mute", cancellationToken).ConfigureAwait(false);
-            var actual = RazerAudio25Protocol.ReadMicMute(
-                await QueryAsync(RazerAudio25Protocol.GetMicMute(), "read back microphone mute", cancellationToken).ConfigureAwait(false));
-            if (actual != muted)
-            {
-                throw new InvalidOperationException($"Microphone mute readback was {actual}, expected {muted}.");
-            }
-        }
-        catch
-        {
-            await TryRestoreAsync(RazerAudio25Protocol.SetMicMute(previous), "restore microphone mute").ConfigureAwait(false);
-            throw;
-        }
-    }
-
-    public async Task SetMicVolumeAsync(byte volume, CancellationToken cancellationToken = default)
+    public Task SetMicVolumeAsync(byte volume, CancellationToken cancellationToken = default)
     {
         if (volume > 100)
         {
             throw new ArgumentOutOfRangeException(nameof(volume), "Microphone volume must be between 0 and 100.");
         }
 
-        var previous = RazerAudio25Protocol.ReadMicVolume(
-            await QueryAsync(RazerAudio25Protocol.GetMicVolume(), "read microphone volume", cancellationToken).ConfigureAwait(false));
-        if (previous == volume)
-        {
-            return;
-        }
-
-        try
-        {
-            await QueryAsync(RazerAudio25Protocol.SetMicVolume(volume), "set microphone volume", cancellationToken).ConfigureAwait(false);
-            var actual = RazerAudio25Protocol.ReadMicVolume(
-                await QueryAsync(RazerAudio25Protocol.GetMicVolume(), "read back microphone volume", cancellationToken).ConfigureAwait(false));
-            if (actual != volume)
-            {
-                throw new InvalidOperationException($"Microphone volume readback was {actual}, expected {volume}.");
-            }
-        }
-        catch
-        {
-            await TryRestoreAsync(RazerAudio25Protocol.SetMicVolume(previous), "restore microphone volume").ConfigureAwait(false);
-            throw;
-        }
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetMicVolume(txn),
+            RazerHeadsetAudioProtocol.ReadMicVolume,
+            volume,
+            (value, txn) => RazerHeadsetAudioProtocol.SetMicVolume(txn, value),
+            value => value == volume,
+            "microphone volume",
+            cancellationToken);
     }
 
-    public async Task SetAudioSourceAsync(RazerAudioSource source, CancellationToken cancellationToken = default)
+    public Task SetAudioSourceAsync(RazerAudioSource source, CancellationToken cancellationToken = default)
     {
         if (!Enum.IsDefined(source))
         {
             throw new ArgumentOutOfRangeException(nameof(source));
         }
 
-        var previousValue = RazerAudio25Protocol.ReadAudioSource(
-            await QueryAsync(RazerAudio25Protocol.GetAudioSource(), "read audio source", cancellationToken).ConfigureAwait(false));
-        if (previousValue == (byte)source)
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetAudioSource(txn),
+            RazerHeadsetAudioProtocol.ReadAudioSource,
+            source,
+            (value, txn) => RazerHeadsetAudioProtocol.SetAudioSource(txn, value),
+            value => value == source,
+            "audio source",
+            cancellationToken);
+    }
+
+    public Task SetNoiseSuppressionAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
+            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetNoiseSuppression(txn, value),
+            value => value == enabled,
+            "noise suppression",
+            cancellationToken);
+
+    public async Task SetAncAsync(
+        RazerAncState state,
+        byte level,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(state))
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+        if (level > RazerHeadsetAudioProtocol.TenBandCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(level), "ANC level must be between 0 and 10.");
+        }
+
+        var previous = RazerHeadsetAudioProtocol.ReadAnc(
+            await QueryAsync(txn => RazerHeadsetAudioProtocol.GetAnc(txn), "read ANC", cancellationToken)
+                .ConfigureAwait(false));
+        if (previous.State == state && previous.Level == level)
         {
             return;
         }
 
         try
         {
-            await QueryAsync(RazerAudio25Protocol.SetAudioSource((byte)source), "set audio source", cancellationToken).ConfigureAwait(false);
-            var actual = RazerAudio25Protocol.ReadAudioSource(
-                await QueryAsync(RazerAudio25Protocol.GetAudioSource(), "read back audio source", cancellationToken).ConfigureAwait(false));
-            if (actual != (byte)source)
+            await QueryAsync(
+                txn => RazerHeadsetAudioProtocol.SetAnc(txn, state, level),
+                "set ANC",
+                cancellationToken).ConfigureAwait(false);
+            var actual = RazerHeadsetAudioProtocol.ReadAnc(
+                await QueryAsync(txn => RazerHeadsetAudioProtocol.GetAnc(txn), "read back ANC", cancellationToken)
+                    .ConfigureAwait(false));
+            if (actual.State != state || actual.Level != level)
             {
-                throw new InvalidOperationException($"Audio source readback was {actual}, expected {(byte)source}.");
+                throw new InvalidOperationException(
+                    $"ANC readback was {actual.State}/{actual.Level}, expected {state}/{level}.");
             }
         }
         catch
         {
-            await TryRestoreAsync(RazerAudio25Protocol.SetAudioSource(previousValue), "restore audio source").ConfigureAwait(false);
+            await TryRestoreAsync(
+                txn => RazerHeadsetAudioProtocol.SetAnc(txn, previous.State, previous.Level),
+                "restore ANC").ConfigureAwait(false);
             throw;
         }
     }
 
-    public async Task SetNoiseSuppressionAsync(bool enabled, CancellationToken cancellationToken = default)
+    private async Task WriteAsync<T>(
+        Func<byte, byte[]> readRequest,
+        Func<ReadOnlySpan<byte>, T> parse,
+        T value,
+        Func<T, byte, byte[]> writeRequest,
+        Func<T, bool> matches,
+        string label,
+        CancellationToken cancellationToken)
     {
-        var previous = RazerAudio25Protocol.ReadNoiseSuppression(
-            await QueryAsync(RazerAudio25Protocol.GetNoiseSuppression(), "read noise suppression", cancellationToken).ConfigureAwait(false));
-        if (previous == enabled)
+        var previous = parse(await QueryAsync(readRequest, $"read {label}", cancellationToken).ConfigureAwait(false));
+        if (matches(previous))
         {
             return;
         }
 
         try
         {
-            await QueryAsync(RazerAudio25Protocol.SetNoiseSuppression(enabled), "set noise suppression", cancellationToken).ConfigureAwait(false);
-            var actual = RazerAudio25Protocol.ReadNoiseSuppression(
-                await QueryAsync(RazerAudio25Protocol.GetNoiseSuppression(), "read back noise suppression", cancellationToken).ConfigureAwait(false));
-            if (actual != enabled)
+            await QueryAsync(txn => writeRequest(value, txn), $"set {label}", cancellationToken)
+                .ConfigureAwait(false);
+            var actual = parse(
+                await QueryAsync(readRequest, $"read back {label}", cancellationToken).ConfigureAwait(false));
+            if (!matches(actual))
             {
-                throw new InvalidOperationException($"Noise suppression readback was {actual}, expected {enabled}.");
+                throw new InvalidOperationException($"{label} readback did not match the requested value.");
             }
         }
         catch
         {
-            await TryRestoreAsync(RazerAudio25Protocol.SetNoiseSuppression(previous), "restore noise suppression").ConfigureAwait(false);
+            await TryRestoreAsync(txn => writeRequest(previous, txn), $"restore {label}").ConfigureAwait(false);
             throw;
         }
     }
 
-    private async Task<IReadOnlyList<byte>> ReadEqBandsRequiredAsync(bool tenBand, CancellationToken cancellationToken)
-    {
-        var data = await QueryAsync(RazerAudio25Protocol.GetEqBands(tenBand: tenBand), "read EQ bands", cancellationToken).ConfigureAwait(false);
-        return RazerAudio25Protocol.ReadEqBands(data, tenBand);
-    }
-
-    private async Task<byte[]> QueryAsync(RazerAudio25Command command, string description, CancellationToken cancellationToken)
-    {
-        var response = await _transport.SendAsync(command, cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccess)
-        {
-            throw new InvalidOperationException($"{description} failed with status 0x{(byte)response.Status:X2}.");
-        }
-        return response.Data;
-    }
+    private async Task<byte[]> ReadEqBandsRequiredAsync(bool tenBand, CancellationToken cancellationToken) =>
+        RazerHeadsetAudioProtocol.ReadEqBands(
+            await QueryAsync(
+                txn => RazerHeadsetAudioProtocol.GetEqBands(txn, tenBand),
+                tenBand ? "read 10-band EQ" : "read 8-band EQ",
+                cancellationToken).ConfigureAwait(false),
+            tenBand);
 
     private async Task<T?> TryReadAsync<T>(
-        string description,
-        RazerAudio25Command command,
-        Func<ReadOnlySpan<byte>, T> parser,
+        string label,
+        Func<byte, byte[]> request,
+        Func<ReadOnlySpan<byte>, T> parse,
         List<string> errors,
         CancellationToken cancellationToken)
     {
         try
         {
-            var data = await QueryAsync(command, description, cancellationToken).ConfigureAwait(false);
-            return parser(data);
+            return parse(await QueryAsync(request, $"read {label}", cancellationToken).ConfigureAwait(false));
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            errors.Add($"{description}: {exception.Message}");
-            _diagnostic?.Invoke($"audio25 {description} failed: {exception.Message}");
+            errors.Add($"{label}: {exception.Message}");
             return default;
         }
     }
 
-    private async Task TryRestoreAsync(RazerAudio25Command command, string description)
+    private async Task TryRestoreAsync(Func<byte, byte[]> request, string label)
     {
         try
         {
-            await QueryAsync(command, description, CancellationToken.None).ConfigureAwait(false);
+            await QueryAsync(request, label, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            _diagnostic?.Invoke($"audio25 {description} failed: {exception.Message}");
+            _diagnostic?.Invoke($"headset {label} failed: {exception.Message}");
         }
     }
 
-    private static bool IsExpected(Exception exception) =>
-        exception is Win32Exception or IOException or InvalidDataException or InvalidOperationException or
-            NotSupportedException or ArgumentException;
+    private async Task<byte[]> QueryAsync(
+        Func<byte, byte[]> request,
+        string label,
+        CancellationToken cancellationToken)
+    {
+        var report = request(NextTransactionId());
+        _diagnostic?.Invoke(
+            $"headset {label}: size={report[6]}, class=0x{report[7]:X2}, command=0x{report[8]:X2}");
+        return await _transport.QueryPreparedAsync(
+            _devicePath, report, _deviceWait, cancellationToken).ConfigureAwait(false);
+    }
 
-    public ValueTask DisposeAsync() => _transport.DisposeAsync();
+    private byte NextTransactionId()
+    {
+        if (_transactionId >= 0x1F)
+        {
+            _transactionId = 0;
+        }
+        else
+        {
+            _transactionId++;
+        }
+
+        return _transactionId;
+    }
+
+    private static bool IsExpected(Exception exception) =>
+        exception is IOException or InvalidDataException or InvalidOperationException or
+            NotSupportedException or Win32Exception or UnauthorizedAccessException;
 }

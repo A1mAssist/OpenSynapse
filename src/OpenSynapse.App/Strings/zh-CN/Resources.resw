@@ -2547,6 +2547,23 @@
   <data name="MacroRecordMouseForegroundLabel" xml:space="preserve"><value>相对前台窗口</value></data>
   <data name="MacroRecordDelayModeLabel" xml:space="preserve"><value>延迟</value></data>
   <data name="MacroRecordMouseModeLabel" xml:space="preserve"><value>鼠标轨迹</value></data>
+  <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>
+  <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>
+  <data name="RazerHeadsetPresetMovie" xml:space="preserve"><value>电影</value></data>
+  <data name="RazerHeadsetPresetTreble" xml:space="preserve"><value>高音增强</value></data>
+  <data name="RazerHeadsetPresetMicBoost" xml:space="preserve"><value>麦克风增强</value></data>
+  <data name="RazerHeadsetPresetPodcast" xml:space="preserve"><value>播客</value></data>
+  <data name="RazerHeadsetPresetCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="RazerHeadsetSourceNone" xml:space="preserve"><value>无</value></data>
+  <data name="RazerHeadsetSourceSpdif" xml:space="preserve"><value>光纤</value></data>
+  <data name="RazerHeadsetSourceAux" xml:space="preserve"><value>线路输入</value></data>
+  <data name="RazerHeadsetSourceBluetooth" xml:space="preserve"><value>蓝牙</value></data>
+  <data name="RazerHeadsetSourceUsb" xml:space="preserve"><value>USB</value></data>
+  <data name="RazerHeadsetAncOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerHeadsetAncOn" xml:space="preserve"><value>开启</value></data>
+  <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>环境音</value></data>
+  <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>读取失败，设备没有响应。</value></data>
 </root>
 
 

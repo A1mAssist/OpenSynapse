@@ -6,6 +6,9 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增 18 款 protocol 25 游戏耳机（Nari、Kraken V3/V4、Barracuda、BlackShark V2 Pro、USB 音频控制器等）的音频页：固件、电量、充电状态、EQ 预设与 8/10 段调节、低音、麦克风静音与音量、音频输入源、AI 降噪和 ANC。每次写入都会先读当前值、写完读回校验，失败时自动恢复原值。
+- Added an audio page for the 18 protocol 25 gaming headsets (Nari, Kraken V3/V4, Barracuda, BlackShark V2 Pro, USB audio controllers): firmware, battery, charging state, EQ presets and 8/10-band curves, bass, microphone mute and volume, audio source, AI noise suppression, and ANC. Every write reads the current value first, verifies the readback, and restores the previous value when the device does not accept the change.
+
 - 新增“仅核显（禁用独显）”显示开关。机器级 MSI 安装会注册受保护的 GPU 服务，安装时请求一次管理员权限，之后切换不再弹 UAC；当前用户安装和 Portable 仍回退到逐次 UAC。机器级安装会迁移旧的当前用户版本，保留配置并更新开机启动项。用户配置已迁到独立的 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`，不会再被 MSI 升级清理。
 - Added an integrated-graphics-only display switch. The machine-wide MSI install registers a protected GPU service, asks for administrator permission once during installation, and then switches without UAC; per-user and portable installs still fall back to a UAC prompt per change. The machine-wide install migrates an older per-user install, preserving settings and updating its startup entry. User data now lives in `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, outside the directories removed by MSI upgrades.
 

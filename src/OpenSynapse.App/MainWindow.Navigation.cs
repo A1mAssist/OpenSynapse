@@ -59,6 +59,7 @@ public sealed partial class MainWindow
         OpenRazerDevicePanel.Visibility = device == "openrazer" ? Visibility.Visible : Visibility.Collapsed;
         OpenRazerKrakenPanel.Visibility = device == "kraken" ? Visibility.Visible : Visibility.Collapsed;
         BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
+        HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
         if (device == "blade")
         {
@@ -195,6 +196,11 @@ public sealed partial class MainWindow
                 await _viewModel.SelectBlackSharkAsync(blackShark, _lifetime.Token);
                 UpdateDeviceSelector("blackshark");
                 break;
+            case DeviceSelectorItemKind.HeadsetAudio when first.Source is RazerHeadsetAudioDeviceRowViewModel headsetAudio:
+                SelectDevice("headsetaudio");
+                await _viewModel.SelectHeadsetAudioAsync(headsetAudio, _lifetime.Token);
+                UpdateDeviceSelector("headsetaudio");
+                break;
             default:
                 SelectDevice("none");
                 break;
@@ -221,6 +227,10 @@ public sealed partial class MainWindow
                     item.Source is BlackSharkDeviceRowViewModel blackSharkRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         blackSharkRow.Connection.DevicePath, _viewModel.SelectedBlackShark?.DevicePath),
+                DeviceSelectorItemKind.HeadsetAudio => device == "headsetaudio" &&
+                    item.Source is RazerHeadsetAudioDeviceRowViewModel headsetAudioRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        headsetAudioRow.Connection.DevicePath, _viewModel.SelectedHeadsetAudio?.DevicePath),
                 _ => false,
             };
             item.SetSelectorBackground(isSelected ? selected : transparent);
