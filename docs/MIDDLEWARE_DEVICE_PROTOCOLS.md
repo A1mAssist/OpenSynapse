@@ -899,6 +899,8 @@
 
 设备：`0F1F` RAZER CHROMA ADDRESSABLE RGB CONTROLLER、`0F28` Razer Raptor 27 (165Hz)、`0F2C` Razer Chroma Wireless ARGB Controller、`0F35` RAZER HANBO AIO、`0F3C` RAZER PWM PC FAN CONTROLLER、`0F64` Razer Soma Chroma
 
+> ARGB 帧不走 HID feature report。OpenRazer（pinned `6820f9d`）的 `razer_send_argb_msg` 发的是 325 字节 SET_REPORT：`report_id`（通道 <5 用 `0x04`，≥5 用 `0x84`）+ `channel_1` + `channel_2` + `pad` + `last_idx`（颜色数 −1）+ 320 字节 RGB，`wValue 0x0300`、`wIndex 1`。Windows 的 `HidD_SetFeature` 送不了这个长度，需要 WinUSB 或 Razer 过滤驱动通道；这也是 `0F1F` 目前只能发现、不能写的唯一原因。
+
 | class:cmd | dataSize | 命令 |
 |---|---:|---|
 | `01:02` | 2 | Set Device Mode |

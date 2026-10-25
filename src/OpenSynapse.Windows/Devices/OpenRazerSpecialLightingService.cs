@@ -109,7 +109,7 @@ public sealed class OpenRazerSpecialLightingService
                 !argb && KrakenDevices[group.Key.ProductId].WritesColor,
                 endpoint is null
                     ? argb
-                        ? "ARGB requires a USB control transfer with wValue 0x0300 and wIndex 1; Windows HID transport is not supported."
+                        ? "ARGB uses a 325-byte SET_REPORT frame (report id 0x04 below channel 5, 0x84 from channel 5, wValue 0x0300, wIndex 1) that Windows HID cannot send; it needs a WinUSB or filter-driver channel."
                         : "No available MI_03 37-byte Output Report collection was found."
                     : null));
         }
@@ -127,7 +127,7 @@ public sealed class OpenRazerSpecialLightingService
         _ = colors;
         _ = cancellationToken;
         throw new PlatformNotSupportedException(
-            "ARGB requires an arbitrary USB control transfer and cannot be sent through HidD_SetFeature.");
+            "ARGB needs the 325-byte SET_REPORT frame sent through WinUSB or the Razer filter driver; HidD_SetFeature cannot carry it.");
     }
 
     public async Task SetKrakenLightingAsync(
