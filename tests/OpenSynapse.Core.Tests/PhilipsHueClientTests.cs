@@ -42,6 +42,20 @@ public sealed class PhilipsHueClientTests
     }
 
     [Fact]
+    public async Task BridgeIdentityIsParsed()
+    {
+        const string json = "{\"data\":[{\"metadata\":{\"name\":\"Hue Bridge\"},\"product_data\":{\"model_id\":\"BSB002\"},\"software_version\":\"1.60.1\"}]}";
+        var handler = new FakeHandler((_, _) => Json(json));
+        using var client = new PhilipsHueClient("192.168.1.2", "key-1", handler);
+
+        var bridge = await client.GetBridgeAsync();
+
+        Assert.Equal("Hue Bridge", bridge.Name);
+        Assert.Equal("BSB002", bridge.ModelId);
+        Assert.Equal("1.60.1", bridge.SoftwareVersion);
+    }
+
+    [Fact]
     public async Task LightsAreParsedWithNameStateAndColor()
     {
         var handler = new FakeHandler((_, _) => Json(LightJson(

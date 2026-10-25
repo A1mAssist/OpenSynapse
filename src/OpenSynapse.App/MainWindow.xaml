@@ -1102,7 +1102,7 @@
                       <TextBlock local:Localized.Uid="HueDescription" Text="通过 Hue 桥控制灯光。先按桥上的配对按钮，再点“配对”。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                     <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
-                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" /><TextBlock Text="{Binding BridgeSummary}" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" TextWrapping="Wrap" />
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                       <TextBox Text="{Binding BridgeHost, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" PlaceholderText="192.168.1.2" />
                       <Button Grid.Column="1" local:Localized.Uid="HuePairButton" Content="配对" Click="HuePairClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource PrimaryButtonStyle}" />

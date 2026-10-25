@@ -8,6 +8,8 @@ using System.Text.Json.Nodes;
 
 namespace OpenSynapse.Windows.Lighting;
 
+public sealed record PhilipsHueBridgeInfo(string? Name, string? ModelId, string? SoftwareVersion);
+
 public sealed record PhilipsHueLight(
     string Id,
     string Name,
@@ -107,6 +109,17 @@ public sealed class PhilipsHueClient : IDisposable
         return new PhilipsHuePairingResult(PhilipsHuePairingOutcome.Failed, null, "Unrecognised pairing reply.");
     }
 
+    public async Task<PhilipsHueBridgeInfo> GetBridgeAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await _http.GetAsync("clip/v2/resource/bridge", cancellationToken).ConfigureAwait(false);
+        var text = await ReadAsync(response, "read bridge", cancellationToken).ConfigureAwait(false);
+        var root = JsonNode.Parse(text);
+        var bridge = root?["data"] is JsonArray data && data.Count > 0 ? data[0] : null;
+        return new PhilipsHueBridgeInfo(
+            bridge?["metadata"]?["name"]?.GetValue<string>(),
+            bridge?["product_data"]?["model_id"]?.GetValue<string>(),
+            bridge?["software_version"]?.GetValue<string>());
+    }
     public async Task<IReadOnlyList<PhilipsHueLight>> GetLightsAsync(CancellationToken cancellationToken = default)
     {
         using var response = await _http.GetAsync("clip/v2/resource/light", cancellationToken).ConfigureAwait(false);
