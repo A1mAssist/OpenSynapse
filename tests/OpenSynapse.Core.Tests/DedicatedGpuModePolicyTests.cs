@@ -78,6 +78,19 @@ public sealed class DedicatedGpuModePolicyTests
     }
 
     [Fact]
+    public void ADisabledDiscreteGpuRemainsRecoverableEvenIfTheRouteLooksStale()
+    {
+        var snapshot = Snapshot() with
+        {
+            DiscreteGpuEnabled = false,
+            InternalDisplayUsesDiscreteGpu = true,
+        };
+
+        Assert.True(DedicatedGpuModePolicy.IsSupported(snapshot));
+        Assert.Equal(DedicatedGpuModeBlockReason.None, DedicatedGpuModePolicy.GetBlockReason(snapshot));
+    }
+
+    [Fact]
     public void ADisabledDiscreteGpuRemainsRecoverableWhenTopologyCannotBeRead()
     {
         var snapshot = Snapshot() with
