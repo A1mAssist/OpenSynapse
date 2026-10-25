@@ -123,6 +123,8 @@ public sealed class OpenRazerDeviceCatalog
     public static OpenRazerDeviceCatalog BuiltIn => BuiltInValue.Value;
     public IReadOnlyList<OpenRazerDeviceDefinition> Devices { get; }
 
+    internal static bool IsViperV3ProSe(ushort productId) => productId is 0x00DE or 0x00DF;
+
     public OpenRazerDeviceDefinition? Find(ushort vendorId, ushort productId) =>
         vendorId == OpenRazerDeviceDefinition.VendorId
             ? _byProductId.GetValueOrDefault(productId)
@@ -326,6 +328,35 @@ public sealed class OpenRazerDeviceCatalog
                 sibling.DefaultStorage,
                 sibling.DefaultLedZone,
                 new Dictionary<string, IReadOnlyList<OpenRazerCommandStep>>()));
+        }
+
+        // Upstream supports 00DE/00DF as Viper V3 Pro SE aliases. Windows exposes their
+        // feature report without a report-id byte, so the transport handles that separately.
+        AddViperV3ProSeAlias(0x00C0, 0x00DE, "Razer Viper V3 Pro SE (Wired)");
+        AddViperV3ProSeAlias(0x00C1, 0x00DF, "Razer Viper V3 Pro SE (Wireless)");
+
+        void AddViperV3ProSeAlias(ushort siblingId, ushort productId, string displayName)
+        {
+            if (!devices.TryGetValue(siblingId, out var sibling) ||
+                devices.ContainsKey(productId))
+            {
+                return;
+            }
+
+            devices.Add(productId, new OpenRazerDeviceDefinition(
+                productId,
+                displayName,
+                sibling.Category,
+                sibling.SourceCapabilities,
+                sibling.MaximumDpi,
+                sibling.PollingRates,
+                sibling.MatrixDimensions,
+                sibling.DeviceWait,
+                sibling.Transactions,
+                sibling.BuilderArgumentPrefixes,
+                sibling.DefaultStorage,
+                sibling.DefaultLedZone,
+                sibling.CommandSequences));
         }
     }
 

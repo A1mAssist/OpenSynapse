@@ -42,22 +42,25 @@ public sealed class OpenRazerDeviceService
     public async Task<IReadOnlyList<OpenRazerDeviceConnection>> DiscoverAsync(
         CancellationToken cancellationToken = default)
     {
-        var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
-            OpenRazerDeviceDefinition.VendorId,
-            RazerFeatureReport.Length,
-            cancellationToken,
-            LogObservedInterface).ConfigureAwait(false);
+        var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
+            OpenRazerDeviceDefinition.VendorId, cancellationToken, LogObservedInterface).ConfigureAwait(false);
         var results = new List<OpenRazerDeviceConnection>();
         foreach (var group in interfaces
             .Where(item => _catalog.Find(item.VendorId, item.ProductId) is not null)
+            .Where(item => item.FeatureReportByteLength == RazerFeatureReport.Length ||
+                (OpenRazerDeviceCatalog.IsViperV3ProSe(item.ProductId) &&
+                 item.FeatureReportByteLength == RazerFeatureReport.OpenRazerLogicalLength))
             .GroupBy(item => (item.ProductId, item.PhysicalDeviceKey))
             .OrderBy(group => group.Key.ProductId)
             .ThenBy(group => group.Key.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase))
         {
             var definition = _catalog.Find(OpenRazerDeviceDefinition.VendorId, group.Key.ProductId)!;
-            var candidates = group.ToArray();
+            var candidates = group
+                .OrderBy(item => OpenRazerDeviceCatalog.IsViperV3ProSe(item.ProductId) &&
+                                 item.FeatureReportByteLength == RazerFeatureReport.OpenRazerLogicalLength ? 0 : 1)
+                .ToArray();
             WriteDiagnostic(definition.ProductId,
-                $"scan found {candidates.Length} matching 91-byte HID collection(s)");
+                $"scan found {candidates.Length} matching HID collection(s)");
             var available = candidates.Where(candidate => candidate.Access == DeviceAccessState.Available).ToArray();
             if (available.Length == 0)
             {
@@ -65,7 +68,7 @@ public sealed class OpenRazerDeviceService
                     OpenRazerEndpointState.BusyOrUnavailable,
                     // Name the rejected collections: a wireless mouse often leaves a wired
                     // collection enumerated whose descriptor does not match, and "busy" hides why.
-                    $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
+                    $"No usable HID control collection ({DescribeRejected(candidates)})."));
                 continue;
             }
 

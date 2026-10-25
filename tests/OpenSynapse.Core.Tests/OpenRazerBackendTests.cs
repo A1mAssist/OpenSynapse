@@ -54,9 +54,9 @@ public sealed class OpenRazerBackendTests
     {
         var catalog = OpenRazerDeviceCatalog.BuiltIn;
 
-        // 254 upstream entries plus the two locally admitted DeathAdder 2000 probes.
-        Assert.Equal(256, catalog.Devices.Count);
-        Assert.Equal(256, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
+        // 254 upstream entries plus two DeathAdder probes and two Viper V3 Pro SE aliases.
+        Assert.Equal(258, catalog.Devices.Count);
+        Assert.Equal(258, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
         Assert.DoesNotContain(catalog.Devices, device => device.ProductId is 0x00B8 or 0x02C6);
         Assert.Null(catalog.Find(0x1234, catalog.Devices[0].ProductId));
         Assert.All(catalog.Devices, device =>
@@ -65,6 +65,70 @@ public sealed class OpenRazerBackendTests
             Assert.Equal(device.SourceCapabilities.Count, device.SourceCapabilities.Distinct(StringComparer.Ordinal).Count());
             Assert.Empty(device.Transactions.Keys.Intersect(device.CommandSequences.Keys, StringComparer.Ordinal));
         });
+    }
+
+    [Theory]
+    [InlineData(0x00DE, 0x00C0, "Razer Viper V3 Pro SE (Wired)")]
+    [InlineData(0x00DF, 0x00C1, "Razer Viper V3 Pro SE (Wireless)")]
+    public void ViperV3ProSeAliasesInheritTheV3ProProtocol(
+        ushort productId,
+        ushort siblingProductId,
+        string displayName)
+    {
+        var catalog = OpenRazerDeviceCatalog.BuiltIn;
+        var alias = catalog.Find(0x1532, productId);
+        var sibling = catalog.Find(0x1532, siblingProductId);
+
+        Assert.NotNull(alias);
+        Assert.NotNull(sibling);
+        Assert.Equal(displayName, alias!.DisplayName);
+        Assert.Equal(sibling!.Category, alias.Category);
+        Assert.Equal(sibling.MaximumDpi, alias.MaximumDpi);
+        Assert.Equal(sibling.PollingRates, alias.PollingRates);
+        Assert.Equal(
+            sibling.Transactions.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray(),
+            alias.Transactions.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray());
+        Assert.Equal(
+            sibling.BuilderArgumentPrefixes.Keys.OrderBy(key => key, StringComparer.Ordinal),
+            alias.BuilderArgumentPrefixes.Keys.OrderBy(key => key, StringComparer.Ordinal));
+        Assert.Equal(
+            sibling.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal),
+            alias.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal));
+        Assert.Equal(0x3F, alias.GetRequiredTransaction("razer_chroma_misc_get_battery_level"));
+    }
+
+    [Fact]
+    public void OpenRazerLogicalReportsStripAndRestoreTheZeroReportId()
+    {
+        var request = RazerFeatureReport.CreateRequest(0x1F, 0x02, 0x07, 0x80, new byte[] { 0x00 });
+
+        var logical = RazerFeatureReport.ToOpenRazerLogicalReport(request);
+        var restored = RazerFeatureReport.FromOpenRazerLogicalReport(logical);
+
+        Assert.Equal(RazerFeatureReport.OpenRazerLogicalLength, logical.Length);
+        Assert.Equal(request[1..], logical);
+        Assert.Equal(request, restored);
+    }
+
+    [Fact]
+    public void OpenRazerLogicalResponseValidatesAfterNormalization()
+    {
+        var request = RazerFeatureReport.CreateRequest(0x1F, 0x02, 0x07, 0x80, new byte[] { 0x00 });
+        var logicalResponse = RazerFeatureReport.ToOpenRazerLogicalReport(request).ToArray();
+        logicalResponse[0] = 0x02;
+
+        var normalized = RazerFeatureReport.FromOpenRazerLogicalReport(logicalResponse);
+
+        Assert.True(RazerFeatureReport.Matches(request, normalized));
+    }
+
+    [Theory]
+    [InlineData(@"\\?\hid#vid_1532&pid_00df&mi_00#test", true)]
+    [InlineData(@"\\?\hid#vid_1532&pid_00de&mi_00#test", true)]
+    [InlineData(@"\\?\hid#vid_1532&pid_00c1&mi_00#test", false)]
+    public void OnlyTheViperV3ProSeUsesTheLogicalReportTransport(string devicePath, bool expected)
+    {
+        Assert.Equal(expected, RazerFeatureTransport.UsesOpenRazerLogicalReport(devicePath));
     }
 
     [Theory]

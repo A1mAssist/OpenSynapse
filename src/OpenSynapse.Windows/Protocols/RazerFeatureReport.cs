@@ -62,6 +62,30 @@ public static class RazerFeatureReport
         return windowsReport;
     }
 
+    internal static byte[] ToOpenRazerLogicalReport(ReadOnlySpan<byte> report)
+    {
+        if (report.Length != Length || report[0] != 0)
+        {
+            throw new ArgumentException("A zero-report-id Razer report must be 91 bytes with a zero first byte.", nameof(report));
+        }
+
+        return report[1..].ToArray();
+    }
+
+    internal static byte[] FromOpenRazerLogicalReport(ReadOnlySpan<byte> report)
+    {
+        if (report.Length != OpenRazerLogicalLength)
+        {
+            throw new ArgumentException(
+                $"OpenRazer logical reports must be {OpenRazerLogicalLength} bytes.",
+                nameof(report));
+        }
+
+        var windowsReport = new byte[Length];
+        report.CopyTo(windowsReport.AsSpan(1));
+        return windowsReport;
+    }
+
     internal static void ValidatePreparedStarlightRequest(ReadOnlySpan<byte> report)
     {
         ValidatePreparedRequest(report);
