@@ -56,13 +56,17 @@ public sealed class Blade028CProbeTests
     }
 
     [Fact]
-    public void TheBlade14_2022ExposesOnlyItsOfficialPerformanceModes()
+    public void TheBlade14_2022ExposesTheOfficialModesPlusTheSupportedExtraMode()
     {
         const ushort productId = 0x028C;
         Assert.Equal(
-            [BladePerformanceMode.Balanced, BladePerformanceMode.Silent, BladePerformanceMode.Custom],
+            [
+                BladePerformanceMode.Balanced,
+                BladePerformanceMode.Silent,
+                BladePerformanceMode.Custom,
+                BladePerformanceMode.Performance,
+            ],
             BladeModelCapabilities.PerformanceModesFor(productId));
-        Assert.DoesNotContain(BladePerformanceMode.Performance, BladeModelCapabilities.PerformanceModesFor(productId));
 
         // Other Blade models keep the generic protocol list.
         Assert.Contains(BladePerformanceMode.Performance, BladeModelCapabilities.PerformanceModesFor(0x02C6));
