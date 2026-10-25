@@ -362,13 +362,11 @@ Catalog presence does not mean every control has been physically tested on every
 
 ## Devices not yet supported
 
-Some devices have a confirmed hardware protocol but are not wired into OpenSynapse yet. Their command sets, command numbers, and payload lengths are recorded in the [middleware device protocol reference](MIDDLEWARE_DEVICE_PROTOCOLS.md), grouped into 33 command profiles covering 119 products.
+Every device whose own handler exposes commands now has a page, with one exception: Philips Hue (0x0301) is a network bridge rather than a HID device, so it needs its own network integration and a physical bridge.
 
-The three highest-value groups:
+Wireless mice such as the Viper V4 Pro use protocol 30 over Bluetooth LE instead of the 91-byte feature report. The channel is documented in the [BLE protocol 30 reference](PROTOCOL30_BLE.zh-CN.md): GATT UUIDs, the 8-byte request and 20-byte reply headers, polling rates, DPI payloads, and the connection and retry rules. The protocol and a service with read-back verification live in `RazerBleProtocol30`, `RazerBleSession` and `RazerBleDeviceService`; the page that surfaces them still needs a Bluetooth-connected mouse for acceptance.
 
-- **Audio peripherals** (Kraken V3/V4, Nari, Barracuda, BlackShark V2 Pro, Nommo V2, Leviathan V2 Pro, and 12 more): one shared profile of 135 commands covering equalizer, bass, AI noise suppression, microphone compressor/de-esser/reverb/limiter, sidetone, and input source.
-- **2026 keyboards** (Huntsman V3 8KHz series, BlackWidow V4 variants, Reclusa): shared OBM key mapping and matrix lighting.
-- **Desktop peripherals** (laptop cooling pad, PWM fan controller, monitor stands, docks, ARGB controllers): shared thermal and lighting commands.
+
 
 The protocol evidence comes from static analysis of the Synapse middleware and only covers commands that appear in a product's own handler. A write still needs capability reads, a read-back, and a recovery path.
 The Blade 16 (2026) and Blade 18 (2026) now have standard OpenRazer catalogue lighting entries, but their telemetry, fan, performance, and MUX controls still need a dedicated Blade manifest.
