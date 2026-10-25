@@ -1593,7 +1593,23 @@
   <data name="BehaviorSettingError" xml:space="preserve"><value>快捷键与通知设置：{0}</value><comment>快捷键与通知设置：{0}</comment></data>
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>设置</value><comment>设置导航项</comment></data>
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>设置</value><comment>设置页面标题</comment></data>
-  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>管理 OpenSynapse 的启动、通知、语言和更新。</value><comment>设置页面说明</comment></data>
+  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>管理 OpenSynapse 的启动、显示、通知、语言和更新。</value><comment>设置页面说明</comment></data>
+  <data name="DedicatedGpuModeTitle.Text" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式标题</comment></data>
+  <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>关闭 NVIDIA 独显，让系统和应用只使用核显。切换需要管理员权限；外接屏可能无画面。</value><comment>仅核显模式说明</comment></data>
+  <data name="DedicatedGpuModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式开关</comment></data>
+  <data name="DedicatedGpuModeStatusInactive" xml:space="preserve"><value>独显当前已启用。</value><comment>仅核显模式关闭状态</comment></data>
+  <data name="DedicatedGpuModeStatusActive" xml:space="preserve"><value>独显已停用，系统仅使用核显。</value><comment>仅核显模式开启状态</comment></data>
+  <data name="DedicatedGpuModeStatusApplying" xml:space="preserve"><value>正在切换，请在 UAC 提示中确认。</value><comment>仅核显模式切换中</comment></data>
+  <data name="DedicatedGpuModeStatusSuccess" xml:space="preserve"><value>切换已完成。</value><comment>仅核显模式切换成功</comment></data>
+  <data name="DedicatedGpuModeStatusRestartRequired" xml:space="preserve"><value>切换已完成；重启后完全生效。</value><comment>仅核显模式需要重启</comment></data>
+  <data name="DedicatedGpuModeStatusCancelled" xml:space="preserve"><value>已取消，未做任何改动。</value><comment>仅核显模式取消 UAC</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedExternal" xml:space="preserve"><value>检测到外接显示器。拔掉后可以切换，避免外接屏失去画面。</value><comment>外接屏阻止切换</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedDisplay" xml:space="preserve"><value>无法确认内置屏幕由核显驱动，暂不提供切换。</value><comment>显示拓扑无法确认</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedInternal" xml:space="preserve"><value>内置屏幕由独显驱动，此机型不支持此开关。</value><comment>内屏由独显驱动</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedUnsupported" xml:space="preserve"><value>未检测到可安全切换的核显与独显组合。</value><comment>硬件组合不支持</comment></data>
+  <data name="DedicatedGpuModeStatusNoDevice" xml:space="preserve"><value>未找到 NVIDIA 独显。</value><comment>未找到独显</comment></data>
+  <data name="DedicatedGpuModeStatusFailed" xml:space="preserve"><value>切换失败（Windows 返回 {0}）。</value><comment>仅核显模式切换失败</comment></data>
+  <data name="DedicatedGpuModeError" xml:space="preserve"><value>显卡模式设置：{0}</value><comment>仅核显模式异常</comment></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>关于 OpenSynapse</value><comment>设置页关于入口标题</comment></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>查看版本、项目主页和许可信息。</value><comment>设置页关于入口说明</comment></data>
   <data name="SettingsAboutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>打开关于 OpenSynapse</value><comment>打开关于辅助功能名称</comment></data>

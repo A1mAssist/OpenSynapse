@@ -234,6 +234,10 @@ public sealed partial class MainWindow
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
         UpdatePerformanceSamplingState();
         UpdateChromaRestStatusTimer();
+        if (SettingsPage.Visibility == Visibility.Visible)
+        {
+            RefreshDedicatedGpuMode();
+        }
         if (DiagnosticsPage.Visibility == Visibility.Visible)
         {
             // The rebuild is skipped while this page is hidden, so entering it must refresh

@@ -1,5 +1,6 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Windows.Lifecycle;
 using Velopack;
 using Velopack.Locators;
 using Velopack.Windows;
@@ -11,6 +12,12 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        if (WindowsDedicatedGpuMode.TryRunElevatedCommand(args) is int helperExitCode)
+        {
+            Environment.Exit(helperExitCode);
+            return;
+        }
+
         VelopackApp.Build()
             .SetAutoApplyOnStartup(false)
             .OnAfterUpdateFastCallback(_ => PreserveExistingShortcuts())

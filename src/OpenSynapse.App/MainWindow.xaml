@@ -762,7 +762,7 @@
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <StackPanel Spacing="5">
                   <TextBlock local:Localized.Uid="SettingsPageTitle" Text="设置" Style="{StaticResource PageTitleStyle}" />
-                  <TextBlock local:Localized.Uid="SettingsPageDescription" Text="管理 OpenSynapse 的启动、通知、语言和更新。" Foreground="{StaticResource MutedBrush}" />
+                  <TextBlock local:Localized.Uid="SettingsPageDescription" Text="管理 OpenSynapse 的启动、显示、通知、语言和更新。" Foreground="{StaticResource MutedBrush}" />
                 </StackPanel>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="14">
@@ -775,6 +775,18 @@
                       <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_4ED618F72C" Text="静默启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_E40B74CC08" Text="开机启动时仅显示托盘图标。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                       <ToggleSwitch local:Localized.Uid="SilentStartupToggle" Grid.Column="1" IsOn="{Binding IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="静默启动" />
                     </Grid>
+                  </StackPanel>
+                </Border>
+                <Border x:Name="DedicatedGpuModeCard" Style="{StaticResource CardStyle}" Padding="16" Visibility="Collapsed">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="DedicatedGpuModeTitle" Text="仅核显（禁用独显）" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="DedicatedGpuModeDescription" Text="关闭 NVIDIA 独显，让系统和应用只使用核显。切换需要管理员权限；外接屏可能无画面。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="DedicatedGpuModeToggle" x:Name="DedicatedGpuModeToggle" Grid.Column="1" Toggled="DedicatedGpuModeToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="仅核显（禁用独显）" />
+                    </Grid>
+                    <TextBlock x:Name="DedicatedGpuModeStatusText" Text="正在读取显卡状态…" FontFamily="Cascadia Mono,Consolas" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">

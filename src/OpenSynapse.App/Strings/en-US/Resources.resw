@@ -1233,7 +1233,23 @@
   <data name="BehaviorSettingError" xml:space="preserve"><value>Shortcut and notification settings: {0}</value></data>
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>Settings</value></data>
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>Settings</value></data>
-  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>Manage OpenSynapse startup, notifications, language, and updates.</value></data>
+  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>Manage OpenSynapse startup, display, notifications, language, and updates.</value></data>
+  <data name="DedicatedGpuModeTitle.Text" xml:space="preserve"><value>Integrated graphics only (disable discrete GPU)</value></data>
+  <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>Turn off the NVIDIA GPU so Windows and apps use integrated graphics only. Switching asks for administrator permission; external displays may go dark.</value></data>
+  <data name="DedicatedGpuModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Integrated graphics only</value></data>
+  <data name="DedicatedGpuModeStatusInactive" xml:space="preserve"><value>The discrete GPU is enabled.</value></data>
+  <data name="DedicatedGpuModeStatusActive" xml:space="preserve"><value>The discrete GPU is disabled; Windows is using integrated graphics only.</value></data>
+  <data name="DedicatedGpuModeStatusApplying" xml:space="preserve"><value>Switching. Confirm the UAC prompt.</value></data>
+  <data name="DedicatedGpuModeStatusSuccess" xml:space="preserve"><value>The switch is complete.</value></data>
+  <data name="DedicatedGpuModeStatusRestartRequired" xml:space="preserve"><value>The switch is complete. Restart to finish.</value></data>
+  <data name="DedicatedGpuModeStatusCancelled" xml:space="preserve"><value>Cancelled. Nothing was changed.</value></data>
+  <data name="DedicatedGpuModeStatusBlockedExternal" xml:space="preserve"><value>An external display is connected. Unplug it before switching so it does not lose its picture.</value></data>
+  <data name="DedicatedGpuModeStatusBlockedDisplay" xml:space="preserve"><value>Could not confirm that the built-in display is driven by integrated graphics, so switching is unavailable.</value></data>
+  <data name="DedicatedGpuModeStatusBlockedInternal" xml:space="preserve"><value>The built-in display is driven by the discrete GPU; this switch is not offered on this model.</value></data>
+  <data name="DedicatedGpuModeStatusBlockedUnsupported" xml:space="preserve"><value>No safely switchable integrated and discrete GPU pair was found.</value></data>
+  <data name="DedicatedGpuModeStatusNoDevice" xml:space="preserve"><value>No NVIDIA discrete GPU was found.</value></data>
+  <data name="DedicatedGpuModeStatusFailed" xml:space="preserve"><value>The switch failed (Windows returned {0}).</value></data>
+  <data name="DedicatedGpuModeError" xml:space="preserve"><value>GPU mode: {0}</value></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>About OpenSynapse</value></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>View the version, project page, and license information.</value></data>
   <data name="SettingsAboutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Open About OpenSynapse</value></data>
