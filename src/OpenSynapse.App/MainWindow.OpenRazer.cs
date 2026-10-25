@@ -43,6 +43,9 @@ public sealed partial class MainWindow
             case RazerChromaDeviceRowViewModel:
                 ChromaSelectorClick(sender, e);
                 break;
+            case RazerBleDeviceRowViewModel:
+                BleSelectorClick(sender, e);
+                break;
         }
     }
 

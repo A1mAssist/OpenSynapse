@@ -2159,6 +2159,9 @@
   <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>Breathing</value></data>
   <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
   <data name="RazerMicrophoneCategory" xml:space="preserve"><value>Microphone</value></data>
+  <data name="BleChargingFailed" xml:space="preserve"><value>Charging failed</value></data>
+  <data name="BleChargingLimit" xml:space="preserve"><value>Charging limit reached</value></data>
+  <data name="BleIdentity" xml:space="preserve"><value>BLE · protocol 30</value></data>
 </root>
 
 
