@@ -80,13 +80,25 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
 
     public RazerHeadsetAudioViewModel(
         RazerHeadsetAudioConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        OpenRazerKrakenViewModel? lighting = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
+        Lighting = lighting;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>
+    /// Some Kraken models expose their 37-byte lighting on a second collection. Those
+    /// devices get one card that carries both the audio settings and that lighting.
+    /// </summary>
+    public OpenRazerKrakenViewModel? Lighting { get; }
+
+    public Microsoft.UI.Xaml.Visibility LightingVisibility => Lighting is null
+        ? Microsoft.UI.Xaml.Visibility.Collapsed
+        : Microsoft.UI.Xaml.Visibility.Visible;
 
     public string Name => _connection.Name;
     public string CategoryText => AppStrings.Text(

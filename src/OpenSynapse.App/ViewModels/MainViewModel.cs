@@ -50,6 +50,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly OpenRazerDeviceService? _openRazerDeviceService;
     private readonly OpenRazerChromaFrameSink? _openRazerChromaFrameSink;
     private readonly OpenRazerSpecialLightingService? _openRazerSpecialLightingService;
+    private IReadOnlyList<OpenRazerSpecialLightingConnection> _krakenConnections = [];
     private CancellationTokenSource? _openRazerSelectionCancellation;
     // A device whose mode was already repaired must not be rewritten on every device-tree
     // change; three HID round trips at the 31 ms device wait is not free.

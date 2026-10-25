@@ -71,8 +71,15 @@ public sealed partial class MainViewModel
         }
 
         _selectedHeadsetAudioDevice = row;
+        OpenRazerKrakenViewModel? lighting = null;
+        if (_openRazerSpecialLightingService is not null &&
+            _krakenConnections.FirstOrDefault(item => item.ProductId == row.Connection.ProductId) is { } kraken)
+        {
+            lighting = new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, kraken);
+        }
+
         SelectedHeadsetAudio = new RazerHeadsetAudioViewModel(
-            row.Connection, message => _diagnosticLog.TryWrite("headset-audio", message));
+            row.Connection, message => _diagnosticLog.TryWrite("headset-audio", message), lighting);
         await SelectedHeadsetAudio.LoadAsync(cancellationToken);
     }
 }

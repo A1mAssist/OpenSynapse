@@ -70,6 +70,13 @@ public sealed class OpenRazerSpecialLightingService
             [0x0560] = Kylie("Razer Kraken Kitty V2"),
         }.ToFrozenDictionary();
 
+    /// <summary>
+    /// Headsets that already own an audio page keep their 37-byte lighting there, so the
+    /// lighting discovery must not emit a second, lighting-only row for the same device.
+    /// </summary>
+    public static bool IsMergedIntoAudioPage(ushort productId) =>
+        RazerHeadsetAudioService.IsSupported(productId);
+
     private readonly OpenRazerHidReportTransport _transport = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
