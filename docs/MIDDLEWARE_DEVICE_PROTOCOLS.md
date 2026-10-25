@@ -22,6 +22,7 @@
 - 只收录出现在产品**自身 handler** 里的命令。共享设备类库（`rzDevice25`、`rzDevice30` 等）里定义的命令不算——库里定义了不代表这台设备支持。
 - 命令存在不等于硬件支持。写入前仍需读能力位、写后读回、准备恢复路径。
 - `dataSize` 是从命令常量推出的上限，实际响应可能更短。
+- 不是所有功能都走 HID。中间件把这些交给原生 DLL：Philips Hue 的桥发现与配对（`DiscoverBridges` / `PairBridge` / `GetConnectedBridgeInfo`）、THX 音效里的侧音（sidetone）、麦克风压缩器、齿音消除、混响、限制器、HRTF。这类条目即使出现在 profile 表里，也没有可解析的报文，不能按 HID 命令实现。
 
 ## 设备与 profile
 
@@ -3492,6 +3493,8 @@
 ### P31 — 1 设备 / 40 命令
 
 设备：`0301` RAZER PHILIPS HUE
+
+> 这一组不是 Hue 的真实报文。`0301` 的 bundle 里只有 Philips 原生 DLL 的调用壳（`philipsEngineManager` → `callDLLApi`），下表是共享鼠标库被一并打包进该 bundle 后产生的噪声，不要据此认为 Hue 有 HID 命令。
 
 | class:cmd | dataSize | 命令 |
 |---|---:|---|
