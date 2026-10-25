@@ -60,6 +60,10 @@ public sealed partial class MainWindow
         OpenRazerKrakenPanel.Visibility = device == "kraken" ? Visibility.Visible : Visibility.Collapsed;
         BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
+        if (device == "blade")
+        {
+            RefreshDedicatedGpuMode();
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
@@ -234,7 +238,8 @@ public sealed partial class MainWindow
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
         UpdatePerformanceSamplingState();
         UpdateChromaRestStatusTimer();
-        if (SettingsPage.Visibility == Visibility.Visible)
+        if (DevicesPage.Visibility == Visibility.Visible &&
+            BladeDevicePanel.Visibility == Visibility.Visible)
         {
             RefreshDedicatedGpuMode();
         }

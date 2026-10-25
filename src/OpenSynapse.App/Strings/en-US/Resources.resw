@@ -1233,7 +1233,7 @@
   <data name="BehaviorSettingError" xml:space="preserve"><value>Shortcut and notification settings: {0}</value></data>
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>Settings</value></data>
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>Settings</value></data>
-  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>Manage OpenSynapse startup, display, notifications, language, and updates.</value></data>
+  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>Manage OpenSynapse startup, notifications, language, and updates.</value></data>
   <data name="DedicatedGpuModeTitle.Text" xml:space="preserve"><value>Integrated graphics only (disable discrete GPU)</value></data>
   <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>Turn off the NVIDIA GPU so Windows and apps use integrated graphics only. Switching asks for administrator permission; external displays may go dark.</value></data>
   <data name="DedicatedGpuModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Integrated graphics only</value></data>
