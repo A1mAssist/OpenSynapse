@@ -2172,6 +2172,8 @@
   <data name="HuePairFailed" xml:space="preserve"><value>Pairing failed.</value></data>
   <data name="HuePairFirst" xml:space="preserve"><value>Pair the bridge first.</value></data>
   <data name="HueLightCount" xml:space="preserve"><value>Loaded {0} lights.</value></data>
+  <data name="HueColorLabel" xml:space="preserve"><value>Color</value></data>
+  <data name="HueApplyColorButton" xml:space="preserve"><value>Apply color</value></data>
 </root>
 
 

@@ -2584,6 +2584,8 @@
   <data name="HuePairFailed" xml:space="preserve"><value>配对失败。</value></data>
   <data name="HuePairFirst" xml:space="preserve"><value>需要先完成配对。</value></data>
   <data name="HueLightCount" xml:space="preserve"><value>已读取 {0} 盏灯。</value></data>
+  <data name="HueColorLabel" xml:space="preserve"><value>颜色</value></data>
+  <data name="HueApplyColorButton" xml:space="preserve"><value>应用颜色</value></data>
 </root>
 
 

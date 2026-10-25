@@ -1120,6 +1120,14 @@
                         </DataTemplate>
                       </ListView.ItemTemplate>
                     </ListView>
+                    <StackPanel Spacing="6">
+                      <TextBlock local:Localized.Uid="HueColorLabel" Text="颜色" Style="{StaticResource MetricLabelStyle}" />
+                      <Grid ColumnDefinitions="180,*,Auto" ColumnSpacing="12">
+                        <ComboBox ItemsSource="{Binding Lights}" SelectedItem="{Binding SelectedColorLight, Mode=TwoWay}" DisplayMemberPath="Name" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                        <ColorPicker Grid.Column="1" Color="{Binding HueColor, Mode=TwoWay}" IsAlphaEnabled="False" IsColorChannelTextInputVisible="False" IsColorSpectrumVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="240" HorizontalAlignment="Left" />
+                        <Button Grid.Column="2" local:Localized.Uid="HueApplyColorButton" Content="应用颜色" Click="HueApplyColorClick" IsEnabled="{Binding CanApplyColor}" Style="{StaticResource OpenRazerSaveButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>
+                    </StackPanel>
                   </StackPanel>
                 </Border>
               </StackPanel>
