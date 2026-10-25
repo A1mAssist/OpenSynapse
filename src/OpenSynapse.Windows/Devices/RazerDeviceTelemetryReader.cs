@@ -512,14 +512,21 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         try
         {
             await EnsureBladeMaxFanOffBeforeLeavingCustomAsync(blade, mode, cancellationToken);
-            await WriteBladeThermalZoneAsync(blade, 0x01, mode, original.FanMode, cancellationToken);
-            await WriteBladeThermalZoneAsync(blade, 0x02, mode, original.FanMode, cancellationToken);
+
+            // 028C manual fan is only acted on in Custom. Leaving Custom must hand the
+            // fans back to firmware automatic instead of carrying a stale manual flag.
+            var fanMode = BladeModelCapabilities.FixedFanRequiresCustomMode(blade.Descriptor.ProductId) &&
+                mode != BladePerformanceMode.Custom
+                    ? BladeFanMode.Automatic
+                    : original.FanMode;
+            await WriteBladeThermalZoneAsync(blade, 0x01, mode, fanMode, cancellationToken);
+            await WriteBladeThermalZoneAsync(blade, 0x02, mode, fanMode, cancellationToken);
 
             var actual = await ReadBladeThermalStateAsync(blade, cancellationToken);
-            if (actual.PerformanceMode != mode || actual.FanMode != original.FanMode)
+            if (actual.PerformanceMode != mode || actual.FanMode != fanMode)
             {
                 throw new InvalidOperationException(
-                    $"Performance mode readback mismatch: wrote {mode} / {original.FanMode}, read {actual.PerformanceMode} / {actual.FanMode}.");
+                    $"Performance mode readback mismatch: wrote {mode} / {fanMode}, read {actual.PerformanceMode} / {actual.FanMode}.");
             }
 
             return actual.PerformanceMode;
@@ -616,6 +623,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         {
             throw new InvalidOperationException("Fixed fan control is not admitted for this Blade model.");
         }
+        if (mode == BladeFanMode.Manual)
+        {
+            ValidateModelFanTargetRpm(blade, cpuTargetRpm!.Value);
+            ValidateModelFanTargetRpm(blade, gpuTargetRpm!.Value);
+        }
 
         var original = await ReadBladeFanTransactionStateAsync(blade, cancellationToken, readTachometers: true);
         var actual = await SetBladeFanTargetsCoreAsync(
@@ -685,29 +697,55 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     {
         try
         {
-            if (writeTargets)
-            {
-                await WriteBladeFanTargetAsync(
-                    blade, BladeFanProtocol.ZoneCpu, cpuTargetRpm, cancellationToken, curveTarget: true);
-                await WriteBladeFanTargetAsync(
-                    blade, BladeFanProtocol.ZoneGpu, gpuTargetRpm, cancellationToken, curveTarget: true);
-            }
+            var requiresCustomMode = BladeModelCapabilities.FixedFanRequiresCustomMode(
+                blade.Descriptor.ProductId);
+            var performanceMode = requiresCustomMode && mode == BladeFanMode.Manual
+                ? BladePerformanceMode.Custom
+                : original.Thermal.PerformanceMode;
 
-            await WriteBladeThermalZoneAsync(
-                blade, BladeFanProtocol.ZoneCpu, original.Thermal.PerformanceMode, mode, cancellationToken);
-            await WriteBladeThermalZoneAsync(
-                blade, BladeFanProtocol.ZoneGpu, original.Thermal.PerformanceMode, mode, cancellationToken);
+            // 028C only acts on a fixed target after the matching Custom/manual mode
+            // write, so mode must go out first. Other audited models keep their order.
+            if (requiresCustomMode)
+            {
+                await WriteBladeThermalZoneAsync(
+                    blade, BladeFanProtocol.ZoneCpu, performanceMode, mode, cancellationToken);
+                await WriteBladeThermalZoneAsync(
+                    blade, BladeFanProtocol.ZoneGpu, performanceMode, mode, cancellationToken);
+                if (writeTargets)
+                {
+                    await WriteBladeFanTargetAsync(
+                        blade, BladeFanProtocol.ZoneCpu, cpuTargetRpm, cancellationToken, curveTarget: true);
+                    await WriteBladeFanTargetAsync(
+                        blade, BladeFanProtocol.ZoneGpu, gpuTargetRpm, cancellationToken, curveTarget: true);
+                }
+            }
+            else
+            {
+                if (writeTargets)
+                {
+                    await WriteBladeFanTargetAsync(
+                        blade, BladeFanProtocol.ZoneCpu, cpuTargetRpm, cancellationToken, curveTarget: true);
+                    await WriteBladeFanTargetAsync(
+                        blade, BladeFanProtocol.ZoneGpu, gpuTargetRpm, cancellationToken, curveTarget: true);
+                }
+
+                await WriteBladeThermalZoneAsync(
+                    blade, BladeFanProtocol.ZoneCpu, performanceMode, mode, cancellationToken);
+                await WriteBladeThermalZoneAsync(
+                    blade, BladeFanProtocol.ZoneGpu, performanceMode, mode, cancellationToken);
+            }
 
             var actual = await ReadBladeFanTransactionStateAsync(
                 blade, cancellationToken, readTachometers: false);
-            if (actual.Thermal.PerformanceMode != original.Thermal.PerformanceMode ||
+            if (actual.Thermal.PerformanceMode != performanceMode ||
                 actual.Thermal.FanMode != mode ||
                 actual.CpuTargetRpm != cpuTargetRpm ||
                 actual.GpuTargetRpm != gpuTargetRpm)
             {
                 throw new InvalidOperationException(
-                    $"Fan readback mismatch: wrote {mode} / CPU {cpuTargetRpm} / GPU {gpuTargetRpm} RPM, " +
-                    $"read {actual.Thermal.FanMode} / CPU {actual.CpuTargetRpm} / GPU {actual.GpuTargetRpm} RPM.");
+                    $"Fan readback mismatch: wrote {performanceMode} / {mode} / CPU {cpuTargetRpm} / GPU {gpuTargetRpm} RPM, " +
+                    $"read {actual.Thermal.PerformanceMode} / {actual.Thermal.FanMode} / " +
+                    $"CPU {actual.CpuTargetRpm} / GPU {actual.GpuTargetRpm} RPM.");
             }
 
             return actual;
@@ -1843,6 +1881,18 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         (powerModeMask & BladePowerModeProtocol.MaxFanBit) != 0
             ? BladeMaxFanMode.Enabled
             : BladeMaxFanMode.Disabled;
+
+    private static void ValidateModelFanTargetRpm(ReadyDevice blade, int rpm)
+    {
+        var minimum = BladeModelCapabilities.MinimumFanTargetRpmFor(blade.Descriptor.ProductId);
+        var maximum = BladeModelCapabilities.MaximumFanTargetRpmFor(blade.Descriptor.ProductId);
+        if (rpm < minimum || rpm > maximum || rpm % BladeFanLimits.StepRpm != 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(rpm),
+                $"Blade fixed fan target must be {minimum}..{maximum} RPM in {BladeFanLimits.StepRpm} RPM steps.");
+        }
+    }
 
     private Task WriteBladeThermalZoneAsync(
         ReadyDevice device,

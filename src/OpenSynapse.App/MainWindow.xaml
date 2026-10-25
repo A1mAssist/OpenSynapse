@@ -283,7 +283,7 @@
                           <RadioButton Content="固定风扇转速" local:Localized.Uid="BladeFanModeFixed" IsChecked="{Binding BladeFanFixedModeSelected, Mode=OneWay}" Click="BladeFanFixedModeClick" GroupName="BladeFanControl" Visibility="{Binding BladeFanFixedVisibility}" />
                           <RadioButton Content="手动风扇曲线" local:Localized.Uid="BladeFanModeCurve" IsChecked="{Binding BladeFanCurveModeSelected, Mode=OneWay}" Click="BladeFanCurveModeClick" GroupName="BladeFanControl" Visibility="{Binding BladeFanCurveVisibility}" />
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding BladeFanFixedRpmVisibility}">
-                            <NumberBox Value="{Binding BladeFanFixedRpm, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Header="目标转速 (RPM)" Minimum="2000" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
+                            <NumberBox Value="{Binding BladeFanFixedRpm, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Header="目标转速 (RPM)" Minimum="{Binding BladeFanFixedMinimumRpm}" Maximum="{Binding BladeFanFixedMaximumRpm}" SmallChange="100" SpinButtonPlacementMode="Compact" />
                             <Button Grid.Column="1" local:Localized.Uid="BladeFanCurveApply" Content="应用" Click="ApplyBladeFanFixedRpmClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" Margin="0,0,0,26" />
                           </Grid>
                           <Button local:Localized.Uid="BladeFanCurveEdit" Content="编辑" Click="OpenBladeFanCurveWindowClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" Visibility="{Binding BladeFanCurvePanelVisibility}" />
@@ -665,7 +665,7 @@
                       <TextBlock local:Localized.Uid="PerformanceCycleDescription" Text="取消不想通过 M4/Fn+P 切换到的模式；手动选择不受影响。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       <Grid x:Name="PerformanceCycleModesPanel" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="12">
                         <CheckBox local:Localized.Uid="PerformanceCycleBalanced" Tag="Balanced" Content="平衡" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
-                        <CheckBox local:Localized.Uid="PerformanceCyclePerformance" Grid.Column="1" Tag="Performance" Content="性能" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox x:Name="PerformanceCyclePerformanceCheckBox" local:Localized.Uid="PerformanceCyclePerformance" Grid.Column="1" Tag="Performance" Content="性能" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
                         <CheckBox local:Localized.Uid="PerformanceCycleCustom" Grid.Column="2" Tag="Custom" Content="自定义" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
                         <CheckBox local:Localized.Uid="PerformanceCycleSilent" Grid.Column="3" Tag="Silent" Content="静音" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
                         <CheckBox Grid.Column="4" Tag="Hyperboost" Content="HyperBoost" Visibility="{Binding HyperboostOptionVisibility}" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />

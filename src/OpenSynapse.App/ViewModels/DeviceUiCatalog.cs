@@ -8,10 +8,7 @@ internal static class DeviceUiCatalog
 {
     public static readonly BladePerformanceMode[] BladePerformanceModes =
     [
-        BladePerformanceMode.Balanced,
-        BladePerformanceMode.Performance,
-        BladePerformanceMode.Custom,
-        BladePerformanceMode.Silent,
+        .. BladeModelCapabilities.PerformanceModesFor(0),
         BladePerformanceMode.Hyperboost,
     ];
 

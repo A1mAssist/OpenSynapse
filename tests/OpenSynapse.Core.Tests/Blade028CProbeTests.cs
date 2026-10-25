@@ -44,11 +44,27 @@ public sealed class Blade028CProbeTests
         // Maximum fan and the fan curve were never exercised, so they stay closed.
         const ushort productId = 0x028C;
         Assert.Equal(
-            [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High],
+            [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High, BladeCpuBoostMode.Boost],
             BladeModelCapabilities.CpuBoostModesFor(productId));
-        Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.High));
+        Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Boost));
         Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
+        Assert.True(BladeModelCapabilities.FixedFanRequiresCustomMode(productId));
+        Assert.Equal(3500, BladeModelCapabilities.MinimumFanTargetRpmFor(productId));
+        Assert.Equal(5000, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
         Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
         Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
+    }
+
+    [Fact]
+    public void TheBlade14_2022ExposesOnlyItsOfficialPerformanceModes()
+    {
+        const ushort productId = 0x028C;
+        Assert.Equal(
+            [BladePerformanceMode.Balanced, BladePerformanceMode.Silent, BladePerformanceMode.Custom],
+            BladeModelCapabilities.PerformanceModesFor(productId));
+        Assert.DoesNotContain(BladePerformanceMode.Performance, BladeModelCapabilities.PerformanceModesFor(productId));
+
+        // Other Blade models keep the generic protocol list.
+        Assert.Contains(BladePerformanceMode.Performance, BladeModelCapabilities.PerformanceModesFor(0x02C6));
     }
 }

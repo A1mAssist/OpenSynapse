@@ -29,6 +29,16 @@ public sealed partial class MainViewModel
             target.FanMode = (byte)mode;
             target.FanTargetRpm = targetRpm;
 
+            // The 028C EC only acts on a fixed target in Custom mode. Selecting a fixed
+            // speed is an explicit fan command, so switch the profile with it instead of
+            // storing a target that the firmware will ignore.
+            if (mode == BladeFanMode.Manual &&
+                BladeModelCapabilities.FixedFanRequiresCustomMode(_blade._bladeProductId))
+            {
+                target.PerformanceMode = (byte)BladePerformanceMode.Custom;
+                SetBladePerformanceMode(BladePerformanceMode.Custom, confirm: false);
+            }
+
             var blade = _deviceDescriptors.FirstOrDefault(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) && device.Access == DeviceAccessState.Available);
             _diagnosticLog.TryWrite(
