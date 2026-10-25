@@ -86,6 +86,7 @@ public sealed class RazerChromaStandardService
             [0x0F5A] = ("Razer Laptop Monitor Stand Chroma", DeviceCategory.Accessory),
             [0x0F5C] = ("Razer Handheld Dock Chroma", DeviceCategory.Accessory),
             [0x0F64] = ("Razer Soma Chroma", DeviceCategory.Accessory),
+            [0x0566] = ("Razer Wireless Control Pod", DeviceCategory.Accessory),
             [0x0F6A] = ("Razer Base Station V3 Chroma", DeviceCategory.Accessory),
             [0x0F6D] = ("MarciT2H", DeviceCategory.Accessory),
         };

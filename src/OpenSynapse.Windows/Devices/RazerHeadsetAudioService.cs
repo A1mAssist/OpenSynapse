@@ -70,6 +70,7 @@ public sealed class RazerHeadsetAudioService
             [0x056A] = "Razer Seiren V3 Mini",
             [0x0548] = "Razer Leviathan V2 Pro",
             [0x056D] = "Razer Kraken V4 X",
+            [0x0F66] = "Razer Marci",
         };
 
     private static readonly IReadOnlySet<ushort> SpeakerProductIds =
