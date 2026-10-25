@@ -2153,6 +2153,7 @@
   <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>Ambient</value></data>
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>Read failed; the device did not respond.</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>Gaming keyboard</value></data>
+  <data name="RazerSpeakerCategory" xml:space="preserve"><value>Speaker</value></data>
 </root>
 
 

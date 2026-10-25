@@ -6,6 +6,31 @@ namespace OpenSynapse.Core.Tests;
 
 public sealed class RazerHeadsetAudioServiceTests
 {
+    [Theory]
+    [InlineData(0x0309)]
+    [InlineData(0x0526)]
+    [InlineData(0x0530)]
+    [InlineData(0x0532)]
+    [InlineData(0x0534)]
+    [InlineData(0x0537)]
+    [InlineData(0x055A)]
+    [InlineData(0x055C)]
+    [InlineData(0x055E)]
+    [InlineData(0x0560)]
+    [InlineData(0x0562)]
+    public void AudioPage_CoversTheKrakenBtAndNommoFamilies(ushort productId) =>
+        Assert.True(RazerHeadsetAudioService.IsSupported(productId));
+
+    [Theory]
+    [InlineData(0x0532, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
+    [InlineData(0x055A, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
+    [InlineData(0x055C, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
+    [InlineData(0x055E, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
+    [InlineData(0x052D, OpenSynapse.Core.Devices.DeviceCategory.Headset)]
+    [InlineData(0x0560, OpenSynapse.Core.Devices.DeviceCategory.Headset)]
+    public void AudioDevices_ReportTheirRealCategory(ushort productId, OpenSynapse.Core.Devices.DeviceCategory expected) =>
+        Assert.Equal(expected, RazerHeadsetAudioService.GetCategory(productId));
+
     [Fact]
     public async Task ReadState_ReportsEveryAdvertisedValue()
     {

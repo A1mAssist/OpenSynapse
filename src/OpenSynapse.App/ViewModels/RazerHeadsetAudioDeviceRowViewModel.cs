@@ -15,9 +15,11 @@ public sealed class RazerHeadsetAudioDeviceRowViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public RazerHeadsetAudioConnection Connection { get; }
-    public DeviceCategory HardwareCategory => DeviceCategory.Headset;
+    public DeviceCategory HardwareCategory => RazerHeadsetAudioService.GetCategory(Connection.ProductId);
     public string Name => Connection.Name;
-    public string Category => AppStrings.Text("BlackSharkHeadsetCategory");
+    public string Category => AppStrings.Text(HardwareCategory == DeviceCategory.Speaker
+        ? "RazerSpeakerCategory"
+        : "BlackSharkHeadsetCategory");
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string IconGlyph => "\uE7F6";
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
