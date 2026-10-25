@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
 - 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
 - Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
@@ -70,6 +72,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
 - 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
 - Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
@@ -126,6 +130,8 @@ This release is unsigned and targets Windows 11 x64. CPU core-voltage offset, GP
 
 ### 新增 / Added
 
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
 - 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
 - Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
@@ -186,6 +192,8 @@ This release is unsigned and targets Windows 11 x64. BlackShark V3 Pro does not 
 
 ### 新增 / Added
 
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
 - 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
 - Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
 - 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
