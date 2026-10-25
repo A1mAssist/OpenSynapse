@@ -4,8 +4,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
-using OpenSynapse.Core.Displays;
-using OpenSynapse.Windows.Lifecycle;
 using System.Net.Sockets;
 
 namespace OpenSynapse.App;
@@ -21,8 +19,6 @@ public sealed partial class MainWindow
     private readonly DispatcherQueueTimer _chromaRestStatusTimer;
     private bool _languageSelectionReady;
     private bool _behaviorUiReady;
-    private bool _dedicatedGpuModeUiReady;
-    private bool _dedicatedGpuModeBusy;
     private int[] _refreshRateCycleOptions = [];
     private long _lastChromaFrames;
     private DateTimeOffset _lastChromaSample = DateTimeOffset.UtcNow;
@@ -117,116 +113,6 @@ public sealed partial class MainWindow
         }
         RebuildRefreshRateCycleOptions();
         _behaviorUiReady = true;
-        RefreshDedicatedGpuMode();
-    }
-
-    private void RefreshDedicatedGpuMode()
-    {
-        var status = WindowsDedicatedGpuMode.GetStatus();
-        DedicatedGpuModeCard.Visibility = status.IsSupported ? Visibility.Visible : Visibility.Collapsed;
-        _dedicatedGpuModeUiReady = false;
-        try
-        {
-            DedicatedGpuModeToggle.IsOn = status.IsSupported && status.IsActive;
-            DedicatedGpuModeToggle.IsEnabled = status.IsSupported && !_dedicatedGpuModeBusy && status.CanChange;
-            DedicatedGpuModeStatusText.Text = status.IsSupported
-                ? DedicatedGpuModeStatusMessage(status)
-                : string.Empty;
-        }
-        finally
-        {
-            _dedicatedGpuModeUiReady = true;
-        }
-    }
-
-    private static string DedicatedGpuModeStatusMessage(DedicatedGpuModeStatus status)
-    {
-        if (status.IsActive)
-        {
-            return AppStrings.Text("DedicatedGpuModeStatusActive");
-        }
-
-        return status.BlockReason switch
-        {
-            DedicatedGpuModeBlockReason.ExternalDisplayConnected =>
-                AppStrings.Text("DedicatedGpuModeStatusBlockedExternal"),
-            DedicatedGpuModeBlockReason.DisplayTopologyUnavailable or
-                DedicatedGpuModeBlockReason.InternalDisplayUnavailable or
-                DedicatedGpuModeBlockReason.InternalDisplayRouteUnavailable =>
-                AppStrings.Text("DedicatedGpuModeStatusBlockedDisplay"),
-            DedicatedGpuModeBlockReason.InternalDisplayUsesDiscreteGpu =>
-                AppStrings.Text("DedicatedGpuModeStatusBlockedInternal"),
-            DedicatedGpuModeBlockReason.NoDiscreteGraphics or
-                DedicatedGpuModeBlockReason.NoIntegratedGraphics =>
-                AppStrings.Text("DedicatedGpuModeStatusBlockedUnsupported"),
-            _ => AppStrings.Text("DedicatedGpuModeStatusInactive"),
-        };
-    }
-
-    private async void DedicatedGpuModeToggled(object sender, RoutedEventArgs e)
-    {
-        if (!_dedicatedGpuModeUiReady || _dedicatedGpuModeBusy ||
-            sender is not ToggleSwitch toggle)
-        {
-            return;
-        }
-
-        _dedicatedGpuModeBusy = true;
-        _dedicatedGpuModeUiReady = false;
-        toggle.IsEnabled = false;
-        DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusApplying");
-
-        DedicatedGpuSwitchResult result;
-        try
-        {
-            result = await WindowsDedicatedGpuMode.SetEnabledAsync(toggle.IsOn, _lifetime.Token);
-        }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
-        {
-            return;
-        }
-        catch (Exception exception)
-        {
-            _viewModel.ReportApplicationError(AppStrings.FormatText(
-                "DedicatedGpuModeError",
-                exception.Message));
-            result = new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
-        }
-        finally
-        {
-            _dedicatedGpuModeBusy = false;
-            _dedicatedGpuModeUiReady = true;
-        }
-
-        if (_lifetime.IsCancellationRequested)
-        {
-            return;
-        }
-
-        RefreshDedicatedGpuMode();
-
-        switch (result.Outcome)
-        {
-            case DedicatedGpuSwitchOutcome.Success:
-                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusSuccess");
-                break;
-            case DedicatedGpuSwitchOutcome.RestartRequired:
-                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusRestartRequired");
-                break;
-            case DedicatedGpuSwitchOutcome.Cancelled:
-                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusCancelled");
-                break;
-            case DedicatedGpuSwitchOutcome.NoDevice:
-                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusNoDevice");
-                break;
-            case DedicatedGpuSwitchOutcome.Failed:
-                DedicatedGpuModeStatusText.Text = AppStrings.FormatText(
-                    "DedicatedGpuModeStatusFailed",
-                    result.ExitCode);
-                break;
-            case DedicatedGpuSwitchOutcome.Blocked:
-                break;
-        }
     }
 
     private void RefreshChromaRestStatus()

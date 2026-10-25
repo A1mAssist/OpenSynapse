@@ -1593,7 +1593,7 @@
   <data name="BehaviorSettingError" xml:space="preserve"><value>快捷键与通知设置：{0}</value><comment>快捷键与通知设置：{0}</comment></data>
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>设置</value><comment>设置导航项</comment></data>
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>设置</value><comment>设置页面标题</comment></data>
-  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>管理 OpenSynapse 的启动、显示、通知、语言和更新。</value><comment>设置页面说明</comment></data>
+  <data name="SettingsPageDescription.Text" xml:space="preserve"><value>管理 OpenSynapse 的启动、通知、语言和更新。</value><comment>设置页面说明</comment></data>
   <data name="DedicatedGpuModeTitle.Text" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式标题</comment></data>
   <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>关闭 NVIDIA 独显，让系统和应用只使用核显。切换需要管理员权限；外接屏可能无画面。</value><comment>仅核显模式说明</comment></data>
   <data name="DedicatedGpuModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式开关</comment></data>
