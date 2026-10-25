@@ -51,6 +51,8 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
     private byte? _batteryPercent;
     private bool? _isCharging;
+    private Version? _firmware;
+    private string? _serial;
     private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
 
     public RazerChromaViewModel(
@@ -81,6 +83,16 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
         : string.Empty;
 
     public Visibility BatteryVisibility => _batteryPercent is null ? Visibility.Collapsed : Visibility.Visible;
+    public string HardwareSummary => string.Join(
+        " · ",
+        new[]
+        {
+            string.IsNullOrWhiteSpace(_serial) ? null : $"SN {_serial}",
+            _firmware is null ? null : $"FW {_firmware}",
+        }.Where(part => part is not null));
+
+    public Visibility HardwareVisibility =>
+        string.IsNullOrEmpty(HardwareSummary) ? Visibility.Collapsed : Visibility.Visible;
     public IReadOnlyList<string> LightingEffectOptions =>
     [
         AppStrings.Text("RazerLightingEffectOff"),
@@ -172,6 +184,10 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
             _batteryPercent = state.BatteryPercent;
             _isCharging = state.IsCharging;
             OnPropertyChanged(nameof(BatterySummary));
+            _firmware = state.Firmware;
+            _serial = state.SerialNumber;
+            OnPropertyChanged(nameof(HardwareSummary));
+            OnPropertyChanged(nameof(HardwareVisibility));
             OnPropertyChanged(nameof(BatteryVisibility));
 
             ErrorText = state.BrightnessPercent is null && state.Effect is null
