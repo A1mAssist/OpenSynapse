@@ -15,6 +15,7 @@ public enum DeviceSelectorItemKind
     Keyboard,
     Chroma,
     Ble,
+    Hue,
 }
 
 public sealed class DeviceSelectorItemViewModel : INotifyPropertyChanged

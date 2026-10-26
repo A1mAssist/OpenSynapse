@@ -6,6 +6,16 @@ namespace OpenSynapse.App;
 
 public sealed partial class MainWindow
 {
+    private async void HueSelectorClick(object sender, RoutedEventArgs e)
+    {
+        SelectDevice("hue");
+        await _viewModel.Hue.EnsureLoadedAsync(_lifetime.Token);
+        UpdateDeviceSelector("hue");
+    }
+
+    private async void HueScanClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.Hue.ScanAsync(_lifetime.Token);
+
     private async void HuePairClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Hue.PairAsync(_lifetime.Token);
 

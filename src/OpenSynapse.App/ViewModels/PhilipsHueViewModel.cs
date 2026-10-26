@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Windows.Lighting;
 
 namespace OpenSynapse.App.ViewModels;
@@ -64,8 +65,8 @@ public sealed class PhilipsHueLightRowViewModel : INotifyPropertyChanged
 }
 
 /// <summary>
-/// Philips Hue bridge pairing and light control. The middleware exposes no wire protocol for
-/// the bridge, so this uses the documented CLIP v2 API against the address the user enters.
+/// Philips Hue bridge discovery, pairing and light control. Bridges are found by SSDP and
+/// Philips' N-UPnP service; pairing and control use the documented CLIP v2 API.
 /// </summary>
 public sealed class PhilipsHueViewModel : INotifyPropertyChanged
 {
@@ -76,8 +77,13 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
     private string _bridgeSummary = string.Empty;
     private string _errorText = string.Empty;
     private bool _isBusy;
+    private bool _hasScanned;
     private PhilipsHueLightRowViewModel? _selectedColorLight;
+    private PhilipsHueBridge? _selectedBridge;
     private global::Windows.UI.Color _hueColor = global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
+    private static readonly Brush ReadyBrush = CreateStatusBrush(153, 221, 114);
+    private static readonly Brush DiscoveredBrush = CreateStatusBrush(255, 181, 71);
+    private static readonly Brush NotConnectedBrush = CreateStatusBrush(255, 107, 107);
 
     public PhilipsHueViewModel(Action<string>? diagnostic = null)
     {
@@ -90,11 +96,43 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
     public Action<string, string?>? Persist { get; set; }
 
     public ObservableCollection<PhilipsHueLightRowViewModel> Lights { get; } = new();
+    public ObservableCollection<PhilipsHueBridge> Bridges { get; } = new();
 
     public string BridgeHost
     {
         get => _bridgeHost;
-        set => SetField(ref _bridgeHost, value);
+        set
+        {
+            if (!SetField(ref _bridgeHost, value)) return;
+            if (_selectedBridge is { } selected &&
+                !StringComparer.OrdinalIgnoreCase.Equals(selected.Host, value))
+            {
+                _selectedBridge = null;
+                _appKey = null;
+                Lights.Clear();
+                OnPropertyChanged(nameof(SelectedBridge));
+            }
+            OnConnectionStateChanged();
+        }
+    }
+
+    public PhilipsHueBridge? SelectedBridge
+    {
+        get => _selectedBridge;
+        set
+        {
+            if (!SetField(ref _selectedBridge, value) || value is null) return;
+            var changedHost = !StringComparer.OrdinalIgnoreCase.Equals(BridgeHost, value.Host);
+            if (changedHost)
+            {
+                _appKey = null;
+                Lights.Clear();
+            }
+
+            BridgeHost = value.Host;
+            OnConnectionStateChanged();
+            if (changedHost) Persist?.Invoke(BridgeHost, _appKey);
+        }
     }
 
     public string BridgeSummary
@@ -103,6 +141,22 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
         private set => SetField(ref _bridgeSummary, value);
     }
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_appKey);
+    public bool HasBridge => !string.IsNullOrWhiteSpace(BridgeHost);
+    public bool IsReady => IsConfigured || HasBridge;
+    public string DeviceStatusText => IsConfigured
+        ? AppStrings.Text("HuePaired")
+        : HasBridge
+            ? AppStrings.Text("HueDiscovered")
+            : AppStrings.Text("HueNotConnected");
+    public string DeviceIdentity => SelectedBridge is { } bridge
+        ? string.Join(" · ", new[] { bridge.Id, bridge.SoftwareVersion, bridge.Host }
+            .Where(part => !string.IsNullOrWhiteSpace(part)))
+        : BridgeHost;
+    public Brush StatusBrush => IsConfigured
+        ? ReadyBrush
+        : HasBridge
+            ? DiscoveredBrush
+            : NotConnectedBrush;
 
     public string StatusText
     {
@@ -135,12 +189,91 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
     {
         BridgeHost = host ?? string.Empty;
         _appKey = string.IsNullOrWhiteSpace(appKey) ? null : appKey;
+        Bridges.Clear();
+        if (!string.IsNullOrWhiteSpace(host))
+        {
+            Bridges.Add(new PhilipsHueBridge(host, null, null, null));
+            _selectedBridge = Bridges[0];
+            OnPropertyChanged(nameof(SelectedBridge));
+        }
         OnPropertyChanged(nameof(IsConfigured));
         OnPropertyChanged(nameof(CanApplyColor));
+        OnConnectionStateChanged();
+    }
+
+    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsConfigured && HasBridge)
+        {
+            await LoadLightsAsync(cancellationToken);
+            return;
+        }
+
+        if (_hasScanned) return;
+        await ScanAsync(cancellationToken);
+    }
+
+    public async Task ScanAsync(CancellationToken cancellationToken = default)
+    {
+        if (!BeginOperation()) return;
+        StatusText = AppStrings.Text("HueScanning");
+        ErrorText = string.Empty;
+        var found = 0;
+        try
+        {
+            using var discovery = new PhilipsHueDiscovery(diagnostic: _diagnostic);
+            var bridges = await discovery.DiscoverAsync(cancellationToken: cancellationToken);
+            found = bridges.Count;
+            Bridges.Clear();
+            foreach (var bridge in bridges) Bridges.Add(bridge);
+
+            if (bridges.Count == 0)
+            {
+                if (HasBridge)
+                {
+                    Bridges.Add(new PhilipsHueBridge(
+                        BridgeHost,
+                        _selectedBridge?.Id,
+                        _selectedBridge?.Name,
+                        _selectedBridge?.SoftwareVersion));
+                    _selectedBridge = Bridges[0];
+                    OnPropertyChanged(nameof(SelectedBridge));
+                    OnConnectionStateChanged();
+                }
+                StatusText = AppStrings.Text("HueNoBridges");
+                return;
+            }
+
+            SelectedBridge = bridges[0];
+            StatusText = AppStrings.FormatText("HueFoundBridges", bridges.Count);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+        }
+        finally
+        {
+            _hasScanned = true;
+            EndOperation();
+        }
+
+        if (found > 0 && IsConfigured)
+        {
+            await LoadLightsAsync(cancellationToken);
+        }
     }
 
     public async Task PairAsync(CancellationToken cancellationToken = default)
     {
+        if (!HasBridge)
+        {
+            ErrorText = AppStrings.Text("HueBridgeRequired");
+            return;
+        }
         if (!BeginOperation()) return;
         try
         {
@@ -151,9 +284,10 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
                 case PhilipsHuePairingOutcome.Paired:
                     _appKey = result.AppKey;
                     OnPropertyChanged(nameof(IsConfigured));
-        OnPropertyChanged(nameof(CanApplyColor));
+                    OnPropertyChanged(nameof(CanApplyColor));
                     Persist?.Invoke(client.Host, _appKey);
                     BridgeHost = client.Host;
+                    OnConnectionStateChanged();
                     StatusText = AppStrings.Text("HuePaired");
                     ErrorText = string.Empty;
                     break;
@@ -291,6 +425,20 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
     }
 
     private void EndOperation() => IsBusy = false;
+
+    private void OnConnectionStateChanged()
+    {
+        OnPropertyChanged(nameof(IsConfigured));
+        OnPropertyChanged(nameof(CanApplyColor));
+        OnPropertyChanged(nameof(HasBridge));
+        OnPropertyChanged(nameof(IsReady));
+        OnPropertyChanged(nameof(DeviceStatusText));
+        OnPropertyChanged(nameof(DeviceIdentity));
+        OnPropertyChanged(nameof(StatusBrush));
+    }
+
+    private static Brush CreateStatusBrush(byte red, byte green, byte blue) =>
+        new SolidColorBrush(global::Windows.UI.Color.FromArgb(255, red, green, blue));
 
     private static bool IsExpectedException(Exception exception) =>
         exception is HttpRequestException or TaskCanceledException or InvalidOperationException or

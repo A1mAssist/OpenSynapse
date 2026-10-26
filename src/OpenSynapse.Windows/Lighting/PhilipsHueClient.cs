@@ -36,9 +36,9 @@ public sealed record PhilipsHuePairingResult(
     string? Error);
 
 /// <summary>
-/// Philips Hue CLIP v2 bridge client. The middleware never exposes a wire protocol for the
-/// bridge (its bundle only calls a native DLL), so this talks to the documented bridge API:
-/// pairing through <c>/api</c>, lights through <c>/clip/v2/resource/light</c>.
+/// Philips Hue CLIP v2 bridge client. The Razer module only covers discovery and pairing, so
+/// light control talks to the documented bridge API: pairing through <c>/api</c>, lights
+/// through <c>/clip/v2/resource/light</c>.
 /// </summary>
 public sealed class PhilipsHueClient : IDisposable
 {

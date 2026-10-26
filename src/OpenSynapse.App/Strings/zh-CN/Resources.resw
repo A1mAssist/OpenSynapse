@@ -2614,7 +2614,7 @@
   <data name="BleChargingLimit" xml:space="preserve"><value>已达充电上限</value></data>
   <data name="BleIdentity" xml:space="preserve"><value>BLE · 协议 30</value></data>
   <data name="HueTitle" xml:space="preserve"><value>飞利浦 Hue</value></data>
-  <data name="HueDescription" xml:space="preserve"><value>通过 Hue 桥控制灯光。先按桥上的配对按钮，再点“配对”。</value></data>
+  <data name="HueDescription" xml:space="preserve"><value>自动查找局域网中的 Hue 桥；找不到时可手动填写地址。按桥上的配对按钮后点“配对”。</value></data>
   <data name="HuePairButton" xml:space="preserve"><value>配对</value></data>
   <data name="HueRefreshButton" xml:space="preserve"><value>刷新</value></data>
   <data name="HueApplyButton" xml:space="preserve"><value>应用</value></data>
@@ -2625,6 +2625,15 @@
   <data name="HueLightCount" xml:space="preserve"><value>已读取 {0} 盏灯。</value></data>
   <data name="HueColorLabel" xml:space="preserve"><value>颜色</value></data>
   <data name="HueApplyColorButton" xml:space="preserve"><value>应用颜色</value></data>
+  <data name="HueDiscovered" xml:space="preserve"><value>已发现，待配对</value></data>
+  <data name="HueNotConnected" xml:space="preserve"><value>未连接</value></data>
+  <data name="HueScanning" xml:space="preserve"><value>正在查找 Hue 桥…</value></data>
+  <data name="HueNoBridges" xml:space="preserve"><value>没有发现 Hue 桥，可手动填写地址。</value></data>
+  <data name="HueFoundBridges" xml:space="preserve"><value>发现 {0} 个 Hue 桥。</value></data>
+  <data name="HueBridgeCombo" xml:space="preserve"><value>Hue 桥</value></data>
+  <data name="HueScanButton" xml:space="preserve"><value>扫描</value></data>
+  <data name="HueLightsTitle" xml:space="preserve"><value>灯光</value></data>
+  <data name="HueBridgeRequired" xml:space="preserve"><value>请先扫描或填写 Hue 桥地址。</value></data>
   <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>板载宏</value></data>
   <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。</value></data>
   <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>读取板载宏</value></data>
