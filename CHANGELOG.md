@@ -69,6 +69,9 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 修复 / Fixed
 
+- 修复独显驱动异常时被误报为“独显当前已启用”的问题。之前只用问题代码 22（用户主动禁用）判断设备是否关闭，驱动启动失败（代码 43）会被当成正常，于是开关会尝试去禁用一个已经挂掉的设备。现在设备状态分为正常、已禁用和驱动故障三种，故障时显示具体错误代码并禁用开关，同时提供“重启独显设备”按钮：机器级安装通过后台服务重启设备，不再弹 UAC；当前用户安装回落到一次管理员授权。
+- Fixed a failing discrete GPU driver being reported as "the discrete GPU is enabled". The switch only looked for problem code 22, which is a device someone turned off, so a driver that failed to start (code 43) counted as healthy and the switch tried to disable an adapter that was already broken. The adapter state is now one of healthy, disabled or faulted; a fault shows its error code, the switch is disabled, and a "Restart GPU device" button restarts the device through the machine-wide service without a UAC prompt, falling back to one administrator request on a per-user install.
+
 - 按雷云 bundle 的 `DeviceInfo` 复核了复用原生协议的 12 个型号（16 个 PID）：补上 Abyssus Lite 漏掉的 125/500/1000 Hz 轮询率，并把没有灯光的 Viper V4 Pro 从灯光页目录里移除。对照明细见 `docs/MIDDLEWARE_MOUSE_AUDIT.md`。
 - Audited the 12 models (16 PIDs) that reuse a sibling protocol against the middleware bundle `DeviceInfo`: restored the missing 125/500/1000 Hz polling rates for the Abyssus Lite and removed the Viper V4 Pro from the lighting catalogue because it has no lighting. See `docs/MIDDLEWARE_MOUSE_AUDIT.md`.
 - Kraken Tournament Edition / Ultimate / Kitty V2（`0520`/`0527`/`0560`）此前同时出现在音频页和 37 字节灯光页，现在只保留音频页一张卡片，灯光效果并入音频页；其余 Kraken（7.1、7.1 Chroma 等）仍保留独立灯光页。
