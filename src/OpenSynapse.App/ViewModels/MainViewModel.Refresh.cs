@@ -89,10 +89,6 @@ public sealed partial class MainViewModel
         }
         SetDeviceQueryError(string.Empty);
         SetDeviceOperationError(string.Empty);
-        if (knownSnapshot is null)
-        {
-            _ = ScanHueInBackgroundAsync(cancellationToken);
-        }
         var powerState = CurrentPowerSource;
         var powerChanged = _lastPowerState != powerState;
         applyDisplayProfile |= powerChanged;

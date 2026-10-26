@@ -10,8 +10,11 @@ namespace OpenSynapse.App;
 
 public sealed partial class MainWindow
 {
-    private async void RefreshClick(object sender, RoutedEventArgs e) =>
+    private async void RefreshClick(object sender, RoutedEventArgs e)
+    {
         await _viewModel.RefreshDevicesAsync(_lifetime.Token);
+        _ = _viewModel.RefreshHueAsync(_lifetime.Token);
+    }
 
     internal void RequestNavigation(string page) => _dispatcherQueue.TryEnqueue(() =>
     {
@@ -282,6 +285,10 @@ public sealed partial class MainWindow
         ProfilesPage.Visibility = page == "profiles" ? Visibility.Visible : Visibility.Collapsed;
         SettingsPage.Visibility = page == "settings" ? Visibility.Visible : Visibility.Collapsed;
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
+        if (page == "devices")
+        {
+            _ = _viewModel.RefreshHueAsync(_lifetime.Token);
+        }
         UpdatePerformanceSamplingState();
         UpdateChromaRestStatusTimer();
         if (DevicesPage.Visibility == Visibility.Visible &&
