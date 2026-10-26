@@ -30,6 +30,22 @@ public sealed partial class MainWindow
         }
     }
 
+    private async void HeadsetAudioOpenThxGameProfilesClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedHeadsetAudio is { ThxGameProfilesUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
+
+    private async void HeadsetAudioOpenThxPatcherClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedHeadsetAudio is { ThxPatcherUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
+
     private async void HeadsetAudioDownloadThxClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.InstallThxNativeAsync(_lifetime.Token) ?? Task.CompletedTask);
 
@@ -62,4 +78,22 @@ public sealed partial class MainWindow
 
     private async void HeadsetAudioApplyLightingClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.Lighting?.ApplyAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxSpatialClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyThxSpatialAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxPresetClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyThxPresetAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxBandsClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyThxBandsAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxNormalizationClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyThxNormalizationAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxVoiceClarityClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyThxVoiceClarityAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxSidetoneClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyThxSidetoneAsync(_lifetime.Token) ?? Task.CompletedTask);
 }

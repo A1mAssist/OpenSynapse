@@ -475,6 +475,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _selectedBlackSharkDevice = null;
         BlackSharkDevices.Clear();
 
+        if (SelectedHeadsetAudio is { } headsetAudio)
+        {
+            await headsetAudio.DisposeAsync().ConfigureAwait(false);
+            SelectedHeadsetAudio = null;
+        }
+
         Task brightnessWriter;
         lock (_bladeBrightnessGate)
         {

@@ -9,7 +9,6 @@ internal sealed class ThxAudioNativeClient : IDisposable
 {
     private const uint LoadLibrarySearchSystem32 = 0x00000800;
     private const int MaximumJsonBytes = 64 * 1024;
-    private const string NativeDllSha256 = ThxAudioAdmission.NativeDllSha256;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -41,9 +40,13 @@ internal sealed class ThxAudioNativeClient : IDisposable
     private readonly FreeMallocCall _freeMalloc;
 
     internal ThxAudioNativeClient()
+        : this(ThxAudioAdmission.NativeDllPath, ThxAudioAdmission.NativeDllLength, ThxAudioAdmission.NativeDllSha256)
     {
-        var path = ThxAudioAdmission.NativeDllPath;
-        VerifyFile(path);
+    }
+
+    internal ThxAudioNativeClient(string path, long expectedLength, string expectedSha256)
+    {
+        VerifyFile(path, expectedLength, expectedSha256);
         _library = LoadLibraryExW(path, nint.Zero, LoadLibrarySearchSystem32);
         if (_library == nint.Zero)
         {
@@ -145,11 +148,12 @@ internal sealed class ThxAudioNativeClient : IDisposable
         return Marshal.GetDelegateForFunctionPointer<T>(address);
     }
 
-    private static void VerifyFile(string path)
+    private static void VerifyFile(string path, long expectedLength, string expectedSha256)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (!CryptographicOperations.FixedTimeEquals(
-                Convert.FromHexString(NativeDllSha256),
+        if (stream.Length != expectedLength ||
+            !CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(expectedSha256),
                 SHA256.HashData(stream)))
         {
             throw new InvalidOperationException("The THX native component has changed.");
@@ -185,6 +189,8 @@ internal sealed class ThxAudioNativeClient : IDisposable
         }
     }
 }
+
+internal sealed record ThxVendorPreset(string Id, string Name);
 
 internal static class ThxVendorJson
 {
@@ -261,6 +267,165 @@ internal static class ThxVendorJson
             throw new InvalidDataException("The selected THX preset is invalid.");
         }
         return id;
+    }
+
+    internal static IReadOnlyList<ThxVendorPreset> ParsePresetEntries(string json)
+    {
+        using var document = Parse(json);
+        var root = document.RootElement;
+        if (root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty("presets", out var nested))
+        {
+            root = nested;
+        }
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidDataException("The THX preset list is not an array.");
+        }
+
+        var entries = new List<ThxVendorPreset>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var element in root.EnumerateArray())
+        {
+            var entry = element.ValueKind switch
+            {
+                JsonValueKind.String when element.GetString() is { } id && ValidId(id) =>
+                    new ThxVendorPreset(id, id),
+                JsonValueKind.Object => ReadPresetEntry(element),
+                _ => null,
+            };
+            if (entry is null || !seen.Add(entry.Id))
+            {
+                continue;
+            }
+            entries.Add(entry);
+            if (entries.Count > 256)
+            {
+                throw new InvalidDataException("The THX preset list is too long.");
+            }
+        }
+        return entries;
+    }
+
+    internal static string? ParseSelectedPresetValue(string json)
+    {
+        using var document = Parse(json);
+        var root = document.RootElement;
+        return root.ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.String when root.GetString() is { } id && ValidId(id) => id,
+            JsonValueKind.Object => ReadPresetEntry(root)?.Id,
+            _ => throw new InvalidDataException("The selected THX preset is invalid."),
+        };
+    }
+
+    internal static IReadOnlyList<double> ParseGains(string json)
+    {
+        using var document = Parse(json);
+        var root = document.RootElement;
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            root = new[] { "gains", "eq", "bands", "values" }
+                .Select(name => root.TryGetProperty(name, out var value) ? value : default)
+                .FirstOrDefault(value => value.ValueKind == JsonValueKind.Array);
+        }
+        if (root.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidDataException("The THX equalizer value is not an array.");
+        }
+
+        var gains = new List<double>();
+        foreach (var element in root.EnumerateArray())
+        {
+            JsonElement value = default;
+            if (element.ValueKind == JsonValueKind.Number)
+            {
+                value = element;
+            }
+            else if (element.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var name in new[] { "gain", "gainDb", "value" })
+                {
+                    if (element.TryGetProperty(name, out var candidate) &&
+                        candidate.ValueKind == JsonValueKind.Number)
+                    {
+                        value = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (value.ValueKind != JsonValueKind.Number ||
+                !value.TryGetDouble(out var gain) ||
+                !double.IsFinite(gain) ||
+                gain is < -24 or > 24)
+            {
+                throw new InvalidDataException("The THX equalizer value is invalid.");
+            }
+            gains.Add(gain);
+            if (gains.Count > 16)
+            {
+                throw new InvalidDataException("The THX equalizer value is too long.");
+            }
+        }
+        return gains;
+    }
+
+    internal static int ParseInteger(string json, int minimum, int maximum)
+    {
+        using var document = Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Number ||
+            !document.RootElement.TryGetInt32(out var value) ||
+            value < minimum ||
+            value > maximum)
+        {
+            throw new InvalidDataException("The THX property is not a valid integer.");
+        }
+        return value;
+    }
+
+    private static ThxVendorPreset? ReadPresetEntry(JsonElement element)
+    {
+        string? id = null;
+        foreach (var name in new[] { "id", "preset", "value", "key" })
+        {
+            if (element.TryGetProperty(name, out var candidate) &&
+                candidate.ValueKind == JsonValueKind.String &&
+                candidate.GetString() is { } text &&
+                ValidId(text))
+            {
+                id = text;
+                break;
+            }
+        }
+        if (id is null &&
+            element.TryGetProperty("name", out var nameCandidate) &&
+            nameCandidate.ValueKind == JsonValueKind.String &&
+            nameCandidate.GetString() is { } nameId &&
+            ValidId(nameId))
+        {
+            id = nameId;
+        }
+        if (id is null)
+        {
+            return null;
+        }
+
+        var label = id;
+        foreach (var name in new[] { "name", "label", "displayName" })
+        {
+            if (element.TryGetProperty(name, out var candidate) &&
+                candidate.ValueKind == JsonValueKind.String &&
+                candidate.GetString() is { } text &&
+                !string.IsNullOrWhiteSpace(text) &&
+                text.Length <= 256)
+            {
+                label = text.Trim();
+                break;
+            }
+        }
+        return new ThxVendorPreset(id, label);
     }
 
     private static JsonDocument Parse(string json)

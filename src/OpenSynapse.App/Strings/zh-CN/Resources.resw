@@ -2562,11 +2562,28 @@
   <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 由雷云的 THX 服务和音频组件提供。缺失时在这里安装；安装包需要管理员权限。</value></data>
   <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>下载 THX 安装包</value></data>
   <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>下载 THX 控制组件</value></data>
+  <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>更新 THX 游戏配置</value></data>
+  <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>更新 THX Patcher</value></data>
   <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未检测到 THX 服务（VSSrv）。下载并运行雷云的 THX 安装包后重新检测。</value></data>
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点下面的按钮下载。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载 THX 控制组件…</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 控制组件下载或校验失败，请重试。</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
+  <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
+  <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>应用空间音效</value></data>
+  <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>预设</value></data>
+  <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
+  <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX 均衡器</value></data>
+  <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>应用频段</value></data>
+  <data name="RazerHeadsetThxNormalizationToggle.Header" xml:space="preserve"><value>音量标准化</value></data>
+  <data name="RazerHeadsetThxNormalizationApply.Content" xml:space="preserve"><value>应用音量标准化</value></data>
+  <data name="RazerHeadsetThxVoiceClarityToggle.Header" xml:space="preserve"><value>人声清晰度</value></data>
+  <data name="RazerHeadsetThxVoiceClarityApply.Content" xml:space="preserve"><value>应用人声清晰度</value></data>
+  <data name="RazerHeadsetThxSidetoneToggle.Header" xml:space="preserve"><value>侧音</value></data>
+  <data name="RazerHeadsetThxSidetoneApply.Content" xml:space="preserve"><value>应用侧音</value></data>
+  <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>没有拿到耳机音频端点的容器 ID，无法定位 THX。重新连接耳机后刷新。</value></data>
+  <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>THX 辅助进程启动失败。重新打开应用后再试。</value></data>
+  <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 组件没有接受这次修改。安装或修复 THX 安装包后刷新。</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>

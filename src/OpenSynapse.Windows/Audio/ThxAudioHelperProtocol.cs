@@ -17,7 +17,10 @@ internal sealed record ThxAudioHelperRequest(
     string? PresetId = null,
     double[]? GainsDb = null,
     string? Enhancement = null,
-    int? LevelPercent = null);
+    int? LevelPercent = null,
+    string? NativeVersion = null,
+    string? ProductId = null,
+    string? ContainerId = null);
 
 internal sealed record ThxAudioHelperResponse(
     int Version,

@@ -174,13 +174,55 @@
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxVisibility}">
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="12">
                       <TextBlock local:Localized.Uid="RazerHeadsetThxTitle" Text="THX Spatial Audio" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                       <TextBlock local:Localized.Uid="RazerHeadsetThxDescription" Text="THX Spatial Audio 由雷云的 THX 服务和音频组件提供。缺失时在这里安装；安装包需要管理员权限。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                       <TextBlock Text="{Binding ThxStatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button local:Localized.Uid="RazerHeadsetThxInstallButton" Content="下载 THX 安装包" Click="HeadsetAudioInstallThxClick" Visibility="{Binding ThxInstallVisibility}" Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button local:Localized.Uid="RazerHeadsetThxInstallButton" Content="下载 THX 安装包" Click="HeadsetAudioInstallThxClick" Visibility="{Binding ThxInstallerVisibility}" Style="{StaticResource PrimaryButtonStyle}" />
                         <Button local:Localized.Uid="RazerHeadsetThxDownloadButton" Content="下载 THX 控制组件" Click="HeadsetAudioDownloadThxClick" Visibility="{Binding ThxDownloadVisibility}" IsEnabled="{Binding CanDownloadThxComponent}" Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button local:Localized.Uid="RazerHeadsetThxGameProfilesButton" Content="更新 THX 游戏配置" Click="HeadsetAudioOpenThxGameProfilesClick" Visibility="{Binding ThxGameProfilesVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button local:Localized.Uid="RazerHeadsetThxPatcherButton" Content="更新 THX Patcher" Click="HeadsetAudioOpenThxPatcherClick" Visibility="{Binding ThxPatcherVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
+                      </StackPanel>
+                      <StackPanel Spacing="12" Visibility="{Binding ThxControlsVisibility}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                          <ToggleSwitch local:Localized.Uid="RazerHeadsetThxSpatialToggle" Header="空间音效" IsOn="{Binding ThxSpatialEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                          <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetThxSpatialApply" Content="应用空间音效" Click="HeadsetAudioApplyThxSpatialClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource OpenRazerSaveButtonStyle}" VerticalAlignment="Bottom" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                          <ComboBox local:Localized.Uid="RazerHeadsetThxPresetLabel" Header="预设" ItemsSource="{Binding ThxPresetOptions}" SelectedIndex="{Binding SelectedThxPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" HorizontalAlignment="Stretch" />
+                          <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetThxPresetApply" Content="应用预设" Click="HeadsetAudioApplyThxPresetClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource OpenRazerSaveButtonStyle}" VerticalAlignment="Bottom" />
+                        </Grid>
+                        <StackPanel Spacing="8" Visibility="{Binding ThxBandsVisibility}">
+                          <TextBlock local:Localized.Uid="RazerHeadsetThxEqualizerTitle" Text="THX 均衡器" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                          <ItemsControl ItemsSource="{Binding ThxBands}" IsEnabled="{Binding CanApplyThx}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <Grid ColumnDefinitions="64,*,56" ColumnSpacing="8" MinHeight="30">
+                                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" />
+                                  <Slider Grid.Column="1" Minimum="-12" Maximum="12" StepFrequency="0.5" Value="{Binding Level, Mode=TwoWay}" />
+                                  <TextBlock Grid.Column="2" Text="{Binding LevelText}" VerticalAlignment="Center" HorizontalAlignment="Right" FontFamily="Cascadia Mono,Consolas" FontSize="11" />
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                          <Button local:Localized.Uid="RazerHeadsetThxEqualizerApply" Content="应用频段" Click="HeadsetAudioApplyThxBandsClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" />
+                        </StackPanel>
+                        <StackPanel Spacing="8" Visibility="{Binding ThxNormalizationVisibility}">
+                          <ToggleSwitch local:Localized.Uid="RazerHeadsetThxNormalizationToggle" Header="音量标准化" IsOn="{Binding ThxNormalizationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxNormalizationLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxNormalizationText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                          <Button local:Localized.Uid="RazerHeadsetThxNormalizationApply" Content="应用音量标准化" Click="HeadsetAudioApplyThxNormalizationClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" />
+                        </StackPanel>
+                        <StackPanel Spacing="8" Visibility="{Binding ThxVoiceClarityVisibility}">
+                          <ToggleSwitch local:Localized.Uid="RazerHeadsetThxVoiceClarityToggle" Header="人声清晰度" IsOn="{Binding ThxVoiceClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxVoiceClarityLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxVoiceClarityText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                          <Button local:Localized.Uid="RazerHeadsetThxVoiceClarityApply" Content="应用人声清晰度" Click="HeadsetAudioApplyThxVoiceClarityClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" />
+                        </StackPanel>
+                        <StackPanel Spacing="8" Visibility="{Binding ThxSidetoneVisibility}">
+                          <ToggleSwitch local:Localized.Uid="RazerHeadsetThxSidetoneToggle" Header="侧音" IsOn="{Binding ThxSidetoneEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxSidetoneLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxSidetoneText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                          <Button local:Localized.Uid="RazerHeadsetThxSidetoneApply" Content="应用侧音" Click="HeadsetAudioApplyThxSidetoneClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" />
+                        </StackPanel>
                       </StackPanel>
                     </StackPanel>
                   </Border>
