@@ -10,6 +10,7 @@ using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Windows.Storage.Pickers;
 using Windows.System;
 using Windows.UI;
@@ -437,6 +438,37 @@ public sealed partial class MainWindow
         }
 
         DisplayMuxModeStatusText.Text = message;
+        if (result.Outcome == BladeDisplayMuxSwitchOutcome.RestartRequired)
+        {
+            await ShowDisplayMuxRestartPromptAsync();
+        }
+    }
+
+    private async Task ShowDisplayMuxRestartPromptAsync()
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = Content.XamlRoot,
+            Title = AppStrings.Text("DisplayMuxModeRestartTitle"),
+            Content = AppStrings.Text("DisplayMuxModeStatusRestartRequired"),
+            PrimaryButtonText = AppStrings.Text("DisplayMuxModeRestartNow"),
+            CloseButtonText = AppStrings.Text("DisplayMuxModeRestartLater"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            RestartSystem();
+        }
+    }
+
+    private static void RestartSystem()
+    {
+        // No /f: let Windows close applications normally so unsaved work can still prompt.
+        using var process = Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 5")
+        {
+            CreateNoWindow = true,
+            UseShellExecute = false,
+        });
     }
 
     private static string DedicatedGpuModeStatusMessage(DedicatedGpuModeStatus status)

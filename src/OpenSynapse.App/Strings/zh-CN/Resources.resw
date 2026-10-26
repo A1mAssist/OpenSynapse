@@ -1621,6 +1621,9 @@
   <data name="DisplayMuxModeStatusApplying" xml:space="preserve"><value>正在写入设备 MUX 设置…</value><comment>MUX 写入中</comment></data>
   <data name="DisplayMuxModeStatusSuccess" xml:space="preserve"><value>当前已是目标显示模式。</value><comment>MUX 无需切换</comment></data>
   <data name="DisplayMuxModeStatusRestartRequired" xml:space="preserve"><value>显示模式已写入，重启后生效。</value><comment>MUX 需要重启</comment></data>
+  <data name="DisplayMuxModeRestartTitle" xml:space="preserve"><value>显示模式已切换</value><comment>MUX 重启提示标题</comment></data>
+  <data name="DisplayMuxModeRestartNow" xml:space="preserve"><value>立即重启</value><comment>MUX 重启提示按钮</comment></data>
+  <data name="DisplayMuxModeRestartLater" xml:space="preserve"><value>稍后</value><comment>MUX 重启提示按钮</comment></data>
   <data name="DisplayMuxModeStatusNoDevice" xml:space="preserve"><value>未找到支持 MUX 的 Blade HID 设备。</value><comment>未找到 Blade MUX 设备</comment></data>
   <data name="DisplayMuxModeStatusNoPair" xml:space="preserve"><value>设备未报告可切换的动态显示（DDS / Optimus）或独显直连能力。</value><comment>MUX 能力不足</comment></data>
   <data name="DisplayMuxModeStatusUnavailable" xml:space="preserve"><value>读取设备 MUX 状态失败。</value><comment>MUX 状态读取异常</comment></data>
