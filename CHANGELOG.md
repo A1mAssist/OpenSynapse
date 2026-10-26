@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 灵刃 16（2025，`02C6`）在未连接雷蛇散热垫时，只要接的是全功率电源，也可以选择 HyperBoost；界面会提示第三方散热由用户自行负责。连接雷蛇散热垫的原有路径不变，其他机型仍需散热垫。
+- Blade 16 (2025, `02C6`) can select HyperBoost without the Razer Cooling Pad when the full-power adapter is connected; the UI warns that third-party cooling is the user's responsibility. The existing cooling-pad path is unchanged, and other models still require the pad.
 - Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
 - After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。

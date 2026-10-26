@@ -298,8 +298,19 @@ public sealed partial class MainViewModel
     private bool _suppressBladePerformanceApply;
     private bool _bladeCoolingPadConnected;
 
+    private bool IsHyperboostAvailable =>
+        BladeModelCapabilities.IsHyperBoostAvailable(
+            _blade._bladeProductId,
+            _lastDeviceTelemetry?.BladeAdapterPower,
+            _bladeCoolingPadConnected);
+
     public Visibility HyperboostOptionVisibility =>
-        _bladeCoolingPadConnected ? Visibility.Visible : Visibility.Collapsed;
+        IsHyperboostAvailable ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility HyperboostHintVisibility =>
+        !_bladeCoolingPadConnected && IsHyperboostAvailable
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
@@ -311,29 +322,34 @@ public sealed partial class MainViewModel
         }
 
         var requested = BladePerformanceModes[BladePerformanceModeIndex];
-        bool coolingPadConnected;
-        try
+        if (requested == BladePerformanceMode.Hyperboost)
         {
-            coolingPadConnected = requested != BladePerformanceMode.Hyperboost ||
-                await RazerCoolingPad.IsConnectedAsync(cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-        if (!coolingPadConnected)
-        {
-            _suppressBladePerformanceApply = true;
             try
             {
-                BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex;
+                await RefreshCoolingPadPresenceAsync(cancellationToken);
             }
-            finally
+            catch (OperationCanceledException)
             {
-                _suppressBladePerformanceApply = false;
+                return;
             }
-            SetDeviceOperationError(AppStrings.Text("BladeHyperboostRequiresPad"));
-            return;
+
+            if (!IsHyperboostAvailable)
+            {
+                _suppressBladePerformanceApply = true;
+                try
+                {
+                    BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex;
+                }
+                finally
+                {
+                    _suppressBladePerformanceApply = false;
+                }
+                SetDeviceOperationError(AppStrings.Text(
+                    BladeModelCapabilities.SupportsPadlessHyperBoost(_blade._bladeProductId)
+                        ? "BladeHyperboostRequiresFullPower"
+                        : "BladeHyperboostRequiresPad"));
+                return;
+            }
         }
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
         {
@@ -543,8 +559,9 @@ public sealed partial class MainViewModel
                 throw new InvalidOperationException(AppStrings.Text("Text_2263C356"));
             }
 
+            await RefreshCoolingPadPresenceAsync(cancellationToken);
             var cycleModes = _bladePerformanceCycleModes;
-            if (!await RazerCoolingPad.IsConnectedAsync(cancellationToken))
+            if (!IsHyperboostAvailable)
             {
                 cycleModes = [.. cycleModes.Where(mode => mode != BladePerformanceMode.Hyperboost)];
                 if (cycleModes.Count == 0)
@@ -1027,7 +1044,7 @@ public sealed partial class MainViewModel
     public bool CanWriteBladeBrightness =>
         CanSetBladeBrightness && BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId);
     public string BladePerformanceModeText { get => _blade._bladePerformanceModeText; private set => SetField(ref _blade._bladePerformanceModeText, value); }
-    public IReadOnlyList<string> BladePerformanceModeOptions => _bladeCoolingPadConnected
+    public IReadOnlyList<string> BladePerformanceModeOptions => IsHyperboostAvailable
         ? AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25", "HyperBoost")
         : AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25");
     public int BladePerformanceModeIndex { get => _blade._bladePerformanceModeIndex; set => SetField(ref _blade._bladePerformanceModeIndex, value); }
@@ -1220,6 +1237,9 @@ public sealed partial class MainViewModel
     {
         OnPropertyChanged(nameof(CanWriteBladeBrightness));
         OnPropertyChanged(nameof(CanWriteBladePerformanceMode));
+        OnPropertyChanged(nameof(HyperboostOptionVisibility));
+        OnPropertyChanged(nameof(HyperboostHintVisibility));
+        OnPropertyChanged(nameof(BladePerformanceModeOptions));
         OnPropertyChanged(nameof(CanSetBladeGamingMode));
         OnPropertyChanged(nameof(BladeCustomPerformanceVisibility));
         OnPropertyChanged(nameof(BladeCpuBoostOptions));

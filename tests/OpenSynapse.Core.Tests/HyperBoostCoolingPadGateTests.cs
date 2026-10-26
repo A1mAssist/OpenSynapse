@@ -8,11 +8,36 @@ namespace OpenSynapse.Core.Tests;
 public sealed class HyperBoostCoolingPadGateTests
 {
     [Fact]
-    public async Task ProfileHyperBoostFallsBackToPerformanceWithoutCoolingPad()
+    public async Task ProfileHyperBoostAppliesWithoutCoolingPadOnBlade16_2025WithFullPower()
     {
         var reader = new RecordingReader();
 
         var result = await ApplyAsync(reader, coolingPadConnected: false);
+
+        Assert.Equal(BladePerformanceMode.Hyperboost, reader.LastMode);
+        Assert.DoesNotContain(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ProfileHyperBoostFallsBackWithoutCoolingPadOnOtherModels()
+    {
+        var reader = new RecordingReader();
+
+        var result = await ApplyAsync(reader, coolingPadConnected: false, productId: 0x02B7);
+
+        Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
+        Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ProfileHyperBoostFallsBackOnBlade16_2025WithoutFullPower()
+    {
+        var reader = new RecordingReader();
+
+        var result = await ApplyAsync(
+            reader,
+            coolingPadConnected: false,
+            powerSource: PowerSourceKind.Battery);
 
         Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
         Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
@@ -23,13 +48,20 @@ public sealed class HyperBoostCoolingPadGateTests
     {
         var reader = new RecordingReader();
 
-        var result = await ApplyAsync(reader, coolingPadConnected: true);
+        var result = await ApplyAsync(
+            reader,
+            coolingPadConnected: true,
+            powerSource: PowerSourceKind.Battery);
 
         Assert.Equal(BladePerformanceMode.Hyperboost, reader.LastMode);
         Assert.DoesNotContain(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
     }
 
-    private static async Task<ProfileApplyResult> ApplyAsync(RecordingReader reader, bool coolingPadConnected)
+    private static async Task<ProfileApplyResult> ApplyAsync(
+        RecordingReader reader,
+        bool coolingPadConnected,
+        ushort productId = 0x02C6,
+        PowerSourceKind powerSource = PowerSourceKind.FullPowerAdapter)
     {
         var document = ProfileDocument.CreateDefault();
         document.Global.Blade.PerformanceMode = (byte)BladePerformanceMode.Hyperboost;
@@ -37,7 +69,7 @@ public sealed class HyperBoostCoolingPadGateTests
             "blade",
             "Blade 16",
             0x1532,
-            0x02C6,
+            productId,
             DeviceAccessState.Available,
             DeviceCapabilityState.PendingValidation,
             91,
@@ -56,14 +88,17 @@ public sealed class HyperBoostCoolingPadGateTests
             ViperDpiY: null,
             ViperIdleSeconds: null,
             Errors: [],
-            CapturedAt: DateTimeOffset.UtcNow);
+            CapturedAt: DateTimeOffset.UtcNow,
+            BladeAdapterPower: powerSource == PowerSourceKind.FullPowerAdapter
+                ? new BladeAdapterPowerSnapshot(0, 0, 280, 280)
+                : null);
 
         return await new VerifiedProfileApplier().ApplyAsync(
             document,
             [device],
             telemetry,
             reader,
-            powerSource: PowerSourceKind.FullPowerAdapter,
+            powerSource: powerSource,
             applyKeyboardBrightness: false,
             coolingPadConnected: coolingPadConnected);
     }

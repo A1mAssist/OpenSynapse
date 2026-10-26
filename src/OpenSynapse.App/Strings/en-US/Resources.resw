@@ -1549,8 +1549,9 @@
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU temperature</value></data>
   <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>Higher of the two</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
-  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad: it raises sustained power limits and relies on the pad for cooling. The mode cannot be selected without the pad.</value></data>
+  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost raises sustained power limits. Without a Razer Cooling Pad, third-party cooling is your responsibility. Available only on the full-power adapter.</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad.</value></data>
+  <data name="BladeHyperboostRequiresFullPower" xml:space="preserve"><value>HyperBoost requires the full-power adapter when no Razer Cooling Pad is connected.</value></data>
   <data name="FirmwareTitle" xml:space="preserve"><value>Firmware</value></data>
   <data name="FirmwareCheckButton" xml:space="preserve"><value>Check for updates</value></data>
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>

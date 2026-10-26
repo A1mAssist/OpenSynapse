@@ -23,7 +23,7 @@ public static class BladeModelCapabilities
             // Blade 16 (2025) RZ09-0528. Custom CPU/GPU levels are the captured
             // 0x0D:0x07 pairs; its maximum fan is the fixed 5400 RPM fan-target
             // control, not the Custom Power Mode bit, so Max Fan is not admitted here.
-            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true, FixedFan: true),
+            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true, FixedFan: true, PadlessHyperBoost: true),
 
             // Blade 15 (Mid 2019) Mercury RZ09-03017. Owner-tested end to end: a fixed
             // target write took effect, both tachometers read back higher without a
@@ -93,6 +93,27 @@ public static class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract) && contract.FixedFan;
 
     /// <summary>
+    /// True only for the 02C6 pad-less HyperBoost path. The mode writes 0x07 to both
+    /// thermal channels and requires the full-power adapter; it does not emulate a
+    /// cooling pad or inherit the pad-present policy.
+    /// </summary>
+    public static bool SupportsPadlessHyperBoost(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.PadlessHyperBoost;
+
+    /// <summary>
+    /// HyperBoost is available through the Razer pad on every admitted Blade, and
+    /// through the pad-less 02C6 path only on the full-power adapter.
+    /// </summary>
+    public static bool IsHyperBoostAvailable(
+        ushort productId,
+        BladeAdapterPowerSnapshot? adapterPower,
+        bool coolingPadConnected) =>
+        coolingPadConnected ||
+        (SupportsPadlessHyperBoost(productId) &&
+         adapterPower is { ActualWatts: > 0, RecommendedWatts: > 0 } power &&
+         !power.IsLimitedAdapter);
+
+    /// <summary>
     /// Upper bound for parsing a stored fan target. This can exceed the fixed-write
     /// ceiling when a model reports a higher maximum than OpenSynapse exposes.
     /// </summary>
@@ -107,7 +128,8 @@ public static class BladeModelCapabilities
         bool FanCurve = false,
         bool FixedFan = false,
         int MaximumFanTargetRpm = BladeFanLimits.MaximumRpm,
-        bool Writes = true);
+        bool Writes = true,
+        bool PadlessHyperBoost = false);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay
