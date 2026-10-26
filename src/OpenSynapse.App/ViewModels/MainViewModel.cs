@@ -464,6 +464,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _openRazerSelectionCancellation?.Cancel();
         _openRazerSelectionCancellation?.Dispose();
         _macroRuntime.Dispose();
+        _hue?.Dispose();
 
         if (SelectedOpenRazerDevice is { } openRazerDevice)
         {

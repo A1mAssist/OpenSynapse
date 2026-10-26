@@ -68,9 +68,10 @@ public sealed class PhilipsHueLightRowViewModel : INotifyPropertyChanged
 /// Philips Hue bridge discovery, pairing and light control. Bridges are found by SSDP and
 /// Philips' N-UPnP service; pairing and control use the documented CLIP v2 API.
 /// </summary>
-public sealed class PhilipsHueViewModel : INotifyPropertyChanged
+public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly Action<string>? _diagnostic;
+    private PhilipsHueDiscovery? _discovery;
     private string _bridgeHost = string.Empty;
     private string? _appKey;
     private string _statusText = string.Empty;
@@ -221,8 +222,8 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
         var found = 0;
         try
         {
-            using var discovery = new PhilipsHueDiscovery(diagnostic: _diagnostic);
-            var bridges = await discovery.DiscoverAsync(cancellationToken: cancellationToken);
+            _discovery ??= new PhilipsHueDiscovery(diagnostic: _diagnostic);
+            var bridges = await _discovery.DiscoverAsync(cancellationToken: cancellationToken);
             _diagnostic?.Invoke($"Hue discovery found {bridges.Count} bridge(s).");
             found = bridges.Count;
             Bridges.Clear();
@@ -455,4 +456,10 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    public void Dispose()
+    {
+        _discovery?.Dispose();
+        _discovery = null;
+    }
 }
