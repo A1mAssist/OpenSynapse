@@ -7,60 +7,80 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed record OpenRazerMappingAction(string Name, byte FunctionId, byte[] Data);
-
 public sealed class OpenRazerMappingRowViewModel : INotifyPropertyChanged
 {
-    private int _targetIndex;
+    private int _groupIndex;
+    private int _optionIndex;
+    private int _modifierIndex;
+    private IReadOnlyList<string> _optionNames = [];
 
-    internal OpenRazerMappingRowViewModel(byte buttonId, IReadOnlyList<string> actionNames)
+    internal OpenRazerMappingRowViewModel(byte buttonId)
     {
         ButtonId = buttonId;
-        ButtonName = OpenRazerMappingViewModel.DescribeButton(buttonId);
-        ActionNames = actionNames;
+        ButtonName = OpenRazerMappingActions.DescribeButton(buttonId);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public byte ButtonId { get; }
     public string ButtonName { get; }
-    public IReadOnlyList<string> ActionNames { get; }
+    public IReadOnlyList<string> ModifierNames => OpenRazerMappingActions.ModifierNames;
     public string CurrentActionText { get; internal set; } = "--";
-    public int TargetIndex
+    public IReadOnlyList<string> OptionNames
     {
-        get => _targetIndex;
-        set
+        get => _optionNames;
+        private set
         {
-            if (_targetIndex == value) return;
-            _targetIndex = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TargetIndex)));
+            _optionNames = value;
+            OnPropertyChanged();
         }
     }
+    public int GroupIndex
+    {
+        get => _groupIndex;
+        set
+        {
+            if (_groupIndex == value) return;
+            _groupIndex = value;
+            OptionNames = OpenRazerMappingActions.OptionNames((OpenRazerMappingGroup)value);
+            _optionIndex = 0;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(OptionIndex));
+            OnPropertyChanged(nameof(ModifierVisibility));
+            OnPropertyChanged(nameof(CanApply));
+        }
+    }
+    public int OptionIndex
+    {
+        get => _optionIndex;
+        set
+        {
+            if (_optionIndex == value) return;
+            _optionIndex = value;
+            OnPropertyChanged();
+        }
+    }
+    public int ModifierIndex
+    {
+        get => _modifierIndex;
+        set
+        {
+            if (_modifierIndex == value) return;
+            _modifierIndex = value;
+            OnPropertyChanged();
+        }
+    }
+    public Visibility ModifierVisibility => _groupIndex == (int)OpenRazerMappingGroup.KeyboardKey
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public bool CanApply => _groupIndex > 0;
+
+    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
 public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
 {
-    private static readonly OpenRazerMappingAction[] Catalog =
-    [
-        new("Off", OpenRazerMappingFunctions.Off, []),
-        new("Left", OpenRazerMappingFunctions.ButtonCode, [0x01]),
-        new("Right", OpenRazerMappingFunctions.ButtonCode, [0x02]),
-        new("Middle", OpenRazerMappingFunctions.ButtonCode, [0x03]),
-        new("Back", OpenRazerMappingFunctions.ButtonCode, [0x04]),
-        new("Forward", OpenRazerMappingFunctions.ButtonCode, [0x05]),
-        new("Button 6", OpenRazerMappingFunctions.ButtonCode, [0x06]),
-        new("Button 7", OpenRazerMappingFunctions.ButtonCode, [0x07]),
-        new("Button 8", OpenRazerMappingFunctions.ButtonCode, [0x08]),
-        new("Scroll up", OpenRazerMappingFunctions.ButtonCode, [0x09]),
-        new("Scroll down", OpenRazerMappingFunctions.ButtonCode, [0x0A]),
-        new("DPI up", OpenRazerMappingFunctions.ButtonCode, [0x0B]),
-        new("DPI down", OpenRazerMappingFunctions.ButtonCode, [0x0C]),
-        new("DPI cycle up", OpenRazerMappingFunctions.ButtonCode, [0x60]),
-        new("DPI cycle down", OpenRazerMappingFunctions.ButtonCode, [0x61]),
-        new("Sniper", OpenRazerMappingFunctions.ButtonCode, [0x0F]),
-        new("Profile switch", OpenRazerMappingFunctions.ButtonCode, [0x0E]),
-    ];
-
     private readonly OpenRazerDeviceService _service;
     private readonly OpenRazerDeviceConnection _connection;
     private readonly Action<string>? _log;
@@ -83,9 +103,6 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<OpenRazerMappingRowViewModel> Rows { get; } = [];
-    private static readonly string[] KeepLabel = ["(keep)"];
-    public IReadOnlyList<string> ActionNames { get; } =
-        KeepLabel.Concat(Catalog.Select(action => action.Name)).ToArray();
     public bool IsBusy
     {
         get => _isBusy;
@@ -99,7 +116,7 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
         }
     }
     public bool CanRead => !IsBusy;
-    public bool CanApply => !IsBusy && _loaded && Rows.Any(row => row.TargetIndex > 0);
+    public bool CanApply => !IsBusy && _loaded && Rows.Any(row => row.CanApply);
     public string StatusText
     {
         get => _statusText;
@@ -149,12 +166,20 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
             Rows.Clear();
             foreach (var id in ids)
             {
-                var row = new OpenRazerMappingRowViewModel(id, ActionNames);
+                var row = new OpenRazerMappingRowViewModel(id);
+                row.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName == nameof(OpenRazerMappingRowViewModel.GroupIndex))
+                    {
+                        OnPropertyChanged(nameof(CanApply));
+                    }
+                };
                 try
                 {
                     var assignment = await _service.GetButtonAssignmentAsync(
                         _connection, id, Mode, cancellationToken).ConfigureAwait(true);
-                row.CurrentActionText = Describe(assignment.FunctionId, assignment.Data);
+                    row.CurrentActionText =
+                        OpenRazerMappingActions.Describe(assignment.FunctionId, assignment.Data);
                 }
                 catch (Exception exception) when (IsExpected(exception))
                 {
@@ -188,14 +213,21 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
         var applied = 0;
         try
         {
-            foreach (var row in Rows.Where(row => row.TargetIndex > 0).ToArray())
+            foreach (var row in Rows.Where(row => row.CanApply).ToArray())
             {
-                var action = Catalog[row.TargetIndex - 1];
+                var action = OpenRazerMappingActions.CreateAction(
+                    (OpenRazerMappingGroup)row.GroupIndex,
+                    row.OptionIndex,
+                    OpenRazerMappingActions.ModifierMasks[row.ModifierIndex]);
+                if (action is null)
+                {
+                    continue;
+                }
                 await _service.SetButtonAssignmentAsync(
                     _connection, row.ButtonId, Mode, action.FunctionId, action.Data,
                     cancellationToken).ConfigureAwait(true);
-                row.CurrentActionText = Describe(action.FunctionId, action.Data);
-                row.TargetIndex = 0;
+                row.CurrentActionText = OpenRazerMappingActions.Describe(action.FunctionId, action.Data);
+                row.GroupIndex = 0;
                 applied++;
             }
             StatusText = applied == 0 ? "Nothing changed" : $"Saved {applied} assignments";
@@ -211,39 +243,6 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(CanApply));
         }
     }
-
-    internal static string DescribeButton(byte buttonId) => buttonId switch
-    {
-        0x01 => "Left",
-        0x02 => "Right",
-        0x03 => "Middle",
-        0x04 => "Back",
-        0x05 => "Forward",
-        >= 0x06 and <= 0x08 => $"Button {buttonId}",
-        0x09 => "Scroll up",
-        0x0A => "Scroll down",
-        0x0B => "DPI up",
-        0x0C => "DPI down",
-        0x0D => "User select",
-        0x0E => "Profile switch",
-        0x0F => "Sniper",
-        >= 0x10 and <= 0x1F => $"Macro {buttonId - 0x0F}",
-        0x60 => "DPI cycle up",
-        0x61 => "DPI cycle down",
-        _ => $"Button {buttonId}",
-    };
-
-    private static string Describe(byte functionId, IReadOnlyList<byte> data) =>
-        functionId switch
-        {
-            OpenRazerMappingFunctions.Off => "Off",
-            OpenRazerMappingFunctions.ButtonCode when data.Count > 0 => DescribeButton(data[0]),
-            OpenRazerMappingFunctions.ButtonCode => "Button",
-            _ => $"Function {functionId}" +
-                 (data.Count == 0
-                     ? string.Empty
-                     : $" [{string.Join(' ', data.Select(value => value.ToString("X2")))}]"),
-        };
 
     private static bool IsExpected(Exception exception) =>
         exception is InvalidOperationException or InvalidDataException or NotSupportedException or

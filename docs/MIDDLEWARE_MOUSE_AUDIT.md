@@ -55,8 +55,25 @@
 | 读单个映射 | `02:8C` | 80 | `[profileId, buttonId, mode]` |
 | 写单个映射 | `02:0C` | 80 | `[profileId, buttonId, mode, fnId, dataSize, data...]` |
 
-- 回复布局：`[classId, buttonId, mode, fnId, dataSize, data0..data4]`。
+- 回复布局：`[buttonId, mode, fnId, dataSize, data0..data4]`（`class` 之后的第一个参数是按键 ID）。
+- 请求和回复的 `dataSize` 都是 80，`profileId` 固定 `1`。
 - `mode`：普通层 `0`，Shift 层 `1`。
-- `fnId`：`0` 关闭，`1` 映射成鼠标按键（data 首字节为目标按键 ID）。
-- 按键 ID 与功能 ID 取自 bundle 的枚举：`LeftButton=1`、`RightButton=2`、`ScrollButton=3`、`Button4..8=4..8`、`ScrollUp/Down=9/10`、`DPIUp/Down=11/12`、`SniperButton=15`、`DPI_Cycle_Up/Down=96/97`。
-- 当前实现固定 `profileId=1`，只提供“关闭 / 映射成鼠标按键”两类动作；宏、键盘码和灯光类动作尚未开放（`fnId` 2..21 已从 bundle 取得）。
+- `fnId` 与 payload 直接取自 bundle 的 `buttonMappingToFnDataByte`（chunk `6120` 的模块 `56415`）：
+
+| fnId | 动作 | payload |
+|---:|---|---|
+| 0 | 关闭 | 空 |
+| 1 | 鼠标按键 | `[buttonId]`（`LeftButton=1`、`RightButton=2`、`ScrollButton=3`、`Button4..8=4..8`、`ScrollUp/Down=9/10`、`DPIUp/Down=11/12`、`SniperButton=15`、`DPI_Cycle_Up/Down=96/97`、`Previous/Next=99/100`、`Vol_Up/Down=101/102`、`Mute=103`、`ScrollLeft/Right=104/105`） |
+| 2 | 键盘按键 | `[修饰键位掩码, HID usage]`；位掩码 `LeftCtrl=1`、`LeftShift=2`、`LeftAlt=4`、`LeftGUI=8`。纯修饰键按雷云的写法发 `[224..231, 0]` |
+| 6 | DPI | `[1]` 加、`[2]` 减、`[6]` 循环加、`[7]` 循环减；`[5, xH, xL, yH, yL]` 是 DPI 瞬降阈值（大端 16 位） |
+| 7 | 配置切换 | `[1]` 上、`[2]` 下、`[3, profileId]` 指定、`[4]` 循环上、`[5]` 循环下 |
+| 9 | 电源键 | `[id]`：`129` 电源、`130` 睡眠、`131` 唤醒 |
+| 10 | 媒体键 | `[hi, lo]` 大端 16 位：`226` 静音、`233/234` 音量加减、`205` 播放/暂停、`181/182` 上/下一曲、`183` 停止、`184` 弹出、`671` 切换应用、`111/112` 亮度、`545` 聚焦搜索 |
+| 11 | 双击 | `[1]` |
+| 12 | HyperShift 切换 | `[1]` |
+| 17 | Razer 键 | `[id]`：`80` 配置切换、`81` 狙击、`82/83` DPI 循环、`84` 滚轮模式、`89` HyperShift、`216` 麦克风静音等 |
+| 18 | 滚轮模式 | `[1]` 切换、`[2]` 滚轮加、`[3]` 滚轮减、`[4]` 循环加、`[5]` 循环减 |
+| 21 | Windows 快捷键 | `[id]`：`99` 截图、`100` Xbox Game Bar、`101` 切换应用 |
+
+- 编辑器没有开放的动作，都是缺设备侧数据、写进去只能靠猜的：`fnId 3/4/5/15`（宏槽 ID 与重放次数）、`13/14`（连发速率）、`16`（手柄按键）、DPI 瞬降阈值、指定配置 ID。
+- `fnId 8`（灯光）在雷云自己的 `buttonMappingToFnDataByte` 里没有 case，直接 `break`，所以这条能力本身不存在。

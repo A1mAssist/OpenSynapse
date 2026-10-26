@@ -135,7 +135,11 @@ public sealed class OpenRazerDeviceCatalog
     /// The middleware mice derive their onboard button-assignment commands from the
     /// product bundle instead of the OpenRazer snapshot; the runtime read still decides.
     /// </summary>
-    internal static bool HasOnboardMapping(ushort productId) => MappingProductIds.Contains(productId);
+    internal static bool HasOnboardMapping(ushort productId)
+    {
+        _ = BuiltIn;
+        return MappingProductIds.Contains(productId);
+    }
     public OpenRazerDeviceDefinition? Find(ushort vendorId, ushort productId) =>
         vendorId == OpenRazerDeviceDefinition.VendorId
             ? _byProductId.GetValueOrDefault(productId)

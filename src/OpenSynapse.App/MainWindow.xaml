@@ -592,18 +592,36 @@
                         <Button Grid.Column="3" Content="保存" Click="OpenRazerApplyMappingClick" IsEnabled="{Binding Mapping.CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>
                       <InfoBar IsOpen="{Binding Mapping.HasError}" IsClosable="False" Severity="Warning" Message="{Binding Mapping.ErrorText}" />
-                      <Grid ColumnDefinitions="150,*,240" ColumnSpacing="12">
-                        <TextBlock Text="鼠标控制" Style="{StaticResource MetricLabelStyle}" />
+                      <Grid ColumnDefinitions="110,1.2*,1*,1.3*,110" ColumnSpacing="12">
+                        <TextBlock Text="按键" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="1" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="2" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Grid.Column="2" Text="类型" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Grid.Column="3" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Grid.Column="4" Text="修饰键" Style="{StaticResource MetricLabelStyle}" />
                       </Grid>
                       <ItemsControl ItemsSource="{Binding Mapping.Rows}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
-                            <Grid ColumnDefinitions="150,*,240" ColumnSpacing="12" MinHeight="38">
+                            <Grid ColumnDefinitions="110,1.2*,1*,1.3*,110" ColumnSpacing="12" MinHeight="38">
                               <TextBlock Text="{Binding ButtonName}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                              <ComboBox Grid.Column="2" ItemsSource="{Binding ActionNames}" SelectedIndex="{Binding TargetIndex, Mode=TwoWay}" AutomationProperties.Name="目标映射动作" HorizontalAlignment="Stretch" />
+                              <ComboBox Grid.Column="2" SelectedIndex="{Binding GroupIndex, Mode=TwoWay}" AutomationProperties.Name="目标映射类型" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="保持" />
+                                <ComboBoxItem Content="关闭" />
+                                <ComboBoxItem Content="鼠标按键" />
+                                <ComboBoxItem Content="键盘按键" />
+                                <ComboBoxItem Content="DPI" />
+                                <ComboBoxItem Content="配置切换" />
+                                <ComboBoxItem Content="媒体键" />
+                                <ComboBoxItem Content="电源键" />
+                                <ComboBoxItem Content="双击" />
+                                <ComboBoxItem Content="滚轮模式" />
+                                <ComboBoxItem Content="Razer 键" />
+                                <ComboBoxItem Content="Windows 快捷键" />
+                                <ComboBoxItem Content="HyperShift 切换" />
+                              </ComboBox>
+                              <ComboBox Grid.Column="3" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding OptionIndex, Mode=TwoWay}" IsEnabled="{Binding CanApply}" AutomationProperties.Name="目标映射动作" HorizontalAlignment="Stretch" />
+                              <ComboBox Grid.Column="4" ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" AutomationProperties.Name="键盘修饰键" HorizontalAlignment="Stretch" />
                             </Grid>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
