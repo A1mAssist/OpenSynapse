@@ -341,6 +341,61 @@ public sealed class OpenRazerDeviceCatalog
         AddViperV3ProSeAlias(0x00C0, 0x00DE, "Razer Viper V3 Pro SE (Wired)");
         AddViperV3ProSeAlias(0x00C1, 0x00DF, "Razer Viper V3 Pro SE (Wireless)");
 
+        AddMiddlewareMice();
+
+        // Product definitions come from the Razer middleware bundles: each product's
+        // DeviceInfo carries the DPI range, polling rates and feature set. Upstream OpenRazer
+        // has no entry for these product ids, so each one reuses the closest catalogued
+        // sibling's protocol. A wrong guess only fails the runtime read probe, which keeps
+        // the matching write path closed.
+        void AddMiddlewareMice()
+        {
+            (ushort Sibling, ushort Product, string Name, int MaxDpi, int[] Rates)[] entries =
+            [
+                (0x006A, 0x0063, "Razer Jugan", 7200, []),
+                (0x0073, 0x0069, "Razer Mamba Hyperflux", 16000, [125, 500, 1000]),
+                (0x006B, 0x0074, "Razer Abyssus Lite", 6400, []),
+                (0x005A, 0x0075, "Razer Turret Mouse Xbox One Edition", 16000, [125, 500, 1000]),
+                (0x0053, 0x0093, "Razer Naga Classic Edition", 16000, [125, 500, 1000]),
+                (0x00BF, 0x00DD, "Razer Krakoff", 45000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00DB, 0x00E0, "Razer Orochi V2", 18000, [125, 500, 1000]),
+                (0x00CD, 0x00E2, "Razer Basilisk V4 Pro (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00CD, 0x00E3, "Razer Basilisk V4 Pro (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00C1, 0x00E5, "Razer Viper V4 Pro (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00C1, 0x00E6, "Razer Viper V4 Pro (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00A8, 0x00E7, "Razer Naga V3 Pro (Wired)", 30000, [125, 500, 1000]),
+                (0x00A8, 0x00E8, "Razer Naga V3 Pro (Wireless)", 30000, [125, 500, 1000]),
+                (0x00CD, 0x00EA, "Razer Basilisk V4 HyperSpeed (Wireless)", 33000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00CD, 0x00EB, "Razer Basilisk V4 HyperSpeed (Wired)", 33000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00BF, 0x00EF, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00BF, 0x00F0, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+            ];
+
+            foreach (var entry in entries)
+            {
+                if (!devices.TryGetValue(entry.Sibling, out var sibling) ||
+                    devices.ContainsKey(entry.Product))
+                {
+                    continue;
+                }
+
+                devices.Add(entry.Product, new OpenRazerDeviceDefinition(
+                    entry.Product,
+                    entry.Name,
+                    sibling.Category,
+                    sibling.SourceCapabilities,
+                    entry.MaxDpi,
+                    Array.AsReadOnly(entry.Rates),
+                    sibling.MatrixDimensions,
+                    sibling.DeviceWait,
+                    sibling.Transactions,
+                    sibling.BuilderArgumentPrefixes,
+                    sibling.DefaultStorage,
+                    sibling.DefaultLedZone,
+                    sibling.CommandSequences));
+            }
+        }
+
         void AddLeviathanV2X()
         {
             if (devices.ContainsKey(LeviathanV2XProtocol.ProductId))

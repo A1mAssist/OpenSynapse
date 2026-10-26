@@ -104,13 +104,24 @@ public sealed class RazerChromaStandardTests
     }
 
     [Fact]
-    public void CatalogDoesNotOverlapAPageThatAlreadyOwnsTheDevice()
+    public void ChromaDiscoveryDoesNotAdmitADeviceTheCatalogOwns()
     {
         foreach (var productId in RazerChromaStandardService.Products.Keys)
         {
             Assert.False(RazerHeadsetAudioService.IsSupported(productId), $"audio 0x{productId:X4}");
             Assert.False(RazerKeyboardService.IsSupported(productId), $"keyboard 0x{productId:X4}");
-            Assert.Null(OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId));
+
+            var connections = RazerChromaStandardService.SelectConnections(
+            [
+                Descriptor(
+                    $"\\\\?\\hid#vid_1532&pid_{productId:x4}#test",
+                    $"catalog-check-{productId:x4}",
+                    productId),
+            ]);
+
+            var ownedByCatalog =
+                OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId) is not null;
+            Assert.Equal(ownedByCatalog ? 0 : 1, connections.Count);
         }
     }
 
