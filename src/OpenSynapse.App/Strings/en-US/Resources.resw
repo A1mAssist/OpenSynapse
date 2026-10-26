@@ -2225,7 +2225,24 @@
   <data name="HueLightCount" xml:space="preserve"><value>Loaded {0} lights.</value></data>
   <data name="HueColorLabel" xml:space="preserve"><value>Color</value></data>
   <data name="HueApplyColorButton" xml:space="preserve"><value>Apply color</value></data>
-</root>
+  <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>Onboard macros</value></data>
+  <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>These macros live in the keyboard's onboard memory and follow it to another PC. This view only reads them.</value></data>
+  <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>Read onboard macros</value></data>
+  <data name="RazerOnboardMacroLoaded" xml:space="preserve"><value>Read {0} onboard macros.</value></data>
+  <data name="RazerOnboardMacroUnavailable" xml:space="preserve"><value>This firmware does not answer the onboard macro command.</value></data>
+  <data name="RazerOnboardMacroRowPrefix" xml:space="preserve"><value>Macro</value></data>
+  <data name="RazerOnboardMacroRowDetail" xml:space="preserve"><value>{0} items · {1} bytes</value></data>
+  <data name="RazerOnboardMacroEmptyStream" xml:space="preserve"><value>Empty macro</value></data>
+  <data name="RazerOnboardMacroMouseButton" xml:space="preserve"><value>Mouse</value></data>
+  <data name="RazerOnboardMacroWheel" xml:space="preserve"><value>Wheel</value></data>  <data name="RazerOnboardMacroLocalLabel.Header" xml:space="preserve"><value>Local macro</value></data>
+  <data name="RazerOnboardMacroSlotLabel.Header" xml:space="preserve"><value>Onboard slot</value></data>
+  <data name="RazerOnboardMacroWriteButton.Content" xml:space="preserve"><value>Write to device</value></data>
+  <data name="RazerOnboardMacroWriteDone" xml:space="preserve"><value>Wrote onboard slot {0}.</value></data>
+  <data name="RazerOnboardMacroWriteUnsupported" xml:space="preserve"><value>This macro holds steps an onboard slot cannot store. Only keys, mouse buttons, wheel notches and delays are supported.</value></data>
+  <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>No macro is selected to write.</value></data>
+  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>Write failed: {0}</value></data></root>
+
+
 
 
 

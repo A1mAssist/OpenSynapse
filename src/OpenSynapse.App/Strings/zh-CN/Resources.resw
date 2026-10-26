@@ -2637,7 +2637,24 @@
   <data name="HueLightCount" xml:space="preserve"><value>已读取 {0} 盏灯。</value></data>
   <data name="HueColorLabel" xml:space="preserve"><value>颜色</value></data>
   <data name="HueApplyColorButton" xml:space="preserve"><value>应用颜色</value></data>
-</root>
+  <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>板载宏</value></data>
+  <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。</value></data>
+  <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>读取板载宏</value></data>
+  <data name="RazerOnboardMacroLoaded" xml:space="preserve"><value>已读取 {0} 个板载宏。</value></data>
+  <data name="RazerOnboardMacroUnavailable" xml:space="preserve"><value>这个固件没有响应板载宏命令。</value></data>
+  <data name="RazerOnboardMacroRowPrefix" xml:space="preserve"><value>宏</value></data>
+  <data name="RazerOnboardMacroRowDetail" xml:space="preserve"><value>{0} 个动作 · {1} 字节</value></data>
+  <data name="RazerOnboardMacroEmptyStream" xml:space="preserve"><value>空宏</value></data>
+  <data name="RazerOnboardMacroMouseButton" xml:space="preserve"><value>鼠标</value></data>
+  <data name="RazerOnboardMacroWheel" xml:space="preserve"><value>滚轮</value></data>  <data name="RazerOnboardMacroLocalLabel.Header" xml:space="preserve"><value>本机宏</value></data>
+  <data name="RazerOnboardMacroSlotLabel.Header" xml:space="preserve"><value>板载槽位</value></data>
+  <data name="RazerOnboardMacroWriteButton.Content" xml:space="preserve"><value>写入板载</value></data>
+  <data name="RazerOnboardMacroWriteDone" xml:space="preserve"><value>已写入板载槽位 {0}。</value></data>
+  <data name="RazerOnboardMacroWriteUnsupported" xml:space="preserve"><value>这个宏含有板载内存放不下的步骤，只支持按键、鼠标键、滚轮和延迟。</value></data>
+  <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>没有选中要写入的宏。</value></data>
+  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>写入失败：{0}</value></data></root>
+
+
 
 
 
