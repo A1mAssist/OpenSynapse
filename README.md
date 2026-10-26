@@ -18,7 +18,7 @@ OpenSynapse reads connected devices first, then exposes only the controls resolv
 
 > Current release `v1.6.0` · Windows 11 x64 · unsigned
 
-See [CHANGELOG.md](CHANGELOG.md) for release history.
+See [CHANGELOG.md](CHANGELOG.md) for release history, or read it in [简体中文](CHANGELOG.zh-CN.md).
 
 ## What it supports
 

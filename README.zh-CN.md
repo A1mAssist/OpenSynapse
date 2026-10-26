@@ -18,7 +18,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 > 当前版本 `v1.6.0` · Windows 11 x64 · 未签名
 
-完整版本记录见 [CHANGELOG.md](CHANGELOG.md)。
+完整版本记录见 [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md)，英文版见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 支持范围
 
