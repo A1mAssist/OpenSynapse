@@ -25,7 +25,7 @@ offset 1   channel_1
 offset 2   channel_2   （与 channel_1 相同）
 offset 3   pad = 0
 offset 4   last_idx = 本帧颜色数 - 1
-offset 5.. 315 字节 RGB，最多 105 颗灯
+offset 5.. 315 字节 RGB，协议上限 105 颗灯（105 × 3 = 315）
 ```
 
 总长固定 320 字节。旧文档里的“325 字节 / 320 字节 RGB”是错的：`struct razer_argb_report` 的
@@ -45,6 +45,16 @@ DeviceIoControl(handle, 0x88883010, frame, 320, nullptr, 0, &returned, nullptr)
 - `src/OpenSynapse.Windows/Protocols/RazerFilterControlTransport.cs` — IOCTL 透传
 - `src/OpenSynapse.Windows/Devices/RazerFilterEndpointDiscovery.cs` — 按 PID 找 `RZCONTROL` 接口
 - `src/OpenSynapse.Windows/Devices/OpenRazerSpecialLightingService.cs` — `SetArgbFrameAsync`
+- `src/OpenSynapse.Windows/Devices/RazerChromaStandardService.cs` — 0F1F 进灯光页，`SetCustomFrameModeAsync`
+- `src/OpenSynapse.App/ViewModels/RazerChromaViewModel.cs` + `MainWindow.xaml` — 「逐灯控制」卡片
+- `src/OpenSynapse.App/ArgbStripSettings.cs` — 每端口灯珠数量持久化
+
+## 逐灯 UI
+
+灯光页的「逐灯控制」卡片按 **6 端口 × 80 颗** 显示，每端口灯珠数量可改并保存在
+`%LOCALAPPDATA%\A1mAssist\OpenSynapse\argb-led-count.txt`。点格子涂色后「应用」才发帧；
+写帧前先发 `0F:02`（data size 12，args `00 00 08`，transaction `0x3F`）切 custom-frame 模式，
+该步失败只记诊断日志，不阻断帧写入。
 
 驱动没装时 `DiscoverAsync` 仍会列出设备，但 `Error` 会写明缺 `PID0f1fDrv`，`SetArgbFrameAsync` 直接报错，不会静默失败。
 

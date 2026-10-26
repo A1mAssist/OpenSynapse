@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
@@ -8,6 +9,36 @@ using OpenSynapse.Windows.Protocols;
 using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
+
+public sealed class ArgbLedViewModel : INotifyPropertyChanged
+{
+    private Color _color;
+
+    public ArgbLedViewModel(byte index, Color color)
+    {
+        Index = index;
+        _color = color;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public byte Index { get; }
+    public string Label => AppStrings.FormatText("RazerArgbLedLabel", Index + 1);
+
+    public Color Color
+    {
+        get => _color;
+        set
+        {
+            if (_color == value) return;
+            _color = value;
+            PropertyChanged?.Invoke(this, new(nameof(Color)));
+            PropertyChanged?.Invoke(this, new(nameof(Brush)));
+        }
+    }
+
+    public Brush Brush => new SolidColorBrush(Color);
+    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
+}
 
 public sealed class RazerChromaDeviceRowViewModel : INotifyPropertyChanged
 {
@@ -41,8 +72,18 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     private static readonly RazerChromaEffect[] Effects =
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
+    private const ushort ArgbProductId = 0x0F1F;
+    private static readonly string[] ArgbPortNames =
+        ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5", "Port 6"];
+
     private readonly RazerChromaDeviceConnection _connection;
     private readonly Action<string>? _diagnostic;
+    private readonly OpenRazerSpecialLightingService? _specialLighting;
+    private readonly Color[][] _argbPortColors = CreateArgbBuffers();
+    private readonly int[] _argbLedCounts = ArgbStripSettings.Load();
+    private OpenRazerSpecialLightingConnection? _argbConnection;
+    private int _selectedArgbPortIndex;
+    private int _argbLedCount;
     private bool _isBusy;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
@@ -57,10 +98,25 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
 
     public RazerChromaViewModel(
         RazerChromaDeviceConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        OpenRazerSpecialLightingService? specialLighting = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
+        _specialLighting = specialLighting;
+        _argbLedCount = _argbLedCounts[0];
+    }
+
+    private static Color[][] CreateArgbBuffers()
+    {
+        var buffers = new Color[ArgbStripSettings.Ports][];
+        for (var port = 0; port < buffers.Length; port++)
+        {
+            buffers[port] = new Color[ArgbStripSettings.MaxLeds];
+            Array.Fill(buffers[port], Color.FromArgb(255, 0, 0, 0));
+        }
+
+        return buffers;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -140,6 +196,41 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
+    public Visibility ArgbVisibility => _argbConnection is null ? Visibility.Collapsed : Visibility.Visible;
+    public IReadOnlyList<string> ArgbPortOptions => ArgbPortNames;
+    public ObservableCollection<ArgbLedViewModel> ArgbLeds { get; } = new();
+
+    public int SelectedArgbPortIndex
+    {
+        get => _selectedArgbPortIndex;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, ArgbStripSettings.Ports - 1);
+            if (_selectedArgbPortIndex == clamped) return;
+            _selectedArgbPortIndex = clamped;
+            _argbLedCount = _argbLedCounts[clamped];
+            OnPropertyChanged(nameof(ArgbLedCount));
+            RebuildArgbLeds();
+            OnPropertyChanged();
+        }
+    }
+
+    public double ArgbLedCount
+    {
+        get => _argbLedCount;
+        set
+        {
+            if (double.IsNaN(value)) return;
+            var clamped = (int)Math.Clamp(Math.Round(value), 1, ArgbStripSettings.MaxLeds);
+            if (_argbLedCount == clamped) return;
+            _argbLedCount = clamped;
+            _argbLedCounts[_selectedArgbPortIndex] = clamped;
+            ArgbStripSettings.Save(_argbLedCounts);
+            RebuildArgbLeds();
+            OnPropertyChanged();
+        }
+    }
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -193,6 +284,7 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
             ErrorText = state.BrightnessPercent is null && state.Effect is null
                 ? AppStrings.Text("RazerHeadsetReadFailed")
                 : string.Empty;
+            await LoadArgbAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -226,7 +318,102 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
             await service.SetEffectAsync(effect, colors, token);
         }, cancellationToken);
 
-    public void RefreshLocalization() => OnPropertyChanged(string.Empty);
+    public void PaintArgbLed(ArgbLedViewModel led)
+    {
+        ArgumentNullException.ThrowIfNull(led);
+        if (led.Index >= _argbLedCount) return;
+        _argbPortColors[_selectedArgbPortIndex][led.Index] = PrimaryColor;
+        led.Color = PrimaryColor;
+    }
+
+    public void FillArgbLeds()
+    {
+        var port = _argbPortColors[_selectedArgbPortIndex];
+        for (var index = 0; index < _argbLedCount; index++) port[index] = PrimaryColor;
+        RebuildArgbLeds();
+    }
+
+    public void ClearArgbLeds()
+    {
+        Array.Fill(_argbPortColors[_selectedArgbPortIndex], Color.FromArgb(255, 0, 0, 0));
+        RebuildArgbLeds();
+    }
+
+    public async Task ApplyArgbFrameAsync(CancellationToken cancellationToken = default)
+    {
+        if (_specialLighting is null || _argbConnection is not { } connection) return;
+        if (!BeginOperation()) return;
+        try
+        {
+            try
+            {
+                await OpenService().SetCustomFrameModeAsync(cancellationToken);
+            }
+            catch (Exception exception) when (IsExpectedException(exception))
+            {
+                // The frame is the operation that matters; firmware that refuses the mode
+                // echo still accepts frames, and the diagnostic log records the refusal.
+                _diagnostic?.Invoke($"chroma custom frame mode: {exception.Message}");
+            }
+
+            var colors = _argbPortColors[_selectedArgbPortIndex][.._argbLedCount]
+                .Select(color => new OpenRazerColor(color.R, color.G, color.B))
+                .ToArray();
+            await _specialLighting.SetArgbFrameAsync(
+                connection,
+                (byte)_selectedArgbPortIndex,
+                colors,
+                cancellationToken);
+            ErrorText = string.Empty;
+            OperationStatusText = AppStrings.Text("BlackSharkSaved");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+            OperationStatusText = string.Empty;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public void RefreshLocalization()
+    {
+        OnPropertyChanged(string.Empty);
+        foreach (var led in ArgbLeds) led.RefreshLocalization();
+    }
+
+    private async Task LoadArgbAsync(CancellationToken cancellationToken)
+    {
+        if (_connection.ProductId != ArgbProductId || _specialLighting is null) return;
+
+        var connections = await _specialLighting.DiscoverAsync(cancellationToken);
+        var argb = connections.FirstOrDefault(item => item.ProductId == ArgbProductId);
+        _argbConnection = argb is { IsReady: true } ? argb : null;
+        if (argb is { IsReady: false, Error: { } error } && string.IsNullOrEmpty(ErrorText))
+        {
+            ErrorText = error;
+        }
+
+        OnPropertyChanged(nameof(ArgbVisibility));
+        RebuildArgbLeds();
+    }
+
+    private void RebuildArgbLeds()
+    {
+        ArgbLeds.Clear();
+        if (_argbConnection is null) return;
+
+        var port = _argbPortColors[_selectedArgbPortIndex];
+        for (var index = 0; index < _argbLedCount; index++)
+        {
+            ArgbLeds.Add(new ArgbLedViewModel((byte)index, port[index]));
+        }
+    }
 
     private RazerChromaStandardService OpenService() =>
         new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);

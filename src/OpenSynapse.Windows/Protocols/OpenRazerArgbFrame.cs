@@ -3,7 +3,10 @@ namespace OpenSynapse.Windows.Protocols;
 internal static class OpenRazerArgbFrame
 {
     internal const int ReportLength = 320;
-    internal const int MaxLeds = 105;
+
+    // The controller exposes six channels of 80 addressable LEDs; the wire frame
+    // could carry 105, but nothing past column 80 is wired.
+    internal const int MaxLeds = 80;
     internal const byte MaxChannel = 5;
 
     /// <summary>

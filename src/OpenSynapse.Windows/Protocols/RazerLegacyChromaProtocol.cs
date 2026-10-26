@@ -15,6 +15,14 @@ public static class RazerLegacyChromaProtocol
     public const byte ReadProfileId = 1;
     public const byte ReadRegionId = 0;
 
+    /// <summary>
+    /// Switches the 320-byte ARGB controller to its custom-frame effect
+    /// (class 0x0F, command 0x02, effect 0x08), the mode OpenRazer enters before
+    /// writing frames. It uses transaction 0x3F on this device.
+    /// </summary>
+    public static byte[] SetCustomFrameMode(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(transactionId, 12, CommandClass, 0x02, [0, 0, 0x08]);
+
     public static byte[] GetEffect(byte transactionId) =>
         RazerFeatureReport.CreateRequest(
             transactionId,

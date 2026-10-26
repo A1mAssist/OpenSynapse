@@ -2135,6 +2135,14 @@
   <data name="MacroRecordMouseForegroundLabel" xml:space="preserve"><value>Relative to foreground window</value></data>
   <data name="MacroRecordDelayModeLabel" xml:space="preserve"><value>Delay</value></data>
   <data name="MacroRecordMouseModeLabel" xml:space="preserve"><value>Mouse tracking</value></data>
+  <data name="RazerArgbApply.Content" xml:space="preserve"><value>Apply strip</value></data>
+  <data name="RazerArgbClear.Content" xml:space="preserve"><value>Turn off</value></data>
+  <data name="RazerArgbDescription.Text" xml:space="preserve"><value>Pick a port and LED count, click cells to paint them with the primary color, then apply. Each port keeps its own colors.</value></data>
+  <data name="RazerArgbFill.Content" xml:space="preserve"><value>Fill all</value></data>
+  <data name="RazerArgbLedCount.Header" xml:space="preserve"><value>LED count</value></data>
+  <data name="RazerArgbLedLabel" xml:space="preserve"><value>LED {0}</value></data>
+  <data name="RazerArgbPort.Header" xml:space="preserve"><value>Port</value></data>
+  <data name="RazerArgbTitle.Text" xml:space="preserve"><value>Per-LED control</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>Default</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>Game</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>Music</value></data>
