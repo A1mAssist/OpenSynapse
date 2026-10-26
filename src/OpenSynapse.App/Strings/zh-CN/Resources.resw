@@ -2226,9 +2226,6 @@
   <data name="HidScanNoDevice" xml:space="preserve">
     <value>未检测到已连接的 OpenRazer 设备</value>
   </data>
-  <data name="HidScanDisabled" xml:space="preserve">
-    <value>鼠标设备已禁用 HID 命令扫描，避免影响 2.4 GHz 接收器</value>
-  </data>
   <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>游戏耳机</value></data>
   <data name="BlackSharkStatusConnected" xml:space="preserve"><value>已连接</value></data>
   <data name="BlackSharkCharging" xml:space="preserve"><value>充电中</value></data>

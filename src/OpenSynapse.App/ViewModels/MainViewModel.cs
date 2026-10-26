@@ -199,8 +199,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
     }
     public bool CanScanHidCommands =>
-        SelectedOpenRazerDevice is { IsReady: true } selected &&
-        selected.Connection.Definition.Category != DeviceCategory.Mouse;
+        SelectedOpenRazerDevice is { IsReady: true };
     public OpenRazerKrakenViewModel? SelectedOpenRazerKraken
     {
         get => _selectedOpenRazerKraken;

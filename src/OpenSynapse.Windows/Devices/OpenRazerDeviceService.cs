@@ -282,10 +282,9 @@ public sealed class OpenRazerDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        if (connection.Definition.Category == DeviceCategory.Mouse)
-        {
-            throw new NotSupportedException("HID command scan is disabled for mice to protect 2.4 GHz receivers.");
-        }
+        // Mice are scannable now that the sweep is read-only. The old guard existed when
+        // the sweep still covered command 00:04, which puts a wireless mouse into a mode
+        // where it never rejoins the 2.4 GHz link.
         var report = new StringBuilder();
         report.AppendLine($"generated: {DateTimeOffset.Now:O}");
         report.Append(HidCommandScan.FormatHeader(
