@@ -1,10 +1,12 @@
 using System.ComponentModel;
+using OpenSynapse.Core.Sensors;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
     private static readonly TimeSpan HueDiscoveryInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan HueDiscoveryIntervalOnBattery = TimeSpan.FromMinutes(2);
     private PhilipsHueViewModel? _hue;
 
     public PhilipsHueViewModel Hue =>
@@ -50,7 +52,10 @@ public sealed partial class MainViewModel
         {
             await ScanHueInBackgroundAsync(cancellationToken);
             if (Hue.IsConfigured) break;
-            await Task.Delay(HueDiscoveryInterval, cancellationToken);
+            var interval = CurrentPowerSource == PowerSourceKind.Battery
+                ? HueDiscoveryIntervalOnBattery
+                : HueDiscoveryInterval;
+            await Task.Delay(interval, cancellationToken);
         }
     }
 }
