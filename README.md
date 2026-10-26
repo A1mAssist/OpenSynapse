@@ -14,7 +14,7 @@
 
 <p align="center"><a href="README.zh-CN.md">简体中文</a> · English</p>
 
-OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It supports 259 OpenRazer catalog models plus dedicated Blade/Viper, Kraken, BlackShark V3 Pro, and Chroma REST integrations.
+OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It recognizes 389 device IDs across mice, keyboards, laptops, headsets, speakers, microphones, mouse pads, monitors, accessories, and network lighting.
 
 > Current release `v1.6.0` · Windows 11 x64 · unsigned
 
@@ -22,23 +22,23 @@ See [CHANGELOG.md](CHANGELOG.md) for release history, or read it in [简体中�
 
 ## What it supports
 
-OpenSynapse is not limited to a small list of product-specific models. The current support surface includes **259 OpenRazer catalog devices**, dedicated Blade and Viper controls, **six Kraken headsets**, **BlackShark V3 Pro audio controls**, and Chroma REST lighting integrations.
+OpenSynapse is not limited to a small list of models. The current support surface covers **389 recognized device IDs**, grouped by device type: 136 mice, 96 keyboards, 50 laptops, 40 headsets, 8 speakers, 4 microphones, 8 mouse pads, 2 monitors, 44 accessories, and 1 network lighting bridge.
 
-**[Browse the complete device and capability list](docs/SUPPORTED_DEVICES.md)** for model names, USB PIDs, product-specific features, and the exact support boundaries.
+**[Browse the complete device and capability list](docs/SUPPORTED_DEVICES.md)** for model names, USB PIDs, controls, and the exact support boundaries.
 
 ### Capability-driven controls
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Depending on the model, a device page may include device information, battery state, polling rate, DPI and DPI stages, power saving, lighting, matrix output, scroll settings, keyswitch optimization, Fn behavior, or HyperPolling receiver controls.
 
-The pinned OpenRazer catalog covers 112 mice, 73 keyboards, 48 laptops, and 26 accessories. Catalog presence does not mean every control has been physically verified on every model. An unresolved or busy endpoint stays read only until the next scan; OpenSynapse does not guess support from a product name or send a write through an unverified HID collection.
+The list is grouped by device type and includes every recognized PID, so a Device Manager entry can be matched directly. Presence in the list does not mean every control has been physically verified on every model. An unresolved or busy endpoint stays read only until the next scan; OpenSynapse does not guess support from a product name or send a write through an unverified HID collection.
 
-### Product-specific and additional support
+### Notable controls
 
 - **Blade:** telemetry, keyboard lighting, performance, fans, display, native panel mode, local dimming where supported, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior.
 - **Display:** an optional integrated-graphics-only mode disables the NVIDIA GPU through Windows PnP. It is not a MUX switch; external displays may stop working until the GPU is re-enabled. The machine-wide MSI install uses a LocalSystem service so the switch does not ask for UAC again; per-user and portable installs fall back to a UAC prompt.
 - **Blade THX audio:** spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization on supported Blade 16 and Blade 14 models. The Blade device page opens a reusable THX control window. The signed Razer native component is not bundled; if missing, the app offers a verified download from Razer's official server.
 - **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
-- **Kraken:** lighting only for six USB headsets; audio, microphone, EQ, and THX controls are not included.
+- **Headsets:** an audio page exposes EQ, microphone volume, sidetone, ANC, THX, and game/chat balance where the model and installed components support them. Kraken 7.1 models are lighting-only; THX V3/V4 installers are offered when the native component is missing.
 - **BlackShark V3 Pro:** battery, charging, sidetone, THX, ANC, and game/chat balance over its own HID channel. EQ, microphone gain, firmware updates, and indicator-LED modes are not included yet.
 
 ### Chroma REST
@@ -81,7 +81,7 @@ The application does not require Razer Synapse, AppEngine, or `mapping_engine.dl
 
 - Firmware updates, Razer accounts, cloud services, and Chroma Studio.
 - AMD Curve Optimizer, GPU MUX controls, and unverified hardware writes.
-- ARGB Controller and legacy fixed-report devices whose Windows transport is unavailable.
+- Legacy fixed-report devices whose Windows transport is unavailable.
 
 ## Build
 

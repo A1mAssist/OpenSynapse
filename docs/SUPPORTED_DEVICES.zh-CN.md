@@ -1,378 +1,486 @@
 # 支持设备
 
-OpenSynapse 的支持范围不只有少数产品专用型号。当前支持范围包括：
+OpenSynapse 只为已连接且成功识别 Windows HID 端点和协议的设备创建页面。下表按设备类型分组，不按协议或目录来源分组。
 
-- **259 个 OpenRazer 目录设备**。其中 8 款 Blade 走产品专用 manifest：`0255`、`029D`、`02B6`、`02B7`、`02B8`、`02C5`、`02C6`、`02C7`；另加本地准入的 Razer Leviathan V2 X `054A`。
-- **4 套产品专用控制**：Blade、Viper、BlackShark V3 Pro 和 Leviathan V2 X 中需要使用专用协议的功能。
-- **6 款 Kraken 耳机**：支持灯光控制。
-- **BlackShark V3 Pro**：支持电量、侧音、THX、主动降噪和游戏/语音平衡。
-- **Chroma REST**：供兼容游戏和外部程序接入灯光。
+当前表格共收录 389 个可识别设备 ID：鼠标 136、键盘 96、笔记本 50、耳机 40、音箱 8、麦克风 4、鼠标垫 8、显示器 2、配件 44、网络灯光桥 1。
 
-OpenRazer 部分固定于提交 `477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d`。OpenSynapse 只为已连接且被识别的具体设备创建页面，只有成功解析 Windows HID 端点和事务后才会显示对应控件。
+每一行是一个可识别的设备 ID。没有说明的行使用该型号的标准控制集；有说明的行标注专用页面、额外能力、仅灯光、只读探针或备用接口。部分实体设备会暴露多个 PID，因此每个可识别 PID 都单独列出，方便直接对照设备管理器。
 
-## 产品专用控制
+Chroma REST 是软件集成，不是设备，因此不放进下表。
 
-| 设备 | USB VID:PID | 可用功能 |
+## 鼠标
+
+标准鼠标控制包括 DPI、轮询率、电量、灯光和板载映射；设备不支持的项目会自动隐藏。
+
+| 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Blade 16 (2025) | `1532:02C6` | 遥测、键盘灯光、性能、风扇、显示、电池、触控板、充电上限，以及经过验证的 Fn/M3/M4/M5 |
-| Razer Blade 14 (2023) | `1532:029D` | 遥测、6×16 键盘矩阵灯光、性能、风扇、最大风扇、CPU 档位、充电上限 |
-| Razer Blade 14 (2024) | `1532:02B6` | 遥测、6×16 键盘矩阵灯光、性能、风扇、最大风扇、CPU 档位、充电上限 |
-| Razer Blade 16 (2024) | `1532:02B7` | Blade 695 middleware 控制集：遥测、6×17 键盘矩阵灯光、性能、风扇、显示 MUX、原生面板模式、局部调光、电池、充电上限、Fn/游戏模式报告 |
-| Razer Blade 18 (2024) | `1532:02B8` | 遥测、6×16 键盘矩阵灯光、性能、风扇、最大风扇、充电上限 |
-| Razer Blade 14 (2025) | `1532:02C5` | 遥测、6×16 键盘矩阵灯光、性能、风扇、充电上限 |
-| Razer Blade 18 (2025) | `1532:02C7` | 遥测、6×19 键盘矩阵灯光、性能、风扇、充电上限 |
-| Razer Blade Base (Early 2020) | `1532:0255` | 遥测、键盘亮度写入、性能/风扇模式写入、适配器功率、电源模式位图、充电上限、原生面板/SKU 读取；百分比风扇目标不伪装成 RPM 目标 |
-| Razer Blade 16 (2023) | `1532:029F` | 遥测、性能模式、自定义性能档位（含 Boost）、风扇全速、固定风扇转速（2000–5000 RPM）、充电上限、一次性充满、Gaming 模式、键盘亮度与固件原生灯效（关闭、呼吸、光谱、波浪） |
-| Razer Viper V3 HyperSpeed | `1532:00B8` | 电量、DPI、轮询率、休眠、电池类型和板载映射 |
-| Razer BlackShark V3 Pro | `1532:101B`、`1532:101C` | 电量、充电、侧音、THX、主动降噪和游戏/语音平衡 |
+| Razer Abyssus | `1532:0042` | — |
+| Razer Abyssus 1800 | `1532:0020` | — |
+| Razer Abyssus 2000 | `1532:005E` | — |
+| Razer Abyssus Elite (D.Va Edition) | `1532:006A` | — |
+| Razer Abyssus Essential | `1532:006B` | — |
+| Razer Abyssus Lite | `1532:0074` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Abyssus V2 | `1532:005B` | — |
+| Razer Atheris (Receiver) | `1532:0062` | — |
+| Razer Basilisk | `1532:0064` | — |
+| Razer Basilisk Essential | `1532:0065` | — |
+| Razer Basilisk Mobile (Receiver) | `1532:00D4` | — |
+| Razer Basilisk Mobile (Wired) | `1532:00D3` | — |
+| Razer Basilisk Ultimate | `1532:0086` | — |
+| Razer Basilisk V2 | `1532:0085` | — |
+| Razer Basilisk V3 | `1532:0099` | — |
+| Razer Basilisk V3 35K | `1532:00CB` | — |
+| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | — |
+| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | — |
+| Razer Basilisk V3 Pro 35K (Wired) | `1532:00CC` | — |
+| Razer Basilisk V3 Pro 35K (Wireless) | `1532:00CD` | — |
+| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | — |
+| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wireless) | `1532:00D7` | — |
+| Razer Basilisk V3 X HyperSpeed | `1532:00B9` | — |
+| Razer Basilisk V4 HyperSpeed (Wired) | `1532:00EB` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Basilisk V4 HyperSpeed (Wireless) | `1532:00EA` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Basilisk V4 Pro (Wired) | `1532:00E2` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Basilisk V4 Pro (Wireless) | `1532:00E3` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Basilisk X HyperSpeed | `1532:0083` | — |
+| Razer Cobra | `1532:00A2` | 通过中间件协议提供 DPI、轮询率和板载映射 |
+| Razer Cobra | `1532:00A3` | — |
+| Razer Cobra HyperSpeed (Wired) | `1532:00DA` | — |
+| Razer Cobra HyperSpeed (Wireless) | `1532:00DB` | — |
+| Razer Cobra Pro (Wired) | `1532:00AF` | — |
+| Razer Cobra Pro (Wireless) | `1532:00B0` | — |
+| Razer DeathAdder 1800 | `1532:0038` | — |
+| Razer DeathAdder 2000 | `1532:004F` | — |
+| Razer DeathAdder 2000 (read-only probe) | `1532:004D` | 只读探针：固件、序列号、DPI、轮询率和亮度 |
+| Razer DeathAdder 2000 (read-only probe) | `1532:005F` | 只读探针：固件、序列号、DPI、轮询率和亮度 |
+| Razer DeathAdder 2013 | `1532:0037` | — |
+| Razer DeathAdder 3500 | `1532:0054` | — |
+| Razer DeathAdder Chroma | `1532:0043` | — |
+| Razer DeathAdder Elite | `1532:005C` | — |
+| Razer DeathAdder Essential | `1532:006E` | — |
+| Razer DeathAdder Essential (2021) | `1532:0098` | — |
+| Razer DeathAdder Essential (White Edition) | `1532:0071` | — |
+| Razer DeathAdder V2 | `1532:0084` | — |
+| Razer DeathAdder V2 Lite | `1532:00A1` | — |
+| Razer DeathAdder V2 Mini | `1532:008C` | — |
+| Razer DeathAdder V2 Pro (Wired) | `1532:007C` | — |
+| Razer DeathAdder V2 Pro (Wireless) | `1532:007D` | — |
+| Razer DeathAdder V2 X HyperSpeed | `1532:009C` | — |
+| Razer DeathAdder V3 | `1532:00B2` | — |
+| Razer DeathAdder V3 HyperSpeed (Wired) | `1532:00C4` | — |
+| Razer DeathAdder V3 HyperSpeed (Wireless) | `1532:00C5` | — |
+| Razer DeathAdder V3 Pro (Wired) | `1532:00B6` | — |
+| Razer DeathAdder V3 Pro (Wired) | `1532:00C2` | — |
+| Razer DeathAdder V3 Pro (Wireless) | `1532:00B7` | — |
+| Razer DeathAdder V3 Pro (Wireless) | `1532:00C3` | — |
+| Razer DeathAdder V4 Pro (Wired) | `1532:00BE` | — |
+| Razer DeathAdder V4 Pro (Wireless) | `1532:00BF` | — |
+| Razer DeathAdder V4 Pro Carbon Fiber Edition (Wired) | `1532:00EF` | DPI、轮询率、电量和板载映射；无灯光 |
+| Razer DeathAdder V4 Pro Carbon Fiber Edition (Wireless) | `1532:00F0` | DPI、轮询率、电量和板载映射；无灯光 |
+| Razer Diamondback Chroma | `1532:004C` | — |
+| Razer HyperFlux V2 | `1532:00CF` | 仅灯光 |
+| Razer HyperPolling Wireless Dongle | `1532:00B3` | — |
+| Razer Imperator 2012 | `1532:002F` | — |
+| Razer Jugan | `1532:0063` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Krakoff | `1532:00DD` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Lancehead (Wired) | `1532:0059` | — |
+| Razer Lancehead (Wireless) | `1532:005A` | — |
+| Razer Lancehead Tournament Edition | `1532:0060` | — |
+| Razer Lancehead Wireless (Receiver) | `1532:006F` | — |
+| Razer Lancehead Wireless (Wired) | `1532:0070` | — |
+| Razer Mamba 2012 (Wired) | `1532:0024` | — |
+| Razer Mamba 2012 (Wireless) | `1532:0025` | — |
+| Razer Mamba Chroma (Wired) | `1532:0044` | — |
+| Razer Mamba Chroma (Wireless) | `1532:0045` | — |
+| Razer Mamba Elite | `1532:006C` | — |
+| Razer Mamba Hyperflux | `1532:0069` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Mamba Tournament Edition | `1532:0046` | — |
+| Razer Mamba Wireless (Receiver) | `1532:0072` | — |
+| Razer Mamba Wireless (Wired) | `1532:0073` | — |
+| Razer Naga | `1532:0015` | — |
+| Razer Naga 2012 | `1532:002E` | — |
+| Razer Naga 2014 | `1532:0040` | — |
+| Razer Naga Chroma | `1532:0053` | — |
+| Razer Naga Classic Edition | `1532:0093` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Naga Epic | `1532:001F` | — |
+| Razer Naga Epic Chroma (Wired) | `1532:003E` | — |
+| Razer Naga Epic Chroma (Wireless) | `1532:003F` | — |
+| Razer Naga Hex | `1532:0041` | — |
+| Razer Naga Hex (Red) | `1532:0036` | — |
+| Razer Naga Hex V2 | `1532:0050` | — |
+| Razer Naga Left Handed Edition 2020 | `1532:008D` | — |
+| Razer Naga Pro (Wired) | `1532:008F` | — |
+| Razer Naga Pro (Wireless) | `1532:0090` | — |
+| Razer Naga Trinity | `1532:0067` | — |
+| Razer Naga V2 HyperSpeed (Receiver) | `1532:00B4` | — |
+| Razer Naga V2 Pro (Wired) | `1532:00A7` | — |
+| Razer Naga V2 Pro (Wireless) | `1532:00A8` | — |
+| Razer Naga V3 Pro (Wired) | `1532:00E7` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Naga V3 Pro (Wireless) | `1532:00E8` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Naga X | `1532:0096` | — |
+| Razer Orochi (Wired) | `1532:0048` | — |
+| Razer Orochi 2011 | `1532:0013` | — |
+| Razer Orochi 2013 | `1532:0039` | — |
+| Razer Orochi V2 | `1532:00E0` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Orochi V2 (Bluetooth) | `1532:0095` | — |
+| Razer Orochi V2 (Receiver) | `1532:0094` | — |
+| Razer Ouroboros | `1532:0032` | — |
+| Razer Pro Click (Receiver) | `1532:0077` | — |
+| Razer Pro Click (Wired) | `1532:0080` | — |
+| Razer Pro Click Mini (Receiver) | `1532:009A` | — |
+| Razer Pro Click V2 (Wired) | `1532:00D0` | — |
+| Razer Pro Click V2 (Wireless) | `1532:00D1` | — |
+| Razer Pro Click V2 Vertical Edition (Wired) | `1532:00C7` | — |
+| Razer Pro Click V2 Vertical Edition (Wireless) | `1532:00C8` | — |
+| Razer Taipan | `1532:0034` | — |
+| Razer Turret Mouse Xbox One Edition | `1532:0075` | DPI、轮询率、电量、灯光和板载映射 |
+| Razer Viper | `1532:0078` | — |
+| Razer Viper 8KHz | `1532:0091` | — |
+| Razer Viper Mini | `1532:008A` | — |
+| Razer Viper Mini SE (Wired) | `1532:009E` | — |
+| Razer Viper Mini SE (Wireless) | `1532:009F` | — |
+| Razer Viper Ultimate (Wired) | `1532:007A` | — |
+| Razer Viper Ultimate (Wireless) | `1532:007B` | — |
+| Razer Viper V2 Pro (Wired) | `1532:00A5` | — |
+| Razer Viper V2 Pro (Wireless) | `1532:00A6` | — |
+| Razer Viper V3 HyperSpeed | `1532:00B8` | Viper 专用页面：电量、DPI、轮询率、休眠和板载映射 |
+| Razer Viper V3 Pro (Wired) | `1532:00C0` | — |
+| Razer Viper V3 Pro (Wireless) | `1532:00C1` | — |
+| Razer Viper V3 Pro SE (Wired) | `1532:00DE` | 00C0 的别名；Viper V3 Pro 专用控制 |
+| Razer Viper V3 Pro SE (Wireless) | `1532:00DF` | 00C1 的别名；Viper V3 Pro 专用控制 |
+| Razer Viper V4 Pro (Wired) | `1532:00E5` | DPI、轮询率、电量和板载映射；蓝牙连接时提供 BLE 页面；无灯光 |
+| Razer Viper V4 Pro (Wireless) | `1532:00E6` | DPI、轮询率、电量和板载映射；蓝牙连接时提供 BLE 页面；无灯光 |
+| RazerBasiliskUltimateReceiver | `1532:0088` | — |
 
-Blade 的波浪和光谱循环在未保存颜色调色板时由固件渲染，保存调色板后改用软件逐帧渲染。Blade 16 (2023) 没有逐键矩阵通道，只开放键盘亮度，以及固件能自绘的 4 个灯效（关闭、呼吸、光谱、波浪）；该机型的灯效颜色无法回读，所以自定义颜色、音频律动、逐帧渲染、Chroma 接管、波浪方向选择和导入 .chroma 按钮都不展示。Viper 支持 `125 / 500 / 1000 Hz` 轮询率、`100` 至 `30000` 的 X/Y DPI、最多 5 档 DPI，以及固定 Profile 1 的 Normal/HyperShift 板载映射。
+Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pro 和 DeathAdder V4 Pro Carbon Fiber Edition 没有灯光。Viper V3 HyperSpeed 使用 Viper 专用页面，不使用标准鼠标布局。
 
-## Razer Leviathan V2 X 声霸（054A）
+## 键盘
 
-`1532:054A` 对应 Synapse product `1354`，覆盖以下同协议版本：
+标准键盘控制包括固件、序列号、电量、游戏模式、轮询率和灯光；设备不支持的项目会自动隐藏。
 
-| Edition ID | 产品 |
-|---:|---|
-| 0 | Razer Leviathan V2 X |
-| 128 | Razer \| Pokémon Pikachu Edition Soundbar |
-| 129 | Razer Leviathan V2 X Pokémon AP Edition |
-| 131 | Razer \| Kuromi Limited Edition Soundbar |
-| 132 | Razer Leviathan V2 X Kuromi Edition |
-
-OpenRazer 目录没有 `054A`，OpenSynapse 将其作为本地准入条目加入：固件、序列号、亮度读取和亮度写入。声霸页额外提供均衡器预设、10 段均衡器、低音增强、输入源和音频接口状态；预设和低音写入会先读当前值、写后回读，失败时恢复原值；自定义 EQ 只有在原预设就是自定义时才恢复频段，因为非自定义预设不暴露已存的自定义曲线。应用会读取 edition 信息，区分 Pikachu 和 Kuromi 版本，并在亮度读写前解析第一个 Chroma region。命令取自当前 `1354` middleware 的 91-byte feature report（report ID `0x07`）和循环的 `0..31` transaction，属于源码证据支持的候选实现，尚未在 054A 实机完成读写与恢复验证。协议细节见 [LEVIATHAN_V2X_054A.md](LEVIATHAN_V2X_054A.md)。
-
-## Kraken 灯光
-
-| 型号 | USB PID | 可用功能 |
+| 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Kraken 7.1 | `0501`、`0506` | 灯光 |
-| Kraken 7.1 Chroma | `0504` | 灯光 |
-| Kraken 7.1 V2 | `0510` | 灯光 |
-| Kraken Tournament Edition | `0520` | 灯光 |
-| Kraken Ultimate | `0527` | 灯光 |
-| Kraken Kitty V2 | `0560` | 灯光 |
-| Kraken V4（有线） | `056B` | 灯光：关闭 / 静态 / 波浪 |
+| BlackWidow Chroma V2 | `1532:0221` | — |
+| Razer Anansi | `1532:010F` | — |
+| Razer BlackWidow (Classic) | `1532:011B` | — |
+| Razer BlackWidow 2019 | `1532:0241` | — |
+| Razer BlackWidow Chroma | `1532:0203` | — |
+| Razer BlackWidow Chroma (Overwatch) | `1532:0211` | — |
+| Razer BlackWidow Elite | `1532:0228` | — |
+| Razer BlackWidow Essential | `1532:0237` | — |
+| Razer BlackWidow Lite | `1532:0235` | — |
+| Razer BlackWidow Stealth Edition | `1532:010E` | — |
+| Razer BlackWidow Tournament Edition 2014 | `1532:011C` | — |
+| Razer BlackWidow Tournament Edition Chroma | `1532:0209` | — |
+| Razer BlackWidow Ultimate 2012 | `1532:010D` | — |
+| Razer BlackWidow Ultimate 2013 | `1532:011A` | — |
+| Razer BlackWidow Ultimate 2016 | `1532:0214` | — |
+| Razer BlackWidow V3 | `1532:024E` | — |
+| Razer BlackWidow V3 Mini HyperSpeed (Wired) | `1532:0258` | — |
+| Razer BlackWidow V3 Mini HyperSpeed (Wireless) | `1532:0271` | — |
+| Razer BlackWidow V3 Pro 2.4 Ghz Wireless | `1532:025C` | — |
+| Razer BlackWidow V3 Pro Wired | `1532:025A` | — |
+| Razer BlackWidow V3 TK | `1532:0A24` | — |
+| Razer BlackWidow V4 | `1532:0287` | — |
+| Razer BlackWidow V4 75% | `1532:02A5` | — |
+| Razer BlackWidow V4 75% Xbox 25th Anniversary Edition | `1532:02F0` | 键盘页面 |
+| Razer BlackWidow V4 Low-profile HyperSpeed | `1532:02CC` | 键盘页面 |
+| Razer BlackWidow V4 Low-profile Tenkeyless HyperSpeed | `1532:02D4` | 键盘页面 |
+| Razer BlackWidow V4 Mini HyperSpeed (Wired) | `1532:02B9` | — |
+| Razer BlackWidow V4 Mini HyperSpeed (Wireless) | `1532:02BA` | — |
+| Razer BlackWidow V4 Pro | `1532:028D` | — |
+| Razer BlackWidow V4 Pro 75% | `1532:02B3` | 键盘页面 |
+| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wired) | `1532:02D7` | — |
+| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wireless) | `1532:02D5` | — |
+| Razer BlackWidow V4 X | `1532:0293` | — |
+| Razer BlackWidow X Chroma | `1532:0216` | — |
+| Razer BlackWidow X Tenkeyless | `1532:024F` | 键盘页面 |
+| Razer BlackWidow X Tournament Edition Chroma | `1532:021A` | — |
+| Razer BlackWidow X Ultimate | `1532:0217` | — |
+| Razer Cynosa Chroma | `1532:022A` | — |
+| Razer Cynosa Chroma Pro | `1532:022C` | — |
+| Razer Cynosa Lite | `1532:023F` | — |
+| Razer Cynosa V2 | `1532:025E` | — |
+| Razer Cynosapro | `1532:028E` | 键盘页面 |
+| Razer DeathStalker Chroma | `1532:0204` | — |
+| Razer DeathStalker Expert | `1532:0202` | — |
+| Razer DeathStalker V2 | `1532:0295` | — |
+| Razer DeathStalker V2 Pro (Wired) | `1532:0292` | — |
+| Razer DeathStalker V2 Pro (Wireless) | `1532:0290` | — |
+| Razer DeathStalker V2 Pro TKL (Wired) | `1532:0298` | — |
+| Razer DeathStalker V2 Pro TKL (Wireless) | `1532:0296` | — |
+| Razer DeathStalker/DeathStalker Essential | `1532:0118` | — |
+| Razer Huntsman | `1532:0227` | — |
+| Razer Huntsman Elite | `1532:0226` | — |
+| Razer Huntsman Essential | `1532:0250` | 键盘页面 |
+| Razer Huntsman Mini | `1532:0257` | — |
+| Razer Huntsman Mini Analog | `1532:0282` | — |
+| Razer Huntsman Mini JP | `1532:0269` | — |
+| Razer Huntsman Signature Edition | `1532:02D8` | 键盘页面 |
+| Razer Huntsman Tournament Edition | `1532:0243` | — |
+| Razer Huntsman V2 | `1532:026C` | — |
+| Razer Huntsman V2 Analog | `1532:0266` | — |
+| Razer Huntsman V2 Tenkeyless | `1532:026B` | — |
+| Razer Huntsman V3 HE Magnetic Mini 65% 8KHz | `1532:02E4` | 键盘页面 |
+| Razer Huntsman V3 HE Magnetic Tenkeyless 8KHz | `1532:02EA` | 键盘页面 |
+| Razer Huntsman V3 Pro | `1532:02A6` | — |
+| Razer Huntsman V3 Pro 8KHz | `1532:02CF` | — |
+| Razer Huntsman V3 Pro Low-Profile Tenkeyless 8KHz | `1532:02E6` | 键盘页面 |
+| Razer Huntsman V3 Pro Mini | `1532:02B0` | — |
+| Razer Huntsman V3 Pro Mini 8KHz | `1532:02D1` | 键盘页面 |
+| Razer Huntsman V3 Pro Tenkeyless 8KHz | `1532:02D0` | 键盘页面 |
+| Razer Huntsman V3 Pro TKL | `1532:02A7` | — |
+| Razer Huntsman V3 Tenkeyless 8KHz | `1532:02E5` | 键盘页面 |
+| Razer Huntsman V3 X Tenkeyless | `1532:02B1` | 键盘页面 |
+| Razer Joro | `1532:02CD` | — |
+| Razer Nostromo | `1532:0111` | — |
+| Razer Orbweaver | `1532:0113` | — |
+| Razer Orbweaver Chroma | `1532:0207` | — |
+| Razer Ornata | `1532:021F` | — |
+| Razer Ornata Chroma | `1532:021E` | — |
+| Razer Ornata V2 | `1532:025D` | — |
+| Razer Ornata V3 | `1532:02A1` | — |
+| Razer Ornata V3 (Alternate) | `1532:028F` | — |
+| Razer Ornata V3 Tenkeyless | `1532:02A3` | — |
+| Razer Ornata V3 X | `1532:0294` | — |
+| Razer Ornata V3 X (Alternate) | `1532:02A2` | — |
+| Razer Pikachu Limited Edition Backlit Keyboard | `1532:0251` | 键盘页面 |
+| Razer Pro Type | `1532:0249` | 键盘页面 |
+| Razer Pro Type Ergo | `1532:02C4` | 键盘页面 |
+| Razer Pro Type Ultra | `1532:0277` | 键盘页面 |
+| Razer Reclusa Mini 65% | `1532:02F4` | 键盘页面 |
+| Razer Reclusa X Mini 65% | `1532:02E3` | 键盘页面 |
+| Razer Tartarus | `1532:0201` | — |
+| Razer Tartarus Chroma | `1532:0208` | — |
+| Razer Tartarus Pro | `1532:0244` | — |
+| Razer Tartarus V2 | `1532:022B` | — |
+| Razer Tartarus V2 Pro | `1532:02EB` | 键盘页面 |
+| Razer Turret Keyboard Xbox One Edition | `1532:023E` | 键盘页面 |
 
-Kraken 7.1 系列使用独立的 37-byte Output Report 通道。Kraken V4 有线版使用 OpenRGB 已验证的 64-byte Report `0x02` 通道；2.4 GHz `056C` 目前不开放灯光或其他控制。这里不包含音频、麦克风、EQ 或 THX 控制。
+## 笔记本
 
-## BlackShark V3 Pro 音频
+带专用 manifest 的 Blade 机型提供遥测、性能、风扇、显示、电池和键盘灯光；普通笔记本条目提供对应目录中的标准控制。
 
-| 型号 | USB PID | 可用功能 |
+| 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| BlackShark V3 Pro（USB） | `101C` | 电量、充电、侧音、THX、主动降噪和游戏/语音平衡 |
-| BlackShark V3 Pro（2.4 GHz） | `101B` | 电量、充电、侧音、THX、主动降噪和游戏/语音平衡 |
+| Razer Blade (Late 2016) | `1532:0224` | — |
+| Razer Blade (QHD) | `1532:020F` | — |
+| Razer Blade 14 (2021) | `1532:0270` | — |
+| Razer Blade 14 (2022) | `1532:028C` | Blade 专用控制；自定义模式下固定转速 3500–5000 RPM |
+| Razer Blade 14 (2023) | `1532:029D` | Blade 专用控制 |
+| Razer Blade 14 (2024) | `1532:02B6` | Blade 专用控制 |
+| Razer Blade 14 (2025) | `1532:02C5` | Blade 专用控制 |
+| Razer Blade 15 (2018) | `1532:0233` | — |
+| Razer Blade 15 (2018) Base Model | `1532:023B` | — |
+| Razer Blade 15 (2018) Mercury | `1532:0240` | — |
+| Razer Blade 15 (2019) Advanced | `1532:023A` | — |
+| Razer Blade 15 (2023) | `1532:029E` | — |
+| Razer Blade 15 (Mid 2019) Base Model | `1532:0246` | — |
+| Razer Blade 15 (Mid 2019) Mercury (read-only probe) | `1532:0245` | Blade 探针控制：遥测、风扇、电源、充电上限、键盘灯光和游戏模式 |
+| Razer Blade 15 Advanced (2020) | `1532:0253` | — |
+| Razer Blade 15 Advanced (Early 2021) | `1532:026D` | — |
+| Razer Blade 15 Advanced (Early 2022) | `1532:028A` | — |
+| Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | — |
+| Razer Blade 15 Studio Edition (2019) | `1532:024D` | — |
+| Razer Blade 16 (2023) | `1532:029F` | Blade 专用控制；固件渲染键盘灯效 |
+| Razer Blade 16 (2024) | `1532:02B7` | Blade 专用控制 |
+| Razer Blade 16 (2025) | `1532:02C6` | Blade 专用控制 |
+| Razer Blade 16 (2026) | `1532:02E0` | 仅标准灯光；遥测、风扇和 MUX 需要专用 Blade manifest |
+| Razer Blade 17 (2022) | `1532:028B` | — |
+| Razer Blade 17 Pro (Early 2021) | `1532:026E` | — |
+| Razer Blade 17 Pro (Mid 2021) | `1532:0279` | — |
+| Razer Blade 18 (2023) | `1532:02A0` | — |
+| Razer Blade 18 (2024) | `1532:02B8` | Blade 专用控制 |
+| Razer Blade 18 (2025) | `1532:02C7` | Blade 专用控制 |
+| Razer Blade 18 (2026) | `1532:02E1` | 仅标准灯光；遥测、风扇和 MUX 需要专用 Blade manifest |
+| Razer Blade Advanced (Late 2019) | `1532:024B` | — |
+| Razer Blade Base (Early 2020) | `1532:0255` | Blade 专用控制；百分比风扇目标不伪装成 RPM |
+| Razer Blade Base (Early 2021) | `1532:026F` | — |
+| Razer Blade Base (Early 2022) | `1532:027A` | — |
+| Razer Blade Late 2020 Base | `1532:0268` | — |
+| Razer Blade Pro (2017) | `1532:0225` | — |
+| Razer Blade Pro (Early 2020) | `1532:0256` | — |
+| Razer Blade Pro (Late 2016) | `1532:0210` | — |
+| Razer Blade Pro (Late 2019) | `1532:024C` | — |
+| Razer Blade Pro 17 (2019) | `1532:0234` | — |
+| Razer Blade Pro FullHD (2017) | `1532:022F` | — |
+| Razer Blade Stealth | `1532:0205` | — |
+| Razer Blade Stealth (2019) | `1532:0239` | — |
+| Razer Blade Stealth (Early 2020) | `1532:0252` | — |
+| Razer Blade Stealth (Late 2016) | `1532:0220` | — |
+| Razer Blade Stealth (Late 2017) | `1532:0232` | — |
+| Razer Blade Stealth (Late 2019) | `1532:024A` | — |
+| Razer Blade Stealth (Late 2020) | `1532:0259` | — |
+| Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
+| Razer Book (2020) | `1532:026A` | — |
 
-OpenRazer 没有 BlackShark 的驱动，没有可参考的上游设备表。控制集合的形态是：雷蛇厂商 ID `1532`、集合页 `FF13`/`FF14`、usage `1`、输出报文不少于 64 字节。这个形态不是 BlackShark 独占的，Kraken V4（`056B`/`056C`）也会枚举出相同形态，因此现在同时要求 HID 产品名包含 `BlackShark`，或 PID 是实测到的 `101B`（2.4 GHz）或 `101C`（USB）。传输字节在这些设备上不区分有线与无线，所有实测变体都在 `0x80` 上应答。
+Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。Blade 16 (2026) 和 Blade 18 (2026) 目前只有标准目录灯光；遥测、风扇和显示 MUX 仍需要专用 Blade manifest。
 
-耳机使用独立的 64-byte Report `0x02` 通道。只有打开设备页面或手动刷新时才读取状态，不进行固定间隔的电量轮询。首个版本不包含 EQ、麦克风增益、固件更新和指示灯模式。
+## 耳机
 
-## OpenRazer 目录
+音频页按设备和已安装组件提供 EQ、麦克风音量、侧音、ANC、THX 与游戏/语音平衡。
 
-固定目录中共有 259 个设备：
-
-- 鼠标：112
-- 键盘：73
-- 笔记本：48
-- 配件：26
-
-### 鼠标（112）
-
-| 设备 | USB VID:PID | 类型 |
+| 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Abyssus | `1532:0042` | 鼠标 |
-| Razer Abyssus 1800 | `1532:0020` | 鼠标 |
-| Razer Abyssus 2000 | `1532:005E` | 鼠标 |
-| Razer Abyssus Elite (D.Va Edition) | `1532:006A` | 鼠标 |
-| Razer Abyssus Essential | `1532:006B` | 鼠标 |
-| Razer Abyssus V2 | `1532:005B` | 鼠标 |
-| Razer Atheris (Receiver) | `1532:0062` | 鼠标 |
-| Razer Basilisk | `1532:0064` | 鼠标 |
-| Razer Basilisk Essential | `1532:0065` | 鼠标 |
-| Razer Basilisk Mobile (Receiver) | `1532:00D4` | 鼠标 |
-| Razer Basilisk Mobile (Wired) | `1532:00D3` | 鼠标 |
-| Razer Basilisk Ultimate | `1532:0086` | 鼠标 |
-| Razer Basilisk V2 | `1532:0085` | 鼠标 |
-| Razer Basilisk V3 | `1532:0099` | 鼠标 |
-| Razer Basilisk V3 35K | `1532:00CB` | 鼠标 |
-| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | 鼠标 |
-| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | 鼠标 |
-| Razer Basilisk V3 Pro 35K (Wired) | `1532:00CC` | 鼠标 |
-| Razer Basilisk V3 Pro 35K (Wireless) | `1532:00CD` | 鼠标 |
-| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | 鼠标 |
-| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wireless) | `1532:00D7` | 鼠标 |
-| Razer Basilisk V3 X HyperSpeed | `1532:00B9` | 鼠标 |
-| Razer Basilisk X HyperSpeed | `1532:0083` | 鼠标 |
-| Razer Cobra | `1532:00A3` | 鼠标 |
-| Razer Cobra HyperSpeed（有线） | `1532:00DA` | 鼠标 |
-| Razer Cobra HyperSpeed（无线） | `1532:00DB` | 鼠标 |
-| Razer Cobra Pro (Wired) | `1532:00AF` | 鼠标 |
-| Razer Cobra Pro (Wireless) | `1532:00B0` | 鼠标 |
-| Razer DeathAdder 1800 | `1532:0038` | 鼠标 |
-| Razer DeathAdder 2000 | `1532:004F` | 鼠标 |
-| Razer DeathAdder 2013 | `1532:0037` | 鼠标 |
-| Razer DeathAdder 3500 | `1532:0054` | 鼠标 |
-| Razer DeathAdder Chroma | `1532:0043` | 鼠标 |
-| Razer DeathAdder Elite | `1532:005C` | 鼠标 |
-| Razer DeathAdder Essential | `1532:006E` | 鼠标 |
-| Razer DeathAdder Essential (2021) | `1532:0098` | 鼠标 |
-| Razer DeathAdder Essential (White Edition) | `1532:0071` | 鼠标 |
-| Razer DeathAdder V2 | `1532:0084` | 鼠标 |
-| Razer DeathAdder V2 Lite | `1532:00A1` | 鼠标 |
-| Razer DeathAdder V2 Mini | `1532:008C` | 鼠标 |
-| Razer DeathAdder V2 Pro (Wired) | `1532:007C` | 鼠标 |
-| Razer DeathAdder V2 Pro (Wireless) | `1532:007D` | 鼠标 |
-| Razer DeathAdder V2 X HyperSpeed | `1532:009C` | 鼠标 |
-| Razer DeathAdder V3 | `1532:00B2` | 鼠标 |
-| Razer DeathAdder V3 HyperSpeed (Wired) | `1532:00C4` | 鼠标 |
-| Razer DeathAdder V3 HyperSpeed (Wireless) | `1532:00C5` | 鼠标 |
-| Razer DeathAdder V3 Pro (Wired) | `1532:00B6` | 鼠标 |
-| Razer DeathAdder V3 Pro (Wired) | `1532:00C2` | 鼠标 |
-| Razer DeathAdder V3 Pro (Wireless) | `1532:00B7` | 鼠标 |
-| Razer DeathAdder V3 Pro (Wireless) | `1532:00C3` | 鼠标 |
-| Razer DeathAdder V4 Pro (Wired) | `1532:00BE` | 鼠标 |
-| Razer DeathAdder V4 Pro (Wireless) | `1532:00BF` | 鼠标 |
-| Razer Diamondback Chroma | `1532:004C` | 鼠标 |
-| Razer HyperPolling Wireless Dongle | `1532:00B3` | 鼠标 |
-| Razer Imperator 2012 | `1532:002F` | 鼠标 |
-| Razer Lancehead (Wired) | `1532:0059` | 鼠标 |
-| Razer Lancehead (Wireless) | `1532:005A` | 鼠标 |
-| Razer Lancehead Tournament Edition | `1532:0060` | 鼠标 |
-| Razer Lancehead Wireless (Receiver) | `1532:006F` | 鼠标 |
-| Razer Lancehead Wireless (Wired) | `1532:0070` | 鼠标 |
-| Razer Mamba 2012 (Wired) | `1532:0024` | 鼠标 |
-| Razer Mamba 2012 (Wireless) | `1532:0025` | 鼠标 |
-| Razer Mamba Chroma (Wired) | `1532:0044` | 鼠标 |
-| Razer Mamba Chroma (Wireless) | `1532:0045` | 鼠标 |
-| Razer Mamba Elite | `1532:006C` | 鼠标 |
-| Razer Mamba Tournament Edition | `1532:0046` | 鼠标 |
-| Razer Mamba Wireless (Receiver) | `1532:0072` | 鼠标 |
-| Razer Mamba Wireless (Wired) | `1532:0073` | 鼠标 |
-| Razer Naga | `1532:0015` | 鼠标 |
-| Razer Naga 2012 | `1532:002E` | 鼠标 |
-| Razer Naga 2014 | `1532:0040` | 鼠标 |
-| Razer Naga Chroma | `1532:0053` | 鼠标 |
-| Razer Naga Epic | `1532:001F` | 鼠标 |
-| Razer Naga Epic Chroma (Wired) | `1532:003E` | 鼠标 |
-| Razer Naga Epic Chroma (Wireless) | `1532:003F` | 鼠标 |
-| Razer Naga Hex | `1532:0041` | 鼠标 |
-| Razer Naga Hex (Red) | `1532:0036` | 鼠标 |
-| Razer Naga Hex V2 | `1532:0050` | 鼠标 |
-| Razer Naga Left Handed Edition 2020 | `1532:008D` | 鼠标 |
-| Razer Naga Pro (Wired) | `1532:008F` | 鼠标 |
-| Razer Naga Pro (Wireless) | `1532:0090` | 鼠标 |
-| Razer Naga Trinity | `1532:0067` | 鼠标 |
-| Razer Naga V2 HyperSpeed (Receiver) | `1532:00B4` | 鼠标 |
-| Razer Naga V2 Pro (Wired) | `1532:00A7` | 鼠标 |
-| Razer Naga V2 Pro (Wireless) | `1532:00A8` | 鼠标 |
-| Razer Naga X | `1532:0096` | 鼠标 |
-| Razer Orochi (Wired) | `1532:0048` | 鼠标 |
-| Razer Orochi 2011 | `1532:0013` | 鼠标 |
-| Razer Orochi 2013 | `1532:0039` | 鼠标 |
-| Razer Orochi V2 (Bluetooth) | `1532:0095` | 鼠标 |
-| Razer Orochi V2 (Receiver) | `1532:0094` | 鼠标 |
-| Razer Ouroboros | `1532:0032` | 鼠标 |
-| Razer Pro Click (Receiver) | `1532:0077` | 鼠标 |
-| Razer Pro Click (Wired) | `1532:0080` | 鼠标 |
-| Razer Pro Click Mini (Receiver) | `1532:009A` | 鼠标 |
-| Razer Pro Click V2 (Wired) | `1532:00D0` | 鼠标 |
-| Razer Pro Click V2 (Wireless) | `1532:00D1` | 鼠标 |
-| Razer Pro Click V2 Vertical Edition (Wired) | `1532:00C7` | 鼠标 |
-| Razer Pro Click V2 Vertical Edition (Wireless) | `1532:00C8` | 鼠标 |
-| Razer Taipan | `1532:0034` | 鼠标 |
-| Razer Viper | `1532:0078` | 鼠标 |
-| Razer Viper 8KHz | `1532:0091` | 鼠标 |
-| Razer Viper Mini | `1532:008A` | 鼠标 |
-| Razer Viper Mini SE (Wired) | `1532:009E` | 鼠标 |
-| Razer Viper Mini SE (Wireless) | `1532:009F` | 鼠标 |
-| Razer Viper Ultimate (Wired) | `1532:007A` | 鼠标 |
-| Razer Viper Ultimate (Wireless) | `1532:007B` | 鼠标 |
-| Razer Viper V2 Pro (Wired) | `1532:00A5` | 鼠标 |
-| Razer Viper V2 Pro (Wireless) | `1532:00A6` | 鼠标 |
-| Razer Viper V3 Pro (Wired) | `1532:00C0` | 鼠标 |
-| Razer Viper V3 Pro (Wireless) | `1532:00C1` | 鼠标 |
-| RazerBasiliskUltimateReceiver | `1532:0088` | 鼠标 |
+| Razer Barracuda | `1532:053C` | 音频页 |
+| Razer Barracuda 2.4 | `1532:053B` | 音频页 |
+| Razer Barracuda 2.4 | `1532:0584` | 音频页 |
+| Razer Barracuda Pro | `1532:0539` | 音频页 |
+| Razer Barracuda Pro | `1532:0583` | 音频页 |
+| Razer Barracuda V2 Pro | `1532:0593` | 音频页；提供 THX V4 安装入口 |
+| Razer BlackShark V2 HyperSpeed | `1532:0565` | 音频页 |
+| Razer BlackShark V2 HyperSpeed | `1532:056E` | 音频页 |
+| Razer BlackShark V2 Pro (2020) | `1532:0528` | 音频页；提供 THX 安装入口 |
+| Razer BlackShark V2 Pro (2023) | `1532:0555` | 音频页；提供 THX 安装入口 |
+| Razer BlackShark V3 | `1532:0579` | 音频页 |
+| Razer BlackShark V3 Pro (0x0576 interface) | `1532:0576` | 音频页；BlackShark V3 Pro 有线控制接口 |
+| Razer BlackShark V3 Pro (2.4 GHz) | `1532:101B` | 音频、ANC、THX 和游戏/语音平衡（2.4 GHz） |
+| Razer BlackShark V3 Pro (USB) | `1532:101C` | 音频、ANC、THX 和游戏/语音平衡（USB） |
+| Razer Kraken 7.1 | `1532:0501` | 仅灯光 |
+| Razer Kraken 7.1 | `1532:0506` | 仅灯光 |
+| Razer Kraken 7.1 Chroma | `1532:0504` | 仅灯光 |
+| Razer Kraken 7.1 V2 | `1532:0510` | 仅灯光 |
+| Razer Kraken BT Kitty Edition | `1532:0530` | 音频页 |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | 音频页 |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | 音频页 |
+| Razer Kraken Kitty Edition | `1532:0521` | 音频页 |
+| Razer Kraken Kitty V2 | `1532:0560` | 音频页与灯光 |
+| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | 音频页 |
+| Razer Kraken Kitty V2 Pro | `1532:0554` | 音频页 |
+| Razer Kraken Kitty V3 Pro | `1532:0587` | 音频页；提供 THX V4 安装入口 |
+| Razer Kraken Tournament Edition | `1532:0520` | 音频页与灯光；提供 Kraken TE 的 THX 安装入口 |
+| Razer Kraken Ultimate | `1532:0527` | 音频页与灯光；提供 THX 安装入口 |
+| Razer Kraken V3 | `1532:0549` | 音频页 |
+| Razer Kraken V3 HyperSense | `1532:0533` | 音频页 |
+| Razer Kraken V3 Pro | `1532:052D` | 音频页 |
+| Razer Kraken V3 X | `1532:0537` | 音频页 |
+| Razer Kraken V4 | `1532:056B` | 音频页与灯光；提供 THX 安装入口 |
+| Razer Kraken V4 Pro | `1532:0567` | 音频页 |
+| Razer Kraken V4 X | `1532:056D` | 音频页 |
+| Razer Kraken X USB | `1532:0526` | 音频页 |
+| Razer Marci | `1532:0F66` | 音频页 |
+| Razer Nari | `1532:051C` | 音频页 |
+| Razer Nari Essential | `1532:051E` | 音频页；提供 THX 安装入口 |
+| Razer Nari Ultimate | `1532:051A` | 音频页 |
 
-### 键盘（73）
+Kraken 7.1 使用 37-byte output-report 通道；Kraken V4 有线版使用 64-byte report-0x02 通道。Kraken V4 的 2.4 GHz 接收器（`056C`）目前未开放。
 
-| 设备 | USB VID:PID | 类型 |
+## 音箱
+
+音箱控制按型号提供 EQ 预设、频段、低音、输入源和灯光。
+
+| 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| BlackWidow Chroma V2 | `1532:0221` | 键盘 |
-| Razer Anansi | `1532:010F` | 键盘 |
-| Razer BlackWidow (Classic) | `1532:011B` | 键盘 |
-| Razer BlackWidow 2019 | `1532:0241` | 键盘 |
-| Razer BlackWidow Chroma | `1532:0203` | 键盘 |
-| Razer BlackWidow Chroma (Overwatch) | `1532:0211` | 键盘 |
-| Razer BlackWidow Elite | `1532:0228` | 键盘 |
-| Razer BlackWidow Essential | `1532:0237` | 键盘 |
-| Razer BlackWidow Lite | `1532:0235` | 键盘 |
-| Razer BlackWidow Stealth Edition | `1532:010E` | 键盘 |
-| Razer BlackWidow Tournament Edition 2014 | `1532:011C` | 键盘 |
-| Razer BlackWidow Tournament Edition Chroma | `1532:0209` | 键盘 |
-| Razer BlackWidow Ultimate 2012 | `1532:010D` | 键盘 |
-| Razer BlackWidow Ultimate 2013 | `1532:011A` | 键盘 |
-| Razer BlackWidow Ultimate 2016 | `1532:0214` | 键盘 |
-| Razer BlackWidow V3 | `1532:024E` | 键盘 |
-| Razer BlackWidow V3 Mini HyperSpeed (Wired) | `1532:0258` | 键盘 |
-| Razer BlackWidow V3 Mini HyperSpeed (Wireless) | `1532:0271` | 键盘 |
-| Razer BlackWidow V3 Pro 2.4 Ghz Wireless | `1532:025C` | 键盘 |
-| Razer BlackWidow V3 Pro Wired | `1532:025A` | 键盘 |
-| Razer BlackWidow V3 TK | `1532:0A24` | 键盘 |
-| Razer BlackWidow V4 | `1532:0287` | 键盘 |
-| Razer BlackWidow V4 75% | `1532:02A5` | 键盘 |
-| Razer BlackWidow V4 Mini HyperSpeed (Wired) | `1532:02B9` | 键盘 |
-| Razer BlackWidow V4 Mini HyperSpeed (Wireless) | `1532:02BA` | 键盘 |
-| Razer BlackWidow V4 Pro | `1532:028D` | 键盘 |
-| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wired) | `1532:02D7` | 键盘 |
-| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wireless) | `1532:02D5` | 键盘 |
-| Razer BlackWidow V4 X | `1532:0293` | 键盘 |
-| Razer BlackWidow X Chroma | `1532:0216` | 键盘 |
-| Razer BlackWidow X Tournament Edition Chroma | `1532:021A` | 键盘 |
-| Razer BlackWidow X Ultimate | `1532:0217` | 键盘 |
-| Razer Cynosa Chroma | `1532:022A` | 键盘 |
-| Razer Cynosa Chroma Pro | `1532:022C` | 键盘 |
-| Razer Cynosa Lite | `1532:023F` | 键盘 |
-| Razer Cynosa V2 | `1532:025E` | 键盘 |
-| Razer DeathStalker Chroma | `1532:0204` | 键盘 |
-| Razer DeathStalker Expert | `1532:0202` | 键盘 |
-| Razer DeathStalker V2 | `1532:0295` | 键盘 |
-| Razer DeathStalker V2 Pro (Wired) | `1532:0292` | 键盘 |
-| Razer DeathStalker V2 Pro (Wireless) | `1532:0290` | 键盘 |
-| Razer DeathStalker V2 Pro TKL (Wired) | `1532:0298` | 键盘 |
-| Razer DeathStalker V2 Pro TKL (Wireless) | `1532:0296` | 键盘 |
-| Razer DeathStalker/DeathStalker Essential | `1532:0118` | 键盘 |
-| Razer Huntsman | `1532:0227` | 键盘 |
-| Razer Huntsman Elite | `1532:0226` | 键盘 |
-| Razer Huntsman Mini | `1532:0257` | 键盘 |
-| Razer Huntsman Mini Analog | `1532:0282` | 键盘 |
-| Razer Huntsman Mini JP | `1532:0269` | 键盘 |
-| Razer Huntsman Tournament Edition | `1532:0243` | 键盘 |
-| Razer Huntsman V2 | `1532:026C` | 键盘 |
-| Razer Huntsman V2 Analog | `1532:0266` | 键盘 |
-| Razer Huntsman V2 Tenkeyless | `1532:026B` | 键盘 |
-| Razer Huntsman V3 Pro | `1532:02A6` | 键盘 |
-| Razer Huntsman V3 Pro 8KHz | `1532:02CF` | 键盘 |
-| Razer Huntsman V3 Pro Mini | `1532:02B0` | 键盘 |
-| Razer Huntsman V3 Pro TKL | `1532:02A7` | 键盘 |
-| Razer Joro | `1532:02CD` | 键盘 |
-| Razer Nostromo | `1532:0111` | 键盘 |
-| Razer Orbweaver | `1532:0113` | 键盘 |
-| Razer Orbweaver Chroma | `1532:0207` | 键盘 |
-| Razer Ornata | `1532:021F` | 键盘 |
-| Razer Ornata Chroma | `1532:021E` | 键盘 |
-| Razer Ornata V2 | `1532:025D` | 键盘 |
-| Razer Ornata V3 | `1532:02A1` | 键盘 |
-| Razer Ornata V3 (Alternate) | `1532:028F` | 键盘 |
-| Razer Ornata V3 Tenkeyless | `1532:02A3` | 键盘 |
-| Razer Ornata V3 X | `1532:0294` | 键盘 |
-| Razer Ornata V3 X (Alternate) | `1532:02A2` | 键盘 |
-| Razer Tartarus | `1532:0201` | 键盘 |
-| Razer Tartarus Chroma | `1532:0208` | 键盘 |
-| Razer Tartarus Pro | `1532:0244` | 键盘 |
-| Razer Tartarus V2 | `1532:022B` | 键盘 |
+| Razer Leviathan V2 | `1532:0532` | 音频页 |
+| Razer Leviathan V2 Pro | `1532:0548` | 音频页 |
+| Razer Leviathan V2 X | `1532:054A` | 声霸音频与灯光；仍待实机验证 |
+| Razer Nommo Chroma | `1532:0517` | Chroma 灯光 |
+| Razer Nommo Pro | `1532:0518` | Chroma 灯光 |
+| Razer Nommo V2 | `1532:055C` | 音频页 |
+| Razer Nommo V2 Pro | `1532:055A` | 音频页 |
+| Razer Nommo V2 X | `1532:055E` | 音频页 |
 
-### 笔记本（48）
+Leviathan V2 X（`054A`）覆盖 edition ID 0（标准版）、128（Pikachu）、129（Pokémon AP）、131（Kuromi）和 132（Kuromi Edition）；应用会读取 edition 信息区分 Pikachu 和 Kuromi 版本。
 
-| 设备 | USB VID:PID | 类型 |
+## 麦克风
+
+麦克风控制按型号提供 EQ、麦克风音量和灯光效果。
+
+| 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Blade (Late 2016) | `1532:0224` | 笔记本 |
-| Razer Blade (QHD) | `1532:020F` | 笔记本 |
-| Razer Blade 14 (2021) | `1532:0270` | 笔记本 |
-| Razer Blade 14 (2022) | `1532:028C` | 笔记本 |
-| Razer Blade 14 (2023) | `1532:029D` | 笔记本 |
-| Razer Blade 14 (2024) | `1532:02B6` | 笔记本 |
-| Razer Blade 14 (2025) | `1532:02C5` | 笔记本 |
-| Razer Blade 15 (2018) | `1532:0233` | 笔记本 |
-| Razer Blade 15 (2018) Base Model | `1532:023B` | 笔记本 |
-| Razer Blade 15 (2018) Mercury | `1532:0240` | 笔记本 |
-| Razer Blade 15 (2019) Advanced | `1532:023A` | 笔记本 |
-| Razer Blade 15 (2023) | `1532:029E` | 笔记本 |
-| Razer Blade 15 (Mid 2019) Base Model | `1532:0246` | 笔记本 |
-| Razer Blade 15 (Mid 2019) Mercury | `1532:0245` | 笔记本 |
-| Razer Blade 15 Advanced (2020) | `1532:0253` | 笔记本 |
-| Razer Blade 15 Advanced (Early 2021) | `1532:026D` | 笔记本 |
-| Razer Blade 15 Advanced (Early 2022) | `1532:028A` | 笔记本 |
-| Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | 笔记本 |
-| Razer Blade 15 Studio Edition (2019) | `1532:024D` | 笔记本 |
-| Razer Blade 16 (2023) | `1532:029F` | 笔记本 |
-| Razer Blade 16 (2026) | `1532:02E0` | 笔记本 |
-| Razer Blade 17 (2022) | `1532:028B` | 笔记本 |
-| Razer Blade 17 Pro (Early 2021) | `1532:026E` | 笔记本 |
-| Razer Blade 17 Pro (Mid 2021) | `1532:0279` | 笔记本 |
-| Razer Blade 18 (2023) | `1532:02A0` | 笔记本 |
-| Razer Blade 18 (2024) | `1532:02B8` | 笔记本 |
-| Razer Blade 18 (2025) | `1532:02C7` | 笔记本 |
-| Razer Blade 18 (2026) | `1532:02E1` | 笔记本 |
-| Razer Blade Advanced (Late 2019) | `1532:024B` | 笔记本 |
-| Razer Blade Base (Early 2020) | `1532:0255` | 笔记本 |
-| Razer Blade Base (Early 2021) | `1532:026F` | 笔记本 |
-| Razer Blade Base (Early 2022) | `1532:027A` | 笔记本 |
-| Razer Blade Late 2020 Base | `1532:0268` | 笔记本 |
-| Razer Blade Pro (2017) | `1532:0225` | 笔记本 |
-| Razer Blade Pro (Early 2020) | `1532:0256` | 笔记本 |
-| Razer Blade Pro (Late 2016) | `1532:0210` | 笔记本 |
-| Razer Blade Pro (Late 2019) | `1532:024C` | 笔记本 |
-| Razer Blade Pro 17 (2019) | `1532:0234` | 笔记本 |
-| Razer Blade Pro FullHD (2017) | `1532:022F` | 笔记本 |
-| Razer Blade Stealth | `1532:0205` | 笔记本 |
-| Razer Blade Stealth (2019) | `1532:0239` | 笔记本 |
-| Razer Blade Stealth (Early 2020) | `1532:0252` | 笔记本 |
-| Razer Blade Stealth (Late 2016) | `1532:0220` | 笔记本 |
-| Razer Blade Stealth (Late 2017) | `1532:0232` | 笔记本 |
-| Razer Blade Stealth (Late 2019) | `1532:024A` | 笔记本 |
-| Razer Blade Stealth (Late 2020) | `1532:0259` | 笔记本 |
-| Razer Blade Stealth (Mid 2017) | `1532:022D` | 笔记本 |
-| Razer Book (2020) | `1532:026A` | 笔记本 |
+| Razer Seiren Emote | `1532:0F1B` | 音频页；8×8 LED 矩阵 |
+| Razer Seiren V2 Pro | `1532:0542` | 音频页 |
+| Razer Seiren V2 X | `1532:0543` | 音频页 |
+| Razer Seiren V3 Mini | `1532:056A` | 音频页 |
 
-### 配件（26）
+## 鼠标垫
 
-| 设备 | USB VID:PID | 类型 |
+鼠标垫提供对应型号的 Chroma 灯光控制。
+
+| 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | 配件 |
-| Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | 配件 |
-| Razer Base Station V2 Chroma | `1532:0F20` | 配件 |
-| Razer Charging Pad Chroma | `1532:0F26` | 配件 |
-| Razer Chroma Hardware Development Kit (HDK) | `1532:0F09` | 配件 |
-| Razer Chroma Mug Holder | `1532:0F07` | 配件 |
-| Razer Core | `1532:0215` | 配件 |
-| Razer Core X Chroma | `1532:0F1A` | 配件 |
-| Razer Firefly (2013) | `1532:0C00` | 鼠标垫 |
-| Razer Firefly Hyperflux (2018) | `1532:0068` | 鼠标垫 |
-| Razer Firefly V2 | `1532:0C04` | 鼠标垫 |
-| Razer Firefly V2 Pro | `1532:0C08` | 鼠标垫 |
-| Razer Goliathus (2018) | `1532:0C01` | 鼠标垫 |
-| Razer Goliathus Chroma 3XL | `1532:0C06` | 鼠标垫 |
-| Razer Goliathus Extended (2018) | `1532:0C02` | 鼠标垫 |
-| Razer Laptop Stand Chroma | `1532:0F0D` | 配件 |
-| Razer Laptop Stand Chroma V2 | `1532:0F2B` | 配件 |
-| Razer Mouse Bungee V3 Chroma | `1532:0F1D` | 配件 |
-| Razer Mouse Dock | `1532:007E` | 配件 |
-| Razer Mouse Dock Pro | `1532:00A4` | 配件 |
-| Razer Nommo Chroma (Speakers) | `1532:0517` | 配件 |
-| Razer Nommo Pro (Speakers) | `1532:0518` | 配件 |
-| Razer Raptor 27 | `1532:0F12` | 显示器 |
-| Razer Strider Chroma | `1532:0C05` | 鼠标垫 |
-| Razer Thunderbolt 4 Dock Chroma | `1532:0F21` | 配件 |
-| Razer Tomahawk ATX | `1532:0F17` | 配件 |
+| Razer Firefly (2013) | `1532:0C00` | — |
+| Razer Firefly Hyperflux (2018) | `1532:0068` | — |
+| Razer Firefly V2 | `1532:0C04` | — |
+| Razer Firefly V2 Pro | `1532:0C08` | — |
+| Razer Goliathus (2018) | `1532:0C01` | — |
+| Razer Goliathus Chroma 3XL | `1532:0C06` | — |
+| Razer Goliathus Extended (2018) | `1532:0C02` | — |
+| Razer Strider Chroma | `1532:0C05` | — |
+
+## 显示器
+
+Raptor 27 提供对应型号的 Chroma 灯光控制。
+
+| 设备 | USB VID:PID | 说明 |
+|---|---|---|
+| Razer Raptor 27 | `1532:0F12` | Chroma 灯光 |
+| Razer Raptor 27 | `1532:0F28` | Chroma 灯光 |
+
+## 配件
+
+配件控制包括灯光、扩展坞、支架、风扇控制和在位检测。
+
+| 设备 | USB VID:PID | 说明 |
+|---|---|---|
+| Esther | `1532:0F45` | 仅灯光 |
+| Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | — |
+| MarciT2H | `1532:0F6D` | 仅灯光 |
+| Razer Aether Lamp | `1532:030E` | 仅灯光 |
+| Razer Aether Lamp Pro | `1532:030D` | 仅灯光 |
+| Razer Aether Light Bulb | `1532:030F` | 仅灯光 |
+| Razer Aether Light Strip | `1532:0310` | 仅灯光 |
+| Razer Aether Monitor Light Bar | `1532:0316` | 仅灯光 |
+| Razer Aether Standing Light Bars | `1532:0317` | 仅灯光 |
+| Razer Audio Mixer | `1532:053E` | 音频控制器页面；混音器控制 |
+| Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | — |
+| Razer Base Station V2 Chroma | `1532:0F20` | — |
+| Razer Base Station V3 Chroma | `1532:0F6A` | 仅灯光 |
+| Razer Charging Pad Chroma | `1532:0F26` | — |
+| Razer Chroma Addressable RGB Controller | `1532:030A` | 标准 Chroma 灯光 |
+| Razer Chroma Addressable RGB Controller | `1532:0F1F` | 逐灯 ARGB 控制；6 端口 × 80 颗 |
+| Razer Chroma Hardware Development Kit (HDK) | `1532:0F09` | — |
+| Razer Chroma Mug Holder | `1532:0F07` | — |
+| Razer Chroma Wireless ARGB Controller | `1532:0F2C` | 标准 Chroma 灯光 |
+| Razer Chroma Wireless ARGB Controller | `1532:0F2E` | 标准 Chroma 灯光 |
+| Razer Core | `1532:0215` | — |
+| Razer Core X Chroma | `1532:0F1A` | — |
+| Razer Core X V2 | `1532:0F51` | 仅灯光 |
+| Razer Hanbo AIO | `1532:0F35` | 仅灯光 |
+| Razer Handheld Dock Chroma | `1532:0F5C` | 仅灯光 |
+| Razer Head Cushion Chroma | `1532:0F36` | 仅灯光 |
+| Razer Key Light Chroma | `1532:030C` | 仅灯光 |
+| Razer Laptop Cooling Pad | `1532:0F43` | 用于 HyperBoost 在位检测；没有独立控制页 |
+| Razer Laptop Monitor Stand Chroma | `1532:0F5A` | 仅灯光 |
+| Razer Laptop Stand Chroma | `1532:0F0D` | — |
+| Razer Laptop Stand Chroma V2 | `1532:0F2B` | — |
+| Razer Monitor Stand Chroma | `1532:0F59` | 仅灯光 |
+| Razer Mouse Bungee V3 Chroma | `1532:0F1D` | — |
+| Razer Mouse Dock | `1532:007E` | — |
+| Razer Mouse Dock Pro | `1532:00A4` | — |
+| Razer Mouse Dock V2 Pro | `1532:00F1` | 仅灯光 |
+| Razer PWM PC Fan Controller | `1532:0F3C` | 仅灯光 |
+| Razer Soma Chroma | `1532:0F64` | 仅灯光 |
+| Razer Thunderbolt 4 Dock Chroma | `1532:0F21` | — |
+| Razer Thunderbolt 5 Dock Chroma | `1532:0F52` | 仅灯光 |
+| Razer Tomahawk ATX | `1532:0F17` | — |
+| Razer Tomahawk Gaming Desktop | `1532:0F27` | 仅灯光 |
+| Razer USB Sound Card | `1532:0529` | 音频控制器页面；声卡控制 |
+| Razer Wireless Control Pod | `1532:0566` | 仅灯光 |
+
+## 网络灯光
+
+Philips Hue 配对后通过桥的 HTTPS API 控制。
+
+| 设备 | USB VID:PID | 说明 |
+|---|---|---|
+| Philips Hue Bridge | `Network` | 桥配对；开关、亮度和颜色 |
 
 ## 能力与验证边界
 
-出现在目录中，表示固定后端能够识别该型号。最终显示的控件取决于能否解析实际 HID 端点和对应事务。不同型号可能提供设备信息、电池状态、轮询率、DPI 与 DPI 档位、省电设置、低电量提醒、灯光亮度与效果、分区 LED、矩阵灯光、滚轮设置、键轴优化、Fn 优先行为或 HyperPolling 接收器控制。
+条目出现在表里表示应用已经有对应代码路径，不代表每个控制项都完成了真机验证。端点无法解析或正被占用时，页面会保持只读，直到下一次扫描。协议允许时写入会读回校验；设备提供旧值时，失败会恢复原值。
 
-设备出现在目录中，不代表每个控制项都已在该型号上完成真机验证。端点无法解析或正被占用时，页面会保持只读，直到重新扫描。OpenSynapse 不会按产品名称猜测能力，也不会改用另一个 HID 接口强行写入。
+THX V3/V4 耳机路径和部分中间件推导设备来自原生客户端与协议证据，标注未实机验证的仍需硬件验收。BLE 设备必须暴露 Razer protocol 30 服务 `52401523`；当前 BLE 页面面向 Viper V4 Pro 这类鼠标。
 
-## 尚未支持的设备
-
-中间件参考里能解析出命令的设备现在都有对应页面。Philips Hue（`0x0301`）不是 HID 设备，已按桥的 HTTPS API 接入：在设置页填桥地址、按桥上的配对按钮后配对，即可列出灯光并控制开关与亮度；真机验收仍需一台实体桥。
-
-Viper V4 Pro 这类无线鼠标改用 BLE 协议 30，不再走 91 字节 feature report。该通道记录在 [BLE 协议 30 规格](PROTOCOL30_BLE.zh-CN.md)：GATT UUID、8 字节请求头与 20 字节响应头、轮询率与 DPI 负载，以及连接和重试规则。协议层与带读回校验的服务已经实现在 `RazerBleProtocol30`、`RazerBleSession`、`RazerBleDeviceService`；页面还需要一台蓝牙连接的鼠标才能验收。
-
-
-
-协议证据来自 Synapse 中间件的静态分析，只覆盖产品自身 handler 里出现的命令；写入前仍需读能力位、写后读回并准备恢复路径。
-Blade 16 (2026) 和 Blade 18 (2026) 已进入 OpenRazer 目录，支持标准灯光；遥测、风扇、性能和 MUX 仍需专用 Blade manifest。
-
-
-外部灯光接入见 [Chroma 支持设备](CHROMA_SUPPORTED_DEVICES.zh-CN.md)。
+外部灯光集成见 [Chroma 支持设备](CHROMA_SUPPORTED_DEVICES.zh-CN.md)。
 
 返回 [README](../README.zh-CN.md)。
