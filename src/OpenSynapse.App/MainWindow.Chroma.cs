@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
+using Windows.System;
 
 namespace OpenSynapse.App;
 
@@ -41,4 +42,12 @@ public sealed partial class MainWindow
 
     private async void ArgbApplyClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedChroma?.ApplyArgbFrameAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void ArgbInstallDriverClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedChroma is { ArgbDriverUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
 }

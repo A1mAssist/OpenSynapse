@@ -2143,6 +2143,9 @@
   <data name="RazerArgbLedLabel" xml:space="preserve"><value>LED {0}</value></data>
   <data name="RazerArgbPort.Header" xml:space="preserve"><value>Port</value></data>
   <data name="RazerArgbTitle.Text" xml:space="preserve"><value>Per-LED control</value></data>
+  <data name="RazerArgbDriverTitle.Text" xml:space="preserve"><value>ARGB driver</value></data>
+  <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>Per-LED control needs Razer's 0F1F control driver. Install it, then refresh.</value></data>
+  <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>Download ARGB driver</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
   <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio comes from Razer's THX service and audio components. Install them here when missing; the installer needs administrator rights.</value></data>
   <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>Download THX installer</value></data>

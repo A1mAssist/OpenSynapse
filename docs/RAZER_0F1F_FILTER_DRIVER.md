@@ -49,6 +49,19 @@ DeviceIoControl(handle, 0x88883010, frame, 320, nullptr, 0, &returned, nullptr)
 - `src/OpenSynapse.App/ViewModels/RazerChromaViewModel.cs` + `MainWindow.xaml` — 「逐灯控制」卡片
 - `src/OpenSynapse.App/ArgbStripSettings.cs` — 每端口灯珠数量持久化
 
+## 应用内入口
+
+0F1F 在场但 `RZCONTROL\VID_1532&PID_0F1F&MI_00` 不存在时，灯光页显示「ARGB 驱动」卡片，
+按钮打开雷云官方驱动包：
+
+```
+https://app-assets.razer.com/files/synapse/devices/3871/1.0.0.0/PID0f1fDrv_v0.1.0.0.exe
+size    2,786,648
+sha256  850B55348774C1B9C8F8780AAA2061766CC1817CE5690F73859171D856888DAA
+```
+
+驱动是 `RzDev_0f1f.sys` upper filter，安装后需要重新枚举设备；卡片提示点“刷新”重新检测。
+
 ## 逐灯 UI
 
 灯光页的「逐灯控制」卡片按 **6 端口 × 80 颗** 显示，每端口灯珠数量可改并保存在

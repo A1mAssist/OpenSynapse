@@ -95,6 +95,27 @@ D:\Tools\ghidra_12.1.2_PUBLIC_20260605\support\analyzeHeadless.bat ^
 
 只检测服务和 DLL，不检查 APO 是否绑定到 0528 的音频端点；这一点需要实机确认。
 
+## 其他独立安装组件
+
+扫描 264 个设备 manifest 的 `resourceManifest.resources`（430 条 `application/x-msdownload`），按组件分类：
+
+| 组件 | 典型资源 | 是否影响已实现功能 | 处理 |
+|---|---|---|---|
+| THX APO | `APO1320` / `APO1365`（V2 Pro）、`APO13xx`（Nari / Kraken / Barracuda / Nommo / Leviathan） | 只有暴露 THX 控制的设备才需要 | V2 Pro 已加入口；其他型号暂不暴露 THX，不加 |
+| THX 预置 | `THXV3APOPreset*` | APO 的预置数据 | 随 APO 安装，不单独加入口 |
+| THX V4 游戏配置/补丁 | `THXV4GameProfiles-*` / `THXV4Patcher714-*` | 雷云 THX V4 配置，不影响我们的 HID/客户端调用 | 不加 |
+| THX 虚拟音频驱动 | `THXVAD*` | 雷云音频路由 | 不用，不加 |
+| Razer 0F1F 过滤驱动 | `DeviceDriver3871` | ARGB 320 字节逐灯 | 已加入口 |
+| Razer 0F1B 过滤驱动 | `PID0f1bDrv` | Emote 8×8 矩阵（未实现） | 等矩阵 UI 做了再加 |
+| 其他 `DeviceDriver*`（5 个） | Kraken V3 / HyperSense、Audio Mixer、HyperFlux V2、0282 | 雷云专用音频/充电功能 | 不加 |
+| `NormalDriver_PID*`（253 个） | 鼠标/键盘/耳机的雷云过滤驱动 | OpenRazer/HID 路径不依赖 | 不加 |
+| `RzAudioUtil` / `audCapNative` | 雷云音频效果 | 我们用 HID 读写 | 不加 |
+| `PhilipsHueDLL` | 雷云 Hue 桥发现 | 我们直接走 Hue HTTP API | 不加 |
+| Blade 超频/固件工具 | `RzIntelOverClock` / `RzAMDOverClock` / `Skip_FirmwareUpdater` | 我们用 HID/WMI 自己实现 | 不加 |
+
+判断规则：只有 OpenSynapse 已经实现的功能真的依赖这个组件时，才加安装入口；
+否则会变成点了没用的按钮。
+
 ## 0528 的 HID 通道
 
 中间件里 0528 的设备模块是 `AudioValkyrie`，不是通用 `rzDevice25`：

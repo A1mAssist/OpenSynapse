@@ -81,6 +81,7 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     private readonly Color[][] _argbPortColors = CreateArgbBuffers();
     private readonly int[] _argbLedCounts = ArgbStripSettings.Load();
     private OpenRazerSpecialLightingConnection? _argbConnection;
+    private bool _argbDriverMissing;
     private int _selectedArgbPortIndex;
     private int _argbLedCount;
     private bool _isBusy;
@@ -196,6 +197,8 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public Visibility ArgbVisibility => _argbConnection is null ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility ArgbDriverVisibility => _argbDriverMissing ? Visibility.Visible : Visibility.Collapsed;
+    public string ArgbDriverUri => RazerFilterDriverAdmission.ArgbInstallerUri;
     public IReadOnlyList<string> ArgbPortOptions => ArgbPortNumbers;
     public ObservableCollection<ArgbLedViewModel> ArgbLeds { get; } = new();
 
@@ -393,12 +396,16 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
         var connections = await _specialLighting.DiscoverAsync(cancellationToken);
         var argb = connections.FirstOrDefault(item => item.ProductId == ArgbProductId);
         _argbConnection = argb is { IsReady: true } ? argb : null;
+        _argbDriverMissing = RazerFilterDriverAdmission.NeedsDriver(
+            _connection.ProductId,
+            argb is { IsReady: true });
         if (argb is { IsReady: false, Error: { } error } && string.IsNullOrEmpty(ErrorText))
         {
             ErrorText = error;
         }
 
         OnPropertyChanged(nameof(ArgbVisibility));
+        OnPropertyChanged(nameof(ArgbDriverVisibility));
         RebuildArgbLeds();
     }
 
