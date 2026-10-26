@@ -470,13 +470,6 @@ public sealed partial class MacroEditorWindow : Window
         await _viewModel.AddMacroStepFromPickerAsync(_lifetime.Token);
     }
 
-    private void MacroPropertiesHeaderClick(object sender, RoutedEventArgs e)
-    {
-        var expanded = MacroPropertiesPanel.Visibility == Visibility.Visible;
-        MacroPropertiesPanel.Visibility = expanded ? Visibility.Collapsed : Visibility.Visible;
-        MacroPropertiesChevron.Glyph = expanded ? "\uE70D" : "\uE70E";
-    }
-
     private async void CaptureMacroTriggerClick(object sender, RoutedEventArgs e) =>
         await _viewModel.CaptureMacroTriggerAsync(_lifetime.Token);
 
