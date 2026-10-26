@@ -35,6 +35,7 @@ public sealed class OpenRazerSoftwareLightingRuntimeTests
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0053)!;
         var connection = CreateConnection(device, "mamba");
         var calls = 0;
+        var secondCall = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var cancellation = new CancellationTokenSource();
         await using var runtime = new OpenRazerSoftwareLightingRuntime(
             new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, new RecordingTransport()),
@@ -42,19 +43,24 @@ public sealed class OpenRazerSoftwareLightingRuntimeTests
 
         await runtime.StartAsync(_ =>
         {
-            Interlocked.Increment(ref calls);
+            if (Interlocked.Increment(ref calls) == 2)
+            {
+                secondCall.TrySetResult();
+                cancellation.Cancel();
+            }
+
             return ValueTask.FromResult<OpenRazerSoftwareLightingFrame?>(
                 new OpenRazerSoftwareLightingFrame(1, 1, [new RazerRgb(1, 2, 3)]));
         }, TimeSpan.FromMilliseconds(10), cancellation.Token);
 
-        await Task.Delay(45);
-        cancellation.Cancel();
+        await secondCall.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await runtime.StopAsync();
 
         Assert.False(runtime.IsRunning);
-        // The 6 x 22 matrix is intentionally capped below the requested 100 Hz
-        // cadence so row-wise HID writes do not build pressure on the device.
-        Assert.InRange(calls, 2, 4);
+        var callsAtStop = Volatile.Read(ref calls);
+        await Task.Delay(40);
+        Assert.Equal(callsAtStop, Volatile.Read(ref calls));
+        Assert.Equal(2, callsAtStop);
     }
 
     [Fact]
