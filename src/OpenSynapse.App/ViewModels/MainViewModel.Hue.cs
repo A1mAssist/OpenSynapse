@@ -23,7 +23,6 @@ public sealed partial class MainViewModel
             nameof(PhilipsHueViewModel.IsReady))
         {
             RefreshDeviceOverviewVisibility();
-            RefreshDeviceSelectorItems();
         }
     }
 
