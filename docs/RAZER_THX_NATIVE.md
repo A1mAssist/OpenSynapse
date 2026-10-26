@@ -80,6 +80,18 @@ D:\Tools\ghidra_12.1.2_PUBLIC_20260605\support\analyzeHeadless.bat ^
   3. 用 `GetRenderDeviceList` / `SetRenderDevice` 找到耳机端点，再 `SetRenderSpatialProcessing`。
 - 不建议把 Razer 的 APO 或 DLL 打包进 OpenSynapse：体积、驱动安装、UAC 和授权都不合适。
 
+## 应用内入口
+
+耳机音频页对 0528 显示 THX 状态卡，逻辑与笔记本 THX 面板一致：
+
+- `VSSrv` 未运行：显示“下载 THX 安装包”，打开官方
+  `THX-0528-BlackSharkV2Pro2020-v3.2.3.0.exe` 下载地址；安装包自己请求管理员权限。
+- 服务已运行、`ThxV3Native.dll` 缺失或 hash 不符：显示“下载 THX 控制组件”，
+  在应用内下载并校验 3.3 MB DLL 到 `%LOCALAPPDATA%\Razer\RazerAppEngine\User Data\Apps\Common\thxv3common`。
+- 两者都在：显示“THX 组件已安装”。
+
+只检测服务和 DLL，不检查 APO 是否绑定到 0528 的音频端点；这一点需要实机确认。
+
 ## 0528 的 HID 通道
 
 中间件里 0528 的设备模块是 `AudioValkyrie`，不是通用 `rzDevice25`：

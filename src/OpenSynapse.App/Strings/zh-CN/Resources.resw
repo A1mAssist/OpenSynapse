@@ -2555,6 +2555,15 @@
   <data name="RazerArgbLedLabel" xml:space="preserve"><value>第 {0} 颗灯</value></data>
   <data name="RazerArgbPort.Header" xml:space="preserve"><value>端口</value></data>
   <data name="RazerArgbTitle.Text" xml:space="preserve"><value>逐灯控制</value></data>
+  <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 由雷云的 THX 服务和音频组件提供。缺失时在这里安装；安装包需要管理员权限。</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>下载 THX 安装包</value></data>
+  <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>下载 THX 控制组件</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未检测到 THX 服务（VSSrv）。下载并运行雷云的 THX 安装包后重新检测。</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点下面的按钮下载。</value></data>
+  <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载 THX 控制组件…</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 控制组件下载或校验失败，请重试。</value></data>
+  <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>

@@ -2143,6 +2143,15 @@
   <data name="RazerArgbLedLabel" xml:space="preserve"><value>LED {0}</value></data>
   <data name="RazerArgbPort.Header" xml:space="preserve"><value>Port</value></data>
   <data name="RazerArgbTitle.Text" xml:space="preserve"><value>Per-LED control</value></data>
+  <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio comes from Razer's THX service and audio components. Install them here when missing; the installer needs administrator rights.</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>Download THX installer</value></data>
+  <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>Download THX component</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>The THX service (VSSrv) is not running. Download and run Razer's THX installer, then refresh.</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>The THX service is ready, but the control component is missing. Download it below.</value></data>
+  <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Downloading the THX control component...</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX control component could not be downloaded or verified. Try again.</value></data>
+  <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX components are installed.</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>Default</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>Game</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>Music</value></data>
