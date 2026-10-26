@@ -78,6 +78,11 @@ public sealed partial class MainViewModel
             lighting = new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, kraken);
         }
 
+        if (SelectedHeadsetAudio is { } previous)
+        {
+            await previous.DisposeAsync();
+        }
+
         SelectedHeadsetAudio = new RazerHeadsetAudioViewModel(
             row.Connection, message => _diagnosticLog.TryWrite("headset-audio", message), lighting);
         await SelectedHeadsetAudio.LoadAsync(cancellationToken);

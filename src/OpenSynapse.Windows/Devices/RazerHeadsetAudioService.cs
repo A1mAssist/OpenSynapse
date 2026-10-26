@@ -8,7 +8,8 @@ public sealed record RazerHeadsetAudioConnection(
     string DevicePath,
     ushort ProductId,
     string Name,
-    ushort FeatureReportByteLength);
+    ushort FeatureReportByteLength,
+    string? ContainerId = null);
 
 public sealed record RazerHeadsetAudioState(
     Version? Firmware,
@@ -48,12 +49,21 @@ public sealed class RazerHeadsetAudioService
             [0x0533] = "Razer Kraken V3 HyperSense",
             [0x0539] = "Razer Barracuda Pro",
             [0x053B] = "Razer Barracuda 2.4",
+            [0x053C] = "Razer Barracuda",
             [0x053E] = "Razer Audio Mixer",
             [0x0549] = "Razer Kraken V3",
             [0x0554] = "Razer Kraken Kitty V2 Pro",
             [0x0555] = "Razer BlackShark V2 Pro",
+            [0x0565] = "Razer BlackShark V2 HyperSpeed",
             [0x0567] = "Razer Kraken V4 Pro",
             [0x056B] = "Razer Kraken V4",
+            [0x056E] = "Razer BlackShark V2 HyperSpeed",
+            [0x0576] = "Razer BlackShark V3 Pro",
+            [0x0579] = "Razer BlackShark V3",
+            [0x0583] = "Razer Barracuda Pro",
+            [0x0584] = "Razer Barracuda 2.4",
+            [0x0587] = "Razer Kraken Kitty V3 Pro",
+            [0x0593] = "Razer Barracuda V2 Pro",
             [0x0309] = "Razer Kraken BT Sanrio Limited Edition",
             [0x0526] = "Razer Kraken X USB",
             [0x0530] = "Razer Kraken BT Kitty Edition",
@@ -104,6 +114,15 @@ public sealed class RazerHeadsetAudioService
 
     public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
 
+    private static string? ToContainerId(string physicalDeviceKey)
+    {
+        const string prefix = "container:";
+        return physicalDeviceKey.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+            physicalDeviceKey.Length > prefix.Length
+                ? $"{{{physicalDeviceKey[prefix.Length..]}}}"
+                : null;
+    }
+
     public static DeviceCategory GetCategory(ushort productId) =>
         MicrophoneProductIds.Contains(productId) ? DeviceCategory.Microphone
         : SpeakerProductIds.Contains(productId) ? DeviceCategory.Speaker
@@ -146,7 +165,8 @@ public sealed class RazerHeadsetAudioService
             chosen.DevicePath,
             chosen.ProductId,
             Products[chosen.ProductId],
-            chosen.FeatureReportByteLength);
+            chosen.FeatureReportByteLength,
+            ToContainerId(chosen.PhysicalDeviceKey));
     }
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken = default)

@@ -170,3 +170,53 @@ offset 63  0
 - 响应帧的 status 偏移和长度校验。实现 64 字节通道前需要从 `_sendCommandOut` 再确认一次，或用一次抓包校准。
 - 侧音/游戏语音写入后的回读值与 UI 范围。
 - 0555（V2 Pro 2023）是否使用同一套 `AudioValkyrie` 命令；目前只核对了 0528 的 bundle。
+
+## 2026-10-26 耳机 THX 控制器实现
+
+状态：static + 代码实现完成，**未实机验证**。本轮按雷云 JS 的调用形状和 DLL 导出表实现，不把“能编译”当成“设备已接受”。
+
+### 两套协议的分派
+
+| 型号 | PID | 原生版本 | 设备标识 | 侧音 |
+|---|---|---|---|---|
+| Nari / Nari Ultimate / Nari Essential | 051A / 051C / 051E | V3 | 音频端点 container ID | 有 |
+| Kraken Kitty Edition / Kraken Ultimate | 0521 / 0527 | V3 | container ID | 有 |
+| BlackShark V2 Pro 2020 / 2023 | 0528 / 0555 | V3 | container ID | 有 |
+| Kraken V3 / V3 Pro / V3 HyperSense | 0549 / 052D / 0533 | V3 | container ID | 有 |
+| Kraken Kitty V2 Pro | 0554 | V3 | container ID | 有 |
+| BlackShark V2 HyperSpeed | 0565 / 056E | V3 | container ID | 有 |
+| Kraken V4 / V4 Pro | 056B / 056C / 0567 / 0568 | V3 | container ID | 有 |
+| Barracuda / Barracuda Pro / Barracuda 2.4 | 053C / 0583 / 0584 | V3 | container ID | 有 |
+| BlackShark V3 Pro / V3 | 0576 / 0579 | V4 | razer_blacksharkv3pro_pc / razer_blacksharkv3_pc + headphones_game | 无 |
+| Kraken Kitty V3 Pro | 0587 | V4 | razer_krakenkittyv3pro + headphones_game | 无 |
+| Barracuda V2 Pro | 0593 | V4 | razer_barracudav2pro + headphones | 无 |
+
+V3 走扁平导出：DeviceInitialize(containerId)、Get/SetRenderSpatialProcessing、GetRenderPresetList、SetRenderPreset、Get/SetRenderEQGains、Get/SetCaptureSidetone(Level)、Get/SetRenderNormalization/VocalClarity。
+
+V4 走 property API：AddDevice({productId, endpointId})，然后读写 spatial_enabled、eq_enabled、eq_band_N_gain_db、volume_leveling_*、voice_clarity_*，预设组为 profile_presets。
+
+### 组件
+
+- V3 控制 DLL：ThxV3Native_v1.1.42.1.dll，3,351,240 字节，5DE7…835A。
+- V4 控制 DLL：ThxV4Native_v1.1.3.0.dll（0576/0579）与 ThxV4Native_v1.1.2.0.dll（0587/0593），13,710,024 字节。
+  - 1.1.3.0 0D88…D4D5
+  - 1.1.2.0 8EAC…30F4
+- 每个型号的 THX APO 安装包 URL 在 ThxHeadsetAdmission 内按 PID 固定；V4 另外提供 GameProfiles 更新器，0576/0579 还有 714 Patcher。
+- 所有下载都校验长度和 SHA-256 后才落到 %LOCALAPPDATA%/Razer/RazerAppEngine/User Data/Apps/Common/thx{v3,v4}common。
+
+### UI
+
+耳机页的 THX 卡现在会：
+
+1. 缺 V3 服务时给出官方安装包入口；
+2. 缺原生 DLL 时给出应用内下载；
+3. 组件齐全时显示空间音效、预设、10 段 EQ、音量标准化、人声清晰度；V3 额外显示侧音；
+4. V4 型号额外显示 GameProfiles / Patcher 更新入口。
+
+### 仍未验证
+
+- HID 设备 container GUID 是否等于音频端点 container ID。若不等，V3 的 DeviceInitialize 会失败，需要改用 GetAudioDeviceListBySystem 按端点名匹配。
+- V3 SetRenderEQGains 接受的 JSON 形状。当前先读后写，失败时只报错、不回滚；实机需要抓一次雷云请求确认是数组还是对象。
+- V3 SetNodeFFIEvent 未调用。控制调用不依赖事件回调，但音量/状态通知不会推送。
+- V4 服务名未固定，因此 V4 只以原生 DLL 作为准入；APO 未安装时会在首次读取时报错，卡片仍保留安装入口。
+- 所有控件的实际音效、回读值和量纲（尤其侧音 1–3162 的线性映射）都未在耳机上验证。

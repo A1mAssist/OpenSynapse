@@ -2,7 +2,8 @@ using System.Text;
 using System.Text.Json;
 using OpenSynapse.Windows.Audio;
 
-var session = new ThxAudioHelperSession();
+ThxAudioHelperSession? laptopSession = null;
+ThxHeadsetHelperSession? headsetSession = null;
 using var input = new StreamReader(
     Console.OpenStandardInput(),
     new UTF8Encoding(false, true),
@@ -25,7 +26,16 @@ while (await input.ReadLineAsync() is { } line)
     {
         var request = JsonSerializer.Deserialize<ThxAudioHelperRequest>(line)
             ?? throw new InvalidDataException("THX helper request is empty.");
-        response = session.Execute(request);
+        if (request.NativeVersion is null)
+        {
+            laptopSession ??= new ThxAudioHelperSession();
+            response = laptopSession.Execute(request);
+        }
+        else
+        {
+            headsetSession ??= new ThxHeadsetHelperSession();
+            response = headsetSession.Execute(request);
+        }
     }
     catch (Exception)
     {

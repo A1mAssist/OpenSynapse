@@ -20,6 +20,7 @@ public enum ThxAudioEnhancementKind
 {
     VoiceClarity,
     SoundNormalization,
+    Sidetone,
 }
 
 public sealed record ThxAudioPreset(string Id, string Name);
@@ -38,7 +39,8 @@ public sealed record ThxAudioState(
     IReadOnlyDictionary<string, IReadOnlyList<double>> FactoryCurves,
     ThxAudioEnhancement? SoundNormalization,
     ThxAudioEnhancement VoiceClarity,
-    bool CanEdit);
+    bool CanEdit,
+    ThxAudioEnhancement? Sidetone = null);
 
 public sealed record ThxAudioStatus(
     ThxAudioAvailability Availability,

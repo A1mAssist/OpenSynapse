@@ -48,4 +48,24 @@ public sealed class ThxAudioProtocolTests
         Assert.Throws<InvalidDataException>(() => ThxVendorJson.ParsePresetIds("[\"game\",7]"));
         Assert.Throws<InvalidDataException>(() => ThxVendorJson.ParseFloat("13", -12, 12));
     }
+
+    [Fact]
+    public void VendorJsonAcceptsObjectPresetAndGainShapes()
+    {
+        var presets = ThxVendorJson.ParsePresetEntries(
+            "{\"presets\":[{\"id\":\"game\",\"name\":\"Game\"},\"movie\"]}");
+        Assert.Equal(["game", "movie"], presets.Select(preset => preset.Id));
+        Assert.Equal(["Game", "movie"], presets.Select(preset => preset.Name));
+
+        Assert.Equal([1, -2, 3], ThxVendorJson.ParseGains("[1,-2,3]"));
+        Assert.Equal([1, -2], ThxVendorJson.ParseGains(
+            "{\"bands\":[{\"gain\":1},{\"value\":-2}]}"));
+        Assert.Equal("movie", ThxVendorJson.ParseSelectedPresetValue(
+            "{\"id\":\"movie\",\"name\":\"Movie\"}"));
+
+        var v4Presets = ThxVendorJson.ParsePresetEntries(
+            "{\"presets\":[{\"name\":\"game\",\"current\":[0,0,0,0,0,0,0,0,0,0]}]}");
+        Assert.Equal("game", Assert.Single(v4Presets).Id);
+        Assert.Equal("game", ThxVendorJson.ParseSelectedPresetValue("{\"name\":\"game\"}"));
+    }
 }
