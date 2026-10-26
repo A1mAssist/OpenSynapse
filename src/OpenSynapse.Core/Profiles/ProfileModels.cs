@@ -229,11 +229,15 @@ public sealed class ProfileShortcutSettings
 {
     public List<BladePerformanceMode>? PerformanceCycleModes { get; set; }
     public List<int>? RefreshRateCycleHertz { get; set; }
+    public MacroInput? MacroPlaybackStart { get; set; }
+    public MacroInput? MacroPlaybackStop { get; set; }
 
     internal void ApplySafeDefaults()
     {
         ValidateNonEmpty(PerformanceCycleModes, nameof(PerformanceCycleModes));
         ValidateNonEmpty(RefreshRateCycleHertz, nameof(RefreshRateCycleHertz));
+        MacroPlaybackStart = NormalizeMacroShortcut(MacroPlaybackStart);
+        MacroPlaybackStop = NormalizeMacroShortcut(MacroPlaybackStop);
         if (PerformanceCycleModes?.Any(mode => mode is not (
                 BladePerformanceMode.Balanced or
                 BladePerformanceMode.Performance or
@@ -261,8 +265,17 @@ public sealed class ProfileShortcutSettings
         {
             PerformanceCycleModes = PerformanceCycleModes?.ToList(),
             RefreshRateCycleHertz = RefreshRateCycleHertz?.ToList(),
+            MacroPlaybackStart = MacroPlaybackStart?.Clone(),
+            MacroPlaybackStop = MacroPlaybackStop?.Clone(),
         };
     }
+
+    private static MacroInput? NormalizeMacroShortcut(MacroInput? input) =>
+        input is not null &&
+        !input.IsModifierKey &&
+        input.IsValid(allowPrimaryMouseButton: false, allowWheel: false)
+            ? input.Clone()
+            : null;
 
     private static void ValidateNonEmpty<T>(IReadOnlyCollection<T>? values, string name)
     {

@@ -94,7 +94,8 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         get => (int)Definition.PlaybackMode;
         set
         {
-            if (!Enum.IsDefined(typeof(MacroPlaybackMode), value) ||
+            if (Definition.Trigger?.Mode == MacroTriggerMode.HoldRepeat ||
+                !Enum.IsDefined(typeof(MacroPlaybackMode), value) ||
                 (int)Definition.PlaybackMode == value)
             {
                 return;
@@ -182,10 +183,24 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
             }
 
             trigger.Mode = (MacroTriggerMode)index;
+            if (trigger.Mode == MacroTriggerMode.HoldRepeat)
+            {
+                Definition.PlaybackMode = MacroPlaybackMode.RepeatUntilStopped;
+                Definition.RepeatCount = 1;
+            }
+
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsPlaybackModeEditable));
+            OnPropertyChanged(nameof(IsRepeating));
+            OnPropertyChanged(nameof(PlaybackModeIndex));
+            OnPropertyChanged(nameof(RepeatCount));
+            OnPropertyChanged(nameof(RepeatCountVisibility));
             OnDefinitionChanged();
         }
     }
+
+    public bool IsPlaybackModeEditable =>
+        Definition.Trigger?.Mode != MacroTriggerMode.HoldRepeat;
 
     public Visibility RepeatCountVisibility =>
         Definition.PlaybackMode == MacroPlaybackMode.Repeat
@@ -203,6 +218,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(TriggerText));
         OnPropertyChanged(nameof(HasTrigger));
         OnPropertyChanged(nameof(TriggerModeIndex));
+        OnPropertyChanged(nameof(IsPlaybackModeEditable));
         OnDefinitionChanged();
     }
 
@@ -224,6 +240,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(RepeatCount));
         OnPropertyChanged(nameof(PlaybackSpeed));
         OnPropertyChanged(nameof(TriggerModeIndex));
+        OnPropertyChanged(nameof(IsPlaybackModeEditable));
         OnPropertyChanged(nameof(RepeatCountVisibility));
     }
 

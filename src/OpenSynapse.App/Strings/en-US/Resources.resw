@@ -1887,6 +1887,20 @@
   <data name="MacroPlaybackModeOnce.Content" xml:space="preserve"><value>Play once</value></data>
   <data name="MacroPlaybackModeRepeat.Content" xml:space="preserve"><value>Repeat</value></data>
   <data name="MacroPlaybackModeContinuous.Content" xml:space="preserve"><value>Continuous loop</value></data>
+  <data name="MacroPlaybackShortcutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Playback shortcuts (start plays the selected macro)</value></data>
+  <data name="MacroPlaybackShortcutButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Playback shortcuts (start plays the selected macro)</value></data>
+  <data name="MacroPlaybackStartShortcutSet.Text" xml:space="preserve"><value>Set start shortcut (selected macro)</value></data>
+  <data name="MacroPlaybackStopShortcutSet.Text" xml:space="preserve"><value>Set playback stop shortcut</value></data>
+  <data name="MacroPlaybackStartShortcutClear.Text" xml:space="preserve"><value>Clear playback start shortcut</value></data>
+  <data name="MacroPlaybackStopShortcutClear.Text" xml:space="preserve"><value>Reset playback stop shortcut</value></data>
+  <data name="MacroPlaybackShortcutUnset" xml:space="preserve"><value>Not set</value></data>
+  <data name="MacroPlaybackStopShortcutDefault" xml:space="preserve"><value>F10 (default)</value></data>
+  <data name="MacroPlaybackShortcutSummary" xml:space="preserve"><value>Start {0} · Stop {1}</value></data>
+  <data name="MacroPlaybackShortcutCapturePrompt" xml:space="preserve"><value>Press the playback shortcut to bind…</value></data>
+  <data name="MacroPlaybackStartShortcutCaptured" xml:space="preserve"><value>Playback start shortcut set to {0}.</value></data>
+  <data name="MacroPlaybackStopShortcutCaptured" xml:space="preserve"><value>Playback stop shortcut set to {0}.</value></data>
+  <data name="MacroPlaybackStartShortcutCleared" xml:space="preserve"><value>Playback start shortcut cleared.</value></data>
+  <data name="MacroPlaybackStopShortcutCleared" xml:space="preserve"><value>F10 restored as the playback stop shortcut.</value></data>
   <data name="MacroDurationContinuous" xml:space="preserve"><value>Continuous</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>Record delays</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>Ignore delays</value></data>
@@ -1996,7 +2010,7 @@
   <data name="MacroImportButton.Content" xml:space="preserve"><value>Import…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>Duplicate</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>Export…</value></data>
-  <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; press F10 to stop playback.</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; set playback shortcuts in the macro editor.</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>Keyboard</value></data>
@@ -2004,7 +2018,6 @@
   <data name="MacroMediaKeysTitle.Text" xml:space="preserve"><value>Media keys</value></data>
   <data name="MacroPlaybackSpeedLabel.Text" xml:space="preserve"><value>Playback speed</value></data>
   <data name="MacroPlaybackSpeed.Header" xml:space="preserve"><value>Playback speed (×, 1 = original)</value></data>
-  <data name="MacroPlaybackStopShortcut.Text" xml:space="preserve"><value>F10 stops playback</value></data>
   <data name="MacroRecordingOptions.Text" xml:space="preserve"><value>Recording options</value></data>
   <data name="MacroRecordDelayMode.Text" xml:space="preserve"><value>Delay</value></data>
   <data name="MacroRecordDelayRecorded.Text" xml:space="preserve"><value>Record actual interval</value></data>
@@ -2047,6 +2060,7 @@
   <data name="MacroTriggerModePress.Content" xml:space="preserve"><value>Press</value></data>
   <data name="MacroTriggerModeToggle.Content" xml:space="preserve"><value>Toggle</value></data>
   <data name="MacroTriggerModeHold.Content" xml:space="preserve"><value>Hold</value></data>
+  <data name="MacroTriggerModeHoldRepeat.Content" xml:space="preserve"><value>Hold to loop</value></data>
   <data name="MacroTriggerModeSequence.Content" xml:space="preserve"><value>Run one step per press</value></data>
   <data name="MacroUnsaved.Text" xml:space="preserve"><value>Unsaved</value></data>
   <data name="MacroAlreadyPlaying" xml:space="preserve"><value>A macro is already playing.</value></data>

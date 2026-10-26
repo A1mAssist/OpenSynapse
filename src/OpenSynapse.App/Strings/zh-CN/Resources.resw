@@ -2299,6 +2299,20 @@
   <data name="MacroPlaybackModeOnce.Content" xml:space="preserve"><value>播放一次</value></data>
   <data name="MacroPlaybackModeRepeat.Content" xml:space="preserve"><value>重复</value></data>
   <data name="MacroPlaybackModeContinuous.Content" xml:space="preserve"><value>持续循环</value></data>
+  <data name="MacroPlaybackShortcutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>播放快捷键（开始播放当前宏）</value></data>
+  <data name="MacroPlaybackShortcutButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>播放快捷键（开始播放当前宏）</value></data>
+  <data name="MacroPlaybackStartShortcutSet.Text" xml:space="preserve"><value>设置开始播放（当前宏）快捷键</value></data>
+  <data name="MacroPlaybackStopShortcutSet.Text" xml:space="preserve"><value>设置停止播放快捷键</value></data>
+  <data name="MacroPlaybackStartShortcutClear.Text" xml:space="preserve"><value>清除开始播放快捷键</value></data>
+  <data name="MacroPlaybackStopShortcutClear.Text" xml:space="preserve"><value>恢复默认停止快捷键</value></data>
+  <data name="MacroPlaybackShortcutUnset" xml:space="preserve"><value>未设置</value></data>
+  <data name="MacroPlaybackStopShortcutDefault" xml:space="preserve"><value>F10（默认）</value></data>
+  <data name="MacroPlaybackShortcutSummary" xml:space="preserve"><value>开始 {0} · 停止 {1}</value></data>
+  <data name="MacroPlaybackShortcutCapturePrompt" xml:space="preserve"><value>请按下要绑定的播放快捷键…</value></data>
+  <data name="MacroPlaybackStartShortcutCaptured" xml:space="preserve"><value>开始播放快捷键已设为 {0}。</value></data>
+  <data name="MacroPlaybackStopShortcutCaptured" xml:space="preserve"><value>停止播放快捷键已设为 {0}。</value></data>
+  <data name="MacroPlaybackStartShortcutCleared" xml:space="preserve"><value>已清除开始播放快捷键。</value></data>
+  <data name="MacroPlaybackStopShortcutCleared" xml:space="preserve"><value>已恢复 F10 停止播放。</value></data>
   <data name="MacroDurationContinuous" xml:space="preserve"><value>持续循环</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>记录间隔</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>不记录间隔</value></data>
@@ -2408,7 +2422,7 @@
   <data name="MacroImportButton.Content" xml:space="preserve"><value>导入…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>复制</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>导出…</value></data>
-  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存，F10 停止播放。</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存；播放快捷键可在宏编辑器中设置。</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>键盘</value></data>
@@ -2416,7 +2430,6 @@
   <data name="MacroMediaKeysTitle.Text" xml:space="preserve"><value>媒体键</value></data>
   <data name="MacroPlaybackSpeedLabel.Text" xml:space="preserve"><value>播放速度</value></data>
   <data name="MacroPlaybackSpeed.Header" xml:space="preserve"><value>播放速度（倍率，1 = 原速）</value></data>
-  <data name="MacroPlaybackStopShortcut.Text" xml:space="preserve"><value>F10 停止播放</value></data>
   <data name="MacroRecordingOptions.Text" xml:space="preserve"><value>录制选项</value></data>
   <data name="MacroRecordDelayMode.Text" xml:space="preserve"><value>延迟</value></data>
   <data name="MacroRecordDelayRecorded.Text" xml:space="preserve"><value>记录实际间隔</value></data>
@@ -2459,6 +2472,7 @@
   <data name="MacroTriggerModePress.Content" xml:space="preserve"><value>按下</value></data>
   <data name="MacroTriggerModeToggle.Content" xml:space="preserve"><value>切换</value></data>
   <data name="MacroTriggerModeHold.Content" xml:space="preserve"><value>按住</value></data>
+  <data name="MacroTriggerModeHoldRepeat.Content" xml:space="preserve"><value>按住循环</value></data>
   <data name="MacroTriggerModeSequence.Content" xml:space="preserve"><value>逐条执行</value></data>
   <data name="MacroUnsaved.Text" xml:space="preserve"><value>未保存</value></data>
   <data name="MacroAlreadyPlaying" xml:space="preserve"><value>已有宏正在播放。</value></data>
