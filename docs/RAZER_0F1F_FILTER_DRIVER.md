@@ -72,7 +72,7 @@ manifest 出处：`artifacts/razer-mw-all-bundles-v2/0F1F/manifest.json`
 
 - IOCTL 分发 `FUN_140002e6c`：`0x88883004/18/1c/20/24/28/2c/30/34/38/3c/40/44/48/4c/80..98/c0/100/104/108/110/144`，
   未命中的码转给下层回调。
-- 设备接口 GUID `E3BE005D-D130-4910-88FF-09AE02F680E9` 位于 `.rdata`（文件偏移 `0x7d70`）。
+- 设备接口 GUID `E3BE005D-D130-4910-88FF-09AE02F680E9` 在驱动镜像内（文件偏移 `0x7d70`）。
 
 `RzDev_0f1f.sys`：
 
@@ -93,3 +93,14 @@ manifest 出处：`artifacts/razer-mw-all-bundles-v2/0F1F/manifest.json`
 Ghidra 工程：`artifacts/reverse-engineering/ghidra-razer-drivers`（`RazerDrivers`，程序
 `/driver-samples/RzCommon.sys`、`/driver-samples/RzDev_02c6.sys`、`/RzDev_0f1f.sys`）。
 反编译输出：`artifacts/reverse-engineering/rzdev-0f1f-*.txt`、`rzcommon-decomp-a.txt`。
+
+## 顺带：Seiren Emote（0F1B）
+
+同一个中间件包机制给 0F1B 也发了驱动：
+`https://app-assets.razer.com/files/synapse/devices/3867/1.0.0.3/PID0f1bDrv_v0.1.0.0.exe`，
+里面是 `RzDev_0f1b.sys`，INF 匹配 `HID\Vid_1532&Pid_0f1b`，同样 `ControlDevice=1`、`DeviceType=3`。
+所以 Emote 也有 `RZCONTROL` + `0x88883010` 这条 SET_FEATURE 通道——**发**不是问题。
+
+缺的仍然只有帧内容：OpenRazer 没有 Emote 支持，中间件 JS 里也没有矩阵帧的组包代码。
+需要一次 `0x88883010` 的抓包（或者雷云原生中间件的组帧函数）才能把 8×8 矩阵写进去。
+如果矩阵走的是 output report 而不是 feature report，这条通道用不上，得另找路。
