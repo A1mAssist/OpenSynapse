@@ -46,14 +46,21 @@ public sealed partial class MainViewModel
     /// </summary>
     public int BladeFanFixedRpm
     {
-        get => EditablePerformanceBladeProfile.FanTargetRpm ?? _bladeFanFixedRpm;
-        set
-        {
-            var clamped = Math.Clamp(value, BladeFanLimits.MinimumRpm, BladeFanLimits.MaximumRpm);
-            var snapped = BladeFanLimits.MinimumRpm +
-                ((clamped - BladeFanLimits.MinimumRpm) / BladeFanLimits.StepRpm) * BladeFanLimits.StepRpm;
-            SetField(ref _bladeFanFixedRpm, snapped);
-        }
+        get => _bladeFanFixedRpm;
+        set => SetField(ref _bladeFanFixedRpm, SnapBladeFanFixedRpm(value));
+    }
+
+    public int BladeFanFixedMinimumRpm =>
+        BladeModelCapabilities.MinimumFanTargetRpmFor(_blade._bladeProductId);
+
+    public int BladeFanFixedMaximumRpm =>
+        BladeModelCapabilities.MaximumFanTargetRpmFor(_blade._bladeProductId);
+
+    private int SnapBladeFanFixedRpm(int value)
+    {
+        var minimum = BladeFanFixedMinimumRpm;
+        var clamped = Math.Clamp(value, minimum, BladeFanFixedMaximumRpm);
+        return minimum + ((clamped - minimum) / BladeFanLimits.StepRpm) * BladeFanLimits.StepRpm;
     }
 
     public IReadOnlyList<string> BladeFanControlModeOptions =>
@@ -120,6 +127,22 @@ public sealed partial class MainViewModel
         var resolved = blade is null
             ? EditablePerformanceBladeProfile
             : ProfileResolver.Resolve(_profile, blade, SelectedPerformancePowerState).Blade;
+
+        // The editor owns the value until Apply. Seeding it from the stored profile must
+        // not override a target the user is currently typing.
+        if (resolved.FanTargetRpm is int targetRpm)
+        {
+            _bladeFanFixedRpm = SnapBladeFanFixedRpm(targetRpm);
+        }
+        else
+        {
+            _bladeFanFixedRpm = Math.Max(_bladeFanFixedRpm, BladeFanFixedMinimumRpm);
+        }
+
+        OnPropertyChanged(nameof(BladeFanFixedRpm));
+        OnPropertyChanged(nameof(BladeFanFixedMinimumRpm));
+        OnPropertyChanged(nameof(BladeFanFixedMaximumRpm));
+
         _bladeFanCurveEditor = new BladeFanCurveEditorViewModel(TryCreateCurve(resolved));
         OnPropertyChanged(nameof(BladeFanCurveEditor));
         OnPropertyChanged(nameof(BladeFanCurveModeIndex));

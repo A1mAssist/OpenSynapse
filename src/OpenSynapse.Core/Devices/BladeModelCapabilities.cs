@@ -10,12 +10,32 @@ namespace OpenSynapse.Core.Devices;
 /// </summary>
 public static class BladeModelCapabilities
 {
+    public const ushort Blade14_2022ProductId = 0x028C;
+
     /// <summary>Custom CPU levels every audited model captures (0x0D:0x07 payload level).</summary>
     private static readonly BladeCpuBoostMode[] LowMediumHigh =
         [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High];
 
     /// <summary>No audited admission. Used when a product id is unknown to this table.</summary>
     private static readonly BladeCpuBoostMode[] None = [];
+
+    private static readonly BladePerformanceMode[] StandardPerformanceModes =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Performance,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.Silent,
+    ];
+
+    // Synapse on 028C exposes the first three. The owner confirmed the firmware also
+    // accepts 0x02 and reads it back, so keep it as an extra mode after the official list.
+    private static readonly BladePerformanceMode[] Blade14_2022PerformanceModes =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.Performance,
+    ];
 
     private static readonly FrozenDictionary<ushort, Contract> Contracts =
         new Dictionary<ushort, Contract>
@@ -52,7 +72,15 @@ public static class BladeModelCapabilities
             // fan and the fan curve stay closed: neither was exercised, and a curve also
             // needs a verified restore-on-exit path.
 
-            [0x028C] = new(MaxFan: false, LowMediumHigh),
+            // Official Synapse exposes four Custom CPU levels on this model, including
+            // Boost, and the fixed fan target only acts in Custom mode with a
+            // 3500-5000 RPM range. Maximum fan and the fan curve stay closed.
+            [Blade14_2022ProductId] = new(
+                MaxFan: false,
+                [.. LowMediumHigh, BladeCpuBoostMode.Boost],
+                FixedFan: true,
+                MinimumFanTargetRpm: 3500,
+                FixedFanRequiresCustomMode: true),
             // Blade 14 (2023) RZ09-0482 and Blade 14 (2024) RZ09-0509. The middleware
             // enables both the maximum-fan bit and custom CPU levels.
             [0x029D] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true, HyperBoost: true),
@@ -96,6 +124,28 @@ public static class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract) && contract.FixedFan;
 
     /// <summary>
+    /// Performance modes exposed for the exact model. 028C uses the three modes its
+    /// Synapse UI exposes; the protocol-only Performance value must not leak into it.
+    /// </summary>
+    public static IReadOnlyList<BladePerformanceMode> PerformanceModesFor(ushort productId) =>
+        productId == Blade14_2022ProductId
+            ? Blade14_2022PerformanceModes
+            : StandardPerformanceModes;
+
+    /// <summary>Lower bound the exact model accepts for a fixed fan target.</summary>
+    public static int MinimumFanTargetRpmFor(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract)
+            ? contract.MinimumFanTargetRpm
+            : BladeFanLimits.MinimumRpm;
+
+    /// <summary>
+    /// True where a fixed target is only acted on in Custom performance mode. The 028C
+    /// EC stores a target in Balanced/Silent but keeps following its own curve.
+    /// </summary>
+    public static bool FixedFanRequiresCustomMode(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.FixedFanRequiresCustomMode;
+
+    /// <summary>
     /// True where the model's own performance-mode table lists HyperBoost. The mode is
     /// written through the shared 0x0D:0x02 thermal channel, so it does not need a
     /// Razer Cooling Pad; the pad only drives the temperature-to-fan curve.
@@ -129,9 +179,11 @@ public static class BladeModelCapabilities
         IReadOnlyList<BladeCpuBoostMode> CpuBoostModes,
         bool FanCurve = false,
         bool FixedFan = false,
+        int MinimumFanTargetRpm = BladeFanLimits.MinimumRpm,
         int MaximumFanTargetRpm = BladeFanLimits.MaximumRpm,
         bool Writes = true,
-        bool HyperBoost = false);
+        bool HyperBoost = false,
+        bool FixedFanRequiresCustomMode = false);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay

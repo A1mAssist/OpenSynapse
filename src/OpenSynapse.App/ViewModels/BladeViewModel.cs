@@ -86,14 +86,21 @@ internal sealed class BladeViewModel
     internal ChromaFileAnimation? _bladeChromaAnimation;
     internal string _bladeChromaStatusText = string.Empty;
 
+    internal IReadOnlyList<BladePerformanceMode> PerformanceModes =>
+        _bladeProductId == BladeModelCapabilities.Blade14_2022ProductId
+            ? BladeModelCapabilities.PerformanceModesFor(_bladeProductId)
+            : BladePerformanceModes;
+
     internal bool IsCustomMode =>
         _confirmedBladePerformanceModeIndex >= 0 &&
-        BladePerformanceModes[_confirmedBladePerformanceModeIndex] == BladePerformanceMode.Custom;
+        _confirmedBladePerformanceModeIndex < PerformanceModes.Count &&
+        PerformanceModes[_confirmedBladePerformanceModeIndex] == BladePerformanceMode.Custom;
 
     internal void SetPerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {
         var modeChanged = _confirmedBladePerformanceModeIndex < 0 ||
-            BladePerformanceModes[_confirmedBladePerformanceModeIndex] != mode;
+            _confirmedBladePerformanceModeIndex >= PerformanceModes.Count ||
+            PerformanceModes[_confirmedBladePerformanceModeIndex] != mode;
         _bladePerformanceModeText = mode switch
         {
             BladePerformanceMode.Balanced => AppStrings.Text("Text_9753B259"),
@@ -105,7 +112,7 @@ internal sealed class BladeViewModel
             BladePerformanceMode.Hyperboost => "HyperBoost",
             _ => "--",
         };
-        _bladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, mode);
+        _bladePerformanceModeIndex = IndexOf(PerformanceModes, mode);
         if (confirm)
         {
             _confirmedBladePerformanceModeIndex = _bladePerformanceModeIndex;
@@ -114,6 +121,18 @@ internal sealed class BladeViewModel
                 ClearCustomPerformance();
             }
         }
+    }
+
+    private static int IndexOf(IReadOnlyList<BladePerformanceMode> modes, BladePerformanceMode mode)
+    {
+        for (var index = 0; index < modes.Count; index++)
+        {
+            if (modes[index] == mode)
+            {
+                return index;
+            }
+        }
+        return -1;
     }
 
     internal void SetGameMode(BladeGameModeTelemetry? gameMode)

@@ -341,7 +341,13 @@ public sealed partial class MainViewModel
 
         ActiveProfileName = _profile.ActiveProfileName;
         var shortcuts = GetActiveProfile().Shortcuts;
-        _bladePerformanceCycleModes = shortcuts.PerformanceCycleModes!.ToHashSet();
+        _bladePerformanceCycleModes = shortcuts.PerformanceCycleModes!
+            .Where(_blade.PerformanceModes.Contains)
+            .ToHashSet();
+        if (_bladePerformanceCycleModes.Count == 0)
+        {
+            _bladePerformanceCycleModes = [.. _blade.PerformanceModes];
+        }
         _internalDisplayRefreshRateCycleHertz = shortcuts.RefreshRateCycleHertz?.ToHashSet();
         RefreshBladeLightingEditor();
         RefreshBladePerformanceEditor();

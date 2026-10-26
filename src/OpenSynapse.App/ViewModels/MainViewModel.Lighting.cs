@@ -13,19 +13,19 @@ public sealed partial class MainViewModel
     private bool _chromaIntegrationEnabled = true;
 
     /// <summary>
-    /// Chroma takes over through the per-key matrix path, which the Blade 16 2023 does
+    /// Chroma takes over through the per-key matrix path, which firmware-rendered models do
     /// not have, so the override is hidden there even when Chroma is enabled globally.
     /// </summary>
     public Visibility BladeChromaOverrideVisibility =>
-        _chromaIntegrationEnabled && !IsBlade2023Model
+        _chromaIntegrationEnabled && !UsesFirmwareKeyboardLighting
             ? Visibility.Visible
             : Visibility.Collapsed;
 
     /// <summary>
-    /// The 2023 generation has no matrix to hand a .chroma file to, so the import button
+    /// Firmware-rendered models have no matrix to hand a .chroma file to, so the import button
     /// stays hidden rather than accepting a file the device cannot play.
     /// </summary>
-    public Visibility BladeChromaImportVisibility => IsBlade2023Model
+    public Visibility BladeChromaImportVisibility => UsesFirmwareKeyboardLighting
         ? Visibility.Collapsed
         : Visibility.Visible;
 
@@ -180,7 +180,7 @@ public sealed partial class MainViewModel
             }
             try
             {
-                if (IsBlade2023Model)
+                if (UsesFirmwareKeyboardLighting)
                 {
                     await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
                         _deviceDescriptors,
@@ -242,9 +242,9 @@ public sealed partial class MainViewModel
             return null;
         }
 
-        if (IsBlade2023Model)
+        if (UsesFirmwareKeyboardLighting)
         {
-            return await ApplyBlade2023LightingProfileAsync(
+            return await ApplyFirmwareKeyboardLightingProfileAsync(
                 blade,
                 effect,
                 resolved.Blade.KeyboardBrightness,
@@ -285,11 +285,11 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>
-    /// Applies a resolved profile on the Blade 16 2023. That generation has no matrix
+    /// Applies a resolved profile on models that render keyboard lighting in firmware. They have no matrix
     /// frame path, so brightness and the firmware effect reach the device through the
     /// telemetry reader instead of the lighting controller.
     /// </summary>
-    private async Task<string?> ApplyBlade2023LightingProfileAsync(
+    private async Task<string?> ApplyFirmwareKeyboardLightingProfileAsync(
         DeviceDescriptor blade,
         BladeLightingEffect effect,
         byte? keyboardBrightness,

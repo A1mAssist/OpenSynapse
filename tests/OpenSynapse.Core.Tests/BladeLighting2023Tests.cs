@@ -128,6 +128,14 @@ public sealed class BladeLighting2023Tests
     }
 
     [Fact]
+    public void Blade14_2022UsesTheSameFirmwareKeyboardEffectPath()
+    {
+        Assert.True(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x028C));
+        Assert.True(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x029F));
+        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x02C6));
+    }
+
+    [Fact]
     public void AdmittedEffectsExcludeEverythingTheMatrixGenerationOffers()
     {
         Assert.True(BladeLighting2023Admitted.Allows(BladeLightingMode.Off));
