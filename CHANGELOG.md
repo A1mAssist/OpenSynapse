@@ -73,6 +73,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 改进 / Improved
 
+- 移除设置页的“系统音频”卡。默认播放/录音设备、音量和静音交回 Windows 声音设置，应用不再维护未公开的默认端点切换。
+- Removed the System audio card from Settings. Default playback/recording devices, volume and mute stay in Windows Sound settings, and the app no longer maintains the undocumented default-endpoint switch.
 - OpenRazer 设备目录升级到上游 `477f4d6`，新增 Razer Joro、Cobra HyperSpeed（有线/无线）、Blade 16 (2026) 和 Blade 18 (2026)，目录共 259 款。
 - The OpenRazer catalogue is upgraded to upstream `477f4d6`, adding Razer Joro, Cobra HyperSpeed (wired/wireless), Blade 16 (2026), and Blade 18 (2026), for 259 entries in total.
 - 新增《中间件设备协议参考》文档，列出 119 款雷云产品在自身中间件里实际调用的 HID 命令，按 33 组命令 profile 归类。OpenRazer 目录未收录的设备可以据此判断功能是否可实现。

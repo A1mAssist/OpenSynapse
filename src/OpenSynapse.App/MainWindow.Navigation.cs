@@ -283,10 +283,6 @@ public sealed partial class MainWindow
         {
             RefreshDedicatedGpuMode();
         }
-        if (SettingsPage.Visibility == Visibility.Visible)
-        {
-            _ = SystemAudio.LoadAsync(_lifetime.Token);
-        }
         if (DiagnosticsPage.Visibility == Visibility.Visible)
         {
             // The rebuild is skipped while this page is hidden, so entering it must refresh

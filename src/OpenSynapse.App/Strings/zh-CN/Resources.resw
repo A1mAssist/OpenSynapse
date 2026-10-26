@@ -2533,21 +2533,6 @@
   <data name="LeviathanPresetMovie" xml:space="preserve"><value>电影</value></data>
   <data name="LeviathanPresetTreble" xml:space="preserve"><value>高音</value></data>
   <data name="LeviathanPresetCustom" xml:space="preserve"><value>自定义</value></data>
-  <data name="SystemAudioTitle.Text" xml:space="preserve"><value>系统音频</value></data>
-  <data name="SystemAudioDescription.Text" xml:space="preserve"><value>默认播放与录音端点、音量和静音。实现对应本地雷云 simple_service 的 Core Audio 功能。</value></data>
-  <data name="SystemAudioRefresh.Content" xml:space="preserve"><value>刷新</value></data>
-  <data name="SystemAudioPlaybackLabel.Text" xml:space="preserve"><value>播放设备</value></data>
-  <data name="SystemAudioRecordingLabel.Text" xml:space="preserve"><value>录音设备</value></data>
-  <data name="SystemAudioMuteLabel.Text" xml:space="preserve"><value>静音</value></data>
-  <data name="SystemAudioApplyPlayback.Content" xml:space="preserve"><value>应用播放设置</value></data>
-  <data name="SystemAudioApplyRecording.Content" xml:space="preserve"><value>应用录音设置</value></data>
-  <data name="SystemAudioRefreshed" xml:space="preserve"><value>音频设备已刷新</value></data>
-  <data name="SystemAudioLoadFailed" xml:space="preserve"><value>读取系统音频失败：{0}</value></data>
-  <data name="SystemAudioDefaultEndpoint" xml:space="preserve"><value>默认 · {0}</value></data>
-  <data name="SystemAudioMissingEndpoint" xml:space="preserve"><value>Windows 未返回可用的默认播放或录音端点。</value></data>
-  <data name="SystemAudioRenderApplied" xml:space="preserve"><value>默认播放设备与音量已应用</value></data>
-  <data name="SystemAudioCaptureApplied" xml:space="preserve"><value>默认录音设备与音量已应用</value></data>
-  <data name="SystemAudioApplyFailed" xml:space="preserve"><value>应用音频设置失败：{0}</value></data>
   <data name="MacroExportButtonShort.Content" xml:space="preserve"><value>导出</value></data>
   <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>启用宏</value></data>
   <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>启用或禁用这个宏</value></data>
