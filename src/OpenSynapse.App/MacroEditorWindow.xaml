@@ -76,8 +76,8 @@
             <Border Grid.Row="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8">
               <Grid x:Name="MacroPlaybackBar" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8" Visibility="{Binding MacroEditorVisibility}">
                 <Button x:Name="MacroPlayButton" Content="{Binding MacroPlayButtonText}" Click="PlayMacroClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanPlayMacro}" />
-                <Button Content="{Binding MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding IsMacroPlaying}" />
-                <Button local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanStopMacro}" />
+                <Button Grid.Column="1" Content="{Binding MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding IsMacroPlaying}" />
+                <Button Grid.Column="2" local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanStopMacro}" />
                 <Grid Grid.Column="3" ColumnDefinitions="*,Auto" ColumnSpacing="4" Margin="4,0">
                   <TextBlock Text="{Binding MacroPlaybackShortcutText}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding MacroPlaybackShortcutText}" />
                   <Button Grid.Column="1" x:Name="MacroPlaybackShortcutButton" local:Localized.Uid="MacroPlaybackShortcutButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center">
