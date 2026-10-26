@@ -125,7 +125,7 @@
             </ScrollViewer>
             <ScrollViewer x:Name="DevicesPage" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
-                <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_E7F68C4BF6" Text="设备" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_0053B5D025" Text="已发现的设备及其已验证控制。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button local:Localized.Uid="Loc_AB55074471" Grid.Column="1" Content="重新探测" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid>
+                <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_E7F68C4BF6" Text="设备" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_0053B5D025" Text="已发现的设备及其已验证控制。" Foreground="{StaticResource MutedBrush}" /></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom"><Button local:Localized.Uid="HueAddButton" Content="添加 Hue 桥" Click="HueAddClick" Visibility="{Binding HueAddVisibility}" Style="{StaticResource SecondaryButtonStyle}" /><Button local:Localized.Uid="Loc_AB55074471" Content="重新探测" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /></StackPanel></Grid>
                 <InfoBar IsOpen="{Binding HasDeviceError}" IsClosable="False" Severity="Warning" Message="{Binding DeviceErrorText}" />
                 <StackPanel Spacing="8">
                 <ItemsRepeater x:Name="DeviceCardsRepeater" ItemsSource="{Binding PrimaryDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater>
@@ -156,7 +156,7 @@
                         <Button Grid.Column="1" local:Localized.Uid="HueScanButton" Content="扫描" Click="HueScanClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>
                       <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                        <TextBox Text="{Binding BridgeHost, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" PlaceholderText="手动输入桥地址，例如 192.168.1.2" />
+                        <TextBox Text="{Binding BridgeHost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEdit}" PlaceholderText="手动输入桥地址，例如 192.168.1.2" />
                         <Button Grid.Column="1" local:Localized.Uid="HuePairButton" Content="配对" Click="HuePairClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource PrimaryButtonStyle}" />
                         <Button Grid.Column="2" local:Localized.Uid="HueRefreshButton" Content="刷新" Click="HueRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" />
                       </Grid>

@@ -2625,7 +2625,7 @@
   <data name="HueLightCount" xml:space="preserve"><value>已读取 {0} 盏灯。</value></data>
   <data name="HueColorLabel" xml:space="preserve"><value>颜色</value></data>
   <data name="HueApplyColorButton" xml:space="preserve"><value>应用颜色</value></data>
-  <data name="HueDiscovered" xml:space="preserve"><value>已发现，待配对</value></data>
+  <data name="HueNotPaired" xml:space="preserve"><value>待配对</value></data>
   <data name="HueNotConnected" xml:space="preserve"><value>未连接</value></data>
   <data name="HueScanning" xml:space="preserve"><value>正在查找 Hue 桥…</value></data>
   <data name="HueNoBridges" xml:space="preserve"><value>没有发现 Hue 桥，可手动填写地址。</value></data>
@@ -2634,6 +2634,7 @@
   <data name="HueScanButton" xml:space="preserve"><value>扫描</value></data>
   <data name="HueLightsTitle" xml:space="preserve"><value>灯光</value></data>
   <data name="HueBridgeRequired" xml:space="preserve"><value>请先扫描或填写 Hue 桥地址。</value></data>
+  <data name="HueAddButton" xml:space="preserve"><value>添加 Hue 桥</value></data>
   <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>板载宏</value></data>
   <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。</value></data>
   <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>读取板载宏</value></data>

@@ -112,6 +112,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
                 Lights.Clear();
                 OnPropertyChanged(nameof(SelectedBridge));
             }
+            StatusText = string.Empty;
             OnConnectionStateChanged();
         }
     }
@@ -146,7 +147,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
     public string DeviceStatusText => IsConfigured
         ? AppStrings.Text("HuePaired")
         : HasBridge
-            ? AppStrings.Text("HueDiscovered")
+            ? AppStrings.Text("HueNotPaired")
             : AppStrings.Text("HueNotConnected");
     public string DeviceIdentity => SelectedBridge is { } bridge
         ? string.Join(" · ", new[] { bridge.Id, bridge.SoftwareVersion, bridge.Host }
