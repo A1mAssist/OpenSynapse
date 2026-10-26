@@ -29,7 +29,7 @@ public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
 
-public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
+public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 {
     private static readonly int[] PollingRates = [8_000, 4_000, 2_000, 1_000, 500, 250, 125];
 
@@ -391,3 +391,4 @@ public sealed class RazerKeyboardViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
+
