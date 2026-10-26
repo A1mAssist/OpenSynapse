@@ -81,6 +81,7 @@ public sealed partial class MainWindow
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
         };
         picker.FileTypeFilter.Add(".json");
+        picker.FileTypeFilter.Add(".xml");
         InitializePicker(picker);
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
