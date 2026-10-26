@@ -248,7 +248,27 @@
                       <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right"><Button local:Localized.Uid="RazerLightingApplyBrightness" Content="应用亮度" Click="KeyboardApplyBrightnessClick" IsEnabled="{Binding CanEdit}" Visibility="{Binding BrightnessVisibility}" Style="{StaticResource OpenRazerSaveButtonStyle}" /><Button local:Localized.Uid="RazerLightingApplyEffect" Content="应用灯效" Click="KeyboardApplyLightingClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource PrimaryButtonStyle}" /></StackPanel>
                     </StackPanel>
                   </Border>
-                </StackPanel>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding OnboardMacroVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock local:Localized.Uid="RazerOnboardMacroTitle" Text="板载宏" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="RazerOnboardMacroDescription" Text="这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding OnboardMacroStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                      <ItemsControl ItemsSource="{Binding OnboardMacros}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="viewModels:OnboardMacroRowViewModel">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" Padding="0,6">
+                              <TextBlock Text="{Binding Title}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" VerticalAlignment="Top" />
+                              <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Detail}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                              </StackPanel>
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <Button local:Localized.Uid="RazerOnboardMacroReadButton" Content="读取板载宏" Click="KeyboardReadOnboardMacrosClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>                </StackPanel>
                 <StackPanel x:Name="ChromaPanel" DataContext="{Binding SelectedChroma}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding BatterySummary}" Visibility="{Binding BatteryVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding HardwareSummary}" Visibility="{Binding HardwareVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
@@ -1294,3 +1314,4 @@
     </TeachingTip>
   </Grid>
 </Window>
+
