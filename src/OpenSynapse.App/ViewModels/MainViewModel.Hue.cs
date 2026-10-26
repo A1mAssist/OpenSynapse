@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
@@ -5,5 +7,23 @@ public sealed partial class MainViewModel
     private PhilipsHueViewModel? _hue;
 
     public PhilipsHueViewModel Hue =>
-        _hue ??= new PhilipsHueViewModel(message => _diagnosticLog.TryWrite("hue", message));
+        _hue ??= CreateHueViewModel();
+
+    private PhilipsHueViewModel CreateHueViewModel()
+    {
+        var hue = new PhilipsHueViewModel(message => _diagnosticLog.TryWrite("hue", message));
+        hue.PropertyChanged += OnHuePropertyChanged;
+        return hue;
+    }
+
+    private void OnHuePropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is nameof(PhilipsHueViewModel.DeviceStatusText) or
+            nameof(PhilipsHueViewModel.DeviceIdentity) or
+            nameof(PhilipsHueViewModel.IsReady))
+        {
+            RefreshDeviceOverviewVisibility();
+            RefreshDeviceSelectorItems();
+        }
+    }
 }

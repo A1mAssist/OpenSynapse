@@ -2202,7 +2202,7 @@
   <data name="BleChargingLimit" xml:space="preserve"><value>Charging limit reached</value></data>
   <data name="BleIdentity" xml:space="preserve"><value>BLE · protocol 30</value></data>
   <data name="HueTitle" xml:space="preserve"><value>Philips Hue</value></data>
-  <data name="HueDescription" xml:space="preserve"><value>Control lights through a Hue bridge. Press the link button on the bridge, then choose Pair.</value></data>
+  <data name="HueDescription" xml:space="preserve"><value>Find a Hue bridge on the local network, or enter its address manually. Press the link button on the bridge, then choose Pair.</value></data>
   <data name="HuePairButton" xml:space="preserve"><value>Pair</value></data>
   <data name="HueRefreshButton" xml:space="preserve"><value>Refresh</value></data>
   <data name="HueApplyButton" xml:space="preserve"><value>Apply</value></data>
@@ -2213,6 +2213,15 @@
   <data name="HueLightCount" xml:space="preserve"><value>Loaded {0} lights.</value></data>
   <data name="HueColorLabel" xml:space="preserve"><value>Color</value></data>
   <data name="HueApplyColorButton" xml:space="preserve"><value>Apply color</value></data>
+  <data name="HueDiscovered" xml:space="preserve"><value>Discovered, not paired</value></data>
+  <data name="HueNotConnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="HueScanning" xml:space="preserve"><value>Looking for Hue bridges…</value></data>
+  <data name="HueNoBridges" xml:space="preserve"><value>No Hue bridge found. Enter the address manually.</value></data>
+  <data name="HueFoundBridges" xml:space="preserve"><value>Found {0} Hue bridge(s).</value></data>
+  <data name="HueBridgeCombo" xml:space="preserve"><value>Hue bridge</value></data>
+  <data name="HueScanButton" xml:space="preserve"><value>Scan</value></data>
+  <data name="HueLightsTitle" xml:space="preserve"><value>Lights</value></data>
+  <data name="HueBridgeRequired" xml:space="preserve"><value>Scan or enter a Hue bridge address first.</value></data>
   <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>Onboard macros</value></data>
   <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>These macros live in the keyboard's onboard memory and follow it to another PC. This view only reads them.</value></data>
   <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>Read onboard macros</value></data>

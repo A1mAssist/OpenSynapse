@@ -26,6 +26,7 @@ public sealed partial class MainViewModel
                 .Where(chroma => !Devices.Any(native => native.ProductId == chroma.Connection.ProductId))
                 .Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat([new ConnectedDeviceRowViewModel(Hue)])
             .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
             .ThenBy(device => device.SortOrder)
@@ -149,6 +150,12 @@ public sealed partial class MainViewModel
                 row.IconGlyph,
                 row));
         }
+
+        DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+            DeviceSelectorItemKind.Hue,
+            AppStrings.Text("HueTitle"),
+            "\uE706",
+            Hue));
         OnPropertyChanged(nameof(DeviceSelectorItems));
     }
 

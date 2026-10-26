@@ -106,6 +106,18 @@ public sealed class ConnectedDeviceRowViewModel
         IsVisible = true;
     }
 
+    public ConnectedDeviceRowViewModel(PhilipsHueViewModel source)
+    {
+        Source = source;
+        Name = AppStrings.Text("HueTitle");
+        Identity = source.DeviceIdentity;
+        Access = source.DeviceStatusText;
+        IconGlyph = "\uE706";
+        Category = DeviceCategory.Accessory;
+        IsReady = source.IsReady;
+        IsVisible = true;
+    }
+
     public object Source { get; }
     public string Name { get; }
     public string Identity { get; }
@@ -121,6 +133,7 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerKrakenDeviceRowViewModel row => row.Status,
         RazerBleDeviceRowViewModel row => row.Status,
         BlackSharkDeviceRowViewModel row => row.Status,
+        PhilipsHueViewModel row => row.IsConfigured ? AppStrings.Text("HuePaired") : string.Empty,
         _ => string.Empty,
     };
     public string Error => Source switch
@@ -128,6 +141,7 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerDeviceRowViewModel row => row.Error,
         OpenRazerKrakenDeviceRowViewModel row => row.Error,
         BlackSharkDeviceRowViewModel row => row.Error,
+        PhilipsHueViewModel row => row.ErrorText,
         _ => string.Empty,
     };
     public Brush StatusBrush => Source switch
@@ -137,6 +151,7 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerKrakenDeviceRowViewModel row => row.StatusBrush,
         RazerBleDeviceRowViewModel row => row.StatusBrush,
         BlackSharkDeviceRowViewModel row => row.StatusBrush,
+        PhilipsHueViewModel row => row.StatusBrush,
         _ => throw new InvalidOperationException(),
     };
     public int SortOrder => Category switch

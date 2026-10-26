@@ -74,13 +74,14 @@ Synapse 4 中间件 JS 里的 `ConfigureFFI` 声明 `philipshuev2.dll`，调用�
 
 ## 对 OpenSynapse 的意义
 
-当前实现（`PhilipsHueViewModel`）让用户手输桥地址，再走 CLIP v2 REST 逐灯控制。要补齐自动发现，
-按上面的顺序实现即可：
+当前接入（`PhilipsHueDiscovery` + `PhilipsHueViewModel`）：
 
-1. SSDP `M-SEARCH`（`ST:ssdp:all`）广播并解析 `LOCATION` / `hue-bridgeid`；
-2. `https://discovery.meethue.com` 作为跨网段兜底；
-3. 局域网内仍找不到时保留手输 IP；
-4. 配对继续用 CLIP v2 的 `POST /api` 流程。
+- 发现：SSDP `M-SEARCH`（`ST:ssdp:all`）解析 `LOCATION` / `hue-bridgeid`，同时请求
+  `https://discovery.meethue.com`（含 `/api/nupnp`）作为跨网段兜底，按桥地址合并结果；
+- 配对：CLIP v2 的 `POST /api` 流程，保存返回的 `username`；
+- 控制：`/clip/v2/resource/light` 逐灯读写；
+- 找不到时保留手输 IP，配对与刷新仍可用；
+- mDNS `_hue._tcp` 与 `IPHLPAPI` 网段扫描尚未实现；SSDP + N-UPnP 覆盖常规局域网。
 
 Entertainment/DTLS 是独立的一大块，只在需要低延迟流光时再做；它不影响发现和逐灯控制。
 

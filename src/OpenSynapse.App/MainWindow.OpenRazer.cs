@@ -46,6 +46,9 @@ public sealed partial class MainWindow
             case RazerBleDeviceRowViewModel:
                 BleSelectorClick(sender, e);
                 break;
+            case PhilipsHueViewModel:
+                HueSelectorClick(sender, e);
+                break;
         }
     }
 
@@ -125,6 +128,10 @@ public sealed partial class MainWindow
             case DeviceRowViewModel row
                 when StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Viper):
                 SelectDevice("viper");
+                break;
+            case PhilipsHueViewModel:
+                SelectDevice("hue");
+                await _viewModel.Hue.EnsureLoadedAsync(_lifetime.Token);
                 break;
         }
     }
