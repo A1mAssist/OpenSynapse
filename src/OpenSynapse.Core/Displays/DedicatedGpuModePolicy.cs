@@ -25,6 +25,14 @@ public readonly record struct DedicatedGpuModeSnapshot(
 
 public static class DedicatedGpuModePolicy
 {
+    /// <summary>
+    /// True when the adapter already sits in the requested state, so the change can
+    /// be skipped. A faulted adapter is neither enabled nor disabled and never counts
+    /// as already in a state.
+    /// </summary>
+    public static bool IsAlreadyInState(DedicatedGpuDeviceState state, bool enabled) =>
+        !state.IsFaulted() && state.IsEnabled() == enabled;
+
     public static bool IsSupported(in DedicatedGpuModeSnapshot snapshot) =>
         snapshot.HasDiscreteGraphics &&
         snapshot.HasIntegratedGraphics &&
