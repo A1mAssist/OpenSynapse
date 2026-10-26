@@ -173,6 +173,17 @@
                     <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock local:Localized.Uid="RazerHeadsetThxTitle" Text="THX Spatial Audio" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="RazerHeadsetThxDescription" Text="THX Spatial Audio 由雷云的 THX 服务和音频组件提供。缺失时在这里安装；安装包需要管理员权限。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding ThxStatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button local:Localized.Uid="RazerHeadsetThxInstallButton" Content="下载 THX 安装包" Click="HeadsetAudioInstallThxClick" Visibility="{Binding ThxInstallVisibility}" Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button local:Localized.Uid="RazerHeadsetThxDownloadButton" Content="下载 THX 控制组件" Click="HeadsetAudioDownloadThxClick" Visibility="{Binding ThxDownloadVisibility}" IsEnabled="{Binding CanDownloadThxComponent}" Style="{StaticResource PrimaryButtonStyle}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" /><Button Grid.Column="1" local:Localized.Uid="RazerHeadsetRefreshButton" Content="刷新" Click="HeadsetAudioRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" /></Grid>
                   <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
                     <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="RazerHeadsetStatusTitle" Text="设备状态" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6"><TextBlock local:Localized.Uid="RazerHeadsetFirmwareLabel" Text="固件" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Column="1" Text="{Binding FirmwareText}" FontFamily="Cascadia Mono,Consolas" /><TextBlock Grid.Row="1" local:Localized.Uid="RazerHeadsetBatteryLabel" Text="电量" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BatteryText}" FontFamily="Cascadia Mono,Consolas" /><TextBlock Grid.Row="2" local:Localized.Uid="RazerHeadsetChargingLabel" Text="充电" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ChargingText}" FontFamily="Cascadia Mono,Consolas" /></Grid></StackPanel></Border>

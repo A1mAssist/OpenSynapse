@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Windows.Audio;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -79,6 +80,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     private bool _hasBass;
     private bool _hasAnc;
     private bool _hasLighting;
+    private ThxHeadsetStatus _thxStatus = new(ThxHeadsetAvailability.UnsupportedDevice, null);
     private double _brightness = 100;
     private int _selectedEffectIndex;
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
@@ -95,6 +97,10 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
         _connection = connection;
         _diagnostic = diagnostic;
         Lighting = lighting;
+        if (connection.ProductId == ThxHeadsetAdmission.SupportedProductId)
+        {
+            _thxStatus = ThxHeadsetAdmission.Check(connection.ProductId);
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -108,6 +114,38 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     public Microsoft.UI.Xaml.Visibility LightingVisibility => Lighting is null
         ? Microsoft.UI.Xaml.Visibility.Collapsed
         : Microsoft.UI.Xaml.Visibility.Visible;
+
+    /// <summary>
+    /// THX is an APO plus service on this headset, so the card only appears for the
+    /// model whose installer we have pinned. Missing pieces get an install entry.
+    /// </summary>
+    public Visibility ThxVisibility => _connection.ProductId == ThxHeadsetAdmission.SupportedProductId
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public string ThxStatusText => _thxStatus.ErrorCode switch
+    {
+        "ThxServiceMissing" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
+        "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
+        "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
+            AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+        _ when _thxStatus.Availability == ThxHeadsetAvailability.Available =>
+            AppStrings.Text("RazerHeadsetThxReady"),
+        _ => string.Empty,
+    };
+
+    public Visibility ThxInstallVisibility =>
+        _thxStatus.Availability == ThxHeadsetAvailability.ServiceMissing
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility ThxDownloadVisibility =>
+        _thxStatus.Availability == ThxHeadsetAvailability.NativeMissing
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public bool CanDownloadThxComponent =>
+        !IsBusy && _thxStatus.Availability == ThxHeadsetAvailability.NativeMissing;
 
     /// <summary>
     /// Mic-body lighting (the Seiren Emote matrix) uses the shared class 0x10 Chroma
@@ -282,6 +320,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
         {
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanDownloadThxComponent));
         }
     }
 
@@ -317,7 +356,46 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            RefreshThxStatus();
         }
+    }
+
+    public async Task InstallThxNativeAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanDownloadThxComponent || !BeginOperation()) return;
+        try
+        {
+            OperationStatusText = AppStrings.Text("RazerHeadsetThxDownloading");
+            _thxStatus = await ThxHeadsetAdmission.InstallNativeComponentAsync(cancellationToken);
+            ErrorText = _thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed"
+                ? AppStrings.Text("RazerHeadsetThxDownloadFailed")
+                : string.Empty;
+            OperationStatusText = _thxStatus.Availability == ThxHeadsetAvailability.Available
+                ? AppStrings.Text("RazerHeadsetThxReady")
+                : string.Empty;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyThxStatus();
+        }
+    }
+
+    private void RefreshThxStatus()
+    {
+        _thxStatus = ThxHeadsetAdmission.Check(_connection.ProductId);
+        NotifyThxStatus();
+    }
+
+    private void NotifyThxStatus()
+    {
+        OnPropertyChanged(nameof(ThxStatusText));
+        OnPropertyChanged(nameof(ThxInstallVisibility));
+        OnPropertyChanged(nameof(ThxDownloadVisibility));
+        OnPropertyChanged(nameof(CanDownloadThxComponent));
     }
 
     public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)

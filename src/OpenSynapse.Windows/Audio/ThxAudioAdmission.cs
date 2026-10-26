@@ -246,7 +246,7 @@ internal static class ThxAudioAdmission
         return false;
     }
 
-    private static bool HasRunningService(string serviceName)
+    internal static bool HasRunningService(string serviceName)
     {
         var manager = NativeMethods.OpenSCManager(null, null, NativeMethods.ScManagerConnect);
         if (manager == IntPtr.Zero)
