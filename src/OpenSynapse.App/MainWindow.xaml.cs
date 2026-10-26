@@ -288,6 +288,9 @@ public sealed partial class MainWindow : Window
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
+            _ = ObserveBackgroundLoopAsync(
+                () => _viewModel.RunHueDiscoveryLoopAsync(_lifetime.Token),
+                AppStrings.Text("HueTitle"));
             _viewModel.RequestDeviceRefresh();
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
