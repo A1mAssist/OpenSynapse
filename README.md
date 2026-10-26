@@ -16,7 +16,7 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It supports 259 OpenRazer catalog models plus dedicated Blade/Viper, Kraken, BlackShark V3 Pro, and Chroma REST integrations.
 
-> Current release `v1.5.5` · Windows 11 x64 · unsigned
+> Current release `v1.5.6` · Windows 11 x64 · unsigned
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 

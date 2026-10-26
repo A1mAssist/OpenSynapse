@@ -2,9 +2,18 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
-## [Unreleased]
+## [1.5.6] - 2026-10-26
 
 ### 新增 / Added
+
+- 灵刃 14 (2022) 转为正式支持设备：按雷云的性能模式列表给出平衡/静音/自定义/性能四档，开放固定转速（3500–5000 RPM，仅自定义模式下生效）和 CPU Boost 档位，键盘灯光走固件渲染通道。
+- The Blade 14 (2022) is now a supported device: it exposes the performance modes Synapse lists (Balanced, Silent, Custom and Performance), a fixed fan target of 3500-5000 RPM that only acts in Custom mode, the CPU Boost level, and firmware-rendered keyboard lighting.
+- 导入雷云 Synapse 3 / Synapse 4 导出的 XML 宏，宏编辑器可以直接读取雷云的宏文件。
+- The macro editor can import the XML macros Synapse 3 and Synapse 4 export.
+- Kraken V4 耳机接上有线灯光：不再被当成黑鲨，灯光效果与亮度可以正常写入和读回校验。
+- The Kraken V4 headset now gets wired lighting: it is no longer matched as a BlackShark, and the lighting effect and brightness are written and verified.
+- 鼠标现在也可以做 HID 命令扫描。扫描只发设备到主机方向的读命令，写命令半边早已移除，原来的保护没有意义；无线鼠标的 2.4 GHz 命令空间因此也能被探测。
+- Mice can now run the HID command scan. The sweep only sends device-to-host reads since the write half was removed, so the old mouse guard protected nothing; a wireless mouse now gets its 2.4 GHz command space probed too.
 
 - HyperBoost 不再要求连接雷蛇散热垫：只要机型本身支持（灵刃 14 2023、灵刃 16 2023/2024/2025）且接的是全功率电源，就可以在性能模式下拉里选择它。未连接散热垫时选择会先弹出免责声明，第三方散热的风险由用户自行承担。电池和低功率适配器下仍不可用。散热垫接入时的原有行为不变。
 - HyperBoost no longer requires the Razer Laptop Cooling Pad. On models that support it (Blade 14 2023, Blade 16 2023/2024/2025) it is selectable from the performance-mode list whenever the full-power adapter is connected. Selecting it without a pad now shows a disclaimer first and leaves third-party cooling to the user; battery and low-power adapters still cannot use it. The pad-present behaviour is unchanged.
