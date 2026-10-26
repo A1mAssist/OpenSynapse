@@ -58,6 +58,7 @@ public sealed partial class MainWindow : Window
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _viewModel.SetMacroDispatcher(_dispatcherQueue);
         _viewModel.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
+        _viewModel.SetPadlessHyperBoostConfirmation(ConfirmPadlessHyperBoostAsync);
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(BladeBrightnessPointerPressed),
