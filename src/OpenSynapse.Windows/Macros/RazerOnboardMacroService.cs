@@ -129,6 +129,39 @@ public sealed class RazerOnboardMacroService
             throw new ArgumentException("An onboard macro needs at least one item.", nameof(items));
         }
 
+        // Keep whatever the slot held so a failed write cannot silently destroy it.
+        var backup = await TryReadRawAsync(id, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await WriteRawAsync(id, payload, cancellationToken).ConfigureAwait(false);
+            var written = await ReadMemoryAsync(id, payload.Length, cancellationToken).ConfigureAwait(false);
+            if (!written.AsSpan().SequenceEqual(payload))
+            {
+                throw new InvalidOperationException(
+                    $"Onboard macro {id} did not read back the bytes that were written.");
+            }
+        }
+        catch
+        {
+            if (backup is { Length: > 0 })
+            {
+                try
+                {
+                    await WriteRawAsync(id, backup, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception restoreFailure) when (IsExpected(restoreFailure))
+                {
+                    _diagnostic?.Invoke(
+                        $"onboard macro {id} could not be restored: {restoreFailure.Message}");
+                }
+            }
+
+            throw;
+        }
+    }
+
+    private async Task WriteRawAsync(byte id, byte[] payload, CancellationToken cancellationToken)
+    {
         var allocated = RazerOnboardMacroProtocol.RequiredAllocation(payload.Length);
         await QueryAsync(
             transactionId => RazerOnboardMacroProtocol.AllocateMacroData.CreateRequest(
@@ -151,12 +184,18 @@ public sealed class RazerOnboardMacroService
                 cancellationToken).ConfigureAwait(false);
             offset += length;
         }
+    }
 
-        var written = await ReadMemoryAsync(id, payload.Length, cancellationToken).ConfigureAwait(false);
-        if (!written.AsSpan().SequenceEqual(payload))
+    private async Task<byte[]?> TryReadRawAsync(byte id, CancellationToken cancellationToken)
+    {
+        try
         {
-            throw new InvalidOperationException(
-                $"Onboard macro {id} did not read back the bytes that were written.");
+            var existing = await ReadAsync(id, cancellationToken).ConfigureAwait(false);
+            return existing?.Raw;
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            return null;
         }
     }
 

@@ -2203,7 +2203,14 @@
   <data name="RazerOnboardMacroRowDetail" xml:space="preserve"><value>{0} items · {1} bytes</value></data>
   <data name="RazerOnboardMacroEmptyStream" xml:space="preserve"><value>Empty macro</value></data>
   <data name="RazerOnboardMacroMouseButton" xml:space="preserve"><value>Mouse</value></data>
-  <data name="RazerOnboardMacroWheel" xml:space="preserve"><value>Wheel</value></data></root>
+  <data name="RazerOnboardMacroWheel" xml:space="preserve"><value>Wheel</value></data>  <data name="RazerOnboardMacroLocalLabel.Header" xml:space="preserve"><value>Local macro</value></data>
+  <data name="RazerOnboardMacroSlotLabel.Header" xml:space="preserve"><value>Onboard slot</value></data>
+  <data name="RazerOnboardMacroWriteButton.Content" xml:space="preserve"><value>Write to device</value></data>
+  <data name="RazerOnboardMacroWriteDone" xml:space="preserve"><value>Wrote onboard slot {0}.</value></data>
+  <data name="RazerOnboardMacroWriteUnsupported" xml:space="preserve"><value>This macro holds steps an onboard slot cannot store. Only keys, mouse buttons, wheel notches and delays are supported.</value></data>
+  <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>No macro is selected to write.</value></data>
+  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>Write failed: {0}</value></data></root>
+
 
 
 

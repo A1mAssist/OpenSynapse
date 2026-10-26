@@ -288,8 +288,9 @@ public sealed partial class MainViewModel
     }
 
     private OpenRazerDeviceViewModel CreateOpenRazerDeviceViewModel(
-        OpenRazerDeviceConnection connection) =>
-        new(
+        OpenRazerDeviceConnection connection)
+    {
+        OpenRazerDeviceViewModel device = new(
             _openRazerDeviceService ?? throw new InvalidOperationException("OpenRazer service is unavailable."),
             connection,
             () => CurrentPowerSource,
@@ -310,6 +311,10 @@ public sealed partial class MainViewModel
                 chromaOverrideEnabled,
                 token),
             _chromaIntegrationEnabled);
+        device.Onboard.LocalMacroProvider =
+            () => Macros.Select(macro => macro.Definition).ToArray();
+        return device;
+    }
 
     private async Task<bool> SaveOpenRazerLightingAsync(
         OpenRazerDeviceConnection connection,

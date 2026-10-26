@@ -12,11 +12,15 @@ public sealed partial class RazerKeyboardViewModel
             RazerOnboardMacroDevices.Keyboards.Contains(_connection.ProductId));
 
     public Task LoadOnboardMacrosAsync(CancellationToken cancellationToken = default) =>
-        Onboard.LoadAsync(
-            () => new RazerOnboardMacroService(
-                new RazerFeatureTransport(),
-                _connection.DevicePath,
-                TimeSpan.FromMilliseconds(20),
-                _diagnostic),
-            cancellationToken);
+        Onboard.LoadAsync(CreateService, cancellationToken);
+
+    public Task WriteOnboardMacroAsync(CancellationToken cancellationToken = default) =>
+        Onboard.WriteSelectedAsync(CreateService, cancellationToken);
+
+    private RazerOnboardMacroService CreateService() =>
+        new(
+            new RazerFeatureTransport(),
+            _connection.DevicePath,
+            TimeSpan.FromMilliseconds(20),
+            _diagnostic);
 }

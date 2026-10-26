@@ -12,11 +12,15 @@ public sealed partial class OpenRazerDeviceViewModel
             RazerOnboardMacroDevices.Mice.Contains(Connection.Definition.ProductId));
 
     public Task LoadOnboardMacrosAsync(CancellationToken cancellationToken = default) =>
-        Onboard.LoadAsync(
-            () => new RazerOnboardMacroService(
-                new RazerFeatureTransport(),
-                Connection.DevicePath ??
-                    throw new InvalidOperationException("The device has no HID control path."),
-                TimeSpan.FromMilliseconds(20)),
-            cancellationToken);
+        Onboard.LoadAsync(CreateService, cancellationToken);
+
+    public Task WriteOnboardMacroAsync(CancellationToken cancellationToken = default) =>
+        Onboard.WriteSelectedAsync(CreateService, cancellationToken);
+
+    private RazerOnboardMacroService CreateService() =>
+        new(
+            new RazerFeatureTransport(),
+            Connection.DevicePath ??
+                throw new InvalidOperationException("The device has no HID control path."),
+            TimeSpan.FromMilliseconds(20));
 }

@@ -35,5 +35,9 @@ public sealed partial class MainWindow
 
     private async void KeyboardReadOnboardMacrosClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedKeyboard?.LoadOnboardMacrosAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void KeyboardWriteOnboardMacroClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedKeyboard?.WriteOnboardMacroAsync(_lifetime.Token) ?? Task.CompletedTask);
 }
+
 
