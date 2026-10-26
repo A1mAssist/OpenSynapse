@@ -1,377 +1,485 @@
 # Supported devices
 
-OpenSynapse is not limited to the product-specific Blade and Viper implementations. The support surface currently includes:
+OpenSynapse creates a page only for a connected device whose Windows HID endpoint and protocol are recognized. The list is grouped by device type, not by protocol or catalogue source.
 
-- **259 OpenRazer catalog models**. Eight Blade PIDs use product-specific manifests: `0255`, `029D`, `02B6`, `02B7`, `02B8`, `02C5`, `02C6`, and `02C7`; the Razer Leviathan V2 X `054A` is also locally admitted.
-- **4 product-specific control sets**: Blade, Viper, BlackShark V3 Pro, and Leviathan V2 X audio features that need dedicated protocols.
-- **6 Kraken headsets** with lighting control.
-- **BlackShark V3 Pro** with battery, sidetone, THX, ANC, and game/chat balance controls.
-- **Chroma REST** for compatible games and integrations.
+The current tables contain 389 recognized device IDs: 136 mice, 96 keyboards, 50 laptops, 40 headsets, 8 speakers, 4 microphones, 8 mouse pads, 2 monitors, 44 accessories and 1 network lighting bridge.
 
-The OpenRazer portion is pinned to OpenRazer commit `477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d`. OpenSynapse creates a page only for a connected, recognized device and shows a control only after resolving its Windows HID endpoint and transaction.
+Each row is one recognized device ID. A row without a note uses the model's standard control set. Notes mark dedicated pages, extra controls, lighting-only support, read-only probes, or an alternate interface. Some physical devices expose more than one PID; each recognized PID is listed so a Device Manager ID can be matched directly.
 
-## Product-specific controls
+Chroma REST is a software integration rather than a device, so it is not listed here.
 
-| Device | USB VID:PID | Controls |
+## Mice
+
+Standard mouse controls include DPI, polling rate, battery, lighting and onboard mapping when the model answers them.
+
+| Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Blade 16 (2025) | `1532:02C6` | Telemetry, keyboard lighting, performance, fans, display, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior |
-| Razer Blade 14 (2023) | `1532:029D` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, Max Fan, CPU levels, and charge limit |
-| Razer Blade 14 (2024) | `1532:02B6` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, Max Fan, CPU levels, and charge limit |
-| Razer Blade 16 (2024) | `1532:02B7` | Blade 695 middleware control set: telemetry, 6×17 keyboard matrix lighting, performance, fans, display MUX, native panel mode, local dimming, battery, charge limit, and Fn/game-mode reports |
-| Razer Blade 18 (2024) | `1532:02B8` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, Max Fan, and charge limit |
-| Razer Blade 14 (2025) | `1532:02C5` | Telemetry, 6×16 keyboard matrix lighting, performance, fans, and charge limit |
-| Razer Blade 18 (2025) | `1532:02C7` | Telemetry, 6×19 keyboard matrix lighting, performance, fans, and charge limit |
-| Razer Blade Base (Early 2020) | `1532:0255` | Telemetry, keyboard brightness writes, performance/fan-mode writes, adapter power, power-mode bitmap, charge limit, and native panel/SKU reads; the percentage-based fan target is not exposed as an RPM target |
-| Razer Blade 16 (2023) | `1532:029F` | Telemetry, keyboard brightness and firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom levels including CPU Boost, Max Fan, fixed fan targets (2000-5000 RPM), charge limit, one-time full charge, and Gaming mode |
-| Razer Viper V3 HyperSpeed | `1532:00B8` | Battery, DPI, polling, sleep timeout, battery type, and onboard mappings |
-| Razer BlackShark V3 Pro | `1532:101B`, `1532:101C` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
+| Razer Abyssus | `1532:0042` | — |
+| Razer Abyssus 1800 | `1532:0020` | — |
+| Razer Abyssus 2000 | `1532:005E` | — |
+| Razer Abyssus Elite (D.Va Edition) | `1532:006A` | — |
+| Razer Abyssus Essential | `1532:006B` | — |
+| Razer Abyssus Lite | `1532:0074` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Abyssus V2 | `1532:005B` | — |
+| Razer Atheris (Receiver) | `1532:0062` | — |
+| Razer Basilisk | `1532:0064` | — |
+| Razer Basilisk Essential | `1532:0065` | — |
+| Razer Basilisk Mobile (Receiver) | `1532:00D4` | — |
+| Razer Basilisk Mobile (Wired) | `1532:00D3` | — |
+| Razer Basilisk Ultimate | `1532:0086` | — |
+| Razer Basilisk V2 | `1532:0085` | — |
+| Razer Basilisk V3 | `1532:0099` | — |
+| Razer Basilisk V3 35K | `1532:00CB` | — |
+| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | — |
+| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | — |
+| Razer Basilisk V3 Pro 35K (Wired) | `1532:00CC` | — |
+| Razer Basilisk V3 Pro 35K (Wireless) | `1532:00CD` | — |
+| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | — |
+| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wireless) | `1532:00D7` | — |
+| Razer Basilisk V3 X HyperSpeed | `1532:00B9` | — |
+| Razer Basilisk V4 HyperSpeed (Wired) | `1532:00EB` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Basilisk V4 HyperSpeed (Wireless) | `1532:00EA` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Basilisk V4 Pro (Wired) | `1532:00E2` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Basilisk V4 Pro (Wireless) | `1532:00E3` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Basilisk X HyperSpeed | `1532:0083` | — |
+| Razer Cobra | `1532:00A2` | DPI, polling and onboard mapping via the middleware protocol |
+| Razer Cobra | `1532:00A3` | — |
+| Razer Cobra HyperSpeed (Wired) | `1532:00DA` | — |
+| Razer Cobra HyperSpeed (Wireless) | `1532:00DB` | — |
+| Razer Cobra Pro (Wired) | `1532:00AF` | — |
+| Razer Cobra Pro (Wireless) | `1532:00B0` | — |
+| Razer DeathAdder 1800 | `1532:0038` | — |
+| Razer DeathAdder 2000 | `1532:004F` | — |
+| Razer DeathAdder 2000 (read-only probe) | `1532:004D` | Read-only probe: firmware, serial, DPI, polling and brightness |
+| Razer DeathAdder 2000 (read-only probe) | `1532:005F` | Read-only probe: firmware, serial, DPI, polling and brightness |
+| Razer DeathAdder 2013 | `1532:0037` | — |
+| Razer DeathAdder 3500 | `1532:0054` | — |
+| Razer DeathAdder Chroma | `1532:0043` | — |
+| Razer DeathAdder Elite | `1532:005C` | — |
+| Razer DeathAdder Essential | `1532:006E` | — |
+| Razer DeathAdder Essential (2021) | `1532:0098` | — |
+| Razer DeathAdder Essential (White Edition) | `1532:0071` | — |
+| Razer DeathAdder V2 | `1532:0084` | — |
+| Razer DeathAdder V2 Lite | `1532:00A1` | — |
+| Razer DeathAdder V2 Mini | `1532:008C` | — |
+| Razer DeathAdder V2 Pro (Wired) | `1532:007C` | — |
+| Razer DeathAdder V2 Pro (Wireless) | `1532:007D` | — |
+| Razer DeathAdder V2 X HyperSpeed | `1532:009C` | — |
+| Razer DeathAdder V3 | `1532:00B2` | — |
+| Razer DeathAdder V3 HyperSpeed (Wired) | `1532:00C4` | — |
+| Razer DeathAdder V3 HyperSpeed (Wireless) | `1532:00C5` | — |
+| Razer DeathAdder V3 Pro (Wired) | `1532:00B6` | — |
+| Razer DeathAdder V3 Pro (Wired) | `1532:00C2` | — |
+| Razer DeathAdder V3 Pro (Wireless) | `1532:00B7` | — |
+| Razer DeathAdder V3 Pro (Wireless) | `1532:00C3` | — |
+| Razer DeathAdder V4 Pro (Wired) | `1532:00BE` | — |
+| Razer DeathAdder V4 Pro (Wireless) | `1532:00BF` | — |
+| Razer DeathAdder V4 Pro Carbon Fiber Edition (Wired) | `1532:00EF` | DPI, polling, battery and onboard mapping; no lighting |
+| Razer DeathAdder V4 Pro Carbon Fiber Edition (Wireless) | `1532:00F0` | DPI, polling, battery and onboard mapping; no lighting |
+| Razer Diamondback Chroma | `1532:004C` | — |
+| Razer HyperFlux V2 | `1532:00CF` | Lighting only |
+| Razer HyperPolling Wireless Dongle | `1532:00B3` | — |
+| Razer Imperator 2012 | `1532:002F` | — |
+| Razer Jugan | `1532:0063` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Krakoff | `1532:00DD` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Lancehead (Wired) | `1532:0059` | — |
+| Razer Lancehead (Wireless) | `1532:005A` | — |
+| Razer Lancehead Tournament Edition | `1532:0060` | — |
+| Razer Lancehead Wireless (Receiver) | `1532:006F` | — |
+| Razer Lancehead Wireless (Wired) | `1532:0070` | — |
+| Razer Mamba 2012 (Wired) | `1532:0024` | — |
+| Razer Mamba 2012 (Wireless) | `1532:0025` | — |
+| Razer Mamba Chroma (Wired) | `1532:0044` | — |
+| Razer Mamba Chroma (Wireless) | `1532:0045` | — |
+| Razer Mamba Elite | `1532:006C` | — |
+| Razer Mamba Hyperflux | `1532:0069` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Mamba Tournament Edition | `1532:0046` | — |
+| Razer Mamba Wireless (Receiver) | `1532:0072` | — |
+| Razer Mamba Wireless (Wired) | `1532:0073` | — |
+| Razer Naga | `1532:0015` | — |
+| Razer Naga 2012 | `1532:002E` | — |
+| Razer Naga 2014 | `1532:0040` | — |
+| Razer Naga Chroma | `1532:0053` | — |
+| Razer Naga Classic Edition | `1532:0093` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Naga Epic | `1532:001F` | — |
+| Razer Naga Epic Chroma (Wired) | `1532:003E` | — |
+| Razer Naga Epic Chroma (Wireless) | `1532:003F` | — |
+| Razer Naga Hex | `1532:0041` | — |
+| Razer Naga Hex (Red) | `1532:0036` | — |
+| Razer Naga Hex V2 | `1532:0050` | — |
+| Razer Naga Left Handed Edition 2020 | `1532:008D` | — |
+| Razer Naga Pro (Wired) | `1532:008F` | — |
+| Razer Naga Pro (Wireless) | `1532:0090` | — |
+| Razer Naga Trinity | `1532:0067` | — |
+| Razer Naga V2 HyperSpeed (Receiver) | `1532:00B4` | — |
+| Razer Naga V2 Pro (Wired) | `1532:00A7` | — |
+| Razer Naga V2 Pro (Wireless) | `1532:00A8` | — |
+| Razer Naga V3 Pro (Wired) | `1532:00E7` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Naga V3 Pro (Wireless) | `1532:00E8` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Naga X | `1532:0096` | — |
+| Razer Orochi (Wired) | `1532:0048` | — |
+| Razer Orochi 2011 | `1532:0013` | — |
+| Razer Orochi 2013 | `1532:0039` | — |
+| Razer Orochi V2 | `1532:00E0` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Orochi V2 (Bluetooth) | `1532:0095` | — |
+| Razer Orochi V2 (Receiver) | `1532:0094` | — |
+| Razer Ouroboros | `1532:0032` | — |
+| Razer Pro Click (Receiver) | `1532:0077` | — |
+| Razer Pro Click (Wired) | `1532:0080` | — |
+| Razer Pro Click Mini (Receiver) | `1532:009A` | — |
+| Razer Pro Click V2 (Wired) | `1532:00D0` | — |
+| Razer Pro Click V2 (Wireless) | `1532:00D1` | — |
+| Razer Pro Click V2 Vertical Edition (Wired) | `1532:00C7` | — |
+| Razer Pro Click V2 Vertical Edition (Wireless) | `1532:00C8` | — |
+| Razer Taipan | `1532:0034` | — |
+| Razer Turret Mouse Xbox One Edition | `1532:0075` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Viper | `1532:0078` | — |
+| Razer Viper 8KHz | `1532:0091` | — |
+| Razer Viper Mini | `1532:008A` | — |
+| Razer Viper Mini SE (Wired) | `1532:009E` | — |
+| Razer Viper Mini SE (Wireless) | `1532:009F` | — |
+| Razer Viper Ultimate (Wired) | `1532:007A` | — |
+| Razer Viper Ultimate (Wireless) | `1532:007B` | — |
+| Razer Viper V2 Pro (Wired) | `1532:00A5` | — |
+| Razer Viper V2 Pro (Wireless) | `1532:00A6` | — |
+| Razer Viper V3 HyperSpeed | `1532:00B8` | Dedicated Viper page: battery, DPI, polling, sleep timeout and mappings |
+| Razer Viper V3 Pro (Wired) | `1532:00C0` | — |
+| Razer Viper V3 Pro (Wireless) | `1532:00C1` | — |
+| Razer Viper V3 Pro SE (Wired) | `1532:00DE` | Alias of 00C0; dedicated Viper V3 Pro controls |
+| Razer Viper V3 Pro SE (Wireless) | `1532:00DF` | Alias of 00C1; dedicated Viper V3 Pro controls |
+| Razer Viper V4 Pro (Wired) | `1532:00E5` | DPI, polling, battery and onboard mapping; BLE page over Bluetooth; no lighting |
+| Razer Viper V4 Pro (Wireless) | `1532:00E6` | DPI, polling, battery and onboard mapping; BLE page over Bluetooth; no lighting |
+| RazerBasiliskUltimateReceiver | `1532:0088` | — |
 
-Blade Wave and Spectrum use firmware rendering when no palette is saved and software frame rendering when a palette is saved. The Blade 16 (2023) has no per-key matrix channel: it exposes brightness plus the four effects its firmware draws on its own (Off, Breathing, Spectrum, Wave), and its stored effect color is not readable. Custom colors, audio-reactive lighting, frame rendering, Chroma takeover, the wave direction selector, and the .chroma import button are therefore not offered on that model. The Viper page supports 125 / 500 / 1000 Hz polling, X/Y DPI from 100 to 30000, up to five DPI stages, and Normal/HyperShift mappings in fixed Profile 1.
+The Naga V3 Pro (`00E7`/`00E8`) uses the Naga V2 Pro (`00A8`) protocol. The Viper V4 Pro and DeathAdder V4 Pro Carbon Fiber Edition have no lighting. The Viper V3 HyperSpeed uses a dedicated Viper page instead of the standard mouse layout.
 
-## Razer Leviathan V2 X soundbars (054A)
+## Keyboards
 
-`1532:054A` maps to Synapse product `1354` and covers the following editions that share one protocol build:
+Standard keyboard controls include firmware, serial number, battery, game mode, polling rate and lighting when the model answers them.
 
-| Edition ID | Product |
-|---:|---|
-| 0 | Razer Leviathan V2 X |
-| 128 | Razer \| Pokémon Pikachu Edition Soundbar |
-| 129 | Razer Leviathan V2 X Pokémon AP Edition |
-| 131 | Razer \| Kuromi Limited Edition Soundbar |
-| 132 | Razer Leviathan V2 X Kuromi Edition |
-
-OpenRazer does not catalogue `054A`, so OpenSynapse admits it locally for firmware, serial, brightness read, and brightness write. The soundbar page adds equalizer presets, a 10-band equalizer, bass boost, input source, and audio I/O status. Preset and bass writes read the current value first, read back after writing, and restore the previous value on failure. Custom EQ writes restore the bands only when the previous preset was Custom, because a non-custom preset does not expose the stored custom curve. The app reads the edition information command to label Pikachu and Kuromi units separately, and resolves the first Chroma region before brightness reads or writes. The commands come from the current `1354` middleware's 91-byte feature report (report ID `0x07`) with a cycling `0..31` transaction. This is a source-backed candidate implementation; read/write and restore behavior still needs validation on a physical 054A device. Protocol details are in [LEVIATHAN_V2X_054A.md](LEVIATHAN_V2X_054A.md).
-
-## Kraken lighting
-
-| Model | USB PID | Controls |
+| Device | USB VID:PID | Notes |
 |---|---|---|
-| Kraken 7.1 | `0501`, `0506` | Lighting |
-| Kraken 7.1 Chroma | `0504` | Lighting |
-| Kraken 7.1 V2 | `0510` | Lighting |
-| Kraken Tournament Edition | `0520` | Lighting |
-| Kraken Ultimate | `0527` | Lighting |
-| Kraken Kitty V2 | `0560` | Lighting |
-| Kraken V4 (wired) | `056B` | Lighting: off / static / wave |
+| BlackWidow Chroma V2 | `1532:0221` | — |
+| Razer Anansi | `1532:010F` | — |
+| Razer BlackWidow (Classic) | `1532:011B` | — |
+| Razer BlackWidow 2019 | `1532:0241` | — |
+| Razer BlackWidow Chroma | `1532:0203` | — |
+| Razer BlackWidow Chroma (Overwatch) | `1532:0211` | — |
+| Razer BlackWidow Elite | `1532:0228` | — |
+| Razer BlackWidow Essential | `1532:0237` | — |
+| Razer BlackWidow Lite | `1532:0235` | — |
+| Razer BlackWidow Stealth Edition | `1532:010E` | — |
+| Razer BlackWidow Tournament Edition 2014 | `1532:011C` | — |
+| Razer BlackWidow Tournament Edition Chroma | `1532:0209` | — |
+| Razer BlackWidow Ultimate 2012 | `1532:010D` | — |
+| Razer BlackWidow Ultimate 2013 | `1532:011A` | — |
+| Razer BlackWidow Ultimate 2016 | `1532:0214` | — |
+| Razer BlackWidow V3 | `1532:024E` | — |
+| Razer BlackWidow V3 Mini HyperSpeed (Wired) | `1532:0258` | — |
+| Razer BlackWidow V3 Mini HyperSpeed (Wireless) | `1532:0271` | — |
+| Razer BlackWidow V3 Pro 2.4 Ghz Wireless | `1532:025C` | — |
+| Razer BlackWidow V3 Pro Wired | `1532:025A` | — |
+| Razer BlackWidow V3 TK | `1532:0A24` | — |
+| Razer BlackWidow V4 | `1532:0287` | — |
+| Razer BlackWidow V4 75% | `1532:02A5` | — |
+| Razer BlackWidow V4 75% Xbox 25th Anniversary Edition | `1532:02F0` | Keyboard page |
+| Razer BlackWidow V4 Low-profile HyperSpeed | `1532:02CC` | Keyboard page |
+| Razer BlackWidow V4 Low-profile Tenkeyless HyperSpeed | `1532:02D4` | Keyboard page |
+| Razer BlackWidow V4 Mini HyperSpeed (Wired) | `1532:02B9` | — |
+| Razer BlackWidow V4 Mini HyperSpeed (Wireless) | `1532:02BA` | — |
+| Razer BlackWidow V4 Pro | `1532:028D` | — |
+| Razer BlackWidow V4 Pro 75% | `1532:02B3` | Keyboard page |
+| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wired) | `1532:02D7` | — |
+| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wireless) | `1532:02D5` | — |
+| Razer BlackWidow V4 X | `1532:0293` | — |
+| Razer BlackWidow X Chroma | `1532:0216` | — |
+| Razer BlackWidow X Tenkeyless | `1532:024F` | Keyboard page |
+| Razer BlackWidow X Tournament Edition Chroma | `1532:021A` | — |
+| Razer BlackWidow X Ultimate | `1532:0217` | — |
+| Razer Cynosa Chroma | `1532:022A` | — |
+| Razer Cynosa Chroma Pro | `1532:022C` | — |
+| Razer Cynosa Lite | `1532:023F` | — |
+| Razer Cynosa V2 | `1532:025E` | — |
+| Razer Cynosapro | `1532:028E` | Keyboard page |
+| Razer DeathStalker Chroma | `1532:0204` | — |
+| Razer DeathStalker Expert | `1532:0202` | — |
+| Razer DeathStalker V2 | `1532:0295` | — |
+| Razer DeathStalker V2 Pro (Wired) | `1532:0292` | — |
+| Razer DeathStalker V2 Pro (Wireless) | `1532:0290` | — |
+| Razer DeathStalker V2 Pro TKL (Wired) | `1532:0298` | — |
+| Razer DeathStalker V2 Pro TKL (Wireless) | `1532:0296` | — |
+| Razer DeathStalker/DeathStalker Essential | `1532:0118` | — |
+| Razer Huntsman | `1532:0227` | — |
+| Razer Huntsman Elite | `1532:0226` | — |
+| Razer Huntsman Essential | `1532:0250` | Keyboard page |
+| Razer Huntsman Mini | `1532:0257` | — |
+| Razer Huntsman Mini Analog | `1532:0282` | — |
+| Razer Huntsman Mini JP | `1532:0269` | — |
+| Razer Huntsman Signature Edition | `1532:02D8` | Keyboard page |
+| Razer Huntsman Tournament Edition | `1532:0243` | — |
+| Razer Huntsman V2 | `1532:026C` | — |
+| Razer Huntsman V2 Analog | `1532:0266` | — |
+| Razer Huntsman V2 Tenkeyless | `1532:026B` | — |
+| Razer Huntsman V3 HE Magnetic Mini 65% 8KHz | `1532:02E4` | Keyboard page |
+| Razer Huntsman V3 HE Magnetic Tenkeyless 8KHz | `1532:02EA` | Keyboard page |
+| Razer Huntsman V3 Pro | `1532:02A6` | — |
+| Razer Huntsman V3 Pro 8KHz | `1532:02CF` | — |
+| Razer Huntsman V3 Pro Low-Profile Tenkeyless 8KHz | `1532:02E6` | Keyboard page |
+| Razer Huntsman V3 Pro Mini | `1532:02B0` | — |
+| Razer Huntsman V3 Pro Mini 8KHz | `1532:02D1` | Keyboard page |
+| Razer Huntsman V3 Pro Tenkeyless 8KHz | `1532:02D0` | Keyboard page |
+| Razer Huntsman V3 Pro TKL | `1532:02A7` | — |
+| Razer Huntsman V3 Tenkeyless 8KHz | `1532:02E5` | Keyboard page |
+| Razer Huntsman V3 X Tenkeyless | `1532:02B1` | Keyboard page |
+| Razer Joro | `1532:02CD` | — |
+| Razer Nostromo | `1532:0111` | — |
+| Razer Orbweaver | `1532:0113` | — |
+| Razer Orbweaver Chroma | `1532:0207` | — |
+| Razer Ornata | `1532:021F` | — |
+| Razer Ornata Chroma | `1532:021E` | — |
+| Razer Ornata V2 | `1532:025D` | — |
+| Razer Ornata V3 | `1532:02A1` | — |
+| Razer Ornata V3 (Alternate) | `1532:028F` | — |
+| Razer Ornata V3 Tenkeyless | `1532:02A3` | — |
+| Razer Ornata V3 X | `1532:0294` | — |
+| Razer Ornata V3 X (Alternate) | `1532:02A2` | — |
+| Razer Pikachu Limited Edition Backlit Keyboard | `1532:0251` | Keyboard page |
+| Razer Pro Type | `1532:0249` | Keyboard page |
+| Razer Pro Type Ergo | `1532:02C4` | Keyboard page |
+| Razer Pro Type Ultra | `1532:0277` | Keyboard page |
+| Razer Reclusa Mini 65% | `1532:02F4` | Keyboard page |
+| Razer Reclusa X Mini 65% | `1532:02E3` | Keyboard page |
+| Razer Tartarus | `1532:0201` | — |
+| Razer Tartarus Chroma | `1532:0208` | — |
+| Razer Tartarus Pro | `1532:0244` | — |
+| Razer Tartarus V2 | `1532:022B` | — |
+| Razer Tartarus V2 Pro | `1532:02EB` | Keyboard page |
+| Razer Turret Keyboard Xbox One Edition | `1532:023E` | Keyboard page |
 
-Kraken 7.1 devices use the separate 37-byte Output Report path. Kraken V4 wired uses the merged OpenRGB 64-byte Report `0x02` path; the 2.4 GHz `056C` receiver does not expose lighting or other controls yet. Audio, microphone, EQ, and THX controls are not included.
+## Laptops
 
-## BlackShark V3 Pro audio
+Blade models with a dedicated manifest expose telemetry, performance, fans, display, battery and keyboard lighting. Standard laptop entries expose the model-dependent catalogue controls.
 
-| Model | USB PID | Controls |
+| Device | USB VID:PID | Notes |
 |---|---|---|
-| BlackShark V3 Pro (USB) | `101C` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
-| BlackShark V3 Pro (2.4 GHz) | `101B` | Battery, charging, sidetone, THX, ANC, and game/chat balance |
+| Razer Blade (Late 2016) | `1532:0224` | — |
+| Razer Blade (QHD) | `1532:020F` | — |
+| Razer Blade 14 (2021) | `1532:0270` | — |
+| Razer Blade 14 (2022) | `1532:028C` | Dedicated Blade controls; fixed fan 3500-5000 RPM in Custom mode |
+| Razer Blade 14 (2023) | `1532:029D` | Dedicated Blade controls |
+| Razer Blade 14 (2024) | `1532:02B6` | Dedicated Blade controls |
+| Razer Blade 14 (2025) | `1532:02C5` | Dedicated Blade controls |
+| Razer Blade 15 (2018) | `1532:0233` | — |
+| Razer Blade 15 (2018) Base Model | `1532:023B` | — |
+| Razer Blade 15 (2018) Mercury | `1532:0240` | — |
+| Razer Blade 15 (2019) Advanced | `1532:023A` | — |
+| Razer Blade 15 (2023) | `1532:029E` | — |
+| Razer Blade 15 (Mid 2019) Base Model | `1532:0246` | — |
+| Razer Blade 15 (Mid 2019) Mercury (read-only probe) | `1532:0245` | Blade probe controls: telemetry, fan, power, charge limit, keyboard lighting and gaming mode |
+| Razer Blade 15 Advanced (2020) | `1532:0253` | — |
+| Razer Blade 15 Advanced (Early 2021) | `1532:026D` | — |
+| Razer Blade 15 Advanced (Early 2022) | `1532:028A` | — |
+| Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | — |
+| Razer Blade 15 Studio Edition (2019) | `1532:024D` | — |
+| Razer Blade 16 (2023) | `1532:029F` | Dedicated Blade controls; firmware-rendered keyboard effects |
+| Razer Blade 16 (2024) | `1532:02B7` | Dedicated Blade controls |
+| Razer Blade 16 (2025) | `1532:02C6` | Dedicated Blade controls |
+| Razer Blade 16 (2026) | `1532:02E0` | Standard lighting only; telemetry, fans and MUX need a dedicated Blade manifest |
+| Razer Blade 17 (2022) | `1532:028B` | — |
+| Razer Blade 17 Pro (Early 2021) | `1532:026E` | — |
+| Razer Blade 17 Pro (Mid 2021) | `1532:0279` | — |
+| Razer Blade 18 (2023) | `1532:02A0` | — |
+| Razer Blade 18 (2024) | `1532:02B8` | Dedicated Blade controls |
+| Razer Blade 18 (2025) | `1532:02C7` | Dedicated Blade controls |
+| Razer Blade 18 (2026) | `1532:02E1` | Standard lighting only; telemetry, fans and MUX need a dedicated Blade manifest |
+| Razer Blade Advanced (Late 2019) | `1532:024B` | — |
+| Razer Blade Base (Early 2020) | `1532:0255` | Dedicated Blade controls; percentage fan target is not exposed as RPM |
+| Razer Blade Base (Early 2021) | `1532:026F` | — |
+| Razer Blade Base (Early 2022) | `1532:027A` | — |
+| Razer Blade Late 2020 Base | `1532:0268` | — |
+| Razer Blade Pro (2017) | `1532:0225` | — |
+| Razer Blade Pro (Early 2020) | `1532:0256` | — |
+| Razer Blade Pro (Late 2016) | `1532:0210` | — |
+| Razer Blade Pro (Late 2019) | `1532:024C` | — |
+| Razer Blade Pro 17 (2019) | `1532:0234` | — |
+| Razer Blade Pro FullHD (2017) | `1532:022F` | — |
+| Razer Blade Stealth | `1532:0205` | — |
+| Razer Blade Stealth (2019) | `1532:0239` | — |
+| Razer Blade Stealth (Early 2020) | `1532:0252` | — |
+| Razer Blade Stealth (Late 2016) | `1532:0220` | — |
+| Razer Blade Stealth (Late 2017) | `1532:0232` | — |
+| Razer Blade Stealth (Late 2019) | `1532:024A` | — |
+| Razer Blade Stealth (Late 2020) | `1532:0259` | — |
+| Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
+| Razer Book (2020) | `1532:026A` | — |
 
-OpenRazer ships no BlackShark driver, so there is no upstream device list to follow. The control collection has the shape Razer vendor `1532`, collection page `FF13`/`FF14`, usage `1`, and an output report of at least 64 bytes. That shape is not exclusive to BlackShark: Kraken V4 (`056B`/`056C`) enumerates with the same shape. Selection therefore also requires the HID product name to contain `BlackShark`, or the product id to be one of the verified `101B` (2.4 GHz) / `101C` (USB) values. The transport byte does not distinguish wired from wireless on these devices, and every observed variant answers on `0x80`.
+Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effects and has no per-key matrix channel. Blade 16 (2026) and Blade 18 (2026) currently expose standard catalogue lighting only; telemetry, fans and display MUX still need dedicated Blade manifests.
 
-The headset uses its own 64-byte Report `0x02` channel. Queries run only when the device page is opened or refreshed; OpenSynapse does not poll battery at a fixed interval. EQ, microphone gain, firmware updates, and indicator-LED modes are outside this first release.
+## Headsets
 
-## OpenRazer catalog
+The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat balance where the model and installed components support them.
 
-259 devices are present in the pinned catalog:
-
-- Mice: 112
-- Keyboards: 73
-- Laptops: 48
-- Accessories: 26
-
-### Mice (112)
-
-| Device | USB VID:PID | Type |
+| Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Abyssus | `1532:0042` | Mouse |
-| Razer Abyssus 1800 | `1532:0020` | Mouse |
-| Razer Abyssus 2000 | `1532:005E` | Mouse |
-| Razer Abyssus Elite (D.Va Edition) | `1532:006A` | Mouse |
-| Razer Abyssus Essential | `1532:006B` | Mouse |
-| Razer Abyssus V2 | `1532:005B` | Mouse |
-| Razer Atheris (Receiver) | `1532:0062` | Mouse |
-| Razer Basilisk | `1532:0064` | Mouse |
-| Razer Basilisk Essential | `1532:0065` | Mouse |
-| Razer Basilisk Mobile (Receiver) | `1532:00D4` | Mouse |
-| Razer Basilisk Mobile (Wired) | `1532:00D3` | Mouse |
-| Razer Basilisk Ultimate | `1532:0086` | Mouse |
-| Razer Basilisk V2 | `1532:0085` | Mouse |
-| Razer Basilisk V3 | `1532:0099` | Mouse |
-| Razer Basilisk V3 35K | `1532:00CB` | Mouse |
-| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | Mouse |
-| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | Mouse |
-| Razer Basilisk V3 Pro 35K (Wired) | `1532:00CC` | Mouse |
-| Razer Basilisk V3 Pro 35K (Wireless) | `1532:00CD` | Mouse |
-| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | Mouse |
-| Razer Basilisk V3 Pro 35K Phantom Green Edition (Wireless) | `1532:00D7` | Mouse |
-| Razer Basilisk V3 X HyperSpeed | `1532:00B9` | Mouse |
-| Razer Basilisk X HyperSpeed | `1532:0083` | Mouse |
-| Razer Cobra | `1532:00A3` | Mouse |
-| Razer Cobra HyperSpeed (Wired) | `1532:00DA` | Mouse |
-| Razer Cobra HyperSpeed (Wireless) | `1532:00DB` | Mouse |
-| Razer Cobra Pro (Wired) | `1532:00AF` | Mouse |
-| Razer Cobra Pro (Wireless) | `1532:00B0` | Mouse |
-| Razer DeathAdder 1800 | `1532:0038` | Mouse |
-| Razer DeathAdder 2000 | `1532:004F` | Mouse |
-| Razer DeathAdder 2013 | `1532:0037` | Mouse |
-| Razer DeathAdder 3500 | `1532:0054` | Mouse |
-| Razer DeathAdder Chroma | `1532:0043` | Mouse |
-| Razer DeathAdder Elite | `1532:005C` | Mouse |
-| Razer DeathAdder Essential | `1532:006E` | Mouse |
-| Razer DeathAdder Essential (2021) | `1532:0098` | Mouse |
-| Razer DeathAdder Essential (White Edition) | `1532:0071` | Mouse |
-| Razer DeathAdder V2 | `1532:0084` | Mouse |
-| Razer DeathAdder V2 Lite | `1532:00A1` | Mouse |
-| Razer DeathAdder V2 Mini | `1532:008C` | Mouse |
-| Razer DeathAdder V2 Pro (Wired) | `1532:007C` | Mouse |
-| Razer DeathAdder V2 Pro (Wireless) | `1532:007D` | Mouse |
-| Razer DeathAdder V2 X HyperSpeed | `1532:009C` | Mouse |
-| Razer DeathAdder V3 | `1532:00B2` | Mouse |
-| Razer DeathAdder V3 HyperSpeed (Wired) | `1532:00C4` | Mouse |
-| Razer DeathAdder V3 HyperSpeed (Wireless) | `1532:00C5` | Mouse |
-| Razer DeathAdder V3 Pro (Wired) | `1532:00B6` | Mouse |
-| Razer DeathAdder V3 Pro (Wired) | `1532:00C2` | Mouse |
-| Razer DeathAdder V3 Pro (Wireless) | `1532:00B7` | Mouse |
-| Razer DeathAdder V3 Pro (Wireless) | `1532:00C3` | Mouse |
-| Razer DeathAdder V4 Pro (Wired) | `1532:00BE` | Mouse |
-| Razer DeathAdder V4 Pro (Wireless) | `1532:00BF` | Mouse |
-| Razer Diamondback Chroma | `1532:004C` | Mouse |
-| Razer HyperPolling Wireless Dongle | `1532:00B3` | Mouse |
-| Razer Imperator 2012 | `1532:002F` | Mouse |
-| Razer Lancehead (Wired) | `1532:0059` | Mouse |
-| Razer Lancehead (Wireless) | `1532:005A` | Mouse |
-| Razer Lancehead Tournament Edition | `1532:0060` | Mouse |
-| Razer Lancehead Wireless (Receiver) | `1532:006F` | Mouse |
-| Razer Lancehead Wireless (Wired) | `1532:0070` | Mouse |
-| Razer Mamba 2012 (Wired) | `1532:0024` | Mouse |
-| Razer Mamba 2012 (Wireless) | `1532:0025` | Mouse |
-| Razer Mamba Chroma (Wired) | `1532:0044` | Mouse |
-| Razer Mamba Chroma (Wireless) | `1532:0045` | Mouse |
-| Razer Mamba Elite | `1532:006C` | Mouse |
-| Razer Mamba Tournament Edition | `1532:0046` | Mouse |
-| Razer Mamba Wireless (Receiver) | `1532:0072` | Mouse |
-| Razer Mamba Wireless (Wired) | `1532:0073` | Mouse |
-| Razer Naga | `1532:0015` | Mouse |
-| Razer Naga 2012 | `1532:002E` | Mouse |
-| Razer Naga 2014 | `1532:0040` | Mouse |
-| Razer Naga Chroma | `1532:0053` | Mouse |
-| Razer Naga Epic | `1532:001F` | Mouse |
-| Razer Naga Epic Chroma (Wired) | `1532:003E` | Mouse |
-| Razer Naga Epic Chroma (Wireless) | `1532:003F` | Mouse |
-| Razer Naga Hex | `1532:0041` | Mouse |
-| Razer Naga Hex (Red) | `1532:0036` | Mouse |
-| Razer Naga Hex V2 | `1532:0050` | Mouse |
-| Razer Naga Left Handed Edition 2020 | `1532:008D` | Mouse |
-| Razer Naga Pro (Wired) | `1532:008F` | Mouse |
-| Razer Naga Pro (Wireless) | `1532:0090` | Mouse |
-| Razer Naga Trinity | `1532:0067` | Mouse |
-| Razer Naga V2 HyperSpeed (Receiver) | `1532:00B4` | Mouse |
-| Razer Naga V2 Pro (Wired) | `1532:00A7` | Mouse |
-| Razer Naga V2 Pro (Wireless) | `1532:00A8` | Mouse |
-| Razer Naga X | `1532:0096` | Mouse |
-| Razer Orochi (Wired) | `1532:0048` | Mouse |
-| Razer Orochi 2011 | `1532:0013` | Mouse |
-| Razer Orochi 2013 | `1532:0039` | Mouse |
-| Razer Orochi V2 (Bluetooth) | `1532:0095` | Mouse |
-| Razer Orochi V2 (Receiver) | `1532:0094` | Mouse |
-| Razer Ouroboros | `1532:0032` | Mouse |
-| Razer Pro Click (Receiver) | `1532:0077` | Mouse |
-| Razer Pro Click (Wired) | `1532:0080` | Mouse |
-| Razer Pro Click Mini (Receiver) | `1532:009A` | Mouse |
-| Razer Pro Click V2 (Wired) | `1532:00D0` | Mouse |
-| Razer Pro Click V2 (Wireless) | `1532:00D1` | Mouse |
-| Razer Pro Click V2 Vertical Edition (Wired) | `1532:00C7` | Mouse |
-| Razer Pro Click V2 Vertical Edition (Wireless) | `1532:00C8` | Mouse |
-| Razer Taipan | `1532:0034` | Mouse |
-| Razer Viper | `1532:0078` | Mouse |
-| Razer Viper 8KHz | `1532:0091` | Mouse |
-| Razer Viper Mini | `1532:008A` | Mouse |
-| Razer Viper Mini SE (Wired) | `1532:009E` | Mouse |
-| Razer Viper Mini SE (Wireless) | `1532:009F` | Mouse |
-| Razer Viper Ultimate (Wired) | `1532:007A` | Mouse |
-| Razer Viper Ultimate (Wireless) | `1532:007B` | Mouse |
-| Razer Viper V2 Pro (Wired) | `1532:00A5` | Mouse |
-| Razer Viper V2 Pro (Wireless) | `1532:00A6` | Mouse |
-| Razer Viper V3 Pro (Wired) | `1532:00C0` | Mouse |
-| Razer Viper V3 Pro (Wireless) | `1532:00C1` | Mouse |
-| RazerBasiliskUltimateReceiver | `1532:0088` | Mouse |
+| Razer Barracuda | `1532:053C` | Audio page |
+| Razer Barracuda 2.4 | `1532:053B` | Audio page |
+| Razer Barracuda 2.4 | `1532:0584` | Audio page |
+| Razer Barracuda Pro | `1532:0539` | Audio page |
+| Razer Barracuda Pro | `1532:0583` | Audio page |
+| Razer Barracuda V2 Pro | `1532:0593` | Audio page; THX V4 installer |
+| Razer BlackShark V2 HyperSpeed | `1532:0565` | Audio page |
+| Razer BlackShark V2 HyperSpeed | `1532:056E` | Audio page |
+| Razer BlackShark V2 Pro (2020) | `1532:0528` | Audio page; THX installer |
+| Razer BlackShark V2 Pro (2023) | `1532:0555` | Audio page; THX installer |
+| Razer BlackShark V3 | `1532:0579` | Audio page |
+| Razer BlackShark V3 Pro (0x0576 interface) | `1532:0576` | Audio page; wired BlackShark V3 Pro interface |
+| Razer BlackShark V3 Pro (2.4 GHz) | `1532:101B` | Audio, ANC, THX and game/chat balance (2.4 GHz) |
+| Razer BlackShark V3 Pro (USB) | `1532:101C` | Audio, ANC, THX and game/chat balance (USB) |
+| Razer Kraken 7.1 | `1532:0501` | Lighting only |
+| Razer Kraken 7.1 | `1532:0506` | Lighting only |
+| Razer Kraken 7.1 Chroma | `1532:0504` | Lighting only |
+| Razer Kraken 7.1 V2 | `1532:0510` | Lighting only |
+| Razer Kraken BT Kitty Edition | `1532:0530` | Audio page |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | Audio page |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | Audio page |
+| Razer Kraken Kitty Edition | `1532:0521` | Audio page |
+| Razer Kraken Kitty V2 | `1532:0560` | Audio page plus lighting |
+| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | Audio page |
+| Razer Kraken Kitty V2 Pro | `1532:0554` | Audio page |
+| Razer Kraken Kitty V3 Pro | `1532:0587` | Audio page; THX V4 installer |
+| Razer Kraken Tournament Edition | `1532:0520` | Audio page plus lighting; THX installer for Kraken TE |
+| Razer Kraken Ultimate | `1532:0527` | Audio page plus lighting; THX installer |
+| Razer Kraken V3 | `1532:0549` | Audio page |
+| Razer Kraken V3 HyperSense | `1532:0533` | Audio page |
+| Razer Kraken V3 Pro | `1532:052D` | Audio page |
+| Razer Kraken V3 X | `1532:0537` | Audio page |
+| Razer Kraken V4 | `1532:056B` | Audio page plus lighting; THX installer |
+| Razer Kraken V4 Pro | `1532:0567` | Audio page |
+| Razer Kraken V4 X | `1532:056D` | Audio page |
+| Razer Kraken X USB | `1532:0526` | Audio page |
+| Razer Marci | `1532:0F66` | Audio page |
+| Razer Nari | `1532:051C` | Audio page |
+| Razer Nari Essential | `1532:051E` | Audio page; THX installer |
+| Razer Nari Ultimate | `1532:051A` | Audio page |
 
-### Keyboards (73)
+Kraken 7.1 uses the 37-byte output-report path; Kraken V4 wired uses the 64-byte report-0x02 path. The Kraken V4 2.4 GHz receiver (`056C`) is not exposed yet.
 
-| Device | USB VID:PID | Type |
+## Speakers
+
+Speaker controls cover EQ presets, bands, bass, input source and lighting where available.
+
+| Device | USB VID:PID | Notes |
 |---|---|---|
-| BlackWidow Chroma V2 | `1532:0221` | Keyboard |
-| Razer Anansi | `1532:010F` | Keyboard |
-| Razer BlackWidow (Classic) | `1532:011B` | Keyboard |
-| Razer BlackWidow 2019 | `1532:0241` | Keyboard |
-| Razer BlackWidow Chroma | `1532:0203` | Keyboard |
-| Razer BlackWidow Chroma (Overwatch) | `1532:0211` | Keyboard |
-| Razer BlackWidow Elite | `1532:0228` | Keyboard |
-| Razer BlackWidow Essential | `1532:0237` | Keyboard |
-| Razer BlackWidow Lite | `1532:0235` | Keyboard |
-| Razer BlackWidow Stealth Edition | `1532:010E` | Keyboard |
-| Razer BlackWidow Tournament Edition 2014 | `1532:011C` | Keyboard |
-| Razer BlackWidow Tournament Edition Chroma | `1532:0209` | Keyboard |
-| Razer BlackWidow Ultimate 2012 | `1532:010D` | Keyboard |
-| Razer BlackWidow Ultimate 2013 | `1532:011A` | Keyboard |
-| Razer BlackWidow Ultimate 2016 | `1532:0214` | Keyboard |
-| Razer BlackWidow V3 | `1532:024E` | Keyboard |
-| Razer BlackWidow V3 Mini HyperSpeed (Wired) | `1532:0258` | Keyboard |
-| Razer BlackWidow V3 Mini HyperSpeed (Wireless) | `1532:0271` | Keyboard |
-| Razer BlackWidow V3 Pro 2.4 Ghz Wireless | `1532:025C` | Keyboard |
-| Razer BlackWidow V3 Pro Wired | `1532:025A` | Keyboard |
-| Razer BlackWidow V3 TK | `1532:0A24` | Keyboard |
-| Razer BlackWidow V4 | `1532:0287` | Keyboard |
-| Razer BlackWidow V4 75% | `1532:02A5` | Keyboard |
-| Razer BlackWidow V4 Mini HyperSpeed (Wired) | `1532:02B9` | Keyboard |
-| Razer BlackWidow V4 Mini HyperSpeed (Wireless) | `1532:02BA` | Keyboard |
-| Razer BlackWidow V4 Pro | `1532:028D` | Keyboard |
-| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wired) | `1532:02D7` | Keyboard |
-| Razer BlackWidow V4 Tenkeyless HyperSpeed (Wireless) | `1532:02D5` | Keyboard |
-| Razer BlackWidow V4 X | `1532:0293` | Keyboard |
-| Razer BlackWidow X Chroma | `1532:0216` | Keyboard |
-| Razer BlackWidow X Tournament Edition Chroma | `1532:021A` | Keyboard |
-| Razer BlackWidow X Ultimate | `1532:0217` | Keyboard |
-| Razer Cynosa Chroma | `1532:022A` | Keyboard |
-| Razer Cynosa Chroma Pro | `1532:022C` | Keyboard |
-| Razer Cynosa Lite | `1532:023F` | Keyboard |
-| Razer Cynosa V2 | `1532:025E` | Keyboard |
-| Razer DeathStalker Chroma | `1532:0204` | Keyboard |
-| Razer DeathStalker Expert | `1532:0202` | Keyboard |
-| Razer DeathStalker V2 | `1532:0295` | Keyboard |
-| Razer DeathStalker V2 Pro (Wired) | `1532:0292` | Keyboard |
-| Razer DeathStalker V2 Pro (Wireless) | `1532:0290` | Keyboard |
-| Razer DeathStalker V2 Pro TKL (Wired) | `1532:0298` | Keyboard |
-| Razer DeathStalker V2 Pro TKL (Wireless) | `1532:0296` | Keyboard |
-| Razer DeathStalker/DeathStalker Essential | `1532:0118` | Keyboard |
-| Razer Huntsman | `1532:0227` | Keyboard |
-| Razer Huntsman Elite | `1532:0226` | Keyboard |
-| Razer Huntsman Mini | `1532:0257` | Keyboard |
-| Razer Huntsman Mini Analog | `1532:0282` | Keyboard |
-| Razer Huntsman Mini JP | `1532:0269` | Keyboard |
-| Razer Huntsman Tournament Edition | `1532:0243` | Keyboard |
-| Razer Huntsman V2 | `1532:026C` | Keyboard |
-| Razer Huntsman V2 Analog | `1532:0266` | Keyboard |
-| Razer Huntsman V2 Tenkeyless | `1532:026B` | Keyboard |
-| Razer Huntsman V3 Pro | `1532:02A6` | Keyboard |
-| Razer Huntsman V3 Pro 8KHz | `1532:02CF` | Keyboard |
-| Razer Huntsman V3 Pro Mini | `1532:02B0` | Keyboard |
-| Razer Huntsman V3 Pro TKL | `1532:02A7` | Keyboard |
-| Razer Joro | `1532:02CD` | Keyboard |
-| Razer Nostromo | `1532:0111` | Keyboard |
-| Razer Orbweaver | `1532:0113` | Keyboard |
-| Razer Orbweaver Chroma | `1532:0207` | Keyboard |
-| Razer Ornata | `1532:021F` | Keyboard |
-| Razer Ornata Chroma | `1532:021E` | Keyboard |
-| Razer Ornata V2 | `1532:025D` | Keyboard |
-| Razer Ornata V3 | `1532:02A1` | Keyboard |
-| Razer Ornata V3 (Alternate) | `1532:028F` | Keyboard |
-| Razer Ornata V3 Tenkeyless | `1532:02A3` | Keyboard |
-| Razer Ornata V3 X | `1532:0294` | Keyboard |
-| Razer Ornata V3 X (Alternate) | `1532:02A2` | Keyboard |
-| Razer Tartarus | `1532:0201` | Keyboard |
-| Razer Tartarus Chroma | `1532:0208` | Keyboard |
-| Razer Tartarus Pro | `1532:0244` | Keyboard |
-| Razer Tartarus V2 | `1532:022B` | Keyboard |
+| Razer Leviathan V2 | `1532:0532` | Audio page |
+| Razer Leviathan V2 Pro | `1532:0548` | Audio page |
+| Razer Leviathan V2 X | `1532:054A` | Soundbar audio and lighting; physical validation still pending |
+| Razer Nommo Chroma | `1532:0517` | Chroma lighting |
+| Razer Nommo Pro | `1532:0518` | Chroma lighting |
+| Razer Nommo V2 | `1532:055C` | Audio page |
+| Razer Nommo V2 Pro | `1532:055A` | Audio page |
+| Razer Nommo V2 X | `1532:055E` | Audio page |
 
-### Laptops (48)
+Leviathan V2 X (`054A`) covers edition IDs 0 (base), 128 (Pikachu), 129 (Pokémon AP), 131 (Kuromi) and 132 (Kuromi Edition); the app distinguishes Pikachu and Kuromi units by reading edition information.
 
-| Device | USB VID:PID | Type |
+## Microphones
+
+Microphone controls cover EQ, microphone volume and LED effects where available.
+
+| Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Blade (Late 2016) | `1532:0224` | Laptop |
-| Razer Blade (QHD) | `1532:020F` | Laptop |
-| Razer Blade 14 (2021) | `1532:0270` | Laptop |
-| Razer Blade 14 (2022) | `1532:028C` | Laptop |
-| Razer Blade 14 (2023) | `1532:029D` | Laptop |
-| Razer Blade 14 (2024) | `1532:02B6` | Laptop |
-| Razer Blade 14 (2025) | `1532:02C5` | Laptop |
-| Razer Blade 15 (2018) | `1532:0233` | Laptop |
-| Razer Blade 15 (2018) Base Model | `1532:023B` | Laptop |
-| Razer Blade 15 (2018) Mercury | `1532:0240` | Laptop |
-| Razer Blade 15 (2019) Advanced | `1532:023A` | Laptop |
-| Razer Blade 15 (2023) | `1532:029E` | Laptop |
-| Razer Blade 15 (Mid 2019) Base Model | `1532:0246` | Laptop |
-| Razer Blade 15 (Mid 2019) Mercury | `1532:0245` | Laptop |
-| Razer Blade 15 Advanced (2020) | `1532:0253` | Laptop |
-| Razer Blade 15 Advanced (Early 2021) | `1532:026D` | Laptop |
-| Razer Blade 15 Advanced (Early 2022) | `1532:028A` | Laptop |
-| Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | Laptop |
-| Razer Blade 15 Studio Edition (2019) | `1532:024D` | Laptop |
-| Razer Blade 16 (2023) | `1532:029F` | Laptop |
-| Razer Blade 16 (2026) | `1532:02E0` | Laptop |
-| Razer Blade 17 (2022) | `1532:028B` | Laptop |
-| Razer Blade 17 Pro (Early 2021) | `1532:026E` | Laptop |
-| Razer Blade 17 Pro (Mid 2021) | `1532:0279` | Laptop |
-| Razer Blade 18 (2023) | `1532:02A0` | Laptop |
-| Razer Blade 18 (2024) | `1532:02B8` | Laptop |
-| Razer Blade 18 (2025) | `1532:02C7` | Laptop |
-| Razer Blade 18 (2026) | `1532:02E1` | Laptop |
-| Razer Blade Advanced (Late 2019) | `1532:024B` | Laptop |
-| Razer Blade Base (Early 2020) | `1532:0255` | Laptop |
-| Razer Blade Base (Early 2021) | `1532:026F` | Laptop |
-| Razer Blade Base (Early 2022) | `1532:027A` | Laptop |
-| Razer Blade Late 2020 Base | `1532:0268` | Laptop |
-| Razer Blade Pro (2017) | `1532:0225` | Laptop |
-| Razer Blade Pro (Early 2020) | `1532:0256` | Laptop |
-| Razer Blade Pro (Late 2016) | `1532:0210` | Laptop |
-| Razer Blade Pro (Late 2019) | `1532:024C` | Laptop |
-| Razer Blade Pro 17 (2019) | `1532:0234` | Laptop |
-| Razer Blade Pro FullHD (2017) | `1532:022F` | Laptop |
-| Razer Blade Stealth | `1532:0205` | Laptop |
-| Razer Blade Stealth (2019) | `1532:0239` | Laptop |
-| Razer Blade Stealth (Early 2020) | `1532:0252` | Laptop |
-| Razer Blade Stealth (Late 2016) | `1532:0220` | Laptop |
-| Razer Blade Stealth (Late 2017) | `1532:0232` | Laptop |
-| Razer Blade Stealth (Late 2019) | `1532:024A` | Laptop |
-| Razer Blade Stealth (Late 2020) | `1532:0259` | Laptop |
-| Razer Blade Stealth (Mid 2017) | `1532:022D` | Laptop |
-| Razer Book (2020) | `1532:026A` | Laptop |
+| Razer Seiren Emote | `1532:0F1B` | Audio page; 8x8 LED matrix |
+| Razer Seiren V2 Pro | `1532:0542` | Audio page |
+| Razer Seiren V2 X | `1532:0543` | Audio page |
+| Razer Seiren V3 Mini | `1532:056A` | Audio page |
 
-### Accessories (26)
+## Mouse pads
 
-| Device | USB VID:PID | Type |
+Mouse pads expose their model-dependent Chroma lighting controls.
+
+| Device | USB VID:PID | Notes |
 |---|---|---|
-| Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | Accessory |
-| Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | Accessory |
-| Razer Base Station V2 Chroma | `1532:0F20` | Accessory |
-| Razer Charging Pad Chroma | `1532:0F26` | Accessory |
-| Razer Chroma Hardware Development Kit (HDK) | `1532:0F09` | Accessory |
-| Razer Chroma Mug Holder | `1532:0F07` | Accessory |
-| Razer Core | `1532:0215` | Accessory |
-| Razer Core X Chroma | `1532:0F1A` | Accessory |
-| Razer Firefly (2013) | `1532:0C00` | Mouse pad |
-| Razer Firefly Hyperflux (2018) | `1532:0068` | Mouse pad |
-| Razer Firefly V2 | `1532:0C04` | Mouse pad |
-| Razer Firefly V2 Pro | `1532:0C08` | Mouse pad |
-| Razer Goliathus (2018) | `1532:0C01` | Mouse pad |
-| Razer Goliathus Chroma 3XL | `1532:0C06` | Mouse pad |
-| Razer Goliathus Extended (2018) | `1532:0C02` | Mouse pad |
-| Razer Laptop Stand Chroma | `1532:0F0D` | Accessory |
-| Razer Laptop Stand Chroma V2 | `1532:0F2B` | Accessory |
-| Razer Mouse Bungee V3 Chroma | `1532:0F1D` | Accessory |
-| Razer Mouse Dock | `1532:007E` | Accessory |
-| Razer Mouse Dock Pro | `1532:00A4` | Accessory |
-| Razer Nommo Chroma (Speakers) | `1532:0517` | Accessory |
-| Razer Nommo Pro (Speakers) | `1532:0518` | Accessory |
-| Razer Raptor 27 | `1532:0F12` | Monitor |
-| Razer Strider Chroma | `1532:0C05` | Mouse pad |
-| Razer Thunderbolt 4 Dock Chroma | `1532:0F21` | Accessory |
-| Razer Tomahawk ATX | `1532:0F17` | Accessory |
+| Razer Firefly (2013) | `1532:0C00` | — |
+| Razer Firefly Hyperflux (2018) | `1532:0068` | — |
+| Razer Firefly V2 | `1532:0C04` | — |
+| Razer Firefly V2 Pro | `1532:0C08` | — |
+| Razer Goliathus (2018) | `1532:0C01` | — |
+| Razer Goliathus Chroma 3XL | `1532:0C06` | — |
+| Razer Goliathus Extended (2018) | `1532:0C02` | — |
+| Razer Strider Chroma | `1532:0C05` | — |
+
+## Monitors
+
+The Raptor 27 exposes its model-dependent Chroma lighting controls.
+
+| Device | USB VID:PID | Notes |
+|---|---|---|
+| Razer Raptor 27 | `1532:0F12` | Chroma lighting |
+| Razer Raptor 27 | `1532:0F28` | Chroma lighting |
+
+## Accessories
+
+Accessory controls cover lighting, docks, stands, fan control and presence signaling.
+
+| Device | USB VID:PID | Notes |
+|---|---|---|
+| Esther | `1532:0F45` | Lighting only |
+| Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | — |
+| MarciT2H | `1532:0F6D` | Lighting only |
+| Razer Aether Lamp | `1532:030E` | Lighting only |
+| Razer Aether Lamp Pro | `1532:030D` | Lighting only |
+| Razer Aether Light Bulb | `1532:030F` | Lighting only |
+| Razer Aether Light Strip | `1532:0310` | Lighting only |
+| Razer Aether Monitor Light Bar | `1532:0316` | Lighting only |
+| Razer Aether Standing Light Bars | `1532:0317` | Lighting only |
+| Razer Audio Mixer | `1532:053E` | Audio controller page; mixer controls |
+| Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | — |
+| Razer Base Station V2 Chroma | `1532:0F20` | — |
+| Razer Base Station V3 Chroma | `1532:0F6A` | Lighting only |
+| Razer Charging Pad Chroma | `1532:0F26` | — |
+| Razer Chroma Addressable RGB Controller | `1532:030A` | Standard Chroma lighting |
+| Razer Chroma Addressable RGB Controller | `1532:0F1F` | Per-LED ARGB control; 6 ports x 80 LEDs |
+| Razer Chroma Hardware Development Kit (HDK) | `1532:0F09` | — |
+| Razer Chroma Mug Holder | `1532:0F07` | — |
+| Razer Chroma Wireless ARGB Controller | `1532:0F2C` | Standard Chroma lighting |
+| Razer Chroma Wireless ARGB Controller | `1532:0F2E` | Standard Chroma lighting |
+| Razer Core | `1532:0215` | — |
+| Razer Core X Chroma | `1532:0F1A` | — |
+| Razer Core X V2 | `1532:0F51` | Lighting only |
+| Razer Hanbo AIO | `1532:0F35` | Lighting only |
+| Razer Handheld Dock Chroma | `1532:0F5C` | Lighting only |
+| Razer Head Cushion Chroma | `1532:0F36` | Lighting only |
+| Razer Key Light Chroma | `1532:030C` | Lighting only |
+| Razer Laptop Cooling Pad | `1532:0F43` | Presence signal for HyperBoost; no standalone control page |
+| Razer Laptop Monitor Stand Chroma | `1532:0F5A` | Lighting only |
+| Razer Laptop Stand Chroma | `1532:0F0D` | — |
+| Razer Laptop Stand Chroma V2 | `1532:0F2B` | — |
+| Razer Monitor Stand Chroma | `1532:0F59` | Lighting only |
+| Razer Mouse Bungee V3 Chroma | `1532:0F1D` | — |
+| Razer Mouse Dock | `1532:007E` | — |
+| Razer Mouse Dock Pro | `1532:00A4` | — |
+| Razer Mouse Dock V2 Pro | `1532:00F1` | Lighting only |
+| Razer PWM PC Fan Controller | `1532:0F3C` | Lighting only |
+| Razer Soma Chroma | `1532:0F64` | Lighting only |
+| Razer Thunderbolt 4 Dock Chroma | `1532:0F21` | — |
+| Razer Thunderbolt 5 Dock Chroma | `1532:0F52` | Lighting only |
+| Razer Tomahawk ATX | `1532:0F17` | — |
+| Razer Tomahawk Gaming Desktop | `1532:0F27` | Lighting only |
+| Razer USB Sound Card | `1532:0529` | Audio controller page; sound-card controls |
+| Razer Wireless Control Pod | `1532:0566` | Lighting only |
+
+## Network lighting
+
+Philips Hue is controlled over the bridge HTTPS API after pairing.
+
+| Device | USB VID:PID | Notes |
+|---|---|---|
+| Philips Hue Bridge | `Network` | Bridge pairing; on/off, brightness and colour |
 
 ## Capability and verification boundaries
 
-Catalog presence means the model is recognized by the pinned backend. The actual controls shown depend on the resolved HID endpoint and supported transactions. Depending on the model, the app may expose device information, battery state, polling rate, DPI and DPI stages, power saving, low-battery warning, lighting brightness and effects, per-zone LEDs, matrix lighting, scroll-wheel settings, keyswitch optimization, Fn-primary behavior, or HyperPolling receiver controls.
+A listed ID means a code path exists for that device. It does not mean every control has been tested on physical hardware. An unresolved or busy endpoint stays read-only until the next scan. Writes are read back where the protocol allows, and a failed write restores the previous value when the device exposes one.
 
-Catalog presence does not mean every control has been physically tested on every model. An unresolved or busy endpoint stays read only until the next scan. OpenSynapse does not guess support from a product name or send writes through another HID collection.
-
-## Devices not yet supported
-
-Every device whose own handler exposes commands now has a page. Philips Hue (0x0301) is not a HID device; it is integrated through the bridge HTTPS API, so Settings can pair with the bridge address and the link button, then list lights and control on/off and brightness. Accepting it still needs a physical bridge.
-
-Wireless mice such as the Viper V4 Pro use protocol 30 over Bluetooth LE instead of the 91-byte feature report. The channel is documented in the [BLE protocol 30 reference](PROTOCOL30_BLE.zh-CN.md): GATT UUIDs, the 8-byte request and 20-byte reply headers, polling rates, DPI payloads, and the connection and retry rules. The protocol and a service with read-back verification live in `RazerBleProtocol30`, `RazerBleSession` and `RazerBleDeviceService`; the page that surfaces them still needs a Bluetooth-connected mouse for acceptance.
-
-
-
-The protocol evidence comes from static analysis of the Synapse middleware and only covers commands that appear in a product's own handler. A write still needs capability reads, a read-back, and a recovery path.
-The Blade 16 (2026) and Blade 18 (2026) now have standard OpenRazer catalogue lighting entries, but their telemetry, fan, performance, and MUX controls still need a dedicated Blade manifest.
-
+The THX V3/V4 headset path and parts of the middleware-derived device set are built from native clients and protocol evidence; hardware acceptance is still required where noted. BLE devices must expose Razer protocol 30 service `52401523`; the current BLE page targets mice such as the Viper V4 Pro.
 
 For external lighting integrations, see [Chroma-supported devices](CHROMA_SUPPORTED_DEVICES.md).
 
