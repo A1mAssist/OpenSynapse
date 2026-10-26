@@ -44,3 +44,19 @@
 
 - DPI 步进只进了文档，界面 NumberBox 仍按 100 递增；输入框可以键入任意值，但用微调按钮时无法按 1 或 50 调整。
 - `0063`、`0074` 的 bundle 没有 `supportedFeature` 块，灯光能力只能靠 Chroma 探测确认。
+
+## 板载按键映射（从 bundle 提取）
+
+产品 bundle 里每个鼠标都定义了单键映射命令；应用按这套帧实现，不依赖实机抓包：
+
+| 用途 | 命令（class:cmd） | data size | 负载 |
+|---|---|---:|---|
+| 按键列表 | `02:84` | 80 | 全 0；回复首字节为数量，随后是按键 ID |
+| 读单个映射 | `02:8C` | 80 | `[profileId, buttonId, mode]` |
+| 写单个映射 | `02:0C` | 80 | `[profileId, buttonId, mode, fnId, dataSize, data...]` |
+
+- 回复布局：`[classId, buttonId, mode, fnId, dataSize, data0..data4]`。
+- `mode`：普通层 `0`，Shift 层 `1`。
+- `fnId`：`0` 关闭，`1` 映射成鼠标按键（data 首字节为目标按键 ID）。
+- 按键 ID 与功能 ID 取自 bundle 的枚举：`LeftButton=1`、`RightButton=2`、`ScrollButton=3`、`Button4..8=4..8`、`ScrollUp/Down=9/10`、`DPIUp/Down=11/12`、`SniperButton=15`、`DPI_Cycle_Up/Down=96/97`。
+- 当前实现固定 `profileId=1`，只提供“关闭 / 映射成鼠标按键”两类动作；宏、键盘码和灯光类动作尚未开放（`fnId` 2..21 已从 bundle 取得）。

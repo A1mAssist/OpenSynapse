@@ -512,6 +512,39 @@ public sealed class OpenRazerDeviceService
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetLowBatteryThreshold(connection.Definition, percent), cancellationToken);
 
+    public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
+        OpenRazerDeviceConnection connection,
+        CancellationToken cancellationToken = default) =>
+        OpenRazerMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
+            OpenRazerMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
+
+    public async Task<OpenRazerButtonAssignment> GetButtonAssignmentAsync(
+        OpenRazerDeviceConnection connection,
+        byte buttonId,
+        byte mode,
+        CancellationToken cancellationToken = default) =>
+        OpenRazerMappingProtocol.ParseAssignment(await ExecuteAsync(connection,
+            OpenRazerMappingProtocol.GetAssignment(buttonId, mode), cancellationToken).ConfigureAwait(false));
+
+    public async Task SetButtonAssignmentAsync(
+        OpenRazerDeviceConnection connection,
+        byte buttonId,
+        byte mode,
+        byte functionId,
+        IReadOnlyList<byte> data,
+        CancellationToken cancellationToken = default)
+    {
+        await ExecuteWithoutResultAsync(connection,
+            OpenRazerMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray()),
+            cancellationToken).ConfigureAwait(false);
+        var applied = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
+            .ConfigureAwait(false);
+        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(data))
+        {
+            throw new InvalidOperationException("The device kept a different button assignment.");
+        }
+    }
+
     public async Task<byte> GetBrightnessAsync(
         OpenRazerDeviceConnection connection,
         OpenRazerStorage? storage = null,
@@ -1234,6 +1267,11 @@ public sealed class OpenRazerDeviceService
             result.Add(OpenRazerBackendCapability.HyperPollingPairWrite);
         Add(OpenRazerBackendCapability.HyperPollingUnpairWrite, "set_hyperpolling_wireless_dongle_unpair",
             "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair");
+        if (OpenRazerDeviceCatalog.HasOnboardMapping(device.ProductId))
+        {
+            result.Add(OpenRazerBackendCapability.MappingRead);
+            result.Add(OpenRazerBackendCapability.MappingWrite);
+        }
         return result.ToFrozenSet();
 
         bool Has(string builder) => device.Transactions.ContainsKey(builder) || device.CommandSequences.ContainsKey(builder);

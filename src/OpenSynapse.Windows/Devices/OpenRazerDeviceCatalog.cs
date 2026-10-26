@@ -102,6 +102,7 @@ public sealed class OpenRazerDeviceCatalog
     internal const string SourceCommit = "477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d";
     private const int ExpectedDeviceCount = 259;
     private static readonly ushort[] ReservedProductIds = [0x00B8, 0x02C6];
+    private static readonly HashSet<ushort> MappingProductIds = [];
     private static readonly string[] ResourceSuffixes =
     [
         ".Devices.OpenRazer.accessories.json",
@@ -129,6 +130,12 @@ public sealed class OpenRazerDeviceCatalog
     public IReadOnlyList<OpenRazerDeviceDefinition> Devices { get; }
 
     internal static bool IsLeviathanV2X(ushort productId) => productId == LeviathanV2XProtocol.ProductId;
+
+    /// <summary>
+    /// The middleware mice derive their onboard button-assignment commands from the
+    /// product bundle instead of the OpenRazer snapshot; the runtime read still decides.
+    /// </summary>
+    internal static bool HasOnboardMapping(ushort productId) => MappingProductIds.Contains(productId);
     public OpenRazerDeviceDefinition? Find(ushort vendorId, ushort productId) =>
         vendorId == OpenRazerDeviceDefinition.VendorId
             ? _byProductId.GetValueOrDefault(productId)
@@ -394,6 +401,7 @@ public sealed class OpenRazerDeviceCatalog
                     sibling.DefaultStorage,
                     sibling.DefaultLedZone,
                     sibling.CommandSequences));
+                MappingProductIds.Add(entry.Product);
             }
         }
 
