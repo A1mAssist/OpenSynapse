@@ -1609,6 +1609,10 @@
   <data name="DedicatedGpuModeStatusBlockedUnsupported" xml:space="preserve"><value>未检测到可安全切换的核显与独显组合。</value><comment>硬件组合不支持</comment></data>
   <data name="DedicatedGpuModeStatusNoDevice" xml:space="preserve"><value>未找到 NVIDIA 独显。</value><comment>未找到独显</comment></data>
   <data name="DedicatedGpuModeStatusFailed" xml:space="preserve"><value>切换失败（Windows 返回 {0}）。</value><comment>仅核显模式切换失败</comment></data>
+  <data name="DedicatedGpuModeStatusFaulted" xml:space="preserve"><value>独显驱动异常（错误代码 {0}），设备已被系统停用。可以点“重启独显设备”重新加载驱动；无独显时系统会继续使用核显。</value><comment>独显驱动故障状态</comment></data>
+  <data name="DedicatedGpuModeStatusRestarting" xml:space="preserve"><value>正在重启独显设备…</value><comment>重启独显设备中</comment></data>
+  <data name="DedicatedGpuModeStatusRestarted" xml:space="preserve"><value>独显设备已重启，正在重新加载驱动。</value><comment>重启独显设备成功</comment></data>
+  <data name="DedicatedGpuModeRestart" xml:space="preserve"><value>重启独显设备</value><comment>重启独显设备按钮</comment></data>
   <data name="DedicatedGpuModeError" xml:space="preserve"><value>显卡模式设置：{0}</value><comment>仅核显模式异常</comment></data>
   <data name="DisplayMuxModeTitle.Text" xml:space="preserve"><value>显示模式（MUX）</value><comment>GPU MUX 显示模式标题</comment></data>
   <data name="DisplayMuxModeDescription.Text" xml:space="preserve"><value>通过设备固件 HID 命令切换内置屏幕的输出显卡。切换后需要重启。</value><comment>GPU MUX 显示模式说明</comment></data>

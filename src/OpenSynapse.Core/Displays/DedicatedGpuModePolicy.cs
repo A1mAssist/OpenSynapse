@@ -5,6 +5,7 @@ public enum DedicatedGpuModeBlockReason
     None,
     NoDiscreteGraphics,
     NoIntegratedGraphics,
+    DiscreteGpuFaulted,
     DisplayTopologyUnavailable,
     InternalDisplayUnavailable,
     InternalDisplayRouteUnavailable,
@@ -15,7 +16,7 @@ public enum DedicatedGpuModeBlockReason
 public readonly record struct DedicatedGpuModeSnapshot(
     bool HasIntegratedGraphics,
     bool HasDiscreteGraphics,
-    bool DiscreteGpuEnabled,
+    DedicatedGpuDeviceState DiscreteGpuState,
     bool DisplayTopologyKnown,
     bool HasActiveInternalDisplay,
     bool InternalDisplayRouteKnown,
@@ -27,7 +28,7 @@ public static class DedicatedGpuModePolicy
     public static bool IsSupported(in DedicatedGpuModeSnapshot snapshot) =>
         snapshot.HasDiscreteGraphics &&
         snapshot.HasIntegratedGraphics &&
-        (!snapshot.DiscreteGpuEnabled || !snapshot.InternalDisplayUsesDiscreteGpu);
+        (!snapshot.DiscreteGpuState.IsEnabled() || !snapshot.InternalDisplayUsesDiscreteGpu);
 
     public static DedicatedGpuModeBlockReason GetBlockReason(in DedicatedGpuModeSnapshot snapshot)
     {
@@ -41,7 +42,14 @@ public static class DedicatedGpuModePolicy
             return DedicatedGpuModeBlockReason.NoIntegratedGraphics;
         }
 
-        if (!snapshot.DiscreteGpuEnabled)
+        if (snapshot.DiscreteGpuState.IsFaulted())
+        {
+            // The adapter already failed. Disabling it would not help, and it would
+            // take away the restart that recovers it.
+            return DedicatedGpuModeBlockReason.DiscreteGpuFaulted;
+        }
+
+        if (!snapshot.DiscreteGpuState.IsEnabled())
         {
             // Re-enabling the discrete GPU is always safe and is the recovery path.
             return DedicatedGpuModeBlockReason.None;

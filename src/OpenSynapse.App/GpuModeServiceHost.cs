@@ -197,37 +197,42 @@ internal static class GpuModeServiceHost
                 return Invalid("Unsupported GPU service request.");
             }
 
-            if (StringComparer.Ordinal.Equals(
-                    request.Operation,
-                    DedicatedGpuModeServiceProtocol.StatusOperation))
+            switch (DedicatedGpuModeServiceRequestParser.Parse(request))
             {
-                return new DedicatedGpuModeServiceResponse(
-                    DedicatedGpuModeServiceProtocol.Version,
-                    Handled: true,
-                    DedicatedGpuSwitchOutcome.Success,
-                    ExitCode: 0,
-                    Status: WindowsDedicatedGpuMode.GetStatus(),
-                    Error: null);
-            }
+                case DedicatedGpuModeServiceAction.Status:
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        DedicatedGpuSwitchOutcome.Success,
+                        ExitCode: 0,
+                        Status: WindowsDedicatedGpuMode.GetStatus(),
+                        Error: null);
 
-            if (!StringComparer.Ordinal.Equals(
-                    request.Operation,
-                    DedicatedGpuModeServiceProtocol.SetOperation) ||
-                request.Enabled is not bool enabled)
-            {
-                return Invalid("Invalid GPU service command.");
-            }
+                case DedicatedGpuModeServiceAction.Restart:
+                    var restart = WindowsDedicatedGpuMode.RestartFaultedDirect();
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        restart.Outcome,
+                        ExitCode: restart.ExitCode,
+                        Status: WindowsDedicatedGpuMode.GetStatus(),
+                        Error: null);
 
-            var result = WindowsDedicatedGpuMode.SetEnabledDirect(
-                enabled,
-                validateDisplayPolicy: false);
-            return new DedicatedGpuModeServiceResponse(
-                DedicatedGpuModeServiceProtocol.Version,
-                Handled: true,
-                result.Outcome,
-                result.ExitCode,
-                WindowsDedicatedGpuMode.GetStatus(),
-                Error: null);
+                case DedicatedGpuModeServiceAction.Set:
+                    var result = WindowsDedicatedGpuMode.SetEnabledDirect(
+                        request.Enabled!.Value,
+                        validateDisplayPolicy: false);
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        result.Outcome,
+                        ExitCode: result.ExitCode,
+                        Status: WindowsDedicatedGpuMode.GetStatus(),
+                        Error: null);
+
+                default:
+                    return Invalid("Invalid GPU service command.");
+            }
         }
 
         private static DedicatedGpuModeServiceResponse Invalid(string error) =>
