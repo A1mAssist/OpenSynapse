@@ -37,6 +37,14 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Performance,
     ];
 
+    // HyperBoost only exists on the models whose middleware lists it. It rides the same
+    // thermal channel as the presets, so the write itself needs no extra capability.
+    private static readonly BladePerformanceMode[] HyperBoostPerformanceModes =
+    [
+        .. StandardPerformanceModes,
+        BladePerformanceMode.Hyperboost,
+    ];
+
     private static readonly FrozenDictionary<ushort, Contract> Contracts =
         new Dictionary<ushort, Contract>
         {
@@ -130,7 +138,9 @@ public static class BladeModelCapabilities
     public static IReadOnlyList<BladePerformanceMode> PerformanceModesFor(ushort productId) =>
         productId == Blade14_2022ProductId
             ? Blade14_2022PerformanceModes
-            : StandardPerformanceModes;
+            : SupportsHyperBoost(productId)
+                ? HyperBoostPerformanceModes
+                : StandardPerformanceModes;
 
     /// <summary>Lower bound the exact model accepts for a fixed fan target.</summary>
     public static int MinimumFanTargetRpmFor(ushort productId) =>

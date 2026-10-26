@@ -8,8 +8,7 @@ internal static class DeviceUiCatalog
 {
     public static readonly BladePerformanceMode[] BladePerformanceModes =
     [
-        .. BladeModelCapabilities.PerformanceModesFor(0),
-        BladePerformanceMode.Hyperboost,
+        .. BladeModelCapabilities.PerformanceModesFor(0x02C6),
     ];
 
     public static readonly int[] BladeChargeLimits = [50, 55, 60, 65, 70, 75, 80, 100];

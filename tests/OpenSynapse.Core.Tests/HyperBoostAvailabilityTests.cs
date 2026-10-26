@@ -7,6 +7,30 @@ namespace OpenSynapse.Core.Tests;
 
 public sealed class HyperBoostCoolingPadGateTests
 {
+    [Theory]
+    [InlineData(0x029D)]
+    [InlineData(0x029F)]
+    [InlineData(0x02B7)]
+    [InlineData(0x02C6)]
+    public void HyperBoostIsOnlyOfferedOnTheModelsWhoseMiddlewareListsIt(ushort productId) =>
+        Assert.Contains(
+            BladePerformanceMode.Hyperboost,
+            BladeModelCapabilities.PerformanceModesFor(productId));
+
+    [Theory]
+    [InlineData(0x028C)]
+    [InlineData(0x0245)]
+    [InlineData(0x02A0)]
+    [InlineData(0x02B6)]
+    [InlineData(0x02B8)]
+    [InlineData(0x02C5)]
+    [InlineData(0x02C7)]
+    [InlineData(0x02E0)]
+    public void HyperBoostStaysOutOfThePerformanceListOnEveryOtherModel(ushort productId) =>
+        Assert.DoesNotContain(
+            BladePerformanceMode.Hyperboost,
+            BladeModelCapabilities.PerformanceModesFor(productId));
+
     [Fact]
     public async Task ProfileHyperBoostAppliesWithoutCoolingPadOnTheFullPowerAdapter()
     {
