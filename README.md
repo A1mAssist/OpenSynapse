@@ -38,7 +38,7 @@ The list is grouped by device type and includes every recognized PID, so a Devic
 - **Display:** an optional integrated-graphics-only mode disables the NVIDIA GPU through Windows PnP. It is not a MUX switch; external displays may stop working until the GPU is re-enabled. The machine-wide MSI install uses a LocalSystem service so the switch does not ask for UAC again; per-user and portable installs fall back to a UAC prompt.
 - **Blade THX audio:** spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization on supported Blade 16 and Blade 14 models. The Blade device page opens a reusable THX control window. The signed Razer native component is not bundled; if missing, the app offers a verified download from Razer's official server.
 - **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
-- **Headsets:** an audio page exposes EQ, microphone volume, sidetone, ANC, THX, and game/chat balance where the model and installed components support them. Kraken 7.1 models are lighting-only; THX V3/V4 installers are offered when the native component is missing.
+- **Headsets:** an audio page exposes EQ, microphone volume, sidetone, ANC, THX, and game/chat balance where the model and installed components support them. Kraken 7.1 models are lighting-only; THX V3/V4 installers are offered on supported models when the native component is missing.
 - **BlackShark V3 Pro:** battery, charging, sidetone, THX, ANC, and game/chat balance over its own HID channel. EQ, microphone gain, firmware updates, and indicator-LED modes are not included yet.
 
 ### Chroma REST
