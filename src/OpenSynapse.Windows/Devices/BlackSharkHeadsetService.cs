@@ -367,6 +367,11 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         ushort usage,
         int outputReportByteLength)
     {
+        if (RazerMxicHeadsetService.IsSupported(productId))
+        {
+            return false;
+        }
+
         if (usagePage is not (0xFF13 or 0xFF14) || usage != 0x0001 ||
             outputReportByteLength < BlackSharkV3ProProtocol.ReportLength)
         {
