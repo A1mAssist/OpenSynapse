@@ -48,7 +48,6 @@ public sealed partial class MainWindow : Window
         _viewModel.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
-        SystemAudioCard.DataContext = SystemAudio;
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
         _viewModel.Hue.Persist = (host, appKey) =>
         {

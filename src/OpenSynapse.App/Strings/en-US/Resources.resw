@@ -2121,21 +2121,6 @@
   <data name="LeviathanPresetMovie" xml:space="preserve"><value>Movie</value></data>
   <data name="LeviathanPresetTreble" xml:space="preserve"><value>Treble</value></data>
   <data name="LeviathanPresetCustom" xml:space="preserve"><value>Custom</value></data>
-  <data name="SystemAudioTitle.Text" xml:space="preserve"><value>System audio</value></data>
-  <data name="SystemAudioDescription.Text" xml:space="preserve"><value>Default playback and recording endpoints, volume, and mute. Mirrors Core Audio behavior from the local Razer Synapse simple_service.</value></data>
-  <data name="SystemAudioRefresh.Content" xml:space="preserve"><value>Refresh</value></data>
-  <data name="SystemAudioPlaybackLabel.Text" xml:space="preserve"><value>Playback device</value></data>
-  <data name="SystemAudioRecordingLabel.Text" xml:space="preserve"><value>Recording device</value></data>
-  <data name="SystemAudioMuteLabel.Text" xml:space="preserve"><value>Mute</value></data>
-  <data name="SystemAudioApplyPlayback.Content" xml:space="preserve"><value>Apply playback settings</value></data>
-  <data name="SystemAudioApplyRecording.Content" xml:space="preserve"><value>Apply recording settings</value></data>
-  <data name="SystemAudioRefreshed" xml:space="preserve"><value>Audio devices refreshed</value></data>
-  <data name="SystemAudioLoadFailed" xml:space="preserve"><value>Failed to read system audio: {0}</value></data>
-  <data name="SystemAudioDefaultEndpoint" xml:space="preserve"><value>Default · {0}</value></data>
-  <data name="SystemAudioMissingEndpoint" xml:space="preserve"><value>Windows did not return a usable default playback or recording endpoint.</value></data>
-  <data name="SystemAudioRenderApplied" xml:space="preserve"><value>Default playback device and volume applied</value></data>
-  <data name="SystemAudioCaptureApplied" xml:space="preserve"><value>Default recording device and volume applied</value></data>
-  <data name="SystemAudioApplyFailed" xml:space="preserve"><value>Failed to apply audio settings: {0}</value></data>
   <data name="MacroExportButtonShort.Content" xml:space="preserve"><value>Export</value></data>
   <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Enable macro</value></data>
   <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Enable or disable this macro</value></data>
