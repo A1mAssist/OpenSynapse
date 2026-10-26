@@ -13,16 +13,23 @@ internal enum ThxHeadsetAvailability
 internal sealed record ThxHeadsetStatus(ThxHeadsetAvailability Availability, string? ErrorCode);
 
 /// <summary>
-/// THX for the BlackShark V2 Pro 2020 (0528) needs three layers: the THX APO bound
-/// to the headset audio endpoint, the VSSrv service, and ThxV3Native.dll. This class
-/// checks the last two; the APO comes with the service installer.
+/// THX for the BlackShark V2 Pro 2020 (0528) and 2023 (0555) needs three layers:
+/// the THX APO bound to the headset audio endpoint, the VSSrv service, and
+/// ThxV3Native.dll. This class checks the last two; the APO comes with each model's
+/// installer.
 /// </summary>
 internal static class ThxHeadsetAdmission
 {
-    internal const ushort SupportedProductId = 0x0528;
     internal const string ServiceName = "VSSrv";
-    internal const string ServiceInstallerUri =
-        "https://app-assets.razer.com/files/synapse/devices/1320/1.0.4.2/THX-0528-BlackSharkV2Pro2020-v3.2.3.0.exe";
+
+    private static readonly IReadOnlyDictionary<ushort, string> ServiceInstallers =
+        new Dictionary<ushort, string>
+        {
+            [0x0528] =
+                "https://app-assets.razer.com/files/synapse/devices/1320/1.0.4.2/THX-0528-BlackSharkV2Pro2020-v3.2.3.0.exe",
+            [0x0555] =
+                "https://app-assets.razer.com/files/synapse/devices/1365/1.0.0.16/THX-0555-BlackSharkV2Pro2023-v3.2.3.0.exe",
+        };
     internal const string NativeDllName = "ThxV3Native_v1.1.42.1.dll";
     internal const string NativeDllUri =
         "https://app-assets.razer.com/files/synapse/devices/common/THX/ThxV3Native_v1.1.42.1.dll";
@@ -45,9 +52,16 @@ internal static class ThxHeadsetAdmission
         "thxv3common",
         NativeDllName);
 
+    internal static bool IsSupported(ushort productId) => ServiceInstallers.ContainsKey(productId);
+
+    internal static string GetServiceInstallerUri(ushort productId) =>
+        ServiceInstallers.TryGetValue(productId, out var uri)
+            ? uri
+            : throw new ArgumentOutOfRangeException(nameof(productId), "No THX installer is pinned for this headset.");
+
     internal static ThxHeadsetStatus Check(ushort productId)
     {
-        if (productId != SupportedProductId)
+        if (!IsSupported(productId))
         {
             return Evaluate(productId, false, false);
         }
@@ -60,7 +74,7 @@ internal static class ThxHeadsetAdmission
 
     internal static ThxHeadsetStatus Evaluate(ushort productId, bool serviceRunning, bool nativePresent)
     {
-        if (productId != SupportedProductId)
+        if (!IsSupported(productId))
         {
             return new(ThxHeadsetAvailability.UnsupportedDevice, "ThxHeadsetUnsupported");
         }
@@ -92,6 +106,7 @@ internal static class ThxHeadsetAdmission
     }
 
     internal static async Task<ThxHeadsetStatus> InstallNativeComponentAsync(
+        ushort productId,
         CancellationToken cancellationToken = default)
     {
         var destination = NativeDllPath;
@@ -144,7 +159,7 @@ internal static class ThxHeadsetAdmission
 
             Directory.CreateDirectory(directory);
             File.Move(temporary, destination, overwrite: true);
-            return Check(SupportedProductId);
+            return Check(productId);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

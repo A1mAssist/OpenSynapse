@@ -82,10 +82,13 @@ D:\Tools\ghidra_12.1.2_PUBLIC_20260605\support\analyzeHeadless.bat ^
 
 ## 应用内入口
 
-耳机音频页对 0528 显示 THX 状态卡，逻辑与笔记本 THX 面板一致：
+耳机音频页对 0528 / 0555 显示 THX 状态卡，逻辑与笔记本 THX 面板一致：
 
-- `VSSrv` 未运行：显示“下载 THX 安装包”，打开官方
-  `THX-0528-BlackSharkV2Pro2020-v3.2.3.0.exe` 下载地址；安装包自己请求管理员权限。
+- `VSSrv` 未运行：显示“下载 THX 安装包”，打开对应型号的官方安装包：
+  - 0528：`THX-0528-BlackSharkV2Pro2020-v3.2.3.0.exe`
+  - 0555：`THX-0555-BlackSharkV2Pro2023-v3.2.3.0.exe`（41,618,480 字节，
+    sha256 `8FB66381E7548F5C6DCDEA16ADB7289E8C368354F03B4074E83E8FC2F3B37D07`）
+  安装包自己请求管理员权限。
 - 服务已运行、`ThxV3Native.dll` 缺失或 hash 不符：显示“下载 THX 控制组件”，
   在应用内下载并校验 3.3 MB DLL 到 `%LOCALAPPDATA%\Razer\RazerAppEngine\User Data\Apps\Common\thxv3common`。
 - 两者都在：显示“THX 组件已安装”。

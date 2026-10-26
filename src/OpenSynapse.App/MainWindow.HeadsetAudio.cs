@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
-using OpenSynapse.Windows.Audio;
 using Windows.System;
 
 namespace OpenSynapse.App;
@@ -23,8 +22,13 @@ public sealed partial class MainWindow
     private async void HeadsetAudioRefreshClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.LoadAsync(_lifetime.Token) ?? Task.CompletedTask);
 
-    private async void HeadsetAudioInstallThxClick(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri(ThxHeadsetAdmission.ServiceInstallerUri));
+    private async void HeadsetAudioInstallThxClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedHeadsetAudio is { ThxInstallerUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
 
     private async void HeadsetAudioDownloadThxClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.InstallThxNativeAsync(_lifetime.Token) ?? Task.CompletedTask);
