@@ -225,11 +225,6 @@ public sealed partial class MainWindow
                 await _viewModel.SelectBleAsync(ble, _lifetime.Token);
                 UpdateDeviceSelector("ble");
                 break;
-            case DeviceSelectorItemKind.Hue:
-                SelectDevice("hue");
-                await _viewModel.Hue.EnsureLoadedAsync(_lifetime.Token);
-                UpdateDeviceSelector("hue");
-                break;
             default:
                 SelectDevice("none");
                 break;
@@ -272,7 +267,6 @@ public sealed partial class MainWindow
                     item.Source is RazerChromaDeviceRowViewModel chromaRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         chromaRow.Connection.DevicePath, _viewModel.SelectedChroma?.DevicePath),
-                DeviceSelectorItemKind.Hue => device == "hue",
                 _ => false,
             };
             item.SetSelectorBackground(isSelected ? selected : transparent);

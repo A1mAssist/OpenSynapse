@@ -2634,7 +2634,6 @@
   <data name="HueScanButton" xml:space="preserve"><value>扫描</value></data>
   <data name="HueLightsTitle" xml:space="preserve"><value>灯光</value></data>
   <data name="HueBridgeRequired" xml:space="preserve"><value>请先扫描或填写 Hue 桥地址。</value></data>
-  <data name="HueAddButton" xml:space="preserve"><value>添加 Hue 桥</value></data>
   <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>板载宏</value></data>
   <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。</value></data>
   <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>读取板载宏</value></data>
