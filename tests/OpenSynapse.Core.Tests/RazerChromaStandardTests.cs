@@ -91,19 +91,21 @@ public sealed class RazerChromaStandardTests
                  {
                      0x030C, 0x030D, 0x030E, 0x030F, 0x0310, 0x0317,
                      0x030A, 0x0F2C, 0x0F35, 0x0F52, 0x0F59, 0x0566,
-                     0x00E5, 0x00EF, 0x0093, 0x00E2,
+                     0x00E7, 0x00EF, 0x0093, 0x00E2,
                  })
         {
             Assert.True(RazerChromaStandardService.IsSupported(productId), $"0x{productId:X4}");
         }
 
         Assert.Equal(OpenSynapse.Core.Devices.DeviceCategory.Mouse,
-            RazerChromaStandardService.Products[0x00E5].Category);
+            RazerChromaStandardService.Products[0x00E7].Category);
         Assert.Equal(OpenSynapse.Core.Devices.DeviceCategory.Monitor,
             RazerChromaStandardService.Products[0x0F28].Category);
 
         // The Viper V3 HyperSpeed has no lighting; its native page owns DPI and battery.
         Assert.False(RazerChromaStandardService.IsSupported(0x00B8));
+        // The Viper V4 Pro reports brightness:false in its own DeviceInfo.
+        Assert.False(RazerChromaStandardService.IsSupported(0x00E5));
     }
 
     [Fact]

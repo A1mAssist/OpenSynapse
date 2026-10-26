@@ -56,6 +56,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 修复 / Fixed
 
+- 按雷云 bundle 的 `DeviceInfo` 复核了复用原生协议的 12 个型号（16 个 PID）：补上 Abyssus Lite 漏掉的 125/500/1000 Hz 轮询率，并把没有灯光的 Viper V4 Pro 从灯光页目录里移除。对照明细见 `docs/MIDDLEWARE_MOUSE_AUDIT.md`。
+- Audited the 12 models (16 PIDs) that reuse a sibling protocol against the middleware bundle `DeviceInfo`: restored the missing 125/500/1000 Hz polling rates for the Abyssus Lite and removed the Viper V4 Pro from the lighting catalogue because it has no lighting. See `docs/MIDDLEWARE_MOUSE_AUDIT.md`.
 - Kraken Tournament Edition / Ultimate / Kitty V2（`0520`/`0527`/`0560`）此前同时出现在音频页和 37 字节灯光页，现在只保留音频页一张卡片，灯光效果并入音频页；其余 Kraken（7.1、7.1 Chroma 等）仍保留独立灯光页。
 - Kraken Tournament Edition, Ultimate and Kitty V2 (0x0520/0x0527/0x0560) used to appear twice — once on the audio page and once on the 37-byte lighting page. They now keep a single card on the audio page with the lighting merged in; the other Kraken models (7.1, 7.1 Chroma, …) keep their lighting page.
 - 修正耳机与键盘的电量读数：中间件的原始值是 0–255，按比例换算成百分比再显示；充电状态同样从第一个数据字节读取，不再整体偏移一位。
