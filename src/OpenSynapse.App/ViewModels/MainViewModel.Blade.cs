@@ -416,6 +416,7 @@ public sealed partial class MainViewModel
         target.FanMode = null;
         target.FanTargetRpm = null;
         target.FanCurve = null;
+        _pendingMode = null;
         RaiseBladeFanModeSelection();
         OnPropertyChanged(nameof(BladeFanCurveActive));
     }

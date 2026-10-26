@@ -87,9 +87,7 @@ internal sealed class BladeViewModel
     internal string _bladeChromaStatusText = string.Empty;
 
     internal IReadOnlyList<BladePerformanceMode> PerformanceModes =>
-        _bladeProductId == BladeModelCapabilities.Blade14_2022ProductId
-            ? BladeModelCapabilities.PerformanceModesFor(_bladeProductId)
-            : BladePerformanceModes;
+        BladeModelCapabilities.PerformanceModesFor(_bladeProductId);
 
     internal bool IsCustomMode =>
         _confirmedBladePerformanceModeIndex >= 0 &&
