@@ -1261,6 +1261,9 @@
   <data name="DisplayMuxModeStatusApplying" xml:space="preserve"><value>Writing the device MUX setting...</value></data>
   <data name="DisplayMuxModeStatusSuccess" xml:space="preserve"><value>The requested display mode is already active.</value></data>
   <data name="DisplayMuxModeStatusRestartRequired" xml:space="preserve"><value>Display mode written. Restart to apply it.</value></data>
+  <data name="DisplayMuxModeRestartTitle" xml:space="preserve"><value>Display mode changed</value></data>
+  <data name="DisplayMuxModeRestartNow" xml:space="preserve"><value>Restart now</value></data>
+  <data name="DisplayMuxModeRestartLater" xml:space="preserve"><value>Later</value></data>
   <data name="DisplayMuxModeStatusNoDevice" xml:space="preserve"><value>No Blade HID device with MUX support was found.</value></data>
   <data name="DisplayMuxModeStatusNoPair" xml:space="preserve"><value>The device did not report switchable dynamic display (DDS / Optimus) or discrete-direct capability.</value></data>
   <data name="DisplayMuxModeStatusUnavailable" xml:space="preserve"><value>Could not read the device MUX state.</value></data>
