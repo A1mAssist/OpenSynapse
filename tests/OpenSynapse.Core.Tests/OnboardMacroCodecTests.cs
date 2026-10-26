@@ -136,20 +136,84 @@ public sealed class OnboardMacroProtocolTests
     {
         var response = new byte[RazerFeatureReport.Length];
         var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
-        arguments[0] = 1;
-        arguments[1] = 0;
+        arguments[0] = 0;
+        arguments[1] = 1;
         arguments[2] = 0;
-        arguments[3] = 72;
+        arguments[3] = 0;
         arguments[4] = 0;
-        arguments[5] = 3;
-        arguments[6] = 0x01;
-        arguments[7] = 0x04;
-        arguments[8] = 0x02;
+        arguments[5] = 72;
+        arguments[6] = 3;
+        arguments[7] = 0x01;
+        arguments[8] = 0x04;
+        arguments[9] = 0x02;
 
         var chunk = RazerOnboardMacroProtocol.ParseMemoryChunk(response);
         Assert.Equal(72, chunk.Offset);
-        Assert.Equal(3, chunk.Size);
         Assert.Equal(new byte[] { 0x01, 0x04, 0x02 }, chunk.Data);
+    }
+
+    [Fact]
+    public void ReadAndWriteArgumentsCarryTheSevenByteHeader()
+    {
+        Assert.Equal(
+            new byte[] { 0, 3, 0, 0, 0, 72, 24 },
+            RazerOnboardMacroProtocol.CreateReadMemoryArguments(3, 72, 24));
+
+        Assert.Equal(
+            new byte[] { 0, 3, 0, 0, 0, 72, 2, 0x01, 0x04 },
+            RazerOnboardMacroProtocol.CreateWriteMemoryArguments(3, 72, [0x01, 0x04]));
+    }
+
+    [Fact]
+    public void StorageInfoSplitsFourCounters()
+    {
+        var response = new byte[RazerFeatureReport.Length];
+        var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
+        arguments[1] = 5;
+        arguments[2] = 0x00;
+        arguments[3] = 0x00;
+        arguments[4] = 0x10;
+        arguments[5] = 0x00;
+        arguments[6] = 0;
+        arguments[7] = 0;
+        arguments[8] = 0x04;
+        arguments[9] = 0x00;
+        arguments[10] = 0;
+        arguments[11] = 0;
+        arguments[12] = 0x02;
+        arguments[13] = 0x00;
+
+        var info = RazerOnboardMacroProtocol.ParseStorageInfo(response);
+        Assert.Equal(5, info.MaxId);
+        Assert.Equal(4096, info.MaxMemory);
+        Assert.Equal(1024, info.AvailableMemory);
+        Assert.Equal(512, info.RecyclableMemory);
+    }
+
+    [Fact]
+    public void MacroIdListReadsTwoByteIdsAfterTheHeader()
+    {
+        var response = new byte[RazerFeatureReport.Length];
+        var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
+        arguments[3] = 3;
+        arguments[4] = 0x00;
+        arguments[5] = 0x02;
+        arguments[6] = 0x00;
+        arguments[7] = 0x05;
+        arguments[8] = 0x00;
+        arguments[9] = 0x09;
+
+        var (total, ids) = RazerOnboardMacroProtocol.ParseMacroIdList(response);
+        Assert.Equal(3, total);
+        Assert.Equal(new byte[] { 2, 5, 9 }, ids);
+    }
+
+    [Fact]
+    public void AllocationArgumentsUseTheSameIdAndSizeHeader()
+    {
+        Assert.Equal(
+            new byte[] { 0, 2, 0, 0, 2, 0 },
+            RazerOnboardMacroProtocol.CreateAllocateArguments(2, 512));
     }
 
     [Fact]
@@ -161,3 +225,4 @@ public sealed class OnboardMacroProtocolTests
         Assert.Equal(44, RazerOnboardMacroProtocol.ParseMacroDataSize(response));
     }
 }
+

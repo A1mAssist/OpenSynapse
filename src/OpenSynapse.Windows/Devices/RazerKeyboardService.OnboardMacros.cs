@@ -39,16 +39,11 @@ public sealed partial class RazerKeyboardService
     public async Task<IReadOnlyList<RazerOnboardMacro>> ReadOnboardMacrosAsync(
         CancellationToken cancellationToken = default)
     {
-        var count = RazerOnboardMacroProtocol.ParseMacroCount(
-            await QueryAsync(
-                transactionId => RazerOnboardMacroProtocol.GetMacroCount.CreateRequest(transactionId, []),
-                "macro count",
-                cancellationToken).ConfigureAwait(false));
-
-        var macros = new List<RazerOnboardMacro>(Math.Min(count, 255));
-        for (var id = 1; id <= count && id <= byte.MaxValue; id++)
+        var ids = await ReadOnboardMacroIdsAsync(cancellationToken).ConfigureAwait(false);
+        var macros = new List<RazerOnboardMacro>(ids.Count);
+        foreach (var id in ids)
         {
-            var raw = await ReadOnboardMacroAsync((byte)id, cancellationToken).ConfigureAwait(false);
+            var raw = await ReadOnboardMacroAsync(id, cancellationToken).ConfigureAwait(false);
             if (raw is not null)
             {
                 macros.Add(raw);
@@ -56,6 +51,36 @@ public sealed partial class RazerKeyboardService
         }
 
         return macros;
+    }
+
+    /// <summary>
+    /// Reads the id list instead of assuming the ids are 1..count, because deleting a
+    /// macro leaves a hole that sequential iteration would read as a missing macro.
+    /// </summary>
+    private async Task<IReadOnlyList<byte>> ReadOnboardMacroIdsAsync(CancellationToken cancellationToken)
+    {
+        var ids = new List<byte>();
+        var total = int.MaxValue;
+        while (ids.Count < total && ids.Count < byte.MaxValue)
+        {
+            var (windowTotal, window) = RazerOnboardMacroProtocol.ParseMacroIdList(
+                await QueryAsync(
+                    transactionId => RazerOnboardMacroProtocol.GetMacroIdList.CreateRequest(
+                        transactionId,
+                        RazerOnboardMacroProtocol.CreateMacroIdListArguments(ids.Count)),
+                    "macro id list",
+                    cancellationToken).ConfigureAwait(false));
+
+            total = windowTotal;
+            if (window.Length == 0 || window.Any(ids.Contains))
+            {
+                break;
+            }
+
+            ids.AddRange(window);
+        }
+
+        return ids;
     }
 
     public async Task<RazerOnboardMacro?> ReadOnboardMacroAsync(
@@ -72,7 +97,9 @@ public sealed partial class RazerKeyboardService
         {
             dataSize = RazerOnboardMacroProtocol.ParseMacroDataSize(
                 await QueryAsync(
-                    transactionId => RazerOnboardMacroProtocol.GetMacroDataSize.CreateRequest(transactionId, [id]),
+                    transactionId => RazerOnboardMacroProtocol.GetMacroDataSize.CreateRequest(
+                        transactionId,
+                        RazerOnboardMacroProtocol.CreateMacroIdArguments(id)),
                     $"macro {id} size",
                     cancellationToken).ConfigureAwait(false));
         }
@@ -124,12 +151,10 @@ public sealed partial class RazerKeyboardService
         for (var offset = 0; offset < payload.Length;)
         {
             var length = Math.Min(RazerOnboardMacroProtocol.ChunkSize, payload.Length - offset);
-            var arguments = new byte[4 + length];
-            arguments[0] = id;
-            arguments[1] = (byte)(offset >> 8);
-            arguments[2] = (byte)offset;
-            arguments[3] = (byte)length;
-            payload.AsSpan(offset, length).CopyTo(arguments.AsSpan(4));
+            var arguments = RazerOnboardMacroProtocol.CreateWriteMemoryArguments(
+                id,
+                offset,
+                payload.AsSpan(offset, length));
 
             await QueryAsync(
                 transactionId => RazerOnboardMacroProtocol.SetMacroMemory.CreateRequest(transactionId, arguments),
@@ -164,17 +189,18 @@ public sealed partial class RazerKeyboardService
                     $"macro {id} read {offset}",
                     cancellationToken).ConfigureAwait(false));
 
-            if (chunk.Size == 0 || chunk.Offset != offset || chunk.Size > length)
+            if (chunk.Data.Length == 0 || chunk.Offset != offset || chunk.Data.Length > length)
             {
                 throw new InvalidDataException(
-                    $"Onboard macro {id} chunk at {offset} returned offset {chunk.Offset} and size {chunk.Size}.");
+                    $"Onboard macro {id} chunk at {offset} returned offset {chunk.Offset} and size {chunk.Data.Length}.");
             }
 
             chunk.Data.CopyTo(data, offset);
-            offset += chunk.Size;
+            offset += chunk.Data.Length;
         }
 
         return data;
     }
 }
+
 
