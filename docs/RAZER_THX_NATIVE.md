@@ -31,6 +31,21 @@ sha256  D886EEF784E9118E7718AD2EA4F621C416178B7EA64CBBE975896A644F3CF446
 预置包：`THX-0528-Presets-BlackSharkV2Pro2020-v3.2.18.0.exe`
 （`sha256 0D81F36D7742078B0BD89A8FC79817630C73028651F2274842DDCA664DB7CB21`）。
 
+## 安装包里装了什么
+
+解包顺序：`THX-0528-...exe`（NSIS）→ Burn bundle → MSI → `packageZip` → `driver.zip`。
+
+- `THXRTSVC.inf`：把 `VSSrv.exe`、`VSSrvInit.exe`、`VSHelper.exe` 装到 `System32`，注册软件组件
+  `SWC\VEN_THX&PID_THXSVC`。
+- `THXUSBAPO.inf`：匹配 `USB\VID_1532&PID_0528&MI_00`，给扬声器和麦克风端点挂
+  `THXOutAPO-SSE2-v3.dll` / `THXMicAPO-SSE2-v3.dll`，并写 `PKEY_THX_DEVICE_TYPE_ID`、
+  `PKEY_THX_CONFIG_PATH`（`%16419%\THX\usb\1532\0528\thx_spatial.conf.json`）。
+- `THXRTAPO.inf`：APO 组件本体。
+
+所以 THX 是三层：**端点 APO + `VSSrv` 服务 + 客户端 DLL**。缺任何一层都不会有实际音效；
+`ThxV3Native.dll` 只负责第三层。中间件 manifest 里这个 APO 包的安装参数是 `/S /LAUNCH`，
+Synapse 在设备初始化时会静默安装，用户不需要手动点。
+
 ## DLL 的形状
 
 - 231 个导出，C API；依赖 `ole32`、`rpcrt4`、`ws2_32`、`iphlpapi`、`setupapi`，是典型的 COM/RPC + 服务客户端。
@@ -57,7 +72,7 @@ D:\Tools\ghidra_12.1.2_PUBLIC_20260605\support\analyzeHeadless.bat ^
 
 ## 这意味着什么
 
-- 只拷 DLL 没有用。必须先装 THX APO 安装包，让 THX 服务和 APO 注册到音频端点，DLL 才能读到/写到对应 `containerId`。
+- 只拷 DLL 没有用。必须先装 THX APO 安装包，让 `VSSrv` 服务和 APO 注册到音频端点，DLL 才能读到/写到对应 `containerId`。没有 APO 时，`USB\VID_1532&PID_0528&MI_00` 的端点不会挂 THX 效果，DLL 没有可控制的对象。
 - OpenSynapse 现有的 THX 通道（`ThxAudioHelper` + `ThxAudioNativeClient`）是给 Blade 的 `ThxV4Native` 属性接口写的，导出面是 `GetProperty` / `SetProperty`；V3 是扁平 C API，不能直接复用。
 - 要在应用里控制 V2 Pro 的 THX，需要：
   1. 检测 THX APO/服务是否已安装（没有就明确提示，不代装 41 MB 驱动包）；
