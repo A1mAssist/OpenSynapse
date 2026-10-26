@@ -19,6 +19,7 @@ public sealed class OpenRazerSpecialLightingConnection
         OpenRazerSpecialLightingKind kind,
         string instanceId,
         string? devicePath,
+        string? controlDevicePath,
         IReadOnlySet<OpenRazerLightingEffect> effects,
         bool supportsStaticColor,
         string? error)
@@ -28,6 +29,7 @@ public sealed class OpenRazerSpecialLightingConnection
         Kind = kind;
         InstanceId = instanceId;
         DevicePath = devicePath;
+        ControlDevicePath = controlDevicePath;
         SupportedEffects = effects;
         SupportsStaticColor = supportsStaticColor;
         Error = error;
@@ -40,8 +42,9 @@ public sealed class OpenRazerSpecialLightingConnection
     public IReadOnlySet<OpenRazerLightingEffect> SupportedEffects { get; }
     public bool SupportsStaticColor { get; }
     public string? Error { get; }
-    public bool IsReady => DevicePath is not null;
+    public bool IsReady => DevicePath is not null || ControlDevicePath is not null;
     internal string? DevicePath { get; }
+    internal string? ControlDevicePath { get; }
 }
 
 public sealed class OpenRazerSpecialLightingService
@@ -99,19 +102,26 @@ public sealed class OpenRazerSpecialLightingService
             var name = argb
                 ? "Razer Chroma Addressable RGB Controller"
                 : KrakenDevices[group.Key.ProductId].Name;
+            var controlDevicePath = argb
+                ? await RazerFilterEndpointDiscovery.DiscoverAsync(ArgbProductId, cancellationToken)
+                    .ConfigureAwait(false)
+                : null;
+            var error = argb && controlDevicePath is null
+                ? "ARGB needs Razer's 0F1F control driver (PID0f1fDrv) to send the 320-byte SET_FEATURE frame; its RZCONTROL endpoint is not installed."
+                : !argb && endpoint is null
+                    ? "No available MI_03 37-byte Output Report collection was found."
+                    : null;
+
             results.Add(new OpenRazerSpecialLightingConnection(
                 group.Key.ProductId,
                 name,
                 argb ? OpenRazerSpecialLightingKind.Argb320 : OpenRazerSpecialLightingKind.Kraken37,
                 group.Key.PhysicalDeviceKey,
                 endpoint?.DevicePath,
+                controlDevicePath,
                 argb ? Effects(OpenRazerLightingEffect.Custom) : KrakenDevices[group.Key.ProductId].Effects,
                 !argb && KrakenDevices[group.Key.ProductId].WritesColor,
-                endpoint is null
-                    ? argb
-                        ? "ARGB uses a 325-byte SET_REPORT frame (report id 0x04 below channel 5, 0x84 from channel 5, wValue 0x0300, wIndex 1) that Windows HID cannot send; it needs a WinUSB or filter-driver channel."
-                        : "No available MI_03 37-byte Output Report collection was found."
-                    : null));
+                error));
         }
         return results;
     }
@@ -123,11 +133,10 @@ public sealed class OpenRazerSpecialLightingService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection, OpenRazerSpecialLightingKind.Argb320);
-        _ = channel;
-        _ = colors;
-        _ = cancellationToken;
-        throw new PlatformNotSupportedException(
-            "ARGB needs the 325-byte SET_REPORT frame sent through WinUSB or the Razer filter driver; HidD_SetFeature cannot carry it.");
+        var frame = OpenRazerArgbFrame.Create(channel, colors);
+        return RazerFilterControlTransport
+            .SetFeatureAsync(connection.ControlDevicePath!, frame, cancellationToken)
+            .AsTask();
     }
 
     public async Task SetKrakenLightingAsync(

@@ -899,7 +899,7 @@
 
 设备：`0F1F` RAZER CHROMA ADDRESSABLE RGB CONTROLLER、`0F28` Razer Raptor 27 (165Hz)、`0F2C` Razer Chroma Wireless ARGB Controller、`0F35` RAZER HANBO AIO、`0F3C` RAZER PWM PC FAN CONTROLLER、`0F64` Razer Soma Chroma
 
-> ARGB 帧不走 HID feature report。OpenRazer（pinned `6820f9d`）的 `razer_send_argb_msg` 发的是 325 字节 SET_REPORT：`report_id`（通道 <5 用 `0x04`，≥5 用 `0x84`）+ `channel_1` + `channel_2` + `pad` + `last_idx`（颜色数 −1）+ 320 字节 RGB，`wValue 0x0300`、`wIndex 1`。Windows 的 `HidD_SetFeature` 送不了这个长度，需要 WinUSB 或 Razer 过滤驱动通道；这也是 `0F1F` 目前只能发现、不能写的唯一原因。
+> ARGB 帧是 320 字节的 SET_FEATURE report（`struct razer_argb_report`，pinned `6820f9d`）：`report_id`（通道 <5 用 `0x04`，≥5 用 `0x84`）+ `channel_1` + `channel_2` + `pad` + `last_idx`（本帧颜色数 −1）+ 315 字节 RGB（最多 105 颗灯），USB 侧 `wValue 0x0300`、`wIndex 1`。Windows 上走 Razer 的 `RzDev_0f1f` 过滤驱动：打开 `RZCONTROL\VID_1532&PID_0F1F&MI_00` 的接口，`DeviceIoControl(0x88883010, frame)` 会被原样转发成 `IOCTL_HID_SET_FEATURE`，长度不受 HID 栈限制。详见 `docs/RAZER_0F1F_FILTER_DRIVER.md`。
 
 | class:cmd | dataSize | 命令 |
 |---|---:|---|
