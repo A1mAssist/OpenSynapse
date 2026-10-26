@@ -2,7 +2,30 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
-## [1.5.6] - 2026-10-26
+## [1.6.0] - 2026-10-26
+
+这一版把 OpenSynapse 从「能认出设备」推进到「能完整控制设备」。
+
+### 这一版做了什么 / What this release is about
+
+- **119 款雷云中间件产品全部落地**：从雷云自己的 product bundle 里逆出每款设备实际调用的 HID 命令，按 33 组命令 profile 归类。OpenRazer 目录没收录的设备，现在也能按中间件协议实现功能。278 款 bundle 产品全部有对应页面，目录本身升级到上游 `477f4d6`，共 259 款。
+- **设备类型从 5 种扩到 9 种**：新增键盘页、耳机页（含麦克风）、Chroma 灯光页和 BLE 设备页；Philips Hue 走自己的灯光页。设备表收录 268 款：鼠标 112、键盘 72、笔记本 48、配件 16、鼠标垫 8、显示器 1。
+- **音频控制覆盖 34 款设备**：18 款 protocol 25 游戏耳机（Nari、Kraken V3/V4、Barracuda、BlackShark V2 Pro、USB 音频控制器等）支持 EQ 预设与 8/10 段调节、低音、麦克风静音与音量、输入源、AI 降噪和 ANC；另有 11 款 Kraken / Leviathan / Nommo 和 5 款 Seiren 麦克风（V2 Pro / V2 X / V3 Mini）。
+- **灯光覆盖 38 款此前没有页面的设备**：Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 等鼠标、Key Light 与 Aether 灯具系列、Thunderbolt 5 Dock、Core X V2、显示器支架等配件，统一提供效果、亮度和颜色，写入后读回校验。
+- **键盘页新增 39 款设备**：16 款只有 class `0x0F` 灯光通道的键盘（Turret、BlackWidow X、Huntsman Essential、V4 Low-profile、Reclusa、Tartarus V2 Pro 等）+ 12 款新增页 + 11 款 protocol 25 键盘页。固件、序列号、电量、游戏模式、轮询率（最高 8000 Hz）逐项探测，不支持的命令自动隐藏，不留空控件。
+- **板载宏可读可写**：从雷云 product bundle 的 `Set/Get Single Button Assignment`（class `0x02` 的 `0x0C`/`0x8C`）读出按键列表与当前映射，可把普通层或 Shift 层的按键改成其他鼠标键、键盘键（带 Ctrl/Shift/Alt/Win）、DPI 动作、配置切换、媒体键、电源键、双击、滚轮模式、Razer 键、Windows 快捷键或 HyperShift，写入后读回校验。
+- **宏编辑器能读雷云的宏**：直接导入 Synapse 3 / Synapse 4 导出的 XML 宏，按根元素 `<Version>` 自动区分两代格式；13 个真实导出文件导入全部通过。
+- **Chroma ARGB 控制器（`0F1F`）逐灯可画**：选择端口与灯珠数量后直接点格子涂色，可整条填充、熄灭并应用。走雷云过滤驱动的 320 字节帧通道，写入前先切自定义帧模式；设备实际是 6 端口 × 80 颗，组帧上限 105 颗只是线上余量。
+- **Philips Hue 完整支持**：设置页填桥地址、按桥上配对按钮后配对，即可列出灯光并控制开关、亮度和颜色（sRGB→CIE xy 换算写入 `color.xy`）。写入全部读回校验，桥不接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- **BLE 设备页**：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI。底层是雷云 protocol 30 的 GATT 通道。
+- **THX 控制扩展到 V3/V4 全型号**：空间音效、预设、10 段 EQ、音量标准化、人声清晰度，V3 另支持侧音。V3/V4 原生 DLL 按型号校验后下载，V4 提供 GameProfiles / Patcher 入口。旋风黑鲨 V2 Pro（2020 / 2023）音频页新增 THX 状态卡：检测服务与控制组件，缺失时给出官方安装包入口，齐全时显示已安装。
+- **「仅核显（禁用独显）」显示开关**：机器级 MSI 安装会注册受保护的 GPU 服务，安装时请求一次管理员权限，之后切换不再弹 UAC；当前用户安装和 Portable 仍回退到逐次 UAC。机器级安装会迁移旧的当前用户版本，保留配置并更新开机启动项。用户配置已迁到独立的 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`，不会再被 MSI 升级清理。
+- **HyperBoost 不再要求连接雷蛇散热垫**：只要机型本身支持（灵刃 14 2023、灵刃 16 2023/2024/2025）且接的是全功率电源，就可以在性能模式下拉里选择它。未连接散热垫时选择会先弹出免责声明，第三方散热的风险由用户自行承担；电池和低功率适配器下仍不可用，散热垫接入时的原有行为不变。
+- **灵刃 14 (2022) 转为正式支持设备**：按雷云的性能模式列表给出平衡/静音/自定义/性能四档，开放固定转速（3500–5000 RPM，仅自定义模式下生效）和 CPU Boost 档位，键盘灯光走固件渲染通道。
+- **Kraken V4 耳机接上有线灯光**：不再被当成黑鲨，灯光效果与亮度可以正常写入和读回校验。
+- **鼠标也能做 HID 命令扫描**：扫描只发设备到主机方向的读命令，写命令半边早已移除，原来的保护没有意义；无线鼠标的 2.4 GHz 命令空间因此也能被探测。
+- **Seiren Emote 从无名设备变成正式产品**：`0F1B` 查实是 Razer Seiren Emote 麦克风（与 `0524` 共用 Camyt3 中间件包），接入音频页并归到「麦克风」分类；它的 8×8 LED 表情矩阵也拿到了灯光卡，走 class `0x10` 的 `10:03`/`10:05`。
+- **窗口最小宽度从 1080 降到 700 逻辑像素**：恢复小窗口使用，页面内容下限为 640 像素加 48 像素导航栏。
 
 ### 新增 / Added
 
@@ -14,12 +37,11 @@ All notable user-visible changes to OpenSynapse are documented here.
 - The Kraken V4 headset now gets wired lighting: it is no longer matched as a BlackShark, and the lighting effect and brightness are written and verified.
 - 鼠标现在也可以做 HID 命令扫描。扫描只发设备到主机方向的读命令，写命令半边早已移除，原来的保护没有意义；无线鼠标的 2.4 GHz 命令空间因此也能被探测。
 - Mice can now run the HID command scan. The sweep only sends device-to-host reads since the write half was removed, so the old mouse guard protected nothing; a wireless mouse now gets its 2.4 GHz command space probed too.
-
 - HyperBoost 不再要求连接雷蛇散热垫：只要机型本身支持（灵刃 14 2023、灵刃 16 2023/2024/2025）且接的是全功率电源，就可以在性能模式下拉里选择它。未连接散热垫时选择会先弹出免责声明，第三方散热的风险由用户自行承担。电池和低功率适配器下仍不可用。散热垫接入时的原有行为不变。
 - HyperBoost no longer requires the Razer Laptop Cooling Pad. On models that support it (Blade 14 2023, Blade 16 2023/2024/2025) it is selectable from the performance-mode list whenever the full-power adapter is connected. Selecting it without a pad now shows a disclaimer first and leaves third-party cooling to the user; battery and low-power adapters still cannot use it. The pad-present behaviour is unchanged.
 - 雷云推导鼠标新增板载按键映射：从产品 bundle 的 `Set/Get Single Button Assignment`（class `0x02` 的 `0x0C`/`0x8C`）读取按键列表和当前映射，可把普通层或 Shift 层的按键改成关闭、其他鼠标按键、键盘按键（含 Ctrl/Shift/Alt/Win 修饰）、DPI 动作、配置切换、媒体键、电源键、双击、滚轮模式、Razer 键、Windows 快捷键或 HyperShift 切换，写入后读回校验；不支持命令的设备读取失败时卡片保持隐藏。
 - Middleware-derived mice now expose onboard button mapping: read the button list and current assignments over the bundle's `Set/Get Single Button Assignment` commands (class 0x02, 0x0C/0x8C), then remap a button on the normal or HyperShift layer to off, another mouse button, a keyboard key with Ctrl/Shift/Alt/Win, a DPI action, profile navigation, a media key, a power key, double click, a scroll-wheel mode, a Razer key, a Windows shortcut or HyperShift. Every write is verified by reading it back, and the card stays hidden when the device refuses the command.
-- 0F1F ARGB 控制器缺少雷云过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。
+- 0F1F ARGB 控制器缺少雷蛇过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。
 - When the 0F1F ARGB controller is missing Razer's filter driver, the lighting page now offers Razer's driver download instead of only showing an error.
 - 旋风黑鲨 V2 Pro（2020 / 2023）的音频页新增 THX 状态卡：检测 THX 服务（VSSrv）和控制组件；缺服务时给出雷云 THX 安装包入口，缺控制组件时可直接下载并校验，组件齐全时显示已安装。
 - The BlackShark V2 Pro (2020 and 2023) audio page now shows THX status: it checks the THX service (VSSrv) and the control component, links to Razer's THX installer when the service is missing, and downloads plus verifies the control component when only that is missing.
@@ -42,7 +64,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - 灯光页不再只显示一台设备：同时接入多个 Aether 灯具、鼠标或配件时全部列出，同一台设备的多个 HID 接口合并成一行，刷新时保留原来选中的设备。
 - The lighting page no longer stops at a single device: every attached Aether lamp, mouse or accessory gets its own row, several HID interfaces of one device collapse into one row, and the previous selection survives a refresh.
 - 键盘页补上 class `0x0F` 的灯光通道，覆盖 16 款只有这套命令的键盘（Turret、BlackWidow X、Huntsman Essential / V3 X / V3 Pro 系列、BlackWidow V4 Low-profile、Reclusa、Tartarus V2 Pro 等）：可选关闭/静态/呼吸/光谱并写入 1–2 种颜色。这套通道没有亮度命令，亮度控件自动隐藏；设备能应答 `0F:130` 时读回校验，不能应答时按雷云同样的方式直接写入。
-- The keyboard page now drives the class 0x0F lighting channel used by 16 keyboards that have no class 0x10 support (Turret, BlackWidow X, Huntsman Essential / V3 X / V3 Pro series, BlackWidow V4 Low-profile, Reclusa, Tartarus V2 Pro and others): off/static/breathing/spectrum with one or two colours. The channel has no brightness command, so the brightness controls hide themselves; writes are read back when the firmware answers 0F:130 and applied without a readback otherwise, matching the middleware.
+- The keyboard page now drives the class 0x0F lighting channel used by 16 keyboards that have no class 0x10 support (Turret, BlackWidow X, Huntsman Essential, V3 X, V3 Pro series, BlackWidow V4 Low-profile, Reclusa, Tartarus V2 Pro and others): off/static/breathing/spectrum with one or two colours. The channel has no brightness command, so the brightness controls hide themselves; writes are read back when the firmware answers 0F:130 and applied without a readback otherwise, matching the middleware.
 - 查清此前名字为空的 `0F1B`：它是 Razer Seiren Emote 麦克风（与 `0524` 共用 Camyt3 中间件包）。现已接入音频页，显示 10 段 EQ 与麦克风音量，并归到“麦克风”分类；它的 8×8 LED 表情矩阵要走独立帧通道，暂未开放。
 - The previously unnamed 0F1B is the Razer Seiren Emote microphone (it shares the Camyt3 middleware bundle with 0524). It now has an audio page with the 10-band EQ and microphone volume, filed under the microphone category. Its 8x8 LED emote matrix needs the separate frame channel and is not exposed yet.
 - Seiren Emote 的 LED 矩阵补上灯光卡：效果（关/静态/呼吸/光谱）、亮度和主/副色，走 class `0x10` 的 `10:03` / `10:05`，写入前读当前值、写完读回校验、失败恢复。其他音频设备不响应这些命令，卡片自动隐藏。
@@ -50,9 +72,10 @@ All notable user-visible changes to OpenSynapse are documented here.
 - 补上两台边缘设备：Razer Marci（音频）接入音频页，Razer Wireless Control Pod 接入灯光页。至此中间件里能识别出命令的 119 款设备中，118 款已有对应页面；只剩 Philips Hue（走网络桥，不是 HID）。
 - Two edge cases are now covered: Razer Marci (audio) on the audio page and the Razer Wireless Control Pod on the lighting page. Of the 119 devices with identifiable middleware commands, 118 now have a page; only Philips Hue (a network bridge, not HID) is left.
 - 键盘页再扩 12 款：BlackWidow X / V4 Pro 75% / V4 Low-profile（含 TKL）、Huntsman Essential / V3 X / V3 Pro Low-profile、Reclusa Mini 与 Reclusa X Mini、Pro Type Ergo、Tartarus V2 Pro、Turret Keyboard。能应答的功能（固件、序列号、游戏模式、轮询率、电量）自动出现，其余隐藏。
+- The keyboard page now covers 12 more models: BlackWidow X, V4 Pro 75%, V4 Low-profile (including TKL), Huntsman Essential, V3 X and V3 Pro Low-profile, Reclusa Mini and Reclusa X Mini, Pro Type Ergo, Tartarus V2 Pro and the Turret keyboard. Features the device answers (firmware, serial, game mode, polling rate, battery) appear automatically; the rest stay hidden.
 - 音频页再扩 5 款：Seiren V2 Pro / V2 X / V3 Mini 麦克风、Leviathan V2 Pro 音箱和 Kraken V4 X 耳机，并新增“麦克风”设备分类。
 - The keyboard page now covers 12 more models: BlackWidow X, V4 Pro 75%, V4 Low-profile (including TKL), Huntsman Essential, V3 X and V3 Pro Low-profile, Reclusa Mini and Reclusa X Mini, Pro Type Ergo, Tartarus V2 Pro, and the Turret keyboard. Features the device answers (firmware, serial, game mode, polling rate, battery) appear automatically; the rest stay hidden.
-- The audio page now covers 5 more devices: Seiren V2 Pro / V2 X / V3 Mini microphones, the Leviathan V2 Pro speaker, and the Kraken V4 X headset, plus a new microphone device category.
+- The audio page now covers 5 more devices: Seiren V2 Pro, V2 X and V3 Mini microphones, the Leviathan V2 Pro speaker, and the Kraken V4 X headset, plus a new microphone device category.
 - 新增通用灯光页，覆盖 38 款此前没有页面的设备：Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 等鼠标，Key Light、Aether 灯具系列，Chroma ARGB 控制器，Thunderbolt 5 Dock、Core X V2、显示器支架等配件。可选择效果（关闭/静态/呼吸/光谱）、亮度和颜色，写入后读回校验。与 OpenRazer 目录、音频页、键盘页和 320 字节 ARGB 通道自动去重。
 - Added a shared lighting page for 38 devices that had no page: Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 mice, the Key Light and Aether lamp family, Chroma ARGB controllers, and accessories such as Thunderbolt 5 Dock, Core X V2 and monitor stands. It offers effect (off/static/breathing/spectrum), brightness and colour, verified by reading the value back, and skips anything already owned by the OpenRazer catalogue, audio page, keyboard page or the 320-byte ARGB channel.
 - 键盘页新增灯光卡：效果（关闭/静态/呼吸/光谱）、亮度与一到两种颜色，写入后读回校验。底层实现了雷云 class `0x10` 的 Chroma 命令（效果、亮度），这套命令同时被 51 款鼠标、灯具、ARGB 控制器和扩展坞使用，后续页面可以直接复用。
@@ -63,7 +86,6 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Added a device page for 11 keyboards the OpenRazer catalogue does not cover (Huntsman V3 series, Pro Type series, BlackWidow V4 75% Xbox edition): firmware, serial number, battery and charging, game mode, and polling rate up to 8000 Hz. Each item probes the device first, and unsupported commands are hidden instead of leaving an empty control.
 - 新增 18 款 protocol 25 游戏耳机（Nari、Kraken V3/V4、Barracuda、BlackShark V2 Pro、USB 音频控制器等）的音频页：固件、电量、充电状态、EQ 预设与 8/10 段调节、低音、麦克风静音与音量、音频输入源、AI 降噪和 ANC。每次写入都会先读当前值、写完读回校验，失败时自动恢复原值。
 - Added an audio page for the 18 protocol 25 gaming headsets (Nari, Kraken V3/V4, Barracuda, BlackShark V2 Pro, USB audio controllers): firmware, battery, charging state, EQ presets and 8/10-band curves, bass, microphone mute and volume, audio source, AI noise suppression, and ANC. Every write reads the current value first, verifies the readback, and restores the previous value when the device does not accept the change.
-
 - 新增“仅核显（禁用独显）”显示开关。机器级 MSI 安装会注册受保护的 GPU 服务，安装时请求一次管理员权限，之后切换不再弹 UAC；当前用户安装和 Portable 仍回退到逐次 UAC。机器级安装会迁移旧的当前用户版本，保留配置并更新开机启动项。用户配置已迁到独立的 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`，不会再被 MSI 升级清理。
 - Added an integrated-graphics-only display switch. The machine-wide MSI install registers a protected GPU service, asks for administrator permission once during installation, and then switches without UAC; per-user and portable installs still fall back to a UAC prompt per change. The machine-wide install migrates an older per-user install, preserving settings and updating its startup entry. User data now lives in `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, outside the directories removed by MSI upgrades.
 
@@ -73,7 +95,6 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Fixed a failing discrete GPU driver being reported as "the discrete GPU is enabled". The switch only looked for problem code 22, which is a device someone turned off, so a driver that failed to start (code 43) counted as healthy and the switch tried to disable an adapter that was already broken. The adapter state is now one of healthy, disabled or faulted; a fault shows its error code, the switch is disabled, and a "Restart GPU device" button restarts the device through the machine-wide service without a UAC prompt, falling back to one administrator request on a per-user install.
 - 修复关闭“仅核显”后无法真正恢复独显的问题。开关关掉时状态判断写反了：已经处于禁用状态的独显会匹配“启用”请求，于是直接返回成功而没有真正执行启用，界面显示已恢复但设备仍是禁用状态。
 - Fixed the discrete GPU not coming back after the integrated-only switch is turned off. The state comparison was inverted: an adapter that was already disabled matched the request to enable it, so the change returned success without running it and the UI claimed the GPU was back while the device stayed disabled.
-
 - 按雷云 bundle 的 `DeviceInfo` 复核了复用原生协议的 12 个型号（16 个 PID）：补上 Abyssus Lite 漏掉的 125/500/1000 Hz 轮询率，并把没有灯光的 Viper V4 Pro 从灯光页目录里移除。对照明细见 `docs/MIDDLEWARE_MOUSE_AUDIT.md`。
 - Audited the 12 models (16 PIDs) that reuse a sibling protocol against the middleware bundle `DeviceInfo`: restored the missing 125/500/1000 Hz polling rates for the Abyssus Lite and removed the Viper V4 Pro from the lighting catalogue because it has no lighting. See `docs/MIDDLEWARE_MOUSE_AUDIT.md`.
 - Kraken Tournament Edition / Ultimate / Kitty V2（`0520`/`0527`/`0560`）此前同时出现在音频页和 37 字节灯光页，现在只保留音频页一张卡片，灯光效果并入音频页；其余 Kraken（7.1、7.1 Chroma 等）仍保留独立灯光页。
@@ -90,6 +111,20 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Fixed the transitional data root being removed too eagerly. The directory is deleted only once every file in it has been migrated; files still pending are kept for the next launch.
 - 修复 GPU 模式切换在服务刚被唤醒时可能退回 UAC 弹窗的问题。客户端在管道连接失败时重试一次，把常见的唤醒竞态挡在 UAC 之前。
 - Fixed the GPU-mode switch falling back to a UAC prompt when the service was still waking up. The client retries once when the pipe connection fails, so the common wake-up race no longer reaches UAC.
+- 修复设备列表刷新时当前页被切走的问题。刷新不再回退到第一台设备。
+- Fixed the device list refresh switching the page away from the current device.
+- 修复 Chroma 给原生支持设备重复加卡片的问题。设备已经有自己的页面时，Chroma 不再插入第二张卡。
+- Fixed Chroma adding a card for a device that already has a native page.
+- 修复两款没有灯光的鼠标出现在灯光页的问题：Viper V3 HyperSpeed 的页面曾提供一个只会报读取失败的灯光按钮，Viper V4 Pro 的 `DeviceInfo` 明确写着 `brightness:false`。两款都从灯光目录移除。
+- Fixed two mice without lighting showing up on the lighting page: the Viper V3 HyperSpeed page offered a lighting button that could only produce a read-failure card, and the Viper V4 Pro reports `brightness:false` in its own DeviceInfo. Both are out of the lighting catalogue.
+- 修复 Hue 探测在后台持续跑的问题。探测只在设备页可见时进行，HTTP 客户端复用，电池供电时放慢轮询。
+- Fixed Hue discovery running in the background all the time. It now runs only while the devices page is visible, reuses its HTTP client, and slows polling on battery power.
+- 修复显示模式（MUX）切换后没有重启入口的问题。写入只保存固件值，现在切换完立即提供重启选项（`shutdown /r /t 5`，不带 `/f`，让未保存的应用还能自己提示）。
+- Fixed the missing restart offer after a display-mode (MUX) switch. Writing only stores the firmware value, so the app now offers a restart right away (`shutdown /r /t 5`, without `/f`, so unsaved applications can still prompt).
+- Fixed the missing restart prompt after a MUX switch.
+- 修复宏编辑器播放栏的快捷键摘要被截断后看不到全文的问题（现在悬停显示完整提示）；属性卡本来就常驻，折叠箭头和点击折叠的处理一起去掉。
+- Fixed the macro editor trimming the shortcut summary in the playback bar with no way to read it in full (it now carries a tooltip). The properties card is always open, so its chevron and the click-to-collapse handler are gone.
+- Fixed the truncated shortcut hint and the stray collapse caret in the macro editor.
 
 ### 改进 / Improved
 
@@ -103,7 +138,24 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Added the middleware device protocol reference, listing the HID commands 119 Synapse products actually call from their own middleware, grouped into 33 command profiles. It shows what is implementable for devices the OpenRazer catalogue does not cover.
 - 冷却垫协议改用 0F43 实际使用的通用 `rzDevice25` 热控布局：速度是 8 位单字节、风扇信息命令负载为 12 字节、可用范围按固件的 125–2600 RPM 收口。之前的实现套用了 PWM 风扇控制器（0F3C）的 16 位大端布局。
 - The cooling-pad protocol now uses the generic `rzDevice25` thermal layout that 0F43 actually uses: an 8-bit speed byte, a 12-byte fan-information payload, and a 125–2600 RPM range taken from the firmware. The previous implementation applied the 16-bit big-endian layout of the PWM fan controller (0F3C).
-
+- CPU 遥测改读 HWiNFO 共享内存：频率按 `Processor Frequency × % Processor Performance` 计算，温度优先取 HWiNFO 封装温度，ACPI 低值连续 10 秒不变则隐藏；GPU 温度在 IGCL 读不到时回退到 HWiNFO。
+- CPU telemetry now reads the HWiNFO shared memory: the clock is `Processor Frequency × % Processor Performance`, the temperature prefers the HWiNFO package sensor, a flat ACPI reading hides itself, and the GPU temperature falls back to HWiNFO when IGCL is empty.
+- 新增 Intel IGCL 读取核显频率与功耗，不依赖 AIDA64 / HWiNFO64。
+- Added Intel IGCL for the integrated GPU clock and power, without AIDA64 or HWiNFO64.
+- OpenRazer 诊断现在在命令到达 HID 层前记录请求，并在失败时记录预期的命令号、事务号、长度和实际响应字段；写入后会显示设备实际保持的值，方便区分“写入成功”和“设备接受但立即回退”。
+- OpenRazer diagnostics now log requests before they reach the HID layer and record the expected command, transaction, length and actual response fields on failure. Writes also show the value the device actually holds, distinguishing a successful write from one the device accepts and immediately reverts.
+- 遥测条恢复平滑过渡，CPU/GPU 负载变化不再生硬跳变；会话最小值与最大值单独显示。
+- The telemetry bars animate again and show the session minimum and maximum alongside the current value.
+- 新增《Razer 0F1F 过滤驱动与 ARGB 通道》《Razer THX 原生层》《中间件鼠标审计》《Philips Hue 桥发现》《BLE protocol 30》《Leviathan V2X》六份逆向文档。
+- Added six reverse-engineering documents: the Razer 0F1F filter driver and ARGB channel, the native Razer THX layers, the middleware mouse audit, Philips Hue bridge discovery, BLE protocol 30, and the Leviathan V2X.
+- 应用图标字体改为 `Segoe Fluent Icons,Segoe MDL2 Assets` 回退链，`Cascadia Mono` 增加 `Consolas` 回退，中文界面字体增加 `Segoe UI` 回退；Windows 10 缺少 Fluent 时自动使用 MDL2，不再在运行时替换资源。
+- Icon fonts now use the `Segoe Fluent Icons,Segoe MDL2 Assets` fallback chain instead of swapping application resources at runtime, and `Cascadia Mono` and the Chinese UI text fall back to `Consolas` and `Segoe UI`.
+- Windows 10 补齐 Mica、深色标题栏和托盘圆角的回退路径，不再只显示浅色标题栏或透明背景。
+- Windows 10 now falls back for Mica, dark title bars and tray corners instead of showing light title bars or a transparent background.
+- 窗口最小宽度按 DPI 缩放，200% 缩放下设备页不再被裁。
+- The window minimum scales with DPI, so the device page is no longer clipped at 200% scaling.
+- 托盘菜单可配置是否显示电池行，并记住窗口大小。
+- The tray menu can hide its battery row and remembers the window size.
 ## [1.5.5] - 2026-10-23
 
 ### 新增 / Added
