@@ -11,7 +11,9 @@ public sealed record DedicatedGpuModeStatus(
     bool IsSupported,
     bool IsActive,
     bool CanChange,
-    DedicatedGpuModeBlockReason BlockReason);
+    DedicatedGpuModeBlockReason BlockReason,
+    DedicatedGpuDeviceState DeviceState = DedicatedGpuDeviceState.Enabled,
+    int ProblemCode = 0);
 
 public enum DedicatedGpuSwitchOutcome
 {
@@ -21,6 +23,7 @@ public enum DedicatedGpuSwitchOutcome
     Blocked,
     NoDevice,
     Failed,
+    DeviceFaulted,
 }
 
 public readonly record struct DedicatedGpuSwitchResult(
@@ -36,12 +39,15 @@ public readonly record struct DedicatedGpuSwitchResult(
 public static class WindowsDedicatedGpuMode
 {
     private const string HelperSwitch = "--set-dedicated-gpu";
+    private const string HelperRestart = "--restart-dedicated-gpu";
     private const int HelperSuccess = 0;
     private const int HelperFailed = 1;
     private const int HelperRestartRequired = 2;
     private const int HelperNoDevice = 3;
     private const int HelperBlocked = 4;
     private const int UserCancelled = 1223;
+    private const int RecoveryPollAttempts = 6;
+    private static readonly TimeSpan RecoveryPollInterval = TimeSpan.FromMilliseconds(500);
 
     public static DedicatedGpuModeStatus GetStatus()
     {
@@ -67,7 +73,7 @@ public static class WindowsDedicatedGpuMode
             var snapshot = new DedicatedGpuModeSnapshot(
                 HasIntegratedGraphics: true,
                 HasDiscreteGraphics: true,
-                DiscreteGpuEnabled: discrete.Enabled,
+                DiscreteGpuState: discrete.State,
                 DisplayTopologyKnown: topology.IsKnown,
                 HasActiveInternalDisplay: topology.HasActiveInternalDisplay,
                 InternalDisplayRouteKnown: topology.InternalDisplayRouteKnown,
@@ -77,9 +83,11 @@ public static class WindowsDedicatedGpuMode
 
             return new DedicatedGpuModeStatus(
                 IsSupported: DedicatedGpuModePolicy.IsSupported(snapshot),
-                IsActive: !discrete.Enabled,
+                IsActive: discrete.State.IsDisabled(),
                 CanChange: reason == DedicatedGpuModeBlockReason.None,
-                BlockReason: reason);
+                BlockReason: reason,
+                DeviceState: discrete.State,
+                ProblemCode: discrete.ProblemCode);
         }
         catch (Exception exception) when (
             exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException)
@@ -107,9 +115,16 @@ public static class WindowsDedicatedGpuMode
                 return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.NoDevice);
             }
 
-            if (discrete[0].Enabled == enabled)
+            if (discrete[0].State.IsDisabled() == enabled)
             {
                 return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Success);
+            }
+
+            if (!enabled && discrete[0].State.IsFaulted())
+            {
+                // A faulted adapter is already stopped. Disabling it would not free
+                // any power and would remove the restart that recovers it.
+                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.DeviceFaulted);
             }
 
             if (!enabled)
@@ -141,6 +156,140 @@ public static class WindowsDedicatedGpuMode
         {
             return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
         }
+    }
+
+    /// <summary>
+    /// Restarts a faulted discrete adapter so the driver gets another chance to
+    /// start it. A device that failed with code 43 stays invisible until its driver
+    /// is reloaded, which a device restart does.
+    /// </summary>
+    public static async Task<DedicatedGpuSwitchResult> RestartFaultedAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var status = GetStatus();
+        if (!status.DeviceState.IsFaulted())
+        {
+            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Success);
+        }
+
+        if (await DedicatedGpuModeServiceClient.TryRestartDeviceAsync(cancellationToken)
+                .ConfigureAwait(false) is { } serviceResult)
+        {
+            return await AwaitRecoveryAsync(serviceResult, cancellationToken).ConfigureAwait(false);
+        }
+
+        var executablePath = Path.Combine(AppContext.BaseDirectory, "OpenSynapse.App.exe");
+        if (!File.Exists(executablePath))
+        {
+            executablePath = Environment.ProcessPath ?? string.Empty;
+        }
+        if (executablePath.Length == 0)
+        {
+            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+        }
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = executablePath,
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = AppContext.BaseDirectory,
+        };
+        startInfo.ArgumentList.Add(HelperRestart);
+
+        try
+        {
+            using var process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+            }
+
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            var helperResult = new DedicatedGpuSwitchResult(
+                process.ExitCode switch
+                {
+                    HelperSuccess => DedicatedGpuSwitchOutcome.Success,
+                    HelperRestartRequired => DedicatedGpuSwitchOutcome.RestartRequired,
+                    HelperNoDevice => DedicatedGpuSwitchOutcome.NoDevice,
+                    _ => DedicatedGpuSwitchOutcome.Failed,
+                },
+                process.ExitCode);
+            return await AwaitRecoveryAsync(helperResult, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Win32Exception exception) when (exception.NativeErrorCode == UserCancelled)
+        {
+            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Cancelled);
+        }
+        catch (Exception exception) when (
+            exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException or
+                OperationCanceledException)
+        {
+            return new DedicatedGpuSwitchResult(
+                exception is OperationCanceledException
+                    ? DedicatedGpuSwitchOutcome.Cancelled
+                    : DedicatedGpuSwitchOutcome.Failed);
+        }
+    }
+
+    /// <summary>
+    /// Restarts the discrete adapter in the current process. The GPU service runs
+    /// this as LocalSystem, which is what a device restart needs.
+    /// </summary>
+    public static DedicatedGpuSwitchResult RestartFaultedDirect()
+    {
+        try
+        {
+            var discrete = WindowsDisplayAdapters.FindAll()
+                .Where(adapter => adapter.IsNvidia)
+                .ToArray();
+            if (discrete.Length != 1)
+            {
+                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.NoDevice);
+            }
+
+            return WindowsDisplayAdapters.Restart(discrete[0].InstanceId) switch
+            {
+                0 => new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Success),
+                3010 => new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.RestartRequired),
+                var exitCode => new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed, exitCode),
+            };
+        }
+        catch (Exception exception) when (
+            exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException)
+        {
+            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+        }
+    }
+
+    /// <summary>
+    /// A restarted adapter needs a moment before the driver finishes loading, so the
+    /// state is polled briefly instead of read once and reported as still faulted.
+    /// </summary>
+    private static async Task<DedicatedGpuSwitchResult> AwaitRecoveryAsync(
+        DedicatedGpuSwitchResult result,
+        CancellationToken cancellationToken)
+    {
+        if (result.Outcome != DedicatedGpuSwitchOutcome.Success)
+        {
+            return result;
+        }
+
+        for (var attempt = 0; attempt < RecoveryPollAttempts; attempt++)
+        {
+            await Task.Delay(RecoveryPollInterval, cancellationToken).ConfigureAwait(false);
+            if (!GetStatus().DeviceState.IsFaulted())
+            {
+                return result;
+            }
+        }
+
+        // The restart ran but the driver has not come back yet. The caller can
+        // offer the restart again or ask for a system restart.
+        return new DedicatedGpuSwitchResult(
+            DedicatedGpuSwitchOutcome.RestartRequired,
+            result.ExitCode);
     }
 
     public static async Task<DedicatedGpuSwitchResult> SetEnabledAsync(
@@ -226,7 +375,28 @@ public static class WindowsDedicatedGpuMode
     /// </summary>
     public static int? TryRunElevatedCommand(IReadOnlyList<string> args)
     {
-        if (args.Count == 0 || !StringComparer.Ordinal.Equals(args[0], HelperSwitch))
+        if (args.Count == 0)
+        {
+            return null;
+        }
+
+        if (StringComparer.Ordinal.Equals(args[0], HelperRestart))
+        {
+            if (args.Count != 1)
+            {
+                return HelperFailed;
+            }
+
+            return RestartFaultedDirect().Outcome switch
+            {
+                DedicatedGpuSwitchOutcome.Success => HelperSuccess,
+                DedicatedGpuSwitchOutcome.RestartRequired => HelperRestartRequired,
+                DedicatedGpuSwitchOutcome.NoDevice => HelperNoDevice,
+                _ => HelperFailed,
+            };
+        }
+
+        if (!StringComparer.Ordinal.Equals(args[0], HelperSwitch))
         {
             return null;
         }
@@ -251,7 +421,11 @@ public static class WindowsDedicatedGpuMode
         new(false, false, false, reason);
 }
 
-internal sealed record WindowsDisplayAdapter(string InstanceId, string Name, bool Enabled)
+internal sealed record WindowsDisplayAdapter(
+    string InstanceId,
+    string Name,
+    DedicatedGpuDeviceState State,
+    int ProblemCode)
 {
     public bool IsNvidia => InstanceId.Contains("VEN_10DE", StringComparison.OrdinalIgnoreCase);
 
@@ -266,7 +440,6 @@ internal static class WindowsDisplayAdapters
     private const int SpdrpDeviceDesc = 0x0;
     private const int SpdrpFriendlyName = 0xC;
     private const uint DnHasProblem = 0x400;
-    private const uint CmProbDisabled = 22;
     private const int CrSuccess = 0;
     private static readonly Guid DisplayClass = new("4d36e968-e325-11ce-bfc1-08002be10318");
 
@@ -299,14 +472,19 @@ internal static class WindowsDisplayAdapters
                 var name = Property(set, ref info, SpdrpFriendlyName) ??
                     Property(set, ref info, SpdrpDeviceDesc) ??
                     "Display adapter";
-                var disabled = NativeMethods.CM_Get_DevNode_Status(
+                var problemCode = NativeMethods.CM_Get_DevNode_Status(
                     out var status,
                     out var problem,
                     info.DeviceInstance,
                     0) == CrSuccess &&
-                    (status & DnHasProblem) != 0 &&
-                    problem == CmProbDisabled;
-                adapters.Add(new WindowsDisplayAdapter(instanceId, name, Enabled: !disabled));
+                    (status & DnHasProblem) != 0
+                        ? (int)problem
+                        : 0;
+                adapters.Add(new WindowsDisplayAdapter(
+                    instanceId,
+                    name,
+                    DedicatedGpuDeviceInfo.StateFromProblemCode(problemCode),
+                    problemCode));
             }
         }
         finally
@@ -321,6 +499,22 @@ internal static class WindowsDisplayAdapters
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
 
+        return RunPnPUtil(instanceId, enabled ? "/enable-device" : "/disable-device");
+    }
+
+    /// <summary>
+    /// Restarts the adapter so its driver is loaded again. Windows keeps a device
+    /// that failed with code 43 out of the display list until this happens.
+    /// </summary>
+    public static int Restart(string instanceId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+
+        return RunPnPUtil(instanceId, "/restart-device");
+    }
+
+    private static int RunPnPUtil(string instanceId, string command)
+    {
         var startInfo = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "pnputil.exe"))
         {
             CreateNoWindow = true,
@@ -328,7 +522,7 @@ internal static class WindowsDisplayAdapters
             RedirectStandardOutput = true,
             RedirectStandardError = true,
         };
-        startInfo.ArgumentList.Add(enabled ? "/enable-device" : "/disable-device");
+        startInfo.ArgumentList.Add(command);
         startInfo.ArgumentList.Add(instanceId);
 
         using var process = Process.Start(startInfo) ??

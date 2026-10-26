@@ -14,6 +14,7 @@ public static class DedicatedGpuModeServiceProtocol
     public const int Version = 1;
     public const string StatusOperation = "status";
     public const string SetOperation = "set";
+    public const string RestartOperation = "restart";
     public const int MaximumMessageLength = 4096;
 }
 
@@ -22,6 +23,25 @@ public sealed record DedicatedGpuModeServiceRequest(
     string Operation,
     bool? Enabled);
 
+/// <summary>
+/// The operation a service request asks for. The decision lives here so the
+/// request routing can be tested without a running Windows service.
+/// </summary>
+public enum DedicatedGpuModeServiceAction
+{
+    /// <summary>Return the current adapter state.</summary>
+    Status,
+
+    /// <summary>Turn the discrete adapter on or off.</summary>
+    Set,
+
+    /// <summary>Restart the discrete adapter so its driver loads again.</summary>
+    Restart,
+
+    /// <summary>The request does not match any known operation.</summary>
+    Unsupported,
+}
+
 public sealed record DedicatedGpuModeServiceResponse(
     int Version,
     bool Handled,
@@ -29,3 +49,44 @@ public sealed record DedicatedGpuModeServiceResponse(
     int ExitCode,
     DedicatedGpuModeStatus? Status,
     string? Error);
+
+public static class DedicatedGpuModeServiceRequestParser
+{
+    /// <summary>
+    /// Maps a request onto the action the service should take. The restart action is
+    /// resolved before the set action, because a restart carries no enable flag and
+    /// would otherwise be rejected as a malformed set.
+    /// </summary>
+    public static DedicatedGpuModeServiceAction Parse(DedicatedGpuModeServiceRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.Version != DedicatedGpuModeServiceProtocol.Version)
+        {
+            return DedicatedGpuModeServiceAction.Unsupported;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.StatusOperation))
+        {
+            return DedicatedGpuModeServiceAction.Status;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.RestartOperation))
+        {
+            return DedicatedGpuModeServiceAction.Restart;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.SetOperation) &&
+            request.Enabled is bool)
+        {
+            return DedicatedGpuModeServiceAction.Set;
+        }
+
+        return DedicatedGpuModeServiceAction.Unsupported;
+    }
+}

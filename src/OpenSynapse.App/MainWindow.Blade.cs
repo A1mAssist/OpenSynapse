@@ -283,8 +283,11 @@ public sealed partial class MainWindow
         _dedicatedGpuModeUiReady = false;
         try
         {
-            DedicatedGpuModeToggle.IsOn = status.IsSupported && status.IsActive;
-            DedicatedGpuModeToggle.IsEnabled = status.IsSupported && !_dedicatedGpuModeBusy && status.CanChange;
+            var faulted = status.DeviceState.IsFaulted();
+            DedicatedGpuModeToggle.IsOn = status.IsSupported && !faulted && status.IsActive;
+            DedicatedGpuModeToggle.IsEnabled = status.IsSupported && !faulted && !_dedicatedGpuModeBusy && status.CanChange;
+            DedicatedGpuModeRestartButton.Visibility = faulted ? Visibility.Visible : Visibility.Collapsed;
+            DedicatedGpuModeRestartButton.IsEnabled = faulted && !_dedicatedGpuModeBusy;
             DedicatedGpuModeStatusText.Text = status.IsSupported
                 ? DedicatedGpuModeStatusMessage(status)
                 : string.Empty;
@@ -487,6 +490,13 @@ public sealed partial class MainWindow
 
     private static string DedicatedGpuModeStatusMessage(DedicatedGpuModeStatus status)
     {
+        if (status.DeviceState.IsFaulted())
+        {
+            return AppStrings.FormatText(
+                "DedicatedGpuModeStatusFaulted",
+                status.ProblemCode);
+        }
+
         if (status.IsActive)
         {
             return AppStrings.Text("DedicatedGpuModeStatusActive");
@@ -494,6 +504,8 @@ public sealed partial class MainWindow
 
         return status.BlockReason switch
         {
+            DedicatedGpuModeBlockReason.DiscreteGpuFaulted =>
+                AppStrings.FormatText("DedicatedGpuModeStatusFaulted", status.ProblemCode),
             DedicatedGpuModeBlockReason.ExternalDisplayConnected =>
                 AppStrings.Text("DedicatedGpuModeStatusBlockedExternal"),
             DedicatedGpuModeBlockReason.DisplayTopologyUnavailable or
@@ -572,6 +584,70 @@ public sealed partial class MainWindow
                     result.ExitCode);
                 break;
             case DedicatedGpuSwitchOutcome.Blocked:
+                break;
+            case DedicatedGpuSwitchOutcome.DeviceFaulted:
+                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusFaulted");
+                break;
+        }
+    }
+
+    private async void DedicatedGpuModeRestartClick(object sender, RoutedEventArgs e)
+    {
+        if (_dedicatedGpuModeBusy || _lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _dedicatedGpuModeBusy = true;
+        DedicatedGpuModeRestartButton.IsEnabled = false;
+        DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusRestarting");
+
+        DedicatedGpuSwitchResult result;
+        try
+        {
+            result = await WindowsDedicatedGpuMode.RestartFaultedAsync(_lifetime.Token);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            _viewModel.ReportApplicationError(AppStrings.FormatText(
+                "DedicatedGpuModeError",
+                exception.Message));
+            result = new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+        }
+        finally
+        {
+            _dedicatedGpuModeBusy = false;
+        }
+
+        if (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        RefreshDedicatedGpuMode();
+
+        switch (result.Outcome)
+        {
+            case DedicatedGpuSwitchOutcome.Success:
+                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusRestarted");
+                break;
+            case DedicatedGpuSwitchOutcome.RestartRequired:
+                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusRestartRequired");
+                break;
+            case DedicatedGpuSwitchOutcome.Cancelled:
+                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusCancelled");
+                break;
+            case DedicatedGpuSwitchOutcome.NoDevice:
+                DedicatedGpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusNoDevice");
+                break;
+            case DedicatedGpuSwitchOutcome.Failed:
+                DedicatedGpuModeStatusText.Text = AppStrings.FormatText(
+                    "DedicatedGpuModeStatusFailed",
+                    result.ExitCode);
                 break;
         }
     }

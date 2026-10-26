@@ -1249,6 +1249,10 @@
   <data name="DedicatedGpuModeStatusBlockedUnsupported" xml:space="preserve"><value>No safely switchable integrated and discrete GPU pair was found.</value></data>
   <data name="DedicatedGpuModeStatusNoDevice" xml:space="preserve"><value>No NVIDIA discrete GPU was found.</value></data>
   <data name="DedicatedGpuModeStatusFailed" xml:space="preserve"><value>The switch failed (Windows returned {0}).</value></data>
+  <data name="DedicatedGpuModeStatusFaulted" xml:space="preserve"><value>The discrete GPU driver failed (error code {0}) and Windows stopped the device. Use "Restart GPU device" to reload the driver; the system keeps using integrated graphics meanwhile.</value></data>
+  <data name="DedicatedGpuModeStatusRestarting" xml:space="preserve"><value>Restarting the discrete GPU device...</value></data>
+  <data name="DedicatedGpuModeStatusRestarted" xml:space="preserve"><value>The discrete GPU device was restarted and the driver is reloading.</value></data>
+  <data name="DedicatedGpuModeRestart" xml:space="preserve"><value>Restart GPU device</value></data>
   <data name="DedicatedGpuModeError" xml:space="preserve"><value>GPU mode: {0}</value></data>
   <data name="DisplayMuxModeTitle.Text" xml:space="preserve"><value>Display mode (MUX)</value></data>
   <data name="DisplayMuxModeDescription.Text" xml:space="preserve"><value>Switch the built-in display route through the device's HID firmware command. A restart is required.</value></data>

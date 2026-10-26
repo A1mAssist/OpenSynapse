@@ -26,6 +26,29 @@ public static class DedicatedGpuModeServiceClient
             DedicatedGpuModeServiceProtocol.SetOperation,
             enabled);
 
+        return await SendWithWakeupRetryAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asks the service to restart the discrete adapter. Only the machine-wide
+    /// service can do this, because a device restart needs administrator rights.
+    /// </summary>
+    public static async Task<DedicatedGpuSwitchResult?> TryRestartDeviceAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.RestartOperation,
+            Enabled: null);
+
+        return await SendWithWakeupRetryAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<DedicatedGpuSwitchResult?> SendWithWakeupRetryAsync(
+        DedicatedGpuModeServiceRequest request,
+        CancellationToken cancellationToken)
+    {
+
         // The service is demand-started and stops itself after an idle window, so a
         // wake-up races the pipe creation. One retry covers that gap and keeps the
         // common case off the UAC helper.
