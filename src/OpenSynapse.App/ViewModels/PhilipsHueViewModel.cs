@@ -132,7 +132,6 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
 
             BridgeHost = value.Host;
             OnConnectionStateChanged();
-            if (changedHost) Persist?.Invoke(BridgeHost, _appKey);
         }
     }
 
@@ -224,6 +223,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged
         {
             using var discovery = new PhilipsHueDiscovery(diagnostic: _diagnostic);
             var bridges = await discovery.DiscoverAsync(cancellationToken: cancellationToken);
+            _diagnostic?.Invoke($"Hue discovery found {bridges.Count} bridge(s).");
             found = bridges.Count;
             Bridges.Clear();
             foreach (var bridge in bridges) Bridges.Add(bridge);

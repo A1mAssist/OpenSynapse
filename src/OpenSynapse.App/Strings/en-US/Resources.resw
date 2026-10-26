@@ -2222,7 +2222,6 @@
   <data name="HueScanButton" xml:space="preserve"><value>Scan</value></data>
   <data name="HueLightsTitle" xml:space="preserve"><value>Lights</value></data>
   <data name="HueBridgeRequired" xml:space="preserve"><value>Scan or enter a Hue bridge address first.</value></data>
-  <data name="HueAddButton" xml:space="preserve"><value>Add Hue bridge</value></data>
   <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>Onboard macros</value></data>
   <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>These macros live in the keyboard's onboard memory and follow it to another PC. This view only reads them.</value></data>
   <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>Read onboard macros</value></data>

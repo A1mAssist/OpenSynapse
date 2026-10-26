@@ -38,6 +38,7 @@ public sealed partial class MainViewModel
 
     public async Task RunDeviceWatchLoopAsync(CancellationToken cancellationToken)
     {
+        _ = ScanHueInBackgroundAsync(cancellationToken);
         try
         {
             while (true)

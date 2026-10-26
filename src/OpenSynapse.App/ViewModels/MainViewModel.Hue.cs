@@ -22,9 +22,23 @@ public sealed partial class MainViewModel
             nameof(PhilipsHueViewModel.DeviceIdentity) or
             nameof(PhilipsHueViewModel.IsReady))
         {
-            OnPropertyChanged(nameof(HueAddVisibility));
             RefreshDeviceOverviewVisibility();
             RefreshDeviceSelectorItems();
+        }
+    }
+
+    private async Task ScanHueInBackgroundAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Hue.ScanAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("hue", $"background discovery failed: {exception}");
         }
     }
 }
