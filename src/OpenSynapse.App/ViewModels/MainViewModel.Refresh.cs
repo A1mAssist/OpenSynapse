@@ -143,7 +143,7 @@ public sealed partial class MainViewModel
             {
                 var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
                 _krakenConnections = connections.Where(connection =>
-                        connection.Kind == OpenRazerSpecialLightingKind.Kraken37)
+                        connection.Kind is OpenRazerSpecialLightingKind.Kraken37 or OpenRazerSpecialLightingKind.KrakenV4)
                     .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
                     .ToArray();
                 // Headsets that already own an audio page get the lighting card there, so a
