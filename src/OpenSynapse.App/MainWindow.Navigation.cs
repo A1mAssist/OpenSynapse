@@ -50,12 +50,12 @@ public sealed partial class MainWindow
         if (device == "blade" &&
             !_viewModel.DeviceSelectorItems.Any(item => item.Kind == DeviceSelectorItemKind.Blade))
         {
-            SelectFallbackDevice();
-            return;
+            // Without a Blade entry, stay on the overview instead of jumping to another device.
+            device = "none";
         }
         if (device == "viper" && _viewModel.ViperDeviceVisibility != Visibility.Visible)
         {
-            device = "blade";
+            device = "none";
         }
         BladeDevicePanel.Visibility = device == "blade" ? Visibility.Visible : Visibility.Collapsed;
         ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
@@ -109,20 +109,8 @@ public sealed partial class MainWindow
         }
         if (args.PropertyName == nameof(MainViewModel.DeviceSelectorItems))
         {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                var current = CurrentDeviceRoute();
-                if (current.Length == 0 ||
-                    (current == "blade" &&
-                     !_viewModel.DeviceSelectorItems.Any(item => item.Kind == DeviceSelectorItemKind.Blade)))
-                {
-                    SelectFallbackDevice();
-                }
-                else
-                {
-                    UpdateDeviceSelector(current);
-                }
-            });
+            // Rebuilding the list only refreshes the highlight; never change the active page here.
+            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector(CurrentDeviceRoute()));
         }
         if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerDevice) &&
             _viewModel.SelectedOpenRazerDevice is null &&
@@ -171,68 +159,6 @@ public sealed partial class MainWindow
         ViperDevicePanel.Visibility == Visibility.Visible ? "viper" :
         BladeDevicePanel.Visibility == Visibility.Visible ? "blade" :
         string.Empty;
-
-    private async void SelectFallbackDevice()
-    {
-        var first = _viewModel.DeviceSelectorItems.FirstOrDefault();
-        if (first is null)
-        {
-            SelectDevice("none");
-            return;
-        }
-
-        switch (first.Kind)
-        {
-            case DeviceSelectorItemKind.Blade:
-                SelectDevice("blade");
-                break;
-            case DeviceSelectorItemKind.Viper:
-                SelectDevice("viper");
-                break;
-            case DeviceSelectorItemKind.OpenRazer when first.Source is OpenRazerDeviceRowViewModel openRazer:
-                SelectDevice("openrazer");
-                await _viewModel.SelectOpenRazerDeviceAsync(openRazer, _lifetime.Token);
-                UpdateDeviceSelector("openrazer");
-                break;
-            case DeviceSelectorItemKind.Kraken when first.Source is OpenRazerKrakenDeviceRowViewModel kraken:
-                SelectDevice("kraken");
-                await _viewModel.SelectOpenRazerKrakenAsync(kraken);
-                if (_viewModel.SelectedOpenRazerKraken is { } selectedKraken)
-                {
-                    await selectedKraken.LoadSerialAsync(_lifetime.Token);
-                }
-                UpdateDeviceSelector("kraken");
-                break;
-            case DeviceSelectorItemKind.BlackShark when first.Source is BlackSharkDeviceRowViewModel blackShark:
-                SelectDevice("blackshark");
-                await _viewModel.SelectBlackSharkAsync(blackShark, _lifetime.Token);
-                UpdateDeviceSelector("blackshark");
-                break;
-            case DeviceSelectorItemKind.HeadsetAudio when first.Source is RazerHeadsetAudioDeviceRowViewModel headsetAudio:
-                SelectDevice("headsetaudio");
-                await _viewModel.SelectHeadsetAudioAsync(headsetAudio, _lifetime.Token);
-                UpdateDeviceSelector("headsetaudio");
-                break;
-            case DeviceSelectorItemKind.Keyboard when first.Source is RazerKeyboardDeviceRowViewModel keyboard:
-                SelectDevice("keyboard");
-                await _viewModel.SelectKeyboardAsync(keyboard, _lifetime.Token);
-                UpdateDeviceSelector("keyboard");
-                break;
-            case DeviceSelectorItemKind.Chroma when first.Source is RazerChromaDeviceRowViewModel chroma:
-                SelectDevice("chroma");
-                await _viewModel.SelectChromaAsync(chroma, _lifetime.Token);
-                UpdateDeviceSelector("chroma");
-                break;
-            case DeviceSelectorItemKind.Ble when first.Source is RazerBleDeviceRowViewModel ble:
-                SelectDevice("ble");
-                await _viewModel.SelectBleAsync(ble, _lifetime.Token);
-                UpdateDeviceSelector("ble");
-                break;
-            default:
-                SelectDevice("none");
-                break;
-        }
-    }
 
     private void UpdateDeviceSelector(string device)
     {
