@@ -102,6 +102,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, int[]> _leviathanTransactions =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public RazerFeatureTransport(LocalDiagnosticLog? diagnosticLog = null)
     {
@@ -197,6 +199,9 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         CancellationToken cancellationToken)
     {
         var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        var leviathanSequence = UsesLeviathanReportId(devicePath)
+            ? _leviathanTransactions.GetOrAdd(devicePath, static _ => [-1])
+            : null;
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -219,6 +224,11 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     foreach (var request in requests)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
+                        if (leviathanSequence is not null)
+                        {
+                            request[0] = LeviathanV2XProtocol.ReportId;
+                            request[2] = NextLeviathanTransactionId(ref leviathanSequence[0]);
+                        }
                         if (!NativeMethods.HidD_SetFeature(handle, request, request.Length))
                             throw new Win32Exception(Marshal.GetLastWin32Error(), "Razer matrix batch write failed.");
                         if (rowDelay > TimeSpan.Zero)
@@ -233,9 +243,12 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         }
     }
 
-    internal static bool UsesOpenRazerLogicalReport(string devicePath) =>
+    internal static bool UsesLeviathanReportId(string devicePath) =>
         DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
-        OpenRazerDeviceCatalog.IsViperV3ProSe(productId);
+        OpenRazerDeviceCatalog.IsLeviathanV2X(productId);
+
+    internal static byte NextLeviathanTransactionId(ref int sequence) =>
+        unchecked((byte)(System.Threading.Interlocked.Increment(ref sequence) & 0x1F));
 
     private async Task<byte[]> ExecuteAsync(
         string devicePath,
@@ -248,9 +261,18 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         // ponytail: paths are bounded by locally attached HID collections; prune only if
         // long-running hot-plug churn ever makes this cache measurably large.
         var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        var usesLeviathanReportId = UsesLeviathanReportId(devicePath);
         await gate.WaitAsync(cancellationToken);
         try
         {
+            if (usesLeviathanReportId)
+            {
+                var sequence = _leviathanTransactions.GetOrAdd(devicePath, static _ => [-1]);
+                request[0] = LeviathanV2XProtocol.ReportId;
+                request[2] = NextLeviathanTransactionId(ref sequence[0]);
+                responseReportId = LeviathanV2XProtocol.ReportId;
+            }
+
             try
             {
                 using var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
@@ -261,7 +283,6 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     responseReportId,
                     cancellationToken,
                     allowRemainingPacketsMismatch,
-                    UsesOpenRazerLogicalReport(devicePath),
                     message => WriteDiagnostic(devicePath, request, message)).ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException)
@@ -308,24 +329,17 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         byte responseReportId,
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch,
-        bool useOpenRazerLogicalReport,
         Action<string>? diagnostic = null)
     {
         string? lastError = null;
         var rejectedResponses = 0;
         var silentResponses = 0;
-        var sendReport = useOpenRazerLogicalReport
-            ? RazerFeatureReport.ToOpenRazerLogicalReport(request)
-            : request;
-        var responseLength = useOpenRazerLogicalReport
-            ? RazerFeatureReport.OpenRazerLogicalLength
-            : RazerFeatureReport.Length;
         for (var attempt = 1; attempt <= 5; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var setResult = await Task.Run(() =>
             {
-                var success = NativeMethods.HidD_SetFeature(handle, sendReport, sendReport.Length);
+                var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
                 return (Success: success, Error: Marshal.GetLastWin32Error());
             }, cancellationToken).ConfigureAwait(false);
             if (!setResult.Success)
@@ -337,11 +351,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             }
 
             await Task.Delay(deviceWait, cancellationToken).ConfigureAwait(false);
-            var response = new byte[responseLength];
-            if (!useOpenRazerLogicalReport)
-            {
-                response[0] = responseReportId;
-            }
+            var response = new byte[RazerFeatureReport.Length];
+            response[0] = responseReportId;
             var getResult = await Task.Run(() =>
             {
                 var success = NativeMethods.HidD_GetFeature(handle, response, response.Length);
@@ -353,11 +364,6 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 diagnostic?.Invoke($"attempt {attempt}: HidD_GetFeature failed, win32={getResult.Error} ({lastError})");
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
                 continue;
-            }
-
-            if (useOpenRazerLogicalReport)
-            {
-                response = RazerFeatureReport.FromOpenRazerLogicalReport(response);
             }
 
             if (!RazerFeatureReport.MatchesReportId(response, responseReportId) ||
@@ -557,8 +563,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     deviceWait,
                     responseReportId,
                     cancellationToken,
-                    allowRemainingPacketsMismatch,
-                    useOpenRazerLogicalReport: false).ConfigureAwait(false);
+                    allowRemainingPacketsMismatch).ConfigureAwait(false);
             }
             finally
             {

@@ -74,7 +74,9 @@ internal sealed class RazerDeviceManifest
         RazerHidCollection collection,
         string protocolFamily,
         IReadOnlyDictionary<string, RazerRequestDescriptor> capabilities,
-        DeviceCategory category)
+        DeviceCategory category,
+        int matrixRows = 0,
+        int matrixColumns = 0)
     {
         SourceName = sourceName;
         Id = id;
@@ -85,6 +87,8 @@ internal sealed class RazerDeviceManifest
         ProtocolFamily = protocolFamily;
         Capabilities = capabilities;
         Category = category;
+        MatrixRows = matrixRows;
+        MatrixColumns = matrixColumns;
     }
 
     internal string SourceName { get; }
@@ -96,6 +100,8 @@ internal sealed class RazerDeviceManifest
     internal string ProtocolFamily { get; }
     internal IReadOnlyDictionary<string, RazerRequestDescriptor> Capabilities { get; }
     internal DeviceCategory Category { get; }
+    internal int MatrixRows { get; }
+    internal int MatrixColumns { get; }
 
     internal RazerRequestDescriptor GetRequiredCapability(string capabilityId) =>
         Capabilities.TryGetValue(capabilityId, out var descriptor)

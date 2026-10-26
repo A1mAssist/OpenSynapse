@@ -54,9 +54,11 @@ public sealed class OpenRazerBackendTests
     {
         var catalog = OpenRazerDeviceCatalog.BuiltIn;
 
-        // 254 upstream entries plus two DeathAdder probes and two Viper V3 Pro SE aliases.
-        Assert.Equal(258, catalog.Devices.Count);
-        Assert.Equal(258, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
+        // 259 upstream entries plus two DeathAdder probes, two Viper V3 Pro SE aliases,
+        // the locally admitted 054A Leviathan V2 X family, and 18 middleware mouse
+        // product ids (wired and dongle halves included).
+        Assert.Equal(282, catalog.Devices.Count);
+        Assert.Equal(282, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
         Assert.DoesNotContain(catalog.Devices, device => device.ProductId is 0x00B8 or 0x02C6);
         Assert.Null(catalog.Find(0x1234, catalog.Devices[0].ProductId));
         Assert.All(catalog.Devices, device =>
@@ -65,6 +67,45 @@ public sealed class OpenRazerBackendTests
             Assert.Equal(device.SourceCapabilities.Count, device.SourceCapabilities.Distinct(StringComparer.Ordinal).Count());
             Assert.Empty(device.Transactions.Keys.Intersect(device.CommandSequences.Keys, StringComparer.Ordinal));
         });
+    }
+
+    [Fact]
+    public void LeviathanV2XIsAdmittedForIdentityAndBrightness()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x054A);
+
+        Assert.NotNull(device);
+        Assert.Equal("Razer Leviathan V2 X", device!.DisplayName);
+        Assert.Equal(DeviceCategory.Accessory, device.Category);
+        Assert.Equal(TimeSpan.FromMilliseconds(5), device.DeviceWait);
+        Assert.Equal(OpenRazerStorage.Temporary, device.DefaultStorage);
+        Assert.Contains("razer_chroma_extended_matrix_get_region_ids", device.Transactions.Keys);
+        Assert.Contains("get_firmware", device.SourceCapabilities);
+        Assert.Contains("get_serial", device.SourceCapabilities);
+        Assert.Contains("get_brightness", device.SourceCapabilities);
+        Assert.Contains("set_brightness", device.SourceCapabilities);
+        Assert.DoesNotContain("set_static_effect", device.SourceCapabilities);
+
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+        Assert.Contains(OpenRazerBackendCapability.FirmwareRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.BrightnessWrite, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.LightingEffectWrite, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.MatrixFrameWrite, capabilities);
+
+        var renamed = device.WithDisplayName("Razer | Kuromi Limited Edition Soundbar");
+        Assert.Equal("Razer | Kuromi Limited Edition Soundbar", renamed.DisplayName);
+        Assert.Equal(device.DefaultStorage, renamed.DefaultStorage);
+        Assert.Same(device.Transactions, renamed.Transactions);
+        Assert.True(capabilities.SetEquals(OpenRazerDeviceService.GetCapabilities(renamed)));
+    }
+
+    [Theory]
+    [InlineData(@"\\?\hid#vid_1532&pid_054a&mi_01#test", true)]
+    [InlineData(@"\\?\hid#vid_1532&pid_054b&mi_01#test", false)]
+    public void OnlyLeviathan054AUsesReportIdSeven(string devicePath, bool expected)
+    {
+        Assert.Equal(expected, RazerFeatureTransport.UsesLeviathanReportId(devicePath));
     }
 
     [Theory]
@@ -95,40 +136,6 @@ public sealed class OpenRazerBackendTests
             sibling.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal),
             alias.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal));
         Assert.Equal(0x3F, alias.GetRequiredTransaction("razer_chroma_misc_get_battery_level"));
-    }
-
-    [Fact]
-    public void OpenRazerLogicalReportsStripAndRestoreTheZeroReportId()
-    {
-        var request = RazerFeatureReport.CreateRequest(0x1F, 0x02, 0x07, 0x80, new byte[] { 0x00 });
-
-        var logical = RazerFeatureReport.ToOpenRazerLogicalReport(request);
-        var restored = RazerFeatureReport.FromOpenRazerLogicalReport(logical);
-
-        Assert.Equal(RazerFeatureReport.OpenRazerLogicalLength, logical.Length);
-        Assert.Equal(request[1..], logical);
-        Assert.Equal(request, restored);
-    }
-
-    [Fact]
-    public void OpenRazerLogicalResponseValidatesAfterNormalization()
-    {
-        var request = RazerFeatureReport.CreateRequest(0x1F, 0x02, 0x07, 0x80, new byte[] { 0x00 });
-        var logicalResponse = RazerFeatureReport.ToOpenRazerLogicalReport(request).ToArray();
-        logicalResponse[0] = 0x02;
-
-        var normalized = RazerFeatureReport.FromOpenRazerLogicalReport(logicalResponse);
-
-        Assert.True(RazerFeatureReport.Matches(request, normalized));
-    }
-
-    [Theory]
-    [InlineData(@"\\?\hid#vid_1532&pid_00df&mi_00#test", true)]
-    [InlineData(@"\\?\hid#vid_1532&pid_00de&mi_00#test", true)]
-    [InlineData(@"\\?\hid#vid_1532&pid_00c1&mi_00#test", false)]
-    public void OnlyTheViperV3ProSeUsesTheLogicalReportTransport(string devicePath, bool expected)
-    {
-        Assert.Equal(expected, RazerFeatureTransport.UsesOpenRazerLogicalReport(devicePath));
     }
 
     [Theory]
@@ -1275,6 +1282,9 @@ public sealed class OpenRazerBackendTests
                 OpenRazerBackendCapability.HyperPollingPairWrite => CreatePairRequests(device),
                 OpenRazerBackendCapability.HyperPollingUnpairWrite => OpenRazerStandardProtocol.Create(device,
                     "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair", 2, 0, 0x42, [0, 1]),
+                OpenRazerBackendCapability.MappingRead => OpenRazerMappingProtocol.GetButtonList(),
+                OpenRazerBackendCapability.MappingWrite => OpenRazerMappingProtocol.SetAssignment(
+                    0x01, OpenRazerMappingProtocol.NormalMode, OpenRazerMappingFunctions.ButtonCode, [0x01]),
                 _ => throw new InvalidOperationException($"Capability {capability} has no construction assertion."),
             };
             _ = constructed;

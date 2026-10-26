@@ -1,5 +1,6 @@
 using System.Text.Json;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.App;
 
@@ -14,10 +15,7 @@ internal sealed class AppBehaviorSettings
         BladePerformanceMode.Hyperboost,
     ];
 
-    private static readonly string SettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "behavior.json");
+    private static readonly string SettingsPath = AppDataPaths.Combine("behavior.json");
 
     public bool ModeChangeNotificationsEnabled { get; set; } = true;
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
@@ -31,6 +29,8 @@ internal sealed class AppBehaviorSettings
     public HashSet<BladePerformanceMode> PerformanceCycleModes { get; set; } =
         [.. SupportedPerformanceCycleModes];
     public HashSet<int>? RefreshRateCycleHertz { get; set; }
+    public string? HueBridgeHost { get; set; }
+    public string? HueAppKey { get; set; }
 
     public static AppBehaviorSettings Load()
     {

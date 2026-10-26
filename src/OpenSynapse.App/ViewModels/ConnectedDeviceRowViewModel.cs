@@ -47,6 +47,53 @@ public sealed class ConnectedDeviceRowViewModel
         IsVisible = true;
     }
 
+    public ConnectedDeviceRowViewModel(RazerChromaDeviceRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
+    public ConnectedDeviceRowViewModel(RazerBleDeviceRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+    public ConnectedDeviceRowViewModel(RazerKeyboardDeviceRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
+    public ConnectedDeviceRowViewModel(RazerHeadsetAudioDeviceRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
     public ConnectedDeviceRowViewModel(BlackSharkDeviceRowViewModel source)
     {
         Source = source;
@@ -57,6 +104,18 @@ public sealed class ConnectedDeviceRowViewModel
         Category = source.HardwareCategory;
         IsReady = true;
         IsVisible = true;
+    }
+
+    public ConnectedDeviceRowViewModel(PhilipsHueViewModel source)
+    {
+        Source = source;
+        Name = AppStrings.Text("HueTitle");
+        Identity = source.DeviceIdentity;
+        Access = source.DeviceStatusText;
+        IconGlyph = "\uE706";
+        Category = DeviceCategory.Accessory;
+        IsReady = source.IsReady;
+        IsVisible = source.IsReady;
     }
 
     public object Source { get; }
@@ -72,7 +131,9 @@ public sealed class ConnectedDeviceRowViewModel
         DeviceRowViewModel row => row.Capability,
         OpenRazerDeviceRowViewModel row => row.Status,
         OpenRazerKrakenDeviceRowViewModel row => row.Status,
+        RazerBleDeviceRowViewModel row => row.Status,
         BlackSharkDeviceRowViewModel row => row.Status,
+        PhilipsHueViewModel row => row.IsConfigured ? AppStrings.Text("HuePaired") : string.Empty,
         _ => string.Empty,
     };
     public string Error => Source switch
@@ -80,6 +141,7 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerDeviceRowViewModel row => row.Error,
         OpenRazerKrakenDeviceRowViewModel row => row.Error,
         BlackSharkDeviceRowViewModel row => row.Error,
+        PhilipsHueViewModel row => row.ErrorText,
         _ => string.Empty,
     };
     public Brush StatusBrush => Source switch
@@ -87,7 +149,9 @@ public sealed class ConnectedDeviceRowViewModel
         DeviceRowViewModel row => row.StatusBrush,
         OpenRazerDeviceRowViewModel row => row.StatusBrush,
         OpenRazerKrakenDeviceRowViewModel row => row.StatusBrush,
+        RazerBleDeviceRowViewModel row => row.StatusBrush,
         BlackSharkDeviceRowViewModel row => row.StatusBrush,
+        PhilipsHueViewModel row => row.StatusBrush,
         _ => throw new InvalidOperationException(),
     };
     public int SortOrder => Category switch

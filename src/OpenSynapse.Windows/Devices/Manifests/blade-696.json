@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 2,
+  "id": "blade-696",
+  "displayName": "Razer Blade 18 (2024)",
+  "vendorId": "1532",
+  "productIds": [
+    "02B8"
+  ],
+  "collection": {
+    "usagePage": "0001",
+    "usage": "0002",
+    "featureReportLength": 91
+  },
+  "protocolFamily": "blade-710-chroma",
+  "category": "laptop",
+  "transport": {
+    "waitMilliseconds": 2
+  },
+  "capabilities": {
+    "keyboard-brightness.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "83",
+      "arguments": "010500",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-brightness.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "03",
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
+    },
+    "thermal-state.get": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "82",
+      "arguments": ""
+    },
+    "thermal-state.set": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "fan-target.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "81",
+      "arguments": ""
+    },
+    "current-fan-rpm.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "88",
+      "arguments": ""
+    },
+    "advanced-fan-mode.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "87",
+      "arguments": ""
+    },
+    "boost.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "87",
+      "arguments": ""
+    },
+    "boost.set": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "07",
+      "arguments": ""
+    },
+    "adapter-power.get": {
+      "transactionId": "00",
+      "dataSize": "02",
+      "commandClass": "07",
+      "commandId": "8C",
+      "arguments": "0000",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "92",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "12",
+      "arguments": ""
+    },
+    "power-mode.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "8F",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "power-mode.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "0F",
+      "arguments": ""
+    },
+    "gaming-mode.set": {
+      "transactionId": "00",
+      "dataSize": "04",
+      "commandClass": "00",
+      "commandId": "08",
+      "arguments": ""
+    },
+    "fn-key.get": {
+      "transactionId": "00",
+      "dataSize": "02",
+      "commandClass": "02",
+      "commandId": "86",
+      "arguments": "0100"
+    },
+    "mcu-version.get": {
+      "transactionId": "00",
+      "dataSize": "04",
+      "commandClass": "00",
+      "commandId": "87",
+      "arguments": "00000000"
+    },
+    "fn-key.set": {
+      "transactionId": "00",
+      "dataSize": "02",
+      "commandClass": "02",
+      "commandId": "06",
+      "arguments": ""
+    },
+    "startup-animation.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0F",
+      "commandId": "98",
+      "arguments": "00"
+    },
+    "startup-animation.set": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0F",
+      "commandId": "18",
+      "arguments": ""
+    },
+    "native-display-mode.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0D",
+      "commandId": "8E",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "native-display-mode.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0D",
+      "commandId": "0E",
+      "arguments": ""
+    },
+    "sku-hardware-configuration.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0D",
+      "commandId": "8F",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "logo-power.get": {
+      "transactionId": "FF",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "80",
+      "arguments": "010400"
+    },
+    "logo-power.set": {
+      "transactionId": "FF",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "00",
+      "arguments": ""
+    },
+    "logo-mode.get": {
+      "transactionId": "FF",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "82",
+      "arguments": "010400"
+    },
+    "logo-mode.set": {
+      "transactionId": "FF",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "logo-effect.set": {
+      "transactionId": "00",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "logo-state.set": {
+      "transactionId": "00",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "00",
+      "arguments": ""
+    },
+    "display-mux.get": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "89",
+      "arguments": "0000"
+    },
+    "display-mux.set": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "09",
+      "arguments": ""
+    },
+    "display-mux-capabilities.get": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "8A",
+      "arguments": "0000"
+    }
+  },
+  "matrixRows": 6,
+  "matrixColumns": 16
+}

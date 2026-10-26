@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.Core.Profiles;
 
@@ -18,10 +19,7 @@ public sealed class ProfileStore
     public ProfileStore(string? filePath = null)
     {
         FilePath = string.IsNullOrWhiteSpace(filePath)
-            ? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "OpenSynapse",
-                "profiles.json")
+            ? AppDataPaths.Combine("profiles.json")
             : Path.GetFullPath(filePath);
     }
 

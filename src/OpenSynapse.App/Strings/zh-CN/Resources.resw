@@ -1594,6 +1594,44 @@
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>设置</value><comment>设置导航项</comment></data>
   <data name="SettingsPageTitle.Text" xml:space="preserve"><value>设置</value><comment>设置页面标题</comment></data>
   <data name="SettingsPageDescription.Text" xml:space="preserve"><value>管理 OpenSynapse 的启动、通知、语言和更新。</value><comment>设置页面说明</comment></data>
+  <data name="DedicatedGpuModeTitle.Text" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式标题</comment></data>
+  <data name="DedicatedGpuModeDescription.Text" xml:space="preserve"><value>关闭 NVIDIA 独显，让系统和应用只使用核显。机器级安装由后台服务切换；当前用户安装会请求管理员权限。外接屏可能无画面。</value><comment>仅核显模式说明</comment></data>
+  <data name="DedicatedGpuModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>仅核显（禁用独显）</value><comment>仅核显模式开关</comment></data>
+  <data name="DedicatedGpuModeStatusInactive" xml:space="preserve"><value>独显当前已启用。</value><comment>仅核显模式关闭状态</comment></data>
+  <data name="DedicatedGpuModeStatusActive" xml:space="preserve"><value>独显已停用，系统仅使用核显。</value><comment>仅核显模式开启状态</comment></data>
+  <data name="DedicatedGpuModeStatusApplying" xml:space="preserve"><value>正在切换，请在 UAC 提示中确认。</value><comment>仅核显模式切换中</comment></data>
+  <data name="DedicatedGpuModeStatusSuccess" xml:space="preserve"><value>切换已完成。</value><comment>仅核显模式切换成功</comment></data>
+  <data name="DedicatedGpuModeStatusRestartRequired" xml:space="preserve"><value>切换已完成；重启后完全生效。</value><comment>仅核显模式需要重启</comment></data>
+  <data name="DedicatedGpuModeStatusCancelled" xml:space="preserve"><value>已取消，未做任何改动。</value><comment>仅核显模式取消 UAC</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedExternal" xml:space="preserve"><value>检测到外接显示器。拔掉后可以切换，避免外接屏失去画面。</value><comment>外接屏阻止切换</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedDisplay" xml:space="preserve"><value>无法确认内置屏幕由核显驱动，暂不提供切换。</value><comment>显示拓扑无法确认</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedInternal" xml:space="preserve"><value>内置屏幕由独显驱动，此机型不支持此开关。</value><comment>内屏由独显驱动</comment></data>
+  <data name="DedicatedGpuModeStatusBlockedUnsupported" xml:space="preserve"><value>未检测到可安全切换的核显与独显组合。</value><comment>硬件组合不支持</comment></data>
+  <data name="DedicatedGpuModeStatusNoDevice" xml:space="preserve"><value>未找到 NVIDIA 独显。</value><comment>未找到独显</comment></data>
+  <data name="DedicatedGpuModeStatusFailed" xml:space="preserve"><value>切换失败（Windows 返回 {0}）。</value><comment>仅核显模式切换失败</comment></data>
+  <data name="DedicatedGpuModeError" xml:space="preserve"><value>显卡模式设置：{0}</value><comment>仅核显模式异常</comment></data>
+  <data name="DisplayMuxModeTitle.Text" xml:space="preserve"><value>显示模式（MUX）</value><comment>GPU MUX 显示模式标题</comment></data>
+  <data name="DisplayMuxModeDescription.Text" xml:space="preserve"><value>通过设备固件 HID 命令切换内置屏幕的输出显卡。切换后需要重启。</value><comment>GPU MUX 显示模式说明</comment></data>
+  <data name="DisplayMuxModeHybrid" xml:space="preserve"><value>混合模式（Optimus）</value><comment>MUX 混合模式</comment></data>
+  <data name="DisplayMuxModeDds" xml:space="preserve"><value>DDS 动态切换</value><comment>MUX DDS 模式</comment></data>
+  <data name="DisplayMuxModeDiscrete" xml:space="preserve"><value>独显直连</value><comment>MUX 独显直连</comment></data>
+  <data name="DisplayMuxModeStatusHybrid" xml:space="preserve"><value>当前为混合模式（Optimus）。</value><comment>MUX 当前混合模式</comment></data>
+  <data name="DisplayMuxModeStatusDds" xml:space="preserve"><value>当前为 DDS 动态切换。</value><comment>MUX 当前 DDS 模式</comment></data>
+  <data name="DisplayMuxModeStatusDiscrete" xml:space="preserve"><value>当前为独显直连。</value><comment>MUX 当前独显直连</comment></data>
+  <data name="DisplayMuxModeStatusApplying" xml:space="preserve"><value>正在写入设备 MUX 设置…</value><comment>MUX 写入中</comment></data>
+  <data name="DisplayMuxModeStatusSuccess" xml:space="preserve"><value>当前已是目标显示模式。</value><comment>MUX 无需切换</comment></data>
+  <data name="DisplayMuxModeStatusRestartRequired" xml:space="preserve"><value>显示模式已写入，重启后生效。</value><comment>MUX 需要重启</comment></data>
+  <data name="DisplayMuxModeRestartTitle" xml:space="preserve"><value>显示模式已切换</value><comment>MUX 重启提示标题</comment></data>
+  <data name="DisplayMuxModeRestartNow" xml:space="preserve"><value>立即重启</value><comment>MUX 重启提示按钮</comment></data>
+  <data name="DisplayMuxModeRestartLater" xml:space="preserve"><value>稍后</value><comment>MUX 重启提示按钮</comment></data>
+  <data name="DisplayMuxModeStatusNoDevice" xml:space="preserve"><value>未找到支持 MUX 的 Blade HID 设备。</value><comment>未找到 Blade MUX 设备</comment></data>
+  <data name="DisplayMuxModeStatusNoPair" xml:space="preserve"><value>设备未报告可切换的动态显示（DDS / Optimus）或独显直连能力。</value><comment>MUX 能力不足</comment></data>
+  <data name="DisplayMuxModeStatusUnavailable" xml:space="preserve"><value>读取设备 MUX 状态失败。</value><comment>MUX 状态读取异常</comment></data>
+  <data name="DisplayMuxModeStatusFailed" xml:space="preserve"><value>MUX 设置失败（错误码 {0}）。</value><comment>MUX 写入失败</comment></data>
+  <data name="DisplayMuxModeStatusRestored" xml:space="preserve"><value>切换失败，已恢复原显示模式。</value><comment>MUX 已恢复</comment></data>
+  <data name="DisplayMuxModeStatusRestoreFailed" xml:space="preserve"><value>切换失败，恢复原模式也失败；请重启并检查 BIOS 显示模式。</value><comment>MUX 恢复失败</comment></data>
+  <data name="DisplayMuxModeStatusDedicatedGpuDisabled" xml:space="preserve"><value>请先关闭“仅核显（禁用独显）”，再切换 MUX。</value><comment>MUX 被仅核显模式阻断</comment></data>
+  <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX 模式设置：{0}</value><comment>MUX 模式异常</comment></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>关于 OpenSynapse</value><comment>设置页关于入口标题</comment></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>查看版本、项目主页和许可信息。</value><comment>设置页关于入口说明</comment></data>
   <data name="SettingsAboutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>打开关于 OpenSynapse</value><comment>打开关于辅助功能名称</comment></data>
@@ -2179,7 +2217,8 @@
   </data>
   <data name="HidScanUnavailable" xml:space="preserve">
     <value>该设备未连接，无法扫描</value>
-  </data>  <data name="HidScanNoService" xml:space="preserve">
+  </data>
+  <data name="HidScanNoService" xml:space="preserve">
     <value>当前版本未包含 OpenRazer 支持</value>
   </data>
   <data name="HidScanNoDevice" xml:space="preserve">
@@ -2187,7 +2226,8 @@
   </data>
   <data name="HidScanDisabled" xml:space="preserve">
     <value>鼠标设备已禁用 HID 命令扫描，避免影响 2.4 GHz 接收器</value>
-  </data>  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>游戏耳机</value></data>
+  </data>
+  <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>游戏耳机</value></data>
   <data name="BlackSharkStatusConnected" xml:space="preserve"><value>已连接</value></data>
   <data name="BlackSharkCharging" xml:space="preserve"><value>充电中</value></data>
   <data name="BlackSharkNotCharging" xml:space="preserve"><value>未充电</value></data>
@@ -2262,6 +2302,20 @@
   <data name="MacroPlaybackModeOnce.Content" xml:space="preserve"><value>播放一次</value></data>
   <data name="MacroPlaybackModeRepeat.Content" xml:space="preserve"><value>重复</value></data>
   <data name="MacroPlaybackModeContinuous.Content" xml:space="preserve"><value>持续循环</value></data>
+  <data name="MacroPlaybackShortcutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>播放快捷键（开始播放当前宏）</value></data>
+  <data name="MacroPlaybackShortcutButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>播放快捷键（开始播放当前宏）</value></data>
+  <data name="MacroPlaybackStartShortcutSet.Text" xml:space="preserve"><value>设置开始播放（当前宏）快捷键</value></data>
+  <data name="MacroPlaybackStopShortcutSet.Text" xml:space="preserve"><value>设置停止播放快捷键</value></data>
+  <data name="MacroPlaybackStartShortcutClear.Text" xml:space="preserve"><value>清除开始播放快捷键</value></data>
+  <data name="MacroPlaybackStopShortcutClear.Text" xml:space="preserve"><value>恢复默认停止快捷键</value></data>
+  <data name="MacroPlaybackShortcutUnset" xml:space="preserve"><value>未设置</value></data>
+  <data name="MacroPlaybackStopShortcutDefault" xml:space="preserve"><value>F10（默认）</value></data>
+  <data name="MacroPlaybackShortcutSummary" xml:space="preserve"><value>开始 {0} · 停止 {1}</value></data>
+  <data name="MacroPlaybackShortcutCapturePrompt" xml:space="preserve"><value>请按下要绑定的播放快捷键…</value></data>
+  <data name="MacroPlaybackStartShortcutCaptured" xml:space="preserve"><value>开始播放快捷键已设为 {0}。</value></data>
+  <data name="MacroPlaybackStopShortcutCaptured" xml:space="preserve"><value>停止播放快捷键已设为 {0}。</value></data>
+  <data name="MacroPlaybackStartShortcutCleared" xml:space="preserve"><value>已清除开始播放快捷键。</value></data>
+  <data name="MacroPlaybackStopShortcutCleared" xml:space="preserve"><value>已恢复 F10 停止播放。</value></data>
   <data name="MacroDurationContinuous" xml:space="preserve"><value>持续循环</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>记录间隔</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>不记录间隔</value></data>
@@ -2368,11 +2422,10 @@
   <data name="MacroTriggerConflict" xml:space="preserve"><value>触发键与“{0}”冲突。</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>邮件</value></data>
   <data name="MacroMediaHomePage" xml:space="preserve"><value>主页</value></data>
-  <data name="MacroImportButton.Text" xml:space="preserve"><value>导入…</value></data>
-  <data name="MacroExportButton.Text" xml:space="preserve"><value>导出当前宏…</value></data>
+  <data name="MacroImportButton.Content" xml:space="preserve"><value>导入…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>复制</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>导出…</value></data>
-  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存，F10 停止播放。</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存；播放快捷键可在宏编辑器中设置。</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>键盘</value></data>
@@ -2380,19 +2433,18 @@
   <data name="MacroMediaKeysTitle.Text" xml:space="preserve"><value>媒体键</value></data>
   <data name="MacroPlaybackSpeedLabel.Text" xml:space="preserve"><value>播放速度</value></data>
   <data name="MacroPlaybackSpeed.Header" xml:space="preserve"><value>播放速度（倍率，1 = 原速）</value></data>
-  <data name="MacroPlaybackStopShortcut.Text" xml:space="preserve"><value>F10 停止播放</value></data>
   <data name="MacroRecordingOptions.Text" xml:space="preserve"><value>录制选项</value></data>
-  <data name="MacroRecordDelayMode.Header" xml:space="preserve"><value>延迟</value></data>
-  <data name="MacroRecordDelayRecorded.Content" xml:space="preserve"><value>记录实际间隔</value></data>
-  <data name="MacroRecordDelayFixed.Content" xml:space="preserve"><value>固定间隔</value></data>
-  <data name="MacroRecordDelayNone.Content" xml:space="preserve"><value>不记录延迟</value></data>
-  <data name="MacroRecordFixedDelay.Header" xml:space="preserve"><value>固定延迟（毫秒）</value></data>
-  <data name="MacroRecordMouseMode.Header" xml:space="preserve"><value>鼠标轨迹</value></data>
-  <data name="MacroRecordMouseNone.Content" xml:space="preserve"><value>不记录</value></data>
-  <data name="MacroRecordMouseAbsolute.Content" xml:space="preserve"><value>绝对坐标</value></data>
-  <data name="MacroRecordMouseRelative.Content" xml:space="preserve"><value>相对移动</value></data>
-  <data name="MacroRecordMouseStart.Content" xml:space="preserve"><value>相对起点</value></data>
-  <data name="MacroRecordMouseForeground.Content" xml:space="preserve"><value>相对前台窗口</value></data>
+  <data name="MacroRecordDelayMode.Text" xml:space="preserve"><value>延迟</value></data>
+  <data name="MacroRecordDelayRecorded.Text" xml:space="preserve"><value>记录实际间隔</value></data>
+  <data name="MacroRecordDelayFixed.Text" xml:space="preserve"><value>固定间隔</value></data>
+  <data name="MacroRecordDelayNone.Text" xml:space="preserve"><value>不记录延迟</value></data>
+  <data name="MacroRecordFixedDelayLabel.Text" xml:space="preserve"><value>固定延迟（毫秒）</value></data>
+  <data name="MacroRecordMouseMode.Text" xml:space="preserve"><value>鼠标轨迹</value></data>
+  <data name="MacroRecordMouseNone.Text" xml:space="preserve"><value>不记录</value></data>
+  <data name="MacroRecordMouseAbsolute.Text" xml:space="preserve"><value>绝对坐标</value></data>
+  <data name="MacroRecordMouseRelative.Text" xml:space="preserve"><value>相对移动</value></data>
+  <data name="MacroRecordMouseStart.Text" xml:space="preserve"><value>相对起点</value></data>
+  <data name="MacroRecordMouseForeground.Text" xml:space="preserve"><value>相对前台窗口</value></data>
   <data name="MacroRecordStopShortcut.Text" xml:space="preserve"><value>按 F9 停止录制并保存。</value></data>
   <data name="MacroRecordStopShortcutHint.Text" xml:space="preserve"><value>录制时按 F9 可停止并保存</value></data>
   <data name="MacroStepArgumentsLabel.Text" xml:space="preserve"><value>参数</value></data>
@@ -2423,6 +2475,7 @@
   <data name="MacroTriggerModePress.Content" xml:space="preserve"><value>按下</value></data>
   <data name="MacroTriggerModeToggle.Content" xml:space="preserve"><value>切换</value></data>
   <data name="MacroTriggerModeHold.Content" xml:space="preserve"><value>按住</value></data>
+  <data name="MacroTriggerModeHoldRepeat.Content" xml:space="preserve"><value>按住循环</value></data>
   <data name="MacroTriggerModeSequence.Content" xml:space="preserve"><value>逐条执行</value></data>
   <data name="MacroUnsaved.Text" xml:space="preserve"><value>未保存</value></data>
   <data name="MacroAlreadyPlaying" xml:space="preserve"><value>已有宏正在播放。</value></data>
@@ -2462,4 +2515,144 @@
   <data name="MacroMousePathHintForeground" xml:space="preserve"><value>坐标为前台窗口内 0–10000 的相对位置。</value></data>
   <data name="MacroMousePathNeedPoint" xml:space="preserve"><value>至少保留一个轨迹点。</value></data>
   <data name="MacroMousePathPointLimit" xml:space="preserve"><value>轨迹最多 {0} 个点。</value></data>
-  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>时间偏移必须按顺序递增。</value></data></root>
+  <data name="MacroMousePathTimeOrder" xml:space="preserve"><value>时间偏移必须按顺序递增。</value></data>
+  <data name="LeviathanAudioTitle.Text" xml:space="preserve"><value>音频</value></data>
+  <data name="LeviathanAudioDescription.Text" xml:space="preserve"><value>通过 1354 中间件协议读取均衡器、低音和输入状态，并可写回均衡器与低音。</value></data>
+  <data name="LeviathanRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="LeviathanEqPresetLabel.Text" xml:space="preserve"><value>均衡器预设</value></data>
+  <data name="LeviathanEqPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
+  <data name="LeviathanBassLabel.Text" xml:space="preserve"><value>低音增强</value></data>
+  <data name="LeviathanBassApply.Content" xml:space="preserve"><value>应用低音</value></data>
+  <data name="LeviathanEqBandsTitle.Text" xml:space="preserve"><value>10 段均衡器</value></data>
+  <data name="LeviathanEqBandsApply.Content" xml:space="preserve"><value>应用自定义 EQ</value></data>
+  <data name="LeviathanInputSourceLabel" xml:space="preserve"><value>输入源</value></data>
+  <data name="LeviathanAudioIoLabel" xml:space="preserve"><value>音频接口</value></data>
+  <data name="LeviathanOptical" xml:space="preserve"><value>光纤</value></data>
+  <data name="LeviathanBluetooth" xml:space="preserve"><value>蓝牙</value></data>
+  <data name="LeviathanSaved" xml:space="preserve"><value>已应用</value></data>
+  <data name="LeviathanPresetDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="LeviathanPresetGame" xml:space="preserve"><value>游戏</value></data>
+  <data name="LeviathanPresetMusic" xml:space="preserve"><value>音乐</value></data>
+  <data name="LeviathanPresetMovie" xml:space="preserve"><value>电影</value></data>
+  <data name="LeviathanPresetTreble" xml:space="preserve"><value>高音</value></data>
+  <data name="LeviathanPresetCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="MacroExportButtonShort.Content" xml:space="preserve"><value>导出</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>启用宏</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>启用或禁用这个宏</value></data>
+  <data name="MacroRecordDelayRecordedLabel" xml:space="preserve"><value>记录实际间隔</value></data>
+  <data name="MacroRecordDelayFixedLabel" xml:space="preserve"><value>固定间隔</value></data>
+  <data name="MacroRecordDelayNoneLabel" xml:space="preserve"><value>不记录延迟</value></data>
+  <data name="MacroRecordMouseNoneLabel" xml:space="preserve"><value>不记录</value></data>
+  <data name="MacroRecordMouseAbsoluteLabel" xml:space="preserve"><value>绝对坐标</value></data>
+  <data name="MacroRecordMouseRelativeLabel" xml:space="preserve"><value>相对移动</value></data>
+  <data name="MacroRecordMouseStartLabel" xml:space="preserve"><value>相对起点</value></data>
+  <data name="MacroRecordMouseForegroundLabel" xml:space="preserve"><value>相对前台窗口</value></data>
+  <data name="MacroRecordDelayModeLabel" xml:space="preserve"><value>延迟</value></data>
+  <data name="MacroRecordMouseModeLabel" xml:space="preserve"><value>鼠标轨迹</value></data>
+  <data name="RazerArgbApply.Content" xml:space="preserve"><value>应用灯带</value></data>
+  <data name="RazerArgbClear.Content" xml:space="preserve"><value>熄灭</value></data>
+  <data name="RazerArgbDescription.Text" xml:space="preserve"><value>选择端口和灯珠数量，点格子用主色涂色，然后应用。每个端口会保留自己涂的颜色。</value></data>
+  <data name="RazerArgbFill.Content" xml:space="preserve"><value>全部填充</value></data>
+  <data name="RazerArgbLedCount.Header" xml:space="preserve"><value>灯珠数量</value></data>
+  <data name="RazerArgbLedLabel" xml:space="preserve"><value>第 {0} 颗灯</value></data>
+  <data name="RazerArgbPort.Header" xml:space="preserve"><value>端口</value></data>
+  <data name="RazerArgbTitle.Text" xml:space="preserve"><value>逐灯控制</value></data>
+  <data name="RazerArgbDriverTitle.Text" xml:space="preserve"><value>ARGB 驱动</value></data>
+  <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>逐灯控制需要雷云的 0F1F 控制驱动。下载并安装后，点“刷新”重新检测。</value></data>
+  <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>下载 ARGB 驱动</value></data>
+  <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 由雷云的 THX 服务和音频组件提供。缺失时在这里安装；安装包需要管理员权限。</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>下载 THX 安装包</value></data>
+  <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>下载 THX 控制组件</value></data>
+  <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>更新 THX 游戏配置</value></data>
+  <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>更新 THX Patcher</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未检测到 THX 服务（VSSrv）。下载并运行雷云的 THX 安装包后重新检测。</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点下面的按钮下载。</value></data>
+  <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载 THX 控制组件…</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 控制组件下载或校验失败，请重试。</value></data>
+  <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
+  <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
+  <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>应用空间音效</value></data>
+  <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>预设</value></data>
+  <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
+  <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX 均衡器</value></data>
+  <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>应用频段</value></data>
+  <data name="RazerHeadsetThxNormalizationToggle.Header" xml:space="preserve"><value>音量标准化</value></data>
+  <data name="RazerHeadsetThxNormalizationApply.Content" xml:space="preserve"><value>应用音量标准化</value></data>
+  <data name="RazerHeadsetThxVoiceClarityToggle.Header" xml:space="preserve"><value>人声清晰度</value></data>
+  <data name="RazerHeadsetThxVoiceClarityApply.Content" xml:space="preserve"><value>应用人声清晰度</value></data>
+  <data name="RazerHeadsetThxSidetoneToggle.Header" xml:space="preserve"><value>侧音</value></data>
+  <data name="RazerHeadsetThxSidetoneApply.Content" xml:space="preserve"><value>应用侧音</value></data>
+  <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>没有拿到耳机音频端点的容器 ID，无法定位 THX。重新连接耳机后刷新。</value></data>
+  <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>THX 辅助进程启动失败。重新打开应用后再试。</value></data>
+  <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 组件没有接受这次修改。安装或修复 THX 安装包后刷新。</value></data>
+  <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>
+  <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>
+  <data name="RazerHeadsetPresetMovie" xml:space="preserve"><value>电影</value></data>
+  <data name="RazerHeadsetPresetTreble" xml:space="preserve"><value>高音增强</value></data>
+  <data name="RazerHeadsetPresetMicBoost" xml:space="preserve"><value>麦克风增强</value></data>
+  <data name="RazerHeadsetPresetPodcast" xml:space="preserve"><value>播客</value></data>
+  <data name="RazerHeadsetPresetCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="RazerHeadsetSourceNone" xml:space="preserve"><value>无</value></data>
+  <data name="RazerHeadsetSourceSpdif" xml:space="preserve"><value>光纤</value></data>
+  <data name="RazerHeadsetSourceAux" xml:space="preserve"><value>线路输入</value></data>
+  <data name="RazerHeadsetSourceBluetooth" xml:space="preserve"><value>蓝牙</value></data>
+  <data name="RazerHeadsetSourceUsb" xml:space="preserve"><value>USB</value></data>
+  <data name="RazerHeadsetAncOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerHeadsetAncOn" xml:space="preserve"><value>开启</value></data>
+  <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>环境音</value></data>
+  <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>读取失败，设备没有响应。</value></data>
+  <data name="RazerKeyboardCategory" xml:space="preserve"><value>游戏键盘</value></data>
+  <data name="RazerSpeakerCategory" xml:space="preserve"><value>音箱</value></data>
+  <data name="RazerLightingEffectOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>
+  <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>呼吸</value></data>
+  <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
+  <data name="RazerMicrophoneCategory" xml:space="preserve"><value>麦克风</value></data>
+  <data name="BleChargingFailed" xml:space="preserve"><value>充电失败</value></data>
+  <data name="BleChargingLimit" xml:space="preserve"><value>已达充电上限</value></data>
+  <data name="BleIdentity" xml:space="preserve"><value>BLE · 协议 30</value></data>
+  <data name="HueTitle" xml:space="preserve"><value>飞利浦 Hue</value></data>
+  <data name="HueDescription" xml:space="preserve"><value>自动查找局域网中的 Hue 桥；找不到时可手动填写地址。按桥上的配对按钮后点“配对”。</value></data>
+  <data name="HuePairButton" xml:space="preserve"><value>配对</value></data>
+  <data name="HueRefreshButton" xml:space="preserve"><value>刷新</value></data>
+  <data name="HueApplyButton" xml:space="preserve"><value>应用</value></data>
+  <data name="HuePaired" xml:space="preserve"><value>已配对</value></data>
+  <data name="HueLinkButtonHint" xml:space="preserve"><value>请先按下 Hue 桥上的配对按钮。</value></data>
+  <data name="HuePairFailed" xml:space="preserve"><value>配对失败。</value></data>
+  <data name="HuePairFirst" xml:space="preserve"><value>需要先完成配对。</value></data>
+  <data name="HueLightCount" xml:space="preserve"><value>已读取 {0} 盏灯。</value></data>
+  <data name="HueColorLabel" xml:space="preserve"><value>颜色</value></data>
+  <data name="HueApplyColorButton" xml:space="preserve"><value>应用颜色</value></data>
+  <data name="HueNotPaired" xml:space="preserve"><value>待配对</value></data>
+  <data name="HueNotConnected" xml:space="preserve"><value>未连接</value></data>
+  <data name="HueScanning" xml:space="preserve"><value>正在查找 Hue 桥…</value></data>
+  <data name="HueNoBridges" xml:space="preserve"><value>没有发现 Hue 桥，可手动填写地址。</value></data>
+  <data name="HueFoundBridges" xml:space="preserve"><value>发现 {0} 个 Hue 桥。</value></data>
+  <data name="HueBridgeCombo" xml:space="preserve"><value>Hue 桥</value></data>
+  <data name="HueScanButton" xml:space="preserve"><value>扫描</value></data>
+  <data name="HueLightsTitle" xml:space="preserve"><value>灯光</value></data>
+  <data name="HueBridgeRequired" xml:space="preserve"><value>请先扫描或填写 Hue 桥地址。</value></data>
+  <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>板载宏</value></data>
+  <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。</value></data>
+  <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>读取板载宏</value></data>
+  <data name="RazerOnboardMacroLoaded" xml:space="preserve"><value>已读取 {0} 个板载宏。</value></data>
+  <data name="RazerOnboardMacroUnavailable" xml:space="preserve"><value>这个固件没有响应板载宏命令。</value></data>
+  <data name="RazerOnboardMacroRowPrefix" xml:space="preserve"><value>宏</value></data>
+  <data name="RazerOnboardMacroRowDetail" xml:space="preserve"><value>{0} 个动作 · {1} 字节</value></data>
+  <data name="RazerOnboardMacroEmptyStream" xml:space="preserve"><value>空宏</value></data>
+  <data name="RazerOnboardMacroMouseButton" xml:space="preserve"><value>鼠标</value></data>
+  <data name="RazerOnboardMacroWheel" xml:space="preserve"><value>滚轮</value></data>  <data name="RazerOnboardMacroLocalLabel.Header" xml:space="preserve"><value>本机宏</value></data>
+  <data name="RazerOnboardMacroSlotLabel.Header" xml:space="preserve"><value>板载槽位</value></data>
+  <data name="RazerOnboardMacroWriteButton.Content" xml:space="preserve"><value>写入板载</value></data>
+  <data name="RazerOnboardMacroWriteDone" xml:space="preserve"><value>已写入板载槽位 {0}。</value></data>
+  <data name="RazerOnboardMacroWriteUnsupported" xml:space="preserve"><value>这个宏含有板载内存放不下的步骤，只支持按键、鼠标键、滚轮和延迟。</value></data>
+  <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>没有选中要写入的宏。</value></data>
+  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>写入失败：{0}</value></data></root>
+
+
+
+
+
+

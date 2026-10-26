@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Lighting;
@@ -228,10 +229,7 @@ internal static class ChromaFileAnimationStore
     private static readonly object Gate = new();
     private static readonly Dictionary<string, CacheEntry> Cache =
         new(StringComparer.OrdinalIgnoreCase);
-    private static string _rootDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "lighting");
+    private static string _rootDirectory = AppDataPaths.Combine("lighting");
 
     internal static string RootDirectory
     {

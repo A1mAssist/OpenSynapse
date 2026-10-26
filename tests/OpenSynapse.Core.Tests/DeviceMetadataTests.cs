@@ -322,8 +322,10 @@ public sealed class DeviceMetadataTests
     [Theory]
     [InlineData(0x02C6, false)] // Blade 16 (2025): fixed 5400 RPM fan target instead
     [InlineData(0x02E0, false)] // Blade 16 (2026)
-    [InlineData(0x029D, false)] // Blade 14 (2023)
+    [InlineData(0x029D, true)] // Blade 14 (2023): middleware enables maximum fan
     [InlineData(0x02C5, false)] // Blade 14 (2025)
+    [InlineData(0x02B6, true)]  // Blade 14 (2024): middleware enables maximum fan
+    [InlineData(0x02B8, true)]  // Blade 18 (2024): middleware enables maximum fan
     [InlineData(0x029F, true)]  // Blade 16 (2023): owner-tested
     [InlineData(0x02A0, true)]  // Blade 18 (2023): owner-reported
     public void MaxFanIsAdmittedOnlyForModelsWithEvidence(ushort productId, bool expected)
@@ -340,6 +342,8 @@ public sealed class DeviceMetadataTests
     [InlineData(0x02C6, true)]
     [InlineData(0x029F, true)]
     [InlineData(0x028C, true)]
+    [InlineData(0x029D, true)]
+    [InlineData(0x02B6, true)]
     [InlineData(0x0245, false)] // Blade 15 (2019): no audited Custom CPU levels
     [InlineData(0xFFFF, false)]
     public void CpuBoostVisibilityFollowsTheModelContract(ushort productId, bool expected)
@@ -444,8 +448,10 @@ public void Blade671CapabilitySummaryCountsOnlyItsAdmittedReports()
 
 private static string BuiltInManifestJson(string family)
     {
-        var manifest = RazerDeviceRegistry.BuiltIn.Manifests.Single(item =>
-            item.ProtocolFamily == family);
+        var manifest = RazerDeviceRegistry.BuiltIn.Manifests.FirstOrDefault(item =>
+            item.Id == family) ??
+            RazerDeviceRegistry.BuiltIn.Manifests.Single(item =>
+                item.ProtocolFamily == family);
         var resourceName = typeof(RazerDeviceRegistry).Assembly.GetManifestResourceNames()
             .Single(name => name.EndsWith($"{manifest.SourceName}", StringComparison.Ordinal));
         using var stream = typeof(RazerDeviceRegistry).Assembly.GetManifestResourceStream(resourceName)!;

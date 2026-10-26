@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "source": {
     "repository": "openrazer/openrazer",
-    "commit": "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+    "commit": "477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d"
   },
   "capabilitySets": {
     "laptops-001": [
@@ -2152,6 +2152,116 @@
         "razer_chroma_standard_matrix_effect_none": "FF",
         "razer_chroma_standard_matrix_effect_reactive": "FF",
         "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_starlight_single": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_matrix_effect_starlight_single": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02E0",
+      "displayName": "Razer Blade 16 (2026)",
+      "category": "laptop",
+      "capabilitySet": "laptops-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        17
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_dual": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_random": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_static": "FF",
+        "razer_chroma_standard_matrix_effect_starlight_single": "FF",
+        "razer_chroma_standard_matrix_effect_starlight_dual": "FF",
+        "razer_chroma_standard_matrix_effect_starlight_random": "FF",
+        "razer_chroma_standard_matrix_effect_wave": "FF",
+        "razer_chroma_standard_matrix_set_custom_frame": "FF",
+        "razer_chroma_standard_set_led_brightness": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_standard_get_led_brightness": [
+          "0105"
+        ],
+        "razer_chroma_standard_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_matrix_effect_starlight_single": [
+          "01"
+        ],
+        "razer_chroma_standard_matrix_effect_starlight_dual": [
+          "01"
+        ],
+        "razer_chroma_standard_matrix_effect_starlight_random": [
+          "01"
+        ],
+        "razer_chroma_standard_set_led_brightness": [
+          "0105"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02E1",
+      "displayName": "Razer Blade 18 (2026)",
+      "category": "laptop",
+      "capabilitySet": "laptops-001",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        19
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_misc_get_blade_brightness": "FF",
+        "razer_chroma_misc_set_blade_brightness": "FF",
+        "razer_chroma_standard_get_led_brightness": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_single": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_dual": "FF",
+        "razer_chroma_standard_matrix_effect_breathing_random": "FF",
+        "razer_chroma_standard_matrix_effect_custom_frame": "FF",
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_standard_matrix_effect_reactive": "FF",
+        "razer_chroma_standard_matrix_effect_spectrum": "FF",
+        "razer_chroma_standard_matrix_effect_static": "FF",
         "razer_chroma_standard_matrix_effect_starlight_single": "FF",
         "razer_chroma_standard_matrix_effect_wave": "FF",
         "razer_chroma_standard_matrix_set_custom_frame": "FF",

@@ -2,10 +2,114 @@
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [Unreleased]
+
+### 新增 / Added
+
+- 雷云推导鼠标新增板载按键映射：从产品 bundle 的 `Set/Get Single Button Assignment`（class `0x02` 的 `0x0C`/`0x8C`）读取按键列表和当前映射，可把普通层或 Shift 层的按键改成关闭或其他鼠标按键，写入后读回校验；不支持命令的设备读取失败时卡片保持隐藏。
+- Middleware-derived mice now expose onboard button mapping: read the button list and current assignments over the bundle's `Set/Get Single Button Assignment` commands (class 0x02, 0x0C/0x8C), remap a button to off or another mouse button on the normal or HyperShift layer, and verify every write by reading it back. The card stays hidden when the device refuses the command.
+- 0F1F ARGB 控制器缺少雷云过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。
+- When the 0F1F ARGB controller is missing Razer's filter driver, the lighting page now offers Razer's driver download instead of only showing an error.
+- 旋风黑鲨 V2 Pro（2020 / 2023）的音频页新增 THX 状态卡：检测 THX 服务（VSSrv）和控制组件；缺服务时给出雷云 THX 安装包入口，缺控制组件时可直接下载并校验，组件齐全时显示已安装。
+- The BlackShark V2 Pro (2020 and 2023) audio page now shows THX status: it checks the THX service (VSSrv) and the control component, links to Razer's THX installer when the service is missing, and downloads plus verifies the control component when only that is missing.
+- 耳机 THX 控制扩展到 V3/V4 全型号：空间音效、预设、10 段 EQ、音量标准化、人声清晰度，V3 还支持侧音；V3/V4 原生 DLL 按型号校验后下载，V4 提供 GameProfiles / Patcher 入口。未实机验证。
+- THX headset controls now cover V3 and V4 models: spatial audio, presets, 10-band EQ, volume leveling, voice clarity, and sidetone on V3. The app downloads and verifies the model-specific native DLL and offers V4 GameProfiles / Patcher entries. Not hardware-verified.
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
+- 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
+- The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
+- 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
+- Philips Hue also sets colour: pick a light, choose a colour, and the app converts sRGB to CIE 1931 xy and writes color.xy, with the same read-back check.
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
+- 灯光页不再只显示一台设备：同时接入多个 Aether 灯具、鼠标或配件时全部列出，同一台设备的多个 HID 接口合并成一行，刷新时保留原来选中的设备。
+- The lighting page no longer stops at a single device: every attached Aether lamp, mouse or accessory gets its own row, several HID interfaces of one device collapse into one row, and the previous selection survives a refresh.
+- 键盘页补上 class `0x0F` 的灯光通道，覆盖 16 款只有这套命令的键盘（Turret、BlackWidow X、Huntsman Essential / V3 X / V3 Pro 系列、BlackWidow V4 Low-profile、Reclusa、Tartarus V2 Pro 等）：可选关闭/静态/呼吸/光谱并写入 1–2 种颜色。这套通道没有亮度命令，亮度控件自动隐藏；设备能应答 `0F:130` 时读回校验，不能应答时按雷云同样的方式直接写入。
+- The keyboard page now drives the class 0x0F lighting channel used by 16 keyboards that have no class 0x10 support (Turret, BlackWidow X, Huntsman Essential / V3 X / V3 Pro series, BlackWidow V4 Low-profile, Reclusa, Tartarus V2 Pro and others): off/static/breathing/spectrum with one or two colours. The channel has no brightness command, so the brightness controls hide themselves; writes are read back when the firmware answers 0F:130 and applied without a readback otherwise, matching the middleware.
+- 查清此前名字为空的 `0F1B`：它是 Razer Seiren Emote 麦克风（与 `0524` 共用 Camyt3 中间件包）。现已接入音频页，显示 10 段 EQ 与麦克风音量，并归到“麦克风”分类；它的 8×8 LED 表情矩阵要走独立帧通道，暂未开放。
+- The previously unnamed 0F1B is the Razer Seiren Emote microphone (it shares the Camyt3 middleware bundle with 0524). It now has an audio page with the 10-band EQ and microphone volume, filed under the microphone category. Its 8x8 LED emote matrix needs the separate frame channel and is not exposed yet.
+- Seiren Emote 的 LED 矩阵补上灯光卡：效果（关/静态/呼吸/光谱）、亮度和主/副色，走 class `0x10` 的 `10:03` / `10:05`，写入前读当前值、写完读回校验、失败恢复。其他音频设备不响应这些命令，卡片自动隐藏。
+- The Seiren Emote LED matrix now has a lighting card: effect (off/static/breathing/spectrum), brightness and primary/secondary colours over the class 0x10 10:03 and 10:05 commands, with read-before-write, readback verification and restore on failure. Other audio devices do not answer these commands, so the card stays hidden.
+- 补上两台边缘设备：Razer Marci（音频）接入音频页，Razer Wireless Control Pod 接入灯光页。至此中间件里能识别出命令的 119 款设备中，118 款已有对应页面；只剩 Philips Hue（走网络桥，不是 HID）。
+- Two edge cases are now covered: Razer Marci (audio) on the audio page and the Razer Wireless Control Pod on the lighting page. Of the 119 devices with identifiable middleware commands, 118 now have a page; only Philips Hue (a network bridge, not HID) is left.
+- 键盘页再扩 12 款：BlackWidow X / V4 Pro 75% / V4 Low-profile（含 TKL）、Huntsman Essential / V3 X / V3 Pro Low-profile、Reclusa Mini 与 Reclusa X Mini、Pro Type Ergo、Tartarus V2 Pro、Turret Keyboard。能应答的功能（固件、序列号、游戏模式、轮询率、电量）自动出现，其余隐藏。
+- 音频页再扩 5 款：Seiren V2 Pro / V2 X / V3 Mini 麦克风、Leviathan V2 Pro 音箱和 Kraken V4 X 耳机，并新增“麦克风”设备分类。
+- The keyboard page now covers 12 more models: BlackWidow X, V4 Pro 75%, V4 Low-profile (including TKL), Huntsman Essential, V3 X and V3 Pro Low-profile, Reclusa Mini and Reclusa X Mini, Pro Type Ergo, Tartarus V2 Pro, and the Turret keyboard. Features the device answers (firmware, serial, game mode, polling rate, battery) appear automatically; the rest stay hidden.
+- The audio page now covers 5 more devices: Seiren V2 Pro / V2 X / V3 Mini microphones, the Leviathan V2 Pro speaker, and the Kraken V4 X headset, plus a new microphone device category.
+- 新增通用灯光页，覆盖 38 款此前没有页面的设备：Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 等鼠标，Key Light、Aether 灯具系列，Chroma ARGB 控制器，Thunderbolt 5 Dock、Core X V2、显示器支架等配件。可选择效果（关闭/静态/呼吸/光谱）、亮度和颜色，写入后读回校验。与 OpenRazer 目录、音频页、键盘页和 320 字节 ARGB 通道自动去重。
+- Added a shared lighting page for 38 devices that had no page: Viper V4 / Basilisk V4 / DeathAdder V4 / Naga V3 mice, the Key Light and Aether lamp family, Chroma ARGB controllers, and accessories such as Thunderbolt 5 Dock, Core X V2 and monitor stands. It offers effect (off/static/breathing/spectrum), brightness and colour, verified by reading the value back, and skips anything already owned by the OpenRazer catalogue, audio page, keyboard page or the 320-byte ARGB channel.
+- 键盘页新增灯光卡：效果（关闭/静态/呼吸/光谱）、亮度与一到两种颜色，写入后读回校验。底层实现了雷云 class `0x10` 的 Chroma 命令（效果、亮度），这套命令同时被 51 款鼠标、灯具、ARGB 控制器和扩展坞使用，后续页面可以直接复用。
+- Added a lighting card to the keyboard page: effect (off/static/breathing/spectrum), brightness, and one or two colors, each verified by reading the value back. The underlying class 0x10 Chroma commands (effect and brightness) are also used by 51 mice, lamps, ARGB controllers, and docks, so later pages can reuse them directly.
+- 音频页扩展到另外 11 款使用同一套 protocol 25 音频命令的设备：Kraken BT（Sanrio / Kitty）、Kraken X USB、Kraken V3 X、Kraken Kitty V2（含 BT Quartz）以及 Leviathan V2、Nommo V2 / V2 Pro / V2 X。音箱现在按音箱分类显示，没有 ANC 的型号会自动隐藏降噪卡片。
+- The audio page now covers 11 more devices that use the same protocol 25 audio commands: Kraken BT (Sanrio / Kitty), Kraken X USB, Kraken V3 X, Kraken Kitty V2 (including BT Quartz), plus Leviathan V2 and Nommo V2 / V2 Pro / V2 X. Speakers are labelled as speakers, and models without ANC hide the noise-cancelling card.
+- 新增 11 款键盘（Huntsman V3 系列、Pro Type 系列、BlackWidow V4 75% Xbox 版等）的设备页：固件、序列号、电量与充电、游戏模式、轮询率（最高 8000 Hz）。每个项目先探测设备是否应答，不支持的命令自动隐藏，避免出现空白控件。
+- Added a device page for 11 keyboards the OpenRazer catalogue does not cover (Huntsman V3 series, Pro Type series, BlackWidow V4 75% Xbox edition): firmware, serial number, battery and charging, game mode, and polling rate up to 8000 Hz. Each item probes the device first, and unsupported commands are hidden instead of leaving an empty control.
+- 新增 18 款 protocol 25 游戏耳机（Nari、Kraken V3/V4、Barracuda、BlackShark V2 Pro、USB 音频控制器等）的音频页：固件、电量、充电状态、EQ 预设与 8/10 段调节、低音、麦克风静音与音量、音频输入源、AI 降噪和 ANC。每次写入都会先读当前值、写完读回校验，失败时自动恢复原值。
+- Added an audio page for the 18 protocol 25 gaming headsets (Nari, Kraken V3/V4, Barracuda, BlackShark V2 Pro, USB audio controllers): firmware, battery, charging state, EQ presets and 8/10-band curves, bass, microphone mute and volume, audio source, AI noise suppression, and ANC. Every write reads the current value first, verifies the readback, and restores the previous value when the device does not accept the change.
+
+- 新增“仅核显（禁用独显）”显示开关。机器级 MSI 安装会注册受保护的 GPU 服务，安装时请求一次管理员权限，之后切换不再弹 UAC；当前用户安装和 Portable 仍回退到逐次 UAC。机器级安装会迁移旧的当前用户版本，保留配置并更新开机启动项。用户配置已迁到独立的 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`，不会再被 MSI 升级清理。
+- Added an integrated-graphics-only display switch. The machine-wide MSI install registers a protected GPU service, asks for administrator permission once during installation, and then switches without UAC; per-user and portable installs still fall back to a UAC prompt per change. The machine-wide install migrates an older per-user install, preserving settings and updating its startup entry. User data now lives in `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, outside the directories removed by MSI upgrades.
+
+### 修复 / Fixed
+
+- 按雷云 bundle 的 `DeviceInfo` 复核了复用原生协议的 12 个型号（16 个 PID）：补上 Abyssus Lite 漏掉的 125/500/1000 Hz 轮询率，并把没有灯光的 Viper V4 Pro 从灯光页目录里移除。对照明细见 `docs/MIDDLEWARE_MOUSE_AUDIT.md`。
+- Audited the 12 models (16 PIDs) that reuse a sibling protocol against the middleware bundle `DeviceInfo`: restored the missing 125/500/1000 Hz polling rates for the Abyssus Lite and removed the Viper V4 Pro from the lighting catalogue because it has no lighting. See `docs/MIDDLEWARE_MOUSE_AUDIT.md`.
+- Kraken Tournament Edition / Ultimate / Kitty V2（`0520`/`0527`/`0560`）此前同时出现在音频页和 37 字节灯光页，现在只保留音频页一张卡片，灯光效果并入音频页；其余 Kraken（7.1、7.1 Chroma 等）仍保留独立灯光页。
+- Kraken Tournament Edition, Ultimate and Kitty V2 (0x0520/0x0527/0x0560) used to appear twice — once on the audio page and once on the 37-byte lighting page. They now keep a single card on the audio page with the lighting merged in; the other Kraken models (7.1, 7.1 Chroma, …) keep their lighting page.
+- 修正耳机与键盘的电量读数：中间件的原始值是 0–255，按比例换算成百分比再显示；充电状态同样从第一个数据字节读取，不再整体偏移一位。
+- Fixed battery readings for headsets and keyboards: the middleware reports 0–255, now scaled to percent, and the charging flag is read from the first data byte instead of being off by one.
+- 窗口最小宽度从 1080 降到 700 逻辑像素，恢复小窗口使用；页面内容下限为 640 像素加 48 像素导航栏，再小需要重排页面布局。
+- The window minimum width is now 700 logical pixels instead of 1080, so the app can be resized small again; page content still has a 640-pixel floor plus the 48-pixel navigation pane, and going smaller would require reflowing the pages.
+- 修复旧版每用户安装目录在机器级安装后长期残留的问题。安装器产物（`Update.exe`、`packages\`）现在在每次启动时清理，不再只在安装那一刻清一次；用户配置、旧备份和日志一律保留。本机残留从 69.75 MB 降到 1.47 MB。
+- Fixed the legacy per-user install directory lingering after a machine-wide install. Installer artifacts (`Update.exe`, `packages\`) are now cleaned on every launch instead of only once during installation; user settings, backups, and logs are always kept.
+- 修复从每用户安装升级到机器级安装后，桌面和开始菜单的快捷方式丢失的问题。仍指向旧目录的快捷方式会被改写到新的机器级启动器，用户主动删除的快捷方式不会被重建。
+- Fixed the desktop and Start-menu shortcuts disappearing when upgrading from a per-user install to a machine-wide install. Shortcuts still pointing at the old directory are redirected to the new launcher; shortcuts the user deleted are not recreated.
+- 修复过渡目录清理过于激进的问题。旧目录里每个文件都迁移到新目录后才删除整个目录，仍有未迁移的文件时保留目录交给下次启动继续搬。
+- Fixed the transitional data root being removed too eagerly. The directory is deleted only once every file in it has been migrated; files still pending are kept for the next launch.
+- 修复 GPU 模式切换在服务刚被唤醒时可能退回 UAC 弹窗的问题。客户端在管道连接失败时重试一次，把常见的唤醒竞态挡在 UAC 之前。
+- Fixed the GPU-mode switch falling back to a UAC prompt when the service was still waking up. The client retries once when the pipe connection fails, so the common wake-up race no longer reaches UAC.
+
+### 改进 / Improved
+
+- 补齐雷云 product bundle 清单里最后两个没有落点的 PID：Razer Cobra（`00A2`，复用 `00A3` 的 Cobra 定义）和 Chroma 无线 ARGB 控制器（`0F2E`）。现在 278 款能从 CDN 拉到 middleware 的产品都有对应页面。
+- Closed the last two gaps in the middleware bundle list: Razer Cobra (`00A2`, reuse the `00A3` Cobra definition) and the Chroma Wireless ARGB Controller (`0F2E`). All 278 products with a middleware bundle now have a page.
+- 移除设置页的“系统音频”卡。默认播放/录音设备、音量和静音交回 Windows 声音设置，应用不再维护未公开的默认端点切换。
+- Removed the System audio card from Settings. Default playback/recording devices, volume and mute stay in Windows Sound settings, and the app no longer maintains the undocumented default-endpoint switch.
+- OpenRazer 设备目录升级到上游 `477f4d6`，新增 Razer Joro、Cobra HyperSpeed（有线/无线）、Blade 16 (2026) 和 Blade 18 (2026)，目录共 259 款。
+- The OpenRazer catalogue is upgraded to upstream `477f4d6`, adding Razer Joro, Cobra HyperSpeed (wired/wireless), Blade 16 (2026), and Blade 18 (2026), for 259 entries in total.
+- 新增《中间件设备协议参考》文档，列出 119 款雷云产品在自身中间件里实际调用的 HID 命令，按 33 组命令 profile 归类。OpenRazer 目录未收录的设备可以据此判断功能是否可实现。
+- Added the middleware device protocol reference, listing the HID commands 119 Synapse products actually call from their own middleware, grouped into 33 command profiles. It shows what is implementable for devices the OpenRazer catalogue does not cover.
+- 冷却垫协议改用 0F43 实际使用的通用 `rzDevice25` 热控布局：速度是 8 位单字节、风扇信息命令负载为 12 字节、可用范围按固件的 125–2600 RPM 收口。之前的实现套用了 PWM 风扇控制器（0F3C）的 16 位大端布局。
+- The cooling-pad protocol now uses the generic `rzDevice25` thermal layout that 0F43 actually uses: an 8-bit speed byte, a 12-byte fan-information payload, and a 125–2600 RPM range taken from the firmware. The previous implementation applied the 16-bit big-endian layout of the PWM fan controller (0F3C).
+
 ## [1.5.5] - 2026-10-23
 
 ### 新增 / Added
 
+- 0F1F ARGB 控制器缺少雷云过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。
+- When the 0F1F ARGB controller is missing Razer's filter driver, the lighting page now offers Razer's driver download instead of only showing an error.
+- 旋风黑鲨 V2 Pro（2020 / 2023）的音频页新增 THX 状态卡：检测 THX 服务（VSSrv）和控制组件；缺服务时给出雷云 THX 安装包入口，缺控制组件时可直接下载并校验，组件齐全时显示已安装。
+- The BlackShark V2 Pro (2020 and 2023) audio page now shows THX status: it checks the THX service (VSSrv) and the control component, links to Razer's THX installer when the service is missing, and downloads plus verifies the control component when only that is missing.
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
+- 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
+- The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
+- 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
+- Philips Hue also sets colour: pick a light, choose a colour, and the app converts sRGB to CIE 1931 xy and writes color.xy, with the same read-back check.
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 新增宏页面与全尺寸宏编辑器，按雷云的操作结构提供宏列表、动作序列、触发键绑定、录制、单次/重复/持续循环播放，以及每步延迟和按住时间设置。编辑器支持键盘与鼠标选择器，录制或编辑时按下的键位会捕获为完整动作。
 - Added a macro page and full-size editor with the Synapse-style macro list, action sequence, trigger binding, recording, once/repeat/continuous playback, and per-step delay and hold settings. The editor includes keyboard and mouse pickers; a captured key or mouse button becomes a complete action.
 - 手动宏动作支持鼠标移动轨迹编辑：可在图上添加、拖动和删除轨迹点，精确输入 X/Y 坐标与时间；确认应用前不会修改现有宏。
@@ -56,6 +160,24 @@ This release is unsigned and targets Windows 11 x64. CPU core-voltage offset, GP
 
 ### 新增 / Added
 
+- 0F1F ARGB 控制器缺少雷云过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。
+- When the 0F1F ARGB controller is missing Razer's filter driver, the lighting page now offers Razer's driver download instead of only showing an error.
+- 旋风黑鲨 V2 Pro（2020 / 2023）的音频页新增 THX 状态卡：检测 THX 服务（VSSrv）和控制组件；缺服务时给出雷云 THX 安装包入口，缺控制组件时可直接下载并校验，组件齐全时显示已安装。
+- The BlackShark V2 Pro (2020 and 2023) audio page now shows THX status: it checks the THX service (VSSrv) and the control component, links to Razer's THX installer when the service is missing, and downloads plus verifies the control component when only that is missing.
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
+- 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
+- The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
+- 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
+- Philips Hue also sets colour: pick a light, choose a colour, and the app converts sRGB to CIE 1931 xy and writes color.xy, with the same read-back check.
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - Blade 16 (2025) 的风扇控制现提供自动、固定转速和手动曲线三种模式。手动曲线在独立窗口中编辑，支持拖拽 CPU/GPU 曲线点、精确输入温度与 RPM、增加或删除档位、恢复默认。
 - Blade 16 (2025) fan control now offers automatic, fixed-RPM, and manual-curve modes. The curve editor opens in a separate window with draggable CPU/GPU points, exact temperature and RPM inputs, tier add/remove, and reset-to-default.
 - 新增 Razer BlackShark V3 Pro 支持（2.4 GHz `1532:101B`、USB `1532:101C`）：电量、充电状态、侧音、THX Spatial Audio、主动降噪和游戏/语音平衡。
@@ -110,6 +232,24 @@ This release is unsigned and targets Windows 11 x64. BlackShark V3 Pro does not 
 
 ### 新增 / Added
 
+- 0F1F ARGB 控制器缺少雷云过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。
+- When the 0F1F ARGB controller is missing Razer's filter driver, the lighting page now offers Razer's driver download instead of only showing an error.
+- 旋风黑鲨 V2 Pro（2020 / 2023）的音频页新增 THX 状态卡：检测 THX 服务（VSSrv）和控制组件；缺服务时给出雷云 THX 安装包入口，缺控制组件时可直接下载并校验，组件齐全时显示已安装。
+- The BlackShark V2 Pro (2020 and 2023) audio page now shows THX status: it checks the THX service (VSSrv) and the control component, links to Razer's THX installer when the service is missing, and downloads plus verifies the control component when only that is missing.
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
+- Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
+- After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
+- 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
+- The lighting page now shows device identity: serial number and firmware version for devices that answer, hidden without an error when they do not.
+- 灯光页补上电量：有电池的无线鼠标等设备会在名称下方显示电量百分比和充电状态；灯具、扩展坞这类没有电池的设备读不到时自动隐藏，不算错误。
+- The lighting page now shows battery for devices that have one: wireless mice display their percentage and charging state under the name, while lamps and docks hide the line because the probe fails silently.
+- 新增飞利浦 Hue 支持：在设置页填入桥地址、按下桥上的配对按钮后点“配对”，就能列出灯光并控制开关与亮度。每次写入都读回校验，桥没有接受时恢复原值；桥的自签证书只对填入的那个地址放行。
+- Added Philips Hue support. Enter the bridge address in Settings, press the link button on the bridge, then choose Pair to list lights and control on/off and brightness. Every write is read back and the previous state is restored when the bridge keeps a different value; the bridge certificate is trusted only for the address you entered.
+- 飞利浦 Hue 增加颜色控制：选中灯、取色后点“应用颜色”，按 sRGB→CIE xy 换算写入 `color.xy`，同样读回校验。
+- Philips Hue also sets colour: pick a light, choose a colour, and the app converts sRGB to CIE 1931 xy and writes color.xy, with the same read-back check.
+- 新增 BLE 设备页：只走蓝牙的雷蛇鼠标（如 Viper V4 Pro）现在会出现在设备列表里，可查看固件、序列号、电量、充电状态、轮询率与 DPI，并写入轮询率和 DPI；每次写入都读回校验，设备不接受时恢复原值。底层是雷云 protocol 30 的 GATT 通道。
+- Added a BLE device page: Razer mice that only speak Bluetooth (such as the Viper V4 Pro) now appear in the device list with firmware, serial number, battery, charging state, polling rate and DPI, and accept polling-rate and DPI writes. Every write is read back, and the previous value is restored when the device does not take it. The channel is the middleware's GATT protocol 30.
 - 新增 Razer Blade 16 (2023) `1532:029F` 支持：键盘亮度、固件渲染灯效（关闭、呼吸、光谱、波动）、性能模式、自定义 CPU/GPU 档位（含 CPU Boost、Max Fan）、2000–5000 RPM 固定风扇目标、充电上限、一次充满和游戏模式。
 - Added support for the Razer Blade 16 (2023) `1532:029F`: keyboard brightness, firmware-rendered effects (Off, Breathing, Spectrum, Wave), performance modes, Custom CPU/GPU levels with CPU Boost and Max Fan, fixed fan targets from 2000 to 5000 RPM, charge limit, one-time full charge, and Gaming mode.
 - 新增受支持机型的 THX Spatial Audio 控制：扬声器/耳机选择、空间音频、EQ 预设与频段、人声清晰度和扬声器音量标准化。厂商原生组件不随包分发，缺失时应用会提供来自 Razer 官方服务器的可校验下载。

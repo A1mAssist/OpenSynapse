@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "source": {
     "repository": "openrazer/openrazer",
-    "commit": "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+    "commit": "477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d"
   },
   "capabilitySets": {
     "keyboards-001": [
@@ -5268,6 +5268,102 @@
         ],
         "razer_chroma_standard_set_led_effect": [
           "0107"
+        ],
+        "razer_chroma_standard_set_led_state": [
+          "0108"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "05",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "02CD",
+      "displayName": "Razer Joro",
+      "category": "keyboard",
+      "capabilitySet": "keyboards-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        6,
+        16
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_random": "1F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_random": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_standard_get_led_state": "FF",
+        "razer_chroma_standard_set_led_state": "FF"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_random": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_set_custom_frame": [
+          "00"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ],
+        "razer_chroma_standard_get_led_state": [
+          "0108"
         ],
         "razer_chroma_standard_set_led_state": [
           "0108"

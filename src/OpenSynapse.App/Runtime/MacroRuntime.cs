@@ -6,7 +6,7 @@ namespace OpenSynapse.App.Runtime;
 
 internal sealed class MacroRuntime : IDisposable
 {
-    private const int StopPlaybackVirtualKey = 0x79;
+    private const int DefaultStopPlaybackVirtualKey = 0x79;
     private readonly object _gate = new();
     private readonly WindowsMacroInputSink _sink = new();
     private readonly Dictionary<InputKey, SuppressedInput> _suppressedInputs = [];
@@ -31,11 +31,16 @@ internal sealed class MacroRuntime : IDisposable
     private string? _activePlaybackMacroId;
     private bool _disposed;
     private bool _recordingPending;
-    private bool _stopPlaybackHotkeyHeld;
+    private MacroInput? _playbackStartShortcut;
+    private MacroInput _playbackStopShortcut = CreateDefaultStopShortcut();
+    private bool _playbackStartHotkeyHeld;
+    private bool _playbackStopHotkeyHeld;
 
     public event Action<string>? Error;
 
     public event Action? RecordingStopRequested;
+
+    public event Action? PlaybackStartRequested;
 
     public event Action? PlaybackStateChanged;
 
@@ -128,6 +133,28 @@ internal sealed class MacroRuntime : IDisposable
                         _recording is not null &&
                         _recordingOptions.MouseTrackingMode != MacroMouseTrackingMode.None;
                 }
+            }
+        }
+
+        DisposeHook(hookToDispose);
+    }
+
+    public void SetPlaybackShortcuts(MacroInput? start, MacroInput? stop)
+    {
+        MacroInputHook? hookToDispose = null;
+        lock (_gate)
+        {
+            _playbackStartShortcut = NormalizePlaybackShortcut(start);
+            _playbackStopShortcut = NormalizePlaybackShortcut(stop) ?? CreateDefaultStopShortcut();
+            _playbackStartHotkeyHeld = false;
+            _playbackStopHotkeyHeld = false;
+            if (CanDetachHookLocked())
+            {
+                hookToDispose = DetachHookLocked();
+            }
+            else
+            {
+                EnsureHookLocked();
             }
         }
 
@@ -326,8 +353,8 @@ internal sealed class MacroRuntime : IDisposable
             _resumePlayback?.TrySetResult();
             _resumePlayback = null;
             _activePlaybackMacroId = macro.Id;
-            // Manual playback also needs the hook so F10 can stop it even
-            // when no macro has a trigger.
+            // Manual playback also needs the hook so the stop shortcut can
+            // stop it even when no macro has a trigger.
             EnsureHookLocked();
         }
         PlaybackStateChanged?.Invoke();
@@ -487,39 +514,72 @@ internal sealed class MacroRuntime : IDisposable
         var suppress = false;
         var stopRequested = false;
         var stopPlayback = false;
+        var startPlayback = false;
+        var playbackShortcutHandled = false;
 
-        // F10 is reserved while a macro is playing. Keep this check ahead of
-        // trigger matching, but behind recording and capture modes.
-        if (IsStopPlaybackInput(value.Input))
+        // Playback shortcuts take priority over macro triggers, but never while
+        // recording or capturing a key.
+        lock (_gate)
         {
-            var stopHotkeyHandled = false;
-            lock (_gate)
+            var canUsePlaybackShortcuts =
+                _recording is null &&
+                _stepCapture is null &&
+                _triggerCapture is null &&
+                !_recordingPending;
+            if (canUsePlaybackShortcuts)
             {
-                var canUseStopHotkey =
-                    _recording is null &&
-                    _stepCapture is null &&
-                    _triggerCapture is null &&
-                    !_recordingPending;
-                if (value.IsDown && _isPlaying && canUseStopHotkey)
-                {
-                    _stopPlaybackHotkeyHeld = true;
-                    stopHotkeyHandled = true;
-                }
-                else if (!value.IsDown && _stopPlaybackHotkeyHeld && canUseStopHotkey)
-                {
-                    _stopPlaybackHotkeyHeld = false;
-                    stopHotkeyHandled = true;
-                }
-            }
-
-            if (stopHotkeyHandled)
-            {
+                var matchesStart = _playbackStartShortcut?.Matches(value.Input) == true;
+                var matchesStop = _playbackStopShortcut.Matches(value.Input);
                 if (value.IsDown)
                 {
-                    StopPlayback();
+                    if (matchesStart && _playbackStartHotkeyHeld)
+                    {
+                        playbackShortcutHandled = true;
+                    }
+                    else if (matchesStop && _playbackStopHotkeyHeld)
+                    {
+                        playbackShortcutHandled = true;
+                    }
+                    else if (matchesStop && _isPlaying)
+                    {
+                        _playbackStopHotkeyHeld = true;
+                        stopPlayback = true;
+                        playbackShortcutHandled = true;
+                    }
+                    else if (matchesStart)
+                    {
+                        _playbackStartHotkeyHeld = true;
+                        startPlayback = !_isPlaying;
+                        playbackShortcutHandled = true;
+                    }
                 }
-                return true;
+                else
+                {
+                    if (matchesStart && _playbackStartHotkeyHeld)
+                    {
+                        _playbackStartHotkeyHeld = false;
+                        playbackShortcutHandled = true;
+                    }
+                    if (matchesStop && _playbackStopHotkeyHeld)
+                    {
+                        _playbackStopHotkeyHeld = false;
+                        playbackShortcutHandled = true;
+                    }
+                }
             }
+        }
+
+        if (playbackShortcutHandled)
+        {
+            if (stopPlayback)
+            {
+                StopPlayback();
+            }
+            if (startPlayback)
+            {
+                PlaybackStartRequested?.Invoke();
+            }
+            return true;
         }
 
         lock (_gate)
@@ -635,7 +695,7 @@ internal sealed class MacroRuntime : IDisposable
                 if (!value.IsDown)
                 {
                     _suppressedInputs.Remove(key);
-                    if (suppressed.Mode == MacroTriggerMode.Hold &&
+                    if (suppressed.Mode is MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat &&
                         StringComparer.Ordinal.Equals(
                             _activePlaybackMacroId,
                             suppressed.MacroId))
@@ -667,6 +727,7 @@ internal sealed class MacroRuntime : IDisposable
                 switch (trigger.Mode)
                 {
                     case MacroTriggerMode.Hold:
+                    case MacroTriggerMode.HoldRepeat:
                         if (!_isPlaying ||
                             !StringComparer.Ordinal.Equals(_activePlaybackMacroId, macro.Id))
                         {
@@ -1041,7 +1102,8 @@ internal sealed class MacroRuntime : IDisposable
         }
         _suppressedCapture = null;
         _suppressedInputs.Clear();
-        _stopPlaybackHotkeyHeld = false;
+        _playbackStartHotkeyHeld = false;
+        _playbackStopHotkeyHeld = false;
         return hook;
     }
 
@@ -1057,6 +1119,7 @@ internal sealed class MacroRuntime : IDisposable
         _triggerCapture is null &&
         _stepCapture is null &&
         !_isPlaying &&
+        _playbackStartShortcut is null &&
         !HasTrigger(_macros);
 
     private static bool HasTrigger(IReadOnlyList<MacroDefinition> macros) =>
@@ -1065,9 +1128,19 @@ internal sealed class MacroRuntime : IDisposable
             macro.Steps.Count > 0 &&
             macro.Trigger?.Input is not null);
 
-    private static bool IsStopPlaybackInput(MacroInput input) =>
-        input.Kind == MacroInputKind.Keyboard &&
-        input.VirtualKey == StopPlaybackVirtualKey;
+    private static MacroInput CreateDefaultStopShortcut() => new()
+    {
+        Kind = MacroInputKind.Keyboard,
+        VirtualKey = DefaultStopPlaybackVirtualKey,
+        Extended = false,
+    };
+
+    private static MacroInput? NormalizePlaybackShortcut(MacroInput? input) =>
+        input is not null &&
+        !input.IsModifierKey &&
+        input.IsValid(allowPrimaryMouseButton: false, allowWheel: false)
+            ? input.Clone()
+            : null;
 
     private static InputKey KeyOf(MacroInput input) =>
         input.Kind == MacroInputKind.MouseButton

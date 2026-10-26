@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
+using OpenSynapse.Core.Storage;
 using Windows.UI.ViewManagement;
 
 namespace OpenSynapse.App;
@@ -9,10 +10,8 @@ namespace OpenSynapse.App;
 public sealed partial class MainWindow
 {
     private static readonly TimeSpan IntroductionCloseTimeout = TimeSpan.FromSeconds(2);
-    private static readonly string IntroductionMarkerPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "introduction-v1.done");
+    private static readonly string IntroductionMarkerPath =
+        AppDataPaths.Combine("introduction-v1.done");
     private bool _introductionTransitioning;
     private bool _introductionPendingAfterLaunch;
     private int _introductionStep = -1;

@@ -31,6 +31,7 @@ public enum MacroTriggerMode
     Toggle = 1,
     Hold = 2,
     Sequence = 3,
+    HoldRepeat = 4,
 }
 
 public enum MacroDelayMode
@@ -451,6 +452,11 @@ public sealed class MacroDefinition
         RepeatCount = Math.Clamp(RepeatCount, 1, MaxRepeatCount);
         if (PlaybackMode != MacroPlaybackMode.Repeat)
         {
+            RepeatCount = 1;
+        }
+        if (Trigger?.Mode == MacroTriggerMode.HoldRepeat)
+        {
+            PlaybackMode = MacroPlaybackMode.RepeatUntilStopped;
             RepeatCount = 1;
         }
 

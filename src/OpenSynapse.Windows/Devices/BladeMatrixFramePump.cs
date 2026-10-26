@@ -15,6 +15,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
     private readonly Func<CancellationToken, Task> _restorePersistentEffect;
+    private readonly int _matrixRows;
+    private readonly int _matrixColumns;
     private readonly Channel<RazerRgb[]> _frames = Channel.CreateBounded<RazerRgb[]>(
         new BoundedChannelOptions(1)
         {
@@ -35,15 +37,23 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     public BladeMatrixFramePump(
         IRazerFeatureTransport transport,
         string devicePath,
-        Func<CancellationToken, Task> restorePersistentEffect)
+        Func<CancellationToken, Task> restorePersistentEffect,
+        int matrixRows = BladeLightingProtocol.Rows,
+        int matrixColumns = BladeLightingProtocol.Columns)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         ArgumentNullException.ThrowIfNull(restorePersistentEffect);
+        if (matrixRows is < 1 or > 6 || matrixColumns is < 1 or > 25)
+        {
+            throw new ArgumentOutOfRangeException(nameof(matrixRows));
+        }
 
         _transport = transport;
         _devicePath = devicePath;
         _restorePersistentEffect = restorePersistentEffect;
+        _matrixRows = matrixRows;
+        _matrixColumns = matrixColumns;
         _worker = RunAsync();
     }
 
@@ -209,7 +219,10 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         IRazerFeatureSession? session,
         CancellationToken cancellationToken)
     {
-        var requests = BladeLightingProtocol.CreateMatrixFrameRequests(frame);
+        var requests = BladeLightingProtocol.CreateMatrixFrameRequests(
+            ScaleFrame(frame),
+            _matrixRows,
+            _matrixColumns);
         if (session is null)
         {
             await _transport.SendBatchAsync(
@@ -221,6 +234,28 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         }
 
         await session.SendBatchAsync(requests, DeviceWait, cancellationToken).ConfigureAwait(false);
+    }
+
+    private RazerRgb[] ScaleFrame(IReadOnlyList<RazerRgb> frame)
+    {
+        if (_matrixRows == BladeLightingProtocol.Rows &&
+            _matrixColumns == BladeLightingProtocol.Columns)
+        {
+            return frame.ToArray();
+        }
+
+        var scaled = new RazerRgb[_matrixRows * _matrixColumns];
+        for (var row = 0; row < _matrixRows; row++)
+        {
+            var sourceRow = row * BladeLightingProtocol.Rows / _matrixRows;
+            for (var column = 0; column < _matrixColumns; column++)
+            {
+                var sourceColumn = column * BladeLightingProtocol.Columns / _matrixColumns;
+                scaled[row * _matrixColumns + column] =
+                    frame[sourceRow * BladeLightingProtocol.Columns + sourceColumn];
+            }
+        }
+        return scaled;
     }
 
     private async Task<IRazerFeatureSession?> TryOpenSessionAsync(
