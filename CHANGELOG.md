@@ -75,6 +75,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 改进 / Improved
 
+- 补齐雷云 product bundle 清单里最后两个没有落点的 PID：Razer Cobra（`00A2`，复用 `00A3` 的 Cobra 定义）和 Chroma 无线 ARGB 控制器（`0F2E`）。现在 278 款能从 CDN 拉到 middleware 的产品都有对应页面。
+- Closed the last two gaps in the middleware bundle list: Razer Cobra (`00A2`, reuse the `00A3` Cobra definition) and the Chroma Wireless ARGB Controller (`0F2E`). All 278 products with a middleware bundle now have a page.
 - 移除设置页的“系统音频”卡。默认播放/录音设备、音量和静音交回 Windows 声音设置，应用不再维护未公开的默认端点切换。
 - Removed the System audio card from Settings. Default playback/recording devices, volume and mute stay in Windows Sound settings, and the app no longer maintains the undocumented default-endpoint switch.
 - OpenRazer 设备目录升级到上游 `477f4d6`，新增 Razer Joro、Cobra HyperSpeed（有线/无线）、Blade 16 (2026) 和 Blade 18 (2026)，目录共 259 款。

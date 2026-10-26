@@ -35,6 +35,7 @@ public sealed class MiddlewareMouseCatalogTests
     [InlineData(0x00EB, 33000)]
     [InlineData(0x00EF, 50000)]
     [InlineData(0x00F0, 50000)]
+    [InlineData(0x00A2, 8500)]
     public void MiddlewareMiceAreCataloguedWithTheirOwnDpiRange(ushort productId, int maximumDpi)
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(OpenRazerDeviceDefinition.VendorId, productId);
@@ -70,6 +71,7 @@ public sealed class MiddlewareMouseCatalogTests
     {
         Assert.Equal([125, 500, 1000], Find(0x00E0).PollingRates);
         Assert.Equal([125, 500, 1000], Find(0x0074).PollingRates);
+        Assert.Equal([125, 500, 1000], Find(0x00A2).PollingRates);
         Assert.Equal([125, 500, 1000, 2000, 4000, 8000], Find(0x00E2).PollingRates);
         Assert.Equal([125, 500, 1000], Find(0x00E7).PollingRates);
     }
@@ -81,6 +83,6 @@ public sealed class MiddlewareMouseCatalogTests
     private static IEnumerable<ushort> AllPids() =>
     [
         0x0063, 0x0069, 0x0074, 0x0075, 0x0093, 0x00DD, 0x00E0, 0x00E2, 0x00E3,
-        0x00E5, 0x00E6, 0x00E7, 0x00E8, 0x00EA, 0x00EB, 0x00EF, 0x00F0,
+        0x00E5, 0x00E6, 0x00E7, 0x00E8, 0x00EA, 0x00EB, 0x00EF, 0x00F0, 0x00A2,
     ];
 }
