@@ -60,27 +60,10 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="4" />
       </Style>
-      <!-- The stock ProgressBar animates value changes through its Updating state, which makes
-           live telemetry bars visibly jump when load falls. This template keeps the same parts
-           but omits the visual states, so the indicator width updates without that transition. -->
       <Style x:Key="TelemetryBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="4" />
         <Setter Property="MinHeight" Value="4" />
         <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
-        <Setter Property="Template">
-          <Setter.Value>
-            <ControlTemplate TargetType="ProgressBar">
-              <Grid x:Name="LayoutRoot" Height="{TemplateBinding Height}">
-                <Border Background="{TemplateBinding Background}" CornerRadius="2" />
-                <Rectangle x:Name="DeterminateProgressBarIndicator"
-                           Fill="{TemplateBinding Foreground}"
-                           HorizontalAlignment="Left"
-                           RadiusX="2"
-                           RadiusY="2" />
-              </Grid>
-            </ControlTemplate>
-          </Setter.Value>
-        </Setter>
       </Style>
       <Style x:Key="PrimaryButtonStyle" TargetType="Button">
         <Setter Property="MinHeight" Value="34" />
