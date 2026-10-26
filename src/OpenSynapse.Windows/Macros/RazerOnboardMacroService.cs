@@ -1,24 +1,43 @@
-using OpenSynapse.Windows.Macros;
+using System.ComponentModel;
 using OpenSynapse.Windows.Protocols;
 
-namespace OpenSynapse.Windows.Devices;
+namespace OpenSynapse.Windows.Macros;
 
-public sealed partial class RazerKeyboardService
+/// <summary>
+/// Reads and rewrites the onboard macro block of a protocol 25 device. The wire format
+/// comes from Synapse's rzDevice25 macro methods, which the keyboards and the
+/// macro-capable mice (Naga Trinity, Naga Left Handed 2020, Naga Classic, Turret) share.
+/// </summary>
+public sealed class RazerOnboardMacroService
 {
-    /// <summary>
-    /// Keyboards whose middleware model declares OBMSpecs.supportedFeature.macros.
-    /// Products outside this set keep the onboard macro card hidden.
-    /// </summary>
-    public static readonly IReadOnlySet<ushort> OnboardMacroProducts = new HashSet<ushort>
+    private readonly IRazerFeatureTransport _transport;
+    private readonly string _devicePath;
+    private readonly TimeSpan _deviceWait;
+    private readonly Action<string>? _diagnostic;
+    private byte _transactionId = 0x1F;
+
+    public RazerOnboardMacroService(
+        IRazerFeatureTransport transport,
+        string devicePath,
+        TimeSpan deviceWait,
+        Action<string>? diagnostic = null)
     {
-        0x02D0, 0x02D1, 0x02D8, 0x02E3, 0x02E4, 0x02E5, 0x02E6, 0x02EA, 0x02EB, 0x02F4, 0x02CC,
-    };
+        _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _devicePath = string.IsNullOrWhiteSpace(devicePath)
+            ? throw new ArgumentException("A HID device path is required.", nameof(devicePath))
+            : devicePath;
+        _deviceWait = deviceWait;
+        _diagnostic = diagnostic;
+    }
+
+    public static bool IsSupportedProduct(ushort productId) =>
+        RazerOnboardMacroDevices.Products.Contains(productId);
+
     /// <summary>
-    /// Returns the raw 14-byte storage block, or null when the firmware does not answer
-    /// the onboard macro command. Null hides the whole feature instead of showing an
-    /// empty page.
+    /// Returns the storage block, or null when the firmware does not answer the command.
+    /// Null keeps the whole feature hidden instead of showing an empty page.
     /// </summary>
-    public async Task<RazerOnboardMacroStorageInfo?> ProbeOnboardMacroStorageAsync(
+    public async Task<RazerOnboardMacroStorageInfo?> ProbeStorageAsync(
         CancellationToken cancellationToken = default)
     {
         try
@@ -31,59 +50,29 @@ public sealed partial class RazerKeyboardService
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            _diagnostic?.Invoke($"keyboard macro storage unavailable: {exception.Message}");
+            _diagnostic?.Invoke($"onboard macro storage unavailable: {exception.Message}");
             return null;
         }
     }
 
-    public async Task<IReadOnlyList<RazerOnboardMacro>> ReadOnboardMacrosAsync(
+    public async Task<IReadOnlyList<RazerOnboardMacro>> ReadAllAsync(
         CancellationToken cancellationToken = default)
     {
-        var ids = await ReadOnboardMacroIdsAsync(cancellationToken).ConfigureAwait(false);
+        var ids = await ReadIdsAsync(cancellationToken).ConfigureAwait(false);
         var macros = new List<RazerOnboardMacro>(ids.Count);
         foreach (var id in ids)
         {
-            var raw = await ReadOnboardMacroAsync(id, cancellationToken).ConfigureAwait(false);
-            if (raw is not null)
+            var macro = await ReadAsync(id, cancellationToken).ConfigureAwait(false);
+            if (macro is not null)
             {
-                macros.Add(raw);
+                macros.Add(macro);
             }
         }
 
         return macros;
     }
 
-    /// <summary>
-    /// Reads the id list instead of assuming the ids are 1..count, because deleting a
-    /// macro leaves a hole that sequential iteration would read as a missing macro.
-    /// </summary>
-    private async Task<IReadOnlyList<byte>> ReadOnboardMacroIdsAsync(CancellationToken cancellationToken)
-    {
-        var ids = new List<byte>();
-        var total = int.MaxValue;
-        while (ids.Count < total && ids.Count < byte.MaxValue)
-        {
-            var (windowTotal, window) = RazerOnboardMacroProtocol.ParseMacroIdList(
-                await QueryAsync(
-                    transactionId => RazerOnboardMacroProtocol.GetMacroIdList.CreateRequest(
-                        transactionId,
-                        RazerOnboardMacroProtocol.CreateMacroIdListArguments(ids.Count)),
-                    "macro id list",
-                    cancellationToken).ConfigureAwait(false));
-
-            total = windowTotal;
-            if (window.Length == 0 || window.Any(ids.Contains))
-            {
-                break;
-            }
-
-            ids.AddRange(window);
-        }
-
-        return ids;
-    }
-
-    public async Task<RazerOnboardMacro?> ReadOnboardMacroAsync(
+    public async Task<RazerOnboardMacro?> ReadAsync(
         byte id,
         CancellationToken cancellationToken = default)
     {
@@ -105,25 +94,25 @@ public sealed partial class RazerKeyboardService
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            _diagnostic?.Invoke($"keyboard macro {id} size unavailable: {exception.Message}");
+            _diagnostic?.Invoke($"onboard macro {id} size unavailable: {exception.Message}");
             return null;
         }
 
         if (dataSize is <= 0 or > 64 * 1024)
         {
-            _diagnostic?.Invoke($"keyboard macro {id} declares an implausible size {dataSize}; skipped");
+            _diagnostic?.Invoke($"onboard macro {id} declares an implausible size {dataSize}; skipped");
             return null;
         }
 
-        var raw = await ReadMacroMemoryAsync(id, dataSize, cancellationToken).ConfigureAwait(false);
+        var raw = await ReadMemoryAsync(id, dataSize, cancellationToken).ConfigureAwait(false);
         return new RazerOnboardMacro(id, dataSize, raw, RazerOnboardMacroCodec.Decode(raw));
     }
 
     /// <summary>
-    /// Rewrites one macro and verifies it by reading it back. The caller keeps the
+    /// Rewrites one macro and confirms it by reading the bytes back. Callers keep the
     /// original RazerOnboardMacro.Raw so a failed round trip can be restored.
     /// </summary>
-    public async Task WriteOnboardMacroAsync(
+    public async Task WriteAsync(
         byte id,
         IReadOnlyList<OnboardMacroItem> items,
         CancellationToken cancellationToken = default)
@@ -163,7 +152,7 @@ public sealed partial class RazerKeyboardService
             offset += length;
         }
 
-        var written = await ReadMacroMemoryAsync(id, payload.Length, cancellationToken).ConfigureAwait(false);
+        var written = await ReadMemoryAsync(id, payload.Length, cancellationToken).ConfigureAwait(false);
         if (!written.AsSpan().SequenceEqual(payload))
         {
             throw new InvalidOperationException(
@@ -171,10 +160,33 @@ public sealed partial class RazerKeyboardService
         }
     }
 
-    private async Task<byte[]> ReadMacroMemoryAsync(
-        byte id,
-        int size,
-        CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<byte>> ReadIdsAsync(CancellationToken cancellationToken)
+    {
+        var ids = new List<byte>();
+        var total = int.MaxValue;
+        while (ids.Count < total && ids.Count < byte.MaxValue)
+        {
+            var (windowTotal, window) = RazerOnboardMacroProtocol.ParseMacroIdList(
+                await QueryAsync(
+                    transactionId => RazerOnboardMacroProtocol.GetMacroIdList.CreateRequest(
+                        transactionId,
+                        RazerOnboardMacroProtocol.CreateMacroIdListArguments(ids.Count)),
+                    "macro id list",
+                    cancellationToken).ConfigureAwait(false));
+
+            total = windowTotal;
+            if (window.Length == 0 || window.Any(ids.Contains))
+            {
+                break;
+            }
+
+            ids.AddRange(window);
+        }
+
+        return ids;
+    }
+
+    private async Task<byte[]> ReadMemoryAsync(byte id, int size, CancellationToken cancellationToken)
     {
         var data = new byte[size];
         var offset = 0;
@@ -201,6 +213,34 @@ public sealed partial class RazerKeyboardService
 
         return data;
     }
+
+    private async Task<byte[]> QueryAsync(
+        Func<byte, byte[]> request,
+        string label,
+        CancellationToken cancellationToken)
+    {
+        var report = request(NextTransactionId());
+        _diagnostic?.Invoke(
+            $"onboard macro {label}: size={report[6]}, class=0x{report[7]:X2}, command=0x{report[8]:X2}");
+        return await _transport.QueryPreparedAsync(
+            _devicePath, report, _deviceWait, cancellationToken).ConfigureAwait(false);
+    }
+
+    private byte NextTransactionId()
+    {
+        if (_transactionId >= 0x1F)
+        {
+            _transactionId = 0;
+        }
+        else
+        {
+            _transactionId++;
+        }
+
+        return _transactionId;
+    }
+
+    private static bool IsExpected(Exception exception) =>
+        exception is IOException or InvalidDataException or InvalidOperationException or
+            NotSupportedException or Win32Exception or UnauthorizedAccessException;
 }
-
-

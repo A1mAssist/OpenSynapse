@@ -320,6 +320,9 @@ public sealed partial class MainWindow
     private async void OpenRazerPairHyperPollingClick(object sender, RoutedEventArgs e) =>
         await ConfirmHyperPollingAsync(pair: true);
 
+    private async void OpenRazerReadOnboardMacrosClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedOpenRazerDevice?.LoadOnboardMacrosAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerUnpairHyperPollingClick(object sender, RoutedEventArgs e) =>
         await ConfirmHyperPollingAsync(pair: false);
 
