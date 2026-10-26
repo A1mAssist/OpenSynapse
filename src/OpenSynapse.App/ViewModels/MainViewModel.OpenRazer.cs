@@ -20,7 +20,11 @@ public sealed partial class MainViewModel
             .Concat(BlackSharkDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
-            .Concat(ChromaDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            // The Viper owns a native page and still answers Chroma discovery; its lighting page
+            // opens from there, so list the device once.
+            .Concat(ChromaDevices
+                .Where(chroma => !Devices.Any(native => native.ProductId == chroma.Connection.ProductId))
+                .Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
@@ -45,6 +49,12 @@ public sealed partial class MainViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+    public Visibility ViperLightingVisibility =>
+        ChromaDevices.Any(row =>
+            row.Connection.ProductId == OpenSynapse.Windows.Protocols.ViperProduct184Protocol.ProductId)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
     private void RefreshDeviceOverviewVisibility()
     {
         _connectedDevicesCache = null;
@@ -56,6 +66,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(ViperProtocolText));
         OnPropertyChanged(nameof(ViperIdentityText));
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
+        OnPropertyChanged(nameof(ViperLightingVisibility));
     }
 
     private void RefreshDeviceSelectorItems()

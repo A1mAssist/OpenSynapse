@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Windows.Protocols;
 using Windows.System;
 
 namespace OpenSynapse.App;
@@ -10,6 +11,20 @@ public sealed partial class MainWindow
     private async void ChromaSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: RazerChromaDeviceRowViewModel row })
+        {
+            return;
+        }
+
+        SelectDevice("chroma");
+        await _viewModel.SelectChromaAsync(row, _lifetime.Token);
+        UpdateDeviceSelector("chroma");
+    }
+
+    private async void ViperLightingClick(object sender, RoutedEventArgs e)
+    {
+        var row = _viewModel.ChromaDevices.FirstOrDefault(row =>
+            row.Connection.ProductId == ViperProduct184Protocol.ProductId);
+        if (row is null)
         {
             return;
         }

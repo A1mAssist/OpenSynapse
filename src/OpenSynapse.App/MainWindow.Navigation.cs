@@ -159,6 +159,10 @@ public sealed partial class MainWindow
         OpenRazerKrakenPanel.Visibility == Visibility.Visible ? "kraken" :
         BlackSharkPanel.Visibility == Visibility.Visible ? "blackshark" :
         OpenRazerDevicePanel.Visibility == Visibility.Visible ? "openrazer" :
+        HeadsetAudioPanel.Visibility == Visibility.Visible ? "headsetaudio" :
+        KeyboardPanel.Visibility == Visibility.Visible ? "keyboard" :
+        ChromaPanel.Visibility == Visibility.Visible ? "chroma" :
+        BlePanel.Visibility == Visibility.Visible ? "ble" :
         ViperDevicePanel.Visibility == Visibility.Visible ? "viper" :
         BladeDevicePanel.Visibility == Visibility.Visible ? "blade" :
         string.Empty;
