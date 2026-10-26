@@ -293,6 +293,13 @@
                       </StackPanel>
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ArgbDriverVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock local:Localized.Uid="RazerArgbDriverTitle" Text="ARGB 驱动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="RazerArgbDriverDescription" Text="逐灯控制需要雷云的 0F1F 控制驱动。下载并安装后，点“刷新”重新检测。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Button local:Localized.Uid="RazerArgbDriverButton" Content="下载 ARGB 驱动" Click="ArgbInstallDriverClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
                 <StackPanel x:Name="BlePanel" DataContext="{Binding SelectedBle}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
