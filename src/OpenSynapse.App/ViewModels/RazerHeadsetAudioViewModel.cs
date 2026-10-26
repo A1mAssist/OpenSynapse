@@ -97,7 +97,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
         _connection = connection;
         _diagnostic = diagnostic;
         Lighting = lighting;
-        if (connection.ProductId == ThxHeadsetAdmission.SupportedProductId)
+        if (ThxHeadsetAdmission.IsSupported(connection.ProductId))
         {
             _thxStatus = ThxHeadsetAdmission.Check(connection.ProductId);
         }
@@ -119,9 +119,13 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
     /// THX is an APO plus service on this headset, so the card only appears for the
     /// model whose installer we have pinned. Missing pieces get an install entry.
     /// </summary>
-    public Visibility ThxVisibility => _connection.ProductId == ThxHeadsetAdmission.SupportedProductId
+    public Visibility ThxVisibility => ThxHeadsetAdmission.IsSupported(_connection.ProductId)
         ? Visibility.Visible
         : Visibility.Collapsed;
+
+    public string ThxInstallerUri => ThxHeadsetAdmission.IsSupported(_connection.ProductId)
+        ? ThxHeadsetAdmission.GetServiceInstallerUri(_connection.ProductId)
+        : string.Empty;
 
     public string ThxStatusText => _thxStatus.ErrorCode switch
     {
@@ -366,7 +370,9 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged
         try
         {
             OperationStatusText = AppStrings.Text("RazerHeadsetThxDownloading");
-            _thxStatus = await ThxHeadsetAdmission.InstallNativeComponentAsync(cancellationToken);
+            _thxStatus = await ThxHeadsetAdmission.InstallNativeComponentAsync(
+                _connection.ProductId,
+                cancellationToken);
             ErrorText = _thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed"
                 ? AppStrings.Text("RazerHeadsetThxDownloadFailed")
                 : string.Empty;

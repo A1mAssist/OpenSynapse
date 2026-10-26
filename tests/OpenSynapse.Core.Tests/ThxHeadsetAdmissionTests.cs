@@ -8,10 +8,19 @@ public sealed class ThxHeadsetAdmissionTests
     [Fact]
     public void UnsupportedProductStaysHidden()
     {
-        var status = ThxHeadsetAdmission.Evaluate(0x0555, serviceRunning: true, nativePresent: true);
+        var status = ThxHeadsetAdmission.Evaluate(0x056B, serviceRunning: true, nativePresent: true);
 
         Assert.Equal(ThxHeadsetAvailability.UnsupportedDevice, status.Availability);
         Assert.Equal("ThxHeadsetUnsupported", status.ErrorCode);
+    }
+
+    [Fact]
+    public void BothV2ProModelsUseTheSameDetection()
+    {
+        var status = ThxHeadsetAdmission.Evaluate(0x0555, serviceRunning: false, nativePresent: false);
+
+        Assert.Equal(ThxHeadsetAvailability.ServiceMissing, status.Availability);
+        Assert.Equal("ThxServiceMissing", status.ErrorCode);
     }
 
     [Fact]
