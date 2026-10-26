@@ -81,7 +81,8 @@ Synapse 4 中间件 JS 里的 `ConfigureFFI` 声明 `philipshuev2.dll`，调用�
 - 配对：CLIP v2 的 `POST /api` 流程，保存返回的 `username`；
 - 控制：`/clip/v2/resource/light` 逐灯读写；
 - 出现在设备列表的条件：已保存桥地址，或发现桥；未发现时不显示占位卡；
-- 启动后每 30 秒后台发现一次，直到配对成功；桥上线后最多约 30 秒自动出现；
+- 启动后后台发现，直到配对成功；接电源每 30 秒一次，电池每 2 分钟一次；
+- 桥上线后最多约 30 秒（电池约 2 分钟）自动出现；
 - 点“重新探测”会立即再扫一次，不等下个周期；
 - 没有已保存地址且发现不到桥时，设备页不提供 Hue 入口；手动 IP 只在 Hue 面板内可见
   （面板由已出现的 Hue 卡片进入）；
@@ -96,7 +97,7 @@ Entertainment/DTLS 是独立的一大块，只在需要低延迟流光时再做�
 `ScanAndPair`、`BridgeNotFound`、`BridgeConnected`、`BridgeNotConnected`、`UpdateRequired`
 （见 `Razer.Synapse3.HueUI.dll`），未连接时的“扫描/配对”界面留在 Hue 模块页里。
 
-OpenSynapse 没有模块页，因此等价规则是：启动后每 30 秒后台发现，配对后停止；只有发现桥
+OpenSynapse 没有模块页，因此等价规则是：启动后按电源状态后台发现，配对后停止；只有发现桥
 或已有保存地址时才在设备列表出现 Hue 卡片；没有桥时设备列表里不出现任何 Hue 占位项。
 
 ## 证据边界
