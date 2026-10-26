@@ -79,7 +79,7 @@
                 <Button Content="{Binding MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding IsMacroPlaying}" />
                 <Button local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanStopMacro}" />
                 <Grid Grid.Column="3" ColumnDefinitions="*,Auto" ColumnSpacing="4" Margin="4,0">
-                  <TextBlock Text="{Binding MacroPlaybackShortcutText}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding MacroPlaybackShortcutText}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding MacroPlaybackShortcutText}" />
                   <Button Grid.Column="1" x:Name="MacroPlaybackShortcutButton" local:Localized.Uid="MacroPlaybackShortcutButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
                     <Button.Flyout>
@@ -144,14 +144,11 @@
       <Grid Grid.Column="2" Grid.ColumnSpan="5" ColumnDefinitions="*,16,*,16,*">
       <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="0">
         <StackPanel>
-          <Button x:Name="MacroPropertiesHeader" Click="MacroPropertiesHeaderClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" CornerRadius="0" MinHeight="38" Padding="12,10">
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock local:Localized.Uid="MacroProperties" Text="属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-              <FontIcon Grid.Column="1" x:Name="MacroPropertiesChevron" Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-            </Grid>
-          </Button>
+          <Grid Padding="12,10">
+            <TextBlock local:Localized.Uid="MacroProperties" Text="属性" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+          </Grid>
           <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,10,12,12">
-            <ContentControl x:Name="MacroPropertiesPanel" IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Stretch">
+            <ContentControl IsEnabled="{Binding CanEditMacro}" HorizontalContentAlignment="Stretch">
               <StackPanel Spacing="10">
                 <StackPanel Spacing="4">
                   <TextBlock local:Localized.Uid="MacroNameLabel" Text="名称" Style="{StaticResource MetricLabelStyle}" />
