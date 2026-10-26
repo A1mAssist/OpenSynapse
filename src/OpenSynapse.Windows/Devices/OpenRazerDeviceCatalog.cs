@@ -369,6 +369,7 @@ public sealed class OpenRazerDeviceCatalog
                 (0x00CD, 0x00EB, "Razer Basilisk V4 HyperSpeed (Wired)", 33000, [125, 500, 1000, 2000, 4000, 8000]),
                 (0x00BF, 0x00EF, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
                 (0x00BF, 0x00F0, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00A3, 0x00A2, "Razer Cobra", 8500, [125, 500, 1000]),
             ];
 
             foreach (var entry in entries)

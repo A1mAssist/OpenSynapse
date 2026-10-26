@@ -92,6 +92,7 @@ public sealed class RazerChromaStandardService
             [0x0F27] = ("Tomahawk Gaming Desktop", DeviceCategory.Accessory),
             [0x0F28] = ("Razer Raptor 27", DeviceCategory.Monitor),
             [0x0F2C] = ("Razer Chroma Wireless ARGB Controller", DeviceCategory.Accessory),
+            [0x0F2E] = ("Razer Chroma Wireless ARGB Controller", DeviceCategory.Accessory),
             [0x0F35] = ("Razer Hanbo AIO", DeviceCategory.Accessory),
             [0x0F36] = ("Razer Head Cushion Chroma", DeviceCategory.Accessory),
             [0x0F3C] = ("Razer PWM PC Fan Controller", DeviceCategory.Accessory),

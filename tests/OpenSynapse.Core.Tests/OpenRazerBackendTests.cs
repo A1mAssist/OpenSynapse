@@ -55,10 +55,10 @@ public sealed class OpenRazerBackendTests
         var catalog = OpenRazerDeviceCatalog.BuiltIn;
 
         // 259 upstream entries plus two DeathAdder probes, two Viper V3 Pro SE aliases,
-        // the locally admitted 054A Leviathan V2 X family, and 17 middleware mouse
+        // the locally admitted 054A Leviathan V2 X family, and 18 middleware mouse
         // product ids (wired and dongle halves included).
-        Assert.Equal(281, catalog.Devices.Count);
-        Assert.Equal(281, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
+        Assert.Equal(282, catalog.Devices.Count);
+        Assert.Equal(282, catalog.Devices.Select(device => device.ProductId).Distinct().Count());
         Assert.DoesNotContain(catalog.Devices, device => device.ProductId is 0x00B8 or 0x02C6);
         Assert.Null(catalog.Find(0x1234, catalog.Devices[0].ProductId));
         Assert.All(catalog.Devices, device =>
