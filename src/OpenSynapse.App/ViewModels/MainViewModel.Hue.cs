@@ -4,6 +4,7 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private static readonly TimeSpan HueDiscoveryInterval = TimeSpan.FromSeconds(30);
     private PhilipsHueViewModel? _hue;
 
     public PhilipsHueViewModel Hue =>
@@ -39,6 +40,17 @@ public sealed partial class MainViewModel
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("hue", $"background discovery failed: {exception}");
+        }
+    }
+
+    public async Task RunHueDiscoveryLoopAsync(CancellationToken cancellationToken = default)
+    {
+        // A bridge can appear without a PC network change, so poll until one is known.
+        while (!Hue.IsConfigured && !cancellationToken.IsCancellationRequested)
+        {
+            await ScanHueInBackgroundAsync(cancellationToken);
+            if (Hue.IsConfigured) break;
+            await Task.Delay(HueDiscoveryInterval, cancellationToken);
         }
     }
 }
