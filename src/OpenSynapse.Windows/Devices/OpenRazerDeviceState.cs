@@ -16,6 +16,24 @@ public static class OpenRazerMappingFunctions
 {
     public const byte Off = 0x00;
     public const byte ButtonCode = 0x01;
+    public const byte KeyCode = 0x02;
+    public const byte MacroTypeI = 0x03;
+    public const byte MacroTypeII = 0x04;
+    public const byte MacroTypeIII = 0x05;
+    public const byte Dpi = 0x06;
+    public const byte Profile = 0x07;
+    public const byte Lighting = 0x08;
+    public const byte PowerKeys = 0x09;
+    public const byte MediaKeys = 0x0A;
+    public const byte DoubleClick = 0x0B;
+    public const byte ModeButtonkey = 0x0C;
+    public const byte TurboModeKey = 0x0D;
+    public const byte TurboModeButton = 0x0E;
+    public const byte MacroTypeIV = 0x0F;
+    public const byte Controller = 0x10;
+    public const byte RazerKey = 0x11;
+    public const byte ScrollWheelMode = 0x12;
+    public const byte Win8ShortcutsKey = 0x15;
 }
 
 public enum OpenRazerBackendCapability
