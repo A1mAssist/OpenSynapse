@@ -147,6 +147,20 @@ public sealed partial class MainWindow
     private async void ApplyPerformanceModeClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
 
+    private async Task<bool> ConfirmPadlessHyperBoostAsync()
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = RootLayout.XamlRoot,
+            Title = AppStrings.Text("BladeHyperboostDisclaimerTitle"),
+            Content = AppStrings.Text("BladeHyperboostDisclaimerMessage"),
+            PrimaryButtonText = AppStrings.Text("BladeHyperboostDisclaimerAccept"),
+            CloseButtonText = AppStrings.Text("Text_949856B3"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
+
     private async void AutoApplyComboSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.Tag is not string setting ||

@@ -297,9 +297,37 @@ public sealed partial class MainViewModel
 
     private bool _suppressBladePerformanceApply;
     private bool _bladeCoolingPadConnected;
+    private Func<Task<bool>>? _confirmPadlessHyperBoost;
+
+    /// <summary>
+    /// Asks the user to accept the cooling risk before HyperBoost is written without a
+    /// Razer Cooling Pad. The UI owns the dialog, so the ViewModel stays headless.
+    /// </summary>
+    internal void SetPadlessHyperBoostConfirmation(Func<Task<bool>> confirmation) =>
+        _confirmPadlessHyperBoost = confirmation;
+
+    private async Task<bool> ConfirmPadlessHyperBoostAsync()
+    {
+        if (_confirmPadlessHyperBoost is not { } confirmation)
+        {
+            return true;
+        }
+
+        return await confirmation();
+    }
 
     public Visibility HyperboostOptionVisibility =>
-        _bladeCoolingPadConnected ? Visibility.Visible : Visibility.Collapsed;
+        BladeModelCapabilities.SupportsHyperBoost(_blade._bladeProductId)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    /// <summary>
+    /// True when HyperBoost is offered without a Razer Cooling Pad. The user accepts
+    /// the cooling risk explicitly before the mode is written.
+    /// </summary>
+    public bool HyperboostNeedsCoolingPadWarning =>
+        !_bladeCoolingPadConnected &&
+        BladeModelCapabilities.SupportsHyperBoost(_blade._bladeProductId);
 
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
@@ -311,17 +339,9 @@ public sealed partial class MainViewModel
         }
 
         var requested = BladePerformanceModes[BladePerformanceModeIndex];
-        bool coolingPadConnected;
-        try
-        {
-            coolingPadConnected = requested != BladePerformanceMode.Hyperboost ||
-                await RazerCoolingPad.IsConnectedAsync(cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-        if (!coolingPadConnected)
+        if (requested == BladePerformanceMode.Hyperboost &&
+            !BladeModelCapabilities.IsHyperBoostAvailable(
+                _blade._bladeProductId, _lastDeviceTelemetry?.BladeAdapterPower))
         {
             _suppressBladePerformanceApply = true;
             try
@@ -332,7 +352,22 @@ public sealed partial class MainViewModel
             {
                 _suppressBladePerformanceApply = false;
             }
-            SetDeviceOperationError(AppStrings.Text("BladeHyperboostRequiresPad"));
+            SetDeviceOperationError(AppStrings.Text("BladeHyperboostRequiresFullPower"));
+            return;
+        }
+        if (requested == BladePerformanceMode.Hyperboost &&
+            HyperboostNeedsCoolingPadWarning &&
+            !await ConfirmPadlessHyperBoostAsync())
+        {
+            _suppressBladePerformanceApply = true;
+            try
+            {
+                BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex;
+            }
+            finally
+            {
+                _suppressBladePerformanceApply = false;
+            }
             return;
         }
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
@@ -544,7 +579,12 @@ public sealed partial class MainViewModel
             }
 
             var cycleModes = _bladePerformanceCycleModes;
-            if (!await RazerCoolingPad.IsConnectedAsync(cancellationToken))
+            // The shortcut cycle has no place to ask for the cooling-risk
+            // confirmation, so it skips HyperBoost unless the pad is connected or
+            // the full-power adapter makes it available without one.
+            if (!BladeModelCapabilities.IsHyperBoostAvailable(
+                    _blade._bladeProductId, _lastDeviceTelemetry?.BladeAdapterPower) ||
+                HyperboostNeedsCoolingPadWarning)
             {
                 cycleModes = [.. cycleModes.Where(mode => mode != BladePerformanceMode.Hyperboost)];
                 if (cycleModes.Count == 0)
@@ -1027,7 +1067,7 @@ public sealed partial class MainViewModel
     public bool CanWriteBladeBrightness =>
         CanSetBladeBrightness && BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId);
     public string BladePerformanceModeText { get => _blade._bladePerformanceModeText; private set => SetField(ref _blade._bladePerformanceModeText, value); }
-    public IReadOnlyList<string> BladePerformanceModeOptions => _bladeCoolingPadConnected
+    public IReadOnlyList<string> BladePerformanceModeOptions => HyperboostOptionVisibility == Visibility.Visible
         ? AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25", "HyperBoost")
         : AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25");
     public int BladePerformanceModeIndex { get => _blade._bladePerformanceModeIndex; set => SetField(ref _blade._bladePerformanceModeIndex, value); }
@@ -1220,6 +1260,9 @@ public sealed partial class MainViewModel
     {
         OnPropertyChanged(nameof(CanWriteBladeBrightness));
         OnPropertyChanged(nameof(CanWriteBladePerformanceMode));
+        OnPropertyChanged(nameof(HyperboostOptionVisibility));
+        OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
+        OnPropertyChanged(nameof(BladePerformanceModeOptions));
         OnPropertyChanged(nameof(CanSetBladeGamingMode));
         OnPropertyChanged(nameof(BladeCustomPerformanceVisibility));
         OnPropertyChanged(nameof(BladeCpuBoostOptions));
