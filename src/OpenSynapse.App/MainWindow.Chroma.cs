@@ -28,6 +28,7 @@ public sealed partial class MainWindow
     private async void ChromaApplyEffectClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedChroma?.ApplyEffectAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+
     private void ArgbLedClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: ArgbLedViewModel led }) return;
@@ -51,3 +52,4 @@ public sealed partial class MainWindow
         }
     }
 }
+
