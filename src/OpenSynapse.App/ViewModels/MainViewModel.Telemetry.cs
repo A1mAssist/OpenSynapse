@@ -400,10 +400,6 @@ public sealed partial class MainViewModel
     private void SetBladePerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {
         _blade.SetPerformanceMode(mode, confirm);
-        if (mode == BladePerformanceMode.Hyperboost && !_bladeCoolingPadConnected)
-        {
-            BladePerformanceModeIndex = -1;
-        }
         OnPropertyChanged(nameof(BladePerformanceModeText));
         OnPropertyChanged(nameof(BladePerformanceModeIndex));
         OnPropertyChanged(nameof(BladeCpuBoostText));

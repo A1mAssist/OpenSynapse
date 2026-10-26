@@ -1912,8 +1912,10 @@
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU 温度</value></data>
   <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>两者取较高值</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
-  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫：它会提高持续功耗上限，由散热垫负责散热；未连接时无法切换。</value></data>
-  <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost 需要连接雷蛇笔记本散热垫后才能启用。</value></data>
+  <data name="BladeHyperboostRequiresFullPower" xml:space="preserve"><value>HyperBoost 需要全功率电源适配器，未接电池或低功率适配器时无法启用。</value></data>
+  <data name="BladeHyperboostDisclaimerTitle" xml:space="preserve"><value>未连接雷蛇散热垫</value></data>
+  <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost 会提高 CPU 和 GPU 的持续功耗上限。未连接雷蛇笔记本散热垫时，雷云的温度-风扇曲线不会执行，散热完全依赖你自备的第三方方案。长时间高负载可能导致过热降频或硬件损伤。继续启用即表示你已自行承担这一风险。</value></data>
+  <data name="BladeHyperboostDisclaimerAccept" xml:space="preserve"><value>我已了解风险，继续启用</value></data>
   <data name="FirmwareTitle" xml:space="preserve"><value>固件</value></data>
   <data name="FirmwareCheckButton" xml:space="preserve"><value>检查更新</value></data>
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>
