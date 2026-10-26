@@ -21,6 +21,7 @@ docs/*
 !docs/DEVICE_ADAPTATION.zh-CN.md
 !docs/LEVIATHAN_V2X_054A.md
 !docs/MIDDLEWARE_DEVICE_PROTOCOLS.md
+!docs/PHILIPS_HUE_DISCOVERY.zh-CN.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/
