@@ -8,6 +8,16 @@ public sealed partial class MainWindow
 {
     private async void HueSelectorClick(object sender, RoutedEventArgs e)
     {
+        await OpenHueAsync();
+    }
+
+    private async void HueAddClick(object sender, RoutedEventArgs e)
+    {
+        await OpenHueAsync();
+    }
+
+    private async Task OpenHueAsync()
+    {
         SelectDevice("hue");
         await _viewModel.Hue.EnsureLoadedAsync(_lifetime.Token);
         UpdateDeviceSelector("hue");

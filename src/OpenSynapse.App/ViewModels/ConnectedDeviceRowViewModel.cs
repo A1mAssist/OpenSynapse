@@ -115,7 +115,7 @@ public sealed class ConnectedDeviceRowViewModel
         IconGlyph = "\uE706";
         Category = DeviceCategory.Accessory;
         IsReady = source.IsReady;
-        IsVisible = true;
+        IsVisible = source.IsReady;
     }
 
     public object Source { get; }

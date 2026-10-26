@@ -50,6 +50,9 @@ public sealed partial class MainViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+    public Visibility HueAddVisibility =>
+        Hue.IsReady ? Visibility.Collapsed : Visibility.Visible;
+
     public Visibility ViperLightingVisibility =>
         ChromaDevices.Any(row =>
             row.Connection.ProductId == OpenSynapse.Windows.Protocols.ViperProduct184Protocol.ProductId)
