@@ -3,40 +3,56 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Macros;
 
 /// <summary>
-/// One onboarding-memory command. The class/id/size tuples come from the per-device
-/// handler tables in docs/MIDDLEWARE_DEVICE_PROTOCOLS.md (06:08, 06:09, 06:128,
-/// 06:136, 06:137, 06:142 and the 04:xx name pair).
+/// One onboard-memory command. Class, id and payload size are the vectors declared by
+/// Synapse's protocol 25 keyboard class (rzDevice25): 06:03 delete, 06:08 allocate,
+/// 06:09 write, 06:80 count, 06:88 data size, 06:89 memory read, 06:8E storage info.
 /// </summary>
 public sealed record RazerOnboardMacroCommand(byte CommandClass, byte CommandId, byte DataSize)
 {
-    public byte[] CreateRequest(byte transactionId, ReadOnlySpan<byte> arguments) =>
-        RazerFeatureReport.CreateRequest(transactionId, DataSize, CommandClass, CommandId, arguments);
+    public byte[] CreateRequest(byte transactionId, ReadOnlySpan<byte> arguments)
+    {
+        if (arguments.Length > DataSize)
+        {
+            throw new ArgumentException(
+                $"Command 0x{CommandClass:X2}:0x{CommandId:X2} accepts {DataSize} argument bytes, not {arguments.Length}.",
+                nameof(arguments));
+        }
+
+        return RazerFeatureReport.CreateRequest(transactionId, DataSize, CommandClass, CommandId, arguments);
+    }
 }
 
-public sealed record RazerOnboardMacroStorageInfo(byte[] Raw);
+/// <summary>
+/// Four 16/32-bit counters from Get Macro Storage Info. MaxId counts macro slots;
+/// the three memory fields are bytes.
+/// </summary>
+public sealed record RazerOnboardMacroStorageInfo(
+    int MaxId,
+    int MaxMemory,
+    int AvailableMemory,
+    int RecyclableMemory);
 
-public sealed record RazerOnboardMacroMemoryChunk(int Offset, int Size, byte[] Data);
+public sealed record RazerOnboardMacroMemoryChunk(int Offset, byte[] Data);
 
 /// <summary>
-/// Request shapes for the onboard macro block. Synapse's own request builders are not
-/// present in the shipped chunks, so the argument order below is the documented
-/// six-byte pattern: macro id, big-endian offset, length.
-/// shortcut: request argument order is inferred, correct it after one hardware read.
+/// Request and response shapes for protocol 25 keyboards, transcribed from the
+/// rzDevice25 getMacroStorageInfo/getMacroMemoryData/setMacroMemoryData builders.
+/// A macro id is a big-endian 16-bit value; offsets and sizes are big-endian 32-bit
+/// values split into two 16-bit halves.
 /// </summary>
 public static class RazerOnboardMacroProtocol
 {
     public static readonly RazerOnboardMacroCommand DeleteMacro = new(0x06, 0x03, 2);
     public static readonly RazerOnboardMacroCommand AllocateMacroData = new(0x06, 0x08, 6);
     public static readonly RazerOnboardMacroCommand SetMacroMemory = new(0x06, 0x09, 80);
-    public static readonly RazerOnboardMacroCommand GetMacroCount = new(0x06, 0x80, 2);
     public static readonly RazerOnboardMacroCommand GetMacroDataSize = new(0x06, 0x88, 6);
     public static readonly RazerOnboardMacroCommand GetMacroMemory = new(0x06, 0x89, 80);
     public static readonly RazerOnboardMacroCommand GetMacroStorageInfo = new(0x06, 0x8E, 14);
-    public static readonly RazerOnboardMacroCommand GetMacroName = new(0x04, 0x83, 0);
-    public static readonly RazerOnboardMacroCommand SetMacroName = new(0x04, 0x03, 255);
+    public static readonly RazerOnboardMacroCommand GetMacroIdList = new(0x06, 0x8B, 80);
 
     public const int ChunkSize = 72;
     public const int AllocationGranularity = 256;
+    private const int ArgumentOffset = RazerFeatureReport.ArgumentsOffset;
 
     /// <summary>
     /// Synapse keeps 256 bytes of name/header space per macro and rounds the whole
@@ -44,17 +60,14 @@ public static class RazerOnboardMacroProtocol
     /// </summary>
     public static int RequiredAllocation(int macroDataSize)
     {
-        if (macroDataSize < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(macroDataSize));
-        }
-
-        return AllocationGranularity * (int)Math.Ceiling((macroDataSize + (double)AllocationGranularity) / AllocationGranularity);
+        ArgumentOutOfRangeException.ThrowIfNegative(macroDataSize);
+        return AllocationGranularity *
+            (int)Math.Ceiling((macroDataSize + (double)AllocationGranularity) / AllocationGranularity);
     }
 
     public static byte[] CreateReadMemoryArguments(byte macroId, int offset, int length)
     {
-        if (offset is < 0 or > 0xFFFF)
+        if (offset is < 0 or > int.MaxValue)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
@@ -64,7 +77,32 @@ public static class RazerOnboardMacroProtocol
             throw new ArgumentOutOfRangeException(nameof(length));
         }
 
-        return [macroId, (byte)(offset >> 8), (byte)offset, (byte)length];
+        return
+        [
+            0,
+            macroId,
+            (byte)(offset >> 24),
+            (byte)(offset >> 16),
+            (byte)(offset >> 8),
+            (byte)offset,
+            (byte)length,
+        ];
+    }
+
+    public static byte[] CreateWriteMemoryArguments(
+        byte macroId,
+        int offset,
+        ReadOnlySpan<byte> data)
+    {
+        if (data.Length is <= 0 or > ChunkSize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(data));
+        }
+
+        var arguments = new byte[7 + data.Length];
+        CreateReadMemoryArguments(macroId, offset, data.Length).CopyTo(arguments, 0);
+        data.CopyTo(arguments.AsSpan(7));
+        return arguments;
     }
 
     public static byte[] CreateAllocateArguments(byte macroId, int allocatedSize)
@@ -78,6 +116,7 @@ public static class RazerOnboardMacroProtocol
 
         return
         [
+            0,
             macroId,
             (byte)(allocatedSize >> 24),
             (byte)(allocatedSize >> 16),
@@ -88,37 +127,73 @@ public static class RazerOnboardMacroProtocol
 
     public static RazerOnboardMacroMemoryChunk ParseMemoryChunk(ReadOnlySpan<byte> response)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, RazerFeatureReport.ArgumentsOffset + 6);
-        var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        var offset = (arguments[2] << 8) | arguments[3];
-        var size = (arguments[4] << 8) | arguments[5];
-        if (size < 0 || arguments.Length < 6 + size)
+        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 7);
+        var arguments = response[ArgumentOffset..];
+        var offset = (arguments[2] << 24) | (arguments[3] << 16) | (arguments[4] << 8) | arguments[5];
+        var size = arguments[6];
+        if (arguments.Length < 7 + size)
         {
             throw new InvalidOperationException(
-                $"Onboard macro chunk declares {size} bytes but the response carries {arguments.Length - 6}.");
+                $"Onboard macro chunk declares {size} bytes but the response carries {arguments.Length - 7}.");
         }
 
-        return new RazerOnboardMacroMemoryChunk(offset, size, arguments.Slice(6, size).ToArray());
+        return new RazerOnboardMacroMemoryChunk(offset, arguments.Slice(7, size).ToArray());
     }
 
     public static RazerOnboardMacroStorageInfo ParseStorageInfo(ReadOnlySpan<byte> response)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, RazerFeatureReport.ArgumentsOffset + 14);
+        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 14);
+        var data = response.Slice(ArgumentOffset, 14);
         return new RazerOnboardMacroStorageInfo(
-            response.Slice(RazerFeatureReport.ArgumentsOffset, 14).ToArray());
+            (data[0] << 8) | data[1],
+            (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5],
+            (data[6] << 24) | (data[7] << 16) | (data[8] << 8) | data[9],
+            (data[10] << 24) | (data[11] << 16) | (data[12] << 8) | data[13]);
     }
 
-    public static int ParseMacroCount(ReadOnlySpan<byte> response)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, RazerFeatureReport.ArgumentsOffset + 2);
-        return (response[RazerFeatureReport.ArgumentsOffset] << 8) |
-            response[RazerFeatureReport.ArgumentsOffset + 1];
-    }
 
     public static int ParseMacroDataSize(ReadOnlySpan<byte> response)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, RazerFeatureReport.ArgumentsOffset + 6);
-        var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        return (arguments[2] << 24) | (arguments[3] << 16) | (arguments[4] << 8) | arguments[5];
+        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 6);
+        var data = response[ArgumentOffset..];
+        return (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
+    }
+
+    public static byte[] CreateMacroIdArguments(byte macroId) => [0, macroId];
+
+    public static byte[] CreateMacroIdListArguments(int offset)
+    {
+        if (offset is < 0 or > 0xFFFF)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset));
+        }
+
+        return [(byte)(offset >> 8), (byte)offset];
+    }
+
+    /// <summary>
+    /// Get Macro ID List answers with a two-byte offset echo, a two-byte total count
+    /// and the ids as big-endian 16-bit values.
+    /// </summary>
+    public static (int Total, byte[] Ids) ParseMacroIdList(ReadOnlySpan<byte> response)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 4);
+        var data = response[ArgumentOffset..];
+        var total = (data[2] << 8) | data[3];
+        var returned = Math.Min((data.Length - 4) / 2, total);
+        var ids = new byte[returned];
+        for (var index = 0; index < returned; index++)
+        {
+            var id = (data[4 + (index * 2)] << 8) | data[5 + (index * 2)];
+            if (id is <= 0 or > byte.MaxValue)
+            {
+                throw new InvalidOperationException($"Onboard macro id {id} does not fit a byte slot.");
+            }
+
+            ids[index] = (byte)id;
+        }
+
+        return (total, ids);
     }
 }
+
