@@ -69,6 +69,22 @@ public sealed class RazerFilterEndpointDiscoveryTests
             BladeContainer));
     }
 
+    [Fact]
+    public void SelectsArgbControllerMi00ByProductId()
+    {
+        const string argb =
+            @"\\?\RZCONTROL#VID_1532&PID_0F1F&MI_00#ARGB#{E3BE005D-D130-4910-88FF-09AE02F680E9}";
+        var candidates = new[]
+        {
+            Candidate(@"\\?\RZCONTROL#VID_1532&PID_02C6&MI_00#BLADE", BladeContainer),
+            Candidate(@"\\?\RZCONTROL#VID_1532&PID_0F1F&MI_01#WRONG-MI", OtherContainer),
+            Candidate(argb, OtherContainer),
+        };
+
+        Assert.Equal(argb, RazerFilterEndpointDiscovery.SelectEndpoint(candidates, 0x0F1F));
+        Assert.Null(RazerFilterEndpointDiscovery.SelectEndpoint(candidates, 0x0F1E));
+    }
+
     private static RazerFilterEndpointCandidate Candidate(string path, Guid containerId) =>
         new(path, containerId);
 }

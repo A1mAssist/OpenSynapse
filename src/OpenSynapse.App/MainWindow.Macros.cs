@@ -10,6 +10,19 @@ public sealed partial class MainWindow
     private async void CreateMacroClick(object sender, RoutedEventArgs e) =>
         await _viewModel.CreateMacroAsync(_lifetime.Token);
 
+    private async void MacroRowEnabledToggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch
+            {
+                DataContext: MacroRowViewModel row,
+                FocusState: not FocusState.Unfocused,
+            } toggle)
+        {
+            row.Enabled = toggle.IsOn;
+            await _viewModel.SaveMacroEnabledAsync(row, _lifetime.Token);
+        }
+    }
+
     private async void CopyMacroRowClick(object sender, RoutedEventArgs e)
     {
         if (MacroRowFromSender(sender) is { } row)

@@ -1,16 +1,12 @@
+using OpenSynapse.Core.Storage;
+
 namespace OpenSynapse.App;
 
 internal static class AppUpdateSettings
 {
     private static readonly TimeSpan AutomaticCheckInterval = TimeSpan.FromHours(6);
-    private static readonly string SettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "automatic-updates.txt");
-    private static readonly string LastCheckPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "last-update-check.txt");
+    private static readonly string SettingsPath = AppDataPaths.Combine("automatic-updates.txt");
+    private static readonly string LastCheckPath = AppDataPaths.Combine("last-update-check.txt");
 
     public static bool AutomaticCheckDue
     {

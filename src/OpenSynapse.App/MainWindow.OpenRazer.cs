@@ -34,6 +34,21 @@ public sealed partial class MainWindow
             case BlackSharkDeviceRowViewModel:
                 BlackSharkSelectorClick(sender, e);
                 break;
+            case RazerHeadsetAudioDeviceRowViewModel:
+                HeadsetAudioSelectorClick(sender, e);
+                break;
+            case RazerKeyboardDeviceRowViewModel:
+                KeyboardSelectorClick(sender, e);
+                break;
+            case RazerChromaDeviceRowViewModel:
+                ChromaSelectorClick(sender, e);
+                break;
+            case RazerBleDeviceRowViewModel:
+                BleSelectorClick(sender, e);
+                break;
+            case PhilipsHueViewModel:
+                HueSelectorClick(sender, e);
+                break;
         }
     }
 
@@ -44,7 +59,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Blade))
+        if (DeviceProtocolFamilies.IsBlade(row.ProtocolFamily))
         {
             SelectDevice("blade");
         }
@@ -107,12 +122,16 @@ public sealed partial class MainWindow
                 await _viewModel.SelectBlackSharkAsync(row, _lifetime.Token);
                 break;
             case DeviceRowViewModel row
-                when StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Blade):
+                when DeviceProtocolFamilies.IsBlade(row.ProtocolFamily):
                 SelectDevice("blade");
                 break;
             case DeviceRowViewModel row
                 when StringComparer.Ordinal.Equals(row.ProtocolFamily, DeviceProtocolFamilies.Viper):
                 SelectDevice("viper");
+                break;
+            case PhilipsHueViewModel:
+                SelectDevice("hue");
+                await _viewModel.Hue.EnsureLoadedAsync(_lifetime.Token);
                 break;
         }
     }
@@ -152,6 +171,12 @@ public sealed partial class MainWindow
 
     private async void OpenRazerApplyLowBatteryClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyLowBatteryThresholdAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerReadMappingClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.LoadMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyMappingClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyBrightnessClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
@@ -307,6 +332,12 @@ public sealed partial class MainWindow
 
     private async void OpenRazerPairHyperPollingClick(object sender, RoutedEventArgs e) =>
         await ConfirmHyperPollingAsync(pair: true);
+
+    private async void OpenRazerReadOnboardMacrosClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedOpenRazerDevice?.LoadOnboardMacrosAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerWriteOnboardMacroClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedOpenRazerDevice?.WriteOnboardMacroAsync(_lifetime.Token) ?? Task.CompletedTask);
 
     private async void OpenRazerUnpairHyperPollingClick(object sender, RoutedEventArgs e) =>
         await ConfirmHyperPollingAsync(pair: false);

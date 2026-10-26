@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Displays;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -210,7 +211,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 }
             }
 
-            if (bladeThermalReadSucceeded)
+            if (bladeThermalReadSucceeded && owns("boost.get"))
             {
                 try
                 {
@@ -225,34 +226,40 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 }
             }
 
-            try
+            if (owns("charge-limit.get"))
             {
-                bladeChargeLimitPercent = await ReadBladeChargeLimitAsync(blade, cancellationToken);
-                _validatedBladeChargeLimitPath = blade.Descriptor.Id;
-            }
-            catch (Exception exception) when (IsExpectedHardwareException(exception))
-            {
-                errors.Add($"Charge limit: {exception.Message}");
+                try
+                {
+                    bladeChargeLimitPercent = await ReadBladeChargeLimitAsync(blade, cancellationToken);
+                    _validatedBladeChargeLimitPath = blade.Descriptor.Id;
+                }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    errors.Add($"Charge limit: {exception.Message}");
+                }
             }
 
-            try
+            if (owns("power-mode.get"))
             {
-                var powerModeMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
-                // Synapse shares this bitmask across models, so a readable Max Fan bit
-                // is not evidence of support. Only an audited model may expose it.
-                if (BladeModelCapabilities.SupportsMaxFan(blade.Descriptor.ProductId))
+                try
                 {
-                    bladeMaxFanMode = ToMaxFanMode(powerModeMask);
+                    var powerModeMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+                    // Synapse shares this bitmask across models, so a readable Max Fan bit
+                    // is not evidence of support. Only an audited model may expose it.
+                    if (BladeModelCapabilities.SupportsMaxFan(blade.Descriptor.ProductId))
+                    {
+                        bladeMaxFanMode = ToMaxFanMode(powerModeMask);
+                    }
+                    bladeOneTimeFullChargeEnabled =
+                        (powerModeMask & BladePowerModeProtocol.OneTimeFullChargeBit) != 0;
+                    bladeLocalDimmingEnabled =
+                        (powerModeMask & BladePowerModeProtocol.LocalDimmingBit) != 0;
+                    _validatedBladePowerModePath = blade.Descriptor.Id;
                 }
-                bladeOneTimeFullChargeEnabled =
-                    (powerModeMask & BladePowerModeProtocol.OneTimeFullChargeBit) != 0;
-                bladeLocalDimmingEnabled =
-                    (powerModeMask & BladePowerModeProtocol.LocalDimmingBit) != 0;
-                _validatedBladePowerModePath = blade.Descriptor.Id;
-            }
-            catch (Exception exception) when (IsExpectedHardwareException(exception))
-            {
-                errors.Add($"Power Mode Control: {exception.Message}");
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    errors.Add($"Power Mode Control: {exception.Message}");
+                }
             }
 
             if (owns("startup-animation.get"))
@@ -506,6 +513,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
         var blade = FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade platform control channel is unavailable.");
+        EnsureBladeControlWritesAdmitted(blade);
         EnsureValidated(_validatedBladePerformancePath, blade.Descriptor.Id, "Read the Blade performance mode successfully first.");
 
         var original = await ReadBladeThermalStateAsync(blade, cancellationToken);
@@ -1110,6 +1118,163 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         }
     }
 
+    public async ValueTask<BladeDisplayMuxStatus> ReadBladeDisplayMuxStatusAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyBlade(devices);
+        if (blade is null)
+        {
+            return UnsupportedBladeDisplayMux(BladeDisplayMuxBlockReason.NoDevice);
+        }
+
+        if (!HasBladeDisplayMuxCapabilities(blade))
+        {
+            return UnsupportedBladeDisplayMux(BladeDisplayMuxBlockReason.MissingCapability);
+        }
+
+        try
+        {
+            var capabilities = await ReadBladeDisplayMuxCapabilitiesAsync(blade, cancellationToken);
+            if (!BladeDisplayMuxModes.CanSwitch(capabilities))
+            {
+                return new BladeDisplayMuxStatus(
+                    IsSupported: false,
+                    CanChange: false,
+                    Mode: BladeDisplayMuxMode.Hybrid,
+                    BlockReason: BladeDisplayMuxBlockReason.MissingCapability,
+                    Capabilities: capabilities);
+            }
+
+            var mode = await ReadBladeDisplayMuxModeAsync(blade, cancellationToken);
+            return new BladeDisplayMuxStatus(
+                IsSupported: true,
+                CanChange: true,
+                Mode: mode,
+                BlockReason: BladeDisplayMuxBlockReason.None,
+                Capabilities: capabilities);
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return UnsupportedBladeDisplayMux(BladeDisplayMuxBlockReason.ReadFailed);
+        }
+    }
+
+    public async ValueTask<BladeDisplayMuxSwitchResult> SetBladeDisplayMuxModeAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeDisplayMuxMode mode,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(mode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode));
+        }
+
+        var blade = FindReadyBlade(devices);
+        if (blade is null)
+        {
+            return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.NoDevice);
+        }
+
+        if (!HasBladeDisplayMuxCapabilities(blade))
+        {
+            return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Unsupported);
+        }
+
+        var capabilities = await ReadBladeDisplayMuxCapabilitiesAsync(blade, cancellationToken);
+        if (!BladeDisplayMuxModes.CanSwitch(capabilities) ||
+            !BladeDisplayMuxModes.Supports(capabilities, mode))
+        {
+            return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Unsupported);
+        }
+
+        var original = await ReadBladeDisplayMuxModeAsync(blade, cancellationToken);
+        if (original == mode)
+        {
+            return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Success);
+        }
+
+        try
+        {
+            await QueryCapabilityAsync(
+                blade,
+                "display-mux.set",
+                new byte[] { 0x00, (byte)mode },
+                cancellationToken);
+            var actual = await ReadBladeDisplayMuxModeAsync(blade, cancellationToken);
+            if (actual != mode)
+            {
+                throw new InvalidOperationException(
+                    $"Display MUX readback mismatch: wrote {mode}, read {actual}.");
+            }
+
+            return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.RestartRequired);
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreBladeDisplayMuxModeAsync(blade, original);
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(
+                    "Display MUX change was cancelled.", exception, cancellationToken);
+            }
+
+            return new BladeDisplayMuxSwitchResult(
+                restored ? BladeDisplayMuxSwitchOutcome.Restored : BladeDisplayMuxSwitchOutcome.RestoreFailed);
+        }
+    }
+
+    private async Task<BladeDisplayMuxMode> ReadBladeDisplayMuxModeAsync(
+        ReadyDevice blade,
+        CancellationToken cancellationToken)
+    {
+        var request = CreateCapabilityRequest(blade, "display-mux.get");
+        var response = await QueryCapabilityAsync(blade, "display-mux.get", cancellationToken);
+        return BladeDisplayMuxProtocol.ParseMode(response, request);
+    }
+
+    private async Task<BladeDisplayMuxCapabilities> ReadBladeDisplayMuxCapabilitiesAsync(
+        ReadyDevice blade,
+        CancellationToken cancellationToken)
+    {
+        var request = CreateCapabilityRequest(blade, "display-mux-capabilities.get");
+        var response = await QueryCapabilityAsync(blade, "display-mux-capabilities.get", cancellationToken);
+        return BladeDisplayMuxProtocol.ParseCapabilities(response, request);
+    }
+
+    private async Task<bool> TryRestoreBladeDisplayMuxModeAsync(
+        ReadyDevice blade,
+        BladeDisplayMuxMode original)
+    {
+        try
+        {
+            await QueryCapabilityAsync(
+                blade,
+                "display-mux.set",
+                new byte[] { 0x00, (byte)original },
+                CancellationToken.None);
+            return await ReadBladeDisplayMuxModeAsync(blade, CancellationToken.None) == original;
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
+    private static bool HasBladeDisplayMuxCapabilities(ReadyDevice blade) =>
+        blade.Manifest.Capabilities.ContainsKey("display-mux.get") &&
+        blade.Manifest.Capabilities.ContainsKey("display-mux.set") &&
+        blade.Manifest.Capabilities.ContainsKey("display-mux-capabilities.get");
+
+    private static BladeDisplayMuxStatus UnsupportedBladeDisplayMux(BladeDisplayMuxBlockReason reason) =>
+        new(
+            IsSupported: false,
+            CanChange: false,
+            Mode: BladeDisplayMuxMode.Hybrid,
+            BlockReason: reason,
+            Capabilities: BladeDisplayMuxCapabilities.None);
+
     public async ValueTask<byte> SetBladeKeyboardBrightnessAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         byte brightness,
@@ -1118,6 +1283,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     {
         var blade = FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade keyboard control channel is unavailable.");
+        EnsureBladeControlWritesAdmitted(blade);
         EnsureValidated(_validatedBladeBrightnessPath, blade.Descriptor.Id, "Read the Blade keyboard brightness successfully first.");
 
         if (!verifyReadback)
@@ -1222,6 +1388,19 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         CancellationToken cancellationToken)
     {
         var response = await QueryCapabilityAsync(device, "keyboard-brightness.get", cancellationToken);
+        if (device.Descriptor.ProtocolFamily is "blade-597" or "blade-710-chroma")
+        {
+            // Chroma brightness answers profileId, regionId, raw 0..255. The keyboard
+            // backlight is the BacklightLED region (5) on these families.
+            EnsureDataSize(response, 3, "keyboard brightness");
+            var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
+            if (arguments[0] != 0x01 || arguments[1] != 0x05)
+            {
+                throw new InvalidOperationException("Blade returned an incorrect Chroma brightness object.");
+            }
+
+            return checked((byte)Math.Ceiling(arguments[2] * 100d / 255d));
+        }
         if (BladeLighting2023Admitted.IsBlade2023(device.Descriptor.ProductId))
         {
             return BladeLighting2023Protocol.ParseBrightness(response);
@@ -1234,8 +1413,22 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private Task WriteBladeBrightnessAsync(
         ReadyDevice device,
         byte brightness,
-        CancellationToken cancellationToken) =>
-        BladeLighting2023Admitted.IsBlade2023(device.Descriptor.ProductId)
+        CancellationToken cancellationToken)
+    {
+        if (device.Descriptor.ProtocolFamily is "blade-597" or "blade-710-chroma")
+        {
+            // These families use the Chroma brightness object: profile 1, BacklightLED
+            // region 5, and an 8-bit raw value. Floor keeps a 50% write reading back as
+            // 50% after the read path's ceil conversion.
+            var raw = (byte)Math.Clamp(brightness * 255 / 100, 0, 255);
+            return QueryCapabilityAsync(
+                device,
+                "keyboard-brightness.set",
+                new byte[] { 0x01, 0x05, raw },
+                cancellationToken);
+        }
+
+        return BladeLighting2023Admitted.IsBlade2023(device.Descriptor.ProductId)
             ? QueryBuiltRequestAsync(
                 device,
                 "keyboard-brightness.set",
@@ -1243,7 +1436,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 cancellationToken)
             : QueryCapabilityAsync(
                 device, "keyboard-brightness.set", new byte[] { 0x01, brightness }, cancellationToken);
-
+    }
     private async Task<bool> TryRestoreBladeBrightnessAsync(ReadyDevice device, byte original)
     {
         try
@@ -1450,12 +1643,16 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         CancellationToken cancellationToken)
     {
         BladeThermalState? state = null;
+        // The 597 middleware selects the default profile (1); the 710/671 reports
+        // accept profile 0. The remaining two bytes are the performance mode and
+        // fan-mode response slots.
+        var profileId = device.Descriptor.ProtocolFamily == "blade-597" ? (byte)0x01 : (byte)0x00;
         foreach (var zone in new byte[] { 0x01, 0x02 })
         {
             var response = await QueryCapabilityAsync(
                 device,
                 "thermal-state.get",
-                new byte[] { 0x00, zone, 0x00, 0x00 },
+                new byte[] { profileId, zone, 0x00, 0x00 },
                 cancellationToken);
             EnsureDataSize(response, 4, "Blade performance mode");
             if (response[RazerFeatureReport.ArgumentsOffset + 1] != zone)
@@ -2474,11 +2671,14 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     }
 
     /// <summary>
-    /// Both admitted Blade families share the thermal, power-mode and charge
-    /// commands, so every Blade setter resolves its laptop through this.
+    /// Resolves the first admitted Blade family. The 597 contract admits thermal,
+    /// charge-limit and power-mode writes alongside its read-only panel reports.
     /// </summary>
     private ReadyDevice? FindReadyBlade(IReadOnlyList<DeviceDescriptor> devices) =>
-        FindReadyDevice(devices, "blade-710") ?? FindReadyDevice(devices, "blade-671");
+        FindReadyDevice(devices, "blade-710") ??
+        FindReadyDevice(devices, "blade-710-chroma") ??
+        FindReadyDevice(devices, "blade-671") ??
+        FindReadyDevice(devices, "blade-597");
 
     private ReadyDevice? FindReadyDevice(
         IReadOnlyList<DeviceDescriptor> devices,
@@ -2577,6 +2777,15 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         {
             throw new InvalidOperationException(
                 "Max Fan is not available on this Blade model; use the fixed fan speed control instead.");
+        }
+    }
+
+    private static void EnsureBladeControlWritesAdmitted(ReadyDevice blade)
+    {
+        if (!BladeModelCapabilities.AllowsControlWrites(blade.Descriptor.ProductId))
+        {
+            throw new InvalidOperationException(
+                "Control writes are not admitted for this Blade model; only its read-only status reports are enabled.");
         }
     }
 

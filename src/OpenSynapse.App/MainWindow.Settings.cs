@@ -40,8 +40,9 @@ public sealed partial class MainWindow
             AppStrings.Reset();
             _viewModel.RefreshLocalization();
             Localized.RefreshTree(RootLayout);
-        _lastChromaSources = null;
+            _lastChromaSources = null;
             RefreshChromaRestStatus();
+            RefreshDedicatedGpuMode();
             _aboutWindow?.RefreshLocalization();
             _macroEditorWindow?.RefreshLocalization();
             ((App)Application.Current).RefreshTrayLocalization();

@@ -39,28 +39,70 @@ public sealed class OpenRazerDeviceService
         _diagnosticLog = diagnosticLog;
     }
 
+    public LeviathanV2XAudioService? CreateLeviathanV2XAudio(OpenRazerDeviceConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        return connection.Definition.ProductId == LeviathanV2XProtocol.ProductId &&
+               connection.IsReady &&
+               !string.IsNullOrWhiteSpace(connection.DevicePath)
+            ? new LeviathanV2XAudioService(
+                _transport,
+                connection.DevicePath!,
+                connection.Definition.DeviceWait,
+                message => _diagnosticLog?.TryWrite("leviathan-054A", message))
+            : null;
+    }
+
+    private async Task<OpenRazerDeviceDefinition> ResolveLeviathanDefinitionAsync(
+        OpenRazerDeviceDefinition definition,
+        string devicePath,
+        CancellationToken cancellationToken)
+    {
+        if (definition.ProductId != LeviathanV2XProtocol.ProductId)
+        {
+            return definition;
+        }
+
+        try
+        {
+            var request = OpenRazerStandardProtocol.Create(definition,
+                "razer_standard_get_edition_info", 0x03, 0x00, 0x86, []);
+            var response = await _transport.QueryPreparedAsync(
+                devicePath, request.Report, definition.DeviceWait, cancellationToken).ConfigureAwait(false);
+            var edition = LeviathanV2XProtocol.ReadEditionInfo(response).Edition;
+            return definition.WithDisplayName(LeviathanV2XProtocol.GetEditionDisplayName(edition));
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or
+            InvalidOperationException or NotSupportedException or InvalidDataException or UnauthorizedAccessException)
+        {
+            WriteDiagnostic(definition.ProductId,
+                $"optional edition read failed: {exception.GetType().Name}: {exception.Message}");
+            return definition;
+        }
+    }
+
     public async Task<IReadOnlyList<OpenRazerDeviceConnection>> DiscoverAsync(
         CancellationToken cancellationToken = default)
     {
-        var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
-            OpenRazerDeviceDefinition.VendorId, cancellationToken, LogObservedInterface).ConfigureAwait(false);
+        var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
+            OpenRazerDeviceDefinition.VendorId,
+            RazerFeatureReport.Length,
+            cancellationToken,
+            LogObservedInterface).ConfigureAwait(false);
         var results = new List<OpenRazerDeviceConnection>();
         foreach (var group in interfaces
             .Where(item => _catalog.Find(item.VendorId, item.ProductId) is not null)
-            .Where(item => item.FeatureReportByteLength == RazerFeatureReport.Length ||
-                (OpenRazerDeviceCatalog.IsViperV3ProSe(item.ProductId) &&
-                 item.FeatureReportByteLength == RazerFeatureReport.OpenRazerLogicalLength))
+            // A locally admitted Blade manifest owns the laptop controls and matrix path;
+            // discovering it twice would show one physical device as two cards.
+            .Where(item => RazerDeviceRegistry.BuiltIn.Find(item.VendorId, item.ProductId) is null)
             .GroupBy(item => (item.ProductId, item.PhysicalDeviceKey))
             .OrderBy(group => group.Key.ProductId)
             .ThenBy(group => group.Key.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase))
         {
             var definition = _catalog.Find(OpenRazerDeviceDefinition.VendorId, group.Key.ProductId)!;
-            var candidates = group
-                .OrderBy(item => OpenRazerDeviceCatalog.IsViperV3ProSe(item.ProductId) &&
-                                 item.FeatureReportByteLength == RazerFeatureReport.OpenRazerLogicalLength ? 0 : 1)
-                .ToArray();
+            var candidates = group.ToArray();
             WriteDiagnostic(definition.ProductId,
-                $"scan found {candidates.Length} matching HID collection(s)");
+                $"scan found {candidates.Length} matching 91-byte HID collection(s)");
             var available = candidates.Where(candidate => candidate.Access == DeviceAccessState.Available).ToArray();
             if (available.Length == 0)
             {
@@ -68,7 +110,7 @@ public sealed class OpenRazerDeviceService
                     OpenRazerEndpointState.BusyOrUnavailable,
                     // Name the rejected collections: a wireless mouse often leaves a wired
                     // collection enumerated whose descriptor does not match, and "busy" hides why.
-                    $"No usable HID control collection ({DescribeRejected(candidates)})."));
+                    $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
                 continue;
             }
 
@@ -111,7 +153,9 @@ public sealed class OpenRazerDeviceService
             else
             {
                 _endpointCache[group.Key.PhysicalDeviceKey] = resolvedPath;
-                results.Add(CreateConnection(definition, resolvedPath, group.Key.PhysicalDeviceKey,
+                var resolvedDefinition = await ResolveLeviathanDefinitionAsync(
+                    definition, resolvedPath, cancellationToken).ConfigureAwait(false);
+                results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
                     OpenRazerEndpointState.Resolved, null));
             }
         }
@@ -468,6 +512,39 @@ public sealed class OpenRazerDeviceService
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetLowBatteryThreshold(connection.Definition, percent), cancellationToken);
 
+    public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
+        OpenRazerDeviceConnection connection,
+        CancellationToken cancellationToken = default) =>
+        OpenRazerMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
+            OpenRazerMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
+
+    public async Task<OpenRazerButtonAssignment> GetButtonAssignmentAsync(
+        OpenRazerDeviceConnection connection,
+        byte buttonId,
+        byte mode,
+        CancellationToken cancellationToken = default) =>
+        OpenRazerMappingProtocol.ParseAssignment(await ExecuteAsync(connection,
+            OpenRazerMappingProtocol.GetAssignment(buttonId, mode), cancellationToken).ConfigureAwait(false));
+
+    public async Task SetButtonAssignmentAsync(
+        OpenRazerDeviceConnection connection,
+        byte buttonId,
+        byte mode,
+        byte functionId,
+        IReadOnlyList<byte> data,
+        CancellationToken cancellationToken = default)
+    {
+        await ExecuteWithoutResultAsync(connection,
+            OpenRazerMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray()),
+            cancellationToken).ConfigureAwait(false);
+        var applied = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
+            .ConfigureAwait(false);
+        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(data))
+        {
+            throw new InvalidOperationException("The device kept a different button assignment.");
+        }
+    }
+
     public async Task<byte> GetBrightnessAsync(
         OpenRazerDeviceConnection connection,
         OpenRazerStorage? storage = null,
@@ -479,6 +556,17 @@ public sealed class OpenRazerDeviceService
         var zone = OpenRazerLightingProtocol.ResolveBrightnessZone(connection.Definition, write: false,
             storage, selectedZone);
         RequireLightingZone(connection, zone, capability => capability.CanReadBrightness, "brightness read");
+        if (connection.Definition.ProductId == LeviathanV2XProtocol.ProductId)
+        {
+            var region = await GetLeviathanRegionAsync(connection, cancellationToken).ConfigureAwait(false);
+            var leviathanRequest = OpenRazerStandardProtocol.Create(connection.Definition,
+                "razer_chroma_extended_matrix_get_brightness", 0x03, 0x0F, 0x84,
+                [(byte)OpenRazerStorage.Temporary, region]);
+            var leviathanArguments = OpenRazerStandardProtocol.Arguments(await ExecuteAsync(connection,
+                leviathanRequest, cancellationToken).ConfigureAwait(false), 3);
+            return leviathanArguments[2];
+        }
+
         var request = OpenRazerLightingProtocol.GetBrightness(connection.Definition, storage, zone);
         var arguments = OpenRazerStandardProtocol.Arguments(await ExecuteAsync(connection,
             request, cancellationToken).ConfigureAwait(false),
@@ -491,7 +579,7 @@ public sealed class OpenRazerDeviceService
         };
     }
 
-    public Task SetBrightnessAsync(
+    public async Task SetBrightnessAsync(
         OpenRazerDeviceConnection connection,
         byte brightness,
         OpenRazerStorage? storage = null,
@@ -503,8 +591,18 @@ public sealed class OpenRazerDeviceService
         var zone = OpenRazerLightingProtocol.ResolveBrightnessZone(connection.Definition, write: true,
             storage, selectedZone);
         RequireLightingZone(connection, zone, capability => capability.CanWriteBrightness, "brightness write");
-        return ExecuteWithoutResultAsync(connection,
-            OpenRazerLightingProtocol.SetBrightness(connection.Definition, storage, zone, brightness), cancellationToken);
+        if (connection.Definition.ProductId == LeviathanV2XProtocol.ProductId)
+        {
+            var region = await GetLeviathanRegionAsync(connection, cancellationToken).ConfigureAwait(false);
+            await ExecuteWithoutResultAsync(connection, OpenRazerStandardProtocol.Create(connection.Definition,
+                "razer_chroma_extended_matrix_brightness", 0x03, 0x0F, 0x04,
+                [(byte)OpenRazerStorage.Temporary, region, brightness]), cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await ExecuteWithoutResultAsync(connection,
+            OpenRazerLightingProtocol.SetBrightness(connection.Definition, storage, zone, brightness), cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public async Task SetLightingAsync(
@@ -1169,6 +1267,11 @@ public sealed class OpenRazerDeviceService
             result.Add(OpenRazerBackendCapability.HyperPollingPairWrite);
         Add(OpenRazerBackendCapability.HyperPollingUnpairWrite, "set_hyperpolling_wireless_dongle_unpair",
             "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair");
+        if (OpenRazerDeviceCatalog.HasOnboardMapping(device.ProductId))
+        {
+            result.Add(OpenRazerBackendCapability.MappingRead);
+            result.Add(OpenRazerBackendCapability.MappingWrite);
+        }
         return result.ToFrozenSet();
 
         bool Has(string builder) => device.Transactions.ContainsKey(builder) || device.CommandSequences.ContainsKey(builder);
@@ -1258,6 +1361,16 @@ public sealed class OpenRazerDeviceService
         }
         return connection.LightingZones.Values.Where(Supports).Select(item => item.Zone)
             .Order().FirstOrDefault(defaultZone);
+    }
+
+    private async Task<byte> GetLeviathanRegionAsync(
+        OpenRazerDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        var request = OpenRazerStandardProtocol.Create(connection.Definition,
+            "razer_chroma_extended_matrix_get_region_ids", 0x50, 0x0F, 0x80, []);
+        return LeviathanV2XProtocol.ReadFirstRegion(
+            await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false));
     }
 
     private static void RequireClassicLedOperation(

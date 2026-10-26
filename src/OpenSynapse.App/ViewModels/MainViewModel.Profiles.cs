@@ -537,6 +537,12 @@ public sealed partial class MainViewModel
             return new(await StopBladeFanControlAsync("device-unavailable"), Changed: true);
         }
 
+        // The 597 family is read-only until its fan and thermal setters are exercised.
+        if (blade.ProtocolFamily == "blade-597")
+        {
+            return new(null, Changed: false);
+        }
+
         var profile = ProfileResolver.Resolve(_profile, blade, powerState).Blade;
         BladeFanCurve? curve = null;
         try

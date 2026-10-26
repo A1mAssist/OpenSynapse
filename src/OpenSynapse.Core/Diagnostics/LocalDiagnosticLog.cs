@@ -1,4 +1,5 @@
 using System.Text;
+using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.Core.Diagnostics;
 
@@ -17,11 +18,7 @@ public sealed class LocalDiagnosticLog
         }
 
         FilePath = string.IsNullOrWhiteSpace(filePath)
-            ? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "OpenSynapse",
-                "logs",
-                "opensynapse.log")
+            ? AppDataPaths.Combine("logs", "opensynapse.log")
             : Path.GetFullPath(filePath);
         PreviousFilePath = $"{FilePath}.previous";
         _maxFileBytes = maxFileBytes;

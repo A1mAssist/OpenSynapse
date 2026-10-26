@@ -14,7 +14,7 @@
 
 <p align="center"><a href="README.zh-CN.md">简体中文</a> · English</p>
 
-OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It supports 254 OpenRazer catalog models plus dedicated Blade/Viper, Kraken, BlackShark V3 Pro, and Chroma REST integrations.
+OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It supports 259 OpenRazer catalog models plus dedicated Blade/Viper, Kraken, BlackShark V3 Pro, and Chroma REST integrations.
 
 > Current release `v1.5.5` · Windows 11 x64 · unsigned
 
@@ -22,7 +22,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## What it supports
 
-OpenSynapse is not limited to a small list of product-specific models. The current support surface includes **254 OpenRazer catalog devices**, dedicated Blade and Viper controls, **six Kraken headsets**, **BlackShark V3 Pro audio controls**, and Chroma REST lighting integrations.
+OpenSynapse is not limited to a small list of product-specific models. The current support surface includes **259 OpenRazer catalog devices**, dedicated Blade and Viper controls, **six Kraken headsets**, **BlackShark V3 Pro audio controls**, and Chroma REST lighting integrations.
 
 **[Browse the complete device and capability list](docs/SUPPORTED_DEVICES.md)** for model names, USB PIDs, product-specific features, and the exact support boundaries.
 
@@ -30,11 +30,12 @@ OpenSynapse is not limited to a small list of product-specific models. The curre
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. Depending on the model, a device page may include device information, battery state, polling rate, DPI and DPI stages, power saving, lighting, matrix output, scroll settings, keyswitch optimization, Fn behavior, or HyperPolling receiver controls.
 
-The pinned OpenRazer catalog covers 110 mice, 72 keyboards, 46 laptops, and 26 accessories. Catalog presence does not mean every control has been physically verified on every model. An unresolved or busy endpoint stays read only until the next scan; OpenSynapse does not guess support from a product name or send a write through an unverified HID collection.
+The pinned OpenRazer catalog covers 112 mice, 73 keyboards, 48 laptops, and 26 accessories. Catalog presence does not mean every control has been physically verified on every model. An unresolved or busy endpoint stays read only until the next scan; OpenSynapse does not guess support from a product name or send a write through an unverified HID collection.
 
 ### Product-specific and additional support
 
 - **Blade:** telemetry, keyboard lighting, performance, fans, display, native panel mode, local dimming where supported, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior.
+- **Display:** an optional integrated-graphics-only mode disables the NVIDIA GPU through Windows PnP. It is not a MUX switch; external displays may stop working until the GPU is re-enabled. The machine-wide MSI install uses a LocalSystem service so the switch does not ask for UAC again; per-user and portable installs fall back to a UAC prompt.
 - **Blade THX audio:** spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization on supported Blade 16 and Blade 14 models. The Blade device page opens a reusable THX control window. The signed Razer native component is not bundled; if missing, the app offers a verified download from Razer's official server.
 - **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
 - **Kraken:** lighting only for six USB headsets; audio, microphone, EQ, and THX controls are not included.
@@ -60,8 +61,13 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-win-Setup.exe` installs for the current user and supports automatic updates.
-- `OpenSynapse-win-Portable.zip` runs without installation.
+- `OpenSynapse-win.msi` installs for all users under `Program Files` and registers the GPU mode service. Administrator permission is requested once during installation; later integrated-graphics switches do not prompt for UAC. If an older per-user Setup install is present, the MSI saves its profiles and settings, removes the old install, restores the data, and moves the startup entry to the new executable.
+- `OpenSynapse-win-Setup.exe` installs for the current user and supports automatic updates. It does not install the machine-wide service; the GPU switch falls back to a UAC prompt for each change.
+- `OpenSynapse-win-Portable.zip` runs without installation. The GPU switch prompts for UAC when used.
+
+The MSI service runs as `LocalSystem`, uses the protected executable under `Program Files`, and accepts only status plus fixed enable/disable requests. Its control pipe is restricted to the Windows account that installed the app.
+
+Profiles, logs, and device manifests live in `%LOCALAPPDATA%\A1mAssist\OpenSynapse`. Keeping user data outside the Velopack-managed directory prevents an MSI upgrade or uninstall from deleting it.
 
 Exit Razer Synapse before scanning devices so both applications do not contend for the same HID endpoint. OpenSynapse reports access failures and does not terminate Synapse itself.
 

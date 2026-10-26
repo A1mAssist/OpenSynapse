@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "source": {
     "repository": "openrazer/openrazer",
-    "commit": "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+    "commit": "477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d"
   },
   "capabilitySets": {
     "mice-001": [
@@ -1580,6 +1580,35 @@
       "set_idle_time",
       "set_low_battery_threshold",
       "set_poll_rate"
+    ],
+    "mice-060": [
+      "get_battery",
+      "get_brightness",
+      "get_device_type_mouse",
+      "get_dpi_stages",
+      "get_dpi_xy",
+      "get_idle_time",
+      "get_logo_brightness",
+      "get_low_battery_threshold",
+      "get_poll_rate",
+      "get_supported_poll_rates",
+      "is_charging",
+      "max_dpi",
+      "set_brightness",
+      "set_dpi_stages",
+      "set_dpi_xy",
+      "set_idle_time",
+      "set_logo_brightness",
+      "set_logo_none",
+      "set_logo_spectrum",
+      "set_logo_static",
+      "set_logo_wave",
+      "set_low_battery_threshold",
+      "set_none_effect",
+      "set_poll_rate",
+      "set_spectrum_effect",
+      "set_static_effect",
+      "set_wave_effect"
     ]
   },
   "devices": [
@@ -5469,7 +5498,11 @@
       "category": "mouse",
       "capabilitySet": "mice-058",
       "maximumDpi": 14000,
-      "pollRates": [125, 500, 1000],
+      "pollRates": [
+        125,
+        500,
+        1000
+      ],
       "matrixDimensions": null,
       "waitMicroseconds": 31000,
       "transactions": {
@@ -7786,6 +7819,152 @@
         "razer_chroma_extended_matrix_effect_wave": "1F",
         "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_misc_get_dpi_stages": "1F",
+        "razer_chroma_misc_get_dpi_xy": "1F",
+        "razer_chroma_misc_get_idle_time": "1F",
+        "razer_chroma_misc_get_polling_rate": "1F",
+        "razer_chroma_misc_set_dpi_stages": "1F",
+        "razer_chroma_misc_set_dpi_xy": "1F",
+        "razer_chroma_misc_set_idle_time": "1F",
+        "razer_chroma_misc_set_polling_rate": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_misc_get_dpi_xy": [
+          "00"
+        ],
+        "razer_chroma_misc_set_dpi_xy": [
+          "00"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "00DA",
+      "displayName": "Razer Cobra HyperSpeed (Wired)",
+      "category": "mouse",
+      "capabilitySet": "mice-060",
+      "maximumDpi": 26000,
+      "pollRates": [
+        125,
+        500,
+        1000
+      ],
+      "matrixDimensions": null,
+      "waitMicroseconds": 31000,
+      "transactions": {
+        "razer_chroma_standard_get_firmware_version": "00",
+        "razer_chroma_standard_get_serial": "00",
+        "razer_chroma_standard_get_device_mode": "00",
+        "razer_chroma_misc_get_battery_level": "3F",
+        "razer_chroma_misc_get_charging_status": "00",
+        "razer_chroma_misc_get_low_battery_threshold": "FF",
+        "razer_chroma_misc_set_low_battery_threshold": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_misc_get_dpi_stages": "1F",
+        "razer_chroma_misc_get_dpi_xy": "1F",
+        "razer_chroma_misc_get_idle_time": "1F",
+        "razer_chroma_misc_get_polling_rate": "1F",
+        "razer_chroma_misc_set_dpi_stages": "1F",
+        "razer_chroma_misc_set_dpi_xy": "1F",
+        "razer_chroma_misc_set_idle_time": "1F",
+        "razer_chroma_misc_set_polling_rate": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "01",
+          "0100"
+        ],
+        "razer_chroma_misc_get_dpi_xy": [
+          "00"
+        ],
+        "razer_chroma_misc_set_dpi_xy": [
+          "00"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "00DB",
+      "displayName": "Razer Cobra HyperSpeed (Wireless)",
+      "category": "mouse",
+      "capabilitySet": "mice-060",
+      "maximumDpi": 26000,
+      "pollRates": [
+        125,
+        500,
+        1000
+      ],
+      "matrixDimensions": null,
+      "waitMicroseconds": 31000,
+      "transactions": {
+        "razer_chroma_standard_get_firmware_version": "00",
+        "razer_chroma_standard_get_serial": "00",
+        "razer_chroma_standard_get_device_mode": "00",
+        "razer_chroma_misc_get_battery_level": "3F",
+        "razer_chroma_misc_get_charging_status": "00",
+        "razer_chroma_misc_get_low_battery_threshold": "FF",
+        "razer_chroma_misc_set_low_battery_threshold": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_misc_get_dpi_stages": "1F",
         "razer_chroma_misc_get_dpi_xy": "1F",
         "razer_chroma_misc_get_idle_time": "1F",

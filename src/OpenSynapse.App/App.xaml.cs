@@ -102,6 +102,24 @@ public partial class App : Application
         }
 
         _behaviorSettings = AppBehaviorSettings.Load();
+        try
+        {
+            if (Environment.ProcessPath is string executablePath &&
+                DedicatedGpuModeServiceInstaller.IsMachineInstallPath(executablePath) &&
+                WindowsStartupManager.TryRepairStaleRegistration(executablePath))
+            {
+                _diagnosticLog.TryWrite(
+                    "startup",
+                    "Migrated the startup registration to the machine-wide executable.");
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                System.Security.SecurityException)
+        {
+            _diagnosticLog.TryWrite("startup", $"migration failed: {exception}");
+        }
+
         _lowBatteryNotifications = new LowBatteryNotificationTracker(_behaviorSettings.LowBatteryNotifiedLevels);
         RegisterAppNotifications();
 

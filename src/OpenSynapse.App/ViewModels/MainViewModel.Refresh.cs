@@ -141,14 +141,20 @@ public sealed partial class MainViewModel
                     // so the rescan the user just asked for can actually recover.
                     selectedDevice.ClearRequiresRescan();
                     await selectedDevice.LoadBasicStateAsync(cancellationToken);
+                    await selectedDevice.LoadSoundbarAsync(cancellationToken);
                 }
             }
             if (_openRazerSpecialLightingService is not null)
             {
                 var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
-                var krakenConnections = connections.Where(connection =>
+                _krakenConnections = connections.Where(connection =>
                         connection.Kind is OpenRazerSpecialLightingKind.Kraken37 or OpenRazerSpecialLightingKind.KrakenV4)
                     .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                // Headsets that already own an audio page get the lighting card there, so a
+                // second lighting-only row for the same headset would be a duplicate.
+                var krakenConnections = _krakenConnections
+                    .Where(connection => !OpenRazerSpecialLightingService.IsMergedIntoAudioPage(connection.ProductId))
                     .ToArray();
                 if (OpenRazerKrakenDevices.Count != krakenConnections.Length ||
                     !OpenRazerKrakenDevices.Zip(krakenConnections)
@@ -170,6 +176,10 @@ public sealed partial class MainViewModel
                 }
             }
             await RefreshBlackSharkAsync(cancellationToken);
+            await RefreshHeadsetAudioAsync(cancellationToken);
+            await RefreshKeyboardsAsync(cancellationToken);
+            await RefreshChromaAsync(cancellationToken);
+            await RefreshBleAsync(cancellationToken);
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
             {
@@ -350,7 +360,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
         {
-            var hadBlade = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            var hadBlade = _deviceDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
             var hadViper = _deviceDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             _deviceDescriptors = Array.Empty<DeviceDescriptor>();
             BlackSharkDevices.Clear();
@@ -400,6 +410,7 @@ public sealed partial class MainViewModel
         OpenRazerDeviceConnection current) =>
         StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
         StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
+        StringComparer.Ordinal.Equals(previous.Definition.DisplayName, current.Definition.DisplayName) &&
         previous.EndpointState == current.EndpointState &&
         StringComparer.Ordinal.Equals(previous.Error, current.Error);
 
@@ -433,3 +444,4 @@ public sealed partial class MainViewModel
     }
 
 }
+

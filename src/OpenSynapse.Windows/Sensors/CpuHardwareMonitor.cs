@@ -8,19 +8,93 @@ internal sealed class CpuHardwareMonitor : IDisposable
         PdhWildcardCounter.TryCreate(@"\Thermal Zone Information(*)\Temperature");
     private readonly PdhWildcardCounter? _power =
         PdhWildcardCounter.TryCreate(@"\Energy Meter(*)\Power");
+    private readonly PdhWildcardCounter? _baseClock =
+        PdhWildcardCounter.TryCreate(@"\Processor Information(*)\Processor Frequency");
+    private readonly PdhWildcardCounter? _clockPerformance =
+        PdhWildcardCounter.TryCreate(@"\Processor Information(*)\% Processor Performance");
+    private readonly HwinfoSensorReader _hwinfo = new();
+    private readonly object _gate = new();
+    private double? _lastAcpiTemperature;
+    private DateTimeOffset _acpiTemperatureStableSince = DateTimeOffset.UtcNow;
+    private bool _acpiTemperatureSuppressed;
 
-    internal CpuHardwareSample Read() => new(
-        ReadTemperatureCelsius(),
-        SelectPackagePowerWatts(_power?.Read() ?? []),
-        ReadWindowsClock());
+    internal CpuHardwareSample Read()
+    {
+        lock (_gate)
+        {
+            return new CpuHardwareSample(
+                ReadTemperatureCelsius(),
+                SelectPackagePowerWatts(_power?.Read() ?? []),
+                ReadWindowsClock());
+        }
+    }
 
-    internal double? ReadTemperatureCelsius() =>
-        SelectTemperatureCelsius(_temperature?.Read().Select(sample => sample.Value) ?? []);
+    internal double? ReadTemperatureCelsius()
+    {
+        lock (_gate)
+        {
+            if (_hwinfo.ReadCpuTemperatureCelsius() is double hwinfoTemperature)
+            {
+                _lastAcpiTemperature = null;
+                _acpiTemperatureSuppressed = false;
+                return hwinfoTemperature;
+            }
+
+            var acpiTemperature = SelectTemperatureCelsius(
+                _temperature?.Read().Select(sample => sample.Value) ?? []);
+            if (acpiTemperature is not double value)
+            {
+                _lastAcpiTemperature = null;
+                _acpiTemperatureSuppressed = false;
+                return null;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            if (value != _lastAcpiTemperature)
+            {
+                _lastAcpiTemperature = value;
+                _acpiTemperatureStableSince = now;
+                _acpiTemperatureSuppressed = false;
+                return value;
+            }
+
+            if (!_acpiTemperatureSuppressed &&
+                ShouldSuppressAcpiTemperature(value, _lastAcpiTemperature, _acpiTemperatureStableSince, now))
+            {
+                _acpiTemperatureSuppressed = true;
+            }
+
+            return _acpiTemperatureSuppressed ? null : value;
+        }
+    }
+
+    internal double? ReadGpuTemperatureCelsius(string? vendorHint)
+    {
+        lock (_gate)
+        {
+            return _hwinfo.ReadGpuTemperatureCelsius(vendorHint);
+        }
+    }
+
+    internal static bool ShouldSuppressAcpiTemperature(
+        double value,
+        double? previousValue,
+        DateTimeOffset stableSince,
+        DateTimeOffset now) =>
+        value == previousValue &&
+        value is > 0 and <= 30 &&
+        now - stableSince >= TimeSpan.FromSeconds(10);
 
     public void Dispose()
     {
-        _temperature?.Dispose();
-        _power?.Dispose();
+        lock (_gate)
+        {
+            _temperature?.Dispose();
+            _power?.Dispose();
+            _baseClock?.Dispose();
+            _clockPerformance?.Dispose();
+            _hwinfo.Dispose();
+        }
     }
 
     internal static double? SelectTemperatureCelsius(IEnumerable<double> kelvinValues)
@@ -57,7 +131,15 @@ internal sealed class CpuHardwareMonitor : IDisposable
         return !package.IsEmpty && package.IndexOfAnyExceptInRange('0', '9') < 0;
     }
 
-    private static int? ReadWindowsClock()
+    private int? ReadWindowsClock()
+    {
+        var clock = SelectFastestCoreClock(
+            _baseClock?.Read() ?? [],
+            _clockPerformance?.Read() ?? []);
+        return clock ?? ReadPowerInformationClock();
+    }
+
+    private static int? ReadPowerInformationClock()
     {
         var processors = new ProcessorPowerInformation[Environment.ProcessorCount];
         var status = CallNtPowerInformation(
@@ -69,6 +151,25 @@ internal sealed class CpuHardwareMonitor : IDisposable
         return status == 0
             ? SelectFastestCoreClock(processors.Select(item => item.CurrentMhz))
             : null;
+    }
+
+    internal static int? SelectFastestCoreClock(
+        IReadOnlyList<PdhSample> baseClocks,
+        IReadOnlyList<PdhSample> performancePercentages)
+    {
+        var bases = baseClocks
+            .Where(sample => double.IsFinite(sample.Value) && sample.Value is >= 100 and <= 10000)
+            .GroupBy(sample => sample.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First().Value, StringComparer.OrdinalIgnoreCase);
+        var clocks = performancePercentages
+            .Where(sample => double.IsFinite(sample.Value) && sample.Value is >= 1 and <= 1000)
+            .Select(sample => bases.TryGetValue(sample.Name, out var baseClock)
+                ? baseClock * sample.Value / 100
+                : 0)
+            .Where(megahertz => megahertz is > 0 and <= 10000)
+            .Select(megahertz => (int)Math.Round(megahertz))
+            .ToArray();
+        return clocks.Length == 0 ? null : clocks.Max();
     }
 
     internal static int? SelectFastestCoreClock(IEnumerable<uint> clocks)

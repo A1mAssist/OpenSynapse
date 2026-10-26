@@ -17,6 +17,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     {
         foreach (var row in DpiStages) row.RefreshLocalization();
         foreach (var cell in MatrixCells) cell.RefreshLocalization();
+        Soundbar?.RefreshLocalization();
         OnPropertyChanged(string.Empty);
     }
 

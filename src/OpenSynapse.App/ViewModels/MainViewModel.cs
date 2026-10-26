@@ -50,6 +50,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly OpenRazerDeviceService? _openRazerDeviceService;
     private readonly OpenRazerChromaFrameSink? _openRazerChromaFrameSink;
     private readonly OpenRazerSpecialLightingService? _openRazerSpecialLightingService;
+    private IReadOnlyList<OpenRazerSpecialLightingConnection> _krakenConnections = [];
     private CancellationTokenSource? _openRazerSelectionCancellation;
     // A device whose mode was already repaired must not be rewritten on every device-tree
     // change; three HID round trips at the 31 ms device wait is not free.
@@ -463,6 +464,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _openRazerSelectionCancellation?.Cancel();
         _openRazerSelectionCancellation?.Dispose();
         _macroRuntime.Dispose();
+        _hue?.Dispose();
 
         if (SelectedOpenRazerDevice is { } openRazerDevice)
         {
@@ -473,6 +475,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         SelectedBlackShark = null;
         _selectedBlackSharkDevice = null;
         BlackSharkDevices.Clear();
+
+        if (SelectedHeadsetAudio is { } headsetAudio)
+        {
+            await headsetAudio.DisposeAsync().ConfigureAwait(false);
+            SelectedHeadsetAudio = null;
+        }
 
         Task brightnessWriter;
         lock (_bladeBrightnessGate)
@@ -568,7 +576,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         var powerState = SelectedLightingPowerState;
         var resolved = blade is null
             ? null
@@ -634,7 +642,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         var powerState = SelectedPerformancePowerState;
         var bladeProfile = blade is null
             ? EditablePerformanceBladeProfile
@@ -664,7 +672,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         }
 
         var blade = _deviceDescriptors.FirstOrDefault(device =>
-            device.ProtocolFamily == DeviceProtocolFamilies.Blade);
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         var powerState = SelectedLogoPowerState;
         var bladeProfile = blade is null
             ? EditableLogoBladeProfile
@@ -866,7 +874,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         Diagnostics.Clear();
         var groups = new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase);
         var errorBrush = new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
-        var bladeName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Blade)?.Name
+        var bladeName = snapshot.Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Name
             ?? "Razer Blade";
         var viperName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper)?.Name
             ?? "Razer Viper";

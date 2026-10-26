@@ -18,6 +18,15 @@ public sealed partial class MainViewModel
             .Concat(OpenRazerDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(OpenRazerKrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BlackSharkDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            // The Viper owns a native page and still answers Chroma discovery; its lighting page
+            // opens from there, so list the device once.
+            .Concat(ChromaDevices
+                .Where(chroma => !Devices.Any(native => native.ProductId == chroma.Connection.ProductId))
+                .Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat([new ConnectedDeviceRowViewModel(Hue)])
             .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
             .ThenBy(device => device.SortOrder)
@@ -98,6 +107,43 @@ public sealed partial class MainViewModel
                 row.IconGlyph,
                 row));
         }
+
+        foreach (var row in HeadsetAudioDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.HeadsetAudio,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in KeyboardDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Keyboard,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in ChromaDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Chroma,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in BleDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Ble,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
         OnPropertyChanged(nameof(DeviceSelectorItems));
     }
 
@@ -175,6 +221,7 @@ public sealed partial class MainViewModel
         SelectedOpenRazerKraken = null;
         SelectedOpenRazerDevice = selected;
         await selected.LoadBasicStateAsync(selectionToken);
+        await selected.LoadSoundbarAsync(selectionToken);
         await selected.LoadDpiStagesAsync(selectionToken);
         await selected.ApplyConfiguredLightingAsync(selectionToken);
         RefreshDeviceOverviewVisibility();
@@ -247,8 +294,9 @@ public sealed partial class MainViewModel
     }
 
     private OpenRazerDeviceViewModel CreateOpenRazerDeviceViewModel(
-        OpenRazerDeviceConnection connection) =>
-        new(
+        OpenRazerDeviceConnection connection)
+    {
+        OpenRazerDeviceViewModel device = new(
             _openRazerDeviceService ?? throw new InvalidOperationException("OpenRazer service is unavailable."),
             connection,
             () => CurrentPowerSource,
@@ -269,6 +317,10 @@ public sealed partial class MainViewModel
                 chromaOverrideEnabled,
                 token),
             _chromaIntegrationEnabled);
+        device.Onboard.LocalMacroProvider =
+            () => Macros.Select(macro => macro.Definition).ToArray();
+        return device;
+    }
 
     private async Task<bool> SaveOpenRazerLightingAsync(
         OpenRazerDeviceConnection connection,
@@ -383,3 +435,4 @@ public sealed partial class MainViewModel
         return path;
     }
 }
+

@@ -69,6 +69,11 @@ public sealed class OpenRazerDeviceDefinition
             : throw new NotSupportedException(
                 $"OpenRazer device 1532:{ProductId:X4} has no unambiguous transaction for '{builderName}'.");
 
+    internal OpenRazerDeviceDefinition WithDisplayName(string displayName) =>
+        new(ProductId, displayName, Category, SourceCapabilities, MaximumDpi, PollingRates,
+            MatrixDimensions, DeviceWait, Transactions, BuilderArgumentPrefixes, DefaultStorage,
+            DefaultLedZone, CommandSequences);
+
     internal byte GetRequiredFixedArgument(string builderName, int argumentIndex)
     {
         if (argumentIndex < 0)
@@ -94,9 +99,10 @@ public sealed class OpenRazerDeviceDefinition
 
 public sealed class OpenRazerDeviceCatalog
 {
-    internal const string SourceCommit = "6820f9da169d354bc7e6e93a0aa8683a6bb75792";
-    private const int ExpectedDeviceCount = 254;
+    internal const string SourceCommit = "477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d";
+    private const int ExpectedDeviceCount = 259;
     private static readonly ushort[] ReservedProductIds = [0x00B8, 0x02C6];
+    private static readonly HashSet<ushort> MappingProductIds = [];
     private static readonly string[] ResourceSuffixes =
     [
         ".Devices.OpenRazer.accessories.json",
@@ -123,8 +129,13 @@ public sealed class OpenRazerDeviceCatalog
     public static OpenRazerDeviceCatalog BuiltIn => BuiltInValue.Value;
     public IReadOnlyList<OpenRazerDeviceDefinition> Devices { get; }
 
-    internal static bool IsViperV3ProSe(ushort productId) => productId is 0x00DE or 0x00DF;
+    internal static bool IsLeviathanV2X(ushort productId) => productId == LeviathanV2XProtocol.ProductId;
 
+    /// <summary>
+    /// The middleware mice derive their onboard button-assignment commands from the
+    /// product bundle instead of the OpenRazer snapshot; the runtime read still decides.
+    /// </summary>
+    internal static bool HasOnboardMapping(ushort productId) => MappingProductIds.Contains(productId);
     public OpenRazerDeviceDefinition? Find(ushort vendorId, ushort productId) =>
         vendorId == OpenRazerDeviceDefinition.VendorId
             ? _byProductId.GetValueOrDefault(productId)
@@ -330,10 +341,121 @@ public sealed class OpenRazerDeviceCatalog
                 new Dictionary<string, IReadOnlyList<OpenRazerCommandStep>>()));
         }
 
-        // Upstream supports 00DE/00DF as Viper V3 Pro SE aliases. Windows exposes their
-        // feature report without a report-id byte, so the transport handles that separately.
+        AddLeviathanV2X();
+
+        // Upstream supports 00DE/00DF as Viper V3 Pro SE aliases. Windows reports their
+        // feature report as 91 bytes including the report-id byte, same as the V3 Pro.
         AddViperV3ProSeAlias(0x00C0, 0x00DE, "Razer Viper V3 Pro SE (Wired)");
         AddViperV3ProSeAlias(0x00C1, 0x00DF, "Razer Viper V3 Pro SE (Wireless)");
+
+        AddMiddlewareMice();
+
+        // Product definitions come from the Razer middleware bundles: each product's
+        // DeviceInfo carries the DPI range, polling rates and feature set. Upstream OpenRazer
+        // has no entry for these product ids, so each one reuses the closest catalogued
+        // sibling's protocol. A wrong guess only fails the runtime read probe, which keeps
+        // the matching write path closed.
+        void AddMiddlewareMice()
+        {
+            (ushort Sibling, ushort Product, string Name, int MaxDpi, int[] Rates)[] entries =
+            [
+                (0x006A, 0x0063, "Razer Jugan", 7200, []),
+                (0x0073, 0x0069, "Razer Mamba Hyperflux", 16000, [125, 500, 1000]),
+                (0x006B, 0x0074, "Razer Abyssus Lite", 6400, [125, 500, 1000]),
+                (0x005A, 0x0075, "Razer Turret Mouse Xbox One Edition", 16000, [125, 500, 1000]),
+                (0x0053, 0x0093, "Razer Naga Classic Edition", 16000, [125, 500, 1000]),
+                (0x00BF, 0x00DD, "Razer Krakoff", 45000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00DB, 0x00E0, "Razer Orochi V2", 18000, [125, 500, 1000]),
+                (0x00CD, 0x00E2, "Razer Basilisk V4 Pro (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00CD, 0x00E3, "Razer Basilisk V4 Pro (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00C1, 0x00E5, "Razer Viper V4 Pro (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00C1, 0x00E6, "Razer Viper V4 Pro (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00A8, 0x00E7, "Razer Naga V3 Pro (Wired)", 30000, [125, 500, 1000]),
+                (0x00A8, 0x00E8, "Razer Naga V3 Pro (Wireless)", 30000, [125, 500, 1000]),
+                (0x00CD, 0x00EA, "Razer Basilisk V4 HyperSpeed (Wireless)", 33000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00CD, 0x00EB, "Razer Basilisk V4 HyperSpeed (Wired)", 33000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00BF, 0x00EF, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00BF, 0x00F0, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
+                (0x00A3, 0x00A2, "Razer Cobra", 8500, [125, 500, 1000]),
+            ];
+
+            foreach (var entry in entries)
+            {
+                if (!devices.TryGetValue(entry.Sibling, out var sibling) ||
+                    devices.ContainsKey(entry.Product))
+                {
+                    continue;
+                }
+
+                devices.Add(entry.Product, new OpenRazerDeviceDefinition(
+                    entry.Product,
+                    entry.Name,
+                    sibling.Category,
+                    sibling.SourceCapabilities,
+                    entry.MaxDpi,
+                    Array.AsReadOnly(entry.Rates),
+                    sibling.MatrixDimensions,
+                    sibling.DeviceWait,
+                    sibling.Transactions,
+                    sibling.BuilderArgumentPrefixes,
+                    sibling.DefaultStorage,
+                    sibling.DefaultLedZone,
+                    sibling.CommandSequences));
+                MappingProductIds.Add(entry.Product);
+            }
+        }
+
+        void AddLeviathanV2X()
+        {
+            if (devices.ContainsKey(LeviathanV2XProtocol.ProductId))
+            {
+                return;
+            }
+
+            // The 1354 middleware uses the same 91-byte feature-report envelope as the
+            // OpenRazer catalog. Only the identity and brightness half is admitted here;
+            // EQ, bass and input-source controls live in the dedicated audio overlay.
+            var capabilities = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "get_firmware",
+                "get_serial",
+                "get_brightness",
+                "set_brightness",
+            };
+            var transactions = new Dictionary<string, byte>(StringComparer.Ordinal)
+            {
+                // The transport replaces these placeholders with the 054A transaction
+                // sequence (0..31) before sending.
+                ["razer_chroma_standard_get_firmware_version"] = 0x00,
+                ["razer_chroma_standard_get_serial"] = 0x00,
+                ["razer_standard_get_edition_info"] = 0x00,
+                ["razer_chroma_extended_matrix_get_region_ids"] = 0x00,
+                ["razer_chroma_extended_matrix_get_brightness"] = 0x00,
+                ["razer_chroma_extended_matrix_brightness"] = 0x00,
+            };
+            var brightnessPrefix = Array.AsReadOnly(
+                new[] { new ReadOnlyMemory<byte>(new byte[] { 0x00, 0x00 }) });
+            var prefixes = new Dictionary<string, IReadOnlyList<ReadOnlyMemory<byte>>>(StringComparer.Ordinal)
+            {
+                ["razer_chroma_extended_matrix_get_brightness"] = brightnessPrefix,
+                ["razer_chroma_extended_matrix_brightness"] = brightnessPrefix,
+            };
+            devices.Add(LeviathanV2XProtocol.ProductId, new OpenRazerDeviceDefinition(
+                LeviathanV2XProtocol.ProductId,
+                "Razer Leviathan V2 X",
+                DeviceCategory.Accessory,
+                capabilities,
+                null,
+                Array.Empty<int>(),
+                null,
+                // The 1354 middleware uses SLEEP_TIME_BETWEEN_OUT_IN = 5 ms.
+                TimeSpan.FromMilliseconds(5),
+                transactions,
+                prefixes,
+                OpenRazerStorage.Temporary,
+                OpenRazerLedZone.All,
+                new Dictionary<string, IReadOnlyList<OpenRazerCommandStep>>(StringComparer.Ordinal)));
+        }
 
         void AddViperV3ProSeAlias(ushort siblingId, ushort productId, string displayName)
         {

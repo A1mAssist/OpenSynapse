@@ -25,7 +25,7 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
         Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
         Assert.Equal(2, attempts);
         Assert.Equal(1, failures);
-        Assert.Null(source.LastError);
+        Assert.True(SpinWait.SpinUntil(() => source.LastError is null, TimeSpan.FromSeconds(2)));
     }
 
     [Fact]

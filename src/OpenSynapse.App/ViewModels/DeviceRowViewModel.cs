@@ -18,6 +18,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         ProtocolFamily = descriptor.ProtocolFamily;
         HardwareCategory = descriptor.Category;
         Name = descriptor.Name;
+        ProductId = descriptor.ProductId;
         Identity = $"VID_{descriptor.VendorId:X4} / PID_{descriptor.ProductId:X4}";
         _accessSource = descriptor.Access == DeviceAccessState.Available
             ? AppStrings.Text("Text_5965520A")
@@ -73,6 +74,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public string Name { get; }
     public DeviceCategory HardwareCategory { get; }
     public string ProtocolFamily { get; }
+    public ushort ProductId { get; }
     public string Identity { get; }
     public string Access => _accessSource;
     public string Capability => _capabilityState switch
@@ -132,6 +134,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                 break;
 
             case "blade-710":
+            case "blade-710-chroma":
                 Add("Text_5F0C27DB", telemetry.BladeKeyboardBrightness,
                     telemetry.BladeKeyboardBrightness is byte brightness ? $"{brightness}/255" : null);
                 Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode);

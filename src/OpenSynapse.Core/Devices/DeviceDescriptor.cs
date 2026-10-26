@@ -20,6 +20,8 @@ public enum DeviceCategory
     Mouse,
     Keyboard,
     Headset,
+    Speaker,
+    Microphone,
     Accessory,
     MouseMat,
     Monitor,
