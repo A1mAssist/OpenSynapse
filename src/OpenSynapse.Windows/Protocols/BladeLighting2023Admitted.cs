@@ -4,17 +4,25 @@ using OpenSynapse.Windows.Lighting;
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Keyboard-lighting admission for the Blade 16 2023 generation.
+/// Keyboard-lighting admission for models that render uniform effects in firmware.
 ///
-/// This model has no per-key matrix report, so only firmware-rendered uniform effects
-/// and brightness are admitted. Its stored effect RGB is not readable, so no color
-/// readback, custom palette, frame-pumped effect or Chroma override is offered.
+/// These models have no per-key matrix path in the native Blade channel, so only
+/// firmware-rendered effects and brightness are admitted. Their stored effect RGB is
+/// not readable, so no color readback, custom palette, frame-pumped effect or Chroma
+/// override is offered.
 /// </summary>
 public static class BladeLighting2023Admitted
 {
     public const ushort Blade16_2023ProductId = 0x029F;
+    public const ushort Blade14_2022ProductId = 0x028C;
 
-    public static bool IsBlade2023(ushort productId) => productId == Blade16_2023ProductId;
+    /// <summary>
+    /// True where the manifest's selector-prefixed keyboard-effect reports drive the
+    /// lighting, instead of the 710 matrix controller. 028C reports Spectrum through
+    /// those same reports.
+    /// </summary>
+    public static bool UsesFirmwareKeyboardLighting(ushort productId) =>
+        productId is Blade16_2023ProductId or Blade14_2022ProductId;
 
     /// <summary>Effects this model can render in firmware, in display order.</summary>
     public static IReadOnlyList<BladeLightingMode> Effects { get; } =

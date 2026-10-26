@@ -178,9 +178,9 @@ public sealed partial class MainViewModel
             return Task.CompletedTask;
         }
 
-        if (IsBlade2023Model)
+        if (UsesFirmwareKeyboardLighting)
         {
-            return ApplyBlade2023LightingEffectAsync(modes[BladeLightingModeIndex], cancellationToken);
+            return ApplyFirmwareKeyboardLightingEffectAsync(modes[BladeLightingModeIndex], cancellationToken);
         }
 
         var color = new RazerRgb(BladeLightingColor.R, BladeLightingColor.G, BladeLightingColor.B);
@@ -317,7 +317,7 @@ public sealed partial class MainViewModel
     }
 
     public Visibility HyperboostOptionVisibility =>
-        BladeModelCapabilities.SupportsHyperBoost(_blade._bladeProductId)
+        _blade.PerformanceModes.Contains(BladePerformanceMode.Hyperboost)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -331,14 +331,15 @@ public sealed partial class MainViewModel
 
     public async Task ApplyBladePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
+        var modes = _blade.PerformanceModes;
         if (_suppressBladePerformanceApply ||
             !CanWriteBladePerformanceMode ||
-            BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= BladePerformanceModes.Length)
+            BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= modes.Count)
         {
             return;
         }
 
-        var requested = BladePerformanceModes[BladePerformanceModeIndex];
+        var requested = modes[BladePerformanceModeIndex];
         if (requested == BladePerformanceMode.Hyperboost &&
             !BladeModelCapabilities.IsHyperBoostAvailable(
                 _blade._bladeProductId, _lastDeviceTelemetry?.BladeAdapterPower))
@@ -389,11 +390,34 @@ public sealed partial class MainViewModel
                 _deviceDescriptors, requested, cancellationToken);
             SetBladePerformanceMode(actual);
             EditablePerformanceBladeProfile.PerformanceMode = (byte)actual;
+            ClearFixedFanWhenLeavingCustom(actual);
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
             BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex);
+    }
+
+    /// <summary>
+    /// Drops a stored fixed fan target when the model leaves Custom mode. The 028C EC
+    /// stores a target in Balanced/Silent but keeps following its own curve, so the
+    /// profile would otherwise carry a value the firmware ignores.
+    /// </summary>
+    private void ClearFixedFanWhenLeavingCustom(BladePerformanceMode mode)
+    {
+        if (mode == BladePerformanceMode.Custom ||
+            !BladeModelCapabilities.FixedFanRequiresCustomMode(_blade._bladeProductId) ||
+            EditablePerformanceBladeProfile.FanMode is null)
+        {
+            return;
+        }
+
+        var target = EditablePerformanceBladeProfile;
+        target.FanMode = null;
+        target.FanTargetRpm = null;
+        target.FanCurve = null;
+        RaiseBladeFanModeSelection();
+        OnPropertyChanged(nameof(BladeFanCurveActive));
     }
 
     public async Task ApplyBladeChargeLimitAsync(CancellationToken cancellationToken = default)
@@ -593,17 +617,25 @@ public sealed partial class MainViewModel
                 }
             }
 
+            var modes = _blade.PerformanceModes;
+            cycleModes = [.. cycleModes.Where(modes.Contains)];
+            if (cycleModes.Count == 0)
+            {
+                cycleModes = [modes[0]];
+            }
+
             var nextMode = BladePerformanceModeCycle.GetNext(
-                BladePerformanceModes[_blade._confirmedBladePerformanceModeIndex],
-                BladePerformanceModes,
+                modes[_blade._confirmedBladePerformanceModeIndex],
+                modes,
                 cycleModes);
-            BladePerformanceModeIndex = Array.IndexOf(BladePerformanceModes, nextMode);
+            BladePerformanceModeIndex = modes.ToList().IndexOf(nextMode);
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 _deviceDescriptors,
-                BladePerformanceModes[BladePerformanceModeIndex],
+                modes[BladePerformanceModeIndex],
                 cancellationToken);
             SetBladePerformanceMode(actual);
             (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).PerformanceMode = (byte)actual;
+            ClearFixedFanWhenLeavingCustom(actual);
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);
@@ -1067,9 +1099,22 @@ public sealed partial class MainViewModel
     public bool CanWriteBladeBrightness =>
         CanSetBladeBrightness && BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId);
     public string BladePerformanceModeText { get => _blade._bladePerformanceModeText; private set => SetField(ref _blade._bladePerformanceModeText, value); }
-    public IReadOnlyList<string> BladePerformanceModeOptions => HyperboostOptionVisibility == Visibility.Visible
-        ? AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25", "HyperBoost")
-        : AppStrings.Texts("Text_9753B259", "Text_C1DB7AE1", "Text_598C5804", "Text_60E54E25");
+    public IReadOnlyList<string> BladePerformanceModeOptions =>
+        _blade.PerformanceModes
+            .Select(mode => AppStrings.Text(BladePerformanceModeTextKey(mode)))
+            .ToArray();
+
+    private static string BladePerformanceModeTextKey(BladePerformanceMode mode) => mode switch
+    {
+        BladePerformanceMode.Balanced => "Text_9753B259",
+        BladePerformanceMode.Performance => "Text_C1DB7AE1",
+        BladePerformanceMode.BatterySaver => "Text_EE43F0B1",
+        BladePerformanceMode.Custom => "Text_598C5804",
+        BladePerformanceMode.Silent => "Text_60E54E25",
+        BladePerformanceMode.BalancedDc => "Text_A8CF66DD",
+        BladePerformanceMode.Hyperboost => "HyperBoost",
+        _ => "Text_C1DB7AE1",
+    };
     public int BladePerformanceModeIndex { get => _blade._bladePerformanceModeIndex; set => SetField(ref _blade._bladePerformanceModeIndex, value); }
     public bool CanSetBladePerformanceMode
     {
@@ -1258,6 +1303,19 @@ public sealed partial class MainViewModel
     /// </summary>
     public void RefreshBladeModelCapabilityUi()
     {
+        // The model can change the exposed performance-mode list, so the selected index
+        // and the shortcut cycle have to be rebuilt against the new list.
+        var performanceModes = _blade.PerformanceModes;
+        _blade._bladePerformanceModeIndex = -1;
+        _blade._confirmedBladePerformanceModeIndex = -1;
+        OnPropertyChanged(nameof(BladePerformanceModeIndex));
+        _bladePerformanceCycleModes.RemoveWhere(mode => !performanceModes.Contains(mode));
+        if (_bladePerformanceCycleModes.Count == 0)
+        {
+            _bladePerformanceCycleModes = [.. performanceModes];
+        }
+        OnPropertyChanged(nameof(BladePerformanceCycleModes));
+
         OnPropertyChanged(nameof(CanWriteBladeBrightness));
         OnPropertyChanged(nameof(CanWriteBladePerformanceMode));
         OnPropertyChanged(nameof(HyperboostOptionVisibility));
@@ -1294,6 +1352,10 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeFanFixedVisibility));
         OnPropertyChanged(nameof(BladeFanCurveVisibility));
     }
+
+    /// <summary>True when the exact model exposes the given performance mode.</summary>
+    internal bool IsBladePerformanceModeAvailable(BladePerformanceMode mode) =>
+        _blade.PerformanceModes.Contains(mode);
 
     /// <summary>Collapses the Max Fan column entirely on models without that switch.</summary>
     public Visibility BladeMaxFanVisibility => _blade.SupportsMaxFan
@@ -1357,7 +1419,7 @@ public sealed partial class MainViewModel
 /// firmware-rendered uniform effects gets a matching short list instead of entries that
 /// would not apply to it.
 /// </summary>
-public IReadOnlyList<string> BladeLightingModeOptions => IsBlade2023Model
+public IReadOnlyList<string> BladeLightingModeOptions => UsesFirmwareKeyboardLighting
     ? AppStrings.Texts(
         AppStrings.Text("Text_39B523BD"),
         AppStrings.Text("Text_7EDA32B9"),
@@ -1428,7 +1490,7 @@ public IReadOnlyList<string> BladeLightingModeOptions => IsBlade2023Model
 /// </summary>
 public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
-        (IsBlade2023Model || _bladeLightingController is not null);
+        (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
     public int BladeLightingPowerProfileIndex
     {
         get => _bladeLightingPowerProfileIndex;
@@ -1536,7 +1598,7 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
             }
         }
     }
-    public Visibility BladeLightingRenderModeVisibility => !IsBlade2023Model &&
+    public Visibility BladeLightingRenderModeVisibility => !UsesFirmwareKeyboardLighting &&
         SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Spectrum
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -1545,7 +1607,7 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
     public Visibility BladeLightingPresetVisibility => SelectedBladeLightingMode == BladeLightingMode.Starlight
         ? BladeLightingColorVisibility : BladeLightingSecondColorVisibility;
     public Visibility BladeLightingColorVisibility => !BladeFirmwarePaletteHidden &&
-        !IsBlade2023Model &&
+        !UsesFirmwareKeyboardLighting &&
         (SelectedBladeLightingMode is
         BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
         BladeLightingMode.Ripple or BladeLightingMode.Tidal or BladeLightingMode.Spectrum or
@@ -1553,13 +1615,13 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex != 0))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingSecondColorVisibility => !BladeFirmwarePaletteHidden && !IsBlade2023Model &&
+    public Visibility BladeLightingSecondColorVisibility => !BladeFirmwarePaletteHidden && !UsesFirmwareKeyboardLighting &&
         (SelectedBladeLightingMode is BladeLightingMode.Tidal or
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
         (SelectedBladeLightingMode == BladeLightingMode.Starlight && BladeStarlightColorModeIndex == 2))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility BladeLightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden && !IsBlade2023Model &&
+    public Visibility BladeLightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden && !UsesFirmwareKeyboardLighting &&
         SelectedBladeLightingMode is
         BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
         BladeLightingMode.Wheel or BladeLightingMode.AudioMeter
@@ -1569,7 +1631,7 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
     /// The 2023 generation stores a fixed rightward wave direction, so offering the
     /// direction selector there would present a control that cannot change anything.
     /// </summary>
-public Visibility BladeWaveDirectionVisibility => !IsBlade2023Model &&
+public Visibility BladeWaveDirectionVisibility => !UsesFirmwareKeyboardLighting &&
         SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -1604,7 +1666,7 @@ public Visibility BladeWaveDirectionVisibility => !IsBlade2023Model &&
 /// </summary>
 public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
-        (IsBlade2023Model || _bladeLightingController is not null);
+        (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
 
     /// <summary>
 /// Both Blade generations have an admitted keyboard-lighting report, so the card is
@@ -1612,10 +1674,12 @@ public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
 /// </summary>
 public Visibility BladeLightingCardVisibility => Visibility.Visible;
 
-    private const ushort Blade2023ProductId = 0x029F;
-
-    /// <summary>True on the Blade 16 2023, which has no per-key lighting matrix.</summary>
-    private bool IsBlade2023Model => _blade._bladeProductId == Blade2023ProductId;
+    /// <summary>
+    /// True where the keyboard is driven through the firmware effect reports instead of
+    /// the 710 matrix controller. This covers the Blade 16 2023 and the Blade 14 2022.
+    /// </summary>
+    private bool UsesFirmwareKeyboardLighting =>
+        BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(_blade._bladeProductId);
 
     /// <summary>
     /// Effect list for the selected model. A 2023 machine renders a short firmware list;
@@ -1628,7 +1692,7 @@ public Visibility BladeLightingCardVisibility => Visibility.Visible;
     public BladeLightingMode? SelectedBladeLightingModeForPage => SelectedBladeLightingMode;
 
     private IReadOnlyList<BladeLightingMode> ActiveBladeLightingModes =>
-        IsBlade2023Model
+        UsesFirmwareKeyboardLighting
             ? BladeLighting2023Admitted.Effects
             : BladeLightingModes;
 
@@ -1636,7 +1700,7 @@ public Visibility BladeLightingCardVisibility => Visibility.Visible;
     /// The Blade 16 2023 renders these effects in firmware through its own report, so the
     /// effect and brightness reach the device without the per-key frame path.
     /// </summary>
-    private async Task ApplyBlade2023LightingEffectAsync(
+    private async Task ApplyFirmwareKeyboardLightingEffectAsync(
         BladeLightingMode mode,
         CancellationToken cancellationToken)
     {

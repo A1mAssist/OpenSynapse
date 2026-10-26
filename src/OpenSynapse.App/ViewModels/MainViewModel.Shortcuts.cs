@@ -1,6 +1,5 @@
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Devices;
-using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -10,8 +9,9 @@ public sealed partial class MainViewModel
         IEnumerable<BladePerformanceMode> performanceModes,
         IEnumerable<int>? refreshRates)
     {
+        var available = _blade.PerformanceModes;
         _legacyPerformanceCycleModes = performanceModes
-            .Where(BladePerformanceModes.Contains)
+            .Where(available.Contains)
             .Distinct()
             .ToArray();
         _legacyRefreshRateCycleHertz = refreshRates?
@@ -23,7 +23,7 @@ public sealed partial class MainViewModel
 
     internal void SetBladePerformanceCycleModes(IEnumerable<BladePerformanceMode> modes)
     {
-        var selected = modes.Where(BladePerformanceModes.Contains).ToHashSet();
+        var selected = modes.Where(_blade.PerformanceModes.Contains).ToHashSet();
         if (selected.Count == 0)
         {
             throw new ArgumentException("At least one performance mode must remain in the shortcut cycle.", nameof(modes));
@@ -45,7 +45,7 @@ public sealed partial class MainViewModel
         IEnumerable<BladePerformanceMode> modes,
         CancellationToken cancellationToken = default)
     {
-        var selected = modes.Where(BladePerformanceModes.Contains).Distinct().ToArray();
+        var selected = modes.Where(_blade.PerformanceModes.Contains).Distinct().ToArray();
         if (selected.Length == 0)
         {
             return false;

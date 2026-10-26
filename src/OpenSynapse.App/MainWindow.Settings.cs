@@ -98,6 +98,7 @@ public sealed partial class MainWindow
 
     private void InitializeBehaviorSettingsUi()
     {
+        _behaviorUiReady = false;
         ModeNotificationToggle.IsOn = _behaviorSettings.ModeChangeNotificationsEnabled;
         LowBatteryNotificationToggle.IsOn = _behaviorSettings.LowBatteryNotificationsEnabled;
         TrayBatteryToggle.IsOn = _behaviorSettings.TrayBatteryLevelsEnabled;
@@ -105,6 +106,13 @@ public sealed partial class MainWindow
         _viewModel.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = _behaviorSettings.RestoreLightingAfterChromaSession;
         RefreshChromaRestStatus();
+        var performanceAvailable = _viewModel.IsBladePerformanceModeAvailable(BladePerformanceMode.Performance);
+        PerformanceCyclePerformanceCheckBox.Visibility =
+            performanceAvailable ? Visibility.Visible : Visibility.Collapsed;
+        if (!performanceAvailable)
+        {
+            PerformanceCyclePerformanceCheckBox.IsChecked = false;
+        }
         foreach (var checkBox in PerformanceCycleModesPanel.Children.OfType<CheckBox>())
         {
             checkBox.IsChecked = checkBox.Tag is string tag &&
