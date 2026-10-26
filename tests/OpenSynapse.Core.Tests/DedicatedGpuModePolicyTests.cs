@@ -191,6 +191,27 @@ public sealed class DedicatedGpuModePolicyTests
             DedicatedGpuDeviceInfo.StateFromProblemCode(DedicatedGpuProblemCodes.Disabled));
     }
 
+    [Theory]
+    [InlineData(DedicatedGpuDeviceState.Enabled, true, true)]
+    [InlineData(DedicatedGpuDeviceState.Enabled, false, false)]
+    [InlineData(DedicatedGpuDeviceState.Disabled, true, false)]
+    [InlineData(DedicatedGpuDeviceState.Disabled, false, true)]
+    public void OnlyAHealthyOrDisabledAdapterCountsAsAlreadyInTheRequestedState(
+        DedicatedGpuDeviceState state,
+        bool enabled,
+        bool expected) =>
+        Assert.Equal(expected, DedicatedGpuModePolicy.IsAlreadyInState(state, enabled));
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AFaultedAdapterNeverCountsAsAlreadyInTheRequestedState(bool enabled) =>
+        // Otherwise disabling a faulted adapter would report success without ever
+        // touching the device, and the fault guard below it would never run.
+        Assert.False(DedicatedGpuModePolicy.IsAlreadyInState(
+            DedicatedGpuDeviceState.Faulted,
+            enabled));
+
     [Fact]
     public void ARestartRequestIsRoutedToTheRestartAction()
     {

@@ -115,7 +115,11 @@ public static class WindowsDedicatedGpuMode
                 return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.NoDevice);
             }
 
-            if (discrete[0].State.IsDisabled() == enabled)
+            // A faulted adapter is neither enabled nor disabled, so it never counts as
+            // already being in the requested state. The early return has to skip it,
+            // otherwise disabling a faulted adapter would report success without
+            // touching the device.
+            if (DedicatedGpuModePolicy.IsAlreadyInState(discrete[0].State, enabled))
             {
                 return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Success);
             }
