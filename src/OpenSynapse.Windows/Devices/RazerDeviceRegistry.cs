@@ -89,6 +89,7 @@ internal sealed class RazerDeviceRegistry
                 ["current-fan-rpm.get"] = new(0x03, 0x0D, 0x88, ""),
                 ["boost.get"] = new(0x03, 0x0D, 0x87, ""),
                 ["boost.set"] = new(0x03, 0x0D, 0x07, ""),
+                ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
                 ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
                 ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
                 ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
@@ -148,7 +149,11 @@ internal sealed class RazerDeviceRegistry
         {
             ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
             ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys.ToHashSet(StringComparer.Ordinal),
-            ["blade-671"] = FamilyCapabilities["blade-671"].Keys.ToHashSet(StringComparer.Ordinal),
+            // adapter-power.get is optional in this family: only the 029F manifest
+            // answers the adapter-wattage level, so it is not required here.
+            ["blade-671"] = FamilyCapabilities["blade-671"].Keys
+                .Where(capability => capability != "adapter-power.get")
+                .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
             ["openrazer-standard"] = new HashSet<string>(StringComparer.Ordinal),
@@ -643,7 +648,7 @@ internal sealed class RazerDeviceRegistry
                     "blade-710-chroma" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
                         "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get" or
                         "keyboard-brightness.get" or "keyboard-brightness.set"),
-                    "blade-671" => capabilityId is not ("charge-limit.get" or "power-mode.get" or
+                    "blade-671" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or "power-mode.get" or
                         "keyboard-brightness.get" or "keyboard-brightness.set" or
                         "keyboard-effect.get" or "keyboard-effect.set"),
                     "blade-597" => capabilityId is not ("keyboard-brightness.get" or

@@ -391,6 +391,7 @@ public void Blade671IsItsOwnFamilyWithoutTheProduct710OnlyReports()
     Assert.Equal(DeviceCategory.Laptop, manifest.Category);
     Assert.Contains("power-mode.get", manifest.Capabilities.Keys);
     Assert.Contains("fan-target.get", manifest.Capabilities.Keys);
+    Assert.Contains("adapter-power.get", manifest.Capabilities.Keys);
     // Its own lighting reports: brightness in 0x03:0x83 and the uniform effect store,
     // not the 02C6 matrix protocol.
     Assert.Contains("keyboard-brightness.get", manifest.Capabilities.Keys);

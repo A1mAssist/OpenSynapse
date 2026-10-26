@@ -23,7 +23,7 @@ public static class BladeModelCapabilities
             // Blade 16 (2025) RZ09-0528. Custom CPU/GPU levels are the captured
             // 0x0D:0x07 pairs; its maximum fan is the fixed 5400 RPM fan-target
             // control, not the Custom Power Mode bit, so Max Fan is not admitted here.
-            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true, FixedFan: true),
+            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true, FixedFan: true, HyperBoost: true),
 
             // Blade 15 (Mid 2019) Mercury RZ09-03017. Owner-tested end to end: a fixed
             // target write took effect, both tachometers read back higher without a
@@ -37,7 +37,9 @@ public static class BladeModelCapabilities
             [0x0245] = new(MaxFan: false, None, FixedFan: true, MaximumFanTargetRpm: 5300),
 
             // Blade 16 (2023) RZ09-0483. Owner-tested maximum fans plus a CPU Boost level.
-            [0x029F] = new(MaxFan: true, [.. LowMediumHigh, BladeCpuBoostMode.Boost]),
+            // Its performance-mode table lists HyperBoost, and it reads the adapter
+            // wattage level through the same 07:8C report the other models use.
+            [0x029F] = new(MaxFan: true, [.. LowMediumHigh, BladeCpuBoostMode.Boost], HyperBoost: true),
 
             // Blade 18 (2023) RZ09-0484. Owner-reported maximum fans; its fixed fan
             // targets were reported ignored, so no fixed target is admitted.
@@ -53,7 +55,7 @@ public static class BladeModelCapabilities
             [0x028C] = new(MaxFan: false, LowMediumHigh),
             // Blade 14 (2023) RZ09-0482 and Blade 14 (2024) RZ09-0509. The middleware
             // enables both the maximum-fan bit and custom CPU levels.
-            [0x029D] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true),
+            [0x029D] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true, HyperBoost: true),
             [0x02B6] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true),
 
             // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
@@ -68,8 +70,9 @@ public static class BladeModelCapabilities
             // Blade 16 (2024) 1532:02B7. The 695 middleware uses the same fan-target,
             // panel and power reports as 02C6; Max Fan stays off because its injected
             // configuration does not enable the Custom maximum-fan bit. CPU Boost is
-            // likewise not enabled by its deviceUI configuration.
-            [0x02B7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true),
+            // likewise not enabled by its deviceUI configuration. Its performance-mode
+            // table lists HyperBoost, so the pad-less path applies here too.
+            [0x02B7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, HyperBoost: true),
 
             // Blade 16 (2026) RZ09-0581 remains read-only until its middleware is audited.
             [0x02E0] = new(MaxFan: false, None),
@@ -93,6 +96,26 @@ public static class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract) && contract.FixedFan;
 
     /// <summary>
+    /// True where the model's own performance-mode table lists HyperBoost. The mode is
+    /// written through the shared 0x0D:0x02 thermal channel, so it does not need a
+    /// Razer Cooling Pad; the pad only drives the temperature-to-fan curve.
+    /// </summary>
+    public static bool SupportsHyperBoost(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.HyperBoost;
+
+    /// <summary>
+    /// HyperBoost raises sustained power limits, so it needs the full-power adapter.
+    /// The cooling pad is not required: Synapse only gates the option on the pad
+    /// because the pad hosts the temperature-to-fan curve.
+    /// </summary>
+    public static bool IsHyperBoostAvailable(
+        ushort productId,
+        BladeAdapterPowerSnapshot? adapterPower) =>
+        SupportsHyperBoost(productId) &&
+        adapterPower is { ActualWatts: > 0, RecommendedWatts: > 0 } power &&
+        !power.IsLimitedAdapter;
+
+    /// <summary>
     /// Upper bound for parsing a stored fan target. This can exceed the fixed-write
     /// ceiling when a model reports a higher maximum than OpenSynapse exposes.
     /// </summary>
@@ -107,7 +130,8 @@ public static class BladeModelCapabilities
         bool FanCurve = false,
         bool FixedFan = false,
         int MaximumFanTargetRpm = BladeFanLimits.MaximumRpm,
-        bool Writes = true);
+        bool Writes = true,
+        bool HyperBoost = false);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay

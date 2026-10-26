@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- HyperBoost 不再要求连接雷蛇散热垫：只要机型本身支持（灵刃 14 2023、灵刃 16 2023/2024/2025）且接的是全功率电源，就可以在性能模式下拉里选择它。未连接散热垫时选择会先弹出免责声明，第三方散热的风险由用户自行承担。电池和低功率适配器下仍不可用。散热垫接入时的原有行为不变。
+- HyperBoost no longer requires the Razer Laptop Cooling Pad. On models that support it (Blade 14 2023, Blade 16 2023/2024/2025) it is selectable from the performance-mode list whenever the full-power adapter is connected. Selecting it without a pad now shows a disclaimer first and leaves third-party cooling to the user; battery and low-power adapters still cannot use it. The pad-present behaviour is unchanged.
 - 雷云推导鼠标新增板载按键映射：从产品 bundle 的 `Set/Get Single Button Assignment`（class `0x02` 的 `0x0C`/`0x8C`）读取按键列表和当前映射，可把普通层或 Shift 层的按键改成关闭、其他鼠标按键、键盘按键（含 Ctrl/Shift/Alt/Win 修饰）、DPI 动作、配置切换、媒体键、电源键、双击、滚轮模式、Razer 键、Windows 快捷键或 HyperShift 切换，写入后读回校验；不支持命令的设备读取失败时卡片保持隐藏。
 - Middleware-derived mice now expose onboard button mapping: read the button list and current assignments over the bundle's `Set/Get Single Button Assignment` commands (class 0x02, 0x0C/0x8C), then remap a button on the normal or HyperShift layer to off, another mouse button, a keyboard key with Ctrl/Shift/Alt/Win, a DPI action, profile navigation, a media key, a power key, double click, a scroll-wheel mode, a Razer key, a Windows shortcut or HyperShift. Every write is verified by reading it back, and the card stays hidden when the device refuses the command.
 - 0F1F ARGB 控制器缺少雷云过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。

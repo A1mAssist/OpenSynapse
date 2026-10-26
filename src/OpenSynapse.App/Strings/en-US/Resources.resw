@@ -1552,8 +1552,10 @@
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU temperature</value></data>
   <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>Higher of the two</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
-  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad: it raises sustained power limits and relies on the pad for cooling. The mode cannot be selected without the pad.</value></data>
-  <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost requires the Razer Laptop Cooling Pad.</value></data>
+  <data name="BladeHyperboostRequiresFullPower" xml:space="preserve"><value>HyperBoost requires the full-power adapter; it cannot be used on battery or a low-power adapter.</value></data>
+  <data name="BladeHyperboostDisclaimerTitle" xml:space="preserve"><value>No Razer Cooling Pad connected</value></data>
+  <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost raises the sustained CPU and GPU power limits. Without the Razer Laptop Cooling Pad, Synapse's temperature-to-fan curve does not run, so cooling depends entirely on your own third-party setup. Sustained heavy load may cause thermal throttling or hardware damage. Continuing means you accept this risk.</value></data>
+  <data name="BladeHyperboostDisclaimerAccept" xml:space="preserve"><value>I understand the risk, enable it</value></data>
   <data name="FirmwareTitle" xml:space="preserve"><value>Firmware</value></data>
   <data name="FirmwareCheckButton" xml:space="preserve"><value>Check for updates</value></data>
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>

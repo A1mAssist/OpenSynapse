@@ -36,13 +36,8 @@ public sealed partial class MainViewModel
 
         _bladeCoolingPadConnected = connected;
         OnPropertyChanged(nameof(HyperboostOptionVisibility));
+        OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
         OnPropertyChanged(nameof(BladePerformanceModeOptions));
-        if (!connected &&
-            BladePerformanceModeIndex ==
-            Array.IndexOf(DeviceUiCatalog.BladePerformanceModes, BladePerformanceMode.Hyperboost))
-        {
-            BladePerformanceModeIndex = -1;
-        }
     }
 
     /// <summary>
