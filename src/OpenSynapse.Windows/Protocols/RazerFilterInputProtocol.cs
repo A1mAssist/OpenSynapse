@@ -4,6 +4,8 @@ namespace OpenSynapse.Windows.Protocols;
 
 internal static class RazerFilterInputProtocol
 {
+    internal const uint SetFeature = 0x88883010;
+    internal const uint GetFeature = 0x88883014;
     internal const uint ReadInput = 0x88883018;
     internal const uint EnableInputRedirect = 0x8888301C;
     internal const uint SubmitInput = 0x88883020;

@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Discovers the RZCONTROL interface used by Product 710's installed Razer
-/// filter driver. Discovery does not open the endpoint or change driver state.
+/// Discovers the RZCONTROL interface that Razer's per-device filter driver
+/// exposes. Discovery does not open the endpoint or change driver state.
 /// </summary>
 public static class RazerFilterEndpointDiscovery
 {
@@ -55,6 +55,32 @@ public static class RazerFilterEndpointDiscovery
                     containerIds[0])
                 : null;
         }, cancellationToken));
+    }
+
+    /// <summary>
+    /// Finds the RZCONTROL endpoint for any product whose Razer driver exposes one.
+    /// </summary>
+    public static ValueTask<string?> DiscoverAsync(
+        ushort productId,
+        CancellationToken cancellationToken = default) =>
+        new(Task.Run(
+            () => SelectEndpoint(
+                EnumerateCandidates(InterfaceClassGuid, cancellationToken),
+                productId),
+            cancellationToken));
+
+    internal static string? SelectEndpoint(
+        IEnumerable<RazerFilterEndpointCandidate> candidates,
+        ushort productId)
+    {
+        ArgumentNullException.ThrowIfNull(candidates);
+        var fragment = $"RZCONTROL#VID_1532&PID_{productId:X4}&MI_00#";
+        var matches = candidates
+            .Where(candidate => candidate.Path.Contains(fragment, StringComparison.OrdinalIgnoreCase))
+            .Select(static candidate => candidate.Path)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return matches.Length == 1 ? matches[0] : null;
     }
 
     internal static string? SelectProduct710Endpoint(
