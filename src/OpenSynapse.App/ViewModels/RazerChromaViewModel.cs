@@ -73,8 +73,7 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
     private const ushort ArgbProductId = 0x0F1F;
-    private static readonly string[] ArgbPortNames =
-        ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5", "Port 6"];
+    private static readonly string[] ArgbPortNumbers = ["1", "2", "3", "4", "5", "6"];
 
     private readonly RazerChromaDeviceConnection _connection;
     private readonly Action<string>? _diagnostic;
@@ -197,7 +196,7 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public Visibility ArgbVisibility => _argbConnection is null ? Visibility.Collapsed : Visibility.Visible;
-    public IReadOnlyList<string> ArgbPortOptions => ArgbPortNames;
+    public IReadOnlyList<string> ArgbPortOptions => ArgbPortNumbers;
     public ObservableCollection<ArgbLedViewModel> ArgbLeds { get; } = new();
 
     public int SelectedArgbPortIndex
