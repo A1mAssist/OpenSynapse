@@ -100,6 +100,7 @@ public sealed partial class MacroEditorWindow : Window
     {
         _viewModel.CancelMacroCapture();
         _viewModel.CancelMacroStepCapture();
+        _viewModel.CancelMacroPlaybackShortcutCapture();
         _viewModel.CancelMacroPlaybackCountdown();
         _viewModel.DiscardMacroRecording();
     }
@@ -478,6 +479,18 @@ public sealed partial class MacroEditorWindow : Window
 
     private async void CaptureMacroTriggerClick(object sender, RoutedEventArgs e) =>
         await _viewModel.CaptureMacroTriggerAsync(_lifetime.Token);
+
+    private async void CaptureMacroPlaybackStartShortcutClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.CaptureMacroPlaybackStartShortcutAsync(_lifetime.Token);
+
+    private async void CaptureMacroPlaybackStopShortcutClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.CaptureMacroPlaybackStopShortcutAsync(_lifetime.Token);
+
+    private async void ClearMacroPlaybackStartShortcutClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ClearMacroPlaybackStartShortcutAsync(_lifetime.Token);
+
+    private async void ClearMacroPlaybackStopShortcutClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ClearMacroPlaybackStopShortcutAsync(_lifetime.Token);
 
     private async void PlayMacroClick(object sender, RoutedEventArgs e) =>
         await _viewModel.PlaySelectedMacroAsync(_lifetime.Token);

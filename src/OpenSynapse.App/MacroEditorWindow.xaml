@@ -78,7 +78,21 @@
                 <Button x:Name="MacroPlayButton" Content="{Binding MacroPlayButtonText}" Click="PlayMacroClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanPlayMacro}" />
                 <Button Content="{Binding MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding IsMacroPlaying}" />
                 <Button local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding CanStopMacro}" />
-                <TextBlock Grid.Column="3" local:Localized.Uid="MacroPlaybackStopShortcut" Text="F10 停止播放" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="4,0" />
+                <Grid Grid.Column="3" ColumnDefinitions="*,Auto" ColumnSpacing="4" Margin="4,0">
+                  <TextBlock Text="{Binding MacroPlaybackShortcutText}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <Button Grid.Column="1" x:Name="MacroPlaybackShortcutButton" local:Localized.Uid="MacroPlaybackShortcutButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
+                    <Button.Flyout>
+                      <MenuFlyout>
+                        <MenuFlyoutItem local:Localized.Uid="MacroPlaybackStartShortcutSet" Text="设置开始播放（当前宏）快捷键" Click="CaptureMacroPlaybackStartShortcutClick" Style="{StaticResource MacroMenuItemStyle}" />
+                        <MenuFlyoutItem local:Localized.Uid="MacroPlaybackStopShortcutSet" Text="设置停止播放快捷键" Click="CaptureMacroPlaybackStopShortcutClick" Style="{StaticResource MacroMenuItemStyle}" />
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem local:Localized.Uid="MacroPlaybackStartShortcutClear" Text="清除开始播放快捷键" Click="ClearMacroPlaybackStartShortcutClick" Style="{StaticResource MacroMenuItemStyle}" />
+                        <MenuFlyoutItem local:Localized.Uid="MacroPlaybackStopShortcutClear" Text="恢复默认停止快捷键" Click="ClearMacroPlaybackStopShortcutClick" Style="{StaticResource MacroMenuItemStyle}" />
+                      </MenuFlyout>
+                    </Button.Flyout>
+                  </Button>
+                </Grid>
                 <StackPanel Grid.Column="4" x:Name="MacroDurationChip" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                   <FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   <TextBlock Text="{Binding MacroTotalDurationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
@@ -120,6 +134,7 @@
                 <ComboBoxItem local:Localized.Uid="MacroTriggerModeToggle" Content="切换" />
                 <ComboBoxItem local:Localized.Uid="MacroTriggerModeHold" Content="按住" />
                 <ComboBoxItem local:Localized.Uid="MacroTriggerModeSequence" Content="逐条执行" />
+                <ComboBoxItem local:Localized.Uid="MacroTriggerModeHoldRepeat" Content="按住循环" />
               </ComboBox>
             </Grid>
           </StackPanel>
@@ -148,7 +163,7 @@
                 </Grid>
                 <StackPanel Spacing="4">
                   <TextBlock x:Name="MacroPlaybackLabel" local:Localized.Uid="MacroPlaybackLabel" Text="播放方式" Style="{StaticResource MetricLabelStyle}" />
-                  <ComboBox MinWidth="126" FontSize="13" MinHeight="40" MaxDropDownHeight="240" HorizontalAlignment="Stretch" SelectedIndex="{Binding SelectedMacro.PlaybackModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanEditMacro}" AutomationProperties.LabeledBy="{Binding ElementName=MacroPlaybackLabel}">
+                  <ComboBox MinWidth="126" FontSize="13" MinHeight="40" MaxDropDownHeight="240" HorizontalAlignment="Stretch" SelectedIndex="{Binding SelectedMacro.PlaybackModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanEditMacroPlaybackMode}" AutomationProperties.LabeledBy="{Binding ElementName=MacroPlaybackLabel}">
                     <ComboBoxItem local:Localized.Uid="MacroPlaybackModeOnce" Content="播放一次" />
                     <ComboBoxItem local:Localized.Uid="MacroPlaybackModeRepeat" Content="重复" />
                     <ComboBoxItem local:Localized.Uid="MacroPlaybackModeContinuous" Content="持续循环" />

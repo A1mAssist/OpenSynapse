@@ -132,6 +132,30 @@ public sealed class MacroTests
     }
 
     [Fact]
+    public void ProfileCloneDropsInvalidPlaybackShortcuts()
+    {
+        var document = ProfileDocument.CreateDefault();
+        var shortcuts = document.Profiles[ProfileCatalog.DefaultProfileName].Shortcuts;
+        shortcuts.MacroPlaybackStart = new MacroInput
+        {
+            Kind = MacroInputKind.Keyboard,
+            VirtualKey = 0x10,
+        };
+        shortcuts.MacroPlaybackStop = new MacroInput
+        {
+            Kind = MacroInputKind.Keyboard,
+            VirtualKey = 0,
+            ScanCode = 0,
+        };
+
+        var clone = document.Clone();
+
+        var cloned = clone.Profiles[ProfileCatalog.DefaultProfileName].Shortcuts;
+        Assert.Null(cloned.MacroPlaybackStart);
+        Assert.Null(cloned.MacroPlaybackStop);
+    }
+
+    [Fact]
     public async Task ProfileStoreRoundTripsMacros()
     {
         var path = Path.Combine(
@@ -154,6 +178,7 @@ public sealed class MacroTests
                         VirtualKey = 0x41,
                         ScanCode = 0x1E,
                     },
+                    Mode = MacroTriggerMode.HoldRepeat,
                 },
                 Steps =
                 [
@@ -169,6 +194,18 @@ public sealed class MacroTests
                     },
                 ],
             });
+            var shortcuts = document.Profiles[ProfileCatalog.DefaultProfileName].Shortcuts;
+            shortcuts.MacroPlaybackStart = new MacroInput
+            {
+                Kind = MacroInputKind.Keyboard,
+                VirtualKey = 0x77,
+                ScanCode = 0x3E,
+            };
+            shortcuts.MacroPlaybackStop = new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = 4,
+            };
 
             await ProfileStore.ExportAsync(document, path);
             var loaded = await new ProfileStore(path).LoadAsync();
@@ -177,12 +214,18 @@ public sealed class MacroTests
                 loaded.Profiles[ProfileCatalog.DefaultProfileName].Macros);
             Assert.Equal("macro-roundtrip", macro.Id);
             Assert.Equal("Round trip", macro.Name);
-            Assert.Equal(MacroPlaybackMode.Repeat, macro.PlaybackMode);
-            Assert.Equal(3, macro.RepeatCount);
+            Assert.Equal(MacroPlaybackMode.RepeatUntilStopped, macro.PlaybackMode);
+            Assert.Equal(1, macro.RepeatCount);
             Assert.Equal(MacroInputKind.Keyboard, macro.Trigger!.Input.Kind);
             Assert.Equal(0x41, macro.Trigger.Input.VirtualKey);
+            Assert.Equal(MacroTriggerMode.HoldRepeat, macro.Trigger.Mode);
             Assert.Single(macro.Steps);
             Assert.True(macro.Steps[0].IsDown);
+
+            var loadedShortcuts = loaded.Profiles[ProfileCatalog.DefaultProfileName].Shortcuts;
+            Assert.Equal(0x77, loadedShortcuts.MacroPlaybackStart!.VirtualKey);
+            Assert.Equal(MacroInputKind.MouseButton, loadedShortcuts.MacroPlaybackStop!.Kind);
+            Assert.Equal(4, loadedShortcuts.MacroPlaybackStop.MouseButton);
         }
         finally
         {

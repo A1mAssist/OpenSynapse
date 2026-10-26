@@ -32,6 +32,7 @@ public sealed partial class MainViewModel
     private bool _isMacroTriggerCapturing;
     private bool _isMacroStepCapturing;
     private CancellationTokenSource? _macroCaptureCancellation;
+    private CancellationTokenSource? _macroPlaybackShortcutCaptureCancellation;
     private CancellationTokenSource? _macroStepCaptureCancellation;
     private CancellationTokenSource? _macroCountdownCancellation;
     private CancellationTokenSource? _macroPlaybackCountdownCancellation;
@@ -71,6 +72,7 @@ public sealed partial class MainViewModel
 
             CancelMacroCapture();
             CancelMacroStepCapture();
+            CancelMacroPlaybackShortcutCapture();
             CancelMacroCountdown();
             CancelMacroPlaybackCountdown();
             _selectedMacro = value;
@@ -89,6 +91,9 @@ public sealed partial class MainViewModel
 
     public bool CanEditMacro =>
         SelectedMacro is not null && !IsMacroRecording && !IsMacroCountdown;
+
+    public bool CanEditMacroPlaybackMode =>
+        CanEditMacro && SelectedMacro?.IsPlaybackModeEditable == true;
 
     public MacroStepRowViewModel? SelectedMacroStep
     {
@@ -161,9 +166,10 @@ public sealed partial class MainViewModel
                     return AppStrings.Text("MacroDurationUnavailable");
                 }
 
-                return selected.Definition.PlaybackMode == MacroPlaybackMode.RepeatUntilStopped
-                    ? AppStrings.Text("MacroDurationContinuous")
-                    : AppStrings.FormatText("MacroDurationText", plan.TotalDurationMilliseconds);
+                return selected.Definition.PlaybackMode == MacroPlaybackMode.RepeatUntilStopped ||
+                    selected.Definition.Trigger?.Mode == MacroTriggerMode.HoldRepeat
+                        ? AppStrings.Text("MacroDurationContinuous")
+                        : AppStrings.FormatText("MacroDurationText", plan.TotalDurationMilliseconds);
             }
             catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
             {
@@ -355,6 +361,21 @@ public sealed partial class MainViewModel
 
     public string MacroPlayButtonText => AppStrings.Text("MacroPlayButton");
 
+    public string MacroPlaybackShortcutText
+    {
+        get
+        {
+            var shortcuts = GetActiveProfile().Shortcuts;
+            var start = shortcuts.MacroPlaybackStart is { } startInput
+                ? MacroRowViewModel.DescribeInput(startInput)
+                : AppStrings.Text("MacroPlaybackShortcutUnset");
+            var stop = shortcuts.MacroPlaybackStop is { } stopInput
+                ? MacroRowViewModel.DescribeInput(stopInput)
+                : AppStrings.Text("MacroPlaybackStopShortcutDefault");
+            return AppStrings.FormatText("MacroPlaybackShortcutSummary", start, stop);
+        }
+    }
+
     public string MacroPauseButtonText => AppStrings.Text(
         _isMacroPaused ? "MacroResumeButton" : "MacroPauseButton");
 
@@ -377,6 +398,7 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(MacroRecordButtonText));
             OnPropertyChanged(nameof(CanEditMacro));
             OnPropertyChanged(nameof(CanEditMacroStep));
+            OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
             OnPropertyChanged(nameof(CanStartMacroRecording));
             OnPropertyChanged(nameof(CanStopMacroRecording));
             OnPropertyChanged(nameof(CanPlayMacro));
@@ -397,6 +419,7 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(MacroRecordButtonText));
             OnPropertyChanged(nameof(CanEditMacro));
             OnPropertyChanged(nameof(CanEditMacroStep));
+            OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
             OnPropertyChanged(nameof(CanStartMacroRecording));
             OnPropertyChanged(nameof(CanStopMacroRecording));
         }
@@ -482,6 +505,7 @@ public sealed partial class MainViewModel
         if (!_recordingStopSubscribed)
         {
             _macroRuntime.RecordingStopRequested += OnMacroRecordingStopRequested;
+            _macroRuntime.PlaybackStartRequested += OnMacroPlaybackStartRequested;
             _macroRuntime.PlaybackStateChanged += OnMacroPlaybackStateChanged;
             _recordingStopSubscribed = true;
         }
@@ -499,6 +523,7 @@ public sealed partial class MainViewModel
     {
         CancelMacroCapture();
         CancelMacroStepCapture();
+        CancelMacroPlaybackShortcutCapture();
         CancelMacroCountdown();
         CancelMacroPlaybackCountdown();
         if (IsMacroRecording)
@@ -1041,6 +1066,23 @@ public sealed partial class MainViewModel
         }
     }
 
+    private void OnMacroPlaybackStartRequested()
+    {
+        if (_macroDispatcherQueue is not { } dispatcher)
+        {
+            return;
+        }
+
+        if (dispatcher.HasThreadAccess)
+        {
+            _ = PlaySelectedMacroAsync(useCountdown: false, CancellationToken.None);
+            return;
+        }
+
+        dispatcher.TryEnqueue(() =>
+            _ = PlaySelectedMacroAsync(useCountdown: false, CancellationToken.None));
+    }
+
     public Task CaptureMacroTriggerAsync(CancellationToken cancellationToken = default) =>
         CaptureMacroTriggerCoreAsync(allowModifierCombo: false, cancellationToken);
 
@@ -1070,6 +1112,7 @@ public sealed partial class MainViewModel
 
         var selected = SelectedMacro;
         CancelMacroStepCapture();
+        CancelMacroPlaybackShortcutCapture();
         if (_macroCaptureCancellation is not null)
         {
             _macroCaptureCancellation.Cancel();
@@ -1142,6 +1185,113 @@ public sealed partial class MainViewModel
         RefreshMacroRuntime();
         NotifySelectedMacroChanged();
         MacroStatusText = AppStrings.Text("MacroTriggerCleared");
+    }
+
+    public Task CaptureMacroPlaybackStartShortcutAsync(CancellationToken cancellationToken = default) =>
+        CaptureMacroPlaybackShortcutAsync(isStart: true, cancellationToken);
+
+    public Task CaptureMacroPlaybackStopShortcutAsync(CancellationToken cancellationToken = default) =>
+        CaptureMacroPlaybackShortcutAsync(isStart: false, cancellationToken);
+
+    public async Task ClearMacroPlaybackStartShortcutAsync(CancellationToken cancellationToken = default)
+    {
+        CancelMacroPlaybackShortcutCapture();
+        if (await SetMacroPlaybackShortcutAsync(isStart: true, input: null, cancellationToken))
+        {
+            MacroStatusText = AppStrings.Text("MacroPlaybackStartShortcutCleared");
+        }
+    }
+
+    public async Task ClearMacroPlaybackStopShortcutAsync(CancellationToken cancellationToken = default)
+    {
+        CancelMacroPlaybackShortcutCapture();
+        if (await SetMacroPlaybackShortcutAsync(isStart: false, input: null, cancellationToken))
+        {
+            MacroStatusText = AppStrings.Text("MacroPlaybackStopShortcutCleared");
+        }
+    }
+
+    private async Task CaptureMacroPlaybackShortcutAsync(
+        bool isStart,
+        CancellationToken cancellationToken)
+    {
+        if (IsMacroRecording || IsMacroCountdown)
+        {
+            MacroStatusText = AppStrings.Text("MacroRecording");
+            return;
+        }
+
+        if (_macroPlaybackShortcutCaptureCancellation is not null)
+        {
+            _macroPlaybackShortcutCaptureCancellation.Cancel();
+            return;
+        }
+
+        CancelMacroCapture();
+        CancelMacroStepCapture();
+        using var capture = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _macroPlaybackShortcutCaptureCancellation = capture;
+        MacroStatusText = AppStrings.Text("MacroPlaybackShortcutCapturePrompt");
+        try
+        {
+            var trigger = await _macroRuntime.CaptureNextTriggerAsync(
+                allowModifierCombo: false,
+                capture.Token);
+            if (trigger is null)
+            {
+                MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
+                return;
+            }
+
+            if (!await SetMacroPlaybackShortcutAsync(
+                    isStart,
+                    trigger.Input.Clone(),
+                    cancellationToken))
+            {
+                return;
+            }
+
+            MacroStatusText = AppStrings.FormatText(
+                isStart
+                    ? "MacroPlaybackStartShortcutCaptured"
+                    : "MacroPlaybackStopShortcutCaptured",
+                MacroRowViewModel.DescribeInput(trigger.Input));
+        }
+        catch (OperationCanceledException)
+        {
+            MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
+        }
+        finally
+        {
+            if (ReferenceEquals(_macroPlaybackShortcutCaptureCancellation, capture))
+            {
+                _macroPlaybackShortcutCaptureCancellation = null;
+            }
+        }
+    }
+
+    private async Task<bool> SetMacroPlaybackShortcutAsync(
+        bool isStart,
+        MacroInput? input,
+        CancellationToken cancellationToken)
+    {
+        var shortcuts = GetActiveProfile().Shortcuts;
+        if (isStart)
+        {
+            shortcuts.MacroPlaybackStart = input;
+        }
+        else
+        {
+            shortcuts.MacroPlaybackStop = input;
+        }
+
+        if (!await TrySaveMacroProfileAsync(cancellationToken))
+        {
+            return false;
+        }
+
+        RefreshMacroRuntime();
+        return true;
     }
 
     public async Task AddMacroDelayAsync(CancellationToken cancellationToken = default)
@@ -1561,6 +1711,12 @@ public sealed partial class MainViewModel
         IsMacroTriggerCapturing = false;
     }
 
+    public void CancelMacroPlaybackShortcutCapture()
+    {
+        _macroPlaybackShortcutCaptureCancellation?.Cancel();
+        _macroPlaybackShortcutCaptureCancellation = null;
+    }
+
     private void CancelMacroCountdown()
     {
         _macroCountdownCancellation?.Cancel();
@@ -1573,7 +1729,12 @@ public sealed partial class MainViewModel
         countdown?.Cancel();
     }
 
-    public async Task PlaySelectedMacroAsync(CancellationToken cancellationToken = default)
+    public Task PlaySelectedMacroAsync(CancellationToken cancellationToken = default) =>
+        PlaySelectedMacroAsync(useCountdown: true, cancellationToken);
+
+    private async Task PlaySelectedMacroAsync(
+        bool useCountdown,
+        CancellationToken cancellationToken)
     {
         if (IsMacroPlaybackCountdown)
         {
@@ -1614,6 +1775,13 @@ public sealed partial class MainViewModel
 
         CancelMacroCapture();
         CancelMacroStepCapture();
+        CancelMacroPlaybackShortcutCapture();
+        if (!useCountdown)
+        {
+            await PlaySelectedMacroCoreAsync(selected, cancellationToken);
+            return;
+        }
+
         using var countdown = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _macroPlaybackCountdownCancellation = countdown;
         IsMacroPlaybackCountdown = true;
@@ -2332,6 +2500,7 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(MacroTriggerBoundVisibility));
             OnPropertyChanged(nameof(MacroTriggerUnsetVisibility));
             OnPropertyChanged(nameof(MacroTotalDurationText));
+            OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
             OnPropertyChanged(nameof(CanPlayMacro));
         }
     }
@@ -2358,8 +2527,13 @@ public sealed partial class MainViewModel
 
     private void RefreshMacroRuntime()
     {
-        _macroRuntime.UpdateMacros(GetActiveProfile().Macros);
+        var profile = GetActiveProfile();
+        _macroRuntime.SetPlaybackShortcuts(
+            profile.Shortcuts.MacroPlaybackStart,
+            profile.Shortcuts.MacroPlaybackStop);
+        _macroRuntime.UpdateMacros(profile.Macros);
         OnPropertyChanged(nameof(CanPlayMacro));
+        OnPropertyChanged(nameof(MacroPlaybackShortcutText));
     }
 
     private void RefreshMacroSteps(
@@ -2423,6 +2597,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(MacroEditorVisibility));
         OnPropertyChanged(nameof(CanEditMacro));
         OnPropertyChanged(nameof(CanEditMacroStep));
+        OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
         OnPropertyChanged(nameof(MacroNoSelectionVisibility));
         OnPropertyChanged(nameof(MacroTriggerBoundVisibility));
         OnPropertyChanged(nameof(MacroTriggerUnsetVisibility));
