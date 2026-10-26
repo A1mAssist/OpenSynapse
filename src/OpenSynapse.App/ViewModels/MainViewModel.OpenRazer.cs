@@ -50,12 +50,6 @@ public sealed partial class MainViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
-    public Visibility ViperLightingVisibility =>
-        ChromaDevices.Any(row =>
-            row.Connection.ProductId == OpenSynapse.Windows.Protocols.ViperProduct184Protocol.ProductId)
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
     private void RefreshDeviceOverviewVisibility()
     {
         _connectedDevicesCache = null;
@@ -67,7 +61,6 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(ViperProtocolText));
         OnPropertyChanged(nameof(ViperIdentityText));
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
-        OnPropertyChanged(nameof(ViperLightingVisibility));
     }
 
     private void RefreshDeviceSelectorItems()

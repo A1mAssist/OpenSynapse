@@ -101,6 +101,9 @@ public sealed class RazerChromaStandardTests
             RazerChromaStandardService.Products[0x00E5].Category);
         Assert.Equal(OpenSynapse.Core.Devices.DeviceCategory.Monitor,
             RazerChromaStandardService.Products[0x0F28].Category);
+
+        // The Viper V3 HyperSpeed has no lighting; its native page owns DPI and battery.
+        Assert.False(RazerChromaStandardService.IsSupported(0x00B8));
     }
 
     [Fact]

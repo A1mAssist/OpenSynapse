@@ -72,7 +72,6 @@ public sealed class RazerChromaStandardService
             [0x0074] = ("Razer Abyssus Lite", DeviceCategory.Mouse),
             [0x0075] = ("Razer Turret Mouse Xbox One Edition", DeviceCategory.Mouse),
             [0x0093] = ("Razer Naga Classic Edition", DeviceCategory.Mouse),
-            [0x00B8] = ("Razer Viper V3 HyperSpeed", DeviceCategory.Mouse),
             [0x00CF] = ("Razer HyperFlux V2", DeviceCategory.Mouse),
             [0x00DD] = ("Razer Krakoff", DeviceCategory.Mouse),
             [0x00E0] = ("Razer Orochi V2", DeviceCategory.Mouse),
