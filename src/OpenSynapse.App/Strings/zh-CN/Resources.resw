@@ -2615,7 +2615,14 @@
   <data name="RazerOnboardMacroRowDetail" xml:space="preserve"><value>{0} 个动作 · {1} 字节</value></data>
   <data name="RazerOnboardMacroEmptyStream" xml:space="preserve"><value>空宏</value></data>
   <data name="RazerOnboardMacroMouseButton" xml:space="preserve"><value>鼠标</value></data>
-  <data name="RazerOnboardMacroWheel" xml:space="preserve"><value>滚轮</value></data></root>
+  <data name="RazerOnboardMacroWheel" xml:space="preserve"><value>滚轮</value></data>  <data name="RazerOnboardMacroLocalLabel.Header" xml:space="preserve"><value>本机宏</value></data>
+  <data name="RazerOnboardMacroSlotLabel.Header" xml:space="preserve"><value>板载槽位</value></data>
+  <data name="RazerOnboardMacroWriteButton.Content" xml:space="preserve"><value>写入板载</value></data>
+  <data name="RazerOnboardMacroWriteDone" xml:space="preserve"><value>已写入板载槽位 {0}。</value></data>
+  <data name="RazerOnboardMacroWriteUnsupported" xml:space="preserve"><value>这个宏含有板载内存放不下的步骤，只支持按键、鼠标键、滚轮和延迟。</value></data>
+  <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>没有选中要写入的宏。</value></data>
+  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>写入失败：{0}</value></data></root>
+
 
 
 

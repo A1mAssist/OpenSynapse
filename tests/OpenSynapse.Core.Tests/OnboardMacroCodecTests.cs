@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Macros;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
@@ -188,6 +189,72 @@ public sealed class OnboardMacroProtocolTests
         Assert.Equal(4096, info.MaxMemory);
         Assert.Equal(1024, info.AvailableMemory);
         Assert.Equal(512, info.RecyclableMemory);
+    }
+
+    [Fact]
+    public void AutoReleaseStepBecomesDownHoldUp()
+    {
+        var steps = new List<MacroStep>
+        {
+            new()
+            {
+                Kind = MacroStepKind.Input,
+                Input = new MacroInput { Kind = MacroInputKind.Keyboard, VirtualKey = 0x41, ScanCode = 0x1E },
+                IsDown = true,
+                AutoRelease = true,
+                HoldMilliseconds = 40,
+            },
+        };
+
+        var items = OnboardMacroTranslation.FromSteps(steps);
+        Assert.Collection(
+            items,
+            item => Assert.False(item.Released),
+            item => Assert.Equal(40, item.DelayMilliseconds),
+            item => Assert.True(item.Released));
+    }
+
+    [Fact]
+    public void PlainUpStepBecomesOnlyARelease()
+    {
+        var steps = new List<MacroStep>
+        {
+            new()
+            {
+                Kind = MacroStepKind.Input,
+                Input = new MacroInput { Kind = MacroInputKind.Keyboard, VirtualKey = 0x41, ScanCode = 0x1E },
+                IsDown = false,
+            },
+        };
+
+        var item = Assert.Single(OnboardMacroTranslation.FromSteps(steps));
+        Assert.True(item.Released);
+    }
+
+    [Fact]
+    public void HeldStepKeepsItsOwnRelease()
+    {
+        var steps = new List<MacroStep>
+        {
+            new()
+            {
+                Kind = MacroStepKind.Input,
+                Input = new MacroInput { Kind = MacroInputKind.MouseButton, MouseButton = 4 },
+                IsDown = true,
+                AutoRelease = false,
+            },
+        };
+
+        var item = Assert.Single(OnboardMacroTranslation.FromSteps(steps));
+        Assert.Equal(4, item.MouseButton);
+        Assert.True(item.MousePressed);
+    }
+
+    [Fact]
+    public void StepsTheSlotCannotHoldAreRejected()
+    {
+        var steps = new List<MacroStep> { new() { Kind = MacroStepKind.Text, Text = "hello" } };
+        Assert.Throws<InvalidOperationException>(() => OnboardMacroTranslation.FromSteps(steps));
     }
 
     [Fact]

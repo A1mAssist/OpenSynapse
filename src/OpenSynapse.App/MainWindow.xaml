@@ -267,7 +267,12 @@
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                       <Button local:Localized.Uid="RazerOnboardMacroReadButton" Content="读取板载宏" Click="KeyboardReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanLoad}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
-                    </StackPanel>
+
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                        <ComboBox local:Localized.Uid="RazerOnboardMacroLocalLabel" Header="本机宏" ItemsSource="{Binding Onboard.LocalMacroNames}" SelectedIndex="{Binding Onboard.SelectedLocalMacroIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding Onboard.CanLoad}" />
+                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
+                        <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="KeyboardReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>                    </StackPanel>
                   </Border>                </StackPanel>
                 <StackPanel x:Name="ChromaPanel" DataContext="{Binding SelectedChroma}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -380,7 +385,12 @@
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                       <Button local:Localized.Uid="RazerOnboardMacroReadButton" Content="读取板载宏" Click="OpenRazerReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanLoad}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
-                    </StackPanel>
+
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                        <ComboBox local:Localized.Uid="RazerOnboardMacroLocalLabel" Header="本机宏" ItemsSource="{Binding Onboard.LocalMacroNames}" SelectedIndex="{Binding Onboard.SelectedLocalMacroIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding Onboard.CanLoad}" />
+                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
+                        <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="OpenRazerReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>                    </StackPanel>
                   </Border>                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding BasicVisibility}">
                     <StackPanel Spacing="14">
                       <TextBlock local:Localized.Uid="OpenRazerInformationTitle" Text="设备信息" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -1334,6 +1344,7 @@
     </TeachingTip>
   </Grid>
 </Window>
+
 
 
 
