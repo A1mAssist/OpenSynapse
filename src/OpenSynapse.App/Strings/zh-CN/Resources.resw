@@ -1909,8 +1909,9 @@
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU 温度</value></data>
   <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>两者取较高值</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost（最高）</value></data>
-  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 需搭配雷蛇笔记本散热垫：它会提高持续功耗上限，由散热垫负责散热；未连接时无法切换。</value></data>
+  <data name="BladeHyperboostHint" xml:space="preserve"><value>HyperBoost 会提高持续功耗上限。未检测到雷蛇散热垫时，第三方散热由你自行负责；仅在全功率电源下可用。</value></data>
   <data name="BladeHyperboostRequiresPad" xml:space="preserve"><value>HyperBoost 需要连接雷蛇笔记本散热垫后才能启用。</value></data>
+  <data name="BladeHyperboostRequiresFullPower" xml:space="preserve"><value>HyperBoost 在未连接雷蛇散热垫时，需要全功率电源。</value></data>
   <data name="FirmwareTitle" xml:space="preserve"><value>固件</value></data>
   <data name="FirmwareCheckButton" xml:space="preserve"><value>检查更新</value></data>
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>

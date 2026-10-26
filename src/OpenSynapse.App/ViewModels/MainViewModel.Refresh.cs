@@ -36,8 +36,10 @@ public sealed partial class MainViewModel
 
         _bladeCoolingPadConnected = connected;
         OnPropertyChanged(nameof(HyperboostOptionVisibility));
+        OnPropertyChanged(nameof(HyperboostHintVisibility));
         OnPropertyChanged(nameof(BladePerformanceModeOptions));
         if (!connected &&
+            !BladeModelCapabilities.SupportsPadlessHyperBoost(_blade._bladeProductId) &&
             BladePerformanceModeIndex ==
             Array.IndexOf(DeviceUiCatalog.BladePerformanceModes, BladePerformanceMode.Hyperboost))
         {
@@ -229,6 +231,12 @@ public sealed partial class MainViewModel
                 await RefreshBatteryHealthAsync(cancellationToken);
             }
             _lastPowerState = powerState;
+            if (observedPowerChanged)
+            {
+                OnPropertyChanged(nameof(HyperboostOptionVisibility));
+                OnPropertyChanged(nameof(HyperboostHintVisibility));
+                OnPropertyChanged(nameof(BladePerformanceModeOptions));
+            }
             OnPropertyChanged(nameof(ActivePowerSourceText));
             RefreshInternalDisplay(powerState, applyDisplayProfile);
             if (applyDisplayProfile)

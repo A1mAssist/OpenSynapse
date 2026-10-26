@@ -351,8 +351,35 @@ public sealed class DeviceMetadataTests
         Assert.Equal(expected, BladeModelCapabilities.SupportsCpuBoost(productId));
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(0x02C6, true)]  // Blade 16 (2025): pad-less path with the full-power adapter
+    [InlineData(0x02B7, false)] // Blade 16 (2024): pad path only
+    [InlineData(0x028C, false)] // Blade 14 (2022): pad path only
+    [InlineData(0xFFFF, false)]
+    public void PadlessHyperBoostIsAdmittedOnlyForBlade16_2025(ushort productId, bool expected)
+    {
+        Assert.Equal(expected, BladeModelCapabilities.SupportsPadlessHyperBoost(productId));
+    }
 
+    [Fact]
+    public void HyperBoostAvailabilityRequiresThePadOrTheAdmittedFullPowerPath()
+    {
+        var fullPower = new BladeAdapterPowerSnapshot(0, 0, 280, 280);
+        var limitedPower = new BladeAdapterPowerSnapshot(0, 0, 230, 280);
+
+        Assert.True(BladeModelCapabilities.IsHyperBoostAvailable(
+            0x02C6, fullPower, coolingPadConnected: false));
+        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(
+            0x02C6, limitedPower, coolingPadConnected: false));
+        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(
+            0x02C6, adapterPower: null, coolingPadConnected: false));
+        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(
+            0x02B7, fullPower, coolingPadConnected: false));
+        Assert.True(BladeModelCapabilities.IsHyperBoostAvailable(
+            0x02B7, adapterPower: null, coolingPadConnected: true));
+    }
+
+    [Fact]
     public void UnknownProductIdAdmitsNothing()
     {
         Assert.False(BladeModelCapabilities.SupportsMaxFan(0xFFFF));

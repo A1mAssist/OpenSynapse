@@ -93,10 +93,15 @@ public sealed class VerifiedProfileApplier
                 else
                 {
                     var requested = (BladePerformanceMode)rawPerformanceMode;
-                    if (requested == BladePerformanceMode.Hyperboost && !coolingPadConnected)
+                    if (requested == BladePerformanceMode.Hyperboost &&
+                        !BladeModelCapabilities.IsHyperBoostAvailable(
+                            blade.ProductId, telemetry.BladeAdapterPower, coolingPadConnected))
                     {
                         requested = BladePerformanceMode.Performance;
-                        bladeErrors.Add("HyperBoost requires the Razer Laptop Cooling Pad; Performance mode was applied instead.");
+                        var requirement = BladeModelCapabilities.SupportsPadlessHyperBoost(blade.ProductId)
+                            ? "HyperBoost requires the Razer Laptop Cooling Pad or the full-power adapter"
+                            : "HyperBoost requires the Razer Laptop Cooling Pad";
+                        bladeErrors.Add($"{requirement}; Performance mode was applied instead.");
                     }
                     effectivePerformanceMode = current;
                     try
