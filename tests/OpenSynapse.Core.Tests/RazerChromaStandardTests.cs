@@ -111,6 +111,7 @@ public sealed class RazerChromaStandardTests
     {
         foreach (var productId in RazerChromaStandardService.Products.Keys)
         {
+            Assert.Null(RazerDeviceRegistry.BuiltIn.Find(0x1532, productId));
             Assert.False(RazerHeadsetAudioService.IsSupported(productId), $"audio 0x{productId:X4}");
             Assert.False(RazerKeyboardService.IsSupported(productId), $"keyboard 0x{productId:X4}");
 
