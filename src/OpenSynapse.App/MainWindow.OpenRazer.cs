@@ -172,6 +172,12 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyLowBatteryClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyLowBatteryThresholdAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void OpenRazerReadMappingClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.LoadMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyMappingClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerApplyBrightnessClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
 

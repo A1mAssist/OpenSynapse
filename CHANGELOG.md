@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 雷云推导鼠标新增板载按键映射：从产品 bundle 的 `Set/Get Single Button Assignment`（class `0x02` 的 `0x0C`/`0x8C`）读取按键列表和当前映射，可把普通层或 Shift 层的按键改成关闭或其他鼠标按键，写入后读回校验；不支持命令的设备读取失败时卡片保持隐藏。
+- Middleware-derived mice now expose onboard button mapping: read the button list and current assignments over the bundle's `Set/Get Single Button Assignment` commands (class 0x02, 0x0C/0x8C), remap a button to off or another mouse button on the normal or HyperShift layer, and verify every write by reading it back. The card stays hidden when the device refuses the command.
 - 0F1F ARGB 控制器缺少雷云过滤驱动时，灯光页会显示官方驱动下载入口，不再只报错。
 - When the 0F1F ARGB controller is missing Razer's filter driver, the lighting page now offers Razer's driver download instead of only showing an error.
 - 旋风黑鲨 V2 Pro（2020 / 2023）的音频页新增 THX 状态卡：检测 THX 服务（VSSrv）和控制组件；缺服务时给出雷云 THX 安装包入口，缺控制组件时可直接下载并校验，组件齐全时显示已安装。

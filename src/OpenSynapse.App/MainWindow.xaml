@@ -577,6 +577,39 @@
                       <Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="OpenRazerApplyDpiStagesClick" IsEnabled="{Binding CanEditDpiStages}" Visibility="{Binding DpiStagesWriteVisibility}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
+                    <StackPanel Spacing="12">
+                      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="板载映射" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                          <TextBlock Text="{Binding Mapping.StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ComboBox Grid.Column="1" Width="132" Header="映射层" AutomationProperties.Name="映射层" SelectedIndex="{Binding Mapping.LayerIndex, Mode=TwoWay}" VerticalAlignment="Bottom">
+                          <ComboBoxItem Content="普通层" />
+                          <ComboBoxItem Content="Shift 层" />
+                        </ComboBox>
+                        <Button Grid.Column="2" Content="读取" Click="OpenRazerReadMappingClick" IsEnabled="{Binding Mapping.CanRead}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                        <Button Grid.Column="3" Content="保存" Click="OpenRazerApplyMappingClick" IsEnabled="{Binding Mapping.CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>
+                      <InfoBar IsOpen="{Binding Mapping.HasError}" IsClosable="False" Severity="Warning" Message="{Binding Mapping.ErrorText}" />
+                      <Grid ColumnDefinitions="150,*,240" ColumnSpacing="12">
+                        <TextBlock Text="鼠标控制" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Grid.Column="1" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Grid.Column="2" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
+                      </Grid>
+                      <ItemsControl ItemsSource="{Binding Mapping.Rows}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Grid ColumnDefinitions="150,*,240" ColumnSpacing="12" MinHeight="38">
+                              <TextBlock Text="{Binding ButtonName}" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
+                              <ComboBox Grid.Column="2" ItemsSource="{Binding ActionNames}" SelectedIndex="{Binding TargetIndex, Mode=TwoWay}" AutomationProperties.Name="目标映射动作" HorizontalAlignment="Stretch" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding PowerVisibility}">
                     <StackPanel Spacing="14"><TextBlock local:Localized.Uid="OpenRazerPowerTitle" Text="电源管理" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                       <Grid ColumnDefinitions="*,*" ColumnSpacing="20">

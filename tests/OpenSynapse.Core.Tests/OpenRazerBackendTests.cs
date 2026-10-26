@@ -1282,6 +1282,9 @@ public sealed class OpenRazerBackendTests
                 OpenRazerBackendCapability.HyperPollingPairWrite => CreatePairRequests(device),
                 OpenRazerBackendCapability.HyperPollingUnpairWrite => OpenRazerStandardProtocol.Create(device,
                     "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair", 2, 0, 0x42, [0, 1]),
+                OpenRazerBackendCapability.MappingRead => OpenRazerMappingProtocol.GetButtonList(),
+                OpenRazerBackendCapability.MappingWrite => OpenRazerMappingProtocol.SetAssignment(
+                    0x01, OpenRazerMappingProtocol.NormalMode, OpenRazerMappingFunctions.ButtonCode, [0x01]),
                 _ => throw new InvalidOperationException($"Capability {capability} has no construction assertion."),
             };
             _ = constructed;

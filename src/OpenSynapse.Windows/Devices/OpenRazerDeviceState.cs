@@ -11,6 +11,13 @@ public enum OpenRazerEndpointState
     BusyOrUnavailable,
 }
 
+/// <summary>Onboard button-assignment function ids used by the middleware.</summary>
+public static class OpenRazerMappingFunctions
+{
+    public const byte Off = 0x00;
+    public const byte ButtonCode = 0x01;
+}
+
 public enum OpenRazerBackendCapability
 {
     FirmwareRead,
@@ -42,6 +49,8 @@ public enum OpenRazerBackendCapability
     ReactiveTriggerWrite,
     ScrollModeRead,
     ScrollModeWrite,
+    MappingRead,
+    MappingWrite,
     ScrollAccelerationRead,
     ScrollAccelerationWrite,
     SmartReelRead,
