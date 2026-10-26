@@ -76,7 +76,6 @@ public sealed class RazerChromaStandardService
             [0x00DD] = ("Razer Krakoff", DeviceCategory.Mouse),
             [0x00E0] = ("Razer Orochi V2", DeviceCategory.Mouse),
             [0x00E2] = ("Razer Basilisk V4 Pro", DeviceCategory.Mouse),
-            [0x00E5] = ("Razer Viper V4 Pro", DeviceCategory.Mouse),
             [0x00E7] = ("Razer Naga V3 Pro", DeviceCategory.Mouse),
             [0x00EB] = ("Razer Basilisk V4 HyperSpeed", DeviceCategory.Mouse),
             [0x00EF] = ("Razer DeathAdder V4 Pro Carbon Fiber Edition", DeviceCategory.Mouse),

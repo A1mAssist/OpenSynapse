@@ -69,6 +69,7 @@ public sealed class MiddlewareMouseCatalogTests
     public void PollingRatesFollowTheMiddlewareDefinition()
     {
         Assert.Equal([125, 500, 1000], Find(0x00E0).PollingRates);
+        Assert.Equal([125, 500, 1000], Find(0x0074).PollingRates);
         Assert.Equal([125, 500, 1000, 2000, 4000, 8000], Find(0x00E2).PollingRates);
         Assert.Equal([125, 500, 1000], Find(0x00E7).PollingRates);
     }

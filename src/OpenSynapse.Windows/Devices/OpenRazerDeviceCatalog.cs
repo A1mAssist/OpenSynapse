@@ -354,7 +354,7 @@ public sealed class OpenRazerDeviceCatalog
             [
                 (0x006A, 0x0063, "Razer Jugan", 7200, []),
                 (0x0073, 0x0069, "Razer Mamba Hyperflux", 16000, [125, 500, 1000]),
-                (0x006B, 0x0074, "Razer Abyssus Lite", 6400, []),
+                (0x006B, 0x0074, "Razer Abyssus Lite", 6400, [125, 500, 1000]),
                 (0x005A, 0x0075, "Razer Turret Mouse Xbox One Edition", 16000, [125, 500, 1000]),
                 (0x0053, 0x0093, "Razer Naga Classic Edition", 16000, [125, 500, 1000]),
                 (0x00BF, 0x00DD, "Razer Krakoff", 45000, [125, 500, 1000, 2000, 4000, 8000]),
