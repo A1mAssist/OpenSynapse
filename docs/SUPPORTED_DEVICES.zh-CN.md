@@ -52,8 +52,9 @@ OpenRazer 目录没有 `054A`，OpenSynapse 将其作为本地准入条目加入
 | Kraken Tournament Edition | `0520` | 灯光 |
 | Kraken Ultimate | `0527` | 灯光 |
 | Kraken Kitty V2 | `0560` | 灯光 |
+| Kraken V4（有线） | `056B` | 灯光：关闭 / 静态 / 波浪 |
 
-Kraken 使用独立的 37-byte Output Report 通道。这里不包含音频、麦克风、EQ 或 THX 控制。
+Kraken 7.1 系列使用独立的 37-byte Output Report 通道。Kraken V4 有线版使用 OpenRGB 已验证的 64-byte Report `0x02` 通道；2.4 GHz `056C` 目前不开放灯光或其他控制。这里不包含音频、麦克风、EQ 或 THX 控制。
 
 ## BlackShark V3 Pro 音频
 

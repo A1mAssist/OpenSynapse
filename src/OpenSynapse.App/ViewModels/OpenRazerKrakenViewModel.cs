@@ -37,9 +37,10 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     public OpenRazerSpecialLightingConnection Connection { get; }
     public string InstanceId => Connection.InstanceId;
     public string Name => Connection.DisplayName;
-    public string CategoryText => Connection.Kind == OpenRazerSpecialLightingKind.Kraken37
-        ? AppStrings.Text("OpenRazerKrakenSubtitle/Text")
-        : AppStrings.Text("Text_71E692AA");
+    public string CategoryText => (Connection.Kind is
+        OpenRazerSpecialLightingKind.Kraken37 or OpenRazerSpecialLightingKind.KrakenV4)
+            ? AppStrings.Text("OpenRazerKrakenSubtitle/Text")
+            : AppStrings.Text("Text_71E692AA");
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string? Serial { get => _serial; private set => SetField(ref _serial, value); }
     public Visibility SerialVisibility => string.IsNullOrWhiteSpace(Serial) ? Visibility.Collapsed : Visibility.Visible;
@@ -62,7 +63,8 @@ public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool RequiresRescan { get => _requiresRescan; private set => SetField(ref _requiresRescan, value); }
     public Visibility ControlsVisibility => VisibleWhen(Connection.IsReady && !RequiresRescan &&
-        Connection.Kind == OpenRazerSpecialLightingKind.Kraken37 && Effects.Count > 0);
+        (Connection.Kind is OpenRazerSpecialLightingKind.Kraken37 or OpenRazerSpecialLightingKind.KrakenV4) &&
+        Effects.Count > 0);
     public IReadOnlyList<OpenRazerLightingEffect> Effects => Connection.SupportedEffects
         .Where(effect => !_unsupported.Contains(effect)).Order().ToArray();
     public IReadOnlyList<string> EffectOptions => Effects.Select(FormatEffect).ToArray();
