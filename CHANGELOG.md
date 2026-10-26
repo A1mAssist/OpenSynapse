@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
 - Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
 - After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
@@ -76,6 +78,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### 新增 / Added
 
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
 - Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
 - After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
@@ -138,6 +142,8 @@ This release is unsigned and targets Windows 11 x64. CPU core-voltage offset, GP
 
 ### 新增 / Added
 
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
 - Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
 - After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。
@@ -204,6 +210,8 @@ This release is unsigned and targets Windows 11 x64. BlackShark V3 Pro does not 
 
 ### 新增 / Added
 
+- 新增 Chroma ARGB 控制器（`0F1F`）逐灯控制：在灯光页选择端口与灯珠数量，直接点格子涂色，可整条填充、熄灭并应用；写入前先切到自定义帧模式，每个端口的灯珠数量本地保存。组帧上限 105 颗，界面按设备实际的 6 端口 × 80 颗显示。
+- Added per-LED control for the Chroma Addressable RGB Controller (0F1F): pick a port and LED count on the lighting page, click cells to paint, then fill, clear or apply the whole strip. The app switches the controller to custom-frame mode first and remembers the LED count per port. Frames hold up to 105 LEDs; the UI follows the device's real 6 ports x 80 LEDs.
 - Hue 配对后显示桥的名称、型号与固件版本，方便确认连的是哪一台桥。
 - After pairing, the Hue card shows the bridge name, model and software version so it is clear which bridge is connected.
 - 灯光页补上设备身份：能应答的设备显示序列号和固件版本，读不到时整行隐藏，不报错。

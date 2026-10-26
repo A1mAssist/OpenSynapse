@@ -257,6 +257,31 @@
                       <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right"><Button local:Localized.Uid="RazerLightingApplyBrightness" Content="应用亮度" Click="ChromaApplyBrightnessClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" /><Button local:Localized.Uid="RazerLightingApplyEffect" Content="应用灯效" Click="ChromaApplyEffectClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource PrimaryButtonStyle}" /></StackPanel>
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ArgbVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock local:Localized.Uid="RazerArgbTitle" Text="逐灯控制" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="RazerArgbDescription" Text="选择端口和灯珠数量，点格子用主色涂色，然后应用。每个端口会保留自己涂的颜色。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                        <ComboBox local:Localized.Uid="RazerArgbPort" Header="端口" ItemsSource="{Binding ArgbPortOptions}" SelectedIndex="{Binding SelectedArgbPortIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEdit}" />
+                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerArgbLedCount" Header="灯珠数量" Value="{Binding ArgbLedCount, Mode=TwoWay}" Minimum="1" Maximum="80" SmallChange="1" SpinButtonPlacementMode="Compact" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEdit}" />
+                      </Grid>
+                      <ItemsControl ItemsSource="{Binding ArgbLeds}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="20" /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Width="24" Height="24" Margin="2" Padding="0" CornerRadius="4" BorderThickness="1" BorderBrush="{StaticResource LineStrongBrush}" Background="{Binding Brush}" Tag="{Binding}" Click="ArgbLedClick" ToolTipService.ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                        <Button local:Localized.Uid="RazerArgbFill" Content="全部填充" Click="ArgbFillClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button local:Localized.Uid="RazerArgbClear" Content="熄灭" Click="ArgbClearClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button local:Localized.Uid="RazerArgbApply" Content="应用灯带" Click="ArgbApplyClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource PrimaryButtonStyle}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
                 <StackPanel x:Name="BlePanel" DataContext="{Binding SelectedBle}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">

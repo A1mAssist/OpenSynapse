@@ -83,6 +83,7 @@ public sealed class RazerChromaStandardService
             [0x00EF] = ("Razer DeathAdder V4 Pro Carbon Fiber Edition", DeviceCategory.Mouse),
             [0x00F1] = ("Razer Mouse Dock V2 Pro", DeviceCategory.Accessory),
             [0x030A] = ("Razer Chroma Addressable RGB Controller", DeviceCategory.Accessory),
+            [0x0F1F] = ("Razer Chroma Addressable RGB Controller", DeviceCategory.Accessory),
             [0x030C] = ("Razer Key Light Chroma", DeviceCategory.Accessory),
             [0x030D] = ("Razer Aether Lamp Pro", DeviceCategory.Accessory),
             [0x030E] = ("Razer Aether Lamp", DeviceCategory.Accessory),
@@ -346,6 +347,19 @@ public sealed class RazerChromaStandardService
                 "restore effect").ConfigureAwait(false);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Switches the 320-byte ARGB controller to its custom-frame effect so the
+    /// frames sent through its filter driver are the ones the strip shows.
+    /// </summary>
+    public async Task SetCustomFrameModeAsync(CancellationToken cancellationToken = default)
+    {
+        if (_channel != RazerChromaChannel.Standard) return;
+        await QueryAsync(
+            _ => RazerLegacyChromaProtocol.SetCustomFrameMode(0x3F),
+            "enter custom frame mode",
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task SetLegacyEffectAsync(

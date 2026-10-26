@@ -32,6 +32,20 @@ public sealed class RazerLegacyChromaTests
     }
 
     [Fact]
+    public void CustomFrameModeUsesTheArgbEffectSelector()
+    {
+        var request = RazerLegacyChromaProtocol.SetCustomFrameMode(0x3F);
+
+        Assert.Equal(0x3F, request[2]);
+        Assert.Equal((byte)12, request[6]);
+        Assert.Equal(0x0F, request[7]);
+        Assert.Equal(0x02, request[8]);
+        Assert.Equal([0x00, 0x00, 0x08], request[9..12]);
+        Assert.All(request[12..89], value => Assert.Equal(0, value));
+        Assert.Equal(RazerFeatureReport.CalculateCrc(request), request[89]);
+    }
+
+    [Fact]
     public void SetEffectRejectsTheClass10OnlyEffects()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => RazerLegacyChromaProtocol.SetEffect(

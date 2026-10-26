@@ -77,7 +77,9 @@ public sealed partial class MainViewModel
 
         _selectedChromaDevice = row;
         SelectedChroma = new RazerChromaViewModel(
-            row.Connection, message => _diagnosticLog.TryWrite("chroma", message));
+            row.Connection,
+            message => _diagnosticLog.TryWrite("chroma", message),
+            _openRazerSpecialLightingService);
         await SelectedChroma.LoadAsync(cancellationToken);
     }
 }

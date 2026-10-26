@@ -2547,6 +2547,14 @@
   <data name="MacroRecordMouseForegroundLabel" xml:space="preserve"><value>相对前台窗口</value></data>
   <data name="MacroRecordDelayModeLabel" xml:space="preserve"><value>延迟</value></data>
   <data name="MacroRecordMouseModeLabel" xml:space="preserve"><value>鼠标轨迹</value></data>
+  <data name="RazerArgbApply.Content" xml:space="preserve"><value>应用灯带</value></data>
+  <data name="RazerArgbClear.Content" xml:space="preserve"><value>熄灭</value></data>
+  <data name="RazerArgbDescription.Text" xml:space="preserve"><value>选择端口和灯珠数量，点格子用主色涂色，然后应用。每个端口会保留自己涂的颜色。</value></data>
+  <data name="RazerArgbFill.Content" xml:space="preserve"><value>全部填充</value></data>
+  <data name="RazerArgbLedCount.Header" xml:space="preserve"><value>灯珠数量</value></data>
+  <data name="RazerArgbLedLabel" xml:space="preserve"><value>第 {0} 颗灯</value></data>
+  <data name="RazerArgbPort.Header" xml:space="preserve"><value>端口</value></data>
+  <data name="RazerArgbTitle.Text" xml:space="preserve"><value>逐灯控制</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>
