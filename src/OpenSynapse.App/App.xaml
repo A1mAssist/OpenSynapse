@@ -73,8 +73,8 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="#10200D" />
         <Setter Property="CornerRadius" Value="4" />
-        <Setter Property="FontFamily" Value="{StaticResource AppFontSemiBoldFamily}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+        <Setter Property="FontWeight" Value="Bold" />
       </Style>
       <Style x:Key="SecondaryButtonStyle" TargetType="Button">
         <Setter Property="MinHeight" Value="34" />
@@ -84,8 +84,8 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource DataBrush}" />
         <Setter Property="CornerRadius" Value="4" />
-        <Setter Property="FontFamily" Value="{StaticResource AppFontSemiBoldFamily}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+        <Setter Property="FontWeight" Value="Bold" />
       </Style>
       <Style x:Key="OpenRazerSaveButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
         <Setter Property="ContentTemplate">
