@@ -72,6 +72,8 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             {
                 throw new ArgumentNullException(nameof(targetRpm));
             }
+            // The per-model ceiling is enforced where the write happens, because only
+            // the reader knows which Blade answered.
             BladeFanLimits.ValidateTargetRpm(targetRpm.Value);
         }
         else if (targetRpm is not null)

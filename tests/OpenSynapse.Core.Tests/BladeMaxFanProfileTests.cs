@@ -130,7 +130,7 @@ public sealed class BladeMaxFanProfileTests
     /// <summary>
     /// The Blade 16 (2023) middleware drives a fixed speed from every performance mode,
     /// so no custom-mode gate applies. Its official modes reach 5200 RPM and Custom
-    /// reaches 5300, so the firmware may hold a target above the write ceiling.
+    /// reaches 5300, which is also the ceiling the write guard allows.
     /// </summary>
     [Fact]
     public void TheBlade16_2023AdmitsAFixedSpeedWithoutTheCustomModeGate()
@@ -142,8 +142,45 @@ public sealed class BladeMaxFanProfileTests
         Assert.Equal(3400, BladeModelCapabilities.MinimumFanTargetRpmFor(productId));
         Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
 
-        // The shared fan-target report rejects anything past the global ceiling, so the
-        // slider and the write guard stop at 5000 even though the firmware reports 5300.
-        Assert.Equal(5000, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
+        Assert.Equal(5300, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
+    }
+
+    /// <summary>
+    /// The Blade 16 (2025) official Performance and Hyperboost modes run up to 5400
+    /// RPM and the official middleware writes the same rpm/100 value, so the slider
+    /// has to offer that instead of stopping at 5000.
+    /// </summary>
+    [Fact]
+    public void TheBlade16_2025OffersTheOfficialFanSpeedCeiling()
+    {
+        const ushort productId = 0x02C6;
+
+        Assert.Equal(5400, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+        Assert.Equal(5400, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
+        Assert.Equal(5400, BladeFanLimits.MaximumRpm);
+        Assert.Equal(5400, BladeFanCurve.MaximumPointFanSpeedRpm);
+    }
+
+    /// <summary>
+    /// Every model that accepts a fixed fan target has to carry the ceiling its own
+    /// official bundle declares, because the shared report takes the same rpm/100
+    /// value the official middleware writes.
+    /// </summary>
+    [Theory]
+    [InlineData(0x02C6, 5400)] // Blade 16 (2025)
+    [InlineData(0x0245, 5300)] // Blade 15 (2019)
+    [InlineData(0x029F, 5300)] // Blade 16 (2023)
+    [InlineData(0x028C, 5400)] // Blade 14 (2022)
+    [InlineData(0x029D, 5400)] // Blade 14 (2023)
+    [InlineData(0x02B6, 5400)] // Blade 14 (2024)
+    [InlineData(0x02B7, 5400)] // Blade 16 (2024)
+    [InlineData(0x02B8, 5400)] // Blade 18 (2024)
+    [InlineData(0x02C5, 5400)] // Blade 14 (2025)
+    [InlineData(0x02C7, 5400)] // Blade 18 (2025)
+    public void EveryFixedFanModelCarriesItsOfficialCeiling(ushort productId, int expectedRpm)
+    {
+        Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
+        Assert.Equal(expectedRpm, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+        Assert.Equal(expectedRpm, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
     }
 }

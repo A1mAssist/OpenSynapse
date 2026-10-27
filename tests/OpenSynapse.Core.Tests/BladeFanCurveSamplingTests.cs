@@ -17,7 +17,7 @@ public sealed class BladeFanCurveSamplingTests
 
         // The whole point of the default: near-idle when cool, full speed before throttling.
         Assert.True(curve.Evaluate(40, 40).CpuRpm <= 2400);
-        Assert.Equal(5000, curve.Evaluate(95, 95).CpuRpm);
+        Assert.Equal(5400, curve.Evaluate(95, 95).CpuRpm);
         Assert.True(curve.Evaluate(70, 70).CpuRpm < curve.Evaluate(85, 85).CpuRpm);
     }
 
