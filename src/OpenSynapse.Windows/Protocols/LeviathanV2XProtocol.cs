@@ -107,6 +107,57 @@ public static class LeviathanV2XProtocol
     public static byte[] CreateGetRegionIds() =>
         Create(0x50, 0x0F, 0x80, []);
 
+    public static byte[] CreateGetEffect(byte profileId, byte regionId) =>
+        Create(0x03, 0x0F, 0x82, [profileId, regionId]);
+
+    public static byte[] CreateSetEffect(
+        byte profileId,
+        byte regionId,
+        byte effectId,
+        byte flags,
+        byte rate,
+        ReadOnlySpan<byte> colors)
+    {
+        if (colors.Length % 3 != 0)
+        {
+            throw new ArgumentException("Chroma effect colors must be RGB triples.", nameof(colors));
+        }
+
+        var arguments = new byte[6 + colors.Length];
+        arguments[0] = profileId;
+        arguments[1] = regionId;
+        arguments[2] = effectId;
+        arguments[3] = flags;
+        arguments[4] = rate;
+        arguments[5] = checked((byte)(colors.Length / 3));
+        colors.CopyTo(arguments.AsSpan(6));
+        return Create(checked((byte)arguments.Length), 0x0F, 0x02, arguments);
+    }
+
+    /// <summary>
+    /// Quick-effect payload the 1354 middleware builds: effect id, flags (breathing color
+    /// mode or wave direction), rate and one RGB triple per color. The soundbar reports
+    /// every writable effect the same way, so one entry point covers the whole list.
+    /// </summary>
+    public static byte[] CreateEffect(
+        byte regionId,
+        OpenRazerLightingEffect effect,
+        byte direction,
+        OpenRazerColor primary,
+        OpenRazerColor secondary) => effect switch
+    {
+        OpenRazerLightingEffect.Off => CreateSetEffect(WriteProfile, regionId, 0x00, 0, 0, []),
+        OpenRazerLightingEffect.Static => CreateSetEffect(WriteProfile, regionId, 0x01, 0, 0,
+            [primary.Red, primary.Green, primary.Blue]),
+        OpenRazerLightingEffect.BreathingDual => CreateSetEffect(WriteProfile, regionId, 0x02, 2, 0,
+            [primary.Red, primary.Green, primary.Blue, secondary.Red, secondary.Green, secondary.Blue]),
+        OpenRazerLightingEffect.Spectrum => CreateSetEffect(WriteProfile, regionId, 0x03, 0, 0, []),
+        OpenRazerLightingEffect.Wave => CreateSetEffect(WriteProfile, regionId, 0x04,
+            Math.Clamp(direction, (byte)1, (byte)2), 40, []),
+        _ => throw new NotSupportedException(
+            $"The Leviathan V2 X does not expose the {effect} lighting effect."),
+    };
+
     public static byte[] CreateGetFirmware() =>
         Create(0x02, 0x00, 0x81, []);
 
@@ -195,6 +246,14 @@ public static class LeviathanV2XProtocol
 
     public static byte ReadFirstRegion(ReadOnlySpan<byte> response) =>
         Arguments(response, 1)[0];
+
+    public static byte ReadEffect(ReadOnlySpan<byte> response, out byte profileId, out byte regionId)
+    {
+        var arguments = Arguments(response, 3);
+        profileId = arguments[0];
+        regionId = arguments[1];
+        return arguments[2];
+    }
 
     private static byte[] Create(byte dataSize, byte commandClass, byte commandId, ReadOnlySpan<byte> arguments) =>
         RazerFeatureReport.CreateRequest(TransportTransactionId, dataSize, commandClass, commandId, arguments);

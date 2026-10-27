@@ -31,6 +31,8 @@ logical[89] = 0
 
 响应按逻辑报文的 `[0]` 状态、`[1]` transaction、`[5]` size、`[6]` class、`[7]` command 读取；Windows 层对应为 report ID 后的 `[1]`、`[2]`、`[6]`、`[7]`、`[8]`。`rzDevice25._getTransactionId()` 是 `0..31` 递增并回绕，不是固定值；当前实现由 `RazerFeatureTransport` 对 `054A` 使用 report ID `0x07`，并为每个设备路径分配循环 transaction。
 
+**响应的校验和与请求不同**：实机日志显示 054A 把 transaction id 也算进了响应校验和，而通用的范围不含它（逻辑报文 `[2..87]`）。三次探测的差值精确等于各自的 transaction id：`0x08`（固件）、`0x09`（序列号）、`0x0A`（亮度）。状态、transaction、class、command、长度全部匹配，只有校验和差这一个字节。官方 JS 从不校验响应校验和，只比对 transaction、class、command 和状态，所以官方不会碰到这个差异。`RazerFeatureReport.MatchesWithTransactionChecksum` 覆盖逻辑报文 `[1..87]`，只对 054A 启用。
+
 ## 已实现命令
 
 | 功能 | GET | SET | 参数 / 响应 |
@@ -44,6 +46,8 @@ logical[89] = 0
 | Edition 信息 | `[3, 0x00, 0x86]` | 无 | `[keyboardLayout, edition, firmwareId]` |
 | Chroma region 列表 | `[80, 0x0F, 0x80]` | 无 | 每 5 bytes 一组，首 byte 是 region id |
 | 亮度读取 | `[3, 0x0F, 0x84]` | `[3, 0x0F, 0x04]` | `[profile 0, region]` / `[profile 0, region, 0..255]` |
+| Chroma 当前效果 | `[3, 0x0F, 0x82]` | 无 | `[profile 0, region]`；返回 `[profile, region, effectId, flags, rate, 颜色数, RGB…]` |
+| Chroma 效果写入 | 无 | `[6 + 3n, 0x0F, 0x02]` | `[profile 0, region, effectId, flags, rate, 颜色数, RGB…]` |
 
 EQ 预设值：`Default=0`、`Game=1`、`Music=2`、`Movie=3`、`Treble=4`、`Custom=0x10`。输入源：`None=0`、`Optical=1`、`AUX=2`、`Bluetooth=3`、`USB=4`。
 
@@ -53,7 +57,10 @@ EQ 频段来自 middleware 默认曲线：`31, 63, 125, 250, 500, 1k, 2k, 4k, 8k
 
 - 音量 / 静音：当前 `1354` 主入口使用 Windows Core Audio `simpleService`，没有使用 HID 的 master-volume / mute 命令。
 - 音频输出路由：`[2, 0x08, 0x91]` / `[2, 0x08, 0x11]`，可切换 soundbar / headset；未在实机确认切换后的恢复路径。
-- Chroma 效果和逐帧：需要先读取 region/effect 能力表，当前只开放亮度。
+- Chroma 逐帧：`[80, 0x0F, 0x03]` 需要矩阵行列数，声霸没有可用的尺寸声明，未开放。
+- 星光 / 火星 / 音频律动 / 色轮：效果 id 见 `l={Off:0,Static:1,Breathing:2,Spectrum:3,Wave:4,Starlite:7,CustomFrame:8,Fire:9,AudioMeter:10,Wheel:12}`，但各自的 flags / rate / 颜色数组语义还没逐个核对，暂不开放。
+
+当前开放的效果：关闭、静态、双色呼吸、光谱循环、波浪。效果写入沿用 middleware 的 quick-effect 载荷：静态带 1 组 RGB；双色呼吸 `flags=2` 带 2 组 RGB；波浪 `flags` 是方向（1/2）、`rate=40`；光谱和关闭不带颜色。效果 id 与 colors 一样按 profile 0、设备上报的第一个 region 发送。
 - 电源：没有直接的 power on/off HID 命令；`[2, 0x00, 0x84]` 是 device mode，不等于电源开关。
 - Treble 没有独立 setter，只出现在未使用的 aggregate `Get Device Level` 中。
 
@@ -61,7 +68,7 @@ EQ 频段来自 middleware 默认曲线：`31, 63, 125, 250, 500, 1k, 2k, 4k, 8k
 
 - 所有 edition 共用同一协议，没有 edition 分支；连接后读取 `[3, 0x00, 0x86]`，用 edition 值显示 Pikachu / Kuromi 名称。
 - 设备选择按 `VID_1532&PID_054A`、91-byte feature collection 和物理设备分组，不使用用户机器上的 `COMPUTER\{...}` 容器 ID。
-- 写入先读当前值，写后回读；失败时尝试恢复原值。按 middleware 的实际调用：预设读取/写入和 Bass/自定义 EQ 读取使用 profile 0，Bass/自定义 EQ 写入使用 profile 1。只有原预设为 Custom 时才回写自定义 EQ 频段；非 Custom 预设无法读出已存的自定义曲线，因此不做猜测性恢复。
+- 写入先读当前值，写后回读；失败时尝试恢复原值。声霸面板的读写都在 profile 0，profile 1 属于 Broadcaster 广播路径，声霸不走那条路。只有原预设为 Custom 时才回写自定义 EQ 频段；非 Custom 预设无法读出已存的自定义曲线，因此不做猜测性恢复。
 - 亮度先读取 region 列表，再用 profile 0 和第一个 region 读取/写入；这不依赖固定的 All-region。
 - 当前为源码支持的候选实现，尚未在任何 054A 实机完成读写、回读和恢复验证。
 
