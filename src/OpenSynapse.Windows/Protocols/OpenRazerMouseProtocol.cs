@@ -399,7 +399,9 @@ internal static class OpenRazerMouseProtocol
         {
             throw new ArgumentOutOfRangeException(nameof(percent), "Threshold must be 5%..25% in 5% steps.");
         }
-        var raw = checked((byte)(percent * 255 / 100));
+        // The middleware writes `Math.ceil(percent / 100 * 255)`. Truncating puts
+        // the threshold one unit below the official app for most of the range.
+        var raw = checked((byte)Math.Ceiling(percent * 255d / 100d));
         return OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_low_battery_threshold", 0x01, 0x07, 0x01, [raw]);
     }
@@ -469,7 +471,8 @@ internal static class OpenRazerMouseProtocol
             var legacy = OpenRazerStandardProtocol.Arguments(response, 1)[0];
             return legacy switch
             {
-                0x01 => 1000, 0x02 => 500, 0x08 => 125,
+                0x01 => 1000, 0x02 => 500, 0x03 => 333, 0x04 => 250,
+                0x05 => 200, 0x08 => 125, 0x0A => 100,
                 _ => throw new InvalidDataException($"Unknown polling-rate code 0x{legacy:X2}."),
             };
         }
@@ -552,7 +555,11 @@ internal static class OpenRazerMouseProtocol
     {
         1000 => 0x01,
         500 => 0x02,
+        333 => 0x03,
+        250 => 0x04,
+        200 => 0x05,
         125 => 0x08,
+        100 => 0x0A,
         _ => throw new ArgumentOutOfRangeException(nameof(hertz)),
     };
 

@@ -236,4 +236,23 @@ public sealed class OpenRazerMiddlewareAlignmentTests
         Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset + 1]);
     }
+
+    [Fact]
+    public void LegacyPollingRateUsesTheMiddlewareRateTable()
+    {
+        // Pro Click V2 declares 250 Hz and only has the legacy polling command.
+        var device = Device(0x00D0);
+
+        var set = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, 250)).Report;
+        Assert.Equal(0x00, set[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0x05, set[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x04, set[RazerFeatureReport.ArgumentsOffset]);
+
+        var get = OpenRazerMouseProtocol.GetPollingRate(device).Report;
+        get[1] = 0x02;
+        get[RazerFeatureReport.DataSizeOffset] = 0x01;
+        get[RazerFeatureReport.ArgumentsOffset] = 0x04;
+        get[89] = RazerFeatureReport.CalculateCrc(get);
+        Assert.Equal(250, OpenRazerMouseProtocol.ParsePollingRate(get, highRate: false));
+    }
 }
