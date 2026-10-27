@@ -556,11 +556,13 @@ public sealed class OpenRazerBackendTests
     }
 
     [Theory]
-    [InlineData(5, 0x0C)]
-    [InlineData(15, 0x26)]
-    [InlineData(25, 0x3F)]
-    public void LowBatteryThresholdMatchesOpenRazerScaling(int percent, byte raw)
+    [InlineData(5, 0x0D)]
+    [InlineData(15, 0x27)]
+    [InlineData(25, 0x40)]
+    public void LowBatteryThresholdMatchesMiddlewareScaling(int percent, byte raw)
     {
+        // The middleware writes `Math.ceil(percent / 100 * 255)`, so 15% is 39 and
+        // not 38. OpenRazer truncates; the official app is the ground truth here.
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x008F)!;
         var report = OpenRazerMouseProtocol.SetLowBatteryThreshold(device, percent).Report;
 
