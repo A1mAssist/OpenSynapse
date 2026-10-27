@@ -327,7 +327,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool CanWritePolling => CanUse(OpenRazerBackendCapability.PollingRateWrite) &&
         PollingOptions.Count > 0 && !IsPollingBusy;
     public bool CanEditPolling => CanUse(OpenRazerBackendCapability.PollingRateWrite) &&
-        !IsPollingBusy && PollingOptions.Contains(SelectedPollingRate);
+        PollingOptions.Contains(SelectedPollingRate);
 
     public Visibility DpiVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.DpiRead,
@@ -355,7 +355,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public string DpiText => _basicState?.DpiX is { } x && _basicState.DpiY is { } y ? $"{x} x {y} DPI" : "--";
     public bool IsDpiBusy { get => _isDpiBusy; private set => SetBusy(ref _isDpiBusy, value, nameof(CanEditDpi), nameof(CanWriteDpi)); }
     public bool CanWriteDpi => CanUse(OpenRazerBackendCapability.DpiWrite) && !IsDpiBusy;
-    public bool CanEditDpi => CanUse(OpenRazerBackendCapability.DpiWrite) && !IsDpiBusy &&
+    public bool CanEditDpi => CanUse(OpenRazerBackendCapability.DpiWrite) &&
         DpiX is >= 100 && DpiY is >= 100 && DpiX <= MaximumDpi && DpiY <= MaximumDpi;
 
     public Visibility DpiStagesVisibility => VisibleWhen(Has(OpenRazerBackendCapability.DpiStagesRead));
@@ -393,7 +393,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     }
     public bool CanWriteDpiStages => CanUse(OpenRazerBackendCapability.DpiStagesRead) &&
         CanUse(OpenRazerBackendCapability.DpiStagesWrite) && !IsDpiStagesBusy;
-    public bool CanEditDpiStages => CanWriteDpiStages && DpiStages.Count is >= 1 and <= 5 &&
+    public bool CanEditDpiStages => CanUse(OpenRazerBackendCapability.DpiStagesRead) &&
+        CanUse(OpenRazerBackendCapability.DpiStagesWrite) &&
+        DpiStages.Count is >= 1 and <= 5 &&
         ActiveDpiStage >= 1 && ActiveDpiStage <= DpiStages.Count &&
         DpiStages.All(stage => stage.X is >= 100 && stage.Y is >= 100 && stage.X <= MaximumDpi && stage.Y <= MaximumDpi);
 
@@ -421,7 +423,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public string IdleTimeoutText => _basicState?.IdleTimeoutSeconds is { } value ? $"{value} s" : "--";
     public bool IsIdleBusy { get => _isIdleBusy; private set => SetBusy(ref _isIdleBusy, value, nameof(CanEditIdle), nameof(CanWriteIdle)); }
     public bool CanWriteIdle => CanUse(OpenRazerBackendCapability.IdleTimeoutWrite) && !IsIdleBusy;
-    public bool CanEditIdle => CanUse(OpenRazerBackendCapability.IdleTimeoutWrite) && !IsIdleBusy &&
+    public bool CanEditIdle => CanUse(OpenRazerBackendCapability.IdleTimeoutWrite) &&
         IdleTimeoutSeconds is >= 60 and <= 900;
     public Visibility LowBatteryVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.LowBatteryThresholdRead,
@@ -439,7 +441,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool IsLowBatteryBusy { get => _isLowBatteryBusy; private set => SetBusy(ref _isLowBatteryBusy, value, nameof(CanEditLowBattery), nameof(CanWriteLowBattery)); }
     public bool CanWriteLowBattery => CanUse(OpenRazerBackendCapability.LowBatteryThresholdWrite) && !IsLowBatteryBusy;
     public bool CanEditLowBattery => CanUse(OpenRazerBackendCapability.LowBatteryThresholdWrite) &&
-        !IsLowBatteryBusy && LowBatteryThresholdPercent is >= 5 and <= 25 && LowBatteryThresholdPercent % 5 == 0;
+        LowBatteryThresholdPercent is >= 5 and <= 25 && LowBatteryThresholdPercent % 5 == 0;
     public Visibility AutoSleepVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.AutoSleepRead,
         OpenRazerBackendCapability.AutoSleepWrite));
@@ -453,7 +455,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         ? value ? AppStrings.Text("Text_OpenRazerAutoSleepOn") : AppStrings.Text("Text_OpenRazerAutoSleepOff")
         : "--";
     public bool IsAutoSleepBusy { get => _isAutoSleepBusy; private set => SetBusy(ref _isAutoSleepBusy, value, nameof(CanWriteAutoSleep)); }
-    public bool CanWriteAutoSleep => CanUse(OpenRazerBackendCapability.AutoSleepWrite) && !IsAutoSleepBusy;
+    public bool CanWriteAutoSleep => CanUse(OpenRazerBackendCapability.AutoSleepWrite);
     public Visibility ChargeLimiterVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.BatteryChargeLimiterRead,
         OpenRazerBackendCapability.BatteryChargeLimiterWrite));
@@ -475,7 +477,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool IsChargeLimiterBusy { get => _isChargeLimiterBusy; private set => SetBusy(ref _isChargeLimiterBusy, value, nameof(CanEditChargeLimiter), nameof(CanWriteChargeLimiter)); }
     public bool CanWriteChargeLimiter => CanUse(OpenRazerBackendCapability.BatteryChargeLimiterWrite) && !IsChargeLimiterBusy;
     public bool CanEditChargeLimiter => CanUse(OpenRazerBackendCapability.BatteryChargeLimiterWrite) &&
-        !IsChargeLimiterBusy && ChargeLimiterPercent is >= 50 and <= 95 && ChargeLimiterPercent % 5 == 0;
+        ChargeLimiterPercent is >= 50 and <= 95 && ChargeLimiterPercent % 5 == 0;
 
     public Visibility LightingVisibility => VisibleWhen(LightingZones.Count > 0);
     public Visibility LightingControlsVisibility => VisibleWhen(
@@ -735,8 +737,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         CanApplyLightingEffect ||
         BrightnessWriteVisibility == Visibility.Visible ||
         LedStateWriteVisibility == Visibility.Visible);
-    public bool CanApplyLighting => LightingEnabled && !IsLightingBusy &&
-        (CanApplyLightingEffect || CanWriteBrightness || CanWriteLedState);
+    public bool CanApplyLighting => LightingEnabled &&
+        (CanApplyLightingEffect || CanEditBrightness || CanWriteLedState);
     public Visibility BrightnessVisibility => VisibleWhen(SelectedZoneCapabilities is { } zone &&
         (zone.CanReadBrightness && !_unsupportedBrightnessReads.Contains(SelectedLightingZone) ||
          zone.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(SelectedLightingZone)));
@@ -758,7 +760,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool CanWriteBrightness => CanWrite && !IsBrightnessBusy &&
         SelectedZoneCapabilities?.CanWriteBrightness == true &&
         !_unsupportedBrightnessWrites.Contains(SelectedLightingZone);
-    public bool CanEditBrightness => CanWrite && !IsBrightnessBusy &&
+    public bool CanEditBrightness => CanWrite &&
         SelectedZoneCapabilities?.CanWriteBrightness == true &&
         !_unsupportedBrightnessWrites.Contains(SelectedLightingZone);
     public Visibility LedStateVisibility => VisibleWhen(SelectedZoneCapabilities is { } zone &&
@@ -781,18 +783,18 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         }
     }
     public bool IsLedStateBusy { get => _isLedStateBusy; private set => SetBusy(ref _isLedStateBusy, value, nameof(CanWriteLedState)); }
-    public bool CanWriteLedState => CanWrite && !IsLedStateBusy &&
+    public bool CanWriteLedState => CanWrite &&
         SelectedZoneCapabilities?.CanWriteState == true &&
         !_unsupportedLedStateWrites.Contains(SelectedLightingZone);
     public Visibility ReactiveTriggerVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ReactiveTriggerWrite));
-    public bool CanTriggerReactive => CanUse(OpenRazerBackendCapability.ReactiveTriggerWrite) && !IsLightingBusy;
+    public bool CanTriggerReactive => CanUse(OpenRazerBackendCapability.ReactiveTriggerWrite);
 
     public Visibility MatrixVisibility => VisibleWhen(MatrixCells.Count > 0 && Has(OpenRazerBackendCapability.MatrixFrameWrite));
     public ObservableCollection<OpenRazerMatrixCellViewModel> MatrixCells { get; } = new();
     public int MatrixColumns => Connection.Definition.MatrixDimensions?.Columns ?? 1;
     public bool IsMatrixBusy { get => _isMatrixBusy; private set => SetBusy(ref _isMatrixBusy, value, nameof(CanApplyMatrix)); }
     public bool CanApplyMatrix => CanUse(OpenRazerBackendCapability.MatrixFrameWrite) &&
-        LightingEnabled && !IsMatrixBusy;
+        LightingEnabled;
 
     public Visibility ScrollVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.ScrollAccelerationRead,
@@ -817,9 +819,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool CanWriteScrollMode => CanUse(OpenRazerBackendCapability.ScrollModeWrite) && !IsScrollModeBusy;
     public bool CanWriteScrollAcceleration => CanUse(OpenRazerBackendCapability.ScrollAccelerationWrite) && !IsScrollAccelerationBusy;
     public bool CanWriteSmartReel => CanUse(OpenRazerBackendCapability.SmartReelWrite) && !IsSmartReelBusy;
-    public bool CanEditScrollMode => CanUse(OpenRazerBackendCapability.ScrollModeWrite) && !IsScrollModeBusy;
-    public bool CanEditScrollAcceleration => CanUse(OpenRazerBackendCapability.ScrollAccelerationWrite) && !IsScrollAccelerationBusy;
-    public bool CanEditSmartReel => CanUse(OpenRazerBackendCapability.SmartReelWrite) && !IsSmartReelBusy;
+    public bool CanEditScrollMode => CanUse(OpenRazerBackendCapability.ScrollModeWrite);
+    public bool CanEditScrollAcceleration => CanUse(OpenRazerBackendCapability.ScrollAccelerationWrite);
+    public bool CanEditSmartReel => CanUse(OpenRazerBackendCapability.SmartReelWrite);
 
     public Visibility KeyswitchVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.KeyswitchOptimizationRead,
@@ -849,11 +851,11 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool IsKeyswitchLoading { get => _isKeyswitchLoading; private set => SetField(ref _isKeyswitchLoading, value); }
     public bool IsKeyswitchBusy { get => _isKeyswitchBusy; private set => SetBusy(ref _isKeyswitchBusy, value, nameof(CanEditKeyswitch), nameof(CanWriteKeyswitch)); }
     public bool CanWriteKeyswitch => CanUse(OpenRazerBackendCapability.KeyswitchOptimizationWrite) && !IsKeyswitchBusy;
-    public bool CanEditKeyswitch => CanUse(OpenRazerBackendCapability.KeyswitchOptimizationWrite) && !IsKeyswitchBusy;
+    public bool CanEditKeyswitch => CanUse(OpenRazerBackendCapability.KeyswitchOptimizationWrite);
 
     public Visibility FnPrimaryVisibility => VisibleWhen(Has(OpenRazerBackendCapability.FnPrimaryWrite));
     public bool IsFnBusy { get => _isFnBusy; private set => SetBusy(ref _isFnBusy, value, nameof(CanSetFnPrimary)); }
-    public bool CanSetFnPrimary => CanUse(OpenRazerBackendCapability.FnPrimaryWrite) && !IsFnBusy;
+    public bool CanSetFnPrimary => CanUse(OpenRazerBackendCapability.FnPrimaryWrite);
 
     public Visibility HyperPollingVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.HyperPollingIndicatorWrite,
@@ -875,7 +877,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
             OnPropertyChanged(nameof(CanUnpairHyperPolling));
         }
     }
-    public bool CanUseHyperPolling => CanWrite && !IsHyperPollingBusy;
+    public bool CanUseHyperPolling => CanWrite;
     public bool CanSetHyperPollingIndicator => CanUseHyperPolling && Has(OpenRazerBackendCapability.HyperPollingIndicatorWrite);
     public bool CanPairHyperPolling => CanUseHyperPolling && Has(OpenRazerBackendCapability.HyperPollingPairWrite);
     public bool CanUnpairHyperPolling => CanUseHyperPolling && Has(OpenRazerBackendCapability.HyperPollingUnpairWrite);
