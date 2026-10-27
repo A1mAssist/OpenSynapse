@@ -353,7 +353,7 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Kraken V3 HyperSense | `1532:0533` | 音频页 |
 | Razer Kraken V3 Pro | `1532:052D` | 音频页 |
 | Razer Kraken V3 X | `1532:0537` | 音频页 |
-| Razer Kraken V4 | `1532:056B` | 音频页与灯光；提供 THX 安装入口 |
+| Razer Kraken V4 | `1532:056B` | 灯光页（有线） |
 | Razer Kraken V4 Pro | `1532:0567` | 音频页 |
 | Razer Kraken V4 X | `1532:056D` | 音频页 |
 | Razer Kraken X USB | `1532:0526` | 音频页 |
