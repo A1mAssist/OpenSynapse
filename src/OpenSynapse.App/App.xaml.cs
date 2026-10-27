@@ -179,7 +179,8 @@ public partial class App : Application
             registryLoad.Errors,
             new WindowsTouchpadController(),
             _openRazerDeviceService,
-            new OpenRazerSpecialLightingService(),
+            new OpenRazerSpecialLightingService(
+                message => _diagnosticLog.TryWrite("kraken-lighting", message)),
             thxAudioController: _thxAudioController,
             thxAudioSupported: WindowsThxAudioController.IsSupportedModel(),
             macroInputSink: _elevatedMacroSink);
