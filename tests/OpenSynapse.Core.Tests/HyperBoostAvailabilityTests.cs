@@ -75,7 +75,7 @@ public sealed class HyperBoostCoolingPadGateTests
     }
 
     [Fact]
-    public async Task ProfileHyperBoostFallsBackWithoutTheFullPowerAdapter()
+    public async Task ProfileHyperBoostAppliesWithoutAnyAdapterReading()
     {
         var reader = new RecordingReader();
 
@@ -84,12 +84,12 @@ public sealed class HyperBoostCoolingPadGateTests
             adapterPower: null,
             coolingPadConnected: true);
 
-        Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
-        Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
+        Assert.Equal(BladePerformanceMode.Hyperboost, reader.LastMode);
+        Assert.DoesNotContain(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task DisclaimerAcceptanceDoesNotBypassTheAdapterRequirement()
+    public async Task ProfileHyperBoostAppliesOnALimitedAdapter()
     {
         var reader = new RecordingReader();
 
@@ -99,19 +99,19 @@ public sealed class HyperBoostCoolingPadGateTests
             coolingPadConnected: false,
             padlessHyperBoostAccepted: true);
 
-        Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
-        Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
+        Assert.Equal(BladePerformanceMode.Hyperboost, reader.LastMode);
+        Assert.DoesNotContain(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task ProfileHyperBoostFallsBackOnALimitedAdapter()
+    public async Task ProfileHyperBoostFallsBackWithoutTheCoolingPadAndWithoutAcceptance()
     {
         var reader = new RecordingReader();
 
         var result = await ApplyAsync(
             reader,
             adapterPower: new BladeAdapterPowerSnapshot(0, 0, 230, 280),
-            coolingPadConnected: true);
+            coolingPadConnected: false);
 
         Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
         Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
@@ -144,15 +144,11 @@ public sealed class HyperBoostCoolingPadGateTests
     }
 
     [Fact]
-    public void HyperBoostNeedsTheFullPowerAdapterButNotTheCoolingPad()
+    public void HyperBoostOnlyNeedsTheModelToListIt()
     {
-        var fullPower = new BladeAdapterPowerSnapshot(0, 0, 280, 280);
-        var limitedPower = new BladeAdapterPowerSnapshot(0, 0, 230, 280);
-
-        Assert.True(BladeModelCapabilities.IsHyperBoostAvailable(0x02C6, fullPower));
-        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(0x02C6, limitedPower));
-        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(0x02C6, adapterPower: null));
-        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(0x02B6, fullPower));
+        Assert.True(BladeModelCapabilities.IsHyperBoostAvailable(0x02C6));
+        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(0x02B6));
+        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(0x02E0));
     }
 
     private static async Task<ProfileApplyResult> ApplyAsync(

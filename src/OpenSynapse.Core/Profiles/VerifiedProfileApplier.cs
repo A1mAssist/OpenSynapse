@@ -96,17 +96,14 @@ public sealed class VerifiedProfileApplier
                     var requested = (BladePerformanceMode)rawPerformanceMode;
                     if (requested == BladePerformanceMode.Hyperboost)
                     {
-                        var adapterReady = BladeModelCapabilities.IsHyperBoostAvailable(
-                            blade.ProductId, telemetry.BladeAdapterPower);
+                        var modeSupported = BladeModelCapabilities.IsHyperBoostAvailable(blade.ProductId);
                         var padReady = coolingPadConnected || padlessHyperBoostAccepted;
-                        if (!adapterReady || !padReady)
+                        if (!modeSupported || !padReady)
                         {
                             requested = BladePerformanceMode.Performance;
                             bladeErrors.Add(!BladeModelCapabilities.SupportsHyperBoost(blade.ProductId)
                                 ? "HyperBoost is not supported on this model; Performance mode was applied instead."
-                                : !adapterReady
-                                    ? "HyperBoost requires the full-power adapter; Performance mode was applied instead."
-                                    : "HyperBoost requires the Razer Laptop Cooling Pad and a recorded disclaimer acceptance; Performance mode was applied instead.");
+                                : "HyperBoost requires the Razer Laptop Cooling Pad and a recorded disclaimer acceptance; Performance mode was applied instead.");
                         }
                     }
                     effectivePerformanceMode = current;

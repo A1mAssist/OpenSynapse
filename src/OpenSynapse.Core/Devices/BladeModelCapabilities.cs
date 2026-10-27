@@ -175,16 +175,14 @@ public static class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract) && contract.HyperBoost;
 
     /// <summary>
-    /// HyperBoost raises sustained power limits, so it needs the full-power adapter.
-    /// The cooling pad is not required: Synapse only gates the option on the pad
-    /// because the pad hosts the temperature-to-fan curve.
+    /// HyperBoost is offered on every model whose middleware lists it. The adapter
+    /// wattage report only tells the user that the current supply may not hold the
+    /// raised power limit, so it must not close the option: the middleware keeps the
+    /// mode selectable and reports the shortage separately. The cooling pad is not
+    /// required either, because the pad only hosts the temperature-to-fan curve.
     /// </summary>
-    public static bool IsHyperBoostAvailable(
-        ushort productId,
-        BladeAdapterPowerSnapshot? adapterPower) =>
-        SupportsHyperBoost(productId) &&
-        adapterPower is { ActualWatts: > 0, RecommendedWatts: > 0 } power &&
-        !power.IsLimitedAdapter;
+    public static bool IsHyperBoostAvailable(ushort productId) =>
+        SupportsHyperBoost(productId);
 
     /// <summary>
     /// Upper bound for parsing a stored fan target. This can exceed the fixed-write
