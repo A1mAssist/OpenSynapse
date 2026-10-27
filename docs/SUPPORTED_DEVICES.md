@@ -353,7 +353,7 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Kraken V3 HyperSense | `1532:0533` | Audio page |
 | Razer Kraken V3 Pro | `1532:052D` | Audio page |
 | Razer Kraken V3 X | `1532:0537` | Audio page |
-| Razer Kraken V4 | `1532:056B` | Audio page plus lighting; THX installer |
+| Razer Kraken V4 | `1532:056B` | Lighting page (wired) |
 | Razer Kraken V4 Pro | `1532:0567` | Audio page |
 | Razer Kraken V4 X | `1532:056D` | Audio page |
 | Razer Kraken X USB | `1532:0526` | Audio page |
