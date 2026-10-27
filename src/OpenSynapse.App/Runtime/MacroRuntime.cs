@@ -7,8 +7,10 @@ namespace OpenSynapse.App.Runtime;
 internal sealed class MacroRuntime : IDisposable
 {
     private const int DefaultStopPlaybackVirtualKey = 0x79;
+    private const int HoldReleaseCheckMilliseconds = 100;
     private readonly object _gate = new();
     private readonly WindowsMacroInputSink _sink = new();
+    private readonly Func<MacroInput, bool> _isPhysicallyDown;
     private readonly Dictionary<InputKey, SuppressedInput> _suppressedInputs = [];
     private readonly HashSet<int> _physicalModifierKeys = [];
     private readonly Dictionary<string, int> _sequencePositions = new(StringComparer.Ordinal);
@@ -23,6 +25,8 @@ internal sealed class MacroRuntime : IDisposable
     private TaskCompletionSource<MacroInput?>? _stepCapture;
     private MacroInput? _suppressedCapture;
     private bool _triggerCaptureAllowsModifiers;
+    private bool _triggerCaptureAllowsNagaSideButton;
+    private bool _triggerCaptureAllowsDeviceButton;
     private Func<bool>? _isOwnWindowForeground;
     private CancellationTokenSource? _playbackCancellation;
     private TaskCompletionSource? _resumePlayback;
@@ -36,11 +40,18 @@ internal sealed class MacroRuntime : IDisposable
     private bool _playbackStartHotkeyHeld;
     private bool _playbackStopHotkeyHeld;
 
+    internal MacroRuntime(Func<MacroInput, bool>? isPhysicallyDown = null)
+    {
+        _isPhysicallyDown = isPhysicallyDown ?? MacroInputHook.IsPhysicallyDown;
+    }
+
     public event Action<string>? Error;
 
     public event Action? RecordingStopRequested;
 
     public event Action? PlaybackStartRequested;
+
+    public event Action<MacroDefinition>? PlaybackStarted;
 
     public event Action? PlaybackStateChanged;
 
@@ -220,10 +231,22 @@ internal sealed class MacroRuntime : IDisposable
 
     public Task<MacroTrigger?> CaptureNextTriggerAsync(
         CancellationToken cancellationToken = default) =>
-        CaptureNextTriggerAsync(allowModifierCombo: false, cancellationToken);
+        CaptureNextTriggerAsync(
+            allowModifierCombo: false,
+            cancellationToken: cancellationToken);
+
+    public Task<MacroTrigger?> CaptureNextTriggerAsync(
+        bool allowModifierCombo,
+        CancellationToken cancellationToken = default) =>
+        CaptureNextTriggerAsync(
+            allowModifierCombo,
+            allowNagaSideButton: true,
+            cancellationToken: cancellationToken);
 
     public async Task<MacroTrigger?> CaptureNextTriggerAsync(
         bool allowModifierCombo,
+        bool allowNagaSideButton,
+        bool allowDeviceButton = false,
         CancellationToken cancellationToken = default)
     {
         TaskCompletionSource<MacroTrigger?> completion;
@@ -234,6 +257,8 @@ internal sealed class MacroRuntime : IDisposable
             _stepCapture?.TrySetResult(null);
             _stepCapture = null;
             _triggerCaptureAllowsModifiers = allowModifierCombo;
+            _triggerCaptureAllowsNagaSideButton = allowNagaSideButton;
+            _triggerCaptureAllowsDeviceButton = allowDeviceButton;
             completion = new TaskCompletionSource<MacroTrigger?>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             _triggerCapture = completion;
@@ -257,6 +282,8 @@ internal sealed class MacroRuntime : IDisposable
                 if (ReferenceEquals(_triggerCapture, completion))
                 {
                     _triggerCapture = null;
+                    _triggerCaptureAllowsNagaSideButton = false;
+                    _triggerCaptureAllowsDeviceButton = false;
                 }
                 if (CanDetachHookLocked())
                 {
@@ -320,6 +347,7 @@ internal sealed class MacroRuntime : IDisposable
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(macro);
+        cancellationToken.ThrowIfCancellationRequested();
         var repeatUntilStopped = macro.PlaybackMode == MacroPlaybackMode.RepeatUntilStopped;
         IReadOnlyDictionary<string, MacroDefinition> macroMap;
         lock (_gate)
@@ -358,6 +386,7 @@ internal sealed class MacroRuntime : IDisposable
             EnsureHookLocked();
         }
         PlaybackStateChanged?.Invoke();
+        PlaybackStarted?.Invoke(macro);
         previous?.Cancel();
         previous?.Dispose();
         var releasedModifiers = ReleaseTriggerModifiers(triggerModifiers);
@@ -516,6 +545,8 @@ internal sealed class MacroRuntime : IDisposable
         var stopPlayback = false;
         var startPlayback = false;
         var playbackShortcutHandled = false;
+        CancellationTokenSource? holdCancellation = null;
+        MacroInput? holdInput = null;
 
         // Playback shortcuts take priority over macro triggers, but never while
         // recording or capturing a key.
@@ -619,6 +650,15 @@ internal sealed class MacroRuntime : IDisposable
                     return false;
                 }
 
+                // Device-scoped triggers cannot be replayed with SendInput.
+                // If the firmware also emits a standard key, the low-level hook
+                // records that normal key instead.
+                if (value.Input.Kind is MacroInputKind.NagaSideButton or
+                    MacroInputKind.DeviceButton or MacroInputKind.RazerKey)
+                {
+                    return false;
+                }
+
                 recording.TryAdd(value.Input, value.IsDown, value.TimestampMilliseconds);
                 return false;
             }
@@ -651,7 +691,11 @@ internal sealed class MacroRuntime : IDisposable
             if (_triggerCapture is { } capture)
             {
                 if (!value.IsDown ||
-                    !value.Input.IsValid(allowPrimaryMouseButton: false, allowWheel: false))
+                    !value.Input.IsValid(
+                        allowPrimaryMouseButton: false,
+                        allowWheel: false,
+                        allowNagaSideButton: _triggerCaptureAllowsNagaSideButton,
+                        allowDeviceButton: _triggerCaptureAllowsDeviceButton))
                 {
                     return false;
                 }
@@ -695,6 +739,7 @@ internal sealed class MacroRuntime : IDisposable
                 if (!value.IsDown)
                 {
                     _suppressedInputs.Remove(key);
+                    suppressed.HoldCancellation?.Cancel();
                     if (suppressed.Mode is MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat &&
                         StringComparer.Ordinal.Equals(
                             _activePlaybackMacroId,
@@ -702,8 +747,19 @@ internal sealed class MacroRuntime : IDisposable
                     {
                         stopPlayback = true;
                     }
+                    return true;
                 }
-                return true;
+
+                // Mouse buttons cannot auto-repeat. A second down means the
+                // previous up was lost (focus change or device removal), so
+                // process it instead of swallowing the trigger until restart.
+                if (value.Input.Kind != MacroInputKind.MouseButton)
+                {
+                    return true;
+                }
+
+                _suppressedInputs.Remove(key);
+                suppressed.HoldCancellation?.Cancel();
             }
 
             if (!value.IsDown)
@@ -769,6 +825,17 @@ internal sealed class MacroRuntime : IDisposable
                         playMacro = macro;
                         break;
                 }
+
+                if (playMacro is not null &&
+                    trigger.Mode is MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat)
+                {
+                    holdCancellation = new CancellationTokenSource();
+                    holdInput = value.Input.Clone();
+                    _suppressedInputs[key] = _suppressedInputs[key] with
+                    {
+                        HoldCancellation = holdCancellation,
+                    };
+                }
                 break;
             }
         }
@@ -786,18 +853,32 @@ internal sealed class MacroRuntime : IDisposable
             // Never build a playback plan or send the first input on the
             // low-level hook thread. Windows drops slow hooks and the desktop
             // would stall until the plan finishes.
-            _ = Task.Run(() => ObservePlaybackAsync(playMacro, playModifiers));
+            _ = Task.Run(() => ObservePlaybackAsync(
+                playMacro,
+                playModifiers,
+                holdCancellation,
+                holdInput));
         }
         return suppress;
     }
 
     private async Task ObservePlaybackAsync(
         MacroDefinition macro,
-        MacroModifierKeys triggerModifiers)
+        MacroModifierKeys triggerModifiers,
+        CancellationTokenSource? holdCancellation,
+        MacroInput? holdInput)
     {
+        var holdMonitor = holdCancellation is not null &&
+            holdInput is not null &&
+            MacroInputHook.SupportsPhysicalState(holdInput)
+                ? MonitorHoldReleaseAsync(holdInput, holdCancellation)
+                : Task.CompletedTask;
         try
         {
-            await PlayAsync(macro, triggerModifiers).ConfigureAwait(false);
+            await PlayAsync(
+                macro,
+                triggerModifiers,
+                holdCancellation?.Token ?? CancellationToken.None).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -808,6 +889,58 @@ internal sealed class MacroRuntime : IDisposable
         catch (Exception exception)
         {
             Error?.Invoke(exception.Message);
+        }
+        finally
+        {
+            holdCancellation?.Cancel();
+            await holdMonitor.ConfigureAwait(false);
+            if (holdCancellation is not null)
+            {
+                lock (_gate)
+                {
+                    foreach (var key in _suppressedInputs
+                        .Where(pair => ReferenceEquals(
+                            pair.Value.HoldCancellation,
+                            holdCancellation))
+                        .Select(pair => pair.Key)
+                        .ToArray())
+                    {
+                        _suppressedInputs.Remove(key);
+                    }
+                }
+                holdCancellation.Dispose();
+            }
+        }
+    }
+
+    private async Task MonitorHoldReleaseAsync(
+        MacroInput input,
+        CancellationTokenSource holdCancellation)
+    {
+        try
+        {
+            while (!holdCancellation.IsCancellationRequested)
+            {
+                await Task.Delay(
+                    HoldReleaseCheckMilliseconds,
+                    holdCancellation.Token).ConfigureAwait(false);
+                if (!_isPhysicallyDown(input))
+                {
+                    holdCancellation.Cancel();
+                    return;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        catch
+        {
+            // A failed state probe must not leave a hold macro running forever.
+            holdCancellation.Cancel();
         }
     }
 
@@ -1101,6 +1234,10 @@ internal sealed class MacroRuntime : IDisposable
             hook.CaptureMouseMoves = false;
         }
         _suppressedCapture = null;
+        foreach (var suppressed in _suppressedInputs.Values)
+        {
+            suppressed.HoldCancellation?.Cancel();
+        }
         _suppressedInputs.Clear();
         _playbackStartHotkeyHeld = false;
         _playbackStopHotkeyHeld = false;
@@ -1143,11 +1280,31 @@ internal sealed class MacroRuntime : IDisposable
             : null;
 
     private static InputKey KeyOf(MacroInput input) =>
-        input.Kind == MacroInputKind.MouseButton
-            ? new InputKey(input.Kind, input.MouseButton, false)
-            : new InputKey(input.Kind, input.VirtualKey, input.Extended);
+        input.Kind switch
+        {
+            MacroInputKind.MouseButton => new InputKey(input.Kind, input.MouseButton, false),
+            MacroInputKind.NagaSideButton => new InputKey(input.Kind, input.SideButton, false),
+            MacroInputKind.DeviceButton => new InputKey(
+                input.Kind,
+                (input.VirtualKey << 16) | input.ScanCode,
+                input.Extended,
+                input.DeviceId),
+            MacroInputKind.RazerKey => new InputKey(
+                input.Kind,
+                input.RazerKeyCode,
+                false,
+                input.DeviceId),
+            _ => new InputKey(input.Kind, input.VirtualKey, input.Extended),
+        };
 
-    private readonly record struct InputKey(MacroInputKind Kind, int Code, bool Extended);
+    private readonly record struct InputKey(
+        MacroInputKind Kind,
+        int Code,
+        bool Extended,
+        int DeviceId = 0);
 
-    private readonly record struct SuppressedInput(MacroTriggerMode Mode, string? MacroId);
+    private readonly record struct SuppressedInput(
+        MacroTriggerMode Mode,
+        string? MacroId,
+        CancellationTokenSource? HoldCancellation = null);
 }

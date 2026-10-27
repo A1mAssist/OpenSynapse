@@ -1877,6 +1877,10 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>Middle</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>Mouse 4</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>Mouse 5</value></data>
+  <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga side {0}</value></data>
+  <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga side buttons</value></data>
+  <data name="MacroTriggerDevice.Text" xml:space="preserve"><value>Capture device button</value></data>
+  <data name="MacroCapturePromptDevice" xml:space="preserve"><value>Press a button on another Razer device.</value></data>
   <data name="MacroRuntimeError" xml:space="preserve"><value>Macro runtime error: {0}</value></data>
   <data name="MacroSaveFailed" xml:space="preserve"><value>Could not save the macro.</value></data>
   <data name="MacroCreated" xml:space="preserve"><value>Macro created.</value></data>
@@ -1891,6 +1895,9 @@
   <data name="MacroEmpty" xml:space="preserve"><value>This macro has no actions.</value></data>
   <data name="MacroPlaying" xml:space="preserve"><value>Playing macro.</value></data>
   <data name="MacroPlayed" xml:space="preserve"><value>Macro playback finished.</value></data>
+  <data name="MacroContinuousPlaybackTitle" xml:space="preserve"><value>Continuous macro started</value></data>
+  <data name="MacroContinuousPlaybackBody" xml:space="preserve"><value>"{0}" will keep looping. Press {1} or open OpenSynapse and click Stop to end it.</value></data>
+  <data name="MacroUntitled" xml:space="preserve"><value>Untitled macro</value></data>
   <data name="MacroPlayCanceled" xml:space="preserve"><value>Macro playback canceled.</value></data>
   <data name="MacroPlaybackLabel.Text" xml:space="preserve"><value>Playback</value></data>
   <data name="MacroPlaybackRepeatCount.Text" xml:space="preserve"><value>Repeat count</value></data>

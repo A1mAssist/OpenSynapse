@@ -275,6 +275,8 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         input.Kind switch
         {
             MacroInputKind.MouseButton => AppStrings.Text($"MacroMouseButton{input.MouseButton}"),
+            MacroInputKind.NagaSideButton =>
+                AppStrings.FormatText("MacroNagaSideButton", input.SideButton),
             MacroInputKind.MouseWheel when input.WheelHorizontal =>
                 AppStrings.FormatText("MacroWheelHorizontal", input.WheelDelta),
             MacroInputKind.MouseWheel when input.WheelDelta > 0 =>

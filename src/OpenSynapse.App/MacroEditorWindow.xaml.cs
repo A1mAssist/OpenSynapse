@@ -739,6 +739,20 @@ public sealed partial class MacroEditorWindow : Window
         MacroClearTriggerItem.IsEnabled =
             _viewModel.CanEditMacro &&
             _viewModel.SelectedMacro?.Definition.Trigger is not null;
+        MacroNagaTriggerMenu.IsEnabled = _viewModel.CanEditMacro;
+        if (MacroNagaTriggerMenu.Items.Count == 0)
+        {
+            for (var sideButton = 1; sideButton <= 12; sideButton++)
+            {
+                var item = new MenuFlyoutItem
+                {
+                    Text = AppStrings.FormatText("MacroNagaSideButton", sideButton),
+                    Tag = sideButton,
+                };
+                item.Click += NagaSideButtonTriggerClick;
+                MacroNagaTriggerMenu.Items.Add(item);
+            }
+        }
     }
 
     private void MacroRecordDelayModeFlyoutOpening(object sender, object e)
@@ -794,8 +808,21 @@ public sealed partial class MacroEditorWindow : Window
     private async void CaptureMacroTriggerComboClick(object sender, RoutedEventArgs e) =>
         await _viewModel.CaptureMacroTriggerComboAsync(_lifetime.Token);
 
+    private async void CaptureMacroDeviceTriggerClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.CaptureMacroDeviceTriggerAsync(_lifetime.Token);
+
     private async void ClearMacroTriggerClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ClearMacroTriggerAsync(_lifetime.Token);
+
+    private async void NagaSideButtonTriggerClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem { Tag: int sideButton })
+        {
+            await _viewModel.SetMacroNagaSideButtonTriggerAsync(
+                sideButton,
+                _lifetime.Token);
+        }
+    }
 
     private void TogglePauseMacroClick(object sender, RoutedEventArgs e) =>
         _viewModel.ToggleMacroPlaybackPause();

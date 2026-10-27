@@ -63,7 +63,7 @@ public sealed class WindowsMacroInputSink
                 return;
             }
 
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "SendInput could not send a macro event.");
+            throw SendInputFailure(Marshal.GetLastWin32Error(), "SendInput could not send a macro event");
         }
     }
 
@@ -124,7 +124,7 @@ public sealed class WindowsMacroInputSink
             };
             if (SendInput(1, [input], Marshal.SizeOf<Input>()) != 1)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "SendInput could not move the mouse.");
+                throw SendInputFailure(Marshal.GetLastWin32Error(), "SendInput could not move the mouse");
             }
         }
     }
@@ -282,10 +282,18 @@ public sealed class WindowsMacroInputSink
         var sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>());
         if (sent != (uint)inputs.Length)
         {
-            throw new Win32Exception(
+            throw SendInputFailure(
                 Marshal.GetLastWin32Error(),
-                $"SendInput sent {sent} of {inputs.Length} macro events.");
+                $"SendInput sent {sent} of {inputs.Length} macro events");
         }
+    }
+
+    private static Win32Exception SendInputFailure(int error, string message)
+    {
+        var hint = error == 5
+            ? " Access is denied; the target window may be running at a higher integrity level."
+            : string.Empty;
+        return new Win32Exception(error, $"{message} (Win32 error {error}).{hint}");
     }
 
     private static (uint Flags, int X, int Y) ResolveForegroundMove(int x, int y)

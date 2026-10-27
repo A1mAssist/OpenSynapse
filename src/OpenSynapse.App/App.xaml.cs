@@ -153,7 +153,9 @@ public partial class App : Application
             registryLoad.Registry,
             _bladeModeCoordinator);
         _thxAudioController = new WindowsThxAudioController();
-        _openRazerDeviceService = new OpenRazerDeviceService(_diagnosticLog);
+        // Share the Razer transport so OpenRazer requests and telemetry serialize on one gate.
+        _openRazerDeviceService = new OpenRazerDeviceService(
+            OpenRazerDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
         _openRazerDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
         var viewModel = new MainViewModel(
             new WindowsHidDiscovery(
@@ -184,6 +186,7 @@ public partial class App : Application
         viewModel.InternalDisplayRefreshRateChangedByUser += OnInternalDisplayRefreshRateChangedByUser;
         viewModel.BladeInputProfileChanged += OnBladeInputProfileChanged;
         viewModel.BatteryObserved += OnPeripheralBatteryObserved;
+        viewModel.MacroContinuousPlaybackStarted += OnMacroContinuousPlaybackStarted;
         viewModel.SetLegacyShortcutCycleDefaults(
             _behaviorSettings.PerformanceCycleModes,
             _behaviorSettings.RefreshRateCycleHertz);
@@ -344,6 +347,7 @@ public partial class App : Application
             _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
             _audioMuteViewModel.BladeInputProfileChanged -= OnBladeInputProfileChanged;
             _audioMuteViewModel.BatteryObserved -= OnPeripheralBatteryObserved;
+            _audioMuteViewModel.MacroContinuousPlaybackStarted -= OnMacroContinuousPlaybackStarted;
             _audioMuteViewModel = null;
         }
         if (_openRazerDeviceService is not null)
@@ -434,6 +438,9 @@ public partial class App : Application
     private void OnInternalDisplayRefreshRateChangedByUser(int hertz) => ShowModeNotification(
         AppStrings.Text("Text_8A7CE3A6"),
         AppStrings.FormatText("RefreshRateNotification", hertz));
+
+    private void OnMacroContinuousPlaybackStarted(string title, string body) =>
+        ShowNotification(title, body, "macro-playback");
 
     private void ShowModeNotification(string title, string body)
     {
