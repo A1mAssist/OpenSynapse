@@ -22,6 +22,29 @@ public static class MacroInputFormatter
             };
         }
 
+        if (input.Kind == MacroInputKind.NagaSideButton)
+        {
+            return $"Naga side {input.SideButton}";
+        }
+
+        if (input.Kind == MacroInputKind.DeviceButton)
+        {
+            var device = string.IsNullOrWhiteSpace(input.DeviceName)
+                ? $"Razer {input.DeviceId:X4}"
+                : input.DeviceName;
+            return $"{device} · {DescribeKey(input)}";
+        }
+
+        if (input.Kind == MacroInputKind.RazerKey)
+        {
+            var device = string.IsNullOrWhiteSpace(input.DeviceName)
+                ? $"Razer {input.DeviceId:X4}"
+                : input.DeviceName;
+            return $"{device} · {RazerPrivateKeyCatalog.Describe(
+                (ushort)input.DeviceId,
+                input.RazerKeyCode)}";
+        }
+
         if (input.Kind == MacroInputKind.MouseWheel)
         {
             return input.WheelHorizontal
@@ -29,6 +52,11 @@ public static class MacroInputFormatter
                 : $"Wheel {input.WheelDelta}";
         }
 
+        return DescribeKey(input);
+    }
+
+    private static string DescribeKey(MacroInput input)
+    {
         if (input.VirtualKey is <= 0 or > 0xFF)
         {
             return "Key ?";

@@ -506,6 +506,7 @@ public sealed partial class MainViewModel
         {
             _macroRuntime.RecordingStopRequested += OnMacroRecordingStopRequested;
             _macroRuntime.PlaybackStartRequested += OnMacroPlaybackStartRequested;
+            _macroRuntime.PlaybackStarted += OnMacroPlaybackStarted;
             _macroRuntime.PlaybackStateChanged += OnMacroPlaybackStateChanged;
             _recordingStopSubscribed = true;
         }
@@ -1083,14 +1084,59 @@ public sealed partial class MainViewModel
             _ = PlaySelectedMacroAsync(useCountdown: false, CancellationToken.None));
     }
 
+    private void OnMacroPlaybackStarted(MacroDefinition macro)
+    {
+        _diagnosticLog.TryWrite(
+            "macro",
+            $"started id={macro.Id} trigger={macro.Trigger?.Mode.ToString() ?? "manual"} playback={macro.PlaybackMode}");
+        if (macro.PlaybackMode != MacroPlaybackMode.RepeatUntilStopped ||
+            macro.Trigger?.Mode is (MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat))
+        {
+            return;
+        }
+
+        if (_macroDispatcherQueue is not { } dispatcher)
+        {
+            return;
+        }
+
+        void Notify()
+        {
+            var name = string.IsNullOrWhiteSpace(macro.Name)
+                ? AppStrings.Text("MacroUntitled")
+                : macro.Name.Trim();
+            var stopShortcut = GetActiveProfile().Shortcuts.MacroPlaybackStop is { } input
+                ? MacroRowViewModel.DescribeInput(input)
+                : AppStrings.Text("MacroPlaybackStopShortcutDefault");
+            MacroContinuousPlaybackStarted?.Invoke(
+                AppStrings.Text("MacroContinuousPlaybackTitle"),
+                AppStrings.FormatText("MacroContinuousPlaybackBody", name, stopShortcut));
+        }
+
+        dispatcher.TryEnqueue(Notify);
+    }
+
     public Task CaptureMacroTriggerAsync(CancellationToken cancellationToken = default) =>
-        CaptureMacroTriggerCoreAsync(allowModifierCombo: false, cancellationToken);
+        CaptureMacroTriggerCoreAsync(
+            allowModifierCombo: false,
+            allowDeviceButton: false,
+            cancellationToken);
 
     public Task CaptureMacroTriggerComboAsync(CancellationToken cancellationToken = default) =>
-        CaptureMacroTriggerCoreAsync(allowModifierCombo: true, cancellationToken);
+        CaptureMacroTriggerCoreAsync(
+            allowModifierCombo: true,
+            allowDeviceButton: false,
+            cancellationToken);
+
+    public Task CaptureMacroDeviceTriggerAsync(CancellationToken cancellationToken = default) =>
+        CaptureMacroTriggerCoreAsync(
+            allowModifierCombo: false,
+            allowDeviceButton: true,
+            cancellationToken);
 
     private async Task CaptureMacroTriggerCoreAsync(
         bool allowModifierCombo,
+        bool allowDeviceButton,
         CancellationToken cancellationToken)
     {
         if (SelectedMacro is null)
@@ -1122,36 +1168,22 @@ public sealed partial class MainViewModel
         using var capture = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _macroCaptureCancellation = capture;
         IsMacroTriggerCapturing = true;
-        MacroStatusText = AppStrings.Text("MacroCapturePrompt");
+        MacroStatusText = AppStrings.Text(
+            allowDeviceButton ? "MacroCapturePromptDevice" : "MacroCapturePrompt");
         try
         {
             var trigger = await _macroRuntime.CaptureNextTriggerAsync(
                 allowModifierCombo,
-                capture.Token);
+                allowNagaSideButton: !allowDeviceButton,
+                allowDeviceButton: allowDeviceButton,
+                cancellationToken: capture.Token);
             if (trigger is null)
             {
                 MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
                 return;
             }
 
-            trigger.Mode = selected.Definition.Trigger?.Mode ?? MacroTriggerMode.Press;
-            if (FindTriggerConflict(selected.Definition, trigger, selected) is { } conflict)
-            {
-                MacroStatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
-                return;
-            }
-
-            selected.SetTrigger(trigger);
-            MarkMacroDirty(selected);
-            if (!await TrySaveMacroProfileAsync(cancellationToken))
-            {
-                return;
-            }
-
-            RefreshMacroRuntime();
-            MacroStatusText = AppStrings.FormatText(
-                "MacroTriggerCaptured",
-                MacroRowViewModel.DescribeTrigger(trigger));
+            await ApplyMacroTriggerAsync(selected, trigger, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -1165,6 +1197,58 @@ public sealed partial class MainViewModel
                 IsMacroTriggerCapturing = false;
             }
         }
+    }
+
+    public async Task SetMacroNagaSideButtonTriggerAsync(
+        int sideButton,
+        CancellationToken cancellationToken = default)
+    {
+        if (SelectedMacro is not { } selected ||
+            !CanEditMacro ||
+            sideButton is < 1 or > 12)
+        {
+            return;
+        }
+
+        CancelMacroCapture();
+        CancelMacroStepCapture();
+        CancelMacroPlaybackShortcutCapture();
+        await ApplyMacroTriggerAsync(
+            selected,
+            new MacroTrigger
+            {
+                Input = new MacroInput
+                {
+                    Kind = MacroInputKind.NagaSideButton,
+                    SideButton = sideButton,
+                },
+            },
+            cancellationToken);
+    }
+
+    private async Task ApplyMacroTriggerAsync(
+        MacroRowViewModel selected,
+        MacroTrigger trigger,
+        CancellationToken cancellationToken)
+    {
+        trigger.Mode = selected.Definition.Trigger?.Mode ?? MacroTriggerMode.Press;
+        if (FindTriggerConflict(selected.Definition, trigger, selected) is { } conflict)
+        {
+            MacroStatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
+            return;
+        }
+
+        selected.SetTrigger(trigger);
+        MarkMacroDirty(selected);
+        if (!await TrySaveMacroProfileAsync(cancellationToken))
+        {
+            return;
+        }
+
+        RefreshMacroRuntime();
+        MacroStatusText = AppStrings.FormatText(
+            "MacroTriggerCaptured",
+            MacroRowViewModel.DescribeTrigger(trigger));
     }
 
     public async Task ClearMacroTriggerAsync(CancellationToken cancellationToken = default)
@@ -1236,7 +1320,8 @@ public sealed partial class MainViewModel
         {
             var trigger = await _macroRuntime.CaptureNextTriggerAsync(
                 allowModifierCombo: false,
-                capture.Token);
+                allowNagaSideButton: false,
+                cancellationToken: capture.Token);
             if (trigger is null)
             {
                 MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
@@ -1912,8 +1997,13 @@ public sealed partial class MainViewModel
 
     private void SyncMacroPlaybackState()
     {
+        var wasPlaying = IsMacroPlaying;
         IsMacroPlaying = _macroRuntime.IsPlaying;
         IsMacroPaused = _macroRuntime.IsPaused;
+        if (wasPlaying && !IsMacroPlaying)
+        {
+            _diagnosticLog.TryWrite("macro", "playback stopped");
+        }
     }
 
     public async Task ExportSelectedMacroAsync(
@@ -2507,6 +2597,7 @@ public sealed partial class MainViewModel
 
     private void SetMacroRuntimeError(string message)
     {
+        _diagnosticLog.TryWrite("macro", $"runtime error: {message}");
         if (_macroDispatcherQueue is { HasThreadAccess: false } dispatcher)
         {
             dispatcher.TryEnqueue(() =>

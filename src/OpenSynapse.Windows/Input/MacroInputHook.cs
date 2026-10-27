@@ -73,6 +73,8 @@ public sealed class MacroInputHook : IDisposable
     private uint _threadId;
     private nint _keyboardHook;
     private nint _mouseHook;
+    private RazerDeviceButtonInput? _razerDeviceButtons;
+    private RazerPrivateKeyInput? _razerPrivateKeys;
     private Exception? _startupError;
     private volatile bool _captureMouseMoves;
     private byte _modifierBits;
@@ -95,6 +97,37 @@ public sealed class MacroInputHook : IDisposable
     {
         get => _captureMouseMoves;
         set => _captureMouseMoves = value;
+    }
+
+    public static bool SupportsPhysicalState(MacroInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        return input.Kind switch
+        {
+            MacroInputKind.Keyboard => input.VirtualKey is > 0 and <= 0xFF,
+            MacroInputKind.MouseButton => input.MouseButton is >= 1 and <= 5,
+            _ => false,
+        };
+    }
+
+    public static bool IsPhysicallyDown(MacroInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        var virtualKey = input.Kind switch
+        {
+            MacroInputKind.Keyboard => input.VirtualKey,
+            MacroInputKind.MouseButton => input.MouseButton switch
+            {
+                1 => 0x01, // VK_LBUTTON
+                2 => 0x02, // VK_RBUTTON
+                3 => 0x04, // VK_MBUTTON
+                4 => 0x05, // VK_XBUTTON1
+                5 => 0x06, // VK_XBUTTON2
+                _ => 0,
+            },
+            _ => 0,
+        };
+        return virtualKey != 0 && (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
     }
 
     public void Start()
@@ -183,6 +216,30 @@ public sealed class MacroInputHook : IDisposable
             // Force the message queue into existence so Dispose can post WM_QUIT before the loop starts.
             PeekMessage(out _, 0, 0, 0, 0);
             _modifierBits = ReadModifierBits();
+            var razerDeviceButtons = new RazerDeviceButtonInput(HandleRazerDeviceButton);
+            try
+            {
+                razerDeviceButtons.Start();
+                _razerDeviceButtons = razerDeviceButtons;
+            }
+            catch
+            {
+                // Raw Input only adds device-scoped triggers. A failure here must
+                // not disable the keyboard and mouse hooks that already work.
+                razerDeviceButtons.Dispose();
+            }
+
+            var razerPrivateKeys = new RazerPrivateKeyInput(HandleRazerDeviceButton);
+            try
+            {
+                razerPrivateKeys.Start();
+                _razerPrivateKeys = razerPrivateKeys;
+            }
+            catch
+            {
+                razerPrivateKeys.Dispose();
+            }
+
             var module = GetModuleHandle(null);
             keyboardHook = SetWindowsHookEx(WhKeyboardLl, _keyboardProc, module, 0);
             if (keyboardHook == 0)
@@ -205,7 +262,13 @@ public sealed class MacroInputHook : IDisposable
                 if (message.Message == WmTimer && message.WParam == MouseMoveTimerId)
                 {
                     FlushMouseMove();
+                    continue;
                 }
+
+                // Raw Input arrives as WM_INPUT on the hidden window. Low-level
+                // hooks fire inside GetMessage, but window messages still need
+                // to be dispatched to reach the window procedure.
+                _ = DispatchMessage(in message);
             }
         }
         catch (Exception exception)
@@ -215,6 +278,10 @@ public sealed class MacroInputHook : IDisposable
         }
         finally
         {
+            _razerDeviceButtons?.Dispose();
+            _razerDeviceButtons = null;
+            _razerPrivateKeys?.Dispose();
+            _razerPrivateKeys = null;
             StopMouseMoveTimer();
             _hasPendingMouseMove = false;
             if (keyboardHook != 0)
@@ -358,6 +425,13 @@ public sealed class MacroInputHook : IDisposable
         {
             return CallNextHookEx(0, code, wParam, lParam);
         }
+    }
+
+    private void HandleRazerDeviceButton(MacroInput input, bool isDown)
+    {
+        // Raw Input cannot suppress the legacy key report, so the result is
+        // intentionally ignored. The trigger itself is still delivered.
+        _ = _handler(CreateEvent(input, isDown));
     }
 
     private nint HandleMouseMove(int code, nint wParam, nint lParam)
@@ -664,6 +738,9 @@ public sealed class MacroInputHook : IDisposable
 
     [DllImport("user32.dll")]
     private static extern int GetMessage(out Msg message, nint window, uint filterMin, uint filterMax);
+
+    [DllImport("user32.dll")]
+    private static extern nint DispatchMessage(in Msg message);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

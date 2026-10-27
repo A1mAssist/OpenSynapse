@@ -5,6 +5,9 @@ public enum MacroInputKind
     Keyboard = 0,
     MouseButton = 1,
     MouseWheel = 2,
+    NagaSideButton = 3,
+    DeviceButton = 4,
+    RazerKey = 5,
 }
 
 public enum MacroStepKind
@@ -75,6 +78,10 @@ public sealed class MacroInput
     public int VirtualKey { get; set; }
     public int ScanCode { get; set; }
     public int MouseButton { get; set; }
+    public int SideButton { get; set; }
+    public int DeviceId { get; set; }
+    public string? DeviceName { get; set; }
+    public int RazerKeyCode { get; set; }
     public int WheelDelta { get; set; }
     public bool WheelHorizontal { get; set; }
     public bool Extended { get; set; }
@@ -91,6 +98,13 @@ public sealed class MacroInput
         {
             MacroInputKind.Keyboard => VirtualKey == other.VirtualKey && Extended == other.Extended,
             MacroInputKind.MouseButton => MouseButton == other.MouseButton,
+            MacroInputKind.NagaSideButton => SideButton == other.SideButton,
+            MacroInputKind.DeviceButton => DeviceId == other.DeviceId &&
+                VirtualKey == other.VirtualKey &&
+                ScanCode == other.ScanCode &&
+                Extended == other.Extended,
+            MacroInputKind.RazerKey => DeviceId == other.DeviceId &&
+                RazerKeyCode == other.RazerKeyCode,
             MacroInputKind.MouseWheel => WheelDelta == other.WheelDelta &&
                 WheelHorizontal == other.WheelHorizontal,
             _ => false,
@@ -98,11 +112,15 @@ public sealed class MacroInput
     }
 
     public bool IsModifierKey =>
-        Kind == MacroInputKind.Keyboard &&
+        Kind is MacroInputKind.Keyboard or MacroInputKind.DeviceButton &&
         VirtualKey is 0x10 or 0x11 or 0x12 or 0x5B or 0x5C or
             0xA0 or 0xA1 or 0xA2 or 0xA3 or 0xA4 or 0xA5;
 
-    public bool IsValid(bool allowPrimaryMouseButton, bool allowWheel = true)
+    public bool IsValid(
+        bool allowPrimaryMouseButton,
+        bool allowWheel = true,
+        bool allowNagaSideButton = false,
+        bool allowDeviceButton = false)
     {
         return Kind switch
         {
@@ -110,6 +128,14 @@ public sealed class MacroInput
             MacroInputKind.MouseButton => allowPrimaryMouseButton
                 ? MouseButton is >= 1 and <= 5
                 : MouseButton is >= 3 and <= 5,
+            MacroInputKind.NagaSideButton => allowNagaSideButton && SideButton is >= 1 and <= 12,
+            MacroInputKind.DeviceButton => allowDeviceButton &&
+                DeviceId is > 0 and <= 0xFFFF &&
+                VirtualKey is > 0 and <= 0xFF &&
+                ScanCode is >= 0 and <= 0xFFFF,
+            MacroInputKind.RazerKey => allowDeviceButton &&
+                DeviceId is > 0 and <= 0xFFFF &&
+                RazerKeyCode is > 0 and <= 0xFF,
             MacroInputKind.MouseWheel => allowWheel && WheelDelta is not 0 and >= -1200 and <= 1200,
             _ => false,
         };
@@ -121,10 +147,20 @@ public sealed class MacroInput
         VirtualKey = VirtualKey,
         ScanCode = ScanCode,
         MouseButton = MouseButton,
+        SideButton = SideButton,
+        DeviceId = DeviceId,
+        DeviceName = DeviceName,
+        RazerKeyCode = RazerKeyCode,
         WheelDelta = WheelDelta,
         WheelHorizontal = WheelHorizontal,
         Extended = Extended,
     };
+
+    internal void ApplySafeDefaults()
+    {
+        var name = DeviceName?.Trim();
+        DeviceName = string.IsNullOrEmpty(name) ? null : name[..Math.Min(name.Length, 128)];
+    }
 }
 
 public sealed class MacroTrigger
@@ -143,6 +179,7 @@ public sealed class MacroTrigger
 
     public void ApplySafeDefaults()
     {
+        Input.ApplySafeDefaults();
         Modifiers &= MacroModifierKeys.All;
         if (!Enum.IsDefined(Mode))
         {
@@ -436,7 +473,11 @@ public sealed class MacroDefinition
 
         if (Trigger?.Input is not { } triggerInput ||
             triggerInput.IsModifierKey ||
-            !triggerInput.IsValid(allowPrimaryMouseButton: false, allowWheel: false))
+            !triggerInput.IsValid(
+                allowPrimaryMouseButton: false,
+                allowWheel: false,
+                allowNagaSideButton: true,
+                allowDeviceButton: true))
         {
             Trigger = null;
         }

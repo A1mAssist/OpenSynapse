@@ -241,7 +241,11 @@ public static class MacroFileStore
              (trigger.Modifiers & ~MacroModifierKeys.All) != 0 ||
              trigger.Input is not { } triggerInput ||
              triggerInput.IsModifierKey ||
-             !triggerInput.IsValid(allowPrimaryMouseButton: false, allowWheel: false)))
+             !triggerInput.IsValid(
+                 allowPrimaryMouseButton: false,
+                 allowWheel: false,
+                 allowNagaSideButton: true,
+                 allowDeviceButton: true)))
         {
             return false;
         }

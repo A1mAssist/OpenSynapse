@@ -174,6 +174,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal event Action<bool>? BladeOneTimeFullChargeChangedByUser;
     internal event Action<int>? InternalDisplayRefreshRateChangedByUser;
     internal event Action? BladeInputProfileChanged;
+    internal event Action<string, string>? MacroContinuousPlaybackStarted;
 
     internal IReadOnlySet<BladePerformanceMode> BladePerformanceCycleModes =>
         _bladePerformanceCycleModes;
