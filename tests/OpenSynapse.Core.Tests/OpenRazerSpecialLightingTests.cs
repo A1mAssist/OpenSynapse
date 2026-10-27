@@ -11,7 +11,9 @@ public sealed class OpenRazerSpecialLightingTests
     [InlineData(0x0527)]
     [InlineData(0x0560)]
     public void KrakenLightingMergesIntoTheAudioPage(ushort productId) =>
-        Assert.True(OpenRazerSpecialLightingService.IsMergedIntoAudioPage(productId), $"0x{productId:X4}");
+        Assert.True(
+            OpenRazerSpecialLightingService.IsMergedIntoAudioPage(productId, hasAudioFeatureInterface: true),
+            $"0x{productId:X4}");
 
     [Theory]
     [InlineData(0x0501)]
@@ -19,7 +21,20 @@ public sealed class OpenRazerSpecialLightingTests
     [InlineData(0x0506)]
     [InlineData(0x0510)]
     public void OlderKrakenModelsKeepTheirLightingRow(ushort productId) =>
-        Assert.False(OpenRazerSpecialLightingService.IsMergedIntoAudioPage(productId), $"0x{productId:X4}");
+        Assert.False(
+            OpenRazerSpecialLightingService.IsMergedIntoAudioPage(productId, hasAudioFeatureInterface: false),
+            $"0x{productId:X4}");
+
+    [Fact]
+    public void KrakenV4KeepsItsLightingRowBecauseItHasNoAudioFeatureInterface()
+    {
+        // The Kraken V4 exposes only a 64-byte FF14 collection, so the audio page
+        // never selects it. Moving its lighting card to the audio page would hide
+        // the headset from the app entirely.
+        Assert.False(
+            OpenRazerSpecialLightingService.IsMergedIntoAudioPage(0x056B, hasAudioFeatureInterface: false),
+            "0x056B");
+    }
 
     [Fact]
     public void ArgbFrameCarriesChannelAndColorBytes()
