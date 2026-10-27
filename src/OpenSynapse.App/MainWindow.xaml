@@ -453,6 +453,95 @@
                       </Grid>
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding LightingVisibility}">
+                    <StackPanel Spacing="14">
+                      <TextBlock Text="灯光" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Slider Minimum="0" Maximum="100" Value="{Binding Brightness, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" />
+                        <TextBlock Grid.Column="1" Text="{Binding BrightnessText}" FontFamily="Cascadia Mono,Consolas" VerticalAlignment="Center" />
+                      </Grid>
+                      <ComboBox Header="效果" ItemsSource="{Binding LightingEffectOptions}" SelectedIndex="{Binding SelectedLightingEffectIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <ComboBox Header="方向" ItemsSource="{Binding LightingDirectionOptions}" SelectedIndex="{Binding SelectedLightingDirectionIndex, Mode=TwoWay}" Visibility="{Binding LightingDirectionVisibility}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <ColorPicker Color="{Binding LightingColor, Mode=TwoWay}" Visibility="{Binding LightingColorVisibility}" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="False" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="260" HorizontalAlignment="Left" />
+                      <Button Content="应用灯光" Click="BleApplyLightingClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                      <TextBlock Text="{Binding LightingStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="按键映射" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <ComboBox Header="层" ItemsSource="{Binding MappingLayerOptions}" SelectedIndex="{Binding SelectedMappingLayerIndex, Mode=TwoWay}" SelectionChanged="BleMappingLayerChanged" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <TextBlock Text="{Binding MappingStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                      <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding MappingRows}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:RazerBleMappingRowViewModel">
+                              <Grid ColumnDefinitions="130,*" ColumnSpacing="10" Padding="0,6">
+                                <StackPanel Spacing="2">
+                                  <TextBlock Text="{Binding ButtonName}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                                  <TextBlock Text="{Binding CurrentActionText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Grid Grid.Column="1" ColumnDefinitions="120,160,100" ColumnSpacing="8">
+                                  <ComboBox ItemsSource="{Binding GroupOptions}" DisplayMemberPath="Name" SelectedIndex="{Binding SelectedGroupIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                                  <ComboBox Grid.Column="1" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding SelectedOptionIndex, Mode=TwoWay}" Visibility="{Binding OptionVisibility}" HorizontalAlignment="Stretch" />
+                                  <ComboBox Grid.Column="2" ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding SelectedModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" HorizontalAlignment="Stretch" />
+                                </Grid>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </ScrollViewer>
+                      <Button Content="应用映射" Click="BleApplyMappingClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding DpiStagesVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="DPI 档位" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <NumberBox Header="当前档位" Value="{Binding ActiveDpiStageValue, Mode=TwoWay}" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" />
+                      <ItemsControl ItemsSource="{Binding DpiStages}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="viewModels:RazerBleDpiStageRowViewModel">
+                            <Grid ColumnDefinitions="90,*,*" ColumnSpacing="10" Padding="0,4">
+                              <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                              <NumberBox Grid.Column="1" Header="X" Value="{Binding X, Mode=TwoWay}" Minimum="1" Maximum="65535" SmallChange="50" SpinButtonPlacementMode="Compact" />
+                              <NumberBox Grid.Column="2" Header="Y" Value="{Binding Y, Mode=TwoWay}" Minimum="1" Maximum="65535" SmallChange="50" SpinButtonPlacementMode="Compact" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <Button Content="应用 DPI 档位" Click="BleApplyDpiStagesClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                      <TextBlock Text="{Binding DpiStagesStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ScrollVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="滚轮" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <ComboBox Header="模式" ItemsSource="{Binding ScrollModeOptions}" SelectedIndex="{Binding SelectedScrollModeIndex, Mode=TwoWay}" Visibility="{Binding ScrollModeVisibility}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <ToggleSwitch Header="Smart Reel" IsOn="{Binding ScrollSmartReelEnabled, Mode=TwoWay}" Visibility="{Binding ScrollSmartReelVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <NumberBox Header="Smart Reel 阈值" Value="{Binding ScrollSmartReelThreshold, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding ScrollSmartReelThresholdVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <ToggleSwitch Header="滚轮加速" IsOn="{Binding ScrollAccelerationEnabled, Mode=TwoWay}" Visibility="{Binding ScrollAccelerationVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <Button Content="应用滚轮设置" Click="BleApplyScrollClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                      <TextBlock Text="{Binding ScrollStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding PowerVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="电源" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <NumberBox Header="低电量提醒 (%)" Value="{Binding LowBatteryThresholdPercent, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding PowerLowBatteryVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <ToggleSwitch Header="自动休眠" IsOn="{Binding AutoSleepEnabled, Mode=TwoWay}" Visibility="{Binding PowerAutoSleepVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <NumberBox Header="休眠时间 (分钟)" Value="{Binding SleepMinutes, Mode=TwoWay}" Minimum="1" Maximum="65535" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding PowerSleepTimeVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <Button Content="应用电源设置" Click="BleApplyPowerClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                      <TextBlock Text="{Binding PowerStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ProfilesVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="配置文件" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <ComboBox Header="当前配置" ItemsSource="{Binding ProfileOptions}" SelectedIndex="{Binding SelectedProfileIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <Button Content="切换配置" Click="BleApplyProfileClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                      <TextBlock Text="{Binding ProfileStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
                 <StackPanel x:Name="OpenRazerDevicePanel" DataContext="{Binding SelectedOpenRazerDevice}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
