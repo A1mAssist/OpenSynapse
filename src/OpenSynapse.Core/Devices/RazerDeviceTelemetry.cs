@@ -208,14 +208,8 @@ public static class DeviceCapabilitySummaryCalculator
                     telemetry.BladeKeyboardBrightness,
                     telemetry.BladePerformanceMode,
                     telemetry.BladeChargeLimitPercent,
-                    telemetry.BladeFanMode,
-                    telemetry.BladeCurrentFanCpuRpm,
-                    telemetry.BladeCurrentFanGpuRpm,
-                    telemetry.BladeNativeDisplayMode,
-                    telemetry.BladeSkuHardwareConfiguration,
-                    telemetry.BladeOneTimeFullChargeEnabled,
-                    telemetry.BladeAdapterPower),
-                10),
+                    telemetry.BladeFanMode),
+                4),
             "viper-184" => new(
                 Count(
                     telemetry.ViperBatteryPercent,
