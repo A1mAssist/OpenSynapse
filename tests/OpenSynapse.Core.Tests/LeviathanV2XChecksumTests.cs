@@ -52,6 +52,24 @@ public sealed class LeviathanV2XChecksumTests
         Assert.False(RazerFeatureReport.MatchesWithTransactionChecksum(request, response));
     }
 
+    /// <summary>
+    /// The transport change alone was not enough: the parse helpers re-validate the
+    /// checksum, so a folded reply still threw InvalidDataException and every read that
+    /// parsed a value showed up as unsupported.
+    /// </summary>
+    [Fact]
+    public void TheParserAcceptsTheSoundbarsFoldedChecksum()
+    {
+        var response = RazerFeatureReport.CreateRequest(0x08, 0x02, 0x00, 0x81, []);
+        response[0] = LeviathanV2XProtocol.ReportId;
+        response[1] = 0x02;
+        response[9] = 0x01;
+        response[10] = 0x06;
+        response[89] = ChecksumIncludingTransaction(response);
+
+        Assert.Equal([0x01, 0x06], OpenRazerStandardProtocol.Arguments(response, 2).ToArray());
+    }
+
     private static byte ChecksumIncludingTransaction(byte[] report)
     {
         byte crc = 0;
