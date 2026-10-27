@@ -20,7 +20,13 @@ public sealed class BladeFanCurve
     public const int DefaultMinimumGpuTemperatureCelsius = 30;
     public const int DefaultMinimumFanSpeedRpm = 2300;
     public const int MinimumPointFanSpeedRpm = 1900;
-    public const int MaximumPointFanSpeedRpm = 5000;
+    /// <summary>
+    /// Highest speed a curve point may carry. The official middleware drives the same
+    /// fan-target report as rpm/100 and its Performance and Hyperboost modes run up to
+    /// 5400 RPM, so a curve may ask for that too; the per-model ceiling in
+    /// BladeModelCapabilities still guards the write itself.
+    /// </summary>
+    public const int MaximumPointFanSpeedRpm = 5400;
     private const int MaximumPoints = 32;
 
     public BladeFanCurve(
@@ -209,23 +215,33 @@ public sealed class BladeFanCurve
         new(65, 2800, 2900),
         new(75, 3500, 3700),
         new(85, 4300, 4600),
-        new(92, 5000, 5000),
+        new(92, 5400, 5400),
     ];
 }
 
 public static class BladeFanLimits
 {
     public const int MinimumRpm = 2000;
-    public const int MaximumRpm = 5000;
+    /// <summary>
+    /// Highest speed the shared fan-target report can carry. The official middleware
+    /// writes the same rpm/100 value and its own Performance and Hyperboost modes run
+    /// up to 5400 RPM, so this is the ceiling the firmware accepts rather than a guess.
+    /// </summary>
+    public const int MaximumRpm = 5400;
     public const int StepRpm = 100;
 
     public static void ValidateTargetRpm(int rpm)
     {
-        if (rpm is < MinimumRpm or > MaximumRpm || (rpm - MinimumRpm) % StepRpm != 0)
+        ValidateTargetRpm(rpm, MaximumRpm);
+    }
+
+    public static void ValidateTargetRpm(int rpm, int maximumRpm)
+    {
+        if (rpm is < MinimumRpm || rpm > maximumRpm || (rpm - MinimumRpm) % StepRpm != 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(rpm),
-                $"Fan speed must be between {MinimumRpm} and {MaximumRpm} RPM in increments of {StepRpm} RPM.");
+                $"Fan speed must be between {MinimumRpm} and {maximumRpm} RPM in increments of {StepRpm} RPM.");
         }
     }
 }

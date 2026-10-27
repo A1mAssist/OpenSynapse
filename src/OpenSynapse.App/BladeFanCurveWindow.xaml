@@ -23,8 +23,8 @@
               <DataTemplate>
                 <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10" Padding="0,3">
                   <NumberBox Value="{Binding TemperatureInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="35" Maximum="120" SpinButtonPlacementMode="Compact" />
-                  <NumberBox Grid.Column="1" Value="{Binding CpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
-                  <NumberBox Grid.Column="2" Value="{Binding GpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5000" SmallChange="100" SpinButtonPlacementMode="Compact" />
+                  <NumberBox Grid.Column="1" Value="{Binding CpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5400" SmallChange="100" SpinButtonPlacementMode="Compact" />
+                  <NumberBox Grid.Column="2" Value="{Binding GpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5400" SmallChange="100" SpinButtonPlacementMode="Compact" />
                   <Button Grid.Column="3" Content="×" Tag="{Binding}" Click="RemoveBladeFanCurveTierClick" HorizontalAlignment="Right" Padding="0" MinWidth="30" />
                 </Grid>
               </DataTemplate>

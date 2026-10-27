@@ -265,7 +265,7 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade (Late 2016) | `1532:0224` | — |
 | Razer Blade (QHD) | `1532:020F` | — |
 | Razer Blade 14 (2021) | `1532:0270` | — |
-| Razer Blade 14 (2022) | `1532:028C` | Blade 专用控制；自定义模式下固定转速 3500–5000 RPM |
+| Razer Blade 14 (2022) | `1532:028C` | Blade 专用控制；自定义模式下固定转速 3500–5400 RPM |
 | Razer Blade 14 (2023) | `1532:029D` | Blade 专用控制 |
 | Razer Blade 14 (2024) | `1532:02B6` | Blade 专用控制 |
 | Razer Blade 14 (2025) | `1532:02C5` | Blade 专用控制 |

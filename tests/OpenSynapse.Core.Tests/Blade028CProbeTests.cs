@@ -50,7 +50,7 @@ public sealed class Blade028CProbeTests
         Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
         Assert.True(BladeModelCapabilities.FixedFanRequiresCustomMode(productId));
         Assert.Equal(3500, BladeModelCapabilities.MinimumFanTargetRpmFor(productId));
-        Assert.Equal(5000, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+        Assert.Equal(5400, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
         Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
         Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
     }
