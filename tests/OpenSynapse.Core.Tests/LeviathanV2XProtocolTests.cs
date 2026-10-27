@@ -59,6 +59,70 @@ public sealed class LeviathanV2XProtocolTests
         Assert.Equal(0x04, LeviathanV2XProtocol.ReadFirstRegion(response));
     }
 
+    [Fact]
+    public void SetEffect_UsesTheMiddlewareQuickEffectPayload()
+    {
+        var report = LeviathanV2XProtocol.CreateSetEffect(0x00, 0x0F, 0x01, 0, 0, [0x11, 0x22, 0x33]);
+
+        Assert.Equal(0x09, report[6]);
+        Assert.Equal(0x0F, report[7]);
+        Assert.Equal(0x02, report[8]);
+        Assert.Equal(0x00, report[9]);
+        Assert.Equal(0x0F, report[10]);
+        Assert.Equal(0x01, report[11]);
+        Assert.Equal(0x00, report[12]);
+        Assert.Equal(0x00, report[13]);
+        Assert.Equal(0x01, report[14]);
+        Assert.Equal([0x11, 0x22, 0x33], report[15..18]);
+        Assert.Equal(RazerFeatureReport.CalculateCrc(report), report[89]);
+    }
+
+    [Fact]
+    public void WaveEffect_CarriesTheDirectionAndMiddlewareRate()
+    {
+        var report = LeviathanV2XProtocol.CreateEffect(
+            0x0F, OpenRazerLightingEffect.Wave, 2, default, default);
+
+        Assert.Equal(0x06, report[6]);
+        Assert.Equal(0x04, report[11]);
+        Assert.Equal(0x02, report[12]);
+        Assert.Equal(40, report[13]);
+        Assert.Equal(0x00, report[14]);
+    }
+
+    [Fact]
+    public void BreathingDualEffect_WritesBothRgbTriples()
+    {
+        var report = LeviathanV2XProtocol.CreateEffect(
+            0x0F, OpenRazerLightingEffect.BreathingDual, 1,
+            new OpenRazerColor(1, 2, 3), new OpenRazerColor(4, 5, 6));
+
+        Assert.Equal(0x0C, report[6]);
+        Assert.Equal(0x02, report[11]);
+        Assert.Equal(0x02, report[12]);
+        Assert.Equal(0x02, report[14]);
+        Assert.Equal([1, 2, 3, 4, 5, 6], report[15..21]);
+    }
+
+    [Theory]
+    [InlineData(OpenRazerLightingEffect.Reactive)]
+    [InlineData(OpenRazerLightingEffect.Custom)]
+    public void CreateEffect_RejectsEffectsTheSoundbarDoesNotExpose(OpenRazerLightingEffect effect)
+    {
+        Assert.Throws<NotSupportedException>(() =>
+            LeviathanV2XProtocol.CreateEffect(0x0F, effect, 1, default, default));
+    }
+
+    [Fact]
+    public void ReadEffect_ReturnsTheStoredProfileRegionAndEffect()
+    {
+        var response = Response(0x03, 0x0F, 0x82, [0x00, 0x0F, 0x03]);
+
+        Assert.Equal(0x03, LeviathanV2XProtocol.ReadEffect(response, out var profile, out var region));
+        Assert.Equal(0x00, profile);
+        Assert.Equal(0x0F, region);
+    }
+
     [Theory]
     [InlineData(0, "Razer Leviathan V2 X")]
     [InlineData(128, "Razer | Pokémon Pikachu Edition Soundbar")]
