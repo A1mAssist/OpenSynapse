@@ -1728,6 +1728,7 @@
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
   <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
   <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>滚轮加速</value></data>
+  <data name="OpenRazerSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel 阈值</value></data>
   <data name="OpenRazerKeyswitchExpander.Header" xml:space="preserve"><value>键轴优化</value></data>
   <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>选择功能键或媒体键作为第一层。</value></data>
   <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>功能键优先</value></data>
@@ -1919,6 +1920,8 @@
   <data name="OpenRazerCapabilityScrollAccelerationWrite" xml:space="preserve"><value>滚轮加速写入</value></data>
   <data name="OpenRazerCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel 读取</value></data>
   <data name="OpenRazerCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel 写入</value></data>
+  <data name="OpenRazerCapabilitySmartReelThresholdRead" xml:space="preserve"><value>Smart Reel 阈值读取</value></data>
+  <data name="OpenRazerCapabilitySmartReelThresholdWrite" xml:space="preserve"><value>Smart Reel 阈值写入</value></data>
   <data name="OpenRazerCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn 主层写入</value></data>
   <data name="OpenRazerCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>键轴优化读取</value></data>
   <data name="OpenRazerCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>键轴优化写入</value></data>

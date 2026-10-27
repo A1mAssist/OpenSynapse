@@ -1013,6 +1013,14 @@ public sealed class OpenRazerDeviceService
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetSmartReel(connection.Definition, enabled), cancellationToken);
 
+    public async Task<byte> GetSmartReelThresholdAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseSecondArgument(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetSmartReelThreshold(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public Task SetSmartReelThresholdAsync(OpenRazerDeviceConnection connection, byte level, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetSmartReelThreshold(connection.Definition, level), cancellationToken);
+
     public Task SetFnPrimaryAsync(OpenRazerDeviceConnection connection, bool fnFunctionsArePrimary, CancellationToken cancellationToken = default) =>
         ExecuteWithoutResultAsync(connection, OpenRazerStandardProtocol.Create(connection.Definition,
             "razer_chroma_misc_fn_key_toggle", 0x02, 0x02, 0x06,
@@ -1510,6 +1518,8 @@ public sealed class OpenRazerDeviceService
         Add(OpenRazerBackendCapability.ScrollAccelerationWrite, "set_scroll_acceleration", "razer_chroma_misc_set_scroll_acceleration");
         Add(OpenRazerBackendCapability.SmartReelRead, "get_scroll_smart_reel", "razer_chroma_misc_get_scroll_smart_reel");
         Add(OpenRazerBackendCapability.SmartReelWrite, "set_scroll_smart_reel", "razer_chroma_misc_set_scroll_smart_reel");
+        Add(OpenRazerBackendCapability.SmartReelThresholdRead, "get_scroll_smart_reel_threshold", "razer_chroma_misc_get_scroll_smart_reel_threshold");
+        Add(OpenRazerBackendCapability.SmartReelThresholdWrite, "set_scroll_smart_reel_threshold", "razer_chroma_misc_set_scroll_smart_reel_threshold");
         Add(OpenRazerBackendCapability.KeyswitchOptimizationRead, "get_keyswitch_optimization", "razer_chroma_misc_get_keyswitch_optimization");
         if (device.HasSourceCapability("set_keyswitch_optimization") &&
             Has("razer_chroma_misc_set_keyswitch_optimization_command1") &&

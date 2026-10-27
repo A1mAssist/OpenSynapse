@@ -394,6 +394,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ScrollAccelerationWriteVisibility));
         OnPropertyChanged(nameof(SmartReelVisibility));
         OnPropertyChanged(nameof(SmartReelWriteVisibility));
+        OnPropertyChanged(nameof(SmartReelThresholdVisibility));
+        OnPropertyChanged(nameof(SmartReelThresholdWriteVisibility));
         NotifyMiddlewareStateChanged();
         OnPropertyChanged(nameof(CanEditScrollMode));
         OnPropertyChanged(nameof(CanWriteScrollMode));
@@ -401,6 +403,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanWriteScrollAcceleration));
         OnPropertyChanged(nameof(CanEditSmartReel));
         OnPropertyChanged(nameof(CanWriteSmartReel));
+        OnPropertyChanged(nameof(CanEditSmartReelThreshold));
+        OnPropertyChanged(nameof(CanWriteSmartReelThreshold));
         OnPropertyChanged(nameof(KeyswitchVisibility));
         OnPropertyChanged(nameof(KeyswitchWriteVisibility));
         OnPropertyChanged(nameof(CanEditKeyswitch));

@@ -94,6 +94,8 @@ public enum OpenRazerBackendCapability
     ScrollAccelerationWrite,
     SmartReelRead,
     SmartReelWrite,
+    SmartReelThresholdRead,
+    SmartReelThresholdWrite,
     FnPrimaryWrite,
     KeyswitchOptimizationRead,
     KeyswitchOptimizationWrite,

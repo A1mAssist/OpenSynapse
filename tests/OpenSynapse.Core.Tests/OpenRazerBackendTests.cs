@@ -252,7 +252,7 @@ public sealed class OpenRazerBackendTests
                 new(4, 3200, 3200),
                 new(5, 4000, 4000),
             ])).Report;
-        Assert.Equal(0x50, dpiStagesSet[6]);
+        Assert.Equal(0x26, dpiStagesSet[6]);
         Assert.Equal(0x06, dpiStagesSet[8]);
         Assert.Equal(0x01, dpiStagesSet[RazerFeatureReport.ArgumentsOffset]);
 
@@ -1069,6 +1069,8 @@ public sealed class OpenRazerBackendTests
                 (OpenRazerBackendCapability.ScrollAccelerationWrite, ["set_scroll_acceleration"]),
                 (OpenRazerBackendCapability.SmartReelRead, ["get_scroll_smart_reel"]),
                 (OpenRazerBackendCapability.SmartReelWrite, ["set_scroll_smart_reel"]),
+                (OpenRazerBackendCapability.SmartReelThresholdRead, ["get_scroll_smart_reel_threshold"]),
+                (OpenRazerBackendCapability.SmartReelThresholdWrite, ["set_scroll_smart_reel_threshold"]),
                 (OpenRazerBackendCapability.KeyswitchOptimizationRead, ["get_keyswitch_optimization"]),
                 (OpenRazerBackendCapability.KeyswitchOptimizationWrite, ["set_keyswitch_optimization"]),
                 (OpenRazerBackendCapability.HyperPollingIndicatorWrite, ["set_hyperpolling_wireless_dongle_indicator_led_mode"]),
@@ -1514,6 +1516,8 @@ public sealed class OpenRazerBackendTests
                 OpenRazerBackendCapability.ScrollAccelerationWrite => OpenRazerMouseProtocol.SetScrollAcceleration(device, false),
                 OpenRazerBackendCapability.SmartReelRead => OpenRazerMouseProtocol.GetSmartReel(device),
                 OpenRazerBackendCapability.SmartReelWrite => OpenRazerMouseProtocol.SetSmartReel(device, false),
+                OpenRazerBackendCapability.SmartReelThresholdRead => OpenRazerMouseProtocol.GetSmartReelThreshold(device),
+                OpenRazerBackendCapability.SmartReelThresholdWrite => OpenRazerMouseProtocol.SetSmartReelThreshold(device, 50),
                 OpenRazerBackendCapability.FnPrimaryWrite => OpenRazerStandardProtocol.Create(device,
                     "razer_chroma_misc_fn_key_toggle", 0x02, 0x02, 0x06, [0, 0]),
                 OpenRazerBackendCapability.KeyswitchOptimizationRead => OpenRazerStandardProtocol.Create(device,

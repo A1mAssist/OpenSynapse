@@ -44,6 +44,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool _isScrollModeBusy;
     private bool _isScrollAccelerationBusy;
     private bool _isSmartReelBusy;
+    private bool _isSmartReelThresholdBusy;
     private bool _isScrollLoading;
     private bool _isKeyswitchBusy;
     private bool _isKeyswitchLoading;
@@ -72,6 +73,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private byte _scrollMode;
     private bool _scrollAccelerationEnabled;
     private bool _smartReelEnabled;
+    private byte _smartReelThreshold = 50;
     private OpenRazerKeyswitchOptimization _keyswitchOptimization;
     private byte _activeDpiStage = 1;
     private byte _hyperPollingIndicatorMode = 1;
@@ -813,6 +815,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         OpenRazerBackendCapability.ScrollAccelerationWrite,
         OpenRazerBackendCapability.SmartReelRead,
         OpenRazerBackendCapability.SmartReelWrite,
+        OpenRazerBackendCapability.SmartReelThresholdRead,
+        OpenRazerBackendCapability.SmartReelThresholdWrite,
         OpenRazerBackendCapability.LkScrollWheelModeRead,
         OpenRazerBackendCapability.LkScrollWheelModeWrite));
     public Visibility ScrollModeVisibility => Visibility.Collapsed;
@@ -823,19 +827,26 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public Visibility SmartReelVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.SmartReelRead, OpenRazerBackendCapability.SmartReelWrite));
     public Visibility SmartReelWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.SmartReelWrite));
+    public Visibility SmartReelThresholdVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.SmartReelThresholdRead, OpenRazerBackendCapability.SmartReelThresholdWrite));
+    public Visibility SmartReelThresholdWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.SmartReelThresholdWrite));
     public bool IsScrollLoading { get => _isScrollLoading; private set => SetField(ref _isScrollLoading, value); }
     public byte ScrollMode { get => _scrollMode; set => SetField(ref _scrollMode, value); }
     public bool ScrollAccelerationEnabled { get => _scrollAccelerationEnabled; set => SetField(ref _scrollAccelerationEnabled, value); }
     public bool SmartReelEnabled { get => _smartReelEnabled; set => SetField(ref _smartReelEnabled, value); }
+    public byte SmartReelThreshold { get => _smartReelThreshold; set => SetField(ref _smartReelThreshold, value); }
     public bool IsScrollModeBusy { get => _isScrollModeBusy; private set => SetBusy(ref _isScrollModeBusy, value, nameof(CanEditScrollMode), nameof(CanWriteScrollMode)); }
     public bool IsScrollAccelerationBusy { get => _isScrollAccelerationBusy; private set => SetBusy(ref _isScrollAccelerationBusy, value, nameof(CanEditScrollAcceleration), nameof(CanWriteScrollAcceleration)); }
     public bool IsSmartReelBusy { get => _isSmartReelBusy; private set => SetBusy(ref _isSmartReelBusy, value, nameof(CanEditSmartReel), nameof(CanWriteSmartReel)); }
+    public bool IsSmartReelThresholdBusy { get => _isSmartReelThresholdBusy; private set => SetBusy(ref _isSmartReelThresholdBusy, value, nameof(CanEditSmartReelThreshold), nameof(CanWriteSmartReelThreshold)); }
     public bool CanWriteScrollMode => CanUse(OpenRazerBackendCapability.ScrollModeWrite) && !IsScrollModeBusy;
     public bool CanWriteScrollAcceleration => CanUse(OpenRazerBackendCapability.ScrollAccelerationWrite) && !IsScrollAccelerationBusy;
     public bool CanWriteSmartReel => CanUse(OpenRazerBackendCapability.SmartReelWrite) && !IsSmartReelBusy;
+    public bool CanWriteSmartReelThreshold => CanUse(OpenRazerBackendCapability.SmartReelThresholdWrite) && !IsSmartReelThresholdBusy;
     public bool CanEditScrollMode => CanUse(OpenRazerBackendCapability.ScrollModeWrite);
     public bool CanEditScrollAcceleration => CanUse(OpenRazerBackendCapability.ScrollAccelerationWrite);
     public bool CanEditSmartReel => CanUse(OpenRazerBackendCapability.SmartReelWrite);
+    public bool CanEditSmartReelThreshold => CanUse(OpenRazerBackendCapability.SmartReelThresholdWrite);
 
     public Visibility KeyswitchVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.KeyswitchOptimizationRead,

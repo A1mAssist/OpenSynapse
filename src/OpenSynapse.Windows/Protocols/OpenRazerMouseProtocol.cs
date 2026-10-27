@@ -181,7 +181,9 @@ internal static class OpenRazerMouseProtocol
         }
         return OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_dpi_stages",
-            device.GetCommandSize("razer_chroma_misc_set_dpi_stages", MiddlewareDpiStageFrameSize),
+            // The middleware declares the builder as 80 bytes but overrides the size
+            // with 7*stageCount+3 on every write, so the frame only carries the stages.
+            checked((byte)(3 + (state.Stages.Count * 7))),
             0x04, 0x06, arguments);
     }
 
@@ -434,6 +436,16 @@ internal static class OpenRazerMouseProtocol
         OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_scroll_smart_reel", 0x50, 0x02, 0x17,
             [OpenRazerStandardProtocol.VariableStore, enabled ? (byte)1 : (byte)0]);
+
+    internal static OpenRazerRequest GetSmartReelThreshold(OpenRazerDeviceDefinition device) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_scroll_smart_reel_threshold", 0x02, 0x02, 0xA3,
+            [OpenRazerStandardProtocol.VariableStore]);
+
+    internal static OpenRazerRequest SetSmartReelThreshold(OpenRazerDeviceDefinition device, byte level) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_scroll_smart_reel_threshold", 0x02, 0x02, 0x23,
+            [OpenRazerStandardProtocol.VariableStore, level]);
 
     internal static OpenRazerRequest GetLkScrollWheelMode(OpenRazerDeviceDefinition device, byte profileId = 1) =>
         OpenRazerStandardProtocol.Create(device,
