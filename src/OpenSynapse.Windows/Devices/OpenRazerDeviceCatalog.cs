@@ -378,8 +378,11 @@ public sealed class OpenRazerDeviceCatalog
 
         // Upstream supports 00DE/00DF as Viper V3 Pro SE aliases. Windows reports their
         // feature report as 91 bytes including the report-id byte, same as the V3 Pro.
+        // The wireless SE firmware rejects the V3 Pro's high-rate polling commands
+        // (00:C0 / 00:40) and only answers the legacy 00:85 / 00:05 pair.
         AddViperV3ProSeAlias(0x00C0, 0x00DE, "Razer Viper V3 Pro SE (Wired)");
-        AddViperV3ProSeAlias(0x00C1, 0x00DF, "Razer Viper V3 Pro SE (Wireless)");
+        AddViperV3ProSeAlias(0x00C1, 0x00DF, "Razer Viper V3 Pro SE (Wireless)",
+            legacyPolling: true);
 
         AddMiddlewareMice();
 
@@ -496,12 +499,40 @@ public sealed class OpenRazerDeviceCatalog
                 new Dictionary<string, IReadOnlyList<OpenRazerCommandStep>>(StringComparer.Ordinal)));
         }
 
-        void AddViperV3ProSeAlias(ushort siblingId, ushort productId, string displayName)
+        void AddViperV3ProSeAlias(
+            ushort siblingId,
+            ushort productId,
+            string displayName,
+            bool legacyPolling = false)
         {
             if (!devices.TryGetValue(siblingId, out var sibling) ||
                 devices.ContainsKey(productId))
             {
                 return;
+            }
+
+            var transactions = sibling.Transactions;
+            var pollingRates = sibling.PollingRates;
+            var commandSequences = sibling.CommandSequences;
+            var commandSizes = sibling.CommandSizes;
+            if (legacyPolling)
+            {
+                var legacyTransactions = sibling.Transactions
+                    .Where(entry => entry.Key is not
+                        ("razer_chroma_misc_get_polling_rate2" or "razer_chroma_misc_set_polling_rate2"))
+                    .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+                legacyTransactions["razer_chroma_misc_get_polling_rate"] = 0x1F;
+                legacyTransactions["razer_chroma_misc_set_polling_rate"] = 0x1F;
+                transactions = legacyTransactions.ToFrozenDictionary(StringComparer.Ordinal);
+                pollingRates = Array.AsReadOnly([125, 500, 1000]);
+                commandSequences = sibling.CommandSequences
+                    .Where(entry => entry.Key != "razer_chroma_misc_set_polling_rate2")
+                    .ToFrozenDictionary(StringComparer.Ordinal);
+                // A command size is only valid for a command the device declares.
+                commandSizes = sibling.CommandSizes
+                    .Where(entry => entry.Key is not
+                        ("razer_chroma_misc_get_polling_rate2" or "razer_chroma_misc_set_polling_rate2"))
+                    .ToFrozenDictionary(StringComparer.Ordinal);
             }
 
             devices.Add(productId, new OpenRazerDeviceDefinition(
@@ -510,15 +541,15 @@ public sealed class OpenRazerDeviceCatalog
                 sibling.Category,
                 sibling.SourceCapabilities,
                 sibling.MaximumDpi,
-                sibling.PollingRates,
+                pollingRates,
                 sibling.MatrixDimensions,
                 sibling.DeviceWait,
-                sibling.Transactions,
+                transactions,
                 sibling.BuilderArgumentPrefixes,
                 sibling.DefaultStorage,
                 sibling.DefaultLedZone,
-                sibling.CommandSequences,
-                sibling.CommandSizes));
+                commandSequences,
+                commandSizes));
         }
     }
 
