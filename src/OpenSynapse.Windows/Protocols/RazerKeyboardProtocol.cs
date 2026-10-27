@@ -37,18 +37,19 @@ public static class RazerKeyboardProtocol
     public static byte[] GetGameModeState(byte transactionId) =>
         Create(transactionId, 4, 0x00, 0x88);
 
-    public static byte[] SetGameModeState(
-        byte transactionId,
-        byte gameMode,
-        byte keyCover,
-        byte lifted) =>
-        Create(transactionId, 4, 0x00, 0x08, gameMode, keyCover, lifted);
+    // The middleware writes only the mode byte and leaves the rest of the four-byte
+    // payload zero; the firmware derives the key cover and lifted fields itself.
+    public static byte[] SetGameModeState(byte transactionId, byte gameMode) =>
+        Create(transactionId, 4, 0x00, 0x08, gameMode);
 
+    // The 8 kHz boards configure polling through the USB high-speed pair, and both
+    // commands carry the profile id in the first byte. 00:0E/00:8E are the per-profile
+    // variants the polling UI does not use.
     public static byte[] GetPollingRate(byte transactionId) =>
-        Create(transactionId, 2, 0x00, 0x8E);
+        Create(transactionId, 2, 0x00, 0xC0, 0x00);
 
     public static byte[] SetPollingRate(byte transactionId, byte code) =>
-        Create(transactionId, 2, 0x00, 0x0E, code);
+        Create(transactionId, 2, 0x00, 0x40, 0x00, code);
 
     public static byte[] GetBatteryLevel(byte transactionId) =>
         Create(transactionId, 2, 0x07, 0x80);

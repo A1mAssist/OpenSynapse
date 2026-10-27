@@ -191,8 +191,7 @@ public sealed class RazerKeyboardService
         try
         {
             await QueryAsync(
-                transaction => RazerKeyboardProtocol.SetGameModeState(
-                    transaction, desired, previous.KeyCover, previous.Lifted),
+                transaction => RazerKeyboardProtocol.SetGameModeState(transaction, desired),
                 "set game mode",
                 cancellationToken).ConfigureAwait(false);
             var actual = RazerKeyboardProtocol.ReadGameModeState(
@@ -207,8 +206,7 @@ public sealed class RazerKeyboardService
         catch
         {
             await TryRestoreAsync(
-                transaction => RazerKeyboardProtocol.SetGameModeState(
-                    transaction, previous.GameMode, previous.KeyCover, previous.Lifted),
+                transaction => RazerKeyboardProtocol.SetGameModeState(transaction, previous.GameMode),
                 "restore game mode").ConfigureAwait(false);
             throw;
         }
