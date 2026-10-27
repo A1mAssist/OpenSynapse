@@ -302,6 +302,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     responseReportId,
                     cancellationToken,
                     allowRemainingPacketsMismatch,
+                    usesLeviathanReportId,
                     message => WriteDiagnostic(devicePath, request, message)).ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException)
@@ -348,6 +349,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         byte responseReportId,
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch,
+        bool usesLeviathanReportId,
         Action<string>? diagnostic = null)
     {
         string? lastError = null;
@@ -392,8 +394,10 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     break;
                 }
 
-                if (!RazerFeatureReport.MatchesReportId(candidate, responseReportId) ||
-                    !RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch))
+                var matches = usesLeviathanReportId
+                    ? RazerFeatureReport.MatchesWithTransactionChecksum(request, candidate, allowRemainingPacketsMismatch)
+                    : RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch);
+                if (!RazerFeatureReport.MatchesReportId(candidate, responseReportId) || !matches)
                 {
                     readError = $"status=0x{candidate[1]:X2}, txn=0x{candidate[2]:X2} (want 0x{request[2]:X2}), class=0x{candidate[7]:X2} (want 0x{request[7]:X2}), command=0x{candidate[8]:X2} (want 0x{request[8]:X2}), len={candidate[6]} (want {request[6]}), crc=0x{candidate[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(candidate):X2}";
                     continue;
@@ -602,7 +606,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     deviceWait,
                     responseReportId,
                     cancellationToken,
-                    allowRemainingPacketsMismatch).ConfigureAwait(false);
+                    allowRemainingPacketsMismatch,
+                    usesLeviathanReportId: false).ConfigureAwait(false);
             }
             finally
             {

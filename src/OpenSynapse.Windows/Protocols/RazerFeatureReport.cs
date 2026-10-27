@@ -171,6 +171,42 @@ public static class RazerFeatureReport
                response[89] == CalculateCrc(response);
     }
 
+    /// <summary>
+    /// Some firmware folds the transaction id into the response checksum. The Leviathan
+    /// V2 X does, so a report that carries its transaction id in the checksum fails the
+    /// shared range by exactly that id.
+    /// </summary>
+    public static bool MatchesWithTransactionChecksum(
+        ReadOnlySpan<byte> request,
+        ReadOnlySpan<byte> response,
+        bool allowRemainingPacketsMismatch = false)
+    {
+        return request.Length == Length &&
+               response.Length == Length &&
+               response[2] == request[2] &&
+               (allowRemainingPacketsMismatch ||
+                (response[3] == request[3] && response[4] == request[4])) &&
+               response[7] == request[7] &&
+               response[8] == request[8] &&
+               response[89] == CalculateCrcIncludingTransaction(response);
+    }
+
+    private static byte CalculateCrcIncludingTransaction(ReadOnlySpan<byte> report)
+    {
+        if (report.Length != Length)
+        {
+            throw new ArgumentException($"Razer feature reports must be {Length} bytes.", nameof(report));
+        }
+
+        byte crc = 0;
+        for (var index = 2; index <= 88; index++)
+        {
+            crc ^= report[index];
+        }
+
+        return crc;
+    }
+
     internal static bool MatchesReportId(ReadOnlySpan<byte> response, byte reportId) =>
         response.Length == Length && response[0] == reportId;
 
