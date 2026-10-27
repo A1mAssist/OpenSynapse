@@ -13,7 +13,7 @@ public sealed record ViperDpiStagesState(
 public static class ViperDpiStagesProtocol
 {
     private const byte TransactionId = 0x1F;
-    private const byte DataSize = 0x26;
+    private const byte DataSize = 0x50;
     private const byte CommandClass = 0x04;
     private const byte CommandId = 0x86;
     private const byte VariableStorage = 0x01;

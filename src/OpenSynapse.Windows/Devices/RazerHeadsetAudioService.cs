@@ -254,8 +254,8 @@ public sealed class RazerHeadsetAudioService
             "audio source", txn => RazerHeadsetAudioProtocol.GetAudioSource(txn), RazerHeadsetAudioProtocol.ReadAudioSource,
             errors, cancellationToken).ConfigureAwait(false);
         var noise = await ProbeAsync(
-            "noise suppression", txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
-            RazerHeadsetAudioProtocol.ReadNoiseSuppression, errors, cancellationToken).ConfigureAwait(false);
+            "noise suppression", txn => RazerHeadsetAudioProtocol.GetAudioInputControlState(txn),
+            RazerHeadsetAudioProtocol.ReadAudioInputControlState, errors, cancellationToken).ConfigureAwait(false);
 
         IReadOnlyList<byte>? bands = null;
         try
@@ -420,14 +420,7 @@ public sealed class RazerHeadsetAudioService
     }
 
     public Task SetNoiseSuppressionAsync(bool enabled, CancellationToken cancellationToken = default) =>
-        WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
-            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
-            enabled,
-            (value, txn) => RazerHeadsetAudioProtocol.SetNoiseSuppression(txn, value),
-            value => value == enabled,
-            "noise suppression",
-            cancellationToken);
+        SetNoiseSuppressionCoreAsync(enabled, cancellationToken);
 
     public async Task SetAncAsync(
         RazerAncState state,
@@ -473,6 +466,34 @@ public sealed class RazerHeadsetAudioService
                 "restore ANC").ConfigureAwait(false);
             throw;
         }
+    }
+
+    private async Task SetNoiseSuppressionCoreAsync(bool enabled, CancellationToken cancellationToken)
+    {
+        // The switch is the audio-input control state (08:16, source 3); 08:1C only carries
+        // the amount, where 1 would mean 1% suppression. Enable first, then raise the level.
+        await WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetAudioInputControlState(txn),
+            RazerHeadsetAudioProtocol.ReadAudioInputControlState,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetAudioInputControlState(txn, value),
+            value => value == enabled,
+            "noise suppression",
+            cancellationToken).ConfigureAwait(false);
+
+        if (!enabled)
+        {
+            return;
+        }
+
+        await WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
+            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
+            true,
+            (value, txn) => RazerHeadsetAudioProtocol.SetNoiseSuppression(txn, value),
+            value => value,
+            "noise suppression level",
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task WriteAsync<T>(

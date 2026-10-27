@@ -83,7 +83,7 @@ public sealed class OpenRazerWindowsPortTests
         AssertOpenRazerLogicalReport(ViperProduct184Protocol.CreateGetPollingRateRequest(), 0x1F, 0x01, 0x00, 0x85);
         AssertOpenRazerLogicalReport(ViperProduct184Protocol.CreateSetPollingRateRequest(1000), 0x1F, 0x01, 0x00, 0x05, 0x01);
         AssertOpenRazerLogicalReport(ViperProduct184Protocol.CreateGetDpiRequest(), 0x1F, 0x07, 0x04, 0x85, 0x00);
-        AssertOpenRazerLogicalReport(ViperProduct184Protocol.CreateGetDpiStagesRequest(), 0x1F, 0x26, 0x04, 0x86, 0x01);
+        AssertOpenRazerLogicalReport(ViperProduct184Protocol.CreateGetDpiStagesRequest(), 0x1F, 0x50, 0x04, 0x86, 0x01);
         AssertOpenRazerLogicalReport(
             ViperProduct184Protocol.CreateSetDpiStagesRequest(new ViperDpiStagesState(
                 1,
@@ -95,7 +95,7 @@ public sealed class OpenRazerWindowsPortTests
                     new(5, 4000, 4000),
                 ])),
             0x1F,
-            0x26,
+            0x50,
             0x04,
             0x06,
             0x01, 0x01, 0x05,

@@ -591,6 +591,28 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void LightingEffectsCarryTheMiddlewareEffectIdsAndFlags()
+    {
+        var keyboard = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0203)!;
+        var reactive = OpenRazerLightingProtocol.CreateEffect(keyboard,
+            new OpenRazerLightingSettings(OpenRazerLightingEffect.Reactive,
+                Speed: 3, Primary: new OpenRazerColor(1, 2, 3))).Report;
+        Assert.Equal(new byte[] { 0x02, 0x00, 0x01, 0x02, 0x03 },
+            reactive[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 5)]);
+    }
+
+    [Fact]
+    public void BrightnessAndBreathingFlagsMatchTheMiddleware()
+    {
+        // The middleware writes Math.floor(percent / 100 * 255).
+        Assert.Equal((byte)127, RazerChromaStandardProtocol.ToBrightnessLevel(50));
+        Assert.Equal((byte)255, RazerChromaStandardProtocol.ToBrightnessLevel(100));
+
+        var dual = RazerLegacyChromaProtocol.SetEffect(0x1F, RazerChromaEffect.Breathing, [1, 2, 3, 4, 5, 6]);
+        Assert.Equal(2, dual[RazerFeatureReport.ArgumentsOffset + 3]);
+    }
+
+    [Fact]
     public void StandardCustomEffectUsesItsSourceFixedStorage()
     {
         var keyboard = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0203)!;

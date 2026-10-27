@@ -32,6 +32,12 @@ public static class RazerHeadsetAudioProtocol
     public const int TenBandCount = 10;
     public const int EightBandCount = 8;
 
+    /// <summary>Audio-input control source id the middleware uses for AI noise suppression.</summary>
+    public const byte NoiseSuppressionSource = 3;
+
+    /// <summary>AI noise suppression is an amount, not a switch; 100 is full strength.</summary>
+    public const byte NoiseSuppressionFullAmount = 100;
+
     public static readonly IReadOnlyList<int> TenBandFrequencies =
         [31, 63, 125, 250, 500, 1_000, 2_000, 4_000, 8_000, 16_000];
 
@@ -102,8 +108,23 @@ public static class RazerHeadsetAudioProtocol
     public static byte[] GetNoiseSuppression(byte transactionId, byte profile = ReadProfile) =>
         Create(transactionId, 2, 0x08, 0x9C, profile);
 
+    // The switch lives on the audio-input control command; 08:1C only carries the amount.
+    public static byte[] GetAudioInputControlState(
+        byte transactionId,
+        byte sourceId = NoiseSuppressionSource,
+        byte profile = ReadProfile) =>
+        Create(transactionId, 3, 0x08, 0x96, profile, sourceId);
+
+    public static byte[] SetAudioInputControlState(
+        byte transactionId,
+        bool enabled,
+        byte sourceId = NoiseSuppressionSource,
+        byte profile = WriteProfile) =>
+        Create(transactionId, 3, 0x08, 0x16, profile, sourceId, enabled ? (byte)1 : (byte)0);
+
     public static byte[] SetNoiseSuppression(byte transactionId, bool enabled, byte profile = WriteProfile) =>
-        Create(transactionId, 2, 0x08, 0x1C, profile, enabled ? (byte)1 : (byte)0);
+        Create(transactionId, 2, 0x08, 0x1C, profile,
+            enabled ? NoiseSuppressionFullAmount : (byte)0);
 
     // The middleware declares one argument byte for this read but the firmware answers with
     // profileId, state and level.
@@ -196,6 +217,13 @@ public static class RazerHeadsetAudioProtocol
         var data = Arguments(response);
         Require(data, 2);
         return data[1] != 0;
+    }
+
+    public static bool ReadAudioInputControlState(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        Require(data, 3);
+        return data[2] != 0;
     }
 
     public static (RazerAncState State, byte Level) ReadAnc(ReadOnlySpan<byte> response)

@@ -211,7 +211,7 @@ public static class RazerBleProtocol30
     }
 
     public static byte[] CreateGetDpiStages(byte transactionId, byte profileId = 0) =>
-        CreateFrame(transactionId, 0x0B, 0x82, param6: profileId);
+        CreateFrame(transactionId, 0x0B, 0x84, param6: profileId);
 
     public static RazerBleDpiStages ReadDpiStages(RazerBleResponse response)
     {

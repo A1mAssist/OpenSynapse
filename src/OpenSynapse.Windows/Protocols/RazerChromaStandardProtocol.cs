@@ -125,7 +125,7 @@ public static class RazerChromaStandardProtocol
         return System.Text.Encoding.ASCII.GetString(data[..end]).Trim();
     }
     public static byte ToBrightnessLevel(byte percent) =>
-        (byte)Math.Round(Math.Clamp(percent, (byte)0, (byte)100) * 255d / 100d);
+        (byte)Math.Floor(Math.Clamp(percent, (byte)0, (byte)100) * 255d / 100d);
 
     private static byte[] Create(
         byte transactionId,
