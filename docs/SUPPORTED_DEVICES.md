@@ -30,8 +30,8 @@ Standard mouse controls include DPI, polling rate, battery, lighting and onboard
 | Razer Basilisk V2 | `1532:0085` | — |
 | Razer Basilisk V3 | `1532:0099` | — |
 | Razer Basilisk V3 35K | `1532:00CB` | — |
-| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | — |
-| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | — |
+| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | DPI, polling, battery, lighting and onboard mapping; BLE page over Bluetooth |
+| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | DPI, polling, battery, lighting and onboard mapping; BLE page over Bluetooth |
 | Razer Basilisk V3 Pro 35K (Wired) | `1532:00CC` | — |
 | Razer Basilisk V3 Pro 35K (Wireless) | `1532:00CD` | — |
 | Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | — |
@@ -479,7 +479,7 @@ Philips Hue is controlled over the bridge HTTPS API after pairing.
 
 A listed ID means a code path exists for that device. It does not mean every control has been tested on physical hardware. An unresolved or busy endpoint stays read-only until the next scan. Writes are read back where the protocol allows, and a failed write restores the previous value when the device exposes one.
 
-The THX V3/V4 headset path and parts of the middleware-derived device set are built from native clients and protocol evidence; hardware acceptance is still required where noted. BLE devices must expose Razer protocol 30 service `52401523`; the current BLE page targets mice such as the Viper V4 Pro.
+The THX V3/V4 headset path and parts of the middleware-derived device set are built from native clients and protocol evidence; hardware acceptance is still required where noted. BLE devices must expose Razer protocol 30 service `52401523`; the BLE page targets protocol 30 mice such as the Basilisk V3 Pro and Viper V4 Pro, with battery, polling, DPI, lighting and button mapping where the device answers those commands.
 
 For external lighting integrations, see [Chroma-supported devices](CHROMA_SUPPORTED_DEVICES.md).
 

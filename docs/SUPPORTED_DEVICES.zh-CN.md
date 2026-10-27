@@ -30,8 +30,8 @@ Chroma REST 是软件集成，不是设备，因此不放进下表。
 | Razer Basilisk V2 | `1532:0085` | — |
 | Razer Basilisk V3 | `1532:0099` | — |
 | Razer Basilisk V3 35K | `1532:00CB` | — |
-| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | — |
-| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | — |
+| Razer Basilisk V3 Pro (Wired) | `1532:00AA` | DPI、轮询率、电量、灯光和板载映射；蓝牙连接时提供 BLE 页面 |
+| Razer Basilisk V3 Pro (Wireless) | `1532:00AB` | DPI、轮询率、电量、灯光和板载映射；蓝牙连接时提供 BLE 页面 |
 | Razer Basilisk V3 Pro 35K (Wired) | `1532:00CC` | — |
 | Razer Basilisk V3 Pro 35K (Wireless) | `1532:00CD` | — |
 | Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | — |
@@ -479,7 +479,7 @@ Philips Hue 配对后通过桥的 HTTPS API 控制。
 
 条目出现在表里表示应用已经有对应代码路径，不代表每个控制项都完成了真机验证。端点无法解析或正被占用时，页面会保持只读，直到下一次扫描。协议允许时写入会读回校验；设备提供旧值时，失败会恢复原值。
 
-THX V3/V4 耳机路径和部分中间件推导设备来自原生客户端与协议证据，标注未实机验证的仍需硬件验收。BLE 设备必须暴露 Razer protocol 30 服务 `52401523`；当前 BLE 页面面向 Viper V4 Pro 这类鼠标。
+THX V3/V4 耳机路径和部分中间件推导设备来自原生客户端与协议证据，标注未实机验证的仍需硬件验收。BLE 设备必须暴露 Razer protocol 30 服务 `52401523`；BLE 页面面向 Basilisk V3 Pro、Viper V4 Pro 这类 protocol 30 鼠标，按设备实际响应提供电量、轮询率、DPI、灯光和按键映射。
 
 外部灯光集成见 [Chroma 支持设备](CHROMA_SUPPORTED_DEVICES.zh-CN.md)。
 
