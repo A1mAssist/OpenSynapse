@@ -74,7 +74,8 @@ public sealed class BlackSharkV3ProProtocolTests
     {
         var report = BlackSharkV3ProProtocol.CreateSetGameChat(10);
 
-        Assert.Equal(0x06, report[6]);
+        // The middleware declares one payload byte for 0xDC:0x01.
+        Assert.Equal(0x05, report[6]);
         Assert.Equal(0xDC, report[10]);
         Assert.Equal(0x01, report[12]);
         Assert.Equal(0x0A, report[13]);
