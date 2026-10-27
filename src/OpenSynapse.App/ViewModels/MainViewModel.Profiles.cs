@@ -450,7 +450,8 @@ public sealed partial class MainViewModel
             powerState,
             cancellationToken,
             applyKeyboardBrightness: Volatile.Read(ref _displayAvailable) != 0,
-            coolingPadConnected: await RazerCoolingPad.IsConnectedAsync(cancellationToken));
+            coolingPadConnected: await RazerCoolingPad.IsConnectedAsync(cancellationToken),
+            padlessHyperBoostAccepted: _padlessHyperBoostAccepted);
         return result;
     }
 
