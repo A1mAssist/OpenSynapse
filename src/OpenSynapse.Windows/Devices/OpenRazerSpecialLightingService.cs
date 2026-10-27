@@ -23,6 +23,7 @@ public sealed class OpenRazerSpecialLightingConnection
         string? controlDevicePath,
         IReadOnlySet<OpenRazerLightingEffect> effects,
         bool supportsStaticColor,
+        bool isMergedIntoAudioPage,
         string? error)
     {
         ProductId = productId;
@@ -33,6 +34,7 @@ public sealed class OpenRazerSpecialLightingConnection
         ControlDevicePath = controlDevicePath;
         SupportedEffects = effects;
         SupportsStaticColor = supportsStaticColor;
+        IsMergedIntoAudioPage = isMergedIntoAudioPage;
         Error = error;
     }
 
@@ -42,6 +44,12 @@ public sealed class OpenRazerSpecialLightingConnection
     public string InstanceId { get; }
     public IReadOnlySet<OpenRazerLightingEffect> SupportedEffects { get; }
     public bool SupportsStaticColor { get; }
+    /// <summary>
+    /// True when the audio page owns this headset and shows the lighting card there.
+    /// The audio page only discovers a headset that exposes the 91-byte feature
+    /// interface, so a headset without one keeps its own lighting row.
+    /// </summary>
+    public bool IsMergedIntoAudioPage { get; }
     public string? Error { get; }
     public bool IsReady => DevicePath is not null || ControlDevicePath is not null;
     internal string? DevicePath { get; }
@@ -87,8 +95,14 @@ public sealed class OpenRazerSpecialLightingService
     /// Headsets that already own an audio page keep their 37-byte lighting there, so the
     /// lighting discovery must not emit a second, lighting-only row for the same device.
     /// </summary>
-    public static bool IsMergedIntoAudioPage(ushort productId) =>
-        RazerHeadsetAudioService.IsSupported(productId);
+    /// <remarks>
+    /// The audio page only discovers a headset that exposes the 91-byte feature
+    /// interface, so the lighting card may only move there for a headset that has one.
+    /// A headset without that interface keeps its own lighting row; otherwise it would
+    /// vanish from the app, because neither page could show it.
+    /// </remarks>
+    public static bool IsMergedIntoAudioPage(ushort productId, bool hasAudioFeatureInterface) =>
+        hasAudioFeatureInterface && RazerHeadsetAudioService.IsSupported(productId);
 
     private readonly OpenRazerHidReportTransport _transport = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
@@ -128,6 +142,13 @@ public sealed class OpenRazerSpecialLightingService
                         ? "No available FF14:0001 64-byte Output Report collection was found."
                         : "No available MI_03 37-byte Output Report collection was found."
                     : null;
+            // The audio page only finds a headset that exposes the 91-byte feature
+            // interface. The Kraken V4 exposes only a 64-byte FF14 collection, so the
+            // audio page never selects it and the lighting card has to stay on its
+            // own row, otherwise the headset disappears from the app entirely.
+            var mergedIntoAudioPage = !argb && IsMergedIntoAudioPage(
+                group.Key.ProductId,
+                group.Any(item => item.FeatureReportByteLength == RazerFeatureReport.Length));
             results.Add(new OpenRazerSpecialLightingConnection(
                 group.Key.ProductId,
                 name,
@@ -137,6 +158,7 @@ public sealed class OpenRazerSpecialLightingService
                 controlDevicePath,
                 argb ? Effects(OpenRazerLightingEffect.Custom) : definition!.Effects,
                 !argb && definition!.WritesColor,
+                mergedIntoAudioPage,
                 error));
         }
         return results;
