@@ -168,24 +168,27 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 }
             }
 
-            try
+            if (owns("current-fan-rpm.get"))
             {
-                bladeCurrentFanCpuRpm = await ReadBladeCurrentFanRpmAsync(
-                    blade, BladeThermalProtocol.CpuFanId, cancellationToken);
-            }
-            catch (Exception exception) when (IsExpectedHardwareException(exception))
-            {
-                errors.Add($"Current CPU fan speed: {exception.Message}");
-            }
+                try
+                {
+                    bladeCurrentFanCpuRpm = await ReadBladeCurrentFanRpmAsync(
+                        blade, BladeThermalProtocol.CpuFanId, cancellationToken);
+                }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    errors.Add($"Current CPU fan speed: {exception.Message}");
+                }
 
-            try
-            {
-                bladeCurrentFanGpuRpm = await ReadBladeCurrentFanRpmAsync(
-                    blade, BladeThermalProtocol.GpuFanId, cancellationToken);
-            }
-            catch (Exception exception) when (IsExpectedHardwareException(exception))
-            {
-                errors.Add($"Current GPU fan speed: {exception.Message}");
+                try
+                {
+                    bladeCurrentFanGpuRpm = await ReadBladeCurrentFanRpmAsync(
+                        blade, BladeThermalProtocol.GpuFanId, cancellationToken);
+                }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    errors.Add($"Current GPU fan speed: {exception.Message}");
+                }
             }
 
             if (owns("advanced-fan-mode.get"))
