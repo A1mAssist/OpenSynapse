@@ -241,6 +241,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(AutoSleepText));
         OnPropertyChanged(nameof(ChargeLimiterText));
         OnPropertyChanged(nameof(BrightnessText));
+        NotifyMiddlewareStateChanged();
     }
 
     private void OnLightingSelectionChanged()
@@ -393,6 +394,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ScrollAccelerationWriteVisibility));
         OnPropertyChanged(nameof(SmartReelVisibility));
         OnPropertyChanged(nameof(SmartReelWriteVisibility));
+        NotifyMiddlewareStateChanged();
         OnPropertyChanged(nameof(CanEditScrollMode));
         OnPropertyChanged(nameof(CanWriteScrollMode));
         OnPropertyChanged(nameof(CanEditScrollAcceleration));

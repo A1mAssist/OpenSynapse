@@ -405,7 +405,13 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         OpenRazerBackendCapability.AutoSleepRead,
         OpenRazerBackendCapability.AutoSleepWrite,
         OpenRazerBackendCapability.BatteryChargeLimiterRead,
-        OpenRazerBackendCapability.BatteryChargeLimiterWrite));
+        OpenRazerBackendCapability.BatteryChargeLimiterWrite,
+        OpenRazerBackendCapability.TimeToDimRead,
+        OpenRazerBackendCapability.TimeToDimWrite,
+        OpenRazerBackendCapability.IndicatorLedConfigurationRead,
+        OpenRazerBackendCapability.IndicatorLedConfigurationWrite,
+        OpenRazerBackendCapability.BatteryDischargeCurveRead,
+        OpenRazerBackendCapability.BatteryDischargeCurveWrite));
     public Visibility IdleVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.IdleTimeoutRead,
         OpenRazerBackendCapability.IdleTimeoutWrite));
@@ -477,7 +483,13 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool CanEditChargeLimiter => CanUse(OpenRazerBackendCapability.BatteryChargeLimiterWrite) &&
         !IsChargeLimiterBusy && ChargeLimiterPercent is >= 50 and <= 95 && ChargeLimiterPercent % 5 == 0;
 
-    public Visibility LightingVisibility => VisibleWhen(LightingZones.Count > 0);
+    public Visibility LightingVisibility => VisibleWhen(LightingZones.Count > 0 || HasAny(
+        OpenRazerBackendCapability.GpuCardDetectionRead,
+        OpenRazerBackendCapability.GpuCardDetectionWrite,
+        OpenRazerBackendCapability.ForceChromaCtrlRead,
+        OpenRazerBackendCapability.ForceChromaCtrlWrite,
+        OpenRazerBackendCapability.ChromaTapRead,
+        OpenRazerBackendCapability.ChromaTapWrite));
     public Visibility LightingControlsVisibility => VisibleWhen(
         LightingZones.Count > 0 &&
         (Has(OpenRazerBackendCapability.LightingEffectWrite) ||
@@ -798,7 +810,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         OpenRazerBackendCapability.ScrollAccelerationRead,
         OpenRazerBackendCapability.ScrollAccelerationWrite,
         OpenRazerBackendCapability.SmartReelRead,
-        OpenRazerBackendCapability.SmartReelWrite));
+        OpenRazerBackendCapability.SmartReelWrite,
+        OpenRazerBackendCapability.LkScrollWheelModeRead,
+        OpenRazerBackendCapability.LkScrollWheelModeWrite));
     public Visibility ScrollModeVisibility => Visibility.Collapsed;
     public Visibility ScrollModeWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.ScrollModeWrite));
     public Visibility ScrollAccelerationVisibility => VisibleWhen(HasAny(
