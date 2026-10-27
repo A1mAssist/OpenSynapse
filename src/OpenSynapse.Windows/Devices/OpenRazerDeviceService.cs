@@ -802,6 +802,19 @@ public sealed class OpenRazerDeviceService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        if (connection.Definition.ProductId == LeviathanV2XProtocol.ProductId)
+        {
+            // The soundbar's effect write needs the region it reports, not the enum's All
+            // placeholder, so it bypasses the OpenRazer zone resolution below.
+            var region = await GetLeviathanRegionAsync(connection, cancellationToken).ConfigureAwait(false);
+            await ExecuteWithoutResultAsync(connection,
+                new OpenRazerRequest("razer_chroma_extended_matrix_effect_leviathan",
+                    LeviathanV2XProtocol.CreateEffect(region, settings.Effect, settings.Direction,
+                        settings.Primary, settings.Secondary)),
+                cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         var zone = OpenRazerLightingProtocol.ResolveEffectZone(
             connection.Definition, settings.Effect, settings.Storage, settings.Zone);
         RequireLightingZone(connection, zone,
@@ -874,18 +887,43 @@ public sealed class OpenRazerDeviceService
             cancellationToken).ConfigureAwait(false), (byte)storage, (byte)ledId);
     }
 
-    public async Task<OpenRazerClassicLedEffect> GetLedEffectAsync(
+    public async Task<OpenRazerLightingEffect?> GetLedEffectAsync(
         OpenRazerDeviceConnection connection,
         OpenRazerStorage storage,
         OpenRazerLedZone ledId,
         CancellationToken cancellationToken = default)
     {
+        if (connection.Definition.ProductId == LeviathanV2XProtocol.ProductId)
+        {
+            var region = await GetLeviathanRegionAsync(connection, cancellationToken).ConfigureAwait(false);
+            var effect = LeviathanV2XProtocol.ReadEffect(await ExecuteAsync(connection,
+                new OpenRazerRequest("razer_chroma_extended_matrix_effect_leviathan_read",
+                    LeviathanV2XProtocol.CreateGetEffect(LeviathanV2XProtocol.ReadProfile, region)),
+                cancellationToken).ConfigureAwait(false), out _, out _);
+            return effect switch
+            {
+                0x00 => OpenRazerLightingEffect.Off,
+                0x01 => OpenRazerLightingEffect.Static,
+                0x02 => OpenRazerLightingEffect.BreathingDual,
+                0x03 => OpenRazerLightingEffect.Spectrum,
+                0x04 => OpenRazerLightingEffect.Wave,
+                _ => null,
+            };
+        }
+
         RequireClassicLedOperation(connection, storage, ledId,
             capability => capability.CanReadEffect, "classic LED effect read",
             "razer_chroma_standard_get_led_effect");
         return OpenRazerStandardProtocol.ParseLedEffect(await ExecuteAsync(connection,
             OpenRazerStandardProtocol.GetLedEffect(connection.Definition, (byte)storage, (byte)ledId),
-            cancellationToken).ConfigureAwait(false), (byte)storage, (byte)ledId);
+            cancellationToken).ConfigureAwait(false), (byte)storage, (byte)ledId) switch
+        {
+            OpenRazerClassicLedEffect.Static => OpenRazerLightingEffect.Static,
+            OpenRazerClassicLedEffect.Blinking => OpenRazerLightingEffect.Blinking,
+            OpenRazerClassicLedEffect.Breathing => OpenRazerLightingEffect.BreathingSingle,
+            OpenRazerClassicLedEffect.Spectrum => OpenRazerLightingEffect.Spectrum,
+            _ => null,
+        };
     }
 
     public Task SetLedEffectAsync(

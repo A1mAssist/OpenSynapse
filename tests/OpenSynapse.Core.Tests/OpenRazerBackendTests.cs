@@ -84,14 +84,29 @@ public sealed class OpenRazerBackendTests
         Assert.Contains("get_serial", device.SourceCapabilities);
         Assert.Contains("get_brightness", device.SourceCapabilities);
         Assert.Contains("set_brightness", device.SourceCapabilities);
-        Assert.DoesNotContain("set_static_effect", device.SourceCapabilities);
+        Assert.Contains("set_none_effect", device.SourceCapabilities);
+        Assert.Contains("set_static_effect", device.SourceCapabilities);
+        Assert.Contains("set_spectrum_effect", device.SourceCapabilities);
+        Assert.Contains("set_wave_effect", device.SourceCapabilities);
+        Assert.Contains("set_breath_dual_effect", device.SourceCapabilities);
 
         var capabilities = OpenRazerDeviceService.GetCapabilities(device);
         Assert.Contains(OpenRazerBackendCapability.FirmwareRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BrightnessWrite, capabilities);
-        Assert.DoesNotContain(OpenRazerBackendCapability.LightingEffectWrite, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.LightingEffectWrite, capabilities);
         Assert.DoesNotContain(OpenRazerBackendCapability.MatrixFrameWrite, capabilities);
+
+        var zone = OpenRazerDeviceService.GetLightingZoneCapabilities(device)[OpenRazerLedZone.All];
+        Assert.Equal(
+            [
+                OpenRazerLightingEffect.Off,
+                OpenRazerLightingEffect.Static,
+                OpenRazerLightingEffect.Spectrum,
+                OpenRazerLightingEffect.Wave,
+                OpenRazerLightingEffect.BreathingDual,
+            ],
+            zone.LightingEffects.Order());
 
         var renamed = device.WithDisplayName("Razer | Kuromi Limited Edition Soundbar");
         Assert.Equal("Razer | Kuromi Limited Edition Soundbar", renamed.DisplayName);

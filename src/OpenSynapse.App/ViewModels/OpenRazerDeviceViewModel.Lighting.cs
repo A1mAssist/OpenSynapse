@@ -60,22 +60,28 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                     if (SelectedLightingZone != selectedZone) return;
                     PrimaryColor = ToColor(color);
                 });
-            if (SelectedLightingZone == selectedZone && zone.CanReadEffect &&
+            // The soundbar answers its own Chroma effect read even though it publishes no
+            // OpenRazer classic selector, so it opts in here rather than through a capability.
+            if (SelectedLightingZone == selectedZone &&
+                (zone.CanReadEffect || Connection.Definition.ProductId == LeviathanV2XProtocol.ProductId) &&
                 !_unsupportedLedEffectReads.Contains(selectedZone))
                 await ReadZoneAsync(selectedZone, _unsupportedLedEffectReads, async () =>
                 {
-                    var effect = await _service.GetLedEffectAsync(Connection,
-                        Connection.Definition.DefaultStorage, selectedZone, cancellationToken);
-                    if (SelectedLightingZone != selectedZone) return;
-                    var mapped = effect switch
+                    OpenRazerLightingEffect? effect;
+                    try
                     {
-                        OpenRazerClassicLedEffect.Static => OpenRazerLightingEffect.Static,
-                        OpenRazerClassicLedEffect.Blinking => OpenRazerLightingEffect.Blinking,
-                        OpenRazerClassicLedEffect.Breathing => OpenRazerLightingEffect.BreathingSingle,
-                        OpenRazerClassicLedEffect.Spectrum => OpenRazerLightingEffect.Spectrum,
-                        _ => (OpenRazerLightingEffect?)null,
-                    };
-                    if (mapped is { } value && LightingEffects.Contains(value)) SelectedLightingEffect = value;
+                        effect = await _service.GetLedEffectAsync(Connection,
+                            Connection.Definition.DefaultStorage, selectedZone, cancellationToken);
+                    }
+                    catch (Exception exception) when (exception is IOException or InvalidDataException or InvalidOperationException)
+                    {
+                        // The current effect is a display-only read; a firmware that stays
+                        // silent must not turn the page load into an error.
+                        _unsupportedLedEffectReads.Add(selectedZone);
+                        return;
+                    }
+                    if (SelectedLightingZone != selectedZone) return;
+                    if (effect is { } value && LightingEffects.Contains(value)) SelectedLightingEffect = value;
                 });
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
