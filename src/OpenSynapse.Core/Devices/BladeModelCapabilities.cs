@@ -51,7 +51,16 @@ public static class BladeModelCapabilities
             // Blade 16 (2025) RZ09-0528. Custom CPU/GPU levels are the captured
             // 0x0D:0x07 pairs; its maximum fan is the fixed 5400 RPM fan-target
             // control, not the Custom Power Mode bit, so Max Fan is not admitted here.
-            [0x02C6] = new(MaxFan: false, LowMediumHigh, FanCurve: true, FixedFan: true, HyperBoost: true),
+            // The official bundle drives that same report as rpm/100 and its own
+            // Performance and Hyperboost modes run up to 5400 RPM, so the firmware
+            // accepts a target the earlier 5000 RPM ceiling wrongly refused.
+            [0x02C6] = new(
+                MaxFan: false,
+                LowMediumHigh,
+                FanCurve: true,
+                FixedFan: true,
+                HyperBoost: true,
+                MaximumFanTargetRpm: 5400),
 
             // Blade 15 (Mid 2019) Mercury RZ09-03017. Owner-tested end to end: a fixed
             // target write took effect, both tachometers read back higher without a
@@ -69,9 +78,9 @@ public static class BladeModelCapabilities
             // wattage level through the same 07:8C report the other models use.
             // The official middleware drives a fixed fan speed from every performance
             // mode, not only from Custom, so no custom-mode gate applies here. The
-            // official modes span 3400 to 5200 RPM and Custom reaches 5300, so the
-            // readback ceiling follows the firmware while the write ceiling stays at
-            // the 5000 RPM the shared fan-target report accepts.
+            // official modes span 3400 to 5200 RPM and Custom reaches 5300, and the
+            // shared fan-target report takes the same rpm/100 value the official
+            // middleware writes, so the write ceiling follows the firmware too.
             [0x029F] = new(
                 MaxFan: true,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
@@ -92,34 +101,35 @@ public static class BladeModelCapabilities
             // needs a verified restore-on-exit path.
 
             // Official Synapse exposes four Custom CPU levels on this model, including
-            // Boost, and the fixed fan target only acts in Custom mode with a
-            // 3500-5000 RPM range. Maximum fan and the fan curve stay closed.
+            // Boost, and the fixed fan target only acts in Custom mode. Its official
+            // modes run up to 5400 RPM. Maximum fan and the fan curve stay closed.
             [Blade14_2022ProductId] = new(
                 MaxFan: false,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
                 FixedFan: true,
                 MinimumFanTargetRpm: 3500,
+                MaximumFanTargetRpm: 5400,
                 FixedFanRequiresCustomMode: true),
             // Blade 14 (2023) RZ09-0482 and Blade 14 (2024) RZ09-0509. The middleware
             // enables both the maximum-fan bit and custom CPU levels.
-            [0x029D] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true, HyperBoost: true),
-            [0x02B6] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true),
+            [0x029D] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true, HyperBoost: true, MaximumFanTargetRpm: 5400),
+            [0x02B6] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
 
             // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
             // It has no CPU-level flag, so the custom CPU control stays closed.
-            [0x02B8] = new(MaxFan: true, None, FanCurve: true, FixedFan: true),
+            [0x02B8] = new(MaxFan: true, None, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
 
             // Blade 14 (2025) and Blade 18 (2025) expose the 710 fan-target reports but
             // do not enable the maximum-fan bit or custom CPU levels in their middleware.
-            [0x02C5] = new(MaxFan: false, None, FanCurve: true, FixedFan: true),
-            [0x02C7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true),
+            [0x02C5] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
+            [0x02C7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
 
             // Blade 16 (2024) 1532:02B7. The 695 middleware uses the same fan-target,
             // panel and power reports as 02C6; Max Fan stays off because its injected
             // configuration does not enable the Custom maximum-fan bit. CPU Boost is
             // likewise not enabled by its deviceUI configuration. Its performance-mode
             // table lists HyperBoost, so the pad-less path applies here too.
-            [0x02B7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, HyperBoost: true),
+            [0x02B7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, HyperBoost: true, MaximumFanTargetRpm: 5400),
 
             // Blade 16 (2026) RZ09-0581 remains read-only until its middleware is audited.
             [0x02E0] = new(MaxFan: false, None),
@@ -195,12 +205,12 @@ public static class BladeModelCapabilities
 
     /// <summary>
     /// Upper bound for a fixed fan write and for the slider that offers one. The shared
-    /// fan-target report stores the speed in 100 RPM steps and the firmware rejects
-    /// anything past the global ceiling, so a model that reports a higher maximum keeps
-    /// that higher ceiling only for reading back a target the firmware already stored.
+    /// fan-target report stores the speed in 100 RPM steps, and the official middleware
+    /// writes the same rpm/100 value, so each model writes up to the ceiling its own
+    /// firmware reports.
     /// </summary>
     public static int MaximumWritableFanTargetRpmFor(ushort productId) =>
-        Math.Min(MaximumFanTargetRpmFor(productId), BladeFanLimits.MaximumRpm);
+        MaximumFanTargetRpmFor(productId);
 
     private sealed record Contract(
         bool MaxFan,

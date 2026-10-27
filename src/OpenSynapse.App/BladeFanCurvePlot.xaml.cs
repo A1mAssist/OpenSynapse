@@ -26,7 +26,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private const double PointMarkerSize = 6;
     private const double HandleGrabRadius = 22;
     private static readonly double[] TemperatureTicks = [30, 45, 60, 75, 90, 105, 120];
-    private static readonly double[] RpmTicks = [2000, 2500, 3000, 3500, 4000, 4500, 5000];
+    private static readonly double[] RpmTicks = [2000, 2500, 3000, 3500, 4000, 4500, 5000, 5400];
 
     private readonly List<Line> _horizontalGridLines = [];
     private readonly List<Line> _verticalGridLines = [];

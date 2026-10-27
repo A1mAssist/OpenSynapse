@@ -81,17 +81,16 @@ public sealed class Blade029FTests
 
     /// <summary>
     /// The Blade 16 (2023) official modes reach 5200 RPM and Custom reaches 5300, but
-    /// the shared fan-target report rejects a write past the global ceiling, so the
-    /// slider and the write guard stop at 5000 while the firmware keeps a higher
-    /// readback ceiling.
+    /// the shared fan-target report takes the same rpm/100 value the official middleware
+    /// writes, so the slider and the write guard reach the ceiling the model reports.
     /// </summary>
     [Fact]
-    public void TheFixedFanSliderStopsAtTheGlobalCeilingWhileTheReadbackAllowsMore()
+    public void TheFixedFanSliderReachesTheCeilingTheFirmwareReports()
     {
         const ushort productId = 0x029F;
 
         Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
-        Assert.Equal(5000, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
+        Assert.Equal(5300, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
     }
 
     /// <summary>
@@ -132,5 +131,20 @@ public sealed class Blade029FTests
         Assert.Equal((byte)0x00, request[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal((byte)0x01, request[RazerFeatureReport.ArgumentsOffset + 1]);
         Assert.Equal((byte)0x2A, request[RazerFeatureReport.ArgumentsOffset + 2]);
+    }
+
+    /// <summary>
+    /// The official middleware writes the fan speed as rpm/100, so the top speed the
+    /// official Performance mode asks for still fits in the report's speed byte.
+    /// </summary>
+    [Fact]
+    public void TheTopOfficialSpeedFitsInTheFanTargetByte()
+    {
+        var request = BladeFanProtocol.CreateSetTargetRequest(
+            BladeFanProtocol.ZoneCpu,
+            5400,
+            BladeModelCapabilities.MaximumWritableFanTargetRpmFor(0x02C6));
+
+        Assert.Equal((byte)0x36, request[RazerFeatureReport.ArgumentsOffset + 2]);
     }
 }
