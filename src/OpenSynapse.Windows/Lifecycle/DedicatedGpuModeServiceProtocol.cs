@@ -15,6 +15,8 @@ public static class DedicatedGpuModeServiceProtocol
     public const string StatusOperation = "status";
     public const string SetOperation = "set";
     public const string RestartOperation = "restart";
+    public const string EnsureMacroAgentOperation = "ensure-macro-agent";
+    public const string StartMacroAgentOperation = "start-macro-agent";
     public const int MaximumMessageLength = 4096;
 }
 
@@ -37,6 +39,18 @@ public enum DedicatedGpuModeServiceAction
 
     /// <summary>Restart the discrete adapter so its driver loads again.</summary>
     Restart,
+
+    /// <summary>
+    /// Create the macro agent's scheduled task for the authorized user and
+    /// start it. The task runs at the highest available integrity level so
+    /// macro input reaches windows that a normal app cannot write to.
+    /// </summary>
+    EnsureMacroAgent,
+
+    /// <summary>
+    /// Start the macro agent if its task already exists.
+    /// </summary>
+    StartMacroAgent,
 
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
@@ -77,6 +91,20 @@ public static class DedicatedGpuModeServiceRequestParser
                 DedicatedGpuModeServiceProtocol.RestartOperation))
         {
             return DedicatedGpuModeServiceAction.Restart;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.EnsureMacroAgentOperation))
+        {
+            return DedicatedGpuModeServiceAction.EnsureMacroAgent;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.StartMacroAgentOperation))
+        {
+            return DedicatedGpuModeServiceAction.StartMacroAgent;
         }
 
         if (StringComparer.Ordinal.Equals(

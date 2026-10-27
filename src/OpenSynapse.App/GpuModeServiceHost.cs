@@ -5,6 +5,7 @@ using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text;
 using System.Text.Json;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.App;
@@ -105,7 +106,8 @@ internal static class GpuModeServiceHost
                         cancellationToken);
                     idle.CancelAfter(TimeSpan.FromSeconds(IdleStopSeconds));
                     await pipe.WaitForConnectionAsync(idle.Token).ConfigureAwait(false);
-                    await HandleRequestAsync(pipe, cancellationToken).ConfigureAwait(false);
+                    await HandleRequestAsync(pipe, _authorizedUser, cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
@@ -141,6 +143,7 @@ internal static class GpuModeServiceHost
 
         private static async Task HandleRequestAsync(
             NamedPipeServerStream pipe,
+            SecurityIdentifier? authorizedUser,
             CancellationToken cancellationToken)
         {
             using var reader = new StreamReader(
@@ -184,12 +187,13 @@ internal static class GpuModeServiceHost
                 }
             }
 
-            var response = Execute(request);
+            var response = Execute(request, authorizedUser);
             await writer.WriteLineAsync(JsonSerializer.Serialize(response)).ConfigureAwait(false);
         }
 
         private static DedicatedGpuModeServiceResponse Execute(
-            DedicatedGpuModeServiceRequest? request)
+            DedicatedGpuModeServiceRequest? request,
+            SecurityIdentifier? authorizedUser)
         {
             if (request is null ||
                 request.Version != DedicatedGpuModeServiceProtocol.Version)
@@ -230,9 +234,63 @@ internal static class GpuModeServiceHost
                         Status: WindowsDedicatedGpuMode.GetStatus(),
                         Error: null);
 
+                case DedicatedGpuModeServiceAction.EnsureMacroAgent:
+                    return EnsureMacroAgent(authorizedUser);
+
+                case DedicatedGpuModeServiceAction.StartMacroAgent:
+                    return StartMacroAgent();
+
                 default:
                     return Invalid("Invalid GPU service command.");
             }
+        }
+
+        /// <summary>
+        /// Creates the macro agent's scheduled task for the authorized user.
+        ///
+        /// A highest-run-level task can only be created by an administrator,
+        /// which is what this service is. The task runs with the user's
+        /// interactive token, so the agent reaches the user's desktop and no
+        /// further UAC prompt is needed.
+        /// </summary>
+        private static DedicatedGpuModeServiceResponse EnsureMacroAgent(
+            SecurityIdentifier? authorizedUser)
+        {
+            if (authorizedUser is null)
+            {
+                return Invalid("The GPU service is missing its authorized user SID.");
+            }
+
+            var executablePath = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return Invalid("The GPU service cannot resolve its own path.");
+            }
+
+            if (!ElevatedMacroTaskInstaller.EnsureInstalled(
+                    executablePath,
+                    authorizedUser.Value))
+            {
+                return Invalid("The macro agent task could not be created.");
+            }
+
+            return StartMacroAgent();
+        }
+
+        private static DedicatedGpuModeServiceResponse StartMacroAgent()
+        {
+            if (!ElevatedMacroTaskInstaller.TryStart())
+            {
+                return Invalid("The macro agent task could not be started.");
+            }
+
+            return new DedicatedGpuModeServiceResponse(
+                DedicatedGpuModeServiceProtocol.Version,
+                Handled: true,
+                DedicatedGpuSwitchOutcome.Success,
+                ExitCode: 0,
+                Status: null,
+                Error: null);
         }
 
         private static DedicatedGpuModeServiceResponse Invalid(string error) =>

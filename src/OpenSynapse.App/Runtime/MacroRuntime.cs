@@ -9,7 +9,7 @@ internal sealed class MacroRuntime : IDisposable
     private const int DefaultStopPlaybackVirtualKey = 0x79;
     private const int HoldReleaseCheckMilliseconds = 100;
     private readonly object _gate = new();
-    private readonly WindowsMacroInputSink _sink = new();
+    private readonly IMacroInputSink _sink;
     private readonly Func<MacroInput, bool> _isPhysicallyDown;
     private readonly Dictionary<InputKey, SuppressedInput> _suppressedInputs = [];
     private readonly HashSet<int> _physicalModifierKeys = [];
@@ -40,9 +40,12 @@ internal sealed class MacroRuntime : IDisposable
     private bool _playbackStartHotkeyHeld;
     private bool _playbackStopHotkeyHeld;
 
-    internal MacroRuntime(Func<MacroInput, bool>? isPhysicallyDown = null)
+    internal MacroRuntime(
+        Func<MacroInput, bool>? isPhysicallyDown = null,
+        IMacroInputSink? sink = null)
     {
         _isPhysicallyDown = isPhysicallyDown ?? MacroInputHook.IsPhysicallyDown;
+        _sink = sink ?? new WindowsMacroInputSink();
     }
 
     public event Action<string>? Error;
@@ -389,7 +392,8 @@ internal sealed class MacroRuntime : IDisposable
         PlaybackStarted?.Invoke(macro);
         previous?.Cancel();
         previous?.Dispose();
-        var releasedModifiers = ReleaseTriggerModifiers(triggerModifiers);
+        var releasedModifiers = await ReleaseTriggerModifiersAsync(triggerModifiers)
+            .ConfigureAwait(false);
 
         try
         {
@@ -409,7 +413,7 @@ internal sealed class MacroRuntime : IDisposable
         }
         finally
         {
-            RestoreTriggerModifiers(releasedModifiers);
+            await RestoreTriggerModifiersAsync(releasedModifiers).ConfigureAwait(false);
             MacroInputHook? hookToDispose = null;
             lock (_gate)
             {
@@ -967,7 +971,8 @@ internal sealed class MacroRuntime : IDisposable
                 {
                     case MacroPlaybackActionKind.KeyDown:
                     case MacroPlaybackActionKind.MouseButtonDown:
-                        SendInput(action.Input!, isDown: true);
+                        await SendInputAsync(action.Input!, isDown: true, cancellationToken)
+                            .ConfigureAwait(false);
                         if (action.Input is { } downInput)
                         {
                             pressed.RemoveAll(item => item.Matches(downInput));
@@ -977,7 +982,8 @@ internal sealed class MacroRuntime : IDisposable
 
                     case MacroPlaybackActionKind.KeyUp:
                     case MacroPlaybackActionKind.MouseButtonUp:
-                        SendInput(action.Input!, isDown: false);
+                        await SendInputAsync(action.Input!, isDown: false, cancellationToken)
+                            .ConfigureAwait(false);
                         if (action.Input is { } upInput)
                         {
                             pressed.RemoveAll(item => item.Matches(upInput));
@@ -985,7 +991,8 @@ internal sealed class MacroRuntime : IDisposable
                         break;
 
                     case MacroPlaybackActionKind.MouseWheel:
-                        SendInput(action.Input!, isDown: false);
+                        await SendInputAsync(action.Input!, isDown: false, cancellationToken)
+                            .ConfigureAwait(false);
                         break;
 
                     case MacroPlaybackActionKind.MouseMove:
@@ -993,7 +1000,8 @@ internal sealed class MacroRuntime : IDisposable
                         break;
 
                     case MacroPlaybackActionKind.Text:
-                        _sink.SendText(action.Text ?? string.Empty);
+                        await _sink.SendTextAsync(action.Text ?? string.Empty, cancellationToken)
+                            .ConfigureAwait(false);
                         break;
 
                     case MacroPlaybackActionKind.RunCommand:
@@ -1008,13 +1016,16 @@ internal sealed class MacroRuntime : IDisposable
             {
                 try
                 {
-                    SendInput(input, isDown: false);
+                    await SendInputAsync(input, isDown: false, CancellationToken.None)
+                        .ConfigureAwait(false);
                 }
                 catch
                 {
                     // Best effort release; the original error is more actionable.
                 }
             }
+
+            await _sink.ReleaseAllAsync().ConfigureAwait(false);
         }
     }
 
@@ -1033,18 +1044,22 @@ internal sealed class MacroRuntime : IDisposable
                 await DelayWithPauseAsync(delay, cancellationToken).ConfigureAwait(false);
             }
             previousOffset = point.OffsetMilliseconds;
-            _sink.SendMouseMove(action.MouseMoveMode, point.X, point.Y);
+            await _sink.SendMouseMoveAsync(action.MouseMoveMode, point.X, point.Y, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 
-    private void SendInput(MacroInput input, bool isDown)
+    private Task SendInputAsync(
+        MacroInput input,
+        bool isDown,
+        CancellationToken cancellationToken)
     {
-        _sink.Send(new MacroStep
+        return _sink.SendAsync(new MacroStep
         {
             Kind = MacroStepKind.Input,
             Input = input,
             IsDown = isDown,
-        });
+        }, cancellationToken);
     }
 
     private void TrackPhysicalModifier(MacroInputEvent value)
@@ -1068,7 +1083,8 @@ internal sealed class MacroRuntime : IDisposable
         }
     }
 
-    private IReadOnlyList<MacroInput> ReleaseTriggerModifiers(MacroModifierKeys modifiers)
+    private async Task<IReadOnlyList<MacroInput>> ReleaseTriggerModifiersAsync(
+        MacroModifierKeys modifiers)
     {
         var released = new List<MacroInput>(4);
         if (modifiers == MacroModifierKeys.None)
@@ -1094,7 +1110,8 @@ internal sealed class MacroRuntime : IDisposable
 
             try
             {
-                SendInput(input, isDown: false);
+                await SendInputAsync(input, isDown: false, CancellationToken.None)
+                    .ConfigureAwait(false);
                 released.Add(input.Clone());
             }
             catch
@@ -1106,7 +1123,7 @@ internal sealed class MacroRuntime : IDisposable
         return released;
     }
 
-    private void RestoreTriggerModifiers(IReadOnlyList<MacroInput> released)
+    private async Task RestoreTriggerModifiersAsync(IReadOnlyList<MacroInput> released)
     {
         foreach (var input in released)
         {
@@ -1123,7 +1140,8 @@ internal sealed class MacroRuntime : IDisposable
 
             try
             {
-                SendInput(input, isDown: true);
+                await SendInputAsync(input, isDown: true, CancellationToken.None)
+                    .ConfigureAwait(false);
             }
             catch
             {

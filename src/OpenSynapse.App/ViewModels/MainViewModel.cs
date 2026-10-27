@@ -11,6 +11,7 @@ using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.App.Runtime;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Protocols;
@@ -134,7 +135,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         OpenRazerSpecialLightingService? openRazerSpecialLightingService = null,
         RazerFirmwareUpdateClient? firmwareUpdateClient = null,
         IThxAudioController? thxAudioController = null,
-        bool thxAudioSupported = false)
+        bool thxAudioSupported = false,
+        IMacroInputSink? macroInputSink = null)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -159,6 +161,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 IsOpenRazerChromaOverrideEnabled);
         }
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
+        _macroRuntime = new MacroRuntime(sink: macroInputSink);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);

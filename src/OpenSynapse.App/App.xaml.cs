@@ -10,6 +10,7 @@ using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Audio;
 using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
@@ -24,6 +25,8 @@ public partial class App : Application
     private static readonly TimeSpan ExitCleanupTimeout = TimeSpan.FromSeconds(12);
     private MainWindow? _window;
     private SingleInstanceGuard? _singleInstanceGuard;
+    private ElevatedMacroClient? _elevatedMacroClient;
+    private ElevatedMacroInputSink? _elevatedMacroSink;
     private WindowsTrayIcon? _trayIcon;
     private TrayMenuWindow? _trayMenuWindow;
     private WindowsPerformanceMonitor? _performanceMonitor;
@@ -153,6 +156,8 @@ public partial class App : Application
             registryLoad.Registry,
             _bladeModeCoordinator);
         _thxAudioController = new WindowsThxAudioController();
+        _elevatedMacroClient = new ElevatedMacroClient();
+        _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
         // Share the Razer transport so OpenRazer requests and telemetry serialize on one gate.
         _openRazerDeviceService = new OpenRazerDeviceService(
             OpenRazerDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
@@ -176,7 +181,9 @@ public partial class App : Application
             _openRazerDeviceService,
             new OpenRazerSpecialLightingService(),
             thxAudioController: _thxAudioController,
-            thxAudioSupported: WindowsThxAudioController.IsSupportedModel());
+            thxAudioSupported: WindowsThxAudioController.IsSupportedModel(),
+            macroInputSink: _elevatedMacroSink);
+        _ = EnsureMacroAgentAsync();
         _audioMuteViewModel = viewModel;
         viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
         viewModel.BladePerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
@@ -216,6 +223,52 @@ public partial class App : Application
         _ = ObserveActivationRequestsAsync(_activationCancellation.Token);
     }
 
+    /// <summary>
+    /// Brings the elevated macro agent up.
+    ///
+    /// The scheduled task has to run at the highest integrity level, so the
+    /// machine-wide service creates it on the app's behalf. After that the
+    /// agent runs in the user's session and no further prompt appears.
+    /// </summary>
+    private async Task EnsureMacroAgentAsync()
+    {
+        if (_elevatedMacroSink is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!await DedicatedGpuModeServiceClient.TryEnsureMacroAgentAsync()
+                    .ConfigureAwait(false))
+            {
+                _diagnosticLog.TryWrite(
+                    "macro",
+                    "The elevated macro agent is unavailable; macros use the app's own input path.");
+                return;
+            }
+
+            if (!await _elevatedMacroSink.TryEnableAsync().ConfigureAwait(false))
+            {
+                _diagnosticLog.TryWrite(
+                    "macro",
+                    "The elevated macro agent did not answer; macros use the app's own input path.");
+                return;
+            }
+
+            _diagnosticLog.TryWrite("macro", "The elevated macro agent is active.");
+        }
+        catch (Exception exception) when (
+            exception is IOException or InvalidOperationException or
+                UnauthorizedAccessException or TimeoutException or
+                System.ServiceProcess.TimeoutException)
+        {
+            _diagnosticLog.TryWrite(
+                "macro",
+                $"The elevated macro agent could not be started: {exception.Message}");
+        }
+    }
+
     private void RegisterMainWindow(MainWindow window, MainViewModel viewModel)
     {
         _window = window;
@@ -229,6 +282,7 @@ public partial class App : Application
             return;
         }
 
+        _elevatedMacroClient?.Dispose();
         await GetShutdownTask(viewModel);
     }
 

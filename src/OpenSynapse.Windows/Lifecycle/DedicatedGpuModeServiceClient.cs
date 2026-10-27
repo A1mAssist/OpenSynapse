@@ -44,6 +44,26 @@ public static class DedicatedGpuModeServiceClient
         return await SendWithWakeupRetryAsync(request, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Asks the service to create the macro agent's scheduled task and start it.
+    ///
+    /// The task must run at the highest integrity level, so only the
+    /// machine-wide service can create it. The agent then runs in the user's
+    /// session without any further prompt.
+    /// </summary>
+    public static async Task<bool> TryEnsureMacroAgentAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.EnsureMacroAgentOperation,
+            Enabled: null);
+
+        var response = await SendWithWakeupRetryAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+        return response?.Outcome == DedicatedGpuSwitchOutcome.Success;
+    }
+
     private static async Task<DedicatedGpuSwitchResult?> SendWithWakeupRetryAsync(
         DedicatedGpuModeServiceRequest request,
         CancellationToken cancellationToken)
