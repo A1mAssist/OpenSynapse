@@ -1368,6 +1368,7 @@
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>
   <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
   <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>Scroll acceleration</value></data>
+  <data name="OpenRazerSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel threshold</value></data>
   <data name="OpenRazerKeyswitchExpander.Header" xml:space="preserve"><value>Keyswitch optimization</value></data>
   <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>Choose function keys or media keys as the primary layer.</value></data>
   <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>Function keys first</value></data>
@@ -1559,6 +1560,8 @@
   <data name="OpenRazerCapabilityScrollAccelerationWrite" xml:space="preserve"><value>Scroll acceleration write</value></data>
   <data name="OpenRazerCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel read</value></data>
   <data name="OpenRazerCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel write</value></data>
+  <data name="OpenRazerCapabilitySmartReelThresholdRead" xml:space="preserve"><value>Smart Reel threshold read</value></data>
+  <data name="OpenRazerCapabilitySmartReelThresholdWrite" xml:space="preserve"><value>Smart Reel threshold write</value></data>
   <data name="OpenRazerCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn primary layer write</value></data>
   <data name="OpenRazerCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>Keyswitch optimization read</value></data>
   <data name="OpenRazerCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>Keyswitch optimization write</value></data>

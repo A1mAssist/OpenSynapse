@@ -28,6 +28,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 async () => ScrollAccelerationEnabled = await _service.GetScrollAccelerationAsync(Connection, cancellationToken));
             await ReadOptionalAsync(OpenRazerBackendCapability.SmartReelRead,
                 async () => SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken));
+            await ReadOptionalAsync(OpenRazerBackendCapability.SmartReelThresholdRead,
+                async () => SmartReelThreshold = await _service.GetSmartReelThresholdAsync(Connection, cancellationToken));
         }
         finally
         {
@@ -63,6 +65,16 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 await _service.SetSmartReelAsync(Connection, SmartReelEnabled, cancellationToken);
                 if (Has(OpenRazerBackendCapability.SmartReelRead))
                     SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken);
+            }, cancellationToken);
+
+    public Task ApplySmartReelThresholdAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.SmartReelThresholdWrite,
+            () => IsSmartReelThresholdBusy, value => IsSmartReelThresholdBusy = value,
+            async () =>
+            {
+                await _service.SetSmartReelThresholdAsync(Connection, SmartReelThreshold, cancellationToken);
+                if (Has(OpenRazerBackendCapability.SmartReelThresholdRead))
+                    SmartReelThreshold = await _service.GetSmartReelThresholdAsync(Connection, cancellationToken);
             }, cancellationToken);
 
     public async Task LoadKeyswitchAsync(CancellationToken cancellationToken = default)
