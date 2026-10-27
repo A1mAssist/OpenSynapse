@@ -36,6 +36,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool _isDpiBusy;
     private bool _isIdleBusy;
     private bool _isLowBatteryBusy;
+    private bool _isAutoSleepBusy;
+    private bool _isChargeLimiterBusy;
     private bool _isBrightnessBusy;
     private bool _isLightingBusy;
     private bool _isLightingLoading;
@@ -56,6 +58,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private int _dpiY = 800;
     private int _idleTimeoutSeconds = 300;
     private int _lowBatteryThresholdPercent = 15;
+    private bool _autoSleepEnabled = true;
+    private int _chargeLimiterPercent = 80;
+    private bool _chargeLimiterEnabled = true;
     private byte _brightness = 255;
     private OpenRazerLedZone _selectedLightingZone;
     private OpenRazerLightingEffect _selectedLightingEffect;
@@ -396,7 +401,11 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         OpenRazerBackendCapability.IdleTimeoutRead,
         OpenRazerBackendCapability.IdleTimeoutWrite,
         OpenRazerBackendCapability.LowBatteryThresholdRead,
-        OpenRazerBackendCapability.LowBatteryThresholdWrite));
+        OpenRazerBackendCapability.LowBatteryThresholdWrite,
+        OpenRazerBackendCapability.AutoSleepRead,
+        OpenRazerBackendCapability.AutoSleepWrite,
+        OpenRazerBackendCapability.BatteryChargeLimiterRead,
+        OpenRazerBackendCapability.BatteryChargeLimiterWrite));
     public Visibility IdleVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.IdleTimeoutRead,
         OpenRazerBackendCapability.IdleTimeoutWrite));
@@ -431,6 +440,42 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public bool CanWriteLowBattery => CanUse(OpenRazerBackendCapability.LowBatteryThresholdWrite) && !IsLowBatteryBusy;
     public bool CanEditLowBattery => CanUse(OpenRazerBackendCapability.LowBatteryThresholdWrite) &&
         !IsLowBatteryBusy && LowBatteryThresholdPercent is >= 5 and <= 25 && LowBatteryThresholdPercent % 5 == 0;
+    public Visibility AutoSleepVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.AutoSleepRead,
+        OpenRazerBackendCapability.AutoSleepWrite));
+    public Visibility AutoSleepWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.AutoSleepWrite));
+    public bool AutoSleepEnabled
+    {
+        get => _autoSleepEnabled;
+        set => SetField(ref _autoSleepEnabled, value);
+    }
+    public string AutoSleepText => _basicState?.AutoSleepEnabled is { } value
+        ? value ? AppStrings.Text("Text_OpenRazerAutoSleepOn") : AppStrings.Text("Text_OpenRazerAutoSleepOff")
+        : "--";
+    public bool IsAutoSleepBusy { get => _isAutoSleepBusy; private set => SetBusy(ref _isAutoSleepBusy, value, nameof(CanWriteAutoSleep)); }
+    public bool CanWriteAutoSleep => CanUse(OpenRazerBackendCapability.AutoSleepWrite) && !IsAutoSleepBusy;
+    public Visibility ChargeLimiterVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.BatteryChargeLimiterRead,
+        OpenRazerBackendCapability.BatteryChargeLimiterWrite));
+    public Visibility ChargeLimiterWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.BatteryChargeLimiterWrite));
+    public bool ChargeLimiterEnabled
+    {
+        get => _chargeLimiterEnabled;
+        set => SetField(ref _chargeLimiterEnabled, value);
+    }
+    public int ChargeLimiterPercent
+    {
+        get => _chargeLimiterPercent;
+        set
+        {
+            if (SetField(ref _chargeLimiterPercent, value)) OnPropertyChanged(nameof(CanEditChargeLimiter));
+        }
+    }
+    public string ChargeLimiterText => _basicState?.BatteryChargeLimiterPercent is { } value ? $"{value}%" : "--";
+    public bool IsChargeLimiterBusy { get => _isChargeLimiterBusy; private set => SetBusy(ref _isChargeLimiterBusy, value, nameof(CanEditChargeLimiter), nameof(CanWriteChargeLimiter)); }
+    public bool CanWriteChargeLimiter => CanUse(OpenRazerBackendCapability.BatteryChargeLimiterWrite) && !IsChargeLimiterBusy;
+    public bool CanEditChargeLimiter => CanUse(OpenRazerBackendCapability.BatteryChargeLimiterWrite) &&
+        !IsChargeLimiterBusy && ChargeLimiterPercent is >= 50 and <= 95 && ChargeLimiterPercent % 5 == 0;
 
     public Visibility LightingVisibility => VisibleWhen(LightingZones.Count > 0);
     public Visibility LightingControlsVisibility => VisibleWhen(

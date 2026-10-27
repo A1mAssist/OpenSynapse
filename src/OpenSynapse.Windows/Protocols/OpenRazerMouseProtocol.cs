@@ -2,12 +2,34 @@ using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
 
-public sealed record OpenRazerDpiStage(byte Number, int X, int Y);
+public sealed record OpenRazerDpiStage(byte Number, int X, int Y, int Z = 0);
 
 public sealed record OpenRazerDpiStages(byte ActiveStage, IReadOnlyList<OpenRazerDpiStage> Stages);
 
+/// <summary>Profile key debounce timings as the middleware reports them.</summary>
+public sealed record OpenRazerProfileDebounce(
+    byte ProfileId,
+    byte MakeDebounceTimeMs,
+    byte MakeMaskTimeMs,
+    byte BreakDebounceTimeMs,
+    byte BreakMaskTimeMs);
+
+/// <summary>Onboard macro storage summary as the middleware reports it.</summary>
+public sealed record OpenRazerMacroStorageInfo(
+    int MaxId,
+    int MaxMemoryLow,
+    int MaxMemoryHigh,
+    int AvailableMemoryLow,
+    int AvailableMemoryHigh,
+    int RecyclableMemoryLow,
+    int RecyclableMemoryHigh);
+
 internal static class OpenRazerMouseProtocol
 {
+    // The middleware declares the profile DPI class data frame as 80 bytes and
+    // overrides it per call with 7*stageCount+3.
+    internal const byte MiddlewareDpiStageFrameSize = 0x50;
+
     internal static OpenRazerRequest GetBattery(OpenRazerDeviceDefinition device) =>
         OpenRazerStandardProtocol.Create(device, "razer_chroma_misc_get_battery_level", 0x02, 0x07, 0x80, []);
 
@@ -18,8 +40,14 @@ internal static class OpenRazerMouseProtocol
     {
         if (device.Transactions.ContainsKey("razer_chroma_misc_get_polling_rate2"))
         {
+            var profile = device.GetFixedArgumentOrNull("razer_chroma_misc_get_polling_rate2", 0);
+            var arguments = profile is byte value ? new[] { value } : [];
             return OpenRazerStandardProtocol.Create(device,
-                "razer_chroma_misc_get_polling_rate2", 0x01, 0x00, 0xC0, []);
+                "razer_chroma_misc_get_polling_rate2",
+                // The middleware declares the USB high speed polling read as two
+                // bytes in every product bundle that ships it.
+                device.GetCommandSize("razer_chroma_misc_get_polling_rate2", 0x02),
+                0x00, 0xC0, arguments);
         }
         return OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_get_polling_rate", 0x01, 0x00, 0x85, []);
@@ -32,6 +60,14 @@ internal static class OpenRazerMouseProtocol
         if (device.PollingRates.Count > 0 && !device.PollingRates.Contains(hertz))
         {
             throw new ArgumentOutOfRangeException(nameof(hertz), "Polling rate is not declared for this device.");
+        }
+        if (device.Transactions.ContainsKey("razer_chroma_misc_set_polling_rate2") &&
+            device.GetFixedArgumentOrNull("razer_chroma_misc_set_polling_rate2", 0) is byte profile)
+        {
+            return [OpenRazerStandardProtocol.Create(device,
+                "razer_chroma_misc_set_polling_rate2",
+                device.GetCommandSize("razer_chroma_misc_set_polling_rate2", 0x02),
+                0x00, 0x40, [profile, EncodeHighPollingRate(hertz)])];
         }
         if (device.CommandSequences.TryGetValue("razer_chroma_misc_set_polling_rate2", out var sequence))
         {
@@ -87,14 +123,21 @@ internal static class OpenRazerMouseProtocol
 
     internal static OpenRazerRequest GetDpiStages(
         OpenRazerDeviceDefinition device,
-        byte storage = OpenRazerStandardProtocol.VariableStore) =>
-        OpenRazerStandardProtocol.Create(device,
-            "razer_chroma_misc_get_dpi_stages", 0x26, 0x04, 0x86, [storage]);
+        byte? storage = null)
+    {
+        var effectiveStorage = storage
+            ?? device.GetFixedArgumentOrNull("razer_chroma_misc_get_dpi_stages", 0)
+            ?? OpenRazerStandardProtocol.VariableStore;
+        return OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_dpi_stages",
+            device.GetCommandSize("razer_chroma_misc_get_dpi_stages", MiddlewareDpiStageFrameSize),
+            0x04, 0x86, [effectiveStorage]);
+    }
 
     internal static OpenRazerRequest SetDpiStages(
         OpenRazerDeviceDefinition device,
         OpenRazerDpiStages state,
-        byte storage = OpenRazerStandardProtocol.VariableStore)
+        byte? storage = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         if (state.Stages is null || state.Stages.Count is < 1 or > 5 ||
@@ -103,28 +146,31 @@ internal static class OpenRazerMouseProtocol
             throw new ArgumentOutOfRangeException(nameof(state));
         }
 
+        var effectiveStorage = storage
+            ?? device.GetFixedArgumentOrNull("razer_chroma_misc_set_dpi_stages", 0)
+            ?? OpenRazerStandardProtocol.VariableStore;
         var arguments = new byte[3 + (state.Stages.Count * 7)];
-        arguments[0] = storage;
+        arguments[0] = effectiveStorage;
         arguments[1] = state.ActiveStage;
         arguments[2] = checked((byte)state.Stages.Count);
         for (var index = 0; index < state.Stages.Count; index++)
         {
             var stage = state.Stages[index];
-            if (stage.Number != index + 1)
-            {
-                throw new ArgumentException("DPI stage numbers must be contiguous and one-based.", nameof(state));
-            }
             ValidateDpi(device, stage.X, nameof(state));
             ValidateDpi(device, stage.Y, nameof(state));
             var offset = 3 + (index * 7);
-            arguments[offset] = checked((byte)index);
+            arguments[offset] = stage.Number;
             arguments[offset + 1] = High(stage.X);
             arguments[offset + 2] = Low(stage.X);
             arguments[offset + 3] = High(stage.Y);
             arguments[offset + 4] = Low(stage.Y);
+            arguments[offset + 5] = High(stage.Z);
+            arguments[offset + 6] = Low(stage.Z);
         }
         return OpenRazerStandardProtocol.Create(device,
-            "razer_chroma_misc_set_dpi_stages", 0x26, 0x04, 0x06, arguments);
+            "razer_chroma_misc_set_dpi_stages",
+            device.GetCommandSize("razer_chroma_misc_set_dpi_stages", MiddlewareDpiStageFrameSize),
+            0x04, 0x06, arguments);
     }
 
     internal static OpenRazerDpiStages ParseDpiStages(
@@ -143,20 +189,173 @@ internal static class OpenRazerMouseProtocol
         var stages = new OpenRazerDpiStage[count];
         for (var index = 0; index < count; index++)
         {
-            // OpenRazer treats the per-stage marker and two trailing bytes as
-            // device payload; only active stage, count, and X/Y are semantic.
             var offset = 3 + (index * 7);
+            var number = arguments[offset];
             var x = (arguments[offset + 1] << 8) | arguments[offset + 2];
             var y = (arguments[offset + 3] << 8) | arguments[offset + 4];
+            var z = (arguments[offset + 5] << 8) | arguments[offset + 6];
             ValidateDpi(device, x, nameof(response));
             ValidateDpi(device, y, nameof(response));
-            stages[index] = new OpenRazerDpiStage(checked((byte)(index + 1)), x, y);
+            stages[index] = new OpenRazerDpiStage(number, x, y, z);
         }
         return new OpenRazerDpiStages(activeStage, stages);
     }
 
     internal static OpenRazerRequest GetIdleTime(OpenRazerDeviceDefinition device) =>
         OpenRazerStandardProtocol.Create(device, "razer_chroma_misc_get_idle_time", 0x02, 0x07, 0x83, []);
+
+    // The middleware drives the mouse power settings through the class 07 battery
+    // namespace. Auto sleep is read through a fallback chain of command ids
+    // because the firmware generation differs between the wireless mice; the
+    // middleware settles on 07:88 for the mouse family.
+    internal static OpenRazerRequest GetAutoSleep(OpenRazerDeviceDefinition device, byte profileId = 0) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_auto_sleep", 0x02, 0x07, 0x88, [profileId]);
+
+    internal static OpenRazerRequest SetAutoSleep(OpenRazerDeviceDefinition device, bool enabled, byte profileId = 0) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_auto_sleep", 0x02, 0x07, 0x08,
+            [profileId, enabled ? (byte)1 : (byte)0]);
+
+    internal static OpenRazerRequest GetTimeToDim(OpenRazerDeviceDefinition device, byte batteryId = 0) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_time_to_dim", 0x05, 0x07, 0x8B, [batteryId]);
+
+    /// <summary>
+    /// The middleware writes the dim delay as five bytes: profile id, enabled flag,
+    /// the delay as a big-endian 16-bit value, then the percentage.
+    /// </summary>
+    internal static OpenRazerRequest SetTimeToDim(
+        OpenRazerDeviceDefinition device,
+        byte profileId,
+        bool enabled,
+        int seconds,
+        byte percentage) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_time_to_dim", 0x05, 0x07, 0x0B,
+            [profileId, enabled ? (byte)1 : (byte)0, High(seconds), Low(seconds), percentage]);
+
+    internal static OpenRazerRequest GetBatteryDischargeCurve(OpenRazerDeviceDefinition device) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_battery_discharge_curve", 0x01, 0x07, 0x94, []);
+
+    internal static OpenRazerRequest SetBatteryDischargeCurve(OpenRazerDeviceDefinition device, byte chemistry) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_battery_discharge_curve", 0x01, 0x07, 0x14, [chemistry]);
+
+    internal static OpenRazerRequest GetGpuCardDetection(OpenRazerDeviceDefinition device, byte ledClassId) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_gpu_card_detection", 0x03, 0x03, 0xA0, [ledClassId]);
+
+    internal static OpenRazerRequest SetGpuCardDetection(
+        OpenRazerDeviceDefinition device,
+        byte ledClassId,
+        byte enabled) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_gpu_card_detection", 0x03, 0x03, 0x20, [ledClassId, enabled]);
+
+    internal static OpenRazerRequest GetProfileDebounceTime(OpenRazerDeviceDefinition device, byte profileId) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_profile_debounce_time", 0x05, 0x02, 0x95, [profileId]);
+
+    internal static OpenRazerRequest SetProfileDebounceTime(
+        OpenRazerDeviceDefinition device,
+        byte profileId,
+        byte makeDebounceTimeMs,
+        byte makeMaskTimeMs,
+        byte breakDebounceTimeMs,
+        byte breakMaskTimeMs) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_profile_debounce_time", 0x05, 0x02, 0x15,
+            [profileId, makeDebounceTimeMs, makeMaskTimeMs, breakDebounceTimeMs, breakMaskTimeMs]);
+
+    internal static OpenRazerRequest GetChromaTap(OpenRazerDeviceDefinition device, byte profileId) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_chroma_tap", 0x04, 0x0F, 0x93, [profileId, 0x00, 0x00, 0x00]);
+
+    internal static OpenRazerRequest SetChromaTap(
+        OpenRazerDeviceDefinition device,
+        byte profileId,
+        byte status,
+        byte tapMode,
+        byte functionId) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_chroma_tap", 0x04, 0x0F, 0x13,
+            [profileId, status, tapMode, functionId]);
+
+    internal static OpenRazerRequest GetForceChromaCtrl(OpenRazerDeviceDefinition device) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_force_chroma_ctrl", 0x01, 0x0F, 0x90, []);
+
+    internal static OpenRazerRequest SetForceChromaCtrl(OpenRazerDeviceDefinition device, byte configuration) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_force_chroma_ctrl", 0x01, 0x0F, 0x10, [configuration]);
+
+    internal static OpenRazerRequest GetMacroStorageInfo(OpenRazerDeviceDefinition device) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_macro_storage_info", 0x0E, 0x06, 0x8E, []);
+
+    internal static OpenRazerRequest GetBatteryChargeLimiter(OpenRazerDeviceDefinition device) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_battery_charge_limiter", 0x01, 0x07, 0x92, []);
+
+    internal static OpenRazerRequest SetBatteryChargeLimiter(OpenRazerDeviceDefinition device, byte level, bool enabled) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_battery_charge_limiter", 0x01, 0x07, 0x12,
+            // The middleware packs the enabled flag into the high bit and the
+            // charge level into the low seven bits: `payload[0] = isEnabled << 7 | value`.
+            [(byte)((enabled ? 0x80 : 0x00) | (level & 0x7F))]);
+
+    internal static OpenRazerRequest GetIndicatorLedConfiguration(OpenRazerDeviceDefinition device) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_indicator_led_configuration", 0x01, 0x07, 0x90, []);
+
+    internal static OpenRazerRequest SetIndicatorLedConfiguration(OpenRazerDeviceDefinition device, byte configuration) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_indicator_led_configuration", 0x01, 0x07, 0x10, [configuration]);
+
+    internal static bool ParseAutoSleepEnabled(ReadOnlySpan<byte> response) =>
+        OpenRazerStandardProtocol.Arguments(response, 2)[1] != 0;
+
+    /// <summary>
+    /// The middleware reads the charge limiter level and the enabled flag out of one
+    /// byte: `value = data[0] &amp; 0x7F` and `enabled = (data[0] &amp; 0x80) &gt;&gt; 7`.
+    /// The flag therefore lives in the high bit, not the low bit.
+    /// </summary>
+    internal static (byte Level, bool Enabled) ParseBatteryChargeLimiter(ReadOnlySpan<byte> response)
+    {
+        var value = OpenRazerStandardProtocol.Arguments(response, 1)[0];
+        return ((byte)(value & 0x7F), (value & 0x80) != 0);
+    }
+
+    /// <summary>
+    /// The middleware reads the profile debounce times back as five bytes:
+    /// profile id, then the make/break debounce and mask times.
+    /// </summary>
+    internal static OpenRazerProfileDebounce ParseProfileDebounceTime(ReadOnlySpan<byte> response)
+    {
+        var arguments = OpenRazerStandardProtocol.Arguments(response, 5);
+        return new OpenRazerProfileDebounce(
+            arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]);
+    }
+
+    /// <summary>
+    /// The middleware reads the macro storage summary back as fourteen bytes: the
+    /// maximum id and the total, available and recyclable memory as four big-endian
+    /// 16-bit values in between.
+    /// </summary>
+    internal static OpenRazerMacroStorageInfo ParseMacroStorageInfo(ReadOnlySpan<byte> response)
+    {
+        var arguments = OpenRazerStandardProtocol.Arguments(response, 14);
+        return new OpenRazerMacroStorageInfo(
+            (arguments[0] << 8) | arguments[1],
+            (arguments[2] << 8) | arguments[3],
+            (arguments[4] << 8) | arguments[5],
+            (arguments[6] << 8) | arguments[7],
+            (arguments[8] << 8) | arguments[9],
+            (arguments[10] << 8) | arguments[11],
+            (arguments[12] << 8) | arguments[13]);
+    }
 
     internal static OpenRazerRequest SetIdleTime(OpenRazerDeviceDefinition device, int seconds)
     {
@@ -204,12 +403,12 @@ internal static class OpenRazerMouseProtocol
 
     internal static OpenRazerRequest GetSmartReel(OpenRazerDeviceDefinition device) =>
         OpenRazerStandardProtocol.Create(device,
-            "razer_chroma_misc_get_scroll_smart_reel", 0x02, 0x02, 0x97,
+            "razer_chroma_misc_get_scroll_smart_reel", 0x50, 0x02, 0x97,
             [OpenRazerStandardProtocol.VariableStore]);
 
     internal static OpenRazerRequest SetSmartReel(OpenRazerDeviceDefinition device, bool enabled) =>
         OpenRazerStandardProtocol.Create(device,
-            "razer_chroma_misc_set_scroll_smart_reel", 0x02, 0x02, 0x17,
+            "razer_chroma_misc_set_scroll_smart_reel", 0x50, 0x02, 0x17,
             [OpenRazerStandardProtocol.VariableStore, enabled ? (byte)1 : (byte)0]);
 
     internal static int ParseBatteryPercent(ReadOnlySpan<byte> response)

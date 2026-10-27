@@ -100,9 +100,12 @@ internal sealed class RazerDeviceTimeoutException(string message) : InvalidOpera
 public sealed class RazerFeatureTransport : IRazerFeatureTransport
 {
     private readonly LocalDiagnosticLog? _diagnosticLog;
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
+    // Feature reports are a request/response pair on one HID collection. Discovery,
+    // telemetry and device pages each own a transport instance, so the gate must be
+    // process-wide; otherwise one transport can read another's response.
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, int[]> _leviathanTransactions =
+    private static readonly ConcurrentDictionary<string, int[]> _leviathanTransactions =
         new(StringComparer.OrdinalIgnoreCase);
 
     public RazerFeatureTransport(LocalDiagnosticLog? diagnosticLog = null)

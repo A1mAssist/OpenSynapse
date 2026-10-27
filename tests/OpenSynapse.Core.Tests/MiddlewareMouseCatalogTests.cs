@@ -76,6 +76,19 @@ public sealed class MiddlewareMouseCatalogTests
         Assert.Equal([125, 500, 1000], Find(0x00E7).PollingRates);
     }
 
+    [Theory]
+    [InlineData(0x00AA)]
+    [InlineData(0x00AB)]
+    public void BasiliskV3ProUsesTheOfficialPollingAndMappingCapabilities(ushort productId)
+    {
+        var device = Find(productId);
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+
+        Assert.Equal([125, 500, 1000], device.PollingRates);
+        Assert.Contains(OpenRazerBackendCapability.MappingRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.MappingWrite, capabilities);
+    }
+
     private static OpenRazerDeviceDefinition Find(ushort productId) =>
         OpenRazerDeviceCatalog.BuiltIn.Find(OpenRazerDeviceDefinition.VendorId, productId)
             ?? throw new InvalidOperationException($"1532:{productId:X4} is missing.");

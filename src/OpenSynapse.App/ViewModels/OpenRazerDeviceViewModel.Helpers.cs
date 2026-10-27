@@ -26,7 +26,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         DpiStages.Clear();
         foreach (var stage in state.Stages)
         {
-            var row = new OpenRazerDpiStageRowViewModel(stage.Number, stage.X, stage.Y, CanWriteDpiStages);
+            var row = new OpenRazerDpiStageRowViewModel(stage.Number, stage.X, stage.Y, stage.Z, CanWriteDpiStages);
             row.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CanEditDpiStages));
             DpiStages.Add(row);
         }
@@ -238,6 +238,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(DpiText));
         OnPropertyChanged(nameof(IdleTimeoutText));
         OnPropertyChanged(nameof(LowBatteryThresholdText));
+        OnPropertyChanged(nameof(AutoSleepText));
+        OnPropertyChanged(nameof(ChargeLimiterText));
         OnPropertyChanged(nameof(BrightnessText));
     }
 

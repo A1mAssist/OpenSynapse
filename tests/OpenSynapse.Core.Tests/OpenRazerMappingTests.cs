@@ -115,17 +115,51 @@ public sealed class OpenRazerMappingTests
                 continue;
             }
 
-            var names = OpenRazerMappingActions.OptionNames(group);
+            IReadOnlyList<OpenRazerMacroOption>? macros = group == OpenRazerMappingGroup.Macro
+                ? [new OpenRazerMacroOption(3, "Macro 3")]
+                : null;
+            var names = OpenRazerMappingActions.OptionNames(group, macros);
             Assert.NotEmpty(names);
             for (var index = 0; index < names.Count; index++)
             {
-                var action = OpenRazerMappingActions.CreateAction(group, index);
+                var action = OpenRazerMappingActions.CreateAction(group, index, macros: macros);
                 Assert.NotNull(action);
                 Assert.Equal(names[index], action.Name);
                 Assert.Equal(names[index],
-                    OpenRazerMappingActions.Describe(action.FunctionId, action.Data));
+                    OpenRazerMappingActions.Describe(action.FunctionId, action.Data, macros));
             }
         }
+    }
+
+    [Fact]
+    public void MacroAssignmentUsesTheOnboardMacroId()
+    {
+        OpenRazerMacroOption[] macros = [new(7, "Macro 7")];
+
+        var action = OpenRazerMappingActions.CreateAction(
+            OpenRazerMappingGroup.Macro, 0, macros: macros);
+
+        Assert.NotNull(action);
+        Assert.Equal(OpenRazerMappingFunctions.MacroTypeI, action.FunctionId);
+        Assert.Equal([0x00, 0x07, 0x01], action.Data);
+        Assert.Equal("Macro 7", OpenRazerMappingActions.Describe(
+            action.FunctionId, action.Data, macros));
+
+        var request = OpenRazerMappingProtocol.SetAssignment(
+            0x04, OpenRazerMappingProtocol.NormalMode, action.FunctionId, action.Data);
+        Assert.Equal(
+            new byte[] { 0x01, 0x04, 0x00, 0x03, 0x03, 0x00, 0x07, 0x01 },
+            request.Report.AsSpan(RazerFeatureReport.ArgumentsOffset, 8).ToArray());
+    }
+
+    [Fact]
+    public void MacroGroupExplainsWhenTheDeviceHasNoSlots()
+    {
+        Assert.Equal(
+            ["No readable macro slots"],
+            OpenRazerMappingActions.OptionNames(OpenRazerMappingGroup.Macro));
+        Assert.Null(OpenRazerMappingActions.CreateAction(
+            OpenRazerMappingGroup.Macro, 0));
     }
 
     [Fact]

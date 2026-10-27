@@ -4,6 +4,9 @@ public static class RazerFeatureReport
 {
     public const int Length = 91;
     public const int ArgumentsOffset = 9;
+    public const int DataSizeOffset = 6;
+    public const int CommandClassOffset = 7;
+    public const int CommandIdOffset = 8;
     internal const int OpenRazerLogicalLength = Length - 1;
 
     public static byte[] CreateRequest(

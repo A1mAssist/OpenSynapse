@@ -1310,6 +1310,10 @@
   <data name="OpenRazerPowerTitle.Text" xml:space="preserve"><value>Power management</value></data>
   <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
   <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>Low battery warning (%)</value></data>
+  <data name="OpenRazerAutoSleepLabel.Text" xml:space="preserve"><value>Auto sleep</value></data>
+  <data name="OpenRazerChargeLimiterLabel.Text" xml:space="preserve"><value>Charge limit (%)</value></data>
+  <data name="Text_OpenRazerAutoSleepOn" xml:space="preserve"><value>On</value></data>
+  <data name="Text_OpenRazerAutoSleepOff" xml:space="preserve"><value>Off</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
   <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>Lighting enabled</value></data>
   <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>Allow Chroma override</value></data>

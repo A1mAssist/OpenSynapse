@@ -190,8 +190,18 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                     await _service.SetBrightnessAsync(Connection, Brightness,
                         Connection.Definition.DefaultStorage, zone, cancellationToken);
                     if (capabilities?.CanReadBrightness == true)
-                        Brightness = await _service.GetBrightnessAsync(Connection,
-                            Connection.Definition.DefaultStorage, zone, cancellationToken);
+                    {
+                        try
+                        {
+                            Brightness = await _service.GetBrightnessAsync(Connection,
+                                Connection.Definition.DefaultStorage, zone, cancellationToken);
+                        }
+                        catch (NotSupportedException)
+                        {
+                            _unsupportedBrightnessReads.Add(zone);
+                            OnLightingSelectionChanged();
+                        }
+                    }
                 }
                 await SaveLightingProfileAsync(cancellationToken);
                 OnPropertyChanged(nameof(BrightnessText));

@@ -178,6 +178,9 @@ public sealed class OpenRazerDeviceService
         int? dpiY = null;
         int? idle = null;
         int? threshold = null;
+        bool? autoSleep = null;
+        byte? chargeLimiterLevel = null;
+        bool? chargeLimiterEnabled = null;
         byte? brightness = null;
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);
         var unsupported = new HashSet<OpenRazerBackendCapability>();
@@ -259,6 +262,10 @@ public sealed class OpenRazerDeviceService
             () => GetIdleTimeoutAsync(connection, cancellationToken), value => idle = value);
         await ReadAsync(OpenRazerBackendCapability.LowBatteryThresholdRead, "lowBatteryThreshold",
             () => GetLowBatteryThresholdAsync(connection, cancellationToken), value => threshold = value);
+        await ReadAsync(OpenRazerBackendCapability.AutoSleepRead, "autoSleep",
+            () => GetAutoSleepAsync(connection, cancellationToken), value => autoSleep = value);
+        await ReadAsync(OpenRazerBackendCapability.BatteryChargeLimiterRead, "batteryChargeLimiter",
+            () => GetBatteryChargeLimiterAsync(connection, cancellationToken), value => (chargeLimiterLevel, chargeLimiterEnabled) = value);
         await ReadAsync(OpenRazerBackendCapability.BrightnessRead, "brightness",
             () => GetBrightnessAsync(connection, cancellationToken: cancellationToken), value => brightness = value);
 
@@ -268,7 +275,9 @@ public sealed class OpenRazerDeviceService
                 $"openrazer:{connection.InstanceId}", connection.Definition.DisplayName, battery, charging));
         }
         return new OpenRazerBasicState(firmware, serial, softwareMode, battery, charging,
-            pollingRate, dpiX, dpiY, idle, threshold, brightness, errors,
+            pollingRate, dpiX, dpiY, idle, threshold, autoSleep,
+            chargeLimiterEnabled, chargeLimiterLevel,
+            brightness, errors,
             unsupported.ToFrozenSet());
     }
 
@@ -511,6 +520,24 @@ public sealed class OpenRazerDeviceService
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetLowBatteryThreshold(connection.Definition, percent), cancellationToken);
 
+    public async Task<bool> GetAutoSleepAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseAutoSleepEnabled(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetAutoSleep(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public Task SetAutoSleepAsync(OpenRazerDeviceConnection connection, bool enabled, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetAutoSleep(connection.Definition, enabled), cancellationToken);
+
+    public async Task<(byte Level, bool Enabled)> GetBatteryChargeLimiterAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseBatteryChargeLimiter(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetBatteryChargeLimiter(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public Task SetBatteryChargeLimiterAsync(
+        OpenRazerDeviceConnection connection, byte level, bool enabled, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetBatteryChargeLimiter(connection.Definition, level, enabled), cancellationToken);
+
     public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
         OpenRazerDeviceConnection connection,
         CancellationToken cancellationToken = default) =>
@@ -567,8 +594,26 @@ public sealed class OpenRazerDeviceService
         }
 
         var request = OpenRazerLightingProtocol.GetBrightness(connection.Definition, storage, zone);
-        var arguments = OpenRazerStandardProtocol.Arguments(await ExecuteAsync(connection,
-            request, cancellationToken).ConfigureAwait(false),
+        byte[] response;
+        try
+        {
+            response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (NotSupportedException) when (
+            zone == OpenRazerLedZone.All &&
+            request.BuilderName == "razer_chroma_extended_matrix_get_brightness")
+        {
+            // shortcut: use the first readable zone instead of querying the official region list;
+            // upgrade if a device rejects zone 0 but exposes more than one matrix region.
+            var fallback = connection.LightingZones.Values
+                .Where(item => item.Zone != OpenRazerLedZone.All && item.CanReadBrightness)
+                .OrderBy(item => item.Zone)
+                .FirstOrDefault();
+            if (fallback is null) throw;
+            request = OpenRazerLightingProtocol.GetBrightness(connection.Definition, storage, fallback.Zone);
+            response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+        }
+        var arguments = OpenRazerStandardProtocol.Arguments(response,
             request.BuilderName == "razer_chroma_misc_get_dock_brightness" ? (byte)1 : (byte)2);
         return request.BuilderName switch
         {
@@ -1231,6 +1276,10 @@ public sealed class OpenRazerDeviceService
         Add(OpenRazerBackendCapability.IdleTimeoutWrite, "set_idle_time", "razer_chroma_misc_set_idle_time");
         Add(OpenRazerBackendCapability.LowBatteryThresholdRead, "get_low_battery_threshold", "razer_chroma_misc_get_low_battery_threshold");
         Add(OpenRazerBackendCapability.LowBatteryThresholdWrite, "set_low_battery_threshold", "razer_chroma_misc_set_low_battery_threshold");
+        Add(OpenRazerBackendCapability.AutoSleepRead, "get_auto_sleep", "razer_chroma_misc_get_auto_sleep");
+        Add(OpenRazerBackendCapability.AutoSleepWrite, "set_auto_sleep", "razer_chroma_misc_set_auto_sleep");
+        Add(OpenRazerBackendCapability.BatteryChargeLimiterRead, "get_battery_charge_limiter", "razer_chroma_misc_get_battery_charge_limiter");
+        Add(OpenRazerBackendCapability.BatteryChargeLimiterWrite, "set_battery_charge_limiter", "razer_chroma_misc_set_battery_charge_limiter");
         if (lightingZones.Any(zone => zone.CanReadBrightness)) result.Add(OpenRazerBackendCapability.BrightnessRead);
         if (lightingZones.Any(zone => zone.CanWriteBrightness)) result.Add(OpenRazerBackendCapability.BrightnessWrite);
         if (lightingZones.Any(zone => zone.CanReadState)) result.Add(OpenRazerBackendCapability.LedStateRead);
