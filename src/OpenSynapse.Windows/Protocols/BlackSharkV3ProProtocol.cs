@@ -39,6 +39,7 @@ public static class BlackSharkV3ProProtocol
     private const byte ChargingClass = 0x2A;
     private const byte SidetoneReadClass = 0x19;
     private const byte SidetoneSetClass = 0x99;
+    private const byte ThxReadClass = 0x1E;
     private const byte ThxClass = 0x9E;
     private const byte AncReadClass = 0x12;
     private const byte AncSetClass = 0x92;
@@ -54,9 +55,8 @@ public static class BlackSharkV3ProProtocol
         _ => "Razer BlackShark V3 Pro",
     };
 
-    /// <summary>V3 Pro answers the battery query only after a zero sub-parameter.</summary>
     public static byte[] CreateGetBattery(bool wireless = true) =>
-        Create(BatteryClass, 0x00, wireless, 0x00);
+        Create(BatteryClass, 0x00, wireless);
 
     /// <summary>Wireless wake sequence observed in Synapse before the first query.</summary>
     public static IReadOnlyList<byte[]> CreateWakeSequence() =>
@@ -79,14 +79,14 @@ public static class BlackSharkV3ProProtocol
             throw new ArgumentOutOfRangeException(nameof(level), "BlackShark sidetone level must be between 0 and 15.");
         }
 
-        return Create(SidetoneSetClass, 0x01, wireless, checked((byte)level), 0x00);
+        return Create(SidetoneSetClass, 0x01, wireless, checked((byte)level));
     }
 
     public static byte[] CreateGetThx(bool wireless = true) =>
-        Create(ThxClass, 0x00, wireless);
+        Create(ThxReadClass, 0x00, wireless);
 
     public static byte[] CreateSetThx(bool enabled, bool wireless = true) =>
-        Create(ThxClass, 0x01, wireless, enabled ? (byte)0x01 : (byte)0x00, 0x00);
+        Create(ThxClass, 0x01, wireless, enabled ? (byte)0x01 : (byte)0x00);
 
     public static byte[] CreateGetAnc(bool wireless = true) =>
         Create(AncReadClass, 0x00, wireless);

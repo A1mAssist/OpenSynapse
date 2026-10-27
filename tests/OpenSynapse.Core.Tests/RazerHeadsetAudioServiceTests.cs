@@ -219,7 +219,8 @@ public sealed class RazerHeadsetAudioServiceTests
                         state.Preset = request[10];
                     }
                 }, state.Preset),
-                0x84 when request[7] == 0x07 => Response(request, 1, state.Charging ? (byte)1 : (byte)0),
+                0x84 when request[7] == 0x07 =>
+                    Response(request, 2, 0x00, state.Charging ? (byte)1 : (byte)0),
                 0x84 => EqBands(request),
                 0x04 => SetEqBands(request),
                 0x87 => Response(request, 2, 0x00, state.Bass),
@@ -235,7 +236,7 @@ public sealed class RazerHeadsetAudioServiceTests
                     request[10], state.NoiseSuppression ? (byte)1 : (byte)0),
                 0x9C => Response(request, 2, 0x00, state.NoiseSuppressionAmount),
                 0x1C => Write(request, () => state.NoiseSuppressionAmount = request[10], state.NoiseSuppressionAmount),
-                0x80 when request[7] == 0x07 => Response(request, 1, state.Battery),
+                0x80 when request[7] == 0x07 => Response(request, 2, 0x00, state.Battery),
                 0x81 => Response(request, 2, 1, 2),
                 0x86 => Response(request, 3, 0x00, (byte)state.AncState, state.AncLevel),
                 0x06 => Write(request, () =>

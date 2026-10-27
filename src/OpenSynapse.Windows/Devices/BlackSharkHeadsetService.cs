@@ -134,7 +134,7 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             cancellationToken).ConfigureAwait(false);
         var thx = await ReadValueAsync(
             BlackSharkV3ProProtocol.CreateGetThx(_connection.Wireless),
-            0x9E,
+            0x1E,
             cancellationToken).ConfigureAwait(false);
         var anc = await ReadAncAsync(cancellationToken).ConfigureAwait(false);
         var gameChat = await ReadValueAsync(
@@ -184,14 +184,14 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
     {
         var previous = await ReadValueAsync(
             BlackSharkV3ProProtocol.CreateGetThx(_connection.Wireless),
-            0x9E,
+            0x1E,
             cancellationToken).ConfigureAwait(false);
         try
         {
             await _transport.SendAsync(
                 BlackSharkV3ProProtocol.CreateSetThx(enabled, _connection.Wireless), false, cancellationToken)
                 .ConfigureAwait(false);
-            var actual = await ReadValueWithRetryAsync(0x9E, cancellationToken).ConfigureAwait(false);
+            var actual = await ReadValueWithRetryAsync(0x1E, cancellationToken).ConfigureAwait(false);
             if (actual is null || (actual != 0) != enabled)
             {
                 throw new InvalidOperationException("BlackShark THX readback did not match the requested state.");
