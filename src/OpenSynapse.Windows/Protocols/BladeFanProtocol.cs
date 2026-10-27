@@ -36,9 +36,21 @@ public static class BladeFanProtocol
         return CreateSetTargetRequestCore(zone, rpm);
     }
 
+    internal static byte[] CreateSetTargetRequest(byte zone, int rpm, int maximumRpm)
+    {
+        ValidateTargetRpm(rpm, maximumRpm);
+        return CreateSetTargetRequestCore(zone, rpm);
+    }
+
     internal static byte[] CreateSetCurveTargetRequest(byte zone, int rpm)
     {
         ValidateCurveTargetRpm(rpm);
+        return CreateSetTargetRequestCore(zone, rpm);
+    }
+
+    internal static byte[] CreateSetCurveTargetRequest(byte zone, int rpm, int maximumRpm)
+    {
+        ValidateCurveTargetRpm(rpm, maximumRpm);
         return CreateSetTargetRequestCore(zone, rpm);
     }
 
@@ -112,13 +124,21 @@ public static class BladeFanProtocol
     public static void ValidateTargetRpm(int rpm)
         => BladeFanLimits.ValidateTargetRpm(rpm);
 
+    internal static void ValidateTargetRpm(int rpm, int maximumRpm)
+        => BladeFanLimits.ValidateTargetRpm(rpm, maximumRpm);
+
     internal static void ValidateCurveTargetRpm(int rpm)
     {
-        if (rpm is < MinimumCurveRpm or > MaximumRpm || rpm % StepRpm != 0)
+        ValidateCurveTargetRpm(rpm, MaximumRpm);
+    }
+
+    internal static void ValidateCurveTargetRpm(int rpm, int maximumRpm)
+    {
+        if (rpm is < MinimumCurveRpm || rpm > maximumRpm || rpm % StepRpm != 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(rpm),
-                $"Blade curve target must be {MinimumCurveRpm}..{MaximumRpm} RPM in {StepRpm} RPM steps.");
+                $"Blade curve target must be {MinimumCurveRpm}..{maximumRpm} RPM in {StepRpm} RPM steps.");
         }
     }
 }

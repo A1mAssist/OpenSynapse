@@ -265,7 +265,7 @@ Blade models with a dedicated manifest expose telemetry, performance, fans, disp
 | Razer Blade (Late 2016) | `1532:0224` | — |
 | Razer Blade (QHD) | `1532:020F` | — |
 | Razer Blade 14 (2021) | `1532:0270` | — |
-| Razer Blade 14 (2022) | `1532:028C` | Dedicated Blade controls; fixed fan 3500-5000 RPM in Custom mode |
+| Razer Blade 14 (2022) | `1532:028C` | Dedicated Blade controls; fixed fan 3500-5400 RPM in Custom mode |
 | Razer Blade 14 (2023) | `1532:029D` | Dedicated Blade controls |
 | Razer Blade 14 (2024) | `1532:02B6` | Dedicated Blade controls |
 | Razer Blade 14 (2025) | `1532:02C5` | Dedicated Blade controls |

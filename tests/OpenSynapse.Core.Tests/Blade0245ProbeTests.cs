@@ -72,7 +72,8 @@ public sealed class Blade0245ProbeTests
                 BladeFanProtocol.ZoneCpu,
                 BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu),
                 maximumRpm));
+        // A caller that passes a lower ceiling than the model reports still rejects it.
         Assert.Throws<InvalidOperationException>(() =>
-            BladeFanProtocol.ParseTarget(response, BladeFanProtocol.ZoneCpu));
+            BladeFanProtocol.ParseTarget(response, BladeFanProtocol.ZoneCpu, 5000));
     }
 }

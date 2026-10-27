@@ -615,8 +615,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             {
                 throw new ArgumentNullException(nameof(gpuTargetRpm));
             }
-            BladeFanProtocol.ValidateTargetRpm(cpuTargetRpm.Value);
-            BladeFanProtocol.ValidateTargetRpm(gpuTargetRpm.Value);
         }
         else if (cpuTargetRpm is not null || gpuTargetRpm is not null)
         {
@@ -672,14 +670,15 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         {
             throw new ArgumentOutOfRangeException(nameof(mode));
         }
-        BladeFanProtocol.ValidateCurveTargetRpm(cpuTargetRpm);
-        BladeFanProtocol.ValidateCurveTargetRpm(gpuTargetRpm);
         var blade = FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade fan control channel is unavailable.");
         if (!BladeModelCapabilities.SupportsFanCurve(blade.Descriptor.ProductId))
         {
             throw new InvalidOperationException("Fan-curve control is not admitted for this Blade model.");
         }
+        var maximumRpm = BladeModelCapabilities.MaximumWritableFanTargetRpmFor(blade.Descriptor.ProductId);
+        BladeFanProtocol.ValidateCurveTargetRpm(cpuTargetRpm, maximumRpm);
+        BladeFanProtocol.ValidateCurveTargetRpm(gpuTargetRpm, maximumRpm);
         var original = await ReadBladeFanTransactionStateAsync(
             blade, cancellationToken, readTachometers: true);
         var actual = await SetBladeFanTargetsCoreAsync(
@@ -1790,8 +1789,14 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         bool curveTarget = false)
     {
         var request = curveTarget
-            ? BladeFanProtocol.CreateSetCurveTargetRequest(zone, rpm)
-            : BladeFanProtocol.CreateSetTargetRequest(zone, rpm);
+            ? BladeFanProtocol.CreateSetCurveTargetRequest(
+                zone,
+                rpm,
+                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(device.Descriptor.ProductId))
+            : BladeFanProtocol.CreateSetTargetRequest(
+                zone,
+                rpm,
+                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(device.Descriptor.ProductId));
         var transport = device.Manifest.GetRequiredCapability("fan-target.get");
         return _transport.QueryAsync(
             device.Descriptor.Id,
