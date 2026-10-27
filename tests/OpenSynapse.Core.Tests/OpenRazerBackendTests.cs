@@ -111,7 +111,7 @@ public sealed class OpenRazerBackendTests
     [Theory]
     [InlineData(0x00DE, 0x00C0, "Razer Viper V3 Pro SE (Wired)")]
     [InlineData(0x00DF, 0x00C1, "Razer Viper V3 Pro SE (Wireless)")]
-    public void ViperV3ProSeAliasesInheritTheV3ProProtocol(
+    public void ViperV3ProSeAliasesUseTheMatchingPollingProtocol(
         ushort productId,
         ushort siblingProductId,
         string displayName)
@@ -125,16 +125,41 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(displayName, alias!.DisplayName);
         Assert.Equal(sibling!.Category, alias.Category);
         Assert.Equal(sibling.MaximumDpi, alias.MaximumDpi);
-        Assert.Equal(sibling.PollingRates, alias.PollingRates);
-        Assert.Equal(
-            sibling.Transactions.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray(),
-            alias.Transactions.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray());
-        Assert.Equal(
-            sibling.BuilderArgumentPrefixes.Keys.OrderBy(key => key, StringComparer.Ordinal),
-            alias.BuilderArgumentPrefixes.Keys.OrderBy(key => key, StringComparer.Ordinal));
-        Assert.Equal(
-            sibling.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal),
-            alias.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal));
+        if (productId == 0x00DF)
+        {
+            Assert.Equal(new[] { 125, 500, 1000 }, alias.PollingRates);
+            Assert.Equal(0x1F, alias.GetRequiredTransaction("razer_chroma_misc_get_polling_rate"));
+            Assert.Equal(0x1F, alias.GetRequiredTransaction("razer_chroma_misc_set_polling_rate"));
+            Assert.DoesNotContain("razer_chroma_misc_get_polling_rate2", alias.Transactions.Keys);
+            Assert.DoesNotContain("razer_chroma_misc_set_polling_rate2", alias.Transactions.Keys);
+            Assert.DoesNotContain("razer_chroma_misc_set_polling_rate2", alias.CommandSequences.Keys);
+
+            var get = OpenRazerMouseProtocol.GetPollingRate(alias).Report;
+            Assert.Equal(0x1F, get[2]);
+            Assert.Equal(0x01, get[6]);
+            Assert.Equal(0x00, get[7]);
+            Assert.Equal(0x85, get[8]);
+
+            var set = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(alias, 1000));
+            Assert.Equal(0x1F, set.Report[2]);
+            Assert.Equal(0x01, set.Report[6]);
+            Assert.Equal(0x00, set.Report[7]);
+            Assert.Equal(0x05, set.Report[8]);
+            Assert.Equal(0x01, set.Report[RazerFeatureReport.ArgumentsOffset]);
+        }
+        else
+        {
+            Assert.Equal(sibling.PollingRates, alias.PollingRates);
+            Assert.Equal(
+                sibling.Transactions.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray(),
+                alias.Transactions.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray());
+            Assert.Equal(
+                sibling.BuilderArgumentPrefixes.Keys.OrderBy(key => key, StringComparer.Ordinal),
+                alias.BuilderArgumentPrefixes.Keys.OrderBy(key => key, StringComparer.Ordinal));
+            Assert.Equal(
+                sibling.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal),
+                alias.CommandSequences.Keys.OrderBy(key => key, StringComparer.Ordinal));
+        }
         Assert.Equal(0x3F, alias.GetRequiredTransaction("razer_chroma_misc_get_battery_level"));
     }
 
