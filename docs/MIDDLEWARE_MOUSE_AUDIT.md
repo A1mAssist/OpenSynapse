@@ -27,6 +27,15 @@
 | 00EF/00F0 | DeathAdder V4 Pro CF | 100–50000 / 50 | 125–8000 | 1 | 一致；无灯光 |
 | 00DE/00DF | Viper V3 Pro SE | 100–35000 / 1 | 125/500/1000 | 1 | 最大 DPI 与轮询率一致；步进为兄弟型号的 50 |
 | 00A2 | Cobra | 200–8500 / 100 | 125/500/1000 | — | 新增，复用 `00A3` Cobra 的定义 |
+| B005 | Viper V4 HyperSpeed | 100–33000 / 50 | 125–8000 | 1 | 新增，复用 `00C1` Viper V4 Pro；bundle 的 `productPid` 与 `donglePid` 同为 45061，BLE 为 45062 |
+| B007 | DeathAdder V4 HyperSpeed | 100–33000 / 10 | 125–8000 | 1 | 新增，复用 `00BF` DeathAdder V4 Pro (Wireless)；`productPid`/`donglePid` 同为 45063，BLE 45064；`supportedFeature.macros=false` |
+| B00A/B00B | Basilisk V3 Pro 35K - Xbox 25 Anniversary Edition | 100–35000 / 50 | 125/500/1000 | 4 | 新增，`productPid` 45066 复用 `00CC`、`donglePid` 45067 复用 `00CD`；`supportedFeature.scrollWheel=true`，BLE 45068 |
+
+这三款的 bundle 只有薄适配层（B005 用的是 `rzDevice25LegacyNoBrightness`），
+`sendCommand` 定义在共享引擎 chunk 里、包里没有落盘：`out9/protocols.json` 里
+B005/B007 的 `definedCommands` 为 0，B00A 抓到的 31 条是共享引擎的游戏手柄命令并集。
+因此它们是**按兄弟型号复用命令族**，不是逐字节从自己的 JS 推出来的；实际能力以运行时
+读探针为准，读不回来的控件保持隐藏。
 
 ## 命令集说明
 
