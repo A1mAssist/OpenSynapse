@@ -1308,6 +1308,10 @@ public sealed class OpenRazerBackendTests
     [InlineData(0x009C)]
     [InlineData(0x00B9)]
     [InlineData(0x0080)]
+    [InlineData(0x00B6)]
+    [InlineData(0x00B7)]
+    [InlineData(0x00C2)]
+    [InlineData(0x00C3)]
     public void DeclaredPollingControlAlwaysPublishesRates(ushort productId)
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
@@ -1333,6 +1337,40 @@ public sealed class OpenRazerBackendTests
         Assert.Contains(OpenRazerBackendCapability.DpiRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.DpiWrite, capabilities);
     }
+
+    /// <summary>
+    /// The DeathAdder V3 Pro family reaches the mouse through two identities. The
+    /// 00B6/00B7 pair is the plain Pro body and dongle, and the 00C2/00C3 pair is
+    /// the HyperPolling body and dongle. The official bundles list 125/500/1000 for
+    /// every body, so the plain pair uses the legacy 00:85/00:05 commands. Only the
+    /// 00C3 dongle carries the wireless high-speed commands, which is the same
+    /// shape as the Viper V3 Pro dongle (00C1).
+    /// </summary>
+    [Fact]
+    public void DeathAdderV3ProPublishesThePollingRatesItsBundlesDeclare()
+    {
+        var plain = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B6)!;
+        var plainDongle = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B7)!;
+        var hyperPolling = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00C2)!;
+        var hyperPollingDongle = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00C3)!;
+
+        Assert.Equal([125, 500, 1000], plain.PollingRates);
+        Assert.Equal([125, 500, 1000], plainDongle.PollingRates);
+        Assert.Equal([125, 500, 1000], hyperPolling.PollingRates);
+        Assert.Equal([125, 500, 1000, 2000, 4000, 8000], hyperPollingDongle.PollingRates);
+
+        // The plain pair answers the legacy polling commands only.
+        Assert.Contains("razer_chroma_misc_get_polling_rate", plain.Transactions.Keys);
+        Assert.Contains("razer_chroma_misc_set_polling_rate", plain.Transactions.Keys);
+        Assert.DoesNotContain("razer_chroma_misc_get_polling_rate2", plain.Transactions.Keys);
+
+        // The HyperPolling dongle answers the high-speed pair instead, so the 8 kHz
+        // codes reach the device.
+        Assert.Contains("razer_chroma_misc_get_polling_rate2", hyperPollingDongle.Transactions.Keys);
+        Assert.Contains("razer_chroma_misc_set_polling_rate2", hyperPollingDongle.Transactions.Keys);
+        Assert.DoesNotContain("razer_chroma_misc_get_polling_rate", hyperPollingDongle.Transactions.Keys);
+    }
+
 
     /// <summary>
     /// The DeathAdder V2 X HyperSpeed answers the 0x1F command family. OpenRazer sends
