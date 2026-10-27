@@ -30,6 +30,9 @@
     "keyboard-brightness.set": { "transactionId": "03", "dataSize": "03", "commandClass": "03", "commandId": "03", "arguments": "", "allowRemainingPacketsMismatch": true },
     "keyboard-effect.get": { "transactionId": "03", "dataSize": "03", "commandClass": "0F", "commandId": "82", "arguments": "010500", "allowRemainingPacketsMismatch": true },
     "keyboard-effect.set": { "transactionId": "03", "dataSize": "03", "commandClass": "0F", "commandId": "02", "arguments": "", "allowRemainingPacketsMismatch": true },
+    "display-mux.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "89", "arguments": "0000" },
+    "display-mux.set": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "09", "arguments": "" },
+    "display-mux-capabilities.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "8A", "arguments": "0000" },
     "gaming-mode.set": { "transactionId": "00", "dataSize": "04", "commandClass": "00", "commandId": "08", "arguments": "" }
   }
 }

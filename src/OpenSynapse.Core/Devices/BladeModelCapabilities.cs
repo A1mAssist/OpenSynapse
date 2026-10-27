@@ -67,7 +67,18 @@ public static class BladeModelCapabilities
             // Blade 16 (2023) RZ09-0483. Owner-tested maximum fans plus a CPU Boost level.
             // Its performance-mode table lists HyperBoost, and it reads the adapter
             // wattage level through the same 07:8C report the other models use.
-            [0x029F] = new(MaxFan: true, [.. LowMediumHigh, BladeCpuBoostMode.Boost], HyperBoost: true),
+            // The official middleware drives a fixed fan speed from every performance
+            // mode, not only from Custom, so no custom-mode gate applies here. The
+            // official modes span 3400 to 5200 RPM and Custom reaches 5300, so the
+            // readback ceiling follows the firmware while the write ceiling stays at
+            // the 5000 RPM the shared fan-target report accepts.
+            [0x029F] = new(
+                MaxFan: true,
+                [.. LowMediumHigh, BladeCpuBoostMode.Boost],
+                FixedFan: true,
+                MinimumFanTargetRpm: 3400,
+                MaximumFanTargetRpm: 5300,
+                HyperBoost: true),
 
             // Blade 18 (2023) RZ09-0484. Owner-reported maximum fans; its fixed fan
             // targets were reported ignored, so no fixed target is admitted.
@@ -183,6 +194,15 @@ public static class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract)
             ? contract.MaximumFanTargetRpm
             : BladeFanLimits.MaximumRpm;
+
+    /// <summary>
+    /// Upper bound for a fixed fan write and for the slider that offers one. The shared
+    /// fan-target report stores the speed in 100 RPM steps and the firmware rejects
+    /// anything past the global ceiling, so a model that reports a higher maximum keeps
+    /// that higher ceiling only for reading back a target the firmware already stored.
+    /// </summary>
+    public static int MaximumWritableFanTargetRpmFor(ushort productId) =>
+        Math.Min(MaximumFanTargetRpmFor(productId), BladeFanLimits.MaximumRpm);
 
     private sealed record Contract(
         bool MaxFan,
