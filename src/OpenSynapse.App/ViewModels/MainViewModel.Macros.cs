@@ -18,7 +18,7 @@ public sealed partial class MainViewModel
         Converters = { new JsonStringEnumConverter() },
     };
 
-    private readonly MacroRuntime _macroRuntime = new();
+    private readonly MacroRuntime _macroRuntime;
     private readonly SemaphoreSlim _macroSaveGate = new(1, 1);
     private readonly HashSet<string> _dirtyMacroIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, long> _macroEditVersions = new(StringComparer.Ordinal);

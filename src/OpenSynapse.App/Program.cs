@@ -1,5 +1,6 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
 using Velopack;
 using Velopack.Locators;
@@ -17,6 +18,11 @@ public static class Program
             return;
         }
 
+        if (ElevatedMacroAgent.TryRun(args))
+        {
+            return;
+        }
+
         if (WindowsDedicatedGpuMode.TryRunElevatedCommand(args) is int helperExitCode)
         {
             Environment.Exit(helperExitCode);
@@ -30,16 +36,22 @@ public static class Program
                 MigrateLegacyInstall();
                 RepairStartupRegistration();
                 EnsureGpuService();
+                EnsureMacroAgentTask();
                 PreserveExistingShortcuts();
             })
             .OnAfterUpdateFastCallback(_ =>
             {
                 EnsureGpuService();
+                EnsureMacroAgentTask();
                 RepairStartupRegistration();
                 PreserveExistingShortcuts();
             })
             .OnBeforeUpdateFastCallback(_ => StopGpuService())
-            .OnBeforeUninstallFastCallback(_ => RemoveGpuService())
+            .OnBeforeUninstallFastCallback(_ =>
+            {
+                RemoveGpuService();
+                RemoveMacroAgentTask();
+            })
             .Run();
 
         MigrateLegacyUserData();
@@ -126,6 +138,40 @@ public static class Program
             {
                 _ = DedicatedGpuModeServiceInstaller.Stop();
             }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Creates the macro agent's scheduled task.
+    ///
+    /// The install hook runs elevated, and a task at the highest integrity
+    /// level can only be created by an administrator. The task then starts
+    /// the agent in the user's session, so no further prompt is needed.
+    /// </summary>
+    private static void EnsureMacroAgentTask()
+    {
+        try
+        {
+            if (Environment.ProcessPath is { } executablePath &&
+                ElevatedMacroTaskInstaller.EnsureInstalled(executablePath))
+            {
+                ElevatedMacroTaskInstaller.TryStart();
+            }
+        }
+        catch (Exception)
+        {
+            // Macros keep working through the app's own input path.
+        }
+    }
+
+    private static void RemoveMacroAgentTask()
+    {
+        try
+        {
+            _ = ElevatedMacroTaskInstaller.Remove();
         }
         catch (Exception)
         {

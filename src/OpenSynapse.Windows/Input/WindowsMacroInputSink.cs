@@ -4,7 +4,7 @@ using OpenSynapse.Core.Macros;
 
 namespace OpenSynapse.Windows.Input;
 
-public sealed class WindowsMacroInputSink
+public sealed class WindowsMacroInputSink : IMacroInputSink
 {
     internal static readonly nuint InjectionTag = unchecked((nuint)0x4F534D4143524FUL);
 
@@ -46,12 +46,12 @@ public sealed class WindowsMacroInputSink
 
     private readonly object _gate = new();
 
-    public void Send(MacroStep step)
+    public Task SendAsync(MacroStep step, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(step);
         if (step.Kind == MacroStepKind.Delay)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var input = CreateInput(step);
@@ -60,19 +60,19 @@ public sealed class WindowsMacroInputSink
             var sent = SendInput(1, [input], Marshal.SizeOf<Input>());
             if (sent == 1)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             throw SendInputFailure(Marshal.GetLastWin32Error(), "SendInput could not send a macro event");
         }
     }
 
-    public void SendText(string text)
+    public Task SendTextAsync(string text, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(text);
         if (text.Length == 0)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         lock (_gate)
@@ -91,9 +91,15 @@ public sealed class WindowsMacroInputSink
                 SendAll(inputs);
             }
         }
+
+        return Task.CompletedTask;
     }
 
-    public void SendMouseMove(MacroMouseMoveMode mode, int x, int y)
+    public Task SendMouseMoveAsync(
+        MacroMouseMoveMode mode,
+        int x,
+        int y,
+        CancellationToken cancellationToken = default)
     {
         lock (_gate)
         {
@@ -127,6 +133,8 @@ public sealed class WindowsMacroInputSink
                 throw SendInputFailure(Marshal.GetLastWin32Error(), "SendInput could not move the mouse");
             }
         }
+
+        return Task.CompletedTask;
     }
 
     public static MacroModifierKeys GetModifierState()
