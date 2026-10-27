@@ -17,6 +17,11 @@ public enum OpenRazerKeyswitchOptimization
 
 public sealed class OpenRazerDeviceService
 {
+    // The middleware drives GPU card detection on LED class 0 (All_Region).
+    private const byte GpuCardLedClassId = 0x00;
+    // The middleware writes the LK scroll wheel mode for the base profile.
+    private const byte LkScrollProfileId = 0x01;
+
     private readonly OpenRazerDeviceCatalog _catalog;
     private readonly IRazerFeatureTransport _transport;
     private readonly LocalDiagnosticLog? _diagnosticLog;
@@ -181,6 +186,17 @@ public sealed class OpenRazerDeviceService
         bool? autoSleep = null;
         byte? chargeLimiterLevel = null;
         bool? chargeLimiterEnabled = null;
+        bool? timeToDimEnabled = null;
+        int? timeToDimSeconds = null;
+        byte? timeToDimPercent = null;
+        byte? indicatorLedConfiguration = null;
+        bool? gpuCardDetection = null;
+        bool? forceChromaCtrl = null;
+        OpenRazerProfileDebounce? profileDebounce = null;
+        OpenRazerChromaTap? chromaTap = null;
+        byte? batteryDischargeCurve = null;
+        OpenRazerMacroStorageInfo? macroStorageInfo = null;
+        byte? lkScrollWheelModeMask = null;
         byte? brightness = null;
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);
         var unsupported = new HashSet<OpenRazerBackendCapability>();
@@ -266,6 +282,29 @@ public sealed class OpenRazerDeviceService
             () => GetAutoSleepAsync(connection, cancellationToken), value => autoSleep = value);
         await ReadAsync(OpenRazerBackendCapability.BatteryChargeLimiterRead, "batteryChargeLimiter",
             () => GetBatteryChargeLimiterAsync(connection, cancellationToken), value => (chargeLimiterLevel, chargeLimiterEnabled) = value);
+        await ReadAsync(OpenRazerBackendCapability.TimeToDimRead, "timeToDim",
+            () => GetTimeToDimAsync(connection, cancellationToken), value =>
+            {
+                timeToDimEnabled = value.Enabled;
+                timeToDimSeconds = value.Seconds;
+                timeToDimPercent = value.Percentage;
+            });
+        await ReadAsync(OpenRazerBackendCapability.IndicatorLedConfigurationRead, "indicatorLedConfiguration",
+            () => GetIndicatorLedConfigurationAsync(connection, cancellationToken), value => indicatorLedConfiguration = value);
+        await ReadAsync(OpenRazerBackendCapability.GpuCardDetectionRead, "gpuCardDetection",
+            () => GetGpuCardDetectionAsync(connection, cancellationToken), value => gpuCardDetection = value.Enabled);
+        await ReadAsync(OpenRazerBackendCapability.ForceChromaCtrlRead, "forceChromaCtrl",
+            () => GetForceChromaCtrlAsync(connection, cancellationToken), value => forceChromaCtrl = value);
+        await ReadAsync(OpenRazerBackendCapability.ProfileDebounceTimeRead, "profileDebounce",
+            () => GetProfileDebounceTimeAsync(connection, cancellationToken), value => profileDebounce = value);
+        await ReadAsync(OpenRazerBackendCapability.ChromaTapRead, "chromaTap",
+            () => GetChromaTapAsync(connection, cancellationToken), value => chromaTap = value);
+        await ReadAsync(OpenRazerBackendCapability.BatteryDischargeCurveRead, "batteryDischargeCurve",
+            () => GetBatteryDischargeCurveAsync(connection, cancellationToken), value => batteryDischargeCurve = value);
+        await ReadAsync(OpenRazerBackendCapability.MacroStorageInfoRead, "macroStorageInfo",
+            () => GetMacroStorageInfoAsync(connection, cancellationToken), value => macroStorageInfo = value);
+        await ReadAsync(OpenRazerBackendCapability.LkScrollWheelModeRead, "lkScrollWheelMode",
+            () => GetLkScrollWheelModeAsync(connection, cancellationToken), value => lkScrollWheelModeMask = value.ModeMask);
         await ReadAsync(OpenRazerBackendCapability.BrightnessRead, "brightness",
             () => GetBrightnessAsync(connection, cancellationToken: cancellationToken), value => brightness = value);
 
@@ -277,6 +316,10 @@ public sealed class OpenRazerDeviceService
         return new OpenRazerBasicState(firmware, serial, softwareMode, battery, charging,
             pollingRate, dpiX, dpiY, idle, threshold, autoSleep,
             chargeLimiterEnabled, chargeLimiterLevel,
+            timeToDimEnabled, timeToDimSeconds, timeToDimPercent,
+            indicatorLedConfiguration, gpuCardDetection, forceChromaCtrl,
+            profileDebounce, chromaTap, batteryDischargeCurve, macroStorageInfo,
+            lkScrollWheelModeMask,
             brightness, errors,
             unsupported.ToFrozenSet());
     }
@@ -537,6 +580,110 @@ public sealed class OpenRazerDeviceService
         OpenRazerDeviceConnection connection, byte level, bool enabled, CancellationToken cancellationToken = default) =>
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetBatteryChargeLimiter(connection.Definition, level, enabled), cancellationToken);
+
+    public async Task<OpenRazerTimeToDim> GetTimeToDimAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseTimeToDim(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetTimeToDim(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public Task SetTimeToDimAsync(
+        OpenRazerDeviceConnection connection,
+        bool enabled,
+        int seconds,
+        byte percentage,
+        CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetTimeToDim(connection.Definition, 0, enabled, seconds, percentage),
+            cancellationToken);
+
+    public async Task<byte> GetIndicatorLedConfigurationAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseIndicatorLedConfiguration(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetIndicatorLedConfiguration(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public Task SetIndicatorLedConfigurationAsync(
+        OpenRazerDeviceConnection connection, byte configuration, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetIndicatorLedConfiguration(connection.Definition, configuration), cancellationToken);
+
+    public async Task<OpenRazerGpuCardDetection> GetGpuCardDetectionAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseGpuCardDetection(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetGpuCardDetection(connection.Definition, GpuCardLedClassId), cancellationToken).ConfigureAwait(false));
+
+    public Task SetGpuCardDetectionAsync(
+        OpenRazerDeviceConnection connection, bool enabled, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetGpuCardDetection(connection.Definition, GpuCardLedClassId, enabled ? (byte)1 : (byte)0),
+            cancellationToken);
+
+    public async Task<bool> GetForceChromaCtrlAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseForceChromaCtrl(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetForceChromaCtrl(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public Task SetForceChromaCtrlAsync(
+        OpenRazerDeviceConnection connection, bool enabled, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetForceChromaCtrl(connection.Definition, enabled ? (byte)1 : (byte)0),
+            cancellationToken);
+
+    public async Task<OpenRazerProfileDebounce> GetProfileDebounceTimeAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseProfileDebounceTime(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetProfileDebounceTime(connection.Definition, 0), cancellationToken).ConfigureAwait(false));
+
+    public Task SetProfileDebounceTimeAsync(
+        OpenRazerDeviceConnection connection,
+        byte makeDebounceTimeMs,
+        byte makeMaskTimeMs,
+        byte breakDebounceTimeMs,
+        byte breakMaskTimeMs,
+        CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetProfileDebounceTime(connection.Definition, 0,
+                makeDebounceTimeMs, makeMaskTimeMs, breakDebounceTimeMs, breakMaskTimeMs),
+            cancellationToken);
+
+    public async Task<OpenRazerChromaTap> GetChromaTapAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseChromaTap(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetChromaTap(connection.Definition, 0), cancellationToken).ConfigureAwait(false));
+
+    public Task SetChromaTapAsync(
+        OpenRazerDeviceConnection connection,
+        byte status,
+        byte tapMode,
+        byte functionId,
+        CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetChromaTap(connection.Definition, 0, status, tapMode, functionId),
+            cancellationToken);
+
+    public async Task<byte> GetBatteryDischargeCurveAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseBatteryDischargeCurve(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetBatteryDischargeCurve(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public Task SetBatteryDischargeCurveAsync(
+        OpenRazerDeviceConnection connection, byte chemistry, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetBatteryDischargeCurve(connection.Definition, chemistry), cancellationToken);
+
+    public async Task<OpenRazerMacroStorageInfo> GetMacroStorageInfoAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseMacroStorageInfo(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetMacroStorageInfo(connection.Definition), cancellationToken).ConfigureAwait(false));
+
+    public async Task<OpenRazerLkScrollWheelMode> GetLkScrollWheelModeAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        OpenRazerMouseProtocol.ParseLkScrollWheelMode(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetLkScrollWheelMode(connection.Definition, LkScrollProfileId), cancellationToken).ConfigureAwait(false));
+
+    public Task SetLkScrollWheelModeAsync(
+        OpenRazerDeviceConnection connection, byte modeMask, CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            OpenRazerMouseProtocol.SetLkScrollWheelMode(connection.Definition, modeMask, LkScrollProfileId), cancellationToken);
 
     public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
         OpenRazerDeviceConnection connection,
@@ -1280,6 +1427,23 @@ public sealed class OpenRazerDeviceService
         Add(OpenRazerBackendCapability.AutoSleepWrite, "set_auto_sleep", "razer_chroma_misc_set_auto_sleep");
         Add(OpenRazerBackendCapability.BatteryChargeLimiterRead, "get_battery_charge_limiter", "razer_chroma_misc_get_battery_charge_limiter");
         Add(OpenRazerBackendCapability.BatteryChargeLimiterWrite, "set_battery_charge_limiter", "razer_chroma_misc_set_battery_charge_limiter");
+        Add(OpenRazerBackendCapability.TimeToDimRead, "get_time_to_dim", "razer_chroma_misc_get_time_to_dim");
+        Add(OpenRazerBackendCapability.TimeToDimWrite, "set_time_to_dim", "razer_chroma_misc_set_time_to_dim");
+        Add(OpenRazerBackendCapability.IndicatorLedConfigurationRead, "get_indicator_led_configuration", "razer_chroma_misc_get_indicator_led_configuration");
+        Add(OpenRazerBackendCapability.IndicatorLedConfigurationWrite, "set_indicator_led_configuration", "razer_chroma_misc_set_indicator_led_configuration");
+        Add(OpenRazerBackendCapability.GpuCardDetectionRead, "get_gpu_card_detection", "razer_chroma_misc_get_gpu_card_detection");
+        Add(OpenRazerBackendCapability.GpuCardDetectionWrite, "set_gpu_card_detection", "razer_chroma_misc_set_gpu_card_detection");
+        Add(OpenRazerBackendCapability.ForceChromaCtrlRead, "get_force_chroma_ctrl", "razer_chroma_misc_get_force_chroma_ctrl");
+        Add(OpenRazerBackendCapability.ForceChromaCtrlWrite, "set_force_chroma_ctrl", "razer_chroma_misc_set_force_chroma_ctrl");
+        Add(OpenRazerBackendCapability.ProfileDebounceTimeRead, "get_profile_debounce_time", "razer_chroma_misc_get_profile_debounce_time");
+        Add(OpenRazerBackendCapability.ProfileDebounceTimeWrite, "set_profile_debounce_time", "razer_chroma_misc_set_profile_debounce_time");
+        Add(OpenRazerBackendCapability.ChromaTapRead, "get_chroma_tap", "razer_chroma_misc_get_chroma_tap");
+        Add(OpenRazerBackendCapability.ChromaTapWrite, "set_chroma_tap", "razer_chroma_misc_set_chroma_tap");
+        Add(OpenRazerBackendCapability.BatteryDischargeCurveRead, "get_battery_discharge_curve", "razer_chroma_misc_get_battery_discharge_curve");
+        Add(OpenRazerBackendCapability.BatteryDischargeCurveWrite, "set_battery_discharge_curve", "razer_chroma_misc_set_battery_discharge_curve");
+        Add(OpenRazerBackendCapability.MacroStorageInfoRead, "get_macro_storage_info", "razer_chroma_misc_get_macro_storage_info");
+        Add(OpenRazerBackendCapability.LkScrollWheelModeRead, "get_lk_scroll_wheel_mode", "razer_chroma_misc_get_lk_scroll_wheel_mode");
+        Add(OpenRazerBackendCapability.LkScrollWheelModeWrite, "set_lk_scroll_wheel_mode", "razer_chroma_misc_set_lk_scroll_wheel_mode");
         if (lightingZones.Any(zone => zone.CanReadBrightness)) result.Add(OpenRazerBackendCapability.BrightnessRead);
         if (lightingZones.Any(zone => zone.CanWriteBrightness)) result.Add(OpenRazerBackendCapability.BrightnessWrite);
         if (lightingZones.Any(zone => zone.CanReadState)) result.Add(OpenRazerBackendCapability.LedStateRead);

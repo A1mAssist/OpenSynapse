@@ -38,6 +38,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             if (state.AutoSleepEnabled is { } autoSleep) AutoSleepEnabled = autoSleep;
             if (state.BatteryChargeLimiterEnabled is { } limiterEnabled) ChargeLimiterEnabled = limiterEnabled;
             if (state.BatteryChargeLimiterPercent is { } limiter) ChargeLimiterPercent = limiter;
+            ApplyMiddlewareState(state);
             if (state.Brightness is { } brightness &&
                 SelectedLightingZone == Connection.Definition.DefaultLedZone)
             {

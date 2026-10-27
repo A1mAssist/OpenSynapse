@@ -178,6 +178,30 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyChargeLimiterClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyChargeLimiterAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void OpenRazerApplyTimeToDimClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyTimeToDimAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyIndicatorLedClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyIndicatorLedAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyBatteryCurveClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyBatteryCurveAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyGpuCardClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyGpuCardAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyForceChromaClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyForceChromaAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyChromaTapClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyChromaTapAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyProfileDebounceClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyProfileDebounceAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyLkScrollClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyLkScrollAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerReadMappingClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.LoadMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
 

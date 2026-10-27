@@ -14,6 +14,18 @@ public sealed record OpenRazerProfileDebounce(
     byte BreakDebounceTimeMs,
     byte BreakMaskTimeMs);
 
+/// <summary>Time-to-dim state as the middleware reports it.</summary>
+public sealed record OpenRazerTimeToDim(bool Enabled, int Seconds, byte Percentage);
+
+/// <summary>GPU card detection response: led class id, enabled flag and firmware status.</summary>
+public sealed record OpenRazerGpuCardDetection(byte LedClassId, bool Enabled, byte Status);
+
+/// <summary>Chroma tap configuration; the enum fields are derived from these bytes.</summary>
+public sealed record OpenRazerChromaTap(byte ProfileId, byte Status, byte TapMode, byte FunctionId);
+
+/// <summary>LK scroll wheel enabled-mode bitmask, bit 1 Tactile, bit 2 FreeSpin, bit 4 MicroTactile.</summary>
+public sealed record OpenRazerLkScrollWheelMode(byte ProfileId, byte ModeMask);
+
 /// <summary>Onboard macro storage summary as the middleware reports it.</summary>
 public sealed record OpenRazerMacroStorageInfo(
     int MaxId,
@@ -217,9 +229,9 @@ internal static class OpenRazerMouseProtocol
             "razer_chroma_misc_set_auto_sleep", 0x02, 0x07, 0x08,
             [profileId, enabled ? (byte)1 : (byte)0]);
 
-    internal static OpenRazerRequest GetTimeToDim(OpenRazerDeviceDefinition device, byte batteryId = 0) =>
+    internal static OpenRazerRequest GetTimeToDim(OpenRazerDeviceDefinition device, byte profileId = 0) =>
         OpenRazerStandardProtocol.Create(device,
-            "razer_chroma_misc_get_time_to_dim", 0x05, 0x07, 0x8B, [batteryId]);
+            "razer_chroma_misc_get_time_to_dim", 0x05, 0x07, 0x8B, [profileId]);
 
     /// <summary>
     /// The middleware writes the dim delay as five bytes: profile id, enabled flag,
@@ -240,8 +252,10 @@ internal static class OpenRazerMouseProtocol
             "razer_chroma_misc_get_battery_discharge_curve", 0x01, 0x07, 0x94, []);
 
     internal static OpenRazerRequest SetBatteryDischargeCurve(OpenRazerDeviceDefinition device, byte chemistry) =>
-        OpenRazerStandardProtocol.Create(device,
-            "razer_chroma_misc_set_battery_discharge_curve", 0x01, 0x07, 0x14, [chemistry]);
+        chemistry <= 2
+            ? OpenRazerStandardProtocol.Create(device,
+                "razer_chroma_misc_set_battery_discharge_curve", 0x01, 0x07, 0x14, [chemistry])
+            : throw new ArgumentOutOfRangeException(nameof(chemistry), "Chemistry must be 0..2.");
 
     internal static OpenRazerRequest GetGpuCardDetection(OpenRazerDeviceDefinition device, byte ledClassId) =>
         OpenRazerStandardProtocol.Create(device,
@@ -278,10 +292,16 @@ internal static class OpenRazerMouseProtocol
         byte profileId,
         byte status,
         byte tapMode,
-        byte functionId) =>
-        OpenRazerStandardProtocol.Create(device,
+        byte functionId)
+    {
+        if (status is not (1 or 2) || tapMode > 1 || functionId is < 1 or > 4)
+        {
+            throw new ArgumentOutOfRangeException(nameof(status), "Chroma tap values are out of range.");
+        }
+        return OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_chroma_tap", 0x04, 0x0F, 0x13,
             [profileId, status, tapMode, functionId]);
+    }
 
     internal static OpenRazerRequest GetForceChromaCtrl(OpenRazerDeviceDefinition device) =>
         OpenRazerStandardProtocol.Create(device,
@@ -311,8 +331,10 @@ internal static class OpenRazerMouseProtocol
             "razer_chroma_misc_get_indicator_led_configuration", 0x01, 0x07, 0x90, []);
 
     internal static OpenRazerRequest SetIndicatorLedConfiguration(OpenRazerDeviceDefinition device, byte configuration) =>
-        OpenRazerStandardProtocol.Create(device,
-            "razer_chroma_misc_set_indicator_led_configuration", 0x01, 0x07, 0x10, [configuration]);
+        configuration <= 1
+            ? OpenRazerStandardProtocol.Create(device,
+                "razer_chroma_misc_set_indicator_led_configuration", 0x01, 0x07, 0x10, [configuration])
+            : throw new ArgumentOutOfRangeException(nameof(configuration), "Configuration must be 0 or 1.");
 
     internal static bool ParseAutoSleepEnabled(ReadOnlySpan<byte> response) =>
         OpenRazerStandardProtocol.Arguments(response, 2)[1] != 0;
@@ -411,6 +433,20 @@ internal static class OpenRazerMouseProtocol
             "razer_chroma_misc_set_scroll_smart_reel", 0x50, 0x02, 0x17,
             [OpenRazerStandardProtocol.VariableStore, enabled ? (byte)1 : (byte)0]);
 
+    internal static OpenRazerRequest GetLkScrollWheelMode(OpenRazerDeviceDefinition device, byte profileId = 1) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_lk_scroll_wheel_mode", 0x02, 0x15, 0x8B, [profileId]);
+
+    internal static OpenRazerRequest SetLkScrollWheelMode(OpenRazerDeviceDefinition device, byte modeMask, byte profileId = 1)
+    {
+        if (modeMask is < 1 or > 7)
+        {
+            throw new ArgumentOutOfRangeException(nameof(modeMask), "At least one scroll mode must stay enabled.");
+        }
+        return OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_lk_scroll_wheel_mode", 0x02, 0x15, 0x0B, [profileId, modeMask]);
+    }
+
     internal static int ParseBatteryPercent(ReadOnlySpan<byte> response)
     {
         var arguments = OpenRazerStandardProtocol.Arguments(response, 2);
@@ -465,6 +501,46 @@ internal static class OpenRazerMouseProtocol
     internal static int ParseLowBatteryThreshold(ReadOnlySpan<byte> response) =>
         (int)Math.Round(OpenRazerStandardProtocol.Arguments(response, 1)[0] * 100d / 255d,
             MidpointRounding.AwayFromZero);
+
+    internal static OpenRazerTimeToDim ParseTimeToDim(ReadOnlySpan<byte> response)
+    {
+        var arguments = OpenRazerStandardProtocol.Arguments(response, 5);
+        return new OpenRazerTimeToDim(
+            arguments[1] != 0,
+            (arguments[2] << 8) | arguments[3],
+            arguments[4]);
+    }
+
+    internal static byte ParseIndicatorLedConfiguration(ReadOnlySpan<byte> response) =>
+        OpenRazerStandardProtocol.Arguments(response, 1)[0];
+
+    internal static OpenRazerGpuCardDetection ParseGpuCardDetection(ReadOnlySpan<byte> response)
+    {
+        var arguments = OpenRazerStandardProtocol.Arguments(response, 3);
+        return new OpenRazerGpuCardDetection(arguments[0], arguments[1] != 0, arguments[2]);
+    }
+
+    /// <summary>
+    /// The middleware reads the force-chroma state as two bytes: the profile id
+    /// first and the enabled flag second.
+    /// </summary>
+    internal static bool ParseForceChromaCtrl(ReadOnlySpan<byte> response) =>
+        OpenRazerStandardProtocol.Arguments(response, 2)[1] != 0;
+
+    internal static OpenRazerChromaTap ParseChromaTap(ReadOnlySpan<byte> response)
+    {
+        var arguments = OpenRazerStandardProtocol.Arguments(response, 4);
+        return new OpenRazerChromaTap(arguments[0], arguments[1], arguments[2], arguments[3]);
+    }
+
+    internal static byte ParseBatteryDischargeCurve(ReadOnlySpan<byte> response) =>
+        OpenRazerStandardProtocol.Arguments(response, 1)[0];
+
+    internal static OpenRazerLkScrollWheelMode ParseLkScrollWheelMode(ReadOnlySpan<byte> response)
+    {
+        var arguments = OpenRazerStandardProtocol.Arguments(response, 2);
+        return new OpenRazerLkScrollWheelMode(arguments[0], arguments[1]);
+    }
 
     internal static bool ParseBooleanSecondArgument(ReadOnlySpan<byte> response) =>
         OpenRazerStandardProtocol.Arguments(response, 2)[1] != 0;

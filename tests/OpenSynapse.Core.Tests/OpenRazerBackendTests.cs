@@ -963,6 +963,40 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public void MiddlewareSupplementalCapabilitiesArePublishedByTheCatalog()
+    {
+        var published = OpenRazerDeviceCatalog.BuiltIn.Devices
+            .SelectMany(OpenRazerDeviceService.GetCapabilities)
+            .ToHashSet();
+
+        OpenRazerBackendCapability[] expected =
+        [
+            OpenRazerBackendCapability.TimeToDimRead,
+            OpenRazerBackendCapability.TimeToDimWrite,
+            OpenRazerBackendCapability.IndicatorLedConfigurationRead,
+            OpenRazerBackendCapability.IndicatorLedConfigurationWrite,
+            OpenRazerBackendCapability.GpuCardDetectionRead,
+            OpenRazerBackendCapability.GpuCardDetectionWrite,
+            OpenRazerBackendCapability.ForceChromaCtrlRead,
+            OpenRazerBackendCapability.ForceChromaCtrlWrite,
+            OpenRazerBackendCapability.ProfileDebounceTimeRead,
+            OpenRazerBackendCapability.ProfileDebounceTimeWrite,
+            OpenRazerBackendCapability.ChromaTapRead,
+            OpenRazerBackendCapability.ChromaTapWrite,
+            OpenRazerBackendCapability.BatteryDischargeCurveRead,
+            OpenRazerBackendCapability.BatteryDischargeCurveWrite,
+            OpenRazerBackendCapability.MacroStorageInfoRead,
+            OpenRazerBackendCapability.LkScrollWheelModeRead,
+            OpenRazerBackendCapability.LkScrollWheelModeWrite,
+        ];
+
+        foreach (var capability in expected)
+        {
+            Assert.Contains(capability, published);
+        }
+    }
+
+    [Fact]
     public void CapabilitySnapshotDistinguishesUnknownAndMatrixOnlyLayouts()
     {
         var unknown = OpenRazerDeviceCatalog.BuiltIn.Devices
@@ -1023,6 +1057,23 @@ public sealed class OpenRazerBackendTests
                 (OpenRazerBackendCapability.HyperPollingIndicatorWrite, ["set_hyperpolling_wireless_dongle_indicator_led_mode"]),
                 (OpenRazerBackendCapability.HyperPollingPairWrite, ["set_hyperpolling_wireless_dongle_pair"]),
                 (OpenRazerBackendCapability.HyperPollingUnpairWrite, ["set_hyperpolling_wireless_dongle_unpair"]),
+                (OpenRazerBackendCapability.TimeToDimRead, ["get_time_to_dim"]),
+                (OpenRazerBackendCapability.TimeToDimWrite, ["set_time_to_dim"]),
+                (OpenRazerBackendCapability.IndicatorLedConfigurationRead, ["get_indicator_led_configuration"]),
+                (OpenRazerBackendCapability.IndicatorLedConfigurationWrite, ["set_indicator_led_configuration"]),
+                (OpenRazerBackendCapability.GpuCardDetectionRead, ["get_gpu_card_detection"]),
+                (OpenRazerBackendCapability.GpuCardDetectionWrite, ["set_gpu_card_detection"]),
+                (OpenRazerBackendCapability.ForceChromaCtrlRead, ["get_force_chroma_ctrl"]),
+                (OpenRazerBackendCapability.ForceChromaCtrlWrite, ["set_force_chroma_ctrl"]),
+                (OpenRazerBackendCapability.ProfileDebounceTimeRead, ["get_profile_debounce_time"]),
+                (OpenRazerBackendCapability.ProfileDebounceTimeWrite, ["set_profile_debounce_time"]),
+                (OpenRazerBackendCapability.ChromaTapRead, ["get_chroma_tap"]),
+                (OpenRazerBackendCapability.ChromaTapWrite, ["set_chroma_tap"]),
+                (OpenRazerBackendCapability.BatteryDischargeCurveRead, ["get_battery_discharge_curve"]),
+                (OpenRazerBackendCapability.BatteryDischargeCurveWrite, ["set_battery_discharge_curve"]),
+                (OpenRazerBackendCapability.MacroStorageInfoRead, ["get_macro_storage_info"]),
+                (OpenRazerBackendCapability.LkScrollWheelModeRead, ["get_lk_scroll_wheel_mode"]),
+                (OpenRazerBackendCapability.LkScrollWheelModeWrite, ["set_lk_scroll_wheel_mode"]),
             })
             {
                 if (!published.Contains(capability)) continue;
@@ -1112,10 +1163,10 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(OpenRazerLedZone.ScrollWheel, device.DefaultLedZone);
         Assert.DoesNotContain(OpenRazerBackendCapability.ChargingRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
-        // The middleware bundle declares the auto sleep and battery charge
-        // limiter commands for this mouse, so the four extra capabilities are
-        // declared rather than inherited from a generic mouse.
-        Assert.Equal(18, capabilities.Count);
+        // The middleware bundle declares the newer power, lighting and scroll
+        // commands for this mouse, so all of them are declared rather than
+        // inherited from a generic mouse.
+        Assert.Equal(35, capabilities.Count);
         Assert.Contains(OpenRazerBackendCapability.AutoSleepRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BatteryChargeLimiterRead, capabilities);
         Assert.Equal([125, 500, 1000], device.PollingRates);
@@ -1361,6 +1412,23 @@ public sealed class OpenRazerBackendTests
                 OpenRazerBackendCapability.AutoSleepWrite => OpenRazerMouseProtocol.SetAutoSleep(device, true),
                 OpenRazerBackendCapability.BatteryChargeLimiterRead => OpenRazerMouseProtocol.GetBatteryChargeLimiter(device),
                 OpenRazerBackendCapability.BatteryChargeLimiterWrite => OpenRazerMouseProtocol.SetBatteryChargeLimiter(device, 80, true),
+                OpenRazerBackendCapability.TimeToDimRead => OpenRazerMouseProtocol.GetTimeToDim(device),
+                OpenRazerBackendCapability.TimeToDimWrite => OpenRazerMouseProtocol.SetTimeToDim(device, 0, true, 60, 20),
+                OpenRazerBackendCapability.IndicatorLedConfigurationRead => OpenRazerMouseProtocol.GetIndicatorLedConfiguration(device),
+                OpenRazerBackendCapability.IndicatorLedConfigurationWrite => OpenRazerMouseProtocol.SetIndicatorLedConfiguration(device, 0),
+                OpenRazerBackendCapability.GpuCardDetectionRead => OpenRazerMouseProtocol.GetGpuCardDetection(device, 0),
+                OpenRazerBackendCapability.GpuCardDetectionWrite => OpenRazerMouseProtocol.SetGpuCardDetection(device, 0, 1),
+                OpenRazerBackendCapability.ForceChromaCtrlRead => OpenRazerMouseProtocol.GetForceChromaCtrl(device),
+                OpenRazerBackendCapability.ForceChromaCtrlWrite => OpenRazerMouseProtocol.SetForceChromaCtrl(device, 1),
+                OpenRazerBackendCapability.ProfileDebounceTimeRead => OpenRazerMouseProtocol.GetProfileDebounceTime(device, 0),
+                OpenRazerBackendCapability.ProfileDebounceTimeWrite => OpenRazerMouseProtocol.SetProfileDebounceTime(device, 0, 1, 2, 3, 4),
+                OpenRazerBackendCapability.ChromaTapRead => OpenRazerMouseProtocol.GetChromaTap(device, 0),
+                OpenRazerBackendCapability.ChromaTapWrite => OpenRazerMouseProtocol.SetChromaTap(device, 0, 1, 0, 1),
+                OpenRazerBackendCapability.BatteryDischargeCurveRead => OpenRazerMouseProtocol.GetBatteryDischargeCurve(device),
+                OpenRazerBackendCapability.BatteryDischargeCurveWrite => OpenRazerMouseProtocol.SetBatteryDischargeCurve(device, 0),
+                OpenRazerBackendCapability.MacroStorageInfoRead => OpenRazerMouseProtocol.GetMacroStorageInfo(device),
+                OpenRazerBackendCapability.LkScrollWheelModeRead => OpenRazerMouseProtocol.GetLkScrollWheelMode(device),
+                OpenRazerBackendCapability.LkScrollWheelModeWrite => OpenRazerMouseProtocol.SetLkScrollWheelMode(device, 7),
                 OpenRazerBackendCapability.BrightnessRead => OpenRazerLightingProtocol.GetBrightness(device, null,
                     zones.Values.First(zone => zone.CanReadBrightness).Zone),
                 OpenRazerBackendCapability.BrightnessWrite => OpenRazerLightingProtocol.SetBrightness(device, null,

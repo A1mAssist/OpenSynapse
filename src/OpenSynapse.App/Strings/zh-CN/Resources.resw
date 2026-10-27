@@ -1674,6 +1674,32 @@
   <data name="OpenRazerChargeLimiterLabel.Text" xml:space="preserve"><value>充电限制（%）</value></data>
   <data name="Text_OpenRazerAutoSleepOn" xml:space="preserve"><value>开启</value></data>
   <data name="Text_OpenRazerAutoSleepOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="OpenRazerTimeToDimLabel.Text" xml:space="preserve"><value>自动变暗</value></data>
+  <data name="OpenRazerIndicatorLedLabel.Text" xml:space="preserve"><value>指示灯亮度</value></data>
+  <data name="OpenRazerBatteryCurveLabel.Text" xml:space="preserve"><value>电池放电曲线</value></data>
+  <data name="OpenRazerGpuCardLabel.Text" xml:space="preserve"><value>GPU 卡检测</value></data>
+  <data name="OpenRazerForceChromaLabel.Text" xml:space="preserve"><value>强制 Chroma 控制</value></data>
+  <data name="OpenRazerChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
+  <data name="OpenRazerLkScrollLabel.Text" xml:space="preserve"><value>LK 滚轮模式</value></data>
+  <data name="OpenRazerProfileDebounceTitle.Text" xml:space="preserve"><value>按键响应</value></data>
+  <data name="OpenRazerMacroStorageTitle.Text" xml:space="preserve"><value>板载宏容量</value></data>
+  <data name="Text_OpenRazerOn" xml:space="preserve"><value>开启</value></data>
+  <data name="Text_OpenRazerOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="Text_OpenRazerIndicatorHalf" xml:space="preserve"><value>一半</value></data>
+  <data name="Text_OpenRazerIndicatorQuarter" xml:space="preserve"><value>四分之一</value></data>
+  <data name="Text_OpenRazerIndicatorOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="Text_OpenRazerBatteryAlkaline" xml:space="preserve"><value>碱性</value></data>
+  <data name="Text_OpenRazerBatteryNiMH" xml:space="preserve"><value>镍氢</value></data>
+  <data name="Text_OpenRazerBatteryLithium" xml:space="preserve"><value>锂离子</value></data>
+  <data name="Text_OpenRazerChromaTapDouble" xml:space="preserve"><value>双击</value></data>
+  <data name="Text_OpenRazerChromaTapTriple" xml:space="preserve"><value>三击</value></data>
+  <data name="Text_OpenRazerChromaTapCycle" xml:space="preserve"><value>循环灯效</value></data>
+  <data name="Text_OpenRazerChromaTapEffect" xml:space="preserve"><value>指定灯效</value></data>
+  <data name="Text_OpenRazerChromaTapSpecific" xml:space="preserve"><value>指定快捷灯效</value></data>
+  <data name="Text_OpenRazerChromaTapLimiter" xml:space="preserve"><value>切换数字/模拟限位</value></data>
+  <data name="Text_OpenRazerLkTactile" xml:space="preserve"><value>Tactile</value></data>
+  <data name="Text_OpenRazerLkFreeSpin" xml:space="preserve"><value>FreeSpin</value></data>
+  <data name="Text_OpenRazerLkMicroTactile" xml:space="preserve"><value>MicroTactile</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
   <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>启用灯光</value></data>
   <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>允许 Chroma 接管</value></data>

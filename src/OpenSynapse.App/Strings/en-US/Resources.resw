@@ -1314,6 +1314,32 @@
   <data name="OpenRazerChargeLimiterLabel.Text" xml:space="preserve"><value>Charge limit (%)</value></data>
   <data name="Text_OpenRazerAutoSleepOn" xml:space="preserve"><value>On</value></data>
   <data name="Text_OpenRazerAutoSleepOff" xml:space="preserve"><value>Off</value></data>
+  <data name="OpenRazerTimeToDimLabel.Text" xml:space="preserve"><value>Time to dim</value></data>
+  <data name="OpenRazerIndicatorLedLabel.Text" xml:space="preserve"><value>Indicator LED</value></data>
+  <data name="OpenRazerBatteryCurveLabel.Text" xml:space="preserve"><value>Battery discharge curve</value></data>
+  <data name="OpenRazerGpuCardLabel.Text" xml:space="preserve"><value>GPU card detection</value></data>
+  <data name="OpenRazerForceChromaLabel.Text" xml:space="preserve"><value>Force Chroma control</value></data>
+  <data name="OpenRazerChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
+  <data name="OpenRazerLkScrollLabel.Text" xml:space="preserve"><value>LK scroll wheel modes</value></data>
+  <data name="OpenRazerProfileDebounceTitle.Text" xml:space="preserve"><value>Key response</value></data>
+  <data name="OpenRazerMacroStorageTitle.Text" xml:space="preserve"><value>Onboard macro storage</value></data>
+  <data name="Text_OpenRazerOn" xml:space="preserve"><value>On</value></data>
+  <data name="Text_OpenRazerOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Text_OpenRazerIndicatorHalf" xml:space="preserve"><value>Half</value></data>
+  <data name="Text_OpenRazerIndicatorQuarter" xml:space="preserve"><value>Quarter</value></data>
+  <data name="Text_OpenRazerIndicatorOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Text_OpenRazerBatteryAlkaline" xml:space="preserve"><value>Alkaline</value></data>
+  <data name="Text_OpenRazerBatteryNiMH" xml:space="preserve"><value>NiMH</value></data>
+  <data name="Text_OpenRazerBatteryLithium" xml:space="preserve"><value>Lithium</value></data>
+  <data name="Text_OpenRazerChromaTapDouble" xml:space="preserve"><value>Double tap</value></data>
+  <data name="Text_OpenRazerChromaTapTriple" xml:space="preserve"><value>Triple tap</value></data>
+  <data name="Text_OpenRazerChromaTapCycle" xml:space="preserve"><value>Cycle effect</value></data>
+  <data name="Text_OpenRazerChromaTapEffect" xml:space="preserve"><value>Specific effect</value></data>
+  <data name="Text_OpenRazerChromaTapSpecific" xml:space="preserve"><value>Specific quick effect</value></data>
+  <data name="Text_OpenRazerChromaTapLimiter" xml:space="preserve"><value>Toggle digital/analog limiter</value></data>
+  <data name="Text_OpenRazerLkTactile" xml:space="preserve"><value>Tactile</value></data>
+  <data name="Text_OpenRazerLkFreeSpin" xml:space="preserve"><value>FreeSpin</value></data>
+  <data name="Text_OpenRazerLkMicroTactile" xml:space="preserve"><value>MicroTactile</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
   <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>Lighting enabled</value></data>
   <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>Allow Chroma override</value></data>
