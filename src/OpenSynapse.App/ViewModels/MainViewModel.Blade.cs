@@ -320,6 +320,17 @@ public sealed partial class MainViewModel
         return await confirmation();
     }
 
+    /// <summary>
+    /// Renders the adapter wattage report for the diagnostic log, so a refused
+    /// HyperBoost shows which reading the decision was made on.
+    /// </summary>
+    private static string DescribeAdapterPower(BladeAdapterPowerSnapshot? adapterPower) =>
+        adapterPower is null
+            ? "not reported"
+            : $"level {adapterPower.ActualLevel}/{adapterPower.RecommendedLevel}, " +
+              $"watts {adapterPower.ActualWatts?.ToString() ?? "?"}/" +
+              $"{adapterPower.RecommendedWatts?.ToString() ?? "?"}";
+
     public Visibility HyperboostOptionVisibility =>
         _blade.PerformanceModes.Contains(BladePerformanceMode.Hyperboost)
             ? Visibility.Visible
@@ -340,14 +351,24 @@ public sealed partial class MainViewModel
             !CanWriteBladePerformanceMode ||
             BladePerformanceModeIndex < 0 || BladePerformanceModeIndex >= modes.Count)
         {
+            _diagnosticLog.TryWrite(
+                "blade-performance",
+                $"Performance apply skipped: suppressed={_suppressBladePerformanceApply}, " +
+                $"canWrite={CanWriteBladePerformanceMode}, " +
+                $"canSet={CanSetBladePerformanceMode}, " +
+                $"index={BladePerformanceModeIndex}, count={modes.Count}, " +
+                $"productId=0x{_blade._bladeProductId:X4}.");
             return;
         }
 
         var requested = modes[BladePerformanceModeIndex];
         if (requested == BladePerformanceMode.Hyperboost &&
-            !BladeModelCapabilities.IsHyperBoostAvailable(
-                _blade._bladeProductId, _lastDeviceTelemetry?.BladeAdapterPower))
+            !BladeModelCapabilities.IsHyperBoostAvailable(_blade._bladeProductId))
         {
+            _diagnosticLog.TryWrite(
+                "blade-performance",
+                $"HyperBoost refused: productId=0x{_blade._bladeProductId:X4}, " +
+                $"adapter={DescribeAdapterPower(_lastDeviceTelemetry?.BladeAdapterPower)}.");
             _suppressBladePerformanceApply = true;
             try
             {
@@ -357,7 +378,7 @@ public sealed partial class MainViewModel
             {
                 _suppressBladePerformanceApply = false;
             }
-            SetDeviceOperationError(AppStrings.Text("BladeHyperboostRequiresFullPower"));
+            SetDeviceOperationError(AppStrings.Text("BladeHyperboostUnsupportedModel"));
             return;
         }
         if (requested == BladePerformanceMode.Hyperboost &&
@@ -365,6 +386,9 @@ public sealed partial class MainViewModel
             !_padlessHyperBoostAccepted &&
             !await ConfirmPadlessHyperBoostAsync())
         {
+            _diagnosticLog.TryWrite(
+                "blade-performance",
+                "HyperBoost declined: the cooling-pad disclaimer was dismissed.");
             _suppressBladePerformanceApply = true;
             try
             {
@@ -376,6 +400,12 @@ public sealed partial class MainViewModel
             }
             return;
         }
+        // The mode still applies when the adapter cannot hold the raised limit. The
+        // middleware reports that shortage separately instead of hiding the option,
+        // so the user is told after the write rather than blocked before it.
+        var limitedAdapter = requested == BladePerformanceMode.Hyperboost &&
+            _lastDeviceTelemetry?.BladeAdapterPower is { } adapter &&
+            adapter.IsLimitedAdapter;
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
         {
             if (!IsSelectedPerformancePowerActive)
@@ -401,6 +431,10 @@ public sealed partial class MainViewModel
             BladePerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
             BladePerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex);
+        if (limitedAdapter)
+        {
+            SetDeviceOperationError(AppStrings.Text("BladeHyperboostLimitedAdapter"));
+        }
     }
 
     /// <summary>
@@ -613,7 +647,7 @@ public sealed partial class MainViewModel
             // confirmation, so it skips HyperBoost unless the pad is connected or
             // the user already accepted the pad-less warning.
             if (!BladeModelCapabilities.IsHyperBoostAvailable(
-                    _blade._bladeProductId, _lastDeviceTelemetry?.BladeAdapterPower) ||
+                    _blade._bladeProductId) ||
                 (HyperboostNeedsCoolingPadWarning && !_padlessHyperBoostAccepted))
             {
                 cycleModes = [.. cycleModes.Where(mode => mode != BladePerformanceMode.Hyperboost)];
