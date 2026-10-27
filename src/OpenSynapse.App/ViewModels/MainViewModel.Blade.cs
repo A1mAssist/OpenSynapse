@@ -297,6 +297,7 @@ public sealed partial class MainViewModel
 
     private bool _suppressBladePerformanceApply;
     private bool _bladeCoolingPadConnected;
+    private bool _padlessHyperBoostAccepted;
     private Func<Task<bool>>? _confirmPadlessHyperBoost;
 
     /// <summary>
@@ -305,6 +306,9 @@ public sealed partial class MainViewModel
     /// </summary>
     internal void SetPadlessHyperBoostConfirmation(Func<Task<bool>> confirmation) =>
         _confirmPadlessHyperBoost = confirmation;
+
+    internal void SetPadlessHyperBoostAccepted(bool accepted) =>
+        _padlessHyperBoostAccepted = accepted;
 
     private async Task<bool> ConfirmPadlessHyperBoostAsync()
     {
@@ -323,7 +327,7 @@ public sealed partial class MainViewModel
 
     /// <summary>
     /// True when HyperBoost is offered without a Razer Cooling Pad. The user accepts
-    /// the cooling risk explicitly before the mode is written.
+    /// the cooling risk explicitly before the first pad-less write.
     /// </summary>
     public bool HyperboostNeedsCoolingPadWarning =>
         !_bladeCoolingPadConnected &&
@@ -358,6 +362,7 @@ public sealed partial class MainViewModel
         }
         if (requested == BladePerformanceMode.Hyperboost &&
             HyperboostNeedsCoolingPadWarning &&
+            !_padlessHyperBoostAccepted &&
             !await ConfirmPadlessHyperBoostAsync())
         {
             _suppressBladePerformanceApply = true;
@@ -606,10 +611,10 @@ public sealed partial class MainViewModel
             var cycleModes = _bladePerformanceCycleModes;
             // The shortcut cycle has no place to ask for the cooling-risk
             // confirmation, so it skips HyperBoost unless the pad is connected or
-            // the full-power adapter makes it available without one.
+            // the user already accepted the pad-less warning.
             if (!BladeModelCapabilities.IsHyperBoostAvailable(
                     _blade._bladeProductId, _lastDeviceTelemetry?.BladeAdapterPower) ||
-                HyperboostNeedsCoolingPadWarning)
+                (HyperboostNeedsCoolingPadWarning && !_padlessHyperBoostAccepted))
             {
                 cycleModes = [.. cycleModes.Where(mode => mode != BladePerformanceMode.Hyperboost)];
                 if (cycleModes.Count == 0)

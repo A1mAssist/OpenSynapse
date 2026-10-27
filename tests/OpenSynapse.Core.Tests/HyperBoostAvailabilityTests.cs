@@ -32,7 +32,7 @@ public sealed class HyperBoostCoolingPadGateTests
             BladeModelCapabilities.PerformanceModesFor(productId));
 
     [Fact]
-    public async Task ProfileHyperBoostAppliesWithoutCoolingPadOnTheFullPowerAdapter()
+    public async Task ProfileHyperBoostAppliesWithCoolingPadOnTheFullPowerAdapter()
     {
         var reader = new RecordingReader();
 
@@ -40,6 +40,21 @@ public sealed class HyperBoostCoolingPadGateTests
             reader,
             adapterPower: new BladeAdapterPowerSnapshot(0, 0, 280, 280),
             coolingPadConnected: true);
+
+        Assert.Equal(BladePerformanceMode.Hyperboost, reader.LastMode);
+        Assert.DoesNotContain(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ProfileHyperBoostAppliesWithoutCoolingPadAfterDisclaimerAcceptance()
+    {
+        var reader = new RecordingReader();
+
+        var result = await ApplyAsync(
+            reader,
+            adapterPower: new BladeAdapterPowerSnapshot(0, 0, 280, 280),
+            coolingPadConnected: false,
+            padlessHyperBoostAccepted: true);
 
         Assert.Equal(BladePerformanceMode.Hyperboost, reader.LastMode);
         Assert.DoesNotContain(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
@@ -68,6 +83,21 @@ public sealed class HyperBoostCoolingPadGateTests
             reader,
             adapterPower: null,
             coolingPadConnected: true);
+
+        Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
+        Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task DisclaimerAcceptanceDoesNotBypassTheAdapterRequirement()
+    {
+        var reader = new RecordingReader();
+
+        var result = await ApplyAsync(
+            reader,
+            adapterPower: new BladeAdapterPowerSnapshot(0, 0, 230, 280),
+            coolingPadConnected: false,
+            padlessHyperBoostAccepted: true);
 
         Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
         Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
@@ -129,6 +159,7 @@ public sealed class HyperBoostCoolingPadGateTests
         RecordingReader reader,
         BladeAdapterPowerSnapshot? adapterPower,
         bool coolingPadConnected = true,
+        bool padlessHyperBoostAccepted = false,
         ushort productId = 0x02C6)
     {
         var document = ProfileDocument.CreateDefault();
@@ -166,7 +197,8 @@ public sealed class HyperBoostCoolingPadGateTests
             reader,
             powerSource: PowerSourceKind.FullPowerAdapter,
             applyKeyboardBrightness: false,
-            coolingPadConnected: coolingPadConnected);
+            coolingPadConnected: coolingPadConnected,
+            padlessHyperBoostAccepted: padlessHyperBoostAccepted);
     }
 
     private sealed class RecordingReader : IRazerDeviceTelemetryReader

@@ -59,6 +59,7 @@ public sealed partial class MainWindow : Window
         _viewModel.SetMacroDispatcher(_dispatcherQueue);
         _viewModel.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
         _viewModel.SetPadlessHyperBoostConfirmation(ConfirmPadlessHyperBoostAsync);
+        _viewModel.SetPadlessHyperBoostAccepted(_behaviorSettings.PadlessHyperBoostAccepted);
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(BladeBrightnessPointerPressed),

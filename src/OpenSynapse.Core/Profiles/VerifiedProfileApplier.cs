@@ -26,7 +26,8 @@ public sealed class VerifiedProfileApplier
         PowerSourceKind powerSource,
         CancellationToken cancellationToken = default,
         bool applyKeyboardBrightness = true,
-        bool coolingPadConnected = true)
+        bool coolingPadConnected = true,
+        bool padlessHyperBoostAccepted = false)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(devices);
@@ -93,18 +94,20 @@ public sealed class VerifiedProfileApplier
                 else
                 {
                     var requested = (BladePerformanceMode)rawPerformanceMode;
-                    if (requested == BladePerformanceMode.Hyperboost &&
-                        (!coolingPadConnected ||
-                         !BladeModelCapabilities.IsHyperBoostAvailable(
-                             blade.ProductId, telemetry.BladeAdapterPower)))
+                    if (requested == BladePerformanceMode.Hyperboost)
                     {
-                        requested = BladePerformanceMode.Performance;
-                        // A profile applies without any user interaction, so it cannot
-                        // show the pad-less disclaimer. Only the manual selection path
-                        // may enable HyperBoost without the pad.
-                        bladeErrors.Add(coolingPadConnected
-                            ? "HyperBoost requires the full-power adapter; Performance mode was applied instead."
-                            : "HyperBoost requires the Razer Laptop Cooling Pad; Performance mode was applied instead.");
+                        var adapterReady = BladeModelCapabilities.IsHyperBoostAvailable(
+                            blade.ProductId, telemetry.BladeAdapterPower);
+                        var padReady = coolingPadConnected || padlessHyperBoostAccepted;
+                        if (!adapterReady || !padReady)
+                        {
+                            requested = BladePerformanceMode.Performance;
+                            bladeErrors.Add(!BladeModelCapabilities.SupportsHyperBoost(blade.ProductId)
+                                ? "HyperBoost is not supported on this model; Performance mode was applied instead."
+                                : !adapterReady
+                                    ? "HyperBoost requires the full-power adapter; Performance mode was applied instead."
+                                    : "HyperBoost requires the Razer Laptop Cooling Pad and a recorded disclaimer acceptance; Performance mode was applied instead.");
+                        }
                     }
                     effectivePerformanceMode = current;
                     try

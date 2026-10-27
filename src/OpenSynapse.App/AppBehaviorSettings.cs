@@ -28,6 +28,7 @@ internal sealed class AppBehaviorSettings
     public bool RestoreLightingAfterChromaSession { get; set; } = true;
     public HashSet<BladePerformanceMode> PerformanceCycleModes { get; set; } =
         [.. SupportedPerformanceCycleModes];
+    public bool PadlessHyperBoostAccepted { get; set; }
     public HashSet<int>? RefreshRateCycleHertz { get; set; }
     public string? HueBridgeHost { get; set; }
     public string? HueAppKey { get; set; }

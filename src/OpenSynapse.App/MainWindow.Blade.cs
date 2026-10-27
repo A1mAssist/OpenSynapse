@@ -158,7 +158,30 @@ public sealed partial class MainWindow
             CloseButtonText = AppStrings.Text("Text_949856B3"),
             DefaultButton = ContentDialogButton.Close,
         };
-        return await dialog.ShowAsync() == ContentDialogResult.Primary;
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return false;
+        }
+
+        _viewModel.SetPadlessHyperBoostAccepted(true);
+        if (!_behaviorSettings.PadlessHyperBoostAccepted)
+        {
+            _behaviorSettings.PadlessHyperBoostAccepted = true;
+            try
+            {
+                _behaviorSettings.Save();
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException or
+                    System.Security.SecurityException or InvalidOperationException)
+            {
+                _viewModel.ReportApplicationError(AppStrings.FormatText(
+                    "BehaviorSettingError",
+                    exception.Message));
+            }
+        }
+
+        return true;
     }
 
     private async void AutoApplyComboSelectionChanged(object sender, SelectionChangedEventArgs e)
