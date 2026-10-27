@@ -1122,8 +1122,14 @@ public sealed class OpenRazerDeviceService
         AddIfResolved("razer_chroma_misc_get_dpi_xy_byte", () => OpenRazerMouseProtocol.GetDpi(definition));
         AddIfResolved("razer_chroma_misc_get_polling_rate2", () => OpenRazerMouseProtocol.GetPollingRate(definition));
         AddIfResolved("razer_chroma_misc_get_polling_rate", () => OpenRazerMouseProtocol.GetPollingRate(definition));
-        AddIfResolved("razer_chroma_extended_matrix_get_brightness", () =>
-            OpenRazerLightingProtocol.GetBrightness(definition, null, null));
+        // The soundbar has no All region: the firmware only answers a real region id, so
+        // probing with region 0 fails on every unit. Its brightness path reads the region
+        // list first, and the firmware probe above is enough to open the channel.
+        if (!OpenRazerDeviceCatalog.IsLeviathanV2X(definition.ProductId))
+        {
+            AddIfResolved("razer_chroma_extended_matrix_get_brightness", () =>
+                OpenRazerLightingProtocol.GetBrightness(definition, null, null));
+        }
         AddIfResolved("razer_chroma_standard_get_led_brightness", () =>
             OpenRazerLightingProtocol.GetBrightness(definition, null, null));
         AddIfResolved("razer_chroma_misc_get_blade_brightness", () =>

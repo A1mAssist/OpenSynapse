@@ -37,10 +37,10 @@ public static class LeviathanV2XProtocol
     public const byte ReportId = 0x07;
     public const int EqBandCount = 10;
 
-    // NoaT3 reads state and selects presets from profile 0, but applies custom EQ
-    // and bass writes to profile 1. The middleware does the same.
+    // The soundbar panel reads and writes the same profile 0. Profile 1 belongs to the
+    // Broadcaster broadcast path, which the soundbar never uses.
     public const byte ReadProfile = 0x00;
-    public const byte WriteProfile = 0x01;
+    public const byte WriteProfile = 0x00;
 
     // The transport assigns the per-device 0..31 transaction sequence for 054A.
     private const byte TransportTransactionId = 0x00;
