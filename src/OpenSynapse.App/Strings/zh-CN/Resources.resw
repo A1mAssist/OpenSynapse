@@ -2280,6 +2280,8 @@
   <data name="BlackSharkSidetoneTitle.Text" xml:space="preserve"><value>侧音</value></data>
   <data name="BlackSharkSidetoneLabel.Text" xml:space="preserve"><value>侧音强度</value></data>
   <data name="BlackSharkGameChatTitle.Text" xml:space="preserve"><value>游戏 / 语音平衡</value></data>
+  <data name="BlackSharkGameChatGameSide.Text" xml:space="preserve"><value>游戏</value></data>
+  <data name="BlackSharkGameChatChatSide.Text" xml:space="preserve"><value>语音</value></data>
   <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>主动降噪</value></data>
   <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>模式</value></data>
   <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>强度</value></data>

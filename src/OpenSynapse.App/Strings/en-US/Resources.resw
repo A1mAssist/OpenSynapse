@@ -1868,6 +1868,8 @@
   <data name="BlackSharkSidetoneTitle.Text" xml:space="preserve"><value>Sidetone</value></data>
   <data name="BlackSharkSidetoneLabel.Text" xml:space="preserve"><value>Sidetone level</value></data>
   <data name="BlackSharkGameChatTitle.Text" xml:space="preserve"><value>Game / chat balance</value></data>
+  <data name="BlackSharkGameChatGameSide.Text" xml:space="preserve"><value>Game</value></data>
+  <data name="BlackSharkGameChatChatSide.Text" xml:space="preserve"><value>Chat</value></data>
   <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>Active noise cancellation</value></data>
   <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>Mode</value></data>
   <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>Level</value></data>
