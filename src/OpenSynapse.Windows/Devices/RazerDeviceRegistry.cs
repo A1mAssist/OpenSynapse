@@ -99,6 +99,9 @@ internal sealed class RazerDeviceRegistry
                 ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
                 ["keyboard-effect.get"] = new(0x03, 0x0F, 0x82, "010500", true),
                 ["keyboard-effect.set"] = new(0x03, 0x0F, 0x02, "", true),
+                ["display-mux.get"] = new(0x02, 0x0D, 0x89, "0000"),
+                ["display-mux.set"] = new(0x02, 0x0D, 0x09, ""),
+                ["display-mux-capabilities.get"] = new(0x02, 0x0D, 0x8A, "0000"),
             },
             // Blade 15 Base (Early 2020) reports its keyboard brightness through the
             // Chroma region command; its 07:8F/92 reports supply power-mode and charge state.
@@ -149,10 +152,12 @@ internal sealed class RazerDeviceRegistry
         {
             ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
             ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys.ToHashSet(StringComparer.Ordinal),
-            // adapter-power.get is optional in this family: only the 029F manifest
-            // answers the adapter-wattage level, so it is not required here.
+            // adapter-power.get and the display MUX reports are optional in this family:
+            // only the 029F manifest answers the adapter-wattage level and owns the
+            // MUX reports, so they are not required here.
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys
-                .Where(capability => capability != "adapter-power.get")
+                .Where(capability => capability is not ("adapter-power.get" or
+                    "display-mux.get" or "display-mux.set" or "display-mux-capabilities.get"))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),

@@ -2086,7 +2086,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private static void ValidateModelFanTargetRpm(ReadyDevice blade, int rpm)
     {
         var minimum = BladeModelCapabilities.MinimumFanTargetRpmFor(blade.Descriptor.ProductId);
-        var maximum = BladeModelCapabilities.MaximumFanTargetRpmFor(blade.Descriptor.ProductId);
+        var maximum = BladeModelCapabilities.MaximumWritableFanTargetRpmFor(blade.Descriptor.ProductId);
         if (rpm < minimum || rpm > maximum || rpm % BladeFanLimits.StepRpm != 0)
         {
             throw new ArgumentOutOfRangeException(
@@ -2168,18 +2168,33 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         _ => throw new InvalidOperationException($"Blade returned an unknown fan mode: 0x{value:X2}."),
     };
 
-    private static int DecodeBladeChargeLimit(byte value) => value switch
+    /// <summary>
+    /// Decodes the charge-limiter report the way the official middleware does: the low
+    /// seven bits hold the threshold and the top bit holds the enabled flag. A disabled
+    /// limiter charges to 100 percent whatever threshold the firmware reports.
+    /// </summary>
+    internal static int DecodeBladeChargeLimit(byte value)
     {
-        0xB2 => 50,
-        0xB7 => 55,
-        0xBC => 60,
-        0xC1 => 65,
-        0xC6 => 70,
-        0xCB => 75,
-        0xD0 => 80,
-        0x50 => 100,
-        _ => throw new InvalidOperationException($"Blade returned an unknown charge-limit code: 0x{value:X2}."),
-    };
+        var enabled = (value & 0x80) != 0;
+        var threshold = value & 0x7F;
+        if (!enabled)
+        {
+            return 100;
+        }
+
+        return threshold switch
+        {
+            50 => 50,
+            55 => 55,
+            60 => 60,
+            65 => 65,
+            70 => 70,
+            75 => 75,
+            80 => 80,
+            _ => throw new InvalidOperationException(
+                $"Blade returned an unknown charge-limit code: 0x{value:X2}."),
+        };
+    }
 
     private static byte EncodeBladeChargeLimit(int percent) => percent switch
     {
