@@ -115,7 +115,9 @@ public static class BlackSharkV3ProProtocol
             throw new ArgumentOutOfRangeException(nameof(balance), "BlackShark game/chat balance must be between 0 and 20.");
         }
 
-        return Create(GameChatSetClass, 0x01, wireless, checked((byte)balance), 0x00);
+        // The middleware sends a one-byte payload for 0xDC:0x01 (its command table
+        // declares size 1); a trailing zero made our frame one byte longer.
+        return Create(GameChatSetClass, 0x01, wireless, checked((byte)balance));
     }
 
     public static bool TryParseResponse(ReadOnlySpan<byte> report, out BlackSharkV3ProResponse response)
