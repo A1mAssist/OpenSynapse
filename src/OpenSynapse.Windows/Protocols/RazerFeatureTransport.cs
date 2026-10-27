@@ -107,6 +107,12 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, int[]> _leviathanTransactions =
         new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, int[]> _transactionSequences =
+        new(StringComparer.OrdinalIgnoreCase);
+    private const int MaxQueryAttempts = 5;
+    private const int MaxReadAttempts = 10;
+    private static readonly TimeSpan ReadRetryDelay = TimeSpan.FromMilliseconds(5);
+    private static readonly TimeSpan QueryRetryDelay = TimeSpan.FromMilliseconds(10);
 
     public RazerFeatureTransport(LocalDiagnosticLog? diagnosticLog = null)
     {
@@ -250,8 +256,11 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
         OpenRazerDeviceCatalog.IsLeviathanV2X(productId);
 
-    internal static byte NextLeviathanTransactionId(ref int sequence) =>
+    internal static byte NextTransactionId(ref int sequence) =>
         unchecked((byte)(System.Threading.Interlocked.Increment(ref sequence) & 0x1F));
+
+    internal static byte NextLeviathanTransactionId(ref int sequence) =>
+        NextTransactionId(ref sequence);
 
     private async Task<byte[]> ExecuteAsync(
         string devicePath,
@@ -274,6 +283,13 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 request[0] = LeviathanV2XProtocol.ReportId;
                 request[2] = NextLeviathanTransactionId(ref sequence[0]);
                 responseReportId = LeviathanV2XProtocol.ReportId;
+            }
+            else if (request[2] != 0xFF)
+            {
+                // Match the middleware: every command gets a fresh transaction id.
+                // A fixed id lets a previous response pass for the current one.
+                var sequence = _transactionSequences.GetOrAdd(devicePath, static _ => [-1]);
+                request[2] = NextTransactionId(ref sequence[0]);
             }
 
             try
@@ -337,7 +353,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         string? lastError = null;
         var rejectedResponses = 0;
         var silentResponses = 0;
-        for (var attempt = 1; attempt <= 5; attempt++)
+        for (var attempt = 1; attempt <= MaxQueryAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var setResult = await Task.Run(() =>
@@ -349,33 +365,53 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             {
                 lastError = new Win32Exception(setResult.Error).Message;
                 diagnostic?.Invoke($"attempt {attempt}: HidD_SetFeature failed, win32={setResult.Error} ({lastError})");
-                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+                await Task.Delay(QueryRetryDelay, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 
             await Task.Delay(deviceWait, cancellationToken).ConfigureAwait(false);
-            var response = new byte[RazerFeatureReport.Length];
-            response[0] = responseReportId;
-            var getResult = await Task.Run(() =>
+            byte[]? response = null;
+            string? readError = null;
+            for (var readAttempt = 1; readAttempt <= MaxReadAttempts; readAttempt++)
             {
-                var success = NativeMethods.HidD_GetFeature(handle, response, response.Length);
-                return (Success: success, Error: Marshal.GetLastWin32Error());
-            }, cancellationToken).ConfigureAwait(false);
-            if (!getResult.Success)
+                if (readAttempt > 1)
+                {
+                    await Task.Delay(ReadRetryDelay, cancellationToken).ConfigureAwait(false);
+                }
+
+                var candidate = new byte[RazerFeatureReport.Length];
+                candidate[0] = responseReportId;
+                var getResult = await Task.Run(() =>
+                {
+                    var success = NativeMethods.HidD_GetFeature(handle, candidate, candidate.Length);
+                    return (Success: success, Error: Marshal.GetLastWin32Error());
+                }, cancellationToken).ConfigureAwait(false);
+                if (!getResult.Success)
+                {
+                    readError = new Win32Exception(getResult.Error).Message;
+                    break;
+                }
+
+                if (!RazerFeatureReport.MatchesReportId(candidate, responseReportId) ||
+                    !RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch))
+                {
+                    readError = $"status=0x{candidate[1]:X2}, txn=0x{candidate[2]:X2} (want 0x{request[2]:X2}), class=0x{candidate[7]:X2} (want 0x{request[7]:X2}), command=0x{candidate[8]:X2} (want 0x{request[8]:X2}), len={candidate[6]} (want {request[6]}), crc=0x{candidate[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(candidate):X2}";
+                    continue;
+                }
+
+                response = candidate;
+                break;
+            }
+
+            if (response is null)
             {
-                lastError = new Win32Exception(getResult.Error).Message;
-                diagnostic?.Invoke($"attempt {attempt}: HidD_GetFeature failed, win32={getResult.Error} ({lastError})");
-                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+                lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
+                diagnostic?.Invoke($"attempt {attempt}: response validation failed after {MaxReadAttempts} reads ({readError})");
+                await Task.Delay(QueryRetryDelay, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 
-            if (!RazerFeatureReport.MatchesReportId(response, responseReportId) ||
-                !RazerFeatureReport.Matches(request, response, allowRemainingPacketsMismatch))
-            {
-                lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
-                diagnostic?.Invoke($"attempt {attempt}: response validation failed, status=0x{response[1]:X2}, txn=0x{response[2]:X2} (want 0x{request[2]:X2}), class=0x{response[7]:X2} (want 0x{request[7]:X2}), command=0x{response[8]:X2} (want 0x{request[8]:X2}), len={response[6]} (want {request[6]}), crc=0x{response[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(response):X2}");
-            }
-            else if (response[1] == 0x02)
+            if (response[1] == 0x02)
             {
                 // The firmware answers a successful command without echoing the payload, so
                 // the response arguments are the only evidence of what it actually stored.
@@ -414,15 +450,15 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 diagnostic?.Invoke($"attempt {attempt}: {lastError}");
             }
 
-            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+            await Task.Delay(QueryRetryDelay, cancellationToken).ConfigureAwait(false);
         }
 
-        if (rejectedResponses == 5)
+        if (rejectedResponses == MaxQueryAttempts)
             throw new RazerCommandRejectedException(lastError!);
 
         // A dead endpoint fails every command on its path, so one silent command means the
         // firmware does not answer it, not that the transport is gone.
-        if (silentResponses == 5)
+        if (silentResponses == MaxQueryAttempts)
             throw new RazerDeviceTimeoutException(lastError ?? "The device did not answer this command.");
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
     }
