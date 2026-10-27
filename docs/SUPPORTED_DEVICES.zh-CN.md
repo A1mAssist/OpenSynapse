@@ -69,9 +69,9 @@ Chroma REST 是软件集成，不是设备，因此不放进下表。
 | Razer DeathAdder V3 HyperSpeed (Wired) | `1532:00C4` | — |
 | Razer DeathAdder V3 HyperSpeed (Wireless) | `1532:00C5` | — |
 | Razer DeathAdder V3 Pro (Wired) | `1532:00B6` | — |
-| Razer DeathAdder V3 Pro (Wired) | `1532:00C2` | — |
+| Razer DeathAdder V3 Pro HyperPolling (Wired) | `1532:00C2` | — |
 | Razer DeathAdder V3 Pro (Wireless) | `1532:00B7` | — |
-| Razer DeathAdder V3 Pro (Wireless) | `1532:00C3` | — |
+| Razer DeathAdder V3 Pro HyperPolling (Wireless) | `1532:00C3` | — |
 | Razer DeathAdder V4 Pro (Wired) | `1532:00BE` | — |
 | Razer DeathAdder V4 Pro (Wireless) | `1532:00BF` | — |
 | Razer DeathAdder V4 Pro Carbon Fiber Edition (Wired) | `1532:00EF` | DPI、轮询率、电量和板载映射；无灯光 |
