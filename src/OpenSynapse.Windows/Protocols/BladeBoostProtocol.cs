@@ -39,7 +39,7 @@ public static class BladeBoostProtocol
         }
 
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        if (arguments[0] != 0x00 || arguments[1] != expectedCluster)
+        if (arguments[0] != BladeThermalProtocol.ProfileId || arguments[1] != expectedCluster)
         {
             throw new InvalidOperationException(
                 $"Blade returned an incorrect {name} Boost group: {arguments[0]:X2}/{arguments[1]:X2}.");
