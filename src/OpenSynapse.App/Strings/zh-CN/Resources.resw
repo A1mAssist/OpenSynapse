@@ -1670,6 +1670,10 @@
   <data name="OpenRazerPowerTitle.Text" xml:space="preserve"><value>电源管理</value></data>
   <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
   <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>低电量提醒（%）</value></data>
+  <data name="OpenRazerAutoSleepLabel.Text" xml:space="preserve"><value>自动休眠</value></data>
+  <data name="OpenRazerChargeLimiterLabel.Text" xml:space="preserve"><value>充电限制（%）</value></data>
+  <data name="Text_OpenRazerAutoSleepOn" xml:space="preserve"><value>开启</value></data>
+  <data name="Text_OpenRazerAutoSleepOff" xml:space="preserve"><value>关闭</value></data>
   <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
   <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>启用灯光</value></data>
   <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>允许 Chroma 接管</value></data>

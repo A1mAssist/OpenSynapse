@@ -9,13 +9,17 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed class OpenRazerMappingRowViewModel : INotifyPropertyChanged
 {
+    private readonly IReadOnlyList<OpenRazerMacroOption> _macros;
     private int _groupIndex;
     private int _optionIndex;
     private int _modifierIndex;
     private IReadOnlyList<string> _optionNames = [];
 
-    internal OpenRazerMappingRowViewModel(byte buttonId)
+    internal OpenRazerMappingRowViewModel(
+        byte buttonId,
+        IReadOnlyList<OpenRazerMacroOption> macros)
     {
+        _macros = macros;
         ButtonId = buttonId;
         ButtonName = OpenRazerMappingActions.DescribeButton(buttonId);
     }
@@ -42,7 +46,9 @@ public sealed class OpenRazerMappingRowViewModel : INotifyPropertyChanged
         {
             if (_groupIndex == value) return;
             _groupIndex = value;
-            OptionNames = OpenRazerMappingActions.OptionNames((OpenRazerMappingGroup)value);
+            OptionNames = OpenRazerMappingActions.OptionNames(
+                (OpenRazerMappingGroup)value,
+                _macros);
             _optionIndex = 0;
             OnPropertyChanged();
             OnPropertyChanged(nameof(OptionIndex));
@@ -73,7 +79,8 @@ public sealed class OpenRazerMappingRowViewModel : INotifyPropertyChanged
     public Visibility ModifierVisibility => _groupIndex == (int)OpenRazerMappingGroup.KeyboardKey
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public bool CanApply => _groupIndex > 0;
+    public bool CanApply => _groupIndex > 0 &&
+        (_groupIndex != (int)OpenRazerMappingGroup.Macro || _macros.Count > 0);
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -89,6 +96,7 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
     private string _errorText = string.Empty;
     private bool _loaded;
     private int _layerIndex;
+    private IReadOnlyList<OpenRazerMacroOption> _macros = [];
 
     public OpenRazerMappingViewModel(
         OpenRazerDeviceService service,
@@ -154,11 +162,17 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
 
     private byte Mode => (byte)LayerIndex;
 
-    public async Task ReadAsync(CancellationToken cancellationToken = default)
+    public Task ReadAsync(CancellationToken cancellationToken = default) =>
+        ReadAsync([], cancellationToken);
+
+    public async Task ReadAsync(
+        IReadOnlyList<OpenRazerMacroOption> macros,
+        CancellationToken cancellationToken = default)
     {
         if (IsBusy) return;
         IsBusy = true;
         ErrorText = string.Empty;
+        _macros = macros;
         try
         {
             var ids = await _service.GetMappingButtonIdsAsync(_connection, cancellationToken)
@@ -166,7 +180,7 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
             Rows.Clear();
             foreach (var id in ids)
             {
-                var row = new OpenRazerMappingRowViewModel(id);
+                var row = new OpenRazerMappingRowViewModel(id, _macros);
                 row.PropertyChanged += (_, args) =>
                 {
                     if (args.PropertyName == nameof(OpenRazerMappingRowViewModel.GroupIndex))
@@ -179,7 +193,10 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
                     var assignment = await _service.GetButtonAssignmentAsync(
                         _connection, id, Mode, cancellationToken).ConfigureAwait(true);
                     row.CurrentActionText =
-                        OpenRazerMappingActions.Describe(assignment.FunctionId, assignment.Data);
+                        OpenRazerMappingActions.Describe(
+                            assignment.FunctionId,
+                            assignment.Data,
+                            _macros);
                 }
                 catch (Exception exception) when (IsExpected(exception))
                 {
@@ -189,7 +206,11 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
                 Rows.Add(row);
             }
             _loaded = true;
-            StatusText = Rows.Count == 0 ? "No mappable buttons" : $"Read {Rows.Count} buttons";
+            StatusText = Rows.Count == 0
+                ? "No mappable buttons"
+                : _macros.Count == 0
+                    ? $"Read {Rows.Count} buttons"
+                    : $"Read {Rows.Count} buttons · {_macros.Count} macros";
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -218,7 +239,8 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
                 var action = OpenRazerMappingActions.CreateAction(
                     (OpenRazerMappingGroup)row.GroupIndex,
                     row.OptionIndex,
-                    OpenRazerMappingActions.ModifierMasks[row.ModifierIndex]);
+                    OpenRazerMappingActions.ModifierMasks[row.ModifierIndex],
+                    _macros);
                 if (action is null)
                 {
                     continue;
@@ -226,7 +248,10 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
                 await _service.SetButtonAssignmentAsync(
                     _connection, row.ButtonId, Mode, action.FunctionId, action.Data,
                     cancellationToken).ConfigureAwait(true);
-                row.CurrentActionText = OpenRazerMappingActions.Describe(action.FunctionId, action.Data);
+                row.CurrentActionText = OpenRazerMappingActions.Describe(
+                    action.FunctionId,
+                    action.Data,
+                    _macros);
                 row.GroupIndex = 0;
                 applied++;
             }

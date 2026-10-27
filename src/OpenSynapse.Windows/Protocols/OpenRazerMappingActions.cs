@@ -21,15 +21,19 @@ public enum OpenRazerMappingGroup
     RazerKey,
     WindowsShortcut,
     HyperShiftToggle,
+    Macro,
 }
 
 public sealed record OpenRazerMappingAction(string Name, byte FunctionId, byte[] Data);
 
+public sealed record OpenRazerMacroOption(byte Id, string Name);
+
 /// <summary>
 /// Selectable onboard mappings, transcribed from the middleware's fnId switch
 /// (chunk 6120, module 56415). Groups that need data this app cannot read from the device
-/// (macro slots, DPI-clutch thresholds, turbo rates, profile ids, controller buttons) are not
-/// listed: the writer would have to invent values.
+/// (DPI-clutch thresholds, turbo rates, profile ids, controller buttons) are not listed: the
+/// writer would have to invent values. Macro slots are listed only when the caller supplies
+/// the ids read from the device.
 /// </summary>
 public static class OpenRazerMappingActions
 {
@@ -120,7 +124,9 @@ public static class OpenRazerMappingActions
         ("Screenshot", 99), ("Xbox Game Bar", 100), ("Cycle apps", 101),
     ];
 
-    public static IReadOnlyList<string> OptionNames(OpenRazerMappingGroup group) => group switch
+    public static IReadOnlyList<string> OptionNames(
+        OpenRazerMappingGroup group,
+        IReadOnlyList<OpenRazerMacroOption>? macros = null) => group switch
     {
         OpenRazerMappingGroup.Off => ["Off"],
         OpenRazerMappingGroup.MouseButton => Names(MouseButtons),
@@ -134,13 +140,17 @@ public static class OpenRazerMappingActions
         OpenRazerMappingGroup.RazerKey => Names(RazerKeys),
         OpenRazerMappingGroup.WindowsShortcut => Names(WindowsShortcuts),
         OpenRazerMappingGroup.HyperShiftToggle => ["HyperShift"],
+        OpenRazerMappingGroup.Macro when macros is { Count: > 0 } =>
+            macros.Select(macro => macro.Name).ToArray(),
+        OpenRazerMappingGroup.Macro => ["No readable macro slots"],
         _ => [],
     };
 
     public static OpenRazerMappingAction? CreateAction(
         OpenRazerMappingGroup group,
         int optionIndex,
-        byte modifierMask = 0)
+        byte modifierMask = 0,
+        IReadOnlyList<OpenRazerMacroOption>? macros = null)
     {
         if (optionIndex < 0)
         {
@@ -186,12 +196,18 @@ public static class OpenRazerMappingActions
                     [shortcut.Code]);
             case OpenRazerMappingGroup.HyperShiftToggle:
                 return new("HyperShift", OpenRazerMappingFunctions.ModeButtonkey, [0x01]);
+            case OpenRazerMappingGroup.Macro when macros is not null && optionIndex < macros.Count:
+                var macro = macros[optionIndex];
+                return new(macro.Name, OpenRazerMappingFunctions.MacroTypeI, [0x00, macro.Id, 0x01]);
             default:
                 return null;
         }
     }
 
-    public static string Describe(byte functionId, IReadOnlyList<byte> data) => functionId switch
+    public static string Describe(
+        byte functionId,
+        IReadOnlyList<byte> data,
+        IReadOnlyList<OpenRazerMacroOption>? macros = null) => functionId switch
     {
         OpenRazerMappingFunctions.Off => "Off",
         OpenRazerMappingFunctions.ButtonCode when data.Count > 0 => DescribeButton(data[0]),
@@ -219,7 +235,7 @@ public static class OpenRazerMappingActions
             "Turbo" + (data.Count > 0 ? $" {DescribeButton(data[0])}" : string.Empty),
         OpenRazerMappingFunctions.MacroTypeI or OpenRazerMappingFunctions.MacroTypeII or
             OpenRazerMappingFunctions.MacroTypeIII or OpenRazerMappingFunctions.MacroTypeIV =>
-            "Macro",
+            DescribeMacro(functionId, data, macros),
         _ => $"Function {functionId}" + (data.Count == 0
             ? string.Empty
             : $" [{string.Join(' ', data.Select(value => value.ToString("X2")))}]"),
@@ -227,6 +243,24 @@ public static class OpenRazerMappingActions
 
     public static string DescribeButton(byte buttonId) =>
         MouseButtons.FirstOrDefault(button => button.Id == buttonId).Name ?? $"Button {buttonId}";
+
+    private static string DescribeMacro(
+        byte functionId,
+        IReadOnlyList<byte> data,
+        IReadOnlyList<OpenRazerMacroOption>? macros)
+    {
+        var id = data.Count >= 2 ? (data[0] << 8) | data[1] : 0;
+        var name = macros?.FirstOrDefault(macro => macro.Id == id)?.Name ??
+            (id == 0 ? "Macro" : $"Macro {id}");
+        return functionId switch
+        {
+            OpenRazerMappingFunctions.MacroTypeI when data.Count >= 3 && data[2] > 1 =>
+                $"{name} ×{data[2]}",
+            OpenRazerMappingFunctions.MacroTypeII => $"{name} (hold)",
+            OpenRazerMappingFunctions.MacroTypeIII => $"{name} (toggle)",
+            _ => name,
+        };
+    }
 
     private static string DescribeKey(byte modifierMask, byte hid)
     {

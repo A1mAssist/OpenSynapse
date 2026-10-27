@@ -199,7 +199,7 @@ public sealed class RazerOnboardMacroService
         }
     }
 
-    private async Task<IReadOnlyList<byte>> ReadIdsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<byte>> ReadIdsAsync(CancellationToken cancellationToken = default)
     {
         var ids = new List<byte>();
         var total = int.MaxValue;

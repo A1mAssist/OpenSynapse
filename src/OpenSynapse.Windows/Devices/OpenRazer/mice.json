@@ -8,7 +8,9 @@
     "mice-001": [
       "add_macro",
       "delete_macro",
+      "get_auto_sleep",
       "get_backlight_brightness",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_logo_brightness",
@@ -16,6 +18,7 @@
       "get_poll_rate",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
       "set_backlight_breath_dual",
       "set_backlight_breath_random",
       "set_backlight_breath_single",
@@ -24,6 +27,7 @@
       "set_backlight_reactive",
       "set_backlight_spectrum",
       "set_backlight_static",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_xy",
       "set_key_row",
@@ -98,7 +102,9 @@
     "mice-003": [
       "add_macro",
       "delete_macro",
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -110,6 +116,8 @@
       "get_scroll_brightness",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_breath_dual_effect",
       "set_breath_random_effect",
       "set_breath_single_effect",
@@ -146,6 +154,8 @@
     "mice-004": [
       "add_macro",
       "delete_macro",
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -154,6 +164,8 @@
       "get_poll_rate",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -181,6 +193,8 @@
     "mice-005": [
       "add_macro",
       "delete_macro",
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_logo_brightness",
@@ -189,6 +203,8 @@
       "get_right_brightness",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_xy",
       "set_key_row",
@@ -252,10 +268,12 @@
       "set_scroll_static"
     ],
     "mice-007": [
+      "get_auto_sleep",
       "get_backlight_brightness",
       "get_device_type_mouse",
       "get_dpi_xy",
       "max_dpi",
+      "set_auto_sleep",
       "set_backlight_breath_dual",
       "set_backlight_breath_random",
       "set_backlight_breath_single",
@@ -270,7 +288,9 @@
       "set_key_row"
     ],
     "mice-008": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -285,6 +305,8 @@
       "get_scroll_smart_reel",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_brightness",
       "set_custom_effect",
       "set_dpi_stages",
@@ -312,7 +334,9 @@
       "set_wave_effect"
     ],
     "mice-009": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -324,6 +348,8 @@
       "get_scroll_brightness",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_brightness",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -346,6 +372,7 @@
       "set_wave_effect"
     ],
     "mice-010": [
+      "get_auto_sleep",
       "get_battery",
       "get_brightness",
       "get_device_type_mouse",
@@ -360,6 +387,7 @@
       "get_scroll_smart_reel",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
       "set_brightness",
       "set_custom_effect",
       "set_dpi_stages",
@@ -382,7 +410,9 @@
       "set_wave_effect"
     ],
     "mice-011": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -393,6 +423,8 @@
       "get_supported_poll_rates",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_brightness",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -405,7 +437,9 @@
       "set_wave_effect"
     ],
     "mice-012": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -415,6 +449,8 @@
       "get_poll_rate",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_brightness",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -485,7 +521,9 @@
       "set_scroll_wave"
     ],
     "mice-014": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -498,6 +536,8 @@
       "get_scroll_brightness",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -580,6 +620,7 @@
       "set_static_effect"
     ],
     "mice-016": [
+      "get_auto_sleep",
       "get_battery",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -590,6 +631,7 @@
       "get_poll_rate",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
       "set_breath_dual_effect",
       "set_breath_random_effect",
       "set_breath_single_effect",
@@ -644,7 +686,9 @@
       "set_poll_rate"
     ],
     "mice-018": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -654,6 +698,8 @@
       "get_poll_rate",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -671,7 +717,9 @@
       "set_poll_rate"
     ],
     "mice-019": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -680,6 +728,8 @@
       "get_poll_rate",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_idle_time",
@@ -696,6 +746,7 @@
       "set_scroll_wave"
     ],
     "mice-020": [
+      "get_auto_sleep",
       "get_battery",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -706,6 +757,7 @@
       "get_supported_poll_rates",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_hyperpolling_wireless_dongle_indicator_led_mode",
@@ -734,7 +786,9 @@
       "set_poll_rate"
     ],
     "mice-022": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -744,6 +798,8 @@
       "get_supported_poll_rates",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_idle_time",
@@ -751,7 +807,9 @@
       "set_poll_rate"
     ],
     "mice-023": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -760,6 +818,8 @@
       "get_poll_rate",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_idle_time",
@@ -823,6 +883,7 @@
       "set_scroll_static"
     ],
     "mice-025": [
+      "get_auto_sleep",
       "get_battery",
       "get_device_type_mouse",
       "get_dpi_xy",
@@ -835,6 +896,7 @@
       "get_scroll_brightness",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
       "set_custom_effect",
       "set_dpi_xy",
       "set_idle_time",
@@ -913,7 +975,9 @@
       "set_scroll_static"
     ],
     "mice-027": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_idle_time",
@@ -923,6 +987,8 @@
       "get_scroll_brightness",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_xy",
       "set_idle_time",
@@ -1053,6 +1119,8 @@
       "set_scroll_static"
     ],
     "mice-033": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -1064,6 +1132,8 @@
       "get_scroll_mode",
       "get_scroll_smart_reel",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_brightness",
       "set_custom_effect",
       "set_dpi_stages",
@@ -1089,6 +1159,7 @@
       "set_wave_effect"
     ],
     "mice-034": [
+      "get_auto_sleep",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -1100,6 +1171,7 @@
       "get_scroll_mode",
       "get_scroll_smart_reel",
       "max_dpi",
+      "set_auto_sleep",
       "set_brightness",
       "set_custom_effect",
       "set_dpi_stages",
@@ -1122,17 +1194,22 @@
       "set_wave_effect"
     ],
     "mice-035": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_poll_rate",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_brightness",
       "set_dpi_xy",
       "set_poll_rate",
       "set_static_effect"
     ],
     "mice-036": [
+      "get_auto_sleep",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -1142,6 +1219,7 @@
       "get_right_brightness",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
       "set_custom_effect",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -1185,6 +1263,8 @@
       "set_scroll_wave"
     ],
     "mice-037": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -1192,6 +1272,8 @@
       "get_poll_rate",
       "get_supported_poll_rates",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_logo_breath_dual",
@@ -1205,12 +1287,16 @@
       "set_poll_rate"
     ],
     "mice-038": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
       "get_logo_brightness",
       "get_poll_rate",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -1226,12 +1312,16 @@
       "set_poll_rate"
     ],
     "mice-039": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
       "get_poll_rate",
       "get_supported_poll_rates",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_poll_rate"
@@ -1260,6 +1350,8 @@
       "set_scroll_on"
     ],
     "mice-041": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_left_brightness",
@@ -1268,6 +1360,8 @@
       "get_right_brightness",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_xy",
       "set_key_row",
@@ -1310,12 +1404,16 @@
       "set_scroll_wave"
     ],
     "mice-042": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_logo_brightness",
       "get_poll_rate",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_custom_effect",
       "set_dpi_xy",
       "set_key_row",
@@ -1398,12 +1496,14 @@
       "set_scroll_on"
     ],
     "mice-046": [
+      "get_auto_sleep",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_logo_brightness",
       "get_poll_rate",
       "get_scroll_brightness",
       "max_dpi",
+      "set_auto_sleep",
       "set_dpi_xy",
       "set_logo_breath_single",
       "set_logo_brightness",
@@ -1416,11 +1516,13 @@
       "set_scroll_static"
     ],
     "mice-047": [
+      "get_auto_sleep",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_logo_brightness",
       "get_poll_rate",
       "max_dpi",
+      "set_auto_sleep",
       "set_dpi_xy",
       "set_logo_breath_dual",
       "set_logo_breath_random",
@@ -1433,11 +1535,15 @@
       "set_poll_rate"
     ],
     "mice-048": [
+      "get_auto_sleep",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_xy",
       "get_logo_brightness",
       "get_poll_rate",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_dpi_xy",
       "set_logo_breath_single",
       "set_logo_brightness",
@@ -1551,7 +1657,9 @@
       "set_poll_rate"
     ],
     "mice-058": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_device_type_mouse",
       "get_dpi_stages",
       "get_dpi_xy",
@@ -1559,6 +1667,8 @@
       "get_low_battery_threshold",
       "get_poll_rate",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_idle_time",
@@ -1566,6 +1676,7 @@
       "set_poll_rate"
     ],
     "mice-059": [
+      "get_auto_sleep",
       "get_battery",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -1575,6 +1686,7 @@
       "get_poll_rate",
       "get_supported_poll_rates",
       "max_dpi",
+      "set_auto_sleep",
       "set_dpi_stages",
       "set_dpi_xy",
       "set_idle_time",
@@ -1582,7 +1694,9 @@
       "set_poll_rate"
     ],
     "mice-060": [
+      "get_auto_sleep",
       "get_battery",
+      "get_battery_charge_limiter",
       "get_brightness",
       "get_device_type_mouse",
       "get_dpi_stages",
@@ -1594,6 +1708,8 @@
       "get_supported_poll_rates",
       "is_charging",
       "max_dpi",
+      "set_auto_sleep",
+      "set_battery_charge_limiter",
       "set_brightness",
       "set_dpi_stages",
       "set_dpi_xy",
@@ -2465,7 +2581,14 @@
         "razer_chroma_standard_matrix_effect_spectrum": "FF",
         "razer_chroma_standard_matrix_effect_static": "FF",
         "razer_chroma_standard_matrix_effect_wave": "FF",
-        "razer_chroma_standard_set_led_brightness": "FF"
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -2662,7 +2785,14 @@
         "razer_chroma_standard_get_led_brightness": "3F",
         "razer_chroma_standard_matrix_effect_custom_frame": "3F",
         "razer_chroma_standard_matrix_set_custom_frame": "3F",
-        "razer_chroma_standard_set_led_brightness": "3F"
+        "razer_chroma_standard_set_led_brightness": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -2729,7 +2859,26 @@
         "razer_chroma_mouse_extended_matrix_effect_spectrum": "3F",
         "razer_chroma_mouse_extended_matrix_effect_static": "3F",
         "razer_chroma_standard_get_led_brightness": "FF",
-        "razer_chroma_standard_set_led_brightness": "FF"
+        "razer_chroma_standard_set_led_brightness": "FF",
+        "razer_chroma_misc_get_battery_discharge_curve": "3F",
+        "razer_chroma_misc_set_battery_discharge_curve": "3F",
+        "razer_chroma_misc_get_indicator_led_configuration": "3F",
+        "razer_chroma_misc_set_indicator_led_configuration": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_chroma_tap": "FF",
+        "razer_chroma_misc_set_chroma_tap": "FF",
+        "razer_chroma_misc_get_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_set_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F",
+        "razer_chroma_misc_get_battery_charge_limiter": "3F",
+        "razer_chroma_misc_set_battery_charge_limiter": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -2845,7 +2994,26 @@
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "3F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_chroma_tap": "3F",
+        "razer_chroma_misc_set_chroma_tap": "3F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3031,7 +3199,14 @@
         "razer_chroma_misc_get_dpi_xy": "3F",
         "razer_chroma_misc_get_polling_rate": "3F",
         "razer_chroma_misc_set_dpi_xy": "3F",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3133,7 +3308,22 @@
         "razer_chroma_misc_get_polling_rate": "3F",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "3F",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "3F",
+        "razer_chroma_misc_set_battery_discharge_curve": "3F",
+        "razer_chroma_misc_get_indicator_led_configuration": "3F",
+        "razer_chroma_misc_set_indicator_led_configuration": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3196,7 +3386,14 @@
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -3239,7 +3436,26 @@
         "razer_chroma_misc_get_dpi_xy": "3F",
         "razer_chroma_misc_get_polling_rate": "3F",
         "razer_chroma_misc_set_dpi_xy": "3F",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "3F",
+        "razer_chroma_misc_set_battery_discharge_curve": "3F",
+        "razer_chroma_misc_get_indicator_led_configuration": "3F",
+        "razer_chroma_misc_set_indicator_led_configuration": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_chroma_tap": "3F",
+        "razer_chroma_misc_set_chroma_tap": "3F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F",
+        "razer_chroma_misc_get_battery_charge_limiter": "3F",
+        "razer_chroma_misc_set_battery_charge_limiter": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3305,7 +3521,26 @@
         "razer_chroma_misc_get_polling_rate": "3F",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "3F",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "3F",
+        "razer_chroma_misc_set_battery_discharge_curve": "3F",
+        "razer_chroma_misc_get_indicator_led_configuration": "3F",
+        "razer_chroma_misc_set_indicator_led_configuration": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_chroma_tap": "3F",
+        "razer_chroma_misc_set_chroma_tap": "3F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F",
+        "razer_chroma_misc_get_battery_charge_limiter": "3F",
+        "razer_chroma_misc_set_battery_charge_limiter": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3359,7 +3594,26 @@
         "razer_chroma_misc_get_dpi_xy": "FF",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "FF",
+        "razer_chroma_misc_set_gpu_card_detection": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_chroma_tap": "FF",
+        "razer_chroma_misc_set_chroma_tap": "FF",
+        "razer_chroma_misc_get_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_set_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3403,7 +3657,14 @@
         "razer_chroma_misc_get_dpi_xy": "FF",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3462,7 +3723,14 @@
         "razer_chroma_misc_get_dpi_xy": "FF",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3527,7 +3795,26 @@
         "razer_chroma_misc_get_dpi_xy": "1F",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_chroma_tap": "FF",
+        "razer_chroma_misc_set_chroma_tap": "FF",
+        "razer_chroma_misc_get_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_set_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3589,7 +3876,14 @@
         "razer_chroma_misc_get_dpi_xy": "FF",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "00",
+        "razer_chroma_misc_set_time_to_dim": "00",
+        "razer_chroma_misc_get_profile_debounce_time": "00",
+        "razer_chroma_misc_set_profile_debounce_time": "00",
+        "razer_chroma_misc_get_macro_storage_info": "00",
+        "razer_chroma_misc_get_auto_sleep": "00",
+        "razer_chroma_misc_set_auto_sleep": "00"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3732,7 +4026,20 @@
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "3F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3792,7 +4099,14 @@
         "razer_chroma_misc_get_dpi_xy": "FF",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "00",
+        "razer_chroma_misc_set_time_to_dim": "00",
+        "razer_chroma_misc_get_profile_debounce_time": "00",
+        "razer_chroma_misc_set_profile_debounce_time": "00",
+        "razer_chroma_misc_get_macro_storage_info": "00",
+        "razer_chroma_misc_get_auto_sleep": "00",
+        "razer_chroma_misc_set_auto_sleep": "00"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -3926,7 +4240,26 @@
         "razer_chroma_misc_get_polling_rate": "3F",
         "razer_chroma_misc_set_dpi_xy": "3F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_chroma_tap": "3F",
+        "razer_chroma_misc_set_chroma_tap": "3F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4035,7 +4368,14 @@
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4107,7 +4447,14 @@
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4251,7 +4598,26 @@
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "3F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_chroma_tap": "3F",
+        "razer_chroma_misc_set_chroma_tap": "3F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4387,7 +4753,14 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -4426,7 +4799,26 @@
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "FF",
+        "razer_chroma_misc_set_gpu_card_detection": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_chroma_tap": "FF",
+        "razer_chroma_misc_set_chroma_tap": "FF",
+        "razer_chroma_misc_get_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_set_force_chroma_ctrl": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -4469,7 +4861,10 @@
         "razer_chroma_misc_get_dpi_xy": "3F",
         "razer_chroma_misc_get_polling_rate": "3F",
         "razer_chroma_misc_set_dpi_xy": "3F",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4533,7 +4928,14 @@
         "razer_chroma_misc_get_dpi_xy": "1F",
         "razer_chroma_misc_get_polling_rate": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4604,7 +5006,14 @@
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4747,7 +5156,14 @@
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4813,7 +5229,26 @@
         "razer_chroma_misc_get_polling_rate": "3F",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "3F",
-        "razer_chroma_misc_set_polling_rate": "3F"
+        "razer_chroma_misc_set_polling_rate": "3F",
+        "razer_chroma_misc_get_battery_discharge_curve": "3F",
+        "razer_chroma_misc_set_battery_discharge_curve": "3F",
+        "razer_chroma_misc_get_indicator_led_configuration": "3F",
+        "razer_chroma_misc_set_indicator_led_configuration": "3F",
+        "razer_chroma_misc_get_time_to_dim": "3F",
+        "razer_chroma_misc_set_time_to_dim": "3F",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "3F",
+        "razer_chroma_misc_set_profile_debounce_time": "3F",
+        "razer_chroma_misc_get_chroma_tap": "3F",
+        "razer_chroma_misc_set_chroma_tap": "3F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "3F",
+        "razer_chroma_misc_get_macro_storage_info": "3F",
+        "razer_chroma_misc_get_auto_sleep": "3F",
+        "razer_chroma_misc_set_auto_sleep": "3F",
+        "razer_chroma_misc_get_battery_charge_limiter": "3F",
+        "razer_chroma_misc_set_battery_charge_limiter": "3F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4878,7 +5313,26 @@
         "razer_chroma_misc_get_dpi_xy": "1F",
         "razer_chroma_misc_get_polling_rate": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -4960,7 +5414,26 @@
         "razer_chroma_mouse_extended_matrix_effect_breathing_single": "1F",
         "razer_chroma_mouse_extended_matrix_effect_reactive": "1F",
         "razer_chroma_mouse_extended_matrix_effect_spectrum": "1F",
-        "razer_chroma_standard_matrix_effect_none": "FF"
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -5132,7 +5605,26 @@
         "razer_chroma_misc_get_dpi_xy": "FF",
         "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_dpi_stages": "FF",
-        "razer_chroma_misc_set_dpi_xy": "FF"
+        "razer_chroma_misc_set_dpi_xy": "FF",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -5203,7 +5695,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "FF",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "FF",
+        "razer_chroma_misc_set_gpu_card_detection": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -5288,7 +5799,26 @@
         "razer_chroma_misc_get_polling_rate": "1F",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -5350,7 +5880,26 @@
         "razer_chroma_misc_get_dpi_xy": "FF",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_battery_discharge_curve": "00",
+        "razer_chroma_misc_set_battery_discharge_curve": "00",
+        "razer_chroma_misc_get_indicator_led_configuration": "00",
+        "razer_chroma_misc_set_indicator_led_configuration": "00",
+        "razer_chroma_misc_get_time_to_dim": "00",
+        "razer_chroma_misc_set_time_to_dim": "00",
+        "razer_chroma_misc_get_gpu_card_detection": "3F",
+        "razer_chroma_misc_set_gpu_card_detection": "3F",
+        "razer_chroma_misc_get_profile_debounce_time": "00",
+        "razer_chroma_misc_set_profile_debounce_time": "00",
+        "razer_chroma_misc_get_chroma_tap": "00",
+        "razer_chroma_misc_set_chroma_tap": "00",
+        "razer_chroma_misc_get_force_chroma_ctrl": "00",
+        "razer_chroma_misc_set_force_chroma_ctrl": "00",
+        "razer_chroma_misc_get_macro_storage_info": "00",
+        "razer_chroma_misc_get_auto_sleep": "00",
+        "razer_chroma_misc_set_auto_sleep": "00",
+        "razer_chroma_misc_get_battery_charge_limiter": "00",
+        "razer_chroma_misc_set_battery_charge_limiter": "00"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -5414,7 +5963,14 @@
         "razer_chroma_misc_get_polling_rate": "1F",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -5477,7 +6033,14 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -5519,7 +6082,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -5561,7 +6143,22 @@
         "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_idle_time": "1F"
+        "razer_chroma_misc_set_idle_time": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -5674,7 +6271,26 @@
         "razer_chroma_misc_get_polling_rate": "1F",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -5739,7 +6355,14 @@
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_stages": "FF",
         "razer_chroma_misc_set_dpi_xy": "FF",
-        "razer_chroma_misc_set_polling_rate": "FF"
+        "razer_chroma_misc_set_polling_rate": "FF",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "FF",
+        "razer_chroma_misc_set_profile_debounce_time": "FF",
+        "razer_chroma_misc_get_macro_storage_info": "FF",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -5799,7 +6422,14 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -5894,7 +6524,14 @@
         "razer_chroma_mouse_extended_matrix_effect_breathing_single": "1F",
         "razer_chroma_mouse_extended_matrix_effect_reactive": "1F",
         "razer_chroma_mouse_extended_matrix_effect_spectrum": "1F",
-        "razer_chroma_standard_matrix_effect_none": "FF"
+        "razer_chroma_standard_matrix_effect_none": "FF",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -6041,7 +6678,11 @@
       "category": "mouse",
       "capabilitySet": "mice-008",
       "maximumDpi": 30000,
-      "pollRates": null,
+      "pollRates": [
+        125,
+        500,
+        1000
+      ],
       "matrixDimensions": [
         1,
         13
@@ -6058,8 +6699,8 @@
         "razer_chroma_misc_get_scroll_acceleration": "1F",
         "razer_chroma_misc_set_scroll_smart_reel": "1F",
         "razer_chroma_misc_get_scroll_smart_reel": "1F",
-        "razer_chroma_misc_get_low_battery_threshold": "FF",
-        "razer_chroma_misc_set_low_battery_threshold": "FF",
+        "razer_chroma_misc_get_low_battery_threshold": "1F",
+        "razer_chroma_misc_set_low_battery_threshold": "1F",
         "razer_chroma_standard_get_device_mode": "00",
         "razer_chroma_extended_matrix_brightness": "1F",
         "razer_chroma_extended_matrix_effect_custom_frame": "1F",
@@ -6076,7 +6717,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -6108,12 +6768,22 @@
         ],
         "razer_chroma_misc_set_dpi_xy": [
           "00"
+        ],
+        "razer_chroma_misc_get_dpi_stages": [
+          "00"
+        ],
+        "razer_chroma_misc_set_dpi_stages": [
+          "00"
         ]
       },
       "defaultStorage": "01",
       "defaultLedZone": "00",
       "commandSequences": {},
-      "ambiguousTransactions": []
+      "ambiguousTransactions": [],
+      "commandSizes": {
+        "razer_chroma_misc_get_dpi_stages": "50",
+        "razer_chroma_misc_set_dpi_stages": "50"
+      }
     },
     {
       "productId": "00AB",
@@ -6121,7 +6791,11 @@
       "category": "mouse",
       "capabilitySet": "mice-008",
       "maximumDpi": 30000,
-      "pollRates": null,
+      "pollRates": [
+        125,
+        500,
+        1000
+      ],
       "matrixDimensions": [
         1,
         13
@@ -6138,8 +6812,8 @@
         "razer_chroma_misc_get_scroll_acceleration": "1F",
         "razer_chroma_misc_set_scroll_smart_reel": "1F",
         "razer_chroma_misc_get_scroll_smart_reel": "1F",
-        "razer_chroma_misc_get_low_battery_threshold": "FF",
-        "razer_chroma_misc_set_low_battery_threshold": "FF",
+        "razer_chroma_misc_get_low_battery_threshold": "1F",
+        "razer_chroma_misc_set_low_battery_threshold": "1F",
         "razer_chroma_standard_get_device_mode": "00",
         "razer_chroma_extended_matrix_brightness": "1F",
         "razer_chroma_extended_matrix_effect_custom_frame": "1F",
@@ -6188,12 +6862,22 @@
         ],
         "razer_chroma_misc_set_dpi_xy": [
           "00"
+        ],
+        "razer_chroma_misc_get_dpi_stages": [
+          "00"
+        ],
+        "razer_chroma_misc_set_dpi_stages": [
+          "00"
         ]
       },
       "defaultStorage": "01",
       "defaultLedZone": "00",
       "commandSequences": {},
-      "ambiguousTransactions": []
+      "ambiguousTransactions": [],
+      "commandSizes": {
+        "razer_chroma_misc_get_dpi_stages": "50",
+        "razer_chroma_misc_set_dpi_stages": "50"
+      }
     },
     {
       "productId": "00AF",
@@ -6225,7 +6909,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -6357,7 +7060,26 @@
         "razer_chroma_misc_get_dpi_xy": "1F",
         "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_dpi_stages": "1F",
-        "razer_chroma_misc_set_dpi_xy": "1F"
+        "razer_chroma_misc_set_dpi_xy": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -6417,7 +7139,14 @@
         "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_idle_time": "1F"
+        "razer_chroma_misc_set_idle_time": "1F",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -6467,7 +7196,14 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -6506,7 +7242,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -6596,7 +7351,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -6666,7 +7440,10 @@
         "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_idle_time": "1F"
+        "razer_chroma_misc_set_idle_time": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -6777,20 +7554,49 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
-          "00"
+          "01"
         ],
         "razer_chroma_misc_set_dpi_xy": [
-          "00"
+          "01"
+        ],
+        "razer_chroma_misc_get_dpi_stages": [
+          "01"
+        ],
+        "razer_chroma_misc_set_dpi_stages": [
+          "01"
         ]
       },
       "defaultStorage": null,
       "defaultLedZone": null,
       "commandSequences": {},
-      "ambiguousTransactions": []
+      "ambiguousTransactions": [],
+      "commandSizes": {
+        "razer_chroma_misc_get_dpi_stages": "50",
+        "razer_chroma_misc_set_dpi_stages": "50"
+      }
     },
     {
       "productId": "00C1",
@@ -6823,31 +7629,39 @@
         "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_idle_time": "1F"
+        "razer_chroma_misc_set_idle_time": "1F",
+        "razer_chroma_misc_set_polling_rate2": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
-          "00"
+          "01"
         ],
         "razer_chroma_misc_set_dpi_xy": [
-          "00"
+          "01"
+        ],
+        "razer_chroma_misc_get_dpi_stages": [
+          "01"
+        ],
+        "razer_chroma_misc_set_dpi_stages": [
+          "01"
+        ],
+        "razer_chroma_misc_get_polling_rate2": [
+          "01"
+        ],
+        "razer_chroma_misc_set_polling_rate2": [
+          "01"
         ]
       },
       "defaultStorage": null,
       "defaultLedZone": null,
-      "commandSequences": {
-        "razer_chroma_misc_set_polling_rate2": [
-          {
-            "transactionId": "1F",
-            "fixedArgument0": "00"
-          },
-          {
-            "transactionId": "1F",
-            "fixedArgument0": "01"
-          }
-        ]
-      },
-      "ambiguousTransactions": []
+      "commandSequences": {},
+      "ambiguousTransactions": [],
+      "commandSizes": {
+        "razer_chroma_misc_get_dpi_stages": "50",
+        "razer_chroma_misc_set_dpi_stages": "50",
+        "razer_chroma_misc_get_polling_rate2": "02",
+        "razer_chroma_misc_set_polling_rate2": "02"
+      }
     },
     {
       "productId": "00C2",
@@ -6873,7 +7687,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -6951,7 +7784,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_misc_get_dpi_xy": [
@@ -7045,7 +7897,26 @@
         "razer_chroma_misc_set_idle_time": "1F",
         "razer_chroma_misc_set_polling_rate": "1F",
         "razer_chroma_mouse_extended_matrix_effect_breathing_single": "1F",
-        "razer_chroma_mouse_extended_matrix_effect_reactive": "1F"
+        "razer_chroma_mouse_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -7222,7 +8093,26 @@
         "razer_chroma_misc_get_polling_rate": "1F",
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -7302,7 +8192,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -7461,7 +8370,26 @@
         "razer_chroma_misc_set_idle_time": "1F",
         "razer_chroma_misc_set_polling_rate": "1F",
         "razer_chroma_mouse_extended_matrix_effect_breathing_single": "1F",
-        "razer_chroma_mouse_extended_matrix_effect_reactive": "1F"
+        "razer_chroma_mouse_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -7630,7 +8558,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "1F",
+        "razer_chroma_misc_set_battery_discharge_curve": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -7746,7 +8693,18 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [
@@ -7899,7 +8857,26 @@
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
-        "razer_chroma_misc_set_polling_rate": "1F"
+        "razer_chroma_misc_set_polling_rate": "1F",
+        "razer_chroma_misc_get_battery_discharge_curve": "FF",
+        "razer_chroma_misc_set_battery_discharge_curve": "FF",
+        "razer_chroma_misc_get_indicator_led_configuration": "FF",
+        "razer_chroma_misc_set_indicator_led_configuration": "FF",
+        "razer_chroma_misc_get_time_to_dim": "FF",
+        "razer_chroma_misc_set_time_to_dim": "FF",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_profile_debounce_time": "1F",
+        "razer_chroma_misc_set_profile_debounce_time": "1F",
+        "razer_chroma_misc_get_chroma_tap": "1F",
+        "razer_chroma_misc_set_chroma_tap": "1F",
+        "razer_chroma_misc_get_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_set_force_chroma_ctrl": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F",
+        "razer_chroma_misc_get_auto_sleep": "FF",
+        "razer_chroma_misc_set_auto_sleep": "FF",
+        "razer_chroma_misc_get_battery_charge_limiter": "FF",
+        "razer_chroma_misc_set_battery_charge_limiter": "FF"
       },
       "builderArgumentPrefixes": {
         "razer_chroma_extended_matrix_brightness": [

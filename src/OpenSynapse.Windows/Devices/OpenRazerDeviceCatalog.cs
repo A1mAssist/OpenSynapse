@@ -27,7 +27,8 @@ public sealed class OpenRazerDeviceDefinition
         IReadOnlyDictionary<string, IReadOnlyList<ReadOnlyMemory<byte>>> builderArgumentPrefixes,
         OpenRazerStorage defaultStorage,
         OpenRazerLedZone defaultLedZone,
-        IReadOnlyDictionary<string, IReadOnlyList<OpenRazerCommandStep>> commandSequences)
+        IReadOnlyDictionary<string, IReadOnlyList<OpenRazerCommandStep>> commandSequences,
+        IReadOnlyDictionary<string, byte>? commandSizes = null)
     {
         ProductId = productId;
         DisplayName = displayName;
@@ -43,6 +44,7 @@ public sealed class OpenRazerDeviceDefinition
         DefaultStorage = defaultStorage;
         DefaultLedZone = defaultLedZone;
         CommandSequences = commandSequences;
+        CommandSizes = commandSizes ?? FrozenDictionary<string, byte>.Empty;
     }
 
     public const ushort VendorId = 0x1532;
@@ -60,6 +62,7 @@ public sealed class OpenRazerDeviceDefinition
     internal IReadOnlyDictionary<string, byte> Transactions { get; }
     internal IReadOnlyDictionary<string, IReadOnlyList<ReadOnlyMemory<byte>>> BuilderArgumentPrefixes { get; }
     internal IReadOnlyDictionary<string, IReadOnlyList<OpenRazerCommandStep>> CommandSequences { get; }
+    internal IReadOnlyDictionary<string, byte> CommandSizes { get; }
 
     internal bool HasSourceCapability(string capability) => SourceCapabilities.Contains(capability);
 
@@ -72,7 +75,7 @@ public sealed class OpenRazerDeviceDefinition
     internal OpenRazerDeviceDefinition WithDisplayName(string displayName) =>
         new(ProductId, displayName, Category, SourceCapabilities, MaximumDpi, PollingRates,
             MatrixDimensions, DeviceWait, Transactions, BuilderArgumentPrefixes, DefaultStorage,
-            DefaultLedZone, CommandSequences);
+            DefaultLedZone, CommandSequences, CommandSizes);
 
     internal byte GetRequiredFixedArgument(string builderName, int argumentIndex)
     {
@@ -95,6 +98,14 @@ public sealed class OpenRazerDeviceDefinition
             : throw new NotSupportedException(
                 $"OpenRazer device 1532:{ProductId:X4} has no single fixed argument {argumentIndex} for '{builderName}'.");
     }
+
+    internal byte? GetFixedArgumentOrNull(string builderName, int argumentIndex) =>
+        BuilderArgumentPrefixes.ContainsKey(builderName)
+            ? GetRequiredFixedArgument(builderName, argumentIndex)
+            : null;
+
+    internal byte GetCommandSize(string builderName, byte fallback) =>
+        CommandSizes.TryGetValue(builderName, out var size) ? size : fallback;
 }
 
 public sealed class OpenRazerDeviceCatalog
@@ -261,6 +272,19 @@ public sealed class OpenRazerDeviceCatalog
                     byte.Parse(step.FixedArgument0, System.Globalization.NumberStyles.HexNumber))).ToArray()));
             }
 
+            var commandSizes = new Dictionary<string, byte>(StringComparer.Ordinal);
+            foreach (var (builder, value) in device.CommandSizes ?? [])
+            {
+                if (string.IsNullOrWhiteSpace(builder) ||
+                    !transactions.ContainsKey(builder) ||
+                    !byte.TryParse(value, System.Globalization.NumberStyles.HexNumber, null, out var size) ||
+                    size is 0 or > 80)
+                {
+                    throw new InvalidOperationException($"OpenRazer catalog '{sourceName}' contains invalid command sizes.");
+                }
+                commandSizes.Add(builder, size);
+            }
+
             OpenRazerMatrixDimensions? matrix = device.MatrixDimensions switch
             {
                 null => null,
@@ -281,7 +305,8 @@ public sealed class OpenRazerDeviceCatalog
                 builderArgumentPrefixes.ToFrozenDictionary(StringComparer.Ordinal),
                 ParseStorage(device.DefaultStorage),
                 ParseLedZone(device.DefaultLedZone),
-                commandSequences.ToFrozenDictionary(StringComparer.Ordinal));
+                commandSequences.ToFrozenDictionary(StringComparer.Ordinal),
+                commandSizes.ToFrozenDictionary(StringComparer.Ordinal));
             if (!output.TryAdd(productId, definition))
             {
                 throw new InvalidOperationException($"Duplicate OpenRazer product ID 1532:{productId:X4}.");
@@ -328,6 +353,9 @@ public sealed class OpenRazerDeviceCatalog
             var readOnlyPrefixes = sibling.BuilderArgumentPrefixes
                 .Where(entry => readOnly.ContainsKey(entry.Key))
                 .ToFrozenDictionary(StringComparer.Ordinal);
+            var readOnlyCommandSizes = sibling.CommandSizes
+                .Where(entry => readOnly.ContainsKey(entry.Key))
+                .ToFrozenDictionary(StringComparer.Ordinal);
 
             devices.Add(productId, new OpenRazerDeviceDefinition(
                 productId,
@@ -342,7 +370,8 @@ public sealed class OpenRazerDeviceCatalog
                 readOnlyPrefixes,
                 sibling.DefaultStorage,
                 sibling.DefaultLedZone,
-                new Dictionary<string, IReadOnlyList<OpenRazerCommandStep>>()));
+                new Dictionary<string, IReadOnlyList<OpenRazerCommandStep>>(),
+                readOnlyCommandSizes));
         }
 
         AddLeviathanV2X();
@@ -353,6 +382,11 @@ public sealed class OpenRazerDeviceCatalog
         AddViperV3ProSeAlias(0x00C1, 0x00DF, "Razer Viper V3 Pro SE (Wireless)");
 
         AddMiddlewareMice();
+
+        // The official 00AA bundle declares productId 170 and dongleId 171 with
+        // isOBMDevice:true, so both wired and wireless identities expose the OBM pages.
+        MappingProductIds.Add(0x00AA);
+        MappingProductIds.Add(0x00AB);
 
         // Product definitions come from the Razer middleware bundles: each product's
         // DeviceInfo carries the DPI range, polling rates and feature set. Upstream OpenRazer
@@ -404,7 +438,8 @@ public sealed class OpenRazerDeviceCatalog
                     sibling.BuilderArgumentPrefixes,
                     sibling.DefaultStorage,
                     sibling.DefaultLedZone,
-                    sibling.CommandSequences));
+                    sibling.CommandSequences,
+                    sibling.CommandSizes));
                 MappingProductIds.Add(entry.Product);
             }
         }
@@ -482,7 +517,8 @@ public sealed class OpenRazerDeviceCatalog
                 sibling.BuilderArgumentPrefixes,
                 sibling.DefaultStorage,
                 sibling.DefaultLedZone,
-                sibling.CommandSequences));
+                sibling.CommandSequences,
+                sibling.CommandSizes));
         }
     }
 
@@ -602,6 +638,7 @@ public sealed class OpenRazerDeviceCatalog
         string? DefaultStorage,
         string? DefaultLedZone,
         Dictionary<string, CatalogCommandStep[]> CommandSequences,
+        Dictionary<string, string>? CommandSizes,
         string[] AmbiguousTransactions);
 
     private sealed record CatalogCommandStep(string TransactionId, string FixedArgument0);

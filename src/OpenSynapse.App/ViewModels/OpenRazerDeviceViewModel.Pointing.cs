@@ -93,7 +93,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             async () =>
             {
                 var state = new OpenRazerDpiStages(ActiveDpiStage,
-                    DpiStages.Select(stage => new OpenRazerDpiStage(stage.Number, stage.X, stage.Y)).ToArray());
+                    DpiStages.Select(stage => new OpenRazerDpiStage(stage.Number, stage.X, stage.Y, stage.Z)).ToArray());
                 await _service.SetDpiStagesAsync(Connection, state, cancellationToken);
                 if (Has(OpenRazerBackendCapability.DpiStagesRead))
                     ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken));
@@ -119,6 +119,37 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 if (Has(OpenRazerBackendCapability.LowBatteryThresholdRead))
                     LowBatteryThresholdPercent = await _service.GetLowBatteryThresholdAsync(Connection, cancellationToken);
                 UpdateBasic(state => state with { LowBatteryThresholdPercent = LowBatteryThresholdPercent });
+            }, cancellationToken);
+
+    public Task ApplyAutoSleepAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.AutoSleepWrite,
+            () => IsAutoSleepBusy, value => IsAutoSleepBusy = value,
+            async () =>
+            {
+                await _service.SetAutoSleepAsync(Connection, AutoSleepEnabled, cancellationToken);
+                if (Has(OpenRazerBackendCapability.AutoSleepRead))
+                    AutoSleepEnabled = await _service.GetAutoSleepAsync(Connection, cancellationToken);
+                UpdateBasic(state => state with { AutoSleepEnabled = AutoSleepEnabled });
+            }, cancellationToken);
+
+    public Task ApplyChargeLimiterAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.BatteryChargeLimiterWrite,
+            () => IsChargeLimiterBusy, value => IsChargeLimiterBusy = value,
+            async () =>
+            {
+                await _service.SetBatteryChargeLimiterAsync(
+                    Connection, checked((byte)ChargeLimiterPercent), ChargeLimiterEnabled, cancellationToken);
+                if (Has(OpenRazerBackendCapability.BatteryChargeLimiterRead))
+                {
+                    var (level, enabled) = await _service.GetBatteryChargeLimiterAsync(Connection, cancellationToken);
+                    ChargeLimiterPercent = level;
+                    ChargeLimiterEnabled = enabled;
+                }
+                UpdateBasic(state => state with
+                {
+                    BatteryChargeLimiterEnabled = ChargeLimiterEnabled,
+                    BatteryChargeLimiterPercent = ChargeLimiterPercent,
+                });
             }, cancellationToken);
 
 }

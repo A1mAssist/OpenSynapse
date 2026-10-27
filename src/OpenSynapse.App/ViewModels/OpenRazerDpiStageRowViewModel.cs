@@ -10,15 +10,22 @@ public sealed class OpenRazerDpiStageRowViewModel : INotifyPropertyChanged
     private bool _isEditable;
 
     public OpenRazerDpiStageRowViewModel(byte number, int x, int y, bool isEditable)
+        : this(number, x, y, 0, isEditable)
+    {
+    }
+
+    public OpenRazerDpiStageRowViewModel(byte number, int x, int y, int z, bool isEditable)
     {
         Number = number;
         _x = x;
         _y = y;
+        Z = z;
         _isEditable = isEditable;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public byte Number { get; }
+    public int Z { get; }
     public bool IsEditable => _isEditable;
     public string Label => AppStrings.FormatText("OpenRazerDpiStageLabel", Number);
     public int X { get => _x; set => SetField(ref _x, value); }

@@ -162,7 +162,6 @@ public sealed class OpenRazerBackendTests
     [InlineData(0x00B2, 0x1F)]
     [InlineData(0x00BE, 0x1F)]
     [InlineData(0x00BF, 0x1F)]
-    [InlineData(0x00C1, 0x1F)]
     public async Task HighPollingRateSetterPreservesBothWrites(ushort productId, byte secondTransaction)
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
@@ -180,6 +179,42 @@ public sealed class OpenRazerBackendTests
         Assert.Equal((secondTransaction, 0x01, 0x08),
             (transport.Requests[1][2], transport.Requests[1][RazerFeatureReport.ArgumentsOffset], transport.Requests[1][RazerFeatureReport.ArgumentsOffset + 1]));
         Assert.DoesNotContain("razer_chroma_misc_set_polling_rate2", device.Transactions.Keys);
+    }
+
+    [Fact]
+    public void ViperV3ProWirelessPacketsMatchMiddleware()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00C1)!;
+
+        var dpiStages = OpenRazerMouseProtocol.GetDpiStages(device).Report;
+        Assert.Equal(0x50, dpiStages[6]);
+        Assert.Equal(0x04, dpiStages[7]);
+        Assert.Equal(0x86, dpiStages[8]);
+        Assert.Equal(0x01, dpiStages[RazerFeatureReport.ArgumentsOffset]);
+
+        var dpiStagesSet = OpenRazerMouseProtocol.SetDpiStages(device, new OpenRazerDpiStages(
+            1,
+            [
+                new(1, 800, 800),
+                new(2, 1600, 1600),
+                new(3, 2400, 2400),
+                new(4, 3200, 3200),
+                new(5, 4000, 4000),
+            ])).Report;
+        Assert.Equal(0x50, dpiStagesSet[6]);
+        Assert.Equal(0x06, dpiStagesSet[8]);
+        Assert.Equal(0x01, dpiStagesSet[RazerFeatureReport.ArgumentsOffset]);
+
+        var polling = OpenRazerMouseProtocol.GetPollingRate(device).Report;
+        Assert.Equal(0x02, polling[6]);
+        Assert.Equal(0xC0, polling[8]);
+        Assert.Equal(0x01, polling[RazerFeatureReport.ArgumentsOffset]);
+
+        var pollingSet = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, 1000));
+        Assert.Equal(0x02, pollingSet.Report[6]);
+        Assert.Equal(0x40, pollingSet.Report[8]);
+        Assert.Equal(0x01, pollingSet.Report[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x08, pollingSet.Report[RazerFeatureReport.ArgumentsOffset + 1]);
     }
 
     [Fact]
@@ -208,7 +243,7 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
-    public void DpiStagesFollowOpenRazerLayoutWithoutOverValidatingReservedBytes()
+    public void DpiStagesFollowTheMiddlewareLayoutWithAZAxis()
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00B9)!;
         var arguments = new byte[]
@@ -226,7 +261,10 @@ public sealed class OpenRazerBackendTests
 
         Assert.Equal(1, stages.ActiveStage);
         Assert.Equal(
-            [new OpenRazerDpiStage(1, 800, 800), new OpenRazerDpiStage(2, 1500, 1500)],
+            [
+                new OpenRazerDpiStage(0, 800, 800, 31317),
+                new OpenRazerDpiStage(1, 1500, 1500, 4660),
+            ],
             stages.Stages);
     }
 
@@ -448,12 +486,15 @@ public sealed class OpenRazerBackendTests
     {
         var imperator = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x002F)!;
         var viper8K = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0091)!;
+        var viperV3Pro = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00C1)!;
         var legacy = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0015)!;
 
         Assert.Equal(0x01, OpenRazerMouseProtocol.GetDpi(imperator).Report[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x00, OpenRazerMouseProtocol.GetDpi(viper8K).Report[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x01, OpenRazerMouseProtocol.SetDpi(imperator, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x01, OpenRazerMouseProtocol.SetDpi(viper8K, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x01, OpenRazerMouseProtocol.GetDpi(viperV3Pro).Report[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x01, OpenRazerMouseProtocol.SetDpi(viperV3Pro, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
 
         var legacyRequest = OpenRazerMouseProtocol.SetDpi(legacy, 1600, 1600).Report;
         Assert.Equal(60, legacyRequest[RazerFeatureReport.ArgumentsOffset]);
@@ -1035,7 +1076,12 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(OpenRazerLedZone.ScrollWheel, device.DefaultLedZone);
         Assert.DoesNotContain(OpenRazerBackendCapability.ChargingRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
-        Assert.Equal(14, capabilities.Count);
+        // The middleware bundle declares the auto sleep and battery charge
+        // limiter commands for this mouse, so the four extra capabilities are
+        // declared rather than inherited from a generic mouse.
+        Assert.Equal(18, capabilities.Count);
+        Assert.Contains(OpenRazerBackendCapability.AutoSleepRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.BatteryChargeLimiterRead, capabilities);
         Assert.Equal([125, 500, 1000], device.PollingRates);
         Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
@@ -1093,6 +1139,39 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(0x84, request[8]);
         Assert.Equal(0x01, request[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal((byte)OpenRazerLedZone.ScrollWheel, request[RazerFeatureReport.ArgumentsOffset + 1]);
+    }
+
+    [Fact]
+    public async Task BasiliskV3ProBrightnessReadFallsBackWhenAllIsRejected()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00AB)!;
+        var transport = new BrightnessZoneFallbackTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved, OpenRazerDeviceService.GetCapabilities(device),
+            OpenRazerDeviceService.GetLightingZoneCapabilities(device), null);
+
+        var brightness = await service.GetBrightnessAsync(connection);
+
+        Assert.Equal(0x2A, brightness);
+        Assert.Equal(2, transport.Requests.Count);
+        Assert.Equal((byte)OpenRazerLedZone.All,
+            transport.Requests[0][RazerFeatureReport.ArgumentsOffset + 1]);
+        Assert.Equal((byte)OpenRazerLedZone.ScrollWheel,
+            transport.Requests[1][RazerFeatureReport.ArgumentsOffset + 1]);
+    }
+
+    [Theory]
+    [InlineData(0x00AA)]
+    [InlineData(0x00AB)]
+    public void BasiliskV3ProUsesTheWorkingLowBatteryTransaction(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_get_low_battery_threshold"]);
+        Assert.Equal(0x1F, device.Transactions["razer_chroma_misc_set_low_battery_threshold"]);
+        Assert.Equal(0x1F, OpenRazerMouseProtocol.GetLowBatteryThreshold(device).Report[2]);
+        Assert.Equal(0x1F, OpenRazerMouseProtocol.SetLowBatteryThreshold(device, 15).Report[2]);
     }
 
     [Fact]
@@ -1242,6 +1321,10 @@ public sealed class OpenRazerBackendTests
                 OpenRazerBackendCapability.IdleTimeoutWrite => OpenRazerMouseProtocol.SetIdleTime(device, 60),
                 OpenRazerBackendCapability.LowBatteryThresholdRead => OpenRazerMouseProtocol.GetLowBatteryThreshold(device),
                 OpenRazerBackendCapability.LowBatteryThresholdWrite => OpenRazerMouseProtocol.SetLowBatteryThreshold(device, 15),
+                OpenRazerBackendCapability.AutoSleepRead => OpenRazerMouseProtocol.GetAutoSleep(device),
+                OpenRazerBackendCapability.AutoSleepWrite => OpenRazerMouseProtocol.SetAutoSleep(device, true),
+                OpenRazerBackendCapability.BatteryChargeLimiterRead => OpenRazerMouseProtocol.GetBatteryChargeLimiter(device),
+                OpenRazerBackendCapability.BatteryChargeLimiterWrite => OpenRazerMouseProtocol.SetBatteryChargeLimiter(device, 80, true),
                 OpenRazerBackendCapability.BrightnessRead => OpenRazerLightingProtocol.GetBrightness(device, null,
                     zones.Values.First(zone => zone.CanReadBrightness).Zone),
                 OpenRazerBackendCapability.BrightnessWrite => OpenRazerLightingProtocol.SetBrightness(device, null,
@@ -1456,6 +1539,45 @@ public sealed class OpenRazerBackendTests
                 Assert.True(exception is null,
                     $"1532:{device.ProductId:X4} source capability {capability} has no explicit binding: {exception}");
             }
+        }
+    }
+
+    private sealed class BrightnessZoneFallbackTransport : IRazerFeatureTransport
+    {
+        internal List<byte[]> Requests { get; } = [];
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            Requests.Add(request.ToArray());
+            if (request.Span[7] == 0x0F && request.Span[8] == 0x84 &&
+                request.Span[RazerFeatureReport.ArgumentsOffset + 1] == (byte)OpenRazerLedZone.All)
+            {
+                throw new RazerCommandRejectedException("The device rejected the query (0x03).");
+            }
+
+            var response = request.ToArray();
+            response[1] = 0x02;
+            response[6] = 0x03;
+            response[RazerFeatureReport.ArgumentsOffset + 2] = 0x2A;
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
         }
     }
 
