@@ -54,7 +54,7 @@ public sealed partial class MainViewModel
         BladeModelCapabilities.MinimumFanTargetRpmFor(_blade._bladeProductId);
 
     public int BladeFanFixedMaximumRpm =>
-        BladeModelCapabilities.MaximumFanTargetRpmFor(_blade._bladeProductId);
+        BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId);
 
     private int SnapBladeFanFixedRpm(int value)
     {
