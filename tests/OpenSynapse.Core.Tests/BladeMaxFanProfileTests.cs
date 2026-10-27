@@ -120,10 +120,30 @@ public sealed class BladeMaxFanProfileTests
     [Theory]
     [InlineData(0x02C6, true)]
     [InlineData(0x0245, true)]
-    [InlineData(0x029F, false)]
+    [InlineData(0x029F, true)]
     [InlineData(0x02A0, false)]
     [InlineData(0x028C, true)]
     [InlineData(0x0000, false)]
     public void OnlyAuditedModelsAdmitFixedFanWrites(ushort productId, bool expected) =>
         Assert.Equal(expected, BladeModelCapabilities.SupportsFixedFan(productId));
+
+    /// <summary>
+    /// The Blade 16 (2023) middleware drives a fixed speed from every performance mode,
+    /// so no custom-mode gate applies. Its official modes reach 5200 RPM and Custom
+    /// reaches 5300, so the firmware may hold a target above the write ceiling.
+    /// </summary>
+    [Fact]
+    public void TheBlade16_2023AdmitsAFixedSpeedWithoutTheCustomModeGate()
+    {
+        const ushort productId = 0x029F;
+
+        Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
+        Assert.False(BladeModelCapabilities.FixedFanRequiresCustomMode(productId));
+        Assert.Equal(3400, BladeModelCapabilities.MinimumFanTargetRpmFor(productId));
+        Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+
+        // The shared fan-target report rejects anything past the global ceiling, so the
+        // slider and the write guard stop at 5000 even though the firmware reports 5300.
+        Assert.Equal(5000, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
+    }
 }
