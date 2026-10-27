@@ -6,55 +6,100 @@ namespace OpenSynapse.Core.Tests;
 public sealed class OpenRazerKrakenV4ProtocolTests
 {
     [Fact]
-    public void StaticColorUsesTheWiredDirectReport()
+    public void StaticColorSetsTheEffectAndThenWritesTheFrame()
     {
-        var report = Assert.Single(OpenRazerKrakenV4Protocol.CreateStatic(new OpenRazerColor(0x11, 0x22, 0x33)));
+        var reports = OpenRazerKrakenV4Protocol.CreateStatic(new OpenRazerColor(0x11, 0x22, 0x33));
+        Assert.Equal(2, reports.Count);
 
-        Assert.Equal(OpenRazerKrakenV4Protocol.ReportLength, report.Length);
-        Assert.Equal(0x02, report[0]);
-        Assert.Equal(0x60, report[2]);
-        Assert.Equal(32, report[6]);
-        Assert.Equal(0x0F, report[7]);
-        Assert.Equal(0x03, report[8]);
-        Assert.Equal(0x00, report[9]);
-        Assert.Equal([0x00, 0x00, 0x00, 0x00, 0x08], report[10..15]);
+        var effect = reports[0];
+        Assert.Equal(OpenRazerKrakenV4Protocol.ReportLength, effect.Length);
+        Assert.Equal(0x02, effect[0]);
+        Assert.Equal(0x60, effect[2]);
+        Assert.Equal(0x05, effect[6]);
+        Assert.Equal(0x00, effect[7]);
+        Assert.Equal(0x00, effect[8]);
+        Assert.Equal(0x00, effect[9]);
+        Assert.Equal([0xC0, 0x01, 0x01, 0x01], effect[10..14]);
+
+        var frame = reports[1];
+        Assert.Equal(0x0F, frame[7]);
+        Assert.Equal(0x10, frame[8]);
+        Assert.Equal(0x00, frame[9]);
+        Assert.Equal([0x00, 0x00, 0x01, 0x00, 0x09], frame[10..15]);
 
         for (var led = 0; led < OpenRazerKrakenV4Protocol.LedCount; led++)
         {
-            Assert.Equal([0x11, 0x22, 0x33], report[(15 + (led * 3))..(18 + (led * 3))]);
+            Assert.Equal([0x11, 0x22, 0x33], frame[(15 + (led * 3))..(18 + (led * 3))]);
         }
     }
 
     [Fact]
-    public void WaveAndBrightnessUseTheEncapsulatedCommandBytes()
+    public void EveryReportCarriesTheChecksumTheFirmwareVerifies()
     {
-        var reports = OpenRazerKrakenV4Protocol.CreateWave(0xCC);
-        Assert.Equal(2, reports.Count);
+        foreach (var report in OpenRazerKrakenV4Protocol.CreateStatic(new OpenRazerColor(0x11, 0x22, 0x33))
+                     .Concat(OpenRazerKrakenV4Protocol.CreateOff())
+                     .Concat(OpenRazerKrakenV4Protocol.CreateWave()))
+        {
+            byte expected = 0;
+            for (var index = 0; index < OpenRazerKrakenV4Protocol.ReportLength - 2; index++)
+            {
+                expected ^= report[index];
+            }
 
-        var wave = reports[0];
-        Assert.Equal(5, wave[6]);
-        Assert.Equal(0x00, wave[7]);
-        Assert.Equal(0x00, wave[8]);
-        Assert.Equal(0x00, wave[9]);
-        Assert.Equal(0xC0, wave[10]);
-        Assert.Equal(0x01, wave[12]);
-        Assert.Equal(0x04, wave[13]);
-
-        var brightness = reports[1];
-        Assert.Equal(0xC1, brightness[10]);
-        Assert.Equal(0xCC, brightness[13]);
+            Assert.Equal(expected, report[OpenRazerKrakenV4Protocol.ReportLength - 2]);
+        }
     }
 
     [Fact]
-    public void OffIsAnAllBlackDirectFrameAndIntensityScalesTheColor()
+    public void OffTurnsTheEffectOffAndClearsTheFrame()
     {
-        var off = Assert.Single(OpenRazerKrakenV4Protocol.CreateOff());
-        Assert.All(off[15..42], value => Assert.Equal(0, value));
+        var reports = OpenRazerKrakenV4Protocol.CreateOff();
+        Assert.Equal(2, reports.Count);
 
-        var dimmed = Assert.Single(OpenRazerKrakenV4Protocol.CreateStatic(
-            new OpenRazerColor(200, 100, 50), 128));
-        Assert.Equal(100, dimmed[15]);
-        Assert.Equal(50, dimmed[16]);
-        Assert.Equal(25, dimmed[17]);
+        var effect = reports[0];
+        Assert.Equal([0xC0, 0x01, 0x01, 0x00], effect[10..14]);
+
+        var frame = reports[1];
+        Assert.Equal(0x0F, frame[7]);
+        Assert.Equal(0x10, frame[8]);
+        Assert.All(frame[15..42], value => Assert.Equal(0, value));
+    }
+
+    [Fact]
+    public void WaveSetsTheWaveEffect()
+    {
+        var report = Assert.Single(OpenRazerKrakenV4Protocol.CreateWave());
+        Assert.Equal(0x00, report[7]);
+        Assert.Equal(0x00, report[8]);
+        Assert.Equal([0xC0, 0x01, 0x01, 0x04], report[10..14]);
+    }
+
+    [Fact]
+    public void IntensityScalesTheColor()
+    {
+        var dimmed = OpenRazerKrakenV4Protocol.CreateStatic(
+            new OpenRazerColor(200, 100, 50), 128);
+        var frame = dimmed[1];
+        Assert.Equal(100, frame[15]);
+        Assert.Equal(50, frame[16]);
+        Assert.Equal(25, frame[17]);
+    }
+
+    [Fact]
+    public void TheFramesMatchTheRazerBundleByteForByte()
+    {
+        // Reference frames taken from the "Billie" headset implementation in
+        // Razer's own product bundle, including the checksum byte.
+        var staticReports = OpenRazerKrakenV4Protocol.CreateStatic(new OpenRazerColor(0x11, 0x22, 0x33));
+        Assert.Equal(
+            "02006000000005000000C0010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A600",
+            Convert.ToHexString(staticReports[0]));
+        Assert.Equal(
+            "020060000000210F1000000001000911223311223311223311223311223311223311223311223311223300000000000000000000000000000000000000005400",
+            Convert.ToHexString(staticReports[1]));
+
+        Assert.Equal(
+            "02006000000005000000C0010104000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A300",
+            Convert.ToHexString(Assert.Single(OpenRazerKrakenV4Protocol.CreateWave())));
     }
 }

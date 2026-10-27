@@ -80,9 +80,10 @@ public sealed class OpenRazerSpecialLightingService
             [0x0520] = Kylie("Razer Kraken Tournament Edition"),
             [0x0527] = Kylie("Razer Kraken Ultimate"),
             [0x0560] = Kylie("Razer Kraken Kitty V2"),
-            // OpenRGB's merged wired implementation validates the same 64-byte,
-            // report-0x02 protocol on the Kraken V4 cable. The 2.4 GHz receiver is
-            // deliberately not exposed until that path is validated.
+            // The Kraken V4 exposes a 64-byte FF14 output report on the USB-C cable.
+            // The 2.4 GHz receiver (056C) enumerates the same collection, but the
+            // vendor bundle ships no lighting writes for the dongle, so it stays
+            // out of this list.
             [0x056B] = new(
                 "Razer Kraken V4 (Wired)",
                 OpenRazerKrakenLayout.Kylie,
@@ -107,6 +108,12 @@ public sealed class OpenRazerSpecialLightingService
     private readonly OpenRazerHidReportTransport _transport = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Action<string>? _diagnostic;
+
+    public OpenRazerSpecialLightingService(Action<string>? diagnostic = null)
+    {
+        _diagnostic = diagnostic;
+    }
 
     public async Task<IReadOnlyList<OpenRazerSpecialLightingConnection>> DiscoverAsync(
         CancellationToken cancellationToken = default)
@@ -263,6 +270,9 @@ public sealed class OpenRazerSpecialLightingService
             foreach (var report in reports)
             {
                 await _transport.SendOutputAsync(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
+                _diagnostic?.Invoke(
+                    $"kraken lighting 1532:{connection.ProductId:X4} effect={settings.Effect} " +
+                    $"report=[{Convert.ToHexString(report)}]");
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
             }
         }
