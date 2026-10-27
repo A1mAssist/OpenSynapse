@@ -139,7 +139,7 @@ internal static class OpenRazerStandardProtocol
     {
         if (response.Length != RazerFeatureReport.Length || !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
             response[6] < minimumLength || response[6] > 80 ||
-            response[89] != RazerFeatureReport.CalculateCrc(response))
+            !RazerFeatureReport.IsAcceptedChecksum(response))
         {
             throw new InvalidDataException("OpenRazer response is invalid or unsuccessful.");
         }
@@ -155,7 +155,7 @@ internal static class OpenRazerStandardProtocol
     {
         if (response.Length != RazerFeatureReport.Length || !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
             response[6] > 80 ||
-            response[89] != RazerFeatureReport.CalculateCrc(response))
+            !RazerFeatureReport.IsAcceptedChecksum(response))
         {
             throw new InvalidDataException("OpenRazer response is invalid or unsuccessful.");
         }
