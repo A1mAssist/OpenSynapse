@@ -108,6 +108,17 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(expected, RazerFeatureTransport.UsesLeviathanReportId(devicePath));
     }
 
+    [Fact]
+    public void FeatureTransactionIdsCycleFromZeroThroughThirtyOne()
+    {
+        var sequence = -1;
+        var actual = Enumerable.Range(0, 34)
+            .Select(_ => RazerFeatureTransport.NextTransactionId(ref sequence))
+            .ToArray();
+
+        Assert.Equal(Enumerable.Range(0, 32).Concat([0, 1]).Select(value => (byte)value), actual);
+    }
+
     [Theory]
     [InlineData(0x00DE, 0x00C0, "Razer Viper V3 Pro SE (Wired)")]
     [InlineData(0x00DF, 0x00C1, "Razer Viper V3 Pro SE (Wireless)")]

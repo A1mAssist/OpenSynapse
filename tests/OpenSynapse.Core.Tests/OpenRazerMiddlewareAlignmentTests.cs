@@ -196,4 +196,44 @@ public sealed class OpenRazerMiddlewareAlignmentTests
         Assert.Equal(32, info.RecyclableMemoryLow);
         Assert.Equal(16, info.RecyclableMemoryHigh);
     }
+
+    [Theory]
+    [InlineData(0x00C0)]
+    [InlineData(0x00C1)]
+    public void ViperV3ProDpiStagesUseTheMiddlewareProfileClass(ushort productId)
+    {
+        var device = Device(productId);
+
+        var get = OpenRazerMouseProtocol.GetDpiStages(device).Report;
+        Assert.Equal(0x50, get[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(0x04, get[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0x86, get[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x01, get[RazerFeatureReport.ArgumentsOffset]);
+
+        var set = OpenRazerMouseProtocol.SetDpiStages(device, new OpenRazerDpiStages(
+            1, [new OpenRazerDpiStage(1, 800, 1600, 400)])).Report;
+        Assert.Equal(0x50, set[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(0x04, set[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0x06, set[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset]);
+    }
+
+    [Fact]
+    public void ViperV3ProWirelessPollingUsesTheTwoByteProfileFrame()
+    {
+        var device = Device(0x00C1);
+
+        var get = OpenRazerMouseProtocol.GetPollingRate(device).Report;
+        Assert.Equal(0x02, get[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(0x00, get[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0xC0, get[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x01, get[RazerFeatureReport.ArgumentsOffset]);
+
+        var set = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, 8_000)).Report;
+        Assert.Equal(0x02, set[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(0x00, set[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0x40, set[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset + 1]);
+    }
 }
