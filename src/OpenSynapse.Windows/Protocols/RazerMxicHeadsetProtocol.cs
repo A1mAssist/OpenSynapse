@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
@@ -39,7 +41,24 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] SetMicMuteCommand = [0xE9, 0x00, 0x01];
     public static readonly byte[] SetMicMuteHeader = [0xE9, 0x01, 0x01];
 
-    public static bool IsSupported(ushort productId) => productId == ProductId;
+    /// <summary>
+    /// Products whose audio channel uses this 64-byte MXIC envelope. The 2026
+    /// BlackShark V3 Xbox/PlayStation identities select the AudioValkyrie chunk, whose
+    /// command triplets are the same ones defined above: EQ preset 13:00/93:00, EQ
+    /// bands 15:00/95:00 (10 bands), mic mute 55:00/E9:00, battery 21:00 and
+    /// charging 2A:00. The Hammerhead V3 and BlackShark V3 X families use a different
+    /// 0x18 command set and are not listed here.
+    /// </summary>
+    private static readonly FrozenSet<ushort> ProductIds = new ushort[]
+    {
+        ProductId,
+        0x0A4E,
+        0x0A51,
+        0x101E,
+        0x101F,
+    }.ToFrozenSet();
+
+    public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
 
     public static byte[] CreateRemoteMode(bool enabled) =>
         Create(RemoteCommand, [0xE1], [enabled ? (byte)1 : (byte)0]);

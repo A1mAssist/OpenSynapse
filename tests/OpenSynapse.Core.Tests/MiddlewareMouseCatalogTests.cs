@@ -15,6 +15,7 @@ public sealed class MiddlewareMouseCatalogTests
     [
         0x0069, 0x0075, 0x00DD, 0x00E0, 0x00E2, 0x00E3, 0x00E5, 0x00E6,
         0x00E7, 0x00E8, 0x00EA, 0x00EB, 0x00EF, 0x00F0,
+        0xB005, 0xB007, 0xB00A, 0xB00B,
     ];
 
     [Theory]
@@ -36,6 +37,10 @@ public sealed class MiddlewareMouseCatalogTests
     [InlineData(0x00EF, 50000)]
     [InlineData(0x00F0, 50000)]
     [InlineData(0x00A2, 8500)]
+    [InlineData(0xB005, 33000)]
+    [InlineData(0xB007, 33000)]
+    [InlineData(0xB00A, 35000)]
+    [InlineData(0xB00B, 35000)]
     public void MiddlewareMiceAreCataloguedWithTheirOwnDpiRange(ushort productId, int maximumDpi)
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(OpenRazerDeviceDefinition.VendorId, productId);
@@ -74,6 +79,12 @@ public sealed class MiddlewareMouseCatalogTests
         Assert.Equal([125, 500, 1000], Find(0x00A2).PollingRates);
         Assert.Equal([125, 500, 1000, 2000, 4000, 8000], Find(0x00E2).PollingRates);
         Assert.Equal([125, 500, 1000], Find(0x00E7).PollingRates);
+        // Viper V4 HyperSpeed and DeathAdder V4 HyperSpeed declare the 8 kHz ladder;
+        // the Basilisk V3 Pro 35K Xbox edition declares 125/500/1000 only.
+        Assert.Equal([125, 500, 1000, 2000, 4000, 8000], Find(0xB005).PollingRates);
+        Assert.Equal([125, 500, 1000, 2000, 4000, 8000], Find(0xB007).PollingRates);
+        Assert.Equal([125, 500, 1000], Find(0xB00A).PollingRates);
+        Assert.Equal([125, 500, 1000], Find(0xB00B).PollingRates);
     }
 
     [Theory]
@@ -97,5 +108,6 @@ public sealed class MiddlewareMouseCatalogTests
     [
         0x0063, 0x0069, 0x0074, 0x0075, 0x0093, 0x00DD, 0x00E0, 0x00E2, 0x00E3,
         0x00E5, 0x00E6, 0x00E7, 0x00E8, 0x00EA, 0x00EB, 0x00EF, 0x00F0, 0x00A2,
+        0xB005, 0xB007, 0xB00A, 0xB00B,
     ];
 }
