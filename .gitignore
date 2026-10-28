@@ -24,6 +24,8 @@ docs/*
 !docs/PHILIPS_HUE_DISCOVERY.zh-CN.md
 !docs/HEADSET_AUDIO_ALIGNMENT.md
 !docs/ACCESSORY_LIGHTING_ALIGNMENT.md
+!docs/WEBCAM_LIGHTING_ALIGNMENT.md
+!docs/GAMEPAD_FEASIBILITY.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/
