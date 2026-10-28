@@ -77,7 +77,7 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 |---|---|---|
 | `0A4E` `0A51` `101E` `101F` | **Added** | AudioValkyrie 的 `[19,0,0]/[147,0,1]`（EQ preset）、`[21,0,0]/[149,0,10]`（EQ bands 10 段）、`[85,0,0]/[233,0,1]`（mic mute）、`[33,0,0]`（battery）、`[42,0,0]`（charging）与 `RazerMxicHeadsetProtocol` 现有常量逐字节相同；已加入 `Products` 和 `IsSupported` |
 | `101C` | Skipped | 命令与上面四款相同，但 `101C` 是 `BlackSharkV3ProProtocol.UsbProductId`（仓库已按实机观测接入 THX/ANC/sidetone 面板）。同一台设备再进 MXIC 会多出一张音频卡，所以保留专用面板，不加进 `Products` |
-| `0A54` `1022` | Blocked | rzDevice25ValkyrieT3：report id **7**，EQ/mute/sidetone 走 `18:80/18:00`、`18:81/18:01`、`18:84/18:04`、`18:83/18:03`。帧 id 和三元组顺序都和 MXIC 不同，需要独立的帧构造器 |
+| `0A54` `1022` | **Added** | rzDevice25ValkyrieT3：同样的 `[dataSize, class, id]`，但整条通道走 64-byte **report id 7**；EQ 已接，mic mute 只读不写（见下） |
 | `0A61` `0A64` `0A68` `0A6C` `0A81` | **Added** | rzDevice40：同一套 64-byte `50 41` 信封，但三元组是 `[dataSize, class, id]`，EQ/mute 在 class `0x18`。已实现 EQ preset、EQ 10 段、麦克风静音、电量、充电、固件；细节见下 |
 
 ### rzDevice40（Hammerhead V3，report id 2）
@@ -100,6 +100,26 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 （`08:86/08:87/08:97/08:8A/08:8C` 一族）。这组的 class 是 `0x08`，但三元组顺序同样是
 `[dataSize, class, id]`，和 0555 的 `[class, id, dataSize]` 相反——不能直接复用旧常量，
 payload 语义也没有从 JS 里确认，所以先不写。
+
+### rzDevice25ValkyrieT3（BlackShark V3 X，report id 7）
+
+`S=[2,24,128]`、`A=[4,24,0]`、`U=[2,24,129]`、`E=[12,24,1]`；第二字节是 EQ 预设组
+（`setPresetEQIndex` 只接受 0/1，第三字节必须为 0），不是 0555 那种 source。
+
+| 用途 | 三元组 | 请求 payload | 响应 |
+|---|---|---|---|
+| 读 EQ preset | `02 18 80` | `[profile=0, group=0]` | `[profile, group, ?, preset]`（JS 取 `data[3]`） |
+| 写 EQ preset | `04 18 00` | `[0, group, 0, preset]` | JS 只校验 status，按 ACK 处理 |
+| 读 EQ 段 | `02 18 81` | `[0, 0]` | `[profile, group, band0..band9]`（JS 从 `data[2]` 起读 10 段） |
+| 写 EQ 段 | `0C 18 01` | `[0, 0, band0..band9]` | JS 只校验 status |
+
+整台设备的 report id 都是 7（`this.reportId=7, this.reportLength=64`），所以固件、电量、
+充电和 remote-mode 请求也走 7；`RazerMxicHeadsetProtocol.TryReadValue` 现在按请求的
+report id 匹配响应，0555 仍然是 2。
+
+**没做**：麦克风静音。chunk 里只有 `Get Mute State`（`03 18 84`，按 source 读），没有
+对应的 setter，写不进去就不提供开关，避免出现一个点了没反应的按钮。sidetone、DND、
+静音检测虽然三元组齐全，但 payload 语义没有从 JS 确认，先不写。
 
 未实现的 AudioValkyrie 子命令：sidetone `18:00/98:00`、ANC `12:00/92:00`、
 DND `27:00/A7:00`。三条都是 get/set 对称的 1 字节 payload，但本仓库还没有对应的

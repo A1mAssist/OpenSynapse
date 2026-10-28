@@ -236,6 +236,50 @@ public sealed class RazerMxicHeadsetProtocolTests
         Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x00 }, read[10..15]);
     }
 
+    [Fact]
+    public void ValkyrieRequestsUseReportId7()
+    {
+        var getPreset = RazerMxicHeadsetProtocol.CreateGetEqPresetValkyrie();
+        Assert.Equal(7, getPreset[0]);
+        Assert.Equal(5, getPreset[9]);
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x00 }, getPreset[10..15]);
+
+        var setPreset = RazerMxicHeadsetProtocol.CreateSetEqPresetValkyrie(0x02);
+        Assert.Equal(7, setPreset[0]);
+        Assert.Equal(7, setPreset[9]);
+        Assert.Equal(new byte[] { 0x04, 0x18, 0x00, 0x00, 0x00, 0x00, 0x02 }, setPreset[10..17]);
+
+        var getBands = RazerMxicHeadsetProtocol.CreateGetEqBandsValkyrie();
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x81, 0x00, 0x00 }, getBands[10..15]);
+
+        byte[] bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        var setBands = RazerMxicHeadsetProtocol.CreateSetEqBandsValkyrie(bands);
+        Assert.Equal(7, setBands[0]);
+        Assert.Equal(15, setBands[9]);
+        Assert.Equal(
+            new byte[] { 0x0C, 0x18, 0x01, 0x00, 0x00, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+            setBands[10..25]);
+    }
+
+    [Fact]
+    public async Task ValkyrieServiceReadsAndWritesEqOverReportId7()
+    {
+        var transport = new FakeTransport { Preset = 1 };
+        var service = new RazerMxicHeadsetService(transport, 0x0A54);
+
+        var state = await service.ReadStateAsync();
+        Assert.Equal((byte)1, state.EqPreset);
+        // The Valkyrie T3 chunk has no mute setter, so the page leaves the toggle out.
+        Assert.Null(state.MicMuted);
+
+        await service.SetEqPresetAsync(2);
+        Assert.Equal((byte)2, transport.Preset);
+
+        var read = transport.Requests.First(request => request[0] == 7 && request[11] == 0x18);
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x00 }, read[10..15]);
+        Assert.DoesNotContain(transport.Requests, request => request[0] is not (2 or 7));
+    }
+
     private sealed class FakeTransport : IRazerMxicHeadsetTransport
     {
         public List<byte[]> Requests { get; } = [];
@@ -290,8 +334,11 @@ public sealed class RazerMxicHeadsetProtocolTests
                 return Task.FromResult<byte[]?>(null);
             }
 
+            // The input report id echoes the request, so report id 7 devices must be read
+            // with their own id instead of the 0555 constant.
+            responseReport[0] = report[0];
             return Task.FromResult(RazerMxicHeadsetProtocol.TryReadValue(
-                responseReport, expectedHeader, out var value)
+                responseReport, report[0], expectedHeader, out var value)
                 ? value
                 : null);
         }
@@ -300,12 +347,14 @@ public sealed class RazerMxicHeadsetProtocolTests
         {
             var id = report[12];
             var payload = report.AsSpan(13, report[10]).ToArray();
+            // rzDevice40 replies echo [profile, source=1]; ValkyrieT3 echoes [profile, group=0].
+            var prefix = report[0] == RazerMxicHeadsetProtocol.ValkyrieReportId ? (byte)0x00 : (byte)0x01;
             var responseReport = id switch
             {
-                0x80 => BuildResponse((0x18, [0x00, 0x01, 0x00, Preset])),
-                0x00 => WritePreset18(payload),
-                0x81 => BuildResponse((0x18, [0x00, 0x01, .. Bands])),
-                0x01 => WriteBands18(payload),
+                0x80 => BuildResponse((0x18, [0x00, prefix, 0x00, Preset])),
+                0x00 => WritePreset18(payload, prefix),
+                0x81 => BuildResponse((0x18, [0x00, prefix, .. Bands])),
+                0x01 => WriteBands18(payload, prefix),
                 0x84 => BuildResponse((0x18, [0x00, 0x02, MicMuted ? (byte)1 : (byte)0])),
                 0x04 => WriteMicMute18(payload),
                 _ => null,
@@ -315,25 +364,27 @@ public sealed class RazerMxicHeadsetProtocolTests
                 return null;
             }
 
-            return RazerMxicHeadsetProtocol.TryReadValue(responseReport, expectedHeader, out var value)
+            responseReport[0] = report[0];
+            return RazerMxicHeadsetProtocol.TryReadValue(
+                responseReport, report[0], expectedHeader, out var value)
                 ? value
                 : null;
         }
 
-        private byte[] WritePreset18(byte[] payload)
+        private byte[] WritePreset18(byte[] payload, byte prefix)
         {
             if (!IgnorePresetWrites)
             {
                 Preset = payload[3];
             }
 
-            return BuildResponse((0x18, [0x00, 0x01, 0x00, Preset]));
+            return BuildResponse((0x18, [0x00, prefix, 0x00, Preset]));
         }
 
-        private byte[] WriteBands18(byte[] payload)
+        private byte[] WriteBands18(byte[] payload, byte prefix)
         {
             Bands = payload[2..];
-            return BuildResponse((0x18, [0x00, 0x01, .. Bands]));
+            return BuildResponse((0x18, [0x00, prefix, .. Bands]));
         }
 
         private byte[] WriteMicMute18(byte[] payload)
