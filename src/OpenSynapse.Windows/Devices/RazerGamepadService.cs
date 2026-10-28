@@ -448,6 +448,75 @@ public sealed class RazerGamepadService
             mask,
             cancellationToken);
 
+    public async Task<RazerGamepadButtonAssignment> ReadButtonAssignmentAsync(
+        byte buttonId,
+        RazerGamepadButtonMode mode = RazerGamepadButtonMode.Normal,
+        CancellationToken cancellationToken = default) =>
+        RazerGamepadProtocol.ReadButtonAssignment(
+            await QueryAsync(
+                transaction => RazerGamepadProtocol.CreateGetButtonAssignmentRequest(
+                    transaction, _profileId, buttonId, mode),
+                $"read button {buttonId}",
+                cancellationToken).ConfigureAwait(false));
+
+    public async Task SetButtonAssignmentAsync(
+        byte buttonId,
+        RazerGamepadButtonMode mode,
+        RazerGamepadFunctionData assignment,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(assignment);
+        if (assignment.Size > 5 || assignment.Data.Length > 5)
+        {
+            throw new ArgumentException("Button-assignment data is limited to five bytes.", nameof(assignment));
+        }
+
+        RazerGamepadButtonAssignment? previous = null;
+        try
+        {
+            previous = await ReadButtonAssignmentAsync(buttonId, mode, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke($"gamepad read button {buttonId} failed: {exception.Message}");
+        }
+
+        if (previous is not null && Matches(previous, assignment)) return;
+
+        try
+        {
+            await WriteButtonAssignmentAsync(buttonId, mode, assignment, cancellationToken).ConfigureAwait(false);
+            var actual = await ReadButtonAssignmentAsync(buttonId, mode, cancellationToken).ConfigureAwait(false);
+            if (!Matches(actual, assignment))
+            {
+                throw new InvalidOperationException(
+                    $"Button {buttonId} readback was {actual.Function}/{actual.DataSize}, " +
+                    $"expected {assignment.Function}/{assignment.Size}.");
+            }
+        }
+        catch
+        {
+            if (previous is not null)
+            {
+                try
+                {
+                    var restore = new RazerGamepadFunctionData(
+                        previous.Function,
+                        previous.DataSize,
+                        previous.Data.ToArray());
+                    await WriteButtonAssignmentAsync(buttonId, mode, restore, CancellationToken.None)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception exception) when (IsExpected(exception))
+                {
+                    _diagnostic?.Invoke($"gamepad restore button {buttonId} failed: {exception.Message}");
+                }
+            }
+
+            throw;
+        }
+    }
+
     public async Task<RazerGamepadCalibration> ReadCalibrationAsync(
         RazerGamepadCalibrationControl control,
         CancellationToken cancellationToken = default) =>
@@ -527,6 +596,25 @@ public sealed class RazerGamepadService
         return await _transport.QueryPreparedAsync(
             _devicePath, report, _deviceWait, cancellationToken).ConfigureAwait(false);
     }
+
+    private Task<byte[]> WriteButtonAssignmentAsync(
+        byte buttonId,
+        RazerGamepadButtonMode mode,
+        RazerGamepadFunctionData assignment,
+        CancellationToken cancellationToken) =>
+        QueryAsync(
+            transaction => RazerGamepadProtocol.CreateSetButtonAssignmentRequest(
+                transaction, _profileId, buttonId, mode, assignment.Function,
+                assignment.Size, assignment.Data),
+            $"set button {buttonId}",
+            cancellationToken);
+
+    private static bool Matches(
+        RazerGamepadButtonAssignment actual,
+        RazerGamepadFunctionData expected) =>
+        actual.Function == expected.Function &&
+        actual.DataSize == expected.Size &&
+        actual.Data.Take(actual.DataSize).SequenceEqual(expected.Data.Take(expected.Size));
 
     private byte NextTransactionId()
     {

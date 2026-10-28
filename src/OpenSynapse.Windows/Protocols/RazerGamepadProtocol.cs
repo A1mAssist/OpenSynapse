@@ -504,7 +504,7 @@ public static class RazerGamepadProtocol
             (RazerGamepadButtonMode)data[2],
             (RazerGamepadFunction)data[3],
             size,
-            data.Slice(5, size).ToArray());
+            data.Slice(5, 5).ToArray());
     }
 
     /// <summary>The middleware sends the command tuple itself as the raw-input argument block.</summary>
