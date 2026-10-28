@@ -31,6 +31,30 @@ public sealed class RazerGamepadDeviceRowViewModel : INotifyPropertyChanged
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }
 
+public sealed class RazerGamepadButtonAssignmentRowViewModel : INotifyPropertyChanged
+{
+    public RazerGamepadButtonAssignmentRowViewModel(RazerGamepadButtonAssignment assignment)
+    {
+        ArgumentNullException.ThrowIfNull(assignment);
+        Assignment = assignment;
+        ButtonName = Enum.GetName((RazerGamepadButtonId)assignment.ButtonId) ??
+            $"Button 0x{assignment.ButtonId:X2}";
+        var function = Enum.GetName(assignment.Function) ?? $"0x{(byte)assignment.Function:X2}";
+        var dataSize = Math.Min(assignment.DataSize, assignment.Data.Count);
+        AssignmentText = $"{function} [{string.Join(" ", assignment.Data.Take(dataSize).Select(value => $"{value:X2}"))}]";
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public RazerGamepadButtonAssignment Assignment { get; }
+    public string ButtonName { get; }
+    public string AssignmentText { get; }
+    public string ModeText => AppStrings.Text(Assignment.Mode == RazerGamepadButtonMode.Hypershift
+        ? "RazerGamepadModeHypershift"
+        : "RazerGamepadModeNormal");
+
+    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(nameof(ModeText)));
+}
+
 public sealed class RazerGamepadStickRowViewModel : INotifyPropertyChanged
 {
     private double _sensitivity;
@@ -266,6 +290,7 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<RazerGamepadStickRowViewModel> Sticks { get; } = [];
     public ObservableCollection<RazerGamepadTriggerRowViewModel> Triggers { get; } = [];
+    public ObservableCollection<RazerGamepadButtonAssignmentRowViewModel> ButtonAssignments { get; } = [];
     public string Name => _connection.Name;
     public string CategoryText => AppStrings.Text("RazerGamepadCategory");
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
@@ -276,6 +301,8 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         Sticks.Any(row => row.IsAvailable) ? Visibility.Visible : Visibility.Collapsed;
     public Visibility TriggersVisibility =>
         Triggers.Any(row => row.IsAvailable) ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility ButtonAssignmentsVisibility =>
+        ButtonAssignments.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DpadVisibility => _hasDpad ? Visibility.Visible : Visibility.Collapsed;
     public Visibility IgnoreDPadVisibility => _hasIgnoreDPad ? Visibility.Visible : Visibility.Collapsed;
     public Visibility SocdVisibility => _hasSocd ? Visibility.Visible : Visibility.Collapsed;
@@ -342,6 +369,29 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         {
             var state = await _service.ReadStateAsync(cancellationToken);
             ApplyState(state);
+            if (state.ButtonIds.Count > 0)
+            {
+                try
+                {
+                    var assignments = await _service.ReadButtonAssignmentsAsync(
+                        RazerGamepadButtonMode.Normal,
+                        cancellationToken);
+                    ApplyButtonAssignments(assignments);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception) when (IsExpectedException(exception))
+                {
+                    // Mapping is optional; a device that refuses the read keeps the page usable.
+                    ApplyButtonAssignments([]);
+                }
+            }
+            else
+            {
+                ApplyButtonAssignments([]);
+            }
             ErrorText = Sticks.All(row => !row.IsAvailable) &&
                 Triggers.All(row => !row.IsAvailable) &&
                 !_hasDpad && !_hasVibration && !_hasAdc && !_hasRaw
@@ -354,6 +404,33 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         catch (Exception exception) when (IsExpectedException(exception))
         {
             ErrorText = exception.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task RefreshButtonAssignmentsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!BeginOperation()) return;
+        try
+        {
+            var assignments = await _service.ReadButtonAssignmentsAsync(
+                RazerGamepadButtonMode.Normal,
+                cancellationToken);
+            ApplyButtonAssignments(assignments);
+            OperationStatusText = assignments.Count == 0
+                ? AppStrings.Text("RazerGamepadAssignmentsReadFailed")
+                : AppStrings.Text("RazerGamepadAssignmentsRefreshed");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+            OperationStatusText = string.Empty;
         }
         finally
         {
@@ -522,6 +599,17 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 
+    private void ApplyButtonAssignments(IReadOnlyList<RazerGamepadButtonAssignment> assignments)
+    {
+        ButtonAssignments.Clear();
+        foreach (var assignment in assignments)
+        {
+            ButtonAssignments.Add(new RazerGamepadButtonAssignmentRowViewModel(assignment));
+        }
+
+        OnPropertyChanged(nameof(ButtonAssignmentsVisibility));
+    }
+
     private void ApplyState(RazerGamepadState state)
     {
         Sticks.Clear();
@@ -585,6 +673,9 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         return true;
     }
 
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
         PropertyChanged?.Invoke(this, new(propertyName));
+        if (propertyName == nameof(ErrorText)) OnPropertyChanged(nameof(HasError));
+    }
 }

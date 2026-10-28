@@ -17,6 +17,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     {
         foreach (var row in DpiStages) row.RefreshLocalization();
         foreach (var cell in MatrixCells) cell.RefreshLocalization();
+        foreach (var row in KnobStages) row.RefreshLocalization();
+        foreach (var row in WirelessDevices) row.RefreshLocalization();
         Soundbar?.RefreshLocalization();
         OnPropertyChanged(string.Empty);
     }
@@ -396,7 +398,15 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SmartReelWriteVisibility));
         OnPropertyChanged(nameof(SmartReelThresholdVisibility));
         OnPropertyChanged(nameof(SmartReelThresholdWriteVisibility));
+        OnPropertyChanged(nameof(ScrollFreeNotchedModeVisibility));
+        OnPropertyChanged(nameof(ScrollFreeNotchedModeWriteVisibility));
+        OnPropertyChanged(nameof(ScrollAccelerationLevelVisibility));
+        OnPropertyChanged(nameof(ScrollAccelerationLevelWriteVisibility));
         NotifyMiddlewareStateChanged();
+        OnPropertyChanged(nameof(CanEditScrollFreeNotched));
+        OnPropertyChanged(nameof(CanWriteScrollFreeNotched));
+        OnPropertyChanged(nameof(CanEditScrollAccelerationLevel));
+        OnPropertyChanged(nameof(CanWriteScrollAccelerationLevel));
         OnPropertyChanged(nameof(CanEditScrollMode));
         OnPropertyChanged(nameof(CanWriteScrollMode));
         OnPropertyChanged(nameof(CanEditScrollAcceleration));
@@ -419,6 +429,21 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanSetHyperPollingIndicator));
         OnPropertyChanged(nameof(CanPairHyperPolling));
         OnPropertyChanged(nameof(CanUnpairHyperPolling));
+        OnPropertyChanged(nameof(WirelessVisibility));
+        OnPropertyChanged(nameof(WirelessWriteVisibility));
+        OnPropertyChanged(nameof(CanEditWireless));
+        OnPropertyChanged(nameof(CanRefreshWireless));
+        OnPropertyChanged(nameof(CanUnpairWireless));
+        OnPropertyChanged(nameof(KnobVisibility));
+        OnPropertyChanged(nameof(KnobWriteVisibility));
+        OnPropertyChanged(nameof(CanEditKnob));
+        OnPropertyChanged(nameof(CanApplyKnob));
+        OnPropertyChanged(nameof(AnalogKeyVisibility));
+        OnPropertyChanged(nameof(AnalogKeyWriteVisibility));
+        OnPropertyChanged(nameof(CanEditAnalogKey));
+        OnPropertyChanged(nameof(OledVisibility));
+        OnPropertyChanged(nameof(OledWriteVisibility));
+        OnPropertyChanged(nameof(CanEditOled));
         OnLightingSelectionChanged();
     }
 

@@ -115,6 +115,30 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     private double _micVolume;
     private int _selectedSourceIndex;
     private bool _noiseSuppression;
+    private bool _dnd;
+    private bool _autoPause;
+    private bool _gestureControl;
+    private bool _dolby;
+    private bool _nightMode;
+    private bool _voicePrompts;
+    private double _micDeEsser;
+    private double _micLimiterDb;
+    private int _micReverbRoomModeIndex;
+    private double _micReverbIntensity;
+    private bool _hasDnd;
+    private bool _hasAutoPause;
+    private bool _hasGestureControl;
+    private bool _hasDolby;
+    private bool _hasNightMode;
+    private bool _hasVoicePrompts;
+    private bool _hasMicDeEsser;
+    private bool _hasMicLimiter;
+    private bool _hasMicReverb;
+    private bool _hapticsEnabled;
+    private double _hapticsStrength;
+    private bool _hasHaptics;
+    private static readonly RazerMicReverbRoomMode[] MicReverbModes =
+        Enum.GetValues<RazerMicReverbRoomMode>();
     private int _selectedAncIndex;
     private double _ancLevel = 1;
     private bool _hasEqBands;
@@ -457,6 +481,102 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     }
 
     public Visibility NoiseSuppressionVisibility => IsMxic ? Visibility.Collapsed : Visibility.Visible;
+
+    public bool Dnd { get => _dnd; set => SetField(ref _dnd, value); }
+    public Visibility DndVisibility => _hasDnd ? Visibility.Visible : Visibility.Collapsed;
+
+    public bool AutoPause { get => _autoPause; set => SetField(ref _autoPause, value); }
+    public Visibility AutoPauseVisibility => _hasAutoPause ? Visibility.Visible : Visibility.Collapsed;
+
+    public bool GestureControl { get => _gestureControl; set => SetField(ref _gestureControl, value); }
+    public Visibility GestureControlVisibility => _hasGestureControl ? Visibility.Visible : Visibility.Collapsed;
+
+    public bool Dolby { get => _dolby; set => SetField(ref _dolby, value); }
+    public Visibility DolbyVisibility => _hasDolby ? Visibility.Visible : Visibility.Collapsed;
+
+    public bool NightMode { get => _nightMode; set => SetField(ref _nightMode, value); }
+    public Visibility NightModeVisibility => _hasNightMode ? Visibility.Visible : Visibility.Collapsed;
+
+    public bool VoicePrompts { get => _voicePrompts; set => SetField(ref _voicePrompts, value); }
+    public Visibility VoicePromptsVisibility => _hasVoicePrompts ? Visibility.Visible : Visibility.Collapsed;
+
+    public double MicDeEsser
+    {
+        get => _micDeEsser;
+        set
+        {
+            if (!SetField(ref _micDeEsser, Math.Clamp(value, 0, 100))) return;
+            OnPropertyChanged(nameof(MicDeEsserText));
+        }
+    }
+
+    public string MicDeEsserText => $"{Math.Round(MicDeEsser)}";
+    public Visibility MicDeEsserVisibility => _hasMicDeEsser ? Visibility.Visible : Visibility.Collapsed;
+
+    public double MicLimiterDb
+    {
+        get => _micLimiterDb;
+        set
+        {
+            if (!SetField(ref _micLimiterDb, Math.Clamp(value, -60, 0))) return;
+            OnPropertyChanged(nameof(MicLimiterText));
+        }
+    }
+
+    public string MicLimiterText => $"{Math.Round(MicLimiterDb)} dB";
+    public Visibility MicLimiterVisibility => _hasMicLimiter ? Visibility.Visible : Visibility.Collapsed;
+
+    public IReadOnlyList<string> MicReverbOptions =>
+    [
+        AppStrings.Text("RazerHeadsetReverbSmall"),
+        AppStrings.Text("RazerHeadsetReverbMedium"),
+        AppStrings.Text("RazerHeadsetReverbLarge"),
+        AppStrings.Text("RazerHeadsetReverbPlate"),
+    ];
+
+    public int SelectedMicReverbIndex
+    {
+        get => _micReverbRoomModeIndex;
+        set => SetField(ref _micReverbRoomModeIndex, Math.Clamp(value, 0, MicReverbModes.Length - 1));
+    }
+
+    public double MicReverbIntensity
+    {
+        get => _micReverbIntensity;
+        set
+        {
+            if (!SetField(ref _micReverbIntensity, Math.Clamp(value, 0, 100))) return;
+            OnPropertyChanged(nameof(MicReverbIntensityText));
+        }
+    }
+
+    public string MicReverbIntensityText => $"{Math.Round(MicReverbIntensity)}";
+    public Visibility MicReverbVisibility => _hasMicReverb ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility AdvancedAudioVisibility =>
+        _hasDnd || _hasAutoPause || _hasGestureControl || _hasDolby || _hasNightMode || _hasVoicePrompts
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility MicProcessingVisibility =>
+        _hasMicDeEsser || _hasMicLimiter || _hasMicReverb
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public bool HapticsEnabled { get => _hapticsEnabled; set => SetField(ref _hapticsEnabled, value); }
+
+    public double HapticsStrength
+    {
+        get => _hapticsStrength;
+        set
+        {
+            if (!SetField(ref _hapticsStrength, Math.Clamp(value, 0, ushort.MaxValue))) return;
+            OnPropertyChanged(nameof(HapticsStrengthText));
+        }
+    }
+
+    public string HapticsStrengthText => $"{Math.Round(HapticsStrength)}";
+    public Visibility HapticsVisibility => _hasHaptics ? Visibility.Visible : Visibility.Collapsed;
 
     public IReadOnlyList<string> AncOptions =>
     [
@@ -839,6 +959,92 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 (service, token) => service.SetAudioSourceAsync(Sources[SelectedSourceIndex], token),
                 cancellationToken);
 
+    public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetHapticsAsync(
+                    HapticsEnabled, (ushort)Math.Round(HapticsStrength), token),
+                cancellationToken);
+
+    public async Task ApplyAdvancedAsync(CancellationToken cancellationToken = default)
+    {
+        await ApplyDndAsync(cancellationToken);
+        await ApplyAutoPauseAsync(cancellationToken);
+        await ApplyGestureControlAsync(cancellationToken);
+        await ApplyDolbyAsync(cancellationToken);
+        await ApplyNightModeAsync(cancellationToken);
+        await ApplyVoicePromptsAsync(cancellationToken);
+    }
+
+    public async Task ApplyMicProcessingAsync(CancellationToken cancellationToken = default)
+    {
+        await ApplyMicDeEsserAsync(cancellationToken);
+        await ApplyMicLimiterAsync(cancellationToken);
+        await ApplyMicReverbAsync(cancellationToken);
+    }
+
+    public Task ApplyDndAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync((service, token) => service.SetAudioDndAsync(Dnd, token), cancellationToken);
+
+    public Task ApplyAutoPauseAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync((service, token) => service.SetAudioAutoPauseAsync(AutoPause, token), cancellationToken);
+
+    public Task ApplyGestureControlAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetAudioGestureControlAsync(GestureControl, token),
+                cancellationToken);
+
+    public Task ApplyDolbyAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync((service, token) => service.SetDolbyStateAsync(Dolby, token), cancellationToken);
+
+    public Task ApplyNightModeAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync((service, token) => service.SetEqNightModeAsync(NightMode, token), cancellationToken);
+
+    public Task ApplyVoicePromptsAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetAudioVoicePromptsAsync(
+                    VoicePrompts, cancellationToken: token),
+                cancellationToken);
+
+    public Task ApplyMicDeEsserAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetMicDeEsserAsync(
+                    (byte)Math.Round(MicDeEsser), token),
+                cancellationToken);
+
+    public Task ApplyMicLimiterAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetMicLimiterAsync(
+                    (sbyte)Math.Round(MicLimiterDb), token),
+                cancellationToken);
+
+    public Task ApplyMicReverbAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetMicReverbAsync(
+                    MicReverbModes[SelectedMicReverbIndex],
+                    (byte)Math.Round(MicReverbIntensity),
+                    token),
+                cancellationToken);
+
     public Task ApplyNoiseSuppressionAsync(CancellationToken cancellationToken = default) =>
         IsMxic
             ? Task.CompletedTask
@@ -1009,6 +1215,69 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         }
 
         if (state.MicMuted is bool muted) MicMuted = muted;
+        if (state.Dnd is bool dnd) { Dnd = dnd; _hasDnd = true; OnPropertyChanged(nameof(DndVisibility)); }
+        if (state.AutoPause is bool autoPause)
+        {
+            AutoPause = autoPause;
+            _hasAutoPause = true;
+            OnPropertyChanged(nameof(AutoPauseVisibility));
+        }
+
+        if (state.GestureControl is bool gesture)
+        {
+            GestureControl = gesture;
+            _hasGestureControl = true;
+            OnPropertyChanged(nameof(GestureControlVisibility));
+        }
+
+        if (state.Dolby is bool dolby) { Dolby = dolby; _hasDolby = true; OnPropertyChanged(nameof(DolbyVisibility)); }
+        if (state.NightMode is bool night)
+        {
+            NightMode = night;
+            _hasNightMode = true;
+            OnPropertyChanged(nameof(NightModeVisibility));
+        }
+
+        if (state.VoicePrompts is { } prompts)
+        {
+            VoicePrompts = prompts.Enabled;
+            _hasVoicePrompts = true;
+            OnPropertyChanged(nameof(VoicePromptsVisibility));
+        }
+
+        if (state.MicDeEsser is byte deEsser)
+        {
+            MicDeEsser = deEsser;
+            _hasMicDeEsser = true;
+            OnPropertyChanged(nameof(MicDeEsserVisibility));
+        }
+
+        if (state.MicLimiter is sbyte limiter)
+        {
+            MicLimiterDb = limiter;
+            _hasMicLimiter = true;
+            OnPropertyChanged(nameof(MicLimiterVisibility));
+        }
+
+        if (state.MicReverb is { } reverb)
+        {
+            var index = Array.IndexOf(MicReverbModes, reverb.RoomMode);
+            if (index >= 0) SelectedMicReverbIndex = index;
+            MicReverbIntensity = reverb.Intensity;
+            _hasMicReverb = true;
+            OnPropertyChanged(nameof(MicReverbVisibility));
+        }
+
+        if (state.Haptics is { } haptics)
+        {
+            HapticsEnabled = haptics.Enabled;
+            HapticsStrength = haptics.Strength;
+            _hasHaptics = true;
+            OnPropertyChanged(nameof(HapticsVisibility));
+        }
+
+        OnPropertyChanged(nameof(AdvancedAudioVisibility));
+        OnPropertyChanged(nameof(MicProcessingVisibility));
         if (state.MicVolume is byte volume) MicVolume = volume;
         if (state.AudioSource is RazerAudioSource source)
         {

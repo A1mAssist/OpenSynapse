@@ -207,6 +207,11 @@ public sealed class RazerHeadsetAudioServiceTests
 
         public byte[] Handle(byte[] request)
         {
+            if (request[7] == RazerHapticsProtocol.CommandClass)
+            {
+                throw new NotSupportedException("Haptics control is not simulated.");
+            }
+
             var command = request[8];
             var state = this;
             return command switch

@@ -23,7 +23,8 @@ public sealed partial class OpenRazerDeviceViewModel
             {
                 var ids = await CreateService().ReadIdsAsync(cancellationToken).ConfigureAwait(true);
                 macros = ids
-                    .Select(id => new OpenRazerMacroOption(id, $"Macro {id}"))
+                    .Select(id => new OpenRazerMacroOption(
+                        id, AppStrings.FormatText("OpenRazerMappingMacroName", id)))
                     .ToArray();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -40,6 +41,28 @@ public sealed partial class OpenRazerDeviceViewModel
         }
 
         await Mapping.ReadAsync(macros, cancellationToken);
+    }
+
+    private async Task LoadMappingIfNeededAsync(CancellationToken cancellationToken)
+    {
+        if (MappingVisibility != Visibility.Visible || Mapping.IsLoaded)
+        {
+            return;
+        }
+
+        try
+        {
+            await LoadMappingAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // The mapping card is optional; its failure must not mark the whole device page broken.
+            Mapping.SetLoadError(exception.Message);
+        }
     }
 
     public Task ApplyMappingAsync(CancellationToken cancellationToken = default) =>

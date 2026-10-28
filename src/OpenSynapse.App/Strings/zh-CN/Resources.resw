@@ -1313,6 +1313,38 @@
     <value>OpenRazer 协议查询失败。</value>
     <comment>OpenRazer 协议查询失败</comment>
   </data>
+  <data name="OpenRazerMappingNoButtons" xml:space="preserve">
+    <value>设备未报告任何映射按键</value>
+    <comment>设备未报告任何映射按键</comment>
+  </data>
+  <data name="OpenRazerMappingReadCount" xml:space="preserve">
+    <value>已读取 {0} 个按键</value>
+    <comment>已读取 {0} 个按键</comment>
+  </data>
+  <data name="OpenRazerMappingReadCountWithMacros" xml:space="preserve">
+    <value>已读取 {0} 个按键 · {1} 个宏</value>
+    <comment>已读取 {0} 个按键 · {1} 个宏</comment>
+  </data>
+  <data name="OpenRazerMappingMacroName" xml:space="preserve">
+    <value>宏 {0}</value>
+    <comment>宏 {0}</comment>
+  </data>
+  <data name="OpenRazerMappingUnreadable" xml:space="preserve">
+    <value>无法读取</value>
+    <comment>无法读取</comment>
+  </data>
+  <data name="OpenRazerMappingReadFailed" xml:space="preserve">
+    <value>无法读取按键映射。</value>
+    <comment>无法读取按键映射。</comment>
+  </data>
+  <data name="OpenRazerMappingNothingChanged" xml:space="preserve">
+    <value>没有需要保存的更改</value>
+    <comment>没有需要保存的更改</comment>
+  </data>
+  <data name="OpenRazerMappingSavedCount" xml:space="preserve">
+    <value>已保存 {0} 个映射</value>
+    <comment>已保存 {0} 个映射</comment>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0}失败：{1}</value>
     <comment>{0}失败：{1}</comment>
@@ -1726,6 +1758,18 @@
   <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>保存</value></data>
   <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
+  <data name="OpenRazerOnboardProfileTitle.Text" xml:space="preserve"><value>板载配置</value></data>
+  <data name="OpenRazerOnboardProfileCountLabel.Text" xml:space="preserve"><value>已用 / 上限</value></data>
+  <data name="OpenRazerOnboardProfileActiveLabel.Text" xml:space="preserve"><value>当前配置</value></data>
+  <data name="OpenRazerOnboardProfileSelectLabel.Text" xml:space="preserve"><value>配置编号</value></data>
+  <data name="OpenRazerOnboardProfileApplyButton.Content" xml:space="preserve"><value>切换</value></data>
+  <data name="OpenRazerOnboardProfileCreateButton.Content" xml:space="preserve"><value>新建</value></data>
+  <data name="OpenRazerOnboardProfileDeleteButton.Content" xml:space="preserve"><value>删除</value></data>
+  <data name="OpenRazerOnboardProfileResetButton.Content" xml:space="preserve"><value>重置</value></data>
+  <data name="OpenRazerScrollFreeNotchedLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="OpenRazerScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>滚轮加速等级</value></data>
+  <data name="OpenRazerScrollNotchedMode.Text" xml:space="preserve"><value>段落感</value></data>
+  <data name="OpenRazerScrollFreeSpinMode.Text" xml:space="preserve"><value>自由滚动</value></data>
   <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
   <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>滚轮加速</value></data>
   <data name="OpenRazerSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel 阈值</value></data>
@@ -1733,6 +1777,43 @@
   <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>选择功能键或媒体键作为第一层。</value></data>
   <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>功能键优先</value></data>
   <data name="OpenRazerMediaPrimaryButton.Content" xml:space="preserve"><value>媒体键优先</value></data>
+  <data name="OpenRazerWirelessTitle.Text" xml:space="preserve"><value>无线连接</value></data>
+  <data name="OpenRazerWirelessDescription.Text" xml:space="preserve"><value>无线链路报告的设备。取消配对会移除选中项。</value></data>
+  <data name="OpenRazerWirelessRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="OpenRazerWirelessUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
+  <data name="OpenRazerWirelessEmpty.Text" xml:space="preserve"><value>未报告无线设备。</value></data>
+  <data name="OpenRazerWirelessStatus" xml:space="preserve"><value>状态 {0}</value></data>
+  <data name="OpenRazerKnobTitle.Text" xml:space="preserve"><value>旋钮</value></data>
+  <data name="OpenRazerKnobDescription.Text" xml:space="preserve"><value>配置八个旋钮阶段；应用时同步更新当前阶段。</value></data>
+  <data name="OpenRazerKnobCurrentLabel.Text" xml:space="preserve"><value>当前模式</value></data>
+  <data name="OpenRazerKnobStageColumn.Text" xml:space="preserve"><value>阶段</value></data>
+  <data name="OpenRazerKnobModeColumn.Text" xml:space="preserve"><value>模式</value></data>
+  <data name="OpenRazerKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>键盘亮度</value></data>
+  <data name="OpenRazerKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>切换旋钮灯效</value></data>
+  <data name="OpenRazerKnobModeMicVolumeUpDown" xml:space="preserve"><value>麦克风音量</value></data>
+  <data name="OpenRazerKnobModeTrackJogging" xml:space="preserve"><value>曲目快进/后退</value></data>
+  <data name="OpenRazerKnobModeWindowZoomInOut" xml:space="preserve"><value>窗口缩放</value></data>
+  <data name="OpenRazerKnobModeWindowScrollUpDown" xml:space="preserve"><value>上下滚动</value></data>
+  <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>左右滚动</value></data>
+  <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>切换应用</value></data>
+  <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="OpenRazerOledLanguage.Text" xml:space="preserve"><value>语言</value></data>
+  <data name="OpenRazerOledLanguageEnglish.Text" xml:space="preserve"><value>英语</value></data>
+  <data name="OpenRazerOledLanguageChinese.Text" xml:space="preserve"><value>简体中文</value></data>
+  <data name="OpenRazerOledLanguageJapanese.Text" xml:space="preserve"><value>日语</value></data>
+  <data name="OpenRazerOledLanguageGerman.Text" xml:space="preserve"><value>德语</value></data>
+  <data name="OpenRazerOledLanguageKorean.Text" xml:space="preserve"><value>韩语</value></data>
+  <data name="OpenRazerOledLanguageFrench.Text" xml:space="preserve"><value>法语</value></data>
+  <data name="OpenRazerAnalogKeyTitle.Text" xml:space="preserve"><value>模拟键</value></data>
+  <data name="OpenRazerAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger、底部死区和上报模式。</value></data>
+  <data name="OpenRazerAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
+  <data name="OpenRazerAnalogBottomDeadZone.Header" xml:space="preserve"><value>底部死区</value></data>
+  <data name="OpenRazerAnalogReportMode.Header" xml:space="preserve"><value>模拟上报模式</value></data>
+  <data name="OpenRazerOledTitle.Text" xml:space="preserve"><value>OLED 屏幕</value></data>
+  <data name="OpenRazerOledBrightness.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="OpenRazerOledScreensaverMode.Header" xml:space="preserve"><value>屏保模式</value></data>
+  <data name="OpenRazerOledScreensaverItem.Header" xml:space="preserve"><value>屏保项目</value></data>
+  <data name="OpenRazerOledScreensaverReadOnly.Text" xml:space="preserve"><value>屏保选项只读：协议没有提供写入命令。</value></data>
   <data name="Text_4B32CEE8" xml:space="preserve"><value>鼠标</value></data>
   <data name="Text_66E7127F" xml:space="preserve"><value>笔记本</value></data>
   <data name="Text_7D4E2D8B" xml:space="preserve"><value>键盘</value></data>
@@ -2682,6 +2763,12 @@
   <data name="RazerGamepadVibrationTitle" xml:space="preserve"><value>触觉反馈</value></data>
   <data name="RazerGamepadVibrationStrength" xml:space="preserve"><value>震动强度</value></data>
   <data name="RazerGamepadRawTitle" xml:space="preserve"><value>实时输入</value></data>
+  <data name="RazerGamepadModeNormal" xml:space="preserve"><value>普通</value></data>
+  <data name="RazerGamepadModeHypershift" xml:space="preserve"><value>Hypershift</value></data>
+  <data name="RazerGamepadAssignmentsRefreshed" xml:space="preserve"><value>按键映射已刷新</value></data>
+  <data name="RazerGamepadAssignmentsReadFailed" xml:space="preserve"><value>无法读取按键映射</value></data>
+  <data name="RazerGamepadMappingTitle.Text" xml:space="preserve"><value>按键映射</value></data>
+  <data name="RazerGamepadMappingRefresh.Content" xml:space="preserve"><value>刷新</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>音箱</value></data>
   <data name="RazerLightingEffectOff" xml:space="preserve"><value>关闭</value></data>
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>

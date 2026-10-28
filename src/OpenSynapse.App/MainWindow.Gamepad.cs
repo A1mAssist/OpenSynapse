@@ -19,6 +19,11 @@ public sealed partial class MainWindow
         await (_viewModel.SelectedGamepad?.LoadAsync(_lifetime.Token) ?? Task.CompletedTask);
     }
 
+    private async void GamepadRefreshAssignmentsClick(object sender, RoutedEventArgs e)
+    {
+        await (_viewModel.SelectedGamepad?.RefreshButtonAssignmentsAsync(_lifetime.Token) ?? Task.CompletedTask);
+    }
+
     private async void GamepadApplyStickClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: RazerGamepadStickRowViewModel row })

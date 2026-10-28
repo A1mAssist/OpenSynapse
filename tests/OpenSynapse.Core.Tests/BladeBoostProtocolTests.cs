@@ -13,7 +13,7 @@ public sealed class BladeBoostProtocolTests
     {
         var response = Response(BladeThermalProtocol.ProfileId, BladeBoostProtocol.CpuCluster, value);
 
-        Assert.Equal(expected, BladeBoostProtocol.ParseCpu(response));
+        Assert.Equal(expected, BladeBoostProtocol.ParseCpu(response, BladeBoostProtocol.ProfileId));
     }
 
     [Fact]
@@ -21,7 +21,9 @@ public sealed class BladeBoostProtocolTests
     {
         var response = Response(0x00, BladeBoostProtocol.CpuCluster, 0x02);
 
-        Assert.Equal(BladeCpuBoostMode.High, BladeBoostProtocol.ParseCpu(response));
+        Assert.Equal(
+            BladeCpuBoostMode.High,
+            BladeBoostProtocol.ParseCpu(response, BladeBoostProtocol.ProfileId));
     }
 
     [Fact]
@@ -29,7 +31,8 @@ public sealed class BladeBoostProtocolTests
     {
         var response = Response(0x05, BladeBoostProtocol.CpuCluster, 0x02);
 
-        var error = Assert.Throws<InvalidOperationException>(() => BladeBoostProtocol.ParseCpu(response));
+        var error = Assert.Throws<InvalidOperationException>(
+            () => BladeBoostProtocol.ParseCpu(response, BladeBoostProtocol.ProfileId));
         Assert.Contains("CPU", error.Message);
     }
 
@@ -38,7 +41,15 @@ public sealed class BladeBoostProtocolTests
     {
         var response = Response(BladeThermalProtocol.ProfileId, BladeBoostProtocol.GpuCluster, 0x01);
 
-        Assert.Throws<InvalidOperationException>(() => BladeBoostProtocol.ParseCpu(response));
+        Assert.Throws<InvalidOperationException>(
+            () => BladeBoostProtocol.ParseCpu(response, BladeBoostProtocol.ProfileId));
+    }
+
+    [Fact]
+    public void RequestsCarryTheMiddlewareProfile()
+    {
+        Assert.Equal(BladeBoostProtocol.ProfileId, BladeBoostProtocol.CreateGetArguments(BladeBoostProtocol.CpuCluster)[0]);
+        Assert.Equal(BladeBoostProtocol.ProfileId, BladeBoostProtocol.CreateSetArguments(BladeBoostProtocol.GpuCluster, 0x02)[0]);
     }
 
     private static byte[] Response(byte profileId, byte cluster, byte value)

@@ -102,6 +102,22 @@ public enum OpenRazerBackendCapability
     HyperPollingIndicatorWrite,
     HyperPollingPairWrite,
     HyperPollingUnpairWrite,
+    ScrollFreeNotchedModeRead,
+    ScrollFreeNotchedModeWrite,
+    ScrollAccelerationLevelRead,
+    ScrollAccelerationLevelWrite,
+    OnboardProfileRead,
+    OnboardProfileWrite,
+    WirelessPairingWrite,
+    WirelessConnectionStateRead,
+    ProximitySensorRead,
+    ProximitySensorWrite,
+    KnobRead,
+    KnobWrite,
+    AnalogKeyRead,
+    AnalogKeyWrite,
+    OledRead,
+    OledWrite,
 }
 
 public sealed record OpenRazerLightingZoneCapabilities(
