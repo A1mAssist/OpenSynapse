@@ -79,6 +79,9 @@ public sealed partial class MainWindow
     private async void HeadsetAudioApplyHapticsClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.ApplyHapticsAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void HeadsetAudioApplyCompressorClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyMicCompressorAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void HeadsetAudioApplyMatrixBrightnessClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.ApplyMatrixBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
 
