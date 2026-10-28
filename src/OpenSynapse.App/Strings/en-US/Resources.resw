@@ -2392,7 +2392,7 @@
   <data name="HueLightsTitle" xml:space="preserve"><value>Lights</value></data>
   <data name="HueBridgeRequired" xml:space="preserve"><value>Scan or enter a Hue bridge address first.</value></data>
   <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>Onboard macros</value></data>
-  <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>These macros live in the keyboard's onboard memory and follow it to another PC. This view only reads them.</value></data>
+  <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>These macros live in the device's onboard memory and follow it to another PC. You can write a local macro into an onboard slot; the write is verified by reading it back.</value></data>
   <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>Read onboard macros</value></data>
   <data name="RazerOnboardMacroLoaded" xml:space="preserve"><value>Read {0} onboard macros.</value></data>
   <data name="RazerOnboardMacroUnavailable" xml:space="preserve"><value>This firmware does not answer the onboard macro command.</value></data>
@@ -2404,9 +2404,10 @@
   <data name="RazerOnboardMacroSlotLabel.Header" xml:space="preserve"><value>Onboard slot</value></data>
   <data name="RazerOnboardMacroWriteButton.Content" xml:space="preserve"><value>Write to device</value></data>
   <data name="RazerOnboardMacroWriteDone" xml:space="preserve"><value>Wrote onboard slot {0}.</value></data>
-  <data name="RazerOnboardMacroWriteUnsupported" xml:space="preserve"><value>This macro holds steps an onboard slot cannot store. Only keys, mouse buttons, wheel notches and delays are supported.</value></data>
   <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>No macro is selected to write.</value></data>
-  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>Write failed: {0}</value></data></root>
+  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>Write failed: {0}</value></data>
+  <data name="RazerOnboardMacroWriteStepFailed" xml:space="preserve"><value>Step {0}: {1}</value></data>
+  <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>Used {0} / {1} bytes · {2} free · {3} slots</value></data></root>
 
 
 
