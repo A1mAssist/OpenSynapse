@@ -93,7 +93,7 @@ public sealed class RazerMxicHeadsetProtocolTests
             Bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             MicMuted = true,
         };
-        var service = new RazerMxicHeadsetService(transport);
+        var service = new RazerMxicHeadsetService(transport, RazerMxicHeadsetProtocol.ProductId);
 
         var state = await service.ReadStateAsync();
 
@@ -113,7 +113,7 @@ public sealed class RazerMxicHeadsetProtocolTests
     public async Task EqPresetWriteRestoresThePreviousValueWhenTheDeviceIgnoresIt()
     {
         var transport = new FakeTransport { Preset = 0, IgnorePresetWrites = true };
-        var service = new RazerMxicHeadsetService(transport);
+        var service = new RazerMxicHeadsetService(transport, RazerMxicHeadsetProtocol.ProductId);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.SetEqPresetAsync(8));
 
@@ -126,7 +126,7 @@ public sealed class RazerMxicHeadsetProtocolTests
     public async Task EqBandsAndMicMuteWriteAndReadBack()
     {
         var transport = new FakeTransport();
-        var service = new RazerMxicHeadsetService(transport);
+        var service = new RazerMxicHeadsetService(transport, RazerMxicHeadsetProtocol.ProductId);
         byte[] bands = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
         await service.SetEqBandsAsync(bands);
@@ -157,6 +157,85 @@ public sealed class RazerMxicHeadsetProtocolTests
         return report;
     }
 
+    [Fact]
+    public void Class18EqPresetRequestUsesTheRzDevice40Tuple()
+    {
+        var report = RazerMxicHeadsetProtocol.CreateGetEqPresetClass18();
+
+        Assert.Equal(64, report.Length);
+        Assert.Equal(2, report[0]);
+        Assert.Equal(0x50, report[5]);
+        Assert.Equal(0x41, report[6]);
+        Assert.Equal(8, report[7]);
+        Assert.Equal(5, report[9]);
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x00 }, report[10..15]);
+    }
+
+    [Fact]
+    public void Class18EqPresetSetCarriesProfileSourceAndPreset()
+    {
+        var report = RazerMxicHeadsetProtocol.CreateSetEqPresetClass18(0x03);
+
+        Assert.Equal(7, report[9]);
+        Assert.Equal(new byte[] { 0x04, 0x18, 0x00, 0x00, 0x01, 0x00, 0x03 }, report[10..17]);
+    }
+
+    [Fact]
+    public void Class18EqBandsUseTheTwelveBytePayload()
+    {
+        byte[] bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+        var set = RazerMxicHeadsetProtocol.CreateSetEqBandsClass18(bands);
+        Assert.Equal(15, set[9]);
+        Assert.Equal(new byte[] { 0x0C, 0x18, 0x01, 0x00, 0x01, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, set[10..25]);
+
+        var read = RazerMxicHeadsetProtocol.CreateGetEqBandsClass18();
+        Assert.Equal(15, read[9]);
+        Assert.Equal(new byte[] { 0x0C, 0x18, 0x81, 0x00 }, read[10..14]);
+        Assert.All(read[14..25], value => Assert.Equal(0, value));
+    }
+
+    [Fact]
+    public void Class18MicMuteUsesTheMicrophoneSource()
+    {
+        var read = RazerMxicHeadsetProtocol.CreateGetMicMuteClass18();
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x84, 0x00, 0x02 }, read[10..15]);
+
+        var set = RazerMxicHeadsetProtocol.CreateSetMicMuteClass18(true);
+        Assert.Equal(6, set[9]);
+        Assert.Equal(new byte[] { 0x03, 0x18, 0x04, 0x00, 0x02, 0x01 }, set[10..16]);
+    }
+
+    [Fact]
+    public void Class18PresetReplySkipsTheGroupByte()
+    {
+        // TryReadValue already stripped the [profile, source] header, so the reply value
+        // starts at the equalizer group number.
+        Assert.Equal(3, RazerMxicHeadsetProtocol.ReadEqPresetClass18([0x02, 0x03]));
+        Assert.Throws<InvalidDataException>(
+            () => RazerMxicHeadsetProtocol.ReadEqPresetClass18([0x02]));
+    }
+
+    [Fact]
+    public async Task Class18ServiceReadsAndWritesThroughTheDialect()
+    {
+        var transport = new FakeTransport { Preset = 1 };
+        var service = new RazerMxicHeadsetService(transport, 0x0A61);
+
+        var state = await service.ReadStateAsync();
+        Assert.Equal((byte)1, state.EqPreset);
+        Assert.False(state.MicMuted);
+
+        await service.SetEqPresetAsync(3);
+        Assert.Equal((byte)3, transport.Preset);
+
+        await service.SetMicMuteAsync(true);
+        Assert.True(transport.MicMuted);
+
+        var read = transport.Requests.First(request => request[11] == 0x18 && request[12] == 0x80);
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x00 }, read[10..15]);
+    }
+
     private sealed class FakeTransport : IRazerMxicHeadsetTransport
     {
         public List<byte[]> Requests { get; } = [];
@@ -185,6 +264,11 @@ public sealed class RazerMxicHeadsetProtocolTests
             CancellationToken cancellationToken)
         {
             Requests.Add(report);
+            if (report[11] == 0x18)
+            {
+                return Task.FromResult(QueryClass18(report, expectedHeader));
+            }
+
             var command = report[10];
             var dataLength = report[12];
             var data = report.AsSpan(13, dataLength).ToArray();
@@ -210,6 +294,52 @@ public sealed class RazerMxicHeadsetProtocolTests
                 responseReport, expectedHeader, out var value)
                 ? value
                 : null);
+        }
+
+        private byte[]? QueryClass18(byte[] report, byte[] expectedHeader)
+        {
+            var id = report[12];
+            var payload = report.AsSpan(13, report[10]).ToArray();
+            var responseReport = id switch
+            {
+                0x80 => BuildResponse((0x18, [0x00, 0x01, 0x00, Preset])),
+                0x00 => WritePreset18(payload),
+                0x81 => BuildResponse((0x18, [0x00, 0x01, .. Bands])),
+                0x01 => WriteBands18(payload),
+                0x84 => BuildResponse((0x18, [0x00, 0x02, MicMuted ? (byte)1 : (byte)0])),
+                0x04 => WriteMicMute18(payload),
+                _ => null,
+            };
+            if (responseReport is null)
+            {
+                return null;
+            }
+
+            return RazerMxicHeadsetProtocol.TryReadValue(responseReport, expectedHeader, out var value)
+                ? value
+                : null;
+        }
+
+        private byte[] WritePreset18(byte[] payload)
+        {
+            if (!IgnorePresetWrites)
+            {
+                Preset = payload[3];
+            }
+
+            return BuildResponse((0x18, [0x00, 0x01, 0x00, Preset]));
+        }
+
+        private byte[] WriteBands18(byte[] payload)
+        {
+            Bands = payload[2..];
+            return BuildResponse((0x18, [0x00, 0x01, .. Bands]));
+        }
+
+        private byte[] WriteMicMute18(byte[] payload)
+        {
+            MicMuted = payload[2] == 1;
+            return BuildResponse((0x18, [0x00, 0x02, MicMuted ? (byte)1 : (byte)0]));
         }
 
         private byte[] WritePreset(byte[] data)

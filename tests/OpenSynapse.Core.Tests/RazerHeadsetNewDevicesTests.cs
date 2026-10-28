@@ -23,24 +23,36 @@ public sealed class RazerHeadsetNewDevicesTests
         Assert.False(string.IsNullOrWhiteSpace(RazerHeadsetAudioService.Products[productId]));
     }
 
-    // The Hammerhead V3 and BlackShark V3 X identities move EQ, mic mute and sidetone
-    // to 64-byte class 0x18 commands that nothing in this repository builds yet.
+    // The Valkyrie T3 identities (0A54, 1022) move EQ, mic mute and sidetone to report id 7
+    // frames that nothing in this repository builds yet.
     [Theory]
     // 0x101C is the hardware-observed BlackShark V3 Pro USB identity owned by the
     // proprietary THX panel, so it stays out of the MXIC audio table.
     [InlineData(0x101C)]
     [InlineData(0x0A54)]
-    [InlineData(0x0A61)]
-    [InlineData(0x0A64)]
-    [InlineData(0x0A68)]
-    [InlineData(0x0A6C)]
-    [InlineData(0x0A81)]
     [InlineData(0x1022)]
     public void UnsupportedHeadsetCandidates_AreNotAdmitted(ushort productId)
     {
         Assert.False(RazerHeadsetAudioService.IsSupported(productId));
         Assert.False(RazerHeadsetAudioService.Products.ContainsKey(productId));
         Assert.Equal(DeviceCategory.Headset, RazerHeadsetAudioService.GetCategory(productId));
+    }
+
+    // The Hammerhead V3 dongles use the rzDevice40 class 0x18 triplet layout on the same
+    // 64-byte MXIC envelope. See docs/HEADSET_AUDIO_ALIGNMENT.md.
+    [Theory]
+    [InlineData(0x0A61)]
+    [InlineData(0x0A64)]
+    [InlineData(0x0A68)]
+    [InlineData(0x0A6C)]
+    [InlineData(0x0A81)]
+    public void HammerheadV3_UseTheClass18Dialect(ushort productId)
+    {
+        Assert.True(RazerHeadsetAudioService.IsSupported(productId));
+        Assert.True(RazerMxicHeadsetProtocol.IsSupported(productId));
+        Assert.True(RazerMxicHeadsetProtocol.UsesClass18Commands(productId));
+        Assert.Equal(DeviceCategory.Headset, RazerHeadsetAudioService.GetCategory(productId));
+        Assert.False(string.IsNullOrWhiteSpace(RazerHeadsetAudioService.Products[productId]));
     }
 
     [Theory]

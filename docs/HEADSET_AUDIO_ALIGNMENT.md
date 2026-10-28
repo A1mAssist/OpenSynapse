@@ -77,8 +77,29 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 |---|---|---|
 | `0A4E` `0A51` `101E` `101F` | **Added** | AudioValkyrie 的 `[19,0,0]/[147,0,1]`（EQ preset）、`[21,0,0]/[149,0,10]`（EQ bands 10 段）、`[85,0,0]/[233,0,1]`（mic mute）、`[33,0,0]`（battery）、`[42,0,0]`（charging）与 `RazerMxicHeadsetProtocol` 现有常量逐字节相同；已加入 `Products` 和 `IsSupported` |
 | `101C` | Skipped | 命令与上面四款相同，但 `101C` 是 `BlackSharkV3ProProtocol.UsbProductId`（仓库已按实机观测接入 THX/ANC/sidetone 面板）。同一台设备再进 MXIC 会多出一张音频卡，所以保留专用面板，不加进 `Products` |
-| `0A54` `1022` | Blocked | rzDevice25ValkyrieT3：report id 7，EQ/mute/sidetone 走 `18:80/18:00`、`18:81/18:01`、`18:84/18:04`、`18:83/18:03`，与 MXIC 的 13/15/55 族不同 |
-| `0A61` `0A64` `0A68` `0A6C` `0A81` | Blocked | rzDevice40：EQ/mute 走 `18:80/18:00`、`18:81/18:01`、`18:84/18:04`，set EQ bands 的 dataSize 是 12（`[12,24,129]`/`[12,24,1]`），与 MXIC 的 10 段布局不同 |
+| `0A54` `1022` | Blocked | rzDevice25ValkyrieT3：report id **7**，EQ/mute/sidetone 走 `18:80/18:00`、`18:81/18:01`、`18:84/18:04`、`18:83/18:03`。帧 id 和三元组顺序都和 MXIC 不同，需要独立的帧构造器 |
+| `0A61` `0A64` `0A68` `0A6C` `0A81` | **Added** | rzDevice40：同一套 64-byte `50 41` 信封，但三元组是 `[dataSize, class, id]`，EQ/mute 在 class `0x18`。已实现 EQ preset、EQ 10 段、麦克风静音、电量、充电、固件；细节见下 |
+
+### rzDevice40（Hammerhead V3，report id 2）
+
+请求三元组和 payload 逐字节取自 bundle，响应是 request payload 的回显（`Rn`/`On`/`Bn` 三个解析器）：
+
+| 用途 | 三元组 | 请求 payload | 响应 |
+|---|---|---|---|
+| 读 EQ preset | `02 18 80` | `[profile=0, 0]` | `[profile, source, group, preset]` |
+| 写 EQ preset | `04 18 00` | `[0, source=1, 0, preset]` | 同上 |
+| 读 EQ 段 | `0C 18 81` | 12 字节，`[0]`=profile | `[profile, source, band0..band9]` |
+| 写 EQ 段 | `0C 18 01` | `[0, 1, band0..band9]` | 同上 |
+| 读麦克风静音 | `02 18 84` | `[0, source=2]` | `[profile, source, muted]` |
+| 写麦克风静音 | `03 18 04` | `[0, 2, muted]` | 同上 |
+
+`TD={Speaker:1,Mic:2}`；bundle 读写都用当前 profile `0`，所以回读能对上。EQ 段电平是
+符号-幅值（`level<0 ? 128|abs(level) : level`），与 0555 的编码一致。
+
+**没做**：sidetone（`08:83`/`08:03`）、DND（`18:85/18:05`）、bass / 麦克风音量 / 音源 / Dolby
+（`08:86/08:87/08:97/08:8A/08:8C` 一族）。这组的 class 是 `0x08`，但三元组顺序同样是
+`[dataSize, class, id]`，和 0555 的 `[class, id, dataSize]` 相反——不能直接复用旧常量，
+payload 语义也没有从 JS 里确认，所以先不写。
 
 未实现的 AudioValkyrie 子命令：sidetone `18:00/98:00`、ANC `12:00/92:00`、
 DND `27:00/A7:00`。三条都是 get/set 对称的 1 字节 payload，但本仓库还没有对应的
