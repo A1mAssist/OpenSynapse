@@ -9,15 +9,20 @@ namespace OpenSynapse.Core.Tests;
 public sealed class Blade2026Tests
 {
     [Theory]
-    [InlineData(0x02E0, "Razer Blade 16 (2026)")]
-    [InlineData(0x02E1, "Razer Blade 18 (2026)")]
-    public void The2026ManifestsExposeTheBladeControlChannel(ushort productId, string displayName)
+    [InlineData(0x02E0, "Razer Blade 16 (2026)", 17)]
+    [InlineData(0x02E1, "Razer Blade 18 (2026)", 19)]
+    public void The2026ManifestsExposeTheBladeControlChannel(
+        ushort productId,
+        string displayName,
+        int columns)
     {
         var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, productId);
 
         Assert.NotNull(manifest);
-        Assert.Equal("blade-2026", manifest!.ProtocolFamily);
+        Assert.Equal("blade-671", manifest!.ProtocolFamily);
         Assert.Equal(displayName, manifest.DisplayName);
+        Assert.Equal(6, manifest.MatrixRows);
+        Assert.Equal(columns, manifest.MatrixColumns);
         Assert.Equal(0x1F, manifest.GetRequiredCapability("thermal-state.get").TransactionId);
         Assert.Equal(0x0D, manifest.GetRequiredCapability("fan-target.get").CommandClass);
         Assert.Equal(0x81, manifest.GetRequiredCapability("fan-target.get").CommandId);
@@ -69,28 +74,22 @@ public sealed class Blade2026Tests
     }
 
     [Theory]
-    [InlineData(0x02E0, 6, 17)]
-    [InlineData(0x02E1, 6, 19)]
-    public void The2026ManifestsUseTheSharedBladeHidCollection(ushort productId, byte rows, byte columns)
+    [InlineData(0x02E0, 17)]
+    [InlineData(0x02E1, 19)]
+    public void The2026ManifestsOwnTheNativeKeyboardReports(ushort productId, int columns)
     {
         var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, productId);
         Assert.NotNull(manifest);
 
-        // The bundles confirm the 91-byte frame, not the usage pair. The 0001:0002
-        // collection is inherited from the existing Blade manifests and still needs
-        // a physical 2026 unit before a pre-release claim.
         Assert.Equal((ushort)0x0001, manifest!.Collection.UsagePage);
         Assert.Equal((ushort)0x0002, manifest.Collection.Usage);
         Assert.Equal((ushort)RazerFeatureReport.Length, manifest.Collection.FeatureReportLength);
-        Assert.DoesNotContain("keyboard-brightness.get", manifest.Capabilities.Keys);
-        Assert.DoesNotContain("keyboard-effect.get", manifest.Capabilities.Keys);
-        Assert.DoesNotContain("keyboard-effect.set", manifest.Capabilities.Keys);
-
-        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId);
-        Assert.NotNull(definition);
-        Assert.Equal(new OpenRazerMatrixDimensions(rows, columns), definition!.MatrixDimensions);
-        Assert.True(definition.HasSourceCapability("set_key_row"));
-        Assert.True(definition.HasSourceCapability("set_custom_effect"));
+        Assert.Equal(6, manifest.MatrixRows);
+        Assert.Equal(columns, manifest.MatrixColumns);
+        Assert.Contains("keyboard-brightness.get", manifest.Capabilities.Keys);
+        Assert.Contains("keyboard-brightness.set", manifest.Capabilities.Keys);
+        Assert.Contains("keyboard-effect.get", manifest.Capabilities.Keys);
+        Assert.Contains("keyboard-effect.set", manifest.Capabilities.Keys);
     }
 
     [Fact]
@@ -128,13 +127,16 @@ public sealed class Blade2026Tests
     }
 
     [Fact]
-    public void The2026LightingBelongsToTheOpenRazerStandardPath()
+    public void The2026LightingStaysOnTheNativeMatrixPath()
     {
-        Assert.True(BladeLighting2023Admitted.UsesOpenRazerStandardLighting(0x02E0));
-        Assert.True(BladeLighting2023Admitted.UsesOpenRazerStandardLighting(0x02E1));
-        Assert.False(BladeLighting2023Admitted.UsesOpenRazerStandardLighting(0x02C6));
         Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x02E0));
         Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x02E1));
+
+        var frame = Enumerable.Repeat(new RazerRgb(1, 2, 3), 6 * 17).ToArray();
+        var requests = BladeLightingLedMatrixProtocol.CreateMatrixFrameRequests(frame);
+        Assert.Equal(7, requests.Length);
+        Assert.All(requests[..6], request => Assert.Equal(0x03, request[7]));
+        Assert.Equal(0x02, requests[6][8]);
     }
 
     [Fact]

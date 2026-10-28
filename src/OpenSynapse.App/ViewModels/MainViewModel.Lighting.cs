@@ -17,7 +17,7 @@ public sealed partial class MainViewModel
     /// not have, so the override is hidden there even when Chroma is enabled globally.
     /// </summary>
     public Visibility BladeChromaOverrideVisibility =>
-        _chromaIntegrationEnabled && !UsesFirmwareKeyboardLighting && !UsesOpenRazerStandardLighting
+        _chromaIntegrationEnabled && !UsesFirmwareKeyboardLighting
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -25,8 +25,7 @@ public sealed partial class MainViewModel
     /// Firmware-rendered models have no matrix to hand a .chroma file to, so the import button
     /// stays hidden rather than accepting a file the device cannot play.
     /// </summary>
-    public Visibility BladeChromaImportVisibility =>
-        UsesFirmwareKeyboardLighting || UsesOpenRazerStandardLighting
+    public Visibility BladeChromaImportVisibility => UsesFirmwareKeyboardLighting
         ? Visibility.Collapsed
         : Visibility.Visible;
 
@@ -169,30 +168,6 @@ public sealed partial class MainViewModel
         // The 597 family is read-only until its keyboard write path is exercised.
         if (blade.ProtocolFamily == "blade-597")
         {
-            return null;
-        }
-
-        // The 2026 generation is lit through the OpenRazer standard Chroma path.
-        // Its bundle has no 03:0B keyboard matrix, so never hand it to the native
-        // Blade controller. Clear any controller lease left by a previous model.
-        if (blade.ProtocolFamily == DeviceProtocolFamilies.Blade2026)
-        {
-            if (_bladeLightingDevicePath.Length > 0)
-            {
-                try
-                {
-                    await _bladeLightingController.StopAsync();
-                }
-                catch (Exception exception) when (IsExpectedRuntimeException(exception))
-                {
-                    _diagnosticLog.TryWrite(
-                        "keyboard-lighting",
-                        $"2026 owner transition restore failed: {exception}");
-                }
-            }
-
-            _bladeLightingDevicePath = string.Empty;
-            _lightingShadowFingerprint = string.Empty;
             return null;
         }
 

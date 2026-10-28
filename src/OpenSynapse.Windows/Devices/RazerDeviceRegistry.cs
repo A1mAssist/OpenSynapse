@@ -69,34 +69,6 @@ internal sealed class RazerDeviceRegistry
                 ["display-mux-capabilities.get"] = new(0x02, 0x0D, 0x8A, "0000"),
         };
 
-    // The 2026 Blade 16/18 middleware uses the same thermal, fan, power, charge and
-    // MUX reports as the 710 generation. Keyboard lighting stays on the OpenRazer
-    // standard catalogue path; it is not a Blade-native capability in these bundles.
-    // The bundles confirm the 91-byte frame only; the 0001:0002 HID usage pair is
-    // inherited from the existing Blade manifests and still needs a 2026 unit.
-    private static readonly IReadOnlyDictionary<string, CapabilityContract> Blade2026Capabilities =
-        new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
-        {
-            ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
-            ["thermal-state.set"] = new(0x04, 0x0D, 0x02, ""),
-            ["fan-target.get"] = new(0x03, 0x0D, 0x81, ""),
-            ["current-fan-rpm.get"] = new(0x03, 0x0D, 0x88, ""),
-            ["advanced-fan-mode.get"] = new(0x03, 0x0D, 0x87, ""),
-            ["boost.get"] = new(0x03, 0x0D, 0x87, ""),
-            ["boost.set"] = new(0x03, 0x0D, 0x07, ""),
-            ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
-            ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
-            ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
-            ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
-            ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
-            ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
-            ["mcu-version.get"] = new(0x04, 0x00, 0x87, "00000000", AllowZeroTransactionId: true),
-            ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
-            ["display-mux.get"] = new(0x02, 0x0D, 0x89, "0000"),
-            ["display-mux.set"] = new(0x02, 0x0D, 0x09, ""),
-            ["display-mux-capabilities.get"] = new(0x02, 0x0D, 0x8A, "0000"),
-        };
-
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, CapabilityContract>> FamilyCapabilities =
         new Dictionary<string, IReadOnlyDictionary<string, CapabilityContract>>(StringComparer.Ordinal)
         {
@@ -108,7 +80,6 @@ internal sealed class RazerDeviceRegistry
                 ["keyboard-brightness.get"] = new(0x03, 0x03, 0x83, "010500", true),
                 ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
             },
-            ["blade-2026"] = Blade2026Capabilities,
             // Blade 16 (2023) RZ09-0483 shares the 710 thermal, power-mode and charge
             // commands but has its own lighting matrix report, so it stays a separate family.
             ["blade-671"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
@@ -179,7 +150,6 @@ internal sealed class RazerDeviceRegistry
         {
             ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
             ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys.ToHashSet(StringComparer.Ordinal),
-            ["blade-2026"] = FamilyCapabilities["blade-2026"].Keys.ToHashSet(StringComparer.Ordinal),
             // adapter-power.get and the display MUX reports are optional in this family:
             // only the 029F manifest answers the adapter-wattage level and owns the
             // MUX reports, so they are not required here.
@@ -201,8 +171,6 @@ internal sealed class RazerDeviceRegistry
             [(0x1532, 0x02B8)] = "blade-710-chroma",
             [(0x1532, 0x02C5)] = "blade-710-chroma",
             [(0x1532, 0x02C7)] = "blade-710-chroma",
-            [(0x1532, 0x02E0)] = "blade-2026",
-            [(0x1532, 0x02E1)] = "blade-2026",
             [(0x1532, 0x029F)] = "blade-671",
             [(0x1532, 0x0255)] = "blade-597",
             [(0x1532, 0x00B8)] = "viper-184",
@@ -683,8 +651,6 @@ internal sealed class RazerDeviceRegistry
                     "blade-710-chroma" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
                         "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get" or
                         "keyboard-brightness.get" or "keyboard-brightness.set"),
-                    "blade-2026" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
-                        "power-mode.get" or "sku-hardware-configuration.get"),
                     "blade-671" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or "power-mode.get" or
                         "keyboard-brightness.get" or "keyboard-brightness.set" or
                         "keyboard-effect.get" or "keyboard-effect.set"),
@@ -745,7 +711,7 @@ internal sealed class RazerDeviceRegistry
     {
         null or "" => protocolFamily switch
         {
-            "blade-710" or "blade-710-chroma" or "blade-2026" or "blade-671" or "blade-597" => DeviceCategory.Laptop,
+            "blade-710" or "blade-710-chroma" or "blade-671" or "blade-597" => DeviceCategory.Laptop,
             "viper-184" => DeviceCategory.Mouse,
             _ => DeviceCategory.Unknown,
         },

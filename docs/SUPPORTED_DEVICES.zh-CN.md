@@ -284,14 +284,14 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade 16 (2023) | `1532:029F` | Blade 专用控制；固件渲染键盘灯效 |
 | Razer Blade 16 (2024) | `1532:02B7` | Blade 专用控制 |
 | Razer Blade 16 (2025) | `1532:02C6` | Blade 专用控制 |
-| Razer Blade 16 (2026) | `1532:02E0` | Blade 专用控制；标准 Chroma 灯光走 OpenRazer；MUX 仅开放 Hybrid 和 Discrete |
+| Razer Blade 16 (2026) | `1532:02E0` | Blade 专用控制；原生键盘固件灯效和软件帧泵；MUX 仅开放 Hybrid 和 Discrete |
 | Razer Blade 17 (2022) | `1532:028B` | — |
 | Razer Blade 17 Pro (Early 2021) | `1532:026E` | — |
 | Razer Blade 17 Pro (Mid 2021) | `1532:0279` | — |
 | Razer Blade 18 (2023) | `1532:02A0` | — |
 | Razer Blade 18 (2024) | `1532:02B8` | Blade 专用控制 |
 | Razer Blade 18 (2025) | `1532:02C7` | Blade 专用控制 |
-| Razer Blade 18 (2026) | `1532:02E1` | Blade 专用控制；标准 Chroma 灯光走 OpenRazer；MUX 仅开放 Hybrid 和 Discrete |
+| Razer Blade 18 (2026) | `1532:02E1` | Blade 专用控制；原生键盘固件灯效和软件帧泵；MUX 仅开放 Hybrid 和 Discrete |
 | Razer Blade Advanced (Late 2019) | `1532:024B` | — |
 | Razer Blade Base (Early 2020) | `1532:0255` | Blade 专用控制；百分比风扇目标不伪装成 RPM |
 | Razer Blade Base (Early 2021) | `1532:026F` | — |
@@ -313,7 +313,7 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
 | Razer Book (2020) | `1532:026A` | — |
 
-Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；标准 Chroma 键盘灯光继续由 OpenRazer 目录路径负责。由于 2026 bundle 没有 DDS 模式值，MUX 写入只开放 Hybrid 和 Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle UI 列出了 Turbo，但没有确认的专用 wire value，因此不暴露 Turbo。以上为 bundle 对齐结果，未使用 2026 实机验证。
+Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；原生键盘灯光使用中间件的 03:02 固件灯效报文和 03:0B 软件帧报文。由于 2026 bundle 没有 DDS 模式值，MUX 写入只开放 Hybrid 和 Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle UI 列出了 Turbo，但没有确认的专用 wire value，因此不暴露 Turbo。Blade 16 (2026) 的 HyperBoost 和风扇读取已在一台实机核对；Blade 18 (2026) 仍为 bundle 对齐结果。
 
 ## 耳机
 

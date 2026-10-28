@@ -15,8 +15,6 @@ public static class BladeLighting2023Admitted
 {
     public const ushort Blade16_2023ProductId = 0x029F;
     public const ushort Blade14_2022ProductId = 0x028C;
-    public const ushort Blade16_2026ProductId = 0x02E0;
-    public const ushort Blade18_2026ProductId = 0x02E1;
 
     /// <summary>
     /// True where the manifest's selector-prefixed keyboard-effect reports drive the
@@ -25,14 +23,6 @@ public static class BladeLighting2023Admitted
     /// </summary>
     public static bool UsesFirmwareKeyboardLighting(ushort productId) =>
         productId is Blade16_2023ProductId or Blade14_2022ProductId;
-
-    /// <summary>
-    /// The 2026 generation exposes standard Chroma lighting through the OpenRazer
-    /// catalogue, not through the native Blade 03:0B matrix or the 2023 firmware
-    /// effect reports. Keep those two native paths closed for it.
-    /// </summary>
-    public static bool UsesOpenRazerStandardLighting(ushort productId) =>
-        productId is Blade16_2026ProductId or Blade18_2026ProductId;
 
     /// <summary>Effects this model can render in firmware, in display order.</summary>
     public static IReadOnlyList<BladeLightingMode> Effects { get; } =
