@@ -96,7 +96,8 @@ public static class BladeFanProtocol
         int minimumRpm,
         int maximumRpm)
     {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, DataSize))
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, DataSize, allowRemainingPacketsMismatch: true))
         {
             throw new InvalidOperationException("Blade fan target returned an invalid or out-of-order feature report.");
         }

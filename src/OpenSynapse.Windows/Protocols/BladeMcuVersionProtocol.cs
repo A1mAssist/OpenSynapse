@@ -16,7 +16,8 @@ public static class BladeMcuVersionProtocol
 
     public static string Parse(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
     {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: DataSize))
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, minimumArguments: DataSize, allowRemainingPacketsMismatch: true))
         {
             throw new InvalidOperationException("Blade MCU version returned an invalid or out-of-order feature report.");
         }
