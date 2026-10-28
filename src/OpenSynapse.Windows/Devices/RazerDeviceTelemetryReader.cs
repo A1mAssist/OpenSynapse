@@ -1334,8 +1334,8 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
     private static bool AllowsBladeDds(ReadyDevice blade) =>
         // The 2026 bundle defines only Microsoft_Hybrid (0) and Discrete_MUX (1);
-        // it has no DDS mode value, so do not invent a 0x02 write for that family.
-        blade.Descriptor.ProtocolFamily != "blade-2026";
+        // it has no DDS mode value, so do not invent a 0x02 write for these models.
+        !BladeModelCapabilities.IsBlade2026(blade.Descriptor.ProductId);
 
     private static BladeDisplayMuxStatus UnsupportedBladeDisplayMux(BladeDisplayMuxBlockReason reason) =>
         new(
@@ -2803,7 +2803,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private ReadyDevice? FindReadyBlade(IReadOnlyList<DeviceDescriptor> devices) =>
         FindReadyDevice(devices, "blade-710") ??
         FindReadyDevice(devices, "blade-710-chroma") ??
-        FindReadyDevice(devices, "blade-2026") ??
         FindReadyDevice(devices, "blade-671") ??
         FindReadyDevice(devices, "blade-597");
 

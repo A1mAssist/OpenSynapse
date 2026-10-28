@@ -736,6 +736,10 @@ public static class BladeModelCapabilities
     public static bool UsesBlade2026ThermalSelector(ushort productId) =>
         productId is Blade16_2026ProductId or Blade18_2026ProductId;
 
+    /// <summary>True for the 2026 Blade 16/18 generation.</summary>
+    public static bool IsBlade2026(ushort productId) =>
+        productId is Blade16_2026ProductId or Blade18_2026ProductId;
+
     private sealed record Contract(
         bool MaxFan,
         IReadOnlyList<BladeCpuBoostMode> CpuBoostModes,
