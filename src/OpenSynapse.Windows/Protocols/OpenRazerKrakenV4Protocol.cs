@@ -17,9 +17,12 @@ internal static class OpenRazerKrakenV4Protocol
     private const byte TransactionId = 0x60;
     private const byte WiredFlag = 0x00;
 
-    /// <summary>Chroma command class 0x0F, "Set Chroma Frame".</summary>
+    /// <summary>
+    /// "Set Chroma Frame". The bundle's command table pairs that name with 0F:03;
+    /// 0F:10 is "Force Chroma Control", a different command.
+    /// </summary>
     private const byte FrameCommandClass = 0x0F;
-    private const byte FrameCommandId = 0x10;
+    private const byte FrameCommandId = 0x03;
 
     /// <summary>Chroma command class 0x00, "Get/Set Chroma Effect".</summary>
     private const byte EffectCommandClass = 0x00;
@@ -28,9 +31,10 @@ internal static class OpenRazerKrakenV4Protocol
 
     /// <summary>
     /// The effect command travels as a three byte header in the payload, the same
-    /// shape the firmware uses for the other general commands.
+    /// shape the firmware uses for the other general commands. Set Chroma Effect is
+    /// declared as C0 00 01 in the bundle's command table.
     /// </summary>
-    private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x01, 0x01];
+    private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x00, 0x01];
 
     private const byte EffectOff = 0x00;
     private const byte EffectStatic = 0x01;
@@ -42,13 +46,13 @@ internal static class OpenRazerKrakenV4Protocol
     internal static IReadOnlyList<byte[]> CreateOff() =>
     [
         CreateEffect(EffectOff),
-        CreateFrame(0, LedCount, new OpenRazerColor(0, 0, 0)),
+        CreateFrame(0, LedCount - 1, new OpenRazerColor(0, 0, 0)),
     ];
 
     internal static IReadOnlyList<byte[]> CreateStatic(OpenRazerColor color, byte? intensity = null) =>
     [
         CreateEffect(EffectStatic),
-        CreateFrame(1, LedCount, Scale(color, intensity)),
+        CreateFrame(0, LedCount - 1, Scale(color, intensity)),
     ];
 
     internal static IReadOnlyList<byte[]> CreateWave(byte? intensity = null) =>
