@@ -85,6 +85,37 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Hyperboost,
     ];
 
+    private static readonly BladePerformanceMode[] Modes029D =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.Hyperboost,
+    ];
+
+    // 02B6 lists Turbo, which has no BladePerformanceMode counterpart.
+    private static readonly BladePerformanceMode[] Modes02B6 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Custom,
+    ];
+
+    private static readonly BladePerformanceMode[] Modes0245 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Custom,
+    ];
+
+    // 02A0 and 02B8 publish Balanced, Silent, Turbo and Custom; Turbo has no
+    // BladePerformanceMode counterpart.
+    private static readonly BladePerformanceMode[] Modes02A0 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Custom,
+    ];
+
     private static IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange> Ranges(
         params (BladePerformanceMode Mode, int Minimum, int Maximum, int Default)[] items)
     {
@@ -132,7 +163,12 @@ public static class BladeModelCapabilities
             // stays closed because the official Synapse 4 for this model offers only
             // automatic and a fixed-speed slider, so there is no OEM curve to match.
             // Maximum fan stays closed too: never exercised, and the OEM has no such mode.
-            [0x0245] = new(MaxFan: false, None, FixedFan: true, MaximumFanTargetRpm: 5300),
+            [0x0245] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MaximumFanTargetRpm: 5300,
+                Modes: Modes0245),
 
             // Blade 16 (2023) RZ09-0483. Owner-tested maximum fans plus a CPU Boost level.
             // Its performance-mode table lists HyperBoost, and it reads the adapter
@@ -158,7 +194,7 @@ public static class BladeModelCapabilities
 
             // Blade 18 (2023) RZ09-0484. Owner-reported maximum fans; its fixed fan
             // targets were reported ignored, so no fixed target is admitted.
-            [0x02A0] = new(MaxFan: true, LowMediumHigh),
+            [0x02A0] = new(MaxFan: true, LowMediumHigh, Modes: Modes02A0),
 
             // Blade 14 (2022) RZ09-0427. Owner readings on 028C answered all ten Blade
             // controls, including both live fan tachometers. The owner then confirmed a
@@ -189,7 +225,8 @@ public static class BladeModelCapabilities
                 MaximumFanTargetRpm: 5400,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Silent, 2200, 3800, 3000),
-                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100))),
+                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
+                Modes: Modes029D),
             [0x02B6] = new(
                 MaxFan: true,
                 LowMediumHigh,
@@ -198,11 +235,18 @@ public static class BladeModelCapabilities
                 MinimumFanTargetRpm: 2200,
                 MaximumFanTargetRpm: 5400,
                 ModeFanRanges: Ranges(
-                    (BladePerformanceMode.Silent, 2200, 3800, 3000))),
+                    (BladePerformanceMode.Silent, 2200, 3800, 3000)),
+                Modes: Modes02B6),
 
             // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
             // It has no CPU-level flag, so the custom CPU control stays closed.
-            [0x02B8] = new(MaxFan: true, None, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
+            [0x02B8] = new(
+                MaxFan: true,
+                None,
+                FanCurve: true,
+                FixedFan: true,
+                MaximumFanTargetRpm: 5400,
+                Modes: Modes02A0),
 
             // Blade 14 (2025) and Blade 18 (2025) expose the 710 fan-target reports but
             // do not enable the maximum-fan bit or custom CPU levels in their middleware.
