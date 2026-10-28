@@ -1353,6 +1353,8 @@ public sealed class OpenRazerBackendTests
     [InlineData(0x00B7)]
     [InlineData(0x00C2)]
     [InlineData(0x00C3)]
+    [InlineData(0x00C4)]
+    [InlineData(0x00C5)]
     public void DeclaredPollingControlAlwaysPublishesRates(ushort productId)
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
@@ -1412,6 +1414,21 @@ public sealed class OpenRazerBackendTests
         Assert.DoesNotContain("razer_chroma_misc_get_polling_rate", hyperPollingDongle.Transactions.Keys);
     }
 
+
+    [Fact]
+    public void DeathAdderV3HyperSpeedPublishesItsPollingRatesForBothIdentities()
+    {
+        foreach (var productId in new ushort[] { 0x00C4, 0x00C5 })
+        {
+            var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+            var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+
+            Assert.Equal([125, 500, 1000], device.PollingRates);
+            Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
+            Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
+            Assert.Contains("razer_chroma_misc_set_polling_rate", device.Transactions.Keys);
+        }
+    }
 
     /// <summary>
     /// The DeathAdder V2 X HyperSpeed answers the 0x1F command family. OpenRazer sends
