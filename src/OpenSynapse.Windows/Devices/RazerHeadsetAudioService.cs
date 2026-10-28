@@ -31,7 +31,20 @@ public sealed record RazerHeadsetAudioState(
     bool? NoiseSuppression,
     RazerAncState? AncState,
     byte? AncLevel,
-    IReadOnlyList<string> Errors);
+    IReadOnlyList<string> Errors)
+{
+    public RazerParametricEqBand? ParametricEq { get; init; }
+    public RazerMicCompressor? MicCompressor { get; init; }
+    public byte? MicDeEsser { get; init; }
+    public (RazerMicReverbRoomMode RoomMode, byte Intensity)? MicReverb { get; init; }
+    public sbyte? MicLimiter { get; init; }
+    public bool? Dnd { get; init; }
+    public (byte PromptIndex, bool Enabled)? VoicePrompts { get; init; }
+    public bool? AutoPause { get; init; }
+    public bool? GestureControl { get; init; }
+    public bool? Dolby { get; init; }
+    public bool? NightMode { get; init; }
+}
 
 /// <summary>
 /// Audio controls for the 18-device protocol 25 headset family (Nari, Kraken, Barracuda,
@@ -307,6 +320,85 @@ public sealed class RazerHeadsetAudioService
             errors.Add($"ANC: {exception.Message}");
         }
 
+        // The protocol has no default selector; band 0 is the first of its ten-band range.
+        var parametricEq = await ProbeAsync(
+            "parametric EQ",
+            txn => RazerHeadsetAudioProtocol.GetParametricEqSetting(txn, band: 0),
+            RazerHeadsetAudioProtocol.ReadParametricEqSetting,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var compressor = await ProbeAsync(
+            "microphone compressor",
+            txn => RazerHeadsetAudioProtocol.GetMicCompressor(txn),
+            RazerHeadsetAudioProtocol.ReadMicCompressor,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var deEsser = await ProbeAsync(
+            "microphone de-esser",
+            txn => RazerHeadsetAudioProtocol.GetMicDeEsser(txn),
+            RazerHeadsetAudioProtocol.ReadMicDeEsser,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var reverb = await ProbeAsync(
+            "microphone reverb",
+            txn => RazerHeadsetAudioProtocol.GetMicReverb(txn),
+            RazerHeadsetAudioProtocol.ReadMicReverb,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var limiter = await ProbeAsync(
+            "microphone limiter",
+            txn => RazerHeadsetAudioProtocol.GetMicLimiter(txn),
+            RazerHeadsetAudioProtocol.ReadMicLimiter,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var dnd = await ProbeAsync(
+            "audio DND",
+            txn => RazerHeadsetAudioProtocol.GetAudioDnd(txn),
+            RazerHeadsetAudioProtocol.ReadAudioDnd,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var voicePrompts = await ProbeAsync(
+            "audio voice prompts",
+            txn => RazerHeadsetAudioProtocol.GetAudioVoicePrompts(txn),
+            RazerHeadsetAudioProtocol.ReadAudioVoicePrompts,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var autoPause = await ProbeAsync(
+            "audio auto-pause",
+            txn => RazerHeadsetAudioProtocol.GetAudioAutoPause(txn),
+            RazerHeadsetAudioProtocol.ReadAudioAutoPause,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var gestureControl = await ProbeAsync(
+            "audio gesture control",
+            txn => RazerHeadsetAudioProtocol.GetAudioGestureControl(txn),
+            RazerHeadsetAudioProtocol.ReadAudioGestureControl,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var dolby = await ProbeAsync(
+            "Dolby state",
+            txn => RazerHeadsetAudioProtocol.GetDolbyState(txn),
+            RazerHeadsetAudioProtocol.ReadDolbyState,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+        var nightMode = await ProbeAsync(
+            "EQ night mode",
+            txn => RazerHeadsetAudioProtocol.GetEqNightMode(txn),
+            RazerHeadsetAudioProtocol.ReadEqNightMode,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
+
         return new RazerHeadsetAudioState(
             firmware.Ok ? firmware.Value : null,
             battery.Ok ? battery.Value : null,
@@ -320,7 +412,20 @@ public sealed class RazerHeadsetAudioService
             noise.Ok ? noise.Value : null,
             ancState,
             ancLevel,
-            errors);
+            errors)
+        {
+            ParametricEq = parametricEq.Ok ? parametricEq.Value : null,
+            MicCompressor = compressor.Ok ? compressor.Value : null,
+            MicDeEsser = deEsser.Ok ? deEsser.Value : null,
+            MicReverb = reverb.Ok ? reverb.Value : null,
+            MicLimiter = limiter.Ok ? limiter.Value : null,
+            Dnd = dnd.Ok ? dnd.Value : null,
+            VoicePrompts = voicePrompts.Ok ? voicePrompts.Value : null,
+            AutoPause = autoPause.Ok ? autoPause.Value : null,
+            GestureControl = gestureControl.Ok ? gestureControl.Value : null,
+            Dolby = dolby.Ok ? dolby.Value : null,
+            NightMode = nightMode.Ok ? nightMode.Value : null,
+        };
     }
 
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default)
@@ -488,6 +593,171 @@ public sealed class RazerHeadsetAudioService
         }
     }
 
+    public Task SetParametricEqAsync(
+        RazerParametricEqBand setting,
+        CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetParametricEqSetting(
+                txn, setting.Index, setting.Direction, setting.Profile),
+            RazerHeadsetAudioProtocol.ReadParametricEqSetting,
+            setting,
+            (value, txn) => RazerHeadsetAudioProtocol.SetParametricEqSetting(txn, value),
+            value => value == setting,
+            "parametric EQ",
+            cancellationToken);
+
+    public Task SetMicCompressorAsync(
+        RazerMicCompressor compressor,
+        CancellationToken cancellationToken = default)
+    {
+        if (compressor.Db > 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(compressor), "Razer mic compressor db must be zero or negative.");
+        }
+
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetMicCompressor(txn, compressor.Profile),
+            RazerHeadsetAudioProtocol.ReadMicCompressor,
+            compressor,
+            (value, txn) => RazerHeadsetAudioProtocol.SetMicCompressor(txn, value),
+            value => value == compressor,
+            "microphone compressor",
+            cancellationToken);
+    }
+
+    public Task SetMicDeEsserAsync(byte value, CancellationToken cancellationToken = default)
+    {
+        if (value > RazerHeadsetAudioProtocol.MicDeEsserMax)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(value),
+                $"Razer mic de-esser value must be between 0 and {RazerHeadsetAudioProtocol.MicDeEsserMax}.");
+        }
+
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetMicDeEsser(txn),
+            RazerHeadsetAudioProtocol.ReadMicDeEsser,
+            value,
+            (setting, txn) => RazerHeadsetAudioProtocol.SetMicDeEsser(txn, setting),
+            actual => actual == value,
+            "microphone de-esser",
+            cancellationToken);
+    }
+
+    public Task SetMicReverbAsync(
+        RazerMicReverbRoomMode roomMode,
+        byte intensity,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(roomMode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(roomMode));
+        }
+
+        if (intensity > RazerHeadsetAudioProtocol.MicReverbIntensityMax)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(intensity),
+                $"Razer mic reverb intensity must be between 0 and {RazerHeadsetAudioProtocol.MicReverbIntensityMax}.");
+        }
+
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetMicReverb(txn),
+            RazerHeadsetAudioProtocol.ReadMicReverb,
+            (roomMode, intensity),
+            (value, txn) => RazerHeadsetAudioProtocol.SetMicReverb(txn, value.Item1, value.Item2),
+            value => value.Item1 == roomMode && value.Item2 == intensity,
+            "microphone reverb",
+            cancellationToken);
+    }
+
+    public Task SetMicLimiterAsync(sbyte thresholdDb, CancellationToken cancellationToken = default)
+    {
+        if (thresholdDb is < RazerHeadsetAudioProtocol.MicLimiterMinDb or > 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(thresholdDb),
+                $"Razer mic limiter threshold must be between {RazerHeadsetAudioProtocol.MicLimiterMinDb} and 0 dB.");
+        }
+
+        return WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetMicLimiter(txn),
+            RazerHeadsetAudioProtocol.ReadMicLimiter,
+            thresholdDb,
+            (value, txn) => RazerHeadsetAudioProtocol.SetMicLimiter(txn, value),
+            actual => actual == thresholdDb,
+            "microphone limiter",
+            cancellationToken);
+    }
+
+    public Task SetAudioDndAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetAudioDnd(txn),
+            RazerHeadsetAudioProtocol.ReadAudioDnd,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetAudioDnd(txn, value ? (byte)1 : (byte)0),
+            value => value == enabled,
+            "audio DND",
+            cancellationToken);
+
+    public Task SetAudioVoicePromptsAsync(
+        bool enabled,
+        byte promptIndex = RazerHeadsetAudioProtocol.AudioPromptAll,
+        CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetAudioVoicePrompts(txn, promptIndex),
+            RazerHeadsetAudioProtocol.ReadAudioVoicePrompts,
+            (promptIndex, enabled),
+            (value, txn) => RazerHeadsetAudioProtocol.SetAudioVoicePrompts(
+                txn, value.Item2 ? (byte)1 : (byte)0, promptIndex),
+            value => value.Item2 == enabled &&
+                (promptIndex == RazerHeadsetAudioProtocol.AudioPromptAll || value.Item1 == promptIndex),
+            "audio voice prompts",
+            cancellationToken);
+
+    public Task SetAudioAutoPauseAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetAudioAutoPause(txn),
+            RazerHeadsetAudioProtocol.ReadAudioAutoPause,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetAudioAutoPause(txn, value ? (byte)1 : (byte)0),
+            value => value == enabled,
+            "audio auto-pause",
+            cancellationToken);
+
+    public Task SetAudioGestureControlAsync(
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetAudioGestureControl(txn),
+            RazerHeadsetAudioProtocol.ReadAudioGestureControl,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetAudioGestureControl(txn, value ? (byte)1 : (byte)0),
+            value => value == enabled,
+            "audio gesture control",
+            cancellationToken);
+
+    public Task SetDolbyStateAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetDolbyState(txn),
+            RazerHeadsetAudioProtocol.ReadDolbyState,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetDolbyState(txn, value ? (byte)1 : (byte)0),
+            value => value == enabled,
+            "Dolby state",
+            cancellationToken);
+
+    public Task SetEqNightModeAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetEqNightMode(txn),
+            RazerHeadsetAudioProtocol.ReadEqNightMode,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetEqNightMode(txn, value ? (byte)1 : (byte)0),
+            value => value == enabled,
+            "EQ night mode",
+            cancellationToken);
+
     private async Task SetNoiseSuppressionCoreAsync(bool enabled, CancellationToken cancellationToken)
     {
         // The switch is the audio-input control state (08:16, source 3); 08:1C only carries
@@ -557,12 +827,21 @@ public sealed class RazerHeadsetAudioService
                 cancellationToken).ConfigureAwait(false),
             tenBand);
 
-    private async Task<(bool Ok, T Value)> ProbeAsync<T>(
+    private Task<(bool Ok, T Value)> ProbeAsync<T>(
         string label,
         Func<byte, byte[]> request,
         Func<ReadOnlySpan<byte>, T> parse,
         List<string> errors,
         CancellationToken cancellationToken)
+        => ProbeAsync(label, request, parse, errors, cancellationToken, recordUnsupported: true);
+
+    private async Task<(bool Ok, T Value)> ProbeAsync<T>(
+        string label,
+        Func<byte, byte[]> request,
+        Func<ReadOnlySpan<byte>, T> parse,
+        List<string> errors,
+        CancellationToken cancellationToken,
+        bool recordUnsupported)
     {
         try
         {
@@ -570,7 +849,12 @@ public sealed class RazerHeadsetAudioService
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            errors.Add($"{label}: {exception.Message}");
+            // Advanced audio commands are optional across this device family.
+            if (recordUnsupported || exception is not NotSupportedException)
+            {
+                errors.Add($"{label}: {exception.Message}");
+            }
+
             return (false, default!);
         }
     }

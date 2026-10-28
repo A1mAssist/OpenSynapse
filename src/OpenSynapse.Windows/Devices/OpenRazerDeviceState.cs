@@ -112,6 +112,12 @@ public enum OpenRazerBackendCapability
     WirelessConnectionStateRead,
     ProximitySensorRead,
     ProximitySensorWrite,
+    KnobRead,
+    KnobWrite,
+    AnalogKeyRead,
+    AnalogKeyWrite,
+    OledRead,
+    OledWrite,
 }
 
 public sealed record OpenRazerLightingZoneCapabilities(
