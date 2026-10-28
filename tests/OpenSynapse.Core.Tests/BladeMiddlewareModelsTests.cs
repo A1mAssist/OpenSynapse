@@ -80,8 +80,12 @@ public sealed class BladeMiddlewareModelsTests
     [InlineData(0x02C5)]
     public void TurboModeIsNotInventedForOtherBladeModels(ushort productId)
     {
-        Assert.Throws<InvalidOperationException>(
-            () => RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, productId));
+        // The byte is not Turbo on these models, but firmware that stores it still
+        // reports it. Failing the read would hide the fan controls with it, so it reads
+        // as the same high-performance mode the byte 0x02 carries.
+        Assert.Equal(
+            BladePerformanceMode.Performance,
+            RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, productId));
     }
 
     [Theory]
