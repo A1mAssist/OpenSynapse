@@ -1429,6 +1429,15 @@
   <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>Horizontal scroll</value></data>
   <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>Switch application</value></data>
   <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="OpenRazerHapticScrollTitle.Text" xml:space="preserve"><value>Haptic scroll stages</value></data>
+  <data name="OpenRazerHapticScrollDescription.Text" xml:space="preserve"><value>Pick the stages that take part in switching, then choose the one in effect.</value></data>
+  <data name="OpenRazerHapticScrollActiveLabel.Header" xml:space="preserve"><value>Active stage</value></data>
+  <data name="OpenRazerHapticScrollStandard.Text" xml:space="preserve"><value>Standard</value></data>
+  <data name="OpenRazerHapticScrollDistinct.Text" xml:space="preserve"><value>Distinct</value></data>
+  <data name="OpenRazerHapticScrollUltraFine.Text" xml:space="preserve"><value>Ultra-fine</value></data>
+  <data name="OpenRazerHapticScrollAdaptive.Text" xml:space="preserve"><value>Adaptive</value></data>
+  <data name="OpenRazerHapticScrollSmooth.Text" xml:space="preserve"><value>Smooth scroll</value></data>
+  <data name="OpenRazerHapticScrollCustom.Text" xml:space="preserve"><value>Custom</value></data>
   <data name="OpenRazerOledLanguage.Text" xml:space="preserve"><value>Language</value></data>
   <data name="OpenRazerOledLanguageEnglish.Text" xml:space="preserve"><value>English</value></data>
   <data name="OpenRazerOledLanguageChinese.Text" xml:space="preserve"><value>Simplified Chinese</value></data>

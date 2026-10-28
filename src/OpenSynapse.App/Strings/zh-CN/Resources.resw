@@ -1797,6 +1797,15 @@
   <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>左右滚动</value></data>
   <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>切换应用</value></data>
   <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="OpenRazerHapticScrollTitle.Text" xml:space="preserve"><value>触觉滚轮档位</value></data>
+  <data name="OpenRazerHapticScrollDescription.Text" xml:space="preserve"><value>勾选参与切换的档位，再选当前生效的那一档。</value></data>
+  <data name="OpenRazerHapticScrollActiveLabel.Header" xml:space="preserve"><value>当前档位</value></data>
+  <data name="OpenRazerHapticScrollStandard.Text" xml:space="preserve"><value>标准</value></data>
+  <data name="OpenRazerHapticScrollDistinct.Text" xml:space="preserve"><value>清晰段落</value></data>
+  <data name="OpenRazerHapticScrollUltraFine.Text" xml:space="preserve"><value>超精细</value></data>
+  <data name="OpenRazerHapticScrollAdaptive.Text" xml:space="preserve"><value>自适应</value></data>
+  <data name="OpenRazerHapticScrollSmooth.Text" xml:space="preserve"><value>顺滑滚动</value></data>
+  <data name="OpenRazerHapticScrollCustom.Text" xml:space="preserve"><value>自定义</value></data>
   <data name="OpenRazerOledLanguage.Text" xml:space="preserve"><value>语言</value></data>
   <data name="OpenRazerOledLanguageEnglish.Text" xml:space="preserve"><value>英语</value></data>
   <data name="OpenRazerOledLanguageChinese.Text" xml:space="preserve"><value>简体中文</value></data>
