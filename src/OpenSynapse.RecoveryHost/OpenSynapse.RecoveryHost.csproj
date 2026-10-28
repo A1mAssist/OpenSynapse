@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
     <RootNamespace>OpenSynapse.RecoveryHost</RootNamespace>
     <AssemblyName>OpenSynapse.RecoveryHost</AssemblyName>
+    <!-- Task Manager shows the default .NET icon without this. -->
+    <ApplicationIcon>..\OpenSynapse.App\Assets\OpenSynapse.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
