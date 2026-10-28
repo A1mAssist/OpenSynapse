@@ -346,8 +346,9 @@
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding Onboard.Visibility}">
                     <StackPanel Spacing="10">
                       <TextBlock local:Localized.Uid="RazerOnboardMacroTitle" Text="板载宏" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="RazerOnboardMacroDescription" Text="这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="RazerOnboardMacroDescription" Text="这些宏存在键盘的板载内存里，换一台电脑也能用。可以从本机宏写入板载槽位，写入后会回读校验。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       <TextBlock Text="{Binding Onboard.StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding Onboard.StorageSummary}" Visibility="{Binding Onboard.StorageSummaryVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                       <ItemsControl ItemsSource="{Binding Onboard.Rows}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="viewModels:OnboardMacroRowViewModel">
@@ -365,8 +366,8 @@
 
                       <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                         <ComboBox local:Localized.Uid="RazerOnboardMacroLocalLabel" Header="本机宏" ItemsSource="{Binding Onboard.LocalMacroNames}" SelectedIndex="{Binding Onboard.SelectedLocalMacroIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding Onboard.CanLoad}" />
-                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
-                        <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="KeyboardReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="{Binding Onboard.MaxMacroId}" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
+                        <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="KeyboardWriteOnboardMacroClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>                    </StackPanel>
                   </Border>                </StackPanel>
                 <StackPanel x:Name="GamepadPanel" DataContext="{Binding SelectedGamepad}" Visibility="Collapsed" Spacing="16">
@@ -636,8 +637,9 @@
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding Onboard.Visibility}">
                     <StackPanel Spacing="10">
                       <TextBlock local:Localized.Uid="RazerOnboardMacroTitle" Text="板载宏" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="RazerOnboardMacroDescription" Text="这些宏存在设备的板载内存里，换一台电脑也能用。这里只读取，不改写。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="RazerOnboardMacroDescription" Text="这些宏存在设备的板载内存里，换一台电脑也能用。可以从本机宏写入板载槽位，写入后会回读校验。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       <TextBlock Text="{Binding Onboard.StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding Onboard.StorageSummary}" Visibility="{Binding Onboard.StorageSummaryVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                       <ItemsControl ItemsSource="{Binding Onboard.Rows}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="viewModels:OnboardMacroRowViewModel">
@@ -655,8 +657,8 @@
 
                       <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                         <ComboBox local:Localized.Uid="RazerOnboardMacroLocalLabel" Header="本机宏" ItemsSource="{Binding Onboard.LocalMacroNames}" SelectedIndex="{Binding Onboard.SelectedLocalMacroIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding Onboard.CanLoad}" />
-                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
-                        <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="OpenRazerReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="{Binding Onboard.MaxMacroId}" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
+                        <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="OpenRazerWriteOnboardMacroClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>                    </StackPanel>
                   </Border>                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding BasicVisibility}">
                     <StackPanel Spacing="14">

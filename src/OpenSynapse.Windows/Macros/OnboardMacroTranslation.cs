@@ -14,24 +14,37 @@ public static class OnboardMacroTranslation
     {
         ArgumentNullException.ThrowIfNull(steps);
         var items = new List<OnboardMacroItem>(steps.Count * 2);
-        foreach (var step in steps)
+        for (var index = 0; index < steps.Count; index++)
         {
-            switch (step.Kind)
+            var step = steps[index];
+            try
             {
-                case MacroStepKind.Input when step.Input is { } input:
-                    AppendInput(items, input, step);
-                    break;
+                switch (step.Kind)
+                {
+                    case MacroStepKind.Input when step.Input is { } input:
+                        AppendInput(items, input, step);
+                        break;
 
-                case MacroStepKind.Delay:
-                    items.Add(new OnboardMacroItem(OnboardMacroItemKind.Delay)
-                    {
-                        DelayMilliseconds = step.DelayMilliseconds,
-                    });
-                    break;
+                    case MacroStepKind.Delay:
+                        items.Add(new OnboardMacroItem(OnboardMacroItemKind.Delay)
+                        {
+                            DelayMilliseconds = step.DelayMilliseconds,
+                        });
+                        break;
 
-                default:
-                    throw new InvalidOperationException(
-                        $"Onboard macros store keys, mouse buttons, wheel notches and delays; {step.Kind} cannot be written.");
+                    default:
+                        throw new InvalidOperationException(
+                            $"Onboard macros store keys, mouse buttons, wheel notches and delays; {step.Kind} cannot be written.");
+                }
+            }
+            catch (OnboardMacroUnsupportedException)
+            {
+                throw;
+            }
+            catch (Exception exception) when (
+                exception is InvalidOperationException or ArgumentException or NotSupportedException)
+            {
+                throw new OnboardMacroUnsupportedException(index + 1, exception.Message);
             }
         }
 
@@ -70,6 +83,14 @@ public static class OnboardMacroTranslation
                 return;
 
             case MacroInputKind.MouseWheel:
+                if (input.WheelHorizontal)
+                {
+                    // One notch per item with no axis bit: a horizontal notch would be
+                    // written as a vertical scroll, so it is rejected instead.
+                    throw new InvalidOperationException(
+                        "Horizontal wheel input cannot be stored; the onboard stream has no direction axis.");
+                }
+
                 items.Add(new OnboardMacroItem(OnboardMacroItemKind.Wheel)
                 {
                     WheelDelta = input.WheelDelta,
