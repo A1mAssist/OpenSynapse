@@ -2019,6 +2019,7 @@
   <data name="MacroMouseButton4" xml:space="preserve"><value>Mouse 4</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>Mouse 5</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga side {0}</value></data>
+  <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>Mouse side buttons</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga side buttons</value></data>
   <data name="MacroTriggerDevice.Text" xml:space="preserve"><value>Capture device button</value></data>
   <data name="MacroCapturePromptDevice" xml:space="preserve"><value>Press a button on another Razer device.</value></data>

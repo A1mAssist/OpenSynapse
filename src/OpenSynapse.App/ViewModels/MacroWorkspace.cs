@@ -1213,13 +1213,37 @@ public sealed class MacroWorkspace : INotifyPropertyChanged
         }
     }
 
-    public async Task SetMacroNagaSideButtonTriggerAsync(
+    public Task SetMacroMouseSideButtonTriggerAsync(
+        int mouseButton,
+        CancellationToken cancellationToken = default) =>
+        SetMacroButtonTriggerAsync(
+            mouseButton is 4 or 5
+                ? new MacroInput
+                {
+                    Kind = MacroInputKind.MouseButton,
+                    MouseButton = mouseButton,
+                }
+                : null,
+            cancellationToken);
+
+    public Task SetMacroNagaSideButtonTriggerAsync(
         int sideButton,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        SetMacroButtonTriggerAsync(
+            sideButton is >= 1 and <= 12
+                ? new MacroInput
+                {
+                    Kind = MacroInputKind.NagaSideButton,
+                    SideButton = sideButton,
+                }
+                : null,
+            cancellationToken);
+
+    private async Task SetMacroButtonTriggerAsync(
+        MacroInput? input,
+        CancellationToken cancellationToken)
     {
-        if (SelectedMacro is not { } selected ||
-            !CanEditMacro ||
-            sideButton is < 1 or > 12)
+        if (SelectedMacro is not { } selected || !CanEditMacro || input is null)
         {
             return;
         }
@@ -1229,14 +1253,7 @@ public sealed class MacroWorkspace : INotifyPropertyChanged
         CancelMacroPlaybackShortcutCapture();
         await ApplyMacroTriggerAsync(
             selected,
-            new MacroTrigger
-            {
-                Input = new MacroInput
-                {
-                    Kind = MacroInputKind.NagaSideButton,
-                    SideButton = sideButton,
-                },
-            },
+            new MacroTrigger { Input = input },
             cancellationToken);
     }
 
