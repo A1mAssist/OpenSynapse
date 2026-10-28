@@ -361,6 +361,13 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 }
             }
 
+            // 07:8F is shared and can answer even on a non-MiniLED panel; only a
+            // successful SKU report may promote local dimming to a supported control.
+            if (bladeSkuHardwareConfiguration?.MiniLedResolution != true)
+            {
+                bladeLocalDimmingEnabled = null;
+            }
+
             try
             {
                 if (owns("logo-power.get"))
