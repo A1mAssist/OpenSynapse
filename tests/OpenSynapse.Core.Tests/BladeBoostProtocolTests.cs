@@ -17,9 +17,17 @@ public sealed class BladeBoostProtocolTests
     }
 
     [Fact]
-    public void CpuBoostRejectsAProfileZeroEcho()
+    public void CpuBoostParsesAProfileZeroEcho()
     {
         var response = Response(0x00, BladeBoostProtocol.CpuCluster, 0x02);
+
+        Assert.Equal(BladeCpuBoostMode.High, BladeBoostProtocol.ParseCpu(response));
+    }
+
+    [Fact]
+    public void CpuBoostRejectsAnUnknownProfileEcho()
+    {
+        var response = Response(0x05, BladeBoostProtocol.CpuCluster, 0x02);
 
         var error = Assert.Throws<InvalidOperationException>(() => BladeBoostProtocol.ParseCpu(response));
         Assert.Contains("CPU", error.Message);
