@@ -149,7 +149,7 @@ public sealed partial class MainViewModel
                 // Headsets that already own an audio page get the lighting card there, so a
                 // second lighting-only row for the same headset would be a duplicate.
                 var krakenConnections = _krakenConnections
-                    .Where(connection => !OpenRazerSpecialLightingService.IsMergedIntoAudioPage(connection.ProductId))
+                    .Where(connection => !connection.IsMergedIntoAudioPage)
                     .ToArray();
                 if (OpenRazerKrakenDevices.Count != krakenConnections.Length ||
                     !OpenRazerKrakenDevices.Zip(krakenConnections)
