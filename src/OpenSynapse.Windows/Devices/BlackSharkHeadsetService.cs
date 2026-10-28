@@ -367,7 +367,14 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         ushort usage,
         int outputReportByteLength)
     {
-        if (RazerMxicHeadsetService.IsSupported(productId))
+        // Catalog-declared identities must be the dedicated V3 Pro panel; unknown PIDs keep
+        // the product-name fallback for unlisted SKUs, but known non-dedicated BlackShark
+        // devices (0528, 0A4E, 101E, ...) must not be pulled into the V3 Pro protocol.
+        var channel = RazerHeadsetChannelCatalog.Resolve(productId);
+        var namedBlackShark =
+            productName?.Contains("BlackShark", StringComparison.OrdinalIgnoreCase) == true;
+        if (channel != RazerHeadsetChannel.DedicatedBlackShark &&
+            (channel != RazerHeadsetChannel.Unsupported || !namedBlackShark))
         {
             return false;
         }
@@ -378,8 +385,8 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             return false;
         }
 
-        return productName?.Contains("BlackShark", StringComparison.OrdinalIgnoreCase) == true ||
-            productId is BlackSharkV3ProProtocol.DongleProductId or BlackSharkV3ProProtocol.UsbProductId;
+        return namedBlackShark ||
+            channel == RazerHeadsetChannel.DedicatedBlackShark;
     }
 
     // Only the wireless dongle pid answers on the active link; prefer it so a plugged-in USB

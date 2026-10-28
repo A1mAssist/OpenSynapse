@@ -7,18 +7,20 @@ namespace OpenSynapse.Core.Tests;
 
 public sealed class RazerHeadsetNewDevicesTests
 {
-    // The Xbox/PlayStation BlackShark V3 identities select AudioValkyrie, whose EQ,
-    // EQ-band, mic-mute, battery and charging triplets are the MXIC commands already
-    // implemented for 0x0555. See docs/HEADSET_AUDIO_ALIGNMENT.md.
+    // The Xbox/PlayStation BlackShark V3 identities select AudioValkyrie, which uses the
+    // 64-byte 0x60 frame rather than the MXIC 50 41 envelope.
+    // See docs/HEADSET_AUDIO_ALIGNMENT.md.
     [Theory]
     [InlineData(0x0A4E)]
     [InlineData(0x0A51)]
     [InlineData(0x101E)]
     [InlineData(0x101F)]
-    public void BlackSharkV3ConsoleIdentities_UseTheMxicEnvelope(ushort productId)
+    public void BlackSharkV3ConsoleIdentities_UseTheValkyrieEnvelope(ushort productId)
     {
         Assert.True(RazerHeadsetAudioService.IsSupported(productId));
-        Assert.True(RazerMxicHeadsetProtocol.IsSupported(productId));
+        Assert.True(RazerValkyrieHeadsetService.IsSupported(productId));
+        Assert.Equal(RazerHeadsetChannel.Valkyrie64, RazerHeadsetChannelCatalog.Resolve(productId));
+        Assert.False(RazerMxicHeadsetProtocol.IsSupported(productId));
         Assert.Equal(DeviceCategory.Headset, RazerHeadsetAudioService.GetCategory(productId));
         Assert.False(string.IsNullOrWhiteSpace(RazerHeadsetAudioService.Products[productId]));
     }

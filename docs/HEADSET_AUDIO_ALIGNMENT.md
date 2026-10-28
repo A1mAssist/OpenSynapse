@@ -1,6 +1,7 @@
 # Razer 耳机音频对齐：12 个新 PID
 
-扫描时间：2026-10-28。包根目录：`artifacts/razer-mw-full-cdn/bundles/<PID>/`。
+扫描时间：2026-10-29。包根目录：`artifacts/razer-mw-full-cdn/bundles/<PID>/`。
+重跑：`pwsh -File scripts/scan-device-transport.ps1`，输出 `artifacts/device-transport-scan.csv`。
 
 本地 bundle 目录只落了入口 chunk；缺失的动态 chunk 按 `main.*.js` 里的
 chunk hash 从 `https://apps.razer.com/synapse/products/<decimal>/mw/<name>.<hash>.js`
@@ -67,65 +68,51 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
       wn=new Uint8Array([2,8,23]);
 ```
 
-## 结论
+## 结论（2026-10-29 复核）
 
-上面的“差异”一栏是拿 91-byte 的 `RazerHeadsetAudioProtocol` 比的，那张表之外还有
-一套已经存在的实现：`RazerMxicHeadsetProtocol`（64-byte、report id 2、50 41/50 49
-同步字、XOR 在 byte 62）。
+通道由每个 bundle 的 `useFeature("rzDeviceType", ...)` 决定，不再按 HID 接口特征猜。
+`scripts/scan-device-transport.ps1` 会重扫 338 个 bundle，输出
+`artifacts/device-transport-scan.csv`；代码里的表是
+`src/OpenSynapse.Windows/Devices/RazerHeadsetChannelCatalog.cs`。
 
-| PID | 结论 | 依据 |
+| 结论 | PID | 依据 |
 |---|---|---|
-| `0A4E` `0A51` `101E` `101F` | **Added** | AudioValkyrie 的 `[19,0,0]/[147,0,1]`（EQ preset）、`[21,0,0]/[149,0,10]`（EQ bands 10 段）、`[85,0,0]/[233,0,1]`（mic mute）、`[33,0,0]`（battery）、`[42,0,0]`（charging）与 `RazerMxicHeadsetProtocol` 现有常量逐字节相同；已加入 `Products` 和 `IsSupported` |
-| `101C` | Skipped | 命令与上面四款相同，但 `101C` 是 `BlackSharkV3ProProtocol.UsbProductId`（仓库已按实机观测接入 THX/ANC/sidetone 面板）。同一台设备再进 MXIC 会多出一张音频卡，所以保留专用面板，不加进 `Products` |
-| `0A54` `1022` | **Added** | rzDevice25ValkyrieT3：同样的 `[dataSize, class, id]`，但整条通道走 64-byte **report id 7**；EQ 已接，mic mute 只读不写（见下） |
-| `0A61` `0A64` `0A68` `0A6C` `0A81` | **Added** | rzDevice40：同一套 64-byte `50 41` 信封，但三元组是 `[dataSize, class, id]`，EQ/mute 在 class `0x18`。已实现 EQ preset、EQ 10 段、麦克风静音、电量、充电、固件；细节见下 |
+| Billie64 | 0567 056B | `AudioBillieT1` / `AudioBillieT2`，64 字节 report id 2，`0x60` 事务号 |
+| Valkyrie64 | 0579 0A4E 0A51 101E 101F | `AudioValkyrie`，同一 64 字节信封；0576/101C 保留专用面板 |
+| Mxic64 | 0539 053B 0555 0583 0584 | `AudioMxicDevice`，`50 41`/`50 49` 信封（原有实现） |
+| Mxic64（report id 7） | 0A54 1022 | `rzDevice25ValkyrieT3` |
+| Mxic64（class 0x18） | 0A61 0A64 0A68 0A6C 0A81 | `rzDevice40` |
+| Feature91 | 051A 051C 051E 0528 0529 0520 0527 0526 0521 0560 0533 0549 0537 056D 0542 0543 0F1B 0532 0548 055A 055C 055E 056A 0F66 056E 053E | `AudioAvnera*` / `AudioKraken*` / `AudioKrystal*` / `rzDevice25*` 的 91 字节族 |
+| Feature91（音频） | 0554 | `AudioKrakenKittyV2Pro` 只在 91 字节音频基类上追加 37 字节 Chroma 帧，没有独立音频通道 |
+| 专用面板 | 0576 0577 101B 101C | BlackShark V3 Pro 已有 ANC/侧音/THX 面板，不再进通用耳机页 |
+| 不显示 | 0309 0530 0534 0562 0587 052D 0593 | BLE / Bastet / NXP / Airoha，未实现 |
+| 不显示（无 bundle） | 053C 0565 | CDN 快照里没有 main.js，无法核实 `rzDeviceType` |
 
-### rzDevice40（Hammerhead V3，report id 2）
+### AudioValkyrie / AudioBillie 帧
 
-请求三元组和 payload 逐字节取自 bundle，响应是 request payload 的回显（`Rn`/`On`/`Bn` 三个解析器）：
+64 字节、report id 2，事务号固定 `0x60`：
 
-| 用途 | 三元组 | 请求 payload | 响应 |
-|---|---|---|---|
-| 读 EQ preset | `02 18 80` | `[profile=0, 0]` | `[profile, source, group, preset]` |
-| 写 EQ preset | `04 18 00` | `[0, source=1, 0, preset]` | 同上 |
-| 读 EQ 段 | `0C 18 81` | 12 字节，`[0]`=profile | `[profile, source, band0..band9]` |
-| 写 EQ 段 | `0C 18 01` | `[0, 1, band0..band9]` | 同上 |
-| 读麦克风静音 | `02 18 84` | `[0, source=2]` | `[profile, source, muted]` |
-| 写麦克风静音 | `03 18 04` | `[0, 2, muted]` | 同上 |
+```
+0      02
+2      60
+6      command.Length + data.Length + 1
+9      00（三个 profile 的音频命令都留 0）
+10..12 command 三元组 [class, id, size]
+13..   payload
+62     XOR(0..61)
+63     0
+```
 
-`TD={Speaker:1,Mic:2}`；bundle 读写都用当前 profile `0`，所以回读能对上。EQ 段电平是
-符号-幅值（`level<0 ? 128|abs(level) : level`），与 0555 的编码一致。
+响应：byte1 状态（2 成功，1/3 重发），byte10/11 回显 class/id+1，数据从 13 开始，
+长度取期望响应头的第 3 字节。
 
-**没做**：sidetone（`08:83`/`08:03`）、DND（`18:85/18:05`）、bass / 麦克风音量 / 音源 / Dolby
-（`08:86/08:87/08:97/08:8A/08:8C` 一族）。这组的 class 是 `0x08`，但三元组顺序同样是
-`[dataSize, class, id]`，和 0555 的 `[class, id, dataSize]` 相反——不能直接复用旧常量，
-payload 语义也没有从 JS 里确认，所以先不写。
+命令：电量 `21 00 00` → `21 01 01`；充电 `2A 00 00`；EQ 预设 `13 00 00`/`93 00 01`；
+EQ 频段 `15 00 01`（1 字节 selector）→ `15 01 0B`；写 `95 00 0B`（selector + 10 段）。
+0A4E/0A51/101E/101F 的共享 helper `bo`/`fU` 也用 `Ph7=[21,0,1]`、`jX9=[149,0,11]`，
+所以全部按 11 字节形式。裸 10 段分支保留在协议层，供后续 bundle 复核。
 
-### rzDevice25ValkyrieT3（BlackShark V3 X，report id 7）
+EQ 电平是符号-幅值：`-12 → 140`（128+12），`+12 → 12`。0555 的 MXIC 走另一套
+0..10 步进（UI -12..+12 → 固件 0..10），由 `RazerHeadsetEqScale` 转换；91 字节族
+保持原来的 0..100。
 
-`S=[2,24,128]`、`A=[4,24,0]`、`U=[2,24,129]`、`E=[12,24,1]`；第二字节是 EQ 预设组
-（`setPresetEQIndex` 只接受 0/1，第三字节必须为 0），不是 0555 那种 source。
-
-| 用途 | 三元组 | 请求 payload | 响应 |
-|---|---|---|---|
-| 读 EQ preset | `02 18 80` | `[profile=0, group=0]` | `[profile, group, ?, preset]`（JS 取 `data[3]`） |
-| 写 EQ preset | `04 18 00` | `[0, group, 0, preset]` | JS 只校验 status，按 ACK 处理 |
-| 读 EQ 段 | `02 18 81` | `[0, 0]` | `[profile, group, band0..band9]`（JS 从 `data[2]` 起读 10 段） |
-| 写 EQ 段 | `0C 18 01` | `[0, 0, band0..band9]` | JS 只校验 status |
-
-整台设备的 report id 都是 7（`this.reportId=7, this.reportLength=64`），所以固件、电量、
-充电和 remote-mode 请求也走 7；`RazerMxicHeadsetProtocol.TryReadValue` 现在按请求的
-report id 匹配响应，0555 仍然是 2。
-
-**没做**：麦克风静音。chunk 里只有 `Get Mute State`（`03 18 84`，按 source 读），没有
-对应的 setter，写不进去就不提供开关，避免出现一个点了没反应的按钮。sidetone、DND、
-静音检测虽然三元组齐全，但 payload 语义没有从 JS 确认，先不写。
-
-未实现的 AudioValkyrie 子命令：sidetone `18:00/98:00`、ANC `12:00/92:00`、
-DND `27:00/A7:00`。三条都是 get/set 对称的 1 字节 payload，但本仓库还没有对应的
-UI 入口和取值枚举，所以先不进代码。
-
-现有 `0x0576`/`0x0579` 条目未改动。它们的 bundle 同样选中
-`AudioValkyrie`，因此这次扫描不能证明它们的 91-byte 准入；如果要继续确认，
-需要单独做硬件 HID descriptor / 91-byte feature report 回读。
-
+状态：帧、命令和通道都按 bundle 对齐；没有实机验证。

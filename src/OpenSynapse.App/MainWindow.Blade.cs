@@ -21,6 +21,7 @@ public sealed partial class MainWindow
 {
     private bool _touchpadToggleInFlight;
     private bool _bladeLightingSettingsInFlight;
+    private bool _bladePerformanceApplyInFlight;
     private bool _bladeBrightnessPointerActive;
     private bool _dedicatedGpuModeUiReady;
     private bool _dedicatedGpuModeBusy;
@@ -195,7 +196,19 @@ public sealed partial class MainWindow
         switch (setting)
         {
             case "performance":
-                await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
+                if (_bladePerformanceApplyInFlight)
+                {
+                    return;
+                }
+                _bladePerformanceApplyInFlight = true;
+                try
+                {
+                    await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
+                }
+                finally
+                {
+                    _bladePerformanceApplyInFlight = false;
+                }
                 break;
             case "charge":
                 await _viewModel.ApplyBladeChargeLimitAsync(_lifetime.Token);

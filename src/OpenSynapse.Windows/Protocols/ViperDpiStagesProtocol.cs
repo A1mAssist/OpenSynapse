@@ -19,6 +19,7 @@ public static class ViperDpiStagesProtocol
     private const byte VariableStorage = 0x01;
     private const int MaximumStages = 5;
     private const int StageSize = 7;
+    private const byte ResponseArguments = 3 + (MaximumStages * StageSize);
 
     public static ViperDpiStagesState Parse(ReadOnlySpan<byte> response) =>
         Parse(response, RazerFeatureReport.CreateRequest(
@@ -28,7 +29,12 @@ public static class ViperDpiStagesProtocol
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request)
     {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, DataSize))
+        // 00B8 answers the 0x50-byte request with the 38 bytes it actually uses.
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request,
+                response,
+                ResponseArguments,
+                allowRemainingPacketsMismatch: true))
         {
             throw new InvalidOperationException("Viper DPI stages returned an invalid or out-of-order feature report.");
         }

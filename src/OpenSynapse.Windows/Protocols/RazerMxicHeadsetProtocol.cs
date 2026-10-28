@@ -42,20 +42,21 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] SetMicMuteHeader = [0xE9, 0x01, 0x01];
 
     /// <summary>
-    /// Products whose audio channel uses this 64-byte MXIC envelope. The 2026
-    /// BlackShark V3 Xbox/PlayStation identities select the AudioValkyrie chunk, whose
-    /// command triplets are the same ones defined above: EQ preset 13:00/93:00, EQ
-    /// bands 15:00/95:00 (10 bands), mic mute 55:00/E9:00, battery 21:00 and
-    /// charging 2A:00. The Hammerhead V3 and BlackShark V3 X families use a different
-    /// 0x18 command set and are not listed here.
+    /// Products whose audio channel uses this 64-byte MXIC envelope. The
+    /// Barracuda Pro/2.4 identities (0539, 053B, 0583, 0584) select AudioMxicDevice,
+    /// whose legacy triplets are the ones below. The
+    /// BlackShark V3 Xbox/PlayStation identities select AudioValkyrie, which uses a
+    /// different 64-byte frame and is handled by <c>RazerValkyrieHeadsetService</c>.
+    /// The Hammerhead V3 and BlackShark V3 X families use a different 0x18 command
+    /// set and are not listed here either.
     /// </summary>
     private static readonly FrozenSet<ushort> ProductIds = new ushort[]
     {
         ProductId,
-        0x0A4E,
-        0x0A51,
-        0x101E,
-        0x101F,
+        0x0539,
+        0x053B,
+        0x0583,
+        0x0584,
         0x0A61,
         0x0A64,
         0x0A68,

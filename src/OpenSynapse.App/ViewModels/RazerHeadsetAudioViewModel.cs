@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Audio;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Audio;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -14,21 +15,34 @@ public sealed class RazerHeadsetEqBandViewModel : INotifyPropertyChanged
 {
     private double _level;
 
-    public RazerHeadsetEqBandViewModel(int frequency)
+    public RazerHeadsetEqBandViewModel(
+        int frequency,
+        double minimum,
+        double maximum,
+        double step,
+        bool decibels)
     {
         Label = frequency >= 1_000 ? $"{frequency / 1_000d:0.#} kHz" : $"{frequency} Hz";
+        Minimum = minimum;
+        Maximum = maximum;
+        Step = step;
+        Decibels = decibels;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public string Label { get; }
-    public string LevelText => $"{Math.Round(Level)}";
+    public double Minimum { get; }
+    public double Maximum { get; }
+    public double Step { get; }
+    public bool Decibels { get; }
+    public string LevelText => Decibels ? $"{Level:+0.#;-0.#;0} dB" : $"{Math.Round(Level)}";
 
     public double Level
     {
         get => _level;
         set
         {
-            var normalized = double.IsFinite(value) ? Math.Clamp(value, 0, 100) : 0;
+            var normalized = double.IsFinite(value) ? Math.Clamp(value, Minimum, Maximum) : Minimum;
             if (Math.Abs(_level - normalized) < 0.01)
             {
                 return;
@@ -185,7 +199,26 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
     private bool IsMxic => _connection.Transport == RazerHeadsetAudioTransport.Mxic64;
-    private (byte Value, string Key)[] ActivePresets => IsMxic ? MxicPresets : Presets;
+    private bool IsValkyrie => _connection.Transport is
+        RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
+    private bool IsFeature91 => !IsMxic && !IsValkyrie;
+    private (byte Value, string Key)[] ActivePresets => IsFeature91 ? Presets : MxicPresets;
+
+    private byte ToFirmwareBand(double level) => _connection.Transport switch
+    {
+        RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToStep(level),
+        RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
+            RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
+        _ => (byte)Math.Round(level),
+    };
+
+    private double FromFirmwareBand(byte level) => _connection.Transport switch
+    {
+        RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToDecibels(level),
+        RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
+            RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
+        _ => level,
+    };
 
     public RazerHeadsetAudioViewModel(
         RazerHeadsetAudioConnection connection,
@@ -209,7 +242,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     /// </summary>
     public OpenRazerKrakenViewModel? Lighting { get; }
 
-    public Microsoft.UI.Xaml.Visibility LightingVisibility => IsMxic || Lighting is null
+    public Microsoft.UI.Xaml.Visibility LightingVisibility => !IsFeature91 || Lighting is null
         ? Microsoft.UI.Xaml.Visibility.Collapsed
         : Microsoft.UI.Xaml.Visibility.Visible;
 
@@ -456,6 +489,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
     public Visibility BassVisibility => _hasBass ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility MicCardVisibility => IsValkyrie ? Visibility.Collapsed : Visibility.Visible;
+
     public bool MicMuted
     {
         get => _micMuted;
@@ -473,7 +508,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     }
 
     public string MicVolumeText => $"{Math.Round(MicVolume)}";
-    public Visibility MicVolumeVisibility => IsMxic ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility MicVolumeVisibility => IsFeature91 ? Visibility.Visible : Visibility.Collapsed;
 
     public IReadOnlyList<string> AudioSourceOptions =>
     [
@@ -484,7 +519,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         AppStrings.Text("RazerHeadsetSourceUsb"),
     ];
 
-    public Visibility AudioSourceVisibility => IsMxic ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility AudioSourceVisibility => IsFeature91 ? Visibility.Visible : Visibility.Collapsed;
 
     public int SelectedSourceIndex
     {
@@ -498,7 +533,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         set => SetField(ref _noiseSuppression, value);
     }
 
-    public Visibility NoiseSuppressionVisibility => IsMxic ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility NoiseSuppressionVisibility => IsFeature91 ? Visibility.Visible : Visibility.Collapsed;
 
     public bool Dnd { get => _dnd; set => SetField(ref _dnd, value); }
     public Visibility DndVisibility => _hasDnd ? Visibility.Visible : Visibility.Collapsed;
@@ -731,11 +766,15 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         if (!BeginOperation()) return;
         try
         {
-            var state = IsMxic
-                ? await ReadMxicStateAsync(cancellationToken)
-                : await OpenService().ReadStateAsync(cancellationToken);
+            var state = _connection.Transport switch
+            {
+                RazerHeadsetAudioTransport.Mxic64 => await ReadMxicStateAsync(cancellationToken),
+                RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
+                    await ReadValkyrieStateAsync(cancellationToken),
+                _ => await OpenService().ReadStateAsync(cancellationToken),
+            };
             ApplyState(state);
-            if (!IsMxic)
+            if (IsFeature91)
             {
                 ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
             }
@@ -996,22 +1035,55 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)
     {
         var preset = ActivePresets[SelectedEqPresetIndex].Value;
-        return IsMxic
-            ? RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken)
-            : RunWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken);
+        return _connection.Transport switch
+        {
+            RazerHeadsetAudioTransport.Mxic64 =>
+                RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
+            RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
+                RunValkyrieWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
+            _ => RunWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
+        };
     }
 
-    public Task ApplyEqBandsAsync(CancellationToken cancellationToken = default)
+    public async Task ApplyEqBandsAsync(CancellationToken cancellationToken = default)
     {
-        var bands = EqBands.Select(band => (byte)Math.Round(band.Level)).ToArray();
-        return bands.Length switch
+        var bands = EqBands.Select(band => ToFirmwareBand(band.Level)).ToArray();
+        var customIndex = Array.FindIndex(ActivePresets, preset => preset.Key == "RazerHeadsetPresetCustom");
+        var customPreset = customIndex >= 0 ? ActivePresets[customIndex].Value : (byte)0;
+        var applied = false;
+        switch (bands.Length)
         {
-            10 when IsMxic => RunMxicWriteAsync(
-                (service, token) => service.SetEqBandsAsync(bands, token), cancellationToken),
-            10 or 8 when !IsMxic => RunWriteAsync(
-                (service, token) => service.SetEqBandsAsync(bands, token), cancellationToken),
-            _ => Task.CompletedTask,
-        };
+            case 10 when IsMxic:
+                // The firmware only makes the edited curve audible when the selected preset
+                // is Custom; write that selection before the ten values, as Razer's UI does.
+                applied = await RunMxicWriteAsync(async (service, token) =>
+                {
+                    await service.SetEqPresetAsync(customPreset, token);
+                    await service.SetEqBandsAsync(bands, token);
+                }, cancellationToken);
+                break;
+            case 10 when IsValkyrie:
+                applied = await RunValkyrieWriteAsync(async (service, token) =>
+                {
+                    await service.SetEqPresetAsync(customPreset, token);
+                    await service.SetEqBandsAsync(bands, token);
+                }, cancellationToken);
+                break;
+            case 10 or 8 when IsFeature91:
+                applied = await RunWriteAsync(async (service, token) =>
+                {
+                    await service.SetEqPresetAsync(customPreset, token);
+                    await service.SetEqBandsAsync(bands, token);
+                }, cancellationToken);
+                break;
+            default:
+                return;
+        }
+
+        if (applied && customIndex >= 0)
+        {
+            SelectedEqPresetIndex = customIndex;
+        }
     }
 
     public Task ApplyMatrixBrightnessAsync(CancellationToken cancellationToken = default) =>
@@ -1034,28 +1106,33 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         }, cancellationToken);
 
     public Task ApplyBassAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync((service, token) => service.SetBassAsync((byte)Math.Round(Bass), token), cancellationToken);
 
     public Task ApplyMicrophoneAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
-            ? RunMxicWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken)
-            : RunWriteAsync(async (service, token) =>
+        _connection.Transport switch
+        {
+            RazerHeadsetAudioTransport.Mxic64 =>
+                RunMxicWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
+            RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
+                Task.CompletedTask,
+            _ => RunWriteAsync(async (service, token) =>
             {
                 await service.SetMicMuteAsync(MicMuted, token);
                 await service.SetMicVolumeAsync((byte)Math.Round(MicVolume), token);
-            }, cancellationToken);
+            }, cancellationToken),
+        };
 
     public Task ApplySourceAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetAudioSourceAsync(Sources[SelectedSourceIndex], token),
                 cancellationToken);
 
     public Task ApplyMicMonitoringAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetMicReturnSwitchAsync(MicMonitoringEnabled, token),
@@ -1063,7 +1140,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
     public async Task LoadParametricEqAsync(CancellationToken cancellationToken = default)
     {
-        if (IsMxic || !BeginOperation()) return;
+        if (!IsFeature91 || !BeginOperation()) return;
         try
         {
             var band = await OpenService()
@@ -1092,7 +1169,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     }
 
     public Task ApplyParametricEqAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetParametricEqAsync(
@@ -1109,7 +1186,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 cancellationToken);
 
     public Task ApplyMicCompressorAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetMicCompressorAsync(
@@ -1124,7 +1201,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 cancellationToken);
 
     public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetHapticsAsync(
@@ -1149,34 +1226,34 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     }
 
     public Task ApplyDndAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync((service, token) => service.SetAudioDndAsync(Dnd, token), cancellationToken);
 
     public Task ApplyAutoPauseAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync((service, token) => service.SetAudioAutoPauseAsync(AutoPause, token), cancellationToken);
 
     public Task ApplyGestureControlAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetAudioGestureControlAsync(GestureControl, token),
                 cancellationToken);
 
     public Task ApplyDolbyAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync((service, token) => service.SetDolbyStateAsync(Dolby, token), cancellationToken);
 
     public Task ApplyNightModeAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync((service, token) => service.SetEqNightModeAsync(NightMode, token), cancellationToken);
 
     public Task ApplyVoicePromptsAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetAudioVoicePromptsAsync(
@@ -1184,7 +1261,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 cancellationToken);
 
     public Task ApplyMicDeEsserAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetMicDeEsserAsync(
@@ -1192,7 +1269,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 cancellationToken);
 
     public Task ApplyMicLimiterAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetMicLimiterAsync(
@@ -1200,7 +1277,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 cancellationToken);
 
     public Task ApplyMicReverbAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetMicReverbAsync(
@@ -1210,12 +1287,12 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 cancellationToken);
 
     public Task ApplyNoiseSuppressionAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync((service, token) => service.SetNoiseSuppressionAsync(NoiseSuppression, token), cancellationToken);
 
     public Task ApplyAncAsync(CancellationToken cancellationToken = default) =>
-        IsMxic
+        !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetAncAsync(AncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
@@ -1242,6 +1319,15 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     private async Task<RazerHeadsetAudioState> ReadMxicStateAsync(CancellationToken cancellationToken)
     {
         await using var service = OpenMxicService();
+        return await service.ReadStateAsync(cancellationToken);
+    }
+
+    private RazerValkyrieHeadsetService OpenValkyrieService() =>
+        new(_connection.ProductId, _connection.DevicePath, _diagnostic);
+
+    private async Task<RazerHeadsetAudioState> ReadValkyrieStateAsync(CancellationToken cancellationToken)
+    {
+        await using var service = OpenValkyrieService();
         return await service.ReadStateAsync(cancellationToken);
     }
 
@@ -1299,12 +1385,12 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
         OnPropertyChanged(nameof(MatrixLightingVisibility));
     }
-    private Task RunWriteAsync(
+    private Task<bool> RunWriteAsync(
         Func<RazerHeadsetAudioService, CancellationToken, Task> write,
         CancellationToken cancellationToken) =>
         RunWriteCoreAsync(token => write(OpenService(), token), cancellationToken);
 
-    private Task RunMxicWriteAsync(
+    private Task<bool> RunMxicWriteAsync(
         Func<RazerMxicHeadsetService, CancellationToken, Task> write,
         CancellationToken cancellationToken) =>
         RunWriteCoreAsync(async token =>
@@ -1313,16 +1399,26 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             await write(service, token);
         }, cancellationToken);
 
-    private async Task RunWriteCoreAsync(
+    private Task<bool> RunValkyrieWriteAsync(
+        Func<RazerValkyrieHeadsetService, CancellationToken, Task> write,
+        CancellationToken cancellationToken) =>
+        RunWriteCoreAsync(async token =>
+        {
+            await using var service = OpenValkyrieService();
+            await write(service, token);
+        }, cancellationToken);
+
+    private async Task<bool> RunWriteCoreAsync(
         Func<CancellationToken, Task> write,
         CancellationToken cancellationToken)
     {
-        if (!BeginOperation()) return;
+        if (!BeginOperation()) return false;
         try
         {
             await write(cancellationToken);
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -1336,6 +1432,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         {
             IsBusy = false;
         }
+
+        return false;
     }
 
     private void ApplyState(RazerHeadsetAudioState state)
@@ -1361,10 +1459,26 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             var frequencies = bands.Count == 10
                 ? RazerHeadsetAudioProtocol.TenBandFrequencies
                 : RazerHeadsetAudioProtocol.EightBandFrequencies;
+            var (minimum, maximum, step) = _connection.Transport switch
+            {
+                RazerHeadsetAudioTransport.Mxic64 =>
+                    (RazerHeadsetEqScale.MinimumDb, RazerHeadsetEqScale.MaximumDb, RazerHeadsetEqScale.StepDb),
+                RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
+                    (-12d, 12d, 1d),
+                _ => (0d, 100d, 1d),
+            };
             EqBands.Clear();
             for (var index = 0; index < bands.Count; index++)
             {
-                EqBands.Add(new RazerHeadsetEqBandViewModel(frequencies[index]) { Level = bands[index] });
+                EqBands.Add(new RazerHeadsetEqBandViewModel(
+                    frequencies[index],
+                    minimum,
+                    maximum,
+                    step,
+                    decibels: _connection.Transport != RazerHeadsetAudioTransport.Feature91)
+                {
+                    Level = FromFirmwareBand(bands[index]),
+                });
             }
 
             _hasEqBands = true;

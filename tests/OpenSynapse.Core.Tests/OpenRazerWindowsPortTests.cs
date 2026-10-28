@@ -111,6 +111,44 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public void ViperDpiStagesAcceptThe38ByteReplyTheDeviceActuallySends()
+    {
+        var request = ViperProduct184Protocol.CreateGetDpiStagesRequest();
+        var response = new byte[RazerFeatureReport.Length];
+        response[1] = 0x02;
+        response[2] = request[2];
+        response[3] = request[3];
+        response[4] = request[4];
+        response[6] = 38;
+        response[7] = request[7];
+        response[8] = request[8];
+
+        var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
+        arguments[0] = 0x01;
+        arguments[1] = 0x03;
+        arguments[2] = 0x05;
+        arguments[3] = 0x01;
+        for (var index = 0; index < 5; index++)
+        {
+            var offset = 3 + (index * 7);
+            var dpi = 400 * (index + 1);
+            arguments[offset] = (byte)(index + 1);
+            arguments[offset + 1] = (byte)(dpi >> 8);
+            arguments[offset + 2] = (byte)dpi;
+            arguments[offset + 3] = (byte)(dpi >> 8);
+            arguments[offset + 4] = (byte)dpi;
+        }
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+
+        var state = ViperDpiStagesProtocol.Parse(response, request);
+
+        Assert.Equal(3, state.ActiveStage);
+        Assert.Equal(
+            [400, 800, 1200, 1600, 2000],
+            state.Stages.Select(stage => stage.X));
+    }
+
+    [Fact]
     public void Blade710BuildersMatchOpenRazerCommandPayloads()
     {
         AssertOpenRazerLogicalReport(BladeLightingProtocol.CreateOffRequest(), 0xFF, 0x01, 0x03, 0x0A, 0x00);
