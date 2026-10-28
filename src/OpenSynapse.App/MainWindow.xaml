@@ -823,6 +823,13 @@
                         </StackPanel>
                         <Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="OpenRazerApplyLkScrollClick" IsEnabled="{Binding CanEditLkScroll}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" Visibility="{Binding LkScrollWriteVisibility}" />
                       </StackPanel>
+                      <StackPanel Spacing="8" Visibility="{Binding SmartReelThresholdVisibility}">
+                        <TextBlock local:Localized.Uid="OpenRazerSmartReelThresholdLabel" Text="Smart Reel 阈值" Style="{StaticResource MetricLabelStyle}" />
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                          <NumberBox Value="{Binding SmartReelThreshold, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteSmartReelThreshold}" />
+                          <Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="OpenRazerApplySmartReelThresholdClick" IsEnabled="{Binding CanEditSmartReelThreshold}" Style="{StaticResource OpenRazerSaveButtonStyle}" VerticalAlignment="Bottom" Visibility="{Binding SmartReelThresholdWriteVisibility}" />
+                        </StackPanel>
+                      </StackPanel>
                     </StackPanel>
                   </Border></Expander>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ProfileDebounceVisibility}">

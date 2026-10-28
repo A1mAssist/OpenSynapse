@@ -103,24 +103,21 @@ internal sealed class RazerDeviceRegistry
                 ["display-mux.set"] = new(0x02, 0x0D, 0x09, ""),
                 ["display-mux-capabilities.get"] = new(0x02, 0x0D, 0x8A, "0000"),
             },
-            // Blade 15 Base (Early 2020) reports its keyboard brightness through the
-            // Chroma region command; its 07:8F/92 reports supply power-mode and charge state.
-            // MUX stays out because the product UI does not advertise hasGPUmode.
+            // Blade 15 Base (Early 2020) 1532:0255. Only these reports answer on the unit:
+            // the 0D thermal channel, the Chroma brightness region and the 07:92 charge
+            // limiter. Its middleware data declares no hasGPUmode and no SKU report, and
+            // the hardware rejects 0D:88 (fan RPM), 0D:8E (native display mode), 0D:8F (SKU
+            // hardware configuration), 07:8C (adapter wattage) and 07:8F (power-mode mask)
+            // with "does not support this command" or a malformed reply. The performance
+            // mode runs over the thermal channel, so the power-mode mask is not needed.
             ["blade-597"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {
                 ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
                 ["thermal-state.set"] = new(0x04, 0x0D, 0x02, ""),
-                ["current-fan-rpm.get"] = new(0x03, 0x0D, 0x88, ""),
                 ["keyboard-brightness.get"] = new(0x03, 0x0F, 0x84, "0105", true),
                 ["keyboard-brightness.set"] = new(0x03, 0x0F, 0x04, ""),
-                ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
                 ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
                 ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
-                ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
-                ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
-                ["native-display-mode.get"] = new(0x01, 0x0D, 0x8E, "00", true),
-                ["native-display-mode.set"] = new(0x01, 0x0D, 0x0E, ""),
-                ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
             },
             ["viper-184"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {

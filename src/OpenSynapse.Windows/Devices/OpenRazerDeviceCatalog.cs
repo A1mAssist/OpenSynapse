@@ -463,6 +463,13 @@ public sealed class OpenRazerDeviceCatalog
                 "get_serial",
                 "get_brightness",
                 "set_brightness",
+                // The soundbar keeps its Chroma channel on class 0x0F, so only the effect
+                // selectors the 1354 payload can express are admitted.
+                "set_none_effect",
+                "set_static_effect",
+                "set_spectrum_effect",
+                "set_wave_effect",
+                "set_breath_dual_effect",
             };
             var transactions = new Dictionary<string, byte>(StringComparer.Ordinal)
             {
@@ -474,13 +481,25 @@ public sealed class OpenRazerDeviceCatalog
                 ["razer_chroma_extended_matrix_get_region_ids"] = 0x00,
                 ["razer_chroma_extended_matrix_get_brightness"] = 0x00,
                 ["razer_chroma_extended_matrix_brightness"] = 0x00,
+                ["razer_chroma_extended_matrix_effect_none"] = 0x00,
+                ["razer_chroma_extended_matrix_effect_static"] = 0x00,
+                ["razer_chroma_extended_matrix_effect_spectrum"] = 0x00,
+                ["razer_chroma_extended_matrix_effect_wave"] = 0x00,
+                ["razer_chroma_extended_matrix_effect_breathing_dual"] = 0x00,
             };
-            var brightnessPrefix = Array.AsReadOnly(
+            var zonePrefix = Array.AsReadOnly(
                 new[] { new ReadOnlyMemory<byte>(new byte[] { 0x00, 0x00 }) });
             var prefixes = new Dictionary<string, IReadOnlyList<ReadOnlyMemory<byte>>>(StringComparer.Ordinal)
             {
-                ["razer_chroma_extended_matrix_get_brightness"] = brightnessPrefix,
-                ["razer_chroma_extended_matrix_brightness"] = brightnessPrefix,
+                // Profile 0 is the same profile the soundbar panel reads and writes; the
+                // runtime replaces the region byte with the id it reports.
+                ["razer_chroma_extended_matrix_get_brightness"] = zonePrefix,
+                ["razer_chroma_extended_matrix_brightness"] = zonePrefix,
+                ["razer_chroma_extended_matrix_effect_none"] = zonePrefix,
+                ["razer_chroma_extended_matrix_effect_static"] = zonePrefix,
+                ["razer_chroma_extended_matrix_effect_spectrum"] = zonePrefix,
+                ["razer_chroma_extended_matrix_effect_wave"] = zonePrefix,
+                ["razer_chroma_extended_matrix_effect_breathing_dual"] = zonePrefix,
             };
             devices.Add(LeviathanV2XProtocol.ProductId, new OpenRazerDeviceDefinition(
                 LeviathanV2XProtocol.ProductId,

@@ -84,14 +84,29 @@ public sealed class OpenRazerBackendTests
         Assert.Contains("get_serial", device.SourceCapabilities);
         Assert.Contains("get_brightness", device.SourceCapabilities);
         Assert.Contains("set_brightness", device.SourceCapabilities);
-        Assert.DoesNotContain("set_static_effect", device.SourceCapabilities);
+        Assert.Contains("set_none_effect", device.SourceCapabilities);
+        Assert.Contains("set_static_effect", device.SourceCapabilities);
+        Assert.Contains("set_spectrum_effect", device.SourceCapabilities);
+        Assert.Contains("set_wave_effect", device.SourceCapabilities);
+        Assert.Contains("set_breath_dual_effect", device.SourceCapabilities);
 
         var capabilities = OpenRazerDeviceService.GetCapabilities(device);
         Assert.Contains(OpenRazerBackendCapability.FirmwareRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BrightnessWrite, capabilities);
-        Assert.DoesNotContain(OpenRazerBackendCapability.LightingEffectWrite, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.LightingEffectWrite, capabilities);
         Assert.DoesNotContain(OpenRazerBackendCapability.MatrixFrameWrite, capabilities);
+
+        var zone = OpenRazerDeviceService.GetLightingZoneCapabilities(device)[OpenRazerLedZone.All];
+        Assert.Equal(
+            [
+                OpenRazerLightingEffect.Off,
+                OpenRazerLightingEffect.Static,
+                OpenRazerLightingEffect.Spectrum,
+                OpenRazerLightingEffect.Wave,
+                OpenRazerLightingEffect.BreathingDual,
+            ],
+            zone.LightingEffects.Order());
 
         var renamed = device.WithDisplayName("Razer | Kuromi Limited Edition Soundbar");
         Assert.Equal("Razer | Kuromi Limited Edition Soundbar", renamed.DisplayName);
@@ -237,7 +252,7 @@ public sealed class OpenRazerBackendTests
                 new(4, 3200, 3200),
                 new(5, 4000, 4000),
             ])).Report;
-        Assert.Equal(0x50, dpiStagesSet[6]);
+        Assert.Equal(0x26, dpiStagesSet[6]);
         Assert.Equal(0x06, dpiStagesSet[8]);
         Assert.Equal(0x01, dpiStagesSet[RazerFeatureReport.ArgumentsOffset]);
 
@@ -541,11 +556,13 @@ public sealed class OpenRazerBackendTests
     }
 
     [Theory]
-    [InlineData(5, 0x0C)]
-    [InlineData(15, 0x26)]
-    [InlineData(25, 0x3F)]
-    public void LowBatteryThresholdMatchesOpenRazerScaling(int percent, byte raw)
+    [InlineData(5, 0x0D)]
+    [InlineData(15, 0x27)]
+    [InlineData(25, 0x40)]
+    public void LowBatteryThresholdMatchesMiddlewareScaling(int percent, byte raw)
     {
+        // The middleware writes `Math.ceil(percent / 100 * 255)`, so 15% is 39 and
+        // not 38. OpenRazer truncates; the official app is the ground truth here.
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x008F)!;
         var report = OpenRazerMouseProtocol.SetLowBatteryThreshold(device, percent).Report;
 
@@ -1052,6 +1069,8 @@ public sealed class OpenRazerBackendTests
                 (OpenRazerBackendCapability.ScrollAccelerationWrite, ["set_scroll_acceleration"]),
                 (OpenRazerBackendCapability.SmartReelRead, ["get_scroll_smart_reel"]),
                 (OpenRazerBackendCapability.SmartReelWrite, ["set_scroll_smart_reel"]),
+                (OpenRazerBackendCapability.SmartReelThresholdRead, ["get_scroll_smart_reel_threshold"]),
+                (OpenRazerBackendCapability.SmartReelThresholdWrite, ["set_scroll_smart_reel_threshold"]),
                 (OpenRazerBackendCapability.KeyswitchOptimizationRead, ["get_keyswitch_optimization"]),
                 (OpenRazerBackendCapability.KeyswitchOptimizationWrite, ["set_keyswitch_optimization"]),
                 (OpenRazerBackendCapability.HyperPollingIndicatorWrite, ["set_hyperpolling_wireless_dongle_indicator_led_mode"]),
@@ -1497,6 +1516,8 @@ public sealed class OpenRazerBackendTests
                 OpenRazerBackendCapability.ScrollAccelerationWrite => OpenRazerMouseProtocol.SetScrollAcceleration(device, false),
                 OpenRazerBackendCapability.SmartReelRead => OpenRazerMouseProtocol.GetSmartReel(device),
                 OpenRazerBackendCapability.SmartReelWrite => OpenRazerMouseProtocol.SetSmartReel(device, false),
+                OpenRazerBackendCapability.SmartReelThresholdRead => OpenRazerMouseProtocol.GetSmartReelThreshold(device),
+                OpenRazerBackendCapability.SmartReelThresholdWrite => OpenRazerMouseProtocol.SetSmartReelThreshold(device, 50),
                 OpenRazerBackendCapability.FnPrimaryWrite => OpenRazerStandardProtocol.Create(device,
                     "razer_chroma_misc_fn_key_toggle", 0x02, 0x02, 0x06, [0, 0]),
                 OpenRazerBackendCapability.KeyswitchOptimizationRead => OpenRazerStandardProtocol.Create(device,

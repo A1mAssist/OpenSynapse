@@ -37,7 +37,7 @@ public static class BladeThermalProtocol
         ReadOnlySpan<byte> request)
     {
         expectedFanId = ValidateFanId(expectedFanId);
-        ValidateResponse(response, request, expectedArguments: 2);
+        ValidateResponse(response, request, expectedArguments: 3, allowFramingMismatch: true);
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != ProfileId || arguments[1] != expectedFanId)
         {
@@ -56,7 +56,7 @@ public static class BladeThermalProtocol
         ReadOnlySpan<byte> request)
     {
         expectedFanId = ValidateFanId(expectedFanId);
-        ValidateResponse(response, request, expectedArguments: 2);
+        ValidateResponse(response, request, expectedArguments: 3, allowFramingMismatch: true);
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != ProfileId || arguments[1] != expectedFanId)
         {
@@ -69,9 +69,11 @@ public static class BladeThermalProtocol
     private static void ValidateResponse(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request,
-        byte expectedArguments)
+        byte expectedArguments,
+        bool allowFramingMismatch = false)
     {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, expectedArguments))
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, expectedArguments, allowRemainingPacketsMismatch: allowFramingMismatch))
         {
             throw new InvalidOperationException("Blade thermal control returned an invalid or out-of-order feature report.");
         }
