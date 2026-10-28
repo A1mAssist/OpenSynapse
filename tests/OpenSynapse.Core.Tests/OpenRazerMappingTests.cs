@@ -81,6 +81,17 @@ public sealed class OpenRazerMappingTests
     }
 
     [Fact]
+    public async Task MappingProbeSkipsNonPointerDevices()
+    {
+        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x054A)!;
+        var transport = new ProbeTransport(_ => throw new InvalidOperationException("must not probe"));
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+
+        Assert.False(await service.ProbeMappingCapabilityAsync(definition, "test"));
+        Assert.Equal(0, transport.Count);
+    }
+
+    [Fact]
     public void CatalogUsesTheMiddlewareFunctionIds()
     {
         AssertFrame(OpenRazerMappingGroup.Off, 0, OpenRazerMappingFunctions.Off, []);
