@@ -95,6 +95,7 @@ internal sealed class RazerDeviceRegistry
                 ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
                 ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
                 ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
+                ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
                 ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
                 ["keyboard-brightness.get"] = new(0x03, 0x03, 0x83, "010500", true),
                 ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
@@ -155,7 +156,8 @@ internal sealed class RazerDeviceRegistry
             // MUX reports, so they are not required here.
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys
                 .Where(capability => capability is not ("adapter-power.get" or
-                    "display-mux.get" or "display-mux.set" or "display-mux-capabilities.get"))
+                    "display-mux.get" or "display-mux.set" or "display-mux-capabilities.get" or
+                    "sku-hardware-configuration.get"))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
@@ -652,6 +654,7 @@ internal sealed class RazerDeviceRegistry
                         "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get" or
                         "keyboard-brightness.get" or "keyboard-brightness.set"),
                     "blade-671" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or "power-mode.get" or
+                        "sku-hardware-configuration.get" or
                         "keyboard-brightness.get" or "keyboard-brightness.set" or
                         "keyboard-effect.get" or "keyboard-effect.set"),
                     "blade-597" => capabilityId is not ("keyboard-brightness.get" or

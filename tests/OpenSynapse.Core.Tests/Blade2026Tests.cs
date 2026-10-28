@@ -30,6 +30,9 @@ public sealed class Blade2026Tests
         Assert.Equal(0x92, manifest.GetRequiredCapability("charge-limit.get").CommandId);
         Assert.Equal(0x8C, manifest.GetRequiredCapability("adapter-power.get").CommandId);
         Assert.Equal(0x89, manifest.GetRequiredCapability("display-mux.get").CommandId);
+        Assert.Equal(0x8F, manifest.GetRequiredCapability("sku-hardware-configuration.get").CommandId);
+        Assert.True(manifest.GetRequiredCapability("sku-hardware-configuration.get")
+            .AllowRemainingPacketsMismatch);
     }
 
     [Fact]
