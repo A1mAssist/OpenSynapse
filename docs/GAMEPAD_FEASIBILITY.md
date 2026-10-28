@@ -200,6 +200,10 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 - `artifacts/razer-mw-full-cdn/bundles/0A4C/main.f0ca95429464cd09cbdb.js`：`_createDataSend` 的 90 字节布局、`sendCommand` 的 `reportId/reportLength/protocol:"25"`、`setSingleButtonAssignment` 的 `b=[80,2,12]`。
 - 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `87969`：`rzDevice25` 基类；`setSingleButtonAssignment` 用 `b=[80,2,12]`，`getSingleButtonAssignment` 用 `N=[80,2,140]`，响应 parser 为 `[classId, buttonId, mode, functionId, dataSize, data[5]]`。
 - 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `35922`：`Bx` 按键 ID、`rA` 功能 ID、`zN` 模式（`NormalMode=0`、`HypershiftMode=1`）。
+- 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `4442`：`YZ`/`CS`/`m4`/`Yc`/`BP` 等功能编码器；每个函数的数据布局以这里为准。
+- 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `7215`：`k4` 组类型、`zK` 手柄按键、`ZI` RazerKey、`r9` 宏字段等枚举。
+- 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `44305`：modifier 位标志、电源键、多媒体键、Windows 快捷键和滚动模式表。
+- 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `58701`：Xbox/PlayStation 手柄输入的 fwID 表。
 - `artifacts/razer-mw-full-cdn/bundles/0A74/3975.6a92c3b6f4c11aacbf7f.js`：`Perfect180Feature`，无 `sendCommand`。
 - `artifacts/razer-mw-full-cdn/bundles/1030/1840.79e8045662a8fdce4bed.js`：`rzSerial`，无 `sendCommand`。
 - `artifacts/razer-mw-full-cdn/bundles/1013/main.8c755a3c43990d2c3900.js`：`controllerDPadSOCD:"neutral"` 默认值。
@@ -239,6 +243,61 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 `ReadButtonAssignmentsAsync` 可按 Normal/Hypershift 逐个读取 `02:8C`。写入做读回校验，失败时恢复旧值。
 页面层已加入 `DeviceCategory.Gamepad`、Gamepad 面板和概览卡片；缺项自动折叠。
 
-**仍缺**：实机 HID 描述符验证；按键映射的写入 UI（协议和只读读取已就绪，功能数据如键码/宏 ID 还需要逐个功能解析）；
+**仍缺**：实机 HID 描述符验证；按键映射的写入 UI（协议、功能编码和写读回已就绪）；
 板载 profile 页面。
+
+## 6. 功能编码（2026-10-28）
+
+`RazerGamepadFunctionEncoder` 按模块 `4442` 的编码器逐项实现。所有函数共用 5 字节 `fnDataByte`，真正有效的字节数由 `dataSize` 指定。
+
+| fnId | 功能 | dataSize | data 布局 |
+|---|---|---|---|
+| 0 | Off | 0 | — |
+| 1 | ButtonCode | 1 | `[buttonId]` |
+| 2 | KeyCode | 2 | `[modifierMask, hidUsage]` |
+| 3 | MacroTypeI | 3 | `[macroIdBE16, repeatCount]`；Once 时 repeatCount=1 |
+| 4 | MacroTypeII | 2 | `[macroIdBE16]`；按住循环 |
+| 5 | MacroTypeIII | 2 | `[macroIdBE16]`；切换循环 |
+| 6 | DPI | 1 或 5 | `[action]`；Clutch 时 `[5, xBE16, yBE16]` |
+| 7 | Profile | 1 或 2 | `[action]`；Specific 时 `[3, profileId]` |
+| 9 | PowerKeys | 1 | `[powerKey]` |
+| 10 | MediaKeys | 2 | `[mediaCodeBE16]` |
+| 11 | DoubleClick | 1 | `[1]` |
+| 12 | ModeButtonkey | 1 | `[1]` |
+| 13 | TurboModeKey | 4 | `[modifierMask, hidUsage, intervalBE16]` |
+| 14 | TurboModeButton | 3 | `[buttonId, intervalBE16]` |
+| 15 | MacroTypeIV | 2 | `[macroIdBE16]`；序列宏 |
+| 16 | Controller | 1 | `[controllerFwId]` |
+| 17 | RazerKey | 1 | `[razerKey]` |
+| 18 | ScrollWheelMode | 1 | `[scrollAction]` |
+| 21 | Win8ShortcutsKey | 1 | `[shortcutCode]` |
+
+`intervalBE16 = floor(1000 / keysPerSecond)`；默认 7 次/秒时是 142（`0x008E`）。
+
+`modifierMask` 是位标志：`LeftCtrl=1`、`LeftShift=2`、`LeftAlt=4`、`LeftGUI=8`、`RightCtrl=16`、`RightShift=32`、`RightAlt=64`、`RightGUI=128`。N-key rollover 打开且按键本身是 HID 224..231 时，模块会把 `data[0]` 写成对应的位标志、`data[1]=0`。
+
+| 表 | 值 |
+|---|---|
+| DPI action | `1=Up`、`2=Down`、`5=Clutch`、`6=CycleUp`、`7=CycleDown` |
+| Profile action | `1=Up`、`2=Down`、`3=Specific`、`4=CycleUp`、`5=CycleDown` |
+| Scroll action | `1=ModeSwitch`、`2=Up`、`3=Down`、`4=CycleUp`、`5=CycleDown` |
+| Power key | `129=SystemPower`、`130=Sleep`、`131=Wake` |
+| Windows shortcut | `99=Screenshot`、`100=XboxGameBar`、`101=CycleApps` |
+| Media key | `184=Eject`、`226=Mute`、`234=VolumeDown`、`233=VolumeUp`、`182=Previous`、`183=Stop`、`205=PlayPause`、`181=Next`、`671=CycleApps`、`111=BrightnessUp`、`112=BrightnessDown`、`545=Spotlight` |
+
+Controller fwID（模块 `58701`；`1025`、`1030`、`1013` 使用 PlayStation 表，其余 Xbox 表）：
+
+| 按键 | fwID |
+|---|---|
+| M1..M6 | 16..21 |
+| A/Cross、B/Circle、X/Square、Y/Triangle | 32..35 |
+| 左/右肩键、左/右扳机 | 36..39 |
+| 左/右摇杆按下 | 40、41 |
+| D-pad 上/下/左/右 | 44..47 |
+| View/Create、Menu/Options、Touchpad | 52、53、59 |
+| 左/右/全局灵敏度离合 | 55、56、58 |
+| 左摇杆上/下/左/右 | 128..131 |
+| 右摇杆上/下/左/右 | 132..135 |
+
+`RazerKey` 表来自模块 `7215` 的 `ZI`：`Fn=1`、`RazerKey=2`、`GameMode=3`、`MacroRecord=4`、`BrightnessUp/Down=6/7`、`BacklightUp/Down=8/9`、`ProfileSwitch=80`、`Sniper=81`、`HyperShift=89`、`SnapTap=117`、`MicMute=216` 等。
 

@@ -125,7 +125,7 @@ public sealed class RazerGamepadProtocolTests
         Assert.Equal(0x20, assignment.ButtonId);
         Assert.Equal(RazerGamepadButtonMode.Hypershift, assignment.Mode);
         Assert.Equal(RazerGamepadFunction.MacroTypeI, assignment.Function);
-        Assert.Equal(new byte[] { 0x01, 0x02, 0x03 }, assignment.Data);
+        Assert.Equal(new byte[] { 0x01, 0x02, 0x03 }, assignment.Data.Take(assignment.DataSize).ToArray());
     }
 
     [Fact]

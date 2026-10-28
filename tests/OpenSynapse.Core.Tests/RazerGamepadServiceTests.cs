@@ -48,10 +48,33 @@ public sealed class RazerGamepadServiceTests
 
         Assert.Equal(2, assignments.Count);
         Assert.Equal(RazerGamepadFunction.MacroTypeI, assignments[0].Function);
-        Assert.Equal(new byte[] { 0x0A, 0x0B }, assignments[0].Data);
+        Assert.Equal(new byte[] { 0x0A, 0x0B }, assignments[0].Data.Take(assignments[0].DataSize).ToArray());
         var read = Assert.Single(transport.Requests, request =>
             request[7] == 0x02 && request[8] == 0x8C && request[10] == 32);
         Assert.Equal(new byte[] { 3, 32, 0 }, read[9..12]);
+    }
+
+    [Fact]
+    public async Task SetButtonAssignment_WritesTheFunctionBlockAndVerifies()
+    {
+        var simulator = new GamepadSimulator { ProfileId = 3 };
+        simulator.ButtonAssignments[32] = new(
+            32, RazerGamepadButtonMode.Normal, RazerGamepadFunction.Off, 0, new byte[5]);
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerGamepadService(transport, "test", TimeSpan.Zero);
+        await service.ReadStateAsync();
+
+        await service.SetButtonAssignmentAsync(
+            32,
+            RazerGamepadButtonMode.Normal,
+            RazerGamepadFunctionEncoder.Macro(
+                0x1234, RazerGamepadMacroPlayback.NTimes, 3));
+
+        var write = Assert.Single(transport.Requests, request =>
+            request[7] == 0x02 && request[8] == 0x0C);
+        Assert.Equal(new byte[] { 3, 32, 0, 3, 3, 0x12, 0x34, 3 }, write[9..17]);
+        Assert.Equal(RazerGamepadFunction.MacroTypeI, simulator.ButtonAssignments[32].Function);
+        Assert.Equal(3, simulator.ButtonAssignments[32].DataSize);
     }
 
     [Fact]
@@ -207,9 +230,10 @@ public sealed class RazerGamepadServiceTests
                         request[10],
                         request[11],
                         (byte)ButtonAssignments[request[10]].Function,
-                        (byte)ButtonAssignments[request[10]].Data.Count,
+                        ButtonAssignments[request[10]].DataSize,
                         .. ButtonAssignments[request[10]].Data,
                     ]),
+                (0x02, 0x0C) => WriteButtonAssignment(request),
                 (0x0C, 0x82) => Response(request, 3, 0x0C, request[10], Sensitivity(request[10])),
                 (0x0C, 0x02) => WriteSensitivity(request),
                 (0x0C, 0x85) => Response(request, 9, ZoneBytes(request[10])),
@@ -311,6 +335,23 @@ public sealed class RazerGamepadServiceTests
         {
             Socd = (RazerGamepadSocdMode)request[10];
             return Response(request, 2, 0x0C, request[10]);
+        }
+
+        private byte[] WriteButtonAssignment(byte[] request)
+        {
+            var size = request[13];
+            var data = new byte[5];
+            Array.Copy(request, 14, data, 0, Math.Min((int)size, 5));
+            ButtonAssignments[request[10]] = new(
+                request[10],
+                (RazerGamepadButtonMode)request[11],
+                (RazerGamepadFunction)request[12],
+                size,
+                data);
+            return Response(
+                request,
+                10,
+                [0x02, request[10], request[11], request[12], size, .. data]);
         }
 
         private static byte[] Response(byte[] request, byte dataSize, params byte[] arguments) =>
