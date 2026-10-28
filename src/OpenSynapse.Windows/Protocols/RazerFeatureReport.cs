@@ -231,7 +231,9 @@ public static class RazerFeatureReport
         IsAcceptedStatus(response[1]) &&
         response[6] == request[6] &&
         minimumArguments <= response[6] &&
-        Matches(request, response, allowRemainingPacketsMismatch);
+        response[7] == request[7] &&
+        response[8] == request[8] &&
+        IsAcceptedChecksum(response);
 
     internal static bool IsAcceptedStatus(byte status) => status is 0x01 or 0x02;
 }
