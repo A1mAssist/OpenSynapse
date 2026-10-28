@@ -181,7 +181,9 @@ internal static class OpenRazerMouseProtocol
         }
         return OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_dpi_stages",
-            device.GetCommandSize("razer_chroma_misc_set_dpi_stages", MiddlewareDpiStageFrameSize),
+            // The middleware declares the builder as 80 bytes but overrides the size
+            // with 7*stageCount+3 on every write, so the frame only carries the stages.
+            checked((byte)(3 + (state.Stages.Count * 7))),
             0x04, 0x06, arguments);
     }
 
@@ -399,7 +401,9 @@ internal static class OpenRazerMouseProtocol
         {
             throw new ArgumentOutOfRangeException(nameof(percent), "Threshold must be 5%..25% in 5% steps.");
         }
-        var raw = checked((byte)(percent * 255 / 100));
+        // The middleware writes `Math.ceil(percent / 100 * 255)`. Truncating puts
+        // the threshold one unit below the official app for most of the range.
+        var raw = checked((byte)Math.Ceiling(percent * 255d / 100d));
         return OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_low_battery_threshold", 0x01, 0x07, 0x01, [raw]);
     }
@@ -432,6 +436,16 @@ internal static class OpenRazerMouseProtocol
         OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_scroll_smart_reel", 0x50, 0x02, 0x17,
             [OpenRazerStandardProtocol.VariableStore, enabled ? (byte)1 : (byte)0]);
+
+    internal static OpenRazerRequest GetSmartReelThreshold(OpenRazerDeviceDefinition device) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_get_scroll_smart_reel_threshold", 0x02, 0x02, 0xA3,
+            [OpenRazerStandardProtocol.VariableStore]);
+
+    internal static OpenRazerRequest SetSmartReelThreshold(OpenRazerDeviceDefinition device, byte level) =>
+        OpenRazerStandardProtocol.Create(device,
+            "razer_chroma_misc_set_scroll_smart_reel_threshold", 0x02, 0x02, 0x23,
+            [OpenRazerStandardProtocol.VariableStore, level]);
 
     internal static OpenRazerRequest GetLkScrollWheelMode(OpenRazerDeviceDefinition device, byte profileId = 1) =>
         OpenRazerStandardProtocol.Create(device,
@@ -469,7 +483,8 @@ internal static class OpenRazerMouseProtocol
             var legacy = OpenRazerStandardProtocol.Arguments(response, 1)[0];
             return legacy switch
             {
-                0x01 => 1000, 0x02 => 500, 0x08 => 125,
+                0x01 => 1000, 0x02 => 500, 0x03 => 333, 0x04 => 250,
+                0x05 => 200, 0x08 => 125, 0x0A => 100,
                 _ => throw new InvalidDataException($"Unknown polling-rate code 0x{legacy:X2}."),
             };
         }
@@ -552,7 +567,11 @@ internal static class OpenRazerMouseProtocol
     {
         1000 => 0x01,
         500 => 0x02,
+        333 => 0x03,
+        250 => 0x04,
+        200 => 0x05,
         125 => 0x08,
+        100 => 0x0A,
         _ => throw new ArgumentOutOfRangeException(nameof(hertz)),
     };
 

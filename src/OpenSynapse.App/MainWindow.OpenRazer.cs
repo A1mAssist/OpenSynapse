@@ -345,6 +345,9 @@ public sealed partial class MainWindow
     private async void OpenRazerApplySmartReelClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplySmartReelAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void OpenRazerApplySmartReelThresholdClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplySmartReelThresholdAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerKeyswitchExpanding(Expander sender, ExpanderExpandingEventArgs args) =>
         await (SelectedOpenRazerDevice?.LoadKeyswitchAsync(_lifetime.Token) ?? Task.CompletedTask);
 

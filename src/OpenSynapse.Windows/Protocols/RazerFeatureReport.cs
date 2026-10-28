@@ -207,6 +207,15 @@ public static class RazerFeatureReport
         return crc;
     }
 
+    /// <summary>
+    /// True when the report carries either checksum range. The transport already dropped
+    /// a response that failed the range its own firmware uses, so the parse gate only has
+    /// to agree with the form that reached it.
+    /// </summary>
+    internal static bool IsAcceptedChecksum(ReadOnlySpan<byte> report) =>
+        report.Length == Length &&
+        (report[89] == CalculateCrc(report) || report[89] == CalculateCrcIncludingTransaction(report));
+
     internal static bool MatchesReportId(ReadOnlySpan<byte> response, byte reportId) =>
         response.Length == Length && response[0] == reportId;
 
@@ -218,7 +227,13 @@ public static class RazerFeatureReport
         request.Length == Length &&
         response.Length == Length &&
         IsAcceptedStatus(response[1]) &&
-        response[6] == request[6] &&
+        // The transport already matched the transaction, command and checksum, so a
+        // firmware that answers with more payload than the request declared is still
+        // this command's reply. Callers that read only part of it opt into that here;
+        // the rest keep demanding the exact length they asked for.
+        (allowRemainingPacketsMismatch
+            ? response[6] >= minimumArguments
+            : response[6] == request[6]) &&
         minimumArguments <= response[6] &&
         Matches(request, response, allowRemainingPacketsMismatch);
 

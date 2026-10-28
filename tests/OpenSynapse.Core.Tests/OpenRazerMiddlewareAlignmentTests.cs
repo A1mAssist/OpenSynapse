@@ -33,7 +33,7 @@ public sealed class OpenRazerMiddlewareAlignmentTests
     }
 
     [Fact]
-    public void DpiStageFramesUseTheEightyByteProfileDpiClassDataHeader()
+    public void DpiStageWritesDeclareOnlyTheStagesTheyCarry()
     {
         var device = Device(0x00CB);
 
@@ -44,9 +44,29 @@ public sealed class OpenRazerMiddlewareAlignmentTests
 
         var set = OpenRazerMouseProtocol.SetDpiStages(device, new OpenRazerDpiStages(
             1, [new OpenRazerDpiStage(1, 800, 1600, 400)])).Report;
-        Assert.Equal(0x50, set[RazerFeatureReport.DataSizeOffset]);
+        // The middleware overrides the 80-byte declaration with 7*stageCount+3.
+        Assert.Equal(0x0A, set[RazerFeatureReport.DataSizeOffset]);
         Assert.Equal(0x04, set[RazerFeatureReport.CommandClassOffset]);
         Assert.Equal(0x06, set[RazerFeatureReport.CommandIdOffset]);
+    }
+
+    [Fact]
+    public void SmartReelThresholdUsesTheTwoByteScrollThresholdCommands()
+    {
+        var device = Device(0x00AA);
+
+        var get = OpenRazerMouseProtocol.GetSmartReelThreshold(device).Report;
+        Assert.Equal(0x02, get[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(0x02, get[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0xA3, get[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x01, get[RazerFeatureReport.ArgumentsOffset]);
+
+        var set = OpenRazerMouseProtocol.SetSmartReelThreshold(device, 50).Report;
+        Assert.Equal(0x02, set[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(0x02, set[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0x23, set[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(50, set[RazerFeatureReport.ArgumentsOffset + 1]);
     }
 
     [Fact]
@@ -212,7 +232,7 @@ public sealed class OpenRazerMiddlewareAlignmentTests
 
         var set = OpenRazerMouseProtocol.SetDpiStages(device, new OpenRazerDpiStages(
             1, [new OpenRazerDpiStage(1, 800, 1600, 400)])).Report;
-        Assert.Equal(0x50, set[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(0x0A, set[RazerFeatureReport.DataSizeOffset]);
         Assert.Equal(0x04, set[RazerFeatureReport.CommandClassOffset]);
         Assert.Equal(0x06, set[RazerFeatureReport.CommandIdOffset]);
         Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset]);
@@ -235,5 +255,24 @@ public sealed class OpenRazerMiddlewareAlignmentTests
         Assert.Equal(0x40, set[RazerFeatureReport.CommandIdOffset]);
         Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset + 1]);
+    }
+
+    [Fact]
+    public void LegacyPollingRateUsesTheMiddlewareRateTable()
+    {
+        // Pro Click V2 declares 250 Hz and only has the legacy polling command.
+        var device = Device(0x00D0);
+
+        var set = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, 250)).Report;
+        Assert.Equal(0x00, set[RazerFeatureReport.CommandClassOffset]);
+        Assert.Equal(0x05, set[RazerFeatureReport.CommandIdOffset]);
+        Assert.Equal(0x04, set[RazerFeatureReport.ArgumentsOffset]);
+
+        var get = OpenRazerMouseProtocol.GetPollingRate(device).Report;
+        get[1] = 0x02;
+        get[RazerFeatureReport.DataSizeOffset] = 0x01;
+        get[RazerFeatureReport.ArgumentsOffset] = 0x04;
+        get[89] = RazerFeatureReport.CalculateCrc(get);
+        Assert.Equal(250, OpenRazerMouseProtocol.ParsePollingRate(get, highRate: false));
     }
 }

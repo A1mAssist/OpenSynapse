@@ -19,27 +19,21 @@ public sealed class Blade597Tests
         Assert.NotNull(manifest);
         Assert.Equal(
             [
-                "adapter-power.get",
                 "charge-limit.get",
                 "charge-limit.set",
-                "current-fan-rpm.get",
                 "keyboard-brightness.get",
                 "keyboard-brightness.set",
-                "native-display-mode.get",
-                "native-display-mode.set",
-                "power-mode.get",
-                "power-mode.set",
-                "sku-hardware-configuration.get",
                 "thermal-state.get",
                 "thermal-state.set",
             ],
             manifest.Capabilities.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal(0x8C, manifest.Capabilities["adapter-power.get"].CommandId);
         Assert.Equal(0x92, manifest.Capabilities["charge-limit.get"].CommandId);
         Assert.Equal(0x12, manifest.Capabilities["charge-limit.set"].CommandId);
-        Assert.Equal(0x8F, manifest.Capabilities["power-mode.get"].CommandId);
-        Assert.Equal(0x0F, manifest.Capabilities["power-mode.set"].CommandId);
+        // The middleware for 597 declares no hasGPUmode, and the hardware answers
+        // "not supported" to 0D:8E/0D:8F, so no MUX or SKU report may be admitted.
         Assert.DoesNotContain("display-mux.get", manifest.Capabilities.Keys);
+        Assert.DoesNotContain("native-display-mode.get", manifest.Capabilities.Keys);
+        Assert.DoesNotContain("sku-hardware-configuration.get", manifest.Capabilities.Keys);
 
         var brightness = manifest.Capabilities["keyboard-brightness.get"];
         Assert.Equal(0x01, brightness.TransactionId);
@@ -74,16 +68,13 @@ public sealed class Blade597Tests
         Assert.Equal((byte)51, telemetry.BladeKeyboardBrightness);
         Assert.Equal(BladePerformanceMode.Performance, telemetry.BladePerformanceMode);
         Assert.Equal(BladeFanMode.Automatic, telemetry.BladeFanMode);
-        Assert.Equal(3000, telemetry.BladeCurrentFanCpuRpm);
-        Assert.Equal(3000, telemetry.BladeCurrentFanGpuRpm);
         Assert.Equal(80, telemetry.BladeChargeLimitPercent);
-        Assert.Equal(BladeNativeDisplayMode.Uhd, telemetry.BladeNativeDisplayMode);
-        Assert.NotNull(telemetry.BladeSkuHardwareConfiguration);
-        Assert.False(telemetry.BladeOneTimeFullChargeEnabled);
-        Assert.Equal(65, telemetry.BladeAdapterPower?.ActualWatts);
-        Assert.Equal(80, telemetry.BladeAdapterPower?.RecommendedWatts);
+        Assert.Null(telemetry.BladeCurrentFanCpuRpm);
+        Assert.Null(telemetry.BladeCurrentFanGpuRpm);
+        Assert.Null(telemetry.BladeAdapterPower);
+        Assert.Null(telemetry.BladeNativeDisplayMode);
         Assert.Equal(
-            new DeviceCapabilitySummary(10, 10),
+            new DeviceCapabilitySummary(4, 4),
             DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry));
     }
 
