@@ -6,11 +6,10 @@ public enum BladePerformanceMode : byte
 {
     Balanced = 0x00,
     /// <summary>
-    /// Wire value 0x01. Synapse calls it Gaming, the 2018-2020 chassis call it Turbo;
-    /// it is one byte either way, so the parser names it after the model's own bundle
-    /// and falls back to Performance when the model publishes neither.
+    /// Wire value 0x01. Every middleware bundle names it Gaming; the 2018-2020
+    /// chassis write it as Turbo in their mode table, which is the same byte.
     /// </summary>
-    Turbo = 0x01,
+    Gaming = 0x01,
     Performance = 0x02,
     BatterySaver = 0x03,
     Custom = 0x04,

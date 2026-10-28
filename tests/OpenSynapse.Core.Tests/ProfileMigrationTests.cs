@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Devices;
 using Xunit;
 
 namespace OpenSynapse.Core.Tests;
@@ -101,6 +102,49 @@ public sealed class ProfileMigrationTests
 
             await Assert.ThrowsAsync<InvalidDataException>(
                 () => ProfileStore.ImportAsync(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>
+    /// The performance mode is stored by name. The wire byte 0x01 was called Turbo
+    /// before it was renamed to Gaming, and a profile file that no longer parses would
+    /// be silently replaced by the defaults, so the old name still has to load.
+    /// </summary>
+    [Fact]
+    public async Task AProfileWrittenBeforeTheGamingRenameStillLoads()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            $"opensynapse-turbo-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                """
+                {
+                  "version": 2,
+                  "activeProfileName": "Default",
+                  "profiles": {
+                    "Default": {
+                      "shortcuts": {
+                        "performanceCycleModes": ["Balanced", "Turbo", "Custom"]
+                      }
+                    }
+                  }
+                }
+                """);
+
+            var document = await ProfileStore.ImportAsync(path);
+            var shortcuts = document.Profiles[document.ActiveProfileName].Shortcuts;
+
+            Assert.NotNull(shortcuts);
+            Assert.Equal(
+                [BladePerformanceMode.Balanced, BladePerformanceMode.Gaming, BladePerformanceMode.Custom],
+                shortcuts!.PerformanceCycleModes);
         }
         finally
         {
