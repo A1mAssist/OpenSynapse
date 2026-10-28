@@ -172,6 +172,25 @@ public static class RazerFeatureReport
     }
 
     /// <summary>
+    /// The transport owns the transaction id: it rewrites every command to a fresh id
+    /// before the write and only returns a response that echoed that id. Protocol parsers
+    /// therefore check the command identity and checksum, not the id the manifest named.
+    /// </summary>
+    internal static bool MatchesCommand(
+        ReadOnlySpan<byte> request,
+        ReadOnlySpan<byte> response,
+        bool allowRemainingPacketsMismatch = false)
+    {
+        return request.Length == Length &&
+               response.Length == Length &&
+               (allowRemainingPacketsMismatch ||
+                (response[3] == request[3] && response[4] == request[4])) &&
+               response[7] == request[7] &&
+               response[8] == request[8] &&
+               response[89] == CalculateCrc(response);
+    }
+
+    /// <summary>
     /// Some firmware folds the transaction id into the response checksum. The Leviathan
     /// V2 X does, so a report that carries its transaction id in the checksum fails the
     /// shared range by exactly that id.
@@ -235,7 +254,7 @@ public static class RazerFeatureReport
             ? response[6] >= minimumArguments
             : response[6] == request[6]) &&
         minimumArguments <= response[6] &&
-        Matches(request, response, allowRemainingPacketsMismatch);
+        MatchesCommand(request, response, allowRemainingPacketsMismatch);
 
     internal static bool IsAcceptedStatus(byte status) => status is 0x01 or 0x02;
 }

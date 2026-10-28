@@ -119,12 +119,22 @@ public sealed class BladeLighting2023Tests
     }
 
     [Fact]
-    public void OutOfOrderResponseIsRejected()
+    public void WrongCommandResponseIsRejected()
     {
         var response = BuildResponse(BladeLighting2023Protocol.CreateGetBrightnessRequest(), [0x01, 0x05, 0xC5]);
-        response[2] = (byte)(response[2] + 1);
+        response[8] = (byte)(response[8] + 1);
 
         Assert.Throws<InvalidOperationException>(() => BladeLighting2023Protocol.ParseBrightness(response));
+    }
+
+    [Fact]
+    public void TheTransactionAssignedByTheTransportIsNotRechecked()
+    {
+        var response = BuildResponse(BladeLighting2023Protocol.CreateGetBrightnessRequest(), [0x01, 0x05, 0xC5]);
+        response[2] = 0x07;
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+
+        Assert.Equal(0xC5, BladeLighting2023Protocol.ParseBrightness(response));
     }
 
     [Fact]

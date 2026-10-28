@@ -145,7 +145,7 @@ public static class BladeSynapsePolicyProtocol
         if (response.Length != RazerFeatureReport.Length ||
             response[1] != 0x02 ||
             response[6] is not (0x01 or 0x02) ||
-            !RazerFeatureReport.Matches(request, response))
+            !RazerFeatureReport.MatchesCommand(request, response))
         {
             throw new InvalidOperationException(
                 "Blade startup animation returned an invalid or out-of-order feature report.");
