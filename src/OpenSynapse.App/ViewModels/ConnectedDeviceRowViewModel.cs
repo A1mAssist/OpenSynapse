@@ -82,6 +82,18 @@ public sealed class ConnectedDeviceRowViewModel
         IsVisible = true;
     }
 
+    public ConnectedDeviceRowViewModel(RazerGamepadDeviceRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
     public ConnectedDeviceRowViewModel(RazerHeadsetAudioDeviceRowViewModel source)
     {
         Source = source;
@@ -133,6 +145,7 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerKrakenDeviceRowViewModel row => row.Status,
         RazerBleDeviceRowViewModel row => row.Status,
         BlackSharkDeviceRowViewModel row => row.Status,
+        RazerGamepadDeviceRowViewModel row => row.Status,
         PhilipsHueViewModel row => row.IsConfigured ? AppStrings.Text("HuePaired") : string.Empty,
         _ => string.Empty,
     };
@@ -151,6 +164,7 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerKrakenDeviceRowViewModel row => row.StatusBrush,
         RazerBleDeviceRowViewModel row => row.StatusBrush,
         BlackSharkDeviceRowViewModel row => row.StatusBrush,
+        RazerGamepadDeviceRowViewModel row => row.StatusBrush,
         PhilipsHueViewModel row => row.StatusBrush,
         _ => throw new InvalidOperationException(),
     };

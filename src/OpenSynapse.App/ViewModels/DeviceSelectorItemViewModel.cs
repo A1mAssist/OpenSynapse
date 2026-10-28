@@ -13,6 +13,7 @@ public enum DeviceSelectorItemKind
     BlackShark,
     HeadsetAudio,
     Keyboard,
+    Gamepad,
     Chroma,
     Ble,
 }

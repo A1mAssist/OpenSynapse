@@ -45,10 +45,10 @@ J=[2,12,28], P=[80,12,152], G=[51,12,153], B=[51,12,25]
 | 控制 ID 列表 | `0C:80` | — | 80 | 空 | `total, idList[]` |
 | 模拟控制描述 | `0C:81` | — | 4 | `[profileId, controlId, index]` | `classId, controlId, type, index` |
 | 摇杆灵敏度 | `0C:82` | `0C:02` | 3 | set `[profileId, controlId, sensitivity]`；get `[profileId, controlId]` | `classId, controlId, sensitivity` |
-| 死区/行程区 | `0C:85` | `0C:05` | 9 | set `[profileId, controlId, deadZoneLE16, softBumperLE16, deltaThresholdLE16, preventDoubleDeadzone]`；get `[profileId, controlId]` | 同 9 字节结构 |
+| 死区/行程区 | `0C:85` | `0C:05` | 9 | set `[profileId, controlId, deadZoneBE16, softBumperBE16, deltaThresholdBE16, preventDoubleDeadzone]`；get `[profileId, controlId]` | 同 9 字节结构 |
 | 震动缩放 | `0C:86` | `0C:06` | 3 | set `[profileId, motorId, scaling]`；get `[profileId, motorId]` | `classId, controlId, scaling` |
 | 震动播放一次 | — | `0C:07` | 4 | 压缩参数与调用不一致，暂不作为可验证命令 | — |
-| ADC masking | `0C:91` | `0C:11` | 2 | set `[maskLE16]`；get 空 | `maskLE16` |
+| ADC masking | `0C:91` | `0C:11` | 2 | set `[maskBE16]`；get 空 | `maskBE16` |
 | 摇杆圆形度 | `0C:92` | `0C:12` | 3 | `[profileId, controlId, option]` | `classId, controlId, option` |
 | 扳机模拟行程 | `0C:93` | `0C:13` | 4 | `[profileId, controlId, startRange, endRange]` | 同 4 字节结构 |
 | 扳机模式 | `0C:95` | `0C:15` | 3 | `[profileId, controlId, mode]`；`0=analog`、`1=digital` | `classId, controlId, mode` |
@@ -56,10 +56,12 @@ J=[2,12,28], P=[80,12,152], G=[51,12,153], B=[51,12,25]
 | 忽略 D-pad 斜向 | `0C:97` | `0C:17` | 2 | `[profileId, option]` | `classId, option` |
 | SOCD cleaning | `0C:9B` | `0C:1B` | 2 | `[profileId, option]` | `classId, option` |
 | 控制器模式切换 | `0C:9C` | `0C:1C` | 2 | `[profileId, option]` | `classId, option` |
-| 原始模拟输入 | `0C:98` | — | 80 | 空 | `Lx, Ly, Rx, Ry, Lt, Rt` 各 LE16 |
+| 原始模拟输入 | `0C:98` | — | 80 | JS 把命令元组 `[80,12,152]` 本身当参数块 | `Lx, Ly, Rx, Ry, Lt, Rt` 各 BE16 |
 | 校准数据 | `0C:99` | `0C:19` | 51 | 复杂结构，本次不展开 | 同结构 |
+| 按键 ID 列表 | `02:80` | — | 80 | 空 | `total, idList[]` |
+| 单键映射 | `02:8C` | `02:0C` | 80 | get `[profileId, buttonId, mode]`；set `[profileId, buttonId, mode, functionId, dataSize, ...data]` | `classId, buttonId, mode, functionId, dataSize, data[5]` |
 
-`LE16` 是低字节在前：setter 先写 `E4(value)` 再写 `l7(value)`，parser 用 `Jz(data[n], data[n+1])` 读回。`0C:07` 的 `setAnalogVibrationMotorPlayOnce` 在压缩代码里出现 `o[0]=0,o[1]=n,o[2]=E4(i),o[3]=l7(i)`，但外层只传两个参数，参数语义不闭合，因此不列入逐字节可验证集合。
+`BE16` 是高字节在前：setter 先写 `E4(value)` 再写 `l7(value)`，parser 用 `Jz(data[n], data[n+1])` 读回。`0C:07` 的 `setAnalogVibrationMotorPlayOnce` 在压缩代码里出现 `o[0]=0,o[1]=n,o[2]=E4(i),o[3]=l7(i)`，但外层只传两个参数，参数语义不闭合，因此不列入逐字节可验证集合。
 
 ### 1.3 每个 PID
 
@@ -77,7 +79,17 @@ J=[2,12,28], P=[80,12,152], G=[51,12,153], B=[51,12,25]
 | `1030` | Raiju V3 Pro Signature | `0C:82/02` | `0C:85/05` | `0C:93/13`, `0C:95/15`, `0C:96/16` | `0C:86/06` | `02:0C` | 另有 `1840 rzSerial`（串口 connect/send/disconnect，无 sendCommand） |
 | `1013` | Kitsune | N/A（无摇杆） | N/A | N/A（无扳机） | N/A（无马达） | `02:0C` + SOCD `0C:9B/1B` | `juliana` 默认含 `controllerDPadSOCD:"neutral"`；0x0C 表随包但模拟量不适用 |
 
-按键映射的 `02:0C` 来自 `rzDevice25` 模块（`main.*.js`，模块 `87969`）的 `setSingleButtonAssignment` 实现：它用 `b=[80,2,12]` 发命令，并把 `w="Set Single Button Assignment"` 作为描述。**注意**：同一常量块把 `R="Get Single Button Assignment"` 放在 `b` 旁边，把 `w` 放在 `k=[80,2,141]`（`02:8D`）旁边，压缩后的 name/array 配对有矛盾；因此只能确认 class 是 `0x02`，setter 运行时用 `0x0C`，但完整 payload 和 get 对应 id 还需要源码或抓包确认。
+按键映射的 `02:0C` / `02:8C` 来自 `rzDevice25` 基类（`main.*.js`，模块 `87969`）。`2620.*.js` 只包含 `rzDevice25Controller`，它继承模块 `87969` 的默认导出；把两个模块合并后，setter 和 getter 的常量块才能对上：
+
+```js
+b = new Uint8Array([80, 2, 12]);   // Set Single Button Assignment
+N = new Uint8Array([80, 2, 140]);  // Get Single Button Assignment
+```
+
+setter 的 payload 是 `[profileId, buttonId, mode, functionId, dataSize, ...data]`，整体补齐到 80 字节；getter 的 payload 是 `[profileId, buttonId, mode]`。响应统一为 `[classId, buttonId, mode, functionId, dataSize, data[5]]`。
+按键 ID 和功能 ID 来自由模块 `35922` 导出的 `Bx` 和 `rA`；`mode` 来自 `zN`（`NormalMode=0`、`HypershiftMode=1`）。
+
+之前把 `02:8D` 当成 getter 是压缩常量块相邻关系造成的误判；`02:8D` 实际属于 `getSingleKeyAssignment`（`k=[80,2,141]`）。`02:0C`/`02:8C` 这一组现在按调用点逐字节闭合。
 
 现有 `RazerButtonAssignmentProtocol` 用的是 class `0x08`（protocol 30），不要套到这批 protocol-25 手柄上；手柄 bundle 的 setter 明确用 `[80,2,12]`。
 
@@ -155,22 +167,12 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 
 `rzDevice25Sage` / `SagePC` 没有覆盖 `claimInterface`，所以默认是 0；`connectDevice` 把它传给 `connectHidDevice`。如果实机把 vendor feature collection 放在别的 interface，静态包不能证明；需要 HID 描述符确认。
 
-### 2.3 现有 `RazerFeatureTransport` 为什么不能直接用
+### 2.3 传输层现在按 prepared 请求的首字节取 report id
 
-`src/OpenSynapse.Windows/Protocols/RazerFeatureReport.cs`：
-
-- `public const int Length = 91;`（第 5 行）
-- `CreateRequestCore` 不写 `report[0]`，所以 91 字节缓冲的第一字节保持 0（第 108 行起）
-- `ValidatePreparedRequest` 要求 `report[0] == 0x00`（第 98-100 行）
-- `MatchesReportId` 用 `response[0] == reportId`（第 219 行）
-
-`RazerFeatureTransport.cs`：
-
-- `QueryAsync` 调 `CreateRequest(...)` 后走 `responseReportId: 0`（第 133-138 行）
-- `QueryPreparedAsync` 也走 `responseReportId: 0`（第 178-183 行）
-- 读取循环里 `MatchesReportId(candidate, responseReportId)`，所以只认 `candidate[0] == 0`（第 400 行）
-
-`SendBatchAsync` 确实可以物理写入一个 `[0]=4` 的 91 字节缓冲（它直接 `HidD_SetFeature`，不校验首字节），但它不读响应；middleware 的 `sendCommand` 每次发送后都会 `getFeatureReport` 校验 transaction/class/command，所以 `SendBatchAsync` 不能作为完整的替代。
+- `RazerFeatureReport.CreateRequestCore` 仍然保持 `report[0]=0`，protocol 25 现有设备行为不变。
+- `RazerGamepadProtocol.Create` 把 `report[0]` 设成 4，再由 `QueryPreparedAsync` 从请求首字节取 `responseReportId`。
+- `ValidatePreparedRequest` 不再要求首字节为 0；CRC、事务号、class/id 校验仍复用同一条 91 字节路径。
+- `QueryPreparedAsync` 已用于现有 protocol 25 设备和新手柄；`SendBatchAsync` 不参与需要读回的配置命令。
 
 ### 2.4 不是 XInput / 64 字节 output
 
@@ -180,24 +182,15 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 
 ## 3. 卡点与下一步
 
-1. **传输层 report id 4**（当前唯一硬阻塞）
-   - 现有 transport 的 91 字节帧、CRC、事务号、class/id 校验都可以复用；最小改动是给 `RazerFeatureTransport` 加 report id 参数，或在它旁边加一个 report-4 变体。
-   - 发送时 `report[0]=4`，读取时 `HidD_GetFeature` 期望 `response[0]==4`；`ValidatePreparedRequest` 不能继续要求 0。
-   - 这一步完成后，`0x0C` 的灵敏度/死区/扳机/震动命令可以逐字节实现并测试。
-
-2. **实机 HID 描述符**
+1. **实机 HID 描述符**
    - 需要确认 vendor feature collection 的 report id 4、report length 91、interface number、usage page/usage。
    - 建议在连接 Wolverine/Raiju 的机器上读 `IOCTL_HID_GET_REPORT_DESCRIPTOR`，或抓一次 Synapse 的 `HidD_SetFeature`/`HidD_GetFeature`。
 
-3. **按键映射 payload 未闭合**
-   - class `0x02` 可确认；setter 运行时用 `02:0C`，但常量块同时把 `02:0C` 标成 get、把 `02:8D` 标成 set，且 `setSingleButtonAssignment` 的 `fnDataByte`/`fnDataByteSize` 实参顺序与实现不一致。
-   - 在拿到源码 map 或一次抓包之前，不要写映射命令；先实现四个模拟量功能。
+2. **按键映射的写入语义**
+   - `02:0C`/`02:8C` 已闭合；但每个 `functionId` 的 `data` 含义不同（键码、宏 ID、Razer key 等），需要继续按功能逐个解析后才能做写入 UI。
 
-4. **硬件功能存在性**
+3. **硬件功能存在性**
    - 命令表存在不等于每个 PID 都暴露该 UI。Kitsune 没有摇杆/扳机/马达，模拟量命令不适用；TE 是否有震动马达也应由设备 profile 或实机确认。
-
-5. **本次未写代码、未跑测试**
-   - 结论是 `NeedsNewTransport`，按约束只交文档。没有新增 `RazerGamepadProtocol.cs` / `RazerGamepadProtocolTests.cs`，没有改 UI、`DeviceCategory`、`RazerDeviceRegistry` 或设备表。
 
 ## 4. 证据索引
 
@@ -205,30 +198,47 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 - `artifacts/razer-mw-full-cdn/bundles/0A4C/rzDevice25Sage.b9b57f19edfe6aa9f049.js`：`reportLength=91`、`reportId=4`、`[this.reportId,...a]`。
 - `artifacts/razer-mw-full-cdn/bundles/0A4C/rzDevice25SagePC.cc168544af1bfecc2162.js`：同样的 `reportLength=91`、`reportId=4`。
 - `artifacts/razer-mw-full-cdn/bundles/0A4C/main.f0ca95429464cd09cbdb.js`：`_createDataSend` 的 90 字节布局、`sendCommand` 的 `reportId/reportLength/protocol:"25"`、`setSingleButtonAssignment` 的 `b=[80,2,12]`。
+- 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `87969`：`rzDevice25` 基类；`setSingleButtonAssignment` 用 `b=[80,2,12]`，`getSingleButtonAssignment` 用 `N=[80,2,140]`，响应 parser 为 `[classId, buttonId, mode, functionId, dataSize, data[5]]`。
+- 同一 `main.f0ca95429464cd09cbdb.js` 的模块 `35922`：`Bx` 按键 ID、`rA` 功能 ID、`zN` 模式（`NormalMode=0`、`HypershiftMode=1`）。
 - `artifacts/razer-mw-full-cdn/bundles/0A74/3975.6a92c3b6f4c11aacbf7f.js`：`Perfect180Feature`，无 `sendCommand`。
 - `artifacts/razer-mw-full-cdn/bundles/1030/1840.79e8045662a8fdce4bed.js`：`rzSerial`，无 `sendCommand`。
 - `artifacts/razer-mw-full-cdn/bundles/1013/main.8c755a3c43990d2c3900.js`：`controllerDPadSOCD:"neutral"` 默认值。
-- `src/OpenSynapse.Windows/Protocols/RazerFeatureTransport.cs:133-138,178-183,400`：report id 0 的发送/读取/匹配。
-- `src/OpenSynapse.Windows/Protocols/RazerFeatureReport.cs:5,98-100,108,219`：91 字节长度、`report[0] == 0` 校验、report id 匹配。
+- `src/OpenSynapse.Windows/Protocols/RazerFeatureTransport.cs:170-181`：prepared 请求按首字节取响应 report id。
+- `src/OpenSynapse.Windows/Protocols/RazerFeatureReport.cs:98-108,221-222`：prepared 请求的通用校验与 report id 匹配。
 
-## 5. 已实现（2026-10-28，协议层）
+## 5. 已实现（2026-10-28）
 
-`src/OpenSynapse.Windows/Protocols/RazerGamepadProtocol.cs` 已经落地，覆盖五个 payload 已从 JS 闭合的命令对：
+协议层 `RazerGamepadProtocol` 已覆盖 bundle `2620` 的完整 `0C` 表；所有请求是 91 字节、report id 4。
 
 | 功能 | get | set | payload |
 |---|---|---|---|
-| 摇杆灵敏度 | `0C:82` | `0C:02` | `[controlId, index, value]` |
-| 死区/行程区 | `0C:85` | `0C:05` | `[controlId, index, dzHi,dzLo, sbHi,sbLo, dtHi,dtLo, prevent]` |
-| 震动缩放 | `0C:86` | `0C:06` | `[controlId, index, scale]` |
-| 扳机行程 | `0C:93` | `0C:13` | `[controlId, index, start, end]` |
-| 扳机模式 | `0C:95` | `0C:15` | `[controlId, index, mode]` |
+| 控制 ID 列表 | `0C:80` | — | 80 字节零 |
+| 模拟控制描述 | `0C:81` | — | `[profileId, controlId, index, 0]` |
+| 摇杆灵敏度 | `0C:82` | `0C:02` | `[profileId, controlId, value]` |
+| 死区/行程区 | `0C:85` | `0C:05` | `[profileId, controlId, dzBE16, sbBE16, dtBE16, prevent]` |
+| 震动缩放 | `0C:86` | `0C:06` | `[profileId, motorId, scale]` |
+| 扳机行程 | `0C:93` | `0C:13` | `[profileId, controlId, start, end]` |
+| 扳机模式 | `0C:95` | `0C:15` | `[profileId, controlId, mode]` |
+| 数字扳机 | `0C:96` | `0C:16` | `[profileId, controlId, actuationPoint, rapid]` |
+| 摇杆圆形度 | `0C:92` | `0C:12` | `[profileId, controlId, 0=standard/1=circular]` |
+| D-pad 斜向 | `0C:97` | `0C:17` | `[profileId, option]` |
+| SOCD | `0C:9B` | `0C:1B` | `[profileId, option]` |
+| 控制器模式 | `0C:9C` | `0C:1C` | `[profileId, option]` |
+| ADC masking | `0C:91` | `0C:11` | `[maskBE16]`，无 profile/control |
+| 原始输入 | `0C:98` | — | JS 把 `[80,12,152]` 本身当参数块；六个 BE16 |
+| 校准数据 | `0C:99` | `0C:19` | 51 字节，`analogId` + 16 个 BE16 |
+| 按键 ID 列表 | `02:80` | — | 80 字节零 |
+| 单键映射 | `02:8C` | `02:0C` | 80 字节；get `[profileId, buttonId, mode]`，set `[profileId, buttonId, mode, functionId, dataSize, ...data]` |
 
-响应解析按 bundle 的 parser 逐字段对应：`[classId, controlId, value...]`，zone 的三个 16 位值是大端。
-所有请求是 91 字节、report id 4。
+响应解析按 bundle 的 parser 逐字段对应：`[classId, controlId, value...]`，16 位值全部大端。
 
 传输层同步改成「prepared 请求自带 report id」：`QueryPreparedAsync` 用请求首字节作为响应 id，
 `ValidatePreparedRequest` 不再要求 report id 为 0。现有 protocol 25 请求仍然是 0，行为不变。
 
-**仍缺**：`setSingleButtonAssignment` 的 class 0x02 payload（bundle 里 get/set id 互相矛盾）、
-`0C:96/16` 数字扳机调整（payload 未确认），以及设备页、`DeviceCategory` 和 discovery。
+设备层 `RazerGamepadService` 已按 9 个 PID 发现设备，读活动 profile、整个 `0C` 表和 `02:80` 按键列表；
+`ReadButtonAssignmentsAsync` 可按 Normal/Hypershift 逐个读取 `02:8C`。写入做读回校验，失败时恢复旧值。
+页面层已加入 `DeviceCategory.Gamepad`、Gamepad 面板和概览卡片；缺项自动折叠。
+
+**仍缺**：实机 HID 描述符验证；按键映射的写入 UI（协议和只读读取已就绪，功能数据如键码/宏 ID 还需要逐个功能解析）；
+板载 profile 页面。
 

@@ -416,6 +416,22 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Raptor 27 | `1532:0F12` | Chroma 灯光 |
 | Razer Raptor 27 | `1532:0F28` | Chroma 灯光 |
 
+## 手柄
+
+手柄配置走 91 字节、report id 4 的 feature report。页面提供摇杆/扳机、震动、D-pad、SOCD 和按键映射读取；设备不回应的命令会自动隐藏对应行。
+
+| 设备 | USB VID:PID | 备注 |
+|---|---|---|
+| Razer Kitsune | `1532:1013` | SOCD 和按键映射；无摇杆、无扳机 |
+| Razer Raiju V3 Pro Signature Edition | `1532:1030` | — |
+| Razer Wolverine V3 Pro | `1532:0A4C` | — |
+| Razer Wolverine V3 Pro PC | `1532:0A57` | — |
+| Razer Wolverine V3 Pro Playstation | `1532:1025` | — |
+| Razer Wolverine V3 TE PC | `1532:0A5A` | — |
+| Razer Wolverine V3 Tournament Edition | `1532:0A45` | — |
+| Razer Wolverine V4 Pro | `1532:0A74` | — |
+| Razer Wolverine V4 Tournament Edition | `1532:0A7C` | — |
+
 ## 配件
 
 配件控制包括灯光、扩展坞、支架、风扇控制和在位检测。

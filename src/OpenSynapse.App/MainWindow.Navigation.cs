@@ -64,6 +64,7 @@ public sealed partial class MainWindow
         BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
         HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
         KeyboardPanel.Visibility = device == "keyboard" ? Visibility.Visible : Visibility.Collapsed;
+        GamepadPanel.Visibility = device == "gamepad" ? Visibility.Visible : Visibility.Collapsed;
         ChromaPanel.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
         BlePanel.Visibility = device == "ble" ? Visibility.Visible : Visibility.Collapsed;
         HuePanel.Visibility = device == "hue" ? Visibility.Visible : Visibility.Collapsed;
@@ -153,6 +154,7 @@ public sealed partial class MainWindow
         OpenRazerDevicePanel.Visibility == Visibility.Visible ? "openrazer" :
         HeadsetAudioPanel.Visibility == Visibility.Visible ? "headsetaudio" :
         KeyboardPanel.Visibility == Visibility.Visible ? "keyboard" :
+        GamepadPanel.Visibility == Visibility.Visible ? "gamepad" :
         ChromaPanel.Visibility == Visibility.Visible ? "chroma" :
         BlePanel.Visibility == Visibility.Visible ? "ble" :
         HuePanel.Visibility == Visibility.Visible ? "hue" :
@@ -188,6 +190,10 @@ public sealed partial class MainWindow
                     item.Source is RazerKeyboardDeviceRowViewModel keyboardRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         keyboardRow.Connection.DevicePath, _viewModel.SelectedKeyboard?.DevicePath),
+                DeviceSelectorItemKind.Gamepad => device == "gamepad" &&
+                    item.Source is RazerGamepadDeviceRowViewModel gamepadRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        gamepadRow.Connection.DevicePath, _viewModel.SelectedGamepad?.DevicePath),
                 DeviceSelectorItemKind.Ble => device == "ble" &&
                     item.Source is RazerBleDeviceRowViewModel bleRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
