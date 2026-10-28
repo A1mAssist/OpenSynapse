@@ -150,7 +150,11 @@ internal sealed class RazerDeviceRegistry
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
             ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
-            ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys.ToHashSet(StringComparer.Ordinal),
+            // The Blade 18 (2024) firmware rejects 0F:98/18, even though the family
+            // shares those reports. Keep them optional; the other manifests still own them.
+            ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys
+                .Where(capability => capability is not ("startup-animation.get" or "startup-animation.set"))
+                .ToHashSet(StringComparer.Ordinal),
             // adapter-power.get and the display MUX reports are optional in this family:
             // only the 029F manifest answers the adapter-wattage level and owns the
             // MUX reports, so they are not required here.

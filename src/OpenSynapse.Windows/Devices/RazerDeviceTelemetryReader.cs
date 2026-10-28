@@ -1782,7 +1782,9 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             }
 
             var current = new BladeThermalState(
-                ParseBladePerformanceMode(response[RazerFeatureReport.ArgumentsOffset + 2]),
+                ParseBladePerformanceMode(
+                    response[RazerFeatureReport.ArgumentsOffset + 2],
+                    device.Descriptor.ProductId),
                 ParseBladeFanMode(response[RazerFeatureReport.ArgumentsOffset + 3]));
             if (state is not null && state != current)
             {
@@ -2267,8 +2269,10 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         }
     }
 
-    private static BladePerformanceMode ParseBladePerformanceMode(byte value) => value switch
+    internal static BladePerformanceMode ParseBladePerformanceMode(byte value, ushort productId) => value switch
     {
+        0x01 when BladeModelCapabilities.PerformanceModesFor(productId).Contains(BladePerformanceMode.Turbo) =>
+            BladePerformanceMode.Turbo,
         0x00 => BladePerformanceMode.Balanced,
         0x02 => BladePerformanceMode.Performance,
         0x03 => BladePerformanceMode.BatterySaver,

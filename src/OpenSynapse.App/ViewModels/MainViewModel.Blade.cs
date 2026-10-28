@@ -1148,6 +1148,7 @@ public sealed partial class MainViewModel
     private static string BladePerformanceModeTextKey(BladePerformanceMode mode) => mode switch
     {
         BladePerformanceMode.Balanced => "Text_9753B259",
+        BladePerformanceMode.Turbo => "Text_Turbo",
         BladePerformanceMode.Performance => "Text_C1DB7AE1",
         BladePerformanceMode.BatterySaver => "Text_EE43F0B1",
         BladePerformanceMode.Custom => "Text_598C5804",
