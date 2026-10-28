@@ -13,7 +13,14 @@ public sealed class ProfileStore
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() },
+        // The performance mode is written by name, so it needs a converter that still
+        // reads the name the older builds wrote. It goes first because the converters
+        // are tried in order and the generic one would take it.
+        Converters =
+        {
+            new BladePerformanceModeJsonConverter(),
+            new JsonStringEnumConverter(),
+        },
     };
 
     public ProfileStore(string? filePath = null)

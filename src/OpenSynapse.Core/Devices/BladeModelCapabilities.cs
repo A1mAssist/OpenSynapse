@@ -82,7 +82,7 @@ public static class BladeModelCapabilities
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
-        BladePerformanceMode.Turbo,
+        BladePerformanceMode.Gaming,
         BladePerformanceMode.Custom,
         BladePerformanceMode.Hyperboost,
     ];
@@ -95,12 +95,12 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Hyperboost,
     ];
 
-    // 02B6 publishes Turbo as wire value 0x01.
+    // 02B6 publishes Gaming as wire value 0x01.
     private static readonly BladePerformanceMode[] Modes02B6 =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
-        BladePerformanceMode.Turbo,
+        BladePerformanceMode.Gaming,
         BladePerformanceMode.Custom,
     ];
 
@@ -110,28 +110,28 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Custom,
     ];
 
-    // 02B8 publishes Balanced, Silent, Turbo and Custom. 02A0 publishes only
+    // 02B8 publishes Balanced, Silent, Gaming and Custom. 02A0 publishes only
     // Balanced, Silent and Custom, so it keeps the three-mode list below.
     private static readonly BladePerformanceMode[] Modes02B8 =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
-        BladePerformanceMode.Turbo,
+        BladePerformanceMode.Gaming,
         BladePerformanceMode.Custom,
     ];
 
-    // 02C7 and 02E1 publish Turbo in addition to the 02C5 list.
+    // 02C7 and 02E1 publish Gaming in addition to the 02C5 list.
     private static readonly BladePerformanceMode[] Modes02C7 =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
         BladePerformanceMode.Performance,
-        BladePerformanceMode.Turbo,
+        BladePerformanceMode.Gaming,
         BladePerformanceMode.Custom,
         BladePerformanceMode.BatterySaver,
     ];
 
-    // 02A0/028A/028B/029E share the older three-mode list; only 02B8 adds Turbo.
+    // 02A0/028A/028B/029E share the older three-mode list; only 02B8 adds Gaming.
     private static readonly BladePerformanceMode[] Modes028A =
     [
         BladePerformanceMode.Balanced,
@@ -297,7 +297,7 @@ public static class BladeModelCapabilities
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2000, 5400, 3800),
                     (BladePerformanceMode.Silent, 2200, 3800, 3000),
-                    (BladePerformanceMode.Turbo, 2000, 5400, 3800),
+                    (BladePerformanceMode.Gaming, 2000, 5400, 3800),
                     (BladePerformanceMode.Custom, 3300, 5400, 4300)),
                 Modes: Modes02B6),
 
@@ -313,7 +313,7 @@ public static class BladeModelCapabilities
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
                     (BladePerformanceMode.Silent, 3700, 5300, 4500),
-                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
+                    (BladePerformanceMode.Gaming, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
                 Modes: Modes02B8),
 
@@ -344,7 +344,7 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
-                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
+                    (BladePerformanceMode.Gaming, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
                     (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
                 Modes: Modes02C7),
@@ -365,7 +365,7 @@ public static class BladeModelCapabilities
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
-                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
+                    (BladePerformanceMode.Gaming, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
                     (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
                 Modes: Modes02B7),
@@ -635,7 +635,7 @@ public static class BladeModelCapabilities
                 Modes: Modes02C6),
 
             // Blade 18 (2026) RZ09-0582 publishes the same fan controls as the 2025
-            // Blade 18 family. Its bundle maps Turbo to wire value 0x01. Its deviceUI
+    // Blade 18 family. Its bundle maps Gaming to wire value 0x01. Its deviceUI
             // performance deviceFeatures omit hasMaxFanSpeedModeEnabled.
             [0x02E1] = new(
                 MaxFan: false,
@@ -648,7 +648,7 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
-                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
+                    (BladePerformanceMode.Gaming, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
                     (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
                 Modes: Modes02C7),

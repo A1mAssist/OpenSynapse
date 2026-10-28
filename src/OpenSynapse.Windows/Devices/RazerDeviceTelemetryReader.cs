@@ -160,8 +160,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                     fanBytes.Add(fanByte);
                     try
                     {
-                        performanceMode = ParseBladePerformanceMode(
-                            performanceByte, blade.Descriptor.ProductId);
+                        performanceMode = ParseBladePerformanceMode(performanceByte);
                     }
                     catch (Exception exception) when (IsExpectedHardwareException(exception))
                     {
@@ -1821,9 +1820,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         foreach (var report in await ReadBladeThermalReportsAsync(device, cancellationToken))
         {
             var current = new BladeThermalState(
-                ParseBladePerformanceMode(
-                    report[RazerFeatureReport.ArgumentsOffset + 2],
-                    device.Descriptor.ProductId),
+                ParseBladePerformanceMode(report[RazerFeatureReport.ArgumentsOffset + 2]),
                 ParseBladeFanMode(report[RazerFeatureReport.ArgumentsOffset + 3]),
                 report[RazerFeatureReport.ArgumentsOffset + 2]);
             if (state is not null && state != current)
@@ -2364,18 +2361,15 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
     /// <summary>
     /// Decodes the performance-mode byte the thermal report carries.
-    /// Wire value 0x01 is one byte with two names: Synapse calls it Gaming, the
-    /// 2018-2020 chassis call it Turbo. A model whose own mode table publishes Turbo
-    /// keeps that name. Firmware that stores the byte reports it even on a model whose
-    /// mode table omits it, and there it is the same high-performance mode as 0x02, so
-    /// it reads as Performance: refusing it would fail the whole thermal read and take
-    /// the fan controls with it.
+    /// Wire value 0x01 is Gaming in every middleware bundle; the 2018-2020 chassis
+    /// write it as Turbo in their mode table, which is the same byte. Firmware that
+    /// stores the byte reports it even on a model whose mode table omits it, so
+    /// refusing it would fail the whole thermal read and take the fan controls with
+    /// it.
     /// </summary>
-    internal static BladePerformanceMode ParseBladePerformanceMode(byte value, ushort productId) => value switch
+    internal static BladePerformanceMode ParseBladePerformanceMode(byte value) => value switch
     {
-        0x01 when BladeModelCapabilities.PerformanceModesFor(productId).Contains(BladePerformanceMode.Turbo) =>
-            BladePerformanceMode.Turbo,
-        0x01 => BladePerformanceMode.Performance,
+        0x01 => BladePerformanceMode.Gaming,
         0x00 => BladePerformanceMode.Balanced,
         0x02 => BladePerformanceMode.Performance,
         0x03 => BladePerformanceMode.BatterySaver,
@@ -2438,8 +2432,8 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     /// <summary>
     /// The thermal report's two facts. The raw performance byte is kept because the
     /// named mode can be a widened reading of it: a model whose bundle publishes
-    /// neither Turbo nor Gaming still reports 0x01, which reads as Performance, and
-    /// writing that name back would change the machine's mode.
+    /// neither Gaming nor Performance still reports 0x01, and writing that name back
+    /// would change the machine's mode.
     /// </summary>
     private sealed record BladeThermalState(
         BladePerformanceMode PerformanceMode,

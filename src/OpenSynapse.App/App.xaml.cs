@@ -465,7 +465,7 @@ public partial class App : Application
         var modeText = mode switch
         {
             OpenSynapse.Core.Devices.BladePerformanceMode.Balanced => AppStrings.Text("Text_9753B259"),
-            OpenSynapse.Core.Devices.BladePerformanceMode.Turbo => AppStrings.Text("Text_Turbo"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.Gaming => AppStrings.Text("Text_GamingPerformanceMode"),
             OpenSynapse.Core.Devices.BladePerformanceMode.Performance => AppStrings.Text("Text_C1DB7AE1"),
             OpenSynapse.Core.Devices.BladePerformanceMode.Custom => AppStrings.Text("Text_598C5804"),
             OpenSynapse.Core.Devices.BladePerformanceMode.Silent => AppStrings.Text("Text_60E54E25"),

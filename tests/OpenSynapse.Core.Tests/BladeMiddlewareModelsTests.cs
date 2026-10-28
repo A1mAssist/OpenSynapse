@@ -67,25 +67,21 @@ public sealed class BladeMiddlewareModelsTests
     [InlineData(0x02B8)]
     [InlineData(0x02C7)]
     [InlineData(0x02E1)]
-    public void TurboModeIsParsedForTheModelsThatPublishIt(ushort productId)
-    {
-        Assert.Equal(
-            BladePerformanceMode.Turbo,
-            RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, productId));
-    }
-
-    [Theory]
     [InlineData(0x0255)]
+    [InlineData(0x029F)]
     [InlineData(0x02A0)]
     [InlineData(0x02C5)]
-    public void TurboModeIsNotInventedForOtherBladeModels(ushort productId)
+    public void TheGamingByteIsParsedTheSameOnEveryBladeModel(ushort productId)
     {
-        // The byte is not Turbo on these models, but firmware that stores it still
-        // reports it. Failing the read would hide the fan controls with it, so it reads
-        // as the same high-performance mode the byte 0x02 carries.
+        // Every middleware bundle calls wire value 0x01 Gaming; the 2018-2020 chassis
+        // write it as Turbo in their mode table, which is the same byte.
         Assert.Equal(
-            BladePerformanceMode.Performance,
-            RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, productId));
+            BladePerformanceMode.Gaming,
+            RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01));
+        // The mode tables that publish it name the same byte, whatever they call it.
+        Assert.Equal(
+            productId is 0x02B6 or 0x02B7 or 0x02B8 or 0x02C7 or 0x02E1,
+            BladeModelCapabilities.PublishesPerformanceMode(productId, BladePerformanceMode.Gaming));
     }
 
     [Theory]

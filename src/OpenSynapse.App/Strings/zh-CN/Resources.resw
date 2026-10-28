@@ -833,9 +833,9 @@
     <value>平衡</value>
     <comment>平衡</comment>
   </data>
-  <data name="Text_Turbo" xml:space="preserve">
-    <value>Turbo</value>
-    <comment>Turbo</comment>
+  <data name="Text_GamingPerformanceMode" xml:space="preserve">
+    <value>游戏</value>
+    <comment>游戏</comment>
   </data>
   <data name="Text_10C83C81" xml:space="preserve">
     <value>下一步</value>

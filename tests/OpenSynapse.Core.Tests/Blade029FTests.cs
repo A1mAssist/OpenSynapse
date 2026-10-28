@@ -161,7 +161,7 @@ public sealed class Blade029FTests
             RazerDeviceRegistry.BuiltIn).ReadAsync([Blade029FDescriptor()]);
 
         Assert.Empty(telemetry.Errors);
-        Assert.Equal(BladePerformanceMode.Performance, telemetry.BladePerformanceMode);
+        Assert.Equal(BladePerformanceMode.Gaming, telemetry.BladePerformanceMode);
         Assert.Equal(BladeFanMode.Automatic, telemetry.BladeFanMode);
     }
 

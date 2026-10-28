@@ -631,8 +631,8 @@
   <data name="Text_9753B259" xml:space="preserve">
     <value>Balanced</value>
   </data>
-  <data name="Text_Turbo" xml:space="preserve">
-    <value>Turbo</value>
+  <data name="Text_GamingPerformanceMode" xml:space="preserve">
+    <value>Gaming</value>
   </data>
   <data name="Text_10C83C81" xml:space="preserve">
     <value>Next</value>

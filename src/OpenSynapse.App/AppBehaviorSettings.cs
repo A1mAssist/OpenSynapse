@@ -9,7 +9,7 @@ internal sealed class AppBehaviorSettings
     internal static readonly BladePerformanceMode[] SupportedPerformanceCycleModes =
     [
         BladePerformanceMode.Balanced,
-        BladePerformanceMode.Turbo,
+        BladePerformanceMode.Gaming,
         BladePerformanceMode.Performance,
         BladePerformanceMode.Custom,
         BladePerformanceMode.Silent,
