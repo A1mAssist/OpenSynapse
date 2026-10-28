@@ -19,13 +19,13 @@ public sealed class OpenRazerKrakenV4ProtocolTests
         Assert.Equal(0x00, effect[7]);
         Assert.Equal(0x00, effect[8]);
         Assert.Equal(0x00, effect[9]);
-        Assert.Equal([0xC0, 0x01, 0x01, 0x01], effect[10..14]);
+        Assert.Equal([0xC0, 0x00, 0x01, 0x01], effect[10..14]);
 
         var frame = reports[1];
         Assert.Equal(0x0F, frame[7]);
-        Assert.Equal(0x10, frame[8]);
+        Assert.Equal(0x03, frame[8]);
         Assert.Equal(0x00, frame[9]);
-        Assert.Equal([0x00, 0x00, 0x01, 0x00, 0x09], frame[10..15]);
+        Assert.Equal([0x00, 0x00, 0x00, 0x00, 0x08], frame[10..15]);
 
         for (var led = 0; led < OpenRazerKrakenV4Protocol.LedCount; led++)
         {
@@ -57,11 +57,11 @@ public sealed class OpenRazerKrakenV4ProtocolTests
         Assert.Equal(2, reports.Count);
 
         var effect = reports[0];
-        Assert.Equal([0xC0, 0x01, 0x01, 0x00], effect[10..14]);
+        Assert.Equal([0xC0, 0x00, 0x01, 0x00], effect[10..14]);
 
         var frame = reports[1];
         Assert.Equal(0x0F, frame[7]);
-        Assert.Equal(0x10, frame[8]);
+        Assert.Equal(0x03, frame[8]);
         Assert.All(frame[15..42], value => Assert.Equal(0, value));
     }
 
@@ -71,7 +71,7 @@ public sealed class OpenRazerKrakenV4ProtocolTests
         var report = Assert.Single(OpenRazerKrakenV4Protocol.CreateWave());
         Assert.Equal(0x00, report[7]);
         Assert.Equal(0x00, report[8]);
-        Assert.Equal([0xC0, 0x01, 0x01, 0x04], report[10..14]);
+        Assert.Equal([0xC0, 0x00, 0x01, 0x04], report[10..14]);
     }
 
     [Fact]
@@ -88,18 +88,19 @@ public sealed class OpenRazerKrakenV4ProtocolTests
     [Fact]
     public void TheFramesMatchTheRazerBundleByteForByte()
     {
-        // Reference frames taken from the "Billie" headset implementation in
-        // Razer's own product bundle, including the checksum byte.
+        // Reference frames built from the "Billie" headset bundle: Set Chroma Effect is
+        // C0 00 01, Set Chroma Frame is 0F:03 with a [0,0,row-1,0,col-1] header, and the
+        // checksum is the XOR of bytes 0..61.
         var staticReports = OpenRazerKrakenV4Protocol.CreateStatic(new OpenRazerColor(0x11, 0x22, 0x33));
         Assert.Equal(
-            "02006000000005000000C0010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A600",
+            "02006000000005000000C0000101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A700",
             Convert.ToHexString(staticReports[0]));
         Assert.Equal(
-            "020060000000210F1000000001000911223311223311223311223311223311223311223311223311223300000000000000000000000000000000000000005400",
+            "020060000000210F0300000000000811223311223311223311223311223311223311223311223311223300000000000000000000000000000000000000004700",
             Convert.ToHexString(staticReports[1]));
 
         Assert.Equal(
-            "02006000000005000000C0010104000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A300",
+            "02006000000005000000C0000104000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A200",
             Convert.ToHexString(Assert.Single(OpenRazerKrakenV4Protocol.CreateWave())));
     }
 }
