@@ -49,9 +49,22 @@ public readonly record struct BladeDisplayMuxSwitchResult(
 
 public static class BladeDisplayMuxModes
 {
+    /// <summary>
+    /// Masks the modes a model may expose. The 2026 bundle only defines the
+    /// Microsoft Hybrid (0) and Discrete MUX (1) mode values, so callers drop the
+    /// hardware DDS capability bit before building the switcher.
+    /// </summary>
+    public static BladeDisplayMuxCapabilities AdmittedCapabilities(
+        BladeDisplayMuxCapabilities capabilities,
+        bool allowDds) =>
+        allowDds
+            ? capabilities
+            : capabilities & (BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete);
+
     public static bool Supports(
         BladeDisplayMuxCapabilities capabilities,
-        BladeDisplayMuxMode mode) =>
+        BladeDisplayMuxMode mode,
+        bool allowDds = true) =>
         mode switch
         {
             BladeDisplayMuxMode.Hybrid =>
@@ -59,24 +72,27 @@ public static class BladeDisplayMuxModes
             BladeDisplayMuxMode.Discrete =>
                 capabilities.HasFlag(BladeDisplayMuxCapabilities.Discrete),
             BladeDisplayMuxMode.Dds =>
-                capabilities.HasFlag(BladeDisplayMuxCapabilities.DynamicDisplaySwitch),
+                allowDds && capabilities.HasFlag(BladeDisplayMuxCapabilities.DynamicDisplaySwitch),
             _ => false,
         };
 
-    public static bool CanSwitch(BladeDisplayMuxCapabilities capabilities) =>
+    public static bool CanSwitch(
+        BladeDisplayMuxCapabilities capabilities,
+        bool allowDds = true) =>
         Supports(capabilities, BladeDisplayMuxMode.Discrete) &&
         (Supports(capabilities, BladeDisplayMuxMode.Hybrid) ||
-         Supports(capabilities, BladeDisplayMuxMode.Dds));
+         Supports(capabilities, BladeDisplayMuxMode.Dds, allowDds));
 
     public static IReadOnlyList<BladeDisplayMuxMode> GetSupportedModes(
-        BladeDisplayMuxCapabilities capabilities)
+        BladeDisplayMuxCapabilities capabilities,
+        bool allowDds = true)
     {
         var modes = new List<BladeDisplayMuxMode>(3);
         if (Supports(capabilities, BladeDisplayMuxMode.Hybrid))
         {
             modes.Add(BladeDisplayMuxMode.Hybrid);
         }
-        if (Supports(capabilities, BladeDisplayMuxMode.Dds))
+        if (allowDds && Supports(capabilities, BladeDisplayMuxMode.Dds))
         {
             modes.Add(BladeDisplayMuxMode.Dds);
         }
