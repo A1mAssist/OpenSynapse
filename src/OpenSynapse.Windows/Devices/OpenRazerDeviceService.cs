@@ -118,9 +118,14 @@ public sealed partial class OpenRazerDeviceService
         var results = new List<OpenRazerDeviceConnection>();
         foreach (var group in interfaces
             .Where(item => _catalog.Find(item.VendorId, item.ProductId) is not null)
-            // A locally admitted Blade manifest owns the laptop controls and matrix path;
-            // discovering it twice would show one physical device as two cards.
-            .Where(item => RazerDeviceRegistry.BuiltIn.Find(item.VendorId, item.ProductId) is null)
+            // A locally admitted Blade manifest owns the laptop controls and matrix path.
+            // The 2026 generation is the exception: its standard Chroma lighting lives in
+            // the OpenRazer catalogue, while the manifest owns thermal, fan and MUX.
+            .Where(item =>
+            {
+                var manifest = RazerDeviceRegistry.BuiltIn.Find(item.VendorId, item.ProductId);
+                return manifest is null || manifest.ProtocolFamily == "blade-2026";
+            })
             .GroupBy(item => (item.ProductId, item.PhysicalDeviceKey))
             .OrderBy(group => group.Key.ProductId)
             .ThenBy(group => group.Key.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase))

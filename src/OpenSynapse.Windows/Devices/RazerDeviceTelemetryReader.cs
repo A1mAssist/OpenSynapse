@@ -1177,8 +1177,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
         try
         {
-            var capabilities = await ReadBladeDisplayMuxCapabilitiesAsync(blade, cancellationToken);
-            if (!BladeDisplayMuxModes.CanSwitch(capabilities))
+            var allowDds = AllowsBladeDds(blade);
+            var capabilities = BladeDisplayMuxModes.AdmittedCapabilities(
+                await ReadBladeDisplayMuxCapabilitiesAsync(blade, cancellationToken),
+                allowDds);
+            if (!BladeDisplayMuxModes.CanSwitch(capabilities, allowDds))
             {
                 return new BladeDisplayMuxStatus(
                     IsSupported: false,
@@ -1189,9 +1192,12 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             }
 
             var mode = await ReadBladeDisplayMuxModeAsync(blade, cancellationToken);
+            // A 2026 unit that reports DDS cannot be restored safely because its
+            // bundle has no DDS mode value to write. Do not offer a change there.
+            var canChange = allowDds || mode != BladeDisplayMuxMode.Dds;
             return new BladeDisplayMuxStatus(
                 IsSupported: true,
-                CanChange: true,
+                CanChange: canChange,
                 Mode: mode,
                 BlockReason: BladeDisplayMuxBlockReason.None,
                 Capabilities: capabilities);
@@ -1223,14 +1229,26 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Unsupported);
         }
 
-        var capabilities = await ReadBladeDisplayMuxCapabilitiesAsync(blade, cancellationToken);
-        if (!BladeDisplayMuxModes.CanSwitch(capabilities) ||
-            !BladeDisplayMuxModes.Supports(capabilities, mode))
+        var allowDds = AllowsBladeDds(blade);
+        if (mode == BladeDisplayMuxMode.Dds && !allowDds)
+        {
+            return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Unsupported);
+        }
+
+        var capabilities = BladeDisplayMuxModes.AdmittedCapabilities(
+            await ReadBladeDisplayMuxCapabilitiesAsync(blade, cancellationToken),
+            allowDds);
+        if (!BladeDisplayMuxModes.CanSwitch(capabilities, allowDds) ||
+            !BladeDisplayMuxModes.Supports(capabilities, mode, allowDds))
         {
             return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Unsupported);
         }
 
         var original = await ReadBladeDisplayMuxModeAsync(blade, cancellationToken);
+        if (original == BladeDisplayMuxMode.Dds && !allowDds)
+        {
+            return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Unsupported);
+        }
         if (original == mode)
         {
             return new BladeDisplayMuxSwitchResult(BladeDisplayMuxSwitchOutcome.Success);
@@ -1289,6 +1307,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         ReadyDevice blade,
         BladeDisplayMuxMode original)
     {
+        if (original == BladeDisplayMuxMode.Dds && !AllowsBladeDds(blade))
+        {
+            return false;
+        }
+
         try
         {
             await QueryCapabilityAsync(
@@ -1308,6 +1331,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         blade.Manifest.Capabilities.ContainsKey("display-mux.get") &&
         blade.Manifest.Capabilities.ContainsKey("display-mux.set") &&
         blade.Manifest.Capabilities.ContainsKey("display-mux-capabilities.get");
+
+    private static bool AllowsBladeDds(ReadyDevice blade) =>
+        // The 2026 bundle defines only Microsoft_Hybrid (0) and Discrete_MUX (1);
+        // it has no DDS mode value, so do not invent a 0x02 write for that family.
+        blade.Descriptor.ProtocolFamily != "blade-2026";
 
     private static BladeDisplayMuxStatus UnsupportedBladeDisplayMux(BladeDisplayMuxBlockReason reason) =>
         new(
@@ -1688,10 +1716,13 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         CancellationToken cancellationToken)
     {
         BladeThermalState? state = null;
-        // The 597 middleware selects the default profile (1); the 710/671 reports
-        // accept profile 0. The remaining two bytes are the performance mode and
-        // fan-mode response slots.
-        var profileId = device.Descriptor.ProtocolFamily == "blade-597" ? (byte)0x01 : (byte)0x00;
+        // The 597 and 2026 middleware select the default profile (1); the 710/671
+        // reports accept profile 0. The remaining two bytes are the performance mode
+        // and fan-mode response slots.
+        var profileId = device.Descriptor.ProtocolFamily == "blade-597" ||
+            BladeModelCapabilities.UsesBlade2026ThermalSelector(device.Descriptor.ProductId)
+                ? (byte)0x01
+                : (byte)0x00;
         foreach (var zone in new byte[] { 0x01, 0x02 })
         {
             var response = await QueryCapabilityAsync(
@@ -1725,11 +1756,12 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         // Query both zones before parsing either one. A model-specific target above
         // the write ceiling must not prevent the second diagnostic read.
         var zones = new[] { BladeFanProtocol.ZoneCpu, BladeFanProtocol.ZoneGpu };
+        var classId = GetBladeFanClassId(device);
         var requests = new byte[zones.Length][];
         var responses = new byte[zones.Length][];
         for (var index = 0; index < zones.Length; index++)
         {
-            requests[index] = BladeFanProtocol.CreateGetTargetRequest(zones[index]);
+            requests[index] = BladeFanProtocol.CreateGetTargetRequest(zones[index], classId);
             responses[index] = await QueryBuiltRequestAsync(
                 device, "fan-target.get", requests[index], cancellationToken);
         }
@@ -1742,7 +1774,8 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 responses[index],
                 zones[index],
                 CreateConfiguredRequest(device, "fan-target.get", requests[index]),
-                maximumRpm);
+                maximumRpm,
+                classId);
             if (rpm is not null && rpm != current)
             {
                 throw new InvalidOperationException($"Blade fan-zone targets do not match: {rpm} / {current} RPM.");
@@ -1779,14 +1812,15 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         CancellationToken cancellationToken,
         bool curveTarget)
     {
-        var request = BladeFanProtocol.CreateGetTargetRequest(zone);
+        var classId = GetBladeFanClassId(device);
+        var request = BladeFanProtocol.CreateGetTargetRequest(zone, classId);
         var response = await QueryBuiltRequestAsync(
             device, "fan-target.get", request, cancellationToken);
         var configured = CreateConfiguredRequest(device, "fan-target.get", request);
         var maximumRpm = BladeModelCapabilities.MaximumFanTargetRpmFor(device.Descriptor.ProductId);
         return curveTarget
-            ? BladeFanProtocol.ParseCurveTarget(response, zone, configured, maximumRpm)
-            : BladeFanProtocol.ParseTarget(response, zone, configured, maximumRpm);
+            ? BladeFanProtocol.ParseCurveTarget(response, zone, configured, maximumRpm, classId)
+            : BladeFanProtocol.ParseTarget(response, zone, configured, maximumRpm, classId);
     }
 
     private Task WriteBladeFanTargetAsync(
@@ -1796,15 +1830,18 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         CancellationToken cancellationToken,
         bool curveTarget = false)
     {
+        var classId = GetBladeFanClassId(device);
         var request = curveTarget
             ? BladeFanProtocol.CreateSetCurveTargetRequest(
                 zone,
                 rpm,
-                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(device.Descriptor.ProductId))
+                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(device.Descriptor.ProductId),
+                classId)
             : BladeFanProtocol.CreateSetTargetRequest(
                 zone,
                 rpm,
-                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(device.Descriptor.ProductId));
+                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(device.Descriptor.ProductId),
+                classId);
         var transport = device.Manifest.GetRequiredCapability("fan-target.get");
         return _transport.QueryAsync(
             device.Descriptor.Id,
@@ -2766,8 +2803,14 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private ReadyDevice? FindReadyBlade(IReadOnlyList<DeviceDescriptor> devices) =>
         FindReadyDevice(devices, "blade-710") ??
         FindReadyDevice(devices, "blade-710-chroma") ??
+        FindReadyDevice(devices, "blade-2026") ??
         FindReadyDevice(devices, "blade-671") ??
         FindReadyDevice(devices, "blade-597");
+
+    private static byte GetBladeFanClassId(ReadyDevice device) =>
+        BladeModelCapabilities.UsesBlade2026ThermalSelector(device.Descriptor.ProductId)
+            ? (byte)0x01
+            : BladeFanProtocol.DefaultClassId;
 
     private ReadyDevice? FindReadyDevice(
         IReadOnlyList<DeviceDescriptor> devices,
