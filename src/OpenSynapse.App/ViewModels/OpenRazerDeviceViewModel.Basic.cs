@@ -64,6 +64,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             await LoadKnobAsync(cancellationToken);
             await LoadAnalogKeyAsync(cancellationToken);
             await LoadOledAsync(cancellationToken);
+            await LoadHapticScrollAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

@@ -349,6 +349,9 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyOnboardProfileClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyActiveOnboardProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void OpenRazerApplyHapticScrollClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyHapticScrollAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerCreateOnboardProfileClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.CreateOnboardProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
 
