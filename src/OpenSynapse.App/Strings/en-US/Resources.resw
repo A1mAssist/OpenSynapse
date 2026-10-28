@@ -1001,6 +1001,30 @@
   <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
     <value>The OpenRazer protocol query failed.</value>
   </data>
+  <data name="OpenRazerMappingNoButtons" xml:space="preserve">
+    <value>Device reported no mapping buttons</value>
+  </data>
+  <data name="OpenRazerMappingReadCount" xml:space="preserve">
+    <value>Read {0} buttons</value>
+  </data>
+  <data name="OpenRazerMappingReadCountWithMacros" xml:space="preserve">
+    <value>Read {0} buttons · {1} macros</value>
+  </data>
+  <data name="OpenRazerMappingMacroName" xml:space="preserve">
+    <value>Macro {0}</value>
+  </data>
+  <data name="OpenRazerMappingUnreadable" xml:space="preserve">
+    <value>unreadable</value>
+  </data>
+  <data name="OpenRazerMappingReadFailed" xml:space="preserve">
+    <value>Could not read button mapping.</value>
+  </data>
+  <data name="OpenRazerMappingNothingChanged" xml:space="preserve">
+    <value>Nothing changed</value>
+  </data>
+  <data name="OpenRazerMappingSavedCount" xml:space="preserve">
+    <value>Saved {0} assignments</value>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0} failed: {1}</value>
   </data>
@@ -2270,6 +2294,12 @@
   <data name="RazerGamepadVibrationTitle" xml:space="preserve"><value>Haptics</value></data>
   <data name="RazerGamepadVibrationStrength" xml:space="preserve"><value>Vibration strength</value></data>
   <data name="RazerGamepadRawTitle" xml:space="preserve"><value>Live input</value></data>
+  <data name="RazerGamepadModeNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="RazerGamepadModeHypershift" xml:space="preserve"><value>Hypershift</value></data>
+  <data name="RazerGamepadAssignmentsRefreshed" xml:space="preserve"><value>Button assignments refreshed</value></data>
+  <data name="RazerGamepadAssignmentsReadFailed" xml:space="preserve"><value>Could not read button assignments</value></data>
+  <data name="RazerGamepadMappingTitle.Text" xml:space="preserve"><value>Button mapping</value></data>
+  <data name="RazerGamepadMappingRefresh.Content" xml:space="preserve"><value>Refresh</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>Speaker</value></data>
   <data name="RazerLightingEffectOff" xml:space="preserve"><value>Off</value></data>
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>Static</value></data>

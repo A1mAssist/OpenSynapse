@@ -430,6 +430,27 @@
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding RawInputVisibility}">
                     <StackPanel Spacing="8"><TextBlock Text="实时输入" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding RawInputText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Visibility="{Binding RawTextVisibility}" /><TextBlock Text="{Binding AdcMaskText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" Visibility="{Binding AdcVisibility}" /></StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ButtonAssignmentsVisibility}">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <TextBlock local:Localized.Uid="RazerGamepadMappingTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <Button Grid.Column="1" local:Localized.Uid="RazerGamepadMappingRefresh" Click="GamepadRefreshAssignmentsClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" />
+                      </Grid>
+                      <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding ButtonAssignments}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:RazerGamepadButtonAssignmentRowViewModel">
+                              <Grid ColumnDefinitions="150,*,Auto" ColumnSpacing="12" Padding="0,6">
+                                <TextBlock Text="{Binding ButtonName}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="{Binding AssignmentText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="2" Text="{Binding ModeText}" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Right" />
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </ScrollViewer>
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
                 <StackPanel x:Name="ChromaPanel" DataContext="{Binding SelectedChroma}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">

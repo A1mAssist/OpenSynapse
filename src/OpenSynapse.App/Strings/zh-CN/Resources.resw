@@ -1313,6 +1313,38 @@
     <value>OpenRazer 协议查询失败。</value>
     <comment>OpenRazer 协议查询失败</comment>
   </data>
+  <data name="OpenRazerMappingNoButtons" xml:space="preserve">
+    <value>设备未报告任何映射按键</value>
+    <comment>设备未报告任何映射按键</comment>
+  </data>
+  <data name="OpenRazerMappingReadCount" xml:space="preserve">
+    <value>已读取 {0} 个按键</value>
+    <comment>已读取 {0} 个按键</comment>
+  </data>
+  <data name="OpenRazerMappingReadCountWithMacros" xml:space="preserve">
+    <value>已读取 {0} 个按键 · {1} 个宏</value>
+    <comment>已读取 {0} 个按键 · {1} 个宏</comment>
+  </data>
+  <data name="OpenRazerMappingMacroName" xml:space="preserve">
+    <value>宏 {0}</value>
+    <comment>宏 {0}</comment>
+  </data>
+  <data name="OpenRazerMappingUnreadable" xml:space="preserve">
+    <value>无法读取</value>
+    <comment>无法读取</comment>
+  </data>
+  <data name="OpenRazerMappingReadFailed" xml:space="preserve">
+    <value>无法读取按键映射。</value>
+    <comment>无法读取按键映射。</comment>
+  </data>
+  <data name="OpenRazerMappingNothingChanged" xml:space="preserve">
+    <value>没有需要保存的更改</value>
+    <comment>没有需要保存的更改</comment>
+  </data>
+  <data name="OpenRazerMappingSavedCount" xml:space="preserve">
+    <value>已保存 {0} 个映射</value>
+    <comment>已保存 {0} 个映射</comment>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0}失败：{1}</value>
     <comment>{0}失败：{1}</comment>
@@ -2682,6 +2714,12 @@
   <data name="RazerGamepadVibrationTitle" xml:space="preserve"><value>触觉反馈</value></data>
   <data name="RazerGamepadVibrationStrength" xml:space="preserve"><value>震动强度</value></data>
   <data name="RazerGamepadRawTitle" xml:space="preserve"><value>实时输入</value></data>
+  <data name="RazerGamepadModeNormal" xml:space="preserve"><value>普通</value></data>
+  <data name="RazerGamepadModeHypershift" xml:space="preserve"><value>Hypershift</value></data>
+  <data name="RazerGamepadAssignmentsRefreshed" xml:space="preserve"><value>按键映射已刷新</value></data>
+  <data name="RazerGamepadAssignmentsReadFailed" xml:space="preserve"><value>无法读取按键映射</value></data>
+  <data name="RazerGamepadMappingTitle.Text" xml:space="preserve"><value>按键映射</value></data>
+  <data name="RazerGamepadMappingRefresh.Content" xml:space="preserve"><value>刷新</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>音箱</value></data>
   <data name="RazerLightingEffectOff" xml:space="preserve"><value>关闭</value></data>
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>
