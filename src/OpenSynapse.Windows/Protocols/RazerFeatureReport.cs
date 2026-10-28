@@ -97,7 +97,9 @@ public static class RazerFeatureReport
 
     internal static void ValidatePreparedRequest(ReadOnlySpan<byte> report)
     {
-        if (report.Length != Length || report[0] != 0x00 || report[1] != 0x00 ||
+        // Byte 0 is the HID report id and belongs to the prepared request: protocol 25
+        // devices use 0, the gamepad family uses 4.
+        if (report.Length != Length || report[1] != 0x00 ||
             report[3] != 0x00 || report[4] != 0x00 || report[5] != 0x00 ||
             report[6] > 80 || report[90] != 0x00 || report[89] != CalculateCrc(report))
         {

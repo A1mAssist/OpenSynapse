@@ -176,11 +176,13 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         RazerFeatureReport.ValidatePreparedRequest(request.Span);
+        // A prepared request carries its own HID report id; the reply echoes it.
+        var responseReportId = request.Span[0];
         return ExecuteAsync(
             devicePath,
             request.ToArray(),
             deviceWait,
-            responseReportId: 0,
+            responseReportId,
             cancellationToken,
             allowRemainingPacketsMismatch);
     }
