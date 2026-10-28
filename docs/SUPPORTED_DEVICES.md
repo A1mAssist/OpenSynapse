@@ -416,6 +416,22 @@ The Raptor 27 exposes its model-dependent Chroma lighting controls.
 | Razer Raptor 27 | `1532:0F12` | Chroma lighting |
 | Razer Raptor 27 | `1532:0F28` | Chroma lighting |
 
+## Gamepads
+
+Gamepad configuration uses the 91-byte, report-id-4 feature transport. Analog sticks and triggers, vibration, D-pad, SOCD and button-assignment reads are exposed; a model that does not answer a command hides that row.
+
+| Device | USB VID:PID | Notes |
+|---|---|---|
+| Razer Kitsune | `1532:1013` | SOCD and button assignments; no analog sticks or triggers |
+| Razer Raiju V3 Pro Signature Edition | `1532:1030` | — |
+| Razer Wolverine V3 Pro | `1532:0A4C` | — |
+| Razer Wolverine V3 Pro PC | `1532:0A57` | — |
+| Razer Wolverine V3 Pro Playstation | `1532:1025` | — |
+| Razer Wolverine V3 TE PC | `1532:0A5A` | — |
+| Razer Wolverine V3 Tournament Edition | `1532:0A45` | — |
+| Razer Wolverine V4 Pro | `1532:0A74` | — |
+| Razer Wolverine V4 Tournament Edition | `1532:0A7C` | — |
+
 ## Accessories
 
 Accessory controls cover lighting, docks, stands, fan control and presence signaling.

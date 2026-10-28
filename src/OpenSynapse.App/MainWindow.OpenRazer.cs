@@ -40,6 +40,9 @@ public sealed partial class MainWindow
             case RazerKeyboardDeviceRowViewModel:
                 KeyboardSelectorClick(sender, e);
                 break;
+            case RazerGamepadDeviceRowViewModel:
+                GamepadSelectorClick(sender, e);
+                break;
             case RazerChromaDeviceRowViewModel:
                 ChromaSelectorClick(sender, e);
                 break;
@@ -120,6 +123,10 @@ public sealed partial class MainWindow
             case BlackSharkDeviceRowViewModel row:
                 SelectDevice("blackshark");
                 await _viewModel.SelectBlackSharkAsync(row, _lifetime.Token);
+                break;
+            case RazerGamepadDeviceRowViewModel row:
+                SelectDevice("gamepad");
+                await _viewModel.SelectGamepadAsync(row, _lifetime.Token);
                 break;
             case DeviceRowViewModel row
                 when DeviceProtocolFamilies.IsBlade(row.ProtocolFamily):
