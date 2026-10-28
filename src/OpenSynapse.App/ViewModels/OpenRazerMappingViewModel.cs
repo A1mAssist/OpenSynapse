@@ -111,6 +111,7 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<OpenRazerMappingRowViewModel> Rows { get; } = [];
+    public bool IsLoaded => _loaded;
     public bool IsBusy
     {
         get => _isBusy;
@@ -155,6 +156,7 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
                 Rows.Clear();
                 _loaded = false;
                 StatusText = string.Empty;
+                OnPropertyChanged(nameof(IsLoaded));
                 OnPropertyChanged(nameof(CanApply));
             }
         }
@@ -200,28 +202,31 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
                 }
                 catch (Exception exception) when (IsExpected(exception))
                 {
-                    row.CurrentActionText = "unreadable";
+                    row.CurrentActionText = AppStrings.Text("OpenRazerMappingUnreadable");
                     _log?.Invoke($"mapping button {id} read failed: {exception.Message}");
                 }
                 Rows.Add(row);
             }
             _loaded = true;
             StatusText = Rows.Count == 0
-                ? "No mappable buttons"
+                ? AppStrings.Text("OpenRazerMappingNoButtons")
                 : _macros.Count == 0
-                    ? $"Read {Rows.Count} buttons"
-                    : $"Read {Rows.Count} buttons · {_macros.Count} macros";
+                    ? AppStrings.FormatText("OpenRazerMappingReadCount", Rows.Count)
+                    : AppStrings.FormatText(
+                        "OpenRazerMappingReadCountWithMacros", Rows.Count, _macros.Count);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
             _loaded = false;
             Rows.Clear();
+            StatusText = string.Empty;
             ErrorText = exception.Message;
             _log?.Invoke($"mapping read failed: {exception}");
         }
         finally
         {
             IsBusy = false;
+            OnPropertyChanged(nameof(IsLoaded));
             OnPropertyChanged(nameof(CanApply));
         }
     }
@@ -255,7 +260,9 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
                 row.GroupIndex = 0;
                 applied++;
             }
-            StatusText = applied == 0 ? "Nothing changed" : $"Saved {applied} assignments";
+            StatusText = applied == 0
+                ? AppStrings.Text("OpenRazerMappingNothingChanged")
+                : AppStrings.FormatText("OpenRazerMappingSavedCount", applied);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -267,6 +274,18 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
             IsBusy = false;
             OnPropertyChanged(nameof(CanApply));
         }
+    }
+
+    internal void SetLoadError(string message)
+    {
+        _loaded = false;
+        Rows.Clear();
+        StatusText = string.Empty;
+        ErrorText = string.IsNullOrWhiteSpace(message)
+            ? AppStrings.Text("OpenRazerMappingReadFailed")
+            : message;
+        OnPropertyChanged(nameof(IsLoaded));
+        OnPropertyChanged(nameof(CanApply));
     }
 
     private static bool IsExpected(Exception exception) =>

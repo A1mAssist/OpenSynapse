@@ -4,11 +4,21 @@ namespace OpenSynapse.Windows.Protocols;
 
 public static class BladeBoostProtocol
 {
+    /// <summary>
+    /// rzDevice25 getAdvFanMode()/setAdvFanMode() default to profile 1; every Boost
+    /// read and write asks the firmware for that same profile.
+    /// </summary>
+    public const byte ProfileId = 0x01;
+
     public const byte CpuCluster = 0x01;
     public const byte GpuCluster = 0x02;
 
-    public static BladeCpuBoostMode ParseCpu(ReadOnlySpan<byte> response) =>
-        ParseValue(response, CpuCluster, "CPU") switch
+    public static byte[] CreateGetArguments(byte cluster) => [ProfileId, cluster, 0x00];
+
+    public static byte[] CreateSetArguments(byte cluster, byte value) => [ProfileId, cluster, value];
+
+    public static BladeCpuBoostMode ParseCpu(ReadOnlySpan<byte> response, byte profileId) =>
+        ParseValue(response, profileId, CpuCluster, "CPU") switch
         {
             0x00 => BladeCpuBoostMode.Low,
             0x01 => BladeCpuBoostMode.Medium,
@@ -18,8 +28,8 @@ public static class BladeBoostProtocol
             var value => throw new InvalidOperationException($"Blade returned an unknown CPU Boost value: 0x{value:X2}."),
         };
 
-    public static BladeGpuBoostMode ParseGpu(ReadOnlySpan<byte> response) =>
-        ParseValue(response, GpuCluster, "GPU") switch
+    public static BladeGpuBoostMode ParseGpu(ReadOnlySpan<byte> response, byte profileId) =>
+        ParseValue(response, profileId, GpuCluster, "GPU") switch
         {
             0x00 => BladeGpuBoostMode.Low,
             0x01 => BladeGpuBoostMode.Medium,
@@ -27,7 +37,7 @@ public static class BladeBoostProtocol
             var value => throw new InvalidOperationException($"Blade returned an unknown GPU Boost value: 0x{value:X2}."),
         };
 
-    private static byte ParseValue(ReadOnlySpan<byte> response, byte expectedCluster, string name)
+    private static byte ParseValue(ReadOnlySpan<byte> response, byte profileId, byte expectedCluster, string name)
     {
         if (response.Length != RazerFeatureReport.Length)
         {
@@ -39,9 +49,10 @@ public static class BladeBoostProtocol
         }
 
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        // The reply echoes the profile the request carried: the middleware asks for
-        // profile 1, this app asks for 0, and each firmware answers with what it was given.
-        if ((arguments[0] != 0x00 && arguments[0] != BladeThermalProtocol.ProfileId) ||
+        // Blade firmware echoes the profile it was given. 029F can answer profile 0
+        // even when the shared request carries profile 1; the transport already
+        // matched the command, so accept either profile and reject anything else.
+        if ((arguments[0] != 0x00 && arguments[0] != profileId) ||
             arguments[1] != expectedCluster)
         {
             throw new InvalidOperationException(

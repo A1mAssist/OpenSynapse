@@ -62,6 +62,56 @@ public sealed class OpenRazerMappingTests
     }
 
     [Fact]
+    public async Task MappingProbeCachesPositiveAndNegativeResults()
+    {
+        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00E5)!;
+        var positive = new ProbeTransport(_ => Response([0x03, 0x01, 0x02, 0x04]));
+        var positiveService = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, positive);
+
+        Assert.Contains(OpenRazerBackendCapability.MappingRead,
+            await positiveService.ProbeMiddlewareCapabilitiesAsync(definition, "test"));
+        await positiveService.ProbeMiddlewareCapabilitiesAsync(definition, "test");
+        Assert.Equal(5, positive.Count);
+
+        var negative = new ProbeTransport(_ => throw new NotSupportedException());
+        var negativeService = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, negative);
+
+        Assert.Empty(await negativeService.ProbeMiddlewareCapabilitiesAsync(definition, "test"));
+        Assert.Empty(await negativeService.ProbeMiddlewareCapabilitiesAsync(definition, "test"));
+        Assert.Equal(5, negative.Count);
+    }
+
+    [Fact]
+    public async Task MappingProbeSkipsNonPointerDevices()
+    {
+        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x054A)!;
+        var transport = new ProbeTransport(_ => throw new InvalidOperationException("must not probe"));
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+
+        Assert.Empty(await service.ProbeMiddlewareCapabilitiesAsync(definition, "test"));
+        Assert.Equal(0, transport.Count);
+    }
+
+    [Fact]
+    public async Task ScrollWheelProbeAddsTheMiddlewareCapabilities()
+    {
+        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00E5)!;
+        var transport = new ProbeTransport(request => request[8] switch
+        {
+            0x94 => Echo(request, 0x00, (byte)RazerScrollFreeNotchedMode.FreeSpinMode),
+            0xA2 => Echo(request, 0x00, 0x05),
+            _ => Response([0x03, 0x01, 0x02, 0x04]),
+        });
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+
+        var capabilities = await service.ProbeMiddlewareCapabilitiesAsync(definition, "test");
+
+        Assert.Contains(OpenRazerBackendCapability.MappingRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.ScrollFreeNotchedModeRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.ScrollAccelerationLevelRead, capabilities);
+    }
+
+    [Fact]
     public void CatalogUsesTheMiddlewareFunctionIds()
     {
         AssertFrame(OpenRazerMappingGroup.Off, 0, OpenRazerMappingFunctions.Off, []);
@@ -206,5 +256,49 @@ public sealed class OpenRazerMappingTests
         arguments.CopyTo(response, RazerFeatureReport.ArgumentsOffset);
         response[89] = RazerFeatureReport.CalculateCrc(response);
         return response;
+    }
+
+    /// <summary>Reply that echoes the request header so <c>IsSuccessfulResponse</c> accepts it.</summary>
+    private static byte[] Echo(byte[] request, params byte[] arguments)
+    {
+        var response = new byte[RazerFeatureReport.Length];
+        response[1] = 0x02;
+        response[2] = request[2];
+        response[3] = request[3];
+        response[4] = request[4];
+        response[6] = request[6];
+        response[7] = request[7];
+        response[8] = request[8];
+        arguments.CopyTo(response, RazerFeatureReport.ArgumentsOffset);
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+        return response;
+    }
+
+    private sealed class ProbeTransport(Func<byte[], byte[]> handler) : IRazerFeatureTransport
+    {
+        public int Count { get; private set; }
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            Count++;
+            return Task.FromResult(handler(request.ToArray()));
+        }
     }
 }

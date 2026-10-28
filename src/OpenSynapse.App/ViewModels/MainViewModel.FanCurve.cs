@@ -50,11 +50,25 @@ public sealed partial class MainViewModel
         set => SetField(ref _bladeFanFixedRpm, SnapBladeFanFixedRpm(value));
     }
 
+    /// <summary>
+    /// Synapse publishes a separate fixed-speed range per performance mode, so the slider
+    /// follows the mode the device is currently in instead of one model-wide range.
+    /// </summary>
+    private BladePerformanceMode CurrentBladePerformanceMode
+    {
+        get
+        {
+            var modes = _blade.PerformanceModes;
+            var index = BladePerformanceModeIndex;
+            return index >= 0 && index < modes.Count ? modes[index] : BladePerformanceMode.Balanced;
+        }
+    }
+
     public int BladeFanFixedMinimumRpm =>
-        BladeModelCapabilities.MinimumFanTargetRpmFor(_blade._bladeProductId);
+        BladeModelCapabilities.FanTargetRangeFor(_blade._bladeProductId, CurrentBladePerformanceMode).MinimumRpm;
 
     public int BladeFanFixedMaximumRpm =>
-        BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId);
+        BladeModelCapabilities.FanTargetRangeFor(_blade._bladeProductId, CurrentBladePerformanceMode).MaximumRpm;
 
     private int SnapBladeFanFixedRpm(int value)
     {

@@ -15,7 +15,7 @@ public enum OpenRazerKeyswitchOptimization
     Gaming,
 }
 
-public sealed class OpenRazerDeviceService
+public sealed partial class OpenRazerDeviceService
 {
     // The middleware drives GPU card detection on LED class 0 (All_Region).
     private const byte GpuCardLedClassId = 0x00;
@@ -26,6 +26,27 @@ public sealed class OpenRazerDeviceService
     private readonly IRazerFeatureTransport _transport;
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<(ushort ProductId, string Probe), (bool Supported, DateTimeOffset ExpiresAt)>
+        _middlewareProbeCache = new();
+    private static readonly TimeSpan MiddlewareProbePositiveTtl = TimeSpan.FromHours(12);
+    private static readonly TimeSpan MiddlewareProbeNegativeTtl = TimeSpan.FromMinutes(5);
+    // Middleware bundles increment the transaction id per exchange; the firmware only
+    // matches it against the response, so one fixed value works for a single request.
+    private const byte MiddlewareTransactionId = 0x1F;
+    private static readonly IReadOnlySet<OpenRazerBackendCapability> MappingCapabilities =
+        new HashSet<OpenRazerBackendCapability>
+        {
+            OpenRazerBackendCapability.MappingRead,
+            OpenRazerBackendCapability.MappingWrite,
+        }.ToFrozenSet();
+    private static readonly IReadOnlySet<OpenRazerBackendCapability> ScrollWheelCapabilities =
+        new HashSet<OpenRazerBackendCapability>
+        {
+            OpenRazerBackendCapability.ScrollFreeNotchedModeRead,
+            OpenRazerBackendCapability.ScrollFreeNotchedModeWrite,
+            OpenRazerBackendCapability.ScrollAccelerationLevelRead,
+            OpenRazerBackendCapability.ScrollAccelerationLevelWrite,
+        }.ToFrozenSet();
 
     public event Action<DeviceBatteryReading>? BatteryObserved;
 
@@ -160,8 +181,11 @@ public sealed class OpenRazerDeviceService
                 _endpointCache[group.Key.PhysicalDeviceKey] = resolvedPath;
                 var resolvedDefinition = await ResolveLeviathanDefinitionAsync(
                     definition, resolvedPath, cancellationToken).ConfigureAwait(false);
+                var probedCapabilities = await ProbeMiddlewareCapabilitiesAsync(
+                    resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
                 results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
-                    OpenRazerEndpointState.Resolved, null));
+                    OpenRazerEndpointState.Resolved, null,
+                    probedCapabilities.Count > 0 ? probedCapabilities : null));
             }
         }
         return results;
@@ -1021,6 +1045,44 @@ public sealed class OpenRazerDeviceService
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetSmartReelThreshold(connection.Definition, level), cancellationToken);
 
+    public async Task<RazerScrollFreeNotchedMode> GetScrollFreeNotchedModeAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default)
+    {
+        var request = RazerScrollWheelProtocol.CreateGetScrollFreeNotchedModeRequest(MiddlewareTransactionId);
+        var response = await ExecuteAsync(connection,
+            new OpenRazerRequest("razer_scroll_get_free_notched_mode", request), cancellationToken).ConfigureAwait(false);
+        return RazerScrollWheelProtocol.ParseScrollFreeNotchedMode(response, request).Mode;
+    }
+
+    public Task SetScrollFreeNotchedModeAsync(
+        OpenRazerDeviceConnection connection,
+        RazerScrollFreeNotchedMode mode,
+        CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            new OpenRazerRequest("razer_scroll_set_free_notched_mode",
+                RazerScrollWheelProtocol.CreateSetScrollFreeNotchedModeRequest(MiddlewareTransactionId, mode)),
+            cancellationToken);
+
+    public async Task<byte> GetScrollVirtualAccelerationLevelAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default)
+    {
+        var request =
+            RazerScrollWheelProtocol.CreateGetScrollVirtualAccelerationLevelRequest(MiddlewareTransactionId);
+        var response = await ExecuteAsync(connection,
+            new OpenRazerRequest("razer_scroll_get_acceleration_level", request), cancellationToken).ConfigureAwait(false);
+        return RazerScrollWheelProtocol.ParseScrollVirtualAccelerationLevel(response, request).Level;
+    }
+
+    public Task SetScrollVirtualAccelerationLevelAsync(
+        OpenRazerDeviceConnection connection,
+        byte level,
+        CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            new OpenRazerRequest("razer_scroll_set_acceleration_level",
+                RazerScrollWheelProtocol.CreateSetScrollVirtualAccelerationLevelRequest(
+                    MiddlewareTransactionId, level)),
+            cancellationToken);
+
     public Task SetFnPrimaryAsync(OpenRazerDeviceConnection connection, bool fnFunctionsArePrimary, CancellationToken cancellationToken = default) =>
         ExecuteWithoutResultAsync(connection, OpenRazerStandardProtocol.Create(connection.Definition,
             "razer_chroma_misc_fn_key_toggle", 0x02, 0x02, 0x06,
@@ -1100,6 +1162,110 @@ public sealed class OpenRazerDeviceService
             "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair",
             0x02, 0x00, 0x42,
             [checked((byte)(mouseProductId >> 8)), checked((byte)mouseProductId)]), cancellationToken);
+
+    /// <summary>
+    /// Sends the middleware-only GETs once per device and caches which command families
+    /// answer, so a control appears only when the firmware really understands it. The cache
+    /// keeps device-watch rescans from re-sending a HID request every few seconds.
+    /// </summary>
+    internal async Task<IReadOnlySet<OpenRazerBackendCapability>> ProbeMiddlewareCapabilitiesAsync(
+        OpenRazerDeviceDefinition definition,
+        string devicePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (definition.Category is not (DeviceCategory.Mouse or DeviceCategory.Keyboard))
+        {
+            return FrozenSet<OpenRazerBackendCapability>.Empty;
+        }
+
+        var result = new HashSet<OpenRazerBackendCapability>();
+        var buttonList = OpenRazerMappingProtocol.GetButtonList();
+        if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                "mapping", buttonList.Report,
+                response => OpenRazerMappingProtocol.ParseButtonList(response).Count > 0,
+                cancellationToken).ConfigureAwait(false))
+        {
+            result.UnionWith(MappingCapabilities);
+        }
+
+        if (definition.Category == DeviceCategory.Mouse)
+        {
+            var freeNotched = RazerScrollWheelProtocol.CreateGetScrollFreeNotchedModeRequest(MiddlewareTransactionId);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "scroll.freeNotched", freeNotched, response =>
+                {
+                    _ = RazerScrollWheelProtocol.ParseScrollFreeNotchedMode(response, freeNotched);
+                    return true;
+                }, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(OpenRazerBackendCapability.ScrollFreeNotchedModeRead);
+                result.Add(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite);
+            }
+
+            var accelerationLevel =
+                RazerScrollWheelProtocol.CreateGetScrollVirtualAccelerationLevelRequest(MiddlewareTransactionId);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "scroll.accelerationLevel", accelerationLevel, response =>
+                {
+                    _ = RazerScrollWheelProtocol.ParseScrollVirtualAccelerationLevel(response, accelerationLevel);
+                    return true;
+                }, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(OpenRazerBackendCapability.ScrollAccelerationLevelRead);
+                result.Add(OpenRazerBackendCapability.ScrollAccelerationLevelWrite);
+            }
+        }
+
+        await ProbeOnboardProfileAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeWirelessPairingAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeKnobAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeAnalogKeyAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeOledAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+
+        return result.ToFrozenSet();
+    }
+
+    /// <summary>
+    /// Sends one middleware GET and caches whether the firmware answered, so device-watch
+    /// rescans do not re-send it. Shared by every protocol family that has no OpenRazer
+    /// capability of its own to gate on.
+    /// </summary>
+    private async Task<bool> ProbeMiddlewareAsync(
+        ushort productId,
+        string devicePath,
+        TimeSpan deviceWait,
+        string probe,
+        byte[] request,
+        Func<byte[], bool> accepts,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var key = (productId, probe);
+        if (_middlewareProbeCache.TryGetValue(key, out var cached) && cached.ExpiresAt > now)
+        {
+            return cached.Supported;
+        }
+
+        var supported = false;
+        try
+        {
+            var response = await _transport.QueryPreparedAsync(
+                devicePath, request, deviceWait, cancellationToken).ConfigureAwait(false);
+            supported = accepts(response);
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or
+            InvalidOperationException or NotSupportedException or InvalidDataException or
+            UnauthorizedAccessException or TimeoutException)
+        {
+            WriteDiagnostic(productId, $"{probe} probe failed: {exception.GetType().Name}: {exception.Message}");
+        }
+
+        _middlewareProbeCache[key] = (
+            supported,
+            now + (supported ? MiddlewareProbePositiveTtl : MiddlewareProbeNegativeTtl));
+        WriteDiagnostic(productId, $"{probe} probe: {supported}");
+        return supported;
+    }
 
     private async Task<bool> ProbeEndpointAsync(
         OpenRazerDeviceDefinition definition,
@@ -1198,11 +1364,17 @@ public sealed class OpenRazerDeviceService
         string? path,
         string? physicalDeviceKey,
         OpenRazerEndpointState state,
-        string? error)
+        string? error,
+        IReadOnlySet<OpenRazerBackendCapability>? extraCapabilities = null)
     {
         var resolved = state == OpenRazerEndpointState.Resolved;
+        var capabilities = resolved ? GetCapabilities(definition) : FrozenSet<OpenRazerBackendCapability>.Empty;
+        if (resolved && extraCapabilities is not null)
+        {
+            capabilities = capabilities.Union(extraCapabilities).ToFrozenSet();
+        }
         return new(definition, path, physicalDeviceKey, state,
-            resolved ? GetCapabilities(definition) : FrozenSet<OpenRazerBackendCapability>.Empty,
+            capabilities,
             resolved
                 ? GetLightingZoneCapabilities(definition)
                 : FrozenDictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>.Empty,
@@ -1533,11 +1705,6 @@ public sealed class OpenRazerDeviceService
             result.Add(OpenRazerBackendCapability.HyperPollingPairWrite);
         Add(OpenRazerBackendCapability.HyperPollingUnpairWrite, "set_hyperpolling_wireless_dongle_unpair",
             "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair");
-        if (OpenRazerDeviceCatalog.HasOnboardMapping(device.ProductId))
-        {
-            result.Add(OpenRazerBackendCapability.MappingRead);
-            result.Add(OpenRazerBackendCapability.MappingWrite);
-        }
         return result.ToFrozenSet();
 
         bool Has(string builder) => device.Transactions.ContainsKey(builder) || device.CommandSequences.ContainsKey(builder);

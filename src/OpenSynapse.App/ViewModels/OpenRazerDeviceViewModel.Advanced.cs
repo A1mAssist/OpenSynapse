@@ -30,12 +30,42 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 async () => SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken));
             await ReadOptionalAsync(OpenRazerBackendCapability.SmartReelThresholdRead,
                 async () => SmartReelThreshold = await _service.GetSmartReelThresholdAsync(Connection, cancellationToken));
+            await ReadOptionalAsync(OpenRazerBackendCapability.ScrollFreeNotchedModeRead,
+                async () => ScrollFreeNotchedModeIndex =
+                    (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken));
+            await ReadOptionalAsync(OpenRazerBackendCapability.ScrollAccelerationLevelRead,
+                async () => ScrollAccelerationLevel =
+                    await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken));
         }
         finally
         {
             IsScrollLoading = false;
         }
     }
+
+    public Task ApplyScrollFreeNotchedModeAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite,
+            () => IsScrollFreeNotchedBusy, value => IsScrollFreeNotchedBusy = value,
+            async () =>
+            {
+                await _service.SetScrollFreeNotchedModeAsync(Connection,
+                    (RazerScrollFreeNotchedMode)ScrollFreeNotchedModeIndex, cancellationToken);
+                if (Has(OpenRazerBackendCapability.ScrollFreeNotchedModeRead))
+                    ScrollFreeNotchedModeIndex =
+                        (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken);
+            }, cancellationToken);
+
+    public Task ApplyScrollAccelerationLevelAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.ScrollAccelerationLevelWrite,
+            () => IsScrollAccelerationLevelBusy, value => IsScrollAccelerationLevelBusy = value,
+            async () =>
+            {
+                await _service.SetScrollVirtualAccelerationLevelAsync(
+                    Connection, ScrollAccelerationLevel, cancellationToken);
+                if (Has(OpenRazerBackendCapability.ScrollAccelerationLevelRead))
+                    ScrollAccelerationLevel =
+                        await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken);
+            }, cancellationToken);
 
     public Task ApplyScrollModeAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(OpenRazerBackendCapability.ScrollModeWrite,
@@ -76,6 +106,88 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 if (Has(OpenRazerBackendCapability.SmartReelThresholdRead))
                     SmartReelThreshold = await _service.GetSmartReelThresholdAsync(Connection, cancellationToken);
             }, cancellationToken);
+
+    public async Task LoadOnboardProfilesAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsReady || RequiresRescan || IsOnboardProfileBusy ||
+            !CanUse(OpenRazerBackendCapability.OnboardProfileRead))
+        {
+            return;
+        }
+        IsOnboardProfileBusy = true;
+        try
+        {
+            OnboardProfileCount =
+                await _service.GetOnboardProfileCountAsync(Connection, cancellationToken);
+            OnboardMaxProfiles =
+                await _service.GetMaxOnboardProfilesAsync(Connection, cancellationToken);
+            ActiveOnboardProfileId =
+                await _service.GetActiveOnboardProfileIdAsync(Connection, cancellationToken);
+            if (OnboardMaxProfiles > 0)
+            {
+                SelectedOnboardProfileId = ActiveOnboardProfileId;
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            OnboardProfileStatusText = exception.Message;
+        }
+        finally
+        {
+            IsOnboardProfileBusy = false;
+        }
+    }
+
+    public Task ApplyActiveOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.SetActiveOnboardProfileIdAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    public Task CreateOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.CreateOnboardProfileAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    public Task DeleteOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.DeleteOnboardProfileAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    public Task ResetOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.ResetOnboardProfileAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    private async Task RefreshOnboardProfilesAsync(CancellationToken cancellationToken)
+    {
+        OnboardProfileCount =
+            await _service.GetOnboardProfileCountAsync(Connection, cancellationToken);
+        ActiveOnboardProfileId =
+            await _service.GetActiveOnboardProfileIdAsync(Connection, cancellationToken);
+    }
 
     public async Task LoadKeyswitchAsync(CancellationToken cancellationToken = default)
     {

@@ -49,7 +49,8 @@ public sealed class Blade028CProbeTests
         Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Boost));
         Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
         Assert.True(BladeModelCapabilities.FixedFanRequiresCustomMode(productId));
-        Assert.Equal(3500, BladeModelCapabilities.MinimumFanTargetRpmFor(productId));
+        // The 028C bundle publishes 3300 RPM as the fixed-speed floor for every mode.
+        Assert.Equal(3300, BladeModelCapabilities.MinimumFanTargetRpmFor(productId));
         Assert.Equal(5400, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
         Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
         Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));

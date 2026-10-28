@@ -2,6 +2,9 @@ using System.Collections.Frozen;
 
 namespace OpenSynapse.Core.Devices;
 
+/// <summary>Fixed fan-target range the official middleware offers for one performance mode.</summary>
+public readonly record struct BladeFanTargetRange(int MinimumRpm, int MaximumRpm, int DefaultRpm);
+
 /// <summary>
 /// Per-model Blade capability admission. A capability is admitted only when the exact
 /// USB product id has source-backed evidence for that control. A successful protocol
@@ -45,6 +48,18 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Hyperboost,
     ];
 
+    private static IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange> Ranges(
+        params (BladePerformanceMode Mode, int Minimum, int Maximum, int Default)[] items)
+    {
+        var map = new Dictionary<BladePerformanceMode, BladeFanTargetRange>(items.Length);
+        foreach (var item in items)
+        {
+            map[item.Mode] = new BladeFanTargetRange(item.Minimum, item.Maximum, item.Default);
+        }
+
+        return map;
+    }
+
     private static readonly FrozenDictionary<ushort, Contract> Contracts =
         new Dictionary<ushort, Contract>
         {
@@ -60,7 +75,15 @@ public static class BladeModelCapabilities
                 FanCurve: true,
                 FixedFan: true,
                 HyperBoost: true,
-                MaximumFanTargetRpm: 5400),
+                MinimumFanTargetRpm: 3300,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Performance, 3300, 5400, 4300),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.Hyperboost, 3700, 5300, 4500),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300))),
 
             // Blade 15 (Mid 2019) Mercury RZ09-03017. Owner-tested end to end: a fixed
             // target write took effect, both tachometers read back higher without a
@@ -87,7 +110,12 @@ public static class BladeModelCapabilities
                 FixedFan: true,
                 MinimumFanTargetRpm: 3400,
                 MaximumFanTargetRpm: 5300,
-                HyperBoost: true),
+                HyperBoost: true,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100))),
 
             // Blade 18 (2023) RZ09-0484. Owner-reported maximum fans; its fixed fan
             // targets were reported ignored, so no fixed target is admitted.
@@ -107,13 +135,31 @@ public static class BladeModelCapabilities
                 MaxFan: false,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
                 FixedFan: true,
-                MinimumFanTargetRpm: 3500,
+                MinimumFanTargetRpm: 3300,
                 MaximumFanTargetRpm: 5400,
                 FixedFanRequiresCustomMode: true),
             // Blade 14 (2023) RZ09-0482 and Blade 14 (2024) RZ09-0509. The middleware
             // enables both the maximum-fan bit and custom CPU levels.
-            [0x029D] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true, HyperBoost: true, MaximumFanTargetRpm: 5400),
-            [0x02B6] = new(MaxFan: true, LowMediumHigh, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
+            [0x029D] = new(
+                MaxFan: true,
+                LowMediumHigh,
+                FanCurve: true,
+                FixedFan: true,
+                HyperBoost: true,
+                MinimumFanTargetRpm: 2200,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Silent, 2200, 3800, 3000),
+                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100))),
+            [0x02B6] = new(
+                MaxFan: true,
+                LowMediumHigh,
+                FanCurve: true,
+                FixedFan: true,
+                MinimumFanTargetRpm: 2200,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Silent, 2200, 3800, 3000))),
 
             // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
             // It has no CPU-level flag, so the custom CPU control stays closed.
@@ -121,15 +167,51 @@ public static class BladeModelCapabilities
 
             // Blade 14 (2025) and Blade 18 (2025) expose the 710 fan-target reports but
             // do not enable the maximum-fan bit or custom CPU levels in their middleware.
-            [0x02C5] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
-            [0x02C7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, MaximumFanTargetRpm: 5400),
+            [0x02C5] = new(
+                MaxFan: false,
+                None,
+                FanCurve: true,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3300,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Performance, 3300, 5400, 4300),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300))),
+            [0x02C7] = new(
+                MaxFan: false,
+                None,
+                FanCurve: true,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3300,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Performance, 3300, 5400, 4300),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300))),
 
             // Blade 16 (2024) 1532:02B7. The 695 middleware uses the same fan-target,
             // panel and power reports as 02C6; Max Fan stays off because its injected
             // configuration does not enable the Custom maximum-fan bit. CPU Boost is
             // likewise not enabled by its deviceUI configuration. Its performance-mode
             // table lists HyperBoost, so the pad-less path applies here too.
-            [0x02B7] = new(MaxFan: false, None, FanCurve: true, FixedFan: true, HyperBoost: true, MaximumFanTargetRpm: 5400),
+            [0x02B7] = new(
+                MaxFan: false,
+                None,
+                FanCurve: true,
+                FixedFan: true,
+                HyperBoost: true,
+                MinimumFanTargetRpm: 3300,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100))),
 
             // Blade 16 (2026) RZ09-0581 remains read-only until its middleware is audited.
             [0x02E0] = new(MaxFan: false, None),
@@ -168,6 +250,28 @@ public static class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract)
             ? contract.MinimumFanTargetRpm
             : BladeFanLimits.MinimumRpm;
+
+    /// <summary>
+    /// Fixed fan-target range the official middleware offers for one performance mode.
+    /// Synapse publishes a separate min/max/default per mode, so a single per-model range
+    /// would either refuse a speed the UI offers or allow one it does not.
+    /// </summary>
+    public static BladeFanTargetRange FanTargetRangeFor(ushort productId, BladePerformanceMode mode)
+    {
+        if (!Contracts.TryGetValue(productId, out var contract))
+        {
+            return new BladeFanTargetRange(
+                BladeFanLimits.MinimumRpm, BladeFanLimits.MaximumRpm, BladeFanLimits.MinimumRpm);
+        }
+
+        if (contract.ModeFanRanges is { } ranges && ranges.TryGetValue(mode, out var range))
+        {
+            return range;
+        }
+
+        return new BladeFanTargetRange(
+            contract.MinimumFanTargetRpm, contract.MaximumFanTargetRpm, contract.MinimumFanTargetRpm);
+    }
 
     /// <summary>
     /// True where a fixed target is only acted on in Custom performance mode. The 028C
@@ -221,7 +325,8 @@ public static class BladeModelCapabilities
         int MaximumFanTargetRpm = BladeFanLimits.MaximumRpm,
         bool Writes = true,
         bool HyperBoost = false,
-        bool FixedFanRequiresCustomMode = false);
+        bool FixedFanRequiresCustomMode = false,
+        IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange>? ModeFanRanges = null);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay

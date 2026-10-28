@@ -58,6 +58,12 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 }
             }
             OnBasicStateChanged();
+            await LoadMappingIfNeededAsync(cancellationToken);
+            await LoadOnboardProfilesAsync(cancellationToken);
+            await LoadWirelessAsync(cancellationToken);
+            await LoadKnobAsync(cancellationToken);
+            await LoadAnalogKeyAsync(cancellationToken);
+            await LoadOledAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

@@ -45,6 +45,9 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool _isScrollAccelerationBusy;
     private bool _isSmartReelBusy;
     private bool _isSmartReelThresholdBusy;
+    private bool _isScrollFreeNotchedBusy;
+    private bool _isScrollAccelerationLevelBusy;
+    private bool _isOnboardProfileBusy;
     private bool _isScrollLoading;
     private bool _isKeyswitchBusy;
     private bool _isKeyswitchLoading;
@@ -74,6 +77,13 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool _scrollAccelerationEnabled;
     private bool _smartReelEnabled;
     private byte _smartReelThreshold = 50;
+    private int _scrollFreeNotchedModeIndex;
+    private byte _scrollAccelerationLevel;
+    private byte _onboardProfileCount;
+    private byte _onboardMaxProfiles;
+    private byte _activeOnboardProfileId;
+    private byte _selectedOnboardProfileId = 1;
+    private string _onboardProfileStatusText = string.Empty;
     private OpenRazerKeyswitchOptimization _keyswitchOptimization;
     private byte _activeDpiStage = 1;
     private byte _hyperPollingIndicatorMode = 1;
@@ -817,6 +827,10 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         OpenRazerBackendCapability.SmartReelWrite,
         OpenRazerBackendCapability.SmartReelThresholdRead,
         OpenRazerBackendCapability.SmartReelThresholdWrite,
+        OpenRazerBackendCapability.ScrollFreeNotchedModeRead,
+        OpenRazerBackendCapability.ScrollFreeNotchedModeWrite,
+        OpenRazerBackendCapability.ScrollAccelerationLevelRead,
+        OpenRazerBackendCapability.ScrollAccelerationLevelWrite,
         OpenRazerBackendCapability.LkScrollWheelModeRead,
         OpenRazerBackendCapability.LkScrollWheelModeWrite));
     public Visibility ScrollModeVisibility => Visibility.Collapsed;
@@ -830,19 +844,81 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     public Visibility SmartReelThresholdVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.SmartReelThresholdRead, OpenRazerBackendCapability.SmartReelThresholdWrite));
     public Visibility SmartReelThresholdWriteVisibility => VisibleWhen(Has(OpenRazerBackendCapability.SmartReelThresholdWrite));
+    public Visibility ScrollFreeNotchedModeVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.ScrollFreeNotchedModeRead, OpenRazerBackendCapability.ScrollFreeNotchedModeWrite));
+    public Visibility ScrollFreeNotchedModeWriteVisibility =>
+        VisibleWhen(Has(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite));
+    public Visibility ScrollAccelerationLevelVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.ScrollAccelerationLevelRead, OpenRazerBackendCapability.ScrollAccelerationLevelWrite));
+    public Visibility ScrollAccelerationLevelWriteVisibility =>
+        VisibleWhen(Has(OpenRazerBackendCapability.ScrollAccelerationLevelWrite));
+    public Visibility OnboardProfileVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.OnboardProfileRead, OpenRazerBackendCapability.OnboardProfileWrite));
+    public Visibility OnboardProfileWriteVisibility =>
+        VisibleWhen(Has(OpenRazerBackendCapability.OnboardProfileWrite));
+    public byte OnboardProfileCount
+    {
+        get => _onboardProfileCount;
+        set => SetField(ref _onboardProfileCount, value);
+    }
+    public byte OnboardMaxProfiles
+    {
+        get => _onboardMaxProfiles;
+        set => SetField(ref _onboardMaxProfiles, value);
+    }
+    public byte ActiveOnboardProfileId
+    {
+        get => _activeOnboardProfileId;
+        set => SetField(ref _activeOnboardProfileId, value);
+    }
+    public byte SelectedOnboardProfileId
+    {
+        get => _selectedOnboardProfileId;
+        set => SetField(ref _selectedOnboardProfileId, value);
+    }
+    public string OnboardProfileStatusText
+    {
+        get => _onboardProfileStatusText;
+        set => SetField(ref _onboardProfileStatusText, value);
+    }
+    public bool IsOnboardProfileBusy
+    {
+        get => _isOnboardProfileBusy;
+        private set => SetBusy(ref _isOnboardProfileBusy, value, nameof(CanEditOnboardProfile));
+    }
+    public bool CanEditOnboardProfile =>
+        CanUse(OpenRazerBackendCapability.OnboardProfileWrite) && !IsOnboardProfileBusy;
+    public IReadOnlyList<string> ScrollFreeNotchedModeTexts { get; } =
+        [AppStrings.Text("OpenRazerScrollNotchedMode"), AppStrings.Text("OpenRazerScrollFreeSpinMode")];
     public bool IsScrollLoading { get => _isScrollLoading; private set => SetField(ref _isScrollLoading, value); }
     public byte ScrollMode { get => _scrollMode; set => SetField(ref _scrollMode, value); }
     public bool ScrollAccelerationEnabled { get => _scrollAccelerationEnabled; set => SetField(ref _scrollAccelerationEnabled, value); }
     public bool SmartReelEnabled { get => _smartReelEnabled; set => SetField(ref _smartReelEnabled, value); }
     public byte SmartReelThreshold { get => _smartReelThreshold; set => SetField(ref _smartReelThreshold, value); }
+    public int ScrollFreeNotchedModeIndex
+    {
+        get => _scrollFreeNotchedModeIndex;
+        set => SetField(ref _scrollFreeNotchedModeIndex, value);
+    }
+    public byte ScrollAccelerationLevel
+    {
+        get => _scrollAccelerationLevel;
+        set => SetField(ref _scrollAccelerationLevel, value);
+    }
+    public bool IsScrollFreeNotchedBusy { get => _isScrollFreeNotchedBusy; private set => SetBusy(ref _isScrollFreeNotchedBusy, value, nameof(CanEditScrollFreeNotched), nameof(CanWriteScrollFreeNotched)); }
+    public bool IsScrollAccelerationLevelBusy { get => _isScrollAccelerationLevelBusy; private set => SetBusy(ref _isScrollAccelerationLevelBusy, value, nameof(CanEditScrollAccelerationLevel), nameof(CanWriteScrollAccelerationLevel)); }
     public bool IsScrollModeBusy { get => _isScrollModeBusy; private set => SetBusy(ref _isScrollModeBusy, value, nameof(CanEditScrollMode), nameof(CanWriteScrollMode)); }
     public bool IsScrollAccelerationBusy { get => _isScrollAccelerationBusy; private set => SetBusy(ref _isScrollAccelerationBusy, value, nameof(CanEditScrollAcceleration), nameof(CanWriteScrollAcceleration)); }
     public bool IsSmartReelBusy { get => _isSmartReelBusy; private set => SetBusy(ref _isSmartReelBusy, value, nameof(CanEditSmartReel), nameof(CanWriteSmartReel)); }
     public bool IsSmartReelThresholdBusy { get => _isSmartReelThresholdBusy; private set => SetBusy(ref _isSmartReelThresholdBusy, value, nameof(CanEditSmartReelThreshold), nameof(CanWriteSmartReelThreshold)); }
+    public bool CanWriteScrollFreeNotched => CanUse(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite) && !IsScrollFreeNotchedBusy;
+    public bool CanWriteScrollAccelerationLevel => CanUse(OpenRazerBackendCapability.ScrollAccelerationLevelWrite) && !IsScrollAccelerationLevelBusy;
     public bool CanWriteScrollMode => CanUse(OpenRazerBackendCapability.ScrollModeWrite) && !IsScrollModeBusy;
     public bool CanWriteScrollAcceleration => CanUse(OpenRazerBackendCapability.ScrollAccelerationWrite) && !IsScrollAccelerationBusy;
     public bool CanWriteSmartReel => CanUse(OpenRazerBackendCapability.SmartReelWrite) && !IsSmartReelBusy;
     public bool CanWriteSmartReelThreshold => CanUse(OpenRazerBackendCapability.SmartReelThresholdWrite) && !IsSmartReelThresholdBusy;
+    public bool CanEditScrollFreeNotched => CanUse(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite);
+    public bool CanEditScrollAccelerationLevel => CanUse(OpenRazerBackendCapability.ScrollAccelerationLevelWrite);
     public bool CanEditScrollMode => CanUse(OpenRazerBackendCapability.ScrollModeWrite);
     public bool CanEditScrollAcceleration => CanUse(OpenRazerBackendCapability.ScrollAccelerationWrite);
     public bool CanEditSmartReel => CanUse(OpenRazerBackendCapability.SmartReelWrite);

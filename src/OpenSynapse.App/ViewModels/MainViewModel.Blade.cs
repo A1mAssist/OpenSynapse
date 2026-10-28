@@ -1155,7 +1155,18 @@ public sealed partial class MainViewModel
         BladePerformanceMode.Hyperboost => "HyperBoost",
         _ => "Text_C1DB7AE1",
     };
-    public int BladePerformanceModeIndex { get => _blade._bladePerformanceModeIndex; set => SetField(ref _blade._bladePerformanceModeIndex, value); }
+    public int BladePerformanceModeIndex
+    {
+        get => _blade._bladePerformanceModeIndex;
+        set
+        {
+            if (!SetField(ref _blade._bladePerformanceModeIndex, value)) return;
+            // The fixed-speed range is per mode, so re-clamp the stored target on a switch.
+            OnPropertyChanged(nameof(BladeFanFixedMinimumRpm));
+            OnPropertyChanged(nameof(BladeFanFixedMaximumRpm));
+            BladeFanFixedRpm = BladeFanFixedRpm;
+        }
+    }
     public bool CanSetBladePerformanceMode
     {
         get => _blade._canSetBladePerformanceMode;
