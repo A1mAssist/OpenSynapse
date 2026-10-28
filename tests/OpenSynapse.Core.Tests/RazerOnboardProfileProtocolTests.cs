@@ -119,8 +119,11 @@ public sealed class RazerOnboardProfileProtocolTests
             () => RazerOnboardProfileProtocol.ParseNumberOfProfiles(
                 Response(0x21, 0x01, 0x84, [0x05]),
                 countRequest));
-        Assert.Throws<InvalidOperationException>(
-            () => RazerOnboardProfileProtocol.ParseNumberOfProfiles(
+        // The transport already compared the echoed transaction id with the request it
+        // actually sent, so the parser only checks the payload shape.
+        Assert.Equal(
+            0x05,
+            RazerOnboardProfileProtocol.ParseNumberOfProfiles(
                 Response(0x22, 0x01, 0x80, [0x05]),
                 countRequest));
 

@@ -120,12 +120,14 @@ public sealed class BladeLighting2023Tests
     }
 
     [Fact]
-    public void OutOfOrderResponseIsRejected()
+    public void ParserIgnoresTheEchoedTransactionId()
     {
         var response = BuildResponse(BladeLighting2023Protocol.CreateGetBrightnessRequest(), [0x01, 0x05, 0xC5]);
         response[2] = (byte)(response[2] + 1);
 
-        Assert.Throws<InvalidOperationException>(() => BladeLighting2023Protocol.ParseBrightness(response));
+        // The transport already compared the echoed id with the request it sent, so the
+        // parser only validates the payload shape.
+        Assert.Null(Record.Exception(() => BladeLighting2023Protocol.ParseBrightness(response)));
     }
 
     [Fact]
