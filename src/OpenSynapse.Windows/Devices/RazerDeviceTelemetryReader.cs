@@ -631,13 +631,15 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         {
             throw new InvalidOperationException("Fixed fan control is not admitted for this Blade model.");
         }
+        var original = await ReadBladeFanTransactionStateAsync(blade, cancellationToken, readTachometers: true);
         if (mode == BladeFanMode.Manual)
         {
-            ValidateModelFanTargetRpm(blade, cpuTargetRpm!.Value);
-            ValidateModelFanTargetRpm(blade, gpuTargetRpm!.Value);
+            // Synapse publishes a different fixed-speed range per performance mode, so the
+            // check needs the mode the device is actually in, not a single model range.
+            ValidateModelFanTargetRpm(blade, original.Thermal.PerformanceMode, cpuTargetRpm!.Value);
+            ValidateModelFanTargetRpm(blade, original.Thermal.PerformanceMode, gpuTargetRpm!.Value);
         }
 
-        var original = await ReadBladeFanTransactionStateAsync(blade, cancellationToken, readTachometers: true);
         var actual = await SetBladeFanTargetsCoreAsync(
             blade,
             mode,
@@ -2094,10 +2096,14 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     /// Rejects a fixed target the exact model does not accept. The 028C EC refuses
     /// anything below its own floor, and both models step the target in 100 RPM units.
     /// </summary>
-    private static void ValidateModelFanTargetRpm(ReadyDevice blade, int rpm)
+    private static void ValidateModelFanTargetRpm(
+        ReadyDevice blade,
+        BladePerformanceMode performanceMode,
+        int rpm)
     {
-        var minimum = BladeModelCapabilities.MinimumFanTargetRpmFor(blade.Descriptor.ProductId);
-        var maximum = BladeModelCapabilities.MaximumWritableFanTargetRpmFor(blade.Descriptor.ProductId);
+        var range = BladeModelCapabilities.FanTargetRangeFor(blade.Descriptor.ProductId, performanceMode);
+        var minimum = range.MinimumRpm;
+        var maximum = range.MaximumRpm;
         if (rpm < minimum || rpm > maximum || rpm % BladeFanLimits.StepRpm != 0)
         {
             throw new ArgumentOutOfRangeException(
