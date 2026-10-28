@@ -82,6 +82,15 @@ public sealed partial class MainWindow
     private async void HeadsetAudioApplyCompressorClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.ApplyMicCompressorAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void HeadsetAudioApplyMicMonitoringClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyMicMonitoringAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioLoadParametricEqClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.LoadParametricEqAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyParametricEqClick(object sender, RoutedEventArgs e) =>
+        await (_viewModel.SelectedHeadsetAudio?.ApplyParametricEqAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void HeadsetAudioApplyMatrixBrightnessClick(object sender, RoutedEventArgs e) =>
         await (_viewModel.SelectedHeadsetAudio?.ApplyMatrixBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
 

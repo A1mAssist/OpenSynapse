@@ -63,6 +63,7 @@ public static class RazerHeadsetAudioProtocol
 {
     public const byte ReadProfile = 0x00;
     public const byte WriteProfile = 0x00;
+    public const byte MicReturnSwitchSize = 0x02;
     public const int TenBandCount = 10;
     public const int EightBandCount = 8;
     public const int ParametricEqBandCount = 10;
@@ -228,6 +229,22 @@ public static class RazerHeadsetAudioProtocol
         }
 
         return Create(transactionId, 2, 0x08, 0x20, profile, unchecked((byte)thresholdDb));
+    }
+
+    public static byte[] GetMicReturnSwitch(byte transactionId, byte profile = ReadProfile) =>
+        Create(transactionId, MicReturnSwitchSize, 0x08, 0x82, profile, 0x00);
+
+    /// <summary>
+    /// Return switch is the middleware's mic monitoring (sidetone) path: 0 passes the mic
+    /// ADC straight through, 1 routes it back through the return channel.
+    /// </summary>
+    public static byte[] SetMicReturnSwitch(byte transactionId, bool enabled, byte profile = WriteProfile) =>
+        Create(transactionId, MicReturnSwitchSize, 0x08, 0x22, profile, enabled ? (byte)0x01 : (byte)0x00);
+
+    public static bool ReadMicReturnSwitch(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response, MicReturnSwitchSize);
+        return data[1] != 0;
     }
 
     public static byte[] GetBass(byte transactionId, byte profile = ReadProfile) =>

@@ -144,6 +144,17 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     private double _micCompressorAttack;
     private double _micCompressorRelease;
     private bool _hasMicCompressor;
+    private bool _micMonitoringEnabled;
+    private bool _hasMicMonitoring;
+    private int _parametricEqBandIndex;
+    private bool _parametricEqEnabled;
+    private double _parametricEqFrequency;
+    private double _parametricEqGain;
+    private double _parametricEqQ;
+    private byte _parametricEqProfile;
+    private byte _parametricEqDirection;
+    private byte _parametricEqFilterType;
+    private bool _hasParametricEq;
     private static readonly RazerMicReverbRoomMode[] MicReverbModes =
         Enum.GetValues<RazerMicReverbRoomMode>();
     private int _selectedAncIndex;
@@ -620,6 +631,48 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     public Visibility MicCompressorVisibility =>
         _hasMicCompressor ? Visibility.Visible : Visibility.Collapsed;
 
+    public bool MicMonitoringEnabled
+    {
+        get => _micMonitoringEnabled;
+        set => SetField(ref _micMonitoringEnabled, value);
+    }
+
+    public Visibility MicMonitoringVisibility =>
+        _hasMicMonitoring ? Visibility.Visible : Visibility.Collapsed;
+
+    public int ParametricEqBandIndex
+    {
+        get => _parametricEqBandIndex;
+        set => SetField(ref _parametricEqBandIndex, Math.Clamp(value, 0, 9));
+    }
+
+    public bool ParametricEqEnabled
+    {
+        get => _parametricEqEnabled;
+        set => SetField(ref _parametricEqEnabled, value);
+    }
+
+    public double ParametricEqFrequency
+    {
+        get => _parametricEqFrequency;
+        set => SetField(ref _parametricEqFrequency, Math.Clamp(value, 0, ushort.MaxValue));
+    }
+
+    public double ParametricEqGain
+    {
+        get => _parametricEqGain;
+        set => SetField(ref _parametricEqGain, Math.Clamp(value, -128, 127));
+    }
+
+    public double ParametricEqQ
+    {
+        get => _parametricEqQ;
+        set => SetField(ref _parametricEqQ, Math.Clamp(value, 0, 255));
+    }
+
+    public Visibility ParametricEqVisibility =>
+        _hasParametricEq ? Visibility.Visible : Visibility.Collapsed;
+
     public IReadOnlyList<string> AncOptions =>
     [
         AppStrings.Text("RazerHeadsetAncOff"),
@@ -1001,6 +1054,60 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 (service, token) => service.SetAudioSourceAsync(Sources[SelectedSourceIndex], token),
                 cancellationToken);
 
+    public Task ApplyMicMonitoringAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetMicReturnSwitchAsync(MicMonitoringEnabled, token),
+                cancellationToken);
+
+    public async Task LoadParametricEqAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsMxic || !BeginOperation()) return;
+        try
+        {
+            var band = await OpenService()
+                .GetParametricEqAsync((byte)ParametricEqBandIndex, cancellationToken);
+            _parametricEqProfile = band.Profile;
+            _parametricEqDirection = band.Direction;
+            _parametricEqFilterType = band.FilterType;
+            ParametricEqEnabled = band.Enabled;
+            ParametricEqFrequency = band.Frequency;
+            ParametricEqGain = band.GainTenths;
+            ParametricEqQ = band.QFactorTenths;
+            _hasParametricEq = true;
+            OnPropertyChanged(nameof(ParametricEqVisibility));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public Task ApplyParametricEqAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetParametricEqAsync(
+                    new RazerParametricEqBand(
+                        _parametricEqProfile,
+                        _parametricEqDirection,
+                        (byte)ParametricEqBandIndex,
+                        ParametricEqEnabled ? (byte)1 : (byte)0,
+                        (ushort)Math.Round(ParametricEqFrequency),
+                        (sbyte)Math.Round(ParametricEqGain),
+                        (byte)Math.Round(ParametricEqQ),
+                        _parametricEqFilterType),
+                    token),
+                cancellationToken);
+
     public Task ApplyMicCompressorAsync(CancellationToken cancellationToken = default) =>
         IsMxic
             ? Task.CompletedTask
@@ -1343,6 +1450,13 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             MicCompressorRelease = compressor.ReleaseTime;
             _hasMicCompressor = true;
             OnPropertyChanged(nameof(MicCompressorVisibility));
+        }
+
+        if (state.MicReturnSwitch is bool monitoring)
+        {
+            MicMonitoringEnabled = monitoring;
+            _hasMicMonitoring = true;
+            OnPropertyChanged(nameof(MicMonitoringVisibility));
         }
 
         OnPropertyChanged(nameof(AdvancedAudioVisibility));
