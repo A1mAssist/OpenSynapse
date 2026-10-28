@@ -45,6 +45,7 @@ public sealed record RazerHeadsetAudioState(
     public bool? Dolby { get; init; }
     public bool? NightMode { get; init; }
     public RazerHapticsControlState? Haptics { get; init; }
+    public bool? MicReturnSwitch { get; init; }
 }
 
 /// <summary>
@@ -350,6 +351,13 @@ public sealed class RazerHeadsetAudioService
             errors,
             cancellationToken,
             recordUnsupported: false).ConfigureAwait(false);
+        var micMonitoring = await ProbeAsync(
+            "mic monitoring",
+            txn => RazerHeadsetAudioProtocol.GetMicReturnSwitch(txn),
+            RazerHeadsetAudioProtocol.ReadMicReturnSwitch,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
         var reverb = await ProbeAsync(
             "microphone reverb",
             txn => RazerHeadsetAudioProtocol.GetMicReverb(txn),
@@ -424,6 +432,7 @@ public sealed class RazerHeadsetAudioService
         {
             ParametricEq = parametricEq.Ok ? parametricEq.Value : null,
             MicCompressor = compressor.Ok ? compressor.Value : null,
+            MicReturnSwitch = micMonitoring.Ok ? micMonitoring.Value : null,
             MicDeEsser = deEsser.Ok ? deEsser.Value : null,
             MicReverb = reverb.Ok ? reverb.Value : null,
             MicLimiter = limiter.Ok ? limiter.Value : null,
@@ -508,6 +517,32 @@ public sealed class RazerHeadsetAudioService
             throw;
         }
     }
+
+    public async Task<bool> GetMicReturnSwitchAsync(CancellationToken cancellationToken = default) =>
+        RazerHeadsetAudioProtocol.ReadMicReturnSwitch(
+            await QueryAsync(
+                txn => RazerHeadsetAudioProtocol.GetMicReturnSwitch(txn),
+                "read mic monitoring",
+                cancellationToken).ConfigureAwait(false));
+
+    public Task SetMicReturnSwitchAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetMicReturnSwitch(txn),
+            RazerHeadsetAudioProtocol.ReadMicReturnSwitch,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetMicReturnSwitch(txn, value),
+            value => value == enabled,
+            "mic monitoring",
+            cancellationToken);
+
+    public async Task<RazerParametricEqBand> GetParametricEqAsync(
+        byte band,
+        CancellationToken cancellationToken = default) =>
+        RazerHeadsetAudioProtocol.ReadParametricEqSetting(
+            await QueryAsync(
+                txn => RazerHeadsetAudioProtocol.GetParametricEqSetting(txn, band),
+                "read parametric EQ",
+                cancellationToken).ConfigureAwait(false));
 
     public Task SetBassAsync(byte level, CancellationToken cancellationToken = default)
     {
