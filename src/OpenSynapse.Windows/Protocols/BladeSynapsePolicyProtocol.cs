@@ -49,7 +49,8 @@ public static class BladeSynapsePolicyProtocol
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request)
     {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: 2))
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, minimumArguments: 2, allowRemainingPacketsMismatch: true))
         {
             throw new InvalidOperationException("Blade Fn primary function returned an invalid or out-of-order feature report.");
         }
@@ -144,15 +145,15 @@ public static class BladeSynapsePolicyProtocol
     {
         if (response.Length != RazerFeatureReport.Length ||
             response[1] != 0x02 ||
-            response[6] is not (0x01 or 0x02) ||
-            !RazerFeatureReport.Matches(request, response))
+            response[6] < 0x01 ||
+            !RazerFeatureReport.Matches(request, response, allowRemainingPacketsMismatch: true))
         {
             throw new InvalidOperationException(
                 "Blade startup animation returned an invalid or out-of-order feature report.");
         }
 
         var offset = RazerFeatureReport.ArgumentsOffset;
-        var hasProfileId = response[6] == 0x02;
+        var hasProfileId = response[6] >= 0x02;
         var disabled = response[offset + (hasProfileId ? 1 : 0)];
         if (disabled is not (0x00 or 0x01))
         {
@@ -187,7 +188,8 @@ public static class BladeSynapsePolicyProtocol
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request)
     {
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, minimumArguments: 3))
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, minimumArguments: 3, allowRemainingPacketsMismatch: true))
         {
             throw new InvalidOperationException(
                 "Blade audio mute indicator returned an invalid or out-of-order feature report.");

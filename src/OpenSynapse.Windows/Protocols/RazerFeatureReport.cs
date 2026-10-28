@@ -229,7 +229,13 @@ public static class RazerFeatureReport
         request.Length == Length &&
         response.Length == Length &&
         IsAcceptedStatus(response[1]) &&
-        response[6] == request[6] &&
+        // The transport already matched the transaction, command and checksum, so a
+        // firmware that answers with more payload than the request declared is still
+        // this command's reply. Callers that read only part of it opt into that here;
+        // the rest keep demanding the exact length they asked for.
+        (allowRemainingPacketsMismatch
+            ? response[6] >= minimumArguments
+            : response[6] == request[6]) &&
         minimumArguments <= response[6] &&
         response[7] == request[7] &&
         response[8] == request[8] &&

@@ -25,7 +25,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private string? _validatedViperIdlePath;
     private string? _validatedViperLowBatteryThresholdPath;
     private readonly SemaphoreSlim _bladePowerModeTransactionGate = new(1, 1);
-
     public RazerDeviceTelemetryReader()
         : this(new RazerFeatureTransport(), RazerDeviceRegistry.BuiltIn)
     {
@@ -520,6 +519,19 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         EnsureValidated(_validatedBladePerformancePath, blade.Descriptor.Id, "Read the Blade performance mode successfully first.");
 
         var original = await ReadBladeThermalStateAsync(blade, cancellationToken);
+        // HyperBoost moves the EC to its own preset, so the CPU/GPU level goes with it:
+        // the preset would otherwise run on whatever the previous mode left behind.
+        // The EC keeps a level per mode, so leaving the preset applies that mode's own
+        // values; writing the captured ones back would overwrite them with a stranger's.
+        var raiseLevels = mode == BladePerformanceMode.Hyperboost &&
+            BladeModelCapabilities.SupportsCpuBoost(blade.Descriptor.ProductId);
+        BladeBoostState? originalBoost = null;
+        if (raiseLevels)
+        {
+            EnsureValidated(_validatedBladeBoostPath, blade.Descriptor.Id, "Read the Blade CPU level successfully first.");
+            originalBoost = await ReadBladeBoostStateAsync(blade, cancellationToken);
+        }
+
         try
         {
             await EnsureBladeMaxFanOffBeforeLeavingCustomAsync(blade, mode, cancellationToken);
@@ -532,11 +544,33 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             await WriteBladeThermalZoneAsync(blade, 0x01, mode, fanMode, cancellationToken);
             await WriteBladeThermalZoneAsync(blade, 0x02, mode, fanMode, cancellationToken);
 
+            BladeBoostState? expectedBoost = null;
+            if (raiseLevels)
+            {
+                expectedBoost = new BladeBoostState(
+                    BladeModelCapabilities.MaximumCpuBoostModeFor(blade.Descriptor.ProductId)
+                        ?? throw new InvalidOperationException("This Blade model has no admitted CPU level."),
+                    BladeGpuBoostMode.High);
+            }
+
+            if (expectedBoost is { } levels)
+            {
+                await WriteBladeBoostModeAsync(blade, BladeBoostProtocol.CpuCluster, (byte)levels.Cpu, cancellationToken);
+                await WriteBladeBoostModeAsync(blade, BladeBoostProtocol.GpuCluster, (byte)levels.Gpu, cancellationToken);
+            }
+
             var actual = await ReadBladeThermalStateAsync(blade, cancellationToken);
-            if (actual.PerformanceMode != mode || actual.FanMode != fanMode)
+            var actualBoost = expectedBoost is null
+                ? null
+                : await ReadBladeBoostStateAsync(blade, cancellationToken);
+            if (actual.PerformanceMode != mode || actual.FanMode != fanMode ||
+                (expectedBoost is { } expected && actualBoost != expected))
             {
                 throw new InvalidOperationException(
-                    $"Performance mode readback mismatch: wrote {mode} / {fanMode}, read {actual.PerformanceMode} / {actual.FanMode}.");
+                    $"Performance mode readback mismatch: wrote {mode} / {fanMode}" +
+                    (expectedBoost is { } target ? $" / CPU {target.Cpu} / GPU {target.Gpu}" : string.Empty) +
+                    $", read {actual.PerformanceMode} / {actual.FanMode}" +
+                    (actualBoost is { } read ? $" / CPU {read.Cpu} / GPU {read.Gpu}" : string.Empty) + ".");
             }
 
             return actual.PerformanceMode;
@@ -545,10 +579,14 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             IsExpectedHardwareException(exception) || exception is OperationCanceledException)
         {
             var restored = await TryRestoreBladeThermalStateAsync(blade, original);
+            if (originalBoost is { } boost)
+            {
+                restored &= await TryRestoreBladeBoostLevelsAsync(blade, boost);
+            }
             var message = $"Performance mode update failed: {exception.Message} " +
                 (restored
                     ? "The original state was restored."
-                    : "Original state restoration failed; check both fan zones immediately.");
+                    : "Original state restoration failed; check the fan zones and power levels immediately.");
             if (exception is OperationCanceledException)
             {
                 throw new OperationCanceledException(message, exception, cancellationToken);
@@ -2176,6 +2214,22 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 device, 0x02, state.PerformanceMode, state.FanMode, CancellationToken.None);
             var restored = await ReadBladeThermalStateAsync(device, CancellationToken.None);
             return restored == state;
+        }
+        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> TryRestoreBladeBoostLevelsAsync(ReadyDevice device, BladeBoostState state)
+    {
+        try
+        {
+            await WriteBladeBoostModeAsync(
+                device, BladeBoostProtocol.CpuCluster, (byte)state.Cpu, CancellationToken.None);
+            await WriteBladeBoostModeAsync(
+                device, BladeBoostProtocol.GpuCluster, (byte)state.Gpu, CancellationToken.None);
+            return await ReadBladeBoostStateAsync(device, CancellationToken.None) == state;
         }
         catch (Exception exception) when (IsExpectedHardwareException(exception))
         {
