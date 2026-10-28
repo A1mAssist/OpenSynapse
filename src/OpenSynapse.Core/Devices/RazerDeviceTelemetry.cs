@@ -5,6 +5,7 @@ namespace OpenSynapse.Core.Devices;
 public enum BladePerformanceMode : byte
 {
     Balanced = 0x00,
+    Turbo = 0x01,
     Performance = 0x02,
     BatterySaver = 0x03,
     Custom = 0x04,

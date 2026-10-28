@@ -240,6 +240,7 @@ public sealed class ProfileShortcutSettings
         MacroPlaybackStop = NormalizeMacroShortcut(MacroPlaybackStop);
         if (PerformanceCycleModes?.Any(mode => mode is not (
                 BladePerformanceMode.Balanced or
+                BladePerformanceMode.Turbo or
                 BladePerformanceMode.Performance or
                 BladePerformanceMode.Custom or
                 BladePerformanceMode.Silent or

@@ -44,6 +44,34 @@ public sealed class BladeMiddlewareModelsTests
         Assert.True(BladeModelCapabilities.SupportsFanCurve(productId));
     }
 
+    [Fact]
+    public void Blade18_2024DoesNotAdmitStartupAnimation()
+    {
+        var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x02B8);
+
+        Assert.NotNull(manifest);
+        Assert.DoesNotContain("startup-animation.get", manifest!.Capabilities.Keys);
+        Assert.DoesNotContain("startup-animation.set", manifest.Capabilities.Keys);
+    }
+
+    [Theory]
+    [InlineData(0x02A0)]
+    [InlineData(0x02B6)]
+    [InlineData(0x02B8)]
+    public void TurboModeIsParsedForTheModelsThatPublishIt(ushort productId)
+    {
+        Assert.Equal(
+            BladePerformanceMode.Turbo,
+            RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, productId));
+    }
+
+    [Fact]
+    public void TurboModeIsNotInventedForOtherBladeModels()
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, 0x0255));
+    }
+
     [Theory]
     [InlineData(6, 16)]
     [InlineData(6, 17)]

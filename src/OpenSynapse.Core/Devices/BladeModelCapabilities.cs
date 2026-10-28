@@ -95,11 +95,12 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Hyperboost,
     ];
 
-    // 02B6 lists Turbo, which has no BladePerformanceMode counterpart.
+    // 02B6 publishes Turbo as wire value 0x01.
     private static readonly BladePerformanceMode[] Modes02B6 =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
+        BladePerformanceMode.Turbo,
         BladePerformanceMode.Custom,
     ];
 
@@ -109,9 +110,17 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Custom,
     ];
 
-    // 02A0 and 02B8 publish Balanced, Silent, Turbo and Custom; Turbo has no
-    // BladePerformanceMode counterpart.
+    // 02A0 and 02B8 publish Balanced, Silent, Turbo and Custom.
     private static readonly BladePerformanceMode[] Modes02A0 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Turbo,
+        BladePerformanceMode.Custom,
+    ];
+
+    // 028A/028B/029E share the older three-mode list; only 02A0/02B8 add Turbo.
+    private static readonly BladePerformanceMode[] Modes028A =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
@@ -276,6 +285,7 @@ public static class BladeModelCapabilities
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2000, 5400, 3800),
                     (BladePerformanceMode.Silent, 2200, 3800, 3000),
+                    (BladePerformanceMode.Turbo, 2000, 5400, 3800),
                     (BladePerformanceMode.Custom, 3300, 5400, 4300)),
                 Modes: Modes02B6),
 
@@ -291,6 +301,7 @@ public static class BladeModelCapabilities
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
                     (BladePerformanceMode.Silent, 3700, 5300, 4500),
+                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
                 Modes: Modes02A0),
 
@@ -563,7 +574,7 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
-                Modes: Modes02A0),
+                Modes: Modes028A),
 
             [0x028B] = new(
                 MaxFan: false,
@@ -575,7 +586,7 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 2200, 3800, 3000),
                     (BladePerformanceMode.Silent, 2200, 3800, 3000),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
-                Modes: Modes02A0),
+                Modes: Modes028A),
 
             [0x029E] = new(
                 MaxFan: true,
@@ -587,7 +598,7 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
-                Modes: Modes02A0),
+                Modes: Modes028A),
 
             // Blade 16 (2026) RZ09-0581 publishes the same six modes and fan ranges as 02C6.
             // Its deviceFeatures omit hasMaxFanSpeedModeEnabled, so Max Fan stays closed.
