@@ -106,6 +106,12 @@ public enum OpenRazerBackendCapability
     ScrollFreeNotchedModeWrite,
     ScrollAccelerationLevelRead,
     ScrollAccelerationLevelWrite,
+    OnboardProfileRead,
+    OnboardProfileWrite,
+    WirelessPairingWrite,
+    WirelessConnectionStateRead,
+    ProximitySensorRead,
+    ProximitySensorWrite,
 }
 
 public sealed record OpenRazerLightingZoneCapabilities(
