@@ -5,8 +5,8 @@
 ## 结论
 
 1. 旋风黑鲨 V2 Pro（`1532:0528`）的 THX Spatial Audio 不是耳机 HID 命令，而是 THX APO + Windows 服务，`ThxV3Native.dll` 只是客户端。
-2. 侧音和游戏/语音平衡是 HID 命令，存在于 0528 自己的 `AudioValkyrie` 模块里，走 **64 字节 output report**，不是我们当前耳机页用的 91 字节 feature report。
-3. 因此“侧音只能靠原生 DLL”这句话只对 THX APO 成立；耳机硬件侧音和游戏/语音平衡可以直接做，但要先实现 64 字节 dongle 通道。
+2. 侧音和游戏/语音平衡是 HID 命令。**2026-10-29 复核修正**：0528 的 `rzDeviceType` 是 `AudioAvneraDeviceOdessaT1`，走 91 字节 feature；下文 64 字节 Valkyrie 通道属于 0576/0579/0A4E/0A51/101E/101F，不适用于 0528。
+3. 因此“侧音只能靠原生 DLL”这句话只对 THX APO 成立；耳机硬件侧音和游戏/语音平衡可以直接做，0528 走现有 91 字节通道，Valkyrie 家族才需要 64 字节通道。
 
 ## 找出来的 DLL
 
@@ -118,7 +118,11 @@ D:\Tools\ghidra_12.1.2_PUBLIC_20260605\support\analyzeHeadless.bat ^
 
 ## 0528 的 HID 通道
 
-中间件里 0528 的设备模块是 `AudioValkyrie`，不是通用 `rzDevice25`：
+> 2026-10-29 复核：`bundles/0528/main.*.js` 的 `rzDeviceType` 是
+> `AudioAvneraDeviceOdessaT1`，不是 `AudioValkyrie`；0528 走 91 字节 feature 通道。
+> 下面这节 64 字节 Valkyrie 帧属于 0576/0579/0A4E/0A51/101E/101F，不要套到 0528。
+
+原先的判断是 0528 的设备模块为 `AudioValkyrie`（已被上面的复核推翻，保留作历史记录）：
 
 ```
 REPORT_ID              2

@@ -294,16 +294,18 @@ public sealed partial class MainWindow
         // the resize handler enforces.
         var minimumWidth = Math.Min((int)Math.Round(MinimumWindowWidth * scale), maxWidth);
         var minimumHeight = Math.Min((int)Math.Round(MinimumWindowHeight * scale), maxHeight);
+        var defaultWidth = Math.Min((int)Math.Round(1180 * scale), maxWidth);
+        var defaultHeight = Math.Min((int)Math.Round(800 * scale), maxHeight);
         var width = Math.Clamp(
             _behaviorSettings.WindowWidth > 0
-                ? _behaviorSettings.WindowWidth
-                : (int)Math.Round(1180 * scale),
+                ? Math.Max(_behaviorSettings.WindowWidth, defaultWidth)
+                : defaultWidth,
             minimumWidth,
             maxWidth);
         var height = Math.Clamp(
             _behaviorSettings.WindowHeight > 0
-                ? _behaviorSettings.WindowHeight
-                : (int)Math.Round(800 * scale),
+                ? Math.Max(_behaviorSettings.WindowHeight, defaultHeight)
+                : defaultHeight,
             minimumHeight,
             maxHeight);
         var bounds = new RectInt32(

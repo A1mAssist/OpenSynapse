@@ -39,7 +39,8 @@ artifacts/release-*/
 artifacts/codex-*/
 dist/
 src/OpenSynapse.App/artifacts/
-scripts/
+scripts/*
+!scripts/scan-device-transport.ps1
 
 # IDE and user state
 .vs/

@@ -74,7 +74,14 @@ public sealed partial class MainWindow : Window
             handledEventsToo: true);
         RefreshLightingPresetOptions();
         Localized.RefreshTree(RootLayout);
-        RootLayout.Loaded += (_, _) => Localized.RefreshTree(RootLayout);
+        RootLayout.Loaded += (_, _) =>
+        {
+            Localized.RefreshTree(RootLayout);
+            // The first activation can run before XAML has a XamlRoot. Reapply the saved
+            // geometry once the layout is live so a low-DPI fallback cannot pin the window
+            // to the minimum size for the rest of the session.
+            ResizeForCurrentDisplay();
+        };
         SelectLanguage(AppLanguageSettings.Current);
         _languageSelectionReady = true;
         InitializeBehaviorSettingsUi();

@@ -38,6 +38,29 @@ public sealed class RazerHeadsetAudioServiceTests
     }
 
     [Theory]
+    [InlineData(0x0539)]
+    [InlineData(0x053B)]
+    [InlineData(0x0555)]
+    [InlineData(0x0583)]
+    [InlineData(0x0584)]
+    public void MxicHeadsetsDoNotUseTheFeatureReportPage(ushort productId)
+    {
+        Assert.True(RazerMxicHeadsetService.IsSupported(productId));
+        Assert.False(RazerHeadsetAudioService.UsesFeatureReportTransport(productId));
+    }
+
+    [Theory]
+    [InlineData(0x0A4E)]
+    [InlineData(0x0A51)]
+    [InlineData(0x101E)]
+    [InlineData(0x101F)]
+    public void AudioValkyrieIdentitiesStayOffTheMxicList(ushort productId)
+    {
+        Assert.False(RazerMxicHeadsetService.IsSupported(productId));
+        Assert.False(RazerHeadsetAudioService.UsesFeatureReportTransport(productId));
+    }
+
+    [Theory]
     [InlineData(0x0532, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
     [InlineData(0x055A, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
     [InlineData(0x055C, OpenSynapse.Core.Devices.DeviceCategory.Speaker)]
