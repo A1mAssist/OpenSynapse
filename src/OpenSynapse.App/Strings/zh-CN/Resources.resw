@@ -1777,6 +1777,36 @@
   <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>选择功能键或媒体键作为第一层。</value></data>
   <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>功能键优先</value></data>
   <data name="OpenRazerMediaPrimaryButton.Content" xml:space="preserve"><value>媒体键优先</value></data>
+  <data name="OpenRazerWirelessTitle.Text" xml:space="preserve"><value>无线连接</value></data>
+  <data name="OpenRazerWirelessDescription.Text" xml:space="preserve"><value>无线链路报告的设备。取消配对会移除选中项。</value></data>
+  <data name="OpenRazerWirelessRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="OpenRazerWirelessUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
+  <data name="OpenRazerWirelessEmpty.Text" xml:space="preserve"><value>未报告无线设备。</value></data>
+  <data name="OpenRazerWirelessStatus" xml:space="preserve"><value>状态 {0}</value></data>
+  <data name="OpenRazerKnobTitle.Text" xml:space="preserve"><value>旋钮</value></data>
+  <data name="OpenRazerKnobDescription.Text" xml:space="preserve"><value>配置八个旋钮阶段；应用时同步更新当前阶段。</value></data>
+  <data name="OpenRazerKnobCurrentLabel.Text" xml:space="preserve"><value>当前模式</value></data>
+  <data name="OpenRazerKnobStageColumn.Text" xml:space="preserve"><value>阶段</value></data>
+  <data name="OpenRazerKnobModeColumn.Text" xml:space="preserve"><value>模式</value></data>
+  <data name="OpenRazerKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>键盘亮度</value></data>
+  <data name="OpenRazerKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>切换旋钮灯效</value></data>
+  <data name="OpenRazerKnobModeMicVolumeUpDown" xml:space="preserve"><value>麦克风音量</value></data>
+  <data name="OpenRazerKnobModeTrackJogging" xml:space="preserve"><value>曲目快进/后退</value></data>
+  <data name="OpenRazerKnobModeWindowZoomInOut" xml:space="preserve"><value>窗口缩放</value></data>
+  <data name="OpenRazerKnobModeWindowScrollUpDown" xml:space="preserve"><value>上下滚动</value></data>
+  <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>左右滚动</value></data>
+  <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>切换应用</value></data>
+  <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="OpenRazerAnalogKeyTitle.Text" xml:space="preserve"><value>模拟键</value></data>
+  <data name="OpenRazerAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger、底部死区和上报模式。</value></data>
+  <data name="OpenRazerAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
+  <data name="OpenRazerAnalogBottomDeadZone.Header" xml:space="preserve"><value>底部死区</value></data>
+  <data name="OpenRazerAnalogReportMode.Header" xml:space="preserve"><value>模拟上报模式</value></data>
+  <data name="OpenRazerOledTitle.Text" xml:space="preserve"><value>OLED 屏幕</value></data>
+  <data name="OpenRazerOledBrightness.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="OpenRazerOledScreensaverMode.Header" xml:space="preserve"><value>屏保模式</value></data>
+  <data name="OpenRazerOledScreensaverItem.Header" xml:space="preserve"><value>屏保项目</value></data>
+  <data name="OpenRazerOledScreensaverReadOnly.Text" xml:space="preserve"><value>屏保选项只读：协议没有提供写入命令。</value></data>
   <data name="Text_4B32CEE8" xml:space="preserve"><value>鼠标</value></data>
   <data name="Text_66E7127F" xml:space="preserve"><value>笔记本</value></data>
   <data name="Text_7D4E2D8B" xml:space="preserve"><value>键盘</value></data>

@@ -358,6 +358,21 @@ public sealed partial class MainWindow
     private async void OpenRazerResetOnboardProfileClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ResetOnboardProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void OpenRazerRefreshWirelessClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.LoadWirelessAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerUnpairWirelessClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.UnpairWirelessAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyKnobClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyKnobAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyAnalogKeyClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyAnalogKeyAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyOledClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyOledAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerApplyScrollFreeNotchedModeClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyScrollFreeNotchedModeAsync(_lifetime.Token) ?? Task.CompletedTask);
 

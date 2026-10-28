@@ -134,6 +134,9 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     private bool _hasMicDeEsser;
     private bool _hasMicLimiter;
     private bool _hasMicReverb;
+    private bool _hapticsEnabled;
+    private double _hapticsStrength;
+    private bool _hasHaptics;
     private static readonly RazerMicReverbRoomMode[] MicReverbModes =
         Enum.GetValues<RazerMicReverbRoomMode>();
     private int _selectedAncIndex;
@@ -560,6 +563,21 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+    public bool HapticsEnabled { get => _hapticsEnabled; set => SetField(ref _hapticsEnabled, value); }
+
+    public double HapticsStrength
+    {
+        get => _hapticsStrength;
+        set
+        {
+            if (!SetField(ref _hapticsStrength, Math.Clamp(value, 0, ushort.MaxValue))) return;
+            OnPropertyChanged(nameof(HapticsStrengthText));
+        }
+    }
+
+    public string HapticsStrengthText => $"{Math.Round(HapticsStrength)}";
+    public Visibility HapticsVisibility => _hasHaptics ? Visibility.Visible : Visibility.Collapsed;
+
     public IReadOnlyList<string> AncOptions =>
     [
         AppStrings.Text("RazerHeadsetAncOff"),
@@ -941,6 +959,14 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 (service, token) => service.SetAudioSourceAsync(Sources[SelectedSourceIndex], token),
                 cancellationToken);
 
+    public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetHapticsAsync(
+                    HapticsEnabled, (ushort)Math.Round(HapticsStrength), token),
+                cancellationToken);
+
     public async Task ApplyAdvancedAsync(CancellationToken cancellationToken = default)
     {
         await ApplyDndAsync(cancellationToken);
@@ -1240,6 +1266,14 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             MicReverbIntensity = reverb.Intensity;
             _hasMicReverb = true;
             OnPropertyChanged(nameof(MicReverbVisibility));
+        }
+
+        if (state.Haptics is { } haptics)
+        {
+            HapticsEnabled = haptics.Enabled;
+            HapticsStrength = haptics.Strength;
+            _hasHaptics = true;
+            OnPropertyChanged(nameof(HapticsVisibility));
         }
 
         OnPropertyChanged(nameof(AdvancedAudioVisibility));
