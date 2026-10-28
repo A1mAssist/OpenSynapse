@@ -174,6 +174,26 @@ public static class RazerFeatureReport
     }
 
     /// <summary>
+    /// Validates a reply for a parser that only holds a rebuilt request. The transport
+    /// rotates the transaction id before every query, so a parser that rebuilds the
+    /// request from the manifest compares a stale transaction id and rejects a reply the
+    /// device already accepted. The transport matched the transaction, command and
+    /// checksum on the report it actually sent, so a parser only has to agree on the
+    /// command it asked for.
+    /// </summary>
+    internal static bool MatchesCommand(
+        ReadOnlySpan<byte> request,
+        ReadOnlySpan<byte> response,
+        bool allowRemainingPacketsMismatch = false) =>
+        request.Length == Length &&
+        response.Length == Length &&
+        (allowRemainingPacketsMismatch ||
+         (response[3] == request[3] && response[4] == request[4])) &&
+        response[7] == request[7] &&
+        response[8] == request[8] &&
+        IsAcceptedChecksum(response);
+
+    /// <summary>
     /// Some firmware folds the transaction id into the response checksum. The Leviathan
     /// V2 X does, so a report that carries its transaction id in the checksum fails the
     /// shared range by exactly that id.

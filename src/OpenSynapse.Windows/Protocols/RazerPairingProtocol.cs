@@ -105,7 +105,7 @@ public static class RazerPairingProtocol
         ReadOnlySpan<byte> request,
         byte minimumArguments)
     {
-        if (!RazerFeatureReport.Matches(request, response) ||
+        if (!RazerFeatureReport.MatchesCommand(request, response) ||
             !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
             response[6] < minimumArguments ||
             response[6] > 80)
