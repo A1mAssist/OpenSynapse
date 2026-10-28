@@ -102,6 +102,10 @@ public enum OpenRazerBackendCapability
     HyperPollingIndicatorWrite,
     HyperPollingPairWrite,
     HyperPollingUnpairWrite,
+    ScrollFreeNotchedModeRead,
+    ScrollFreeNotchedModeWrite,
+    ScrollAccelerationLevelRead,
+    ScrollAccelerationLevelWrite,
 }
 
 public sealed record OpenRazerLightingZoneCapabilities(

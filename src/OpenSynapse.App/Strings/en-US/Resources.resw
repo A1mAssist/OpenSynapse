@@ -1390,6 +1390,10 @@
   <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>Save</value></data>
   <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>Apply effect</value></data>
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>
+  <data name="OpenRazerScrollFreeNotchedLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
+  <data name="OpenRazerScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>Scroll acceleration level</value></data>
+  <data name="OpenRazerScrollNotchedMode.Text" xml:space="preserve"><value>Notched</value></data>
+  <data name="OpenRazerScrollFreeSpinMode.Text" xml:space="preserve"><value>Free spin</value></data>
   <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
   <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>Scroll acceleration</value></data>
   <data name="OpenRazerSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel threshold</value></data>

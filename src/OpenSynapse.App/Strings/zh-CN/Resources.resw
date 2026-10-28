@@ -1758,6 +1758,10 @@
   <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>保存</value></data>
   <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
+  <data name="OpenRazerScrollFreeNotchedLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="OpenRazerScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>滚轮加速等级</value></data>
+  <data name="OpenRazerScrollNotchedMode.Text" xml:space="preserve"><value>段落感</value></data>
+  <data name="OpenRazerScrollFreeSpinMode.Text" xml:space="preserve"><value>自由滚动</value></data>
   <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
   <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>滚轮加速</value></data>
   <data name="OpenRazerSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel 阈值</value></data>
