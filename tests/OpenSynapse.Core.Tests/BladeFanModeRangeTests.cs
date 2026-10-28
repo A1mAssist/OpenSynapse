@@ -25,16 +25,19 @@ public sealed class BladeFanModeRangeTests
     }
 
     [Fact]
-    public void AnUnlistedModeFallsBackToTheModelRange()
+    public void TheBlade14_2024PublishesBalancedSilentAndCustomRanges()
     {
-        // 02B6 publishes only its Silent range; Balanced keeps the model-wide fallback.
+        // 02B6 bundle: Balanced 2000..5400, Silent 2200..3800, Custom 3300..5400.
         const ushort productId = 0x02B6;
+        Assert.Equal(
+            new BladeFanTargetRange(2000, 5400, 3800),
+            BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Balanced));
         Assert.Equal(
             new BladeFanTargetRange(2200, 3800, 3000),
             BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Silent));
-        var balanced = BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Balanced);
-        Assert.Equal(2200, balanced.MinimumRpm);
-        Assert.Equal(5400, balanced.MaximumRpm);
+        Assert.Equal(
+            new BladeFanTargetRange(3300, 5400, 4300),
+            BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Custom));
     }
 
     [Fact]
@@ -78,5 +81,119 @@ public sealed class BladeFanModeRangeTests
         Assert.Equal(
             new BladeFanTargetRange(3300, 5400, 4300),
             BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Performance));
+    }
+
+    [Theory]
+    [InlineData(0x0233, "Balanced,Performance")]
+    [InlineData(0x0234, "Balanced,Custom")]
+    [InlineData(0x0239, "Balanced,Performance")]
+    [InlineData(0x023A, "Balanced,Performance")]
+    [InlineData(0x023B, "Balanced")]
+    [InlineData(0x0240, "Balanced,Performance")]
+    [InlineData(0x0245, "Balanced,Custom")]
+    [InlineData(0x0246, "Balanced,Performance")]
+    [InlineData(0x024A, "Balanced")]
+    [InlineData(0x024B, "Balanced,Custom")]
+    [InlineData(0x024C, "Balanced,Custom")]
+    [InlineData(0x024D, "Balanced,Custom")]
+    [InlineData(0x0252, "Balanced,BatterySaver")]
+    [InlineData(0x0253, "Balanced,Custom")]
+    [InlineData(0x0256, "Balanced,Custom")]
+    [InlineData(0x0259, "Balanced,BatterySaver")]
+    [InlineData(0x0268, "Balanced,Performance")]
+    [InlineData(0x026D, "Balanced,Custom")]
+    [InlineData(0x026E, "Balanced,Custom")]
+    [InlineData(0x026F, "Balanced,Performance")]
+    [InlineData(0x0270, "Balanced,Custom")]
+    [InlineData(0x0276, "Balanced,Custom")]
+    [InlineData(0x0279, "Balanced,Custom")]
+    [InlineData(0x027A, "Balanced,Performance")]
+    [InlineData(0x028A, "Balanced,Silent,Custom")]
+    [InlineData(0x028B, "Balanced,Silent,Custom")]
+    [InlineData(0x029D, "Balanced,Silent,Custom,Hyperboost")]
+    [InlineData(0x029E, "Balanced,Silent,Custom")]
+    [InlineData(0x02B6, "Balanced,Silent,Custom")]
+    [InlineData(0x02B8, "Balanced,Silent,Custom")]
+    [InlineData(0x02E0, "Balanced,Silent,Performance,Custom,Hyperboost,BatterySaver")]
+    [InlineData(0x028C, "Balanced,Silent,Custom,Performance")]
+    [InlineData(0x029F, "Balanced,Silent,Custom,Hyperboost")]
+    [InlineData(0x02A0, "Balanced,Silent,Custom")]
+    [InlineData(0x02B7, "Balanced,Silent,Custom,Hyperboost")]
+    [InlineData(0x02C5, "Balanced,Silent,Performance,Custom,BatterySaver")]
+    [InlineData(0x02C6, "Balanced,Silent,Performance,Custom,Hyperboost,BatterySaver")]
+    [InlineData(0x02C7, "Balanced,Silent,Performance,Custom,BatterySaver")]
+    [InlineData(0x0255, "Balanced,Performance")]
+    public void EveryBundleModelPublishesItsModeList(ushort productId, string expected)
+    {
+        Assert.Equal(
+            expected,
+            string.Join(",", BladeModelCapabilities.PerformanceModesFor(productId)));
+    }
+
+    [Theory]
+    [InlineData(0x0233, false)]
+    [InlineData(0x0234, false)]
+    [InlineData(0x0239, false)]
+    [InlineData(0x023A, false)]
+    [InlineData(0x023B, false)]
+    [InlineData(0x0240, false)]
+    [InlineData(0x0245, false)]
+    [InlineData(0x0246, false)]
+    [InlineData(0x024A, false)]
+    [InlineData(0x024B, false)]
+    [InlineData(0x024C, false)]
+    [InlineData(0x024D, false)]
+    [InlineData(0x0252, false)]
+    [InlineData(0x0253, false)]
+    [InlineData(0x0255, false)]
+    [InlineData(0x0256, false)]
+    [InlineData(0x0259, false)]
+    [InlineData(0x0268, false)]
+    [InlineData(0x026D, false)]
+    [InlineData(0x026E, false)]
+    [InlineData(0x026F, false)]
+    [InlineData(0x0270, false)]
+    [InlineData(0x0276, false)]
+    [InlineData(0x0279, false)]
+    [InlineData(0x027A, false)]
+    [InlineData(0x028A, false)]
+    [InlineData(0x028B, false)]
+    [InlineData(0x028C, false)]
+    [InlineData(0x029D, true)]
+    [InlineData(0x029E, true)]
+    [InlineData(0x029F, true)]
+    [InlineData(0x02A0, true)]
+    [InlineData(0x02B6, true)]
+    [InlineData(0x02B7, false)]
+    [InlineData(0x02B8, true)]
+    [InlineData(0x02C5, false)]
+    [InlineData(0x02C6, false)]
+    [InlineData(0x02C7, false)]
+    [InlineData(0x02E0, false)]
+    public void EveryBundleModelPublishesItsMaxFanAdmission(ushort productId, bool expected)
+    {
+        Assert.Equal(expected, BladeModelCapabilities.SupportsMaxFan(productId));
+    }
+
+    [Theory]
+    [InlineData(0x0233, BladePerformanceMode.Balanced, 3500, 5700, 4500)]
+    [InlineData(0x0233, BladePerformanceMode.Performance, 4500, 5700, 5000)]
+    [InlineData(0x023A, BladePerformanceMode.Performance, 4000, 5300, 4600)]
+    [InlineData(0x0252, BladePerformanceMode.BatterySaver, 2500, 5500, 4000)]
+    [InlineData(0x028A, BladePerformanceMode.Balanced, 3400, 5200, 4100)]
+    [InlineData(0x029E, BladePerformanceMode.Custom, 4000, 5300, 4600)]
+    [InlineData(0x029D, BladePerformanceMode.Custom, 2000, 5400, 3800)]
+    [InlineData(0x02B8, BladePerformanceMode.Balanced, 3700, 5300, 4500)]
+    [InlineData(0x02E0, BladePerformanceMode.Hyperboost, 3700, 5300, 4500)]
+    public void EveryBladeDeviceTypePublishesItsModeRanges(
+        ushort productId,
+        BladePerformanceMode mode,
+        int minimum,
+        int maximum,
+        int defaultRpm)
+    {
+        Assert.Equal(
+            new BladeFanTargetRange(minimum, maximum, defaultRpm),
+            BladeModelCapabilities.FanTargetRangeFor(productId, mode));
     }
 }

@@ -109,7 +109,7 @@ public sealed class BladeMaxFanProfileTests
     [Theory]
     [InlineData(0x02C6, true)]
     [InlineData(0x02C5, true)]
-    [InlineData(0x02E0, false)]
+    [InlineData(0x02E0, true)]
     [InlineData(0x029F, false)]
     [InlineData(0x02A0, false)]
     [InlineData(0x029D, true)]
@@ -123,6 +123,11 @@ public sealed class BladeMaxFanProfileTests
     [InlineData(0x029F, true)]
     [InlineData(0x02A0, false)]
     [InlineData(0x028C, true)]
+    [InlineData(0x0233, false)]
+    [InlineData(0x0234, true)]
+    [InlineData(0x028A, true)]
+    [InlineData(0x029E, true)]
+    [InlineData(0x0255, false)]
     [InlineData(0x0000, false)]
     public void OnlyAuditedModelsAdmitFixedFanWrites(ushort productId, bool expected) =>
         Assert.Equal(expected, BladeModelCapabilities.SupportsFixedFan(productId));
@@ -174,9 +179,19 @@ public sealed class BladeMaxFanProfileTests
     [InlineData(0x029D, 5400)] // Blade 14 (2023)
     [InlineData(0x02B6, 5400)] // Blade 14 (2024)
     [InlineData(0x02B7, 5400)] // Blade 16 (2024)
-    [InlineData(0x02B8, 5400)] // Blade 18 (2024)
+    [InlineData(0x02B8, 5300)] // Blade 18 (2024)
     [InlineData(0x02C5, 5400)] // Blade 14 (2025)
     [InlineData(0x02C7, 5400)] // Blade 18 (2025)
+    [InlineData(0x02E0, 5400)] // Blade 16 (2026)
+    [InlineData(0x0234, 5300)] // Blade Pro 17 (2019)
+    [InlineData(0x0239, 5300)] // Blade Stealth (2019)
+    [InlineData(0x023A, 5300)] // Blade 15 Advanced (2019)
+    [InlineData(0x0252, 5500)] // Blade Stealth (Early 2020)
+    [InlineData(0x0259, 5600)] // Blade Stealth (Late 2020)
+    [InlineData(0x027A, 5400)] // Blade Base (Early 2022)
+    [InlineData(0x028A, 5300)] // Blade 15 Advanced (Early 2022)
+    [InlineData(0x028B, 5300)] // Blade 17 (2022)
+    [InlineData(0x029E, 5300)] // Blade 15 (2023)
     public void EveryFixedFanModelCarriesItsOfficialCeiling(ushort productId, int expectedRpm)
     {
         Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
