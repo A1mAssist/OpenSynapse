@@ -10,7 +10,7 @@ Chroma REST is a software integration rather than a device, so it is not listed 
 
 ## Mice
 
-Standard mouse controls include DPI, polling rate, battery, lighting and onboard mapping when the model answers them.
+Standard mouse controls include DPI, polling rate, battery, lighting and onboard mapping when the model answers the runtime button-list probe.
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
