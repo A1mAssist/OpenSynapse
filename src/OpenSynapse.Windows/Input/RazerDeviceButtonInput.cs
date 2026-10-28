@@ -17,6 +17,7 @@ internal sealed class RazerDeviceButtonInput : IDisposable
 {
     private const ushort RiKeyBreak = 0x0001;
     private const ushort RiKeyE0 = 0x0002;
+    private const long FailedDeviceRetryMilliseconds = 5_000;
 
     private const uint FileShareReadWrite = 0x00000003;
     private const uint OpenExisting = 3;
@@ -24,6 +25,8 @@ internal sealed class RazerDeviceButtonInput : IDisposable
 
     private readonly Action<MacroInput, bool> _handler;
     private readonly Dictionary<string, RazerDeviceInfo?> _devices =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _failedDeviceAt =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, HashSet<int>> _pressed = new(StringComparer.OrdinalIgnoreCase);
     private IDisposable? _subscription;
@@ -130,7 +133,23 @@ internal sealed class RazerDeviceButtonInput : IDisposable
             return known;
         }
 
+        var now = Environment.TickCount64;
+        if (_failedDeviceAt.TryGetValue(devicePath, out var failedAt) &&
+            now - failedAt < FailedDeviceRetryMilliseconds)
+        {
+            return null;
+        }
+
         var device = ProbeDevice(devicePath);
+        if (device is null)
+        {
+            // A device can be busy while it reconnects. Back off briefly
+            // instead of probing every key from a non-Razer keyboard.
+            _failedDeviceAt[devicePath] = now;
+            return null;
+        }
+
+        _failedDeviceAt.Remove(devicePath);
         _devices[devicePath] = device;
         return device;
     }
@@ -169,8 +188,20 @@ internal sealed class RazerDeviceButtonInput : IDisposable
         {
             Size = checked((uint)Marshal.SizeOf<HidAttributes>()),
         };
-        if (!HidD_GetAttributes(handle, ref attributes) ||
-            attributes.VendorId != RazerVendorId)
+        if (!HidD_GetAttributes(handle, ref attributes))
+        {
+            return parsed
+                ? new RazerDeviceInfo(
+                    parsedProductId,
+                    null,
+                    RazerNagaSideButtons.IsNaga(
+                        parsedVendorId,
+                        parsedProductId,
+                        null))
+                : null;
+        }
+
+        if (attributes.VendorId != RazerVendorId)
         {
             return null;
         }
