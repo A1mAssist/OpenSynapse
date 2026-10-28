@@ -132,17 +132,71 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 }
             }
 
+            // The performance mode and the fan mode travel in one report, but they are
+            // independent facts. A model whose firmware reports a performance mode the
+            // contract does not know must not lose its fan controls, so each is read on
+            // its own and a failure of one does not hide the other.
+            IReadOnlyList<byte[]>? thermalReports = null;
             try
             {
-                var thermalState = await ReadBladeThermalStateAsync(blade, cancellationToken);
-                bladePerformanceMode = thermalState.PerformanceMode;
-                bladeFanMode = thermalState.FanMode;
-                _validatedBladePerformancePath = blade.Descriptor.Id;
-                bladeThermalReadSucceeded = true;
+                thermalReports = await ReadBladeThermalReportsAsync(blade, cancellationToken);
             }
             catch (Exception exception) when (IsExpectedHardwareException(exception))
             {
                 errors.Add($"Performance and fan state: {exception.Message}");
+            }
+
+            if (thermalReports is not null)
+            {
+                BladePerformanceMode? performanceMode = null;
+                BladeFanMode? fanMode = null;
+                var performanceBytes = new HashSet<byte>();
+                var fanBytes = new HashSet<byte>();
+                foreach (var report in thermalReports)
+                {
+                    var performanceByte = report[RazerFeatureReport.ArgumentsOffset + 2];
+                    var fanByte = report[RazerFeatureReport.ArgumentsOffset + 3];
+                    performanceBytes.Add(performanceByte);
+                    fanBytes.Add(fanByte);
+                    try
+                    {
+                        performanceMode = ParseBladePerformanceMode(
+                            performanceByte, blade.Descriptor.ProductId);
+                    }
+                    catch (Exception exception) when (IsExpectedHardwareException(exception))
+                    {
+                        errors.Add($"Performance mode: {exception.Message}");
+                    }
+
+                    try
+                    {
+                        fanMode = ParseBladeFanMode(fanByte);
+                    }
+                    catch (Exception exception) when (IsExpectedHardwareException(exception))
+                    {
+                        errors.Add($"Fan mode: {exception.Message}");
+                    }
+                }
+
+                // The two zones describe one machine, so a split between them is a
+                // fault worth reporting even when each byte decodes on its own.
+                if (performanceBytes.Count > 1)
+                {
+                    errors.Add("Blade fan zones report different performance modes.");
+                }
+
+                if (fanBytes.Count > 1)
+                {
+                    errors.Add("Blade fan zones report different fan modes.");
+                }
+
+                bladePerformanceMode = performanceMode;
+                bladeFanMode = fanMode;
+                if (performanceMode is not null)
+                {
+                    _validatedBladePerformancePath = blade.Descriptor.Id;
+                    bladeThermalReadSucceeded = true;
+                }
             }
 
             if (owns("fan-target.get"))
@@ -570,7 +624,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             var actualBoost = expectedBoost is null
                 ? null
                 : await ReadBladeBoostStateAsync(blade, cancellationToken);
-            if (actual.PerformanceMode != mode || actual.FanMode != fanMode ||
+            if (actual.PerformanceModeByte != (byte)mode || actual.FanMode != fanMode ||
                 (expectedBoost is { } expected && actualBoost != expected))
             {
                 throw new InvalidOperationException(
@@ -755,9 +809,12 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         {
             var requiresCustomMode = BladeModelCapabilities.FixedFanRequiresCustomMode(
                 blade.Descriptor.ProductId);
-            var performanceMode = requiresCustomMode && mode == BladeFanMode.Manual
-                ? BladePerformanceMode.Custom
-                : original.Thermal.PerformanceMode;
+            // The performance byte is written verbatim so a fan change does not also
+            // change the performance mode: the named mode can be a widened reading of
+            // the byte, and writing the name back would move the machine.
+            var performanceModeByte = requiresCustomMode && mode == BladeFanMode.Manual
+                ? (byte)BladePerformanceMode.Custom
+                : original.Thermal.PerformanceModeByte;
 
             // The 028C EC only acts on a fixed target after the matching Custom/manual
             // mode write, so the mode has to go out first. Every other audited model
@@ -765,9 +822,9 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             if (requiresCustomMode)
             {
                 await WriteBladeThermalZoneAsync(
-                    blade, BladeFanProtocol.ZoneCpu, performanceMode, mode, cancellationToken);
+                    blade, BladeFanProtocol.ZoneCpu, performanceModeByte, mode, cancellationToken);
                 await WriteBladeThermalZoneAsync(
-                    blade, BladeFanProtocol.ZoneGpu, performanceMode, mode, cancellationToken);
+                    blade, BladeFanProtocol.ZoneGpu, performanceModeByte, mode, cancellationToken);
                 if (writeTargets)
                 {
                     await WriteBladeFanTargetAsync(
@@ -787,20 +844,20 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 }
 
                 await WriteBladeThermalZoneAsync(
-                    blade, BladeFanProtocol.ZoneCpu, performanceMode, mode, cancellationToken);
+                    blade, BladeFanProtocol.ZoneCpu, performanceModeByte, mode, cancellationToken);
                 await WriteBladeThermalZoneAsync(
-                    blade, BladeFanProtocol.ZoneGpu, performanceMode, mode, cancellationToken);
+                    blade, BladeFanProtocol.ZoneGpu, performanceModeByte, mode, cancellationToken);
             }
 
             var actual = await ReadBladeFanTransactionStateAsync(
                 blade, cancellationToken, readTachometers: false);
-            if (actual.Thermal.PerformanceMode != performanceMode ||
+            if (actual.Thermal.PerformanceModeByte != performanceModeByte ||
                 actual.Thermal.FanMode != mode ||
                 actual.CpuTargetRpm != cpuTargetRpm ||
                 actual.GpuTargetRpm != gpuTargetRpm)
             {
                 throw new InvalidOperationException(
-                    $"Fan readback mismatch: wrote {performanceMode} / {mode} / CPU {cpuTargetRpm} / GPU {gpuTargetRpm} RPM, " +
+                    $"Fan readback mismatch: wrote 0x{performanceModeByte:X2} / {mode} / CPU {cpuTargetRpm} / GPU {gpuTargetRpm} RPM, " +
                     $"read {actual.Thermal.PerformanceMode} / {actual.Thermal.FanMode} / " +
                     $"CPU {actual.CpuTargetRpm} / GPU {actual.GpuTargetRpm} RPM.");
             }
@@ -1761,13 +1818,35 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         CancellationToken cancellationToken)
     {
         BladeThermalState? state = null;
-        // The 597 and 2026 middleware select the default profile (1); the 710/671
-        // reports accept profile 0. The remaining two bytes are the performance mode
-        // and fan-mode response slots.
-        var profileId = device.Descriptor.ProtocolFamily == "blade-597" ||
-            BladeModelCapabilities.UsesBlade2026ThermalSelector(device.Descriptor.ProductId)
-                ? (byte)0x01
-                : (byte)0x00;
+        foreach (var report in await ReadBladeThermalReportsAsync(device, cancellationToken))
+        {
+            var current = new BladeThermalState(
+                ParseBladePerformanceMode(
+                    report[RazerFeatureReport.ArgumentsOffset + 2],
+                    device.Descriptor.ProductId),
+                ParseBladeFanMode(report[RazerFeatureReport.ArgumentsOffset + 3]),
+                report[RazerFeatureReport.ArgumentsOffset + 2]);
+            if (state is not null && state != current)
+            {
+                throw new InvalidOperationException($"Blade fan-zone states do not match: {state} / {current}.");
+            }
+            state = current;
+        }
+
+        return state ?? throw new InvalidOperationException("Blade did not return a performance mode.");
+    }
+
+    /// <summary>
+    /// Reads the thermal report of both fan zones. The 597 and 2026 middleware select
+    /// the default profile (1); the 710/671 reports accept profile 0. The remaining two
+    /// bytes are the performance mode and fan-mode response slots.
+    /// </summary>
+    private async Task<IReadOnlyList<byte[]>> ReadBladeThermalReportsAsync(
+        ReadyDevice device,
+        CancellationToken cancellationToken)
+    {
+        var profileId = GetBladeThermalProfileId(device);
+        var reports = new List<byte[]>(2);
         foreach (var zone in new byte[] { 0x01, 0x02 })
         {
             var response = await QueryCapabilityAsync(
@@ -1778,23 +1857,25 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             EnsureDataSize(response, 4, "Blade performance mode");
             if (response[RazerFeatureReport.ArgumentsOffset + 1] != zone)
             {
-                throw new InvalidOperationException($"Blade returned the wrong fan zone: {response[RazerFeatureReport.ArgumentsOffset + 1]}.");
+                throw new InvalidOperationException(
+                    $"Blade returned the wrong fan zone: {response[RazerFeatureReport.ArgumentsOffset + 1]}.");
             }
 
-            var current = new BladeThermalState(
-                ParseBladePerformanceMode(
-                    response[RazerFeatureReport.ArgumentsOffset + 2],
-                    device.Descriptor.ProductId),
-                ParseBladeFanMode(response[RazerFeatureReport.ArgumentsOffset + 3]));
-            if (state is not null && state != current)
-            {
-                throw new InvalidOperationException($"Blade fan-zone states do not match: {state} / {current}.");
-            }
-            state = current;
+            reports.Add(response);
         }
 
-        return state ?? throw new InvalidOperationException("Blade did not return a performance mode.");
+        return reports;
     }
+
+    /// <summary>
+    /// The profile byte the thermal report selects. The 597 and 2026 middleware use the
+    /// default profile (1); the 710/671 reports accept profile 0.
+    /// </summary>
+    private static byte GetBladeThermalProfileId(ReadyDevice device) =>
+        device.Descriptor.ProtocolFamily == "blade-597" ||
+        BladeModelCapabilities.UsesBlade2026ThermalSelector(device.Descriptor.ProductId)
+            ? (byte)0x01
+            : (byte)0x00;
 
     private async Task<int> ReadBladeFanTargetRpmAsync(
         ReadyDevice device,
@@ -1935,13 +2016,13 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         await AttemptAsync("Restore CPU fan mode", () => WriteBladeThermalZoneAsync(
             device,
             BladeFanProtocol.ZoneCpu,
-            original.Thermal.PerformanceMode,
+            original.Thermal.PerformanceModeByte,
             original.Thermal.FanMode,
             CancellationToken.None));
         await AttemptAsync("Restore GPU fan mode", () => WriteBladeThermalZoneAsync(
             device,
             BladeFanProtocol.ZoneGpu,
-            original.Thermal.PerformanceMode,
+            original.Thermal.PerformanceModeByte,
             original.Thermal.FanMode,
             CancellationToken.None));
         await AttemptAsync("Restore readback", async () =>
@@ -2205,10 +2286,22 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         BladePerformanceMode performanceMode,
         BladeFanMode fanMode,
         CancellationToken cancellationToken) =>
+        WriteBladeThermalZoneAsync(device, zone, (byte)performanceMode, fanMode, cancellationToken);
+
+    /// <summary>
+    /// Writes the performance byte verbatim. Restoring a captured state must not turn a
+    /// widened reading back into a different mode.
+    /// </summary>
+    private Task WriteBladeThermalZoneAsync(
+        ReadyDevice device,
+        byte zone,
+        byte rawPerformanceMode,
+        BladeFanMode fanMode,
+        CancellationToken cancellationToken) =>
         QueryCapabilityAsync(
             device,
             "thermal-state.set",
-            new byte[] { 0x01, zone, (byte)performanceMode, (byte)fanMode },
+            new byte[] { 0x01, zone, rawPerformanceMode, (byte)fanMode },
             cancellationToken);
 
     private async Task<bool> TryRestoreBladeThermalStateAsync(
@@ -2218,9 +2311,9 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         try
         {
             await WriteBladeThermalZoneAsync(
-                device, 0x01, state.PerformanceMode, state.FanMode, CancellationToken.None);
+                device, 0x01, state.PerformanceModeByte, state.FanMode, CancellationToken.None);
             await WriteBladeThermalZoneAsync(
-                device, 0x02, state.PerformanceMode, state.FanMode, CancellationToken.None);
+                device, 0x02, state.PerformanceModeByte, state.FanMode, CancellationToken.None);
             var restored = await ReadBladeThermalStateAsync(device, CancellationToken.None);
             return restored == state;
         }
@@ -2269,10 +2362,20 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         }
     }
 
+    /// <summary>
+    /// Decodes the performance-mode byte the thermal report carries.
+    /// Wire value 0x01 is one byte with two names: Synapse calls it Gaming, the
+    /// 2018-2020 chassis call it Turbo. A model whose own mode table publishes Turbo
+    /// keeps that name. Firmware that stores the byte reports it even on a model whose
+    /// mode table omits it, and there it is the same high-performance mode as 0x02, so
+    /// it reads as Performance: refusing it would fail the whole thermal read and take
+    /// the fan controls with it.
+    /// </summary>
     internal static BladePerformanceMode ParseBladePerformanceMode(byte value, ushort productId) => value switch
     {
         0x01 when BladeModelCapabilities.PerformanceModesFor(productId).Contains(BladePerformanceMode.Turbo) =>
             BladePerformanceMode.Turbo,
+        0x01 => BladePerformanceMode.Performance,
         0x00 => BladePerformanceMode.Balanced,
         0x02 => BladePerformanceMode.Performance,
         0x03 => BladePerformanceMode.BatterySaver,
@@ -2332,9 +2435,19 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             nameof(percent), "Charge limit must be 50, 55, 60, 65, 70, 75, 80, or 100 percent."),
     };
 
+    /// <summary>
+    /// The thermal report's two facts. The raw performance byte is kept because the
+    /// named mode can be a widened reading of it: a model whose bundle publishes
+    /// neither Turbo nor Gaming still reports 0x01, which reads as Performance, and
+    /// writing that name back would change the machine's mode.
+    /// </summary>
     private sealed record BladeThermalState(
         BladePerformanceMode PerformanceMode,
-        BladeFanMode FanMode);
+        BladeFanMode FanMode,
+        byte RawPerformanceMode)
+    {
+        internal byte PerformanceModeByte => RawPerformanceMode;
+    }
 
     private sealed record BladeFanTransactionState(
         BladeThermalState Thermal,

@@ -96,6 +96,7 @@ internal sealed class BladeViewModel
 
     internal void SetPerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {
+        var index = IndexOf(PerformanceModes, mode);
         var modeChanged = _confirmedBladePerformanceModeIndex < 0 ||
             _confirmedBladePerformanceModeIndex >= PerformanceModes.Count ||
             PerformanceModes[_confirmedBladePerformanceModeIndex] != mode;
@@ -111,11 +112,14 @@ internal sealed class BladeViewModel
             BladePerformanceMode.Hyperboost => "HyperBoost",
             _ => "--",
         };
-        _bladePerformanceModeIndex = IndexOf(PerformanceModes, mode);
+        _bladePerformanceModeIndex = index;
         if (confirm)
         {
             _confirmedBladePerformanceModeIndex = _bladePerformanceModeIndex;
-            if (modeChanged)
+            // A mode the model does not publish is not a mode change: the machine may
+            // still be in Custom, and clearing that would hide the CPU/GPU level and
+            // Max Fan controls the firmware is reporting.
+            if (modeChanged && BladeModelCapabilities.PublishesPerformanceMode(_bladeProductId, mode))
             {
                 ClearCustomPerformance();
             }

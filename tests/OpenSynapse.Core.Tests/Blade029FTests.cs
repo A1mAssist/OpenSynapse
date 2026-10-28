@@ -147,4 +147,182 @@ public sealed class Blade029FTests
 
         Assert.Equal((byte)0x36, request[RazerFeatureReport.ArgumentsOffset + 2]);
     }
+
+    /// <summary>
+    /// The Blade 16 (2023) firmware reports performance mode 0x01 on a chassis whose
+    /// own mode table omits it. Failing that read used to hide the whole fan-control
+    /// card, because the performance mode and the fan mode share one report.
+    /// </summary>
+    [Fact]
+    public async Task AFanControlSurvivesAPerformanceModeTheModelDoesNotPublish()
+    {
+        var telemetry = await new RazerDeviceTelemetryReader(
+            new Blade029FTransport(performanceMode: 0x01),
+            RazerDeviceRegistry.BuiltIn).ReadAsync([Blade029FDescriptor()]);
+
+        Assert.Empty(telemetry.Errors);
+        Assert.Equal(BladePerformanceMode.Performance, telemetry.BladePerformanceMode);
+        Assert.Equal(BladeFanMode.Automatic, telemetry.BladeFanMode);
+    }
+
+    /// <summary>
+    /// The reported byte has to survive a fan change: writing the named mode back
+    /// would move the machine from the mode the firmware reported to another one.
+    /// </summary>
+    [Fact]
+    public async Task AFanChangeKeepsThePerformanceByteTheFirmwareReported()
+    {
+        var transport = new Blade029FTransport(performanceMode: 0x01);
+        var reader = new RazerDeviceTelemetryReader(transport, RazerDeviceRegistry.BuiltIn);
+        var devices = new[] { Blade029FDescriptor() };
+        await reader.ReadAsync(devices);
+
+        await reader.SetBladeFanAsync(devices, BladeFanMode.Manual, 4600, 4600);
+
+        Assert.Equal((byte)0x01, transport.LastPerformanceByte);
+    }
+
+    /// <summary>
+    /// A performance byte no contract knows must still leave the fan controls usable:
+    /// the two travel in one report but they are separate facts.
+    /// </summary>
+    [Fact]
+    public async Task AnUnknownPerformanceByteStillLeavesTheFanControlsUsable()
+    {
+        var telemetry = await new RazerDeviceTelemetryReader(
+            new Blade029FTransport(performanceMode: 0x0A),
+            RazerDeviceRegistry.BuiltIn).ReadAsync([Blade029FDescriptor()]);
+
+        Assert.Null(telemetry.BladePerformanceMode);
+        Assert.Equal(BladeFanMode.Automatic, telemetry.BladeFanMode);
+        Assert.Contains(telemetry.Errors, error => error.StartsWith("Performance mode:", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A mode the model does not publish is not a mode change, so the CPU/GPU level
+    /// and Max Fan readings the firmware reported stay on screen.
+    /// </summary>
+    [Theory]
+    [InlineData(0x029F, BladePerformanceMode.Performance, false)]
+    [InlineData(0x029F, BladePerformanceMode.BatterySaver, false)]
+    [InlineData(0x029F, BladePerformanceMode.Custom, true)]
+    [InlineData(0x02C6, BladePerformanceMode.Performance, true)]
+    public void AModeTheModelDoesNotPublishIsNotAModeChange(
+        ushort productId,
+        BladePerformanceMode mode,
+        bool published)
+    {
+        Assert.Equal(
+            published,
+            BladeModelCapabilities.PublishesPerformanceMode(productId, mode));
+    }
+
+    private static DeviceDescriptor Blade029FDescriptor() =>
+        new(
+            "blade-671-test",
+            @"\\?\hid#vid_1532&pid_029f&mi_02#test#{00000000-0000-0000-0000-000000000000}",
+            0x1532,
+            0x029F,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-671",
+            DeviceCategory.Laptop);
+
+    /// <summary>
+    /// A Blade 16 (2023) EC that answers the thermal report with the given
+    /// performance byte.
+    /// </summary>
+    private sealed class Blade029FTransport : IRazerFeatureTransport
+    {
+        private readonly byte _performanceMode;
+        private BladeFanMode _fanMode = BladeFanMode.Automatic;
+        private int _cpuTargetRpm = 4100;
+        private int _gpuTargetRpm = 4100;
+
+        public Blade029FTransport(byte performanceMode) => _performanceMode = performanceMode;
+
+        public byte LastPerformanceByte { get; private set; }
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            var request = RazerFeatureReport.CreateRequest(
+                transactionId, dataSize, commandClass, commandId, arguments.Span);
+            var response = request.ToArray();
+            response[1] = 0x02;
+            switch (commandClass, commandId)
+            {
+                case (0x0D, 0x02):
+                    LastPerformanceByte = arguments.Span[2];
+                    _fanMode = (BladeFanMode)arguments.Span[3];
+                    break;
+                case (0x0D, 0x82):
+                    response[RazerFeatureReport.ArgumentsOffset + 1] = arguments.Span[1];
+                    response[RazerFeatureReport.ArgumentsOffset + 2] = _performanceMode;
+                    response[RazerFeatureReport.ArgumentsOffset + 3] = (byte)_fanMode;
+                    break;
+                case (0x0D, 0x81):
+                    response[RazerFeatureReport.ArgumentsOffset + 1] = arguments.Span[1];
+                    var stored = arguments.Span[1] == BladeFanProtocol.ZoneCpu
+                        ? _cpuTargetRpm
+                        : _gpuTargetRpm;
+                    response[RazerFeatureReport.ArgumentsOffset + 2] =
+                        (byte)(stored / BladeFanLimits.StepRpm);
+                    break;
+                case (0x0D, 0x01):
+                    if (arguments.Span[1] == BladeFanProtocol.ZoneCpu)
+                    {
+                        _cpuTargetRpm = arguments.Span[2] * BladeFanLimits.StepRpm;
+                    }
+                    else
+                    {
+                        _gpuTargetRpm = arguments.Span[2] * BladeFanLimits.StepRpm;
+                    }
+
+                    break;
+                case (0x0D, 0x88):
+                    response[RazerFeatureReport.ArgumentsOffset + 2] = 30;
+                    break;
+                case (0x0D, 0x87):
+                    response[RazerFeatureReport.ArgumentsOffset + 1] = arguments.Span[1];
+                    response[RazerFeatureReport.ArgumentsOffset + 2] = 1;
+                    break;
+                case (0x07, 0x92):
+                    response[RazerFeatureReport.ArgumentsOffset] = 0xD0;
+                    break;
+                case (0x07, 0x8F):
+                    response[RazerFeatureReport.ArgumentsOffset] = 0;
+                    break;
+                case (0x07, 0x8C):
+                    response[RazerFeatureReport.ArgumentsOffset] = 0x0C;
+                    response[RazerFeatureReport.ArgumentsOffset + 1] = 0x0C;
+                    break;
+                case (0x03, 0x83):
+                    response[RazerFeatureReport.ArgumentsOffset + 2] = 0xC8;
+                    break;
+                case (0x0F, 0x82):
+                    response[RazerFeatureReport.ArgumentsOffset] = 0x01;
+                    response[RazerFeatureReport.ArgumentsOffset + 1] = 0x05;
+                    response[RazerFeatureReport.ArgumentsOffset + 2] = 0x00;
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unexpected Blade 029F command {commandClass:X2}:{commandId:X2}.");
+            }
+
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
 }

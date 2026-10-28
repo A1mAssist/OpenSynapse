@@ -5,6 +5,11 @@ namespace OpenSynapse.Core.Devices;
 public enum BladePerformanceMode : byte
 {
     Balanced = 0x00,
+    /// <summary>
+    /// Wire value 0x01. Synapse calls it Gaming, the 2018-2020 chassis call it Turbo;
+    /// it is one byte either way, so the parser names it after the model's own bundle
+    /// and falls back to Performance when the model publishes neither.
+    /// </summary>
     Turbo = 0x01,
     Performance = 0x02,
     BatterySaver = 0x03,

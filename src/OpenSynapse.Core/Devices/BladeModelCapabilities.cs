@@ -691,6 +691,15 @@ public static class BladeModelCapabilities
             : BladeFanLimits.MinimumRpm;
 
     /// <summary>
+    /// True when the exact model publishes the given performance mode. Firmware can
+    /// report a mode the model does not list, and that is not a mode change: the
+    /// machine may still be in Custom, and treating it as one would drop the
+    /// CPU/GPU level and Max Fan readings the firmware reported.
+    /// </summary>
+    public static bool PublishesPerformanceMode(ushort productId, BladePerformanceMode mode) =>
+        PerformanceModesFor(productId).Contains(mode);
+
+    /// <summary>
     /// Fixed fan-target range the official middleware offers for one performance mode.
     /// Synapse publishes a separate min/max/default per mode, so a single per-model range
     /// would either refuse a speed the UI offers or allow one it does not.
