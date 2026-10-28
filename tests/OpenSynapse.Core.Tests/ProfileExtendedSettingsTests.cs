@@ -287,7 +287,7 @@ public sealed class ProfileExtendedSettingsTests
         {
             var document = ProfileDocument.CreateDefault();
             document.Profiles[document.ActiveProfileName].Shortcuts.PerformanceCycleModes =
-                [BladePerformanceMode.BatterySaver];
+                [BladePerformanceMode.BalancedDc];
 
             await Assert.ThrowsAsync<InvalidDataException>(() =>
                 ProfileStore.ExportAsync(document, path));

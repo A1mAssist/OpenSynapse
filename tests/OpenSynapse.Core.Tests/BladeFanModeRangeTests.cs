@@ -38,6 +38,36 @@ public sealed class BladeFanModeRangeTests
     }
 
     [Fact]
+    public void TheModeListsMatchTheMiddleware()
+    {
+        // 029F: four modes, no Performance. 02C6: six, with BatterySaver.
+        Assert.Equal(
+            [
+                BladePerformanceMode.Balanced,
+                BladePerformanceMode.Silent,
+                BladePerformanceMode.Custom,
+                BladePerformanceMode.Hyperboost,
+            ],
+            BladeModelCapabilities.PerformanceModesFor(0x029F));
+        Assert.Equal(
+            [
+                BladePerformanceMode.Balanced,
+                BladePerformanceMode.Silent,
+                BladePerformanceMode.Performance,
+                BladePerformanceMode.Custom,
+                BladePerformanceMode.Hyperboost,
+                BladePerformanceMode.BatterySaver,
+            ],
+            BladeModelCapabilities.PerformanceModesFor(0x02C6));
+        Assert.Contains(
+            BladePerformanceMode.BatterySaver,
+            BladeModelCapabilities.PerformanceModesFor(0x02C5));
+        Assert.DoesNotContain(
+            BladePerformanceMode.Performance,
+            BladeModelCapabilities.PerformanceModesFor(0x029F));
+    }
+
+    [Fact]
     public void The02C6HyperboostCeilingMatchesTheBundle()
     {
         // 02C6 bundle: Hyperboost 3700..5300, Custom 4000..5300.
