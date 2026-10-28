@@ -15,7 +15,7 @@ public enum OpenRazerKeyswitchOptimization
     Gaming,
 }
 
-public sealed class OpenRazerDeviceService
+public sealed partial class OpenRazerDeviceService
 {
     // The middleware drives GPU card detection on LED class 0 (All_Region).
     private const byte GpuCardLedClassId = 0x00;
@@ -1180,8 +1180,10 @@ public sealed class OpenRazerDeviceService
 
         var result = new HashSet<OpenRazerBackendCapability>();
         var buttonList = OpenRazerMappingProtocol.GetButtonList();
-        if (await ProbeAsync("mapping", buttonList.Report,
-                response => OpenRazerMappingProtocol.ParseButtonList(response).Count > 0).ConfigureAwait(false))
+        if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                "mapping", buttonList.Report,
+                response => OpenRazerMappingProtocol.ParseButtonList(response).Count > 0,
+                cancellationToken).ConfigureAwait(false))
         {
             result.UnionWith(MappingCapabilities);
         }
@@ -1189,11 +1191,12 @@ public sealed class OpenRazerDeviceService
         if (definition.Category == DeviceCategory.Mouse)
         {
             var freeNotched = RazerScrollWheelProtocol.CreateGetScrollFreeNotchedModeRequest(MiddlewareTransactionId);
-            if (await ProbeAsync("scroll.freeNotched", freeNotched, response =>
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "scroll.freeNotched", freeNotched, response =>
                 {
                     _ = RazerScrollWheelProtocol.ParseScrollFreeNotchedMode(response, freeNotched);
                     return true;
-                }).ConfigureAwait(false))
+                }, cancellationToken).ConfigureAwait(false))
             {
                 result.Add(OpenRazerBackendCapability.ScrollFreeNotchedModeRead);
                 result.Add(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite);
@@ -1201,11 +1204,12 @@ public sealed class OpenRazerDeviceService
 
             var accelerationLevel =
                 RazerScrollWheelProtocol.CreateGetScrollVirtualAccelerationLevelRequest(MiddlewareTransactionId);
-            if (await ProbeAsync("scroll.accelerationLevel", accelerationLevel, response =>
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "scroll.accelerationLevel", accelerationLevel, response =>
                 {
                     _ = RazerScrollWheelProtocol.ParseScrollVirtualAccelerationLevel(response, accelerationLevel);
                     return true;
-                }).ConfigureAwait(false))
+                }, cancellationToken).ConfigureAwait(false))
             {
                 result.Add(OpenRazerBackendCapability.ScrollAccelerationLevelRead);
                 result.Add(OpenRazerBackendCapability.ScrollAccelerationLevelWrite);
@@ -1213,37 +1217,48 @@ public sealed class OpenRazerDeviceService
         }
 
         return result.ToFrozenSet();
+    }
 
-        async Task<bool> ProbeAsync(string probe, byte[] request, Func<byte[], bool> accepts)
+    /// <summary>
+    /// Sends one middleware GET and caches whether the firmware answered, so device-watch
+    /// rescans do not re-send it. Shared by every protocol family that has no OpenRazer
+    /// capability of its own to gate on.
+    /// </summary>
+    private async Task<bool> ProbeMiddlewareAsync(
+        ushort productId,
+        string devicePath,
+        TimeSpan deviceWait,
+        string probe,
+        byte[] request,
+        Func<byte[], bool> accepts,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var key = (productId, probe);
+        if (_middlewareProbeCache.TryGetValue(key, out var cached) && cached.ExpiresAt > now)
         {
-            var now = DateTimeOffset.UtcNow;
-            var key = (definition.ProductId, probe);
-            if (_middlewareProbeCache.TryGetValue(key, out var cached) && cached.ExpiresAt > now)
-            {
-                return cached.Supported;
-            }
-
-            var supported = false;
-            try
-            {
-                var response = await _transport.QueryPreparedAsync(
-                    devicePath, request, definition.DeviceWait, cancellationToken).ConfigureAwait(false);
-                supported = accepts(response);
-            }
-            catch (Exception exception) when (exception is Win32Exception or IOException or
-                InvalidOperationException or NotSupportedException or InvalidDataException or
-                UnauthorizedAccessException or TimeoutException)
-            {
-                WriteDiagnostic(definition.ProductId,
-                    $"{probe} probe failed: {exception.GetType().Name}: {exception.Message}");
-            }
-
-            _middlewareProbeCache[key] = (
-                supported,
-                now + (supported ? MiddlewareProbePositiveTtl : MiddlewareProbeNegativeTtl));
-            WriteDiagnostic(definition.ProductId, $"{probe} probe: {supported}");
-            return supported;
+            return cached.Supported;
         }
+
+        var supported = false;
+        try
+        {
+            var response = await _transport.QueryPreparedAsync(
+                devicePath, request, deviceWait, cancellationToken).ConfigureAwait(false);
+            supported = accepts(response);
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or
+            InvalidOperationException or NotSupportedException or InvalidDataException or
+            UnauthorizedAccessException or TimeoutException)
+        {
+            WriteDiagnostic(productId, $"{probe} probe failed: {exception.GetType().Name}: {exception.Message}");
+        }
+
+        _middlewareProbeCache[key] = (
+            supported,
+            now + (supported ? MiddlewareProbePositiveTtl : MiddlewareProbeNegativeTtl));
+        WriteDiagnostic(productId, $"{probe} probe: {supported}");
+        return supported;
     }
 
     private async Task<bool> ProbeEndpointAsync(
