@@ -118,6 +118,8 @@ public enum OpenRazerBackendCapability
     AnalogKeyWrite,
     OledRead,
     OledWrite,
+    HapticScrollRead,
+    HapticScrollWrite,
 }
 
 public sealed record OpenRazerLightingZoneCapabilities(
