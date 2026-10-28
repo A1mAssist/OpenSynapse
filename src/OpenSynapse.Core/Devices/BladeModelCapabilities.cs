@@ -116,6 +116,14 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Custom,
     ];
 
+    // 0255 lists Balanced, Productivity_Creator and Gaming. Productivity_Creator is the
+    // same wire value as Performance (0x02); Gaming (0x01) has no BladePerformanceMode.
+    private static readonly BladePerformanceMode[] Modes0255 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Performance,
+    ];
+
     private static IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange> Ranges(
         params (BladePerformanceMode Mode, int Minimum, int Maximum, int Default)[] items)
     {
@@ -317,7 +325,7 @@ public static class BladeModelCapabilities
             // brightness, thermal, charge-limit, adapter-power and power-mode reports.
             // Fixed RPM targets stay closed because 0x0D:0x81 reports a percentage,
             // not the newer RPM layout.
-            [0x0255] = new(MaxFan: false, CpuBoostModes: None),
+            [0x0255] = new(MaxFan: false, CpuBoostModes: None, Modes: Modes0255),
         }.ToFrozenDictionary();
 
     /// <summary>
