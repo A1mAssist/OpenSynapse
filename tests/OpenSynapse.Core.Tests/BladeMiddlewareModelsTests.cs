@@ -44,20 +44,29 @@ public sealed class BladeMiddlewareModelsTests
         Assert.True(BladeModelCapabilities.SupportsFanCurve(productId));
     }
 
-    [Fact]
-    public void Blade18_2024DoesNotAdmitStartupAnimation()
+    [Theory]
+    [InlineData(0x029D, false)]
+    [InlineData(0x02B6, false)]
+    [InlineData(0x02B7, false)]
+    [InlineData(0x02B8, false)]
+    [InlineData(0x02C5, true)]
+    [InlineData(0x02C6, true)]
+    [InlineData(0x02C7, true)]
+    public void StartupAnimationIsExposedOnlyWhereTheBundlePublishesIt(ushort productId, bool expected)
     {
-        var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x02B8);
+        var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, productId);
 
         Assert.NotNull(manifest);
-        Assert.DoesNotContain("startup-animation.get", manifest!.Capabilities.Keys);
-        Assert.DoesNotContain("startup-animation.set", manifest.Capabilities.Keys);
+        Assert.Equal(expected, manifest!.Capabilities.ContainsKey("startup-animation.get"));
+        Assert.Equal(expected, manifest.Capabilities.ContainsKey("startup-animation.set"));
     }
 
     [Theory]
-    [InlineData(0x02A0)]
     [InlineData(0x02B6)]
+    [InlineData(0x02B7)]
     [InlineData(0x02B8)]
+    [InlineData(0x02C7)]
+    [InlineData(0x02E1)]
     public void TurboModeIsParsedForTheModelsThatPublishIt(ushort productId)
     {
         Assert.Equal(
@@ -65,11 +74,14 @@ public sealed class BladeMiddlewareModelsTests
             RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, productId));
     }
 
-    [Fact]
-    public void TurboModeIsNotInventedForOtherBladeModels()
+    [Theory]
+    [InlineData(0x0255)]
+    [InlineData(0x02A0)]
+    [InlineData(0x02C5)]
+    public void TurboModeIsNotInventedForOtherBladeModels(ushort productId)
     {
         Assert.Throws<InvalidOperationException>(
-            () => RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, 0x0255));
+            () => RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01, productId));
     }
 
     [Theory]

@@ -51,7 +51,6 @@ public static class BladeModelCapabilities
     ];
 
     // Exact mode lists the middleware publishes, in the order its UI shows them.
-    // The Turbo mode some bundles list has no counterpart in BladePerformanceMode.
     private static readonly BladePerformanceMode[] Modes16Hyper =
     [
         BladePerformanceMode.Balanced,
@@ -83,6 +82,7 @@ public static class BladeModelCapabilities
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
+        BladePerformanceMode.Turbo,
         BladePerformanceMode.Custom,
         BladePerformanceMode.Hyperboost,
     ];
@@ -110,8 +110,9 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Custom,
     ];
 
-    // 02A0 and 02B8 publish Balanced, Silent, Turbo and Custom.
-    private static readonly BladePerformanceMode[] Modes02A0 =
+    // 02B8 publishes Balanced, Silent, Turbo and Custom. 02A0 publishes only
+    // Balanced, Silent and Custom, so it keeps the three-mode list below.
+    private static readonly BladePerformanceMode[] Modes02B8 =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Silent,
@@ -119,7 +120,18 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Custom,
     ];
 
-    // 028A/028B/029E share the older three-mode list; only 02A0/02B8 add Turbo.
+    // 02C7 and 02E1 publish Turbo in addition to the 02C5 list.
+    private static readonly BladePerformanceMode[] Modes02C7 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Performance,
+        BladePerformanceMode.Turbo,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.BatterySaver,
+    ];
+
+    // 02A0/028A/028B/029E share the older three-mode list; only 02B8 adds Turbo.
     private static readonly BladePerformanceMode[] Modes028A =
     [
         BladePerformanceMode.Balanced,
@@ -240,7 +252,7 @@ public static class BladeModelCapabilities
 
             // Blade 18 (2023) RZ09-0484. Owner-reported maximum fans; its fixed fan
             // targets were reported ignored, so no fixed target is admitted.
-            [0x02A0] = new(MaxFan: true, LowMediumHigh, Modes: Modes02A0),
+            [0x02A0] = new(MaxFan: true, LowMediumHigh, Modes: Modes028A),
 
             // Blade 14 (2022) RZ09-0427. Owner readings on 028C answered all ten Blade
             // controls, including both live fan tachometers. The owner then confirmed a
@@ -303,7 +315,7 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Silent, 3700, 5300, 4500),
                     (BladePerformanceMode.Turbo, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
-                Modes: Modes02A0),
+                Modes: Modes02B8),
 
             // Blade 14 (2025) and Blade 18 (2025) expose the 710 fan-target reports but
             // do not enable the maximum-fan bit or custom CPU levels in their middleware.
@@ -332,9 +344,10 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
+                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
                     (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
-                Modes: Modes02C5),
+                Modes: Modes02C7),
 
             // Blade 16 (2024) 1532:02B7. The 695 middleware uses the same fan-target,
             // panel and power reports as 02C6; Max Fan stays off because its injected
@@ -352,9 +365,10 @@ public static class BladeModelCapabilities
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
                     (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
-                Modes: Modes16Hyper),
+                Modes: Modes02B7),
 
             // The remaining rzDevice25LedMatrixBladeWattage bundles publish RPM
             // ranges, but their 0D:81/0D:01 target is the legacy percentage report
@@ -396,8 +410,9 @@ public static class BladeModelCapabilities
                 MaxFan: false,
                 None,
                 ModeFanRanges: Ranges(
-                    (BladePerformanceMode.Balanced, 2500, 5500, 4000)),
-                Modes: ModesBalancedOnly),
+                    (BladePerformanceMode.Balanced, 2500, 5500, 4000),
+                    (BladePerformanceMode.BatterySaver, 2500, 5500, 4000)),
+                Modes: ModesBalancedBatterySaver),
 
             [0x024B] = new(
                 MaxFan: false,
@@ -620,9 +635,8 @@ public static class BladeModelCapabilities
                 Modes: Modes02C6),
 
             // Blade 18 (2026) RZ09-0582 publishes the same fan controls as the 2025
-            // Blade 18 family. Its bundle lists Turbo in the UI but defines no numeric
-            // wire value for it, so Turbo stays unexposed. Its deviceUI performance
-            // deviceFeatures also omit hasMaxFanSpeedModeEnabled.
+            // Blade 18 family. Its bundle maps Turbo to wire value 0x01. Its deviceUI
+            // performance deviceFeatures omit hasMaxFanSpeedModeEnabled.
             [0x02E1] = new(
                 MaxFan: false,
                 None,
@@ -634,9 +648,10 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
+                    (BladePerformanceMode.Turbo, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
                     (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
-                Modes: Modes02C5),
+                Modes: Modes02C7),
 
             // Blade 15 Base (Early 2020) 1532:0255. Its middleware exposes Chroma
             // brightness, thermal, charge-limit, adapter-power and power-mode reports.
