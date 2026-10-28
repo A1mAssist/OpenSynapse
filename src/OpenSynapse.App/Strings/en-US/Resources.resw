@@ -1390,6 +1390,14 @@
   <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>Save</value></data>
   <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>Apply effect</value></data>
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>
+  <data name="OpenRazerOnboardProfileTitle.Text" xml:space="preserve"><value>Onboard profiles</value></data>
+  <data name="OpenRazerOnboardProfileCountLabel.Text" xml:space="preserve"><value>Used / max</value></data>
+  <data name="OpenRazerOnboardProfileActiveLabel.Text" xml:space="preserve"><value>Active</value></data>
+  <data name="OpenRazerOnboardProfileSelectLabel.Text" xml:space="preserve"><value>Profile id</value></data>
+  <data name="OpenRazerOnboardProfileApplyButton.Content" xml:space="preserve"><value>Activate</value></data>
+  <data name="OpenRazerOnboardProfileCreateButton.Content" xml:space="preserve"><value>New</value></data>
+  <data name="OpenRazerOnboardProfileDeleteButton.Content" xml:space="preserve"><value>Delete</value></data>
+  <data name="OpenRazerOnboardProfileResetButton.Content" xml:space="preserve"><value>Reset</value></data>
   <data name="OpenRazerScrollFreeNotchedLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
   <data name="OpenRazerScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>Scroll acceleration level</value></data>
   <data name="OpenRazerScrollNotchedMode.Text" xml:space="preserve"><value>Notched</value></data>

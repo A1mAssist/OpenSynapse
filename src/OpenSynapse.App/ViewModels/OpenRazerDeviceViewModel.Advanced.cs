@@ -107,6 +107,88 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                     SmartReelThreshold = await _service.GetSmartReelThresholdAsync(Connection, cancellationToken);
             }, cancellationToken);
 
+    public async Task LoadOnboardProfilesAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsReady || RequiresRescan || IsOnboardProfileBusy ||
+            !CanUse(OpenRazerBackendCapability.OnboardProfileRead))
+        {
+            return;
+        }
+        IsOnboardProfileBusy = true;
+        try
+        {
+            OnboardProfileCount =
+                await _service.GetOnboardProfileCountAsync(Connection, cancellationToken);
+            OnboardMaxProfiles =
+                await _service.GetMaxOnboardProfilesAsync(Connection, cancellationToken);
+            ActiveOnboardProfileId =
+                await _service.GetActiveOnboardProfileIdAsync(Connection, cancellationToken);
+            if (OnboardMaxProfiles > 0)
+            {
+                SelectedOnboardProfileId = ActiveOnboardProfileId;
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            OnboardProfileStatusText = exception.Message;
+        }
+        finally
+        {
+            IsOnboardProfileBusy = false;
+        }
+    }
+
+    public Task ApplyActiveOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.SetActiveOnboardProfileIdAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    public Task CreateOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.CreateOnboardProfileAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    public Task DeleteOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.DeleteOnboardProfileAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    public Task ResetOnboardProfileAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.OnboardProfileWrite,
+            () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
+            async () =>
+            {
+                await _service.ResetOnboardProfileAsync(
+                    Connection, SelectedOnboardProfileId, cancellationToken);
+                await RefreshOnboardProfilesAsync(cancellationToken);
+            }, cancellationToken);
+
+    private async Task RefreshOnboardProfilesAsync(CancellationToken cancellationToken)
+    {
+        OnboardProfileCount =
+            await _service.GetOnboardProfileCountAsync(Connection, cancellationToken);
+        ActiveOnboardProfileId =
+            await _service.GetActiveOnboardProfileIdAsync(Connection, cancellationToken);
+    }
+
     public async Task LoadKeyswitchAsync(CancellationToken cancellationToken = default)
     {
         if (!CanUse(OpenRazerBackendCapability.KeyswitchOptimizationRead) || IsKeyswitchLoading)
