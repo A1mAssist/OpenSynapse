@@ -291,7 +291,7 @@ public static class ViperObmProtocol
             response[1] != 0x02 ||
             response[6] < minimumArguments ||
             response[6] > 80 ||
-            !RazerFeatureReport.Matches(request, response))
+            !RazerFeatureReport.MatchesCommand(request, response))
         {
             throw new InvalidOperationException("Viper OBM returned an invalid or out-of-order feature report.");
         }
