@@ -9,6 +9,12 @@ public sealed partial class OpenRazerDeviceViewModel
     private byte _oledBrightness;
     private byte _oledScreensaverMode;
     private byte _oledScreensaverItem;
+    private byte _oledLanguage;
+    private int _selectedOledLanguageIndex;
+
+    // rzDevice25 OLED language enum: ENGLISH 0, SIMPLIFIED_CHINESE 1, JAPANESE 2,
+    // GERMAN 3, KOREAN 4, FRENCH 5. Values 6, 80 and 255 are internal markers.
+    private static readonly byte[] OledLanguageValues = [0, 1, 2, 3, 4, 5];
 
     public Visibility OledVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.OledRead, OpenRazerBackendCapability.OledWrite));
@@ -30,6 +36,22 @@ public sealed partial class OpenRazerDeviceViewModel
     }
     public bool IsOledBusy { get => _isOledBusy; private set => SetBusy(ref _isOledBusy, value, nameof(CanEditOled)); }
     public bool CanEditOled => CanUse(OpenRazerBackendCapability.OledWrite) && !IsOledBusy;
+
+    public IReadOnlyList<string> OledLanguageOptions =>
+    [
+        AppStrings.Text("OpenRazerOledLanguageEnglish"),
+        AppStrings.Text("OpenRazerOledLanguageChinese"),
+        AppStrings.Text("OpenRazerOledLanguageJapanese"),
+        AppStrings.Text("OpenRazerOledLanguageGerman"),
+        AppStrings.Text("OpenRazerOledLanguageKorean"),
+        AppStrings.Text("OpenRazerOledLanguageFrench"),
+    ];
+
+    public int SelectedOledLanguageIndex
+    {
+        get => _selectedOledLanguageIndex;
+        set => SetField(ref _selectedOledLanguageIndex, Math.Clamp(value, 0, OledLanguageValues.Length - 1));
+    }
 
     public async Task LoadOledAsync(CancellationToken cancellationToken = default)
     {
@@ -62,6 +84,8 @@ public sealed partial class OpenRazerDeviceViewModel
             async () =>
             {
                 await _service.SetOledBrightnessAsync(Connection, OledBrightness, cancellationToken);
+                await _service.SetOledLanguageAsync(
+                    Connection, OledLanguageValues[SelectedOledLanguageIndex], cancellationToken);
                 if (Has(OpenRazerBackendCapability.OledRead))
                 {
                     await RefreshOledAsync(cancellationToken);
@@ -74,5 +98,11 @@ public sealed partial class OpenRazerDeviceViewModel
         var screensaver = await _service.GetOledScreensaverOptionAsync(Connection, cancellationToken);
         OledScreensaverMode = screensaver.Mode;
         OledScreensaverItem = screensaver.Item;
+        _oledLanguage = await _service.GetOledLanguageAsync(Connection, cancellationToken);
+        var languageIndex = Array.IndexOf(OledLanguageValues, _oledLanguage);
+        if (languageIndex >= 0)
+        {
+            SelectedOledLanguageIndex = languageIndex;
+        }
     }
 }
