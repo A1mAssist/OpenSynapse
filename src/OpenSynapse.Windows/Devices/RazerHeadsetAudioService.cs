@@ -44,6 +44,7 @@ public sealed record RazerHeadsetAudioState(
     public bool? GestureControl { get; init; }
     public bool? Dolby { get; init; }
     public bool? NightMode { get; init; }
+    public RazerHapticsControlState? Haptics { get; init; }
 }
 
 /// <summary>
@@ -289,6 +290,13 @@ public sealed class RazerHeadsetAudioService
         var noise = await ProbeAsync(
             "noise suppression", txn => RazerHeadsetAudioProtocol.GetAudioInputControlState(txn),
             RazerHeadsetAudioProtocol.ReadAudioInputControlState, errors, cancellationToken).ConfigureAwait(false);
+        var haptics = await ProbeAsync(
+            "haptics",
+            RazerHapticsProtocol.CreateGetHapticsControlRequest,
+            ParseHapticsResponse,
+            errors,
+            cancellationToken,
+            recordUnsupported: false).ConfigureAwait(false);
 
         IReadOnlyList<byte>? bands = null;
         try
@@ -425,6 +433,7 @@ public sealed class RazerHeadsetAudioService
             GestureControl = gestureControl.Ok ? gestureControl.Value : null,
             Dolby = dolby.Ok ? dolby.Value : null,
             NightMode = nightMode.Ok ? nightMode.Value : null,
+            Haptics = haptics.Ok ? haptics.Value : null,
         };
     }
 
@@ -442,6 +451,23 @@ public sealed class RazerHeadsetAudioService
             (value, txn) => RazerHeadsetAudioProtocol.SetEqPreset(txn, value),
             value => value == preset,
             "EQ preset",
+            cancellationToken);
+    }
+
+    public Task SetHapticsAsync(
+        bool enabled,
+        ushort strength,
+        CancellationToken cancellationToken = default)
+    {
+        var expected = new RazerHapticsControlState(enabled, strength);
+        return WriteAsync(
+            RazerHapticsProtocol.CreateGetHapticsControlRequest,
+            ParseHapticsResponse,
+            expected,
+            (value, txn) => RazerHapticsProtocol.CreateSetHapticsControlRequest(
+                txn, value.Enabled, value.Strength),
+            value => value == expected,
+            "haptics",
             cancellationToken);
     }
 
@@ -826,6 +852,13 @@ public sealed class RazerHeadsetAudioService
                 tenBand ? "read 10-band EQ" : "read 8-band EQ",
                 cancellationToken).ConfigureAwait(false),
             tenBand);
+
+    // ProbeAsync exposes only the response; rebuild the getter request used for its echo check.
+    private static RazerHapticsControlState ParseHapticsResponse(ReadOnlySpan<byte> response) =>
+        RazerHapticsProtocol.ParseHapticsControl(
+            response,
+            RazerHapticsProtocol.CreateGetHapticsControlRequest(
+                response.Length > 2 ? response[2] : (byte)0));
 
     private Task<(bool Ok, T Value)> ProbeAsync<T>(
         string label,
