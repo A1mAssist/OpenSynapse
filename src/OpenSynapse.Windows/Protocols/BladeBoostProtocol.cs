@@ -49,7 +49,11 @@ public static class BladeBoostProtocol
         }
 
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        if (arguments[0] != profileId || arguments[1] != expectedCluster)
+        // Blade firmware echoes the profile it was given. 029F can answer profile 0
+        // even when the shared request carries profile 1; the transport already
+        // matched the command, so accept either profile and reject anything else.
+        if ((arguments[0] != 0x00 && arguments[0] != profileId) ||
+            arguments[1] != expectedCluster)
         {
             throw new InvalidOperationException(
                 $"Blade returned an incorrect {name} Boost group: {arguments[0]:X2}/{arguments[1]:X2}.");

@@ -780,4 +780,13 @@ public static class BladeModelCapabilities
     /// </summary>
     public static IReadOnlyList<BladeCpuBoostMode> CpuBoostModesFor(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) ? contract.CpuBoostModes : None;
+
+    /// <summary>
+    /// Highest CPU level this model admits. HyperBoost carries no power budget of its
+    /// own, so it applies this level to reach the ceiling Custom can already select.
+    /// </summary>
+    public static BladeCpuBoostMode? MaximumCpuBoostModeFor(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.CpuBoostModes.Count > 0
+            ? contract.CpuBoostModes.Max()
+            : null;
 }
