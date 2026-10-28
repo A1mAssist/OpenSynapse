@@ -114,6 +114,7 @@
                   <MenuFlyout Opening="MacroTriggerFlyoutOpening">
                     <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureSingle" Text="捕获单键" Click="CaptureMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
                     <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureCombo" Text="捕获组合键" Click="CaptureMacroTriggerComboClick" Style="{StaticResource MacroMenuItemStyle}" />
+                    <MenuFlyoutSubItem x:Name="MacroMouseSideTriggerMenu" local:Localized.Uid="MacroTriggerMouseSide" Text="鼠标侧键" />
                     <MenuFlyoutSubItem x:Name="MacroNagaTriggerMenu" local:Localized.Uid="MacroTriggerNaga" Text="Naga 侧键" />
                     <MenuFlyoutItem local:Localized.Uid="MacroTriggerDevice" Text="捕获设备按键" Click="CaptureMacroDeviceTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
                     <MenuFlyoutSeparator />
