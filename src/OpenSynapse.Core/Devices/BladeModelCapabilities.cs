@@ -124,6 +124,29 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Performance,
     ];
 
+    private static readonly BladePerformanceMode[] ModesBalancedPerformance =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Performance,
+    ];
+
+    private static readonly BladePerformanceMode[] ModesBalancedCustom =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Custom,
+    ];
+
+    private static readonly BladePerformanceMode[] ModesBalancedOnly =
+    [
+        BladePerformanceMode.Balanced,
+    ];
+
+    private static readonly BladePerformanceMode[] ModesBalancedBatterySaver =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.BatterySaver,
+    ];
+
     private static IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange> Ranges(
         params (BladePerformanceMode Mode, int Minimum, int Maximum, int Default)[] items)
     {
@@ -175,7 +198,11 @@ public static class BladeModelCapabilities
                 MaxFan: false,
                 None,
                 FixedFan: true,
+                MinimumFanTargetRpm: 3700,
                 MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
                 Modes: Modes0245),
 
             // Blade 16 (2023) RZ09-0483. Owner-tested maximum fans plus a CPU Boost level.
@@ -229,10 +256,12 @@ public static class BladeModelCapabilities
                 FanCurve: true,
                 FixedFan: true,
                 HyperBoost: true,
-                MinimumFanTargetRpm: 2200,
+                MinimumFanTargetRpm: 2000,
                 MaximumFanTargetRpm: 5400,
                 ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2000, 5400, 3800),
                     (BladePerformanceMode.Silent, 2200, 3800, 3000),
+                    (BladePerformanceMode.Custom, 2000, 5400, 3800),
                     (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
                 Modes: Modes029D),
             [0x02B6] = new(
@@ -240,10 +269,12 @@ public static class BladeModelCapabilities
                 LowMediumHigh,
                 FanCurve: true,
                 FixedFan: true,
-                MinimumFanTargetRpm: 2200,
+                MinimumFanTargetRpm: 2000,
                 MaximumFanTargetRpm: 5400,
                 ModeFanRanges: Ranges(
-                    (BladePerformanceMode.Silent, 2200, 3800, 3000)),
+                    (BladePerformanceMode.Balanced, 2000, 5400, 3800),
+                    (BladePerformanceMode.Silent, 2200, 3800, 3000),
+                    (BladePerformanceMode.Custom, 3300, 5400, 4300)),
                 Modes: Modes02B6),
 
             // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
@@ -253,7 +284,12 @@ public static class BladeModelCapabilities
                 None,
                 FanCurve: true,
                 FixedFan: true,
-                MaximumFanTargetRpm: 5400,
+                MinimumFanTargetRpm: 3700,
+                MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Silent, 3700, 5300, 4500),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
                 Modes: Modes02A0),
 
             // Blade 14 (2025) and Blade 18 (2025) expose the 710 fan-target reports but
@@ -307,10 +343,256 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
                 Modes: Modes16Hyper),
 
+            // The remaining rzDevice25LedMatrixBladeWattage bundles publish RPM
+            // ranges, but their 0D:81/0D:01 target is the legacy percentage report
+            // (0255 reads 0x35 as 53%), not BladeFanProtocol's rpm/100 target. Keep
+            // fixed RPM closed until a model-specific RPM capture exists. 0245 is
+            // the exception because its 0x35 readback is 5300 RPM.
+            [0x0233] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3500, 5700, 4500),
+                    (BladePerformanceMode.Performance, 4500, 5700, 5000)),
+                Modes: ModesBalancedPerformance),
+
+            [0x023B] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500)),
+                Modes: ModesBalancedOnly),
+
+            [0x0240] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3500, 5700, 4500),
+                    (BladePerformanceMode.Performance, 4500, 5700, 5000)),
+                Modes: ModesBalancedPerformance),
+
+            [0x0246] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3500, 5500, 4200),
+                    (BladePerformanceMode.Performance, 3900, 5500, 4500)),
+                Modes: ModesBalancedPerformance),
+
+            [0x024A] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2500, 5500, 4000)),
+                Modes: ModesBalancedOnly),
+
+            [0x024B] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: ModesBalancedCustom),
+
+            [0x024C] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: ModesBalancedCustom),
+
+            [0x024D] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: ModesBalancedCustom),
+
+            [0x0253] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: ModesBalancedCustom),
+
+            [0x0256] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2300, 4300, 2900),
+                    (BladePerformanceMode.Custom, 2300, 4300, 2900)),
+                Modes: ModesBalancedCustom),
+
+            [0x0268] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3600, 5200, 4300),
+                    (BladePerformanceMode.Performance, 3600, 5200, 4300)),
+                Modes: ModesBalancedPerformance),
+
+            [0x026D] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: ModesBalancedCustom),
+
+            [0x026E] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2300, 4300, 2900),
+                    (BladePerformanceMode.Custom, 2300, 4300, 2900)),
+                Modes: ModesBalancedCustom),
+
+            [0x026F] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 4200, 5400, 4800),
+                    (BladePerformanceMode.Performance, 4200, 5400, 4800)),
+                Modes: ModesBalancedPerformance),
+
+            [0x0270] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3300, 5400, 4300),
+                    (BladePerformanceMode.Custom, 3300, 5400, 4300)),
+                Modes: ModesBalancedCustom),
+
+            [0x0276] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: ModesBalancedCustom),
+
+            [0x0279] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2300, 4300, 2900),
+                    (BladePerformanceMode.Custom, 2300, 4300, 2900)),
+                Modes: ModesBalancedCustom),
+
+            // Blade-group bundles use the 0D:01/0D:81 fan-target path already
+            // implemented by BladeFanProtocol, and their published ranges are RPM,
+            // so fixed RPM is admitted for the same report.
+            [0x0234] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3400,
+                MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: ModesBalancedCustom),
+
+            [0x0239] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 2200,
+                MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2200, 5300, 3800),
+                    (BladePerformanceMode.Performance, 2200, 5300, 3800)),
+                Modes: ModesBalancedPerformance),
+
+            [0x023A] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3700,
+                MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Performance, 4000, 5300, 4600)),
+                Modes: ModesBalancedPerformance),
+
+            [0x0252] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 2500,
+                MaximumFanTargetRpm: 5500,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2500, 5500, 4000),
+                    (BladePerformanceMode.BatterySaver, 2500, 5500, 4000)),
+                Modes: ModesBalancedBatterySaver),
+
+            [0x0259] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 2500,
+                MaximumFanTargetRpm: 5600,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2500, 5600, 4000),
+                    (BladePerformanceMode.BatterySaver, 2500, 5600, 4000)),
+                Modes: ModesBalancedBatterySaver),
+
+            [0x027A] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 4200,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 4200, 5400, 4800),
+                    (BladePerformanceMode.Performance, 4800, 5400, 5100)),
+                Modes: ModesBalancedPerformance),
+
+            [0x028A] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3400,
+                MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: Modes02A0),
+
+            [0x028B] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 2200,
+                MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2200, 3800, 3000),
+                    (BladePerformanceMode.Silent, 2200, 3800, 3000),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: Modes02A0),
+
+            [0x029E] = new(
+                MaxFan: true,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3400,
+                MaximumFanTargetRpm: 5300,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600)),
+                Modes: Modes02A0),
+
             // Blade 16 (2026) RZ09-0581 publishes the same six modes and fan ranges as 02C6.
             [0x02E0] = new(
                 MaxFan: false,
                 None,
+                FanCurve: true,
+                FixedFan: true,
                 HyperBoost: true,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
