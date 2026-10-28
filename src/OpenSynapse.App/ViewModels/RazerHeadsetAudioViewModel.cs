@@ -137,6 +137,13 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     private bool _hapticsEnabled;
     private double _hapticsStrength;
     private bool _hasHaptics;
+    private byte _micCompressorProfile;
+    private bool _micCompressorEnabled;
+    private double _micCompressorDb;
+    private double _micCompressorRatio;
+    private double _micCompressorAttack;
+    private double _micCompressorRelease;
+    private bool _hasMicCompressor;
     private static readonly RazerMicReverbRoomMode[] MicReverbModes =
         Enum.GetValues<RazerMicReverbRoomMode>();
     private int _selectedAncIndex;
@@ -578,6 +585,41 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     public string HapticsStrengthText => $"{Math.Round(HapticsStrength)}";
     public Visibility HapticsVisibility => _hasHaptics ? Visibility.Visible : Visibility.Collapsed;
 
+    public bool MicCompressorEnabled
+    {
+        get => _micCompressorEnabled;
+        set => SetField(ref _micCompressorEnabled, value);
+    }
+
+    public double MicCompressorDb
+    {
+        get => _micCompressorDb;
+        set => SetField(ref _micCompressorDb, Math.Clamp(value, -128, 0));
+    }
+
+    // The middleware stores ratio, attack and release as raw 16-bit values and never
+    // defines a scale, so the UI exposes them unchanged instead of inventing units.
+    public double MicCompressorRatio
+    {
+        get => _micCompressorRatio;
+        set => SetField(ref _micCompressorRatio, Math.Clamp(value, 0, ushort.MaxValue));
+    }
+
+    public double MicCompressorAttack
+    {
+        get => _micCompressorAttack;
+        set => SetField(ref _micCompressorAttack, Math.Clamp(value, 0, ushort.MaxValue));
+    }
+
+    public double MicCompressorRelease
+    {
+        get => _micCompressorRelease;
+        set => SetField(ref _micCompressorRelease, Math.Clamp(value, 0, ushort.MaxValue));
+    }
+
+    public Visibility MicCompressorVisibility =>
+        _hasMicCompressor ? Visibility.Visible : Visibility.Collapsed;
+
     public IReadOnlyList<string> AncOptions =>
     [
         AppStrings.Text("RazerHeadsetAncOff"),
@@ -959,6 +1001,21 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 (service, token) => service.SetAudioSourceAsync(Sources[SelectedSourceIndex], token),
                 cancellationToken);
 
+    public Task ApplyMicCompressorAsync(CancellationToken cancellationToken = default) =>
+        IsMxic
+            ? Task.CompletedTask
+            : RunWriteAsync(
+                (service, token) => service.SetMicCompressorAsync(
+                    new RazerMicCompressor(
+                        _micCompressorProfile,
+                        MicCompressorEnabled ? (byte)1 : (byte)0,
+                        (sbyte)Math.Round(MicCompressorDb),
+                        (ushort)Math.Round(MicCompressorRatio),
+                        (ushort)Math.Round(MicCompressorAttack),
+                        (ushort)Math.Round(MicCompressorRelease)),
+                    token),
+                cancellationToken);
+
     public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
         IsMxic
             ? Task.CompletedTask
@@ -1274,6 +1331,18 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             HapticsStrength = haptics.Strength;
             _hasHaptics = true;
             OnPropertyChanged(nameof(HapticsVisibility));
+        }
+
+        if (state.MicCompressor is { } compressor)
+        {
+            _micCompressorProfile = compressor.Profile;
+            MicCompressorEnabled = compressor.Enabled;
+            MicCompressorDb = compressor.Db;
+            MicCompressorRatio = compressor.RatioTenths;
+            MicCompressorAttack = compressor.AttackTime;
+            MicCompressorRelease = compressor.ReleaseTime;
+            _hasMicCompressor = true;
+            OnPropertyChanged(nameof(MicCompressorVisibility));
         }
 
         OnPropertyChanged(nameof(AdvancedAudioVisibility));
