@@ -56,9 +56,87 @@ public static class RazerMxicHeadsetProtocol
         0x0A51,
         0x101E,
         0x101F,
+        0x0A61,
+        0x0A64,
+        0x0A68,
+        0x0A6C,
+        0x0A81,
     }.ToFrozenSet();
 
     public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
+
+    /// <summary>
+    /// The Hammerhead V3 dongles select the rzDevice40 audio chunk. Its command tuple is
+    /// [dataSize, class, id] where this 2023 class uses [class, id, dataSize], EQ and mute
+    /// moved to class 0x18, and every response echoes the request payload instead of the
+    /// command bytes. The 64-byte 50 41 envelope is unchanged.
+    /// </summary>
+    private static readonly FrozenSet<ushort> Class18ProductIds = new ushort[]
+    {
+        0x0A61,
+        0x0A64,
+        0x0A68,
+        0x0A6C,
+        0x0A81,
+    }.ToFrozenSet();
+
+    public static bool UsesClass18Commands(ushort productId) => Class18ProductIds.Contains(productId);
+
+    // rzDevice40 constants: He=[2,24,128] Be=[4,24,0] [12,24,129] Ve=[12,24,1]
+    // Ye=[2,24,132] Xe=[3,24,4]. TD={Speaker:1,Mic:2}; the bundle reads and writes the
+    // live profile 0 (getEQPreset(0), setEQPreset(0,...)), so the readback matches.
+    private const byte Class18 = 0x18;
+    private const byte LiveProfile = 0x00;
+    private const byte SpeakerSource = 0x01;
+    private const byte MicrophoneSource = 0x02;
+
+    public static readonly byte[] EqPresetRequestClass18 = [2, Class18, 0x80];
+    public static readonly byte[] EqPresetHeaderClass18 = [LiveProfile, SpeakerSource];
+    public static readonly byte[] EqBandsRequestClass18 = [12, Class18, 0x81];
+    public static readonly byte[] EqBandsHeaderClass18 = [LiveProfile, SpeakerSource];
+    public static readonly byte[] MicMuteRequestClass18 = [2, Class18, 0x84];
+    public static readonly byte[] MicMuteHeaderClass18 = [LiveProfile, MicrophoneSource];
+
+    public static byte[] CreateGetEqPresetClass18() =>
+        Create(RazerCommand, EqPresetRequestClass18, [LiveProfile, 0x00]);
+
+    public static byte[] CreateSetEqPresetClass18(byte preset) =>
+        Create(RazerCommand, [4, Class18, 0x00], [LiveProfile, SpeakerSource, 0x00, preset]);
+
+    public static byte[] CreateGetEqBandsClass18()
+    {
+        // The bundle allocates the full 12-byte payload and only sets the profile byte.
+        var payload = new byte[EqBandsRequestClass18[0]];
+        payload[0] = LiveProfile;
+        return Create(RazerCommand, EqBandsRequestClass18, payload);
+    }
+
+    public static byte[] CreateSetEqBandsClass18(ReadOnlySpan<byte> bands)
+    {
+        if (bands.Length != TenBandCount)
+        {
+            throw new ArgumentException("Equalizer data must contain 10 bands.", nameof(bands));
+        }
+
+        var payload = new byte[EqBandsRequestClass18[0]];
+        payload[0] = LiveProfile;
+        payload[1] = SpeakerSource;
+        bands.CopyTo(payload.AsSpan(2));
+        return Create(RazerCommand, [12, Class18, 0x01], payload);
+    }
+
+    public static byte[] CreateGetMicMuteClass18() =>
+        Create(RazerCommand, MicMuteRequestClass18, [LiveProfile, MicrophoneSource]);
+
+    public static byte[] CreateSetMicMuteClass18(bool muted) =>
+        Create(RazerCommand, [3, Class18, 0x04], [LiveProfile, MicrophoneSource, muted ? (byte)1 : (byte)0]);
+
+    /// <summary>The class 0x18 EQ-preset reply carries [profile, source, group, preset].</summary>
+    public static byte ReadEqPresetClass18(ReadOnlySpan<byte> value)
+    {
+        Require(value, 2);
+        return value[1];
+    }
 
     public static byte[] CreateRemoteMode(bool enabled) =>
         Create(RemoteCommand, [0xE1], [enabled ? (byte)1 : (byte)0]);
