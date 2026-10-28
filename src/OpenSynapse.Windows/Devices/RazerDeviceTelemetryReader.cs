@@ -1910,17 +1910,17 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         var cpuResponse = await QueryCapabilityAsync(
             device,
             "boost.get",
-            new byte[] { 0x00, BladeBoostProtocol.CpuCluster, 0x00 },
+            BladeBoostProtocol.CreateGetArguments(BladeBoostProtocol.CpuCluster),
             cancellationToken);
         var gpuResponse = await QueryCapabilityAsync(
             device,
             "boost.get",
-            new byte[] { 0x00, BladeBoostProtocol.GpuCluster, 0x00 },
+            BladeBoostProtocol.CreateGetArguments(BladeBoostProtocol.GpuCluster),
             cancellationToken);
 
         return new BladeBoostState(
-            BladeBoostProtocol.ParseCpu(cpuResponse),
-            BladeBoostProtocol.ParseGpu(gpuResponse));
+            BladeBoostProtocol.ParseCpu(cpuResponse, BladeBoostProtocol.ProfileId),
+            BladeBoostProtocol.ParseGpu(gpuResponse, BladeBoostProtocol.ProfileId));
     }
 
     private async Task<BladeBoostState> SetBladeBoostModeAsync(
@@ -1985,7 +1985,10 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         byte value,
         CancellationToken cancellationToken) =>
         QueryCapabilityAsync(
-            device, "boost.set", new byte[] { 0x00, cluster, value }, cancellationToken);
+            device,
+            "boost.set",
+            BladeBoostProtocol.CreateSetArguments(cluster, value),
+            cancellationToken);
 
     private async Task<bool> TryRestoreBladeBoostStateAsync(
         ReadyDevice device,
