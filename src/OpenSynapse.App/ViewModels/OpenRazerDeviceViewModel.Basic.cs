@@ -59,6 +59,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             }
             OnBasicStateChanged();
             await LoadMappingIfNeededAsync(cancellationToken);
+            await LoadOnboardProfilesAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

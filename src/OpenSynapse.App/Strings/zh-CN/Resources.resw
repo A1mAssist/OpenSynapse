@@ -1758,6 +1758,14 @@
   <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>保存</value></data>
   <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
+  <data name="OpenRazerOnboardProfileTitle.Text" xml:space="preserve"><value>板载配置</value></data>
+  <data name="OpenRazerOnboardProfileCountLabel.Text" xml:space="preserve"><value>已用 / 上限</value></data>
+  <data name="OpenRazerOnboardProfileActiveLabel.Text" xml:space="preserve"><value>当前配置</value></data>
+  <data name="OpenRazerOnboardProfileSelectLabel.Text" xml:space="preserve"><value>配置编号</value></data>
+  <data name="OpenRazerOnboardProfileApplyButton.Content" xml:space="preserve"><value>切换</value></data>
+  <data name="OpenRazerOnboardProfileCreateButton.Content" xml:space="preserve"><value>新建</value></data>
+  <data name="OpenRazerOnboardProfileDeleteButton.Content" xml:space="preserve"><value>删除</value></data>
+  <data name="OpenRazerOnboardProfileResetButton.Content" xml:space="preserve"><value>重置</value></data>
   <data name="OpenRazerScrollFreeNotchedLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
   <data name="OpenRazerScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>滚轮加速等级</value></data>
   <data name="OpenRazerScrollNotchedMode.Text" xml:space="preserve"><value>段落感</value></data>

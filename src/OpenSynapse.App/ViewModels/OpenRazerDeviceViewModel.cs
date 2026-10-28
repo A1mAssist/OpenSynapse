@@ -47,6 +47,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private bool _isSmartReelThresholdBusy;
     private bool _isScrollFreeNotchedBusy;
     private bool _isScrollAccelerationLevelBusy;
+    private bool _isOnboardProfileBusy;
     private bool _isScrollLoading;
     private bool _isKeyswitchBusy;
     private bool _isKeyswitchLoading;
@@ -78,6 +79,11 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     private byte _smartReelThreshold = 50;
     private int _scrollFreeNotchedModeIndex;
     private byte _scrollAccelerationLevel;
+    private byte _onboardProfileCount;
+    private byte _onboardMaxProfiles;
+    private byte _activeOnboardProfileId;
+    private byte _selectedOnboardProfileId = 1;
+    private string _onboardProfileStatusText = string.Empty;
     private OpenRazerKeyswitchOptimization _keyswitchOptimization;
     private byte _activeDpiStage = 1;
     private byte _hyperPollingIndicatorMode = 1;
@@ -846,6 +852,42 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
         OpenRazerBackendCapability.ScrollAccelerationLevelRead, OpenRazerBackendCapability.ScrollAccelerationLevelWrite));
     public Visibility ScrollAccelerationLevelWriteVisibility =>
         VisibleWhen(Has(OpenRazerBackendCapability.ScrollAccelerationLevelWrite));
+    public Visibility OnboardProfileVisibility => VisibleWhen(HasAny(
+        OpenRazerBackendCapability.OnboardProfileRead, OpenRazerBackendCapability.OnboardProfileWrite));
+    public Visibility OnboardProfileWriteVisibility =>
+        VisibleWhen(Has(OpenRazerBackendCapability.OnboardProfileWrite));
+    public byte OnboardProfileCount
+    {
+        get => _onboardProfileCount;
+        set => SetField(ref _onboardProfileCount, value);
+    }
+    public byte OnboardMaxProfiles
+    {
+        get => _onboardMaxProfiles;
+        set => SetField(ref _onboardMaxProfiles, value);
+    }
+    public byte ActiveOnboardProfileId
+    {
+        get => _activeOnboardProfileId;
+        set => SetField(ref _activeOnboardProfileId, value);
+    }
+    public byte SelectedOnboardProfileId
+    {
+        get => _selectedOnboardProfileId;
+        set => SetField(ref _selectedOnboardProfileId, value);
+    }
+    public string OnboardProfileStatusText
+    {
+        get => _onboardProfileStatusText;
+        set => SetField(ref _onboardProfileStatusText, value);
+    }
+    public bool IsOnboardProfileBusy
+    {
+        get => _isOnboardProfileBusy;
+        private set => SetBusy(ref _isOnboardProfileBusy, value, nameof(CanEditOnboardProfile));
+    }
+    public bool CanEditOnboardProfile =>
+        CanUse(OpenRazerBackendCapability.OnboardProfileWrite) && !IsOnboardProfileBusy;
     public IReadOnlyList<string> ScrollFreeNotchedModeTexts { get; } =
         [AppStrings.Text("OpenRazerScrollNotchedMode"), AppStrings.Text("OpenRazerScrollFreeSpinMode")];
     public bool IsScrollLoading { get => _isScrollLoading; private set => SetField(ref _isScrollLoading, value); }
