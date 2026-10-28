@@ -1415,6 +1415,42 @@ public sealed class OpenRazerBackendTests
     }
 
 
+    [Theory]
+    [InlineData(0x0050, "500,1000")]
+    [InlineData(0x0053, "500,1000")]
+    [InlineData(0x0059, "125,500,1000")]
+    [InlineData(0x005C, "125,500,1000")]
+    [InlineData(0x0064, "125,500,1000")]
+    [InlineData(0x0065, "500,1000")]
+    [InlineData(0x0067, "125,500,1000")]
+    [InlineData(0x006C, "125,500,1000")]
+    [InlineData(0x006E, "500,1000")]
+    [InlineData(0x0070, "125,500,1000")]
+    [InlineData(0x0071, "500,1000")]
+    [InlineData(0x0073, "125,500,1000")]
+    [InlineData(0x0078, "125,500,1000")]
+    [InlineData(0x007A, "125,500,1000")]
+    [InlineData(0x007C, "125,500,1000")]
+    [InlineData(0x0083, "125,500,1000")]
+    [InlineData(0x0084, "125,500,1000")]
+    [InlineData(0x0086, "125,500,1000")]
+    [InlineData(0x008A, "125,500,1000")]
+    [InlineData(0x008F, "125,500,1000")]
+    [InlineData(0x0094, "125,500,1000")]
+    [InlineData(0x0098, "500,1000")]
+    [InlineData(0x00A5, "125,500,1000")]
+    [InlineData(0x00A7, "125,500,1000")]
+    [InlineData(0x00AF, "125,500,1000")]
+    [InlineData(0x00B4, "125,500,1000")]
+    [InlineData(0x00CC, "125,500,1000")]
+    [InlineData(0x00D3, "125,500,1000")]
+    [InlineData(0x00D6, "125,500,1000")]
+    public void CatalogPollingRatesMatchTheBundleDeviceInfo(ushort productId, string expected)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+        Assert.Equal(expected, string.Join(",", device.PollingRates));
+    }
+
     [Fact]
     public void DeathAdderV3HyperSpeedPublishesItsPollingRatesForBothIdentities()
     {
