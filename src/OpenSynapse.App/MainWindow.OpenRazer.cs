@@ -346,6 +346,12 @@ public sealed partial class MainWindow
     private async void OpenRazerApplyScrollModeClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyScrollModeAsync(_lifetime.Token) ?? Task.CompletedTask);
 
+    private async void OpenRazerApplyScrollFreeNotchedModeClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyScrollFreeNotchedModeAsync(_lifetime.Token) ?? Task.CompletedTask);
+
+    private async void OpenRazerApplyScrollAccelerationLevelClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerDevice?.ApplyScrollAccelerationLevelAsync(_lifetime.Token) ?? Task.CompletedTask);
+
     private async void OpenRazerApplyScrollAccelerationClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyScrollAccelerationAsync(_lifetime.Token) ?? Task.CompletedTask);
 

@@ -30,12 +30,42 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 async () => SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken));
             await ReadOptionalAsync(OpenRazerBackendCapability.SmartReelThresholdRead,
                 async () => SmartReelThreshold = await _service.GetSmartReelThresholdAsync(Connection, cancellationToken));
+            await ReadOptionalAsync(OpenRazerBackendCapability.ScrollFreeNotchedModeRead,
+                async () => ScrollFreeNotchedModeIndex =
+                    (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken));
+            await ReadOptionalAsync(OpenRazerBackendCapability.ScrollAccelerationLevelRead,
+                async () => ScrollAccelerationLevel =
+                    await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken));
         }
         finally
         {
             IsScrollLoading = false;
         }
     }
+
+    public Task ApplyScrollFreeNotchedModeAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite,
+            () => IsScrollFreeNotchedBusy, value => IsScrollFreeNotchedBusy = value,
+            async () =>
+            {
+                await _service.SetScrollFreeNotchedModeAsync(Connection,
+                    (RazerScrollFreeNotchedMode)ScrollFreeNotchedModeIndex, cancellationToken);
+                if (Has(OpenRazerBackendCapability.ScrollFreeNotchedModeRead))
+                    ScrollFreeNotchedModeIndex =
+                        (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken);
+            }, cancellationToken);
+
+    public Task ApplyScrollAccelerationLevelAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(OpenRazerBackendCapability.ScrollAccelerationLevelWrite,
+            () => IsScrollAccelerationLevelBusy, value => IsScrollAccelerationLevelBusy = value,
+            async () =>
+            {
+                await _service.SetScrollVirtualAccelerationLevelAsync(
+                    Connection, ScrollAccelerationLevel, cancellationToken);
+                if (Has(OpenRazerBackendCapability.ScrollAccelerationLevelRead))
+                    ScrollAccelerationLevel =
+                        await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken);
+            }, cancellationToken);
 
     public Task ApplyScrollModeAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(OpenRazerBackendCapability.ScrollModeWrite,

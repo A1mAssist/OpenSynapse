@@ -26,14 +26,26 @@ public sealed class OpenRazerDeviceService
     private readonly IRazerFeatureTransport _transport;
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<ushort, (bool Supported, DateTimeOffset ExpiresAt)> _mappingProbeCache = new();
-    private static readonly TimeSpan MappingProbePositiveTtl = TimeSpan.FromHours(12);
-    private static readonly TimeSpan MappingProbeNegativeTtl = TimeSpan.FromMinutes(5);
+    private readonly ConcurrentDictionary<(ushort ProductId, string Probe), (bool Supported, DateTimeOffset ExpiresAt)>
+        _middlewareProbeCache = new();
+    private static readonly TimeSpan MiddlewareProbePositiveTtl = TimeSpan.FromHours(12);
+    private static readonly TimeSpan MiddlewareProbeNegativeTtl = TimeSpan.FromMinutes(5);
+    // Middleware bundles increment the transaction id per exchange; the firmware only
+    // matches it against the response, so one fixed value works for a single request.
+    private const byte MiddlewareTransactionId = 0x1F;
     private static readonly IReadOnlySet<OpenRazerBackendCapability> MappingCapabilities =
         new HashSet<OpenRazerBackendCapability>
         {
             OpenRazerBackendCapability.MappingRead,
             OpenRazerBackendCapability.MappingWrite,
+        }.ToFrozenSet();
+    private static readonly IReadOnlySet<OpenRazerBackendCapability> ScrollWheelCapabilities =
+        new HashSet<OpenRazerBackendCapability>
+        {
+            OpenRazerBackendCapability.ScrollFreeNotchedModeRead,
+            OpenRazerBackendCapability.ScrollFreeNotchedModeWrite,
+            OpenRazerBackendCapability.ScrollAccelerationLevelRead,
+            OpenRazerBackendCapability.ScrollAccelerationLevelWrite,
         }.ToFrozenSet();
 
     public event Action<DeviceBatteryReading>? BatteryObserved;
@@ -169,11 +181,11 @@ public sealed class OpenRazerDeviceService
                 _endpointCache[group.Key.PhysicalDeviceKey] = resolvedPath;
                 var resolvedDefinition = await ResolveLeviathanDefinitionAsync(
                     definition, resolvedPath, cancellationToken).ConfigureAwait(false);
-                var mappingSupported = await ProbeMappingCapabilityAsync(
+                var probedCapabilities = await ProbeMiddlewareCapabilitiesAsync(
                     resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
                 results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
                     OpenRazerEndpointState.Resolved, null,
-                    mappingSupported ? MappingCapabilities : null));
+                    probedCapabilities.Count > 0 ? probedCapabilities : null));
             }
         }
         return results;
@@ -1033,6 +1045,44 @@ public sealed class OpenRazerDeviceService
         ExecuteWithoutResultAsync(connection,
             OpenRazerMouseProtocol.SetSmartReelThreshold(connection.Definition, level), cancellationToken);
 
+    public async Task<RazerScrollFreeNotchedMode> GetScrollFreeNotchedModeAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default)
+    {
+        var request = RazerScrollWheelProtocol.CreateGetScrollFreeNotchedModeRequest(MiddlewareTransactionId);
+        var response = await ExecuteAsync(connection,
+            new OpenRazerRequest("razer_scroll_get_free_notched_mode", request), cancellationToken).ConfigureAwait(false);
+        return RazerScrollWheelProtocol.ParseScrollFreeNotchedMode(response, request).Mode;
+    }
+
+    public Task SetScrollFreeNotchedModeAsync(
+        OpenRazerDeviceConnection connection,
+        RazerScrollFreeNotchedMode mode,
+        CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            new OpenRazerRequest("razer_scroll_set_free_notched_mode",
+                RazerScrollWheelProtocol.CreateSetScrollFreeNotchedModeRequest(MiddlewareTransactionId, mode)),
+            cancellationToken);
+
+    public async Task<byte> GetScrollVirtualAccelerationLevelAsync(
+        OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default)
+    {
+        var request =
+            RazerScrollWheelProtocol.CreateGetScrollVirtualAccelerationLevelRequest(MiddlewareTransactionId);
+        var response = await ExecuteAsync(connection,
+            new OpenRazerRequest("razer_scroll_get_acceleration_level", request), cancellationToken).ConfigureAwait(false);
+        return RazerScrollWheelProtocol.ParseScrollVirtualAccelerationLevel(response, request).Level;
+    }
+
+    public Task SetScrollVirtualAccelerationLevelAsync(
+        OpenRazerDeviceConnection connection,
+        byte level,
+        CancellationToken cancellationToken = default) =>
+        ExecuteWithoutResultAsync(connection,
+            new OpenRazerRequest("razer_scroll_set_acceleration_level",
+                RazerScrollWheelProtocol.CreateSetScrollVirtualAccelerationLevelRequest(
+                    MiddlewareTransactionId, level)),
+            cancellationToken);
+
     public Task SetFnPrimaryAsync(OpenRazerDeviceConnection connection, bool fnFunctionsArePrimary, CancellationToken cancellationToken = default) =>
         ExecuteWithoutResultAsync(connection, OpenRazerStandardProtocol.Create(connection.Definition,
             "razer_chroma_misc_fn_key_toggle", 0x02, 0x02, 0x06,
@@ -1114,49 +1164,86 @@ public sealed class OpenRazerDeviceService
             [checked((byte)(mouseProductId >> 8)), checked((byte)mouseProductId)]), cancellationToken);
 
     /// <summary>
-    /// Reads the button-id list as the mapping capability probe. The result is cached per
-    /// product id so device-watch rescans do not send another HID request every few seconds.
+    /// Sends the middleware-only GETs once per device and caches which command families
+    /// answer, so a control appears only when the firmware really understands it. The cache
+    /// keeps device-watch rescans from re-sending a HID request every few seconds.
     /// </summary>
-    internal async Task<bool> ProbeMappingCapabilityAsync(
+    internal async Task<IReadOnlySet<OpenRazerBackendCapability>> ProbeMiddlewareCapabilitiesAsync(
         OpenRazerDeviceDefinition definition,
         string devicePath,
         CancellationToken cancellationToken = default)
     {
         if (definition.Category is not (DeviceCategory.Mouse or DeviceCategory.Keyboard))
         {
-            return false;
+            return FrozenSet<OpenRazerBackendCapability>.Empty;
         }
 
-        var now = DateTimeOffset.UtcNow;
-        if (_mappingProbeCache.TryGetValue(definition.ProductId, out var cached) &&
-            cached.ExpiresAt > now)
+        var result = new HashSet<OpenRazerBackendCapability>();
+        var buttonList = OpenRazerMappingProtocol.GetButtonList();
+        if (await ProbeAsync("mapping", buttonList.Report,
+                response => OpenRazerMappingProtocol.ParseButtonList(response).Count > 0).ConfigureAwait(false))
         {
-            return cached.Supported;
+            result.UnionWith(MappingCapabilities);
         }
 
-        var supported = false;
-        try
+        if (definition.Category == DeviceCategory.Mouse)
         {
-            var response = await _transport.QueryPreparedAsync(
-                devicePath,
-                OpenRazerMappingProtocol.GetButtonList().Report,
-                definition.DeviceWait,
-                cancellationToken).ConfigureAwait(false);
-            supported = OpenRazerMappingProtocol.ParseButtonList(response).Count > 0;
-        }
-        catch (Exception exception) when (exception is Win32Exception or IOException or
-            InvalidOperationException or NotSupportedException or InvalidDataException or
-            UnauthorizedAccessException or TimeoutException)
-        {
-            WriteDiagnostic(definition.ProductId,
-                $"mapping probe failed: {exception.GetType().Name}: {exception.Message}");
+            var freeNotched = RazerScrollWheelProtocol.CreateGetScrollFreeNotchedModeRequest(MiddlewareTransactionId);
+            if (await ProbeAsync("scroll.freeNotched", freeNotched, response =>
+                {
+                    _ = RazerScrollWheelProtocol.ParseScrollFreeNotchedMode(response, freeNotched);
+                    return true;
+                }).ConfigureAwait(false))
+            {
+                result.Add(OpenRazerBackendCapability.ScrollFreeNotchedModeRead);
+                result.Add(OpenRazerBackendCapability.ScrollFreeNotchedModeWrite);
+            }
+
+            var accelerationLevel =
+                RazerScrollWheelProtocol.CreateGetScrollVirtualAccelerationLevelRequest(MiddlewareTransactionId);
+            if (await ProbeAsync("scroll.accelerationLevel", accelerationLevel, response =>
+                {
+                    _ = RazerScrollWheelProtocol.ParseScrollVirtualAccelerationLevel(response, accelerationLevel);
+                    return true;
+                }).ConfigureAwait(false))
+            {
+                result.Add(OpenRazerBackendCapability.ScrollAccelerationLevelRead);
+                result.Add(OpenRazerBackendCapability.ScrollAccelerationLevelWrite);
+            }
         }
 
-        _mappingProbeCache[definition.ProductId] = (
-            supported,
-            now + (supported ? MappingProbePositiveTtl : MappingProbeNegativeTtl));
-        WriteDiagnostic(definition.ProductId, $"mapping probe: {supported}");
-        return supported;
+        return result.ToFrozenSet();
+
+        async Task<bool> ProbeAsync(string probe, byte[] request, Func<byte[], bool> accepts)
+        {
+            var now = DateTimeOffset.UtcNow;
+            var key = (definition.ProductId, probe);
+            if (_middlewareProbeCache.TryGetValue(key, out var cached) && cached.ExpiresAt > now)
+            {
+                return cached.Supported;
+            }
+
+            var supported = false;
+            try
+            {
+                var response = await _transport.QueryPreparedAsync(
+                    devicePath, request, definition.DeviceWait, cancellationToken).ConfigureAwait(false);
+                supported = accepts(response);
+            }
+            catch (Exception exception) when (exception is Win32Exception or IOException or
+                InvalidOperationException or NotSupportedException or InvalidDataException or
+                UnauthorizedAccessException or TimeoutException)
+            {
+                WriteDiagnostic(definition.ProductId,
+                    $"{probe} probe failed: {exception.GetType().Name}: {exception.Message}");
+            }
+
+            _middlewareProbeCache[key] = (
+                supported,
+                now + (supported ? MiddlewareProbePositiveTtl : MiddlewareProbeNegativeTtl));
+            WriteDiagnostic(definition.ProductId, $"{probe} probe: {supported}");
+            return supported;
+        }
     }
 
     private async Task<bool> ProbeEndpointAsync(
