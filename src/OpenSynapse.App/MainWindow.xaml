@@ -995,6 +995,27 @@
                   <Border Visibility="{Binding BladeCustomPerformanceVisibility}" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="14"><TextBlock local:Localized.Uid="BladeCustomPerformanceTitle" Text="自定义性能" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="16"><StackPanel Spacing="8" Visibility="{Binding BladeCpuBoostVisibility}"><TextBlock local:Localized.Uid="BladeCpuPerformanceLabel" Text="CPU 性能档位" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeCpuBoostText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ComboBox Tag="cpuBoost" ItemsSource="{Binding BladeCpuBoostOptions}" SelectedIndex="{Binding BladeCpuBoostIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeCpuBoost}" HorizontalAlignment="Stretch" /></StackPanel><StackPanel Grid.Column="1" Spacing="8" Visibility="{Binding BladeGpuBoostVisibility}"><TextBlock local:Localized.Uid="BladeGpuPerformanceLabel" Text="GPU 性能档位" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeGpuBoostText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ComboBox Tag="gpuBoost" ItemsSource="{Binding BladeGpuBoostOptions}" SelectedIndex="{Binding BladeGpuBoostIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetBladeGpuBoost}" HorizontalAlignment="Stretch" /></StackPanel><StackPanel Grid.Column="2" Spacing="8" Visibility="{Binding BladeMaxFanVisibility}"><TextBlock local:Localized.Uid="BladeMaxFanLabel" Text="风扇全速" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding BladeMaxFanText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ToggleSwitch local:Localized.Uid="Loc_C78C6041E0" IsOn="{Binding BladeMaxFanEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeMaxFan}" Toggled="AutoApplyMaxFanToggled" OnContent="开启" OffContent="关闭" /></StackPanel></Grid><TextBlock local:Localized.Uid="BladeCustomPerformanceHint" Text="修改会保存到当前配置。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" />
                   </StackPanel></Border>
 
+                  <Border Visibility="{Binding BladeGpuClockOffsetVisibility}" Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <TextBlock local:Localized.Uid="BladeGpuClockOffsetTitle" Text="GPU 频率偏移" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="BladeGpuClockOffsetHint" Text="驱动级偏移，切换性能模式或退出应用时自动归零。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                        <StackPanel Spacing="4">
+                          <Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="BladeGpuCoreClockLabel" Text="核心偏移" Style="{StaticResource MetricLabelStyle}" /><TextBlock Grid.Column="1" Text="{Binding BladeCoreClockOffsetText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></Grid>
+                          <Slider Minimum="0" Maximum="200" StepFrequency="5" Value="{Binding BladeCoreClockOffsetMhz, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                          <Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="BladeGpuMemoryClockLabel" Text="显存偏移" Style="{StaticResource MetricLabelStyle}" /><TextBlock Grid.Column="1" Text="{Binding BladeMemoryClockOffsetText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></Grid>
+                          <Slider Minimum="-500" Maximum="2000" StepFrequency="5" Value="{Binding BladeMemoryClockOffsetMhz, Mode=TwoWay}" />
+                        </StackPanel>
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <TextBlock Text="{Binding BladeGpuClockOffsetStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" local:Localized.Uid="BladeGpuClockOffsetApply" Content="应用" Click="ApplyBladeGpuClockOffsetClick" Style="{StaticResource PrimaryButtonStyle}" />
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding BladeLightingCardVisibility}">
                     <StackPanel Spacing="14">
                       <Grid ColumnDefinitions="2*,*" ColumnSpacing="24">

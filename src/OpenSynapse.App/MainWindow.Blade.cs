@@ -148,6 +148,9 @@ public sealed partial class MainWindow
     private async void ApplyPerformanceModeClick(object sender, RoutedEventArgs e) =>
         await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
 
+    private async void ApplyBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
+        await _viewModel.ApplyBladeGpuClockOffsetAsync(_lifetime.Token);
+
     private async Task<bool> ConfirmPadlessHyperBoostAsync()
     {
         var dialog = new ContentDialog

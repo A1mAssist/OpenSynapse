@@ -2039,6 +2039,13 @@
   <data name="BladeFanCurveReset" xml:space="preserve"><value>恢复默认</value></data>
   <data name="BladeFanCurveEdit" xml:space="preserve"><value>编辑</value></data>
   <data name="BladeFanCurveApply" xml:space="preserve"><value>应用</value></data>
+  <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>GPU 频率偏移</value></data>
+  <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>驱动级偏移，切换性能模式或退出应用时自动归零。</value></data>
+  <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>核心偏移</value></data>
+  <data name="BladeGpuMemoryClockLabel" xml:space="preserve"><value>显存偏移</value></data>
+  <data name="BladeGpuClockOffsetApply" xml:space="preserve"><value>应用</value></data>
+  <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>已应用，切换模式或退出时归零。</value></data>
+  <data name="BladeGpuClockOffsetFailed" xml:space="preserve"><value>GPU 驱动拒绝了这次频率偏移。</value></data>
   <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU 温度</value></data>
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU 温度</value></data>
   <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>两者取较高值</value></data>
