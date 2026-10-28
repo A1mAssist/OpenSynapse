@@ -1122,6 +1122,11 @@ public sealed class OpenRazerDeviceService
         string devicePath,
         CancellationToken cancellationToken = default)
     {
+        if (definition.Category is not (DeviceCategory.Mouse or DeviceCategory.Keyboard))
+        {
+            return false;
+        }
+
         var now = DateTimeOffset.UtcNow;
         if (_mappingProbeCache.TryGetValue(definition.ProductId, out var cached) &&
             cached.ExpiresAt > now)
