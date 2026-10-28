@@ -71,14 +71,14 @@ public sealed class OpenRazerMappingTests
         Assert.Contains(OpenRazerBackendCapability.MappingRead,
             await positiveService.ProbeMiddlewareCapabilitiesAsync(definition, "test"));
         await positiveService.ProbeMiddlewareCapabilitiesAsync(definition, "test");
-        Assert.Equal(5, positive.Count);
+        Assert.Equal(6, positive.Count);
 
         var negative = new ProbeTransport(_ => throw new NotSupportedException());
         var negativeService = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, negative);
 
         Assert.Empty(await negativeService.ProbeMiddlewareCapabilitiesAsync(definition, "test"));
         Assert.Empty(await negativeService.ProbeMiddlewareCapabilitiesAsync(definition, "test"));
-        Assert.Equal(5, negative.Count);
+        Assert.Equal(6, negative.Count);
     }
 
     [Fact]
