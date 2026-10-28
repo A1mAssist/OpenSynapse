@@ -15,6 +15,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
     private readonly Func<CancellationToken, Task> _restorePersistentEffect;
+    private readonly Func<IReadOnlyList<RazerRgb>, int, int, byte[][]> _createFrameRequests;
     private readonly int _matrixRows;
     private readonly int _matrixColumns;
     private readonly Channel<RazerRgb[]> _frames = Channel.CreateBounded<RazerRgb[]>(
@@ -39,7 +40,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         string devicePath,
         Func<CancellationToken, Task> restorePersistentEffect,
         int matrixRows = BladeLightingProtocol.Rows,
-        int matrixColumns = BladeLightingProtocol.Columns)
+        int matrixColumns = BladeLightingProtocol.Columns,
+        Func<IReadOnlyList<RazerRgb>, int, int, byte[][]>? createFrameRequests = null)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
@@ -52,6 +54,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         _transport = transport;
         _devicePath = devicePath;
         _restorePersistentEffect = restorePersistentEffect;
+        _createFrameRequests = createFrameRequests ?? BladeLightingProtocol.CreateMatrixFrameRequests;
         _matrixRows = matrixRows;
         _matrixColumns = matrixColumns;
         _worker = RunAsync();
@@ -219,7 +222,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         IRazerFeatureSession? session,
         CancellationToken cancellationToken)
     {
-        var requests = BladeLightingProtocol.CreateMatrixFrameRequests(
+        var requests = _createFrameRequests(
             ScaleFrame(frame),
             _matrixRows,
             _matrixColumns);

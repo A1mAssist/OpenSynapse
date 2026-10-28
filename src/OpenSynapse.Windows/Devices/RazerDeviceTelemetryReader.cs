@@ -1443,7 +1443,10 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
             return checked((byte)Math.Ceiling(arguments[2] * 100d / 255d));
         }
-        if (BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(device.Descriptor.ProductId))
+        // The 671 family answers the selector-shaped brightness report (store, region,
+        // raw 0..255). Reading arguments[1] returns the constant keyboard region (5)
+        // instead of the level, so this family always uses the selector decoder.
+        if (device.Descriptor.ProtocolFamily == "blade-671")
         {
             return BladeLighting2023Protocol.ParseBrightness(response);
         }
@@ -1470,7 +1473,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 cancellationToken);
         }
 
-        return BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(device.Descriptor.ProductId)
+        return device.Descriptor.ProtocolFamily == "blade-671"
             ? QueryBuiltRequestAsync(
                 device,
                 "keyboard-brightness.set",

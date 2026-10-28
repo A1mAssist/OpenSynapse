@@ -95,6 +95,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private Task _nativeEffectKeepAliveTask = Task.CompletedTask;
     private int _turnOffOnStop;
     private int _displayAvailable = 1;
+    private bool _ledMatrixProtocol;
     private int _disposed;
 
     public BladeLightingController()
@@ -212,7 +213,10 @@ public sealed class BladeLightingController : IBladeLightingController
                     device.Id,
                     token => RestoreAsync(device.Id, token),
                     manifest.MatrixRows == 0 ? BladeLightingProtocol.Rows : manifest.MatrixRows,
-                    manifest.MatrixColumns == 0 ? BladeLightingProtocol.Columns : manifest.MatrixColumns);
+                    manifest.MatrixColumns == 0 ? BladeLightingProtocol.Columns : manifest.MatrixColumns,
+                    _ledMatrixProtocol
+                        ? BladeLightingLedMatrixProtocol.CreateMatrixFrameRequests
+                        : BladeLightingProtocol.CreateMatrixFrameRequests);
                 ILightingInputAdapter? inputAdapter = null;
                 ISoftwareLightingFrameSource source;
                 if (effect.Mode is BladeLightingMode.Reactive or BladeLightingMode.Ripple)
@@ -313,7 +317,10 @@ public sealed class BladeLightingController : IBladeLightingController
                         ? token => RestoreAsync(device.Id, token)
                         : token => ReleaseModeLeaseAsync(CancellationToken.None),
                     manifest.MatrixRows == 0 ? BladeLightingProtocol.Rows : manifest.MatrixRows,
-                    manifest.MatrixColumns == 0 ? BladeLightingProtocol.Columns : manifest.MatrixColumns);
+                    manifest.MatrixColumns == 0 ? BladeLightingProtocol.Columns : manifest.MatrixColumns,
+                    _ledMatrixProtocol
+                        ? BladeLightingLedMatrixProtocol.CreateMatrixFrameRequests
+                        : BladeLightingProtocol.CreateMatrixFrameRequests);
                 await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
                 _externalSource = source;
             }
@@ -591,7 +598,7 @@ public sealed class BladeLightingController : IBladeLightingController
         }
     }
 
-    private static bool TryCreateNativeEffectRequest(
+    private bool TryCreateNativeEffectRequest(
         BladeLightingEffect effect,
         out byte[] request)
     {
@@ -604,29 +611,48 @@ public sealed class BladeLightingController : IBladeLightingController
 
         request = effect.Mode switch
         {
-            BladeLightingMode.Off => BladeLightingProtocol.CreateOffRequest(),
+            BladeLightingMode.Off => _ledMatrixProtocol
+                ? BladeLightingLedMatrixProtocol.CreateOffRequest()
+                : BladeLightingProtocol.CreateOffRequest(),
             BladeLightingMode.Static =>
-                BladeLightingProtocol.CreateStaticRequest(effect.Color),
+                _ledMatrixProtocol
+                    ? BladeLightingLedMatrixProtocol.CreateStaticRequest(effect.Color)
+                    : BladeLightingProtocol.CreateStaticRequest(effect.Color),
             BladeLightingMode.Wave =>
-                BladeLightingProtocol.CreateWaveRequest(effect.Direction),
+                _ledMatrixProtocol
+                    ? BladeLightingLedMatrixProtocol.CreateWaveRequest(effect.Direction)
+                    : BladeLightingProtocol.CreateWaveRequest(effect.Direction),
             BladeLightingMode.Spectrum =>
-                BladeLightingProtocol.CreateSpectrumRequest(),
+                _ledMatrixProtocol
+                    ? BladeLightingLedMatrixProtocol.CreateSpectrumRequest()
+                    : BladeLightingProtocol.CreateSpectrumRequest(),
             BladeLightingMode.Reactive =>
-                BladeLightingProtocol.CreateReactiveRequest(effect.ReactiveSpeed, effect.Color),
+                _ledMatrixProtocol
+                    ? BladeLightingLedMatrixProtocol.CreateReactiveRequest(effect.ReactiveSpeed, effect.Color)
+                    : BladeLightingProtocol.CreateReactiveRequest(effect.ReactiveSpeed, effect.Color),
             BladeLightingMode.Starlight =>
                 effect.StarlightColorMode switch
                 {
                     BladeStarlightColorMode.Random =>
-                        BladeLightingProtocol.CreateStarlightRandomRequest(effect.StarlightSpeed),
+                        _ledMatrixProtocol
+                            ? BladeLightingLedMatrixProtocol.CreateStarlightRandomRequest(effect.StarlightSpeed)
+                            : BladeLightingProtocol.CreateStarlightRandomRequest(effect.StarlightSpeed),
                     BladeStarlightColorMode.Single =>
-                        BladeLightingProtocol.CreateStarlightSingleRequest(effect.StarlightSpeed, effect.Color),
+                        _ledMatrixProtocol
+                            ? BladeLightingLedMatrixProtocol.CreateStarlightSingleRequest(effect.StarlightSpeed, effect.Color)
+                            : BladeLightingProtocol.CreateStarlightSingleRequest(effect.StarlightSpeed, effect.Color),
                     BladeStarlightColorMode.Dual =>
-                        BladeLightingProtocol.CreateStarlightDualRequest(
-                            effect.StarlightSpeed, effect.Color, effect.SecondColor),
+                        _ledMatrixProtocol
+                            ? BladeLightingLedMatrixProtocol.CreateStarlightDualRequest(
+                                effect.StarlightSpeed, effect.Color, effect.SecondColor)
+                            : BladeLightingProtocol.CreateStarlightDualRequest(
+                                effect.StarlightSpeed, effect.Color, effect.SecondColor),
                     _ => Array.Empty<byte>(),
                 },
             BladeLightingMode.Breathing =>
-                BladeLightingProtocol.CreateBreathingSingleRequest(effect.Color),
+                _ledMatrixProtocol
+                    ? BladeLightingLedMatrixProtocol.CreateBreathingSingleRequest(effect.Color)
+                    : BladeLightingProtocol.CreateBreathingSingleRequest(effect.Color),
             _ => Array.Empty<byte>(),
         };
 
@@ -639,13 +665,16 @@ public sealed class BladeLightingController : IBladeLightingController
         foreach (var device in devices)
         {
             var manifest = _registry.Find(device.VendorId, device.ProductId);
-            if (manifest?.ProtocolFamily is "blade-710" or "blade-710-chroma" &&
+            if (manifest is not null &&
+                (manifest.ProtocolFamily is "blade-710" or "blade-710-chroma" ||
+                 (manifest.ProtocolFamily == "blade-671" && manifest.MatrixRows > 0)) &&
                 device.Access == DeviceAccessState.Available &&
                 device.Capability == DeviceCapabilityState.PendingValidation &&
                 device.FeatureReportByteLength == manifest.Collection.FeatureReportLength &&
                 device.UsagePage == manifest.Collection.UsagePage &&
                 device.Usage == manifest.Collection.Usage)
             {
+                _ledMatrixProtocol = device.ProductId is 0x02E0 or 0x02E1;
                 return (device, manifest);
             }
         }
@@ -682,7 +711,9 @@ public sealed class BladeLightingController : IBladeLightingController
     {
         await _transport.SendBatchAsync(
             devicePath,
-            BladeLightingProtocol.CreateMatrixFrameRequests(frame),
+            _ledMatrixProtocol
+                ? BladeLightingLedMatrixProtocol.CreateMatrixFrameRequests(frame)
+                : BladeLightingProtocol.CreateMatrixFrameRequests(frame),
             MatrixWait,
             cancellationToken).ConfigureAwait(false);
     }

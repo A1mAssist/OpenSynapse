@@ -176,6 +176,34 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public async Task Blade16_2026UsesTheMiddlewareLedEffectCommand()
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(transport);
+        var device = new DeviceDescriptor(
+            "blade-02e0",
+            "Blade 16 (2026)",
+            0x1532,
+            0x02E0,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-671");
+
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Static, new RazerRgb(0x11, 0x22, 0x33)));
+        await controller.StopAsync();
+
+        Assert.Contains(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x02 &&
+            request.Arguments.SequenceEqual(new byte[] { 0x06, 0x11, 0x22, 0x33 }));
+    }
+
+    [Fact]
     public async Task DisplayOffSendsOffAndBlocksNewLightingWrites()
     {
         var transport = new PreparedReportRecordingTransport();
