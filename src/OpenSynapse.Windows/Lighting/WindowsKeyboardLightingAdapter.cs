@@ -1,9 +1,6 @@
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.ExceptionServices;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Channels;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Lighting;
@@ -22,16 +19,6 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
 {
     internal const uint KeyUpFlag = 0x01;
     internal const uint ExtendedFlag = 0x02;
-    private const uint WmInput = 0x00FF;
-    private const uint WmQuit = 0x0012;
-    private const uint RidInput = 0x10000003;
-    private const uint RidiDeviceName = 0x20000007;
-    private const uint RimTypeKeyboard = 1;
-    private const uint RimTypeHid = 2;
-    private const uint RidevInputSink = 0x00000100;
-    private const uint RidevRemove = 0x00000001;
-    private const uint RidevPageOnly = 0x00000020;
-    private static readonly nint MessageOnlyWindow = new(-3);
     private static readonly TimeSpan Debounce = TimeSpan.FromMilliseconds(20);
     private static readonly IReadOnlyDictionary<(uint ScanCode, bool Extended), (int Row, int Column)> ScanCodeMap =
         CreateScanCodeMap();
@@ -54,20 +41,10 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
         });
     private readonly Dictionary<(uint ScanCode, bool Extended), TimeSpan> _lastByKey = [];
     private readonly HashSet<byte> _pressedRazerKeys = [];
-    private readonly Dictionary<nint, (bool IsBlade, string Name)> _devices = [];
     private readonly Action<RawKeyboardObservation>? _observer;
     private readonly Action<RawHidObservation>? _hidObserver;
-    private readonly WindowProc _windowProc;
     private readonly Stopwatch _clock = new();
-    private readonly TaskCompletionSource _started = NewCompletion();
-    private readonly TaskCompletionSource _stopped = NewCompletion();
-    private readonly string _windowClassName = $"OpenSynapse.RawKeyboard.{Guid.NewGuid():N}";
-    private Thread? _thread;
-    private nint _window;
-    private ushort _windowClass;
-    private uint _threadId;
-    private Exception? _failure;
-    private int _stopRequested;
+    private IDisposable? _subscription;
     private int _disposed;
 
     internal WindowsKeyboardLightingAdapter(
@@ -76,48 +53,40 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
     {
         _observer = observer;
         _hidObserver = hidObserver;
-        _windowProc = HandleWindowMessage;
     }
 
-    public async ValueTask StartAsync(CancellationToken cancellationToken)
+    public ValueTask StartAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-        if (_thread is null)
+        // The router owns the process's single keyboard Raw Input registration; a
+        // second registration would take the stream away from the macro layer.
+        _subscription ??= RawInputRouter.Subscribe(ProcessFrame);
+        if (!_clock.IsRunning)
         {
-            _thread = new Thread(RunMessageLoop)
-            {
-                IsBackground = true,
-                Name = "OpenSynapse Blade raw keyboard input",
-            };
-            _thread.Start();
+            _clock.Restart();
         }
 
-        await _started.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+        return ValueTask.CompletedTask;
     }
 
-    public async ValueTask StopAsync()
+    public ValueTask StopAsync()
     {
-        if (Interlocked.Exchange(ref _stopRequested, 1) == 0)
-        {
-            var threadId = Volatile.Read(ref _threadId);
-            if (threadId != 0)
-            {
-                _ = PostThreadMessage(threadId, WmQuit, 0, 0);
-            }
-        }
-
-        if (_thread is not null)
-        {
-            await _stopped.Task.ConfigureAwait(false);
-        }
+        _subscription?.Dispose();
+        _subscription = null;
+        return ValueTask.CompletedTask;
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 0)
         {
-            await StopAsync().ConfigureAwait(false);
+            _subscription?.Dispose();
+            _subscription = null;
+            _events.Writer.TryComplete();
         }
+
+        return ValueTask.CompletedTask;
     }
 
     internal void DrainTo(ICollection<QuickLightingKeyEvent> destination)
@@ -126,10 +95,6 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
         while (_events.Reader.TryRead(out var item))
         {
             destination.Add(item);
-        }
-        if (_failure is not null)
-        {
-            ExceptionDispatchInfo.Capture(_failure).Throw();
         }
     }
 
@@ -219,185 +184,21 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
     internal static bool IsBladeKeyboardDevice(string deviceName) =>
         deviceName.Contains("VID_1532&PID_02C6", StringComparison.OrdinalIgnoreCase);
 
-    private void RunMessageLoop()
+    private void ProcessFrame(RawInputFrame frame)
     {
-        var instance = GetModuleHandle(null);
-        try
-        {
-            _threadId = GetCurrentThreadId();
-            var windowClass = new WindowClass
-            {
-                Size = checked((uint)Marshal.SizeOf<WindowClass>()),
-                Instance = instance,
-                WindowProc = _windowProc,
-                ClassName = _windowClassName,
-            };
-            _windowClass = RegisterClassEx(in windowClass);
-            if (_windowClass == 0)
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-
-            _window = CreateWindowEx(
-                0,
-                _windowClassName,
-                _windowClassName,
-                0,
-                0,
-                0,
-                0,
-                0,
-                MessageOnlyWindow,
-                0,
-                instance,
-                0);
-            if (_window == 0)
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-
-            RegisterInputs(_window, removing: false);
-            _clock.Restart();
-            _started.TrySetResult();
-
-            while (true)
-            {
-                var result = GetMessage(out var message, 0, 0, 0);
-                if (result == 0)
-                {
-                    break;
-                }
-                if (result < 0)
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
-                }
-                _ = TranslateMessage(in message);
-                _ = DispatchMessage(in message);
-            }
-        }
-        catch (Exception exception)
-        {
-            _failure ??= exception;
-            _started.TrySetException(exception);
-        }
-        finally
-        {
-            if (_window != 0)
-            {
-                try
-                {
-                    RegisterInputs(0, removing: true);
-                }
-                catch
-                {
-                }
-                _ = DestroyWindow(_window);
-                _window = 0;
-            }
-            if (_windowClass != 0)
-            {
-                _ = UnregisterClass(_windowClassName, instance);
-                _windowClass = 0;
-            }
-            _events.Writer.TryComplete(_failure);
-            _stopped.TrySetResult();
-        }
-    }
-
-    private nint HandleWindowMessage(nint window, uint message, nuint wParam, nint lParam)
-    {
-        if (message == WmInput)
-        {
-            try
-            {
-                ProcessRawInput(lParam);
-            }
-            catch (Exception exception)
-            {
-                _failure ??= exception;
-                _ = PostThreadMessage(_threadId, WmQuit, 0, 0);
-            }
-        }
-        return DefWindowProc(window, message, wParam, lParam);
-    }
-
-    private void ProcessRawInput(nint handle)
-    {
-        var headerSize = checked((uint)Marshal.SizeOf<RawInputHeader>());
-        uint size = 0;
-        if (GetRawInputData(handle, RidInput, 0, ref size, headerSize) != 0 || size == 0)
+        if (Volatile.Read(ref _disposed) != 0 || !IsBladeKeyboardDevice(frame.DevicePath))
         {
             return;
         }
 
-        var buffer = Marshal.AllocHGlobal(checked((int)size));
-        try
+        if (frame.IsHid)
         {
-            if (GetRawInputData(handle, RidInput, buffer, ref size, headerSize) != size)
-            {
-                return;
-            }
-            var input = Marshal.PtrToStructure<RawInput>(buffer);
-            var device = GetDevice(input.Header.Device);
-            if (!device.IsBlade)
+            if (frame.Report is not { } report)
             {
                 return;
             }
 
-            if (input.Header.Type == RimTypeHid)
-            {
-                ProcessRawHid(buffer, headerSize, size, device.Name);
-                return;
-            }
-            if (input.Header.Type != RimTypeKeyboard)
-            {
-                return;
-            }
-
-            _observer?.Invoke(new RawKeyboardObservation(
-                device.Name,
-                input.Keyboard.MakeCode,
-                input.Keyboard.Flags,
-                input.Keyboard.VirtualKey));
-            if (TryTranslate(
-                input.Keyboard.MakeCode,
-                input.Keyboard.Flags,
-                _clock.Elapsed,
-                out var keyEvent))
-            {
-                _events.Writer.TryWrite(keyEvent);
-            }
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
-    }
-
-    private void ProcessRawHid(nint buffer, uint headerSize, uint totalSize, string deviceName)
-    {
-        if (totalSize < headerSize + 8)
-        {
-            return;
-        }
-        var data = nint.Add(buffer, checked((int)headerSize));
-        var reportSize = Marshal.ReadInt32(data);
-        var reportCount = Marshal.ReadInt32(data, 4);
-        if (reportSize <= 0 || reportCount <= 0)
-        {
-            return;
-        }
-        var byteCount = checked(reportSize * reportCount);
-        if (byteCount > totalSize - headerSize - 8)
-        {
-            return;
-        }
-        var reports = new byte[byteCount];
-        Marshal.Copy(nint.Add(data, 8), reports, 0, reports.Length);
-        for (var index = 0; index < reportCount; index++)
-        {
-            var report = reports.AsSpan(index * reportSize, reportSize);
-            _hidObserver?.Invoke(new RawHidObservation(deviceName, report.ToArray()));
+            _hidObserver?.Invoke(new RawHidObservation(frame.DevicePath, report));
             if (report.Length > 0 && report[0] == 0x04)
             {
                 var keyEvents = new List<QuickLightingKeyEvent>(1);
@@ -407,56 +208,18 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
                     _events.Writer.TryWrite(keyEvent);
                 }
             }
-        }
-    }
 
-    private (bool IsBlade, string Name) GetDevice(nint handle)
-    {
-        if (_devices.TryGetValue(handle, out var cached))
-        {
-            return cached;
+            return;
         }
 
-        uint characterCount = 0;
-        if (GetRawInputDeviceInfo(handle, RidiDeviceName, null, ref characterCount) == uint.MaxValue ||
-            characterCount == 0)
+        _observer?.Invoke(new RawKeyboardObservation(
+            frame.DevicePath,
+            frame.MakeCode,
+            frame.Flags,
+            frame.VirtualKey));
+        if (TryTranslate(frame.MakeCode, frame.Flags, _clock.Elapsed, out var translated))
         {
-            return _devices[handle] = (false, string.Empty);
-        }
-        var name = new StringBuilder(checked((int)characterCount));
-        if (GetRawInputDeviceInfo(handle, RidiDeviceName, name, ref characterCount) == uint.MaxValue)
-        {
-            return _devices[handle] = (false, string.Empty);
-        }
-        var value = name.ToString();
-        return _devices[handle] = (IsBladeKeyboardDevice(value), value);
-    }
-
-    private static void RegisterInputs(nint target, bool removing)
-    {
-        RawInputDevice[] devices =
-        [
-            new()
-            {
-                UsagePage = 0x01,
-                Usage = 0,
-                Flags = removing ? RidevRemove | RidevPageOnly : RidevInputSink | RidevPageOnly,
-                Target = target,
-            },
-            new()
-            {
-                UsagePage = 0x0C,
-                Usage = 0,
-                Flags = removing ? RidevRemove | RidevPageOnly : RidevInputSink | RidevPageOnly,
-                Target = target,
-            },
-        ];
-        if (!RegisterRawInputDevices(
-                devices,
-                checked((uint)devices.Length),
-                checked((uint)Marshal.SizeOf<RawInputDevice>())))
-        {
-            throw new Win32Exception(Marshal.GetLastWin32Error());
+            _events.Writer.TryWrite(translated);
         }
     }
 
@@ -494,141 +257,4 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
         }
         return map;
     }
-
-    private static TaskCompletionSource NewCompletion() =>
-        new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-    private delegate nint WindowProc(nint window, uint message, nuint wParam, nint lParam);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct WindowClass
-    {
-        internal uint Size;
-        internal uint Style;
-        internal WindowProc WindowProc;
-        internal int ClassExtra;
-        internal int WindowExtra;
-        internal nint Instance;
-        internal nint Icon;
-        internal nint Cursor;
-        internal nint Background;
-        internal string? MenuName;
-        internal string ClassName;
-        internal nint SmallIcon;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RawInputDevice
-    {
-        internal ushort UsagePage;
-        internal ushort Usage;
-        internal uint Flags;
-        internal nint Target;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private readonly struct RawInputHeader
-    {
-        internal readonly uint Type;
-        internal readonly uint Size;
-        internal readonly nint Device;
-        internal readonly nuint WParam;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private readonly struct RawKeyboard
-    {
-        internal readonly ushort MakeCode;
-        internal readonly ushort Flags;
-        internal readonly ushort Reserved;
-        internal readonly ushort VirtualKey;
-        internal readonly uint Message;
-        internal readonly uint ExtraInformation;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private readonly struct RawInput
-    {
-        internal readonly RawInputHeader Header;
-        internal readonly RawKeyboard Keyboard;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private readonly struct NativeMessage
-    {
-        internal readonly nint Window;
-        internal readonly uint Message;
-        internal readonly nuint WParam;
-        internal readonly nint LParam;
-        internal readonly uint Time;
-        internal readonly int X;
-        internal readonly int Y;
-        internal readonly uint Private;
-    }
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern ushort RegisterClassEx(in WindowClass windowClass);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool UnregisterClass(string className, nint instance);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern nint CreateWindowEx(
-        uint extendedStyle,
-        string className,
-        string windowName,
-        uint style,
-        int x,
-        int y,
-        int width,
-        int height,
-        nint parent,
-        nint menu,
-        nint instance,
-        nint parameter);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool DestroyWindow(nint window);
-
-    [DllImport("user32.dll")]
-    private static extern nint DefWindowProc(nint window, uint message, nuint wParam, nint lParam);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool RegisterRawInputDevices(
-        [In] RawInputDevice[] devices,
-        uint deviceCount,
-        uint structureSize);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint GetRawInputData(
-        nint rawInput,
-        uint command,
-        nint data,
-        ref uint size,
-        uint headerSize);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern uint GetRawInputDeviceInfo(
-        nint device,
-        uint command,
-        StringBuilder? data,
-        ref uint size);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern int GetMessage(out NativeMessage message, nint window, uint minimum, uint maximum);
-
-    [DllImport("user32.dll")]
-    private static extern bool TranslateMessage(in NativeMessage message);
-
-    [DllImport("user32.dll")]
-    private static extern nint DispatchMessage(in NativeMessage message);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool PostThreadMessage(uint threadId, uint message, nuint wParam, nint lParam);
-
-    [DllImport("kernel32.dll")]
-    private static extern uint GetCurrentThreadId();
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern nint GetModuleHandle(string? moduleName);
 }
