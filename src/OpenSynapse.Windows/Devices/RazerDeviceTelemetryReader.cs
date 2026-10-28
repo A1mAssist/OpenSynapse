@@ -25,10 +25,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     private string? _validatedViperIdlePath;
     private string? _validatedViperLowBatteryThresholdPath;
     private readonly SemaphoreSlim _bladePowerModeTransactionGate = new(1, 1);
-    // HyperBoost raises the CPU/GPU power levels; this keeps the values Custom had so
-    // leaving the preset can put them back.
-    private BladeBoostState? _bladeBoostBeforeHyperboost;
-
     public RazerDeviceTelemetryReader()
         : this(new RazerFeatureTransport(), RazerDeviceRegistry.BuiltIn)
     {
@@ -523,27 +519,17 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         EnsureValidated(_validatedBladePerformancePath, blade.Descriptor.Id, "Read the Blade performance mode successfully first.");
 
         var original = await ReadBladeThermalStateAsync(blade, cancellationToken);
-        // HyperBoost only moves the EC to its preset; the CPU and GPU power levels it
-        // runs on stay wherever the last Custom selection left them. Applying this
-        // model's highest admitted levels with the preset is what lets it reach the
-        // budget Custom can, and the Custom values go back when the preset is left.
+        // HyperBoost moves the EC to its own preset, so the CPU/GPU level goes with it:
+        // the preset would otherwise run on whatever the previous mode left behind.
+        // The EC keeps a level per mode, so leaving the preset applies that mode's own
+        // values; writing the captured ones back would overwrite them with a stranger's.
         var raiseLevels = mode == BladePerformanceMode.Hyperboost &&
             BladeModelCapabilities.SupportsCpuBoost(blade.Descriptor.ProductId);
-        var savedLevels = _bladeBoostBeforeHyperboost;
         BladeBoostState? originalBoost = null;
         if (raiseLevels)
         {
             EnsureValidated(_validatedBladeBoostPath, blade.Descriptor.Id, "Read the Blade CPU level successfully first.");
             originalBoost = await ReadBladeBoostStateAsync(blade, cancellationToken);
-            if (original.PerformanceMode != BladePerformanceMode.Hyperboost)
-            {
-                _bladeBoostBeforeHyperboost = originalBoost;
-            }
-        }
-        else if (mode != BladePerformanceMode.Hyperboost &&
-                 original.PerformanceMode == BladePerformanceMode.Hyperboost)
-        {
-            originalBoost = savedLevels;
         }
 
         try
@@ -566,10 +552,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                         ?? throw new InvalidOperationException("This Blade model has no admitted CPU level."),
                     BladeGpuBoostMode.High);
             }
-            else if (mode != BladePerformanceMode.Hyperboost)
-            {
-                expectedBoost = savedLevels;
-            }
 
             if (expectedBoost is { } levels)
             {
@@ -589,11 +571,6 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                     (expectedBoost is { } target ? $" / CPU {target.Cpu} / GPU {target.Gpu}" : string.Empty) +
                     $", read {actual.PerformanceMode} / {actual.FanMode}" +
                     (actualBoost is { } read ? $" / CPU {read.Cpu} / GPU {read.Gpu}" : string.Empty) + ".");
-            }
-
-            if (!raiseLevels)
-            {
-                _bladeBoostBeforeHyperboost = null;
             }
 
             return actual.PerformanceMode;
