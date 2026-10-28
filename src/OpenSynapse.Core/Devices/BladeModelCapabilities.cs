@@ -85,17 +85,6 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Hyperboost,
     ];
 
-    // 02E0's bundle lists Hyperboost too, but the model stays read-only until its write
-    // path is audited, so the extra mode is not offered here.
-    private static readonly BladePerformanceMode[] Modes02E0 =
-    [
-        BladePerformanceMode.Balanced,
-        BladePerformanceMode.Silent,
-        BladePerformanceMode.Performance,
-        BladePerformanceMode.Custom,
-        BladePerformanceMode.BatterySaver,
-    ];
-
     private static IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange> Ranges(
         params (BladePerformanceMode Mode, int Minimum, int Maximum, int Default)[] items)
     {
@@ -266,8 +255,19 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
                 Modes: Modes16Hyper),
 
-            // Blade 16 (2026) RZ09-0581 remains read-only until its middleware is audited.
-            [0x02E0] = new(MaxFan: false, None, Modes: Modes02E0),
+            // Blade 16 (2026) RZ09-0581 publishes the same six modes and fan ranges as 02C6.
+            [0x02E0] = new(
+                MaxFan: false,
+                None,
+                HyperBoost: true,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Performance, 3300, 5400, 4300),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.Hyperboost, 3700, 5300, 4500),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
+                Modes: Modes02C6),
 
             // Blade 15 Base (Early 2020) 1532:0255. Its middleware exposes Chroma
             // brightness, thermal, charge-limit, adapter-power and power-mode reports.

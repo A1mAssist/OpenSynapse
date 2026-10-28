@@ -12,6 +12,7 @@ public sealed class HyperBoostCoolingPadGateTests
     [InlineData(0x029F)]
     [InlineData(0x02B7)]
     [InlineData(0x02C6)]
+    [InlineData(0x02E0)]
     public void HyperBoostIsOnlyOfferedOnTheModelsWhoseMiddlewareListsIt(ushort productId) =>
         Assert.Contains(
             BladePerformanceMode.Hyperboost,
@@ -25,7 +26,6 @@ public sealed class HyperBoostCoolingPadGateTests
     [InlineData(0x02B8)]
     [InlineData(0x02C5)]
     [InlineData(0x02C7)]
-    [InlineData(0x02E0)]
     public void HyperBoostStaysOutOfThePerformanceListOnEveryOtherModel(ushort productId) =>
         Assert.DoesNotContain(
             BladePerformanceMode.Hyperboost,
@@ -139,7 +139,7 @@ public sealed class HyperBoostCoolingPadGateTests
         Assert.True(BladeModelCapabilities.SupportsHyperBoost(0x029D));
         Assert.True(BladeModelCapabilities.SupportsHyperBoost(0x02B7));
         Assert.False(BladeModelCapabilities.SupportsHyperBoost(0x02B6));
-        Assert.False(BladeModelCapabilities.SupportsHyperBoost(0x02E0));
+        Assert.True(BladeModelCapabilities.SupportsHyperBoost(0x02E0));
         Assert.False(BladeModelCapabilities.SupportsHyperBoost(0xFFFF));
     }
 
@@ -148,7 +148,7 @@ public sealed class HyperBoostCoolingPadGateTests
     {
         Assert.True(BladeModelCapabilities.IsHyperBoostAvailable(0x02C6));
         Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(0x02B6));
-        Assert.False(BladeModelCapabilities.IsHyperBoostAvailable(0x02E0));
+        Assert.True(BladeModelCapabilities.IsHyperBoostAvailable(0x02E0));
     }
 
     private static async Task<ProfileApplyResult> ApplyAsync(
