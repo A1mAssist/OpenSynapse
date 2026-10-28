@@ -467,6 +467,7 @@ public partial class App : Application
             OpenSynapse.Core.Devices.BladePerformanceMode.Performance => AppStrings.Text("Text_C1DB7AE1"),
             OpenSynapse.Core.Devices.BladePerformanceMode.Custom => AppStrings.Text("Text_598C5804"),
             OpenSynapse.Core.Devices.BladePerformanceMode.Silent => AppStrings.Text("Text_60E54E25"),
+            OpenSynapse.Core.Devices.BladePerformanceMode.BatterySaver => AppStrings.Text("Text_EE43F0B1"),
             OpenSynapse.Core.Devices.BladePerformanceMode.Hyperboost => "HyperBoost",
             _ => mode.ToString(),
         };

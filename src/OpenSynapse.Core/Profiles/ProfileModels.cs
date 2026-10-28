@@ -243,6 +243,7 @@ public sealed class ProfileShortcutSettings
                 BladePerformanceMode.Performance or
                 BladePerformanceMode.Custom or
                 BladePerformanceMode.Silent or
+                BladePerformanceMode.BatterySaver or
                 BladePerformanceMode.Hyperboost)) == true)
         {
             throw new InvalidDataException("Performance shortcut cycle contains an invalid mode.");

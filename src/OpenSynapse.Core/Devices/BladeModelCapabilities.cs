@@ -48,6 +48,54 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Hyperboost,
     ];
 
+    // Exact mode lists the middleware publishes, in the order its UI shows them.
+    // The Turbo mode some bundles list has no counterpart in BladePerformanceMode.
+    private static readonly BladePerformanceMode[] Modes16Hyper =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.Hyperboost,
+    ];
+
+    private static readonly BladePerformanceMode[] Modes02C6 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Performance,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.Hyperboost,
+        BladePerformanceMode.BatterySaver,
+    ];
+
+    private static readonly BladePerformanceMode[] Modes02C5 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Performance,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.BatterySaver,
+    ];
+
+    private static readonly BladePerformanceMode[] Modes02B7 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.Hyperboost,
+    ];
+
+    // 02E0's bundle lists Hyperboost too, but the model stays read-only until its write
+    // path is audited, so the extra mode is not offered here.
+    private static readonly BladePerformanceMode[] Modes02E0 =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Silent,
+        BladePerformanceMode.Performance,
+        BladePerformanceMode.Custom,
+        BladePerformanceMode.BatterySaver,
+    ];
+
     private static IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange> Ranges(
         params (BladePerformanceMode Mode, int Minimum, int Maximum, int Default)[] items)
     {
@@ -83,7 +131,8 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
                     (BladePerformanceMode.Hyperboost, 3700, 5300, 4500),
-                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300))),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
+                Modes: Modes02C6),
 
             // Blade 15 (Mid 2019) Mercury RZ09-03017. Owner-tested end to end: a fixed
             // target write took effect, both tachometers read back higher without a
@@ -115,7 +164,8 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
-                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100))),
+                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
+                Modes: Modes16Hyper),
 
             // Blade 18 (2023) RZ09-0484. Owner-reported maximum fans; its fixed fan
             // targets were reported ignored, so no fixed target is admitted.
@@ -179,7 +229,8 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
-                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300))),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
+                Modes: Modes02C5),
             [0x02C7] = new(
                 MaxFan: false,
                 None,
@@ -192,7 +243,8 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
-                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300))),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
+                Modes: Modes02C5),
 
             // Blade 16 (2024) 1532:02B7. The 695 middleware uses the same fan-target,
             // panel and power reports as 02C6; Max Fan stays off because its injected
@@ -211,10 +263,11 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600),
-                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100))),
+                    (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
+                Modes: Modes16Hyper),
 
             // Blade 16 (2026) RZ09-0581 remains read-only until its middleware is audited.
-            [0x02E0] = new(MaxFan: false, None),
+            [0x02E0] = new(MaxFan: false, None, Modes: Modes02E0),
 
             // Blade 15 Base (Early 2020) 1532:0255. Its middleware exposes Chroma
             // brightness, thermal, charge-limit, adapter-power and power-mode reports.
@@ -239,11 +292,13 @@ public static class BladeModelCapabilities
     /// Synapse UI exposes; the protocol-only Performance value must not leak into it.
     /// </summary>
     public static IReadOnlyList<BladePerformanceMode> PerformanceModesFor(ushort productId) =>
-        productId == Blade14_2022ProductId
-            ? Blade14_2022PerformanceModes
-            : SupportsHyperBoost(productId)
-                ? HyperBoostPerformanceModes
-                : StandardPerformanceModes;
+        Contracts.TryGetValue(productId, out var contract) && contract.Modes is { } modes
+            ? modes
+            : productId == Blade14_2022ProductId
+                ? Blade14_2022PerformanceModes
+                : SupportsHyperBoost(productId)
+                    ? HyperBoostPerformanceModes
+                    : StandardPerformanceModes;
 
     /// <summary>Lower bound the exact model accepts for a fixed fan target.</summary>
     public static int MinimumFanTargetRpmFor(ushort productId) =>
@@ -326,7 +381,8 @@ public static class BladeModelCapabilities
         bool Writes = true,
         bool HyperBoost = false,
         bool FixedFanRequiresCustomMode = false,
-        IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange>? ModeFanRanges = null);
+        IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange>? ModeFanRanges = null,
+        IReadOnlyList<BladePerformanceMode>? Modes = null);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay

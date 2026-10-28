@@ -12,6 +12,7 @@ internal sealed class AppBehaviorSettings
         BladePerformanceMode.Performance,
         BladePerformanceMode.Custom,
         BladePerformanceMode.Silent,
+        BladePerformanceMode.BatterySaver,
         BladePerformanceMode.Hyperboost,
     ];
 
