@@ -211,3 +211,24 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 - `src/OpenSynapse.Windows/Protocols/RazerFeatureTransport.cs:133-138,178-183,400`：report id 0 的发送/读取/匹配。
 - `src/OpenSynapse.Windows/Protocols/RazerFeatureReport.cs:5,98-100,108,219`：91 字节长度、`report[0] == 0` 校验、report id 匹配。
 
+## 5. 已实现（2026-10-28，协议层）
+
+`src/OpenSynapse.Windows/Protocols/RazerGamepadProtocol.cs` 已经落地，覆盖五个 payload 已从 JS 闭合的命令对：
+
+| 功能 | get | set | payload |
+|---|---|---|---|
+| 摇杆灵敏度 | `0C:82` | `0C:02` | `[controlId, index, value]` |
+| 死区/行程区 | `0C:85` | `0C:05` | `[controlId, index, dzHi,dzLo, sbHi,sbLo, dtHi,dtLo, prevent]` |
+| 震动缩放 | `0C:86` | `0C:06` | `[controlId, index, scale]` |
+| 扳机行程 | `0C:93` | `0C:13` | `[controlId, index, start, end]` |
+| 扳机模式 | `0C:95` | `0C:15` | `[controlId, index, mode]` |
+
+响应解析按 bundle 的 parser 逐字段对应：`[classId, controlId, value...]`，zone 的三个 16 位值是大端。
+所有请求是 91 字节、report id 4。
+
+传输层同步改成「prepared 请求自带 report id」：`QueryPreparedAsync` 用请求首字节作为响应 id，
+`ValidatePreparedRequest` 不再要求 report id 为 0。现有 protocol 25 请求仍然是 0，行为不变。
+
+**仍缺**：`setSingleButtonAssignment` 的 class 0x02 payload（bundle 里 get/set id 互相矛盾）、
+`0C:96/16` 数字扳机调整（payload 未确认），以及设备页、`DeviceCategory` 和 discovery。
+
