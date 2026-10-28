@@ -90,14 +90,15 @@ public sealed class MiddlewareMouseCatalogTests
     [Theory]
     [InlineData(0x00AA)]
     [InlineData(0x00AB)]
-    public void BasiliskV3ProUsesTheOfficialPollingAndMappingCapabilities(ushort productId)
+    public void BasiliskV3ProUsesTheOfficialPollingAndMappingHint(ushort productId)
     {
         var device = Find(productId);
         var capabilities = OpenRazerDeviceService.GetCapabilities(device);
 
         Assert.Equal([125, 500, 1000], device.PollingRates);
-        Assert.Contains(OpenRazerBackendCapability.MappingRead, capabilities);
-        Assert.Contains(OpenRazerBackendCapability.MappingWrite, capabilities);
+        Assert.True(OpenRazerDeviceCatalog.HasOnboardMapping(productId));
+        Assert.DoesNotContain(OpenRazerBackendCapability.MappingRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.MappingWrite, capabilities);
     }
 
     private static OpenRazerDeviceDefinition Find(ushort productId) =>

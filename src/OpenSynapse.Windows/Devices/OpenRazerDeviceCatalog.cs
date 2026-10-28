@@ -143,8 +143,8 @@ public sealed class OpenRazerDeviceCatalog
     internal static bool IsLeviathanV2X(ushort productId) => productId == LeviathanV2XProtocol.ProductId;
 
     /// <summary>
-    /// The middleware mice derive their onboard button-assignment commands from the
-    /// product bundle instead of the OpenRazer snapshot; the runtime read still decides.
+    /// Known middleware mapping products. This is a hint for diagnostics and tests; the
+    /// runtime button-list probe decides whether the mapping page is exposed.
     /// </summary>
     internal static bool HasOnboardMapping(ushort productId)
     {

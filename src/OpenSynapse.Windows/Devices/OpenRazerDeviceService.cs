@@ -26,6 +26,15 @@ public sealed class OpenRazerDeviceService
     private readonly IRazerFeatureTransport _transport;
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<ushort, (bool Supported, DateTimeOffset ExpiresAt)> _mappingProbeCache = new();
+    private static readonly TimeSpan MappingProbePositiveTtl = TimeSpan.FromHours(12);
+    private static readonly TimeSpan MappingProbeNegativeTtl = TimeSpan.FromMinutes(5);
+    private static readonly IReadOnlySet<OpenRazerBackendCapability> MappingCapabilities =
+        new HashSet<OpenRazerBackendCapability>
+        {
+            OpenRazerBackendCapability.MappingRead,
+            OpenRazerBackendCapability.MappingWrite,
+        }.ToFrozenSet();
 
     public event Action<DeviceBatteryReading>? BatteryObserved;
 
@@ -160,8 +169,11 @@ public sealed class OpenRazerDeviceService
                 _endpointCache[group.Key.PhysicalDeviceKey] = resolvedPath;
                 var resolvedDefinition = await ResolveLeviathanDefinitionAsync(
                     definition, resolvedPath, cancellationToken).ConfigureAwait(false);
+                var mappingSupported = await ProbeMappingCapabilityAsync(
+                    resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
                 results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
-                    OpenRazerEndpointState.Resolved, null));
+                    OpenRazerEndpointState.Resolved, null,
+                    mappingSupported ? MappingCapabilities : null));
             }
         }
         return results;
@@ -1101,6 +1113,47 @@ public sealed class OpenRazerDeviceService
             0x02, 0x00, 0x42,
             [checked((byte)(mouseProductId >> 8)), checked((byte)mouseProductId)]), cancellationToken);
 
+    /// <summary>
+    /// Reads the button-id list as the mapping capability probe. The result is cached per
+    /// product id so device-watch rescans do not send another HID request every few seconds.
+    /// </summary>
+    internal async Task<bool> ProbeMappingCapabilityAsync(
+        OpenRazerDeviceDefinition definition,
+        string devicePath,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        if (_mappingProbeCache.TryGetValue(definition.ProductId, out var cached) &&
+            cached.ExpiresAt > now)
+        {
+            return cached.Supported;
+        }
+
+        var supported = false;
+        try
+        {
+            var response = await _transport.QueryPreparedAsync(
+                devicePath,
+                OpenRazerMappingProtocol.GetButtonList().Report,
+                definition.DeviceWait,
+                cancellationToken).ConfigureAwait(false);
+            supported = OpenRazerMappingProtocol.ParseButtonList(response).Count > 0;
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or
+            InvalidOperationException or NotSupportedException or InvalidDataException or
+            UnauthorizedAccessException or TimeoutException)
+        {
+            WriteDiagnostic(definition.ProductId,
+                $"mapping probe failed: {exception.GetType().Name}: {exception.Message}");
+        }
+
+        _mappingProbeCache[definition.ProductId] = (
+            supported,
+            now + (supported ? MappingProbePositiveTtl : MappingProbeNegativeTtl));
+        WriteDiagnostic(definition.ProductId, $"mapping probe: {supported}");
+        return supported;
+    }
+
     private async Task<bool> ProbeEndpointAsync(
         OpenRazerDeviceDefinition definition,
         string devicePath,
@@ -1198,11 +1251,17 @@ public sealed class OpenRazerDeviceService
         string? path,
         string? physicalDeviceKey,
         OpenRazerEndpointState state,
-        string? error)
+        string? error,
+        IReadOnlySet<OpenRazerBackendCapability>? extraCapabilities = null)
     {
         var resolved = state == OpenRazerEndpointState.Resolved;
+        var capabilities = resolved ? GetCapabilities(definition) : FrozenSet<OpenRazerBackendCapability>.Empty;
+        if (resolved && extraCapabilities is not null)
+        {
+            capabilities = capabilities.Union(extraCapabilities).ToFrozenSet();
+        }
         return new(definition, path, physicalDeviceKey, state,
-            resolved ? GetCapabilities(definition) : FrozenSet<OpenRazerBackendCapability>.Empty,
+            capabilities,
             resolved
                 ? GetLightingZoneCapabilities(definition)
                 : FrozenDictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>.Empty,
@@ -1533,11 +1592,6 @@ public sealed class OpenRazerDeviceService
             result.Add(OpenRazerBackendCapability.HyperPollingPairWrite);
         Add(OpenRazerBackendCapability.HyperPollingUnpairWrite, "set_hyperpolling_wireless_dongle_unpair",
             "razer_chroma_misc_set_hyperpolling_wireless_dongle_unpair");
-        if (OpenRazerDeviceCatalog.HasOnboardMapping(device.ProductId))
-        {
-            result.Add(OpenRazerBackendCapability.MappingRead);
-            result.Add(OpenRazerBackendCapability.MappingWrite);
-        }
         return result.ToFrozenSet();
 
         bool Has(string builder) => device.Transactions.ContainsKey(builder) || device.CommandSequences.ContainsKey(builder);
