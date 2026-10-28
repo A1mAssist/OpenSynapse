@@ -62,6 +62,25 @@ public sealed class OpenRazerMappingTests
     }
 
     [Fact]
+    public async Task MappingProbeCachesPositiveAndNegativeResults()
+    {
+        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00E5)!;
+        var positive = new ProbeTransport(_ => Response([0x03, 0x01, 0x02, 0x04]));
+        var positiveService = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, positive);
+
+        Assert.True(await positiveService.ProbeMappingCapabilityAsync(definition, "test"));
+        Assert.True(await positiveService.ProbeMappingCapabilityAsync(definition, "test"));
+        Assert.Equal(1, positive.Count);
+
+        var negative = new ProbeTransport(_ => throw new NotSupportedException());
+        var negativeService = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, negative);
+
+        Assert.False(await negativeService.ProbeMappingCapabilityAsync(definition, "test"));
+        Assert.False(await negativeService.ProbeMappingCapabilityAsync(definition, "test"));
+        Assert.Equal(1, negative.Count);
+    }
+
+    [Fact]
     public void CatalogUsesTheMiddlewareFunctionIds()
     {
         AssertFrame(OpenRazerMappingGroup.Off, 0, OpenRazerMappingFunctions.Off, []);
@@ -206,5 +225,33 @@ public sealed class OpenRazerMappingTests
         arguments.CopyTo(response, RazerFeatureReport.ArgumentsOffset);
         response[89] = RazerFeatureReport.CalculateCrc(response);
         return response;
+    }
+
+    private sealed class ProbeTransport(Func<byte[], byte[]> handler) : IRazerFeatureTransport
+    {
+        public int Count { get; private set; }
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            Count++;
+            return Task.FromResult(handler(request.ToArray()));
+        }
     }
 }
