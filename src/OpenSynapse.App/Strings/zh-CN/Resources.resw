@@ -1797,6 +1797,13 @@
   <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>左右滚动</value></data>
   <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>切换应用</value></data>
   <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="OpenRazerOledLanguage.Text" xml:space="preserve"><value>语言</value></data>
+  <data name="OpenRazerOledLanguageEnglish.Text" xml:space="preserve"><value>英语</value></data>
+  <data name="OpenRazerOledLanguageChinese.Text" xml:space="preserve"><value>简体中文</value></data>
+  <data name="OpenRazerOledLanguageJapanese.Text" xml:space="preserve"><value>日语</value></data>
+  <data name="OpenRazerOledLanguageGerman.Text" xml:space="preserve"><value>德语</value></data>
+  <data name="OpenRazerOledLanguageKorean.Text" xml:space="preserve"><value>韩语</value></data>
+  <data name="OpenRazerOledLanguageFrench.Text" xml:space="preserve"><value>法语</value></data>
   <data name="OpenRazerAnalogKeyTitle.Text" xml:space="preserve"><value>模拟键</value></data>
   <data name="OpenRazerAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger、底部死区和上报模式。</value></data>
   <data name="OpenRazerAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
