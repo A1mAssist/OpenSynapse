@@ -1696,6 +1696,210 @@
       "defaultLedZone": "00",
       "commandSequences": {},
       "ambiguousTransactions": []
+    },
+    {
+      "productId": "0F52",
+      "displayName": "Razer Thunderbolt 5 Dock Chroma",
+      "category": "accessory",
+      "capabilitySet": "accessory-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        12
+      ],
+      "waitMicroseconds": 31000,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "00",
+        "razer_chroma_standard_get_firmware_version": "1F",
+        "razer_chroma_standard_get_device_mode": "1F",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "00",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "00",
+        "razer_chroma_extended_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame2": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
+          "0100"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0F59",
+      "displayName": "Razer Monitor Stand Chroma",
+      "category": "accessory",
+      "capabilitySet": "accessory-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        12
+      ],
+      "waitMicroseconds": 31000,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "00",
+        "razer_chroma_standard_get_firmware_version": "1F",
+        "razer_chroma_standard_get_device_mode": "1F",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "00",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "00",
+        "razer_chroma_extended_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame2": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
+          "0100"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0F5A",
+      "displayName": "Razer Laptop Monitor Stand Chroma",
+      "category": "accessory",
+      "capabilitySet": "accessory-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        12
+      ],
+      "waitMicroseconds": 31000,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "00",
+        "razer_chroma_standard_get_firmware_version": "1F",
+        "razer_chroma_standard_get_device_mode": "1F",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "00",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "00",
+        "razer_chroma_extended_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame2": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
+          "0100"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
+      "productId": "0F5C",
+      "displayName": "Razer Handheld Dock Chroma",
+      "category": "accessory",
+      "capabilitySet": "accessory-006",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        1,
+        12
+      ],
+      "waitMicroseconds": 31000,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "00",
+        "razer_chroma_standard_get_firmware_version": "1F",
+        "razer_chroma_standard_get_device_mode": "1F",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "00",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_single": "00",
+        "razer_chroma_extended_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame2": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_single": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
+          "0100"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
     }
   ]
 }

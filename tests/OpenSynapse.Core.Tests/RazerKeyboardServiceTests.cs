@@ -38,7 +38,7 @@ public sealed class RazerKeyboardServiceTests
     }
 
     [Fact]
-    public async Task SetGameMode_PreservesCoverFlagsAndRestoresOnFailure()
+    public async Task SetGameMode_WritesOnlyTheModeByteAndRestoresOnFailure()
     {
         var simulator = new KeyboardSimulator { GameMode = 0, KeyCover = 2, Lifted = 3, IgnoreWrites = true };
         var transport = new FakeTransport(simulator.Handle);
@@ -48,8 +48,9 @@ public sealed class RazerKeyboardServiceTests
 
         var writes = transport.Requests.Where(request => request[8] == 0x08).ToArray();
         Assert.Equal(2, writes.Length);
-        Assert.Equal([1, 2, 3], writes[0][9..12]);
-        Assert.Equal([0, 2, 3], writes[^1][9..12]);
+        // The middleware writes only the mode byte; the firmware fills the rest.
+        Assert.Equal([1, 0, 0], writes[0][9..12]);
+        Assert.Equal([0, 0, 0], writes[^1][9..12]);
     }
 
     [Fact]
@@ -62,7 +63,8 @@ public sealed class RazerKeyboardServiceTests
         await service.SetPollingRateAsync(1_000);
 
         Assert.Equal(0x08, simulator.PollingCode);
-        Assert.Contains(transport.Requests, request => request[8] == 0x0E && request[9] == 0x08);
+        Assert.Contains(transport.Requests, request =>
+            request[8] == 0x40 && request[9] == 0x00 && request[10] == 0x08);
     }
 
     [Theory]
@@ -141,8 +143,8 @@ public sealed class RazerKeyboardServiceTests
                 (0x00, 0x82) => Response(request, 22, [.. "PM1234"u8, .. new byte[16]]),
                 (0x00, 0x88) when SupportsGameMode => Response(request, 4, GameMode, KeyCover, Lifted),
                 (0x00, 0x08) when SupportsGameMode => WriteGameMode(request),
-                (0x00, 0x8E) when SupportsPolling => Response(request, 2, 0x00, PollingCode),
-                (0x00, 0x0E) when SupportsPolling => WritePolling(request),
+                (0x00, 0xC0) when SupportsPolling => Response(request, 2, 0x00, PollingCode),
+                (0x00, 0x40) when SupportsPolling => WritePolling(request),
                 (0x07, 0x80) when SupportsBattery => Response(request, 1, 0xFF),
                 (0x07, 0x84) when SupportsBattery => Response(request, 1, 1),
                 _ => throw new NotSupportedException($"Unexpected command 0x{commandClass:X2}:0x{command:X2}."),
@@ -154,8 +156,6 @@ public sealed class RazerKeyboardServiceTests
             if (!IgnoreWrites)
             {
                 GameMode = request[9];
-                KeyCover = request[10];
-                Lifted = request[11];
             }
 
             return Response(request, 4, GameMode, KeyCover, Lifted);
@@ -165,7 +165,7 @@ public sealed class RazerKeyboardServiceTests
         {
             if (!IgnoreWrites)
             {
-                PollingCode = request[9];
+                PollingCode = request[10];
             }
 
             return Response(request, 2, 0x00, PollingCode);

@@ -49,10 +49,14 @@ public static class RazerLegacyChromaProtocol
         }
 
         var arguments = new byte[6 + colors.Length];
+        var colorCount = (byte)(colors.Length / 3);
         arguments[0] = profileId;
         arguments[1] = regionId;
         arguments[2] = (byte)effect;
-        arguments[5] = (byte)(colors.Length / 3);
+        // The flags byte selects random (0), single-colour (1) or dual-colour (2)
+        // breathing; leaving it at zero made every breathing request random.
+        arguments[3] = effect == RazerChromaEffect.Breathing ? colorCount : (byte)0;
+        arguments[5] = colorCount;
         colors.CopyTo(arguments.AsSpan(6));
         return RazerFeatureReport.CreateRequest(
             transactionId,

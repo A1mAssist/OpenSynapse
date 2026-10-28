@@ -41,6 +41,15 @@ public sealed record RazerHeadsetAudioState(
 /// </summary>
 public sealed class RazerHeadsetAudioService
 {
+    // The 2026 Hammerhead V3 and BlackShark V3 X identities (0A54, 0A61, 0A64,
+    // 0A68, 0A6C, 0A81, 1022) are deliberately absent: their bundles select
+    // rzDevice25ValkyrieT3 or rzDevice40, which move EQ, mic mute and sidetone to
+    // 64-byte class 0x18 commands that this table's 91-byte class 0x08 path and
+    // RazerMxicHeadsetProtocol do not build. The Xbox/PlayStation BlackShark V3
+    // identities (0A4E, 0A51, 101E, 101F) are listed because their AudioValkyrie
+    // chunk uses the MXIC triplets already implemented for 0x0555. 0x101C keeps the
+    // dedicated BlackShark THX panel instead: it is BlackSharkV3ProProtocol.UsbProductId.
+    // See docs/HEADSET_AUDIO_ALIGNMENT.md.
     public static readonly IReadOnlyDictionary<ushort, string> Products =
         new Dictionary<ushort, string>
         {
@@ -67,6 +76,17 @@ public sealed class RazerHeadsetAudioService
             [0x056E] = "Razer BlackShark V2 HyperSpeed",
             [0x0576] = "Razer BlackShark V3 Pro",
             [0x0579] = "Razer BlackShark V3",
+            [0x0A4E] = "Razer BlackShark V3 Pro for Xbox",
+            [0x0A51] = "Razer BlackShark V3 for Xbox",
+            [0x0A54] = "Razer BlackShark V3 X for Xbox",
+            [0x0A61] = "Razer Hammerhead V3 HyperSpeed",
+            [0x0A64] = "Razer Hammerhead V3 X HyperSpeed",
+            [0x0A68] = "Razer Hammerhead V3 X HyperSpeed for Xbox",
+            [0x0A6C] = "Razer Hammerhead V3 X HyperSpeed for PlayStation",
+            [0x0A81] = "Razer Hammerhead V3 X HyperSpeed Kuromi Edition",
+            [0x1022] = "Razer BlackShark V3 X HyperSpeed for PlayStation",
+            [0x101E] = "Razer BlackShark V3 for PlayStation",
+            [0x101F] = "Razer BlackShark V3 for PlayStation",
             [0x0583] = "Razer Barracuda Pro",
             [0x0584] = "Razer Barracuda 2.4",
             [0x0587] = "Razer Kraken Kitty V3 Pro",
@@ -254,8 +274,8 @@ public sealed class RazerHeadsetAudioService
             "audio source", txn => RazerHeadsetAudioProtocol.GetAudioSource(txn), RazerHeadsetAudioProtocol.ReadAudioSource,
             errors, cancellationToken).ConfigureAwait(false);
         var noise = await ProbeAsync(
-            "noise suppression", txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
-            RazerHeadsetAudioProtocol.ReadNoiseSuppression, errors, cancellationToken).ConfigureAwait(false);
+            "noise suppression", txn => RazerHeadsetAudioProtocol.GetAudioInputControlState(txn),
+            RazerHeadsetAudioProtocol.ReadAudioInputControlState, errors, cancellationToken).ConfigureAwait(false);
 
         IReadOnlyList<byte>? bands = null;
         try
@@ -420,14 +440,7 @@ public sealed class RazerHeadsetAudioService
     }
 
     public Task SetNoiseSuppressionAsync(bool enabled, CancellationToken cancellationToken = default) =>
-        WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
-            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
-            enabled,
-            (value, txn) => RazerHeadsetAudioProtocol.SetNoiseSuppression(txn, value),
-            value => value == enabled,
-            "noise suppression",
-            cancellationToken);
+        SetNoiseSuppressionCoreAsync(enabled, cancellationToken);
 
     public async Task SetAncAsync(
         RazerAncState state,
@@ -473,6 +486,34 @@ public sealed class RazerHeadsetAudioService
                 "restore ANC").ConfigureAwait(false);
             throw;
         }
+    }
+
+    private async Task SetNoiseSuppressionCoreAsync(bool enabled, CancellationToken cancellationToken)
+    {
+        // The switch is the audio-input control state (08:16, source 3); 08:1C only carries
+        // the amount, where 1 would mean 1% suppression. Enable first, then raise the level.
+        await WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetAudioInputControlState(txn),
+            RazerHeadsetAudioProtocol.ReadAudioInputControlState,
+            enabled,
+            (value, txn) => RazerHeadsetAudioProtocol.SetAudioInputControlState(txn, value),
+            value => value == enabled,
+            "noise suppression",
+            cancellationToken).ConfigureAwait(false);
+
+        if (!enabled)
+        {
+            return;
+        }
+
+        await WriteAsync(
+            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
+            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
+            true,
+            (value, txn) => RazerHeadsetAudioProtocol.SetNoiseSuppression(txn, value),
+            value => value,
+            "noise suppression level",
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task WriteAsync<T>(

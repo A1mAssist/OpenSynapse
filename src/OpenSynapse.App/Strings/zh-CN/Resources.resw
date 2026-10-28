@@ -2280,6 +2280,8 @@
   <data name="BlackSharkSidetoneTitle.Text" xml:space="preserve"><value>侧音</value></data>
   <data name="BlackSharkSidetoneLabel.Text" xml:space="preserve"><value>侧音强度</value></data>
   <data name="BlackSharkGameChatTitle.Text" xml:space="preserve"><value>游戏 / 语音平衡</value></data>
+  <data name="BlackSharkGameChatGameSide.Text" xml:space="preserve"><value>游戏</value></data>
+  <data name="BlackSharkGameChatChatSide.Text" xml:space="preserve"><value>语音</value></data>
   <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>主动降噪</value></data>
   <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>模式</value></data>
   <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>强度</value></data>
@@ -2648,6 +2650,38 @@
   <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>环境音</value></data>
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>读取失败，设备没有响应。</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>游戏键盘</value></data>
+  <data name="RazerGamepadCategory" xml:space="preserve"><value>游戏手柄</value></data>
+  <data name="RazerGamepadLeftStick" xml:space="preserve"><value>左摇杆</value></data>
+  <data name="RazerGamepadRightStick" xml:space="preserve"><value>右摇杆</value></data>
+  <data name="RazerGamepadLeftTrigger" xml:space="preserve"><value>左扳机</value></data>
+  <data name="RazerGamepadRightTrigger" xml:space="preserve"><value>右扳机</value></data>
+  <data name="RazerGamepadCircularityStandard" xml:space="preserve"><value>标准</value></data>
+  <data name="RazerGamepadCircularityCircular" xml:space="preserve"><value>圆形</value></data>
+  <data name="RazerGamepadTriggerAnalog" xml:space="preserve"><value>模拟</value></data>
+  <data name="RazerGamepadTriggerDigital" xml:space="preserve"><value>数字</value></data>
+  <data name="RazerGamepadSocdNeutral" xml:space="preserve"><value>中性</value></data>
+  <data name="RazerGamepadSocdLast" xml:space="preserve"><value>最后输入优先</value></data>
+  <data name="RazerGamepadSocdFirst" xml:space="preserve"><value>最先输入优先</value></data>
+  <data name="RazerGamepadSocdNone" xml:space="preserve"><value>不清理</value></data>
+  <data name="RazerGamepadSocdAbsoluteUp" xml:space="preserve"><value>绝对上优先</value></data>
+  <data name="RazerGamepadRefresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="RazerGamepadApply" xml:space="preserve"><value>应用</value></data>
+  <data name="RazerGamepadSticksTitle" xml:space="preserve"><value>摇杆</value></data>
+  <data name="RazerGamepadSensitivity" xml:space="preserve"><value>灵敏度</value></data>
+  <data name="RazerGamepadDeadZone" xml:space="preserve"><value>死区</value></data>
+  <data name="RazerGamepadPreventDoubleDeadZone" xml:space="preserve"><value>防止双重死区</value></data>
+  <data name="RazerGamepadCircularity" xml:space="preserve"><value>摇杆形状</value></data>
+  <data name="RazerGamepadTriggersTitle" xml:space="preserve"><value>扳机</value></data>
+  <data name="RazerGamepadMode" xml:space="preserve"><value>模式</value></data>
+  <data name="RazerGamepadAnalogRange" xml:space="preserve"><value>模拟行程</value></data>
+  <data name="RazerGamepadDigitalActuation" xml:space="preserve"><value>数字触发行程</value></data>
+  <data name="RazerGamepadRapidTrigger" xml:space="preserve"><value>快速触发</value></data>
+  <data name="RazerGamepadDpadTitle" xml:space="preserve"><value>方向键</value></data>
+  <data name="RazerGamepadIgnoreDiagonals" xml:space="preserve"><value>忽略方向键斜向</value></data>
+  <data name="RazerGamepadSocd" xml:space="preserve"><value>SOCD 清理</value></data>
+  <data name="RazerGamepadVibrationTitle" xml:space="preserve"><value>触觉反馈</value></data>
+  <data name="RazerGamepadVibrationStrength" xml:space="preserve"><value>震动强度</value></data>
+  <data name="RazerGamepadRawTitle" xml:space="preserve"><value>实时输入</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>音箱</value></data>
   <data name="RazerLightingEffectOff" xml:space="preserve"><value>关闭</value></data>
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>

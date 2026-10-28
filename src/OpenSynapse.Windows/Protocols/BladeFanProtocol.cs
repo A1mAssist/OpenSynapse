@@ -61,6 +61,8 @@ public static class BladeFanProtocol
             DataSize,
             CommandClass,
             SetTargetCommandId,
+            // shortcut: the middleware sends classId 1 here; this build drives fans with 0x00,
+            // so changing it needs one hardware readback.
             new byte[] { 0x00, ValidateZone(zone), checked((byte)(rpm / StepRpm)) });
     }
 

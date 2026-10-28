@@ -1868,6 +1868,8 @@
   <data name="BlackSharkSidetoneTitle.Text" xml:space="preserve"><value>Sidetone</value></data>
   <data name="BlackSharkSidetoneLabel.Text" xml:space="preserve"><value>Sidetone level</value></data>
   <data name="BlackSharkGameChatTitle.Text" xml:space="preserve"><value>Game / chat balance</value></data>
+  <data name="BlackSharkGameChatGameSide.Text" xml:space="preserve"><value>Game</value></data>
+  <data name="BlackSharkGameChatChatSide.Text" xml:space="preserve"><value>Chat</value></data>
   <data name="BlackSharkAncTitle.Text" xml:space="preserve"><value>Active noise cancellation</value></data>
   <data name="BlackSharkAncModeLabel.Header" xml:space="preserve"><value>Mode</value></data>
   <data name="BlackSharkAncLevelLabel.Header" xml:space="preserve"><value>Level</value></data>
@@ -2236,6 +2238,38 @@
   <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>Ambient</value></data>
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>Read failed; the device did not respond.</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>Gaming keyboard</value></data>
+  <data name="RazerGamepadCategory" xml:space="preserve"><value>Gamepad</value></data>
+  <data name="RazerGamepadLeftStick" xml:space="preserve"><value>Left stick</value></data>
+  <data name="RazerGamepadRightStick" xml:space="preserve"><value>Right stick</value></data>
+  <data name="RazerGamepadLeftTrigger" xml:space="preserve"><value>Left trigger</value></data>
+  <data name="RazerGamepadRightTrigger" xml:space="preserve"><value>Right trigger</value></data>
+  <data name="RazerGamepadCircularityStandard" xml:space="preserve"><value>Standard</value></data>
+  <data name="RazerGamepadCircularityCircular" xml:space="preserve"><value>Circular</value></data>
+  <data name="RazerGamepadTriggerAnalog" xml:space="preserve"><value>Analog</value></data>
+  <data name="RazerGamepadTriggerDigital" xml:space="preserve"><value>Digital</value></data>
+  <data name="RazerGamepadSocdNeutral" xml:space="preserve"><value>Neutral</value></data>
+  <data name="RazerGamepadSocdLast" xml:space="preserve"><value>Last input priority</value></data>
+  <data name="RazerGamepadSocdFirst" xml:space="preserve"><value>First input priority</value></data>
+  <data name="RazerGamepadSocdNone" xml:space="preserve"><value>No cleaning</value></data>
+  <data name="RazerGamepadSocdAbsoluteUp" xml:space="preserve"><value>Absolute up priority</value></data>
+  <data name="RazerGamepadRefresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="RazerGamepadApply" xml:space="preserve"><value>Apply</value></data>
+  <data name="RazerGamepadSticksTitle" xml:space="preserve"><value>Sticks</value></data>
+  <data name="RazerGamepadSensitivity" xml:space="preserve"><value>Sensitivity</value></data>
+  <data name="RazerGamepadDeadZone" xml:space="preserve"><value>Dead zone</value></data>
+  <data name="RazerGamepadPreventDoubleDeadZone" xml:space="preserve"><value>Prevent double dead zone</value></data>
+  <data name="RazerGamepadCircularity" xml:space="preserve"><value>Stick shape</value></data>
+  <data name="RazerGamepadTriggersTitle" xml:space="preserve"><value>Triggers</value></data>
+  <data name="RazerGamepadMode" xml:space="preserve"><value>Mode</value></data>
+  <data name="RazerGamepadAnalogRange" xml:space="preserve"><value>Analog travel</value></data>
+  <data name="RazerGamepadDigitalActuation" xml:space="preserve"><value>Digital actuation</value></data>
+  <data name="RazerGamepadRapidTrigger" xml:space="preserve"><value>Rapid trigger</value></data>
+  <data name="RazerGamepadDpadTitle" xml:space="preserve"><value>D-pad</value></data>
+  <data name="RazerGamepadIgnoreDiagonals" xml:space="preserve"><value>Ignore diagonal D-pad input</value></data>
+  <data name="RazerGamepadSocd" xml:space="preserve"><value>SOCD cleaning</value></data>
+  <data name="RazerGamepadVibrationTitle" xml:space="preserve"><value>Haptics</value></data>
+  <data name="RazerGamepadVibrationStrength" xml:space="preserve"><value>Vibration strength</value></data>
+  <data name="RazerGamepadRawTitle" xml:space="preserve"><value>Live input</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>Speaker</value></data>
   <data name="RazerLightingEffectOff" xml:space="preserve"><value>Off</value></data>
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>Static</value></data>

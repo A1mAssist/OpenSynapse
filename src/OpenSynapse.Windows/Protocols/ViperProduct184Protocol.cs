@@ -54,7 +54,7 @@ public static class ViperProduct184Protocol
         Create(0x01, 0x07, 0x01, ViperLowBatteryThresholdProtocol.ToRaw(percent));
 
     public static byte[] CreateGetDpiStagesRequest() =>
-        Create(0x26, 0x04, 0x86, 0x01);
+        Create(0x50, 0x04, 0x86, 0x01);
 
     public static byte[] CreateSetDpiStagesRequest(ViperDpiStagesState state)
     {
@@ -89,7 +89,8 @@ public static class ViperProduct184Protocol
             arguments[offset + 4] = Low(stage.Y);
         }
 
-        return Create(checked((byte)arguments.Length), 0x04, 0x06, arguments);
+        // The middleware declares the full 80-byte buffer and sends 7n+3 bytes of it.
+        return Create(0x50, 0x04, 0x06, arguments);
     }
 
     public static byte[] CreateSetBatteryChemistryRequest(ViperBatteryChemistry chemistry)
