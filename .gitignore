@@ -27,6 +27,7 @@ docs/*
 !docs/ACCESSORY_LIGHTING_ALIGNMENT.md
 !docs/WEBCAM_LIGHTING_ALIGNMENT.md
 !docs/GAMEPAD_FEASIBILITY.md
+!docs/POWER_LIMIT_ALIGNMENT.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/
