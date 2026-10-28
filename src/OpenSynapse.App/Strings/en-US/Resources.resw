@@ -1409,6 +1409,36 @@
   <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>Choose function keys or media keys as the primary layer.</value></data>
   <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>Function keys first</value></data>
   <data name="OpenRazerMediaPrimaryButton.Content" xml:space="preserve"><value>Media keys first</value></data>
+  <data name="OpenRazerWirelessTitle.Text" xml:space="preserve"><value>Wireless connections</value></data>
+  <data name="OpenRazerWirelessDescription.Text" xml:space="preserve"><value>Devices reported by the wireless link. Unpair removes the selected device.</value></data>
+  <data name="OpenRazerWirelessRefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="OpenRazerWirelessUnpairButton.Content" xml:space="preserve"><value>Unpair</value></data>
+  <data name="OpenRazerWirelessEmpty.Text" xml:space="preserve"><value>No wireless devices reported.</value></data>
+  <data name="OpenRazerWirelessStatus" xml:space="preserve"><value>Status {0}</value></data>
+  <data name="OpenRazerKnobTitle.Text" xml:space="preserve"><value>Knob</value></data>
+  <data name="OpenRazerKnobDescription.Text" xml:space="preserve"><value>Configure the eight knob stages. Applying also updates the active stage.</value></data>
+  <data name="OpenRazerKnobCurrentLabel.Text" xml:space="preserve"><value>Current mode</value></data>
+  <data name="OpenRazerKnobStageColumn.Text" xml:space="preserve"><value>Stage</value></data>
+  <data name="OpenRazerKnobModeColumn.Text" xml:space="preserve"><value>Mode</value></data>
+  <data name="OpenRazerKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>Keyboard brightness</value></data>
+  <data name="OpenRazerKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>Cycle knob lighting</value></data>
+  <data name="OpenRazerKnobModeMicVolumeUpDown" xml:space="preserve"><value>Microphone volume</value></data>
+  <data name="OpenRazerKnobModeTrackJogging" xml:space="preserve"><value>Track jogging</value></data>
+  <data name="OpenRazerKnobModeWindowZoomInOut" xml:space="preserve"><value>Window zoom</value></data>
+  <data name="OpenRazerKnobModeWindowScrollUpDown" xml:space="preserve"><value>Vertical scroll</value></data>
+  <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>Horizontal scroll</value></data>
+  <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>Switch application</value></data>
+  <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="OpenRazerAnalogKeyTitle.Text" xml:space="preserve"><value>Analog keys</value></data>
+  <data name="OpenRazerAnalogKeyDescription.Text" xml:space="preserve"><value>Apply continuous Rapid Trigger, bottom dead zone and report mode together.</value></data>
+  <data name="OpenRazerAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>Continuous Rapid Trigger</value></data>
+  <data name="OpenRazerAnalogBottomDeadZone.Header" xml:space="preserve"><value>Bottom dead zone</value></data>
+  <data name="OpenRazerAnalogReportMode.Header" xml:space="preserve"><value>Analog report mode</value></data>
+  <data name="OpenRazerOledTitle.Text" xml:space="preserve"><value>OLED display</value></data>
+  <data name="OpenRazerOledBrightness.Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="OpenRazerOledScreensaverMode.Header" xml:space="preserve"><value>Screensaver mode</value></data>
+  <data name="OpenRazerOledScreensaverItem.Header" xml:space="preserve"><value>Screensaver item</value></data>
+  <data name="OpenRazerOledScreensaverReadOnly.Text" xml:space="preserve"><value>Screensaver options are read-only: the protocol exposes no setter.</value></data>
   <data name="Text_4B32CEE8" xml:space="preserve"><value>Mouse</value></data>
   <data name="Text_66E7127F" xml:space="preserve"><value>Laptop</value></data>
   <data name="Text_7D4E2D8B" xml:space="preserve"><value>Keyboard</value></data>
