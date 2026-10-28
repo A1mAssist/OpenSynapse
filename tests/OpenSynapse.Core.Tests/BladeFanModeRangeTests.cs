@@ -92,7 +92,7 @@ public sealed class BladeFanModeRangeTests
     [InlineData(0x0240, "Balanced,Performance")]
     [InlineData(0x0245, "Balanced,Custom")]
     [InlineData(0x0246, "Balanced,Performance")]
-    [InlineData(0x024A, "Balanced")]
+    [InlineData(0x024A, "Balanced,BatterySaver")]
     [InlineData(0x024B, "Balanced,Custom")]
     [InlineData(0x024C, "Balanced,Custom")]
     [InlineData(0x024D, "Balanced,Custom")]
@@ -117,11 +117,12 @@ public sealed class BladeFanModeRangeTests
     [InlineData(0x02E0, "Balanced,Silent,Performance,Custom,Hyperboost,BatterySaver")]
     [InlineData(0x028C, "Balanced,Silent,Custom,Performance")]
     [InlineData(0x029F, "Balanced,Silent,Custom,Hyperboost")]
-    [InlineData(0x02A0, "Balanced,Silent,Turbo,Custom")]
-    [InlineData(0x02B7, "Balanced,Silent,Custom,Hyperboost")]
+    [InlineData(0x02A0, "Balanced,Silent,Custom")]
+    [InlineData(0x02B7, "Balanced,Silent,Turbo,Custom,Hyperboost")]
     [InlineData(0x02C5, "Balanced,Silent,Performance,Custom,BatterySaver")]
     [InlineData(0x02C6, "Balanced,Silent,Performance,Custom,Hyperboost,BatterySaver")]
-    [InlineData(0x02C7, "Balanced,Silent,Performance,Custom,BatterySaver")]
+    [InlineData(0x02C7, "Balanced,Silent,Performance,Turbo,Custom,BatterySaver")]
+    [InlineData(0x02E1, "Balanced,Silent,Performance,Turbo,Custom,BatterySaver")]
     [InlineData(0x0255, "Balanced,Performance")]
     public void EveryBundleModelPublishesItsModeList(ushort productId, string expected)
     {
@@ -170,6 +171,7 @@ public sealed class BladeFanModeRangeTests
     [InlineData(0x02C6, false)]
     [InlineData(0x02C7, false)]
     [InlineData(0x02E0, false)]
+    [InlineData(0x02E1, false)]
     public void EveryBundleModelPublishesItsMaxFanAdmission(ushort productId, bool expected)
     {
         Assert.Equal(expected, BladeModelCapabilities.SupportsMaxFan(productId));
@@ -179,14 +181,18 @@ public sealed class BladeFanModeRangeTests
     [InlineData(0x0233, BladePerformanceMode.Balanced, 3500, 5700, 4500)]
     [InlineData(0x0233, BladePerformanceMode.Performance, 4500, 5700, 5000)]
     [InlineData(0x023A, BladePerformanceMode.Performance, 4000, 5300, 4600)]
+    [InlineData(0x024A, BladePerformanceMode.BatterySaver, 2500, 5500, 4000)]
     [InlineData(0x0252, BladePerformanceMode.BatterySaver, 2500, 5500, 4000)]
     [InlineData(0x028A, BladePerformanceMode.Balanced, 3400, 5200, 4100)]
     [InlineData(0x029E, BladePerformanceMode.Custom, 4000, 5300, 4600)]
     [InlineData(0x029D, BladePerformanceMode.Custom, 2000, 5400, 3800)]
     [InlineData(0x02B6, BladePerformanceMode.Turbo, 2000, 5400, 3800)]
+    [InlineData(0x02B7, BladePerformanceMode.Turbo, 3300, 5400, 4300)]
     [InlineData(0x02B8, BladePerformanceMode.Balanced, 3700, 5300, 4500)]
     [InlineData(0x02B8, BladePerformanceMode.Turbo, 3300, 5400, 4300)]
+    [InlineData(0x02C7, BladePerformanceMode.Turbo, 3300, 5400, 4300)]
     [InlineData(0x02E0, BladePerformanceMode.Hyperboost, 3700, 5300, 4500)]
+    [InlineData(0x02E1, BladePerformanceMode.Turbo, 3300, 5400, 4300)]
     public void EveryBladeDeviceTypePublishesItsModeRanges(
         ushort productId,
         BladePerformanceMode mode,

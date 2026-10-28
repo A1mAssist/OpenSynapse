@@ -148,20 +148,6 @@
       "commandId": "06",
       "arguments": ""
     },
-    "startup-animation.get": {
-      "transactionId": "1F",
-      "dataSize": "01",
-      "commandClass": "0F",
-      "commandId": "98",
-      "arguments": "00"
-    },
-    "startup-animation.set": {
-      "transactionId": "1F",
-      "dataSize": "02",
-      "commandClass": "0F",
-      "commandId": "18",
-      "arguments": ""
-    },
     "native-display-mode.get": {
       "transactionId": "1F",
       "dataSize": "01",

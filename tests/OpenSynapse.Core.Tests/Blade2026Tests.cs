@@ -57,7 +57,8 @@ public sealed class Blade2026Tests
         Assert.True(BladeModelCapabilities.SupportsFanCurve(0x02E1));
         Assert.Equal(3300, BladeModelCapabilities.MinimumFanTargetRpmFor(0x02E1));
         Assert.Equal(5400, BladeModelCapabilities.MaximumFanTargetRpmFor(0x02E1));
-        Assert.Equal(5, BladeModelCapabilities.PerformanceModesFor(0x02E1).Count);
+        Assert.Equal(6, BladeModelCapabilities.PerformanceModesFor(0x02E1).Count);
+        Assert.Contains(BladePerformanceMode.Turbo, BladeModelCapabilities.PerformanceModesFor(0x02E1));
         Assert.DoesNotContain(BladePerformanceMode.Hyperboost, BladeModelCapabilities.PerformanceModesFor(0x02E1));
     }
 
