@@ -86,7 +86,7 @@ public sealed class RazerLedTableProtocolTests
     {
         var request = RazerLedTableProtocol.CreateGetChromaStripeLedNumberRequest(0x05, 2);
 
-        Assert.Equal((0x05, 0x0F, 0x90), Command(request));
+        Assert.Equal((0x05, 0x0F, 0x88), Command(request));
         Assert.Equal(new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00 }, request[9..14]);
     }
 
@@ -98,7 +98,7 @@ public sealed class RazerLedTableProtocolTests
             2,
             [0x01, 0x03, 0x02, 0x07]);
 
-        Assert.Equal((0x05, 0x0F, 0x10), Command(request));
+        Assert.Equal((0x05, 0x0F, 0x08), Command(request));
         Assert.Equal(new byte[] { 0x02, 0x01, 0x03, 0x02, 0x07 }, request[9..14]);
     }
 
@@ -110,7 +110,7 @@ public sealed class RazerLedTableProtocolTests
             2,
             [0x01, 0x03]);
 
-        Assert.Equal((0x05, 0x0F, 0x10), Command(request));
+        Assert.Equal((0x05, 0x0F, 0x08), Command(request));
         Assert.Equal(new byte[] { 0x02, 0x01, 0x03, 0x00, 0x00 }, request[9..14]);
     }
 
@@ -119,7 +119,7 @@ public sealed class RazerLedTableProtocolTests
     {
         var request = RazerLedTableProtocol.CreateGetChromaStripeLedNumberRequest(0x07, 2);
         var entries = RazerLedTableProtocol.ParseChromaStripeLedNumbers(
-            Response(0x07, 5, 0x0F, 0x90, [0x02, 0x00, 0x04, 0x00, 0x09]),
+            Response(0x07, 5, 0x0F, 0x88, [0x02, 0x00, 0x04, 0x00, 0x09]),
             request);
 
         Assert.Equal(2, entries.Count);
@@ -151,7 +151,7 @@ public sealed class RazerLedTableProtocolTests
                 sleepRequest));
         Assert.Throws<InvalidOperationException>(
             () => RazerLedTableProtocol.ParseChromaStripeLedNumbers(
-                Response(0x05, 5, 0x0F, 0x90, [0x03, 0x00, 0x04, 0x00, 0x09]),
+            Response(0x05, 5, 0x0F, 0x88, [0x03, 0x00, 0x04, 0x00, 0x09]),
                 stripeRequest));
     }
 

@@ -93,8 +93,10 @@ public static class RazerLedTableProtocol
     private const byte GetRgbMaxCommand = 0x88;
     private const byte SetRgbMaxCommand = 0x08;
     private const byte SetSleepLedStateCommand = 0x21;
-    private const byte GetChromaStripeCommand = 0x90;
-    private const byte SetChromaStripeCommand = 0x10;
+    // 0F:88 / 0F:08 are the stripe LED count. 0F:90 / 0F:10 are Force Chroma Ctrl on the
+    // same class; the earlier values here were those commands, not the stripe count.
+    private const byte GetChromaStripeCommand = 0x88;
+    private const byte SetChromaStripeCommand = 0x08;
 
     public static byte[] CreateGetColorTableRequest(byte transactionId, byte ledClass, byte ledId)
     {
