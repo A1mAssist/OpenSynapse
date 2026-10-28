@@ -17,13 +17,17 @@ public static class DedicatedGpuModeServiceProtocol
     public const string RestartOperation = "restart";
     public const string EnsureMacroAgentOperation = "ensure-macro-agent";
     public const string StartMacroAgentOperation = "start-macro-agent";
+    public const string GpuClockOffsetStatusOperation = "gpu-clock-offset-status";
+    public const string SetGpuClockOffsetOperation = "set-gpu-clock-offset";
     public const int MaximumMessageLength = 4096;
 }
 
 public sealed record DedicatedGpuModeServiceRequest(
     int Version,
     string Operation,
-    bool? Enabled);
+    bool? Enabled,
+    int? CoreOffsetMhz = null,
+    int? MemoryOffsetMhz = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -52,6 +56,12 @@ public enum DedicatedGpuModeServiceAction
     /// </summary>
     StartMacroAgent,
 
+    /// <summary>Report whether the GPU driver accepts a clock-offset write.</summary>
+    GpuClockOffsetStatus,
+
+    /// <summary>Apply the GPU core and memory clock offsets.</summary>
+    SetGpuClockOffset,
+
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
 }
@@ -62,7 +72,8 @@ public sealed record DedicatedGpuModeServiceResponse(
     DedicatedGpuSwitchOutcome Outcome,
     int ExitCode,
     DedicatedGpuModeStatus? Status,
-    string? Error);
+    string? Error,
+    bool? ClockOffsetAvailable = null);
 
 public static class DedicatedGpuModeServiceRequestParser
 {
@@ -105,6 +116,22 @@ public static class DedicatedGpuModeServiceRequestParser
                 DedicatedGpuModeServiceProtocol.StartMacroAgentOperation))
         {
             return DedicatedGpuModeServiceAction.StartMacroAgent;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.GpuClockOffsetStatusOperation))
+        {
+            return DedicatedGpuModeServiceAction.GpuClockOffsetStatus;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.SetGpuClockOffsetOperation) &&
+            request.CoreOffsetMhz is not null &&
+            request.MemoryOffsetMhz is not null)
+        {
+            return DedicatedGpuModeServiceAction.SetGpuClockOffset;
         }
 
         if (StringComparer.Ordinal.Equals(

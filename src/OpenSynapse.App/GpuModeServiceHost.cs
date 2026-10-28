@@ -240,6 +240,31 @@ internal static class GpuModeServiceHost
                 case DedicatedGpuModeServiceAction.StartMacroAgent:
                     return StartMacroAgent();
 
+                case DedicatedGpuModeServiceAction.GpuClockOffsetStatus:
+                    var clockAvailable = NvApiGpuClockOffset.TryProbe(out var clockProbeError);
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        DedicatedGpuSwitchOutcome.Success,
+                        ExitCode: 0,
+                        Status: null,
+                        Error: clockAvailable ? null : clockProbeError,
+                        ClockOffsetAvailable: clockAvailable);
+
+                case DedicatedGpuModeServiceAction.SetGpuClockOffset:
+                    var clockApplied = NvApiGpuClockOffset.TryApply(
+                        request.CoreOffsetMhz!.Value,
+                        request.MemoryOffsetMhz!.Value,
+                        out var clockApplyError);
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        clockApplied ? DedicatedGpuSwitchOutcome.Success : DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: clockApplied ? 0 : 1,
+                        Status: null,
+                        Error: clockApplyError,
+                        ClockOffsetAvailable: clockApplied);
+
                 default:
                     return Invalid("Invalid GPU service command.");
             }

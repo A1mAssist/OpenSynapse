@@ -198,6 +198,10 @@ public sealed partial class MainViewModel
                     : null);
             await RefreshCoolingPadPresenceAsync(cancellationToken);
             BladeDeviceName = blade?.Name ?? "Razer Blade";
+            if (blade is not null)
+            {
+                ProbeBladeGpuClockOffset();
+            }
             if (_blade._bladeProductId != (blade?.ProductId ?? 0))
             {
                 _blade._bladeProductId = blade?.ProductId ?? 0;

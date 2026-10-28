@@ -335,6 +335,7 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        _viewModel.ResetBladeGpuClockOffsetOnExit();
         SaveWindowSize();
         _chromaRestStatusTimer.Stop();
         _chromaRestStatusTimer.Tick -= OnChromaRestStatusTick;

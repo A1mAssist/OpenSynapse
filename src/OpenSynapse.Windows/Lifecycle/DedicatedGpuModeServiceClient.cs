@@ -64,11 +64,56 @@ public static class DedicatedGpuModeServiceClient
         return response?.Outcome == DedicatedGpuSwitchOutcome.Success;
     }
 
+    /// <summary>
+    /// Asks the service whether the driver accepts GPU clock offsets. Null means the
+    /// service is unavailable, so the caller keeps the offset controls hidden.
+    /// </summary>
+    public static async Task<bool?> TryGetGpuClockOffsetCapabilityAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.GpuClockOffsetStatusOperation,
+            Enabled: null);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.ClockOffsetAvailable;
+    }
+
+    /// <summary>
+    /// Applies the GPU core and memory clock offsets. Only the machine-wide service can do
+    /// this, because the NVAPI write needs administrator rights.
+    /// </summary>
+    public static async Task<bool> TrySetGpuClockOffsetAsync(
+        int coreOffsetMhz,
+        int memoryOffsetMhz,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.SetGpuClockOffsetOperation,
+            Enabled: null,
+            CoreOffsetMhz: coreOffsetMhz,
+            MemoryOffsetMhz: memoryOffsetMhz);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Outcome == DedicatedGpuSwitchOutcome.Success;
+    }
+
     private static async Task<DedicatedGpuSwitchResult?> SendWithWakeupRetryAsync(
         DedicatedGpuModeServiceRequest request,
         CancellationToken cancellationToken)
     {
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response is null
+            ? null
+            : new DedicatedGpuSwitchResult(response.Outcome, response.ExitCode);
+    }
 
+    private static async Task<DedicatedGpuModeServiceResponse?> SendForResponseAsync(
+        DedicatedGpuModeServiceRequest request,
+        CancellationToken cancellationToken)
+    {
         // The service is demand-started and stops itself after an idle window, so a
         // wake-up races the pipe creation. One retry covers that gap and keeps the
         // common case off the UAC helper.
@@ -84,7 +129,7 @@ public static class DedicatedGpuModeServiceClient
                 response.Handled &&
                 response.Version == DedicatedGpuModeServiceProtocol.Version)
             {
-                return new DedicatedGpuSwitchResult(response.Outcome, response.ExitCode);
+                return response;
             }
 
             if (attempt == 0)

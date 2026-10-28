@@ -427,6 +427,7 @@ public sealed partial class MainViewModel
             SetBladePerformanceMode(actual);
             EditablePerformanceBladeProfile.PerformanceMode = (byte)actual;
             ClearFixedFanWhenLeavingCustom(actual);
+            await ResetBladeGpuClockOffsetAsync(cancellationToken);
             await SaveProfileAsync(cancellationToken);
             RequestDeviceRefresh();
             BladePerformanceModeChangedByUser?.Invoke(actual);

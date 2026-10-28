@@ -87,6 +87,10 @@ internal sealed class BladeViewModel
     internal bool _bladeChromaOverrideEnabled = true;
     internal ChromaFileAnimation? _bladeChromaAnimation;
     internal string _bladeChromaStatusText = string.Empty;
+    internal bool _bladeGpuClockOffsetAvailable;
+    internal double _bladeCoreClockOffsetMhz;
+    internal double _bladeMemoryClockOffsetMhz;
+    internal string _bladeGpuClockOffsetStatusText = string.Empty;
 
     internal IReadOnlyList<BladePerformanceMode> PerformanceModes =>
         BladeModelCapabilities.PerformanceModesFor(_bladeProductId);
