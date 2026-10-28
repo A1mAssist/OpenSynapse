@@ -1216,6 +1216,12 @@ public sealed partial class OpenRazerDeviceService
             }
         }
 
+        await ProbeOnboardProfileAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeWirelessPairingAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeKnobAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeAnalogKeyAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeOledAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+
         return result.ToFrozenSet();
     }
 
