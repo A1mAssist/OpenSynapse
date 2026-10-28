@@ -84,6 +84,22 @@ public sealed class OpenRazerKrakenV4ProtocolTests
     }
 
     [Fact]
+    public void ConnectUsesTheFirmwareVersionCommand()
+    {
+        var report = OpenRazerKrakenV4Protocol.CreateConnect();
+        Assert.Equal(0x04, report[6]);
+        Assert.Equal([0x02, 0x00, 0x00], report[10..13]);
+
+        byte expected = 0;
+        for (var index = 0; index < OpenRazerKrakenV4Protocol.ReportLength - 2; index++)
+        {
+            expected ^= report[index];
+        }
+
+        Assert.Equal(expected, report[OpenRazerKrakenV4Protocol.ReportLength - 2]);
+    }
+
+    [Fact]
     public void IntensityScalesTheColor()
     {
         var dimmed = OpenRazerKrakenV4Protocol.CreateStatic(

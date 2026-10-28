@@ -48,7 +48,13 @@ internal sealed class OpenRazerHidReportTransport
                 }
 
                 var bytes = report.ToArray();
-                if (!NativeMethods.HidD_SetOutputReport(handle, bytes, bytes.Length))
+                if (!NativeMethods.WriteFile(
+                        handle,
+                        bytes,
+                        checked((uint)bytes.Length),
+                        out var written,
+                        IntPtr.Zero) ||
+                    written != bytes.Length)
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error(),
                         "OpenRazer output report write failed.");
@@ -79,8 +85,13 @@ internal sealed class OpenRazerHidReportTransport
             uint flagsAndAttributes,
             IntPtr templateFile);
 
-        [DllImport("hid.dll", SetLastError = true)]
+        [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool HidD_SetOutputReport(SafeFileHandle handle, byte[] reportBuffer, int reportBufferLength);
+        internal static extern bool WriteFile(
+            SafeFileHandle handle,
+            byte[] buffer,
+            uint bytesToWrite,
+            out uint bytesWritten,
+            IntPtr overlapped);
     }
 }

@@ -49,6 +49,13 @@ internal static class OpenRazerKrakenV4Protocol
         CreateFrame(0, LedCount - 1, new OpenRazerColor(0, 0, 0)),
     ];
 
+    /// <summary>
+    /// The bundle's connect handshake is the general command 02 00 00. Synapse
+    /// sends it before it issues any lighting command.
+    /// </summary>
+    internal static byte[] CreateConnect() =>
+        CreateGeneralReport([0x02, 0x00, 0x00], []);
+
     internal static IReadOnlyList<byte[]> CreateStatic(OpenRazerColor color, byte? intensity = null) =>
     [
         CreateEffect(EffectStatic),
