@@ -90,7 +90,9 @@ public sealed partial class MainViewModel
         BladeLightingEffect effect,
         CancellationToken cancellationToken = default)
     {
-        if (!CanSetBladeLighting || _bladeLightingController is null)
+        if (UsesOpenRazerStandardLighting ||
+            !CanSetBladeLighting ||
+            _bladeLightingController is null)
         {
             return;
         }
@@ -171,6 +173,11 @@ public sealed partial class MainViewModel
 
     public Task ApplySelectedBladeLightingEffectAsync(CancellationToken cancellationToken = default)
     {
+        if (UsesOpenRazerStandardLighting)
+        {
+            return Task.CompletedTask;
+        }
+
         var modes = ActiveBladeLightingModes;
         if (BladeLightingModeIndex < 0 || BladeLightingModeIndex >= modes.Count ||
             BladeWaveDirectionIndex < 0 || BladeWaveDirectionIndex >= BladeWaveDirections.Length)
@@ -1541,6 +1548,7 @@ public IReadOnlyList<string> BladeLightingModeOptions => UsesFirmwareKeyboardLig
 /// </summary>
 public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
+        !UsesOpenRazerStandardLighting &&
         (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
     public int BladeLightingPowerProfileIndex
     {
@@ -1717,13 +1725,15 @@ public Visibility BladeWaveDirectionVisibility => !UsesFirmwareKeyboardLighting 
 /// </summary>
 public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
+        !UsesOpenRazerStandardLighting &&
         (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
 
     /// <summary>
-/// Both Blade generations have an admitted keyboard-lighting report, so the card is
-/// always available; only the effect list and color controls differ by model.
+/// The 2026 generation exposes lighting through its OpenRazer row, so the native
+/// Blade page does not show a second, non-functional lighting card there.
 /// </summary>
-public Visibility BladeLightingCardVisibility => Visibility.Visible;
+public Visibility BladeLightingCardVisibility =>
+    UsesOpenRazerStandardLighting ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>
     /// True where the keyboard is driven through the firmware effect reports instead of
@@ -1731,6 +1741,9 @@ public Visibility BladeLightingCardVisibility => Visibility.Visible;
     /// </summary>
     private bool UsesFirmwareKeyboardLighting =>
         BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(_blade._bladeProductId);
+
+    private bool UsesOpenRazerStandardLighting =>
+        BladeLighting2023Admitted.UsesOpenRazerStandardLighting(_blade._bladeProductId);
 
     /// <summary>
     /// Effect list for the selected model. A 2023 machine renders a short firmware list;

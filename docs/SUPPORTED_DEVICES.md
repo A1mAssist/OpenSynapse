@@ -284,14 +284,14 @@ Blade models with a dedicated manifest expose telemetry, performance, fans, disp
 | Razer Blade 16 (2023) | `1532:029F` | Dedicated Blade controls; firmware-rendered keyboard effects |
 | Razer Blade 16 (2024) | `1532:02B7` | Dedicated Blade controls |
 | Razer Blade 16 (2025) | `1532:02C6` | Dedicated Blade controls |
-| Razer Blade 16 (2026) | `1532:02E0` | Standard lighting only; telemetry, fans and MUX need a dedicated Blade manifest |
+| Razer Blade 16 (2026) | `1532:02E0` | Dedicated Blade controls plus standard Chroma lighting through OpenRazer; MUX exposes Hybrid and Discrete only |
 | Razer Blade 17 (2022) | `1532:028B` | — |
 | Razer Blade 17 Pro (Early 2021) | `1532:026E` | — |
 | Razer Blade 17 Pro (Mid 2021) | `1532:0279` | — |
 | Razer Blade 18 (2023) | `1532:02A0` | — |
 | Razer Blade 18 (2024) | `1532:02B8` | Dedicated Blade controls |
 | Razer Blade 18 (2025) | `1532:02C7` | Dedicated Blade controls |
-| Razer Blade 18 (2026) | `1532:02E1` | Standard lighting only; telemetry, fans and MUX need a dedicated Blade manifest |
+| Razer Blade 18 (2026) | `1532:02E1` | Dedicated Blade controls plus standard Chroma lighting through OpenRazer; MUX exposes Hybrid and Discrete only |
 | Razer Blade Advanced (Late 2019) | `1532:024B` | — |
 | Razer Blade Base (Early 2020) | `1532:0255` | Dedicated Blade controls; percentage fan target is not exposed as RPM |
 | Razer Blade Base (Early 2021) | `1532:026F` | — |
@@ -313,7 +313,7 @@ Blade models with a dedicated manifest expose telemetry, performance, fans, disp
 | Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
 | Razer Book (2020) | `1532:026A` | — |
 
-Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effects and has no per-key matrix channel. Blade 16 (2026) and Blade 18 (2026) currently expose standard catalogue lighting only; telemetry, fans and display MUX still need dedicated Blade manifests.
+Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effects and has no per-key matrix channel. The 2026 Blade 16/18 bundles align with P23/P24 for thermal state, fixed fan speed, the software fan curve, charge limit, power mode, adapter power and VGA MUX. Their standard Chroma keyboard lighting stays on the OpenRazer catalogue path. MUX writes are limited to Hybrid and Discrete because the 2026 bundle defines no DDS mode value. The 2026 deviceFeatures do not list the maximum-fan switch, so Max Fan remains hidden. The Blade 18 (2026) bundle lists Turbo in its UI but has no confirmed dedicated wire value, so Turbo remains unexposed. These are bundle-aligned results; no physical 2026 unit was used for validation.
 
 ## Headsets
 

@@ -14,6 +14,8 @@ public readonly record struct BladeFanTargetRange(int MinimumRpm, int MaximumRpm
 public static class BladeModelCapabilities
 {
     public const ushort Blade14_2022ProductId = 0x028C;
+    public const ushort Blade16_2026ProductId = 0x02E0;
+    public const ushort Blade18_2026ProductId = 0x02E1;
 
     /// <summary>Custom CPU levels every audited model captures (0x0D:0x07 payload level).</summary>
     private static readonly BladeCpuBoostMode[] LowMediumHigh =
@@ -588,12 +590,15 @@ public static class BladeModelCapabilities
                 Modes: Modes02A0),
 
             // Blade 16 (2026) RZ09-0581 publishes the same six modes and fan ranges as 02C6.
+            // Its deviceFeatures omit hasMaxFanSpeedModeEnabled, so Max Fan stays closed.
             [0x02E0] = new(
                 MaxFan: false,
                 None,
                 FanCurve: true,
                 FixedFan: true,
                 HyperBoost: true,
+                MinimumFanTargetRpm: 3300,
+                MaximumFanTargetRpm: 5400,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
@@ -602,6 +607,25 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Hyperboost, 3700, 5300, 4500),
                     (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
                 Modes: Modes02C6),
+
+            // Blade 18 (2026) RZ09-0582 publishes the same fan controls as the 2025
+            // Blade 18 family. Its bundle lists Turbo in the UI but defines no numeric
+            // wire value for it, so Turbo stays unexposed. Its deviceUI performance
+            // deviceFeatures also omit hasMaxFanSpeedModeEnabled.
+            [0x02E1] = new(
+                MaxFan: false,
+                None,
+                FanCurve: true,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3300,
+                MaximumFanTargetRpm: 5400,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3400, 5200, 4100),
+                    (BladePerformanceMode.Silent, 3400, 5200, 4100),
+                    (BladePerformanceMode.Performance, 3300, 5400, 4300),
+                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
+                Modes: Modes02C5),
 
             // Blade 15 Base (Early 2020) 1532:0255. Its middleware exposes Chroma
             // brightness, thermal, charge-limit, adapter-power and power-mode reports.
@@ -704,6 +728,13 @@ public static class BladeModelCapabilities
     /// </summary>
     public static int MaximumWritableFanTargetRpmFor(ushort productId) =>
         MaximumFanTargetRpmFor(productId);
+
+    /// <summary>
+    /// True for the 2026 Blade generation. Its thermal reports select profile 1 and its
+    /// fan-target reports select class 1, unlike the older 710/671 reports which use 0.
+    /// </summary>
+    public static bool UsesBlade2026ThermalSelector(ushort productId) =>
+        productId is Blade16_2026ProductId or Blade18_2026ProductId;
 
     private sealed record Contract(
         bool MaxFan,
