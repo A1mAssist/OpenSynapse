@@ -20,6 +20,7 @@ public sealed partial class MainViewModel
             .Concat(BlackSharkDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(GamepadDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             // The Viper owns a native page and still answers Chroma discovery; its lighting page
             // opens from there, so list the device once.
             .Concat(ChromaDevices
@@ -121,6 +122,15 @@ public sealed partial class MainViewModel
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Keyboard,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in GamepadDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Gamepad,
                 row.Name,
                 row.IconGlyph,
                 row));

@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
@@ -39,19 +41,160 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] SetMicMuteCommand = [0xE9, 0x00, 0x01];
     public static readonly byte[] SetMicMuteHeader = [0xE9, 0x01, 0x01];
 
-    public static bool IsSupported(ushort productId) => productId == ProductId;
+    /// <summary>
+    /// Products whose audio channel uses this 64-byte MXIC envelope. The 2026
+    /// BlackShark V3 Xbox/PlayStation identities select the AudioValkyrie chunk, whose
+    /// command triplets are the same ones defined above: EQ preset 13:00/93:00, EQ
+    /// bands 15:00/95:00 (10 bands), mic mute 55:00/E9:00, battery 21:00 and
+    /// charging 2A:00. The Hammerhead V3 and BlackShark V3 X families use a different
+    /// 0x18 command set and are not listed here.
+    /// </summary>
+    private static readonly FrozenSet<ushort> ProductIds = new ushort[]
+    {
+        ProductId,
+        0x0A4E,
+        0x0A51,
+        0x101E,
+        0x101F,
+        0x0A61,
+        0x0A64,
+        0x0A68,
+        0x0A6C,
+        0x0A81,
+        0x0A54,
+        0x1022,
+    }.ToFrozenSet();
 
-    public static byte[] CreateRemoteMode(bool enabled) =>
-        Create(RemoteCommand, [0xE1], [enabled ? (byte)1 : (byte)0]);
+    public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
 
-    public static byte[] CreateRequest(ReadOnlySpan<byte> command, ReadOnlySpan<byte> data = default)
+    /// <summary>
+    /// The Hammerhead V3 dongles select the rzDevice40 audio chunk. Its command tuple is
+    /// [dataSize, class, id] where this 2023 class uses [class, id, dataSize], EQ and mute
+    /// moved to class 0x18, and every response echoes the request payload instead of the
+    /// command bytes. The 64-byte 50 41 envelope is unchanged.
+    /// </summary>
+    private static readonly FrozenSet<ushort> Class18ProductIds = new ushort[]
+    {
+        0x0A61,
+        0x0A64,
+        0x0A68,
+        0x0A6C,
+        0x0A81,
+    }.ToFrozenSet();
+
+    public static bool UsesClass18Commands(ushort productId) => Class18ProductIds.Contains(productId);
+
+    /// <summary>
+    /// BlackShark V3 X identities (0A54, 1022) select rzDevice25ValkyrieT3: the same
+    /// [dataSize, class, id] tuples on class 0x18, sent as 64-byte report id 7 instead
+    /// of 2. Its EQ band getter only carries the two prefix bytes.
+    /// </summary>
+    private static readonly FrozenSet<ushort> ValkyrieT3ProductIds = new ushort[]
+    {
+        0x0A54,
+        0x1022,
+    }.ToFrozenSet();
+
+    public static bool UsesValkyrieT3Commands(ushort productId) => ValkyrieT3ProductIds.Contains(productId);
+
+    // rzDevice40 constants: He=[2,24,128] Be=[4,24,0] [12,24,129] Ve=[12,24,1]
+    // Ye=[2,24,132] Xe=[3,24,4]. TD={Speaker:1,Mic:2}; the bundle reads and writes the
+    // live profile 0 (getEQPreset(0), setEQPreset(0,...)), so the readback matches.
+    private const byte Class18 = 0x18;
+    public const byte ValkyrieReportId = 7;
+    private const byte LiveProfile = 0x00;
+    private const byte SpeakerSource = 0x01;
+    private const byte MicrophoneSource = 0x02;
+
+    public static readonly byte[] EqPresetRequestClass18 = [2, Class18, 0x80];
+    public static readonly byte[] EqPresetHeaderClass18 = [LiveProfile, SpeakerSource];
+    public static readonly byte[] EqBandsRequestClass18 = [12, Class18, 0x81];
+    public static readonly byte[] EqBandsHeaderClass18 = [LiveProfile, SpeakerSource];
+    public static readonly byte[] MicMuteRequestClass18 = [2, Class18, 0x84];
+    public static readonly byte[] MicMuteHeaderClass18 = [LiveProfile, MicrophoneSource];
+
+    public static byte[] CreateGetEqPresetClass18() =>
+        Create(RazerCommand, EqPresetRequestClass18, [LiveProfile, 0x00]);
+
+    public static byte[] CreateSetEqPresetClass18(byte preset) =>
+        Create(RazerCommand, [4, Class18, 0x00], [LiveProfile, SpeakerSource, 0x00, preset]);
+
+    public static byte[] CreateGetEqBandsClass18()
+    {
+        // The bundle allocates the full 12-byte payload and only sets the profile byte.
+        var payload = new byte[EqBandsRequestClass18[0]];
+        payload[0] = LiveProfile;
+        return Create(RazerCommand, EqBandsRequestClass18, payload);
+    }
+
+    public static byte[] CreateSetEqBandsClass18(ReadOnlySpan<byte> bands)
+    {
+        if (bands.Length != TenBandCount)
+        {
+            throw new ArgumentException("Equalizer data must contain 10 bands.", nameof(bands));
+        }
+
+        var payload = new byte[EqBandsRequestClass18[0]];
+        payload[0] = LiveProfile;
+        payload[1] = SpeakerSource;
+        bands.CopyTo(payload.AsSpan(2));
+        return Create(RazerCommand, [12, Class18, 0x01], payload);
+    }
+
+    public static byte[] CreateGetMicMuteClass18() =>
+        Create(RazerCommand, MicMuteRequestClass18, [LiveProfile, MicrophoneSource]);
+
+    public static byte[] CreateSetMicMuteClass18(bool muted) =>
+        Create(RazerCommand, [3, Class18, 0x04], [LiveProfile, MicrophoneSource, muted ? (byte)1 : (byte)0]);
+
+    // rzDevice25ValkyrieT3: S=[2,24,128] A=[4,24,0] U=[2,24,129] E=[12,24,1]. The second
+    // payload byte is the preset group (0/1, validated by setPresetEQIndex), not a source.
+    public static readonly byte[] EqHeaderValkyrie = [LiveProfile, 0x00];
+
+    public static byte[] CreateGetEqPresetValkyrie() =>
+        Create(ValkyrieReportId, RazerCommand, [2, Class18, 0x80], [LiveProfile, 0x00]);
+
+    public static byte[] CreateSetEqPresetValkyrie(byte preset) =>
+        Create(ValkyrieReportId, RazerCommand, [4, Class18, 0x00], [LiveProfile, 0x00, 0x00, preset]);
+
+    public static byte[] CreateGetEqBandsValkyrie() =>
+        Create(ValkyrieReportId, RazerCommand, [2, Class18, 0x81], [LiveProfile, 0x00]);
+
+    public static byte[] CreateSetEqBandsValkyrie(ReadOnlySpan<byte> bands)
+    {
+        if (bands.Length != TenBandCount)
+        {
+            throw new ArgumentException("Equalizer data must contain 10 bands.", nameof(bands));
+        }
+
+        var payload = new byte[12];
+        payload[0] = LiveProfile;
+        payload[1] = 0x00;
+        bands.CopyTo(payload.AsSpan(2));
+        return Create(ValkyrieReportId, RazerCommand, [12, Class18, 0x01], payload);
+    }
+
+    /// <summary>The class 0x18 EQ-preset reply carries [profile, source, group, preset].</summary>
+    public static byte ReadEqPresetClass18(ReadOnlySpan<byte> value)
+    {
+        Require(value, 2);
+        return value[1];
+    }
+
+    public static byte[] CreateRemoteMode(bool enabled, byte reportId = ReportId) =>
+        Create(reportId, RemoteCommand, [0xE1], [enabled ? (byte)1 : (byte)0]);
+
+    public static byte[] CreateRequest(
+        ReadOnlySpan<byte> command,
+        ReadOnlySpan<byte> data = default,
+        byte reportId = ReportId)
     {
         if (command.IsEmpty)
         {
             throw new ArgumentException("An MXIC command is required.", nameof(command));
         }
 
-        return Create(RazerCommand, command, data);
+        return Create(reportId, RazerCommand, command, data);
     }
 
     public static byte[] CreateSetEqPreset(byte preset) =>
@@ -73,11 +216,18 @@ public static class RazerMxicHeadsetProtocol
     public static bool TryReadValue(
         ReadOnlySpan<byte> report,
         ReadOnlySpan<byte> expectedHeader,
+        out byte[] value) =>
+        TryReadValue(report, ReportId, expectedHeader, out value);
+
+    public static bool TryReadValue(
+        ReadOnlySpan<byte> report,
+        byte reportId,
+        ReadOnlySpan<byte> expectedHeader,
         out byte[] value)
     {
         value = [];
         var offset = report.Length > 0 && report[0] == StatusOk ? 1 : 0;
-        if (report.Length < offset + 2 || report[offset] != ReportId)
+        if (report.Length < offset + 2 || report[offset] != reportId)
         {
             return false;
         }
@@ -150,6 +300,13 @@ public static class RazerMxicHeadsetProtocol
     private static byte[] Create(
         byte commandType,
         ReadOnlySpan<byte> command,
+        ReadOnlySpan<byte> data) =>
+        Create(ReportId, commandType, command, data);
+
+    private static byte[] Create(
+        byte reportId,
+        byte commandType,
+        ReadOnlySpan<byte> command,
         ReadOnlySpan<byte> data)
     {
         var total = command.Length + data.Length;
@@ -159,7 +316,7 @@ public static class RazerMxicHeadsetProtocol
         }
 
         var report = new byte[ReportLength];
-        report[0] = ReportId;
+        report[0] = reportId;
         report[1] = 0x80;
         report[2] = (byte)(total + 5);
         report[5] = 0x50;

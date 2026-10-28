@@ -15,7 +15,7 @@ public sealed class BlackSharkV3ProProtocolTests
         Assert.Equal(BlackSharkV3ProProtocol.ReportLength, report.Length);
         Assert.Equal(BlackSharkV3ProProtocol.ReportId, report[0]);
         Assert.Equal(BlackSharkV3ProProtocol.TransactionId, report[2]);
-        Assert.Equal(0x05, report[6]);
+        Assert.Equal(0x04, report[6]);
         Assert.Equal(0x80, report[9]);
         Assert.Equal(0x21, report[10]);
         Assert.Equal(0x00, report[11]);
@@ -38,7 +38,7 @@ public sealed class BlackSharkV3ProProtocolTests
     {
         var report = BlackSharkV3ProProtocol.CreateSetSidetone(7);
 
-        Assert.Equal(0x06, report[6]);
+        Assert.Equal(0x05, report[6]);
         Assert.Equal(0x80, report[9]);
         Assert.Equal(0x99, report[10]);
         Assert.Equal(0x01, report[12]);
@@ -74,7 +74,8 @@ public sealed class BlackSharkV3ProProtocolTests
     {
         var report = BlackSharkV3ProProtocol.CreateSetGameChat(10);
 
-        Assert.Equal(0x06, report[6]);
+        // The middleware declares one payload byte for 0xDC:0x01.
+        Assert.Equal(0x05, report[6]);
         Assert.Equal(0xDC, report[10]);
         Assert.Equal(0x01, report[12]);
         Assert.Equal(0x0A, report[13]);
@@ -87,11 +88,22 @@ public sealed class BlackSharkV3ProProtocolTests
     {
         var report = BlackSharkV3ProProtocol.CreateSetThx(true);
 
-        Assert.Equal(0x06, report[6]);
+        Assert.Equal(0x05, report[6]);
         Assert.Equal(0x9E, report[10]);
         Assert.Equal(0x01, report[12]);
         Assert.Equal(0x01, report[13]);
         Assert.Equal(0x00, report[14]);
+        Assert.True(BlackSharkV3ProProtocol.HasValidCrc(report));
+    }
+
+    [Fact]
+    public void GetThx_UsesTheReadClassInsteadOfTheSetClass()
+    {
+        var report = BlackSharkV3ProProtocol.CreateGetThx();
+
+        Assert.Equal(0x04, report[6]);
+        Assert.Equal(0x1E, report[10]);
+        Assert.Equal(0x00, report[12]);
         Assert.True(BlackSharkV3ProProtocol.HasValidCrc(report));
     }
 

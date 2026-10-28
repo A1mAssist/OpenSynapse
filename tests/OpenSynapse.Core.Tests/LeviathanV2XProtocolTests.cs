@@ -85,9 +85,14 @@ public sealed class LeviathanV2XProtocolTests
 
         Assert.Equal(0x06, report[6]);
         Assert.Equal(0x04, report[11]);
-        Assert.Equal(0x02, report[12]);
+        // The middleware maps direction 1 to flags 2 and every other direction to 1.
+        Assert.Equal(0x01, report[12]);
         Assert.Equal(40, report[13]);
         Assert.Equal(0x00, report[14]);
+
+        var reversed = LeviathanV2XProtocol.CreateEffect(
+            0x0F, OpenRazerLightingEffect.Wave, 1, default, default);
+        Assert.Equal(0x02, reversed[12]);
     }
 
     [Fact]

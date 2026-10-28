@@ -143,7 +143,7 @@ public sealed class RazerBleProtocol30Tests
     public void DpiStageFramesMatchTheMiddlewareLayout()
     {
         Assert.Equal(
-            new byte[] { 0x00, 0x00, 0x00, 0x00, 0x0B, 0x82, 0x00, 0x00 },
+            new byte[] { 0x00, 0x00, 0x00, 0x00, 0x0B, 0x84, 0x00, 0x00 },
             RazerBleProtocol30.CreateGetDpiStages(0x00));
 
         var state = new RazerBleDpiStages(2,

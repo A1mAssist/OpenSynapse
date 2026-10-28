@@ -867,7 +867,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
 
     private RazerMxicHeadsetService OpenMxicService() =>
-        new(_connection.DevicePath, _diagnostic);
+        new(_connection.ProductId, _connection.DevicePath, _diagnostic);
 
     private async Task<RazerHeadsetAudioState> ReadMxicStateAsync(CancellationToken cancellationToken)
     {

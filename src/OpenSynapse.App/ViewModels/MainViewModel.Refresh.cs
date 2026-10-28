@@ -173,6 +173,7 @@ public sealed partial class MainViewModel
             await RefreshBlackSharkAsync(cancellationToken);
             await RefreshHeadsetAudioAsync(cancellationToken);
             await RefreshKeyboardsAsync(cancellationToken);
+            await RefreshGamepadsAsync(cancellationToken);
             await RefreshChromaAsync(cancellationToken);
             await RefreshBleAsync(cancellationToken);
             var nextFingerprint = CreateDeviceFingerprint(snapshot);

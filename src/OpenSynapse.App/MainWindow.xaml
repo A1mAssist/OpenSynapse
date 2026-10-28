@@ -216,7 +216,7 @@
                     <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><TextBlock local:Localized.Uid="BlackSharkBatteryTitle" Text="电量" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="{Binding BatteryText}" Style="{StaticResource MetricValueStyle}" /><TextBlock Text="{Binding ChargingText}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Bottom" /></StackPanel></StackPanel></Border>
                     <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><TextBlock local:Localized.Uid="BlackSharkThxTitle" Text="THX Spatial Audio" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><ToggleSwitch local:Localized.Uid="BlackSharkThxToggle" Header="THX Spatial Audio" IsOn="{Binding ThxEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" /><Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="BlackSharkApplyThxClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" /></StackPanel></Border>
                     <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><TextBlock local:Localized.Uid="BlackSharkSidetoneTitle" Text="侧音" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="BlackSharkSidetoneLabel" Text="侧音强度" Style="{StaticResource MetricLabelStyle}" /><NumberBox Value="{Binding SidetoneLevel, Mode=TwoWay}" Minimum="0" Maximum="15" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" /><TextBlock Text="{Binding SidetoneText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" /><Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="BlackSharkApplySidetoneClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" /></StackPanel></Border>
-                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><TextBlock local:Localized.Uid="BlackSharkGameChatTitle" Text="游戏 / 语音平衡" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Slider Value="{Binding GameChatBalance, Mode=TwoWay}" Minimum="0" Maximum="20" StepFrequency="1" IsEnabled="{Binding CanEdit}" /><TextBlock Text="{Binding GameChatBalanceText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" /><Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="BlackSharkApplyGameChatClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" /></StackPanel></Border>
+                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><TextBlock local:Localized.Uid="BlackSharkGameChatTitle" Text="游戏 / 语音平衡" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Slider Value="{Binding GameChatBalance, Mode=TwoWay}" Minimum="0" Maximum="20" StepFrequency="1" IsEnabled="{Binding CanEdit}" /><Grid ColumnDefinitions="Auto,*,Auto"><TextBlock local:Localized.Uid="BlackSharkGameChatGameSide" Text="游戏" FontSize="12" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Column="2" local:Localized.Uid="BlackSharkGameChatChatSide" Text="语音" FontSize="12" Foreground="{StaticResource MutedBrush}" /></Grid><TextBlock Text="{Binding GameChatBalanceText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" /><Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="BlackSharkApplyGameChatClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" /></StackPanel></Border>
                   </Grid>
                   <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="12"><TextBlock local:Localized.Uid="BlackSharkAncTitle" Text="主动降噪" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Grid ColumnDefinitions="*,*" ColumnSpacing="12"><ComboBox local:Localized.Uid="BlackSharkAncModeLabel" Header="模式" ItemsSource="{Binding AncModeOptions}" SelectedIndex="{Binding SelectedAncModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" /><NumberBox Grid.Column="1" local:Localized.Uid="BlackSharkAncLevelLabel" Header="强度" Value="{Binding AncLevel, Mode=TwoWay}" Minimum="1" Maximum="4" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding AncLevelVisibility}" IsEnabled="{Binding CanEdit}" /></Grid><Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Click="BlackSharkApplyAncClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" /></StackPanel></Border>
                 </StackPanel>
@@ -369,6 +369,68 @@
                         <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="KeyboardReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>                    </StackPanel>
                   </Border>                </StackPanel>
+                <StackPanel x:Name="GamepadPanel" DataContext="{Binding SelectedGamepad}" Visibility="Collapsed" Spacing="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="3"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding OperationStatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" /></StackPanel>
+                  </Grid>
+                  <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+                  <Button Content="刷新" Click="GamepadRefreshClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" />
+                  <StackPanel Spacing="8" Visibility="{Binding SticksVisibility}">
+                    <TextBlock Text="摇杆" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                    <ItemsControl ItemsSource="{Binding Sticks}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:RazerGamepadStickRowViewModel">
+                          <Border Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,8" Visibility="{Binding Visibility}">
+                            <StackPanel Spacing="10">
+                              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Title}" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Button Grid.Column="1" Content="应用" Click="GamepadApplyStickClick" Tag="{Binding}" Style="{StaticResource OpenRazerSaveButtonStyle}" /></Grid>
+                              <StackPanel Spacing="4" Visibility="{Binding SensitivityVisibility}"><TextBlock Text="灵敏度" Style="{StaticResource MetricLabelStyle}" /><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Sensitivity, Mode=TwoWay}" /><TextBlock Text="{Binding SensitivityText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                              <Grid ColumnDefinitions="*,*" ColumnSpacing="16" Visibility="{Binding ZonesVisibility}">
+                                <StackPanel Spacing="4"><TextBlock Text="死区" Style="{StaticResource MetricLabelStyle}" /><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding DeadZone, Mode=TwoWay}" /><TextBlock Text="{Binding DeadZoneText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                                <ToggleSwitch Grid.Column="1" Header="防止双重死区" IsOn="{Binding PreventDoubleDeadZone, Mode=TwoWay}" VerticalAlignment="Bottom" />
+                              </Grid>
+                              <StackPanel Spacing="4" Visibility="{Binding CircularityVisibility}"><TextBlock Text="摇杆形状" Style="{StaticResource MetricLabelStyle}" /><ComboBox ItemsSource="{Binding CircularityOptions}" SelectedIndex="{Binding SelectedCircularityIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" /></StackPanel>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <StackPanel Spacing="8" Visibility="{Binding TriggersVisibility}">
+                    <TextBlock Text="扳机" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                    <ItemsControl ItemsSource="{Binding Triggers}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:RazerGamepadTriggerRowViewModel">
+                          <Border Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,8" Visibility="{Binding Visibility}">
+                            <StackPanel Spacing="10">
+                              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Title}" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Button Grid.Column="1" Content="应用" Click="GamepadApplyTriggerClick" Tag="{Binding}" Style="{StaticResource OpenRazerSaveButtonStyle}" /></Grid>
+                              <StackPanel Spacing="4" Visibility="{Binding ModeVisibility}"><TextBlock Text="模式" Style="{StaticResource MetricLabelStyle}" /><ComboBox ItemsSource="{Binding ModeOptions}" SelectedIndex="{Binding SelectedModeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" /></StackPanel>
+                              <StackPanel Spacing="4" Visibility="{Binding RangeVisibility}"><TextBlock Text="模拟行程" Style="{StaticResource MetricLabelStyle}" /><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding StartRange, Mode=TwoWay}" /><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding EndRange, Mode=TwoWay}" /><TextBlock Text="{Binding RangeText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding DigitalVisibility}"><StackPanel Spacing="4"><TextBlock Text="数字触发行程" Style="{StaticResource MetricLabelStyle}" /><ComboBox ItemsSource="{Binding ActuationOptions}" SelectedIndex="{Binding SelectedActuationIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" /></StackPanel><ToggleSwitch Grid.Column="1" Header="快速触发" IsOn="{Binding RapidTrigger, Mode=TwoWay}" VerticalAlignment="Bottom" /></Grid>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding DpadVisibility}">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="方向键" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Button Grid.Column="1" Content="应用" Click="GamepadApplyDpadClick" Style="{StaticResource OpenRazerSaveButtonStyle}" /></Grid>
+                      <ToggleSwitch Header="忽略方向键斜向" IsOn="{Binding IgnoreDPadDiagonals, Mode=TwoWay}" Visibility="{Binding IgnoreDPadVisibility}" />
+                      <StackPanel Spacing="4" Visibility="{Binding SocdVisibility}"><TextBlock Text="SOCD 清理" Style="{StaticResource MetricLabelStyle}" /><ComboBox ItemsSource="{Binding SocdOptions}" SelectedIndex="{Binding SocdIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" /></StackPanel>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding VibrationVisibility}">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="触觉反馈" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><Button Grid.Column="1" Content="应用" Click="GamepadApplyVibrationClick" Style="{StaticResource OpenRazerSaveButtonStyle}" /></Grid>
+                      <ComboBox Header="震动强度" ItemsSource="{Binding VibrationOptions}" SelectedIndex="{Binding VibrationIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                      <TextBlock Text="{Binding VibrationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding RawInputVisibility}">
+                    <StackPanel Spacing="8"><TextBlock Text="实时输入" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding RawInputText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Visibility="{Binding RawTextVisibility}" /><TextBlock Text="{Binding AdcMaskText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" Visibility="{Binding AdcVisibility}" /></StackPanel>
+                  </Border>
+                </StackPanel>
                 <StackPanel x:Name="ChromaPanel" DataContext="{Binding SelectedChroma}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding BatterySummary}" Visibility="{Binding BatteryVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding HardwareSummary}" Visibility="{Binding HardwareVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>

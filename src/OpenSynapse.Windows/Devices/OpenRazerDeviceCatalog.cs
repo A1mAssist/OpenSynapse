@@ -111,7 +111,7 @@ public sealed class OpenRazerDeviceDefinition
 public sealed class OpenRazerDeviceCatalog
 {
     internal const string SourceCommit = "477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d";
-    private const int ExpectedDeviceCount = 259;
+    private const int ExpectedDeviceCount = 263;
     private static readonly ushort[] ReservedProductIds = [0x00B8, 0x02C6];
     private static readonly HashSet<ushort> MappingProductIds = [];
     private static readonly string[] ResourceSuffixes =
@@ -418,6 +418,15 @@ public sealed class OpenRazerDeviceCatalog
                 (0x00BF, 0x00EF, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wired)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
                 (0x00BF, 0x00F0, "Razer DeathAdder V4 Pro Carbon Fiber Edition (Wireless)", 50000, [125, 500, 1000, 2000, 4000, 8000]),
                 (0x00A3, 0x00A2, "Razer Cobra", 8500, [125, 500, 1000]),
+                // Viper V4 HyperSpeed's bundle declares productId == dongleId 45061 and a BLE
+                // identity 45062, so one USB entry covers both the cable and the receiver.
+                (0x00C1, 0xB005, "Razer Viper V4 HyperSpeed", 33000, [125, 500, 1000, 2000, 4000, 8000]),
+                // DeathAdder V4 HyperSpeed declares 45063 for both cable and receiver, BLE 45064.
+                (0x00BF, 0xB007, "Razer DeathAdder V4 HyperSpeed", 33000, [125, 500, 1000, 2000, 4000, 8000]),
+                // The Xbox 25th Anniversary edition is the 35K identity 45066 with the
+                // receiver on 45067; its DeviceInfo declares 4 OBM slots and scroll lighting.
+                (0x00CC, 0xB00A, "Razer Basilisk V3 Pro 35K - Xbox 25 Anniversary Edition (Wired)", 35000, [125, 500, 1000]),
+                (0x00CD, 0xB00B, "Razer Basilisk V3 Pro 35K - Xbox 25 Anniversary Edition (Wireless)", 35000, [125, 500, 1000]),
             ];
 
             foreach (var entry in entries)

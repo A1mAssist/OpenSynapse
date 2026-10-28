@@ -108,7 +108,7 @@ public static class LeviathanV2XProtocol
         Create(0x50, 0x0F, 0x80, []);
 
     public static byte[] CreateGetEffect(byte profileId, byte regionId) =>
-        Create(0x03, 0x0F, 0x82, [profileId, regionId]);
+        Create(0x50, 0x0F, 0x82, [profileId, regionId]);
 
     public static byte[] CreateSetEffect(
         byte profileId,
@@ -153,7 +153,7 @@ public static class LeviathanV2XProtocol
             [primary.Red, primary.Green, primary.Blue, secondary.Red, secondary.Green, secondary.Blue]),
         OpenRazerLightingEffect.Spectrum => CreateSetEffect(WriteProfile, regionId, 0x03, 0, 0, []),
         OpenRazerLightingEffect.Wave => CreateSetEffect(WriteProfile, regionId, 0x04,
-            Math.Clamp(direction, (byte)1, (byte)2), 40, []),
+            direction == 1 ? (byte)2 : (byte)1, 40, []),
         _ => throw new NotSupportedException(
             $"The Leviathan V2 X does not expose the {effect} lighting effect."),
     };

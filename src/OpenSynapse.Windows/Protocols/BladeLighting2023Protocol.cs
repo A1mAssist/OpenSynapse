@@ -33,7 +33,9 @@ public static class BladeLighting2023Protocol
     /// The Wave report carries a fixed rightward direction byte this model cannot change,
     /// which is why the direction control stays hidden for this generation.
     /// </summary>
-    private const byte WaveDirectionRightward = 0x01;
+    // The middleware maps WAVE_DIRECTION.RIGHT to 2 and leaves 1 for the default
+    // (leftward) direction.
+    private const byte WaveDirectionRightward = 0x02;
 
     /// <summary>Raw brightness is a single byte; every value in the byte range is admitted.</summary>
     public const int BrightnessMaximum = 255;

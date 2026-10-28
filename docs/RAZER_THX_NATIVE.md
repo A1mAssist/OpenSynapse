@@ -162,7 +162,15 @@ offset 63  0
 | 读麦克风自定义 EQ | `0x17:0x00` | `0x17:0x01` | 无，响应 10 字节 |
 | 写麦克风自定义 EQ | `0x97:0x00` | `0x97:0x01` | 10 字节 |
 
-游戏/语音平衡的取值方向：`AudioValkyrie` 直接把输入当 `index` 写入，范围没有在 JS 里夹紧；同族 Billie 的解析是 `value = 20 - raw`，需要实机确认方向。
+游戏/语音平衡的取值方向：JS 里有枚举可以定死含义——
+`main.js` 的 `Game_100_Chat_0:0 … Game_0_Chat_100:20`，即 **index 0 = 全游戏，20 = 全语音**。
+`AudioValkyrie` / `AudioValkyrieDongle` / `AudioBillieT2` 直接按 index 写字节；
+`AudioBillieT1` 写的是 `20 - index`（读回同样 `20 - raw`）。
+所以：设备走 Valkyrie 时我们的原样映射是对的，走 BillieT1 时是反的。
+0576 加载哪个模块已确认：`bundles/0576/main.11fdb3ee2d36c7e8efa4.js` 里
+`useFeature("rzDeviceType", "AudioValkyrie", {rzDeviceName:"AudioValkyrie",
+hardwareEventParserType: AUDIO_VALKYRIE})`，所以 V3 Pro 走 Valkyrie，原样映射正确。
+UI 侧已按这个结论加上「游戏 / 语音」两端标注，避免用户误判方向。
 
 ## 未验证
 

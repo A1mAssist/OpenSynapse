@@ -185,7 +185,9 @@ internal static class OpenRazerLightingProtocol
             OpenRazerLightingEffect.Off => new byte[] { 0x00 },
             OpenRazerLightingEffect.Wave => [0x01, Math.Clamp(value.Direction, (byte)1, (byte)2)],
             OpenRazerLightingEffect.Spectrum => [0x04],
-            OpenRazerLightingEffect.Reactive => [0x02, speed, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
+            // The middleware keeps the flags byte at zero for reactive and puts the colour
+            // straight after it; the speed byte it would overwrite is not part of the frame.
+            OpenRazerLightingEffect.Reactive => [0x02, 0, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
             OpenRazerLightingEffect.Static => [0x06, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
             OpenRazerLightingEffect.StarlightRandom => [0x19, 0x03, Math.Clamp(value.Speed, (byte)1, (byte)3)],
             OpenRazerLightingEffect.StarlightSingle =>
@@ -222,7 +224,9 @@ internal static class OpenRazerLightingProtocol
             OpenRazerLightingEffect.Static => [0x01, 0, 0, 1, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
             OpenRazerLightingEffect.Wave => [0x04, Math.Clamp(value.Direction, (byte)0, (byte)2), 0x28, 0],
             OpenRazerLightingEffect.Spectrum => [0x03, 0, 0, 0],
-            OpenRazerLightingEffect.Wheel => [0x0A, Math.Clamp(value.Direction, (byte)1, (byte)2), 0x28, 0],
+            // Wheel is effect 12 in the middleware's Kw table; 10 is AudioMeter, and the
+            // middleware pins the rate byte to zero for this effect.
+            OpenRazerLightingEffect.Wheel => [0x0C, Math.Clamp(value.Direction, (byte)1, (byte)2), 0, 0],
             OpenRazerLightingEffect.Reactive =>
                 [0x05, 0, Math.Clamp(value.Speed, (byte)1, (byte)4), 1, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
             OpenRazerLightingEffect.BreathingRandom => [0x02, 0, 0, 0],
@@ -233,9 +237,9 @@ internal static class OpenRazerLightingProtocol
             OpenRazerLightingEffect.StarlightRandom =>
                 [0x07, 0, Math.Clamp(value.Speed, (byte)1, (byte)3), 0],
             OpenRazerLightingEffect.StarlightSingle =>
-                [0x07, 0, Math.Clamp(value.Speed, (byte)1, (byte)3), 1, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
+                [0x07, 1, Math.Clamp(value.Speed, (byte)1, (byte)3), 1, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
             OpenRazerLightingEffect.StarlightDual =>
-                [0x07, 0, Math.Clamp(value.Speed, (byte)1, (byte)3), 2, value.Primary.Red, value.Primary.Green, value.Primary.Blue, value.Secondary.Red, value.Secondary.Green, value.Secondary.Blue],
+                [0x07, 2, Math.Clamp(value.Speed, (byte)1, (byte)3), 2, value.Primary.Red, value.Primary.Green, value.Primary.Blue, value.Secondary.Red, value.Secondary.Green, value.Secondary.Blue],
             OpenRazerLightingEffect.Custom => [0x08, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             _ => throw new NotSupportedException($"Extended lighting does not support {value.Effect}."),
         };

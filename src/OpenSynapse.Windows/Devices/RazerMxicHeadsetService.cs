@@ -9,26 +9,121 @@ namespace OpenSynapse.Windows.Devices;
 /// </summary>
 public sealed class RazerMxicHeadsetService : IAsyncDisposable
 {
+    private enum MxicDialect
+    {
+        Legacy,
+        Class18,
+        ValkyrieT3,
+    }
+
     private readonly IRazerMxicHeadsetTransport _transport;
     private readonly Action<string>? _diagnostic;
+    private readonly MxicDialect _dialect;
     private bool _remoteMode;
 
-    public RazerMxicHeadsetService(string devicePath, Action<string>? diagnostic = null)
+    public RazerMxicHeadsetService(ushort productId, string devicePath, Action<string>? diagnostic = null)
         : this(
             new RazerMxicHeadsetTransport(devicePath, RazerMxicHeadsetProtocol.ReportLength),
+            productId,
             diagnostic)
     {
     }
 
     internal RazerMxicHeadsetService(
         IRazerMxicHeadsetTransport transport,
+        ushort productId,
         Action<string>? diagnostic = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _dialect = RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ? MxicDialect.ValkyrieT3
+            : RazerMxicHeadsetProtocol.UsesClass18Commands(productId) ? MxicDialect.Class18
+            : MxicDialect.Legacy;
         _diagnostic = diagnostic;
     }
 
     public static bool IsSupported(ushort productId) => RazerMxicHeadsetProtocol.IsSupported(productId);
+
+    private byte ReportId => _dialect == MxicDialect.ValkyrieT3
+        ? RazerMxicHeadsetProtocol.ValkyrieReportId
+        : RazerMxicHeadsetProtocol.ReportId;
+
+    private byte[] CreateEqPresetRead() => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateGetEqPresetValkyrie(),
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateGetEqPresetClass18(),
+        _ => RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetEqPreset, reportId: ReportId),
+    };
+
+    private byte[] EqPresetHeader => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.EqHeaderValkyrie,
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
+        _ => RazerMxicHeadsetProtocol.EqPresetHeader,
+    };
+
+    private byte ReadEqPreset(ReadOnlySpan<byte> value) => _dialect == MxicDialect.Legacy
+        ? RazerMxicHeadsetProtocol.ReadEqPreset(value)
+        : RazerMxicHeadsetProtocol.ReadEqPresetClass18(value);
+
+    private byte[] CreateEqBandsRead() => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateGetEqBandsValkyrie(),
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateGetEqBandsClass18(),
+        _ => RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetEqBands, reportId: ReportId),
+    };
+
+    private byte[] EqBandsHeader => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.EqHeaderValkyrie,
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
+        _ => RazerMxicHeadsetProtocol.EqBandsHeader,
+    };
+
+    private byte[] CreateSetEqBands(byte[] bands) => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateSetEqBandsValkyrie(bands),
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateSetEqBandsClass18(bands),
+        _ => RazerMxicHeadsetProtocol.CreateSetEqBands(bands),
+    };
+
+    // The Valkyrie T3 setters only check the reply status, so any sub-response is a valid
+    // acknowledgement and the readback below verifies the value.
+    private byte[] SetEqBandsHeader => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => [],
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
+        _ => RazerMxicHeadsetProtocol.SetEqBandsHeader,
+    };
+
+    private byte[] CreateMicMuteRead() => _dialect != MxicDialect.Legacy
+        ? RazerMxicHeadsetProtocol.CreateGetMicMuteClass18()
+        : RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetMicMute, reportId: ReportId);
+
+    private byte[] MicMuteHeader => _dialect != MxicDialect.Legacy
+        ? RazerMxicHeadsetProtocol.MicMuteHeaderClass18
+        : RazerMxicHeadsetProtocol.MicMuteHeader;
+
+    private byte[] CreateSetMicMute(bool muted) => _dialect != MxicDialect.Legacy
+        ? RazerMxicHeadsetProtocol.CreateSetMicMuteClass18(muted)
+        : RazerMxicHeadsetProtocol.CreateSetMicMute(muted);
+
+    private byte[] SetMicMuteHeader => _dialect != MxicDialect.Legacy
+        ? RazerMxicHeadsetProtocol.MicMuteHeaderClass18
+        : RazerMxicHeadsetProtocol.SetMicMuteHeader;
+
+    private byte[] CreateSetEqPreset(byte preset) => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateSetEqPresetValkyrie(preset),
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateSetEqPresetClass18(preset),
+        _ => RazerMxicHeadsetProtocol.CreateSetEqPreset(preset),
+    };
+
+    private byte[] SetEqPresetHeader => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => [],
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
+        _ => RazerMxicHeadsetProtocol.SetEqPresetHeader,
+    };
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(
         CancellationToken cancellationToken = default)
@@ -36,46 +131,52 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         var errors = new List<string>();
         var firmware = await ProbeAsync(
             "firmware",
-            RazerMxicHeadsetProtocol.GetFirmware,
+            RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetFirmware, reportId: ReportId),
             RazerMxicHeadsetProtocol.FirmwareHeader,
             RazerMxicHeadsetProtocol.ReadFirmware,
             errors,
             cancellationToken).ConfigureAwait(false);
         var battery = await ProbeAsync(
             "battery",
-            RazerMxicHeadsetProtocol.GetBattery,
+            RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetBattery, reportId: ReportId),
             RazerMxicHeadsetProtocol.BatteryHeader,
             RazerMxicHeadsetProtocol.ReadBatteryPercent,
             errors,
             cancellationToken).ConfigureAwait(false);
         var charging = await ProbeAsync(
             "charging",
-            RazerMxicHeadsetProtocol.GetCharging,
+            RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetCharging, reportId: ReportId),
             RazerMxicHeadsetProtocol.ChargingHeader,
             RazerMxicHeadsetProtocol.ReadChargingStatus,
             errors,
             cancellationToken).ConfigureAwait(false);
         var preset = await ProbeAsync(
             "EQ preset",
-            RazerMxicHeadsetProtocol.GetEqPreset,
-            RazerMxicHeadsetProtocol.EqPresetHeader,
-            RazerMxicHeadsetProtocol.ReadEqPreset,
+            CreateEqPresetRead(),
+            EqPresetHeader,
+            ReadEqPreset,
             errors,
             cancellationToken).ConfigureAwait(false);
         var bands = await ProbeAsync(
             "EQ bands",
-            RazerMxicHeadsetProtocol.GetEqBands,
-            RazerMxicHeadsetProtocol.EqBandsHeader,
+            CreateEqBandsRead(),
+            EqBandsHeader,
             RazerMxicHeadsetProtocol.ReadEqBands,
             errors,
             cancellationToken).ConfigureAwait(false);
-        var micMute = await ProbeAsync(
-            "microphone mute",
-            RazerMxicHeadsetProtocol.GetMicMute,
-            RazerMxicHeadsetProtocol.MicMuteHeader,
-            RazerMxicHeadsetProtocol.ReadMicMute,
-            errors,
-            cancellationToken).ConfigureAwait(false);
+        // The Valkyrie T3 chunk defines Get Mute State for its own source ids but no setter,
+        // so the page leaves the toggle out instead of offering a write it cannot confirm.
+        var micMute = (Ok: false, Value: false);
+        if (_dialect != MxicDialect.ValkyrieT3)
+        {
+            micMute = await ProbeAsync(
+                "microphone mute",
+                CreateMicMuteRead(),
+                MicMuteHeader,
+                RazerMxicHeadsetProtocol.ReadMicMute,
+                errors,
+                cancellationToken).ConfigureAwait(false);
+        }
 
         return new RazerHeadsetAudioState(
             Firmware: firmware.Ok ? firmware.Value : null,
@@ -95,12 +196,12 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>
         WriteAsync(
-            RazerMxicHeadsetProtocol.GetEqPreset,
-            RazerMxicHeadsetProtocol.EqPresetHeader,
-            RazerMxicHeadsetProtocol.ReadEqPreset,
+            CreateEqPresetRead(),
+            EqPresetHeader,
+            ReadEqPreset,
             preset,
-            RazerMxicHeadsetProtocol.CreateSetEqPreset,
-            RazerMxicHeadsetProtocol.SetEqPresetHeader,
+            CreateSetEqPreset,
+            SetEqPresetHeader,
             value => value == preset,
             "EQ preset",
             cancellationToken);
@@ -117,12 +218,12 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
         var requested = bands.ToArray();
         await WriteAsync(
-            RazerMxicHeadsetProtocol.GetEqBands,
-            RazerMxicHeadsetProtocol.EqBandsHeader,
+            CreateEqBandsRead(),
+            EqBandsHeader,
             RazerMxicHeadsetProtocol.ReadEqBands,
             requested,
-            value => RazerMxicHeadsetProtocol.CreateSetEqBands(value),
-            RazerMxicHeadsetProtocol.SetEqBandsHeader,
+            CreateSetEqBands,
+            SetEqBandsHeader,
             actual => actual.SequenceEqual(requested),
             "EQ bands",
             cancellationToken).ConfigureAwait(false);
@@ -130,12 +231,12 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
     public Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default) =>
         WriteAsync(
-            RazerMxicHeadsetProtocol.GetMicMute,
-            RazerMxicHeadsetProtocol.MicMuteHeader,
+            CreateMicMuteRead(),
+            MicMuteHeader,
             RazerMxicHeadsetProtocol.ReadMicMute,
             muted,
-            RazerMxicHeadsetProtocol.CreateSetMicMute,
-            RazerMxicHeadsetProtocol.SetMicMuteHeader,
+            CreateSetMicMute,
+            SetMicMuteHeader,
             value => value == muted,
             "microphone mute",
             cancellationToken);
@@ -151,7 +252,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         string label,
         CancellationToken cancellationToken)
     {
-        var previous = parse(await QueryCommandAsync(
+        var previous = parse(await QueryReportAsync(
             readRequest, readHeader, $"read {label}", cancellationToken).ConfigureAwait(false));
         if (matches(previous))
         {
@@ -162,7 +263,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         {
             await QueryReportAsync(
                 writeRequest(value), writeHeader, $"set {label}", cancellationToken).ConfigureAwait(false);
-            var actual = parse(await QueryCommandAsync(
+            var actual = parse(await QueryReportAsync(
                 readRequest, readHeader, $"read back {label}", cancellationToken).ConfigureAwait(false));
             if (!matches(actual))
             {
@@ -188,7 +289,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
     {
         try
         {
-            return (true, parse(await QueryCommandAsync(
+            return (true, parse(await QueryReportAsync(
                 request, expectedHeader, $"read {label}", cancellationToken).ConfigureAwait(false)));
         }
         catch (Exception exception) when (IsExpected(exception))
@@ -210,17 +311,6 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
             _diagnostic?.Invoke($"mxic {label} failed: {exception.Message}");
         }
     }
-
-    private Task<byte[]> QueryCommandAsync(
-        byte[] command,
-        byte[] expectedHeader,
-        string label,
-        CancellationToken cancellationToken) =>
-        QueryReportAsync(
-            RazerMxicHeadsetProtocol.CreateRequest(command),
-            expectedHeader,
-            label,
-            cancellationToken);
 
     private async Task<byte[]> QueryReportAsync(
         byte[] report,
@@ -245,7 +335,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         }
 
         await _transport.SendAsync(
-            RazerMxicHeadsetProtocol.CreateRemoteMode(true), cancellationToken).ConfigureAwait(false);
+            RazerMxicHeadsetProtocol.CreateRemoteMode(true, ReportId), cancellationToken).ConfigureAwait(false);
         _remoteMode = true;
     }
 

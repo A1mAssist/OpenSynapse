@@ -9,16 +9,20 @@ public sealed class RazerKeyboardProtocolTests
     public void GameModeAndPollingRequestsMatchTheMiddlewareTable()
     {
         var getMode = RazerKeyboardProtocol.GetGameModeState(0x03);
-        var setMode = RazerKeyboardProtocol.SetGameModeState(0x04, 1, 0, 1);
+        var setMode = RazerKeyboardProtocol.SetGameModeState(0x04, 1);
         var getPolling = RazerKeyboardProtocol.GetPollingRate(0x05);
         var setPolling = RazerKeyboardProtocol.SetPollingRate(0x06, 0x01);
 
         Assert.Equal((0x04, 0x00, 0x88), Command(getMode));
         Assert.Equal((0x04, 0x00, 0x08), Command(setMode));
-        Assert.Equal((0x02, 0x00, 0x8E), Command(getPolling));
-        Assert.Equal((0x02, 0x00, 0x0E), Command(setPolling));
-        Assert.Equal([1, 0, 1], setMode[9..12]);
-        Assert.Equal(0x01, setPolling[9]);
+        // The 8 kHz boards use the USB high-speed pair, and the middleware writes only
+        // the game-mode byte: the rest of the four-byte payload stays zero.
+        Assert.Equal((0x02, 0x00, 0xC0), Command(getPolling));
+        Assert.Equal((0x02, 0x00, 0x40), Command(setPolling));
+        Assert.Equal([1, 0, 0], setMode[9..12]);
+        Assert.Equal(0x00, getPolling[9]);
+        Assert.Equal(0x00, setPolling[9]);
+        Assert.Equal(0x01, setPolling[10]);
         Assert.Equal(RazerFeatureReport.CalculateCrc(setPolling), setPolling[89]);
     }
 

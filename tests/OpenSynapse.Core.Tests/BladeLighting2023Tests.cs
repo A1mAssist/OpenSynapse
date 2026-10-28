@@ -76,7 +76,8 @@ public sealed class BladeLighting2023Tests
         var wave = BladeLighting2023Protocol.CreateWaveRequest();
 
         Assert.Equal(4, wave[6]);
-        Assert.Equal(0x01, wave[RazerFeatureReport.ArgumentsOffset + 3]);
+        // WAVE_DIRECTION.RIGHT is 2 in the middleware; 1 is the leftward default.
+        Assert.Equal(0x02, wave[RazerFeatureReport.ArgumentsOffset + 3]);
     }
 
     [Fact]
