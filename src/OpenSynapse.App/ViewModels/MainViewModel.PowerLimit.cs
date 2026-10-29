@@ -24,9 +24,6 @@ public sealed partial class MainViewModel
         .. CpuPowerLimitPresets.Skip(1).Select(watts => $"{watts:0} W"),
     ];
 
-    /// <summary>Hidden states would leave the user with an unexplained missing feature.</summary>
-    public Visibility CpuPowerLimitVisibility => Visibility.Visible;
-
     public int CpuPowerLimitIndex
     {
         get => _cpuPowerLimitIndex;
@@ -67,13 +64,13 @@ public sealed partial class MainViewModel
             IsLocked: false,
         };
 
-    public bool IsRefreshingCpuPowerLimit
+    internal bool IsRefreshingCpuPowerLimit
     {
         get => _isRefreshingCpuPowerLimit;
         private set => _isRefreshingCpuPowerLimit = value;
     }
 
-    public async Task RefreshCpuPowerLimitAsync(CancellationToken cancellationToken = default)
+    private async Task RefreshCpuPowerLimitAsync(CancellationToken cancellationToken = default)
     {
         EnsureCpuPowerLimitBusyWatch();
 

@@ -23,6 +23,7 @@ internal sealed class DisplayPowerNotification
     private readonly MainViewModel _viewModel;
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
+    private readonly CancellationToken _lifetime;
     private SubclassProcedure? _powerSubclassProcedure;
     private SuspendResumeCallback? _displayStateCallback;
     private SuspendResumeCallback? _suspendResumeCallback;
@@ -37,12 +38,14 @@ internal sealed class DisplayPowerNotification
         Window window,
         MainViewModel viewModel,
         DispatcherQueue dispatcherQueue,
-        Func<bool, Task>? setBladeIndicatorDisplayAvailable)
+        Func<bool, Task>? setBladeIndicatorDisplayAvailable,
+        CancellationToken lifetime)
     {
         _window = window;
         _viewModel = viewModel;
         _dispatcherQueue = dispatcherQueue;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
+        _lifetime = lifetime;
     }
 
     internal void Initialize()
@@ -194,7 +197,7 @@ internal sealed class DisplayPowerNotification
 
         try
         {
-            await _viewModel.ReplayCpuPowerLimitAfterResumeAsync(_lifetime.Token);
+            await _viewModel.ReplayCpuPowerLimitAfterResumeAsync(_lifetime);
         }
         catch (Exception)
         {

@@ -1085,7 +1085,7 @@
                       <ToggleSwitch Grid.Column="1" Tag="cpuPowerBoost" IsOn="{Binding Blade.CpuPowerBoostEnabled, Mode=TwoWay}" IsEnabled="{Binding Blade.CanSetCpuPowerBoost}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeCpuPowerBoostLabel}" />
                     </Grid>
                   </Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding CpuPowerLimitVisibility}">
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="8">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                         <StackPanel Spacing="4">
