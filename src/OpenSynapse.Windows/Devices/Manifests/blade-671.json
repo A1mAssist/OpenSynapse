@@ -33,6 +33,9 @@
     "display-mux.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "89", "arguments": "0000" },
     "display-mux.set": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "09", "arguments": "" },
     "display-mux-capabilities.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "8A", "arguments": "0000" },
-    "gaming-mode.set": { "transactionId": "00", "dataSize": "04", "commandClass": "00", "commandId": "08", "arguments": "" }
+    "gaming-mode.get": { "transactionId": "00", "dataSize": "04", "commandClass": "00", "commandId": "88", "arguments": "" },
+    "gaming-mode.set": { "transactionId": "00", "dataSize": "04", "commandClass": "00", "commandId": "08", "arguments": "" },
+    "startup-animation.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "0F", "commandId": "98", "arguments": "00" },
+    "startup-animation.set": { "transactionId": "1F", "dataSize": "02", "commandClass": "0F", "commandId": "18", "arguments": "" }
   }
 }
