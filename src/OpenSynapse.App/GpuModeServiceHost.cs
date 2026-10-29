@@ -5,6 +5,8 @@ using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text;
 using System.Text.Json;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
 
@@ -302,6 +304,23 @@ internal static class GpuModeServiceHost
                         Error: limitApplyError,
                         ClockLimitAvailable: limitApplied);
 
+                case DedicatedGpuModeServiceAction.CpuPowerLimitStatus:
+                    return WithPowerLimit(controller => controller.Read());
+
+                case DedicatedGpuModeServiceAction.SetCpuPowerLimit:
+                    var powerLimit = new CpuPowerLimit(
+                        request.Pl1Watts!.Value,
+                        request.Pl2Watts!.Value,
+                        0,
+                        0);
+                    return WithPowerLimit(controller => controller.Apply(powerLimit));
+
+                case DedicatedGpuModeServiceAction.RestoreCpuPowerLimit:
+                    return WithPowerLimit(controller =>
+                        request.Pl1Watts is { } pl1 && request.Pl2Watts is { } pl2
+                            ? controller.RestoreTo(pl1, pl2)
+                            : controller.RestoreFirmware());
+
                 default:
                     return Invalid("Invalid GPU service command.");
             }
@@ -353,6 +372,45 @@ internal static class GpuModeServiceHost
                 ExitCode: 0,
                 Status: null,
                 Error: null);
+        }
+
+        /// <summary>
+        /// Runs one CPU power operation with one controller. Failures become reports so a
+        /// firmware lock or a broken PawnIO install cannot take the whole service down.
+        /// </summary>
+        private static DedicatedGpuModeServiceResponse WithPowerLimit(
+            Func<ICpuPowerLimitController, CpuPowerLimitReport> action)
+        {
+            ICpuPowerLimitController? controller = null;
+            CpuPowerLimitReport report;
+            try
+            {
+                var availability = CpuPowerLimitLocal.TryOpen(out controller, out var detail);
+                report = controller is null
+                    ? CpuPowerLimitReport.Unavailable(availability, detail)
+                    : action(controller);
+            }
+            catch (Exception exception)
+            {
+                report = CpuPowerLimitReport.Unavailable(
+                    CpuPowerLimitAvailability.Failed,
+                    exception.Message);
+            }
+            finally
+            {
+                controller?.Dispose();
+            }
+
+            return new DedicatedGpuModeServiceResponse(
+                DedicatedGpuModeServiceProtocol.Version,
+                Handled: true,
+                report.Availability == CpuPowerLimitAvailability.Available
+                    ? DedicatedGpuSwitchOutcome.Success
+                    : DedicatedGpuSwitchOutcome.Failed,
+                ExitCode: report.Availability == CpuPowerLimitAvailability.Available ? 0 : 1,
+                Status: null,
+                Error: report.Detail,
+                PowerLimit: report);
         }
 
         private static DedicatedGpuModeServiceResponse Invalid(string error) =>
