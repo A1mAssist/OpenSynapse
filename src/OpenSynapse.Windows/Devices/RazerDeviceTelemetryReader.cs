@@ -72,6 +72,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         BladeCpuBoostMode? bladeCpuBoostMode = null;
         BladeGpuBoostMode? bladeGpuBoostMode = null;
         BladeMaxFanMode? bladeMaxFanMode = null;
+        bool? bladeCpuPowerBoostEnabled = null;
         int? bladeCurrentFanCpuRpm = null;
         int? bladeCurrentFanGpuRpm = null;
         byte? bladeAdvancedFanCpuModeRaw = null;
@@ -304,6 +305,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                     if (BladeModelCapabilities.SupportsMaxFan(blade.Descriptor.ProductId))
                     {
                         bladeMaxFanMode = ToMaxFanMode(powerModeMask);
+                    }
+                    if (BladeModelCapabilities.SupportsCpuPowerBoost(blade.Descriptor.ProductId))
+                    {
+                        bladeCpuPowerBoostEnabled =
+                            (powerModeMask & BladePowerModeProtocol.CpuPowerBoostBit) != 0;
                     }
                     bladeOneTimeFullChargeEnabled =
                         (powerModeMask & BladePowerModeProtocol.OneTimeFullChargeBit) != 0;
@@ -545,6 +551,7 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             bladeSkuHardwareConfiguration,
             bladeOneTimeFullChargeEnabled,
             bladeLocalDimmingEnabled,
+            bladeCpuPowerBoostEnabled,
             BladeKeyboardEffect: bladeKeyboardEffect,
             BladeFnKeyMultimediaPrimary: bladeFnKeyMultimediaPrimary,
             BladeMcuVersion: bladeMcuVersion,
@@ -997,13 +1004,18 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
 
         try
         {
-            // 07/0F replaces the whole byte, so the other Power Mode Control bits must be
-            // clear or the write would silently change them too.
-            var otherSettings = (byte)(originalMask & ~BladePowerModeProtocol.MaxFanBit);
-            if (otherSettings != 0)
+            // 07/0F replaces the whole byte. Level bits (CPU Boost, Local Dimming) ride
+            // along untouched; a pending one-time-full-charge request is transient, so
+            // Max Fan waits until it clears instead of rewriting a bit whose readback
+            // cannot be verified.
+            var blockingSettings = (byte)(originalMask &
+                ~(BladePowerModeProtocol.MaxFanBit |
+                  BladePowerModeProtocol.CpuPowerBoostBit |
+                  BladePowerModeProtocol.LocalDimmingBit));
+            if (blockingSettings != 0)
             {
                 throw new InvalidOperationException(
-                    $"Max Fan was not changed because other Power Mode Control settings are on (0x{otherSettings:X2}).");
+                    $"Max Fan was not changed because a one-time power setting is pending (0x{blockingSettings:X2}).");
             }
 
             await WriteBladeMaxFanModeAsync(blade, mode, originalMask, cancellationToken);
@@ -1141,6 +1153,70 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
             var restored = await TryRestoreBladePowerModeMaskAsync(blade, originalMask);
             var message = "Local Dimming update failed: " + exception.Message + " " +
                 (restored ? "The original value was restored." : "Original value restoration failed; check the display settings immediately.");
+            if (exception is OperationCanceledException)
+            {
+                throw new OperationCanceledException(message, exception, cancellationToken);
+            }
+
+            throw new InvalidOperationException(message, exception);
+        }
+    }
+
+    public ValueTask<bool> SetBladeCpuPowerBoostAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        RunBladePowerModeTransactionAsync(
+            () => SetBladeCpuPowerBoostCoreAsync(devices, enabled, cancellationToken),
+            cancellationToken);
+
+    /// <summary>
+    /// Power Mode Control bit 0. Synapse calls it `cpuBoost`: it lets the CPU draw more
+    /// power while the GPU is idle. 07:0F carries all four bits, so the write is a
+    /// read-modify-write and the readback must match the full byte.
+    /// </summary>
+    private async ValueTask<bool> SetBladeCpuPowerBoostCoreAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = FindReadyBlade(devices)
+            ?? throw new InvalidOperationException("The Blade CPU Boost control channel is unavailable.");
+        if (!BladeModelCapabilities.SupportsCpuPowerBoost(blade.Descriptor.ProductId))
+        {
+            throw new InvalidOperationException("CPU Boost is not available on this Blade model.");
+        }
+        EnsureValidated(
+            _validatedBladePowerModePath,
+            blade.Descriptor.Id,
+            "Read the Blade Power Mode Control state successfully first.");
+
+        var originalMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+        var original = (originalMask & BladePowerModeProtocol.CpuPowerBoostBit) != 0;
+        if (original == enabled)
+        {
+            return original;
+        }
+
+        var expectedMask = BladePowerModeProtocol.ApplyCpuPowerBoost(originalMask, enabled);
+        try
+        {
+            await WriteBladePowerModeMaskAsync(blade, expectedMask, cancellationToken);
+            var actualMask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+            if (actualMask != expectedMask)
+            {
+                throw new InvalidOperationException(
+                    $"CPU Boost readback mismatch: wrote 0x{expectedMask:X2}, read 0x{actualMask:X2}.");
+            }
+
+            return enabled;
+        }
+        catch (Exception exception) when (
+            IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+        {
+            var restored = await TryRestoreBladePowerModeMaskAsync(blade, originalMask);
+            var message = "CPU Boost update failed: " + exception.Message + " " +
+                (restored ? "The original value was restored." : "Original value restoration failed; check the power settings immediately.");
             if (exception is OperationCanceledException)
             {
                 throw new OperationCanceledException(message, exception, cancellationToken);

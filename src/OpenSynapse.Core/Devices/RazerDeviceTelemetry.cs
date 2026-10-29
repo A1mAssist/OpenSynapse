@@ -279,6 +279,7 @@ public sealed record RazerDeviceTelemetry(
     BladeSkuHardwareConfiguration? BladeSkuHardwareConfiguration = null,
     bool? BladeOneTimeFullChargeEnabled = null,
     bool? BladeLocalDimmingEnabled = null,
+    bool? BladeCpuPowerBoostEnabled = null,
     BladeLighting2023Effect? BladeKeyboardEffect = null,
     IReadOnlyDictionary<string, DeviceCapabilitySummary>? CapabilitySummaries = null,
     bool? BladeFnKeyMultimediaPrimary = null,
@@ -370,6 +371,12 @@ public interface IRazerDeviceTelemetryReader
         throw new NotSupportedException();
 
     ValueTask<bool> SetBladeLocalDimmingAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<bool> SetBladeCpuPowerBoostAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         bool enabled,
         CancellationToken cancellationToken = default) =>

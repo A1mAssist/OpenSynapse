@@ -787,6 +787,27 @@ public sealed partial class MainViewModel
             BladeLocalDimmingEnabled = _blade._bladeLocalDimmingEnabled ?? false);
     }
 
+    public async Task ApplyBladeCpuPowerBoostAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyBladeCpuPowerBoost)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeCpuPowerBoostTitle/Text"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeCpuPowerBoostAsync(
+                _deviceDescriptors, BladeCpuPowerBoostEnabled, cancellationToken);
+            _blade._bladeCpuPowerBoostEnabled = actual;
+            BladeCpuPowerBoostEnabled = actual;
+            OnPropertyChanged(nameof(CanSetBladeCpuPowerBoost));
+            OnPropertyChanged(nameof(CanApplyBladeCpuPowerBoost));
+            OnPropertyChanged(nameof(BladeCpuPowerBoostVisibility));
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            BladeCpuPowerBoostEnabled = _blade._bladeCpuPowerBoostEnabled ?? false);
+    }
+
     public async Task ApplyBladeFnKeyAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyBladeFnKey)
@@ -1291,6 +1312,22 @@ public sealed partial class MainViewModel
         CanSetBladeLocalDimming && BladeLocalDimmingEnabled != _blade._bladeLocalDimmingEnabled;
     public Visibility BladeLocalDimmingVisibility =>
         CanSetBladeLocalDimming ? Visibility.Visible : Visibility.Collapsed;
+    public bool BladeCpuPowerBoostEnabled
+    {
+        get => _blade._bladeCpuPowerBoostSelection;
+        set
+        {
+            if (SetField(ref _blade._bladeCpuPowerBoostSelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyBladeCpuPowerBoost));
+            }
+        }
+    }
+    public bool CanSetBladeCpuPowerBoost => _blade._bladeCpuPowerBoostEnabled is not null;
+    public bool CanApplyBladeCpuPowerBoost =>
+        CanSetBladeCpuPowerBoost && BladeCpuPowerBoostEnabled != _blade._bladeCpuPowerBoostEnabled;
+    public Visibility BladeCpuPowerBoostVisibility =>
+        CanSetBladeCpuPowerBoost ? Visibility.Visible : Visibility.Collapsed;
     public string BladeOneTimeFullChargeText { get => _blade._bladeOneTimeFullChargeText; private set => SetField(ref _blade._bladeOneTimeFullChargeText, value); }
     public bool BladeOneTimeFullChargeEnabled
     {
@@ -1395,6 +1432,9 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanSetBladeMaxFan));
         OnPropertyChanged(nameof(CanSetBladeCpuBoost));
         OnPropertyChanged(nameof(BladeCpuBoostVisibility));
+        OnPropertyChanged(nameof(CanSetBladeCpuPowerBoost));
+        OnPropertyChanged(nameof(CanApplyBladeCpuPowerBoost));
+        OnPropertyChanged(nameof(BladeCpuPowerBoostVisibility));
         OnPropertyChanged(nameof(BladeGpuBoostVisibility));
         OnPropertyChanged(nameof(BladePerformanceModeCardVisibility));
         OnPropertyChanged(nameof(BladeFanCardVisibility));

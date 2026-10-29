@@ -44,6 +44,8 @@ internal sealed class BladeViewModel
     internal bool _bladeFnKeySelection;
     internal bool? _bladeLocalDimmingEnabled;
     internal bool _bladeLocalDimmingSelection;
+    internal bool? _bladeCpuPowerBoostEnabled;
+    internal bool _bladeCpuPowerBoostSelection;
     internal string _bladeOneTimeFullChargeText = "--";
     internal bool? _bladeOneTimeFullChargeEnabled;
     internal bool _bladeOneTimeFullChargeSelection;
@@ -224,6 +226,12 @@ internal sealed class BladeViewModel
     /// Power Mode bit is not enough, so the model contract decides.
     /// </summary>
     internal bool SupportsMaxFan => BladeModelCapabilities.SupportsMaxFan(_bladeProductId);
+
+    /// <summary>
+    /// True only where the deviceUI publishes hasCpuBoostEnabled. The Power Mode bit
+    /// itself reads back on every model, so the contract decides.
+    /// </summary>
+    internal bool SupportsCpuPowerBoost => BladeModelCapabilities.SupportsCpuPowerBoost(_bladeProductId);
 
     /// <summary>
     /// True when the exact model has captured evidence for the stored fan-target protocol
