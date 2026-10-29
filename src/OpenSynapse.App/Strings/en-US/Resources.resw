@@ -352,7 +352,7 @@
     <value>Diagnostics</value>
   </data>
   <data name="Loc_2316E0EB08.Text" xml:space="preserve">
-    <value>Review device channels, protocol readback, and the latest query results.</value>
+    <value>Review device communication and the latest read results. Only items that need attention are listed.</value>
   </data>
   <data name="Loc_B2441B64DA.Content" xml:space="preserve">
     <value>Check again</value>
@@ -614,7 +614,7 @@
     <value>Startup disabled</value>
   </data>
   <data name="Text_5EAB9F51" xml:space="preserve">
-    <value>Device channel</value>
+    <value>Device capabilities</value>
   </data>
   <data name="Text_CF8B06AA" xml:space="preserve">
     <value>Waiting for hardware query</value>
@@ -681,10 +681,10 @@
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>Mouse idle timeout</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>Mouse DPI stages</value></data>
   <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>The device timed out (0x04); wake the device, close Synapse, and retry.</value></data>
-  <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>Protocol details</value></data>
+  <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>Failed checks</value></data>
   <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>Read</value></data>
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>Not read</value></data>
-  <data name="DiagnosticProtocolReadFailed" xml:space="preserve"><value>Read failed: {0}</value></data>
+  <data name="DiagnosticProtocolFailedStatus" xml:space="preserve"><value>Read failed</value></data>
   <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>On</value></data>
   <data name="OpenRazerFailedReadsDetail" xml:space="preserve"><value>Failed reads: {0}</value></data>
   <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>Off</value></data>
@@ -960,7 +960,7 @@
     <value>“{0}” will be deleted. Device settings will remain installed.</value>
   </data>
   <data name="ProtocolAvailableCount" xml:space="preserve">
-    <value>Protocol available {0}/{1}</value>
+    <value>Capabilities available {0}/{1}</value>
   </data>
   <data name="ActivePowerSource" xml:space="preserve">
     <value>Active power source: {0}</value>
@@ -990,7 +990,7 @@
     <value>The device returned malformed DPI stage data. DPI stages have been disabled.</value>
   </data>
   <data name="OpenRazerProtocolUnsupported" xml:space="preserve">
-    <value>The device rejected this OpenRazer command. This capability has been disabled.</value>
+    <value>The device rejected this command. This capability has been disabled.</value>
   </data>
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
     <value>Device communication stopped; writes are paused. Rescan the device to restore control.</value>
@@ -1002,7 +1002,7 @@
     <value>The {0} may be powered off or asleep. Check the device power.</value>
   </data>
   <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
-    <value>The OpenRazer protocol query failed.</value>
+    <value>The device channel could not be read.</value>
   </data>
   <data name="OpenRazerMappingNoButtons" xml:space="preserve">
     <value>Device reported no mapping buttons</value>
@@ -1653,6 +1653,48 @@
   <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling indicator write</value></data>
   <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling pairing</value></data>
   <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling unpairing</value></data>
+  <data name="OpenRazerCapabilityDeviceModeWrite" xml:space="preserve"><value>Device mode write</value></data>
+  <data name="OpenRazerCapabilityAutoSleepRead" xml:space="preserve"><value>Auto sleep read</value></data>
+  <data name="OpenRazerCapabilityAutoSleepWrite" xml:space="preserve"><value>Auto sleep write</value></data>
+  <data name="OpenRazerCapabilityBatteryChargeLimiterRead" xml:space="preserve"><value>Charge limit read</value></data>
+  <data name="OpenRazerCapabilityBatteryChargeLimiterWrite" xml:space="preserve"><value>Charge limit write</value></data>
+  <data name="OpenRazerCapabilityTimeToDimRead" xml:space="preserve"><value>Auto-dim read</value></data>
+  <data name="OpenRazerCapabilityTimeToDimWrite" xml:space="preserve"><value>Auto-dim write</value></data>
+  <data name="OpenRazerCapabilityIndicatorLedConfigurationRead" xml:space="preserve"><value>Indicator LED configuration read</value></data>
+  <data name="OpenRazerCapabilityIndicatorLedConfigurationWrite" xml:space="preserve"><value>Indicator LED configuration write</value></data>
+  <data name="OpenRazerCapabilityGpuCardDetectionRead" xml:space="preserve"><value>GPU card detection read</value></data>
+  <data name="OpenRazerCapabilityGpuCardDetectionWrite" xml:space="preserve"><value>GPU card detection write</value></data>
+  <data name="OpenRazerCapabilityForceChromaCtrlRead" xml:space="preserve"><value>Lighting override read</value></data>
+  <data name="OpenRazerCapabilityForceChromaCtrlWrite" xml:space="preserve"><value>Lighting override write</value></data>
+  <data name="OpenRazerCapabilityProfileDebounceTimeRead" xml:space="preserve"><value>Key debounce read</value></data>
+  <data name="OpenRazerCapabilityProfileDebounceTimeWrite" xml:space="preserve"><value>Key debounce write</value></data>
+  <data name="OpenRazerCapabilityChromaTapRead" xml:space="preserve"><value>Tap gesture read</value></data>
+  <data name="OpenRazerCapabilityChromaTapWrite" xml:space="preserve"><value>Tap gesture write</value></data>
+  <data name="OpenRazerCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>Battery discharge curve read</value></data>
+  <data name="OpenRazerCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>Battery discharge curve write</value></data>
+  <data name="OpenRazerCapabilityMacroStorageInfoRead" xml:space="preserve"><value>Onboard macro storage read</value></data>
+  <data name="OpenRazerCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>Scroll wheel mode read</value></data>
+  <data name="OpenRazerCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>Scroll wheel mode write</value></data>
+  <data name="OpenRazerCapabilityMappingRead" xml:space="preserve"><value>Button mapping read</value></data>
+  <data name="OpenRazerCapabilityMappingWrite" xml:space="preserve"><value>Button mapping write</value></data>
+  <data name="OpenRazerCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>Free-scroll mode read</value></data>
+  <data name="OpenRazerCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>Free-scroll mode write</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>Scroll acceleration level read</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>Scroll acceleration level write</value></data>
+  <data name="OpenRazerCapabilityOnboardProfileRead" xml:space="preserve"><value>Onboard profile read</value></data>
+  <data name="OpenRazerCapabilityOnboardProfileWrite" xml:space="preserve"><value>Onboard profile write</value></data>
+  <data name="OpenRazerCapabilityWirelessPairingWrite" xml:space="preserve"><value>Wireless pairing</value></data>
+  <data name="OpenRazerCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>Wireless connection state read</value></data>
+  <data name="OpenRazerCapabilityProximitySensorRead" xml:space="preserve"><value>Proximity sensor read</value></data>
+  <data name="OpenRazerCapabilityProximitySensorWrite" xml:space="preserve"><value>Proximity sensor write</value></data>
+  <data name="OpenRazerCapabilityKnobRead" xml:space="preserve"><value>Knob read</value></data>
+  <data name="OpenRazerCapabilityKnobWrite" xml:space="preserve"><value>Knob write</value></data>
+  <data name="OpenRazerCapabilityAnalogKeyRead" xml:space="preserve"><value>Analog key read</value></data>
+  <data name="OpenRazerCapabilityAnalogKeyWrite" xml:space="preserve"><value>Analog key write</value></data>
+  <data name="OpenRazerCapabilityOledRead" xml:space="preserve"><value>OLED display read</value></data>
+  <data name="OpenRazerCapabilityOledWrite" xml:space="preserve"><value>OLED display write</value></data>
+  <data name="OpenRazerCapabilityHapticScrollRead" xml:space="preserve"><value>Haptic scroll read</value></data>
+  <data name="OpenRazerCapabilityHapticScrollWrite" xml:space="preserve"><value>Haptic scroll write</value></data>
   <data name="BladeCustomPerformanceTitle" xml:space="preserve"><value>Custom performance</value></data>
   <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU performance level</value></data>
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU performance level</value></data>
@@ -1967,10 +2009,10 @@
     <value>This device is not connected</value>
   </data>
   <data name="HidScanNoService" xml:space="preserve">
-    <value>This build does not include OpenRazer support</value>
+    <value>This build does not include device control support</value>
   </data>
   <data name="HidScanNoDevice" xml:space="preserve">
-    <value>No connected OpenRazer device was found</value>
+    <value>No compatible device is connected</value>
   </data>
   <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>Gaming headset</value></data>
   <data name="BlackSharkStatusConnected" xml:space="preserve"><value>Connected</value></data>

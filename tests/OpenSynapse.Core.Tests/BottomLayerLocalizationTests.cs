@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using OpenSynapse.Windows.Devices;
 using Xunit;
 
 namespace OpenSynapse.Core.Tests;
@@ -49,6 +50,25 @@ public sealed partial class BottomLayerLocalizationTests
 
         Assert.True(english.SetEquals(chinese),
             "en-US and zh-CN resource keys must be identical.");
+    }
+
+    [Fact]
+    public void EveryOpenRazerCapabilityHasADisplayName()
+    {
+        var repository = FindRepositoryRoot();
+        var missing = new List<string>();
+        foreach (var locale in new[] { "en-US", "zh-CN" })
+        {
+            var keys = ReadResourceKeys(Path.Combine(
+                repository, "src", "OpenSynapse.App", "Strings", locale, "Resources.resw"));
+            missing.AddRange(Enum.GetNames<OpenRazerBackendCapability>()
+                .Where(name => !keys.Contains($"OpenRazerCapability{name}"))
+                .Select(name => $"{locale}:{name}"));
+        }
+
+        Assert.True(missing.Count == 0,
+            "Every capability shown in diagnostics needs a display name: " +
+            string.Join(", ", missing));
     }
 
     [Fact]
