@@ -122,7 +122,8 @@ public sealed partial class MainWindow : Window
             this,
             _viewModel,
             _dispatcherQueue,
-            _setBladeIndicatorDisplayAvailable);
+            _setBladeIndicatorDisplayAvailable,
+            _lifetime.Token);
         _displayPowerNotification.Initialize();
         SettingsPage.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
     }

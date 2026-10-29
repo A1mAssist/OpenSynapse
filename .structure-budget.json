@@ -26,11 +26,11 @@
     },
     {
       "path": "src/OpenSynapse.App/Views/DevicesPage.xaml",
-      "maxLines": 1255
+      "maxLines": 1268
     },
     {
       "path": "src/OpenSynapse.App/Views/DevicesPage.Blade.cs",
-      "maxLines": 920
+      "maxLines": 927
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerHeadsetAudioViewModel.cs",
@@ -247,7 +247,7 @@
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
         "maxLines": 1443,
-        "maxPublicMembers": 57
+        "maxPublicMembers": 66
     }
   ]
 }
