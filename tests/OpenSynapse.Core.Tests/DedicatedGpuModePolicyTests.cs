@@ -33,6 +33,17 @@ public sealed class DedicatedGpuModePolicyTests
             DedicatedGpuModePolicy.GetBlockReason(snapshot));
     }
 
+    [Theory]
+    [InlineData(DedicatedGpuModeBlockReason.NoDiscreteGraphics, false)]
+    [InlineData(DedicatedGpuModeBlockReason.NoIntegratedGraphics, false)]
+    [InlineData(DedicatedGpuModeBlockReason.InternalDisplayUsesDiscreteGpu, true)]
+    [InlineData(DedicatedGpuModeBlockReason.ExternalDisplayConnected, true)]
+    [InlineData(DedicatedGpuModeBlockReason.DisplayTopologyUnavailable, true)]
+    public void OnlyAMissingAdapterHidesTheDedicatedGpuCard(
+        DedicatedGpuModeBlockReason reason,
+        bool expected) =>
+        Assert.Equal(expected, DedicatedGpuModePolicy.ShouldShow(reason));
+
     [Fact]
     public void AnInternalPanelDrivenByTheDiscreteGpuIsUnsupported()
     {

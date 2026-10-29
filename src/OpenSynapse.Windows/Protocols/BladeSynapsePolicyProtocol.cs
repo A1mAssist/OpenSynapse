@@ -10,6 +10,7 @@ public static class BladeSynapsePolicyProtocol
 {
     public const byte SynapseTransactionId = 0x00;
     public const byte GameModeCommandClass = 0x00;
+    public const byte GameModeGetCommandId = 0x88;
     public const byte GameModeSetCommandId = 0x08;
     public const byte FnCommandClass = 0x02;
     public const byte FnSetCommandId = 0x06;
@@ -118,6 +119,32 @@ public static class BladeSynapsePolicyProtocol
             GameModeCommandClass,
             GameModeSetCommandId,
             new[] { enabled ? (byte)0x01 : (byte)0x00 });
+
+    public static byte[] CreateGetGameModeRequest() =>
+        RazerFeatureReport.CreateRequest(
+            SynapseTransactionId,
+            0x04,
+            GameModeCommandClass,
+            GameModeGetCommandId,
+            []);
+
+    public static BladeGameModeTelemetry ParseGameMode(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request)
+    {
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, minimumArguments: 3, allowRemainingPacketsMismatch: true))
+        {
+            throw new InvalidOperationException(
+                "Blade gaming mode returned an invalid or out-of-order feature report.");
+        }
+
+        var offset = RazerFeatureReport.ArgumentsOffset;
+        return new BladeGameModeTelemetry(
+            response[offset],
+            response[offset + 1],
+            response[offset + 2]);
+    }
 
     public static byte[] CreateGetStartupAnimationRequest() =>
         RazerFeatureReport.CreateRequest(

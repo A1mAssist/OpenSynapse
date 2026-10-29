@@ -17,7 +17,7 @@ public sealed class ViperButtonAssignmentBatchTests
             Assignment(buttonId, ViperButtonMappingLayer.HyperShift),
         }).ToArray();
 
-        var validated = RazerDeviceTelemetryReader.ValidateViperButtonAssignmentBatch(complete);
+        var validated = ViperTelemetryReader.ValidateViperButtonAssignmentBatch(complete);
 
         Assert.Equal(16, validated.Count);
         Assert.Equal(ViperObmMappingMode.Normal, validated[0].Mode);
@@ -25,7 +25,7 @@ public sealed class ViperButtonAssignmentBatchTests
 
         complete[^1] = complete[0];
         Assert.Throws<ArgumentException>(() =>
-            RazerDeviceTelemetryReader.ValidateViperButtonAssignmentBatch(complete));
+            ViperTelemetryReader.ValidateViperButtonAssignmentBatch(complete));
     }
 
     private static ViperButtonAssignment Assignment(
