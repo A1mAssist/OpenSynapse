@@ -454,6 +454,56 @@ public sealed class OpenRazerDeviceCatalog
                     sibling.CommandSizes));
                 MappingProductIds.Add(entry.Product);
             }
+
+            // The Basilisk V4 middleware exposes the 8 kHz path through
+            // 00:C0/00:40 with profile id 1. The catalog sibling is the 35K mouse,
+            // whose OpenRazer entry only declares the legacy 00:85/00:05 pair.
+            // Keep the shared definition and add the reports the products actually use.
+            AddHighRatePolling(0x00E2);
+            AddHighRatePolling(0x00E3);
+            AddHighRatePolling(0x00EA);
+            AddHighRatePolling(0x00EB);
+
+            void AddHighRatePolling(ushort productId)
+            {
+                if (!devices.TryGetValue(productId, out var device))
+                {
+                    return;
+                }
+
+                var transactions = new Dictionary<string, byte>(device.Transactions, StringComparer.Ordinal)
+                {
+                    ["razer_chroma_misc_get_polling_rate2"] = 0x00,
+                    ["razer_chroma_misc_set_polling_rate2"] = 0x00,
+                };
+                var prefixes = new Dictionary<string, IReadOnlyList<ReadOnlyMemory<byte>>>(
+                    device.BuilderArgumentPrefixes, StringComparer.Ordinal)
+                {
+                    ["razer_chroma_misc_get_polling_rate2"] = [new ReadOnlyMemory<byte>([0x01])],
+                    ["razer_chroma_misc_set_polling_rate2"] = [new ReadOnlyMemory<byte>([0x01])],
+                };
+                var commandSizes = new Dictionary<string, byte>(device.CommandSizes, StringComparer.Ordinal)
+                {
+                    ["razer_chroma_misc_get_polling_rate2"] = 0x02,
+                    ["razer_chroma_misc_set_polling_rate2"] = 0x02,
+                };
+
+                devices[productId] = new OpenRazerDeviceDefinition(
+                    device.ProductId,
+                    device.DisplayName,
+                    device.Category,
+                    device.SourceCapabilities,
+                    device.MaximumDpi,
+                    device.PollingRates,
+                    device.MatrixDimensions,
+                    device.DeviceWait,
+                    transactions,
+                    prefixes,
+                    device.DefaultStorage,
+                    device.DefaultLedZone,
+                    device.CommandSequences,
+                    commandSizes);
+            }
         }
 
         void AddLeviathanV2X()
