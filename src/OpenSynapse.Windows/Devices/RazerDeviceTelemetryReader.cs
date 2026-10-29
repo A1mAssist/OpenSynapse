@@ -626,6 +626,11 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 await WriteBladeBoostModeAsync(blade, BladeBoostProtocol.GpuCluster, (byte)levels.Gpu, cancellationToken);
             }
 
+            if (mode == BladePerformanceMode.Hyperboost)
+            {
+                await ApplyBladeMaxFanForHyperBoostAsync(blade, cancellationToken);
+            }
+
             var actual = await ReadBladeThermalStateAsync(blade, cancellationToken);
             var actualBoost = expectedBoost is null
                 ? null
@@ -3115,6 +3120,47 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
         {
             throw new InvalidOperationException(
                 $"The CPU level 0x{value:X2} is not available on this Blade model.");
+        }
+    }
+
+    /// <summary>
+    /// HyperBoost raises the sustained power ceiling but leaves the EC on its own fan
+    /// curve, which assumes a cooling pad. Without the pin the extra budget only buys
+    /// thermal throttling, so the fans go to maximum together with the mode.
+    /// </summary>
+    private async Task ApplyBladeMaxFanForHyperBoostAsync(
+        ReadyDevice blade,
+        CancellationToken cancellationToken)
+    {
+        if (!BladeModelCapabilities.SupportsMaxFan(blade.Descriptor.ProductId) ||
+            _validatedBladePowerModePath is null)
+        {
+            return;
+        }
+
+        var mask = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+        if ((mask & BladePowerModeProtocol.MaxFanBit) != 0)
+        {
+            return;
+        }
+
+        // 07/0F replaces the whole byte. A pending one-time setting owns a bit whose
+        // readback cannot be verified, so leave it alone rather than rewriting it.
+        var blocking = (byte)(mask &
+            ~(BladePowerModeProtocol.MaxFanBit |
+              BladePowerModeProtocol.CpuPowerBoostBit |
+              BladePowerModeProtocol.LocalDimmingBit));
+        if (blocking != 0)
+        {
+            return;
+        }
+
+        await WriteBladeMaxFanModeAsync(blade, BladeMaxFanMode.Enabled, mask, cancellationToken);
+        var confirmed = await ReadBladePowerModeMaskAsync(blade, cancellationToken);
+        if ((confirmed & BladePowerModeProtocol.MaxFanBit) == 0)
+        {
+            throw new InvalidOperationException(
+                "HyperBoost could not pin the fans to maximum, so the performance mode was not changed.");
         }
     }
 
