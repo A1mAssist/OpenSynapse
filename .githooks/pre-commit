@@ -1,0 +1,19 @@
+#!/bin/sh
+# 拒绝把包清单和工具署名带进仓库。
+staged=$(git diff --cached --name-only)
+
+for name in package.json package-lock.json; do
+    case "$staged" in
+        *"$name"*)
+            echo "pre-commit: 拒绝提交 $name"
+            exit 1
+            ;;
+    esac
+done
+
+if git diff --cached -U0 | grep -q '^+Co-Authored-By:'; then
+    echo "pre-commit: 提交不允许带 Co-Authored-By"
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,13 @@
+#!/bin/sh
+msg=$(head -1 "$1")
+
+case "$msg" in
+    Merge*|Revert*|"") exit 0 ;;
+esac
+
+if echo "$msg" | grep -qE '^(feat|fix|refactor|docs|test|chore|perf|build|ci|style)(\(.+\))?!?: .+'; then
+    exit 0
+fi
+
+echo "commit-msg: 用 Conventional Commits，例如 'fix(blade): ...'"
+exit 1

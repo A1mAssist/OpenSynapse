@@ -44,6 +44,7 @@ dist/
 src/OpenSynapse.App/artifacts/
 scripts/*
 !scripts/scan-device-transport.ps1
+!scripts/check-structure.ps1
 !scripts/extract-blade-mappings.mjs
 
 # IDE and user state
