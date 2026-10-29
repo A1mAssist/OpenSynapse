@@ -426,9 +426,19 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             }
             else if (response[1] == 0x01)
             {
-                // OpenRazer treats BUSY as an accepted command for these devices.
-                diagnostic?.Invoke($"attempt {attempt}: accepted, status=0x01 (busy)");
-                return response;
+                if (IsRetryableBusyResponse(response[1], request[8]))
+                {
+                    // A busy read carries no payload. Treating it as data makes a
+                    // zero-filled response look like a real 0 (brightness, DPI, ...).
+                    lastError = "The device is busy (0x01).";
+                    diagnostic?.Invoke($"attempt {attempt}: {lastError}; retrying read");
+                }
+                else
+                {
+                    // OpenRazer treats BUSY as an accepted command for writes.
+                    diagnostic?.Invoke($"attempt {attempt}: accepted, status=0x01 (busy)");
+                    return response;
+                }
             }
             else if (response[1] == 0x05)
             {
@@ -475,6 +485,9 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             "openrazer-hid",
             $"path={DescribeDevicePath(devicePath)}, txn=0x{request[2]:X2}, size={request[6]}, class=0x{request[7]:X2}, command=0x{request[8]:X2}: {message}");
     }
+
+    internal static bool IsRetryableBusyResponse(byte status, byte commandId) =>
+        status == 0x01 && (commandId & 0x80) != 0;
 
     internal static string DescribeDevicePath(string devicePath)
     {
