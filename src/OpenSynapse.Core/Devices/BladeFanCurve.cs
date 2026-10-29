@@ -5,6 +5,8 @@ public enum BladeFanCurveTemperatureMode
     Cpu,
     Gpu,
     Both,
+    /// <summary>CPU temperature drives the CPU fan; GPU temperature drives the GPU fan.</summary>
+    Independent,
 }
 
 public readonly record struct BladeFanCurvePoint(
@@ -79,6 +81,13 @@ public sealed class BladeFanCurve
                     : SelectHigherCpuOutput(
                         EvaluateCurve(cpuBoth, CpuPoints, MinimumCpuTemperatureCelsius),
                         EvaluateCurve(gpuBoth, GpuPoints, MinimumGpuTemperatureCelsius)),
+            BladeFanCurveTemperatureMode.Independent =>
+                cpuTemperatureCelsius is not double cpuIndependent ||
+                gpuTemperatureCelsius is not double gpuIndependent
+                    ? throw MissingTemperature("CPU/GPU")
+                    : new BladeFanTargets(
+                        EvaluateCurve(cpuIndependent, CpuPoints, MinimumCpuTemperatureCelsius).CpuRpm,
+                        EvaluateCurve(gpuIndependent, GpuPoints, MinimumGpuTemperatureCelsius).GpuRpm),
             _ => throw new InvalidOperationException("Unknown fan curve temperature mode."),
         };
     }

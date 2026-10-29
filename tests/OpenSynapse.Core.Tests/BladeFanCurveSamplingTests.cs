@@ -21,10 +21,67 @@ public sealed class BladeFanCurveSamplingTests
         Assert.True(curve.Evaluate(70, 70).CpuRpm < curve.Evaluate(85, 85).CpuRpm);
     }
 
+    [Fact]
+    public void IndependentModeControlsEachFanFromItsOwnCurve()
+    {
+        BladeFanCurvePoint[] cpuPoints =
+        [
+            new(50, 2500, 2300),
+            new(80, 4500, 2300),
+        ];
+        BladeFanCurvePoint[] gpuPoints =
+        [
+            new(50, 2300, 3000),
+            new(80, 2300, 5000),
+        ];
+        var curve = new BladeFanCurve(
+            BladeFanCurveTemperatureMode.Independent,
+            cpuPoints,
+            gpuPoints);
+
+        var cool = curve.Evaluate(50, 50);
+        var hotCpu = curve.Evaluate(80, 50);
+        var hotGpu = curve.Evaluate(50, 80);
+
+        Assert.Equal(2500, cool.CpuRpm);
+        Assert.Equal(3000, cool.GpuRpm);
+        Assert.Equal(4500, hotCpu.CpuRpm);
+        Assert.Equal(cool.GpuRpm, hotCpu.GpuRpm);
+        Assert.Equal(5000, hotGpu.GpuRpm);
+        Assert.Equal(cool.CpuRpm, hotGpu.CpuRpm);
+        Assert.Throws<InvalidOperationException>(() => { _ = curve.Evaluate(null, 60); });
+        Assert.Throws<InvalidOperationException>(() => { _ = curve.Evaluate(60, null); });
+    }
+
+    [Fact]
+    public void BothModeStillSelectsTheHigherCpuOutput()
+    {
+        BladeFanCurvePoint[] cpuPoints =
+        [
+            new(50, 2300, 2300),
+            new(80, 2300, 2300),
+        ];
+        BladeFanCurvePoint[] gpuPoints =
+        [
+            new(50, 4000, 5000),
+            new(80, 4000, 5400),
+        ];
+        var curve = new BladeFanCurve(
+            BladeFanCurveTemperatureMode.Both,
+            cpuPoints,
+            gpuPoints);
+
+        var result = curve.Evaluate(80, 80);
+
+        Assert.Equal(4000, result.CpuRpm);
+        Assert.Equal(5400, result.GpuRpm);
+    }
+
     [Theory]
     [InlineData(BladeFanCurveTemperatureMode.Cpu, true, false)]
     [InlineData(BladeFanCurveTemperatureMode.Gpu, false, true)]
     [InlineData(BladeFanCurveTemperatureMode.Both, true, true)]
+    [InlineData(BladeFanCurveTemperatureMode.Independent, true, true)]
     public async Task CurveRequestsOnlyRequiredTemperatures(
         BladeFanCurveTemperatureMode mode,
         bool cpuExpected,

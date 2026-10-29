@@ -35,7 +35,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private readonly List<Ellipse>[] _pointMarkers = [[], []];
     private readonly List<Polyline> _seriesLines = [new(), new()];
     private readonly List<Ellipse> _handles = [new(), new()];
-    private readonly Dictionary<int, int> _seriesHandles = [];
+    private readonly List<BladeFanCurvePointViewModel> _observedPoints = [];
     private readonly Rectangle _plotBackground = new();
     private readonly Line _temperatureAxis = new();
     private readonly Line _rpmAxis = new();
@@ -48,7 +48,8 @@ public sealed partial class BladeFanCurvePlot : UserControl
     ];
 
     private BladeFanCurveEditorViewModel? _editor;
-    private int _draggedHandle = -1;
+    private int _draggedSeries = -1;
+    private int _draggedPointIndex = -1;
 
     public BladeFanCurvePlot()
     {
@@ -57,7 +58,11 @@ public sealed partial class BladeFanCurvePlot : UserControl
         PlotCanvas.PointerPressed += PlotPointerPressed;
         PlotCanvas.PointerMoved += PlotPointerMoved;
         PlotCanvas.PointerReleased += PlotPointerReleased;
-        PlotCanvas.PointerCaptureLost += (_, _) => _draggedHandle = -1;
+        PlotCanvas.PointerCaptureLost += (_, _) =>
+        {
+            _draggedSeries = -1;
+            _draggedPointIndex = -1;
+        };
         SizeChanged += (_, _) => Render();
         DataContextChanged += (_, _) => Attach(DataContext as BladeFanCurveEditorViewModel);
         Attach(DataContext as BladeFanCurveEditorViewModel);
@@ -66,8 +71,6 @@ public sealed partial class BladeFanCurvePlot : UserControl
 
     private void BuildStaticShapes()
     {
-        _seriesHandles.Clear();
-
         var gridBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
         var axisBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x70, 0xFF, 0xFF, 0xFF));
         var labelBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xA8, 0xFF, 0xFF, 0xFF));
@@ -181,17 +184,45 @@ public sealed partial class BladeFanCurvePlot : UserControl
                 _editor.PropertyChanged -= EditorChanged;
             }
 
+            ObservePoints(null);
             _editor = editor;
             if (_editor is not null)
             {
                 _editor.PropertyChanged += EditorChanged;
+                ObservePoints(_editor);
             }
         }
 
         Render();
     }
 
-    private void EditorChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Render();
+    private void EditorChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        ObservePoints(_editor);
+        Render();
+    }
+
+    private void ObservePoints(BladeFanCurveEditorViewModel? editor)
+    {
+        foreach (var point in _observedPoints)
+        {
+            point.PropertyChanged -= PointChanged;
+        }
+
+        _observedPoints.Clear();
+        if (editor is null)
+        {
+            return;
+        }
+
+        foreach (var point in editor.CpuPoints.Concat(editor.GpuPoints))
+        {
+            point.PropertyChanged += PointChanged;
+            _observedPoints.Add(point);
+        }
+    }
+
+    private void PointChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Render();
 
     private void PlotPointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -200,24 +231,31 @@ public sealed partial class BladeFanCurvePlot : UserControl
             return;
         }
 
-        _draggedHandle = _seriesHandles[pointIndex];
-        _editor!.SelectedIndex = pointIndex;
+        _draggedSeries = series;
+        _draggedPointIndex = pointIndex;
+        _editor!.SelectCurve(series == 0 ? BladeFanCurveSelection.Cpu : BladeFanCurveSelection.Gpu);
+        _editor.SelectedIndex = pointIndex;
         PlotCanvas.CapturePointer(e.Pointer);
         e.Handled = true;
     }
 
     private void PlotPointerMoved(object sender, PointerRoutedEventArgs e)
     {
-        if (_editor is null || _draggedHandle < 0)
+        if (_editor is null || _draggedSeries < 0)
         {
             return;
         }
 
-        var point = _editor.Points[_draggedHandle];
+        var points = SeriesPoints(_draggedSeries);
+        if (_draggedPointIndex >= points.Count)
+        {
+            return;
+        }
+
+        var point = points[_draggedPointIndex];
         var position = e.GetCurrentPoint(PlotCanvas).Position;
         var rpm = RpmFromY(position.Y, PlotCanvas.ActualHeight);
-        var series = _draggedHandle >> 8;
-        if (series == 0)
+        if (_draggedSeries == 0)
         {
             point.CpuRpm = rpm;
         }
@@ -232,20 +270,21 @@ public sealed partial class BladeFanCurvePlot : UserControl
 
     private void PlotPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        if (_draggedHandle < 0)
+        if (_draggedSeries < 0)
         {
             return;
         }
 
-        _draggedHandle = -1;
+        _draggedSeries = -1;
+        _draggedPointIndex = -1;
         PlotCanvas.ReleasePointerCapture(e.Pointer);
         e.Handled = true;
     }
 
-    private bool TryHitHandle(Point position, out int pointIndex, out int series)
+    private bool TryHitHandle(Point position, out int pointIndex, out int seriesIndex)
     {
         pointIndex = -1;
-        series = -1;
+        seriesIndex = -1;
         var width = PlotCanvas.ActualWidth;
         var height = PlotCanvas.ActualHeight;
         if (_editor is null || width <= 0 || height <= 0)
@@ -253,19 +292,23 @@ public sealed partial class BladeFanCurvePlot : UserControl
             return false;
         }
 
-        for (var index = 0; index < _editor.Points.Count; index++)
+        // Default curves overlap at some tiers, so the selected curve wins the hit test.
+        var preferredSeries = _editor.SelectedCurve == BladeFanCurveSelection.Cpu ? 0 : 1;
+        for (var pass = 0; pass < _seriesLines.Count; pass++)
         {
-            var tier = _editor.Points[index];
-            var x = XFromTemperature(tier.TemperatureCelsius, width);
-            foreach (var candidate in new[] { 0, 1 })
+            var series = pass == 0 ? preferredSeries : 1 - preferredSeries;
+            var points = SeriesPoints(series);
+            for (var index = 0; index < points.Count; index++)
             {
-                var y = YFromRpm(candidate == 0 ? tier.CpuRpm : tier.GpuRpm, height);
+                var tier = points[index];
+                var x = XFromTemperature(tier.TemperatureCelsius, width);
+                var y = YFromRpm(series == 0 ? tier.CpuRpm : tier.GpuRpm, height);
                 var dx = position.X - x;
                 var dy = position.Y - y;
                 if (dx * dx + dy * dy <= HandleGrabRadius * HandleGrabRadius)
                 {
                     pointIndex = index;
-                    series = candidate;
+                    seriesIndex = series;
                     return true;
                 }
             }
@@ -273,6 +316,9 @@ public sealed partial class BladeFanCurvePlot : UserControl
 
         return false;
     }
+
+    private IReadOnlyList<BladeFanCurvePointViewModel> SeriesPoints(int series) =>
+        series == 0 ? _editor!.CpuPoints : _editor!.GpuPoints;
 
     private void Render()
     {
@@ -283,7 +329,8 @@ public sealed partial class BladeFanCurvePlot : UserControl
 
         var width = PlotCanvas.ActualWidth;
         var height = PlotCanvas.ActualHeight;
-        var hasPoints = _editor is { Points.Count: > 0 };
+        var hasPoints = _editor is { } editor &&
+            (editor.CpuPoints.Count > 0 || editor.GpuPoints.Count > 0);
         EmptyHint.Opacity = hasPoints && width > 0 && height > 0 ? 0 : 1;
         if (width <= 0 || height <= 0)
         {
@@ -352,7 +399,6 @@ public sealed partial class BladeFanCurvePlot : UserControl
         Canvas.SetLeft(_temperatureUnit, right - 28);
         Canvas.SetTop(_temperatureUnit, bottom + 26);
 
-        _seriesHandles.Clear();
         for (var series = 0; series < _seriesLines.Count; series++)
         {
             _seriesLines[series].Points.Clear();
@@ -368,26 +414,32 @@ public sealed partial class BladeFanCurvePlot : UserControl
             return;
         }
 
-        // Each tier gets a small marker; the selected tier also gets a larger draggable handle.
-        for (var index = 0; index < _editor!.Points.Count; index++)
+        // Each curve keeps its own tiers: CPU points drive the CPU line, GPU points the GPU line.
+        for (var series = 0; series < _seriesLines.Count; series++)
         {
-            var tier = _editor.Points[index];
-            var x = XFromTemperature(tier.TemperatureCelsius, width);
-            var cpuY = YFromRpm(tier.CpuRpm, height);
-            var gpuY = YFromRpm(tier.GpuRpm, height);
-            _seriesLines[0].Points.Add(new Point(x, cpuY));
-            _seriesLines[1].Points.Add(new Point(x, gpuY));
-
-            ShowMarker(GetPointMarker(0, index), x, cpuY);
-            ShowMarker(GetPointMarker(1, index), x, gpuY);
-
-            if (index == _editor.SelectedIndex || _editor.Points.Count == 1)
+            var points = SeriesPoints(series);
+            if (points.Count == 0)
             {
-                ShowHandle(_handles[0], x, cpuY);
-                _seriesHandles[index] = 0;
-                ShowHandle(_handles[1], x, gpuY);
-                _seriesHandles[index] = 1;
+                continue;
             }
+
+            for (var index = 0; index < points.Count; index++)
+            {
+                var tier = points[index];
+                var x = XFromTemperature(tier.TemperatureCelsius, width);
+                var y = YFromRpm(series == 0 ? tier.CpuRpm : tier.GpuRpm, height);
+                _seriesLines[series].Points.Add(new Point(x, y));
+                ShowMarker(GetPointMarker(series, index), x, y);
+            }
+
+            // The selected tier gets a larger draggable handle; each curve keeps its own.
+            var selectedIndex = Math.Clamp(_editor!.SelectedIndex, 0, points.Count - 1);
+            var selected = points[selectedIndex];
+            var selectedX = XFromTemperature(selected.TemperatureCelsius, width);
+            var selectedY = YFromRpm(
+                series == 0 ? selected.CpuRpm : selected.GpuRpm,
+                height);
+            ShowHandle(_handles[series], selectedX, selectedY);
         }
 
         static void ShowMarker(Ellipse marker, double x, double y)
