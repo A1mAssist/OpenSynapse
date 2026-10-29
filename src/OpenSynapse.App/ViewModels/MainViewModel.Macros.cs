@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using OpenSynapse.App.Runtime;
@@ -11,13 +10,6 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
-    private static readonly JsonSerializerOptions MacroCopyJsonOptions = new(JsonSerializerDefaults.General)
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     private readonly MacroRuntime _macroRuntime;
     private readonly SemaphoreSlim _macroSaveGate = new(1, 1);
     private readonly HashSet<string> _dirtyMacroIds = new(StringComparer.Ordinal);
@@ -603,9 +595,7 @@ public sealed partial class MainViewModel
         MacroDefinition copy;
         try
         {
-            var json = JsonSerializer.Serialize(selected.Definition, MacroCopyJsonOptions);
-            copy = JsonSerializer.Deserialize<MacroDefinition>(json, MacroCopyJsonOptions)
-                ?? throw new InvalidDataException("Macro copy failed.");
+            copy = MacroDocumentService.Clone(selected.Definition);
         }
         catch (Exception exception) when (exception is JsonException or InvalidDataException)
         {
@@ -1516,8 +1506,7 @@ public sealed partial class MainViewModel
             return false;
         }
 
-        var count = 0;
-        if (!ValidateMacroStepList(newSteps, depth: 0, ref count))
+        if (!MacroValidator.ValidateSteps(newSteps))
         {
             MacroStatusText = AppStrings.Text("MacroStepIncomplete");
             return false;
@@ -1681,7 +1670,7 @@ public sealed partial class MainViewModel
 
         var index = row.Index;
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
-        var snapshot = CloneMacroSteps(selected.Definition.Steps);
+        var snapshot = MacroDocumentService.CloneSteps(selected.Definition.Steps);
         if (row.HasGroup && row.Step.GroupId is { } groupId)
         {
             RemoveGroupSteps(selected.Definition.Steps, groupId);
@@ -1720,7 +1709,7 @@ public sealed partial class MainViewModel
 
         var index = row.Index;
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
-        var snapshot = CloneMacroSteps(selected.Definition.Steps);
+        var snapshot = MacroDocumentService.CloneSteps(selected.Definition.Steps);
         var owner = row.Owner;
         if (row.HasGroup && row.Step.GroupId is { } groupId)
         {
@@ -2029,15 +2018,9 @@ public sealed partial class MainViewModel
 
         try
         {
-            var macros = GetActiveProfile().Macros
-                .GroupBy(macro => macro.Id, StringComparer.Ordinal)
-                .ToDictionary(
-                    group => group.Key,
-                    group => group.First(),
-                    StringComparer.Ordinal);
-            await MacroFileStore.ExportAsync(
+            await MacroDocumentService.ExportAsync(
                 selected.Definition,
-                macros,
+                ActiveMacroMap(),
                 filePath,
                 cancellationToken);
             MacroStatusText = AppStrings.FormatText(
@@ -2062,7 +2045,7 @@ public sealed partial class MainViewModel
         IReadOnlyList<MacroDefinition> imported;
         try
         {
-            imported = await MacroFileStore.ImportBundleAsync(filePath, cancellationToken);
+            imported = await MacroDocumentService.ImportAsync(filePath, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -2082,31 +2065,10 @@ public sealed partial class MainViewModel
             return;
         }
 
-        var idMap = imported.ToDictionary(
-            macro => macro.Id,
-            _ => Guid.NewGuid().ToString("N"),
-            StringComparer.Ordinal);
-        foreach (var macro in imported)
-        {
-            macro.Id = idMap[macro.Id];
-            foreach (var step in MacroStepTree.Enumerate(macro.Steps))
-            {
-                if (step.Kind == MacroStepKind.MacroReference &&
-                    step.MacroId is { } reference &&
-                    idMap.TryGetValue(reference, out var replacement))
-                {
-                    step.MacroId = replacement;
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(macro.Name) ||
-                StringComparer.Ordinal.Equals(macro.Name, "Imported macro"))
-            {
-                macro.Name = AppStrings.Text("MacroImportedName");
-            }
-
-            macro.ApplySafeDefaults();
-        }
+        MacroDocumentService.PrepareImported(
+            imported,
+            () => Guid.NewGuid().ToString("N"),
+            AppStrings.Text("MacroImportedName"));
 
         var importedRows = new List<MacroRowViewModel>(imported.Count);
         foreach (var macro in imported)
@@ -2271,108 +2233,14 @@ public sealed partial class MainViewModel
         return true;
     }
 
-    private bool ValidateMacroTree(MacroDefinition macro)
-    {
-        var count = 0;
-        return ValidateMacroStepList(macro.Steps, depth: 0, ref count);
-    }
+    private bool ValidateMacroTree(MacroDefinition macro) =>
+        MacroValidator.ValidateTree(macro);
 
-    private bool ValidateMacroReferences(MacroDefinition macro)
-    {
-        var map = GetActiveProfile().Macros
-            .GroupBy(item => item.Id, StringComparer.Ordinal)
-            .ToDictionary(
-                group => group.Key,
-                group => group.First(),
-                StringComparer.Ordinal);
-        return ValidateMacroReferenceNode(macro, map, [], depth: 0);
-    }
+    private bool ValidateMacroReferences(MacroDefinition macro) =>
+        MacroValidator.ValidateReferences(macro, ActiveMacroMap());
 
-    private static bool ValidateMacroReferenceNode(
-        MacroDefinition macro,
-        IReadOnlyDictionary<string, MacroDefinition> map,
-        HashSet<string> stack,
-        int depth)
-    {
-        if (depth > MacroDefinition.MaxNestingDepth || !stack.Add(macro.Id))
-        {
-            return false;
-        }
-
-        try
-        {
-            foreach (var step in MacroStepTree.Enumerate(macro.Steps))
-            {
-                if (step.Kind != MacroStepKind.MacroReference)
-                {
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(step.MacroId) ||
-                    !map.TryGetValue(step.MacroId, out var referenced) ||
-                    !ValidateMacroReferenceNode(referenced, map, stack, depth + 1))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-        finally
-        {
-            stack.Remove(macro.Id);
-        }
-    }
-
-    private static bool ValidateMacroStepList(
-        IReadOnlyList<MacroStep> steps,
-        int depth,
-        ref int count)
-    {
-        if (depth > MacroDefinition.MaxNestingDepth)
-        {
-            return false;
-        }
-
-        foreach (var step in steps)
-        {
-            count++;
-            if (count > MacroDefinition.MaxSteps)
-            {
-                return false;
-            }
-
-            var valid = step.Kind switch
-            {
-                MacroStepKind.Input => step.Input?.IsValid(allowPrimaryMouseButton: true) == true,
-                MacroStepKind.Delay => true,
-                MacroStepKind.Text => !string.IsNullOrEmpty(step.Text) &&
-                    step.Text.Length <= MacroStep.MaxTextLength,
-                MacroStepKind.RunCommand => !string.IsNullOrEmpty(step.Command) &&
-                    step.Command.Length <= MacroStep.MaxCommandLength &&
-                    (step.Arguments?.Length ?? 0) <= MacroStep.MaxArgumentsLength &&
-                    (step.WorkingDirectory?.Length ?? 0) <= MacroStep.MaxWorkingDirectoryLength,
-                MacroStepKind.Loop => step.LoopCount is >= 1 and <= MacroStep.MaxLoopCount &&
-                    step.Children.Count > 0,
-                MacroStepKind.MacroReference => !string.IsNullOrWhiteSpace(step.MacroId) &&
-                    step.MacroId.Length <= 64,
-                MacroStepKind.MouseMove => step.MousePath.Count is > 0 and <= MacroStep.MaxMousePathPoints,
-                _ => false,
-            };
-            if (!valid)
-            {
-                return false;
-            }
-
-            if (step.Kind == MacroStepKind.Loop &&
-                !ValidateMacroStepList(step.Children, depth + 1, ref count))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+    private IReadOnlyDictionary<string, MacroDefinition> ActiveMacroMap() =>
+        MacroDocumentService.IndexById(GetActiveProfile().Macros);
 
     private void EnsureMacroName(MacroRowViewModel row)
     {
@@ -2516,12 +2384,6 @@ public sealed partial class MainViewModel
         {
             MarkMacroDirtyId(row.Id);
         }
-    }
-
-    private static List<MacroStep> CloneMacroSteps(IReadOnlyList<MacroStep> steps)
-    {
-        var json = JsonSerializer.Serialize(steps, MacroCopyJsonOptions);
-        return JsonSerializer.Deserialize<List<MacroStep>>(json, MacroCopyJsonOptions) ?? [];
     }
 
     private void RestoreMacroDirtyState(string macroId, bool wasDirty)
