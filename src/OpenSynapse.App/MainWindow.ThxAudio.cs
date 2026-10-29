@@ -6,7 +6,7 @@ public sealed partial class MainWindow
 {
     private ThxAudioWindow? _thxAudioWindow;
 
-    private void OpenThxAudioWindowClick(object sender, RoutedEventArgs e)
+    internal void OpenThxAudioWindow()
     {
         if (_thxAudioWindow is not null)
         {

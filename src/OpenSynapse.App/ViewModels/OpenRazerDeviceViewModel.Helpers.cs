@@ -212,7 +212,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             {
                 InvalidDataException => AppStrings.Text("OpenRazerProtocolMalformedResponse"),
                 NotSupportedException => AppStrings.Text("OpenRazerProtocolUnsupported"),
-                _ => AppStrings.Text("OpenRazerProtocolQueryFailed"),
+                _ => $"{AppStrings.Text("OpenRazerProtocolQueryFailed")} " +
+                    $"{exception.GetType().Name}: {exception.Message}".TrimEnd(),
             };
 
     private void UpdateBasic(Func<OpenRazerBasicState, OpenRazerBasicState> update)
@@ -243,6 +244,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(AutoSleepText));
         OnPropertyChanged(nameof(ChargeLimiterText));
         OnPropertyChanged(nameof(BrightnessText));
+        OnPropertyChanged(nameof(ProtocolAvailableCount));
+        OnPropertyChanged(nameof(ProtocolDetails));
         NotifyMiddlewareStateChanged();
     }
 

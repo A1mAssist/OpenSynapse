@@ -1,0 +1,133 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+  <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
+                <StackPanel Spacing="5">
+                  <TextBlock local:Localized.Uid="SettingsPageTitle" Text="设置" Style="{StaticResource PageTitleStyle}" />
+                  <TextBlock local:Localized.Uid="SettingsPageDescription" Text="管理 OpenSynapse 的启动、通知、语言和更新。" Foreground="{StaticResource MutedBrush}" />
+                </StackPanel>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_C6BFF9FFC0" Text="开机启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_6048E58A89" Text="仅当前用户，不需要管理员权限。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                      <ToggleSwitch local:Localized.Uid="StartupToggle" Grid.Column="1" IsOn="{Binding Profiles.IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding Profiles.CanSetStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开机启动" />
+                    </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_4ED618F72C" Text="静默启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_E40B74CC08" Text="开机启动时仅显示托盘图标。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                      <ToggleSwitch local:Localized.Uid="SilentStartupToggle" Grid.Column="1" IsOn="{Binding Profiles.IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding Profiles.CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="静默启动" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="ModeNotificationTitle" Text="模式切换通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="ModeNotificationDescription" Text="性能模式或游戏模式切换成功后发送 Windows 通知。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="ModeNotificationToggle" x:Name="ModeNotificationToggle" Grid.Column="1" Toggled="ModeNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="模式切换通知" />
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="LowBatteryNotificationTitle" Text="外设低电量通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="LowBatteryNotificationDescription" Text="读到外设电量降至 20% 和 10% 时发送 Windows 通知；不会额外轮询或唤醒设备。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="LowBatteryNotificationToggle" x:Name="LowBatteryNotificationToggle" Grid.Column="1" Toggled="LowBatteryNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="外设低电量通知" />
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="TrayBatteryTitle" Text="托盘菜单外设电量" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="TrayBatteryDescription" Text="在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="TrayBatteryToggle" x:Name="TrayBatteryToggle" Grid.Column="1" Toggled="TrayBatteryToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="托盘菜单外设电量" />
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="ChromaRestTitle" Text="Chroma REST" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaRestDescription" Text="Allow compatible games and integrations to control the Blade keyboard locally." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="ChromaRestToggle" x:Name="ChromaRestToggle" Grid.Column="1" Toggled="ChromaRestToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Chroma REST" />
+                    </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="ChromaRestoreTitle" Text="Restore lighting after external control" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaRestoreDescription" Text="Return to the OpenSynapse effect after the session ends or times out." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="ChromaRestoreToggle" x:Name="ChromaRestoreToggle" Grid.Column="1" Toggled="ChromaRestoreToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Restore lighting after external control" />
+                    </Grid>
+                    <TextBlock local:Localized.Uid="ChromaRestStatus" x:Name="ChromaRestStatusText" Text="Disabled" FontFamily="Cascadia Mono,Consolas" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <StackPanel x:Name="ChromaSourceSection" Spacing="10">
+                      <Border Height="1" Background="{StaticResource LineBrush}" />
+                      <TextBlock local:Localized.Uid="ChromaSourcesTitle" Text="Chroma sources" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" FontSize="16" />
+                      <TextBlock local:Localized.Uid="ChromaSourcesDescription" Text="Allow or block lighting control by source name. Names are reported by clients, not verified identities." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="ChromaSourcesEmpty" x:Name="ChromaSourcesEmptyText" Text="Sources appear here when a game or integration connects." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <StackPanel x:Name="ChromaSourcesPanel" Spacing="12" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,220" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="Loc_69C8D0D8B7" Text="语言" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="Loc_7F211E0B63" Text="默认跟随 Windows 显示语言；切换后立即生效。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ComboBox local:Localized.Uid="Loc_C3B65B0A4F" x:Name="AppLanguageComboBox" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" SelectionChanged="LanguageSelectionChanged" AutomationProperties.Name="界面语言">
+                      <ComboBoxItem local:Localized.Uid="Loc_6E1BBAA0E8" Content="跟随系统" Tag="system" />
+                      <ComboBoxItem local:Localized.Uid="Loc_5C8A32D3B1" Content="简体中文" Tag="zh-CN" />
+                      <ComboBoxItem local:Localized.Uid="Loc_F08B7A510E" Content="English" Tag="en-US" />
+                    </ComboBox>
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="UpdateTitle" Text="自动更新" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="UpdateDescription" Text="启动时自动检查并下载；安装前由你确认。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="AutomaticUpdatesToggle" x:Name="AutomaticUpdatesToggle" Grid.Column="1" Toggled="AutomaticUpdatesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="自动更新" />
+                    </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <StackPanel Spacing="5" VerticalAlignment="Center">
+                        <TextBlock x:Name="UpdateStatusText" Text="正在读取更新状态" TextWrapping="Wrap" />
+                        <ProgressBar x:Name="UpdateProgressBar" Minimum="0" Maximum="100" Height="3" Visibility="Collapsed" />
+                      </StackPanel>
+                      <Button local:Localized.Uid="CheckUpdateButton" x:Name="CheckUpdateButton" Grid.Column="1" Content="检查更新" Click="CheckForUpdatesClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                      <Button x:Name="UpdateActionButton" Grid.Column="2" Content="下载更新" Click="UpdateActionClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" Visibility="Collapsed" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+                <Button local:Localized.Uid="Loc_79D0601598" Click="ShowIntroductionClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="查看使用引导">
+                  <Grid>
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="SettingsGuideTitle" Text="使用引导" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="SettingsGuideDescription" Text="重新查看 OpenSynapse 的主要页面和设备控制入口。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+                <Button local:Localized.Uid="SettingsAboutButton" Click="OpenAboutClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="打开关于 OpenSynapse">
+                  <Grid>
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                      <TextBlock local:Localized.Uid="SettingsAboutTitle" Text="关于 OpenSynapse" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="SettingsAboutDescription" Text="查看版本、项目主页和许可信息。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+              </StackPanel>
+  </ScrollViewer>
+</UserControl>

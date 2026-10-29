@@ -2,34 +2,34 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.App.Views;
 
-public sealed partial class MainWindow
+public sealed partial class DevicesPage : UserControl
 {
     private async void HueSelectorClick(object sender, RoutedEventArgs e)
     {
         SelectDevice("hue");
-        await _viewModel.Hue.EnsureLoadedAsync(_lifetime.Token);
+        await ViewModel.Hue.EnsureLoadedAsync(Lifetime);
         UpdateDeviceSelector("hue");
     }
 
     private async void HueScanClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Hue.ScanAsync(_lifetime.Token);
+        await ViewModel.Hue.ScanAsync(Lifetime);
 
     private async void HuePairClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Hue.PairAsync(_lifetime.Token);
+        await ViewModel.Hue.PairAsync(Lifetime);
 
     private async void HueRefreshClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Hue.LoadLightsAsync(_lifetime.Token);
+        await ViewModel.Hue.LoadLightsAsync(Lifetime);
 
     private async void HueApplyColorClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Hue.ApplyColorAsync(_lifetime.Token);
+        await ViewModel.Hue.ApplyColorAsync(Lifetime);
 
     private async void HueApplyLightClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: PhilipsHueLightRowViewModel row })
         {
-            await _viewModel.Hue.ApplyLightAsync(row, _lifetime.Token);
+            await ViewModel.Hue.ApplyLightAsync(row, Lifetime);
         }
     }
 }

@@ -15,9 +15,9 @@ using Windows.Storage.Pickers;
 using Windows.System;
 using Windows.UI;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.App.Views;
 
-public sealed partial class MainWindow
+public sealed partial class DevicesPage : UserControl
 {
     private bool _touchpadToggleInFlight;
     private bool _bladeLightingSettingsInFlight;
@@ -66,10 +66,10 @@ public sealed partial class MainWindow
     ];
 
     private async void ApplyBrightnessClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyBrightnessAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyBrightnessAsync(Lifetime);
 
     private async void ApplyLightingEffectClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
 
     private async void LightingPresetButtonClick(object sender, RoutedEventArgs e)
     {
@@ -89,11 +89,11 @@ public sealed partial class MainWindow
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
         };
         picker.FileTypeFilter.Add(".chroma");
-        InitializePicker(picker);
+        Host.InitializePicker(picker);
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.Blade.ImportChromaFileAsync(file.Path, _lifetime.Token);
+            await ViewModel.Blade.ImportChromaFileAsync(file.Path, Lifetime);
         }
     }
 
@@ -108,14 +108,14 @@ public sealed partial class MainWindow
         {
             // Ask the view model which effect is selected; the admitted list differs per
             // Blade generation, so the page must not index the full catalog itself.
-            if (_viewModel.Blade.SelectedLightingModeForPage == BladeLightingMode.Starlight)
+            if (ViewModel.Blade.SelectedLightingModeForPage == BladeLightingMode.Starlight)
             {
-                _viewModel.Blade.StarlightColorModeIndex = 2;
+                ViewModel.Blade.StarlightColorModeIndex = 2;
             }
-            _viewModel.Blade.LightingColor = preset.Primary;
-            _viewModel.Blade.LightingSecondColor = preset.Secondary;
-            _viewModel.Blade.LightingTertiaryColor = preset.Tertiary;
-            await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
+            ViewModel.Blade.LightingColor = preset.Primary;
+            ViewModel.Blade.LightingSecondColor = preset.Secondary;
+            ViewModel.Blade.LightingTertiaryColor = preset.Tertiary;
+            await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
         }
         else if (target == "openrazer" && SelectedOpenRazerDevice is { } device)
         {
@@ -128,14 +128,14 @@ public sealed partial class MainWindow
             device.PrimaryColor = preset.Primary;
             device.SecondaryColor = preset.Secondary;
             device.TertiaryColor = preset.Tertiary;
-            await device.ApplyLightingAsync(_lifetime.Token);
+            await device.ApplyLightingAsync(Lifetime);
         }
         else if (target == "kraken" && SelectedOpenRazerKraken is { } kraken)
         {
             kraken.Primary = preset.Primary;
             kraken.Secondary = preset.Secondary;
             kraken.Tertiary = preset.Tertiary;
-            await kraken.ApplyAsync(_lifetime.Token);
+            await kraken.ApplyAsync(Lifetime);
         }
     }
 
@@ -146,19 +146,19 @@ public sealed partial class MainWindow
     }
 
     private async void ApplyPerformanceModeClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyPerformanceModeAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyPerformanceModeAsync(Lifetime);
 
     private async void ApplyBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyGpuClockOffsetAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyGpuClockOffsetAsync(Lifetime);
 
     private async void ResetBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ResetGpuClockOffsetDefaultsAsync(_lifetime.Token);
+        await ViewModel.Blade.ResetGpuClockOffsetDefaultsAsync(Lifetime);
 
-    private async Task<bool> ConfirmPadlessHyperBoostAsync()
+    internal async Task<bool> ConfirmPadlessHyperBoostAsync()
     {
         var dialog = new ContentDialog
         {
-            XamlRoot = RootLayout.XamlRoot,
+            XamlRoot = XamlRoot,
             Title = AppStrings.Text("BladeHyperboostDisclaimerTitle"),
             Content = AppStrings.Text("BladeHyperboostDisclaimerMessage"),
             PrimaryButtonText = AppStrings.Text("BladeHyperboostDisclaimerAccept"),
@@ -170,19 +170,19 @@ public sealed partial class MainWindow
             return false;
         }
 
-        _viewModel.Blade.SetPadlessHyperBoostAccepted(true);
-        if (!_behaviorSettings.PadlessHyperBoostAccepted)
+        ViewModel.Blade.SetPadlessHyperBoostAccepted(true);
+        if (!Host.BehaviorSettings.PadlessHyperBoostAccepted)
         {
-            _behaviorSettings.PadlessHyperBoostAccepted = true;
+            Host.BehaviorSettings.PadlessHyperBoostAccepted = true;
             try
             {
-                _behaviorSettings.Save();
+                Host.BehaviorSettings.Save();
             }
             catch (Exception exception) when (
                 exception is IOException or UnauthorizedAccessException or
                     System.Security.SecurityException or InvalidOperationException)
             {
-                _viewModel.ReportApplicationError(AppStrings.FormatText(
+                ViewModel.ReportApplicationError(AppStrings.FormatText(
                     "BehaviorSettingError",
                     exception.Message));
             }
@@ -209,7 +209,7 @@ public sealed partial class MainWindow
                 _bladePerformanceApplyInFlight = true;
                 try
                 {
-                    await _viewModel.Blade.ApplyPerformanceModeAsync(_lifetime.Token);
+                    await ViewModel.Blade.ApplyPerformanceModeAsync(Lifetime);
                 }
                 finally
                 {
@@ -217,46 +217,46 @@ public sealed partial class MainWindow
                 }
                 break;
             case "charge":
-                await _viewModel.Blade.ApplyChargeLimitAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyChargeLimitAsync(Lifetime);
                 break;
             case "cpuBoost":
-                await _viewModel.Blade.ApplyCpuBoostAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyCpuBoostAsync(Lifetime);
                 break;
             case "gpuBoost":
-                await _viewModel.Blade.ApplyGpuBoostAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyGpuBoostAsync(Lifetime);
                 break;
             case "lighting":
-                await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
                 break;
             case "logo":
-                await _viewModel.Blade.ApplyLogoAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyLogoAsync(Lifetime);
                 break;
             case "refreshRate":
-            await _viewModel.Display.ApplyInternalDisplayRefreshRateAsync(_lifetime.Token);
+            await ViewModel.Display.ApplyInternalDisplayRefreshRateAsync(Lifetime);
                 break;
             case "nativeDisplayMode":
-                await _viewModel.Blade.ApplyNativeDisplayModeAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyNativeDisplayModeAsync(Lifetime);
                 break;
         }
     }
 
     private async void BladeFanAutomaticModeClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Fan.SelectBladeFanAutomaticModeAsync(_lifetime.Token);
+        await ViewModel.Fan.SelectBladeFanAutomaticModeAsync(Lifetime);
 
     private void BladeFanFixedModeClick(object sender, RoutedEventArgs e) =>
-        _viewModel.Fan.ShowBladeFanFixedMode();
+        ViewModel.Fan.ShowBladeFanFixedMode();
 
     private void BladeFanCurveModeClick(object sender, RoutedEventArgs e) =>
-        _viewModel.Fan.ShowBladeFanCurveMode();
+        ViewModel.Fan.ShowBladeFanCurveMode();
 
     private async void ApplyBladeFanFixedRpmClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Fan.SelectBladeFanFixedModeAsync(_lifetime.Token);
+        await ViewModel.Fan.SelectBladeFanFixedModeAsync(Lifetime);
 
     private async void AutoApplyMaxFanToggled(object sender, RoutedEventArgs e)
     {
         if (sender is ToggleSwitch { FocusState: not FocusState.Unfocused })
         {
-            await _viewModel.Blade.ApplyMaxFanAsync(_lifetime.Token);
+            await ViewModel.Blade.ApplyMaxFanAsync(Lifetime);
         }
     }
 
@@ -270,7 +270,7 @@ public sealed partial class MainWindow
         _bladeLightingSettingsInFlight = true;
         try
         {
-            await _viewModel.Blade.ApplyLightingSettingsAsync(_lifetime.Token);
+            await ViewModel.Blade.ApplyLightingSettingsAsync(Lifetime);
         }
         finally
         {
@@ -288,19 +288,19 @@ public sealed partial class MainWindow
         switch (setting)
         {
             case "gamingMode":
-                await _viewModel.Blade.ApplyGamingModeAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyGamingModeAsync(Lifetime);
                 break;
             case "startupAnimation":
-                await _viewModel.Blade.ApplyStartupAnimationAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyStartupAnimationAsync(Lifetime);
                 break;
             case "oneTimeFullCharge":
-                await _viewModel.Blade.ApplyOneTimeFullChargeAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyOneTimeFullChargeAsync(Lifetime);
                 break;
             case "localDimming":
-                await _viewModel.Blade.ApplyLocalDimmingAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyLocalDimmingAsync(Lifetime);
                 break;
             case "cpuPowerBoost":
-                await _viewModel.Blade.ApplyCpuPowerBoostAsync(_lifetime.Token);
+                await ViewModel.Blade.ApplyCpuPowerBoostAsync(Lifetime);
                 break;
         }
     }
@@ -309,7 +309,7 @@ public sealed partial class MainWindow
     {
         if (_bladeBrightnessPointerActive && sender is Slider)
         {
-            await _viewModel.Blade.QueueBrightnessAsync(_lifetime.Token);
+            await ViewModel.Blade.QueueBrightnessAsync(Lifetime);
         }
     }
 
@@ -317,7 +317,7 @@ public sealed partial class MainWindow
     {
         if (sender is Slider)
         {
-            await _viewModel.Display.QueueInternalDisplayBrightnessAsync(e.NewValue, _lifetime.Token);
+            await ViewModel.Display.QueueInternalDisplayBrightnessAsync(e.NewValue, Lifetime);
         }
     }
 
@@ -354,15 +354,15 @@ public sealed partial class MainWindow
         var version = ++_displayMuxRefreshVersion;
         try
         {
-            var status = await _viewModel.Blade.ReadDisplayMuxStatusAsync(_lifetime.Token);
-            if (_lifetime.IsCancellationRequested || version != _displayMuxRefreshVersion)
+            var status = await ViewModel.Blade.ReadDisplayMuxStatusAsync(Lifetime);
+            if (Lifetime.IsCancellationRequested || version != _displayMuxRefreshVersion)
             {
                 return;
             }
 
             ApplyDisplayMuxStatus(status);
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
         }
         catch (Exception exception)
@@ -458,15 +458,15 @@ public sealed partial class MainWindow
         BladeDisplayMuxSwitchResult result;
         try
         {
-            result = await _viewModel.Blade.SetDisplayMuxModeAsync(mode, _lifetime.Token);
+            result = await ViewModel.Blade.SetDisplayMuxModeAsync(mode, Lifetime);
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
             return;
         }
         catch (Exception exception)
         {
-            _viewModel.ReportApplicationError(AppStrings.FormatText(
+            ViewModel.ReportApplicationError(AppStrings.FormatText(
                 "DisplayMuxModeError",
                 exception.Message));
             result = new BladeDisplayMuxSwitchResult(
@@ -481,7 +481,7 @@ public sealed partial class MainWindow
                 DisplayMuxModeCombo.Visibility == Visibility.Visible;
         }
 
-        if (_lifetime.IsCancellationRequested)
+        if (Lifetime.IsCancellationRequested)
         {
             return;
         }
@@ -512,7 +512,7 @@ public sealed partial class MainWindow
     {
         var dialog = new ContentDialog
         {
-            XamlRoot = Content.XamlRoot,
+            XamlRoot = XamlRoot,
             Title = AppStrings.Text("DisplayMuxModeRestartTitle"),
             Content = AppStrings.Text("DisplayMuxModeStatusRestartRequired"),
             PrimaryButtonText = AppStrings.Text("DisplayMuxModeRestartNow"),
@@ -585,15 +585,15 @@ public sealed partial class MainWindow
         try
         {
             // The switch means "integrated-only mode is active", so on = disable the GPU.
-            result = await WindowsDedicatedGpuMode.SetEnabledAsync(!toggle.IsOn, _lifetime.Token);
+            result = await WindowsDedicatedGpuMode.SetEnabledAsync(!toggle.IsOn, Lifetime);
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
             return;
         }
         catch (Exception exception)
         {
-            _viewModel.ReportApplicationError(AppStrings.FormatText(
+            ViewModel.ReportApplicationError(AppStrings.FormatText(
                 "DedicatedGpuModeError",
                 exception.Message));
             result = new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
@@ -604,7 +604,7 @@ public sealed partial class MainWindow
             _dedicatedGpuModeUiReady = true;
         }
 
-        if (_lifetime.IsCancellationRequested)
+        if (Lifetime.IsCancellationRequested)
         {
             return;
         }
@@ -640,7 +640,7 @@ public sealed partial class MainWindow
 
     private async void DedicatedGpuModeRestartClick(object sender, RoutedEventArgs e)
     {
-        if (_dedicatedGpuModeBusy || _lifetime.IsCancellationRequested)
+        if (_dedicatedGpuModeBusy || Lifetime.IsCancellationRequested)
         {
             return;
         }
@@ -652,15 +652,15 @@ public sealed partial class MainWindow
         DedicatedGpuSwitchResult result;
         try
         {
-            result = await WindowsDedicatedGpuMode.RestartFaultedAsync(_lifetime.Token);
+            result = await WindowsDedicatedGpuMode.RestartFaultedAsync(Lifetime);
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
             return;
         }
         catch (Exception exception)
         {
-            _viewModel.ReportApplicationError(AppStrings.FormatText(
+            ViewModel.ReportApplicationError(AppStrings.FormatText(
                 "DedicatedGpuModeError",
                 exception.Message));
             result = new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
@@ -670,7 +670,7 @@ public sealed partial class MainWindow
             _dedicatedGpuModeBusy = false;
         }
 
-        if (_lifetime.IsCancellationRequested)
+        if (Lifetime.IsCancellationRequested)
         {
             return;
         }
@@ -705,7 +705,7 @@ public sealed partial class MainWindow
     private async void BladeBrightnessPointerReleased(object sender, PointerRoutedEventArgs e)
     {
         _bladeBrightnessPointerActive = false;
-        await _viewModel.Blade.QueueBrightnessAsync(_lifetime.Token);
+        await ViewModel.Blade.QueueBrightnessAsync(Lifetime);
     }
 
     private void BladeBrightnessPointerCaptureLost(object sender, PointerRoutedEventArgs e) =>
@@ -768,7 +768,7 @@ public sealed partial class MainWindow
             ReferenceEquals(sender, SecondaryLightingColorFlyout) ||
             ReferenceEquals(sender, TertiaryLightingColorFlyout))
         {
-            await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
+            await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
         }
         else if (ReferenceEquals(sender, OpenRazerPrimaryColorFlyout) ||
             ReferenceEquals(sender, OpenRazerSecondaryColorFlyout))
@@ -781,16 +781,16 @@ public sealed partial class MainWindow
                     openRazer.TertiaryColor = picker!.Color;
                 else if (ReferenceEquals(sender, OpenRazerSecondaryColorFlyout))
                     openRazer.SecondaryColor = picker!.Color;
-                await openRazer.ApplyLightingAsync(_lifetime.Token);
+                await openRazer.ApplyLightingAsync(Lifetime);
             }
         }
         else if (ReferenceEquals(sender, KrakenPrimaryColorFlyout) ||
             ReferenceEquals(sender, KrakenSecondaryColorFlyout) ||
             ReferenceEquals(sender, KrakenTertiaryColorFlyout))
         {
-            if (_viewModel.OpenRazer.SelectedKraken is { } kraken)
+            if (ViewModel.OpenRazer.SelectedKraken is { } kraken)
             {
-                await kraken.ApplyAsync(_lifetime.Token);
+                await kraken.ApplyAsync(Lifetime);
             }
         }
     }
@@ -880,25 +880,25 @@ public sealed partial class MainWindow
     }
 
     private async void ApplyChargeLimitClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyChargeLimitAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyChargeLimitAsync(Lifetime);
 
     private async void ApplyCpuBoostClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyCpuBoostAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyCpuBoostAsync(Lifetime);
 
     private async void ApplyGpuBoostClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyGpuBoostAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyGpuBoostAsync(Lifetime);
 
     private async void ApplyMaxFanClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyMaxFanAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyMaxFanAsync(Lifetime);
 
     private async void ApplyLogoClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Blade.ApplyLogoAsync(_lifetime.Token);
+        await ViewModel.Blade.ApplyLogoAsync(Lifetime);
 
     private async void CheckFirmwareUpdateClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Firmware.CheckUpdateAsync(_lifetime.Token);
+        await ViewModel.Firmware.CheckUpdateAsync(Lifetime);
 
     private async void OpenFirmwareDownloadClick(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri(_viewModel.Firmware.DownloadUrl));
+        await Launcher.LaunchUriAsync(new Uri(ViewModel.Firmware.DownloadUrl));
 
     private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
     {
@@ -910,7 +910,7 @@ public sealed partial class MainWindow
         _touchpadToggleInFlight = true;
         try
         {
-            await _viewModel.Blade.ToggleTouchpadAsync(_lifetime.Token);
+            await ViewModel.Blade.ToggleTouchpadAsync(Lifetime);
         }
         finally
         {

@@ -4,9 +4,9 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.App.Views;
 
-public sealed partial class MainWindow
+public sealed partial class DevicesPage : UserControl
 {
     private void AdditionalDevicesToggleClick(object sender, RoutedEventArgs e)
     {
@@ -16,10 +16,15 @@ public sealed partial class MainWindow
         AdditionalDevicesCollapseButton.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    private void OpenBladeFanCurveWindowClick(object sender, RoutedEventArgs e) =>
+        Host.OpenBladeFanCurveWindow();
+
+    private void OpenThxAudioWindowClick(object sender, RoutedEventArgs e) =>
+        Host.OpenThxAudioWindow();
+
     private void ConnectedDeviceCardClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button) return;
-        RootNavigationView.SelectedItem = DevicesNavigationItem;
         switch (button.Tag)
         {
             case DeviceRowViewModel:
@@ -80,7 +85,7 @@ public sealed partial class MainWindow
         }
 
         SelectDevice("openrazer");
-        await _viewModel.OpenRazer.SelectDeviceAsync(row, _lifetime.Token);
+        await ViewModel.OpenRazer.SelectDeviceAsync(row, Lifetime);
         UpdateDeviceSelector("openrazer");
     }
 
@@ -94,39 +99,29 @@ public sealed partial class MainWindow
         await SelectDeviceSourceAsync(item.Source);
     }
 
-    /// <summary>
-    /// Opens the device page on one specific device. The tray uses this so a battery
-    /// row lands on that device instead of the first one on the page.
-    /// </summary>
-    internal void RequestDeviceNavigation(object source)
-    {
-        RequestNavigation("devices");
-        _dispatcherQueue.TryEnqueue(async () => await SelectDeviceSourceAsync(source));
-    }
-
     private async Task SelectDeviceSourceAsync(object? source)
     {
         switch (source)
         {
             case OpenRazerDeviceRowViewModel row:
                 SelectDevice("openrazer");
-                await _viewModel.OpenRazer.SelectDeviceAsync(row, _lifetime.Token);
+                await ViewModel.OpenRazer.SelectDeviceAsync(row, Lifetime);
                 break;
             case OpenRazerKrakenDeviceRowViewModel row:
                 SelectDevice("kraken");
-                await _viewModel.OpenRazer.SelectKrakenAsync(row);
-                if (_viewModel.OpenRazer.SelectedKraken is { } kraken)
+                await ViewModel.OpenRazer.SelectKrakenAsync(row);
+                if (ViewModel.OpenRazer.SelectedKraken is { } kraken)
                 {
-                    await kraken.LoadSerialAsync(_lifetime.Token);
+                    await kraken.LoadSerialAsync(Lifetime);
                 }
                 break;
             case BlackSharkDeviceRowViewModel row:
                 SelectDevice("blackshark");
-                await _viewModel.SelectBlackSharkAsync(row, _lifetime.Token);
+                await ViewModel.SelectBlackSharkAsync(row, Lifetime);
                 break;
             case RazerGamepadDeviceRowViewModel row:
                 SelectDevice("gamepad");
-                await _viewModel.SelectGamepadAsync(row, _lifetime.Token);
+                await ViewModel.SelectGamepadAsync(row, Lifetime);
                 break;
             case DeviceRowViewModel row
                 when DeviceProtocolFamilies.IsBlade(row.ProtocolFamily):
@@ -138,85 +133,85 @@ public sealed partial class MainWindow
                 break;
             case PhilipsHueViewModel:
                 SelectDevice("hue");
-                await _viewModel.Hue.EnsureLoadedAsync(_lifetime.Token);
+                await ViewModel.Hue.EnsureLoadedAsync(Lifetime);
                 break;
         }
     }
     private async void OpenRazerKrakenSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: OpenRazerKrakenDeviceRowViewModel row }) return;
-        await _viewModel.OpenRazer.SelectKrakenAsync(row);
+        await ViewModel.OpenRazer.SelectKrakenAsync(row);
         SelectDevice("kraken");
-        if (_viewModel.OpenRazer.SelectedKraken is { } kraken)
-            await kraken.LoadSerialAsync(_lifetime.Token);
+        if (ViewModel.OpenRazer.SelectedKraken is { } kraken)
+            await kraken.LoadSerialAsync(Lifetime);
     }
 
     private async void BlackSharkSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: BlackSharkDeviceRowViewModel row }) return;
         SelectDevice("blackshark");
-        await _viewModel.SelectBlackSharkAsync(row, _lifetime.Token);
+        await ViewModel.SelectBlackSharkAsync(row, Lifetime);
     }
 
     private async void OpenRazerKrakenApplyClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.OpenRazer.SelectedKraken?.ApplyAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.OpenRazer.SelectedKraken?.ApplyAsync(Lifetime) ?? Task.CompletedTask);
 
-    private OpenRazerDeviceViewModel? SelectedOpenRazerDevice => _viewModel.OpenRazer.SelectedDevice;
-    private OpenRazerKrakenViewModel? SelectedOpenRazerKraken => _viewModel.OpenRazer.SelectedKraken;
+    private OpenRazerDeviceViewModel? SelectedOpenRazerDevice => ViewModel.OpenRazer.SelectedDevice;
+    private OpenRazerKrakenViewModel? SelectedOpenRazerKraken => ViewModel.OpenRazer.SelectedKraken;
 
     private async void OpenRazerApplyPollingClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyPollingAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyPollingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyDpiClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyDpiAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyDpiAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyDpiStagesAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyDpiStagesAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyIdleClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyIdleTimeoutAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyIdleTimeoutAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyLowBatteryClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyLowBatteryThresholdAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyLowBatteryThresholdAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyAutoSleepClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyAutoSleepAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyAutoSleepAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyChargeLimiterClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyChargeLimiterAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyChargeLimiterAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyTimeToDimClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyTimeToDimAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyTimeToDimAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyIndicatorLedClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyIndicatorLedAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyIndicatorLedAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyBatteryCurveClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyBatteryCurveAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyBatteryCurveAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyGpuCardClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyGpuCardAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyGpuCardAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyForceChromaClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyForceChromaAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyForceChromaAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyChromaTapClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyChromaTapAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyChromaTapAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyProfileDebounceClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyProfileDebounceAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyProfileDebounceAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyLkScrollClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyLkScrollAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyLkScrollAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerReadMappingClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.LoadMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.LoadMappingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyMappingClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyMappingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyBrightnessClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyBrightnessAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyBrightnessAsync(Lifetime) ?? Task.CompletedTask);
 
     private void OpenRazerBrightnessValueChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
@@ -233,19 +228,19 @@ public sealed partial class MainWindow
             return;
         }
 
-        await device.ApplyLightingAsync(_lifetime.Token);
-        await device.ApplyBrightnessAsync(_lifetime.Token);
-        await device.ApplyLedStateAsync(_lifetime.Token);
+        await device.ApplyLightingAsync(Lifetime);
+        await device.ApplyBrightnessAsync(Lifetime);
+        await device.ApplyLedStateAsync(Lifetime);
     }
 
     private async void OpenRazerLightingSettingsToggled(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyLightingSettingsAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyLightingSettingsAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyLedStateClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyLedStateAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyLedStateAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerReactiveTriggerClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.TriggerReactiveAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.TriggerReactiveAsync(Lifetime) ?? Task.CompletedTask);
 
     private void OpenRazerMatrixCellClick(object sender, RoutedEventArgs e)
     {
@@ -327,7 +322,7 @@ public sealed partial class MainWindow
     }
 
     private async void OpenRazerApplyMatrixClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyMatrixAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyMatrixAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerLightingSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -337,83 +332,83 @@ public sealed partial class MainWindow
             return;
         }
 
-        await device.LoadLightingAsync(_lifetime.Token);
+        await device.LoadLightingAsync(Lifetime);
     }
 
     private async void OpenRazerScrollExpanding(Expander sender, ExpanderExpandingEventArgs args) =>
-        await (SelectedOpenRazerDevice?.LoadScrollAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.LoadScrollAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyScrollModeClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyScrollModeAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyScrollModeAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyOnboardProfileClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyActiveOnboardProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyActiveOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyHapticScrollClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyHapticScrollAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyHapticScrollAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerCreateOnboardProfileClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.CreateOnboardProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.CreateOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerDeleteOnboardProfileClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.DeleteOnboardProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.DeleteOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerResetOnboardProfileClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ResetOnboardProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ResetOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerRefreshWirelessClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.LoadWirelessAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.LoadWirelessAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerUnpairWirelessClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.UnpairWirelessAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.UnpairWirelessAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyKnobClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyKnobAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyKnobAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyAnalogKeyClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyAnalogKeyAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyAnalogKeyAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyOledClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyOledAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyOledAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyScrollFreeNotchedModeClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyScrollFreeNotchedModeAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyScrollFreeNotchedModeAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyScrollAccelerationLevelClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyScrollAccelerationLevelAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyScrollAccelerationLevelAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyScrollAccelerationClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyScrollAccelerationAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyScrollAccelerationAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplySmartReelClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplySmartReelAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplySmartReelAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplySmartReelThresholdClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplySmartReelThresholdAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplySmartReelThresholdAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerKeyswitchExpanding(Expander sender, ExpanderExpandingEventArgs args) =>
-        await (SelectedOpenRazerDevice?.LoadKeyswitchAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.LoadKeyswitchAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyKeyswitchClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.ApplyKeyswitchAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.ApplyKeyswitchAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerFnPrimaryClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.SetFnPrimaryAsync(true, _lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.SetFnPrimaryAsync(true, Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerMediaPrimaryClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.SetFnPrimaryAsync(false, _lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.SetFnPrimaryAsync(false, Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerApplyHyperPollingIndicatorClick(object sender, RoutedEventArgs e) =>
-        await (SelectedOpenRazerDevice?.SetHyperPollingIndicatorAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (SelectedOpenRazerDevice?.SetHyperPollingIndicatorAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerPairHyperPollingClick(object sender, RoutedEventArgs e) =>
         await ConfirmHyperPollingAsync(pair: true);
 
     private async void OpenRazerReadOnboardMacrosClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.OpenRazer.SelectedDevice?.LoadOnboardMacrosAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.OpenRazer.SelectedDevice?.LoadOnboardMacrosAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerWriteOnboardMacroClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.OpenRazer.SelectedDevice?.WriteOnboardMacroAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.OpenRazer.SelectedDevice?.WriteOnboardMacroAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void OpenRazerUnpairHyperPollingClick(object sender, RoutedEventArgs e) =>
         await ConfirmHyperPollingAsync(pair: false);
@@ -429,7 +424,7 @@ public sealed partial class MainWindow
         };
         var dialog = new ContentDialog
         {
-            XamlRoot = RootLayout.XamlRoot,
+            XamlRoot = XamlRoot,
             Title = AppStrings.Text(pair ? "OpenRazerPairTitle" : "OpenRazerUnpairTitle"),
             Content = productId,
             PrimaryButtonText = AppStrings.Text(pair ? "OpenRazerPairAction" : "OpenRazerUnpairAction"),
@@ -442,10 +437,10 @@ public sealed partial class MainWindow
         if (input.Length != 4 || !ushort.TryParse(input, System.Globalization.NumberStyles.HexNumber,
                 System.Globalization.CultureInfo.InvariantCulture, out var mouseProductId))
         {
-            _viewModel.ReportApplicationError(AppStrings.Text("OpenRazerInvalidProductId"));
+            ViewModel.ReportApplicationError(AppStrings.Text("OpenRazerInvalidProductId"));
             return;
         }
-        if (pair) await device.PairHyperPollingAsync(mouseProductId, _lifetime.Token);
-        else await device.UnpairHyperPollingAsync(mouseProductId, _lifetime.Token);
+        if (pair) await device.PairHyperPollingAsync(mouseProductId, Lifetime);
+        else await device.UnpairHyperPollingAsync(mouseProductId, Lifetime);
     }
 }
