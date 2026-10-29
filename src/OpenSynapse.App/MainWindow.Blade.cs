@@ -222,6 +222,13 @@ public sealed partial class MainWindow
             case "cpuBoost":
                 await _viewModel.ApplyBladeCpuBoostAsync(_lifetime.Token);
                 break;
+            case "cpuPowerLimit":
+                if (_viewModel.IsRefreshingCpuPowerLimit)
+                {
+                    return;
+                }
+                await _viewModel.ApplyCpuPowerLimitAsync(_lifetime.Token);
+                break;
             case "gpuBoost":
                 await _viewModel.ApplyBladeGpuBoostAsync(_lifetime.Token);
                 break;

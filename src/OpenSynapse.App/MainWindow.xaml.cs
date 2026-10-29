@@ -48,6 +48,8 @@ public sealed partial class MainWindow : Window
         _viewModel.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
+        // P5: the card needs a real value on first open, without a privileged read delaying it.
+        _ = _viewModel.RefreshCpuPowerLimitSafelyAsync();
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
         _viewModel.Hue.Persist = (host, appKey) =>
         {

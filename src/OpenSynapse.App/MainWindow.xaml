@@ -1181,6 +1181,19 @@
                       <ToggleSwitch Grid.Column="1" Tag="cpuPowerBoost" IsOn="{Binding BladeCpuPowerBoostEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeCpuPowerBoost}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeCpuPowerBoostLabel}" />
                     </Grid>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding CpuPowerLimitVisibility}">
+                    <StackPanel Spacing="8">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel Spacing="4">
+                          <TextBlock x:Name="CpuPowerLimitLabel" local:Localized.Uid="CpuPowerLimitTitle" Text="CPU 功耗墙" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                          <TextBlock local:Localized.Uid="CpuPowerLimitDescription" Text="限制 CPU 封装功耗上限（PL1/PL2）。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding CpuPowerLimitText}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Right" MaxWidth="280" />
+                      </Grid>
+                      <ComboBox Tag="cpuPowerLimit" ItemsSource="{Binding CpuPowerLimitOptions}" SelectedIndex="{Binding CpuPowerLimitIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding CanSetCpuPowerLimit}" HorizontalAlignment="Stretch" AutomationProperties.LabeledBy="{Binding ElementName=CpuPowerLimitLabel}" />
+                      <TextBlock Text="{Binding CpuPowerLimitDetailText}" Visibility="{Binding CpuPowerLimitDetailVisibility}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
                   <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
                     <Border Style="{StaticResource CardStyle}" Padding="16">
                       <StackPanel Spacing="8">

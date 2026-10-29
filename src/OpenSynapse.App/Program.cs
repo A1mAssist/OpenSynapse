@@ -13,6 +13,17 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        if (args.Contains("--install-service", StringComparer.OrdinalIgnoreCase))
+        {
+            var ok = DedicatedGpuModeServiceInstaller.EnsureInstalled(Environment.ProcessPath);
+            Console.WriteLine(ok
+                ? "OpenSynapseGpuMode service registered."
+                : !DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath)
+                    ? "OpenSynapseGpuMode service registration failed: install under Program Files first."
+                    : "OpenSynapseGpuMode service registration failed: run the command as administrator.");
+            Environment.Exit(ok ? 0 : 1);
+        }
+
         if (GpuModeServiceHost.TryRun(args))
         {
             return;
