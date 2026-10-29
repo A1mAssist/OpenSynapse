@@ -211,3 +211,27 @@ ResolvedRazerDevice(Descriptor, Manifest)
 4. OpenRazer catalog（含本地别名和 middleware 派生条目）声明的每个轮询率都能由 `OpenRazerMouseProtocol.SetPollingRate` 编码，不启动真实 transport。
 
 `BladeModelCapabilities` 的 39 个 PID 现在都有内建 Blade family manifest。旧款 Blade 按 `rzDeviceType` 和同组已有 manifest 分为 `blade-597`（最小命令集）与 `blade-671`（完整风扇/电源/键盘控制）两组；manifest 只声明该组已共享的报文，未凭产品名开启额外能力。
+
+## 预算与检查
+
+结构不能靠自觉。下面每一条都是会红的检查，规矩写在这里只是索引，真正的执行在代码里。
+
+| 检查 | 文件 | 拦住什么 |
+|---|---|---|
+| 文件与类型预算 | `.structure-budget.json` + `StructureBudgetTests` | 文件超过登记行数、类型 public 成员超过登记值；新文件超过 600 行 / 100 public 直接红 |
+| 分层方向 | `LayeringTests` | Core 引用 Windows/App、Windows 引用 App、csproj 引用反向 |
+| 测试工程卫生 | `TestProjectHygieneTests` | 测试项目重新用 `<Compile Include>` 硬链 App 源码 |
+| 能力 id | `ManifestCapabilityTests` | 源码里重新出现 `"x.get"` 形式的字符串；manifest、family contract、常量三者对不上 |
+| XAML 绑定 | `XamlBindingTests` | `{Binding X}` 指向不存在的成员（运行期静默失效的那种） |
+| 设备能力结构 | `DeviceCapabilityStructureTests` | manifest / family contract / `BladeModelCapabilities` 三者不一致 |
+
+本地一条命令看结构现状：
+
+```powershell
+pwsh -NoProfile -File scripts\check-structure.ps1      # 报告 + 退出码
+pwsh -NoProfile -File scripts\run-ui-qa.ps1            # 六页 UI 冒烟 + 截图
+```
+
+**预算只能降。** 要让某个文件变大，改 `.structure-budget.json` 是唯一合法的路，而且那行 diff 会出现在 review 里；重构让文件变小之后，在同一笔提交里把预算改小，收益就被锁住了。
+
+`git config core.hooksPath .githooks` 启用提交检查：拒绝 `package.json` / `package-lock.json`、拒绝 `Co-Authored-By` 尾注、要求 Conventional Commits 前缀。
