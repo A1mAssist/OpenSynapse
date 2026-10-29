@@ -234,11 +234,23 @@ public sealed class OpenRazerWindowsPortTests
             [device],
             new BladeLightingEffect(BladeLightingMode.Static, new RazerRgb(0x11, 0x22, 0x33)));
         await controller.StopAsync();
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Static, new RazerRgb(0x11, 0x22, 0x33)));
+        await controller.SetDisplayAvailableAsync(false);
 
         Assert.Contains(transport.Requests, request =>
             request.CommandClass == 0x03 &&
             request.CommandId == 0x02 &&
             request.Arguments.SequenceEqual(new byte[] { 0x06, 0x11, 0x22, 0x33 }));
+        Assert.Equal(2, transport.Requests.Count(request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x02 &&
+            request.Arguments.SequenceEqual(new byte[] { 0x00 })));
+        Assert.DoesNotContain(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x00 }));
     }
 
     [Fact]

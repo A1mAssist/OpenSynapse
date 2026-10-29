@@ -382,7 +382,7 @@ public sealed class BladeLightingController : IBladeLightingController
                         {
                             await SendAsync(
                                 modeDevicePath,
-                                BladeLightingProtocol.CreateOffRequest(),
+                                CreateOffRequest(),
                                 CancellationToken.None).ConfigureAwait(false);
                         }
                     }
@@ -393,7 +393,7 @@ public sealed class BladeLightingController : IBladeLightingController
                         {
                             await SendAsync(
                                 _nativeEffectDevicePath,
-                                BladeLightingProtocol.CreateOffRequest(),
+                                CreateOffRequest(),
                                 CancellationToken.None).ConfigureAwait(false);
                         }
                         finally
@@ -482,7 +482,7 @@ public sealed class BladeLightingController : IBladeLightingController
             {
                 await SendAsync(
                     _nativeEffectDevicePath ?? throw new InvalidOperationException("Native lighting device path is unavailable."),
-                    BladeLightingProtocol.CreateOffRequest(),
+                    CreateOffRequest(),
                     CancellationToken.None).ConfigureAwait(false);
             }
             finally
@@ -659,6 +659,11 @@ public sealed class BladeLightingController : IBladeLightingController
         return request.Length != 0;
     }
 
+    private byte[] CreateOffRequest() =>
+        _ledMatrixProtocol
+            ? BladeLightingLedMatrixProtocol.CreateOffRequest()
+            : BladeLightingProtocol.CreateOffRequest();
+
     private (DeviceDescriptor Device, RazerDeviceManifest Manifest) FindReadyBlade(
         IReadOnlyList<DeviceDescriptor> devices)
     {
@@ -674,7 +679,10 @@ public sealed class BladeLightingController : IBladeLightingController
                 device.UsagePage == manifest.Collection.UsagePage &&
                 device.Usage == manifest.Collection.Usage)
             {
-                _ledMatrixProtocol = device.ProductId is 0x02E0 or 0x02E1;
+                // Only matrix-bearing blade-671 manifests reach this branch. The
+                // middleware declares rzDevice25LedMatrixBlade2 for that family, so
+                // use the 03:02/03:0B dialect without a PID list or a USB probe.
+                _ledMatrixProtocol = manifest.ProtocolFamily == "blade-671";
                 return (device, manifest);
             }
         }
