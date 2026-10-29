@@ -8,10 +8,10 @@
 
 | 项目 | 值 |
 |---|---|
-| 基线日期 | 2026-10-29 |
+| 基线日期 | 2026-10-30 |
 | 分支 | `main` |
 | 构建 | `dotnet build src\OpenSynapse.App\OpenSynapse.App.csproj -c Release -r win-x64 --no-restore` → 0 警告，0 错误 |
-| 测试 | `dotnet test tests\OpenSynapse.Core.Tests\OpenSynapse.Core.Tests.csproj -c Release --no-restore` → 1643 个测试，1643 通过，0 失败，0 跳过 |
+| 测试 | `dotnet test tests\OpenSynapse.Core.Tests\OpenSynapse.Core.Tests.csproj -c Release --no-restore` → 1657 个测试，1657 通过，0 失败，0 跳过 |
 | Blade manifest | `BladeModelCapabilities` 的 39 个 PID 都有内建 manifest |
 
 测试前需要清空 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 及其小写形式，并设置 `NO_PROXY=no_proxy=127.0.0.1,localhost`；否则 Chroma 测试会尝试走本机代理 `127.0.0.1:7890`。
@@ -83,7 +83,15 @@ OpenSynapse.App ────────► OpenSynapse.Windows ─────�
        └─────────────────────────────────────────────────────┘
 ```
 
-没有反向依赖：Core 不引用 Windows/App，Windows 不引用 App。测试工程为了复用纯逻辑会链接少量 App 源文件，这不改变产品程序集的依赖方向。
+没有反向依赖：Core 不引用 Windows/App，Windows 不引用 App。测试工程不再用 `<Compile Include>` 硬链 App 源码，纯逻辑一律下沉到 Core 或 Windows。
+
+App 内部按三层组织，新代码照这个落位：
+
+| 位置 | 职责 |
+|---|---|
+| `Views/` | 每个导航页一个 UserControl + 自己的 code-behind；事件处理器跟着页面走，不回到 MainWindow |
+| `ViewModels/*Workspace.cs` | 一个子系统一个 workspace，持有自己的状态、命令和订阅；构造注入最小依赖，不持有 `MainViewModel` |
+| `MainViewModel` | 只放组合属性（`Macros` `OpenRazer` `Profiles` `Telemetry` `Fan` `Display` `Lighting` `Blade` `Viper` `Firmware` `Tray` `Refresh` `Diagnostics`）和跨子系统装配；不放业务状态，**也不给 workspace 加转发属性** |
 
 ## 2. 设备能力三层
 
@@ -203,17 +211,6 @@ ResolvedRazerDevice(Descriptor, Manifest)
 
 ## 4. 结构测试
 
-`tests/OpenSynapse.Core.Tests/DeviceCapabilityStructureTests.cs` 固定以下结构：
-
-1. BuiltIn registry 中每个 `(VID, PID)` 只能出现一次；
-2. 每个 family 的 required capability 都能在同一个 family contract 中找到同名项；
-3. `BladeModelCapabilities` 的每个 PID 都能在 BuiltIn registry 找到 Blade family manifest；
-4. OpenRazer catalog（含本地别名和 middleware 派生条目）声明的每个轮询率都能由 `OpenRazerMouseProtocol.SetPollingRate` 编码，不启动真实 transport。
-
-`BladeModelCapabilities` 的 39 个 PID 现在都有内建 Blade family manifest。旧款 Blade 按 `rzDeviceType` 和同组已有 manifest 分为 `blade-597`（最小命令集）与 `blade-671`（完整风扇/电源/键盘控制）两组；manifest 只声明该组已共享的报文，未凭产品名开启额外能力。
-
-## 预算与检查
-
 结构不能靠自觉。下面每一条都是会红的检查，规矩写在这里只是索引，真正的执行在代码里。
 
 | 检查 | 文件 | 拦住什么 |
@@ -222,8 +219,12 @@ ResolvedRazerDevice(Descriptor, Manifest)
 | 分层方向 | `LayeringTests` | Core 引用 Windows/App、Windows 引用 App、csproj 引用反向 |
 | 测试工程卫生 | `TestProjectHygieneTests` | 测试项目重新用 `<Compile Include>` 硬链 App 源码 |
 | 能力 id | `ManifestCapabilityTests` | 源码里重新出现 `"x.get"` 形式的字符串；manifest、family contract、常量三者对不上 |
-| XAML 绑定 | `XamlBindingTests` | `{Binding X}` 指向不存在的成员（运行期静默失效的那种） |
-| 设备能力结构 | `DeviceCapabilityStructureTests` | manifest / family contract / `BladeModelCapabilities` 三者不一致 |
+| XAML 绑定 | `XamlBindingTests` | `{Binding X}` 指向不存在的成员（运行期静默失效的那种），包括 `Workspace.X` 的第二段 |
+| 设备能力结构 | `DeviceCapabilityStructureTests` | manifest / family contract / `BladeModelCapabilities` 三者不一致；同一 `(VID, PID)` 重复声明；OpenRazer 声明的轮询率无法编码 |
+
+`BladeModelCapabilities` 的 39 个 PID 现在都有内建 Blade family manifest。旧款 Blade 按 `rzDeviceType` 和同组已有 manifest 分为 `blade-597`（最小命令集）与 `blade-671`（完整风扇/电源/键盘控制）两组；manifest 只声明该组已共享的报文，未凭产品名开启额外能力。
+
+## 5. 预算与提交检查
 
 本地一条命令看结构现状：
 
