@@ -1524,11 +1524,11 @@ public sealed partial class MainViewModel
     public bool BladeTouchpadEnabled { get => _blade._bladeTouchpadEnabled; private set => SetField(ref _blade._bladeTouchpadEnabled, value); }
     public bool CanSetBladeTouchpad => _blade._canSetBladeTouchpad;
     /// <summary>
-/// Effect names parallel <see cref="BladeLightingModes"/>, so a model that admits only
-/// firmware-rendered uniform effects gets a matching short list instead of entries that
-/// would not apply to it.
-/// </summary>
-public IReadOnlyList<string> BladeLightingModeOptions => UsesFirmwareKeyboardLighting
+    /// Effect names parallel <see cref="BladeLightingModes"/>, so a model that admits only
+    /// firmware-rendered uniform effects gets a matching short list instead of entries that
+    /// would not apply to it.
+    /// </summary>
+    public IReadOnlyList<string> BladeLightingModeOptions => UsesFirmwareKeyboardLighting
     ? AppStrings.Texts(
         AppStrings.Text("Text_39B523BD"),
         AppStrings.Text("Text_7EDA32B9"),
@@ -1594,10 +1594,10 @@ public IReadOnlyList<string> BladeLightingModeOptions => UsesFirmwareKeyboardLig
         OnPropertyChanged(nameof(BladeChromaStatusVisibility));
     }
     /// <summary>
-/// The 2023 generation writes brightness and effects through the telemetry reader, so it
-/// needs no lighting controller. Every other generation still requires one.
-/// </summary>
-public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
+    /// The 2023 generation writes brightness and effects through the telemetry reader, so it
+    /// needs no lighting controller. Every other generation still requires one.
+    /// </summary>
+    public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
         (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
     public int BladeLightingPowerProfileIndex
@@ -1740,7 +1740,7 @@ public bool CanSetBladeLightingSettings => _blade._canSetBladeBrightness &&
     /// The 2023 generation stores a fixed rightward wave direction, so offering the
     /// direction selector there would present a control that cannot change anything.
     /// </summary>
-public Visibility BladeWaveDirectionVisibility => !UsesFirmwareKeyboardLighting &&
+    public Visibility BladeWaveDirectionVisibility => !UsesFirmwareKeyboardLighting &&
         SelectedBladeLightingMode is BladeLightingMode.Wave or BladeLightingMode.Wheel
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -1770,18 +1770,18 @@ public Visibility BladeWaveDirectionVisibility => !UsesFirmwareKeyboardLighting 
     public Color BladeLightingSecondColor { get => _blade._bladeLightingSecondColor; set => SetField(ref _blade._bladeLightingSecondColor, value); }
     public Color BladeLightingTertiaryColor { get => _blade._bladeLightingTertiaryColor; set => SetField(ref _blade._bladeLightingTertiaryColor, value); }
     /// <summary>
-/// Gate for the effect selector. The 2023 generation selects firmware effects through the
-/// telemetry reader, so the matrix-based lighting controller is not required there.
-/// </summary>
-public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
+    /// Gate for the effect selector. The 2023 generation selects firmware effects through the
+    /// telemetry reader, so the matrix-based lighting controller is not required there.
+    /// </summary>
+    public bool CanSetBladeLighting => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
         (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
 
     /// <summary>
-/// Both Blade generations have an admitted keyboard-lighting report, so the card is
-/// always available; only the effect list and color controls differ by model.
-/// </summary>
-public Visibility BladeLightingCardVisibility => Visibility.Visible;
+    /// Both Blade generations have an admitted keyboard-lighting report, so the card is
+    /// always available; only the effect list and color controls differ by model.
+    /// </summary>
+    public Visibility BladeLightingCardVisibility => Visibility.Visible;
 
     /// <summary>
     /// True where the keyboard is driven through the firmware effect reports instead of
