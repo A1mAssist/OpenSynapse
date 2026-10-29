@@ -1,0 +1,197 @@
+{
+  "newFileLineLimit": 600,
+  "newFilePublicMemberLimit": 100,
+  "files": [
+    {
+      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Macros.cs",
+      "maxLines": 2566
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Blade.cs",
+      "maxLines": 1924,
+      "maxPublicMembers": 148
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/OpenRazerDeviceService.cs",
+      "maxLines": 1827
+    },
+    {
+      "path": "src/OpenSynapse.App/MainWindow.xaml",
+      "maxLines": 1733
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/RazerHeadsetAudioViewModel.cs",
+      "maxLines": 1630,
+      "maxPublicMembers": 170
+    },
+    {
+      "path": "src/OpenSynapse.App/Runtime/MacroRuntime.cs",
+      "maxLines": 1328
+    },
+    {
+      "path": "src/OpenSynapse.App/App.xaml.cs",
+      "maxLines": 1167
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/RazerBleDeviceViewModel.cs",
+      "maxLines": 1148,
+      "maxPublicMembers": 111
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Protocols/BladeMappingInputRuntime.cs",
+      "maxLines": 1135
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.cs",
+      "maxLines": 1092
+    },
+    {
+      "path": "src/OpenSynapse.App/Runtime/ChromaRestHost.cs",
+      "maxLines": 1087
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/OpenRazerDeviceViewModel.cs",
+      "maxLines": 993,
+      "maxPublicMembers": 233
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Lighting/BladeLightingController.cs",
+      "maxLines": 955
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/RazerHeadsetAudioService.cs",
+      "maxLines": 954
+    },
+    {
+      "path": "src/OpenSynapse.App/MainWindow.Blade.cs",
+      "maxLines": 920
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/RazerBleDeviceService.cs",
+      "maxLines": 898
+    },
+    {
+      "path": "src/OpenSynapse.App/MacroEditorWindow.xaml.cs",
+      "maxLines": 891
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Lighting/QuickLightingEngine.cs",
+      "maxLines": 865
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/RazerDeviceRegistry.cs",
+      "maxLines": 853
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Lighting/WindowsDisplayCaptureAdapter.cs",
+      "maxLines": 846
+    },
+    {
+      "path": "src/OpenSynapse.Core/Devices/BladeModelCapabilities.cs",
+      "maxLines": 842
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/BladePowerTelemetryReader.cs",
+      "maxLines": 797
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Input/MacroInputHook.cs",
+      "maxLines": 788
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/OpenRazerDeviceCatalog.cs",
+      "maxLines": 754
+    },
+    {
+      "path": "src/OpenSynapse.App/TrayMenuWindow.xaml.cs",
+      "maxLines": 747
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Protocols/RazerGamepadProtocol.cs",
+      "maxLines": 746
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/WindowsHidDiscovery.cs",
+      "maxLines": 739
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/RazerFilterInputHost.cs",
+      "maxLines": 724
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/RazerGamepadViewModel.cs",
+      "maxLines": 681
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Protocols/RazerHapticoreScrollProtocol.cs",
+      "maxLines": 679
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/BladeDisplayTelemetryReader.cs",
+      "maxLines": 678
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/BladeMappingActionExecutor.cs",
+      "maxLines": 678
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Protocols/RazerFeatureTransport.cs",
+      "maxLines": 668
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Telemetry.cs",
+      "maxLines": 658
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Lighting/WasapiAudioMeterAdapter.cs",
+      "maxLines": 655
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Profiles.cs",
+      "maxLines": 654
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/OpenRazerDeviceViewModel.Lighting.cs",
+      "maxLines": 649
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/RazerGamepadService.cs",
+      "maxLines": 636
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Protocols/OpenRazerLightingProtocol.cs",
+      "maxLines": 631
+    },
+    {
+      "path": "src/OpenSynapse.Core/Macros/MacroSynapseXml.cs",
+      "maxLines": 629
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Lifecycle/WindowsDedicatedGpuMode.cs",
+      "maxLines": 628
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/ThxAudioViewModel.cs",
+      "maxLines": 620
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Devices/BladeTelemetryReader.cs",
+      "maxLines": 611
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Protocols/RazerHeadsetAudioProtocol.cs",
+      "maxLines": 604
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Protocols/OpenRazerMouseProtocol.cs",
+      "maxLines": 602
+    }
+  ],
+  "groups": [
+    {
+      "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
+      "maxLines": 10504,
+      "maxPublicMembers": 468
+    }
+  ]
+}
