@@ -314,7 +314,8 @@ public interface IRazerDeviceTelemetryReader
     ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladePerformanceMode mode,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        bool coolingPadConnected = false);
 
     ValueTask<BladeGameModeTelemetry> SetBladeGameModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,

@@ -423,7 +423,7 @@ public sealed partial class MainViewModel
             }
 
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
-                _deviceDescriptors, requested, cancellationToken);
+                _deviceDescriptors, requested, cancellationToken, _bladeCoolingPadConnected);
             SetBladePerformanceMode(actual);
             EditablePerformanceBladeProfile.PerformanceMode = (byte)actual;
             ClearFixedFanWhenLeavingCustom(actual);
@@ -673,7 +673,8 @@ public sealed partial class MainViewModel
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 _deviceDescriptors,
                 modes[BladePerformanceModeIndex],
-                cancellationToken);
+                cancellationToken,
+                _bladeCoolingPadConnected);
             SetBladePerformanceMode(actual);
             (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).PerformanceMode = (byte)actual;
             ClearFixedFanWhenLeavingCustom(actual);

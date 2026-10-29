@@ -1676,7 +1676,7 @@
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
   <data name="BladeHyperboostUnsupportedModel" xml:space="preserve"><value>This model does not support HyperBoost.</value></data>
   <data name="BladeHyperboostDisclaimerTitle" xml:space="preserve"><value>No Razer Cooling Pad connected</value></data>
-  <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost raises the sustained CPU and GPU power limits and, where the model supports it, pins the fans to maximum speed. Without the Razer Laptop Cooling Pad, cooling still depends on your own third-party setup. Sustained heavy load may cause thermal throttling or hardware damage. Continuing means you accept this risk.</value></data>
+  <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost raises the sustained CPU and GPU power limits; without the Razer Cooling Pad it also pins the fans to maximum speed on models that support it. Without the Razer Laptop Cooling Pad, cooling still depends on your own third-party setup. Sustained heavy load may cause thermal throttling or hardware damage. Continuing means you accept this risk.</value></data>
   <data name="BladeHyperboostDisclaimerAccept" xml:space="preserve"><value>I understand the risk, enable it</value></data>
   <data name="BladeHyperboostLimitedAdapter" xml:space="preserve"><value>HyperBoost is enabled, but the current power adapter is below the recommended wattage, so the machine may not sustain full power and will throttle.</value></data>
   <data name="FirmwareTitle" xml:space="preserve"><value>Firmware</value></data>
