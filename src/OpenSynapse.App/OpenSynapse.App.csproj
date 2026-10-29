@@ -41,6 +41,14 @@
     <Content Include="Native\Razer\Mappings\*.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\IntelMSR.bin"
+             Link="IntelMSR.bin"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\IntelMSR-LICENSE.txt"
+             Link="IntelMSR-LICENSE.txt"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
