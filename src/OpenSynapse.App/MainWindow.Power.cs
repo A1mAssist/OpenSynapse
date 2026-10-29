@@ -157,6 +157,27 @@ public sealed partial class MainWindow
             _systemSuspended = false;
             _viewModel.RequestDeviceRefresh();
             QueueDisplayTransition(suspending: false);
+            _dispatcherQueue.TryEnqueue(ReplayCpuPowerLimitAfterResume);
+        }
+    }
+
+    /// <summary>
+    /// Firmware resets the wall while the machine sleeps, so the user's preset must be
+    /// written again. This is a background action: failures stay off the status bar.
+    /// </summary>
+    private async void ReplayCpuPowerLimitAfterResume()
+    {
+        if (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        try
+        {
+            await _viewModel.ReplayCpuPowerLimitAfterResumeAsync(_lifetime.Token);
+        }
+        catch (Exception)
+        {
         }
     }
 
