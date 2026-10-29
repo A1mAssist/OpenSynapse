@@ -195,7 +195,7 @@ public partial class App : Application
         viewModel.InternalDisplayRefreshRateChangedByUser += OnInternalDisplayRefreshRateChangedByUser;
         viewModel.BladeInputProfileChanged += OnBladeInputProfileChanged;
         viewModel.BatteryObserved += OnPeripheralBatteryObserved;
-        viewModel.MacroContinuousPlaybackStarted += OnMacroContinuousPlaybackStarted;
+        viewModel.Macros.MacroContinuousPlaybackStarted += OnMacroContinuousPlaybackStarted;
         viewModel.SetLegacyShortcutCycleDefaults(
             _behaviorSettings.PerformanceCycleModes,
             _behaviorSettings.RefreshRateCycleHertz);
@@ -403,7 +403,7 @@ public partial class App : Application
             _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
             _audioMuteViewModel.BladeInputProfileChanged -= OnBladeInputProfileChanged;
             _audioMuteViewModel.BatteryObserved -= OnPeripheralBatteryObserved;
-            _audioMuteViewModel.MacroContinuousPlaybackStarted -= OnMacroContinuousPlaybackStarted;
+            _audioMuteViewModel.Macros.MacroContinuousPlaybackStarted -= OnMacroContinuousPlaybackStarted;
             _audioMuteViewModel = null;
         }
         if (_openRazerDeviceService is not null)

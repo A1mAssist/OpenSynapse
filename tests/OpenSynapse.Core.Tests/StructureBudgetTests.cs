@@ -168,7 +168,7 @@ public sealed class StructureBudgetTests
             var mask = slash < 0 ? Pattern : Pattern[(slash + 1)..];
             var prefix = folder + "/";
             return relativePath.StartsWith(prefix, StringComparison.Ordinal) &&
-                FileSystemName.MatchesSimpleExpression(mask, relativePath[prefix.Length..], ignoreCase: false);
+                FileSystemName.MatchesSimpleExpression(mask, relativePath.AsSpan(prefix.Length), ignoreCase: false);
         }
 
         public IReadOnlyList<string> MatchedFiles() =>

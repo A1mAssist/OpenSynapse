@@ -8,7 +8,7 @@ namespace OpenSynapse.App;
 public sealed partial class MainWindow
 {
     private async void CreateMacroClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CreateMacroAsync(_lifetime.Token);
+        await _viewModel.Macros.CreateMacroAsync(_lifetime.Token);
 
     private async void MacroRowEnabledToggled(object sender, RoutedEventArgs e)
     {
@@ -19,7 +19,7 @@ public sealed partial class MainWindow
             } toggle)
         {
             row.Enabled = toggle.IsOn;
-            await _viewModel.SaveMacroEnabledAsync(row, _lifetime.Token);
+            await _viewModel.Macros.SaveMacroEnabledAsync(row, _lifetime.Token);
         }
     }
 
@@ -27,8 +27,8 @@ public sealed partial class MainWindow
     {
         if (MacroRowFromSender(sender) is { } row)
         {
-            _viewModel.SelectedMacro = row;
-            await _viewModel.CopySelectedMacroAsync(_lifetime.Token);
+            _viewModel.Macros.SelectedMacro = row;
+            await _viewModel.Macros.CopySelectedMacroAsync(_lifetime.Token);
         }
     }
 
@@ -39,15 +39,15 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (_viewModel.IsMacroRecording &&
-            !await _viewModel.StopMacroRecordingAsync(_lifetime.Token))
+        if (_viewModel.Macros.IsMacroRecording &&
+            !await _viewModel.Macros.StopMacroRecordingAsync(_lifetime.Token))
         {
             return;
         }
 
-        if (!ReferenceEquals(_viewModel.SelectedMacro, row))
+        if (!ReferenceEquals(_viewModel.Macros.SelectedMacro, row))
         {
-            _viewModel.SelectedMacro = row;
+            _viewModel.Macros.SelectedMacro = row;
         }
 
         var dialog = new ContentDialog
@@ -61,7 +61,7 @@ public sealed partial class MainWindow
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {
-            await _viewModel.DeleteSelectedMacroAsync(_lifetime.Token);
+            await _viewModel.Macros.DeleteSelectedMacroAsync(_lifetime.Token);
         }
     }
 
@@ -69,7 +69,7 @@ public sealed partial class MainWindow
     {
         if (MacroRowFromSender(sender) is { } row)
         {
-            _viewModel.SelectedMacro = row;
+            _viewModel.Macros.SelectedMacro = row;
             await ExportSelectedMacroAsync();
         }
     }
@@ -86,7 +86,7 @@ public sealed partial class MainWindow
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.ImportMacroAsync(file.Path, _lifetime.Token);
+            await _viewModel.Macros.ImportMacroAsync(file.Path, _lifetime.Token);
         }
     }
 
@@ -95,7 +95,7 @@ public sealed partial class MainWindow
 
     private async Task ExportSelectedMacroAsync()
     {
-        if (_viewModel.SelectedMacro is not { } selected)
+        if (_viewModel.Macros.SelectedMacro is not { } selected)
         {
             return;
         }
@@ -110,12 +110,12 @@ public sealed partial class MainWindow
         var file = await picker.PickSaveFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.ExportSelectedMacroAsync(file.Path, _lifetime.Token);
+            await _viewModel.Macros.ExportSelectedMacroAsync(file.Path, _lifetime.Token);
         }
     }
 
     private async void CaptureMacroTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CaptureMacroTriggerAsync(_lifetime.Token);
+        await _viewModel.Macros.CaptureMacroTriggerAsync(_lifetime.Token);
 
     private static MacroRowViewModel? MacroRowFromSender(object sender) =>
         sender switch

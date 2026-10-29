@@ -147,6 +147,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
         _activeApplicationProvider = activeApplicationProvider ?? UnknownActiveApplicationProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
+        Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
         _internalDisplayController = internalDisplayController;
         _bladeLightingController = bladeLightingController;
         _startupManager = startupManager;
@@ -162,12 +163,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 IsOpenRazerChromaOverrideEnabled);
         }
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
-        _macroRuntime = new MacroRuntime(sink: macroInputSink);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
         _systemTelemetry.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
-        _macroRuntime.Error += SetMacroRuntimeError;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -178,7 +177,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal event Action<bool>? BladeOneTimeFullChargeChangedByUser;
     internal event Action<int>? InternalDisplayRefreshRateChangedByUser;
     internal event Action? BladeInputProfileChanged;
-    internal event Action<string, string>? MacroContinuousPlaybackStarted;
 
     internal IReadOnlySet<BladePerformanceMode> BladePerformanceCycleModes =>
         _bladePerformanceCycleModes;
@@ -192,6 +190,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public ObservableCollection<OpenRazerDeviceRowViewModel> OpenRazerDevices { get; } = new();
     public ObservableCollection<OpenRazerKrakenDeviceRowViewModel> OpenRazerKrakenDevices { get; } = new();
     public ThxAudioViewModel ThxAudio { get; }
+    public MacroWorkspace Macros { get; }
     public OpenRazerDeviceViewModel? SelectedOpenRazerDevice
     {
         get => _selectedOpenRazerDevice;
@@ -351,7 +350,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         return failures.Count == 0
             ? device.ErrorText
             : AppStrings.FormatText("OpenRazerFailedReadsDetail",
-                string.Join("; ", failures.Select(read => $"{read.Key}: {read.Value}")));
+                string.Join("; ", failures.Select(read =>
+                    $"{AppStrings.Text("OpenRazerCapability" + read.Key)}: {read.Value}")));
     }
 
     internal void SetPerformanceSamplingEnabled(bool enabled)
@@ -467,7 +467,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
         _openRazerSelectionCancellation?.Cancel();
         _openRazerSelectionCancellation?.Dispose();
-        _macroRuntime.Dispose();
+        Macros.Dispose();
         _hue?.Dispose();
 
         if (SelectedOpenRazerDevice is { } openRazerDevice)
@@ -691,7 +691,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal async Task InitializeProfileAsync(CancellationToken cancellationToken = default)
     {
         await LoadProfileAsync(cancellationToken);
-        InitializeMacroRuntime();
+        Macros.InitializeMacroRuntime();
         RefreshFirmwareVersions();
     }
 

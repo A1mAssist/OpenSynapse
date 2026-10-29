@@ -1,16 +1,22 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed partial class MainViewModel
+public sealed class MacroWorkspace : INotifyPropertyChanged
 {
     private readonly MacroRuntime _macroRuntime;
+    private readonly Func<ProfileDefinition> _getActiveProfile;
+    private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
+    private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly SemaphoreSlim _macroSaveGate = new(1, 1);
     private readonly HashSet<string> _dirtyMacroIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, long> _macroEditVersions = new(StringComparer.Ordinal);
@@ -39,13 +45,29 @@ public sealed partial class MainViewModel
     private bool _isSavingMacroEnabled;
     private DispatcherQueue? _macroDispatcherQueue;
 
-    public ObservableCollection<MacroRowViewModel> Macros { get; } = new();
-    public ObservableCollection<MacroStepRowViewModel> MacroSteps { get; } = new();
+    public MacroWorkspace(
+        Func<ProfileDefinition> getActiveProfile,
+        Func<CancellationToken, Task<bool>> saveProfileAsync,
+        LocalDiagnosticLog diagnosticLog,
+        IMacroInputSink? macroInputSink = null)
+    {
+        _getActiveProfile = getActiveProfile;
+        _saveProfileAsync = saveProfileAsync;
+        _diagnosticLog = diagnosticLog;
+        _macroRuntime = new MacroRuntime(sink: macroInputSink);
+        _macroRuntime.Error += SetMacroRuntimeError;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    internal event Action<string, string>? MacroContinuousPlaybackStarted;
+
+    public ObservableCollection<MacroRowViewModel> Items { get; } = new();
+    public ObservableCollection<MacroStepRowViewModel> Steps { get; } = new();
 
     /// <summary>
     /// The on-screen key picker, so a step can be added without capturing input.
     /// </summary>
-    public MacroKeyPickerViewModel MacroKeyPicker { get; } = new();
+    public MacroKeyPickerViewModel KeyPicker { get; } = new();
 
     public MacroRowViewModel? SelectedMacro
     {
@@ -68,11 +90,11 @@ public sealed partial class MainViewModel
             CancelMacroCountdown();
             CancelMacroPlaybackCountdown();
             _selectedMacro = value;
-            MacroStatusText = string.Empty;
+            StatusText = string.Empty;
             _selectedMacroStep = null;
             RefreshMacroSteps(0);
             OnPropertyChanged();
-            OnPropertyChanged(nameof(SelectedMacroStep));
+            OnPropertyChanged(nameof(SelectedStep));
             OnPropertyChanged(nameof(MacroReferenceCandidates));
             NotifySelectedMacroChanged();
         }
@@ -87,7 +109,7 @@ public sealed partial class MainViewModel
     public bool CanEditMacroPlaybackMode =>
         CanEditMacro && SelectedMacro?.IsPlaybackModeEditable == true;
 
-    public MacroStepRowViewModel? SelectedMacroStep
+    public MacroStepRowViewModel? SelectedStep
     {
         get => _selectedMacroStep;
         set
@@ -105,15 +127,15 @@ public sealed partial class MainViewModel
     }
 
     public Visibility MacroStepEditorVisibility =>
-        SelectedMacroStep is null ? Visibility.Collapsed : Visibility.Visible;
+        SelectedStep is null ? Visibility.Collapsed : Visibility.Visible;
 
-    public bool CanEditMacroStep => SelectedMacroStep is not null && CanEditMacro;
+    public bool CanEditMacroStep => SelectedStep is not null && CanEditMacro;
 
     public Visibility MacroNoSelectionVisibility =>
         SelectedMacro is null ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility MacroListEmptyVisibility =>
-        Macros.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility MacroTriggerUnsetVisibility =>
         SelectedMacro is null || SelectedMacro.Definition.Trigger is null
@@ -149,7 +171,7 @@ public sealed partial class MainViewModel
 
             try
             {
-                var macros = GetActiveProfile().Macros
+                var macros = _getActiveProfile().Macros
                     .GroupBy(macro => macro.Id, StringComparer.Ordinal)
                     .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
                 var plan = MacroPlaybackPlan.Build(selected.Definition, macros);
@@ -175,12 +197,12 @@ public sealed partial class MainViewModel
         get
         {
             var selectedId = SelectedMacro?.Id;
-            return Macros
+            return Items
                 .Where(macro => !StringComparer.Ordinal.Equals(macro.Id, selectedId))
                 .Select(macro => new MacroReferenceOption(
                     macro.Id,
                     string.IsNullOrWhiteSpace(macro.Name)
-                        ? AppStrings.FormatText("MacroDefaultName", Macros.IndexOf(macro) + 1)
+                        ? AppStrings.FormatText("MacroDefaultName", Items.IndexOf(macro) + 1)
                         : macro.Name))
                 .ToList();
         }
@@ -335,7 +357,7 @@ public sealed partial class MainViewModel
         private set => SetField(ref _isMacroStepCapturing, value);
     }
 
-    public string MacroStatusText
+    public string StatusText
     {
         get => _macroStatusText;
         private set => SetField(ref _macroStatusText, value);
@@ -357,7 +379,7 @@ public sealed partial class MainViewModel
     {
         get
         {
-            var shortcuts = GetActiveProfile().Shortcuts;
+            var shortcuts = _getActiveProfile().Shortcuts;
             var start = shortcuts.MacroPlaybackStart is { } startInput
                 ? MacroRowViewModel.DescribeInput(startInput)
                 : AppStrings.Text("MacroPlaybackShortcutUnset");
@@ -506,6 +528,8 @@ public sealed partial class MainViewModel
         RefreshMacroState();
     }
 
+    internal void Dispose() => _macroRuntime.Dispose();
+
     internal void SetMacroDispatcher(DispatcherQueue dispatcherQueue) =>
         _macroDispatcherQueue = dispatcherQueue;
 
@@ -525,19 +549,19 @@ public sealed partial class MainViewModel
         }
 
         var selectedId = SelectedMacro?.Id;
-        Macros.Clear();
-        foreach (var macro in GetActiveProfile().Macros)
+        Items.Clear();
+        foreach (var macro in _getActiveProfile().Macros)
         {
-            Macros.Add(CreateMacroRow(macro));
+            Items.Add(CreateMacroRow(macro));
         }
 
-        SelectedMacro = Macros.FirstOrDefault(row =>
+        SelectedMacro = Items.FirstOrDefault(row =>
                 StringComparer.Ordinal.Equals(row.Id, selectedId))
-            ?? Macros.FirstOrDefault();
+            ?? Items.FirstOrDefault();
         RefreshMacroRuntime();
         if (SelectedMacro is null)
         {
-            MacroStatusText = AppStrings.Text("MacroStatusIdle");
+            StatusText = AppStrings.Text("MacroStatusIdle");
         }
         OnPropertyChanged(nameof(MacroEditorVisibility));
         OnPropertyChanged(nameof(MacroListEmptyVisibility));
@@ -549,17 +573,17 @@ public sealed partial class MainViewModel
     {
         CancelMacroCapture();
         CancelMacroStepCapture();
-        var profile = GetActiveProfile();
+        var profile = _getActiveProfile();
         if (profile.Macros.Count >= 64)
         {
-            MacroStatusText = AppStrings.Text("MacroCountLimit");
+            StatusText = AppStrings.Text("MacroCountLimit");
             return;
         }
 
         var macro = new MacroDefinition
         {
             Id = Guid.NewGuid().ToString("N"),
-            Name = AppStrings.FormatText("MacroDefaultName", Macros.Count + 1),
+            Name = AppStrings.FormatText("MacroDefaultName", Items.Count + 1),
             Enabled = true,
             Steps = [],
         };
@@ -571,12 +595,12 @@ public sealed partial class MainViewModel
         }
 
         var row = CreateMacroRow(macro);
-        Macros.Add(row);
+        Items.Add(row);
         OnPropertyChanged(nameof(MacroListEmptyVisibility));
         OnPropertyChanged(nameof(MacroReferenceCandidates));
         SelectedMacro = row;
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.Text("MacroCreated");
+        StatusText = AppStrings.Text("MacroCreated");
     }
 
     public async Task CopySelectedMacroAsync(CancellationToken cancellationToken = default)
@@ -586,9 +610,9 @@ public sealed partial class MainViewModel
             return;
         }
 
-        if (GetActiveProfile().Macros.Count >= 64)
+        if (_getActiveProfile().Macros.Count >= 64)
         {
-            MacroStatusText = AppStrings.Text("MacroCountLimit");
+            StatusText = AppStrings.Text("MacroCountLimit");
             return;
         }
 
@@ -599,7 +623,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception exception) when (exception is JsonException or InvalidDataException)
         {
-            MacroStatusText = AppStrings.FormatText("MacroCopyFailed", exception.Message);
+            StatusText = AppStrings.FormatText("MacroCopyFailed", exception.Message);
             return;
         }
 
@@ -608,18 +632,18 @@ public sealed partial class MainViewModel
         copy.Trigger = null;
         if (!ValidateMacroTree(copy))
         {
-            MacroStatusText = AppStrings.Text("MacroStepIncomplete");
+            StatusText = AppStrings.Text("MacroStepIncomplete");
             return;
         }
 
         copy.ApplySafeDefaults();
         if (!ValidateMacroReferences(copy))
         {
-            MacroStatusText = AppStrings.Text("MacroReferenceInvalid");
+            StatusText = AppStrings.Text("MacroReferenceInvalid");
             return;
         }
 
-        var profile = GetActiveProfile();
+        var profile = _getActiveProfile();
         profile.Macros.Add(copy);
         if (!await TrySaveMacroProfileAsync(cancellationToken))
         {
@@ -628,12 +652,12 @@ public sealed partial class MainViewModel
         }
 
         var row = CreateMacroRow(copy);
-        Macros.Add(row);
+        Items.Add(row);
         OnPropertyChanged(nameof(MacroListEmptyVisibility));
         OnPropertyChanged(nameof(MacroReferenceCandidates));
         SelectedMacro = row;
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.Text("MacroCopied");
+        StatusText = AppStrings.Text("MacroCopied");
     }
 
     public async Task DeleteSelectedMacroAsync(CancellationToken cancellationToken = default)
@@ -655,7 +679,7 @@ public sealed partial class MainViewModel
         CancelMacroCapture();
         CancelMacroStepCapture();
         StopMacroPlayback();
-        var profile = GetActiveProfile();
+        var profile = _getActiveProfile();
         var index = profile.Macros.IndexOf(selected.Definition);
         if (index < 0)
         {
@@ -664,22 +688,22 @@ public sealed partial class MainViewModel
 
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
         profile.Macros.RemoveAt(index);
-        Macros.Remove(selected);
+        Items.Remove(selected);
         _dirtyMacroIds.Remove(selected.Id);
         OnPropertyChanged(nameof(MacroListEmptyVisibility));
         OnPropertyChanged(nameof(MacroReferenceCandidates));
-        SelectedMacro = Macros.FirstOrDefault();
+        SelectedMacro = Items.FirstOrDefault();
         if (!await TrySaveMacroProfileAsync(cancellationToken))
         {
             profile.Macros.Insert(index, selected.Definition);
-            Macros.Insert(Math.Min(index, Macros.Count), selected);
+            Items.Insert(Math.Min(index, Items.Count), selected);
             RestoreMacroDirtyState(selected.Id, wasDirty);
             SelectedMacro = selected;
             return;
         }
 
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.Text("MacroDeleted");
+        StatusText = AppStrings.Text("MacroDeleted");
     }
 
     internal async Task<bool> CommitMacroEditsBeforeProfileSwitchAsync(
@@ -714,7 +738,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        MacroStatusText = AppStrings.Text("MacroSaved");
+        StatusText = AppStrings.Text("MacroSaved");
     }
 
     public async Task SaveMacroEnabledAsync(
@@ -747,7 +771,7 @@ public sealed partial class MainViewModel
                 return;
             }
 
-            MacroStatusText = AppStrings.Text("MacroSaved");
+            StatusText = AppStrings.Text("MacroSaved");
         }
         finally
         {
@@ -770,7 +794,7 @@ public sealed partial class MainViewModel
         bool forceSelected,
         CancellationToken cancellationToken)
     {
-        var rows = Macros
+        var rows = Items
             .Where(row => _dirtyMacroIds.Contains(row.Id) ||
                 (forceSelected && ReferenceEquals(row, SelectedMacro)))
             .Distinct()
@@ -797,7 +821,7 @@ public sealed partial class MainViewModel
 
         if (SelectedMacro is not null)
         {
-            RefreshMacroSteps(selectStep: SelectedMacroStep?.Step);
+            RefreshMacroSteps(selectStep: SelectedStep?.Step);
         }
 
         RefreshMacroRuntime();
@@ -814,26 +838,26 @@ public sealed partial class MainViewModel
         if (IsMacroCountdown)
         {
             CancelMacroCountdown();
-            MacroStatusText = AppStrings.Text("MacroCountdownCanceled");
+            StatusText = AppStrings.Text("MacroCountdownCanceled");
             return;
         }
 
         if (IsMacroRecording || SelectedMacro is null)
         {
-            MacroStatusText = AppStrings.Text("MacroRecording");
+            StatusText = AppStrings.Text("MacroRecording");
             return;
         }
 
         if (IsMacroPlaying)
         {
-            MacroStatusText = AppStrings.Text("MacroStopPlaybackFirst");
+            StatusText = AppStrings.Text("MacroStopPlaybackFirst");
             return;
         }
 
         var selected = SelectedMacro;
         if (append && !ValidateMacroTree(selected.Definition))
         {
-            MacroStatusText = AppStrings.Text("MacroStepIncomplete");
+            StatusText = AppStrings.Text("MacroStepIncomplete");
             return;
         }
 
@@ -848,14 +872,14 @@ public sealed partial class MainViewModel
         {
             for (var remaining = 3; remaining > 0; remaining--)
             {
-                MacroStatusText = AppStrings.FormatText("MacroRecordingCountdown", remaining);
+                StatusText = AppStrings.FormatText("MacroRecordingCountdown", remaining);
                 await Task.Delay(TimeSpan.FromSeconds(1), countdown.Token);
             }
 
             countdown.Token.ThrowIfCancellationRequested();
             if (!ReferenceEquals(SelectedMacro, selected))
             {
-                MacroStatusText = AppStrings.Text("MacroCountdownCanceled");
+                StatusText = AppStrings.Text("MacroCountdownCanceled");
                 return;
             }
 
@@ -864,17 +888,17 @@ public sealed partial class MainViewModel
             _macroRuntime.StartRecording(BuildRecordingOptions());
             _macroRuntime.SetRecordingPending(false);
             IsMacroRecording = true;
-            MacroStatusText = AppStrings.FormatText("MacroRecordingStarted", "F9");
+            StatusText = AppStrings.FormatText("MacroRecordingStarted", "F9");
         }
         catch (OperationCanceledException)
         {
-            MacroStatusText = AppStrings.Text("MacroCountdownCanceled");
+            StatusText = AppStrings.Text("MacroCountdownCanceled");
         }
         catch (Exception exception)
         {
             _recordingMacroId = null;
             _recordingAppend = false;
-            MacroStatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
+            StatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
         }
         finally
         {
@@ -905,7 +929,7 @@ public sealed partial class MainViewModel
         if (IsMacroCountdown)
         {
             CancelMacroCountdown();
-            MacroStatusText = AppStrings.Text("MacroCountdownCanceled");
+            StatusText = AppStrings.Text("MacroCountdownCanceled");
             return true;
         }
 
@@ -927,7 +951,7 @@ public sealed partial class MainViewModel
 
         if (take.Value.Count == 0)
         {
-            MacroStatusText = AppStrings.Text("MacroRecordingEmptyTake");
+            StatusText = AppStrings.Text("MacroRecordingEmptyTake");
             return true;
         }
 
@@ -937,7 +961,7 @@ public sealed partial class MainViewModel
         }
 
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.FormatText("MacroRecorded", take.Value.Count);
+        StatusText = AppStrings.FormatText("MacroRecorded", take.Value.Count);
         return true;
     }
 
@@ -949,11 +973,11 @@ public sealed partial class MainViewModel
         IsMacroRecording = false;
         _recordingMacroId = null;
         _recordingAppend = false;
-        var row = Macros.FirstOrDefault(item =>
+        var row = Items.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
         if (row is null)
         {
-            MacroStatusText = AppStrings.Text("MacroRecordingMacroMissing");
+            StatusText = AppStrings.Text("MacroRecordingMacroMissing");
             return null;
         }
 
@@ -961,7 +985,7 @@ public sealed partial class MainViewModel
         {
             // An empty take is a no-op. Replacing a recorded macro with zero
             // actions is destructive and is almost always an accidental F9.
-            MacroStatusText = AppStrings.Text("MacroRecordingEmptyTake");
+            StatusText = AppStrings.Text("MacroRecordingEmptyTake");
             if (ReferenceEquals(SelectedMacro, row))
             {
                 RefreshMacroSteps();
@@ -973,7 +997,7 @@ public sealed partial class MainViewModel
             MacroStepTree.CountSteps(row.Definition.Steps) +
             MacroStepTree.CountSteps(steps) > MacroDefinition.MaxSteps)
         {
-            MacroStatusText = AppStrings.Text("MacroStepLimit");
+            StatusText = AppStrings.Text("MacroStepLimit");
             return (row, -1);
         }
 
@@ -1006,11 +1030,11 @@ public sealed partial class MainViewModel
             }
 
             RefreshMacroRuntime();
-            MacroStatusText = AppStrings.FormatText("MacroRecorded", count);
+            StatusText = AppStrings.FormatText("MacroRecorded", count);
         }
         catch (Exception exception)
         {
-            MacroStatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
+            StatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
         }
     }
 
@@ -1026,7 +1050,7 @@ public sealed partial class MainViewModel
         IsMacroRecording = false;
         _recordingMacroId = null;
         _recordingAppend = false;
-        MacroStatusText = AppStrings.Text("MacroStatusIdle");
+        StatusText = AppStrings.Text("MacroStatusIdle");
     }
 
     private void OnMacroRecordingStopRequested()
@@ -1053,7 +1077,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception exception)
         {
-            MacroStatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
+            StatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
         }
     }
 
@@ -1095,7 +1119,7 @@ public sealed partial class MainViewModel
             var name = string.IsNullOrWhiteSpace(macro.Name)
                 ? AppStrings.Text("MacroUntitled")
                 : macro.Name.Trim();
-            var stopShortcut = GetActiveProfile().Shortcuts.MacroPlaybackStop is { } input
+            var stopShortcut = _getActiveProfile().Shortcuts.MacroPlaybackStop is { } input
                 ? MacroRowViewModel.DescribeInput(input)
                 : AppStrings.Text("MacroPlaybackStopShortcutDefault");
             MacroContinuousPlaybackStarted?.Invoke(
@@ -1136,13 +1160,13 @@ public sealed partial class MainViewModel
 
         if (IsMacroRecording)
         {
-            MacroStatusText = AppStrings.Text("MacroRecordingBlocked");
+            StatusText = AppStrings.Text("MacroRecordingBlocked");
             return;
         }
 
         if (IsMacroCountdown)
         {
-            MacroStatusText = AppStrings.Text("MacroCountdownBlocked");
+            StatusText = AppStrings.Text("MacroCountdownBlocked");
             return;
         }
 
@@ -1158,7 +1182,7 @@ public sealed partial class MainViewModel
         using var capture = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _macroCaptureCancellation = capture;
         IsMacroTriggerCapturing = true;
-        MacroStatusText = AppStrings.Text(
+        StatusText = AppStrings.Text(
             allowDeviceButton ? "MacroCapturePromptDevice" : "MacroCapturePrompt");
         try
         {
@@ -1169,7 +1193,7 @@ public sealed partial class MainViewModel
                 cancellationToken: capture.Token);
             if (trigger is null)
             {
-                MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
+                StatusText = AppStrings.Text("MacroCaptureCanceled");
                 return;
             }
 
@@ -1177,7 +1201,7 @@ public sealed partial class MainViewModel
         }
         catch (OperationCanceledException)
         {
-            MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
+            StatusText = AppStrings.Text("MacroCaptureCanceled");
         }
         finally
         {
@@ -1224,7 +1248,7 @@ public sealed partial class MainViewModel
         trigger.Mode = selected.Definition.Trigger?.Mode ?? MacroTriggerMode.Press;
         if (FindTriggerConflict(selected.Definition, trigger, selected) is { } conflict)
         {
-            MacroStatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
+            StatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
             return;
         }
 
@@ -1236,7 +1260,7 @@ public sealed partial class MainViewModel
         }
 
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.FormatText(
+        StatusText = AppStrings.FormatText(
             "MacroTriggerCaptured",
             MacroRowViewModel.DescribeTrigger(trigger));
     }
@@ -1258,7 +1282,7 @@ public sealed partial class MainViewModel
 
         RefreshMacroRuntime();
         NotifySelectedMacroChanged();
-        MacroStatusText = AppStrings.Text("MacroTriggerCleared");
+        StatusText = AppStrings.Text("MacroTriggerCleared");
     }
 
     public Task CaptureMacroPlaybackStartShortcutAsync(CancellationToken cancellationToken = default) =>
@@ -1272,7 +1296,7 @@ public sealed partial class MainViewModel
         CancelMacroPlaybackShortcutCapture();
         if (await SetMacroPlaybackShortcutAsync(isStart: true, input: null, cancellationToken))
         {
-            MacroStatusText = AppStrings.Text("MacroPlaybackStartShortcutCleared");
+            StatusText = AppStrings.Text("MacroPlaybackStartShortcutCleared");
         }
     }
 
@@ -1281,7 +1305,7 @@ public sealed partial class MainViewModel
         CancelMacroPlaybackShortcutCapture();
         if (await SetMacroPlaybackShortcutAsync(isStart: false, input: null, cancellationToken))
         {
-            MacroStatusText = AppStrings.Text("MacroPlaybackStopShortcutCleared");
+            StatusText = AppStrings.Text("MacroPlaybackStopShortcutCleared");
         }
     }
 
@@ -1291,7 +1315,7 @@ public sealed partial class MainViewModel
     {
         if (IsMacroRecording || IsMacroCountdown)
         {
-            MacroStatusText = AppStrings.Text("MacroRecording");
+            StatusText = AppStrings.Text("MacroRecording");
             return;
         }
 
@@ -1305,7 +1329,7 @@ public sealed partial class MainViewModel
         CancelMacroStepCapture();
         using var capture = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _macroPlaybackShortcutCaptureCancellation = capture;
-        MacroStatusText = AppStrings.Text("MacroPlaybackShortcutCapturePrompt");
+        StatusText = AppStrings.Text("MacroPlaybackShortcutCapturePrompt");
         try
         {
             var trigger = await _macroRuntime.CaptureNextTriggerAsync(
@@ -1314,7 +1338,7 @@ public sealed partial class MainViewModel
                 cancellationToken: capture.Token);
             if (trigger is null)
             {
-                MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
+                StatusText = AppStrings.Text("MacroCaptureCanceled");
                 return;
             }
 
@@ -1326,7 +1350,7 @@ public sealed partial class MainViewModel
                 return;
             }
 
-            MacroStatusText = AppStrings.FormatText(
+            StatusText = AppStrings.FormatText(
                 isStart
                     ? "MacroPlaybackStartShortcutCaptured"
                     : "MacroPlaybackStopShortcutCaptured",
@@ -1334,7 +1358,7 @@ public sealed partial class MainViewModel
         }
         catch (OperationCanceledException)
         {
-            MacroStatusText = AppStrings.Text("MacroCaptureCanceled");
+            StatusText = AppStrings.Text("MacroCaptureCanceled");
         }
         finally
         {
@@ -1350,7 +1374,7 @@ public sealed partial class MainViewModel
         MacroInput? input,
         CancellationToken cancellationToken)
     {
-        var shortcuts = GetActiveProfile().Shortcuts;
+        var shortcuts = _getActiveProfile().Shortcuts;
         if (isStart)
         {
             shortcuts.MacroPlaybackStart = input;
@@ -1396,7 +1420,7 @@ public sealed partial class MainViewModel
         var input = await CaptureMacroInputAsync(cancellationToken);
         if (input is null || !ReferenceEquals(SelectedMacro, selected))
         {
-            MacroStatusText = AppStrings.Text("MacroStepCaptureCanceled");
+            StatusText = AppStrings.Text("MacroStepCaptureCanceled");
             return;
         }
 
@@ -1405,7 +1429,7 @@ public sealed partial class MainViewModel
 
     public async Task AddMacroStepFromPickerAsync(CancellationToken cancellationToken = default)
     {
-        if (MacroKeyPicker.Selected is not { } option)
+        if (KeyPicker.Selected is not { } option)
         {
             return;
         }
@@ -1502,17 +1526,17 @@ public sealed partial class MainViewModel
         if (MacroStepTree.CountSteps(selected.Definition.Steps) + newSteps.Count >
             MacroDefinition.MaxSteps)
         {
-            MacroStatusText = AppStrings.Text("MacroStepLimit");
+            StatusText = AppStrings.Text("MacroStepLimit");
             return false;
         }
 
         if (!MacroValidator.ValidateSteps(newSteps))
         {
-            MacroStatusText = AppStrings.Text("MacroStepIncomplete");
+            StatusText = AppStrings.Text("MacroStepIncomplete");
             return false;
         }
 
-        var previousStep = SelectedMacroStep?.Step;
+        var previousStep = SelectedStep?.Step;
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
         var target = GetMacroInsertTarget(selected);
         var insertIndex = target.Index;
@@ -1550,13 +1574,13 @@ public sealed partial class MainViewModel
 
         selected.Refresh();
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.Text("MacroStepAdded");
+        StatusText = AppStrings.Text("MacroStepAdded");
         return true;
     }
 
     private MacroInsertTarget GetMacroInsertTarget(MacroRowViewModel selected)
     {
-        if (SelectedMacroStep is { } selectedStep)
+        if (SelectedStep is { } selectedStep)
         {
             // Selecting a loop means "insert inside this loop". Selecting a
             // normal action inserts immediately after it.
@@ -1584,13 +1608,13 @@ public sealed partial class MainViewModel
     public async Task RecaptureMacroStepInputAsync(CancellationToken cancellationToken = default)
     {
         if (!TryGetEditableMacro(out var selected) ||
-            SelectedMacroStep is not { } selectedStep ||
+            SelectedStep is not { } selectedStep ||
             selectedStep.Step.Kind != MacroStepKind.Input ||
             selectedStep.HasGroup)
         {
-            if (SelectedMacroStep?.HasGroup == true)
+            if (SelectedStep?.HasGroup == true)
             {
-                MacroStatusText = AppStrings.Text("MacroGroupRecaptureBlocked");
+                StatusText = AppStrings.Text("MacroGroupRecaptureBlocked");
             }
             return;
         }
@@ -1603,9 +1627,9 @@ public sealed partial class MainViewModel
 
         CancelMacroCapture();
         var input = await CaptureMacroInputAsync(cancellationToken);
-        if (input is null || !ReferenceEquals(SelectedMacroStep, selectedStep))
+        if (input is null || !ReferenceEquals(SelectedStep, selectedStep))
         {
-            MacroStatusText = AppStrings.Text("MacroStepCaptureCanceled");
+            StatusText = AppStrings.Text("MacroStepCaptureCanceled");
             return;
         }
 
@@ -1626,14 +1650,14 @@ public sealed partial class MainViewModel
         }
 
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.FormatText(
+        StatusText = AppStrings.FormatText(
             "MacroStepCaptured",
             MacroRowViewModel.DescribeInput(input));
     }
 
     public int CountMacroStepDeleteTargets()
     {
-        if (SelectedMacro is not { } selected || SelectedMacroStep is not { } row)
+        if (SelectedMacro is not { } selected || SelectedStep is not { } row)
         {
             return 0;
         }
@@ -1651,19 +1675,19 @@ public sealed partial class MainViewModel
         MacroStepRowViewModel row,
         CancellationToken cancellationToken = default)
     {
-        if (row is null || !MacroSteps.Contains(row))
+        if (row is null || !Steps.Contains(row))
         {
             return Task.CompletedTask;
         }
 
-        SelectedMacroStep = row;
+        SelectedStep = row;
         return DeleteSelectedMacroStepAsync(cancellationToken);
     }
 
     public async Task DeleteSelectedMacroStepAsync(CancellationToken cancellationToken = default)
     {
         if (!TryGetEditableMacro(out var selected) ||
-            SelectedMacroStep is not { } row)
+            SelectedStep is not { } row)
         {
             return;
         }
@@ -1693,7 +1717,7 @@ public sealed partial class MainViewModel
 
         selected.Refresh();
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.Text("MacroStepDeleted");
+        StatusText = AppStrings.Text("MacroStepDeleted");
     }
 
     public async Task MoveSelectedMacroStepAsync(
@@ -1702,7 +1726,7 @@ public sealed partial class MainViewModel
     {
         if (offset == 0 ||
             !TryGetEditableMacro(out var selected) ||
-            SelectedMacroStep is not { } row)
+            SelectedStep is not { } row)
         {
             return;
         }
@@ -1744,7 +1768,7 @@ public sealed partial class MainViewModel
 
         selected.Refresh();
         RefreshMacroRuntime();
-        MacroStatusText = AppStrings.Text("MacroStepMoved");
+        StatusText = AppStrings.Text("MacroStepMoved");
     }
 
     private async Task<MacroInput?> CaptureMacroInputAsync(CancellationToken cancellationToken)
@@ -1752,7 +1776,7 @@ public sealed partial class MainViewModel
         using var capture = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _macroStepCaptureCancellation = capture;
         IsMacroStepCapturing = true;
-        MacroStatusText = AppStrings.Text("MacroStepCapturePrompt");
+        StatusText = AppStrings.Text("MacroStepCapturePrompt");
         try
         {
             return await _macroRuntime.CaptureNextInputAsync(capture.Token);
@@ -1813,37 +1837,37 @@ public sealed partial class MainViewModel
         if (IsMacroPlaybackCountdown)
         {
             CancelMacroPlaybackCountdown();
-            MacroStatusText = AppStrings.Text("MacroPlaybackCountdownCanceled");
+            StatusText = AppStrings.Text("MacroPlaybackCountdownCanceled");
             return;
         }
 
         if (IsMacroRecording || IsMacroCountdown)
         {
-            MacroStatusText = AppStrings.Text("MacroRecording");
+            StatusText = AppStrings.Text("MacroRecording");
             return;
         }
 
         if (SelectedMacro is not { } selected || selected.Definition.Steps.Count == 0)
         {
-            MacroStatusText = AppStrings.Text("MacroEmpty");
+            StatusText = AppStrings.Text("MacroEmpty");
             return;
         }
 
         if (IsMacroPlaying)
         {
-            MacroStatusText = AppStrings.Text("MacroAlreadyPlaying");
+            StatusText = AppStrings.Text("MacroAlreadyPlaying");
             return;
         }
 
         if (!ValidateMacroTree(selected.Definition))
         {
-            MacroStatusText = AppStrings.Text("MacroStepIncomplete");
+            StatusText = AppStrings.Text("MacroStepIncomplete");
             return;
         }
 
         if (!ValidateMacroReferences(selected.Definition))
         {
-            MacroStatusText = AppStrings.Text("MacroReferenceInvalid");
+            StatusText = AppStrings.Text("MacroReferenceInvalid");
             return;
         }
 
@@ -1865,7 +1889,7 @@ public sealed partial class MainViewModel
             // immediately would put keystrokes into the macro editor itself.
             for (var remaining = 3; remaining > 0; remaining--)
             {
-                MacroStatusText = AppStrings.FormatText(
+                StatusText = AppStrings.FormatText(
                     "MacroPlaybackCountdown",
                     remaining);
                 await Task.Delay(TimeSpan.FromSeconds(1), countdown.Token);
@@ -1876,7 +1900,7 @@ public sealed partial class MainViewModel
         }
         catch (OperationCanceledException) when (!IsMacroRecording && !IsMacroCountdown)
         {
-            MacroStatusText = AppStrings.Text("MacroPlaybackCountdownCanceled");
+            StatusText = AppStrings.Text("MacroPlaybackCountdownCanceled");
         }
         catch (OperationCanceledException)
         {
@@ -1897,19 +1921,19 @@ public sealed partial class MainViewModel
     {
         IsMacroPlaying = true;
         IsMacroPaused = false;
-        MacroStatusText = AppStrings.Text("MacroPlaying");
+        StatusText = AppStrings.Text("MacroPlaying");
         try
         {
             await _macroRuntime.PlayAsync(selected.Definition, cancellationToken);
-            MacroStatusText = AppStrings.Text("MacroPlayed");
+            StatusText = AppStrings.Text("MacroPlayed");
         }
         catch (OperationCanceledException)
         {
-            MacroStatusText = AppStrings.Text("MacroPlayCanceled");
+            StatusText = AppStrings.Text("MacroPlayCanceled");
         }
         catch (Exception exception)
         {
-            MacroStatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
+            StatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
         }
         finally
         {
@@ -1923,7 +1947,7 @@ public sealed partial class MainViewModel
         CancelMacroPlaybackCountdown();
         if (wasCountingDown)
         {
-            MacroStatusText = AppStrings.Text("MacroPlaybackCountdownCanceled");
+            StatusText = AppStrings.Text("MacroPlaybackCountdownCanceled");
             return;
         }
 
@@ -1931,7 +1955,7 @@ public sealed partial class MainViewModel
         _macroRuntime.StopPlayback();
         if (wasPlaying)
         {
-            MacroStatusText = AppStrings.Text("MacroPlayStopping");
+            StatusText = AppStrings.Text("MacroPlayStopping");
         }
     }
 
@@ -1941,7 +1965,7 @@ public sealed partial class MainViewModel
         SyncMacroPlaybackState();
         if (IsMacroPaused)
         {
-            MacroStatusText = AppStrings.Text("MacroPaused");
+            StatusText = AppStrings.Text("MacroPaused");
         }
     }
 
@@ -1951,7 +1975,7 @@ public sealed partial class MainViewModel
         SyncMacroPlaybackState();
         if (IsMacroPlaying && !IsMacroPaused)
         {
-            MacroStatusText = AppStrings.Text("MacroResumed");
+            StatusText = AppStrings.Text("MacroResumed");
         }
     }
 
@@ -2006,13 +2030,13 @@ public sealed partial class MainViewModel
 
         if (!ValidateMacroTree(selected.Definition))
         {
-            MacroStatusText = AppStrings.Text("MacroStepIncomplete");
+            StatusText = AppStrings.Text("MacroStepIncomplete");
             return;
         }
 
         if (!ValidateMacroReferences(selected.Definition))
         {
-            MacroStatusText = AppStrings.Text("MacroReferenceInvalid");
+            StatusText = AppStrings.Text("MacroReferenceInvalid");
             return;
         }
 
@@ -2023,7 +2047,7 @@ public sealed partial class MainViewModel
                 ActiveMacroMap(),
                 filePath,
                 cancellationToken);
-            MacroStatusText = AppStrings.FormatText(
+            StatusText = AppStrings.FormatText(
                 "MacroExported",
                 Path.GetFileName(filePath));
         }
@@ -2034,7 +2058,7 @@ public sealed partial class MainViewModel
             exception is ArgumentException or IOException or UnauthorizedAccessException or
                 InvalidDataException or InvalidOperationException)
         {
-            MacroStatusText = AppStrings.FormatText("MacroExportFailed", exception.Message);
+            StatusText = AppStrings.FormatText("MacroExportFailed", exception.Message);
         }
     }
 
@@ -2054,14 +2078,14 @@ public sealed partial class MainViewModel
         catch (Exception exception) when (
             exception is ArgumentException or IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            MacroStatusText = AppStrings.FormatText("MacroImportFailed", exception.Message);
+            StatusText = AppStrings.FormatText("MacroImportFailed", exception.Message);
             return;
         }
 
-        var profile = GetActiveProfile();
+        var profile = _getActiveProfile();
         if (profile.Macros.Count + imported.Count > 64)
         {
-            MacroStatusText = AppStrings.Text("MacroCountLimit");
+            StatusText = AppStrings.Text("MacroCountLimit");
             return;
         }
 
@@ -2075,7 +2099,7 @@ public sealed partial class MainViewModel
         {
             profile.Macros.Add(macro);
             var row = CreateMacroRow(macro);
-            Macros.Add(row);
+            Items.Add(row);
             importedRows.Add(row);
             MarkMacroDirtyId(macro.Id);
         }
@@ -2083,14 +2107,14 @@ public sealed partial class MainViewModel
         var importedIds = imported.Select(macro => macro.Id).ToArray();
         if (imported.Any(macro => !ValidateMacroTree(macro)))
         {
-            MacroStatusText = AppStrings.Text("MacroStepIncomplete");
+            StatusText = AppStrings.Text("MacroStepIncomplete");
             RollbackImportedMacros(profile, importedIds, importedRows);
             return;
         }
 
         if (imported.Any(macro => !ValidateMacroReferences(macro)))
         {
-            MacroStatusText = AppStrings.Text("MacroReferenceInvalid");
+            StatusText = AppStrings.Text("MacroReferenceInvalid");
             RollbackImportedMacros(profile, importedIds, importedRows);
             return;
         }
@@ -2100,7 +2124,7 @@ public sealed partial class MainViewModel
             if (macro.Trigger is { } trigger &&
                 FindTriggerConflict(macro, trigger) is { } conflict)
             {
-                MacroStatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
+                StatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
                 RollbackImportedMacros(profile, importedIds, importedRows);
                 return;
             }
@@ -2120,7 +2144,7 @@ public sealed partial class MainViewModel
             SelectedMacro = firstRow;
         }
         RefreshMacroRuntime();
-        MacroStatusText = imported.Count == 1
+        StatusText = imported.Count == 1
             ? AppStrings.Text("MacroImported")
             : AppStrings.FormatText("MacroBundleImported", imported.Count);
     }
@@ -2134,12 +2158,12 @@ public sealed partial class MainViewModel
         profile.Macros.RemoveAll(macro => ids.Contains(macro.Id));
         foreach (var row in rows)
         {
-            Macros.Remove(row);
+            Items.Remove(row);
         }
 
         if (SelectedMacro is { } selected && rows.Contains(selected))
         {
-            SelectedMacro = Macros.FirstOrDefault();
+            SelectedMacro = Items.FirstOrDefault();
         }
 
         foreach (var id in ids)
@@ -2159,7 +2183,7 @@ public sealed partial class MainViewModel
     {
         if (prepareDirtyMacros)
         {
-            var dirtyRows = Macros
+            var dirtyRows = Items
                 .Where(row => _dirtyMacroIds.Contains(row.Id))
                 .ToList();
             if (!PrepareMacrosForSave(dirtyRows))
@@ -2179,9 +2203,9 @@ public sealed partial class MainViewModel
             await _macroSaveGate.WaitAsync(cancellationToken);
             try
             {
-                if (!await SaveProfileAsync(cancellationToken))
+                if (!await _saveProfileAsync(cancellationToken))
                 {
-                    MacroStatusText = AppStrings.Text("MacroSaveFailed");
+                    StatusText = AppStrings.Text("MacroSaveFailed");
                     return false;
                 }
             }
@@ -2199,7 +2223,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception exception)
         {
-            MacroStatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
+            StatusText = AppStrings.FormatText("MacroRuntimeError", exception.Message);
             return false;
         }
     }
@@ -2210,13 +2234,13 @@ public sealed partial class MainViewModel
         {
             if (!ValidateMacroTree(row.Definition))
             {
-                MacroStatusText = AppStrings.Text("MacroStepIncomplete");
+                StatusText = AppStrings.Text("MacroStepIncomplete");
                 return false;
             }
 
             if (!ValidateMacroReferences(row.Definition))
             {
-                MacroStatusText = AppStrings.Text("MacroReferenceInvalid");
+                StatusText = AppStrings.Text("MacroReferenceInvalid");
                 return false;
             }
 
@@ -2225,7 +2249,7 @@ public sealed partial class MainViewModel
             row.Refresh();
             if (FindTriggerConflict(row) is { } conflict)
             {
-                MacroStatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
+                StatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
                 return false;
             }
         }
@@ -2240,7 +2264,7 @@ public sealed partial class MainViewModel
         MacroValidator.ValidateReferences(macro, ActiveMacroMap());
 
     private IReadOnlyDictionary<string, MacroDefinition> ActiveMacroMap() =>
-        MacroDocumentService.IndexById(GetActiveProfile().Macros);
+        MacroDocumentService.IndexById(_getActiveProfile().Macros);
 
     private void EnsureMacroName(MacroRowViewModel row)
     {
@@ -2252,7 +2276,7 @@ public sealed partial class MainViewModel
 
         row.Definition.Name = AppStrings.FormatText(
             "MacroDefaultName",
-            Math.Max(1, Macros.IndexOf(row) + 1));
+            Math.Max(1, Items.IndexOf(row) + 1));
     }
 
     private MacroRowViewModel? FindTriggerConflict(MacroRowViewModel current) =>
@@ -2264,7 +2288,7 @@ public sealed partial class MainViewModel
         MacroDefinition macro,
         MacroTrigger trigger,
         MacroRowViewModel? current = null) =>
-        Macros.FirstOrDefault(other =>
+        Items.FirstOrDefault(other =>
             !ReferenceEquals(other.Definition, macro) &&
             !ReferenceEquals(other, current) &&
             other.Definition.Trigger is { } otherTrigger &&
@@ -2334,13 +2358,13 @@ public sealed partial class MainViewModel
 
         if (IsMacroRecording)
         {
-            MacroStatusText = AppStrings.Text("MacroRecordingBlocked");
+            StatusText = AppStrings.Text("MacroRecordingBlocked");
             return false;
         }
 
         if (IsMacroCountdown)
         {
-            MacroStatusText = AppStrings.Text("MacroCountdownBlocked");
+            StatusText = AppStrings.Text("MacroCountdownBlocked");
             return false;
         }
 
@@ -2350,7 +2374,7 @@ public sealed partial class MainViewModel
     private string CopyName(string name)
     {
         var baseName = string.IsNullOrWhiteSpace(name)
-            ? AppStrings.FormatText("MacroDefaultName", Macros.Count + 1)
+            ? AppStrings.FormatText("MacroDefaultName", Items.Count + 1)
             : name.Trim();
         var suffix = AppStrings.Text("MacroCopySuffix");
         var maxBaseLength = Math.Max(1, MacroDefinition.MaxNameLength - suffix.Length);
@@ -2463,11 +2487,11 @@ public sealed partial class MainViewModel
         if (_macroDispatcherQueue is { HasThreadAccess: false } dispatcher)
         {
             dispatcher.TryEnqueue(() =>
-                MacroStatusText = AppStrings.FormatText("MacroRuntimeError", message));
+                StatusText = AppStrings.FormatText("MacroRuntimeError", message));
             return;
         }
 
-        MacroStatusText = AppStrings.FormatText("MacroRuntimeError", message);
+        StatusText = AppStrings.FormatText("MacroRuntimeError", message);
     }
 
     private MacroRowViewModel CreateMacroRow(MacroDefinition macro)
@@ -2480,7 +2504,7 @@ public sealed partial class MainViewModel
 
     private void RefreshMacroRuntime()
     {
-        var profile = GetActiveProfile();
+        var profile = _getActiveProfile();
         _macroRuntime.SetPlaybackShortcuts(
             profile.Shortcuts.MacroPlaybackStart,
             profile.Shortcuts.MacroPlaybackStop);
@@ -2493,12 +2517,12 @@ public sealed partial class MainViewModel
         int? selectedIndex = null,
         MacroStep? selectStep = null)
     {
-        var oldStep = selectStep ?? SelectedMacroStep?.Step;
-        var oldIndex = selectedIndex ?? SelectedMacroStep?.Index ?? 0;
-        MacroSteps.Clear();
+        var oldStep = selectStep ?? SelectedStep?.Step;
+        var oldIndex = selectedIndex ?? SelectedStep?.Index ?? 0;
+        Steps.Clear();
         if (SelectedMacro is not { } selected)
         {
-            SelectedMacroStep = null;
+            SelectedStep = null;
             return;
         }
 
@@ -2508,10 +2532,10 @@ public sealed partial class MainViewModel
 
         var target = oldStep is null
             ? null
-            : MacroSteps.FirstOrDefault(row => ReferenceEquals(row.Step, oldStep));
-        target ??= MacroSteps.ElementAtOrDefault(
-            Math.Clamp(oldIndex, 0, Math.Max(0, MacroSteps.Count - 1)));
-        SelectedMacroStep = target;
+            : Steps.FirstOrDefault(row => ReferenceEquals(row.Step, oldStep));
+        target ??= Steps.ElementAtOrDefault(
+            Math.Clamp(oldIndex, 0, Math.Max(0, Steps.Count - 1)));
+        SelectedStep = target;
         OnPropertyChanged(nameof(MacroEmptyStepsVisibility));
         OnPropertyChanged(nameof(MacroTotalDurationText));
         OnPropertyChanged(nameof(CanPlayMacro));
@@ -2533,7 +2557,7 @@ public sealed partial class MainViewModel
                 OnMacroStepChanged,
                 FindMacroName);
             row.SetIndex(index++);
-            MacroSteps.Add(row);
+            Steps.Add(row);
             if (step.Kind == MacroStepKind.Loop)
             {
                 AppendMacroStepRows(step.Children, step, depth + 1, ref index);
@@ -2542,7 +2566,7 @@ public sealed partial class MainViewModel
     }
 
     private string? FindMacroName(string macroId) =>
-        Macros.FirstOrDefault(macro =>
+        Items.FirstOrDefault(macro =>
             StringComparer.Ordinal.Equals(macro.Id, macroId))?.Name;
 
     private void NotifySelectedMacroChanged()
@@ -2560,6 +2584,21 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanStartMacroRecording));
         OnPropertyChanged(nameof(CanPlayMacro));
     }
+
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value))
+        {
+            return false;
+        }
+
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
 
 

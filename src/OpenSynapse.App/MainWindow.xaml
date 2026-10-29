@@ -1425,11 +1425,11 @@
                         <TextBlock local:Localized.Uid="MacroListTitle" Text="宏列表" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                           <Button local:Localized.Uid="MacroImportButton" Content="导入" Click="ImportMacroClick" Style="{StaticResource SecondaryButtonStyle}" Padding="8,0" MinHeight="28" FontSize="12" VerticalAlignment="Center" />
-                          <Button local:Localized.Uid="MacroExportButtonShort" Content="导出" Click="ExportSelectedMacroClick" Style="{StaticResource SecondaryButtonStyle}" Padding="8,0" MinHeight="28" FontSize="12" VerticalAlignment="Center" IsEnabled="{Binding CanEditMacro}" />
+                          <Button local:Localized.Uid="MacroExportButtonShort" Content="导出" Click="ExportSelectedMacroClick" Style="{StaticResource SecondaryButtonStyle}" Padding="8,0" MinHeight="28" FontSize="12" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanEditMacro}" />
                           <Button x:Name="MacroNewButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CreateMacroClick" ToolTipService.ToolTip="新建宏" AutomationProperties.Name="新建宏"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                         </StackPanel>
                       </Grid>
-                      <ListView x:Name="MacroListView" Grid.Row="1" ItemsSource="{Binding Macros}" SelectedItem="{Binding SelectedMacro, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="150">
+                      <ListView x:Name="MacroListView" Grid.Row="1" ItemsSource="{Binding Macros.Items}" SelectedItem="{Binding Macros.SelectedMacro, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="150">
                         <ListView.ItemTemplate>
                           <DataTemplate x:DataType="viewModels:MacroRowViewModel">
                             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6" Padding="2,6">
@@ -1453,7 +1453,7 @@
                           </DataTemplate>
                         </ListView.ItemTemplate>
                       </ListView>
-                      <TextBlock x:Name="MacroListEmptyText" Grid.Row="2" local:Localized.Uid="MacroListEmpty" Text="还没有宏，点击 + 新建。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="12,0,12,12" Visibility="{Binding MacroListEmptyVisibility}" />
+                      <TextBlock x:Name="MacroListEmptyText" Grid.Row="2" local:Localized.Uid="MacroListEmpty" Text="还没有宏，点击 + 新建。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="12,0,12,12" Visibility="{Binding Macros.MacroListEmptyVisibility}" />
                     </Grid>
                   </Border>
                   <Border x:Name="MacroSummaryCard" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="0">
@@ -1462,24 +1462,24 @@
                         <TextBlock local:Localized.Uid="MacroSummaryTitle" Text="当前宏" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                       </Grid>
                       <StackPanel Padding="12,0,12,12" Spacing="10">
-                        <StackPanel Spacing="4" Visibility="{Binding MacroEditorVisibility}">
-                          <TextBlock Text="{Binding SelectedMacro.Name}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource DataBrush}" TextWrapping="Wrap" />
-                          <TextBlock Text="{Binding SelectedMacro.StepsText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                        <StackPanel Spacing="4" Visibility="{Binding Macros.MacroEditorVisibility}">
+                          <TextBlock Text="{Binding Macros.SelectedMacro.Name}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource DataBrush}" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding Macros.SelectedMacro.StepsText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                         </StackPanel>
-                        <TextBlock local:Localized.Uid="MacroSummaryNoMacro" Text="选择一个宏以查看它的详情。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" Visibility="{Binding MacroNoSelectionVisibility}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding MacroEditorVisibility}">
+                        <TextBlock local:Localized.Uid="MacroSummaryNoMacro" Text="选择一个宏以查看它的详情。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" Visibility="{Binding Macros.MacroNoSelectionVisibility}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding Macros.MacroEditorVisibility}">
                           <StackPanel Spacing="3">
                             <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Text="{Binding SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Macros.SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
                           </StackPanel>
-                          <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
+                          <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding Macros.CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                         </Grid>
-                        <Button x:Name="MacroOpenEditorButton" local:Localized.Uid="MacroOpenEditorButton" Content="打开编辑器" Click="OpenMacroEditorWindowClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding CanEditMacro}" />
+                        <Button x:Name="MacroOpenEditorButton" local:Localized.Uid="MacroOpenEditorButton" Content="打开编辑器" Click="OpenMacroEditorWindowClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding Macros.CanEditMacro}" />
                       </StackPanel>
                     </StackPanel>
                   </Border>
                 </Grid>
-                <TextBlock Text="{Binding MacroStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Macros.StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                 <TextBlock local:Localized.Uid="MacroHint" Text="宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 可停止录制并保存。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
               </StackPanel>
             </ScrollViewer>
@@ -1619,7 +1619,7 @@
                       <TextBlock x:Name="DiagnosticsCopyStatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                     </StackPanel>
                   </Grid>
-                  <TextBlock local:Localized.Uid="Loc_2316E0EB08" Text="检查设备通道、协议读回和最近一次查询结果。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  <TextBlock local:Localized.Uid="Loc_2316E0EB08" Text="检查设备通信和最近一次读取结果；只列出需要处理的项目。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                 </StackPanel>
                 <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                 <Border Style="{StaticResource CardStyle}" Padding="16">

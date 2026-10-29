@@ -3,8 +3,9 @@
   "newFilePublicMemberLimit": 100,
   "files": [
     {
-      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Macros.cs",
-      "maxLines": 2566
+      "path": "src/OpenSynapse.App/ViewModels/MacroWorkspace.cs",
+      "maxLines": 2605,
+      "maxPublicMembers": 95
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Blade.cs",
@@ -190,8 +191,8 @@
   "groups": [
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
-      "maxLines": 10504,
-      "maxPublicMembers": 468
+        "maxLines": 7937,
+        "maxPublicMembers": 376
     }
   ]
 }

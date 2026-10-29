@@ -98,11 +98,11 @@ public sealed partial class MacroEditorWindow : Window
     /// </summary>
     internal void CancelPendingCapture()
     {
-        _viewModel.CancelMacroCapture();
-        _viewModel.CancelMacroStepCapture();
-        _viewModel.CancelMacroPlaybackShortcutCapture();
-        _viewModel.CancelMacroPlaybackCountdown();
-        _viewModel.DiscardMacroRecording();
+        _viewModel.Macros.CancelMacroCapture();
+        _viewModel.Macros.CancelMacroStepCapture();
+        _viewModel.Macros.CancelMacroPlaybackShortcutCapture();
+        _viewModel.Macros.CancelMacroPlaybackCountdown();
+        _viewModel.Macros.DiscardMacroRecording();
     }
 
     private void ConfigurePresenter(double scale, RectInt32 workArea)
@@ -171,7 +171,7 @@ public sealed partial class MacroEditorWindow : Window
     /// </summary>
     private void BuildMacroKeyboard()
     {
-        var picker = _viewModel.MacroKeyPicker;
+        var picker = _viewModel.Macros.KeyPicker;
         var grid = new Grid();
         for (var column = 0; column < picker.Columns; column++)
         {
@@ -225,7 +225,7 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
-        var picker = _viewModel.MacroKeyPicker;
+        var picker = _viewModel.Macros.KeyPicker;
         var boardWidth = picker.Columns * MacroKeyUnitWidth;
         // The board is capped so the editor chrome above it keeps its room; a
         // taller keyboard would push the property column into a scrollbar.
@@ -267,7 +267,7 @@ public sealed partial class MacroEditorWindow : Window
     private void BuildMacroMediaKeys()
     {
         MacroMediaKeyHost.Children.Clear();
-        foreach (var option in _viewModel.MacroKeyPicker.MediaKeys)
+        foreach (var option in _viewModel.Macros.KeyPicker.MediaKeys)
         {
             var button = new Button
             {
@@ -288,7 +288,7 @@ public sealed partial class MacroEditorWindow : Window
 
     private void InitializeMacroMouse()
     {
-        var picker = _viewModel.MacroKeyPicker;
+        var picker = _viewModel.Macros.KeyPicker;
         foreach (var button in MacroMouseHost.Children.OfType<Button>()
             .Concat(MacroMouseExtraHost.Children.OfType<Button>()))
         {
@@ -397,19 +397,19 @@ public sealed partial class MacroEditorWindow : Window
 
     private async void MacroRecordStartClick(object sender, RoutedEventArgs e)
     {
-        if (_viewModel.IsMacroRecording || _viewModel.IsMacroCountdown)
+        if (_viewModel.Macros.IsMacroRecording || _viewModel.Macros.IsMacroCountdown)
         {
-            await _viewModel.ToggleMacroRecordingAsync(_lifetime.Token);
+            await _viewModel.Macros.ToggleMacroRecordingAsync(_lifetime.Token);
             return;
         }
 
-        if (!_viewModel.CanStartMacroRecording)
+        if (!_viewModel.Macros.CanStartMacroRecording)
         {
             return;
         }
 
         var append = false;
-        if (_viewModel.SelectedMacro is { } selected &&
+        if (_viewModel.Macros.SelectedMacro is { } selected &&
             selected.Definition.Steps.Count > 0)
         {
             var dialog = new ContentDialog
@@ -434,14 +434,14 @@ public sealed partial class MacroEditorWindow : Window
             append = result == ContentDialogResult.Secondary;
         }
 
-        await _viewModel.StartMacroRecordingAsync(append, _lifetime.Token);
+        await _viewModel.Macros.StartMacroRecordingAsync(append, _lifetime.Token);
     }
 
     private async void MacroRecordStopClick(object sender, RoutedEventArgs e)
     {
-        if (_viewModel.IsMacroRecording)
+        if (_viewModel.Macros.IsMacroRecording)
         {
-            await _viewModel.ToggleMacroRecordingAsync(_lifetime.Token);
+            await _viewModel.Macros.ToggleMacroRecordingAsync(_lifetime.Token);
         }
     }
 
@@ -449,15 +449,15 @@ public sealed partial class MacroEditorWindow : Window
     {
         if (sender is ToggleMenuFlyoutItem item)
         {
-            _viewModel.IsMacroRecordingDelays = item.IsChecked;
+            _viewModel.Macros.IsMacroRecordingDelays = item.IsChecked;
         }
     }
 
     private async void MacroInsertCaptureClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.AddMacroInputStepAsync(_lifetime.Token);
+        await _viewModel.Macros.AddMacroInputStepAsync(_lifetime.Token);
 
     private async void AddMacroDelayClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.AddMacroDelayAsync(_lifetime.Token);
+        await _viewModel.Macros.AddMacroDelayAsync(_lifetime.Token);
 
     private async void MacroKeyOptionClick(object sender, RoutedEventArgs e)
     {
@@ -466,31 +466,31 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
-        _viewModel.MacroKeyPicker.Selected = option;
-        await _viewModel.AddMacroStepFromPickerAsync(_lifetime.Token);
+        _viewModel.Macros.KeyPicker.Selected = option;
+        await _viewModel.Macros.AddMacroStepFromPickerAsync(_lifetime.Token);
     }
 
     private async void CaptureMacroTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CaptureMacroTriggerAsync(_lifetime.Token);
+        await _viewModel.Macros.CaptureMacroTriggerAsync(_lifetime.Token);
 
     private async void CaptureMacroPlaybackStartShortcutClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CaptureMacroPlaybackStartShortcutAsync(_lifetime.Token);
+        await _viewModel.Macros.CaptureMacroPlaybackStartShortcutAsync(_lifetime.Token);
 
     private async void CaptureMacroPlaybackStopShortcutClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CaptureMacroPlaybackStopShortcutAsync(_lifetime.Token);
+        await _viewModel.Macros.CaptureMacroPlaybackStopShortcutAsync(_lifetime.Token);
 
     private async void ClearMacroPlaybackStartShortcutClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ClearMacroPlaybackStartShortcutAsync(_lifetime.Token);
+        await _viewModel.Macros.ClearMacroPlaybackStartShortcutAsync(_lifetime.Token);
 
     private async void ClearMacroPlaybackStopShortcutClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ClearMacroPlaybackStopShortcutAsync(_lifetime.Token);
+        await _viewModel.Macros.ClearMacroPlaybackStopShortcutAsync(_lifetime.Token);
 
     private async void PlayMacroClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.PlaySelectedMacroAsync(_lifetime.Token);
+        await _viewModel.Macros.PlaySelectedMacroAsync(_lifetime.Token);
 
     private void OpenMousePathEditorClick(object sender, RoutedEventArgs e)
     {
-        if (_viewModel.SelectedMacroStep is not { IsMouseMove: true } row)
+        if (_viewModel.Macros.SelectedStep is not { IsMouseMove: true } row)
         {
             return;
         }
@@ -520,38 +520,38 @@ public sealed partial class MacroEditorWindow : Window
     }
 
     private async void SaveMacroClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.SaveSelectedMacroAsync(_lifetime.Token);
+        await _viewModel.Macros.SaveSelectedMacroAsync(_lifetime.Token);
 
     private async void RecaptureMacroStepClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.RecaptureMacroStepInputAsync(_lifetime.Token);
+        await _viewModel.Macros.RecaptureMacroStepInputAsync(_lifetime.Token);
 
     private async void MoveMacroStepUpClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.MoveSelectedMacroStepAsync(-1, _lifetime.Token);
+        await _viewModel.Macros.MoveSelectedMacroStepAsync(-1, _lifetime.Token);
 
     private async void MoveMacroStepDownClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.MoveSelectedMacroStepAsync(1, _lifetime.Token);
+        await _viewModel.Macros.MoveSelectedMacroStepAsync(1, _lifetime.Token);
 
     private async void DeleteMacroStepClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.DeleteSelectedMacroStepAsync(_lifetime.Token);
+        await _viewModel.Macros.DeleteSelectedMacroStepAsync(_lifetime.Token);
 
     private async void DeleteMacroStepRowClick(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { Tag: MacroStepRowViewModel row })
         {
-            await _viewModel.DeleteMacroStepAsync(row, _lifetime.Token);
+            await _viewModel.Macros.DeleteMacroStepAsync(row, _lifetime.Token);
         }
     }
 
     private async void MacroStepListKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key != global::Windows.System.VirtualKey.Delete ||
-            _viewModel.SelectedMacroStep is null)
+            _viewModel.Macros.SelectedStep is null)
         {
             return;
         }
 
         e.Handled = true;
-        await _viewModel.DeleteSelectedMacroStepAsync(_lifetime.Token);
+        await _viewModel.Macros.DeleteSelectedMacroStepAsync(_lifetime.Token);
     }
 
     private async void AddMacroTextClick(object sender, RoutedEventArgs e)
@@ -577,7 +577,7 @@ public sealed partial class MacroEditorWindow : Window
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {
-            await _viewModel.AddMacroTextStepAsync(text.Text, _lifetime.Token);
+            await _viewModel.Macros.AddMacroTextStepAsync(text.Text, _lifetime.Token);
         }
     }
 
@@ -604,7 +604,7 @@ public sealed partial class MacroEditorWindow : Window
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {
-            await _viewModel.AddMacroRunCommandStepAsync(
+            await _viewModel.Macros.AddMacroRunCommandStepAsync(
                 command.Text,
                 arguments.Text,
                 workingDirectory.Text,
@@ -625,7 +625,7 @@ public sealed partial class MacroEditorWindow : Window
 
     private async void AddMacroReferenceClick(object sender, RoutedEventArgs e)
     {
-        var options = _viewModel.MacroReferenceCandidates;
+        var options = _viewModel.Macros.MacroReferenceCandidates;
         if (options.Count == 0)
         {
             var emptyDialog = new ContentDialog
@@ -661,7 +661,7 @@ public sealed partial class MacroEditorWindow : Window
         if (await dialog.ShowAsync() == ContentDialogResult.Primary &&
             picker.SelectedItem is MacroReferenceOption option)
         {
-            await _viewModel.AddMacroReferenceStepAsync(option.Id, _lifetime.Token);
+            await _viewModel.Macros.AddMacroReferenceStepAsync(option.Id, _lifetime.Token);
         }
     }
 
@@ -680,7 +680,7 @@ public sealed partial class MacroEditorWindow : Window
         var keyPicker = new ComboBox
         {
             Header = AppStrings.Text("MacroComboKeyLabel"),
-            ItemsSource = _viewModel.MacroKeyPicker.KeyboardKeys,
+            ItemsSource = _viewModel.Macros.KeyPicker.KeyboardKeys,
             DisplayMemberPath = nameof(MacroKeyOptionViewModel.Label),
             SelectedIndex = 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -715,7 +715,7 @@ public sealed partial class MacroEditorWindow : Window
         if (shift.IsChecked == true) modifiers |= MacroModifierKeys.Shift;
         if (alt.IsChecked == true) modifiers |= MacroModifierKeys.Alt;
         if (windows.IsChecked == true) modifiers |= MacroModifierKeys.Windows;
-        await _viewModel.AddMacroComboStepAsync(modifiers, key.Input, _lifetime.Token);
+        await _viewModel.Macros.AddMacroComboStepAsync(modifiers, key.Input, _lifetime.Token);
     }
 
     private static CheckBox CreateModifierCheckBox(string labelKey)
@@ -728,18 +728,18 @@ public sealed partial class MacroEditorWindow : Window
     private void MacroRecordFlyoutOpening(object sender, object e)
     {
         MacroRecordStartItem.Text = AppStrings.Text(
-            _viewModel.IsMacroCountdown ? "MacroCancelCountdown" : "MacroRecordStart/Text");
+            _viewModel.Macros.IsMacroCountdown ? "MacroCancelCountdown" : "MacroRecordStart/Text");
         MacroRecordStartItem.IsEnabled =
-            _viewModel.CanStartMacroRecording || _viewModel.IsMacroCountdown;
-        MacroRecordStopItem.IsEnabled = _viewModel.CanStopMacroRecording;
+            _viewModel.Macros.CanStartMacroRecording || _viewModel.Macros.IsMacroCountdown;
+        MacroRecordStopItem.IsEnabled = _viewModel.Macros.CanStopMacroRecording;
     }
 
     private void MacroTriggerFlyoutOpening(object sender, object e)
     {
         MacroClearTriggerItem.IsEnabled =
-            _viewModel.CanEditMacro &&
-            _viewModel.SelectedMacro?.Definition.Trigger is not null;
-        MacroNagaTriggerMenu.IsEnabled = _viewModel.CanEditMacro;
+            _viewModel.Macros.CanEditMacro &&
+            _viewModel.Macros.SelectedMacro?.Definition.Trigger is not null;
+        MacroNagaTriggerMenu.IsEnabled = _viewModel.Macros.CanEditMacro;
         if (MacroNagaTriggerMenu.Items.Count == 0)
         {
             for (var sideButton = 1; sideButton <= 12; sideButton++)
@@ -757,7 +757,7 @@ public sealed partial class MacroEditorWindow : Window
 
     private void MacroRecordDelayModeFlyoutOpening(object sender, object e)
     {
-        var index = _viewModel.MacroRecordingDelayModeIndex;
+        var index = _viewModel.Macros.MacroRecordingDelayModeIndex;
         MacroRecordDelayRecordedItem.IsChecked = index == 0;
         MacroRecordDelayFixedItem.IsChecked = index == 1;
         MacroRecordDelayNoneItem.IsChecked = index == 2;
@@ -765,7 +765,7 @@ public sealed partial class MacroEditorWindow : Window
 
     private void MacroRecordMouseModeFlyoutOpening(object sender, object e)
     {
-        var index = _viewModel.MacroRecordingMouseTrackingModeIndex;
+        var index = _viewModel.Macros.MacroRecordingMouseTrackingModeIndex;
         MacroRecordMouseNoneItem.IsChecked = index == 0;
         MacroRecordMouseAbsoluteItem.IsChecked = index == 1;
         MacroRecordMouseRelativeItem.IsChecked = index == 2;
@@ -784,7 +784,7 @@ public sealed partial class MacroEditorWindow : Window
         };
         if (index >= 0)
         {
-            _viewModel.MacroRecordingDelayModeIndex = index;
+            _viewModel.Macros.MacroRecordingDelayModeIndex = index;
         }
     }
 
@@ -801,37 +801,37 @@ public sealed partial class MacroEditorWindow : Window
         };
         if (index >= 0)
         {
-            _viewModel.MacroRecordingMouseTrackingModeIndex = index;
+            _viewModel.Macros.MacroRecordingMouseTrackingModeIndex = index;
         }
     }
 
     private async void CaptureMacroTriggerComboClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CaptureMacroTriggerComboAsync(_lifetime.Token);
+        await _viewModel.Macros.CaptureMacroTriggerComboAsync(_lifetime.Token);
 
     private async void CaptureMacroDeviceTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CaptureMacroDeviceTriggerAsync(_lifetime.Token);
+        await _viewModel.Macros.CaptureMacroDeviceTriggerAsync(_lifetime.Token);
 
     private async void ClearMacroTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ClearMacroTriggerAsync(_lifetime.Token);
+        await _viewModel.Macros.ClearMacroTriggerAsync(_lifetime.Token);
 
     private async void NagaSideButtonTriggerClick(object sender, RoutedEventArgs e)
     {
         if (sender is MenuFlyoutItem { Tag: int sideButton })
         {
-            await _viewModel.SetMacroNagaSideButtonTriggerAsync(
+            await _viewModel.Macros.SetMacroNagaSideButtonTriggerAsync(
                 sideButton,
                 _lifetime.Token);
         }
     }
 
     private void TogglePauseMacroClick(object sender, RoutedEventArgs e) =>
-        _viewModel.ToggleMacroPlaybackPause();
+        _viewModel.Macros.ToggleMacroPlaybackPause();
 
     private void StopMacroClick(object sender, RoutedEventArgs e) =>
-        _viewModel.StopMacroPlayback();
+        _viewModel.Macros.StopMacroPlayback();
 
     private async void AddMacroLoopClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.AddMacroLoopStepAsync(_lifetime.Token);
+        await _viewModel.Macros.AddMacroLoopStepAsync(_lifetime.Token);
     private async void OnMacroEditorClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
         if (_allowClose)
@@ -839,11 +839,11 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
-        var hasPendingWork = _viewModel.HasUnsavedMacroChanges ||
-            _viewModel.IsMacroRecording ||
-            _viewModel.IsMacroCountdown ||
-            _viewModel.IsMacroStepCapturing ||
-            _viewModel.IsMacroTriggerCapturing;
+        var hasPendingWork = _viewModel.Macros.HasUnsavedMacroChanges ||
+            _viewModel.Macros.IsMacroRecording ||
+            _viewModel.Macros.IsMacroCountdown ||
+            _viewModel.Macros.IsMacroStepCapturing ||
+            _viewModel.Macros.IsMacroTriggerCapturing;
         if (!hasPendingWork)
         {
             return;
@@ -859,8 +859,8 @@ public sealed partial class MacroEditorWindow : Window
         try
         {
             CancelPendingCapture();
-            if (_viewModel.HasUnsavedMacroChanges &&
-                !await _viewModel.SaveMacroChangesOnCloseAsync(CancellationToken.None))
+            if (_viewModel.Macros.HasUnsavedMacroChanges &&
+                !await _viewModel.Macros.SaveMacroChangesOnCloseAsync(CancellationToken.None))
             {
                 return;
             }
