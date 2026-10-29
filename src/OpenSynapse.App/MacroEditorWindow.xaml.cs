@@ -734,42 +734,6 @@ public sealed partial class MacroEditorWindow : Window
         MacroRecordStopItem.IsEnabled = _viewModel.Macros.CanStopMacroRecording;
     }
 
-    private void MacroTriggerFlyoutOpening(object sender, object e)
-    {
-        MacroClearTriggerItem.IsEnabled =
-            _viewModel.Macros.CanEditMacro &&
-            _viewModel.Macros.SelectedMacro?.Definition.Trigger is not null;
-        MacroMouseSideTriggerMenu.IsEnabled = _viewModel.Macros.CanEditMacro;
-        if (MacroMouseSideTriggerMenu.Items.Count == 0)
-        {
-            for (var mouseButton = 4; mouseButton <= 5; mouseButton++)
-            {
-                var item = new MenuFlyoutItem
-                {
-                    Text = AppStrings.Text($"MacroMouseButton{mouseButton}"),
-                    Tag = mouseButton,
-                };
-                item.Click += MouseSideButtonTriggerClick;
-                MacroMouseSideTriggerMenu.Items.Add(item);
-            }
-        }
-
-        MacroNagaTriggerMenu.IsEnabled = _viewModel.Macros.CanEditMacro;
-        if (MacroNagaTriggerMenu.Items.Count == 0)
-        {
-            for (var sideButton = 1; sideButton <= 12; sideButton++)
-            {
-                var item = new MenuFlyoutItem
-                {
-                    Text = AppStrings.FormatText("MacroNagaSideButton", sideButton),
-                    Tag = sideButton,
-                };
-                item.Click += NagaSideButtonTriggerClick;
-                MacroNagaTriggerMenu.Items.Add(item);
-            }
-        }
-    }
-
     private void MacroRecordDelayModeFlyoutOpening(object sender, object e)
     {
         var index = _viewModel.Macros.MacroRecordingDelayModeIndex;
@@ -828,26 +792,6 @@ public sealed partial class MacroEditorWindow : Window
 
     private async void ClearMacroTriggerClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Macros.ClearMacroTriggerAsync(_lifetime.Token);
-
-    private async void MouseSideButtonTriggerClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuFlyoutItem { Tag: int mouseButton })
-        {
-            await _viewModel.SetMacroMouseSideButtonTriggerAsync(
-                mouseButton,
-                _lifetime.Token);
-        }
-    }
-
-    private async void NagaSideButtonTriggerClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuFlyoutItem { Tag: int sideButton })
-        {
-            await _viewModel.Macros.SetMacroNagaSideButtonTriggerAsync(
-                sideButton,
-                _lifetime.Token);
-        }
-    }
 
     private void TogglePauseMacroClick(object sender, RoutedEventArgs e) =>
         _viewModel.Macros.ToggleMacroPlaybackPause();
