@@ -17,6 +17,8 @@ public static class BladeLightingLedMatrixProtocol
     private const byte FrameCommandClass = 0x03;
     private const byte FrameCommandId = 0x03;
     private const byte FrameId = 0xFF;
+    private const byte Store = 0x01;
+    private const byte KeyboardRegion = 0x05;
 
     // Middleware LED effect ids (rzDevice25 LedEffect).
     private const byte EffectOff = 0;
@@ -95,7 +97,7 @@ public static class BladeLightingLedMatrixProtocol
         CreateStarlightRequest(speed, 0x02, first, second);
 
     public static byte[] CreateCustomFrameEffectRequest() =>
-        CreateEffectRequest(EffectCustomFrame, 0x00);
+        CreateEffectRequest(EffectCustomFrame);
 
     public static byte[][] CreateMatrixFrameRequests(IReadOnlyList<RazerRgb> frame) =>
         CreateMatrixFrameRequests(frame, Rows, Columns);
@@ -179,9 +181,13 @@ public static class BladeLightingLedMatrixProtocol
 
     private static byte[] CreateEffectRequest(byte effectId, params byte[] arguments)
     {
-        var payload = new byte[1 + arguments.Length];
-        payload[0] = effectId;
-        arguments.CopyTo(payload.AsSpan(1));
+        // The 2026 middleware sends every LED effect as
+        // [store, keyboard region, effect id, effect parameters...].
+        var payload = new byte[3 + arguments.Length];
+        payload[0] = Store;
+        payload[1] = KeyboardRegion;
+        payload[2] = effectId;
+        arguments.CopyTo(payload.AsSpan(3));
         return RazerFeatureReport.CreateRequest(
             TransactionId,
             checked((byte)payload.Length),
