@@ -1,10 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Audio;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
@@ -16,33 +14,21 @@ using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Protocols;
 using OpenSynapse.Windows.Devices;
-using Windows.UI;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
-    private readonly IDeviceDiscovery _discovery;
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
-    private readonly RazerFirmwareUpdateClient _firmwareUpdateClient;
     private readonly ProfileStore _profileStore;
     private readonly IPowerSourceProvider _powerSourceProvider;
-    private readonly IActiveApplicationProvider _activeApplicationProvider;
     private readonly LocalDiagnosticLog _diagnosticLog;
-    private readonly ViperViewModel _viper = new();
     private HashSet<int>? _internalDisplayRefreshRateCycleHertz;
     private IReadOnlyList<BladePerformanceMode>? _legacyPerformanceCycleModes;
     private IReadOnlyList<int>? _legacyRefreshRateCycleHertz;
-    private readonly IBladeLightingController? _bladeLightingController;
-    private readonly IReadOnlyList<string> _startupDiagnostics;
-    private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
-    private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
-    private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
     private ProfileDocument _profile = ProfileDocument.CreateDefault();
-    private PowerSourceKind? _lastPowerState;
-    private string _lastDeviceRefreshText = AppStrings.Text("Text_E19E170A");
     private string _deviceTelemetryTimeText = AppStrings.Text("Text_CF8B06AA");
     private string _deviceErrorText = string.Empty;
     private string _deviceQueryErrorText = string.Empty;
@@ -53,14 +39,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private bool _isBusy;
     private IReadOnlyList<DeviceDescriptor> _deviceDescriptors = Array.Empty<DeviceDescriptor>();
     private RazerDeviceTelemetry? _lastDeviceTelemetry;
-    private string _deviceFingerprint = string.Empty;
-    private int _deviceRefreshRequested;
-    private int _displayProfileApplyRequested;
-    private int _deviceReadoutSamplingEnabled = 1;
-    private int _diagnosticsRebuildEnabled = 1;
-    private int _deviceWatchActive = 1;
-    private int _displayAvailable = 1;
-    private int _displayBrightnessRestorePending;
     private int _disposed;
 
     public MainViewModel(
@@ -84,14 +62,29 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         bool thxAudioSupported = false,
         IMacroInputSink? macroInputSink = null)
     {
-        _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
-        _firmwareUpdateClient = firmwareUpdateClient ?? new RazerFirmwareUpdateClient();
         _profileStore = profileStore ?? new ProfileStore();
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
-        _activeApplicationProvider = activeApplicationProvider ?? UnknownActiveApplicationProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
-        _bladeLightingController = bladeLightingController;
+        Telemetry = new TelemetryWorkspace(
+            performanceMonitor,
+            _powerSourceProvider,
+            () => Refresh!.IsDisplayAvailable,
+            () => CurrentPowerSource,
+            error => SetPerformanceError(error));
+        Firmware = new FirmwareWorkspace(
+            firmwareUpdateClient ?? new RazerFirmwareUpdateClient(),
+            () => _deviceDescriptors);
+        Viper = new ViperWorkspace(
+            deviceTelemetryReader,
+            () => _profile,
+            document => _profile = document,
+            SaveProfileAsync,
+            () => _deviceDescriptors,
+            () => CurrentPowerSource,
+            () => Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper),
+            RunDeviceOperationAsync,
+            reading => Telemetry.NotifyBatteryObserved(reading));
         Blade = new BladeWorkspace(
             deviceTelemetryReader,
             bladeLightingController,
@@ -105,13 +98,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => CurrentPowerSource,
             () => _lastDeviceTelemetry,
             () => _internalDisplayRefreshRateCycleHertz,
-            () => Volatile.Read(ref _displayAvailable) != 0,
-            () => Volatile.Read(ref _displayBrightnessRestorePending) != 0,
+            () => Refresh!.IsDisplayAvailable,
+            () => Refresh!.IsBrightnessRestorePending,
             () => Volatile.Read(ref _disposed) != 0,
             SetDeviceOperationError,
-            RequestDeviceRefresh,
+            () => Refresh!.RequestDeviceRefresh(),
             rate => InternalDisplayRefreshRateChangedByUser?.Invoke(rate),
-            ApplyFirmwareMcuVersion,
+            Firmware.ApplyMcuVersion,
             () => Display!,
             () => Fan!,
             () => Lighting!,
@@ -147,13 +140,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             busy => IsBusy = busy,
             SetDeviceOperationError,
             ReportApplicationError,
-            RequestProfileApply);
-        Telemetry = new TelemetryWorkspace(
-            performanceMonitor,
-            _powerSourceProvider,
-            () => Volatile.Read(ref _displayAvailable) != 0,
-            () => CurrentPowerSource,
-            error => SetPerformanceError(error));
+            () => Refresh!.RequestProfileApply());
         Fan = new FanWorkspace(
             deviceTelemetryReader,
             performanceMonitor,
@@ -172,19 +159,19 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             mode => Blade.SetPerformanceMode(mode, confirm: false),
             _diagnosticLog,
             RunDeviceOperation,
-            RequestDeviceRefresh);
+            () => Refresh!.RequestDeviceRefresh());
         Lighting = new LightingWorkspace(
-            _bladeLightingController,
+            bladeLightingController,
             _deviceTelemetryReader,
             _diagnosticLog,
             () => _deviceDescriptors,
             () => _profile,
             () => CurrentPowerSource,
             () => Blade.UsesFirmwareKeyboardLighting,
-            SetDisplayAvailableFlag,
-            () => Volatile.Read(ref _displayAvailable) != 0,
+            available => Refresh!.SetDisplayAvailableFlag(available),
+            () => Refresh!.IsDisplayAvailable,
             _deviceOperationGate,
-            RequestDeviceRefresh,
+            () => Refresh!.RequestDeviceRefresh(),
             SetDeviceOperationError,
             () => Fan.StopAsync("suspend"),
             SetOpenRazerChromaEnabled,
@@ -199,11 +186,57 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             _diagnosticLog,
             () => Lighting.IsChromaIntegrationEnabled,
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
-            RefreshDevicesAsync,
+            ct => Refresh!.RefreshDevicesAsync(ct),
             RefreshDeviceOverviewVisibility,
             SetDeviceOperationError,
             DispatcherQueue.GetForCurrentThread());
-        _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
+        Diagnostics = new DiagnosticsWorkspace(
+            OpenRazer,
+            startupDiagnostics?.ToArray() ?? Array.Empty<string>(),
+            () => Refresh!.LastRefreshText,
+            () => DeviceTelemetryTimeText);
+        Refresh = new RefreshWorkspace(
+            discovery,
+            deviceTelemetryReader,
+            _profileStore,
+            _powerSourceProvider,
+            activeApplicationProvider ?? UnknownActiveApplicationProvider.Instance,
+            _diagnosticLog,
+            bladeLightingController,
+            _deviceOperationGate,
+            () => _profile,
+            document => _profile = document,
+            () => _deviceDescriptors,
+            descriptors => _deviceDescriptors = descriptors,
+            () => CurrentPowerSource,
+            GetDeviceSerialAsync,
+            () => _deviceSerials.Clear(),
+            RefreshAttachedDevicesAsync,
+            Blade,
+            Display,
+            Fan,
+            Lighting,
+            OpenRazer,
+            Viper,
+            Telemetry,
+            Profiles,
+            Firmware,
+            Devices,
+            RefreshDeviceSelectorItems,
+            RefreshDeviceOverviewVisibility,
+            SetDeviceQueryError,
+            SetDeviceOperationError,
+            ResetDeviceTelemetry,
+            ApplyDeviceTelemetry,
+            Diagnostics.Rebuild,
+            () =>
+            {
+                BlackSharkDevices.Clear();
+                _selectedBlackSharkDevice = null;
+                SelectedBlackShark = null;
+            },
+            OnPropertyChanged);
+        Tray = new TrayWorkspace(() => Devices, OpenRazer);
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
     }
 
@@ -214,22 +247,20 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<DeviceSelectorItemViewModel> DeviceSelectorItems { get; } = new();
+    public FirmwareWorkspace Firmware { get; }
+    public ViperWorkspace Viper { get; }
+    public RefreshWorkspace Refresh { get; }
     public BladeWorkspace Blade { get; }
     public ThxAudioViewModel ThxAudio { get; }
     public MacroWorkspace Macros { get; }
     public OpenRazerWorkspace OpenRazer { get; }
+    public TrayWorkspace Tray { get; }
     public ProfilesWorkspace Profiles { get; }
     public TelemetryWorkspace Telemetry { get; }
     public FanWorkspace Fan { get; }
     public DisplayWorkspace Display { get; }
     public LightingWorkspace Lighting { get; }
-    public ObservableCollection<DiagnosticRowViewModel> Diagnostics { get; } = new();
-
-    public string LastDeviceRefreshText
-    {
-        get => _lastDeviceRefreshText;
-        private set => SetField(ref _lastDeviceRefreshText, value);
-    }
+    public DiagnosticsWorkspace Diagnostics { get; }
 
     public string DeviceTelemetryTimeText { get => _deviceTelemetryTimeText; private set => SetField(ref _deviceTelemetryTimeText, value); }
 
@@ -288,102 +319,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _ => "--",
     };
 
-    public string CreateDiagnosticsReport()
-    {
-        var report = new StringBuilder();
-        report.AppendLine(AppStrings.Text("DiagnosticsReportTitle"));
-        report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceRefresh", LastDeviceRefreshText));
-        report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceTelemetry", DeviceTelemetryTimeText));
-        report.AppendLine();
-        foreach (var row in Diagnostics)
-        {
-            AppendDiagnostic(report, row, 0);
-        }
-
-        return report.ToString().TrimEnd();
-    }
-
-    private static void AppendDiagnostic(
-        StringBuilder report,
-        DiagnosticRowViewModel row,
-        int depth)
-    {
-        report.Append(' ', depth * 2)
-            .Append(row.Device)
-            .Append(" | ")
-            .Append(row.Capability)
-            .Append(" | ")
-            .Append(row.Status)
-            .Append(" | ")
-            .AppendLine(row.Detail);
-        foreach (var protocol in row.ProtocolDetails)
-        {
-            report.Append(' ', (depth + 1) * 2)
-                .Append(protocol.Capability)
-                .Append(" | ")
-                .Append(protocol.Status)
-                .Append(" | ")
-                .AppendLine(protocol.Detail);
-        }
-        foreach (var issue in row.Issues)
-        {
-            AppendDiagnostic(report, issue, depth + 1);
-        }
-    }
-
-    /// <summary>
-    /// Names the capabilities that actually failed. The generic "writes are paused" text
-    /// alone leaves a device owner with nothing to act on.
-    /// </summary>
-    private static string DescribeFailedReads(OpenRazerDeviceViewModel device)
-    {
-        var failures = device.BasicErrors;
-        return failures.Count == 0
-            ? device.ErrorText
-            : AppStrings.FormatText("OpenRazerFailedReadsDetail",
-                string.Join("; ", failures.Select(read =>
-                    $"{AppStrings.Text("OpenRazerCapability" + read.Key)}: {read.Value}")));
-    }
-
-    /// <summary>
-    /// Enables the periodic read-only telemetry poll. It is only worth running while the
-    /// device page is open, because that is where the live readouts are shown.
-    /// </summary>
-    internal void SetDeviceReadoutSamplingEnabled(bool enabled) =>
-        Interlocked.Exchange(ref _deviceReadoutSamplingEnabled, enabled ? 1 : 0);
-
-    /// <summary>
-    /// Rebuilding the diagnostics collection clears it and re-adds every row, which resets the
-    /// bound list. Doing that on every telemetry poll stalled whichever page the user was on,
-    /// so the rebuild is deferred until the diagnostics page is shown again.
-    /// </summary>
-    internal void SetDiagnosticsRebuildEnabled(bool enabled) =>
-        Interlocked.Exchange(ref _diagnosticsRebuildEnabled, enabled ? 1 : 0);
-
-    private void RequestProfileApply()
-    {
-        Interlocked.Exchange(ref _displayProfileApplyRequested, 1);
-        RequestDeviceRefresh();
-    }
-
-    /// <summary>
-    /// The window became visible or hidden. Wakes the samplers when the state actually
-    /// changed and asks the next refresh to restore the brightness the user last set.
-    /// </summary>
-    private void SetDisplayAvailableFlag(bool available)
-    {
-        if (Interlocked.Exchange(ref _displayAvailable, available ? 1 : 0) !=
-            (available ? 1 : 0))
-        {
-            Telemetry.NotifySamplingStateChanged();
-        }
-        Interlocked.Exchange(ref _displayBrightnessRestorePending, 1);
-        if (!available)
-        {
-            Blade.OnDisplayAvailabilityChanged(false);
-        }
-    }
-
     /// <summary>Chroma ownership also gates the selected OpenRazer device's software lighting.</summary>
     private void SetOpenRazerChromaEnabled(bool enabled) =>
         OpenRazer.SelectedDevice?.SetChromaIntegrationEnabled(enabled);
@@ -409,14 +344,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             row.RefreshLocalization();
         }
         SelectedBlackShark?.RefreshLocalization();
-        foreach (var row in Diagnostics)
+        foreach (var row in Diagnostics.Rows)
         {
             row.RefreshLocalization();
         }
-        foreach (var row in ViperButtonAssignments)
-        {
-            row.RefreshLocalization();
-        }
+        Viper.RefreshLocalization();
 
         Telemetry.RefreshLocalization();
 
@@ -427,8 +359,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     {
         await Profiles.LoadAsync(cancellationToken);
         await Telemetry.RefreshBatteryHealthAsync(cancellationToken);
-        await RefreshDevicesAsync(cancellationToken);
-        RefreshFirmwareVersions();
+        await Refresh.RefreshDevicesAsync(cancellationToken);
+        Firmware.RefreshVersions();
         await Blade.InitializeAsync(cancellationToken);
         if (Telemetry.IsSamplingEnabled)
         {
@@ -471,8 +403,46 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     {
         await Profiles.LoadAsync(cancellationToken);
         Macros.InitializeMacroRuntime();
-        RefreshFirmwareVersions();
+        Firmware.RefreshVersions();
     }
+
+    /// <summary>
+    /// The profile changed, so everything that follows the active profile is refreshed here:
+    /// the shortcut cycle, the Blade editors, and the macro bindings. The profile page has
+    /// already rebuilt its own lists before calling this.
+    /// </summary>
+    private void ApplyProfileShortcuts(
+        HashSet<BladePerformanceMode> cycleModes,
+        IReadOnlyList<int>? refreshRates)
+    {
+        _internalDisplayRefreshRateCycleHertz = refreshRates?.ToHashSet();
+        Blade.ApplyProfileShortcuts(cycleModes, _profile.Global.Blade);
+        Macros.RefreshMacroState();
+        OnPropertyChanged(nameof(InternalDisplayRefreshRateCycleHertz));
+    }
+
+    private async Task<bool> SaveProfileAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _profileStore.SaveAsync(_profile, cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            SetDeviceOperationError(AppStrings.FormatText("ProfileSaveError", exception.Message));
+            return false;
+        }
+    }
+
+    private ProfileDefinition GetActiveProfile() =>
+        _profile.Profiles.TryGetValue(_profile.ActiveProfileName, out var profile)
+            ? profile
+            : throw new InvalidOperationException("The active profile is missing from the profile catalog.");
 
     private static string FormatOperationException(Exception exception)
     {
@@ -565,188 +535,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             _diagnosticLog.TryWrite(source, current);
         }
     }
-
-    private void RebuildDiagnostics(
-        DeviceSnapshot snapshot,
-        RazerDeviceTelemetry telemetry,
-        IReadOnlyList<string> errors)
-    {
-        Diagnostics.Clear();
-        var groups = new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase);
-        var errorBrush = new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
-        var bladeName = snapshot.Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Name
-            ?? "Razer Blade";
-        var viperName = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper)?.Name
-            ?? "Razer Viper";
-        foreach (var device in snapshot.Devices)
-        {
-            var row = new DeviceRowViewModel(device, telemetry);
-            var group = new DiagnosticRowViewModel(
-                row.Name,
-                AppStrings.Text("Text_5EAB9F51"),
-                row.Capability,
-                $"{row.Access} · {row.ReportInfo}",
-                row.StatusBrush);
-            foreach (var detail in row.ProtocolDetails)
-            {
-                group.AddProtocolDetail(detail);
-            }
-            Diagnostics.Add(group);
-            groups.TryAdd(row.Name, group);
-        }
-
-        foreach (var row in OpenRazer.Devices)
-        {
-            var group = new DiagnosticRowViewModel(
-                row.Name,
-                AppStrings.Text("Text_5EAB9F51"),
-                row.Status,
-                row.Identity,
-                row.StatusBrush);
-            Diagnostics.Add(group);
-            var details = OpenRazer.SelectedDevice?.InstanceId == row.Connection.InstanceId
-                ? OpenRazer.SelectedDevice.ProtocolDetails
-                : OpenRazerDeviceViewModel.BuildProtocolDetails(row.Connection);
-            foreach (var detail in details) group.AddProtocolDetail(detail);
-            if (row.HasError)
-            {
-                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
-                    AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
-            }
-            if (OpenRazer.SelectedDevice?.InstanceId == row.Connection.InstanceId &&
-                OpenRazer.SelectedDevice.HasError &&
-                !StringComparer.Ordinal.Equals(OpenRazer.SelectedDevice.ErrorText, row.Error))
-            {
-                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
-                    AppStrings.Text("Text_6027BEB0"), DescribeFailedReads(OpenRazer.SelectedDevice), errorBrush));
-            }
-        }
-
-        foreach (var row in OpenRazer.KrakenDevices)
-        {
-            var group = new DiagnosticRowViewModel(
-                row.Name,
-                AppStrings.Text("Text_5EAB9F51"),
-                row.Status,
-                row.Identity,
-                row.StatusBrush);
-            Diagnostics.Add(group);
-            if (!string.IsNullOrWhiteSpace(row.Error))
-            {
-                group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
-                    AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
-            }
-        }
-
-        foreach (var error in errors)
-        {
-            var separator = FindDiagnosticSeparator(error);
-            var rawCapability = separator > 0 ? error[..separator] : string.Empty;
-            var (capability, deviceName) = LocalizeTelemetryError(rawCapability, bladeName, viperName);
-            var profilePrefix = AppStrings.FormatText("ProfileApplyError", string.Empty);
-            var profileDetail = error.StartsWith(profilePrefix, StringComparison.Ordinal)
-                ? error[profilePrefix.Length..].TrimStart()
-                : string.Empty;
-            if (profileDetail.StartsWith("Blade", StringComparison.OrdinalIgnoreCase) ||
-                error.StartsWith(AppStrings.FormatText("LightingError", string.Empty), StringComparison.Ordinal) ||
-                error.StartsWith(AppStrings.FormatText("FanControlError", string.Empty), StringComparison.Ordinal))
-            {
-                deviceName = bladeName;
-                capability = rawCapability;
-            }
-            else if (profileDetail.StartsWith("Viper", StringComparison.OrdinalIgnoreCase) ||
-                error.StartsWith(AppStrings.FormatText("ViperMappingProfileError", string.Empty), StringComparison.Ordinal) ||
-                error == AppStrings.Text("ViperMappingReadProfileSaveFailed"))
-            {
-                deviceName = viperName;
-                capability = string.IsNullOrEmpty(rawCapability)
-                    ? AppStrings.Text("Text_23A7CCBC")
-                    : rawCapability;
-            }
-            var detail = LocalizeDiagnosticDetail(separator > 0 ? error[(separator + 1)..] : error);
-            if (!groups.TryGetValue(deviceName, out var group))
-            {
-                group = new DiagnosticRowViewModel(deviceName, AppStrings.Text("Text_DA035EAB"),
-                    AppStrings.Text("Text_6027BEB0"), string.Empty, errorBrush);
-                Diagnostics.Add(group);
-                groups.Add(deviceName, group);
-            }
-            group.AddIssue(new DiagnosticRowViewModel(deviceName, capability,
-                AppStrings.Text("Text_6027BEB0"), detail, errorBrush));
-        }
-
-        DiagnosticRowViewModel? startupGroup = null;
-        foreach (var error in _startupDiagnostics)
-        {
-            var separator = FindDiagnosticSeparator(error);
-            var source = separator > 0 ? error[..separator] : AppStrings.Text("Text_23A7CCBC");
-            var detail = separator > 0 ? error[(separator + 1)..] : error;
-            if (startupGroup is null)
-            {
-                startupGroup = new DiagnosticRowViewModel(AppStrings.Text("Text_6634ED40"),
-                    AppStrings.Text("Text_23A7CCBC"), AppStrings.Text("Text_4B4189B0"),
-                    string.Empty, errorBrush);
-                Diagnostics.Add(startupGroup);
-            }
-            startupGroup.AddIssue(new DiagnosticRowViewModel(startupGroup.Device, source,
-                AppStrings.Text("Text_4B4189B0"), detail, errorBrush));
-        }
-
-        if (Diagnostics.Count == 0)
-        {
-            Diagnostics.Add(new DiagnosticRowViewModel(
-                "Windows HID",
-                AppStrings.Text("Text_DA035EAB"),
-                AppStrings.Text("Text_76BEF6E0"),
-                AppStrings.Text("Text_4DC4534C"),
-                new SolidColorBrush(Color.FromArgb(255, 255, 181, 71))));
-        }
-    }
-
-    private static (string Capability, string Device) LocalizeTelemetryError(
-        string rawCapability,
-        string bladeName,
-        string viperName)
-    {
-        var mapping = rawCapability switch
-        {
-            "Keyboard brightness" => ("Text_5F0C27DB", bladeName),
-            "Performance and fan state" => ("DiagnosticPerformanceFan", bladeName),
-            "Current CPU fan speed" => ("Text_5FCEEE13", bladeName),
-            "Current GPU fan speed" => ("Text_737DBF87", bladeName),
-            "CPU advanced fan mode" => ("Text_BE0A43ED", bladeName),
-            "GPU advanced fan mode" => ("Text_37B37761", bladeName),
-            "CPU/GPU Boost" => ("Text_1DE2FEA3", bladeName),
-            "Charge limit" => ("Text_DEE979FD", bladeName),
-            "Power Mode Control" => ("DiagnosticPowerModeControl", bladeName),
-            "Startup animation" => ("Text_AA91A1FF", bladeName),
-            "Native display mode" => ("Text_24A8C247", bladeName),
-            "SKU hardware configuration" => ("Text_9D1351CB", bladeName),
-            "Blade Logo" => ("DiagnosticBladeLogo", bladeName),
-            "Mouse battery" => ("Text_8B2E15F8", viperName),
-            "Mouse polling rate" => ("DiagnosticMousePollingRate", viperName),
-            "Mouse DPI" => ("Text_25083B1F", viperName),
-            "Mouse idle timeout" => ("DiagnosticMouseIdleTimeout", viperName),
-            "Mouse DPI stages" => ("Text_6D7EF7B5", viperName),
-            "Mouse low-battery threshold" => ("Text_B98036FA", viperName),
-            _ => ("Text_DA035EAB", "Windows HID"),
-        };
-        return (AppStrings.Text(mapping.Item1), mapping.Item2);
-    }
-
-    private static string LocalizeDiagnosticDetail(string detail) =>
-        detail.StartsWith("The device timed out", StringComparison.OrdinalIgnoreCase)
-            ? AppStrings.Text("DiagnosticDeviceTimedOut")
-            : detail;
-
-    private static string CreateDeviceFingerprint(DeviceSnapshot snapshot) =>
-        string.Join(
-            "|",
-            snapshot.Devices
-                .OrderBy(device => device.ProductId)
-                .ThenBy(device => device.Id, StringComparer.OrdinalIgnoreCase)
-                .Select(device => $"{device.ProductId:X4}:{device.Id}:{device.Access}:{device.Capability}")) +
-        $"|{snapshot.ErrorMessage}";
 
     private static bool IsExpectedRuntimeException(Exception exception) =>
         exception is Win32Exception or IOException or UnauthorizedAccessException or

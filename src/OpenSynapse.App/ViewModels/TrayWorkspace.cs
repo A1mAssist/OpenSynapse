@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -9,8 +10,19 @@ namespace OpenSynapse.App.ViewModels;
 /// </summary>
 public sealed record PeripheralBattery(string Name, int? Percent, string Glyph, object Source);
 
-public sealed partial class MainViewModel
+public sealed class TrayWorkspace
 {
+    private readonly Func<IReadOnlyList<DeviceRowViewModel>> _devices;
+    private readonly OpenRazerWorkspace _openRazer;
+
+    internal TrayWorkspace(
+        Func<IReadOnlyList<DeviceRowViewModel>> devices,
+        OpenRazerWorkspace openRazer)
+    {
+        _devices = devices;
+        _openRazer = openRazer;
+    }
+
     /// <summary>
     /// Battery-capable peripherals. Telemetry-backed devices already carry a value;
     /// OpenRazer ones are listed with no value yet, so the tray can size itself
@@ -36,7 +48,7 @@ public sealed partial class MainViewModel
         {
             results.Add(new PeripheralBattery(
                 row.Name,
-                await OpenRazer.ReadBatteryPercentAsync(row, cancellationToken).ConfigureAwait(false),
+                await _openRazer.ReadBatteryPercentAsync(row, cancellationToken).ConfigureAwait(false),
                 row.IconGlyph,
                 row));
         }
@@ -45,13 +57,13 @@ public sealed partial class MainViewModel
     }
 
     private IReadOnlyList<PeripheralBattery> TelemetryBatteries() =>
-        Devices
+        _devices()
             .Where(row => row.BatteryPercent is not null && row.HardwareCategory != DeviceCategory.Laptop)
             .Select(row => new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row))
             .ToArray();
 
     private IEnumerable<OpenRazerDeviceRowViewModel> BatteryDevices() =>
-        OpenRazer.Devices.Where(row => row.Connection.IsReady &&
+        _openRazer.Devices.Where(row => row.Connection.IsReady &&
             row.HardwareCategory != DeviceCategory.Laptop &&
             row.Connection.Capabilities.Contains(OpenRazerBackendCapability.BatteryRead));
 }

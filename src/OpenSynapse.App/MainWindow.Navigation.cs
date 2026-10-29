@@ -12,7 +12,7 @@ public sealed partial class MainWindow
 {
     private async void RefreshClick(object sender, RoutedEventArgs e)
     {
-        await _viewModel.RefreshDevicesAsync(_lifetime.Token);
+        await _viewModel.Refresh.RefreshDevicesAsync(_lifetime.Token);
         _ = _viewModel.RefreshHueAsync(_lifetime.Token);
     }
 
@@ -53,7 +53,7 @@ public sealed partial class MainWindow
             // Without a Blade entry, stay on the overview instead of jumping to another device.
             device = "none";
         }
-        if (device == "viper" && _viewModel.ViperDeviceVisibility != Visibility.Visible)
+        if (device == "viper" && _viewModel.Viper.DeviceVisibility != Visibility.Visible)
         {
             device = "none";
         }
@@ -103,8 +103,8 @@ public sealed partial class MainWindow
                 _behaviorUiReady = true;
             });
         }
-        if (args.PropertyName == nameof(MainViewModel.ViperDeviceVisibility) &&
-            _viewModel.ViperDeviceVisibility != Visibility.Visible)
+        if (args.PropertyName == nameof(ViperWorkspace.DeviceVisibility) &&
+            _viewModel.Viper.DeviceVisibility != Visibility.Visible)
         {
             _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
         }
@@ -232,7 +232,7 @@ public sealed partial class MainWindow
         {
             // The rebuild is skipped while this page is hidden, so entering it must refresh
             // once or the list would show whatever was captured before the user left.
-            _viewModel.RequestDeviceRefresh();
+            _viewModel.Refresh.RequestDeviceRefresh();
         }
     }
 
@@ -240,9 +240,9 @@ public sealed partial class MainWindow
     {
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(
             AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible);
-        _viewModel.SetDeviceReadoutSamplingEnabled(
+        _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
             AppWindow.IsVisible && DevicesPage.Visibility == Visibility.Visible);
-        _viewModel.SetDiagnosticsRebuildEnabled(
+        _viewModel.Refresh.SetDiagnosticsRebuildEnabled(
             AppWindow.IsVisible && DiagnosticsPage.Visibility == Visibility.Visible);
     }
 

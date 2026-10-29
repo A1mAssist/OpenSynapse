@@ -187,13 +187,13 @@ public partial class App : Application
             macroInputSink: _elevatedMacroSink);
         _ = EnsureMacroAgentAsync();
         _audioMuteViewModel = viewModel;
-        viewModel.BladeControlDeviceChanged += OnBladeControlDeviceChanged;
-        viewModel.BladePerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
-        viewModel.BladeGamingModeChangedByUser += OnBladeGamingModeChangedByUser;
-        viewModel.BladeTouchpadChangedByUser += OnBladeTouchpadChangedByUser;
-        viewModel.BladeOneTimeFullChargeChangedByUser += OnBladeOneTimeFullChargeChangedByUser;
+        viewModel.Blade.ControlDeviceChanged += OnBladeControlDeviceChanged;
+        viewModel.Blade.PerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
+        viewModel.Blade.GamingModeChangedByUser += OnBladeGamingModeChangedByUser;
+        viewModel.Blade.TouchpadChangedByUser += OnBladeTouchpadChangedByUser;
+        viewModel.Blade.OneTimeFullChargeChangedByUser += OnBladeOneTimeFullChargeChangedByUser;
         viewModel.InternalDisplayRefreshRateChangedByUser += OnInternalDisplayRefreshRateChangedByUser;
-        viewModel.BladeInputProfileChanged += OnBladeInputProfileChanged;
+        viewModel.Blade.InputProfileChanged += OnBladeInputProfileChanged;
         viewModel.Telemetry.BatteryObserved += OnPeripheralBatteryObserved;
         viewModel.Macros.MacroContinuousPlaybackStarted += OnMacroContinuousPlaybackStarted;
         viewModel.SetLegacyShortcutCycleDefaults(
@@ -395,13 +395,13 @@ public partial class App : Application
         }
         if (_audioMuteViewModel is not null)
         {
-            _audioMuteViewModel.BladeControlDeviceChanged -= OnBladeControlDeviceChanged;
-            _audioMuteViewModel.BladePerformanceModeChangedByUser -= OnBladePerformanceModeChangedByUser;
-            _audioMuteViewModel.BladeGamingModeChangedByUser -= OnBladeGamingModeChangedByUser;
-            _audioMuteViewModel.BladeTouchpadChangedByUser -= OnBladeTouchpadChangedByUser;
-            _audioMuteViewModel.BladeOneTimeFullChargeChangedByUser -= OnBladeOneTimeFullChargeChangedByUser;
+            _audioMuteViewModel.Blade.ControlDeviceChanged -= OnBladeControlDeviceChanged;
+            _audioMuteViewModel.Blade.PerformanceModeChangedByUser -= OnBladePerformanceModeChangedByUser;
+            _audioMuteViewModel.Blade.GamingModeChangedByUser -= OnBladeGamingModeChangedByUser;
+            _audioMuteViewModel.Blade.TouchpadChangedByUser -= OnBladeTouchpadChangedByUser;
+            _audioMuteViewModel.Blade.OneTimeFullChargeChangedByUser -= OnBladeOneTimeFullChargeChangedByUser;
             _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
-            _audioMuteViewModel.BladeInputProfileChanged -= OnBladeInputProfileChanged;
+            _audioMuteViewModel.Blade.InputProfileChanged -= OnBladeInputProfileChanged;
         _audioMuteViewModel.Telemetry.BatteryObserved -= OnPeripheralBatteryObserved;
             _audioMuteViewModel.Macros.MacroContinuousPlaybackStarted -= OnMacroContinuousPlaybackStarted;
             _audioMuteViewModel = null;
@@ -544,9 +544,9 @@ public partial class App : Application
             _trayIcon.ShowRequested += window.RequestActivation;
             _trayIcon.MenuRequested += _trayMenuWindow.ShowAt;
             _trayMenuWindow.BatterySnapshot = () => _behaviorSettings.TrayBatteryLevelsEnabled
-                ? viewModel.ConnectedBatteries
+                ? viewModel.Tray.ConnectedBatteries
                 : Array.Empty<PeripheralBattery>();
-            _trayMenuWindow.BatteryReader = viewModel.ReadBatteriesAsync;
+            _trayMenuWindow.BatteryReader = viewModel.Tray.ReadBatteriesAsync;
             _trayMenuWindow.ShowRequested += window.RequestActivation;
             _trayMenuWindow.NavigationRequested += window.RequestNavigation;
             _trayMenuWindow.DeviceRequested += window.RequestDeviceNavigation;
@@ -681,9 +681,9 @@ public partial class App : Application
                     _bladeModeCoordinator,
                     (action, token) => ExecuteBladeFnLeafAsync(action, generation, token),
                     input => _bladeLightingController?.ObserveMappingInput(input),
-                    _audioMuteViewModel?.ActiveBladeMappingPreset ??
+                    _audioMuteViewModel?.Blade.ActiveMappingPreset ??
                         OpenSynapse.Core.Profiles.BladeProfileSettings.Product710DefaultMappingPreset,
-                    _audioMuteViewModel?.ActiveSnapTapEnabled == true,
+                    _audioMuteViewModel?.Blade.ActiveSnapTapEnabled == true,
                     enabled => PersistBladeSnapTap(enabled, generation));
                 await fnRuntime.StartAsync().ConfigureAwait(false);
                 if (generation == Volatile.Read(ref _audioMuteGeneration))
@@ -781,7 +781,7 @@ public partial class App : Application
         {
             if (generation == Volatile.Read(ref _audioMuteGeneration))
             {
-                await viewModel.SetBladeSnapTapEnabledAsync(enabled);
+                await viewModel.Blade.SetSnapTapEnabledAsync(enabled);
             }
         });
     }
@@ -970,35 +970,35 @@ public partial class App : Application
                 CommandKind: BladeMappingOutputKind.GameMode,
                 Command: BladeMappingCommand.Toggle,
             }:
-                await viewModel.ToggleBladeGamingModeAsync(cancellationToken).ConfigureAwait(true);
+                await viewModel.Blade.ToggleGamingModeAsync(cancellationToken).ConfigureAwait(true);
                 break;
             case BladeCommandMappingAction
             {
                 CommandKind: BladeMappingOutputKind.BladePerformance,
                 Command: BladeMappingCommand.NextPerformanceMode,
             }:
-                await viewModel.CycleBladePerformanceModeAsync(cancellationToken).ConfigureAwait(true);
+                await viewModel.Blade.CyclePerformanceModeAsync(cancellationToken).ConfigureAwait(true);
                 break;
             case BladeCommandMappingAction
             {
                 CommandKind: BladeMappingOutputKind.BladeTrackpad,
                 Command: BladeMappingCommand.Toggle,
             }:
-                await viewModel.ToggleBladeTouchpadAsync(cancellationToken).ConfigureAwait(true);
+                await viewModel.Blade.ToggleTouchpadAsync(cancellationToken).ConfigureAwait(true);
                 break;
             case BladeCommandMappingAction
             {
                 CommandKind: BladeMappingOutputKind.BladeBattery,
                 Command: BladeMappingCommand.Toggle,
             }:
-                await viewModel.ToggleBladeOneTimeFullChargeAsync(cancellationToken).ConfigureAwait(true);
+                await viewModel.Blade.ToggleOneTimeFullChargeAsync(cancellationToken).ConfigureAwait(true);
                 break;
             case BladeCommandMappingAction
             {
                 CommandKind: BladeMappingOutputKind.ScreenRefresh,
                 Command: BladeMappingCommand.NextRefreshRate,
             }:
-                await viewModel.CycleInternalDisplayRefreshRateAsync(cancellationToken).ConfigureAwait(true);
+                await viewModel.Blade.CycleInternalDisplayRefreshRateAsync(cancellationToken).ConfigureAwait(true);
                 break;
             case BladeBacklightMappingAction
             {
@@ -1007,7 +1007,7 @@ public partial class App : Application
             }:
                 try
                 {
-                    await viewModel.StepBladeBrightnessAsync(false, cancellationToken).ConfigureAwait(true);
+                    await viewModel.Blade.StepBrightnessAsync(false, cancellationToken).ConfigureAwait(true);
                 }
                 catch (Exception exception) when (
                     exception is System.ComponentModel.Win32Exception or
@@ -1024,7 +1024,7 @@ public partial class App : Application
             }:
                 try
                 {
-                    await viewModel.StepBladeBrightnessAsync(true, cancellationToken).ConfigureAwait(true);
+                    await viewModel.Blade.StepBrightnessAsync(true, cancellationToken).ConfigureAwait(true);
                 }
                 catch (Exception exception) when (
                     exception is System.ComponentModel.Win32Exception or
@@ -1126,7 +1126,7 @@ public partial class App : Application
             return;
         }
 
-        dispatcher.TryEnqueue(() => viewModel.SetBladeFilterDriverMissing(missing));
+        dispatcher.TryEnqueue(() => viewModel.Blade.SetFilterDriverMissing(missing));
     }
 
     private async Task RetryBladeAudioMuteRuntimeAsync(

@@ -1214,62 +1214,62 @@
                     <StackPanel Spacing="10">
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBlock local:Localized.Uid="FirmwareTitle" Text="固件" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <Button Grid.Column="1" local:Localized.Uid="FirmwareCheckButton" Content="检查更新" Click="CheckFirmwareUpdateClick" IsEnabled="{Binding CanCheckFirmwareUpdate}" Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button Grid.Column="1" local:Localized.Uid="FirmwareCheckButton" Content="检查更新" Click="CheckFirmwareUpdateClick" IsEnabled="{Binding Firmware.CanCheckUpdate}" Style="{StaticResource SecondaryButtonStyle}" />
                       </Grid>
                       <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
-                        <StackPanel Spacing="4"><TextBlock Text="BIOS" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareBiosText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="4"><TextBlock local:Localized.Uid="FirmwareEcLabel" Text="EC" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareEcText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
-                        <StackPanel Grid.Column="2" Spacing="4"><TextBlock local:Localized.Uid="FirmwareMcuLabel" Text="MCU" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareMcuText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
-                        <StackPanel Grid.Column="3" Spacing="4"><TextBlock local:Localized.Uid="FirmwareVbiosLabel" Text="vBIOS" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareVbiosText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Spacing="4"><TextBlock Text="BIOS" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Firmware.BiosText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4"><TextBlock local:Localized.Uid="FirmwareEcLabel" Text="EC" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Firmware.EcText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="4"><TextBlock local:Localized.Uid="FirmwareMcuLabel" Text="MCU" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Firmware.McuText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Column="3" Spacing="4"><TextBlock local:Localized.Uid="FirmwareVbiosLabel" Text="vBIOS" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Firmware.VbiosText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
                       </Grid>
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <TextBlock Text="{Binding FirmwareUpdateStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
-                        <Button Grid.Column="1" local:Localized.Uid="FirmwareDownloadButton" Content="前往下载" Click="OpenFirmwareDownloadClick" Visibility="{Binding FirmwareDownloadAvailableVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
+                        <TextBlock Text="{Binding Firmware.UpdateStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" local:Localized.Uid="FirmwareDownloadButton" Content="前往下载" Click="OpenFirmwareDownloadClick" Visibility="{Binding Firmware.DownloadAvailableVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
                       </Grid>
                     </StackPanel>
                   </Border>
                 </StackPanel>
                 <StackPanel x:Name="ViperDevicePanel" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding ViperDeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding ViperProtocolText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding ViperIdentityText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
-                  <StackPanel Visibility="{Binding ViperSerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding ViperSerial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Viper.DeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding Viper.ProtocolText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Viper.IdentityText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
+                  <StackPanel Visibility="{Binding Viper.SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Viper.Serial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
                   <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="14">
-                    <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_BEA434DB0D" Text="电量" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperBatteryText}" Style="{StaticResource MetricValueStyle}" /><TextBlock local:Localized.Uid="Loc_AAABCC9222" Text="只读" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource MutedBrush}" /></StackPanel></Border>
+                    <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_BEA434DB0D" Text="电量" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Viper.BatteryText}" Style="{StaticResource MetricValueStyle}" /><TextBlock local:Localized.Uid="Loc_AAABCC9222" Text="只读" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource MutedBrush}" /></StackPanel></Border>
                     <Border x:Name="ViperPollingRateCard" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16">
                       <StackPanel Spacing="8">
                         <TextBlock local:Localized.Uid="Loc_4AA416AC22" Text="轮询率" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Text="{Binding ViperPollingRateText}" Style="{StaticResource MetricValueStyle}" />
+                        <TextBlock Text="{Binding Viper.PollingRateText}" Style="{StaticResource MetricValueStyle}" />
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                          <ComboBox SelectedIndex="{Binding ViperPollingRateIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetViperPollingRate}"><ComboBoxItem Content="125 Hz" /><ComboBoxItem Content="500 Hz" /><ComboBoxItem Content="1000 Hz" /></ComboBox>
-                          <Button local:Localized.Uid="Loc_B67B486F7D" x:Name="ViperPollingRateSaveButton" Grid.Column="1" Click="ApplyPollingRateClick" IsEnabled="{Binding CanSetViperPollingRate}" Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.Name="保存轮询率"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
+                          <ComboBox SelectedIndex="{Binding Viper.PollingRateIndex, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetPollingRate}"><ComboBoxItem Content="125 Hz" /><ComboBoxItem Content="500 Hz" /><ComboBoxItem Content="1000 Hz" /></ComboBox>
+                          <Button local:Localized.Uid="Loc_B67B486F7D" x:Name="ViperPollingRateSaveButton" Grid.Column="1" Click="ApplyPollingRateClick" IsEnabled="{Binding Viper.CanSetPollingRate}" Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.Name="保存轮询率"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
                         </Grid>
                       </StackPanel>
                     </Border>
                     <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="16">
                       <StackPanel Spacing="8">
                         <TextBlock local:Localized.Uid="Loc_0BF9362E7D" Text="休眠时间" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Text="{Binding ViperIdleText}" Style="{StaticResource MetricValueStyle}" />
-                        <NumberBox local:Localized.Uid="Loc_B16C078647" Header="分钟" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="1" Maximum="15" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ViperIdleMinutesValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperIdle}" />
-                        <Button local:Localized.Uid="Loc_6632C40B66" Click="ApplyIdleClick" IsEnabled="{Binding CanSetViperIdle}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存休眠时间"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
+                        <TextBlock Text="{Binding Viper.IdleText}" Style="{StaticResource MetricValueStyle}" />
+                        <NumberBox local:Localized.Uid="Loc_B16C078647" Header="分钟" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="1" Maximum="15" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding Viper.IdleMinutesValue, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetIdle}" />
+                        <Button local:Localized.Uid="Loc_6632C40B66" Click="ApplyIdleClick" IsEnabled="{Binding Viper.CanSetIdle}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存休眠时间"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
                       </StackPanel>
                     </Border>
                     <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16">
                       <StackPanel Spacing="8">
                         <TextBlock local:Localized.Uid="Loc_91A248FC39" Text="当前 DPI" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Text="{Binding ViperDpiText}" Style="{StaticResource MetricValueStyle}" />
+                        <TextBlock Text="{Binding Viper.DpiText}" Style="{StaticResource MetricValueStyle}" />
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                          <NumberBox Header="X" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding ViperDpiXValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpi}" />
-                          <NumberBox Grid.Column="1" Header="Y" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding ViperDpiYValue, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpi}" />
+                          <NumberBox Header="X" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding Viper.DpiXValue, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetDpi}" />
+                          <NumberBox Grid.Column="1" Header="Y" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Compact" Value="{Binding Viper.DpiYValue, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetDpi}" />
                         </Grid>
-                        <Button local:Localized.Uid="Loc_1B0EA1DA45" Click="ApplyDpiClick" IsEnabled="{Binding CanSetViperDpi}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存当前 DPI"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
+                        <Button local:Localized.Uid="Loc_1B0EA1DA45" Click="ApplyDpiClick" IsEnabled="{Binding Viper.CanSetDpi}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存当前 DPI"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
                       </StackPanel>
                     </Border>
-                    <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_76FCF14149" Text="低电量提醒" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ViperLowBatteryThresholdText}" Style="{StaticResource MetricValueStyle}" /><NumberBox local:Localized.Uid="ViperLowBatteryThresholdInput" Header="百分比" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="5" Maximum="100" SmallChange="5" SpinButtonPlacementMode="Inline" Value="{Binding ViperLowBatteryThresholdPercent, Mode=TwoWay}" IsEnabled="{Binding CanSetViperLowBatteryThreshold}" /><Button local:Localized.Uid="ViperLowBatteryThresholdSave" Click="ApplyLowBatteryThresholdClick" IsEnabled="{Binding CanSetViperLowBatteryThreshold}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button></StackPanel></Border>
+                    <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock local:Localized.Uid="Loc_76FCF14149" Text="低电量提醒" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Viper.LowBatteryThresholdText}" Style="{StaticResource MetricValueStyle}" /><NumberBox local:Localized.Uid="ViperLowBatteryThresholdInput" Header="百分比" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" Minimum="5" Maximum="100" SmallChange="5" SpinButtonPlacementMode="Inline" Value="{Binding Viper.LowBatteryThresholdPercent, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetLowBatteryThreshold}" /><Button local:Localized.Uid="ViperLowBatteryThresholdSave" Click="ApplyLowBatteryThresholdClick" IsEnabled="{Binding Viper.CanSetLowBatteryThreshold}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button></StackPanel></Border>
                     <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16">
                       <StackPanel Spacing="8">
                         <TextBlock Text="电池类型" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Text="{Binding ViperBatteryChemistryText}" Style="{StaticResource MetricValueStyle}" FontFamily="Microsoft YaHei UI,Segoe UI" FontWeight="Bold" TextWrapping="Wrap" />
-                        <ComboBox local:Localized.Uid="ViperBatteryChemistryInput" Header="类型" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" PlaceholderText="请选择电池类型" ItemsSource="{Binding ViperBatteryChemistryOptions}" SelectedIndex="{Binding ViperBatteryChemistryIndex, Mode=TwoWay}" IsEnabled="{Binding CanSetViperBatteryChemistry}" HorizontalAlignment="Stretch" AutomationProperties.Name="电池类型" />
-                        <Button Click="ApplyBatteryChemistryClick" IsEnabled="{Binding CanSetViperBatteryChemistry}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存电池类型">
+                        <TextBlock Text="{Binding Viper.BatteryChemistryText}" Style="{StaticResource MetricValueStyle}" FontFamily="Microsoft YaHei UI,Segoe UI" FontWeight="Bold" TextWrapping="Wrap" />
+                        <ComboBox local:Localized.Uid="ViperBatteryChemistryInput" Header="类型" HeaderTemplate="{StaticResource MetricFieldHeaderTemplate}" PlaceholderText="请选择电池类型" ItemsSource="{Binding Viper.BatteryChemistryOptions}" SelectedIndex="{Binding Viper.BatteryChemistryIndex, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetBatteryChemistry}" HorizontalAlignment="Stretch" AutomationProperties.Name="电池类型" />
+                        <Button Click="ApplyBatteryChemistryClick" IsEnabled="{Binding Viper.CanSetBatteryChemistry}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存电池类型">
                           <StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock Text="保存" /></StackPanel>
                         </Button>
                       </StackPanel>
@@ -1279,16 +1279,16 @@
                     <StackPanel Spacing="12">
                       <StackPanel Spacing="3">
                         <TextBlock local:Localized.Uid="Loc_FCAB5D1B32" Text="DPI 档位" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding ViperDpiStagesText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Viper.DpiStagesText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
-                       <Grid ColumnDefinitions="*,*" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_35DF22AAAD" Text="档位数" Foreground="{StaticResource MutedBrush}" FontSize="11" /><NumberBox Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ViperDpiStageCount, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpiStages}" /></StackPanel><StackPanel Grid.Column="1" Spacing="4"><TextBlock local:Localized.Uid="Loc_FCBC9D4D0F" Text="活动档" Foreground="{StaticResource MutedBrush}" FontSize="11" /><NumberBox Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ViperActiveDpiStage, Mode=TwoWay}" IsEnabled="{Binding CanSetViperDpiStages}" /></StackPanel></Grid>
+                       <Grid ColumnDefinitions="*,*" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_35DF22AAAD" Text="档位数" Foreground="{StaticResource MutedBrush}" FontSize="11" /><NumberBox Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding Viper.DpiStageCount, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetDpiStages}" /></StackPanel><StackPanel Grid.Column="1" Spacing="4"><TextBlock local:Localized.Uid="Loc_FCBC9D4D0F" Text="活动档" Foreground="{StaticResource MutedBrush}" FontSize="11" /><NumberBox Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding Viper.ActiveDpiStage, Mode=TwoWay}" IsEnabled="{Binding Viper.CanSetDpiStages}" /></StackPanel></Grid>
                         <Grid ColumnDefinitions="56,200,200" ColumnSpacing="10">
                         <TextBlock local:Localized.Uid="Loc_0A97A9B373" Text="档位" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="1" Text="X" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="2" Text="Y" Style="{StaticResource MetricLabelStyle}" />
                       </Grid>
-                      <ContentControl IsEnabled="{Binding CanSetViperDpiStages}" Padding="0">
-                        <ItemsRepeater ItemsSource="{Binding ViperDpiStages}">
+                      <ContentControl IsEnabled="{Binding Viper.CanSetDpiStages}" Padding="0">
+                        <ItemsRepeater ItemsSource="{Binding Viper.DpiStages}">
                           <ItemsRepeater.Layout><StackLayout Spacing="6" /></ItemsRepeater.Layout>
                           <ItemsRepeater.ItemTemplate>
                             <DataTemplate>
@@ -1302,21 +1302,21 @@
                         </ItemsRepeater>
                       </ContentControl>
                       <TextBlock local:Localized.Uid="Loc_A4CE42CFAB" Text="整表提交 · 100–30000 · 步进 50 · 当前会话" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                      <Button local:Localized.Uid="Loc_3500845EBF" Click="ApplyDpiStagesClick" IsEnabled="{Binding CanSetViperDpiStages}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存 DPI 档位"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_B7184FA7E2" Text="保存档位" /></StackPanel></Button>
+                      <Button local:Localized.Uid="Loc_3500845EBF" Click="ApplyDpiStagesClick" IsEnabled="{Binding Viper.CanSetDpiStages}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存 DPI 档位"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_B7184FA7E2" Text="保存档位" /></StackPanel></Button>
                     </StackPanel>
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
                       <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
-                        <StackPanel Spacing="3"><TextBlock local:Localized.Uid="Loc_7228F14C77" Text="板载映射" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding ViperButtonMappingsText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                        <StackPanel Spacing="3"><TextBlock local:Localized.Uid="Loc_7228F14C77" Text="板载映射" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding Viper.ButtonMappingsText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                         <StackPanel Grid.Column="1" Spacing="3">
                           <TextBlock local:Localized.Uid="Loc_38C9EAF77D" Text="映射层" Style="{StaticResource MetricLabelStyle}" />
-                          <ComboBox local:Localized.Uid="Loc_91C223D2EC" Width="152" ItemsSource="{Binding ViperButtonMappingLayerOptions}" SelectedIndex="{Binding ViperButtonMappingLayerIndex, Mode=TwoWay}" AutomationProperties.Name="板载映射层" />
+                          <ComboBox local:Localized.Uid="Loc_91C223D2EC" Width="152" ItemsSource="{Binding Viper.ButtonMappingLayerOptions}" SelectedIndex="{Binding Viper.ButtonMappingLayerIndex, Mode=TwoWay}" AutomationProperties.Name="板载映射层" />
                         </StackPanel>
-                        <Button local:Localized.Uid="Loc_56F4B1E701" Grid.Column="2" Content="读取" Click="ReadViperButtonMappingsClick" IsEnabled="{Binding CanReadViperButtonMappings}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
-                        <Button local:Localized.Uid="Loc_767A063324" Grid.Column="3" Click="ApplyAllViperButtonMappingsClick" IsEnabled="{Binding CanSetViperButtonMappings}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" AutomationProperties.Name="保存板载映射"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
+                        <Button local:Localized.Uid="Loc_56F4B1E701" Grid.Column="2" Content="读取" Click="ReadViperButtonMappingsClick" IsEnabled="{Binding Viper.CanReadButtonMappings}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+                        <Button local:Localized.Uid="Loc_767A063324" Grid.Column="3" Click="ApplyAllViperButtonMappingsClick" IsEnabled="{Binding Viper.CanSetButtonMappings}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" AutomationProperties.Name="保存板载映射"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
                       </Grid>
-                      <ContentControl IsEnabled="{Binding CanSetViperButtonMappings}" Padding="0" HorizontalContentAlignment="Stretch">
+                      <ContentControl IsEnabled="{Binding Viper.CanSetButtonMappings}" Padding="0" HorizontalContentAlignment="Stretch">
                           <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
                             <Grid ColumnDefinitions="110,1.2*,1*,1.35*" ColumnSpacing="10">
                               <TextBlock local:Localized.Uid="Loc_51866506E5" Text="鼠标控制" Style="{StaticResource MetricLabelStyle}" />
@@ -1324,7 +1324,7 @@
                               <TextBlock local:Localized.Uid="Loc_C89F81E3D1" Grid.Column="2" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
                               <TextBlock local:Localized.Uid="Loc_6EE879D982" Grid.Column="3" Text="参数" Style="{StaticResource MetricLabelStyle}" />
                             </Grid>
-                            <ItemsRepeater Grid.Row="1" ItemsSource="{Binding VisibleViperButtonAssignments}">
+                            <ItemsRepeater Grid.Row="1" ItemsSource="{Binding Viper.VisibleButtonAssignments}">
                               <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
                               <ItemsRepeater.ItemTemplate>
                                 <DataTemplate>
@@ -1625,7 +1625,7 @@
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="13">
                     <TextBlock local:Localized.Uid="Loc_BD61CEC3FA" Text="查询记录" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                    <ItemsRepeater ItemsSource="{Binding Diagnostics}">
+                      <ItemsRepeater ItemsSource="{Binding Diagnostics.Rows}">
                       <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
                       <ItemsRepeater.ItemTemplate>
                         <DataTemplate>

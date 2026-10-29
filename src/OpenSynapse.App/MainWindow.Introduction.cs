@@ -19,7 +19,7 @@ public sealed partial class MainWindow
     private AboutWindow? _aboutWindow;
 
     private int IntroductionStepCount =>
-        _viewModel.ViperDeviceVisibility == Visibility.Visible ? 4 : 3;
+        _viewModel.Viper.DeviceVisibility == Visibility.Visible ? 4 : 3;
 
     private void ShowIntroductionClick(object sender, RoutedEventArgs e) =>
         _ = ShowIntroductionStepAsync(0);

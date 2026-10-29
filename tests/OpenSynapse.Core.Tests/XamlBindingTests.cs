@@ -45,6 +45,11 @@ public sealed class XamlBindingTests
         ["Display"] = "src/OpenSynapse.App/ViewModels/DisplayWorkspace.cs",
         ["Lighting"] = "src/OpenSynapse.App/ViewModels/LightingWorkspace.cs",
         ["Blade"] = "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs",
+        ["Firmware"] = "src/OpenSynapse.App/ViewModels/FirmwareWorkspace.cs",
+        ["Diagnostics"] = "src/OpenSynapse.App/ViewModels/DiagnosticsWorkspace.cs",
+        ["Refresh"] = "src/OpenSynapse.App/ViewModels/RefreshWorkspace.cs",
+        ["Tray"] = "src/OpenSynapse.App/ViewModels/TrayWorkspace.cs",
+        ["Viper"] = "src/OpenSynapse.App/ViewModels/ViperWorkspace.cs",
     };
 
     /// <summary>

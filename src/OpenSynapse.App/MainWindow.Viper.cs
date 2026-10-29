@@ -41,26 +41,26 @@ public sealed partial class MainWindow
     }
 
     private async void ApplyPollingRateClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperPollingRateAsync(_lifetime.Token);
+        await _viewModel.Viper.ApplyPollingRateAsync(_lifetime.Token);
 
     private async void ApplyDpiClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperDpiAsync(_lifetime.Token);
+        await _viewModel.Viper.ApplyDpiAsync(_lifetime.Token);
 
     private async void ApplyIdleClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperIdleAsync(_lifetime.Token);
+        await _viewModel.Viper.ApplyIdleAsync(_lifetime.Token);
 
     private async void ApplyLowBatteryThresholdClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperLowBatteryThresholdAsync(_lifetime.Token);
+        await _viewModel.Viper.ApplyLowBatteryThresholdAsync(_lifetime.Token);
 
     private async void ApplyBatteryChemistryClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperBatteryChemistryAsync(_lifetime.Token);
+        await _viewModel.Viper.ApplyBatteryChemistryAsync(_lifetime.Token);
 
     private async void ApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyViperDpiStagesAsync(_lifetime.Token);
+        await _viewModel.Viper.ApplyDpiStagesAsync(_lifetime.Token);
 
     private async void ReadViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ReadViperButtonMappingsAsync(_lifetime.Token);
+        await _viewModel.Viper.ReadButtonMappingsAsync(_lifetime.Token);
 
     private async void ApplyAllViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyAllViperButtonMappingsAsync(_lifetime.Token);
+        await _viewModel.Viper.ApplyAllButtonMappingsAsync(_lifetime.Token);
 }

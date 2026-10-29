@@ -47,7 +47,7 @@ public sealed partial class MainWindow : Window
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException(AppStrings.Text("Text_693F327E"));
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(false);
-        _viewModel.SetDeviceWatchActive(false);
+        _viewModel.Refresh.SetDeviceWatchActive(false);
         InitializeComponent();
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
         _viewModel.Hue.Persist = (host, appKey) =>
@@ -102,6 +102,7 @@ public sealed partial class MainWindow : Window
         _viewModel.OpenRazer.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.Viper.PropertyChanged += OnViewModelPropertyChanged;
         WindowAppearance.Apply(this);
         ApplyDarkTheme();
         ApplyTitleBarColors(launchOverlayActive: true);
@@ -147,8 +148,8 @@ public sealed partial class MainWindow : Window
         Activate();
         SetForegroundWindow(windowHandle);
         UpdatePerformanceSamplingState();
-        _viewModel.SetDeviceWatchActive(true);
-        _viewModel.RequestDeviceRefresh();
+        _viewModel.Refresh.SetDeviceWatchActive(true);
+        _viewModel.Refresh.RequestDeviceRefresh();
     }
 
     [DllImport("user32.dll")]
@@ -201,11 +202,11 @@ public sealed partial class MainWindow : Window
         if (args.DidVisibilityChange)
         {
             UpdatePerformanceSamplingState();
-            _viewModel.SetDeviceWatchActive(sender.IsVisible);
+            _viewModel.Refresh.SetDeviceWatchActive(sender.IsVisible);
             UpdateChromaRestStatusTimer();
             if (sender.IsVisible)
             {
-                _viewModel.RequestDeviceRefresh();
+                _viewModel.Refresh.RequestDeviceRefresh();
                 if (DevicesPage.Visibility == Visibility.Visible)
                 {
                     _ = _viewModel.RefreshHueAsync(_lifetime.Token);
@@ -298,14 +299,14 @@ public sealed partial class MainWindow : Window
             await _viewModel.InitializeProfileAsync(_lifetime.Token);
             LaunchStatusText.Text = AppStrings.Text("Text_C2463C0F");
             UpdatePerformanceSamplingState();
-            _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
+            _viewModel.Refresh.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.Telemetry.RunPerformanceLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_79DA5816"));
             _ = ObserveBackgroundLoopAsync(
-                () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
+                () => _viewModel.Refresh.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
-            _viewModel.RequestDeviceRefresh();
+            _viewModel.Refresh.RequestDeviceRefresh();
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
             {
@@ -351,6 +352,7 @@ public sealed partial class MainWindow : Window
         _viewModel.OpenRazer.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.Viper.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
         ShutdownDisplayPowerNotification();
