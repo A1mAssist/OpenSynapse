@@ -29,12 +29,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly IDeviceDiscovery _discovery;
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
     private readonly RazerFirmwareUpdateClient _firmwareUpdateClient;
-    private readonly IPerformanceMonitor _performanceMonitor;
     private readonly ProfileStore _profileStore;
     private readonly IPowerSourceProvider _powerSourceProvider;
     private readonly IActiveApplicationProvider _activeApplicationProvider;
     private readonly LocalDiagnosticLog _diagnosticLog;
-    private readonly SystemTelemetryViewModel _systemTelemetry = new();
     private readonly BladeViewModel _blade = new();
     private readonly ViperViewModel _viper = new();
     private HashSet<BladePerformanceMode> _bladePerformanceCycleModes =
@@ -44,17 +42,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private IReadOnlyList<int>? _legacyRefreshRateCycleHertz;
     private string _activeBladeMappingPreset = BladeProfileSettings.Product710DefaultMappingPreset;
     private bool _activeSnapTapEnabled;
-    private readonly IInternalDisplayController? _internalDisplayController;
     private readonly IBladeLightingController? _bladeLightingController;
-    private readonly WindowsStartupManager? _startupManager;
     private readonly WindowsTouchpadController? _touchpadController;
-    private readonly string? _executablePath;
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly VerifiedProfileApplier _profileApplier = new();
-    private readonly BladeFanCurveRuntime _bladeFanRuntime;
     private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
-    private readonly SemaphoreSlim _performanceSamplingSignal = new(0, 1);
     private readonly object _bladeBrightnessGate = new();
     private Task _bladeBrightnessWriter = Task.CompletedTask;
     private byte? _desiredBladeBrightness;
@@ -71,20 +64,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private string _deviceOperationErrorText = string.Empty;
     private string _performanceErrorText = string.Empty;
     private string _displayErrorText = string.Empty;
-    private string _profileStatusText = AppStrings.Text("Text_A9AE645B");
-    private string _activeProfileName = ProfileCatalog.DefaultProfileName;
-    private string _profileNameInput = string.Empty;
-    private bool _isStartupEnabled;
-    private bool _isSilentStartupEnabled;
     private string _errorText = string.Empty;
     private bool _isBusy;
     private IReadOnlyList<DeviceDescriptor> _deviceDescriptors = Array.Empty<DeviceDescriptor>();
     private RazerDeviceTelemetry? _lastDeviceTelemetry;
     private string _deviceFingerprint = string.Empty;
-    private string _lightingShadowFingerprint = string.Empty;
-    private string _bladeLightingDevicePath = string.Empty;
-    private string _bladeFanControlFingerprint = string.Empty;
-    private Task? _bladeFanControlCompletion;
     private string? _bladeControlDevicePath;
     private ushort _bladeControlProductId;
     private int _bladeLightingPowerProfileIndex;
@@ -93,19 +77,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private int _bladeLogoPowerProfileIndex;
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
-    private int _performanceSamplingEnabled = 1;
     private int _deviceReadoutSamplingEnabled = 1;
     private int _diagnosticsRebuildEnabled = 1;
     private int _deviceWatchActive = 1;
     private int _displayAvailable = 1;
     private int _displayBrightnessRestorePending;
-    private BladeLogoMode? _displaySuspendedLogoMode;
-    private string _internalDisplayResolutionText = "--";
-    private string _internalDisplayRefreshRateText = "--";
-    private IReadOnlyList<int> _internalDisplayRefreshRates = Array.Empty<int>();
-    private int _internalDisplayRefreshRateHertz;
-    private int _confirmedInternalDisplayRefreshRateHertz;
-    private bool _canSetInternalDisplayRefreshRate;
     private int _disposed;
 
     public MainViewModel(
@@ -132,12 +108,84 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
         _firmwareUpdateClient = firmwareUpdateClient ?? new RazerFirmwareUpdateClient();
-        _performanceMonitor = performanceMonitor;
         _profileStore = profileStore ?? new ProfileStore();
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
         _activeApplicationProvider = activeApplicationProvider ?? UnknownActiveApplicationProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
+        _bladeLightingController = bladeLightingController;
+        _touchpadController = touchpadController;
         Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
+        Display = new DisplayWorkspace(
+            internalDisplayController,
+            () => IsSelectedRefreshRatePowerActive,
+            () => EditableRefreshRateBladeProfile,
+            SaveProfileAsync,
+            RunDeviceOperation,
+            SetDisplayError,
+            () => _profile,
+            () => _deviceDescriptors,
+            _diagnosticLog,
+            () => Volatile.Read(ref _disposed) != 0);
+        Profiles = new ProfilesWorkspace(
+            _profileStore,
+            () => _profile,
+            document => _profile = document,
+            GetActiveProfile,
+            SaveProfileAsync,
+            Macros,
+            ApplyProfileShortcuts,
+            () => _blade.PerformanceModes,
+            () => Display.InternalDisplayRefreshRates,
+            () => _legacyPerformanceCycleModes,
+            () => _legacyRefreshRateCycleHertz,
+            startupManager,
+            executablePath,
+            _deviceOperationGate,
+            busy => IsBusy = busy,
+            SetDeviceOperationError,
+            ReportApplicationError,
+            RequestProfileApply);
+        Telemetry = new TelemetryWorkspace(
+            performanceMonitor,
+            _powerSourceProvider,
+            () => Volatile.Read(ref _displayAvailable) != 0,
+            () => CurrentPowerSource,
+            error => SetPerformanceError(error));
+        Fan = new FanWorkspace(
+            deviceTelemetryReader,
+            performanceMonitor,
+            () => _profile,
+            document => _profile = document,
+            () => EditablePerformanceBladeProfile,
+            SaveProfileAsync,
+            RefreshBladePerformanceEditor,
+            () => _deviceDescriptors,
+            () => CurrentPowerSource,
+            () => IsSelectedPerformancePowerActive,
+            () => SelectedPerformancePowerState,
+            _blade,
+            () => BladePerformanceModeIndex,
+            () => CanSetBladeFan,
+            mode => SetBladePerformanceMode(mode, confirm: false),
+            _diagnosticLog,
+            RunDeviceOperation,
+            RequestDeviceRefresh);
+        Lighting = new LightingWorkspace(
+            _bladeLightingController,
+            _deviceTelemetryReader,
+            _diagnosticLog,
+            () => _deviceDescriptors,
+            () => _profile,
+            () => CurrentPowerSource,
+            () => UsesFirmwareKeyboardLighting,
+            SetDisplayAvailableFlag,
+            () => Volatile.Read(ref _displayAvailable) != 0,
+            _deviceOperationGate,
+            RequestDeviceRefresh,
+            SetDeviceOperationError,
+            () => Fan.StopAsync("suspend"),
+            SetOpenRazerChromaEnabled,
+            _blade);
         OpenRazer = new OpenRazerWorkspace(
             openRazerDeviceService,
             openRazerSpecialLightingService,
@@ -146,21 +194,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             GetActiveProfile,
             SaveProfileAsync,
             _diagnosticLog,
-            () => _chromaIntegrationEnabled,
+            () => Lighting.IsChromaIntegrationEnabled,
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
             RefreshDevicesAsync,
             RefreshDeviceOverviewVisibility,
             SetDeviceOperationError,
             DispatcherQueue.GetForCurrentThread());
-        _internalDisplayController = internalDisplayController;
-        _bladeLightingController = bladeLightingController;
-        _startupManager = startupManager;
-        _touchpadController = touchpadController;
-        _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
-        _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
-        _systemTelemetry.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -184,17 +225,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public ThxAudioViewModel ThxAudio { get; }
     public MacroWorkspace Macros { get; }
     public OpenRazerWorkspace OpenRazer { get; }
+    public ProfilesWorkspace Profiles { get; }
+    public TelemetryWorkspace Telemetry { get; }
+    public FanWorkspace Fan { get; }
+    public DisplayWorkspace Display { get; }
+    public LightingWorkspace Lighting { get; }
     public ObservableCollection<DiagnosticRowViewModel> Diagnostics { get; } = new();
-    public ObservableCollection<string> ProfileNames { get; } = new();
-    public ObservableCollection<ApplicationBindingRowViewModel> ApplicationBindings { get; } = new();
 
     public string LastDeviceRefreshText
     {
         get => _lastDeviceRefreshText;
         private set => SetField(ref _lastDeviceRefreshText, value);
     }
-
-    public string TelemetryTimeText => _systemTelemetry.TelemetryTimeText;
 
     public string DeviceTelemetryTimeText { get => _deviceTelemetryTimeText; private set => SetField(ref _deviceTelemetryTimeText, value); }
 
@@ -226,25 +268,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     }
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
-
-    public string ProfileStatusText { get => _profileStatusText; private set => SetField(ref _profileStatusText, value); }
-    public string ActiveProfileName { get => _activeProfileName; private set => SetField(ref _activeProfileName, value); }
-    public string ProfileNameInput { get => _profileNameInput; set => SetField(ref _profileNameInput, value); }
-    public bool CanDeleteProfile => ProfileNames.Count > 1;
-    public bool IsStartupEnabled
-    {
-        get => _isStartupEnabled;
-        private set
-        {
-            if (SetField(ref _isStartupEnabled, value))
-            {
-                OnPropertyChanged(nameof(CanSetSilentStartup));
-            }
-        }
-    }
-    public bool IsSilentStartupEnabled { get => _isSilentStartupEnabled; private set => SetField(ref _isSilentStartupEnabled, value); }
-    public bool CanSetStartup => _startupManager is not null && !string.IsNullOrWhiteSpace(_executablePath);
-    public bool CanSetSilentStartup => CanSetStartup && IsStartupEnabled;
 
     public bool IsBusy
     {
@@ -329,15 +352,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                     $"{AppStrings.Text("OpenRazerCapability" + read.Key)}: {read.Value}")));
     }
 
-    internal void SetPerformanceSamplingEnabled(bool enabled)
-    {
-        if (Interlocked.Exchange(ref _performanceSamplingEnabled, enabled ? 1 : 0) !=
-            (enabled ? 1 : 0))
-        {
-            SignalPerformanceSamplingStateChanged();
-        }
-    }
-
     /// <summary>
     /// Enables the periodic read-only telemetry poll. It is only worth running while the
     /// device page is open, because that is where the live readouts are shown.
@@ -359,10 +373,32 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         RequestDeviceRefresh();
     }
 
+    /// <summary>
+    /// The window became visible or hidden. Wakes the samplers when the state actually
+    /// changed and asks the next refresh to restore the brightness the user last set.
+    /// </summary>
+    private void SetDisplayAvailableFlag(bool available)
+    {
+        if (Interlocked.Exchange(ref _displayAvailable, available ? 1 : 0) !=
+            (available ? 1 : 0))
+        {
+            Telemetry.NotifySamplingStateChanged();
+        }
+        Interlocked.Exchange(ref _displayBrightnessRestorePending, 1);
+        if (!available)
+        {
+            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
+        }
+    }
+
+    /// <summary>Chroma ownership also gates the selected OpenRazer device's software lighting.</summary>
+    private void SetOpenRazerChromaEnabled(bool enabled) =>
+        OpenRazer.SelectedDevice?.SetChromaIntegrationEnabled(enabled);
+
     public void RefreshLocalization()
     {
-        ProfileStatusText = AppStrings.FormatText("ProfileLoaded",
-            ActiveProfileName);
+        Profiles.ProfileStatusText = AppStrings.FormatText("ProfileLoaded",
+            Profiles.ActiveProfileName);
 
         if (_lastDeviceTelemetry is { } telemetry)
         {
@@ -388,15 +424,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             row.RefreshLocalization();
         }
 
-        _systemTelemetry.RefreshLocalization();
+        Telemetry.RefreshLocalization();
 
         OnPropertyChanged(string.Empty);
     }
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        await LoadProfileAsync(cancellationToken);
-        await RefreshBatteryHealthAsync(cancellationToken);
+        await Profiles.LoadAsync(cancellationToken);
+        await Telemetry.RefreshBatteryHealthAsync(cancellationToken);
         await RefreshDevicesAsync(cancellationToken);
         RefreshFirmwareVersions();
         if (_blade._bladeGameModeState is byte gameMode)
@@ -418,9 +454,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                     exception.Message));
             }
         }
-        if (Volatile.Read(ref _performanceSamplingEnabled) != 0)
+        if (Telemetry.IsSamplingEnabled)
         {
-            await RefreshPerformanceAsync(cancellationToken);
+            await Telemetry.RefreshPerformanceAsync(cancellationToken);
         }
     }
 
@@ -454,15 +490,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         await brightnessWriter.ConfigureAwait(false);
         Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
         await _bladeBrightnessVerification.ConfigureAwait(false);
-        _ = await StopBladeFanControlAsync("application-exit").ConfigureAwait(false);
-        try
-        {
-            await _bladeFanRuntime.DisposeAsync().ConfigureAwait(false);
-        }
-        catch (Exception exception) when (IsExpectedFanException(exception))
-        {
-            _diagnosticLog.TryWrite("blade-fan", $"dispose restore failed: {exception}");
-        }
+        _ = await Fan.StopAsync("application-exit").ConfigureAwait(false);
+        await Fan.DisposeAsync().ConfigureAwait(false);
     }
 
     private PowerSourceKind CurrentPowerSource =>
@@ -624,7 +653,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SetBladeMaxFan((BladeMaxFanMode)rawMaxFan);
         }
 
-        RefreshBladeFanCurveEditor();
+        Fan.RefreshBladeFanCurveEditor();
     }
 
     private void RefreshBladeLogoEditor()
@@ -649,7 +678,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     internal async Task InitializeProfileAsync(CancellationToken cancellationToken = default)
     {
-        await LoadProfileAsync(cancellationToken);
+        await Profiles.LoadAsync(cancellationToken);
         Macros.InitializeMacroRuntime();
         RefreshFirmwareVersions();
     }
@@ -657,70 +686,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private void RefreshInternalDisplayRateEditor()
     {
         var configured = EditableRefreshRateBladeProfile.RefreshRateHertz;
-        if (configured is int hertz && InternalDisplayRefreshRates.Contains(hertz))
+        if (configured is int hertz && Display.InternalDisplayRefreshRates.Contains(hertz))
         {
-            InternalDisplayRefreshRateHertz = hertz;
+            Display.InternalDisplayRefreshRateHertz = hertz;
         }
         else
         {
-            OnPropertyChanged(nameof(InternalDisplayRefreshRateIndex));
-        }
-    }
-
-    public async Task RunPerformanceLoopAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (true)
-            {
-                while (!IsPerformanceSamplingActive)
-                {
-                    await _performanceSamplingSignal.WaitAsync(cancellationToken);
-                }
-
-                await RefreshPerformanceAsync(cancellationToken);
-                await _performanceSamplingSignal.WaitAsync(
-                    TimeSpan.FromSeconds(2), cancellationToken);
-            }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-    }
-
-    private bool IsPerformanceSamplingActive =>
-        Volatile.Read(ref _performanceSamplingEnabled) != 0 &&
-        Volatile.Read(ref _displayAvailable) != 0;
-
-    private void SignalPerformanceSamplingStateChanged()
-    {
-        try
-        {
-            _performanceSamplingSignal.Release();
-        }
-        catch (SemaphoreFullException)
-        {
-        }
-    }
-
-    private async Task ObserveBladeLightingRuntimeAsync(Task completion)
-    {
-        try
-        {
-            await completion;
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or AggregateException or ObjectDisposedException)
-        {
-            if (_bladeLightingController?.RuntimeCompletion == completion)
-            {
-                _lightingShadowFingerprint = string.Empty;
-                _bladeLightingDevicePath = string.Empty;
-                SetDeviceOperationError(AppStrings.FormatText("LightingRuntimeError",
-                    FormatOperationException(exception)));
-            }
+            Display.RaiseRefreshRateIndexChanged();
         }
     }
 
@@ -815,12 +787,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         UpdateErrorText();
     }
 
-    private void SetPerformanceUnavailable(string error)
+    private void SetPerformanceError(string error)
     {
-        _systemTelemetry.MarkUnavailable();
-        var message = AppStrings.FormatText("PerformanceSamplingError", error);
-        LogChangedError("performance", _performanceErrorText, message);
-        _performanceErrorText = message;
+        LogChangedError("performance", _performanceErrorText, error);
+        _performanceErrorText = error;
         UpdateErrorText();
     }
 
@@ -1046,5 +1016,4 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-    private readonly record struct BladeFanProfileApplyResult(string? Error, bool Changed);
 }

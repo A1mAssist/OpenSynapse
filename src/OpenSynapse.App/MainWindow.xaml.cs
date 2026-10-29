@@ -46,7 +46,7 @@ public sealed partial class MainWindow : Window
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException(AppStrings.Text("Text_693F327E"));
-        _viewModel.SetPerformanceSamplingEnabled(false);
+        _viewModel.Telemetry.SetPerformanceSamplingEnabled(false);
         _viewModel.SetDeviceWatchActive(false);
         InitializeComponent();
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
@@ -100,6 +100,7 @@ public sealed partial class MainWindow : Window
         RootNavigationView.DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.OpenRazer.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
         WindowAppearance.Apply(this);
         ApplyDarkTheme();
         ApplyTitleBarColors(launchOverlayActive: true);
@@ -298,7 +299,7 @@ public sealed partial class MainWindow : Window
             UpdatePerformanceSamplingState();
             _viewModel.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
-                () => _viewModel.RunPerformanceLoopAsync(_lifetime.Token),
+                () => _viewModel.Telemetry.RunPerformanceLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_79DA5816"));
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.RunDeviceWatchLoopAsync(_lifetime.Token),
@@ -347,6 +348,7 @@ public sealed partial class MainWindow : Window
         CloseMacroEditorWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.OpenRazer.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.Display.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
         ShutdownDisplayPowerNotification();

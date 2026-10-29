@@ -10,18 +10,18 @@ public sealed partial class MainWindow
     {
         if (sender is ComboBox { SelectedItem: string profileName })
         {
-            await _viewModel.SelectProfileAsync(profileName, _lifetime.Token);
+            await _viewModel.Profiles.SelectProfileAsync(profileName, _lifetime.Token);
         }
     }
 
     private async void CreateProfileClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CreateProfileAsync(_lifetime.Token);
+        await _viewModel.Profiles.CreateProfileAsync(_lifetime.Token);
 
     private async void CloneProfileClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CloneActiveProfileAsync(_lifetime.Token);
+        await _viewModel.Profiles.CloneActiveProfileAsync(_lifetime.Token);
 
     private async void RenameProfileClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.RenameActiveProfileAsync(_lifetime.Token);
+        await _viewModel.Profiles.RenameActiveProfileAsync(_lifetime.Token);
 
     private async void DeleteProfileClick(object sender, RoutedEventArgs e)
     {
@@ -29,7 +29,7 @@ public sealed partial class MainWindow
         {
             Title = AppStrings.Text("Text_4BC87173"),
             Content = AppStrings.FormatText("DeleteProfileMessage",
-                _viewModel.ActiveProfileName),
+                _viewModel.Profiles.ActiveProfileName),
             PrimaryButtonText = AppStrings.Text("Text_EA8D5381"),
             CloseButtonText = AppStrings.Text("Text_949856B3"),
             DefaultButton = ContentDialogButton.Close,
@@ -37,7 +37,7 @@ public sealed partial class MainWindow
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {
-            await _viewModel.DeleteActiveProfileAsync(_lifetime.Token);
+            await _viewModel.Profiles.DeleteActiveProfileAsync(_lifetime.Token);
         }
     }
 
@@ -52,7 +52,7 @@ public sealed partial class MainWindow
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.BindApplicationAsync(file.Path, _lifetime.Token);
+            await _viewModel.Profiles.BindApplicationAsync(file.Path, _lifetime.Token);
         }
     }
 
@@ -60,7 +60,7 @@ public sealed partial class MainWindow
     {
         if (sender is Button { Tag: string executablePath })
         {
-            await _viewModel.UnbindApplicationAsync(executablePath, _lifetime.Token);
+            await _viewModel.Profiles.UnbindApplicationAsync(executablePath, _lifetime.Token);
         }
     }
 
@@ -75,7 +75,7 @@ public sealed partial class MainWindow
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.ImportProfilesAsync(file.Path, _lifetime.Token);
+            await _viewModel.Profiles.ImportProfilesAsync(file.Path, _lifetime.Token);
         }
     }
 
@@ -84,14 +84,14 @@ public sealed partial class MainWindow
         var picker = new FileSavePicker
         {
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-            SuggestedFileName = $"OpenSynapse-{_viewModel.ActiveProfileName}",
+            SuggestedFileName = $"OpenSynapse-{_viewModel.Profiles.ActiveProfileName}",
         };
         picker.FileTypeChoices.Add(AppStrings.Text("Text_07E747F7"), [".json"]);
         InitializePicker(picker);
         var file = await picker.PickSaveFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.ExportProfilesAsync(file.Path, _lifetime.Token);
+            await _viewModel.Profiles.ExportProfilesAsync(file.Path, _lifetime.Token);
         }
     }
 

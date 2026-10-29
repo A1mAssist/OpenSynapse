@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
@@ -96,7 +97,7 @@ public sealed partial class MainViewModel
         applyDisplayProfile |= powerChanged;
         if (powerChanged)
         {
-            await RefreshBatteryHealthAsync(cancellationToken);
+            await Telemetry.RefreshBatteryHealthAsync(cancellationToken);
         }
         try
         {
@@ -159,11 +160,11 @@ public sealed partial class MainViewModel
                 powerState = observedPowerState;
                 powerChanged = true;
                 applyDisplayProfile = true;
-                await RefreshBatteryHealthAsync(cancellationToken);
+                await Telemetry.RefreshBatteryHealthAsync(cancellationToken);
             }
             _lastPowerState = powerState;
             OnPropertyChanged(nameof(ActivePowerSourceText));
-            RefreshInternalDisplay(powerState, applyDisplayProfile);
+            Display.RefreshInternalDisplay(powerState, applyDisplayProfile);
             if (applyDisplayProfile)
             {
                 await OpenRazer.RestoreLightingAfterExternalAsync(cancellationToken);
@@ -188,9 +189,9 @@ public sealed partial class MainViewModel
                 error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
             var fanApply = bladeProfileBlocked
                 ? new BladeFanProfileApplyResult(
-                    await StopBladeFanControlAsync("profile-error"),
+                    await Fan.StopAsync("profile-error"),
                     Changed: true)
-                : await ApplyLoadedFanProfileAsync(blade, powerState, cancellationToken, writeStoredTarget: false);
+                : await Fan.ApplyProfileAsync(blade, powerState, cancellationToken, writeStoredTarget: false);
             var viperMappingError = await ApplyLoadedViperMappingProfileAsync(
                 viperAvailable ? viper : null, powerState, cancellationToken);
             if (fanApply.Changed && blade is { Access: DeviceAccessState.Available })
@@ -201,7 +202,7 @@ public sealed partial class MainViewModel
             var lightingError = profileApply?.Errors.Any(error =>
                     error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
                 ? null
-                : await ApplyLoadedLightingProfileAsync(blade, powerState, cancellationToken);
+                : await Lighting.ApplyLoadedProfileAsync(blade, powerState, cancellationToken);
             var profileOperationErrors = profileApply?.Errors
                 .Where(error => viperAvailable ||
                     !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
@@ -302,7 +303,7 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(ViperSerialVisibility));
             ViperDeviceVisibility = Visibility.Collapsed;
             RefreshDeviceSelectorItems();
-            if (_bladeLightingController is not null && _bladeLightingDevicePath.Length > 0)
+            if (_bladeLightingController is not null && Lighting.LightingDevicePath.Length > 0)
             {
                 try
                 {
@@ -315,13 +316,13 @@ public sealed partial class MainViewModel
                         $"refresh-failure restore failed: {restoreException}");
                 }
             }
-            _ = await StopBladeFanControlAsync("refresh-failure");
+            _ = await Fan.StopAsync("refresh-failure");
             SetBladeControlDevicePath(null, 0);
-            _lightingShadowFingerprint = string.Empty;
-            _bladeLightingDevicePath = string.Empty;
+            Lighting.ShadowFingerprint = string.Empty;
+            Lighting.LightingDevicePath = string.Empty;
             _lastPowerState = powerState;
             OnPropertyChanged(nameof(ActivePowerSourceText));
-            RefreshInternalDisplay(powerState, applyDisplayProfile);
+            Display.RefreshInternalDisplay(powerState, applyDisplayProfile);
             BladeStatusText = hadBlade ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");
             ViperStatusText = hadViper ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");
             SetDeviceQueryError(exception.Message);
@@ -334,6 +335,153 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(CanCheckFirmwareUpdate));
         }
     }
+
+    /// <summary>
+    /// The profile changed, so everything that follows the active profile is refreshed here:
+    /// the shortcut cycle, the Blade editors, and the macro bindings. The profile page has
+    /// already rebuilt its own lists before calling this.
+    /// </summary>
+    private void ApplyProfileShortcuts(
+        HashSet<BladePerformanceMode> cycleModes,
+        IReadOnlyList<int>? refreshRates)
+    {
+        _bladePerformanceCycleModes = cycleModes;
+        _internalDisplayRefreshRateCycleHertz = refreshRates?.ToHashSet();
+        var snapTap = _profile.Global.Blade.SnapTapEnabled == true;
+        var mappingPreset = _profile.Global.Blade.MappingPreset ??
+            BladeProfileSettings.Product710DefaultMappingPreset;
+        var bladeInputChanged = snapTap != _activeSnapTapEnabled ||
+            !StringComparer.Ordinal.Equals(mappingPreset, _activeBladeMappingPreset);
+        _activeSnapTapEnabled = snapTap;
+        _activeBladeMappingPreset = mappingPreset;
+        RefreshBladeLightingEditor();
+        RefreshBladePerformanceEditor();
+        Macros.RefreshMacroState();
+        OnPropertyChanged(nameof(BladePerformanceCycleModes));
+        OnPropertyChanged(nameof(InternalDisplayRefreshRateCycleHertz));
+        if (bladeInputChanged)
+        {
+            BladeInputProfileChanged?.Invoke();
+        }
+    }
+
+    private async Task<bool> SaveProfileAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _profileStore.SaveAsync(_profile, cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            SetDeviceOperationError(AppStrings.FormatText("ProfileSaveError", exception.Message));
+            return false;
+        }
+    }
+
+    private ProfileDefinition GetActiveProfile() =>
+        _profile.Profiles.TryGetValue(_profile.ActiveProfileName, out var profile)
+            ? profile
+            : throw new InvalidOperationException("The active profile is missing from the profile catalog.");
+
+    private async Task<ProfileApplyResult?> ApplyLoadedProfileAsync(
+        RazerDeviceTelemetry telemetry,
+        PowerSourceKind powerState,
+        CancellationToken cancellationToken)
+    {
+        if (_deviceDescriptors.Count == 0)
+        {
+            return null;
+        }
+
+        var result = await _profileApplier.ApplyAsync(
+            _profile,
+            _deviceDescriptors,
+            telemetry,
+            _deviceTelemetryReader,
+            powerState,
+            cancellationToken,
+            applyKeyboardBrightness: Volatile.Read(ref _displayAvailable) != 0,
+            coolingPadConnected: await RazerCoolingPad.IsConnectedAsync(cancellationToken),
+            padlessHyperBoostAccepted: _padlessHyperBoostAccepted);
+        return result;
+    }
+
+    private async Task<string?> ApplyLoadedViperMappingProfileAsync(
+        DeviceDescriptor? viper,
+        PowerSourceKind powerState,
+        CancellationToken cancellationToken)
+    {
+        if (viper is null || viper.Access != DeviceAccessState.Available)
+        {
+            _viper._viperMappingProfileFingerprint = string.Empty;
+            return null;
+        }
+
+        var profile = ProfileResolver.Resolve(_profile, viper, powerState).Viper;
+        var fingerprint = CreateViperMappingFingerprint(viper.Id, profile.ButtonAssignments);
+        if (StringComparer.Ordinal.Equals(_viper._viperMappingProfileFingerprint, fingerprint))
+        {
+            return null;
+        }
+
+        try
+        {
+            IReadOnlyList<ViperButtonAssignment> actual;
+            if (profile.ButtonAssignments is null)
+            {
+                actual = await _deviceTelemetryReader.ReadViperButtonAssignmentsAsync(
+                    _deviceDescriptors, cancellationToken);
+                var previous = _profile.Global.Viper.ButtonAssignments;
+                _profile.Global.Viper.ButtonAssignments = actual.Select(ToProfileAssignment).ToList();
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    _profile.Global.Viper.ButtonAssignments = previous;
+                    return AppStrings.Text("ViperMappingReadProfileSaveFailed");
+                }
+                fingerprint = CreateViperMappingFingerprint(
+                    viper.Id,
+                    _profile.Global.Viper.ButtonAssignments);
+            }
+            else
+            {
+                actual = await _deviceTelemetryReader.SetViperButtonAssignmentsAsync(
+                    _deviceDescriptors,
+                    profile.ButtonAssignments.Select(ToDeviceAssignment).ToArray(),
+                    cancellationToken);
+            }
+
+            SetViperButtonAssignments(actual);
+            _viper._viperMappingProfileFingerprint = fingerprint;
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _viper._viperMappingProfileFingerprint = string.Empty;
+            return AppStrings.FormatText("ViperMappingProfileError", exception.Message);
+        }
+    }
+
+    private string CreateViperMappingFingerprint(
+        string devicePath,
+        IReadOnlyList<ViperButtonAssignmentProfile>? assignments) =>
+        string.Join('|',
+            _profile.ActiveProfileName,
+            devicePath,
+            assignments is null
+                ? "unmanaged"
+                : string.Join(';', assignments
+                    .OrderBy(item => item.ButtonId)
+                    .ThenBy(item => item.Layer)
+                    .Select(item => $"{item.ProfileId:X2}:{item.ButtonId:X2}:{(byte)item.Layer:X2}:{(byte)item.Function:X2}:{Convert.ToHexString(item.FunctionData.ToArray())}")));
 
 }
 

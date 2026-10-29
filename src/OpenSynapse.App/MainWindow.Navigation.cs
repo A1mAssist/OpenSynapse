@@ -77,7 +77,7 @@ public sealed partial class MainWindow
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(MainViewModel.InternalDisplayRefreshRates))
+        if (args.PropertyName == nameof(DisplayWorkspace.InternalDisplayRefreshRates))
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
@@ -238,7 +238,7 @@ public sealed partial class MainWindow
 
     private void UpdatePerformanceSamplingState()
     {
-        _viewModel.SetPerformanceSamplingEnabled(
+        _viewModel.Telemetry.SetPerformanceSamplingEnabled(
             AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible);
         _viewModel.SetDeviceReadoutSamplingEnabled(
             AppWindow.IsVisible && DevicesPage.Visibility == Visibility.Visible);

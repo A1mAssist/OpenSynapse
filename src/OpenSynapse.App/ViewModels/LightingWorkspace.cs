@@ -1,5 +1,7 @@
+using System.ComponentModel;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Lighting;
@@ -8,16 +10,74 @@ using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed partial class MainViewModel
+/// <summary>
+/// Device lighting: the resolved profile effect as it reaches the keyboard, the Chroma
+/// hand-over, and the display-available transitions that hide and restore it.
+/// </summary>
+public sealed class LightingWorkspace : INotifyPropertyChanged
 {
+    private readonly IBladeLightingController? _bladeLightingController;
+    private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
+    private readonly LocalDiagnosticLog _diagnosticLog;
+    private readonly Func<IReadOnlyList<DeviceDescriptor>> _deviceDescriptors;
+    private readonly Func<ProfileDocument> _getProfile;
+    private readonly Func<PowerSourceKind> _currentPowerSource;
+    private readonly Func<bool> _usesFirmwareKeyboardLighting;
+    private readonly Action<bool> _setDisplayAvailable;
+    private readonly Func<bool> _isDisplayAvailable;
+    private readonly SemaphoreSlim _deviceOperationGate;
+    private readonly Action _requestDeviceRefresh;
+    private readonly Action<string> _setDeviceOperationError;
+    private readonly Func<Task<string?>> _stopFanForSuspend;
+    private readonly Action<bool> _setOpenRazerChroma;
+    private readonly BladeViewModel _blade;
     private bool _chromaIntegrationEnabled = true;
+    private BladeLogoMode? _displaySuspendedLogoMode;
+    private string _lightingShadowFingerprint = string.Empty;
+    private string _bladeLightingDevicePath = string.Empty;
+
+    internal LightingWorkspace(
+        IBladeLightingController? bladeLightingController,
+        IRazerDeviceTelemetryReader deviceTelemetryReader,
+        LocalDiagnosticLog diagnosticLog,
+        Func<IReadOnlyList<DeviceDescriptor>> deviceDescriptors,
+        Func<ProfileDocument> getProfile,
+        Func<PowerSourceKind> currentPowerSource,
+        Func<bool> usesFirmwareKeyboardLighting,
+        Action<bool> setDisplayAvailable,
+        Func<bool> isDisplayAvailable,
+        SemaphoreSlim deviceOperationGate,
+        Action requestDeviceRefresh,
+        Action<string> setDeviceOperationError,
+        Func<Task<string?>> stopFanForSuspend,
+        Action<bool> setOpenRazerChroma,
+        BladeViewModel blade)
+    {
+        _bladeLightingController = bladeLightingController;
+        _deviceTelemetryReader = deviceTelemetryReader;
+        _diagnosticLog = diagnosticLog;
+        _deviceDescriptors = deviceDescriptors;
+        _getProfile = getProfile;
+        _currentPowerSource = currentPowerSource;
+        _usesFirmwareKeyboardLighting = usesFirmwareKeyboardLighting;
+        _setDisplayAvailable = setDisplayAvailable;
+        _isDisplayAvailable = isDisplayAvailable;
+        _deviceOperationGate = deviceOperationGate;
+        _requestDeviceRefresh = requestDeviceRefresh;
+        _setDeviceOperationError = setDeviceOperationError;
+        _stopFanForSuspend = stopFanForSuspend;
+        _setOpenRazerChroma = setOpenRazerChroma;
+        _blade = blade;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
     /// Chroma takes over through the per-key matrix path, which firmware-rendered models do
     /// not have, so the override is hidden there even when Chroma is enabled globally.
     /// </summary>
     public Visibility BladeChromaOverrideVisibility =>
-        _chromaIntegrationEnabled && !UsesFirmwareKeyboardLighting
+        _chromaIntegrationEnabled && !_usesFirmwareKeyboardLighting()
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -25,23 +85,38 @@ public sealed partial class MainViewModel
     /// Firmware-rendered models have no matrix to hand a .chroma file to, so the import button
     /// stays hidden rather than accepting a file the device cannot play.
     /// </summary>
-    public Visibility BladeChromaImportVisibility => UsesFirmwareKeyboardLighting
+    public Visibility BladeChromaImportVisibility => _usesFirmwareKeyboardLighting()
         ? Visibility.Collapsed
         : Visibility.Visible;
+
+    /// <summary>What the shell last pushed as the lighting shadow, shared with the Blade editor.</summary>
+    internal bool IsChromaIntegrationEnabled => _chromaIntegrationEnabled;
+
+    internal string ShadowFingerprint
+    {
+        get => _lightingShadowFingerprint;
+        set => _lightingShadowFingerprint = value;
+    }
+
+    internal string LightingDevicePath
+    {
+        get => _bladeLightingDevicePath;
+        set => _bladeLightingDevicePath = value;
+    }
 
     internal void SetChromaIntegrationEnabled(bool enabled)
     {
         if (_chromaIntegrationEnabled == enabled) return;
         _chromaIntegrationEnabled = enabled;
-        OnPropertyChanged(nameof(BladeChromaOverrideVisibility));
-        OpenRazer.SelectedDevice?.SetChromaIntegrationEnabled(enabled);
+        RaiseChromaVisibilityChanged();
+        _setOpenRazerChroma(enabled);
     }
 
     public async Task PrepareForSuspendAsync()
     {
         await SetDisplayAvailableAsync(false).ConfigureAwait(false);
 
-        var error = await StopBladeFanControlAsync("suspend").ConfigureAwait(false);
+        var error = await _stopFanForSuspend().ConfigureAwait(false);
         if (error is not null)
         {
             _diagnosticLog.TryWrite("blade-fan", $"suspend restore incomplete: {error}");
@@ -50,16 +125,7 @@ public sealed partial class MainViewModel
 
     public async Task SetDisplayAvailableAsync(bool available)
     {
-        if (Interlocked.Exchange(ref _displayAvailable, available ? 1 : 0) !=
-            (available ? 1 : 0))
-        {
-            SignalPerformanceSamplingStateChanged();
-        }
-        Interlocked.Exchange(ref _displayBrightnessRestorePending, 1);
-        if (!available)
-        {
-            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
-        }
+        _setDisplayAvailable(available);
         if (_bladeLightingController is not null)
         {
             try
@@ -67,7 +133,7 @@ public sealed partial class MainViewModel
                 await _bladeLightingController.SetDisplayAvailableAsync(available).ConfigureAwait(false);
                 if (!available)
                 {
-                    var blade = _deviceDescriptors.FirstOrDefault(device =>
+                    var blade = _deviceDescriptors().FirstOrDefault(device =>
                         DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                         device.Access == DeviceAccessState.Available);
                     if (blade is not null)
@@ -77,7 +143,7 @@ public sealed partial class MainViewModel
                     }
                 }
             }
-            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
             {
                 _diagnosticLog.TryWrite("keyboard-lighting", $"display-state lighting transition failed: {exception}");
             }
@@ -104,20 +170,20 @@ public sealed partial class MainViewModel
                 {
                     _displaySuspendedLogoMode = BladeLogoModes[_blade._confirmedBladeLogoIndex];
                     await _deviceTelemetryReader.SetBladeLogoModeAsync(
-                        _deviceDescriptors,
+                        _deviceDescriptors(),
                         BladeLogoMode.Off,
                         CancellationToken.None).ConfigureAwait(false);
                 }
                 else if (available && _displaySuspendedLogoMode is { } logoMode)
                 {
                     await _deviceTelemetryReader.SetBladeLogoModeAsync(
-                        _deviceDescriptors,
+                        _deviceDescriptors(),
                         logoMode,
                         CancellationToken.None).ConfigureAwait(false);
                     _displaySuspendedLogoMode = null;
                 }
             }
-            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
             {
                 _diagnosticLog.TryWrite(
                     "blade-logo",
@@ -132,11 +198,11 @@ public sealed partial class MainViewModel
         if (available)
         {
             await RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
-            RequestDeviceRefresh();
+            _requestDeviceRefresh();
         }
     }
 
-    private async Task<string?> ApplyLoadedLightingProfileAsync(
+    internal async Task<string?> ApplyLoadedProfileAsync(
         DeviceDescriptor? blade,
         PowerSourceKind powerState,
         CancellationToken cancellationToken)
@@ -154,7 +220,7 @@ public sealed partial class MainViewModel
                 {
                     await _bladeLightingController.StopAsync();
                 }
-                catch (Exception exception) when (IsExpectedRuntimeException(exception))
+                catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
                 {
                     _diagnosticLog.TryWrite("keyboard-lighting", $"disconnect restore failed: {exception}");
                 }
@@ -171,7 +237,7 @@ public sealed partial class MainViewModel
             return null;
         }
 
-        if (Volatile.Read(ref _displayAvailable) == 0)
+        if (!_isDisplayAvailable())
         {
             var offFingerprint = $"display-off\n{blade.Id}";
             if (StringComparer.Ordinal.Equals(_lightingShadowFingerprint, offFingerprint))
@@ -180,17 +246,17 @@ public sealed partial class MainViewModel
             }
             try
             {
-                if (UsesFirmwareKeyboardLighting)
+                if (_usesFirmwareKeyboardLighting())
                 {
                     await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
-                        _deviceDescriptors,
+                        _deviceDescriptors(),
                         BladeLighting2023Effect.Off,
                         cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
                     await _bladeLightingController.ApplyAsync(
-                        _deviceDescriptors,
+                        _deviceDescriptors(),
                         BladeLightingEffect.Off,
                         cancellationToken).ConfigureAwait(false);
                 }
@@ -199,15 +265,15 @@ public sealed partial class MainViewModel
                 _lightingShadowFingerprint = offFingerprint;
                 return null;
             }
-            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
             {
                 _bladeLightingDevicePath = string.Empty;
                 _lightingShadowFingerprint = string.Empty;
-                return FormatOperationException(exception);
+                return RuntimeErrors.Format(exception);
             }
         }
 
-        var resolved = ProfileResolver.Resolve(_profile, blade, powerState);
+        var resolved = ProfileResolver.Resolve(_getProfile(), blade, powerState);
         var profile = resolved.Lighting;
         var lightingEnabled = resolved.Blade.LightingEnabled ?? true;
         var chromaOverrideEnabled = resolved.Blade.ChromaOverrideEnabled ?? true;
@@ -224,7 +290,7 @@ public sealed partial class MainViewModel
                 _lightingShadowFingerprint = string.Empty;
                 return AppStrings.Text("BladeChromaFileMissing");
             }
-            fingerprint = CreateLightingFingerprint(
+            fingerprint = CreateFingerprint(
                 profile,
                 blade.Id,
                 powerState,
@@ -242,7 +308,7 @@ public sealed partial class MainViewModel
             return null;
         }
 
-        if (UsesFirmwareKeyboardLighting)
+        if (_usesFirmwareKeyboardLighting())
         {
             return await ApplyFirmwareKeyboardLightingProfileAsync(
                 blade,
@@ -262,7 +328,7 @@ public sealed partial class MainViewModel
             {
                 await _bladeLightingController.StopAsync();
             }
-            catch (Exception exception) when (IsExpectedRuntimeException(exception))
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
             {
                 _diagnosticLog.TryWrite("keyboard-lighting", $"path-change restore failed: {exception}");
             }
@@ -270,17 +336,17 @@ public sealed partial class MainViewModel
 
         try
         {
-            await _bladeLightingController.ApplyAsync(_deviceDescriptors, effect, cancellationToken);
+            await _bladeLightingController.ApplyAsync(_deviceDescriptors(), effect, cancellationToken);
             _bladeLightingDevicePath = blade.Id;
             _lightingShadowFingerprint = fingerprint;
-            _ = ObserveBladeLightingRuntimeAsync(_bladeLightingController.RuntimeCompletion);
+            _ = ObserveRuntime(_bladeLightingController.RuntimeCompletion);
             return null;
         }
-        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
         {
             _bladeLightingDevicePath = string.Empty;
             _lightingShadowFingerprint = string.Empty;
-            return FormatOperationException(exception);
+            return RuntimeErrors.Format(exception);
         }
     }
 
@@ -304,7 +370,7 @@ public sealed partial class MainViewModel
             if (keyboardBrightness is byte brightness)
             {
                 _ = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
-                    _deviceDescriptors,
+                    _deviceDescriptors(),
                     brightness,
                     cancellationToken).ConfigureAwait(false);
             }
@@ -313,11 +379,11 @@ public sealed partial class MainViewModel
                 ? BladeLighting2023Admitted.ToWireEffect(effect.Mode)
                 : BladeLighting2023Effect.Off;
             _blade._bladeKeyboardEffect2023 = await _deviceTelemetryReader
-                .SetBlade2023KeyboardEffectAsync(_deviceDescriptors, target, cancellationToken)
+                .SetBlade2023KeyboardEffectAsync(_deviceDescriptors(), target, cancellationToken)
                 .ConfigureAwait(false);
 
             _bladeLightingDevicePath = blade.Id;
-            _lightingShadowFingerprint = CreateLightingFingerprint(
+            _lightingShadowFingerprint = CreateFingerprint(
                 lightingProfile,
                 blade.Id,
                 powerState,
@@ -325,21 +391,21 @@ public sealed partial class MainViewModel
                 chromaOverrideEnabled);
             return null;
         }
-        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
         {
             _bladeLightingDevicePath = string.Empty;
             _lightingShadowFingerprint = string.Empty;
-            return FormatOperationException(exception);
+            return RuntimeErrors.Format(exception);
         }
     }
 
-    private string CreateLightingFingerprint(
+    internal string CreateFingerprint(
         LightingProfile profile,
         string devicePath,
         PowerSourceKind powerState,
         bool lightingEnabled = true,
         bool chromaOverrideEnabled = true) =>
-        $"{_profile.ActiveProfileName}\n{powerState}\n{lightingEnabled}\n{chromaOverrideEnabled}\n{BladeLightingProfileCodec.Fingerprint(profile, devicePath)}";
+        $"{_getProfile().ActiveProfileName}\n{powerState}\n{lightingEnabled}\n{chromaOverrideEnabled}\n{BladeLightingProfileCodec.Fingerprint(profile, devicePath)}";
 
     internal async Task RestoreBladeLightingAfterExternalAsync()
     {
@@ -352,12 +418,12 @@ public sealed partial class MainViewModel
         try
         {
             _lightingShadowFingerprint = string.Empty;
-            var blade = _deviceDescriptors.FirstOrDefault(device =>
+            var blade = _deviceDescriptors().FirstOrDefault(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                 device.Access == DeviceAccessState.Available);
-            await ApplyLoadedLightingProfileAsync(
+            await ApplyLoadedProfileAsync(
                 blade,
-                CurrentPowerSource,
+                _currentPowerSource(),
                 CancellationToken.None).ConfigureAwait(false);
         }
         finally
@@ -368,14 +434,44 @@ public sealed partial class MainViewModel
 
     internal bool IsBladeChromaOverrideEnabled()
     {
-        var blade = _deviceDescriptors.FirstOrDefault(device =>
+        var blade = _deviceDescriptors().FirstOrDefault(device =>
             DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
         if (blade is null)
         {
             return true;
         }
 
-        var resolved = ProfileResolver.Resolve(_profile, blade, CurrentPowerSource).Blade;
+        var resolved = ProfileResolver.Resolve(_getProfile(), blade, _currentPowerSource()).Blade;
         return (resolved.ChromaOverrideEnabled ?? true) && (resolved.LightingEnabled ?? true);
     }
+
+    internal void RaiseChromaVisibilityChanged()
+    {
+        OnPropertyChanged(nameof(BladeChromaOverrideVisibility));
+        OnPropertyChanged(nameof(BladeChromaImportVisibility));
+    }
+
+    internal async Task ObserveRuntime(Task completion)
+    {
+        try
+        {
+            await completion;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or IOException or InvalidOperationException or AggregateException or ObjectDisposedException)
+        {
+            if (_bladeLightingController?.RuntimeCompletion == completion)
+            {
+                _lightingShadowFingerprint = string.Empty;
+                _bladeLightingDevicePath = string.Empty;
+                _setDeviceOperationError(AppStrings.FormatText("LightingRuntimeError",
+                    RuntimeErrors.Format(exception)));
+            }
+        }
+    }
+
+    private void OnPropertyChanged(string? propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }

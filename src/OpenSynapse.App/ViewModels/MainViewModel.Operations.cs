@@ -55,6 +55,13 @@ public sealed partial class MainViewModel
         }
     }
 
+    private Task RunDeviceOperation(
+        string label,
+        Func<Task> operation,
+        CancellationToken cancellationToken,
+        Action? restoreSelection) =>
+        RunDeviceOperationAsync(label, operation, cancellationToken, restoreSelection);
+
     private async Task<bool> TryEnterOperationAsync(CancellationToken cancellationToken)
     {
         try
