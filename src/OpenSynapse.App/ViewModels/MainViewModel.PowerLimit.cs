@@ -49,18 +49,15 @@ public sealed partial class MainViewModel
 
     public string CpuPowerLimitDetailText => _cpuPowerLimitReport switch
     {
-        null => string.Empty,
+        null => AppStrings.Text("CpuPowerLimitChecking"),
         { IsLocked: true } => AppStrings.Text("CpuPowerLimitLocked"),
-        { Availability: CpuPowerLimitAvailability.Available } => string.Empty,
-        { Detail: { Length: > 0 } detail } => detail,
+        { Availability: CpuPowerLimitAvailability.Available } report =>
+            AppStrings.FormatText("CpuPowerLimitCeiling", report.MaximumWatts),
         _ => string.Empty,
     };
 
     public Visibility CpuPowerLimitDetailVisibility =>
-        _cpuPowerLimitReport is { } report &&
-        (report.Availability != CpuPowerLimitAvailability.Available || report.IsLocked)
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        CpuPowerLimitDetailText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public bool CanSetCpuPowerLimit =>
         !IsBusy &&
@@ -140,7 +137,9 @@ public sealed partial class MainViewModel
                 if (report.Availability != CpuPowerLimitAvailability.Available)
                 {
                     throw new InvalidOperationException(
-                        report.Detail ?? AppStrings.Text("CpuPowerLimitUnavailable"));
+                        CpuPowerLimitDetailText is { Length: > 0 } reason
+                            ? reason
+                            : AppStrings.Text("CpuPowerLimitUnavailable"));
                 }
             },
             cancellationToken,
@@ -168,8 +167,10 @@ public sealed partial class MainViewModel
     private void PublishCpuPowerLimit(CpuPowerLimitReport report)
     {
         _cpuPowerLimitReport = report;
+        // A firmware default (150 W) is not a preset; a blank picker would hide that the
+        // card is on Automatic.
         var index = report.Availability == CpuPowerLimitAvailability.Available
-            ? Array.IndexOf(CpuPowerLimitPresets, report.Pl1Watts)
+            ? Math.Max(0, Array.IndexOf(CpuPowerLimitPresets, report.Pl1Watts))
             : -1;
         SetCpuPowerLimitIndex(index);
         OnPropertyChanged(nameof(CpuPowerLimitText));
