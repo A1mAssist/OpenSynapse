@@ -222,6 +222,13 @@ public sealed partial class DevicesPage : UserControl
             case "cpuBoost":
                 await ViewModel.Blade.ApplyCpuBoostAsync(Lifetime);
                 break;
+            case "cpuPowerLimit":
+                if (ViewModel.IsRefreshingCpuPowerLimit)
+                {
+                    return;
+                }
+                await ViewModel.ApplyCpuPowerLimitAsync(Lifetime);
+                break;
             case "gpuBoost":
                 await ViewModel.Blade.ApplyGpuBoostAsync(Lifetime);
                 break;

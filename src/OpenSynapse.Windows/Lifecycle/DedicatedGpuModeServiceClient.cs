@@ -3,6 +3,7 @@ using System.IO.Pipes;
 using System.ServiceProcess;
 using System.Text;
 using System.Text.Json;
+using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Windows.Lifecycle;
 
@@ -144,6 +145,59 @@ public static class DedicatedGpuModeServiceClient
 
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
         return response?.Outcome == DedicatedGpuSwitchOutcome.Success;
+    }
+
+    /// <summary>
+    /// Reads the CPU package power wall. Null means the installed service predates the
+    /// operation or the pipe is unreachable.
+    /// </summary>
+    public static async Task<CpuPowerLimitReport?> TryGetCpuPowerLimitAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.CpuPowerLimitStatusOperation,
+            Enabled: null);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.PowerLimit;
+    }
+
+    /// <summary>Applies both CPU power walls through the machine-wide service.</summary>
+    public static async Task<CpuPowerLimitReport?> TrySetCpuPowerLimitAsync(
+        double pl1Watts,
+        double pl2Watts,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.SetCpuPowerLimitOperation,
+            Enabled: null,
+            Pl1Watts: pl1Watts,
+            Pl2Watts: pl2Watts);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.PowerLimit;
+    }
+
+    /// <summary>
+    /// Restores an explicit pair of walls, or the service's open-time firmware snapshot
+    /// when both values are null.
+    /// </summary>
+    public static async Task<CpuPowerLimitReport?> TryRestoreCpuPowerLimitAsync(
+        double? pl1Watts,
+        double? pl2Watts,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.RestoreCpuPowerLimitOperation,
+            Enabled: null,
+            Pl1Watts: pl1Watts,
+            Pl2Watts: pl2Watts);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.PowerLimit;
     }
 
     private static async Task<DedicatedGpuSwitchResult?> SendWithWakeupRetryAsync(
