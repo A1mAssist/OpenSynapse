@@ -1688,10 +1688,9 @@
   <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>IntelMSR.bin is missing; redeploy OpenSynapse.</value></data>
   <data name="CpuPowerLimitAccessDenied" xml:space="preserve"><value>Administrator rights or the OpenSynapse machine service is required.</value></data>
   <data name="CpuPowerLimitUnavailable" xml:space="preserve"><value>The CPU power wall could not be read.</value></data>
-  <data name="CpuPowerLimitApplied" xml:space="preserve"><value>Applied.</value></data>
-  <data name="CpuPowerLimitRestored" xml:space="preserve"><value>Restored the factory wall.</value></data>
+  <data name="CpuPowerLimitChecking" xml:space="preserve"><value>Reading the power wall…</value></data>
+  <data name="CpuPowerLimitCeiling" xml:space="preserve"><value>Ceiling {0:0} W</value></data>
   <data name="CpuPowerLimitLocked" xml:space="preserve"><value>The firmware has locked the power wall.</value></data>
-  <data name="CpuPowerLimitFailed" xml:space="preserve"><value>Writing the CPU power wall failed.</value></data>
   <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn key takeover needs the Razer driver</value></data>
   <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn shortcut takeover depends on the Razer filter driver that Razer Synapse installs. Install Razer Synapse once so Windows receives the driver, then restart OpenSynapse.</value></data>
   <data name="BladeFilterDriverUninstallHint.Text" xml:space="preserve"><value>You can uninstall Synapse afterwards. The driver stays in Windows and OpenSynapse can still take over the Fn keys.</value></data>
