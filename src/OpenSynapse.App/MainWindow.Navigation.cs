@@ -86,7 +86,7 @@ public sealed partial class MainWindow
                 _behaviorUiReady = true;
             });
         }
-        if (args.PropertyName == nameof(MainViewModel.BladePerformanceCycleModes))
+        if (args.PropertyName == nameof(BladeWorkspace.PerformanceCycleModes))
         {
             _dispatcherQueue.TryEnqueue(() =>
             {

@@ -66,10 +66,10 @@ public sealed partial class MainWindow
     ];
 
     private async void ApplyBrightnessClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeBrightnessAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyBrightnessAsync(_lifetime.Token);
 
     private async void ApplyLightingEffectClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
 
     private async void LightingPresetButtonClick(object sender, RoutedEventArgs e)
     {
@@ -93,7 +93,7 @@ public sealed partial class MainWindow
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.ImportBladeChromaFileAsync(file.Path, _lifetime.Token);
+            await _viewModel.Blade.ImportChromaFileAsync(file.Path, _lifetime.Token);
         }
     }
 
@@ -108,14 +108,14 @@ public sealed partial class MainWindow
         {
             // Ask the view model which effect is selected; the admitted list differs per
             // Blade generation, so the page must not index the full catalog itself.
-            if (_viewModel.SelectedBladeLightingModeForPage == BladeLightingMode.Starlight)
+            if (_viewModel.Blade.SelectedLightingModeForPage == BladeLightingMode.Starlight)
             {
-                _viewModel.BladeStarlightColorModeIndex = 2;
+                _viewModel.Blade.StarlightColorModeIndex = 2;
             }
-            _viewModel.BladeLightingColor = preset.Primary;
-            _viewModel.BladeLightingSecondColor = preset.Secondary;
-            _viewModel.BladeLightingTertiaryColor = preset.Tertiary;
-            await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
+            _viewModel.Blade.LightingColor = preset.Primary;
+            _viewModel.Blade.LightingSecondColor = preset.Secondary;
+            _viewModel.Blade.LightingTertiaryColor = preset.Tertiary;
+            await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
         }
         else if (target == "openrazer" && SelectedOpenRazerDevice is { } device)
         {
@@ -146,13 +146,13 @@ public sealed partial class MainWindow
     }
 
     private async void ApplyPerformanceModeClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyPerformanceModeAsync(_lifetime.Token);
 
     private async void ApplyBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeGpuClockOffsetAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyGpuClockOffsetAsync(_lifetime.Token);
 
     private async void ResetBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ResetBladeGpuClockOffsetDefaultsAsync(_lifetime.Token);
+        await _viewModel.Blade.ResetGpuClockOffsetDefaultsAsync(_lifetime.Token);
 
     private async Task<bool> ConfirmPadlessHyperBoostAsync()
     {
@@ -170,7 +170,7 @@ public sealed partial class MainWindow
             return false;
         }
 
-        _viewModel.SetPadlessHyperBoostAccepted(true);
+        _viewModel.Blade.SetPadlessHyperBoostAccepted(true);
         if (!_behaviorSettings.PadlessHyperBoostAccepted)
         {
             _behaviorSettings.PadlessHyperBoostAccepted = true;
@@ -209,7 +209,7 @@ public sealed partial class MainWindow
                 _bladePerformanceApplyInFlight = true;
                 try
                 {
-                    await _viewModel.ApplyBladePerformanceModeAsync(_lifetime.Token);
+                    await _viewModel.Blade.ApplyPerformanceModeAsync(_lifetime.Token);
                 }
                 finally
                 {
@@ -217,25 +217,25 @@ public sealed partial class MainWindow
                 }
                 break;
             case "charge":
-                await _viewModel.ApplyBladeChargeLimitAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyChargeLimitAsync(_lifetime.Token);
                 break;
             case "cpuBoost":
-                await _viewModel.ApplyBladeCpuBoostAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyCpuBoostAsync(_lifetime.Token);
                 break;
             case "gpuBoost":
-                await _viewModel.ApplyBladeGpuBoostAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyGpuBoostAsync(_lifetime.Token);
                 break;
             case "lighting":
-                await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
                 break;
             case "logo":
-                await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyLogoAsync(_lifetime.Token);
                 break;
             case "refreshRate":
             await _viewModel.Display.ApplyInternalDisplayRefreshRateAsync(_lifetime.Token);
                 break;
             case "nativeDisplayMode":
-                await _viewModel.ApplyBladeNativeDisplayModeAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyNativeDisplayModeAsync(_lifetime.Token);
                 break;
         }
     }
@@ -256,7 +256,7 @@ public sealed partial class MainWindow
     {
         if (sender is ToggleSwitch { FocusState: not FocusState.Unfocused })
         {
-            await _viewModel.ApplyBladeMaxFanAsync(_lifetime.Token);
+            await _viewModel.Blade.ApplyMaxFanAsync(_lifetime.Token);
         }
     }
 
@@ -270,7 +270,7 @@ public sealed partial class MainWindow
         _bladeLightingSettingsInFlight = true;
         try
         {
-            await _viewModel.ApplyBladeLightingSettingsAsync(_lifetime.Token);
+            await _viewModel.Blade.ApplyLightingSettingsAsync(_lifetime.Token);
         }
         finally
         {
@@ -288,19 +288,19 @@ public sealed partial class MainWindow
         switch (setting)
         {
             case "gamingMode":
-                await _viewModel.ApplyBladeGamingModeAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyGamingModeAsync(_lifetime.Token);
                 break;
             case "startupAnimation":
-                await _viewModel.ApplyBladeStartupAnimationAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyStartupAnimationAsync(_lifetime.Token);
                 break;
             case "oneTimeFullCharge":
-                await _viewModel.ApplyBladeOneTimeFullChargeAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyOneTimeFullChargeAsync(_lifetime.Token);
                 break;
             case "localDimming":
-                await _viewModel.ApplyBladeLocalDimmingAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyLocalDimmingAsync(_lifetime.Token);
                 break;
             case "cpuPowerBoost":
-                await _viewModel.ApplyBladeCpuPowerBoostAsync(_lifetime.Token);
+                await _viewModel.Blade.ApplyCpuPowerBoostAsync(_lifetime.Token);
                 break;
         }
     }
@@ -309,7 +309,7 @@ public sealed partial class MainWindow
     {
         if (_bladeBrightnessPointerActive && sender is Slider)
         {
-            await _viewModel.QueueBladeBrightnessAsync(_lifetime.Token);
+            await _viewModel.Blade.QueueBrightnessAsync(_lifetime.Token);
         }
     }
 
@@ -354,7 +354,7 @@ public sealed partial class MainWindow
         var version = ++_displayMuxRefreshVersion;
         try
         {
-            var status = await _viewModel.ReadBladeDisplayMuxStatusAsync(_lifetime.Token);
+            var status = await _viewModel.Blade.ReadDisplayMuxStatusAsync(_lifetime.Token);
             if (_lifetime.IsCancellationRequested || version != _displayMuxRefreshVersion)
             {
                 return;
@@ -458,7 +458,7 @@ public sealed partial class MainWindow
         BladeDisplayMuxSwitchResult result;
         try
         {
-            result = await _viewModel.SetBladeDisplayMuxModeAsync(mode, _lifetime.Token);
+            result = await _viewModel.Blade.SetDisplayMuxModeAsync(mode, _lifetime.Token);
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {
@@ -705,7 +705,7 @@ public sealed partial class MainWindow
     private async void BladeBrightnessPointerReleased(object sender, PointerRoutedEventArgs e)
     {
         _bladeBrightnessPointerActive = false;
-        await _viewModel.QueueBladeBrightnessAsync(_lifetime.Token);
+        await _viewModel.Blade.QueueBrightnessAsync(_lifetime.Token);
     }
 
     private void BladeBrightnessPointerCaptureLost(object sender, PointerRoutedEventArgs e) =>
@@ -768,7 +768,7 @@ public sealed partial class MainWindow
             ReferenceEquals(sender, SecondaryLightingColorFlyout) ||
             ReferenceEquals(sender, TertiaryLightingColorFlyout))
         {
-            await _viewModel.ApplySelectedBladeLightingEffectAsync(_lifetime.Token);
+            await _viewModel.Blade.ApplySelectedLightingEffectAsync(_lifetime.Token);
         }
         else if (ReferenceEquals(sender, OpenRazerPrimaryColorFlyout) ||
             ReferenceEquals(sender, OpenRazerSecondaryColorFlyout))
@@ -880,19 +880,19 @@ public sealed partial class MainWindow
     }
 
     private async void ApplyChargeLimitClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeChargeLimitAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyChargeLimitAsync(_lifetime.Token);
 
     private async void ApplyCpuBoostClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeCpuBoostAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyCpuBoostAsync(_lifetime.Token);
 
     private async void ApplyGpuBoostClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeGpuBoostAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyGpuBoostAsync(_lifetime.Token);
 
     private async void ApplyMaxFanClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeMaxFanAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyMaxFanAsync(_lifetime.Token);
 
     private async void ApplyLogoClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
+        await _viewModel.Blade.ApplyLogoAsync(_lifetime.Token);
 
     private async void CheckFirmwareUpdateClick(object sender, RoutedEventArgs e) =>
         await _viewModel.CheckFirmwareUpdateAsync(_lifetime.Token);
@@ -910,7 +910,7 @@ public sealed partial class MainWindow
         _touchpadToggleInFlight = true;
         try
         {
-            await _viewModel.ToggleBladeTouchpadAsync(_lifetime.Token);
+            await _viewModel.Blade.ToggleTouchpadAsync(_lifetime.Token);
         }
         finally
         {

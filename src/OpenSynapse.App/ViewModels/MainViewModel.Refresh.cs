@@ -10,12 +10,9 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private readonly Dictionary<string, string> _deviceSerials = new(StringComparer.OrdinalIgnoreCase);
-    private string? _bladeSerial;
     private string? _viperSerial;
 
-    public string? BladeSerial { get => _bladeSerial; private set => SetField(ref _bladeSerial, value); }
     public string? ViperSerial { get => _viperSerial; private set => SetField(ref _viperSerial, value); }
-    public Visibility BladeSerialVisibility => string.IsNullOrWhiteSpace(BladeSerial) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility ViperSerialVisibility => string.IsNullOrWhiteSpace(ViperSerial) ? Visibility.Collapsed : Visibility.Visible;
 
     private async Task<string?> GetDeviceSerialAsync(DeviceDescriptor? device, CancellationToken cancellationToken)
@@ -25,20 +22,6 @@ public sealed partial class MainViewModel
         serial = await WindowsHidDiscovery.TryReadSerialNumberAsync(device.Id, cancellationToken);
         if (!string.IsNullOrWhiteSpace(serial)) _deviceSerials[device.Id] = serial;
         return serial;
-    }
-
-    private async Task RefreshCoolingPadPresenceAsync(CancellationToken cancellationToken)
-    {
-        var connected = await RazerCoolingPad.IsConnectedAsync(cancellationToken);
-        if (_bladeCoolingPadConnected == connected)
-        {
-            return;
-        }
-
-        _bladeCoolingPadConnected = connected;
-        OnPropertyChanged(nameof(HyperboostOptionVisibility));
-        OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
-        OnPropertyChanged(nameof(BladePerformanceModeOptions));
     }
 
     /// <summary>
@@ -121,32 +104,12 @@ public sealed partial class MainViewModel
             var blade = snapshot.Devices.FirstOrDefault(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
             var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
-            SetBladeControlDevicePath(
-                blade is
-                {
-                    Access: DeviceAccessState.Available,
-                    FeatureReportByteLength: RazerFeatureReport.Length,
-                }
-                    ? blade.Id
-                    : null,
-                blade?.ProductId ?? 0);
-            await RefreshCoolingPadPresenceAsync(cancellationToken);
-            BladeDeviceName = blade?.Name ?? "Razer Blade";
-            if (blade is not null)
-            {
-                ProbeBladeGpuClockOffset();
-            }
-            if (_blade._bladeProductId != (blade?.ProductId ?? 0))
-            {
-                _blade._bladeProductId = blade?.ProductId ?? 0;
-                RefreshBladeModelCapabilityUi();
-            }
+            await Blade.RefreshCoolingPadPresenceAsync(cancellationToken);
+            Blade.UpdateDevice(blade, FormatDeviceStatus(blade));
             ViperDeviceName = viper?.Name ?? "Razer Viper";
-            BladeSerial = await GetDeviceSerialAsync(blade, cancellationToken);
+            Blade.SetSerial(await GetDeviceSerialAsync(blade, cancellationToken));
             ViperSerial = await GetDeviceSerialAsync(viper, cancellationToken);
-            OnPropertyChanged(nameof(BladeSerialVisibility));
             OnPropertyChanged(nameof(ViperSerialVisibility));
-            BladeStatusText = FormatDeviceStatus(blade);
             ViperStatusText = FormatDeviceStatus(viper);
 
             var telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
@@ -179,9 +142,9 @@ public sealed partial class MainViewModel
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
                 ApplyDeviceTelemetry(telemetry);
             }
-            RefreshBladeLightingEditor();
-            RefreshBladePerformanceEditor();
-            RefreshBladeLogoEditor();
+            Blade.RefreshLightingEditor();
+            Blade.RefreshPerformanceEditor();
+            Blade.RefreshLogoEditor();
             var viperAvailable = viper is not null &&
                 (telemetry.CapabilitySummaries?.GetValueOrDefault(viper.Id)
                     ?? DeviceCapabilitySummaryCalculator.Calculate(viper, telemetry)).Available > 0;
@@ -270,7 +233,7 @@ public sealed partial class MainViewModel
             if (Volatile.Read(ref _displayAvailable) != 0 &&
                 Interlocked.Exchange(ref _displayBrightnessRestorePending, 0) != 0)
             {
-                RefreshBladeLightingEditor();
+                Blade.RefreshLightingEditor();
             }
 
             if (Volatile.Read(ref _diagnosticsRebuildEnabled) != 0)
@@ -297,9 +260,8 @@ public sealed partial class MainViewModel
             BlackSharkDevices.Clear();
             _selectedBlackSharkDevice = null;
             SelectedBlackShark = null;
-            BladeSerial = null;
+            Blade.SetSerial(null);
             ViperSerial = null;
-            OnPropertyChanged(nameof(BladeSerialVisibility));
             OnPropertyChanged(nameof(ViperSerialVisibility));
             ViperDeviceVisibility = Visibility.Collapsed;
             RefreshDeviceSelectorItems();
@@ -317,13 +279,13 @@ public sealed partial class MainViewModel
                 }
             }
             _ = await Fan.StopAsync("refresh-failure");
-            SetBladeControlDevicePath(null, 0);
+            Blade.SetControlDevice(null);
             Lighting.ShadowFingerprint = string.Empty;
             Lighting.LightingDevicePath = string.Empty;
             _lastPowerState = powerState;
             OnPropertyChanged(nameof(ActivePowerSourceText));
             Display.RefreshInternalDisplay(powerState, applyDisplayProfile);
-            BladeStatusText = hadBlade ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");
+            Blade.SetStatus(hadBlade ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC"));
             ViperStatusText = hadViper ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");
             SetDeviceQueryError(exception.Message);
             LastDeviceRefreshText = AppStrings.Text("Text_F9E7EDEF");
@@ -345,24 +307,10 @@ public sealed partial class MainViewModel
         HashSet<BladePerformanceMode> cycleModes,
         IReadOnlyList<int>? refreshRates)
     {
-        _bladePerformanceCycleModes = cycleModes;
         _internalDisplayRefreshRateCycleHertz = refreshRates?.ToHashSet();
-        var snapTap = _profile.Global.Blade.SnapTapEnabled == true;
-        var mappingPreset = _profile.Global.Blade.MappingPreset ??
-            BladeProfileSettings.Product710DefaultMappingPreset;
-        var bladeInputChanged = snapTap != _activeSnapTapEnabled ||
-            !StringComparer.Ordinal.Equals(mappingPreset, _activeBladeMappingPreset);
-        _activeSnapTapEnabled = snapTap;
-        _activeBladeMappingPreset = mappingPreset;
-        RefreshBladeLightingEditor();
-        RefreshBladePerformanceEditor();
+        Blade.ApplyProfileShortcuts(cycleModes, _profile.Global.Blade);
         Macros.RefreshMacroState();
-        OnPropertyChanged(nameof(BladePerformanceCycleModes));
         OnPropertyChanged(nameof(InternalDisplayRefreshRateCycleHertz));
-        if (bladeInputChanged)
-        {
-            BladeInputProfileChanged?.Invoke();
-        }
     }
 
     private async Task<bool> SaveProfileAsync(CancellationToken cancellationToken)
@@ -406,8 +354,8 @@ public sealed partial class MainViewModel
             powerState,
             cancellationToken,
             applyKeyboardBrightness: Volatile.Read(ref _displayAvailable) != 0,
-            coolingPadConnected: await RazerCoolingPad.IsConnectedAsync(cancellationToken),
-            padlessHyperBoostAccepted: _padlessHyperBoostAccepted);
+            coolingPadConnected: Blade.CoolingPadConnected,
+            padlessHyperBoostAccepted: Blade.PadlessHyperBoostAccepted);
         return result;
     }
 

@@ -23,9 +23,6 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
-    private static readonly TimeSpan BladeBrightnessVerificationDelay =
-        TimeSpan.FromMilliseconds(150);
-
     private readonly IDeviceDiscovery _discovery;
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
     private readonly RazerFirmwareUpdateClient _firmwareUpdateClient;
@@ -33,27 +30,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly IPowerSourceProvider _powerSourceProvider;
     private readonly IActiveApplicationProvider _activeApplicationProvider;
     private readonly LocalDiagnosticLog _diagnosticLog;
-    private readonly BladeViewModel _blade = new();
     private readonly ViperViewModel _viper = new();
-    private HashSet<BladePerformanceMode> _bladePerformanceCycleModes =
-        [.. BladePerformanceModes];
     private HashSet<int>? _internalDisplayRefreshRateCycleHertz;
     private IReadOnlyList<BladePerformanceMode>? _legacyPerformanceCycleModes;
     private IReadOnlyList<int>? _legacyRefreshRateCycleHertz;
-    private string _activeBladeMappingPreset = BladeProfileSettings.Product710DefaultMappingPreset;
-    private bool _activeSnapTapEnabled;
     private readonly IBladeLightingController? _bladeLightingController;
-    private readonly WindowsTouchpadController? _touchpadController;
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
-    private readonly object _bladeBrightnessGate = new();
-    private Task _bladeBrightnessWriter = Task.CompletedTask;
-    private byte? _desiredBladeBrightness;
-    private bool _bladeBrightnessWriterActive;
-    private Task _bladeBrightnessVerification = Task.CompletedTask;
-    private long _bladeBrightnessVerificationGeneration;
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
     private ProfileDocument _profile = ProfileDocument.CreateDefault();
     private PowerSourceKind? _lastPowerState;
@@ -69,12 +54,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private IReadOnlyList<DeviceDescriptor> _deviceDescriptors = Array.Empty<DeviceDescriptor>();
     private RazerDeviceTelemetry? _lastDeviceTelemetry;
     private string _deviceFingerprint = string.Empty;
-    private string? _bladeControlDevicePath;
-    private ushort _bladeControlProductId;
-    private int _bladeLightingPowerProfileIndex;
-    private int _bladePerformancePowerProfileIndex;
-    private int _bladeRefreshRatePowerProfileIndex;
-    private int _bladeLogoPowerProfileIndex;
     private int _deviceRefreshRequested;
     private int _displayProfileApplyRequested;
     private int _deviceReadoutSamplingEnabled = 1;
@@ -113,12 +92,36 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _activeApplicationProvider = activeApplicationProvider ?? UnknownActiveApplicationProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
         _bladeLightingController = bladeLightingController;
-        _touchpadController = touchpadController;
+        Blade = new BladeWorkspace(
+            deviceTelemetryReader,
+            bladeLightingController,
+            touchpadController,
+            _diagnosticLog,
+            () => _profile,
+            document => _profile = document,
+            SaveProfileAsync,
+            RunDeviceOperationAsync,
+            () => _deviceDescriptors,
+            () => CurrentPowerSource,
+            () => _lastDeviceTelemetry,
+            () => _internalDisplayRefreshRateCycleHertz,
+            () => Volatile.Read(ref _displayAvailable) != 0,
+            () => Volatile.Read(ref _displayBrightnessRestorePending) != 0,
+            () => Volatile.Read(ref _disposed) != 0,
+            SetDeviceOperationError,
+            RequestDeviceRefresh,
+            rate => InternalDisplayRefreshRateChangedByUser?.Invoke(rate),
+            ApplyFirmwareMcuVersion,
+            () => Display!,
+            () => Fan!,
+            () => Lighting!,
+            () => Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)),
+            GetDeviceSerialAsync);
         Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
         Display = new DisplayWorkspace(
             internalDisplayController,
-            () => IsSelectedRefreshRatePowerActive,
-            () => EditableRefreshRateBladeProfile,
+            () => Blade.IsSelectedRefreshRatePowerActive,
+            () => Blade.EditableRefreshRateProfile,
             SaveProfileAsync,
             RunDeviceOperation,
             SetDisplayError,
@@ -134,7 +137,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SaveProfileAsync,
             Macros,
             ApplyProfileShortcuts,
-            () => _blade.PerformanceModes,
+            () => Blade.PerformanceModes,
             () => Display.InternalDisplayRefreshRates,
             () => _legacyPerformanceCycleModes,
             () => _legacyRefreshRateCycleHertz,
@@ -156,17 +159,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             performanceMonitor,
             () => _profile,
             document => _profile = document,
-            () => EditablePerformanceBladeProfile,
+            () => Blade.EditablePerformanceProfile,
             SaveProfileAsync,
-            RefreshBladePerformanceEditor,
+            Blade.RefreshPerformanceEditor,
             () => _deviceDescriptors,
             () => CurrentPowerSource,
-            () => IsSelectedPerformancePowerActive,
-            () => SelectedPerformancePowerState,
-            _blade,
-            () => BladePerformanceModeIndex,
-            () => CanSetBladeFan,
-            mode => SetBladePerformanceMode(mode, confirm: false),
+            () => Blade.IsSelectedPerformancePowerActive,
+            () => Blade.SelectedPerformancePowerState,
+            Blade.State,
+            () => Blade.PerformanceModeIndex,
+            () => Blade.CanSetFan,
+            mode => Blade.SetPerformanceMode(mode, confirm: false),
             _diagnosticLog,
             RunDeviceOperation,
             RequestDeviceRefresh);
@@ -177,7 +180,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => _deviceDescriptors,
             () => _profile,
             () => CurrentPowerSource,
-            () => UsesFirmwareKeyboardLighting,
+            () => Blade.UsesFirmwareKeyboardLighting,
             SetDisplayAvailableFlag,
             () => Volatile.Read(ref _displayAvailable) != 0,
             _deviceOperationGate,
@@ -185,7 +188,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SetDeviceOperationError,
             () => Fan.StopAsync("suspend"),
             SetOpenRazerChromaEnabled,
-            _blade);
+            Blade.State);
         OpenRazer = new OpenRazerWorkspace(
             openRazerDeviceService,
             openRazerSpecialLightingService,
@@ -205,23 +208,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    internal event Action<string?, ushort>? BladeControlDeviceChanged;
-    internal event Action<BladePerformanceMode>? BladePerformanceModeChangedByUser;
-    internal event Action<bool>? BladeGamingModeChangedByUser;
-    internal event Action<bool>? BladeTouchpadChangedByUser;
-    internal event Action<bool>? BladeOneTimeFullChargeChangedByUser;
     internal event Action<int>? InternalDisplayRefreshRateChangedByUser;
-    internal event Action? BladeInputProfileChanged;
-
-    internal IReadOnlySet<BladePerformanceMode> BladePerformanceCycleModes =>
-        _bladePerformanceCycleModes;
     internal IReadOnlySet<int>? InternalDisplayRefreshRateCycleHertz =>
         _internalDisplayRefreshRateCycleHertz;
-    internal bool ActiveSnapTapEnabled => _activeSnapTapEnabled;
-    internal string ActiveBladeMappingPreset => _activeBladeMappingPreset;
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<DeviceSelectorItemViewModel> DeviceSelectorItems { get; } = new();
+    public BladeWorkspace Blade { get; }
     public ThxAudioViewModel ThxAudio { get; }
     public MacroWorkspace Macros { get; }
     public OpenRazerWorkspace OpenRazer { get; }
@@ -387,7 +380,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         Interlocked.Exchange(ref _displayBrightnessRestorePending, 1);
         if (!available)
         {
-            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
+            Blade.OnDisplayAvailabilityChanged(false);
         }
     }
 
@@ -404,6 +397,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             ApplyDeviceTelemetry(telemetry);
         }
+        Blade.RefreshLocalization();
 
         foreach (var row in Devices)
         {
@@ -435,25 +429,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         await Telemetry.RefreshBatteryHealthAsync(cancellationToken);
         await RefreshDevicesAsync(cancellationToken);
         RefreshFirmwareVersions();
-        if (_blade._bladeGameModeState is byte gameMode)
-        {
-            try
-            {
-                SetBladeGameMode(await _deviceTelemetryReader.SetBladeGameModeAsync(
-                    _deviceDescriptors,
-                    gameMode != 0,
-                    cancellationToken));
-            }
-            catch (Exception exception) when (IsExpectedRuntimeException(exception))
-            {
-                _diagnosticLog.TryWrite(
-                    "device-operation",
-                    $"game mode indicator startup sync failed: {exception}");
-                SetDeviceOperationError(AppStrings.FormatText("LabeledError",
-                    AppStrings.Text("Text_BF98AC8A"),
-                    exception.Message));
-            }
-        }
+        await Blade.InitializeAsync(cancellationToken);
         if (Telemetry.IsSamplingEnabled)
         {
             await Telemetry.RefreshPerformanceAsync(cancellationToken);
@@ -481,15 +457,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SelectedHeadsetAudio = null;
         }
 
-        Task brightnessWriter;
-        lock (_bladeBrightnessGate)
-        {
-            _desiredBladeBrightness = null;
-            brightnessWriter = _bladeBrightnessWriter;
-        }
-        await brightnessWriter.ConfigureAwait(false);
-        Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
-        await _bladeBrightnessVerification.ConfigureAwait(false);
+        await Blade.DisposeAsync().ConfigureAwait(false);
         _ = await Fan.StopAsync("application-exit").ConfigureAwait(false);
         await Fan.DisposeAsync().ConfigureAwait(false);
     }
@@ -499,201 +467,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             _powerSourceProvider.IsPluggedIn,
             _lastDeviceTelemetry?.BladeAdapterPower);
 
-    private PowerSourceKind SelectedLightingPowerState => SelectedPowerSource(_bladeLightingPowerProfileIndex);
-    private PowerSourceKind SelectedPerformancePowerState => SelectedPowerSource(_bladePerformancePowerProfileIndex);
-    private PowerSourceKind SelectedRefreshRatePowerState => SelectedPowerSource(_bladeRefreshRatePowerProfileIndex);
-    private PowerSourceKind SelectedLogoPowerState => SelectedPowerSource(_bladeLogoPowerProfileIndex);
-
-    private PowerSourceKind SelectedPowerSource(int index) => index switch
-    {
-        1 => PowerSourceKind.FullPowerAdapter,
-        2 => PowerSourceKind.LowPowerAdapter,
-        3 => PowerSourceKind.Battery,
-        _ => CurrentPowerSource,
-    };
-
-    private bool IsSelectedLightingPowerActive =>
-        _bladeLightingPowerProfileIndex == 0 || SelectedLightingPowerState == CurrentPowerSource;
-
-    private bool IsSelectedPerformancePowerActive =>
-        _bladePerformancePowerProfileIndex == 0 || SelectedPerformancePowerState == CurrentPowerSource;
-
-    private bool IsSelectedRefreshRatePowerActive =>
-        _bladeRefreshRatePowerProfileIndex == 0 || SelectedRefreshRatePowerState == CurrentPowerSource;
-
-    private bool IsSelectedLogoPowerActive =>
-        _bladeLogoPowerProfileIndex == 0 || SelectedLogoPowerState == CurrentPowerSource;
-
-    private PowerProfileOverrides? SelectedLightingPowerOverrides => SelectedPowerOverrides(_bladeLightingPowerProfileIndex);
-    private PowerProfileOverrides? SelectedPerformancePowerOverrides => SelectedPowerOverrides(_bladePerformancePowerProfileIndex);
-    private PowerProfileOverrides? SelectedRefreshRatePowerOverrides => SelectedPowerOverrides(_bladeRefreshRatePowerProfileIndex);
-    private PowerProfileOverrides? SelectedLogoPowerOverrides => SelectedPowerOverrides(_bladeLogoPowerProfileIndex);
-
-    private PowerProfileOverrides? SelectedPowerOverrides(int index) => index switch
-    {
-        1 => GetActiveProfile().PluggedIn,
-        2 => GetActiveProfile().LowPowerAdapter,
-        3 => GetActiveProfile().OnBattery,
-        _ => CurrentPowerOverrides,
-    };
-
-    private PowerProfileOverrides? CurrentPowerOverrides => CurrentPowerSource switch
-    {
-        PowerSourceKind.FullPowerAdapter => GetActiveProfile().PluggedIn,
-        PowerSourceKind.LowPowerAdapter => GetActiveProfile().LowPowerAdapter,
-        PowerSourceKind.Battery => GetActiveProfile().OnBattery,
-        _ => null,
-    };
-
-    private BladeProfileSettings EditableLightingBladeProfile =>
-        SelectedLightingPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
-
-    private BladeProfileSettings EditablePerformanceBladeProfile =>
-        SelectedPerformancePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
-
-    private BladeProfileSettings EditableRefreshRateBladeProfile =>
-        SelectedRefreshRatePowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
-
-    private BladeProfileSettings EditableLogoBladeProfile =>
-        SelectedLogoPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
-
-    private LightingProfile EditableLightingProfile =>
-        SelectedLightingPowerOverrides?.Lighting ?? GetActiveProfile().Global.Lighting;
-
-    private void RefreshBladeLightingEditor()
-    {
-        if (_profile.Profiles.Count == 0)
-        {
-            return;
-        }
-
-        var blade = _deviceDescriptors.FirstOrDefault(device =>
-            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
-        var powerState = SelectedLightingPowerState;
-        var resolved = blade is null
-            ? null
-            : ProfileResolver.Resolve(_profile, blade, powerState);
-        var lighting = resolved?.Lighting ?? EditableLightingProfile;
-        var bladeProfile = resolved?.Blade ?? EditableLightingBladeProfile;
-        BladeLightingEnabled = bladeProfile.LightingEnabled ?? true;
-        BladeChromaOverrideEnabled = bladeProfile.ChromaOverrideEnabled ?? true;
-        var effect = BladeLightingEnabled
-            ? BladeLightingProfileCodec.Parse(lighting)
-            : BladeLightingEffect.Off;
-        SetBladeChromaAnimation(effect.ChromaAnimation);
-
-        // Index against the list this model actually renders; the full catalog would
-        // select an effect the 2023 generation does not offer.
-        var activeModes = ActiveBladeLightingModes;
-        var lightingIndex = activeModes.ToList().IndexOf(effect.Mode);
-        if (effect.Mode == BladeLightingMode.ChromaFile && effect.ChromaAnimation is null)
-        {
-            BladeLightingModeIndex = -1;
-        }
-        else if (lightingIndex >= 0)
-        {
-            BladeLightingModeIndex = lightingIndex;
-            BladeLightingRenderModeIndex = effect.Palette is not null ? 1 : 0;
-            BladeWaveDirectionIndex = Array.IndexOf(BladeWaveDirections, effect.Direction);
-            BladeLightingColor = Color.FromArgb(0xFF, effect.Color.Red, effect.Color.Green, effect.Color.Blue);
-            BladeLightingSecondColor = Color.FromArgb(
-                0xFF, effect.SecondColor.Red, effect.SecondColor.Green, effect.SecondColor.Blue);
-            var selectedPalette = effect.Palette;
-            if (selectedPalette is null && effect.Mode is
-                BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
-                BladeLightingMode.Wheel or BladeLightingMode.AudioMeter)
-            {
-                selectedPalette = BladeLightingPaletteResolver.GetDefault(effect.Mode);
-            }
-            if (selectedPalette is not null)
-            {
-                var palette = selectedPalette;
-                BladeLightingColor = Color.FromArgb(0xFF, palette.Colors[0].Red, palette.Colors[0].Green, palette.Colors[0].Blue);
-                BladeLightingSecondColor = Color.FromArgb(0xFF, palette.Colors[Math.Min(1, palette.Colors.Count - 1)].Red,
-                    palette.Colors[Math.Min(1, palette.Colors.Count - 1)].Green, palette.Colors[Math.Min(1, palette.Colors.Count - 1)].Blue);
-                BladeLightingTertiaryColor = Color.FromArgb(0xFF, palette.Colors[Math.Min(2, palette.Colors.Count - 1)].Red,
-                    palette.Colors[Math.Min(2, palette.Colors.Count - 1)].Green, palette.Colors[Math.Min(2, palette.Colors.Count - 1)].Blue);
-            }
-            BladeReactiveSpeedIndex = Array.IndexOf(BladeReactiveSpeeds, effect.ReactiveSpeed);
-            BladeStarlightSpeedIndex = Array.IndexOf(BladeStarlightSpeeds, effect.StarlightSpeed);
-            BladeStarlightColorModeIndex = (int)effect.StarlightColorMode;
-            BladeAnimationSpeedIndex = Array.IndexOf(BladeAnimationSpeeds, effect.AnimationSpeed);
-        }
-
-        if (bladeProfile.KeyboardBrightness is byte brightness)
-        {
-            SetBladeBrightness(brightness, confirm: false);
-        }
-    }
-
-    private void RefreshBladePerformanceEditor()
-    {
-        if (_profile.Profiles.Count == 0)
-        {
-            return;
-        }
-
-        var blade = _deviceDescriptors.FirstOrDefault(device =>
-            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
-        var powerState = SelectedPerformancePowerState;
-        var bladeProfile = blade is null
-            ? EditablePerformanceBladeProfile
-            : ProfileResolver.Resolve(_profile, blade, powerState).Blade;
-        if (bladeProfile.PerformanceMode is byte rawPerformanceMode &&
-            Enum.IsDefined(typeof(BladePerformanceMode), rawPerformanceMode))
-        {
-            SetBladePerformanceMode((BladePerformanceMode)rawPerformanceMode, confirm: false);
-        }
-
-        // Restore the Max Fan toggle from the same resolved profile, so the switch shows
-        // the configured value instead of only the last value read back from the device.
-        if (bladeProfile.MaxFanMode is byte rawMaxFan &&
-            Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
-        {
-            SetBladeMaxFan((BladeMaxFanMode)rawMaxFan);
-        }
-
-        Fan.RefreshBladeFanCurveEditor();
-    }
-
-    private void RefreshBladeLogoEditor()
-    {
-        if (_profile.Profiles.Count == 0)
-        {
-            return;
-        }
-
-        var blade = _deviceDescriptors.FirstOrDefault(device =>
-            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
-        var powerState = SelectedLogoPowerState;
-        var bladeProfile = blade is null
-            ? EditableLogoBladeProfile
-            : ProfileResolver.Resolve(_profile, blade, powerState).Blade;
-        if (bladeProfile.LogoMode is byte rawLogoMode &&
-            Enum.IsDefined(typeof(BladeLogoMode), (int)rawLogoMode))
-        {
-            SetBladeLogo((BladeLogoMode)rawLogoMode, confirm: false);
-        }
-    }
-
     internal async Task InitializeProfileAsync(CancellationToken cancellationToken = default)
     {
         await Profiles.LoadAsync(cancellationToken);
         Macros.InitializeMacroRuntime();
         RefreshFirmwareVersions();
-    }
-
-    private void RefreshInternalDisplayRateEditor()
-    {
-        var configured = EditableRefreshRateBladeProfile.RefreshRateHertz;
-        if (configured is int hertz && Display.InternalDisplayRefreshRates.Contains(hertz))
-        {
-            Display.InternalDisplayRefreshRateHertz = hertz;
-        }
-        else
-        {
-            Display.RaiseRefreshRateIndexChanged();
-        }
     }
 
     private static string FormatOperationException(Exception exception)
@@ -706,20 +484,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             exceptions
                 .Select(error => error.Message)
                 .Where(message => !string.IsNullOrWhiteSpace(message)));
-    }
-
-    private void SetBladeControlDevicePath(string? value, ushort productId)
-    {
-        if (StringComparer.OrdinalIgnoreCase.Equals(_bladeControlDevicePath, value) &&
-            _bladeControlProductId == productId)
-        {
-            return;
-        }
-
-        _bladeControlDevicePath = value;
-        _bladeControlProductId = productId;
-        SetBladeFilterDriverMissing(false);
-        BladeControlDeviceChanged?.Invoke(value, productId);
     }
 
     private static string FormatDeviceStatus(DeviceDescriptor? device) => device switch

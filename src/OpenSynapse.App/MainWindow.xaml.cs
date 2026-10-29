@@ -59,8 +59,8 @@ public sealed partial class MainWindow : Window
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _viewModel.Macros.SetMacroDispatcher(_dispatcherQueue);
         _viewModel.Macros.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
-        _viewModel.SetPadlessHyperBoostConfirmation(ConfirmPadlessHyperBoostAsync);
-        _viewModel.SetPadlessHyperBoostAccepted(_behaviorSettings.PadlessHyperBoostAccepted);
+        _viewModel.Blade.SetPadlessHyperBoostConfirmation(ConfirmPadlessHyperBoostAsync);
+        _viewModel.Blade.SetPadlessHyperBoostAccepted(_behaviorSettings.PadlessHyperBoostAccepted);
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(BladeBrightnessPointerPressed),
@@ -101,6 +101,7 @@ public sealed partial class MainWindow : Window
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.OpenRazer.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.Blade.PropertyChanged += OnViewModelPropertyChanged;
         WindowAppearance.Apply(this);
         ApplyDarkTheme();
         ApplyTitleBarColors(launchOverlayActive: true);
@@ -349,6 +350,7 @@ public sealed partial class MainWindow : Window
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.OpenRazer.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.Blade.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
         ShutdownDisplayPowerNotification();

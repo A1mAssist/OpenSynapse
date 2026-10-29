@@ -8,9 +8,9 @@
       "maxPublicMembers": 95
     },
     {
-      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Blade.cs",
-      "maxLines": 1924,
-      "maxPublicMembers": 153
+      "path": "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs",
+      "maxLines": 3041,
+      "maxPublicMembers": 168
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/OpenRazerDeviceService.cs",
@@ -213,8 +213,8 @@
   "groups": [
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
-        "maxLines": 7937,
-        "maxPublicMembers": 376
+        "maxLines": 2897,
+        "maxPublicMembers": 118
     }
   ]
 }

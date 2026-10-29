@@ -46,8 +46,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(PrimaryDevices));
         OnPropertyChanged(nameof(AdditionalDevices));
         OnPropertyChanged(nameof(ConnectedDevices));
-        OnPropertyChanged(nameof(BladeProtocolText));
-        OnPropertyChanged(nameof(BladeIdentityText));
+        Blade.RefreshDeviceOverview();
         OnPropertyChanged(nameof(ViperProtocolText));
         OnPropertyChanged(nameof(ViperIdentityText));
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
@@ -60,7 +59,7 @@ public sealed partial class MainViewModel
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Blade,
-                BladeDeviceName,
+                Blade.DeviceName,
                 "\uE7F8"));
         }
         if (ViperDeviceVisibility == Microsoft.UI.Xaml.Visibility.Visible)
