@@ -107,7 +107,7 @@ public sealed partial class MainWindow
         _viewModel.Lighting.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = _behaviorSettings.RestoreLightingAfterChromaSession;
         RefreshChromaRestStatus();
-        var performanceAvailable = _viewModel.IsBladePerformanceModeAvailable(BladePerformanceMode.Performance);
+        var performanceAvailable = _viewModel.Blade.IsPerformanceModeAvailable(BladePerformanceMode.Performance);
         PerformanceCyclePerformanceCheckBox.Visibility =
             performanceAvailable ? Visibility.Visible : Visibility.Collapsed;
         if (!performanceAvailable)
@@ -118,7 +118,7 @@ public sealed partial class MainWindow
         {
             checkBox.IsChecked = checkBox.Tag is string tag &&
                 Enum.TryParse<BladePerformanceMode>(tag, out var mode) &&
-                _viewModel.BladePerformanceCycleModes.Contains(mode);
+                _viewModel.Blade.PerformanceCycleModes.Contains(mode);
         }
         RebuildRefreshRateCycleOptions();
         _behaviorUiReady = true;
@@ -417,7 +417,7 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (!await _viewModel.SavePerformanceCycleModesAsync(selected, _lifetime.Token))
+        if (!await _viewModel.Blade.SavePerformanceCycleModesAsync(selected, _lifetime.Token))
         {
             _behaviorUiReady = false;
             InitializeBehaviorSettingsUi();

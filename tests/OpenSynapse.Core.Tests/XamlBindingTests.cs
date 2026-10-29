@@ -44,6 +44,7 @@ public sealed class XamlBindingTests
         ["Fan"] = "src/OpenSynapse.App/ViewModels/FanWorkspace.cs",
         ["Display"] = "src/OpenSynapse.App/ViewModels/DisplayWorkspace.cs",
         ["Lighting"] = "src/OpenSynapse.App/ViewModels/LightingWorkspace.cs",
+        ["Blade"] = "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs",
     };
 
     /// <summary>

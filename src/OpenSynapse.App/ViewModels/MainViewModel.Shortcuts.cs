@@ -9,7 +9,7 @@ public sealed partial class MainViewModel
         IEnumerable<BladePerformanceMode> performanceModes,
         IEnumerable<int>? refreshRates)
     {
-        var available = _blade.PerformanceModes;
+        var available = Blade.PerformanceModes;
         _legacyPerformanceCycleModes = performanceModes
             .Where(available.Contains)
             .Distinct()
@@ -21,16 +21,6 @@ public sealed partial class MainViewModel
             .ToArray();
     }
 
-    internal void SetBladePerformanceCycleModes(IEnumerable<BladePerformanceMode> modes)
-    {
-        var selected = modes.Where(_blade.PerformanceModes.Contains).ToHashSet();
-        if (selected.Count == 0)
-        {
-            throw new ArgumentException("At least one performance mode must remain in the shortcut cycle.", nameof(modes));
-        }
-        _bladePerformanceCycleModes = selected;
-    }
-
     internal void SetInternalDisplayRefreshRateCycle(IEnumerable<int> refreshRates)
     {
         var selected = refreshRates.Where(hertz => hertz > 0).ToHashSet();
@@ -39,30 +29,6 @@ public sealed partial class MainViewModel
             throw new ArgumentException("At least one refresh rate must remain in the shortcut cycle.", nameof(refreshRates));
         }
         _internalDisplayRefreshRateCycleHertz = selected;
-    }
-
-    internal async Task<bool> SavePerformanceCycleModesAsync(
-        IEnumerable<BladePerformanceMode> modes,
-        CancellationToken cancellationToken = default)
-    {
-        var selected = modes.Where(_blade.PerformanceModes.Contains).Distinct().ToArray();
-        if (selected.Length == 0)
-        {
-            return false;
-        }
-
-        var previous = _bladePerformanceCycleModes;
-        _bladePerformanceCycleModes = selected.ToHashSet();
-        GetActiveProfile().Shortcuts.PerformanceCycleModes = selected.ToList();
-        if (await SaveProfileAsync(cancellationToken))
-        {
-            OnPropertyChanged(nameof(BladePerformanceCycleModes));
-            return true;
-        }
-
-        _bladePerformanceCycleModes = previous;
-        GetActiveProfile().Shortcuts.PerformanceCycleModes = previous.ToList();
-        return false;
     }
 
     internal async Task<bool> SaveRefreshRateCycleAsync(
@@ -89,17 +55,4 @@ public sealed partial class MainViewModel
         return false;
     }
 
-    internal async Task SetBladeSnapTapEnabledAsync(
-        bool enabled,
-        CancellationToken cancellationToken = default)
-    {
-        var previous = _profile.Global.Blade.SnapTapEnabled;
-        _profile.Global.Blade.SnapTapEnabled = enabled;
-        if (!await SaveProfileAsync(cancellationToken))
-        {
-            _profile.Global.Blade.SnapTapEnabled = previous;
-            return;
-        }
-        _activeSnapTapEnabled = enabled;
-    }
 }
