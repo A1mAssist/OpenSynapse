@@ -244,7 +244,15 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         device.VendorId == RazerVendorId &&
         device.ProductId != 0 &&
         device.InputReportByteLength > 0 &&
-        device.UsagePage is 0x0000 or 0x0080;
+        device.UsagePage is 0x0000 or 0x0080 &&
+        // Blade keyboards publish every M-key, Fn shortcut and the microphone indicator
+        // as report 4 on MI_01 Col04/Col05. The Product 710 filter runtime owns that
+        // stream, and a second reader takes the reports away from it.
+        !IsBladeVendorEventCollection(device.DevicePath);
+
+    private static bool IsBladeVendorEventCollection(string path) =>
+        path.Contains("&MI_01&COL04#", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("&MI_01&COL05#", StringComparison.OrdinalIgnoreCase);
 
     private void DisposeStreams()
     {
