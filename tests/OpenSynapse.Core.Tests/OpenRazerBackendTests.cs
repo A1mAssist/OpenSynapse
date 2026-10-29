@@ -971,6 +971,17 @@ public sealed class OpenRazerBackendTests
         Assert.Equal("len=1, args=0004000000000000", RazerFeatureTransport.DescribeResponseArguments(response));
     }
 
+    [Theory]
+    [InlineData(0x01, 0x83, true)]
+    [InlineData(0x01, 0x03, false)]
+    [InlineData(0x02, 0x83, false)]
+    public void BusyResponsesAreRetriedOnlyForReads(int status, int commandId, bool retry)
+    {
+        Assert.Equal(
+            retry,
+            RazerFeatureTransport.IsRetryableBusyResponse((byte)status, (byte)commandId));
+    }
+
     [Fact]
     public void RejectedCollectionDescriptionNamesThePathAndDescriptor()
     {
