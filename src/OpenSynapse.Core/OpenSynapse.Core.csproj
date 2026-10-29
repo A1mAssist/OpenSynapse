@@ -7,4 +7,8 @@
     <RootNamespace>OpenSynapse.Core</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="OpenSynapse.Core.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 2,
+  "id": "blade-0239",
+  "displayName": "Razer Blade Stealth (2019)",
+  "vendorId": "1532",
+  "productIds": [
+    "0239"
+  ],
+  "collection": {
+    "usagePage": "0001",
+    "usage": "0002",
+    "featureReportLength": 91
+  },
+  "protocolFamily": "blade-671",
+  "category": "laptop",
+  "transport": {
+    "waitMilliseconds": 2
+  },
+  "capabilities": {
+    "thermal-state.get": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "82",
+      "arguments": ""
+    },
+    "thermal-state.set": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "fan-target.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "81",
+      "arguments": ""
+    },
+    "current-fan-rpm.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "88",
+      "arguments": ""
+    },
+    "boost.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "87",
+      "arguments": ""
+    },
+    "boost.set": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "07",
+      "arguments": ""
+    },
+    "charge-limit.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "92",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "12",
+      "arguments": ""
+    },
+    "power-mode.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "8F",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "power-mode.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "0F",
+      "arguments": ""
+    },
+    "keyboard-brightness.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "83",
+      "arguments": "010500",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-brightness.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "03",
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-effect.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "0F",
+      "commandId": "82",
+      "arguments": "010500",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-effect.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "0F",
+      "commandId": "02",
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
+    },
+    "gaming-mode.set": {
+      "transactionId": "00",
+      "dataSize": "04",
+      "commandClass": "00",
+      "commandId": "08",
+      "arguments": ""
+    }
+  }
+}

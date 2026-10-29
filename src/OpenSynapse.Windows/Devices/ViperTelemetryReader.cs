@@ -3,8 +3,40 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-public sealed partial class RazerDeviceTelemetryReader
+internal sealed class ViperTelemetryReader
 {
+    private readonly RazerDeviceResolver _resolver;
+    private readonly RazerCapabilityClient _client;
+
+    public ViperTelemetryReader(RazerDeviceResolver resolver, RazerCapabilityClient client)
+    {
+        _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+    }
+
+    public void ResetValidation() => _validatedViperButtonMappingsPath = null;
+
+    public async ValueTask<byte> SetViperBatteryChemistryAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        byte chemistry,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(typeof(ViperBatteryChemistry), chemistry))
+        {
+            throw new ArgumentOutOfRangeException(nameof(chemistry));
+        }
+
+        var viper = _resolver.FindReadyDevice(devices, "viper-184")
+            ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
+        await _client.QueryBuiltRequestAsync(
+            viper,
+            "battery-chemistry.set",
+            ViperProduct184Protocol.CreateSetBatteryChemistryRequest(
+                (ViperBatteryChemistry)chemistry),
+            cancellationToken);
+        return chemistry;
+    }
+
     private delegate byte ViperObmByteParser(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request);
@@ -26,8 +58,8 @@ public sealed partial class RazerDeviceTelemetryReader
         await _viperButtonMappingTransactionGate.WaitAsync(cancellationToken);
         try
         {
-            _validatedViperButtonMappingsPath = null;
-            var viper = FindReadyDevice(devices, "viper-184")
+            ResetValidation();
+            var viper = _resolver.FindReadyDevice(devices, "viper-184")
                 ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
 
             await ValidateViperProduct184MetadataAsync(viper, cancellationToken);
@@ -53,9 +85,9 @@ public sealed partial class RazerDeviceTelemetryReader
         await _viperButtonMappingTransactionGate.WaitAsync(cancellationToken);
         try
         {
-            var viper = FindReadyDevice(devices, "viper-184")
+            var viper = _resolver.FindReadyDevice(devices, "viper-184")
                 ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
-            EnsureValidated(
+            RazerCapabilityClient.EnsureValidated(
                 _validatedViperButtonMappingsPath,
                 viper.Descriptor.Id,
                 "Read the current mouse profile, button IDs, and all 16 onboard mappings first.");
@@ -86,7 +118,7 @@ public sealed partial class RazerDeviceTelemetryReader
                 return ToPublicAssignment(actual);
             }
             catch (Exception exception) when (
-                IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+                RazerCapabilityClient.IsExpectedHardwareException(exception) || exception is OperationCanceledException)
             {
                 var restorationError = await RestoreViperObmAssignmentAsync(
                     viper, original, originalSibling);
@@ -123,7 +155,7 @@ public sealed partial class RazerDeviceTelemetryReader
         try
         {
             _validatedViperButtonMappingsPath = null;
-            var viper = FindReadyDevice(devices, "viper-184")
+            var viper = _resolver.FindReadyDevice(devices, "viper-184")
                 ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
             await ValidateViperProduct184MetadataAsync(viper, cancellationToken);
 
@@ -157,7 +189,7 @@ public sealed partial class RazerDeviceTelemetryReader
                 return final.Select(ToPublicAssignment).ToArray();
             }
             catch (Exception exception) when (
-                IsExpectedHardwareException(exception) || exception is OperationCanceledException)
+                RazerCapabilityClient.IsExpectedHardwareException(exception) || exception is OperationCanceledException)
             {
                 var restorationError = await RestoreViperObmAssignmentBatchAsync(
                     viper, original, attempted);
@@ -184,7 +216,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task ValidateViperProduct184MetadataAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
         var maximumProfiles = await ReadViperObmByteAsync(
@@ -224,7 +256,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task<byte> ReadViperObmByteAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         string capabilityId,
         byte[] builtRequest,
         ViperObmByteParser parser,
@@ -236,7 +268,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task<byte[]> ReadViperObmIdsAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         string capabilityId,
         byte[] builtRequest,
         ViperObmIdsParser parser,
@@ -248,7 +280,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task<ViperObmAssignment> ReadViperObmAssignmentAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         byte buttonId,
         ViperObmMappingMode mode,
         CancellationToken cancellationToken)
@@ -263,7 +295,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task<IReadOnlyList<ViperObmAssignment>> ReadAllViperObmAssignmentsAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
         var assignments = new List<ViperObmAssignment>(ViperProduct184ButtonIds.Length * 2);
@@ -278,7 +310,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task WriteViperObmAssignmentAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         ViperObmAssignment assignment,
         CancellationToken cancellationToken)
     {
@@ -290,13 +322,13 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task<(byte[] Request, byte[] Response)> QueryViperObmAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         string capabilityId,
         byte[] builtRequest,
         CancellationToken cancellationToken)
     {
-        var request = CreateConfiguredRequest(device, capabilityId, builtRequest);
-        var response = await QueryCapabilityAsync(
+        var request = RazerCapabilityClient.CreateConfiguredRequest(device, capabilityId, builtRequest);
+        var response = await _client.QueryAsync(
             device,
             capabilityId,
             request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
@@ -306,7 +338,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task<string?> RestoreViperObmAssignmentAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         ViperObmAssignment original,
         ViperObmAssignment originalSibling)
     {
@@ -315,7 +347,7 @@ public sealed partial class RazerDeviceTelemetryReader
         {
             await WriteViperObmAssignmentAsync(device, original, CancellationToken.None);
         }
-        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
         {
             errors.Add("Restore write failed: " + exception.Message);
         }
@@ -326,7 +358,7 @@ public sealed partial class RazerDeviceTelemetryReader
                 device, original.ButtonId, original.Mode, CancellationToken.None);
             EnsureAssignmentsEqual(original, restored, "restored target layer");
         }
-        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
         {
             errors.Add("Restored target-layer readback failed: " + exception.Message);
         }
@@ -337,7 +369,7 @@ public sealed partial class RazerDeviceTelemetryReader
                 device, originalSibling.ButtonId, originalSibling.Mode, CancellationToken.None);
             EnsureAssignmentsEqual(originalSibling, sibling, "restored sibling-layer isolation");
         }
-        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
         {
             errors.Add("Sibling-layer readback failed: " + exception.Message);
         }
@@ -346,7 +378,7 @@ public sealed partial class RazerDeviceTelemetryReader
     }
 
     private async Task<string?> RestoreViperObmAssignmentBatchAsync(
-        ReadyDevice device,
+        ResolvedRazerDevice device,
         IReadOnlyList<ViperObmAssignment> original,
         IReadOnlyList<ViperObmAssignment> attempted)
     {
@@ -357,7 +389,7 @@ public sealed partial class RazerDeviceTelemetryReader
             {
                 await WriteViperObmAssignmentAsync(device, assignment, CancellationToken.None);
             }
-            catch (Exception exception) when (IsExpectedHardwareException(exception))
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
             {
                 errors.Add($"Restore write for {FormatAssignment(assignment)} failed: {exception.Message}");
             }
@@ -375,10 +407,11 @@ public sealed partial class RazerDeviceTelemetryReader
                     "batch restore");
             }
         }
-        catch (Exception exception) when (IsExpectedHardwareException(exception))
+        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
         {
             errors.Add("Complete restore readback failed: " + exception.Message);
         }
+
 
         return errors.Count == 0 ? null : string.Join(" ", errors);
     }
@@ -530,3 +563,4 @@ public sealed partial class RazerDeviceTelemetryReader
         $"profile={assignment.ProfileId},button={assignment.ButtonId},mode={assignment.Mode}," +
         $"function={assignment.Function},data={Convert.ToHexString(assignment.FunctionData.ToArray())}";
 }
+

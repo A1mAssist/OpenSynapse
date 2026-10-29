@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 2,
+  "id": "blade-0240",
+  "displayName": "Razer Blade 15 (2018) Mercury",
+  "vendorId": "1532",
+  "productIds": [
+    "0240"
+  ],
+  "collection": {
+    "usagePage": "0001",
+    "usage": "0002",
+    "featureReportLength": 91
+  },
+  "protocolFamily": "blade-597",
+  "category": "laptop",
+  "transport": {
+    "waitMilliseconds": 2
+  },
+  "capabilities": {
+    "thermal-state.get": {
+      "transactionId": "01",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "82",
+      "arguments": ""
+    },
+    "thermal-state.set": {
+      "transactionId": "01",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "keyboard-brightness.get": {
+      "transactionId": "01",
+      "dataSize": "03",
+      "commandClass": "0F",
+      "commandId": "84",
+      "arguments": "0105",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-brightness.set": {
+      "transactionId": "01",
+      "dataSize": "03",
+      "commandClass": "0F",
+      "commandId": "04",
+      "arguments": ""
+    },
+    "charge-limit.get": {
+      "transactionId": "01",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "92",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.set": {
+      "transactionId": "01",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "12",
+      "arguments": ""
+    }
+  }
+}

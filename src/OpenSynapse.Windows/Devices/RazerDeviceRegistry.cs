@@ -96,7 +96,10 @@ internal sealed class RazerDeviceRegistry
                 ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
                 ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
                 ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
+                ["gaming-mode.get"] = new(0x04, 0x00, 0x88, "", AllowZeroTransactionId: true),
                 ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                ["startup-animation.get"] = new(0x01, 0x0F, 0x98, "00"),
+                ["startup-animation.set"] = new(0x02, 0x0F, 0x18, ""),
                 ["keyboard-brightness.get"] = new(0x03, 0x03, 0x83, "010500", true),
                 ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
                 ["keyboard-effect.get"] = new(0x03, 0x0F, 0x82, "010500", true),
@@ -161,7 +164,8 @@ internal sealed class RazerDeviceRegistry
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys
                 .Where(capability => capability is not ("adapter-power.get" or
                     "display-mux.get" or "display-mux.set" or "display-mux-capabilities.get" or
-                    "sku-hardware-configuration.get"))
+                    "sku-hardware-configuration.get" or
+                    "gaming-mode.get" or "startup-animation.get" or "startup-animation.set"))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
@@ -194,6 +198,13 @@ internal sealed class RazerDeviceRegistry
 
     internal static RazerDeviceRegistry BuiltIn => BuiltInValue.Value;
     internal IReadOnlyList<RazerDeviceManifest> Manifests { get; }
+
+    internal static IReadOnlyDictionary<string, IReadOnlySet<string>> FamilyRequirements =>
+        FamilyRequiredCapabilities;
+
+    internal static bool FamilyContractContains(string protocolFamily, string capabilityId) =>
+        FamilyCapabilities.TryGetValue(protocolFamily, out var contracts) &&
+        contracts.ContainsKey(capabilityId);
 
     internal RazerDeviceManifest? Find(ushort vendorId, ushort productId) =>
         _devices.GetValueOrDefault((vendorId, productId));
