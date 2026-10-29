@@ -12,6 +12,8 @@ artifacts/
 docs/
 !docs/
 docs/*
+!docs/ARCHITECTURE.md
+!docs/MAINTAINABILITY-PLAN.md
 !docs/CHROMA_SUPPORTED_DEVICES.md
 !docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md
 !docs/NOTIFICATIONS_AND_CHROMA_SOURCES.md

@@ -2,6 +2,8 @@
 
 本文是 OpenSynapse 第 0 步重构的架构基线。它约束三件事：程序集之间能依赖什么、设备能力由哪几层共同决定、OpenRazer 与 middleware 两套后端在哪里汇合。后续改动应先满足这里的边界，再讨论具体型号和命令。
 
+结构与预算的后续治理（棘轮检查、`MainViewModel` 与 XAML 的拆分顺序、仓库行为规范）见 [`docs/MAINTAINABILITY-PLAN.md`](MAINTAINABILITY-PLAN.md)。
+
 ## 基线
 
 | 项目 | 值 |
@@ -9,7 +11,7 @@
 | 基线日期 | 2026-10-29 |
 | 分支 | `main` |
 | 构建 | `dotnet build src\OpenSynapse.App\OpenSynapse.App.csproj -c Release -r win-x64 --no-restore` → 0 警告，0 错误 |
-| 测试 | `dotnet test tests\OpenSynapse.Core.Tests\OpenSynapse.Core.Tests.csproj -c Release --no-restore` → 1634 个测试，1634 通过，0 失败，0 跳过 |
+| 测试 | `dotnet test tests\OpenSynapse.Core.Tests\OpenSynapse.Core.Tests.csproj -c Release --no-restore` → 1643 个测试，1643 通过，0 失败，0 跳过 |
 | Blade manifest | `BladeModelCapabilities` 的 39 个 PID 都有内建 manifest |
 
 测试前需要清空 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 及其小写形式，并设置 `NO_PROXY=no_proxy=127.0.0.1,localhost`；否则 Chroma 测试会尝试走本机代理 `127.0.0.1:7890`。
