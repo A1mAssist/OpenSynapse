@@ -1685,7 +1685,7 @@
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>Automatic (firmware)</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO is not installed, so the CPU power wall cannot be read or written.</value></data>
-  <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>IntelMSR.bin is missing; redeploy OpenSynapse.</value></data>
+  <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>A PawnIO module file is missing (IntelMSR.bin / RyzenSMU.bin); redeploy OpenSynapse.</value></data>
   <data name="CpuPowerLimitAccessDenied" xml:space="preserve"><value>Administrator rights or the OpenSynapse machine service is required.</value></data>
   <data name="CpuPowerLimitUnavailable" xml:space="preserve"><value>The CPU power wall could not be read.</value></data>
   <data name="CpuPowerLimitChecking" xml:space="preserve"><value>Reading the power wall…</value></data>

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
 using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Windows.Devices;
@@ -9,7 +8,7 @@ namespace OpenSynapse.Windows.Devices;
 /// Reads and writes the Intel RAPL package power wall through PawnIO. The controller
 /// keeps one executor for its lifetime and never hardcodes the register units.
 /// </summary>
-public sealed class CpuPowerLimitController : IDisposable
+public sealed class CpuPowerLimitController : ICpuPowerLimitController
 {
     private const uint UnitMsr = 0x606;
     private const uint PowerLimitMsr = 0x610;
@@ -62,12 +61,12 @@ public sealed class CpuPowerLimitController : IDisposable
     /// through the machine service; every other result is final.
     /// </summary>
     public static CpuPowerLimitAvailability TryOpen(
-        out CpuPowerLimitController? controller,
+        out ICpuPowerLimitController? controller,
         out string? detail)
     {
         controller = null;
 
-        if (IsAmdCpu(out var processorName))
+        if (CpuVendor.IsAmd(out var processorName))
         {
             detail = $"CPU power limits require an Intel CPU ({processorName}).";
             return CpuPowerLimitAvailability.Failed;
@@ -342,28 +341,6 @@ public sealed class CpuPowerLimitController : IDisposable
             NativeLibrary.GetExport(library, name));
 
     private static string FormatResult(int hresult) => $"0x{(uint)hresult:X8}";
-
-    /// <summary>Intel RAPL is Intel-only; AMD's SMU mailbox is a different channel.</summary>
-    private static bool IsAmdCpu(out string? processorName)
-    {
-        try
-        {
-            using var key = Registry.LocalMachine.OpenSubKey(
-                @"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
-            processorName = (key?.GetValue("ProcessorNameString") as string)?.Trim();
-            return processorName is not null &&
-                (processorName.Contains("AMD", StringComparison.OrdinalIgnoreCase) ||
-                 processorName.Contains("Ryzen", StringComparison.OrdinalIgnoreCase) ||
-                 processorName.Contains("EPYC", StringComparison.OrdinalIgnoreCase) ||
-                 processorName.Contains("Threadripper", StringComparison.OrdinalIgnoreCase));
-        }
-        catch (Exception exception) when (
-            exception is System.Security.SecurityException or UnauthorizedAccessException or IOException)
-        {
-            processorName = null;
-            return false;
-        }
-    }
 
     private static void ThrowIfLocked(ulong register)
     {

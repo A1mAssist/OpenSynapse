@@ -2054,7 +2054,7 @@
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>自动（固件）</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>未安装 PawnIO，无法读写 CPU 功耗墙。</value></data>
-  <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>缺少 IntelMSR.bin，请重新部署 OpenSynapse。</value></data>
+  <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>缺少 PawnIO 模块文件（IntelMSR.bin / RyzenSMU.bin），请重新部署 OpenSynapse。</value></data>
   <data name="CpuPowerLimitAccessDenied" xml:space="preserve"><value>需要管理员权限，或安装 OpenSynapse 机器服务。</value></data>
   <data name="CpuPowerLimitUnavailable" xml:space="preserve"><value>无法读取 CPU 功耗墙。</value></data>
   <data name="CpuPowerLimitChecking" xml:space="preserve"><value>正在读取功耗墙…</value></data>
