@@ -42,6 +42,18 @@ public sealed class BladeCpuPowerBoostTests
     }
 
     [Theory]
+    [InlineData(0x00, BladeMaxFanMode.Enabled, 0x02)]
+    [InlineData(0x01, BladeMaxFanMode.Enabled, 0x03)]
+    [InlineData(0x05, BladeMaxFanMode.Enabled, 0x07)]
+    [InlineData(0x0F, BladeMaxFanMode.Disabled, 0x0D)]
+    public void MaxFanWriteLeavesTheOtherPowerBitsAlone(byte original, BladeMaxFanMode mode, byte expected)
+    {
+        var request = BladePowerModeProtocol.CreateSetRequest(mode, original);
+
+        Assert.Equal(expected, request[RazerFeatureReport.ArgumentsOffset]);
+    }
+
+    [Theory]
     [InlineData(0x028C, true)]
     [InlineData(0x029D, true)]
     [InlineData(0x02B6, true)]
