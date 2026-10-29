@@ -30,7 +30,7 @@ internal sealed class ViperTelemetryReader
             ?? throw new InvalidOperationException("The Viper control channel is unavailable.");
         await _client.QueryBuiltRequestAsync(
             viper,
-            "battery-chemistry.set",
+            CapabilityIds.BatteryChemistrySet,
             ViperProduct184Protocol.CreateSetBatteryChemistryRequest(
                 (ViperBatteryChemistry)chemistry),
             cancellationToken);
@@ -221,25 +221,25 @@ internal sealed class ViperTelemetryReader
     {
         var maximumProfiles = await ReadViperObmByteAsync(
             device,
-            "obm-maximum-profiles.get",
+            CapabilityIds.ObmMaximumProfilesGet,
             ViperObmProtocol.CreateGetMaximumProfilesRequest(),
             ViperObmProtocol.ParseMaximumProfiles,
             cancellationToken);
         var profileCount = await ReadViperObmByteAsync(
             device,
-            "obm-profile-count.get",
+            CapabilityIds.ObmProfileCountGet,
             ViperObmProtocol.CreateGetProfileCountRequest(),
             ViperObmProtocol.ParseProfileCount,
             cancellationToken);
         var profileIds = await ReadViperObmIdsAsync(
             device,
-            "obm-profile-ids.get",
+            CapabilityIds.ObmProfileIdsGet,
             ViperObmProtocol.CreateGetProfileIdsRequest(),
             ViperObmProtocol.ParseProfileIds,
             cancellationToken);
         var buttonIds = await ReadViperObmIdsAsync(
             device,
-            "obm-button-ids.get",
+            CapabilityIds.ObmButtonIdsGet,
             ViperObmProtocol.CreateGetButtonIdsRequest(),
             ViperObmProtocol.ParseButtonIds,
             cancellationToken);
@@ -287,7 +287,7 @@ internal sealed class ViperTelemetryReader
     {
         var (request, response) = await QueryViperObmAsync(
             device,
-            "obm-assignment.get",
+            CapabilityIds.ObmAssignmentGet,
             ViperObmProtocol.CreateGetAssignmentRequest(ViperProduct184ProfileId, buttonId, mode),
             cancellationToken);
         return ViperObmProtocol.ParseAssignment(
@@ -316,7 +316,7 @@ internal sealed class ViperTelemetryReader
     {
         _ = await QueryViperObmAsync(
             device,
-            "obm-assignment.set",
+            CapabilityIds.ObmAssignmentSet,
             ViperObmProtocol.CreateSetAssignmentRequest(assignment),
             cancellationToken);
     }

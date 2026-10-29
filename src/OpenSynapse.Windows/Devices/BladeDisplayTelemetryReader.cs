@@ -89,7 +89,7 @@ internal sealed class BladeDisplayTelemetryReader
 
         var blade = _resolver.FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade keyboard control channel is unavailable.");
-        if (!blade.Owns("keyboard-effect.set"))
+        if (!blade.Owns(CapabilityIds.KeyboardEffectSet))
         {
             throw new InvalidOperationException(
                 "Firmware-rendered keyboard effects are not available on this Blade model.");
@@ -101,7 +101,7 @@ internal sealed class BladeDisplayTelemetryReader
             "Read the Blade keyboard effect successfully first.");
 
         var original = BladeLighting2023Protocol.ParseEffect(
-            await _client.QueryAsync(blade, "keyboard-effect.get", cancellationToken));
+            await _client.QueryAsync(blade, CapabilityIds.KeyboardEffectGet, cancellationToken));
         if (original == effect)
         {
             return original;
@@ -115,10 +115,10 @@ internal sealed class BladeDisplayTelemetryReader
             BladeLighting2023Effect.Wave => BladeLighting2023Protocol.CreateWaveRequest(),
             _ => throw new ArgumentOutOfRangeException(nameof(effect)),
         };
-        await _client.QueryBuiltRequestAsync(blade, "keyboard-effect.set", request, cancellationToken);
+        await _client.QueryBuiltRequestAsync(blade, CapabilityIds.KeyboardEffectSet, request, cancellationToken);
 
         var actual = BladeLighting2023Protocol.ParseEffect(
-            await _client.QueryAsync(blade, "keyboard-effect.get", cancellationToken));
+            await _client.QueryAsync(blade, CapabilityIds.KeyboardEffectGet, cancellationToken));
         if (actual != effect)
         {
             throw new InvalidOperationException(
@@ -132,7 +132,7 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var response = await _client.QueryAsync(device, "keyboard-brightness.get", cancellationToken);
+        var response = await _client.QueryAsync(device, CapabilityIds.KeyboardBrightnessGet, cancellationToken);
         if (device.Descriptor.ProtocolFamily is "blade-597" or "blade-710-chroma")
         {
             // Chroma brightness answers profileId, regionId, raw 0..255. The keyboard
@@ -171,7 +171,7 @@ internal sealed class BladeDisplayTelemetryReader
             var raw = (byte)Math.Clamp(brightness * 255 / 100, 0, 255);
             return _client.QueryAsync(
                 device,
-                "keyboard-brightness.set",
+                CapabilityIds.KeyboardBrightnessSet,
                 new byte[] { 0x01, 0x05, raw },
                 cancellationToken);
         }
@@ -179,11 +179,11 @@ internal sealed class BladeDisplayTelemetryReader
         return device.Descriptor.ProtocolFamily == "blade-671"
             ? _client.QueryBuiltRequestAsync(
                 device,
-                "keyboard-brightness.set",
+                CapabilityIds.KeyboardBrightnessSet,
                 BladeLighting2023Protocol.CreateSetBrightnessRequest(brightness),
                 cancellationToken)
             : _client.QueryAsync(
-                device, "keyboard-brightness.set", new byte[] { 0x01, brightness }, cancellationToken);
+                device, CapabilityIds.KeyboardBrightnessSet, new byte[] { 0x01, brightness }, cancellationToken);
     }
 
     private async Task<bool> TryRestoreBrightnessAsync(ResolvedRazerDevice device, byte original)
@@ -251,12 +251,12 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var powerResponse = await _client.QueryAsync(device, "logo-power.get", cancellationToken);
-        var modeResponse = await _client.QueryAsync(device, "logo-mode.get", cancellationToken);
+        var powerResponse = await _client.QueryAsync(device, CapabilityIds.LogoPowerGet, cancellationToken);
+        var modeResponse = await _client.QueryAsync(device, CapabilityIds.LogoModeGet, cancellationToken);
         var power = BladeLogoProtocol.ParsePower(
-            powerResponse, RazerCapabilityClient.CreateRequest(device, "logo-power.get"));
+            powerResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoPowerGet));
         var poweredMode = BladeLogoProtocol.ParseMode(
-            modeResponse, RazerCapabilityClient.CreateRequest(device, "logo-mode.get"));
+            modeResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoModeGet));
         return new BladeLogoState(power, poweredMode);
     }
 
@@ -269,12 +269,12 @@ internal sealed class BladeDisplayTelemetryReader
         {
             await _client.QueryBuiltRequestAsync(
                 device,
-                "logo-effect.set",
+                CapabilityIds.LogoEffectSet,
                 BladeSynapsePolicyProtocol.CreateSetLogoEffectRequest(BladeLogoMode.Breathing),
                 cancellationToken);
             await _client.QueryBuiltRequestAsync(
                 device,
-                "logo-state.set",
+                CapabilityIds.LogoStateSet,
                 BladeSynapsePolicyProtocol.CreateSetLogoStateRequest(BladeLogoMode.Breathing),
                 cancellationToken);
             return;
@@ -283,7 +283,7 @@ internal sealed class BladeDisplayTelemetryReader
         if (combinedMode == BladeLogoMode.Static)
         {
             await _client.QueryBuiltRequestAsync(
-                device, "logo-mode.set", BladeLogoProtocol.CreateSetModeRequest(BladeLogoMode.Static), cancellationToken);
+                device, CapabilityIds.LogoModeSet, BladeLogoProtocol.CreateSetModeRequest(BladeLogoMode.Static), cancellationToken);
         }
         else if (combinedMode != BladeLogoMode.Off)
         {
@@ -291,7 +291,7 @@ internal sealed class BladeDisplayTelemetryReader
         }
 
         var powerRequest = BladeLogoProtocol.CreateSetPowerRequest(combinedMode != BladeLogoMode.Off);
-        await _client.QueryBuiltRequestAsync(device, "logo-power.set", powerRequest, cancellationToken);
+        await _client.QueryBuiltRequestAsync(device, CapabilityIds.LogoPowerSet, powerRequest, cancellationToken);
     }
 
     private async Task<bool> TryRestoreLogoStateAsync(
@@ -302,12 +302,12 @@ internal sealed class BladeDisplayTelemetryReader
         {
             await _client.QueryBuiltRequestAsync(
                 device,
-                "logo-mode.set",
+                CapabilityIds.LogoModeSet,
                 BladeLogoProtocol.CreateSetModeRequest(original.PoweredMode),
                 CancellationToken.None);
             await _client.QueryBuiltRequestAsync(
                 device,
-                "logo-power.set",
+                CapabilityIds.LogoPowerSet,
                 BladeLogoProtocol.CreateSetPowerRequest(original.Powered),
                 CancellationToken.None);
             return await ReadLogoStateAsync(device, CancellationToken.None) == original;
@@ -322,8 +322,8 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var request = RazerCapabilityClient.CreateRequest(device, "startup-animation.get");
-        var response = await _client.QueryAsync(device, "startup-animation.get", cancellationToken);
+        var request = RazerCapabilityClient.CreateRequest(device, CapabilityIds.StartupAnimationGet);
+        var response = await _client.QueryAsync(device, CapabilityIds.StartupAnimationGet, cancellationToken);
         return BladeSynapsePolicyProtocol.ParseStartupAnimation(response, request);
     }
 
@@ -381,7 +381,7 @@ internal sealed class BladeDisplayTelemetryReader
     {
         var request = BladeSynapsePolicyProtocol.CreateSetStartupAnimationRequest(enabled);
         _ = await _client.QueryBuiltRequestAsync(
-            device, "startup-animation.set", request, cancellationToken);
+            device, CapabilityIds.StartupAnimationSet, request, cancellationToken);
     }
 
     private async Task<bool> TryRestoreStartupAnimationAsync(
@@ -403,9 +403,9 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var request = RazerCapabilityClient.CreateRequest(device, "native-display-mode.get");
+        var request = RazerCapabilityClient.CreateRequest(device, CapabilityIds.NativeDisplayModeGet);
         var response = await _client.QueryAsync(
-            device, "native-display-mode.get", cancellationToken);
+            device, CapabilityIds.NativeDisplayModeGet, cancellationToken);
         return BladeProduct710Protocol.ParseNativeDisplayMode(response, request);
     }
 
@@ -465,7 +465,7 @@ internal sealed class BladeDisplayTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryBuiltRequestAsync(
             device,
-            "native-display-mode.set",
+            CapabilityIds.NativeDisplayModeSet,
             BladeProduct710Protocol.CreateSetNativeDisplayModeRequest(mode),
             cancellationToken);
 
@@ -582,7 +582,7 @@ internal sealed class BladeDisplayTelemetryReader
         {
             await _client.QueryAsync(
                 blade,
-                "display-mux.set",
+                CapabilityIds.DisplayMuxSet,
                 new byte[] { 0x00, (byte)mode },
                 cancellationToken);
             var actual = await ReadDisplayMuxModeAsync(blade, cancellationToken);
@@ -613,8 +613,8 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice blade,
         CancellationToken cancellationToken)
     {
-        var request = RazerCapabilityClient.CreateRequest(blade, "display-mux.get");
-        var response = await _client.QueryAsync(blade, "display-mux.get", cancellationToken);
+        var request = RazerCapabilityClient.CreateRequest(blade, CapabilityIds.DisplayMuxGet);
+        var response = await _client.QueryAsync(blade, CapabilityIds.DisplayMuxGet, cancellationToken);
         return BladeDisplayMuxProtocol.ParseMode(response, request);
     }
 
@@ -622,8 +622,8 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice blade,
         CancellationToken cancellationToken)
     {
-        var request = RazerCapabilityClient.CreateRequest(blade, "display-mux-capabilities.get");
-        var response = await _client.QueryAsync(blade, "display-mux-capabilities.get", cancellationToken);
+        var request = RazerCapabilityClient.CreateRequest(blade, CapabilityIds.DisplayMuxCapabilitiesGet);
+        var response = await _client.QueryAsync(blade, CapabilityIds.DisplayMuxCapabilitiesGet, cancellationToken);
         return BladeDisplayMuxProtocol.ParseCapabilities(response, request);
     }
 
@@ -640,7 +640,7 @@ internal sealed class BladeDisplayTelemetryReader
         {
             await _client.QueryAsync(
                 blade,
-                "display-mux.set",
+                CapabilityIds.DisplayMuxSet,
                 new byte[] { 0x00, (byte)original },
                 CancellationToken.None);
             return await ReadDisplayMuxModeAsync(blade, CancellationToken.None) == original;
@@ -652,9 +652,9 @@ internal sealed class BladeDisplayTelemetryReader
     }
 
     private static bool HasDisplayMuxCapabilities(ResolvedRazerDevice blade) =>
-        blade.Owns("display-mux.get") &&
-        blade.Owns("display-mux.set") &&
-        blade.Owns("display-mux-capabilities.get");
+        blade.Owns(CapabilityIds.DisplayMuxGet) &&
+        blade.Owns(CapabilityIds.DisplayMuxSet) &&
+        blade.Owns(CapabilityIds.DisplayMuxCapabilitiesGet);
 
     private static bool AllowsDds(ResolvedRazerDevice blade) =>
         // The 2026 bundle defines only Microsoft_Hybrid (0) and Discrete_MUX (1);

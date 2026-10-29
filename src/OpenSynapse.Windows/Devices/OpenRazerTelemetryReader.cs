@@ -34,9 +34,9 @@ internal sealed class OpenRazerTelemetryReader
         var errors = new List<string>();
             try
             {
-                var response = await _client.QueryAsync(viper, "battery.get", cancellationToken);
+                var response = await _client.QueryAsync(viper, CapabilityIds.BatteryGet, cancellationToken);
                 batteryPercent = ViperProduct184Protocol.ParseBatteryPercent(
-                    response, RazerCapabilityClient.CreateRequest(viper, "battery.get"));
+                    response, RazerCapabilityClient.CreateRequest(viper, CapabilityIds.BatteryGet));
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
             {
@@ -45,9 +45,9 @@ internal sealed class OpenRazerTelemetryReader
 
             try
             {
-                var response = await _client.QueryAsync(viper, "polling-rate.get", cancellationToken);
+                var response = await _client.QueryAsync(viper, CapabilityIds.PollingRateGet, cancellationToken);
                 pollingRate = ViperProduct184Protocol.ParsePollingRateHertz(
-                    response, RazerCapabilityClient.CreateRequest(viper, "polling-rate.get"));
+                    response, RazerCapabilityClient.CreateRequest(viper, CapabilityIds.PollingRateGet));
                 _validatedViperPollingPath = viper.Descriptor.Id;
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
@@ -57,9 +57,9 @@ internal sealed class OpenRazerTelemetryReader
 
             try
             {
-                var response = await _client.QueryAsync(viper, "current-dpi.get", cancellationToken);
+                var response = await _client.QueryAsync(viper, CapabilityIds.CurrentDpiGet, cancellationToken);
                 (dpiX, dpiY) = ViperProduct184Protocol.ParseDpi(
-                    response, RazerCapabilityClient.CreateRequest(viper, "current-dpi.get"));
+                    response, RazerCapabilityClient.CreateRequest(viper, CapabilityIds.CurrentDpiGet));
                 _validatedViperDpiPath = viper.Descriptor.Id;
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
@@ -69,9 +69,9 @@ internal sealed class OpenRazerTelemetryReader
 
             try
             {
-                var response = await _client.QueryAsync(viper, "idle-timeout.get", cancellationToken);
+                var response = await _client.QueryAsync(viper, CapabilityIds.IdleTimeoutGet, cancellationToken);
                 idleSeconds = ViperProduct184Protocol.ParseIdleSeconds(
-                    response, RazerCapabilityClient.CreateRequest(viper, "idle-timeout.get"));
+                    response, RazerCapabilityClient.CreateRequest(viper, CapabilityIds.IdleTimeoutGet));
                 _validatedViperIdlePath = viper.Descriptor.Id;
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
@@ -81,9 +81,9 @@ internal sealed class OpenRazerTelemetryReader
 
             try
             {
-                var response = await _client.QueryAsync(viper, "dpi-stages.get", cancellationToken);
+                var response = await _client.QueryAsync(viper, CapabilityIds.DpiStagesGet, cancellationToken);
                 var parsed = ViperDpiStagesProtocol.Parse(
-                    response, RazerCapabilityClient.CreateRequest(viper, "dpi-stages.get"));
+                    response, RazerCapabilityClient.CreateRequest(viper, CapabilityIds.DpiStagesGet));
                 dpiStages = new ViperDpiStagesTelemetry(
                     parsed.ActiveStage,
                     parsed.Stages.Select(stage => new ViperDpiStageTelemetry(stage.Number, stage.X, stage.Y)).ToArray());
@@ -97,9 +97,9 @@ internal sealed class OpenRazerTelemetryReader
             try
             {
                 var response = await _client.QueryAsync(
-                    viper, "low-battery-threshold.get", cancellationToken);
+                    viper, CapabilityIds.LowBatteryThresholdGet, cancellationToken);
                 lowBatteryThresholdRaw = ViperLowBatteryThresholdProtocol.ParseRaw(
-                    response, RazerCapabilityClient.CreateRequest(viper, "low-battery-threshold.get"));
+                    response, RazerCapabilityClient.CreateRequest(viper, CapabilityIds.LowBatteryThresholdGet));
                 _validatedViperLowBatteryThresholdPath = viper.Descriptor.Id;
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
@@ -227,7 +227,7 @@ internal sealed class OpenRazerTelemetryReader
         {
             await _client.QueryBuiltRequestAsync(
                 viper,
-                "dpi-stages.set",
+                CapabilityIds.DpiStagesSet,
                 ViperProduct184Protocol.CreateSetDpiStagesRequest(requested),
                 cancellationToken);
             var actual = await ReadViperDpiStagesAsync(viper, cancellationToken);
@@ -349,9 +349,9 @@ internal sealed class OpenRazerTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var response = await _client.QueryAsync(device, "polling-rate.get", cancellationToken);
+        var response = await _client.QueryAsync(device, CapabilityIds.PollingRateGet, cancellationToken);
         return ViperProduct184Protocol.ParsePollingRateHertz(
-            response, RazerCapabilityClient.CreateRequest(device, "polling-rate.get"));
+            response, RazerCapabilityClient.CreateRequest(device, CapabilityIds.PollingRateGet));
     }
 
     private Task WriteViperPollingRateAsync(
@@ -360,7 +360,7 @@ internal sealed class OpenRazerTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryBuiltRequestAsync(
             device,
-            "polling-rate.set",
+            CapabilityIds.PollingRateSet,
             ViperProduct184Protocol.CreateSetPollingRateRequest(hertz),
             cancellationToken);
 
@@ -381,9 +381,9 @@ internal sealed class OpenRazerTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var response = await _client.QueryAsync(device, "current-dpi.get", cancellationToken);
+        var response = await _client.QueryAsync(device, CapabilityIds.CurrentDpiGet, cancellationToken);
         return ViperProduct184Protocol.ParseDpi(
-            response, RazerCapabilityClient.CreateRequest(device, "current-dpi.get"));
+            response, RazerCapabilityClient.CreateRequest(device, CapabilityIds.CurrentDpiGet));
     }
 
     private Task WriteViperDpiAsync(
@@ -393,7 +393,7 @@ internal sealed class OpenRazerTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryBuiltRequestAsync(
             device,
-            "current-dpi.set",
+            CapabilityIds.CurrentDpiSet,
 
             ViperProduct184Protocol.CreateSetDpiRequest(x, y),
             cancellationToken);
@@ -417,9 +417,9 @@ internal sealed class OpenRazerTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var response = await _client.QueryAsync(device, "idle-timeout.get", cancellationToken);
+        var response = await _client.QueryAsync(device, CapabilityIds.IdleTimeoutGet, cancellationToken);
         return ViperProduct184Protocol.ParseIdleSeconds(
-            response, RazerCapabilityClient.CreateRequest(device, "idle-timeout.get"));
+            response, RazerCapabilityClient.CreateRequest(device, CapabilityIds.IdleTimeoutGet));
     }
 
     private async Task<byte> ReadViperLowBatteryThresholdAsync(
@@ -427,9 +427,9 @@ internal sealed class OpenRazerTelemetryReader
         CancellationToken cancellationToken)
     {
         var response = await _client.QueryAsync(
-            device, "low-battery-threshold.get", cancellationToken);
+            device, CapabilityIds.LowBatteryThresholdGet, cancellationToken);
         return ViperLowBatteryThresholdProtocol.ParseRaw(
-            response, RazerCapabilityClient.CreateRequest(device, "low-battery-threshold.get"));
+            response, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LowBatteryThresholdGet));
     }
 
     private Task WriteViperLowBatteryThresholdAsync(
@@ -438,7 +438,7 @@ internal sealed class OpenRazerTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryBuiltRequestAsync(
             device,
-            "low-battery-threshold.set",
+            CapabilityIds.LowBatteryThresholdSet,
             ViperProduct184Protocol.CreateSetLowBatteryThresholdRequest(percent),
             cancellationToken);
 
@@ -464,7 +464,7 @@ internal sealed class OpenRazerTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryBuiltRequestAsync(
             device,
-            "idle-timeout.set",
+            CapabilityIds.IdleTimeoutSet,
             ViperProduct184Protocol.CreateSetIdleTimeoutRequest(seconds),
             cancellationToken);
 
@@ -485,9 +485,9 @@ internal sealed class OpenRazerTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
-        var response = await _client.QueryAsync(device, "dpi-stages.get", cancellationToken);
+        var response = await _client.QueryAsync(device, CapabilityIds.DpiStagesGet, cancellationToken);
         return ViperDpiStagesProtocol.Parse(
-            response, RazerCapabilityClient.CreateRequest(device, "dpi-stages.get"));
+            response, RazerCapabilityClient.CreateRequest(device, CapabilityIds.DpiStagesGet));
     }
 
     private async Task<bool> TryRestoreViperDpiStagesAsync(
@@ -498,7 +498,7 @@ internal sealed class OpenRazerTelemetryReader
         {
             await _client.QueryBuiltRequestAsync(
                 device,
-                "dpi-stages.set",
+                CapabilityIds.DpiStagesSet,
                 ViperProduct184Protocol.CreateSetDpiStagesRequest(original),
                 CancellationToken.None);
             var restored = await ReadViperDpiStagesAsync(device, CancellationToken.None);
