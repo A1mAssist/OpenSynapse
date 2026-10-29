@@ -34,6 +34,27 @@ public sealed class Blade029FTests
     }
 
     /// <summary>
+    /// The 2023 bundle exposes both settings through the shared 00:88 read and
+    /// 0F:98/18 startup-animation reports. The set command was already present;
+    /// the read paths are what let the cards leave the unknown "--" state.
+    /// </summary>
+    [Fact]
+    public void TheBlade16_2023ManifestCarriesGameModeAndStartupAnimationReads()
+    {
+        var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x029F);
+
+        Assert.NotNull(manifest);
+        var gameMode = manifest!.GetRequiredCapability("gaming-mode.get");
+        Assert.Equal((byte)0x04, gameMode.MaximumDataSize);
+        Assert.Equal((byte)0x00, gameMode.CommandClass);
+        Assert.Equal((byte)0x88, gameMode.CommandId);
+        Assert.Equal((byte)0x1F, manifest.GetRequiredCapability("startup-animation.get").TransactionId);
+        Assert.Equal((byte)0x98, manifest.GetRequiredCapability("startup-animation.get").CommandId);
+        Assert.Equal((byte)0x1F, manifest.GetRequiredCapability("startup-animation.set").TransactionId);
+        Assert.Equal((byte)0x18, manifest.GetRequiredCapability("startup-animation.set").CommandId);
+    }
+
+    /// <summary>
     /// The MUX reports are the same bytes the 710 family uses, but the Blade 14 (2022)
     /// and the Blade 15 share the blade-671 family and their middleware bundles never
     /// answered the VGA reports, so they must not inherit the switch.
@@ -70,13 +91,13 @@ public sealed class Blade029FTests
     public void TheChargeLimiterReportDecodesTheThresholdAndTheEnabledFlag(
         byte raw,
         int expected) =>
-        Assert.Equal(expected, RazerDeviceTelemetryReader.DecodeBladeChargeLimit(raw));
+        Assert.Equal(expected, BladeTelemetryReader.DecodeBladeChargeLimit(raw));
 
     [Fact]
     public void AnEnabledThresholdTheFirmwareDoesNotOfferIsRejected()
     {
         Assert.Throws<InvalidOperationException>(
-            () => RazerDeviceTelemetryReader.DecodeBladeChargeLimit(0xC8));
+            () => BladeTelemetryReader.DecodeBladeChargeLimit(0xC8));
     }
 
     /// <summary>
@@ -163,6 +184,8 @@ public sealed class Blade029FTests
         Assert.Empty(telemetry.Errors);
         Assert.Equal(BladePerformanceMode.Gaming, telemetry.BladePerformanceMode);
         Assert.Equal(BladeFanMode.Automatic, telemetry.BladeFanMode);
+        Assert.Equal((byte)1, telemetry.BladeGameMode?.GameMode);
+        Assert.True(telemetry.BladeStartupAnimationEnabled);
     }
 
     /// <summary>
@@ -238,6 +261,8 @@ public sealed class Blade029FTests
     private sealed class Blade029FTransport : IRazerFeatureTransport
     {
         private readonly byte _performanceMode;
+        private readonly byte _gameMode = 1;
+        private readonly bool _startupAnimationEnabled = true;
         private BladeFanMode _fanMode = BladeFanMode.Automatic;
         private int _cpuTargetRpm = 4100;
         private int _gpuTargetRpm = 4100;
@@ -307,6 +332,17 @@ public sealed class Blade029FTests
                 case (0x07, 0x8C):
                     response[RazerFeatureReport.ArgumentsOffset] = 0x0C;
                     response[RazerFeatureReport.ArgumentsOffset + 1] = 0x0C;
+                    break;
+                case (0x00, 0x88):
+                    response[RazerFeatureReport.ArgumentsOffset] = _gameMode;
+                    response[RazerFeatureReport.ArgumentsOffset + 1] = 0;
+                    response[RazerFeatureReport.ArgumentsOffset + 2] = 0;
+                    break;
+                case (0x0F, 0x98):
+                    response[6] = 0x02;
+                    response[RazerFeatureReport.ArgumentsOffset] = 0;
+                    response[RazerFeatureReport.ArgumentsOffset + 1] =
+                        (byte)(_startupAnimationEnabled ? 0 : 1);
                     break;
                 case (0x03, 0x83):
                     response[RazerFeatureReport.ArgumentsOffset + 2] = 0xC8;

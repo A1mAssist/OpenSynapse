@@ -38,6 +38,15 @@ public static class DedicatedGpuModePolicy
         snapshot.HasIntegratedGraphics &&
         (!snapshot.DiscreteGpuState.IsEnabled() || !snapshot.InternalDisplayUsesDiscreteGpu);
 
+    /// <summary>
+    /// A machine with both adapters keeps the control visible even when the current
+    /// MUX route or an external display blocks the switch; the status line explains
+    /// what must change first. Only a machine missing one of the adapters hides it.
+    /// </summary>
+    public static bool ShouldShow(DedicatedGpuModeBlockReason reason) =>
+        reason is not (DedicatedGpuModeBlockReason.NoDiscreteGraphics or
+            DedicatedGpuModeBlockReason.NoIntegratedGraphics);
+
     public static DedicatedGpuModeBlockReason GetBlockReason(in DedicatedGpuModeSnapshot snapshot)
     {
         if (!snapshot.HasDiscreteGraphics)
