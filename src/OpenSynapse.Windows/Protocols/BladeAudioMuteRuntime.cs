@@ -68,7 +68,11 @@ public sealed class BladeAudioMuteRuntime : IAsyncDisposable
                 await InitializeSessionAsync(session, cancellationToken).ConfigureAwait(false);
                 modeLease = await _modeCoordinator.AcquireAsync(
                     _devicePath,
-                    token => SetDeviceModeAsync(session, softwareMode: true, token),
+                    // Software mode (0D:02 = 3) stops the keyboard from handling its
+                    // own M-keys and Fn indicator lights, and this app reimplements
+                    // neither, so acquiring the slot also clears a mode an older build
+                    // left behind.
+                    token => SetDeviceModeAsync(session, softwareMode: false, token),
                     () => SetDeviceModeAsync(session, softwareMode: false, CancellationToken.None),
                     cancellationToken)
                     .ConfigureAwait(false);
