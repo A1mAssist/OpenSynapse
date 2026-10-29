@@ -22,8 +22,8 @@ internal sealed class RazerDeviceRegistry
     private static readonly IReadOnlyDictionary<string, string> CapabilityRenames =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["max-fan.get"] = "power-mode.get",
-            ["max-fan.set"] = "power-mode.set",
+            [CapabilityIds.MaxFanGet] = CapabilityIds.PowerModeGet,
+            [CapabilityIds.MaxFanSet] = CapabilityIds.PowerModeSet,
         };
     private static readonly Lazy<RazerDeviceRegistry> BuiltInValue = new(LoadBuiltIn);
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -35,38 +35,38 @@ internal sealed class RazerDeviceRegistry
     private static readonly IReadOnlyDictionary<string, CapabilityContract> Blade710Capabilities =
         new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
         {
-                ["keyboard-brightness.get"] = new(0x02, 0x0E, 0x84, "0100"),
-                ["keyboard-brightness.set"] = new(0x02, 0x0E, 0x04, ""),
-                ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
-                ["thermal-state.set"] = new(0x04, 0x0D, 0x02, ""),
-                ["fan-target.get"] = new(0x03, 0x0D, 0x81, ""),
-                ["current-fan-rpm.get"] = new(0x03, 0x0D, 0x88, ""),
-                ["advanced-fan-mode.get"] = new(0x03, 0x0D, 0x87, ""),
-                ["boost.get"] = new(0x03, 0x0D, 0x87, ""),
-                ["boost.set"] = new(0x03, 0x0D, 0x07, ""),
-                ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
-                ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
-                ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
-                ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
-                ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
-                ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
-                ["fn-key.get"] = new(0x02, 0x02, 0x86, "0100", AllowZeroTransactionId: true),
-                ["mcu-version.get"] = new(0x04, 0x00, 0x87, "00000000", AllowZeroTransactionId: true),
-                ["fn-key.set"] = new(0x02, 0x02, 0x06, "", AllowZeroTransactionId: true),
-                ["startup-animation.get"] = new(0x01, 0x0F, 0x98, "00"),
-                ["startup-animation.set"] = new(0x02, 0x0F, 0x18, ""),
-                ["native-display-mode.get"] = new(0x01, 0x0D, 0x8E, "00", true),
-                ["native-display-mode.set"] = new(0x01, 0x0D, 0x0E, ""),
-                ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
-                ["logo-power.get"] = new(0x03, 0x03, 0x80, "010400"),
-                ["logo-power.set"] = new(0x03, 0x03, 0x00, ""),
-                ["logo-mode.get"] = new(0x03, 0x03, 0x82, "010400"),
-                ["logo-mode.set"] = new(0x03, 0x03, 0x02, ""),
-                ["logo-effect.set"] = new(0x03, 0x03, 0x02, "", AllowZeroTransactionId: true),
-                ["logo-state.set"] = new(0x03, 0x03, 0x00, "", AllowZeroTransactionId: true),
-                ["display-mux.get"] = new(0x02, 0x0D, 0x89, "0000"),
-                ["display-mux.set"] = new(0x02, 0x0D, 0x09, ""),
-                ["display-mux-capabilities.get"] = new(0x02, 0x0D, 0x8A, "0000"),
+                [CapabilityIds.KeyboardBrightnessGet] = new(0x02, 0x0E, 0x84, "0100"),
+                [CapabilityIds.KeyboardBrightnessSet] = new(0x02, 0x0E, 0x04, ""),
+                [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
+                [CapabilityIds.ThermalStateSet] = new(0x04, 0x0D, 0x02, ""),
+                [CapabilityIds.FanTargetGet] = new(0x03, 0x0D, 0x81, ""),
+                [CapabilityIds.CurrentFanRpmGet] = new(0x03, 0x0D, 0x88, ""),
+                [CapabilityIds.AdvancedFanModeGet] = new(0x03, 0x0D, 0x87, ""),
+                [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
+                [CapabilityIds.BoostSet] = new(0x03, 0x0D, 0x07, ""),
+                [CapabilityIds.AdapterPowerGet] = new(0x02, 0x07, 0x8C, "0000", true, true),
+                [CapabilityIds.ChargeLimitGet] = new(0x01, 0x07, 0x92, "00", true),
+                [CapabilityIds.ChargeLimitSet] = new(0x01, 0x07, 0x12, ""),
+                [CapabilityIds.PowerModeGet] = new(0x01, 0x07, 0x8F, "00", true),
+                [CapabilityIds.PowerModeSet] = new(0x01, 0x07, 0x0F, ""),
+                [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0100", AllowZeroTransactionId: true),
+                [CapabilityIds.McuVersionGet] = new(0x04, 0x00, 0x87, "00000000", AllowZeroTransactionId: true),
+                [CapabilityIds.FnKeySet] = new(0x02, 0x02, 0x06, "", AllowZeroTransactionId: true),
+                [CapabilityIds.StartupAnimationGet] = new(0x01, 0x0F, 0x98, "00"),
+                [CapabilityIds.StartupAnimationSet] = new(0x02, 0x0F, 0x18, ""),
+                [CapabilityIds.NativeDisplayModeGet] = new(0x01, 0x0D, 0x8E, "00", true),
+                [CapabilityIds.NativeDisplayModeSet] = new(0x01, 0x0D, 0x0E, ""),
+                [CapabilityIds.SkuHardwareConfigurationGet] = new(0x01, 0x0D, 0x8F, "00", true),
+                [CapabilityIds.LogoPowerGet] = new(0x03, 0x03, 0x80, "010400"),
+                [CapabilityIds.LogoPowerSet] = new(0x03, 0x03, 0x00, ""),
+                [CapabilityIds.LogoModeGet] = new(0x03, 0x03, 0x82, "010400"),
+                [CapabilityIds.LogoModeSet] = new(0x03, 0x03, 0x02, ""),
+                [CapabilityIds.LogoEffectSet] = new(0x03, 0x03, 0x02, "", AllowZeroTransactionId: true),
+                [CapabilityIds.LogoStateSet] = new(0x03, 0x03, 0x00, "", AllowZeroTransactionId: true),
+                [CapabilityIds.DisplayMuxGet] = new(0x02, 0x0D, 0x89, "0000"),
+                [CapabilityIds.DisplayMuxSet] = new(0x02, 0x0D, 0x09, ""),
+                [CapabilityIds.DisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8A, "0000"),
         };
 
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, CapabilityContract>> FamilyCapabilities =
@@ -77,36 +77,36 @@ internal sealed class RazerDeviceRegistry
             // 03:83/03 Chroma region command. All other reports remain 710-compatible.
             ["blade-710-chroma"] = new Dictionary<string, CapabilityContract>(Blade710Capabilities, StringComparer.Ordinal)
             {
-                ["keyboard-brightness.get"] = new(0x03, 0x03, 0x83, "010500", true),
-                ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
+                [CapabilityIds.KeyboardBrightnessGet] = new(0x03, 0x03, 0x83, "010500", true),
+                [CapabilityIds.KeyboardBrightnessSet] = new(0x03, 0x03, 0x03, "", true),
             },
             // Blade 16 (2023) RZ09-0483 shares the 710 thermal, power-mode and charge
             // commands but has its own lighting matrix report, so it stays a separate family.
             ["blade-671"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {
-                ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
-                ["thermal-state.set"] = new(0x04, 0x0D, 0x02, ""),
-                ["fan-target.get"] = new(0x03, 0x0D, 0x81, ""),
-                ["current-fan-rpm.get"] = new(0x03, 0x0D, 0x88, ""),
-                ["boost.get"] = new(0x03, 0x0D, 0x87, ""),
-                ["boost.set"] = new(0x03, 0x0D, 0x07, ""),
-                ["adapter-power.get"] = new(0x02, 0x07, 0x8C, "0000", true, true),
-                ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
-                ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
-                ["power-mode.get"] = new(0x01, 0x07, 0x8F, "00", true),
-                ["power-mode.set"] = new(0x01, 0x07, 0x0F, ""),
-                ["sku-hardware-configuration.get"] = new(0x01, 0x0D, 0x8F, "00", true),
-                ["gaming-mode.get"] = new(0x04, 0x00, 0x88, "", AllowZeroTransactionId: true),
-                ["gaming-mode.set"] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
-                ["startup-animation.get"] = new(0x01, 0x0F, 0x98, "00"),
-                ["startup-animation.set"] = new(0x02, 0x0F, 0x18, ""),
-                ["keyboard-brightness.get"] = new(0x03, 0x03, 0x83, "010500", true),
-                ["keyboard-brightness.set"] = new(0x03, 0x03, 0x03, "", true),
-                ["keyboard-effect.get"] = new(0x03, 0x0F, 0x82, "010500", true),
-                ["keyboard-effect.set"] = new(0x03, 0x0F, 0x02, "", true),
-                ["display-mux.get"] = new(0x02, 0x0D, 0x89, "0000"),
-                ["display-mux.set"] = new(0x02, 0x0D, 0x09, ""),
-                ["display-mux-capabilities.get"] = new(0x02, 0x0D, 0x8A, "0000"),
+                [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
+                [CapabilityIds.ThermalStateSet] = new(0x04, 0x0D, 0x02, ""),
+                [CapabilityIds.FanTargetGet] = new(0x03, 0x0D, 0x81, ""),
+                [CapabilityIds.CurrentFanRpmGet] = new(0x03, 0x0D, 0x88, ""),
+                [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
+                [CapabilityIds.BoostSet] = new(0x03, 0x0D, 0x07, ""),
+                [CapabilityIds.AdapterPowerGet] = new(0x02, 0x07, 0x8C, "0000", true, true),
+                [CapabilityIds.ChargeLimitGet] = new(0x01, 0x07, 0x92, "00", true),
+                [CapabilityIds.ChargeLimitSet] = new(0x01, 0x07, 0x12, ""),
+                [CapabilityIds.PowerModeGet] = new(0x01, 0x07, 0x8F, "00", true),
+                [CapabilityIds.PowerModeSet] = new(0x01, 0x07, 0x0F, ""),
+                [CapabilityIds.SkuHardwareConfigurationGet] = new(0x01, 0x0D, 0x8F, "00", true),
+                [CapabilityIds.GamingModeGet] = new(0x04, 0x00, 0x88, "", AllowZeroTransactionId: true),
+                [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                [CapabilityIds.StartupAnimationGet] = new(0x01, 0x0F, 0x98, "00"),
+                [CapabilityIds.StartupAnimationSet] = new(0x02, 0x0F, 0x18, ""),
+                [CapabilityIds.KeyboardBrightnessGet] = new(0x03, 0x03, 0x83, "010500", true),
+                [CapabilityIds.KeyboardBrightnessSet] = new(0x03, 0x03, 0x03, "", true),
+                [CapabilityIds.KeyboardEffectGet] = new(0x03, 0x0F, 0x82, "010500", true),
+                [CapabilityIds.KeyboardEffectSet] = new(0x03, 0x0F, 0x02, "", true),
+                [CapabilityIds.DisplayMuxGet] = new(0x02, 0x0D, 0x89, "0000"),
+                [CapabilityIds.DisplayMuxSet] = new(0x02, 0x0D, 0x09, ""),
+                [CapabilityIds.DisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8A, "0000"),
             },
             // Blade 15 Base (Early 2020) 1532:0255. Only these reports answer on the unit:
             // the 0D thermal channel, the Chroma brightness region and the 07:92 charge
@@ -117,33 +117,33 @@ internal sealed class RazerDeviceRegistry
             // mode runs over the thermal channel, so the power-mode mask is not needed.
             ["blade-597"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {
-                ["thermal-state.get"] = new(0x04, 0x0D, 0x82, ""),
-                ["thermal-state.set"] = new(0x04, 0x0D, 0x02, ""),
-                ["keyboard-brightness.get"] = new(0x03, 0x0F, 0x84, "0105", true),
-                ["keyboard-brightness.set"] = new(0x03, 0x0F, 0x04, ""),
-                ["charge-limit.get"] = new(0x01, 0x07, 0x92, "00", true),
-                ["charge-limit.set"] = new(0x01, 0x07, 0x12, ""),
+                [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
+                [CapabilityIds.ThermalStateSet] = new(0x04, 0x0D, 0x02, ""),
+                [CapabilityIds.KeyboardBrightnessGet] = new(0x03, 0x0F, 0x84, "0105", true),
+                [CapabilityIds.KeyboardBrightnessSet] = new(0x03, 0x0F, 0x04, ""),
+                [CapabilityIds.ChargeLimitGet] = new(0x01, 0x07, 0x92, "00", true),
+                [CapabilityIds.ChargeLimitSet] = new(0x01, 0x07, 0x12, ""),
             },
             ["viper-184"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {
-                ["battery.get"] = new(0x02, 0x07, 0x80, ""),
-                ["polling-rate.get"] = new(0x01, 0x00, 0x85, ""),
-                ["polling-rate.set"] = new(0x01, 0x00, 0x05, ""),
-                ["current-dpi.get"] = new(0x07, 0x04, 0x85, "00"),
-                ["current-dpi.set"] = new(0x07, 0x04, 0x05, ""),
-                ["idle-timeout.get"] = new(0x02, 0x07, 0x83, ""),
-                ["idle-timeout.set"] = new(0x02, 0x07, 0x03, ""),
-                ["battery-chemistry.set"] = new(0x01, 0x07, 0x14, ""),
-                ["dpi-stages.get"] = new(0x26, 0x04, 0x86, "01"),
-                ["dpi-stages.set"] = new(0x26, 0x04, 0x06, ""),
-                ["low-battery-threshold.get"] = new(0x01, 0x07, 0x81, ""),
-                ["low-battery-threshold.set"] = new(0x01, 0x07, 0x01, ""),
-                ["obm-maximum-profiles.get"] = new(0x01, 0x05, 0x8A, ""),
-                ["obm-profile-count.get"] = new(0x01, 0x05, 0x80, ""),
-                ["obm-profile-ids.get"] = new(0x50, 0x05, 0x81, ""),
-                ["obm-button-ids.get"] = new(0x50, 0x02, 0x84, ""),
-                ["obm-assignment.get"] = new(0x50, 0x02, 0x8C, ""),
-                ["obm-assignment.set"] = new(0x50, 0x02, 0x0C, ""),
+                [CapabilityIds.BatteryGet] = new(0x02, 0x07, 0x80, ""),
+                [CapabilityIds.PollingRateGet] = new(0x01, 0x00, 0x85, ""),
+                [CapabilityIds.PollingRateSet] = new(0x01, 0x00, 0x05, ""),
+                [CapabilityIds.CurrentDpiGet] = new(0x07, 0x04, 0x85, "00"),
+                [CapabilityIds.CurrentDpiSet] = new(0x07, 0x04, 0x05, ""),
+                [CapabilityIds.IdleTimeoutGet] = new(0x02, 0x07, 0x83, ""),
+                [CapabilityIds.IdleTimeoutSet] = new(0x02, 0x07, 0x03, ""),
+                [CapabilityIds.BatteryChemistrySet] = new(0x01, 0x07, 0x14, ""),
+                [CapabilityIds.DpiStagesGet] = new(0x26, 0x04, 0x86, "01"),
+                [CapabilityIds.DpiStagesSet] = new(0x26, 0x04, 0x06, ""),
+                [CapabilityIds.LowBatteryThresholdGet] = new(0x01, 0x07, 0x81, ""),
+                [CapabilityIds.LowBatteryThresholdSet] = new(0x01, 0x07, 0x01, ""),
+                [CapabilityIds.ObmMaximumProfilesGet] = new(0x01, 0x05, 0x8A, ""),
+                [CapabilityIds.ObmProfileCountGet] = new(0x01, 0x05, 0x80, ""),
+                [CapabilityIds.ObmProfileIdsGet] = new(0x50, 0x05, 0x81, ""),
+                [CapabilityIds.ObmButtonIdsGet] = new(0x50, 0x02, 0x84, ""),
+                [CapabilityIds.ObmAssignmentGet] = new(0x50, 0x02, 0x8C, ""),
+                [CapabilityIds.ObmAssignmentSet] = new(0x50, 0x02, 0x0C, ""),
             },
             // Future OpenRazer devices need an audited built-in manifest and
             // verified Windows transport before any capability is admitted.
@@ -156,16 +156,16 @@ internal sealed class RazerDeviceRegistry
             // The Blade 18 (2024) firmware rejects 0F:98/18, even though the family
             // shares those reports. Keep them optional; the other manifests still own them.
             ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys
-                .Where(capability => capability is not ("startup-animation.get" or "startup-animation.set"))
+                .Where(capability => capability is not (CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
                 .ToHashSet(StringComparer.Ordinal),
             // adapter-power.get and the display MUX reports are optional in this family:
             // only the 029F manifest answers the adapter-wattage level and owns the
             // MUX reports, so they are not required here.
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys
-                .Where(capability => capability is not ("adapter-power.get" or
-                    "display-mux.get" or "display-mux.set" or "display-mux-capabilities.get" or
-                    "sku-hardware-configuration.get" or
-                    "gaming-mode.get" or "startup-animation.get" or "startup-animation.set"))
+                .Where(capability => capability is not (CapabilityIds.AdapterPowerGet or
+                    CapabilityIds.DisplayMuxGet or CapabilityIds.DisplayMuxSet or CapabilityIds.DisplayMuxCapabilitiesGet or
+                    CapabilityIds.SkuHardwareConfigurationGet or
+                    CapabilityIds.GamingModeGet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
@@ -201,6 +201,11 @@ internal sealed class RazerDeviceRegistry
 
     internal static IReadOnlyDictionary<string, IReadOnlySet<string>> FamilyRequirements =>
         FamilyRequiredCapabilities;
+
+    internal static IReadOnlyDictionary<string, IReadOnlyDictionary<string, CapabilityContract>> Families =>
+        FamilyCapabilities;
+
+    internal static IReadOnlyDictionary<string, string> CapabilityRenameMap => CapabilityRenames;
 
     internal static bool FamilyContractContains(string protocolFamily, string capabilityId) =>
         FamilyCapabilities.TryGetValue(protocolFamily, out var contracts) &&
@@ -663,18 +668,18 @@ internal sealed class RazerDeviceRegistry
             if (request.AllowRemainingPacketsMismatch &&
                 (source.ProtocolFamily switch
                 {
-                    "blade-710" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
-                        "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get"),
-                    "blade-710-chroma" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or
-                        "power-mode.get" or "native-display-mode.get" or "sku-hardware-configuration.get" or
-                        "keyboard-brightness.get" or "keyboard-brightness.set"),
-                    "blade-671" => capabilityId is not ("adapter-power.get" or "charge-limit.get" or "power-mode.get" or
-                        "sku-hardware-configuration.get" or
-                        "keyboard-brightness.get" or "keyboard-brightness.set" or
-                        "keyboard-effect.get" or "keyboard-effect.set"),
-                    "blade-597" => capabilityId is not ("keyboard-brightness.get" or
-                        "adapter-power.get" or "charge-limit.get" or "power-mode.get" or
-                        "native-display-mode.get" or "sku-hardware-configuration.get"),
+                    "blade-710" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or
+                        CapabilityIds.PowerModeGet or CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet),
+                    "blade-710-chroma" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or
+                        CapabilityIds.PowerModeGet or CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet or
+                        CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet),
+                    "blade-671" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or CapabilityIds.PowerModeGet or
+                        CapabilityIds.SkuHardwareConfigurationGet or
+                        CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet or
+                        CapabilityIds.KeyboardEffectGet or CapabilityIds.KeyboardEffectSet),
+                    "blade-597" => capabilityId is not (CapabilityIds.KeyboardBrightnessGet or
+                        CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or CapabilityIds.PowerModeGet or
+                        CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet),
                     _ => true,
                 }))
             {
@@ -837,7 +842,7 @@ internal sealed class RazerDeviceRegistry
         public bool AllowRemainingPacketsMismatch { get; init; }
     }
 
-    private sealed record CapabilityContract(
+    internal sealed record CapabilityContract(
         byte DataSize,
         byte CommandClass,
         byte CommandId,

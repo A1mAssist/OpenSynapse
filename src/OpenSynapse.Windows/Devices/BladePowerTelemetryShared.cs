@@ -16,7 +16,7 @@ internal static class BladePowerTelemetryShared
         CancellationToken cancellationToken)
     {
         var response = await client.QueryAsync(
-            device, "charge-limit.get", cancellationToken);
+            device, CapabilityIds.ChargeLimitGet, cancellationToken);
         RazerCapabilityClient.EnsureDataSize(response, 1, "Blade charge limit");
         return DecodeChargeLimit(response[RazerFeatureReport.ArgumentsOffset]);
     }
@@ -26,7 +26,7 @@ internal static class BladePowerTelemetryShared
         ResolvedRazerDevice device,
         byte raw,
         CancellationToken cancellationToken) =>
-        client.QueryAsync(device, "charge-limit.set", new byte[] { raw }, cancellationToken);
+        client.QueryAsync(device, CapabilityIds.ChargeLimitSet, new byte[] { raw }, cancellationToken);
 
     /// <summary>
     /// Decodes the charge-limiter report the way the official middleware does: the low

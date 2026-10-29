@@ -239,7 +239,7 @@ internal sealed class BladeFanTelemetryReader
         {
             var response = await _client.QueryAsync(
                 device,
-                "thermal-state.get",
+                CapabilityIds.ThermalStateGet,
                 new byte[] { profileId, zone, 0x00, 0x00 },
                 cancellationToken);
             RazerCapabilityClient.EnsureDataSize(response, 4, "Blade performance mode");
@@ -279,7 +279,7 @@ internal sealed class BladeFanTelemetryReader
         {
             requests[index] = BladeFanProtocol.CreateGetTargetRequest(zones[index], classId);
             responses[index] = await _client.QueryBuiltRequestAsync(
-                device, "fan-target.get", requests[index], cancellationToken);
+                device, CapabilityIds.FanTargetGet, requests[index], cancellationToken);
         }
 
         int? rpm = null;
@@ -289,7 +289,7 @@ internal sealed class BladeFanTelemetryReader
             var current = BladeFanProtocol.ParseTarget(
                 responses[index],
                 zones[index],
-                RazerCapabilityClient.CreateConfiguredRequest(device, "fan-target.get", requests[index]),
+                RazerCapabilityClient.CreateConfiguredRequest(device, CapabilityIds.FanTargetGet, requests[index]),
                 maximumRpm,
                 classId);
             if (rpm is not null && rpm != current)
@@ -331,8 +331,8 @@ internal sealed class BladeFanTelemetryReader
         var classId = GetFanClassId(device);
         var request = BladeFanProtocol.CreateGetTargetRequest(zone, classId);
         var response = await _client.QueryBuiltRequestAsync(
-            device, "fan-target.get", request, cancellationToken);
-        var configured = RazerCapabilityClient.CreateConfiguredRequest(device, "fan-target.get", request);
+            device, CapabilityIds.FanTargetGet, request, cancellationToken);
+        var configured = RazerCapabilityClient.CreateConfiguredRequest(device, CapabilityIds.FanTargetGet, request);
         var maximumRpm = device.MaximumFanTargetRpm;
         return curveTarget
             ? BladeFanProtocol.ParseCurveTarget(response, zone, configured, maximumRpm, classId)
@@ -360,7 +360,7 @@ internal sealed class BladeFanTelemetryReader
                 classId);
         return _client.QueryCommandAsync(
             device,
-            "fan-target.get",
+            CapabilityIds.FanTargetGet,
             0x01,
             request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
             cancellationToken,
@@ -436,11 +436,11 @@ internal sealed class BladeFanTelemetryReader
     {
         var request = BladeThermalProtocol.CreateGetCurrentSpeedRequest(fanId);
         var response = await _client.QueryBuiltRequestAsync(
-            device, "current-fan-rpm.get", request, cancellationToken);
+            device, CapabilityIds.CurrentFanRpmGet, request, cancellationToken);
         return BladeThermalProtocol.ParseCurrentSpeedRpm(
             response,
             fanId,
-            RazerCapabilityClient.CreateConfiguredRequest(device, "current-fan-rpm.get", request));
+            RazerCapabilityClient.CreateConfiguredRequest(device, CapabilityIds.CurrentFanRpmGet, request));
     }
 
     internal async Task<byte> ReadAdvancedFanModeAsync(
@@ -450,11 +450,11 @@ internal sealed class BladeFanTelemetryReader
     {
         var request = BladeThermalProtocol.CreateGetAdvancedFanModeRequest(fanId);
         var response = await _client.QueryBuiltRequestAsync(
-            device, "advanced-fan-mode.get", request, cancellationToken);
+            device, CapabilityIds.AdvancedFanModeGet, request, cancellationToken);
         return BladeThermalProtocol.ParseAdvancedFanMode(
             response,
             fanId,
-            RazerCapabilityClient.CreateConfiguredRequest(device, "advanced-fan-mode.get", request));
+            RazerCapabilityClient.CreateConfiguredRequest(device, CapabilityIds.AdvancedFanModeGet, request));
     }
 
     /// <summary>
@@ -497,7 +497,7 @@ internal sealed class BladeFanTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryAsync(
             device,
-            "thermal-state.set",
+            CapabilityIds.ThermalStateSet,
             new byte[] { 0x01, zone, rawPerformanceMode, (byte)fanMode },
             cancellationToken);
 

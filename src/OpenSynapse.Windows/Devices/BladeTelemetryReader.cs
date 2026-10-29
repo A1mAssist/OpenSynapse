@@ -55,7 +55,7 @@ internal sealed class BladeTelemetryReader
         // Blade family that never owned a report never logs a phantom error.
         var owns = blade.Owns;
         var bladeThermalReadSucceeded = false;
-        if (owns("keyboard-brightness.get"))
+        if (owns(CapabilityIds.KeyboardBrightnessGet))
         {
             try
             {
@@ -70,12 +70,12 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("keyboard-effect.get"))
+        if (owns(CapabilityIds.KeyboardEffectGet))
         {
             try
             {
                 bladeKeyboardEffect = (await _client.QueryAsync(
-                    blade, "keyboard-effect.get", cancellationToken)) is { } effectResponse
+                    blade, CapabilityIds.KeyboardEffectGet, cancellationToken)) is { } effectResponse
                     ? BladeLighting2023Protocol.ParseEffect(effectResponse)
                     : null;
                 _validation.KeyboardEffectPath = blade.Descriptor.Id;
@@ -152,7 +152,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("fan-target.get"))
+        if (owns(CapabilityIds.FanTargetGet))
         {
             try
             {
@@ -174,7 +174,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("current-fan-rpm.get"))
+        if (owns(CapabilityIds.CurrentFanRpmGet))
         {
             try
             {
@@ -197,7 +197,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("advanced-fan-mode.get"))
+        if (owns(CapabilityIds.AdvancedFanModeGet))
         {
             try
             {
@@ -220,7 +220,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (bladeThermalReadSucceeded && owns("boost.get"))
+        if (bladeThermalReadSucceeded && owns(CapabilityIds.BoostGet))
         {
             try
             {
@@ -235,7 +235,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("charge-limit.get"))
+        if (owns(CapabilityIds.ChargeLimitGet))
         {
             try
             {
@@ -249,7 +249,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("power-mode.get"))
+        if (owns(CapabilityIds.PowerModeGet))
         {
             try
             {
@@ -277,12 +277,12 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("gaming-mode.get"))
+        if (owns(CapabilityIds.GamingModeGet))
         {
             try
             {
                 var response = await _client.QueryAsync(
-                    blade, "gaming-mode.get", cancellationToken);
+                    blade, CapabilityIds.GamingModeGet, cancellationToken);
                 bladeGameMode = BladeSynapsePolicyProtocol.ParseGameMode(
                     response, BladeSynapsePolicyProtocol.CreateGetGameModeRequest());
             }
@@ -292,7 +292,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("startup-animation.get"))
+        if (owns(CapabilityIds.StartupAnimationGet))
         {
             try
             {
@@ -306,13 +306,13 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("fn-key.get"))
+        if (owns(CapabilityIds.FnKeyGet))
         {
             try
             {
-                var response = await _client.QueryAsync(blade, "fn-key.get", cancellationToken);
+                var response = await _client.QueryAsync(blade, CapabilityIds.FnKeyGet, cancellationToken);
                 bladeFnKeyMultimediaPrimary = BladeSynapsePolicyProtocol.ParseFnKeyState(
-                    response, RazerCapabilityClient.CreateRequest(blade, "fn-key.get")).MultiFunctionPrimary;
+                    response, RazerCapabilityClient.CreateRequest(blade, CapabilityIds.FnKeyGet)).MultiFunctionPrimary;
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
             {
@@ -320,13 +320,13 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("mcu-version.get"))
+        if (owns(CapabilityIds.McuVersionGet))
         {
             try
             {
-                var response = await _client.QueryAsync(blade, "mcu-version.get", cancellationToken);
+                var response = await _client.QueryAsync(blade, CapabilityIds.McuVersionGet, cancellationToken);
                 bladeMcuVersion = BladeMcuVersionProtocol.Parse(
-                    response, RazerCapabilityClient.CreateRequest(blade, "mcu-version.get"));
+                    response, RazerCapabilityClient.CreateRequest(blade, CapabilityIds.McuVersionGet));
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
             {
@@ -334,13 +334,13 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("adapter-power.get"))
+        if (owns(CapabilityIds.AdapterPowerGet))
         {
             try
             {
-                var response = await _client.QueryAsync(blade, "adapter-power.get", cancellationToken);
+                var response = await _client.QueryAsync(blade, CapabilityIds.AdapterPowerGet, cancellationToken);
                 bladeAdapterPower = BladeAdapterPowerProtocol.Parse(
-                    response, RazerCapabilityClient.CreateRequest(blade, "adapter-power.get"));
+                    response, RazerCapabilityClient.CreateRequest(blade, CapabilityIds.AdapterPowerGet));
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
             {
@@ -348,7 +348,7 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("native-display-mode.get"))
+        if (owns(CapabilityIds.NativeDisplayModeGet))
         {
             try
             {
@@ -361,14 +361,14 @@ internal sealed class BladeTelemetryReader
             }
         }
 
-        if (owns("sku-hardware-configuration.get"))
+        if (owns(CapabilityIds.SkuHardwareConfigurationGet))
         {
             try
             {
                 var response = await _client.QueryAsync(
-                    blade, "sku-hardware-configuration.get", cancellationToken);
+                    blade, CapabilityIds.SkuHardwareConfigurationGet, cancellationToken);
                 bladeSkuHardwareConfiguration = BladeProduct710Protocol.ParseSkuHardwareConfiguration(
-                    response, RazerCapabilityClient.CreateRequest(blade, "sku-hardware-configuration.get"));
+                    response, RazerCapabilityClient.CreateRequest(blade, CapabilityIds.SkuHardwareConfigurationGet));
                 if (bladeSkuHardwareConfiguration.Value.MiniLedResolution)
                 {
                     _validation.LocalDimmingPath = _validation.PowerModePath;
@@ -393,7 +393,7 @@ internal sealed class BladeTelemetryReader
 
         try
         {
-            if (owns("logo-power.get"))
+            if (owns(CapabilityIds.LogoPowerGet))
             {
                 bladeLogoMode = (await _display.ReadLogoStateAsync(blade, cancellationToken)).CombinedMode;
                 _validation.LogoPath = blade.Descriptor.Id;

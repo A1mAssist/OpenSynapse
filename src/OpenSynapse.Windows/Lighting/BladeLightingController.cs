@@ -690,7 +690,7 @@ public sealed class BladeLightingController : IBladeLightingController
         RazerDeviceManifest manifest,
         CancellationToken cancellationToken)
     {
-        var request = manifest.GetRequiredCapability("keyboard-brightness.get");
+        var request = manifest.GetRequiredCapability(CapabilityIds.KeyboardBrightnessGet);
         var response = await _transport.QueryAsync(
             devicePath,
             request.TransactionId,

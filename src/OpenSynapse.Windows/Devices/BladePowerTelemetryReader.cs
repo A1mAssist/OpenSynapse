@@ -269,7 +269,7 @@ internal sealed class BladePowerTelemetryReader
             ?? throw new InvalidOperationException("The Blade gaming-mode control channel is unavailable.");
         await _client.QueryBuiltRequestAsync(
             blade,
-            "gaming-mode.set",
+            CapabilityIds.GamingModeSet,
             BladeSynapsePolicyProtocol.CreateSetGameModeRequest(enabled),
             cancellationToken);
         return new(enabled ? (byte)1 : (byte)0, 0, 0);
@@ -282,17 +282,17 @@ internal sealed class BladePowerTelemetryReader
     {
         var blade = _resolver.FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade Fn primary-function control channel is unavailable.");
-        if (!blade.Owns("fn-key.set"))
+        if (!blade.Owns(CapabilityIds.FnKeySet))
         {
             throw new InvalidOperationException(
                 "The Fn primary-function control is not available on this Blade model.");
         }
 
         var builtRequest = BladeSynapsePolicyProtocol.CreateSetFnKeyStateRequest(multiFunctionPrimary);
-        var request = RazerCapabilityClient.CreateConfiguredRequest(blade, "fn-key.set", builtRequest);
+        var request = RazerCapabilityClient.CreateConfiguredRequest(blade, CapabilityIds.FnKeySet, builtRequest);
         var response = await _client.QueryAsync(
             blade,
-            "fn-key.set",
+            CapabilityIds.FnKeySet,
             request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
             cancellationToken,
             request[6]);
@@ -374,12 +374,12 @@ internal sealed class BladePowerTelemetryReader
     {
         var cpuResponse = await _client.QueryAsync(
             device,
-            "boost.get",
+            CapabilityIds.BoostGet,
             BladeBoostProtocol.CreateGetArguments(BladeBoostProtocol.CpuCluster),
             cancellationToken);
         var gpuResponse = await _client.QueryAsync(
             device,
-            "boost.get",
+            CapabilityIds.BoostGet,
             BladeBoostProtocol.CreateGetArguments(BladeBoostProtocol.GpuCluster),
             cancellationToken);
 
@@ -451,7 +451,7 @@ internal sealed class BladePowerTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryAsync(
             device,
-            "boost.set",
+            CapabilityIds.BoostSet,
             BladeBoostProtocol.CreateSetArguments(cluster, value),
             cancellationToken);
 
@@ -647,9 +647,9 @@ internal sealed class BladePowerTelemetryReader
         CancellationToken cancellationToken)
     {
         var response = await _client.QueryAsync(
-            device, "power-mode.get", cancellationToken);
+            device, CapabilityIds.PowerModeGet, cancellationToken);
         return BladePowerModeProtocol.ParsePowerModeMask(
-            response, RazerCapabilityClient.CreateRequest(device, "power-mode.get"));
+            response, RazerCapabilityClient.CreateRequest(device, CapabilityIds.PowerModeGet));
     }
 
     private Task WriteMaxFanModeAsync(
@@ -659,7 +659,7 @@ internal sealed class BladePowerTelemetryReader
         CancellationToken cancellationToken)
     {
         var request = BladePowerModeProtocol.CreateSetRequest(mode, existingPowerModeMask);
-        return _client.QueryBuiltRequestAsync(device, "power-mode.set", request, cancellationToken);
+        return _client.QueryBuiltRequestAsync(device, CapabilityIds.PowerModeSet, request, cancellationToken);
     }
 
     private Task WritePowerModeMaskAsync(
@@ -668,7 +668,7 @@ internal sealed class BladePowerTelemetryReader
         CancellationToken cancellationToken) =>
         _client.QueryBuiltRequestAsync(
             device,
-            "power-mode.set",
+            CapabilityIds.PowerModeSet,
             BladePowerModeProtocol.CreateSetPowerModeMaskRequest(mask),
             cancellationToken);
 
