@@ -29,7 +29,7 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
     }
 
     [Fact]
-    public void ReadsInitiallyAndOnlyWhenEndpointOrMuteChanges()
+    public void PublishesOnlyWhenEndpointOrMuteChanges()
     {
         var reader = new FakeReader();
         var published = new ConcurrentQueue<BladeAudioMuteState>();
@@ -39,20 +39,20 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
             TimeSpan.FromMilliseconds(20));
 
         source.Start();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
-        Assert.Equal(1, reader.ReadCount);
+        Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
+        Assert.Empty(published);
 
         Thread.Sleep(100);
         Assert.Equal(1, reader.ReadCount);
 
         reader.Snapshot = new WindowsAudioMuteSnapshot(true, false);
         reader.RaiseChanged();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 3, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 1, TimeSpan.FromSeconds(2)));
         Assert.Equal(new BladeAudioMuteState(BladeAudioMuteTarget.Speaker, true), published.Last());
 
         reader.Snapshot = new WindowsAudioMuteSnapshot(true, true);
         reader.RaiseChanged();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 4, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
         Assert.Equal(new BladeAudioMuteState(BladeAudioMuteTarget.Microphone, true), published.Last());
 
         source.Dispose();
@@ -76,9 +76,10 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
             TimeSpan.FromMilliseconds(20));
 
         source.Start();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
+        Assert.Empty(published);
         source.Refresh();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 4, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
         Assert.Equal(2, reader.ReadCount);
     }
 

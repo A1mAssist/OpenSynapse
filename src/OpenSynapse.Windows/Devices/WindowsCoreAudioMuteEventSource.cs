@@ -142,7 +142,13 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                     }
                     var current = reader.Read();
                     var forcePublish = Interlocked.Exchange(ref _forcePublish, 0) != 0;
-                    PublishChanges(forcePublish ? null : previous, current);
+                    // Razer's own service only pushes an indicator state when an endpoint
+                    // changes. Seeding the first snapshot keeps a pre-muted endpoint, such as
+                    // an unused microphone array, from lighting the key LED at startup.
+                    if (previous is not null || forcePublish)
+                    {
+                        PublishChanges(forcePublish ? null : previous, current);
+                    }
                     previous = current;
                     Volatile.Write(ref _lastError, null);
                 }
