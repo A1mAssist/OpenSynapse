@@ -2840,12 +2840,10 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
         BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(_blade._bladeProductId);
 
     /// <summary>
-    /// Hidden until the driver answers a Pstates20 read. A laptop driver that refuses
-    /// the read refuses the write, so the card would only ever show a failing button.
+    /// The card stays visible when the service cannot answer, so a stale machine service
+    /// explains itself instead of silently removing the feature.
     /// </summary>
-    public Visibility GpuClockOffsetVisibility => _blade._bladeGpuClockOffsetAvailable
-        ? Visibility.Visible
-        : Visibility.Collapsed;
+    public bool CanEditGpuClockOffset => _blade._bladeGpuClockOffsetAvailable;
 
     public Visibility GpuClockLimitVisibility => _bladeGpuClockLimitAvailable
         ? Visibility.Visible
@@ -2939,6 +2937,12 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
                 CoreClockOffsetMhz = state.CoreMhz;
                 MemoryClockOffsetMhz = state.MemoryMhz;
             }
+            else
+            {
+                GpuClockOffsetStatusText = AppStrings.Text(state is null
+                    ? "BladeGpuClockOffsetServiceMissing"
+                    : "BladeGpuClockOffsetUnsupported");
+            }
         }
         catch (Exception exception) when (
             exception is IOException or InvalidOperationException or TimeoutException or
@@ -2946,6 +2950,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
                 System.ComponentModel.Win32Exception)
         {
             _blade._bladeGpuClockOffsetAvailable = false;
+            GpuClockOffsetStatusText = AppStrings.Text("BladeGpuClockOffsetServiceMissing");
         }
 
         try
@@ -2968,7 +2973,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
             _bladeGpuClockLimitAvailable = false;
         }
 
-        OnPropertyChanged(nameof(GpuClockOffsetVisibility));
+        OnPropertyChanged(nameof(CanEditGpuClockOffset));
         OnPropertyChanged(nameof(GpuClockLimitVisibility));
     }
 
