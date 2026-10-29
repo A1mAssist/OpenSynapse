@@ -10,7 +10,7 @@
     {
       "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Blade.cs",
       "maxLines": 1924,
-      "maxPublicMembers": 148
+      "maxPublicMembers": 153
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/OpenRazerDeviceService.cs",
@@ -186,6 +186,11 @@
     {
       "path": "src/OpenSynapse.Windows/Protocols/OpenRazerMouseProtocol.cs",
       "maxLines": 602
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/OpenRazerWorkspace.cs",
+      "maxLines": 602,
+      "maxPublicMembers": 10
     }
   ],
   "groups": [

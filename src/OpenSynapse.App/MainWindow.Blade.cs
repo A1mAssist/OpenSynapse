@@ -324,7 +324,9 @@ public sealed partial class MainWindow
     internal void RefreshDedicatedGpuMode()
     {
         var status = WindowsDedicatedGpuMode.GetStatus();
-        DedicatedGpuModeSection.Visibility = status.IsSupported ? Visibility.Visible : Visibility.Collapsed;
+        DedicatedGpuModeSection.Visibility = DedicatedGpuModePolicy.ShouldShow(status.BlockReason)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         _dedicatedGpuModeUiReady = false;
         try
         {
@@ -333,7 +335,7 @@ public sealed partial class MainWindow
             DedicatedGpuModeToggle.IsEnabled = status.IsSupported && !faulted && !_dedicatedGpuModeBusy && status.CanChange;
             DedicatedGpuModeRestartButton.Visibility = faulted ? Visibility.Visible : Visibility.Collapsed;
             DedicatedGpuModeRestartButton.IsEnabled = faulted && !_dedicatedGpuModeBusy;
-            DedicatedGpuModeStatusText.Text = status.IsSupported
+            DedicatedGpuModeStatusText.Text = DedicatedGpuModePolicy.ShouldShow(status.BlockReason)
                 ? DedicatedGpuModeStatusMessage(status)
                 : string.Empty;
         }
@@ -786,7 +788,7 @@ public sealed partial class MainWindow
             ReferenceEquals(sender, KrakenSecondaryColorFlyout) ||
             ReferenceEquals(sender, KrakenTertiaryColorFlyout))
         {
-            if (_viewModel.SelectedOpenRazerKraken is { } kraken)
+            if (_viewModel.OpenRazer.SelectedKraken is { } kraken)
             {
                 await kraken.ApplyAsync(_lifetime.Token);
             }

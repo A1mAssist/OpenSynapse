@@ -190,7 +190,7 @@
                     </StackPanel>
                   </Border>
                 </StackPanel>
-                <StackPanel x:Name="OpenRazerKrakenPanel" DataContext="{Binding SelectedOpenRazerKraken}" Visibility="Collapsed" Spacing="16">
+                <StackPanel x:Name="OpenRazerKrakenPanel" DataContext="{Binding OpenRazer.SelectedKraken}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Serial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
@@ -627,7 +627,7 @@
                     </StackPanel>
                   </Border>
                 </StackPanel>
-                <StackPanel x:Name="OpenRazerDevicePanel" DataContext="{Binding SelectedOpenRazerDevice}" Visibility="Collapsed" Spacing="16">
+                <StackPanel x:Name="OpenRazerDevicePanel" DataContext="{Binding OpenRazer.SelectedDevice}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel>
@@ -1615,7 +1615,7 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                       <Button local:Localized.Uid="Loc_B2441B64DA" Content="重新检查" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" />
                       <Button local:Localized.Uid="CopyDiagnostics" Content="复制诊断信息" Click="CopyDiagnosticsClick" Style="{StaticResource PrimaryButtonStyle}" />
-                      <Button local:Localized.Uid="ScanHidCommands" Content="扫描 HID 命令" Click="ScanHidCommandsClick" IsEnabled="{Binding CanScanHidCommands}" Style="{StaticResource SecondaryButtonStyle}" />
+                      <Button local:Localized.Uid="ScanHidCommands" Content="扫描 HID 命令" Click="ScanHidCommandsClick" IsEnabled="{Binding OpenRazer.CanScanHidCommands}" Style="{StaticResource SecondaryButtonStyle}" />
                       <TextBlock x:Name="DiagnosticsCopyStatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                     </StackPanel>
                   </Grid>

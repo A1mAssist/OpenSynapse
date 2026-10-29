@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Audio;
@@ -10,7 +11,6 @@ using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
-using OpenSynapse.App.Runtime;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Lifecycle;
@@ -48,16 +48,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly WindowsStartupManager? _startupManager;
     private readonly WindowsTouchpadController? _touchpadController;
-    private readonly OpenRazerDeviceService? _openRazerDeviceService;
-    private readonly OpenRazerChromaFrameSink? _openRazerChromaFrameSink;
-    private readonly OpenRazerSpecialLightingService? _openRazerSpecialLightingService;
-    private IReadOnlyList<OpenRazerSpecialLightingConnection> _krakenConnections = [];
-    private CancellationTokenSource? _openRazerSelectionCancellation;
-    // A device whose mode was already repaired must not be rewritten on every device-tree
-    // change; three HID round trips at the 31 ms device wait is not free.
-    private readonly HashSet<string> _openRazerDriverModeChecked = new(StringComparer.OrdinalIgnoreCase);
-    private OpenRazerDeviceViewModel? _selectedOpenRazerDevice;
-    private OpenRazerKrakenViewModel? _selectedOpenRazerKraken;
     private readonly string? _executablePath;
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly VerifiedProfileApplier _profileApplier = new();
@@ -148,20 +138,24 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _activeApplicationProvider = activeApplicationProvider ?? UnknownActiveApplicationProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
         Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
+        OpenRazer = new OpenRazerWorkspace(
+            openRazerDeviceService,
+            openRazerSpecialLightingService,
+            () => CurrentPowerSource,
+            () => _profile,
+            GetActiveProfile,
+            SaveProfileAsync,
+            _diagnosticLog,
+            () => _chromaIntegrationEnabled,
+            () => Macros.Items.Select(macro => macro.Definition).ToArray(),
+            RefreshDevicesAsync,
+            RefreshDeviceOverviewVisibility,
+            SetDeviceOperationError,
+            DispatcherQueue.GetForCurrentThread());
         _internalDisplayController = internalDisplayController;
         _bladeLightingController = bladeLightingController;
         _startupManager = startupManager;
         _touchpadController = touchpadController;
-        _openRazerDeviceService = openRazerDeviceService;
-        _openRazerSpecialLightingService = openRazerSpecialLightingService;
-        if (_openRazerDeviceService is not null)
-        {
-            _openRazerChromaFrameSink = new OpenRazerChromaFrameSink(
-                _openRazerDeviceService,
-                () => CurrentOpenRazerConnections,
-                IsOpenRazerLightingEnabled,
-                IsOpenRazerChromaOverrideEnabled);
-        }
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
         _executablePath = executablePath;
         _startupDiagnostics = startupDiagnostics?.ToArray() ?? Array.Empty<string>();
@@ -187,28 +181,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<DeviceSelectorItemViewModel> DeviceSelectorItems { get; } = new();
-    public ObservableCollection<OpenRazerDeviceRowViewModel> OpenRazerDevices { get; } = new();
-    public ObservableCollection<OpenRazerKrakenDeviceRowViewModel> OpenRazerKrakenDevices { get; } = new();
     public ThxAudioViewModel ThxAudio { get; }
     public MacroWorkspace Macros { get; }
-    public OpenRazerDeviceViewModel? SelectedOpenRazerDevice
-    {
-        get => _selectedOpenRazerDevice;
-        private set
-        {
-            if (SetField(ref _selectedOpenRazerDevice, value))
-            {
-                OnPropertyChanged(nameof(CanScanHidCommands));
-            }
-        }
-    }
-    public bool CanScanHidCommands =>
-        SelectedOpenRazerDevice is { IsReady: true };
-    public OpenRazerKrakenViewModel? SelectedOpenRazerKraken
-    {
-        get => _selectedOpenRazerKraken;
-        private set => SetField(ref _selectedOpenRazerKraken, value);
-    }
+    public OpenRazerWorkspace OpenRazer { get; }
     public ObservableCollection<DiagnosticRowViewModel> Diagnostics { get; } = new();
     public ObservableCollection<string> ProfileNames { get; } = new();
     public ObservableCollection<ApplicationBindingRowViewModel> ApplicationBindings { get; } = new();
@@ -398,20 +373,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             row.RefreshLocalization();
         }
-        foreach (var row in OpenRazerDevices)
-        {
-            row.RefreshLocalization();
-        }
-        foreach (var row in OpenRazerKrakenDevices)
-        {
-            row.RefreshLocalization();
-        }
+        OpenRazer.RefreshLocalization();
         foreach (var row in BlackSharkDevices)
         {
             row.RefreshLocalization();
         }
-        SelectedOpenRazerDevice?.RefreshLocalization();
-        SelectedOpenRazerKraken?.RefreshLocalization();
         SelectedBlackShark?.RefreshLocalization();
         foreach (var row in Diagnostics)
         {
@@ -465,16 +431,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             return;
         }
 
-        _openRazerSelectionCancellation?.Cancel();
-        _openRazerSelectionCancellation?.Dispose();
+        await OpenRazer.DisposeAsync().ConfigureAwait(false);
         Macros.Dispose();
         _hue?.Dispose();
-
-        if (SelectedOpenRazerDevice is { } openRazerDevice)
-        {
-            await openRazerDevice.DisposeAsync().ConfigureAwait(false);
-            SelectedOpenRazerDevice = null;
-        }
 
         SelectedBlackShark = null;
         _selectedBlackSharkDevice = null;
@@ -902,7 +861,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             groups.TryAdd(row.Name, group);
         }
 
-        foreach (var row in OpenRazerDevices)
+        foreach (var row in OpenRazer.Devices)
         {
             var group = new DiagnosticRowViewModel(
                 row.Name,
@@ -911,8 +870,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 row.Identity,
                 row.StatusBrush);
             Diagnostics.Add(group);
-            var details = SelectedOpenRazerDevice?.InstanceId == row.Connection.InstanceId
-                ? SelectedOpenRazerDevice.ProtocolDetails
+            var details = OpenRazer.SelectedDevice?.InstanceId == row.Connection.InstanceId
+                ? OpenRazer.SelectedDevice.ProtocolDetails
                 : OpenRazerDeviceViewModel.BuildProtocolDetails(row.Connection);
             foreach (var detail in details) group.AddProtocolDetail(detail);
             if (row.HasError)
@@ -920,16 +879,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
                     AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
             }
-            if (SelectedOpenRazerDevice?.InstanceId == row.Connection.InstanceId &&
-                SelectedOpenRazerDevice.HasError &&
-                !StringComparer.Ordinal.Equals(SelectedOpenRazerDevice.ErrorText, row.Error))
+            if (OpenRazer.SelectedDevice?.InstanceId == row.Connection.InstanceId &&
+                OpenRazer.SelectedDevice.HasError &&
+                !StringComparer.Ordinal.Equals(OpenRazer.SelectedDevice.ErrorText, row.Error))
             {
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
-                    AppStrings.Text("Text_6027BEB0"), DescribeFailedReads(SelectedOpenRazerDevice), errorBrush));
+                    AppStrings.Text("Text_6027BEB0"), DescribeFailedReads(OpenRazer.SelectedDevice), errorBrush));
             }
         }
 
-        foreach (var row in OpenRazerKrakenDevices)
+        foreach (var row in OpenRazer.KrakenDevices)
         {
             var group = new DiagnosticRowViewModel(
                 row.Name,

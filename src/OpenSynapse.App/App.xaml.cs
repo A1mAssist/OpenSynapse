@@ -349,7 +349,7 @@ public partial class App : Application
                     ? Task.CompletedTask
                     : RestoreLightingAfterChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                viewModel.ApplyOpenRazerChromaFrameAsync,
+                viewModel.OpenRazer.ApplyChromaFrameAsync,
                 viewModel.IsBladeChromaOverrideEnabled,
                 _behaviorSettings.ChromaBlockedSources);
             _chromaRestHost.StartAsync();
@@ -365,7 +365,7 @@ public partial class App : Application
     private static async Task RestoreLightingAfterChromaAsync(MainViewModel viewModel)
     {
         await viewModel.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
-        await viewModel.RestoreOpenRazerLightingAfterExternalAsync().ConfigureAwait(false);
+        await viewModel.OpenRazer.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
     }
 
     private Task GetShutdownTask(MainViewModel viewModel)

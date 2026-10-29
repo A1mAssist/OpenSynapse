@@ -71,12 +71,7 @@ public sealed partial class MainViewModel
         }
 
         _selectedHeadsetAudioDevice = row;
-        OpenRazerKrakenViewModel? lighting = null;
-        if (_openRazerSpecialLightingService is not null &&
-            _krakenConnections.FirstOrDefault(item => item.ProductId == row.Connection.ProductId) is { } kraken)
-        {
-            lighting = new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, kraken);
-        }
+        var lighting = OpenRazer.CreateKrakenLighting(row.Connection.ProductId);
 
         if (SelectedHeadsetAudio is { } previous)
         {
