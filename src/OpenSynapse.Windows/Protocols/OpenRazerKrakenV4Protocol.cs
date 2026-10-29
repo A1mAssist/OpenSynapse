@@ -4,9 +4,9 @@ namespace OpenSynapse.Windows.Protocols;
 /// Razer Kraken V4 wired 64-byte report family, matching the "Billie" headset
 /// implementation in Razer's own product bundle. Every frame is an output report
 /// with the report id in byte 0, the audio transaction id in byte 2, the command
-/// class and id in bytes 7 and 8, the payload from byte 10, and an XOR checksum
-/// over bytes 0..61 in byte 62. The firmware drops a frame whose checksum is
-/// wrong, so the checksum is part of the frame, not an optional extra.
+/// class and id in bytes 7 and 8, and the payload from byte 10. The bundle's
+/// general commands carry an XOR checksum in byte 62; its custom-frame command
+/// leaves that slot zero, so the two builders differ here on purpose.
 /// </summary>
 internal static class OpenRazerKrakenV4Protocol
 {
@@ -32,9 +32,9 @@ internal static class OpenRazerKrakenV4Protocol
     /// <summary>
     /// The effect command travels as a three byte header in the payload, the same
     /// shape the firmware uses for the other general commands. Set Chroma Effect is
-    /// declared as C0 00 01 in the bundle's command table.
+    /// declared as C0 01 01 in the bundle's command table.
     /// </summary>
-    private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x00, 0x01];
+    private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x01, 0x01];
 
     private const byte EffectOff = 0x00;
     private const byte EffectStatic = 0x01;
@@ -48,6 +48,13 @@ internal static class OpenRazerKrakenV4Protocol
         CreateEffect(EffectOff),
         CreateFrame(0, LedCount - 1, new OpenRazerColor(0, 0, 0)),
     ];
+
+    /// <summary>
+    /// The bundle's connect handshake is the general command 02 00 00. Synapse
+    /// sends it before it issues any lighting command.
+    /// </summary>
+    internal static byte[] CreateConnect() =>
+        CreateGeneralReport([0x02, 0x00, 0x00], []);
 
     internal static IReadOnlyList<byte[]> CreateStatic(OpenRazerColor color, byte? intensity = null) =>
     [
@@ -95,7 +102,8 @@ internal static class OpenRazerKrakenV4Protocol
             report[PayloadOffset + index] = payload[index];
         }
 
-        report[ChecksumOffset] = CalculateChecksum(report);
+        // The bundle's _createDataSendCustomFrame returns the buffer without
+        // writing the checksum slot; only general commands calculate it.
         return report;
     }
 
@@ -124,8 +132,8 @@ internal static class OpenRazerKrakenV4Protocol
     }
 
     /// <summary>
-    /// The firmware XORs every byte before the checksum slot and compares the
-    /// result with byte 62.
+    /// The general command builder XORs every byte before the checksum slot and
+    /// writes the result to byte 62. Custom frames do not use this path.
     /// </summary>
     private static byte CalculateChecksum(IReadOnlyList<byte> report)
     {
