@@ -68,7 +68,7 @@ public static class DedicatedGpuModeServiceClient
     /// Asks the service whether the driver accepts GPU clock offsets. Null means the
     /// service is unavailable, so the caller keeps the offset controls hidden.
     /// </summary>
-    public static async Task<bool?> TryGetGpuClockOffsetCapabilityAsync(
+    public static async Task<DedicatedGpuClockOffsetState?> TryGetGpuClockOffsetAsync(
         CancellationToken cancellationToken = default)
     {
         var request = new DedicatedGpuModeServiceRequest(
@@ -77,7 +77,15 @@ public static class DedicatedGpuModeServiceClient
             Enabled: null);
 
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
-        return response?.ClockOffsetAvailable;
+        if (response?.ClockOffsetAvailable is not { } available)
+        {
+            return null;
+        }
+
+        return new DedicatedGpuClockOffsetState(
+            available,
+            response.CoreOffsetMhz ?? 0,
+            response.MemoryOffsetMhz ?? 0);
     }
 
     /// <summary>

@@ -1671,11 +1671,12 @@
   <data name="BladeFanCurveEdit" xml:space="preserve"><value>Edit</value></data>
   <data name="BladeFanCurveApply" xml:space="preserve"><value>Apply</value></data>
   <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>GPU clock offset</value></data>
-  <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>Driver-level offset. It resets to zero when you switch performance mode or close the app.</value></data>
+  <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>Driver-level offset. It stays until you reset it.</value></data>
   <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>Core offset</value></data>
   <data name="BladeGpuMemoryClockLabel" xml:space="preserve"><value>Memory offset</value></data>
   <data name="BladeGpuClockOffsetApply" xml:space="preserve"><value>Apply</value></data>
-  <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>Applied. It resets to zero when you switch mode or close the app.</value></data>
+  <data name="BladeGpuClockOffsetReset" xml:space="preserve"><value>Reset</value></data>
+  <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>Applied. It stays until you reset it.</value></data>
   <data name="BladeGpuClockOffsetFailed" xml:space="preserve"><value>The GPU driver refused this clock offset.</value></data>
   <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU temperature</value></data>
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU temperature</value></data>

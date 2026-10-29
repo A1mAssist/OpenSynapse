@@ -67,6 +67,55 @@ public static class NvApiGpuClockOffset
     }
 
     /// <summary>
+    /// Reads the offsets the driver is currently holding, so the UI can show the real
+    /// state after a restart. A value outside the laptop envelope is reported as zero:
+    /// the block layout is taken from the write path, and a mismatch must not paint a
+    /// bogus number onto a slider.
+    /// </summary>
+    public static bool TryRead(out int coreMegahertz, out int memoryMegahertz, out string? error)
+    {
+        coreMegahertz = 0;
+        memoryMegahertz = 0;
+        if (Api.Value is not { } api)
+        {
+            error = "nvapi64.dll did not expose the NVAPI entry points.";
+            return false;
+        }
+
+        if (!TryGetPrimaryGpu(api, out var gpu, out error))
+        {
+            return false;
+        }
+
+        var core = ReadDomain(api, gpu, ClockDomainGraphics);
+        var memory = ReadDomain(api, gpu, ClockDomainMemory);
+        if (core is null || memory is null)
+        {
+            error = "NvAPI_GPU_GetPstates20 did not return the clock block.";
+            return false;
+        }
+
+        coreMegahertz = Sanitize(core.Value, LaptopCoreMinimumMhz, LaptopCoreMaximumMhz);
+        memoryMegahertz = Sanitize(memory.Value, MemoryMinimumMhz, MemoryMaximumMhz);
+        error = null;
+        return true;
+    }
+
+    internal static int Sanitize(int megahertz, int minimum, int maximum) =>
+        megahertz >= minimum && megahertz <= maximum ? megahertz : 0;
+
+    private static int? ReadDomain(NvApi api, nint gpu, int clockDomain)
+    {
+        var parameters = CreateParameters(clockDomain, 0);
+        if (api.GetPstates20(gpu, parameters) != 0)
+        {
+            return null;
+        }
+
+        return BinaryPrimitives.ReadInt32LittleEndian(parameters.AsSpan(ClockDeltaOffset)) / 1000;
+    }
+
+    /// <summary>
     /// Writes both offsets. Values outside the laptop envelope are clamped, never rejected,
     /// so a slider cannot submit a number the driver would refuse.
     /// </summary>
