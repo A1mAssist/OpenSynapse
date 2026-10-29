@@ -573,7 +573,8 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
     public async ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladePerformanceMode mode,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool coolingPadConnected = false)
     {
         if (!Enum.IsDefined(mode))
         {
@@ -626,7 +627,10 @@ public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryRe
                 await WriteBladeBoostModeAsync(blade, BladeBoostProtocol.GpuCluster, (byte)levels.Gpu, cancellationToken);
             }
 
-            if (mode == BladePerformanceMode.Hyperboost)
+            // With the pad attached the pad and the EC own the airflow, so the fans stay
+            // on their own curve. Without it the pin is the only thing that keeps the
+            // raised budget from turning straight into throttling.
+            if (mode == BladePerformanceMode.Hyperboost && !coolingPadConnected)
             {
                 await ApplyBladeMaxFanForHyperBoostAsync(blade, cancellationToken);
             }
