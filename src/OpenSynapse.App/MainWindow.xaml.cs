@@ -57,8 +57,8 @@ public sealed partial class MainWindow : Window
             _behaviorSettings.Save();
         };
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        _viewModel.SetMacroDispatcher(_dispatcherQueue);
-        _viewModel.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
+        _viewModel.Macros.SetMacroDispatcher(_dispatcherQueue);
+        _viewModel.Macros.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
         _viewModel.SetPadlessHyperBoostConfirmation(ConfirmPadlessHyperBoostAsync);
         _viewModel.SetPadlessHyperBoostAccepted(_behaviorSettings.PadlessHyperBoostAccepted);
         BladeBrightnessSlider.AddHandler(

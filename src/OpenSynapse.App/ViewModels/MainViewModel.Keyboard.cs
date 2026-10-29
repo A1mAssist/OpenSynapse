@@ -74,7 +74,7 @@ public sealed partial class MainViewModel
         SelectedKeyboard = new RazerKeyboardViewModel(
             row.Connection, message => _diagnosticLog.TryWrite("keyboard", message));
         SelectedKeyboard.Onboard.LocalMacroProvider =
-            () => Macros.Select(macro => macro.Definition).ToArray();
+            () => Macros.Items.Select(macro => macro.Definition).ToArray();
         await SelectedKeyboard.LoadAsync(cancellationToken);
     }
 }

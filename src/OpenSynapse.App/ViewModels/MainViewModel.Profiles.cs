@@ -62,7 +62,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        if (!await CommitMacroEditsBeforeProfileSwitchAsync(cancellationToken))
+        if (!await Macros.CommitMacroEditsBeforeProfileSwitchAsync(cancellationToken))
         {
             return;
         }
@@ -83,7 +83,7 @@ public sealed partial class MainViewModel
         }
 
         var name = ProfileNameInput;
-        if (!await CommitMacroEditsBeforeProfileSwitchAsync(cancellationToken))
+        if (!await Macros.CommitMacroEditsBeforeProfileSwitchAsync(cancellationToken))
         {
             return;
         }
@@ -356,7 +356,7 @@ public sealed partial class MainViewModel
         {
             ApplicationBindings.Add(new ApplicationBindingRowViewModel(binding.Key, binding.Value));
         }
-        RefreshMacroState();
+        Macros.RefreshMacroState();
         OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(CanDeleteProfile));
         OnPropertyChanged(nameof(BladePerformanceCycleModes));

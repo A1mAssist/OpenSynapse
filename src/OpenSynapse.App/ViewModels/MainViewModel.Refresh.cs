@@ -47,8 +47,7 @@ public sealed partial class MainViewModel
     /// </summary>
     private async Task RefreshDeviceReadoutsAsync(CancellationToken cancellationToken)
     {
-        if (_deviceDescriptors.Count == 0 ||
-            Volatile.Read(ref _deviceReadoutSamplingEnabled) == 0 ||
+        if (Volatile.Read(ref _deviceReadoutSamplingEnabled) == 0 ||
             !await TryEnterOperationAsync(cancellationToken))
         {
             return;
@@ -56,6 +55,14 @@ public sealed partial class MainViewModel
 
         try
         {
+            if (SelectedOpenRazerDevice is { } openRazerDevice)
+            {
+                await openRazerDevice.RefreshBatteryStateAsync(cancellationToken);
+            }
+            if (_deviceDescriptors.Count == 0)
+            {
+                return;
+            }
             var telemetry = await _deviceTelemetryReader.ReadAsync(_deviceDescriptors, cancellationToken);
             ApplyDeviceTelemetry(telemetry);
         }
