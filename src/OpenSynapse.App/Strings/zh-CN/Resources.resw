@@ -2091,6 +2091,8 @@
   <data name="BladeGpuClockOffsetReset" xml:space="preserve"><value>恢复默认</value></data>
   <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>已应用，会一直保留到恢复默认。</value></data>
   <data name="BladeGpuClockOffsetFailed" xml:space="preserve"><value>GPU 驱动拒绝了这次频率偏移。</value></data>
+  <data name="BladeGpuClockOffsetServiceMissing" xml:space="preserve"><value>需要安装或更新 OpenSynapse 机器服务。</value></data>
+  <data name="BladeGpuClockOffsetUnsupported" xml:space="preserve"><value>当前驱动不接受频率偏移。</value></data>
   <data name="CpuPowerLimitTitle" xml:space="preserve"><value>CPU 功耗墙</value></data>
   <data name="CpuPowerLimitDescription" xml:space="preserve"><value>限制 CPU 封装功耗上限（PL1/PL2）。</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>

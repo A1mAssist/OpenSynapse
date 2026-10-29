@@ -1722,6 +1722,8 @@
   <data name="BladeGpuClockOffsetReset" xml:space="preserve"><value>Reset</value></data>
   <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>Applied. It stays until you reset it.</value></data>
   <data name="BladeGpuClockOffsetFailed" xml:space="preserve"><value>The GPU driver refused this clock offset.</value></data>
+  <data name="BladeGpuClockOffsetServiceMissing" xml:space="preserve"><value>Install or update the OpenSynapse machine service.</value></data>
+  <data name="BladeGpuClockOffsetUnsupported" xml:space="preserve"><value>This driver does not accept clock offsets.</value></data>
   <data name="CpuPowerLimitTitle" xml:space="preserve"><value>CPU power limit</value></data>
   <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Cap the CPU package power wall (PL1/PL2).</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
