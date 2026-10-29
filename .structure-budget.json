@@ -120,6 +120,21 @@
       "maxLines": 724
     },
     {
+      "path": "src/OpenSynapse.App/ViewModels/FanWorkspace.cs",
+      "maxLines": 715,
+      "maxPublicMembers": 30
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/DisplayWorkspace.cs",
+      "maxLines": 358,
+      "maxPublicMembers": 13
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/LightingWorkspace.cs",
+      "maxLines": 477,
+      "maxPublicMembers": 5
+    },
+    {
       "path": "src/OpenSynapse.App/ViewModels/RazerGamepadViewModel.cs",
       "maxLines": 681
     },
@@ -140,16 +155,8 @@
       "maxLines": 668
     },
     {
-      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Telemetry.cs",
-      "maxLines": 658
-    },
-    {
       "path": "src/OpenSynapse.Windows/Lighting/WasapiAudioMeterAdapter.cs",
       "maxLines": 655
-    },
-    {
-      "path": "src/OpenSynapse.App/ViewModels/MainViewModel.Profiles.cs",
-      "maxLines": 654
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/OpenRazerDeviceViewModel.Lighting.cs",
@@ -191,6 +198,16 @@
       "path": "src/OpenSynapse.App/ViewModels/OpenRazerWorkspace.cs",
       "maxLines": 602,
       "maxPublicMembers": 10
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/ProfilesWorkspace.cs",
+      "maxLines": 528,
+      "maxPublicMembers": 23
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/TelemetryWorkspace.cs",
+      "maxLines": 183,
+      "maxPublicMembers": 34
     }
   ],
   "groups": [

@@ -39,7 +39,27 @@ public sealed class XamlBindingTests
     {
         ["Macros"] = "src/OpenSynapse.App/ViewModels/MacroWorkspace.cs",
         ["OpenRazer"] = "src/OpenSynapse.App/ViewModels/OpenRazerWorkspace.cs",
+        ["Profiles"] = "src/OpenSynapse.App/ViewModels/ProfilesWorkspace.cs",
+        ["Telemetry"] = "src/OpenSynapse.App/ViewModels/TelemetryWorkspace.cs",
+        ["Fan"] = "src/OpenSynapse.App/ViewModels/FanWorkspace.cs",
+        ["Display"] = "src/OpenSynapse.App/ViewModels/DisplayWorkspace.cs",
+        ["Lighting"] = "src/OpenSynapse.App/ViewModels/LightingWorkspace.cs",
     };
+
+    /// <summary>
+    /// The headset panel sets its DataContext to the headset view model, whose own Lighting
+    /// property is an OpenRazerKrakenViewModel. Those paths are not workspace roots.
+    /// </summary>
+    private static readonly string[] ResolvedOnNestedViewModels =
+    [
+        "Lighting.EffectOptions",
+        "Lighting.SelectedEffectIndex",
+        "Lighting.PrimaryVisibility",
+        "Lighting.Primary",
+        "Lighting.SecondaryVisibility",
+        "Lighting.Secondary",
+        "Lighting.CanApply",
+    ];
 
     [Fact]
     public void EveryBindingRootResolvesToAViewModelMember()
@@ -92,6 +112,11 @@ public sealed class XamlBindingTests
                             var segments = path.Split('.');
                             if (segments.Length < 2 ||
                                 !string.Equals(segments[0], property, StringComparison.Ordinal))
+                            {
+                                continue;
+                            }
+
+                            if (ResolvedOnNestedViewModels.Contains(path, StringComparer.Ordinal))
                             {
                                 continue;
                             }

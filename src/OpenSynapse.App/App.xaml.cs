@@ -194,7 +194,7 @@ public partial class App : Application
         viewModel.BladeOneTimeFullChargeChangedByUser += OnBladeOneTimeFullChargeChangedByUser;
         viewModel.InternalDisplayRefreshRateChangedByUser += OnInternalDisplayRefreshRateChangedByUser;
         viewModel.BladeInputProfileChanged += OnBladeInputProfileChanged;
-        viewModel.BatteryObserved += OnPeripheralBatteryObserved;
+        viewModel.Telemetry.BatteryObserved += OnPeripheralBatteryObserved;
         viewModel.Macros.MacroContinuousPlaybackStarted += OnMacroContinuousPlaybackStarted;
         viewModel.SetLegacyShortcutCycleDefaults(
             _behaviorSettings.PerformanceCycleModes,
@@ -350,7 +350,7 @@ public partial class App : Application
                     : RestoreLightingAfterChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
                 viewModel.OpenRazer.ApplyChromaFrameAsync,
-                viewModel.IsBladeChromaOverrideEnabled,
+            viewModel.Lighting.IsBladeChromaOverrideEnabled,
                 _behaviorSettings.ChromaBlockedSources);
             _chromaRestHost.StartAsync();
             _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
@@ -364,7 +364,7 @@ public partial class App : Application
 
     private static async Task RestoreLightingAfterChromaAsync(MainViewModel viewModel)
     {
-        await viewModel.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
+            await viewModel.Lighting.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
         await viewModel.OpenRazer.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
     }
 
@@ -402,7 +402,7 @@ public partial class App : Application
             _audioMuteViewModel.BladeOneTimeFullChargeChangedByUser -= OnBladeOneTimeFullChargeChangedByUser;
             _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
             _audioMuteViewModel.BladeInputProfileChanged -= OnBladeInputProfileChanged;
-            _audioMuteViewModel.BatteryObserved -= OnPeripheralBatteryObserved;
+        _audioMuteViewModel.Telemetry.BatteryObserved -= OnPeripheralBatteryObserved;
             _audioMuteViewModel.Macros.MacroContinuousPlaybackStarted -= OnMacroContinuousPlaybackStarted;
             _audioMuteViewModel = null;
         }

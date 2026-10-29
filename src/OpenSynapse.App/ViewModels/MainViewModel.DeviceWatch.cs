@@ -79,11 +79,11 @@ public sealed partial class MainViewModel
                         _lastObservedActiveProfileName = _profile.ActiveProfileName;
                         if (profileChanged)
                         {
-                            RefreshProfileState();
+                            Profiles.RefreshProfileState();
                             try
                             {
                                 await _profileStore.SaveAsync(_profile, cancellationToken);
-                                ProfileStatusText = AppStrings.FormatText("ProfileAutoSwitched", ActiveProfileName);
+                                Profiles.ProfileStatusText = AppStrings.FormatText("ProfileAutoSwitched", Profiles.ActiveProfileName);
                             }
                             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                             {
@@ -94,7 +94,7 @@ public sealed partial class MainViewModel
                                 _profile = previousProfile;
                                 _applicationProfileSwitcher = previousProfileSwitcher;
                                 _lastObservedApplicationBindings = null;
-                                RefreshProfileState();
+                                Profiles.RefreshProfileState();
                                 SetDeviceOperationError(AppStrings.FormatText("AutomaticProfileSaveError",
                                     exception.Message));
                                 profileChanged = false;

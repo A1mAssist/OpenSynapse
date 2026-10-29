@@ -104,7 +104,7 @@ public sealed partial class MainWindow
         LowBatteryNotificationToggle.IsOn = _behaviorSettings.LowBatteryNotificationsEnabled;
         TrayBatteryToggle.IsOn = _behaviorSettings.TrayBatteryLevelsEnabled;
         ChromaRestToggle.IsOn = _behaviorSettings.ExperimentalChromaRestEnabled;
-        _viewModel.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
+        _viewModel.Lighting.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = _behaviorSettings.RestoreLightingAfterChromaSession;
         RefreshChromaRestStatus();
         var performanceAvailable = _viewModel.IsBladePerformanceModeAvailable(BladePerformanceMode.Performance);
@@ -284,7 +284,7 @@ public sealed partial class MainWindow
         {
             _behaviorSettings.ExperimentalChromaRestEnabled = toggle.IsOn;
             _behaviorSettings.Save();
-            _viewModel.SetChromaIntegrationEnabled(toggle.IsOn);
+            _viewModel.Lighting.SetChromaIntegrationEnabled(toggle.IsOn);
             if (_setChromaRestEnabled is not null)
             {
                 await _setChromaRestEnabled(toggle.IsOn);
@@ -296,7 +296,7 @@ public sealed partial class MainWindow
             InvalidOperationException or SocketException or System.Security.SecurityException)
         {
             _behaviorSettings.ExperimentalChromaRestEnabled = previous;
-            _viewModel.SetChromaIntegrationEnabled(previous);
+            _viewModel.Lighting.SetChromaIntegrationEnabled(previous);
             _behaviorUiReady = false;
             toggle.IsOn = previous;
             _behaviorUiReady = true;
@@ -331,7 +331,7 @@ public sealed partial class MainWindow
 
     private void RebuildRefreshRateCycleOptions(bool force = false)
     {
-        var rates = _viewModel.InternalDisplayRefreshRates.Distinct().Order().ToArray();
+        var rates = _viewModel.Display.InternalDisplayRefreshRates.Distinct().Order().ToArray();
         if (!force && _refreshRateCycleOptions.SequenceEqual(rates))
         {
             return;
@@ -463,17 +463,17 @@ public sealed partial class MainWindow
 
     private async void StartupToggled(object sender, RoutedEventArgs e)
     {
-        if (sender is ToggleSwitch toggle && toggle.IsOn != _viewModel.IsStartupEnabled)
+        if (sender is ToggleSwitch toggle && toggle.IsOn != _viewModel.Profiles.IsStartupEnabled)
         {
-            await _viewModel.SetStartupEnabledAsync(toggle.IsOn, _lifetime.Token);
+            await _viewModel.Profiles.SetStartupEnabledAsync(toggle.IsOn, _lifetime.Token);
         }
     }
 
     private async void SilentStartupToggled(object sender, RoutedEventArgs e)
     {
-        if (sender is ToggleSwitch toggle && toggle.IsOn != _viewModel.IsSilentStartupEnabled)
+        if (sender is ToggleSwitch toggle && toggle.IsOn != _viewModel.Profiles.IsSilentStartupEnabled)
         {
-            await _viewModel.SetSilentStartupEnabledAsync(toggle.IsOn, _lifetime.Token);
+            await _viewModel.Profiles.SetSilentStartupEnabledAsync(toggle.IsOn, _lifetime.Token);
         }
     }
 }

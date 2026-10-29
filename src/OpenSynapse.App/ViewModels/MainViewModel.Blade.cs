@@ -145,7 +145,7 @@ public sealed partial class MainViewModel
         if (!await SaveProfileAsync(cancellationToken))
         {
             _profile = previousProfile;
-            _lightingShadowFingerprint = string.Empty;
+            Lighting.ShadowFingerprint = string.Empty;
             throw new InvalidOperationException(AppStrings.Text("Text_C7D0CD75"));
         }
 
@@ -158,15 +158,15 @@ public sealed partial class MainViewModel
                 _profile,
                 blade,
                 CurrentPowerSource);
-            _bladeLightingDevicePath = blade.Id;
-            _lightingShadowFingerprint = CreateLightingFingerprint(
+            Lighting.LightingDevicePath = blade.Id;
+            Lighting.ShadowFingerprint = Lighting.CreateFingerprint(
                 resolved.Lighting,
                 blade.Id,
                 CurrentPowerSource,
                 resolved.Blade.LightingEnabled ?? true,
                 resolved.Blade.ChromaOverrideEnabled ?? true);
         }
-        _ = ObserveBladeLightingRuntimeAsync(
+        _ = Lighting.ObserveRuntime(
             _bladeLightingController!.RuntimeCompletion);
     }
 
@@ -456,9 +456,7 @@ public sealed partial class MainViewModel
         target.FanMode = null;
         target.FanTargetRpm = null;
         target.FanCurve = null;
-        _pendingMode = null;
-        RaiseBladeFanModeSelection();
-        OnPropertyChanged(nameof(BladeFanCurveActive));
+        Fan.ClearPendingMode();
     }
 
     public async Task ApplyBladeChargeLimitAsync(CancellationToken cancellationToken = default)
@@ -830,29 +828,29 @@ public sealed partial class MainViewModel
     {
         await RunDeviceOperationAsync(AppStrings.Text("Text_8423206D"), async () =>
         {
-            if (!_canSetInternalDisplayRefreshRate ||
-                _internalDisplayController is null ||
-                InternalDisplayRefreshRates.Count == 0)
+            if (!Display.CanSetInternalDisplayRefreshRate ||
+                Display.Controller is null ||
+                Display.InternalDisplayRefreshRates.Count == 0)
             {
                 throw new InvalidOperationException(AppStrings.Text("Text_36D4C146"));
             }
 
             var includedRates = _internalDisplayRefreshRateCycleHertz is { Count: > 0 }
                 ? _internalDisplayRefreshRateCycleHertz
-                : InternalDisplayRefreshRates.ToHashSet();
-            InternalDisplayRefreshRateHertz = BladePerformanceModeCycle.GetNext(
-                _confirmedInternalDisplayRefreshRateHertz,
-                InternalDisplayRefreshRates,
+                : Display.InternalDisplayRefreshRates.ToHashSet();
+            Display.InternalDisplayRefreshRateHertz = BladePerformanceModeCycle.GetNext(
+                Display.ConfirmedRefreshRateHertz,
+                Display.InternalDisplayRefreshRates,
                 includedRates);
-            var snapshot = _internalDisplayController.SetRefreshRate(
-                InternalDisplayRefreshRateHertz);
-            ApplyInternalDisplaySnapshot(snapshot);
+            var snapshot = Display.Controller.SetRefreshRate(
+                Display.InternalDisplayRefreshRateHertz);
+            Display.ApplyInternalDisplaySnapshot(snapshot);
             (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).RefreshRateHertz =
                 snapshot.RefreshRateHertz;
             await SaveProfileAsync(cancellationToken);
             InternalDisplayRefreshRateChangedByUser?.Invoke(snapshot.RefreshRateHertz);
         }, cancellationToken, () =>
-            InternalDisplayRefreshRateHertz = _confirmedInternalDisplayRefreshRateHertz);
+            Display.InternalDisplayRefreshRateHertz = Display.ConfirmedRefreshRateHertz);
     }
 
     internal Task StepBladeBrightnessAsync(
@@ -1201,9 +1199,7 @@ public sealed partial class MainViewModel
         {
             if (!SetField(ref _blade._bladePerformanceModeIndex, value)) return;
             // The fixed-speed range is per mode, so re-clamp the stored target on a switch.
-            OnPropertyChanged(nameof(BladeFanFixedMinimumRpm));
-            OnPropertyChanged(nameof(BladeFanFixedMaximumRpm));
-            BladeFanFixedRpm = BladeFanFixedRpm;
+            Fan.ReclampFixedRpm();
         }
     }
     public bool CanSetBladePerformanceMode
@@ -1437,8 +1433,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeLightingColorVisibility));
         OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
         OnPropertyChanged(nameof(BladeLightingTertiaryColorVisibility));
-        OnPropertyChanged(nameof(BladeChromaOverrideVisibility));
-        OnPropertyChanged(nameof(BladeChromaImportVisibility));
+        Lighting.RaiseChromaVisibilityChanged();
         OnPropertyChanged(nameof(BladeWaveDirectionVisibility));
         OnPropertyChanged(nameof(BladeLightingColorVisibility));
         OnPropertyChanged(nameof(BladeLightingSecondColorVisibility));
@@ -1458,8 +1453,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeChargeLimitCardVisibility));
         OnPropertyChanged(nameof(BladeLogoCardVisibility));
         OnPropertyChanged(nameof(CanSetBladeLightingSettings));
-        OnPropertyChanged(nameof(BladeFanFixedVisibility));
-        OnPropertyChanged(nameof(BladeFanCurveVisibility));
+        Fan.RaiseCurveStateChanged();
     }
 
     /// <summary>True when the exact model exposes the given performance mode.</summary>
@@ -1839,7 +1833,7 @@ public sealed partial class MainViewModel
                 throw new InvalidOperationException(AppStrings.Text("Text_C7D0CD75"));
             }
 
-            _lightingShadowFingerprint = string.Empty;
+            Lighting.ShadowFingerprint = string.Empty;
             RequestDeviceRefresh();
         }, cancellationToken);
     }
@@ -1867,11 +1861,11 @@ public sealed partial class MainViewModel
 
                 if (IsSelectedLightingPowerActive && Volatile.Read(ref _displayAvailable) != 0)
                 {
-                    _lightingShadowFingerprint = string.Empty;
+                    Lighting.ShadowFingerprint = string.Empty;
                     var blade = _deviceDescriptors.FirstOrDefault(device =>
                         DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                         device.Access == DeviceAccessState.Available);
-                    await ApplyLoadedLightingProfileAsync(
+                    await Lighting.ApplyLoadedProfileAsync(
                         blade,
                         CurrentPowerSource,
                         cancellationToken).ConfigureAwait(false);

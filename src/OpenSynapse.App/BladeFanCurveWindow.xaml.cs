@@ -101,20 +101,20 @@ public sealed partial class BladeFanCurveWindow : Window
     }
 
     private async void ApplyBladeFanCurveClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBladeFanCurveEditorAsync(CancellationToken.None);
+        await _viewModel.Fan.ApplyBladeFanCurveEditorAsync(CancellationToken.None);
 
     private void AddBladeFanCurveTierClick(object sender, RoutedEventArgs e) =>
-        _viewModel.AddBladeFanCurvePoint();
+        _viewModel.Fan.AddBladeFanCurvePoint();
 
     private void ResetBladeFanCurveClick(object sender, RoutedEventArgs e) =>
-        _viewModel.ResetBladeFanCurveToDefault();
+        _viewModel.Fan.ResetBladeFanCurveToDefault();
 
     private void RemoveBladeFanCurveTierClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: BladeFanCurvePointViewModel point })
         {
-            _viewModel.BladeFanCurveEditor.Select(point);
-            _viewModel.RemoveBladeFanCurvePoint();
+        _viewModel.Fan.BladeFanCurveEditor.Select(point);
+        _viewModel.Fan.RemoveBladeFanCurvePoint();
         }
     }
 

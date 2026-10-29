@@ -23,25 +23,21 @@ public sealed partial class TelemetryPeakBindingTests
 
         foreach (var property in PeakProperties)
         {
-            Assert.Contains($"ToolTipService.ToolTip=\"{{Binding {property}}}\"", xaml, StringComparison.Ordinal);
+            Assert.Contains($"ToolTipService.ToolTip=\"{{Binding Telemetry.{property}}}\"", xaml, StringComparison.Ordinal);
         }
     }
 
     [Fact]
-    public void EveryPeakTooltipIsExposedByTheMainViewModel()
+    public void EveryPeakTooltipIsExposedByTheTelemetryWorkspace()
     {
-        var sources = string.Concat(
-            Directory.EnumerateFiles(
-                Path.Combine(FindRepositoryRoot(), "src", "OpenSynapse.App", "ViewModels"),
-                "MainViewModel*.cs",
-                SearchOption.TopDirectoryOnly)
-            .Select(File.ReadAllText));
+        var sources = ReadRepositoryFile(Path.Combine(
+            "src", "OpenSynapse.App", "ViewModels", "TelemetryWorkspace.cs"));
 
         foreach (var property in PeakProperties)
         {
             Assert.True(
                 sources.Contains($"public string {property} =>", StringComparison.Ordinal),
-                $"MainWindow.xaml binds {property} but MainViewModel does not expose it.");
+                $"MainWindow.xaml binds {property} but TelemetryWorkspace does not expose it.");
         }
     }
 

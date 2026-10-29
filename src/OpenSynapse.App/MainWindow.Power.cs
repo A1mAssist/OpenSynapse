@@ -176,11 +176,11 @@ public sealed partial class MainWindow
         {
             if (suspending)
             {
-                await _viewModel.PrepareForSuspendAsync().ConfigureAwait(false);
+            await _viewModel.Lighting.PrepareForSuspendAsync().ConfigureAwait(false);
             }
             else
             {
-                await _viewModel.SetDisplayAvailableAsync(available).ConfigureAwait(false);
+            await _viewModel.Lighting.SetDisplayAvailableAsync(available).ConfigureAwait(false);
             }
 
             if (_setBladeIndicatorDisplayAvailable is not null)

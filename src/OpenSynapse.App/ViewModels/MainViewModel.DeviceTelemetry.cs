@@ -10,55 +10,6 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
-    public event Action<DeviceBatteryReading>? BatteryObserved;
-
-    private async Task RefreshPerformanceAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            var snapshot = await Task.Run(
-                () => _performanceMonitor.SampleAsync(cancellationToken).AsTask(),
-                cancellationToken);
-            _systemTelemetry.Apply(snapshot);
-            ApplyBatteryCharge();
-            _performanceErrorText = snapshot.ErrorMessage ?? string.Empty;
-            UpdateErrorText();
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception) when (IsExpectedRuntimeException(exception))
-        {
-            SetPerformanceUnavailable(exception.Message);
-        }
-    }
-
-    private async Task RefreshBatteryHealthAsync(CancellationToken cancellationToken)
-    {
-        var snapshot = await Task.Run(WindowsBatteryHealthReader.TryRead, cancellationToken);
-        _systemTelemetry.ApplyBatteryHealth(snapshot);
-        OnPropertyChanged(nameof(BatteryHealthValue));
-        OnPropertyChanged(nameof(BatteryHealthDetail));
-        ApplyBatteryCharge();
-    }
-
-    private void ApplyBatteryCharge()
-    {
-        var percent = _powerSourceProvider.BatteryPercent;
-        var charging = _powerSourceProvider.IsCharging;
-        BatteryChargeValue = percent is { } value ? $"{value}%" : "--";
-        BatteryChargeState = percent is null
-            ? AppStrings.Text("BatteryChargeUnavailable")
-            : charging == true
-                ? AppStrings.Text("BatteryChargeCharging")
-                : CurrentPowerSource == PowerSourceKind.Battery
-                    ? AppStrings.Text("BatteryChargeDischarging")
-                    : AppStrings.Text("BatteryChargeIdle");
-        OnPropertyChanged(nameof(BatteryChargeValue));
-        OnPropertyChanged(nameof(BatteryChargeState));
-    }
-
     private void ApplyDeviceTelemetry(RazerDeviceTelemetry telemetry)
     {
         _lastDeviceTelemetry = telemetry;
@@ -261,7 +212,7 @@ public sealed partial class MainViewModel
         {
             if (telemetry.ViperBatteryPercent is not null)
             {
-                BatteryObserved?.Invoke(new DeviceBatteryReading(
+                Telemetry.NotifyBatteryObserved(new DeviceBatteryReading(
                     $"viper:{viper.Id}", viper.Name, telemetry.ViperBatteryPercent, null));
             }
             var chemistry = ProfileResolver.Resolve(
@@ -322,78 +273,6 @@ public sealed partial class MainViewModel
 
         DeviceTelemetryTimeText = AppStrings.FormatText("HardwareQueryTime",
             telemetry.CapturedAt.ToLocalTime());
-    }
-
-    private void RefreshInternalDisplay(PowerSourceKind powerState, bool applyProfile)
-    {
-        if (_internalDisplayController is null)
-        {
-            return;
-        }
-
-        try
-        {
-            var snapshot = _internalDisplayController.Read();
-            if (applyProfile)
-            {
-                var blade = _deviceDescriptors.FirstOrDefault(
-                    device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)) ?? new DeviceDescriptor(
-                        "internal-display",
-                        "Windows internal display",
-                        0,
-                        0,
-                        DeviceAccessState.Available,
-                        DeviceCapabilityState.Unsupported,
-                        0,
-                        0,
-                        0,
-                        DeviceProtocolFamilies.Blade);
-                var requested = ProfileResolver.Resolve(_profile, blade, powerState).Blade.RefreshRateHertz;
-                if (requested is int hertz && hertz != snapshot.RefreshRateHertz)
-                {
-                    if (!snapshot.SupportedRefreshRates.Contains(hertz))
-                    {
-                        throw new InvalidOperationException(AppStrings.FormatText("UnsupportedDisplayRefreshRate",
-                            hertz,
-                            snapshot.Width,
-                            snapshot.Height));
-                    }
-
-                    snapshot = _internalDisplayController.SetRefreshRate(hertz);
-                }
-            }
-
-            ApplyInternalDisplaySnapshot(snapshot);
-            SetDisplayError(string.Empty);
-        }
-        catch (NoActiveInternalDisplayException)
-        {
-            // External-display-only: nothing to drive, and nothing is wrong.
-            SetInternalDisplayUnavailable();
-            SetDisplayError(string.Empty);
-        }
-        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or ArgumentOutOfRangeException)
-        {
-            SetInternalDisplayUnavailable();
-            SetDisplayError(AppStrings.FormatText("DisplayRefreshRateError", exception.Message));
-        }
-    }
-
-    private void ApplyInternalDisplaySnapshot(InternalDisplaySnapshot snapshot)
-    {
-        InternalDisplayResolutionText = $"{snapshot.Width} x {snapshot.Height}";
-        InternalDisplayRefreshRateText = $"{snapshot.RefreshRateHertz} Hz";
-        InternalDisplayRefreshRates = snapshot.SupportedRefreshRates;
-        InternalDisplayRefreshRateHertz = snapshot.RefreshRateHertz;
-        _confirmedInternalDisplayRefreshRateHertz = snapshot.RefreshRateHertz;
-        CanSetInternalDisplayRefreshRate = snapshot.CanSetRefreshRate;
-        ApplyInternalDisplayBrightness(snapshot.BrightnessLevel);
-    }
-
-    private void SetInternalDisplayUnavailable()
-    {
-        CanSetInternalDisplayRefreshRate = false;
-        CanSetInternalDisplayBrightness = false;
     }
 
     private void SetBladeBrightness(byte brightness, bool confirm = true)
@@ -468,8 +347,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(BladeGpuBoostIndex));
         OnPropertyChanged(nameof(BladeMaxFanText));
         OnPropertyChanged(nameof(BladeMaxFanEnabled));
-        OnPropertyChanged(nameof(BladeFanCurveVisibility));
-        OnPropertyChanged(nameof(BladeFanCurveActive));
+        Fan.RaiseCurveStateChanged();
     }
 
     private void SetBladeCpuBoost(BladeCpuBoostMode mode)
@@ -621,36 +499,6 @@ public sealed partial class MainViewModel
         }
     }
 
-    public string CpuName => _systemTelemetry.CpuName;
-    public string CpuValue => _systemTelemetry.CpuValue;
-    public double CpuPercent => _systemTelemetry.CpuPercent;
-    public string CpuTemperatureText => _systemTelemetry.CpuTemperatureText;
-    public string CpuPowerText => _systemTelemetry.CpuPowerText;
-    public string CpuClockText => _systemTelemetry.CpuClockText;
-    public string CpuTemperaturePeakText => _systemTelemetry.CpuTemperaturePeakText;
-    public string CpuPowerPeakText => _systemTelemetry.CpuPowerPeakText;
-    public string CpuClockPeakText => _systemTelemetry.CpuClockPeakText;
-    public string GpuName => _systemTelemetry.GpuName;
-    public string GpuValue => _systemTelemetry.GpuValue;
-    public double GpuPercent => _systemTelemetry.GpuPercent;
-    public string GpuTemperatureText => _systemTelemetry.GpuTemperatureText;
-    public string GpuPowerText => _systemTelemetry.GpuPowerText;
-    public string GpuClockText => _systemTelemetry.GpuClockText;
-    public string GpuTemperaturePeakText => _systemTelemetry.GpuTemperaturePeakText;
-    public string GpuPowerPeakText => _systemTelemetry.GpuPowerPeakText;
-    public string GpuClockPeakText => _systemTelemetry.GpuClockPeakText;
-    public string GpuMemoryLabel => _systemTelemetry.GpuMemoryLabel;
-    public string GpuMemoryText => _systemTelemetry.GpuMemoryText;
-    public string MemoryValue => _systemTelemetry.MemoryValue;
-    public string MemoryDetail => _systemTelemetry.MemoryDetail;
-    public double MemoryPercent => _systemTelemetry.MemoryPercent;
-    public string StorageValue => _systemTelemetry.StorageValue;
-    public string StorageDetail => _systemTelemetry.StorageDetail;
-    public double StoragePercent => _systemTelemetry.StoragePercent;
-    public string BatteryHealthValue => _systemTelemetry.BatteryHealthValue;
-    public string BatteryHealthDetail => _systemTelemetry.BatteryHealthDetail;
-    public string BatteryChargeValue { get; private set; } = "--";
-    public string BatteryChargeState { get; private set; } = string.Empty;
 }
 
 

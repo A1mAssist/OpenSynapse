@@ -9,19 +9,19 @@
       <StackPanel Spacing="16">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
           <TextBlock local:Localized.Uid="BladeFanCurveHint" Text="拖动圆点调整转速，也可以在下方输入精确数值。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
-          <ComboBox Grid.Column="1" ItemsSource="{Binding BladeFanCurveModeOptions}" SelectedIndex="{Binding BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="160" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Fan.BladeFanCurveModeOptions}" SelectedIndex="{Binding Fan.BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="160" />
         </Grid>
         <StackPanel Orientation="Horizontal" Spacing="16">
-          <RadioButton local:Localized.Uid="BladeFanCurveCpuTab" Content="CPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding BladeFanCurveEditor.IsCpuCurveSelected, Mode=TwoWay}" />
-          <RadioButton local:Localized.Uid="BladeFanCurveGpuTab" Content="GPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding BladeFanCurveEditor.IsGpuCurveSelected, Mode=TwoWay}" />
+          <RadioButton local:Localized.Uid="BladeFanCurveCpuTab" Content="CPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsCpuCurveSelected, Mode=TwoWay}" />
+          <RadioButton local:Localized.Uid="BladeFanCurveGpuTab" Content="GPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsGpuCurveSelected, Mode=TwoWay}" />
         </StackPanel>
-        <local:BladeFanCurvePlot DataContext="{Binding BladeFanCurveEditor}" Height="280" />
+        <local:BladeFanCurvePlot DataContext="{Binding Fan.BladeFanCurveEditor}" Height="280" />
         <StackPanel Spacing="8">
           <Grid ColumnDefinitions="110,*,44" ColumnSpacing="10">
             <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Text="温度" Style="{StaticResource MetricLabelStyle}" />
             <TextBlock Grid.Column="1" Text="RPM" Style="{StaticResource MetricLabelStyle}" />
           </Grid>
-          <ItemsControl ItemsSource="{Binding BladeFanCurveEditor.Points}">
+          <ItemsControl ItemsSource="{Binding Fan.BladeFanCurveEditor.Points}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
                 <Grid ColumnDefinitions="110,*,44" ColumnSpacing="10" Padding="0,3">

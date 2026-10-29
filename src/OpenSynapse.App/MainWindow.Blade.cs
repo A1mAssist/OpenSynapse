@@ -232,7 +232,7 @@ public sealed partial class MainWindow
                 await _viewModel.ApplyBladeLogoAsync(_lifetime.Token);
                 break;
             case "refreshRate":
-                await _viewModel.ApplyInternalDisplayRefreshRateAsync(_lifetime.Token);
+            await _viewModel.Display.ApplyInternalDisplayRefreshRateAsync(_lifetime.Token);
                 break;
             case "nativeDisplayMode":
                 await _viewModel.ApplyBladeNativeDisplayModeAsync(_lifetime.Token);
@@ -241,16 +241,16 @@ public sealed partial class MainWindow
     }
 
     private async void BladeFanAutomaticModeClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.SelectBladeFanAutomaticModeAsync(_lifetime.Token);
+        await _viewModel.Fan.SelectBladeFanAutomaticModeAsync(_lifetime.Token);
 
     private void BladeFanFixedModeClick(object sender, RoutedEventArgs e) =>
-        _viewModel.ShowBladeFanFixedMode();
+        _viewModel.Fan.ShowBladeFanFixedMode();
 
     private void BladeFanCurveModeClick(object sender, RoutedEventArgs e) =>
-        _viewModel.ShowBladeFanCurveMode();
+        _viewModel.Fan.ShowBladeFanCurveMode();
 
     private async void ApplyBladeFanFixedRpmClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.SelectBladeFanFixedModeAsync(_lifetime.Token);
+        await _viewModel.Fan.SelectBladeFanFixedModeAsync(_lifetime.Token);
 
     private async void AutoApplyMaxFanToggled(object sender, RoutedEventArgs e)
     {
@@ -317,7 +317,7 @@ public sealed partial class MainWindow
     {
         if (sender is Slider)
         {
-            await _viewModel.QueueInternalDisplayBrightnessAsync(e.NewValue, _lifetime.Token);
+            await _viewModel.Display.QueueInternalDisplayBrightnessAsync(e.NewValue, _lifetime.Token);
         }
     }
 
