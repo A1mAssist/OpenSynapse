@@ -462,8 +462,8 @@
     <comment>诊断</comment>
   </data>
   <data name="Loc_2316E0EB08.Text" xml:space="preserve">
-    <value>检查设备通道、协议读回和最近一次查询结果。</value>
-    <comment>检查设备通道、协议读回和最近一次查询结果。</comment>
+    <value>检查设备通信和最近一次读取结果；只列出需要处理的项目。</value>
+    <comment>检查设备通信和最近一次读取结果；只列出需要处理的项目。</comment>
   </data>
   <data name="Loc_B2441B64DA.Content" xml:space="preserve">
     <value>重新检查</value>
@@ -810,8 +810,8 @@
     <comment>已关闭开机启动</comment>
   </data>
   <data name="Text_5EAB9F51" xml:space="preserve">
-    <value>设备通道</value>
-    <comment>设备通道</comment>
+    <value>设备能力</value>
+    <comment>设备能力</comment>
   </data>
   <data name="Text_CF8B06AA" xml:space="preserve">
     <value>等待硬件查询</value>
@@ -896,10 +896,10 @@
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>鼠标空闲休眠</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>鼠标 DPI 档位</value></data>
   <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>设备查询超时（0x04）；请唤醒设备、关闭雷蛇 Synapse 后重试。</value></data>
-  <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>协议明细</value></data>
+  <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>未通过的检查</value></data>
   <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>已读取</value></data>
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>未读取</value></data>
-  <data name="DiagnosticProtocolReadFailed" xml:space="preserve"><value>读取失败：{0}</value></data>
+  <data name="DiagnosticProtocolFailedStatus" xml:space="preserve"><value>读取失败</value></data>
   <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>开启</value></data>
   <data name="OpenRazerFailedReadsDetail" xml:space="preserve"><value>失败的读取项：{0}</value></data>
   <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>关闭</value></data>
@@ -1260,8 +1260,8 @@
     <comment>将删除“{0}”，设备设置不会被卸载。</comment>
   </data>
   <data name="ProtocolAvailableCount" xml:space="preserve">
-    <value>协议可用 {0}/{1}</value>
-    <comment>协议可用 {0}/{1}</comment>
+    <value>能力可用 {0}/{1}</value>
+    <comment>能力可用 {0}/{1}</comment>
   </data>
   <data name="ActivePowerSource" xml:space="preserve">
     <value>当前生效供电：{0}</value>
@@ -1299,8 +1299,8 @@
     <comment>OpenRazer DPI 档位数据格式错误</comment>
   </data>
   <data name="OpenRazerProtocolUnsupported" xml:space="preserve">
-    <value>设备拒绝了 OpenRazer 命令，已停用该协议能力。</value>
-    <comment>OpenRazer 命令不支持</comment>
+    <value>设备拒绝了该命令，对应能力已停用。</value>
+    <comment>设备命令不支持</comment>
   </data>
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
     <value>设备通信中断，已暂停写入。请重新扫描设备以恢复控制。</value>
@@ -1314,8 +1314,8 @@
     <value>{0}可能未开启或尚未唤醒，请检查设备电源。</value>
   </data>
   <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
-    <value>OpenRazer 协议查询失败。</value>
-    <comment>OpenRazer 协议查询失败</comment>
+    <value>设备通道读取失败。</value>
+    <comment>设备通道读取失败</comment>
   </data>
   <data name="OpenRazerMappingNoButtons" xml:space="preserve">
     <value>设备未报告任何映射按键</value>
@@ -2022,6 +2022,48 @@
   <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling 指示灯写入</value></data>
   <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling 配对</value></data>
   <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling 取消配对</value></data>
+  <data name="OpenRazerCapabilityDeviceModeWrite" xml:space="preserve"><value>设备模式写入</value></data>
+  <data name="OpenRazerCapabilityAutoSleepRead" xml:space="preserve"><value>自动休眠读取</value></data>
+  <data name="OpenRazerCapabilityAutoSleepWrite" xml:space="preserve"><value>自动休眠写入</value></data>
+  <data name="OpenRazerCapabilityBatteryChargeLimiterRead" xml:space="preserve"><value>充电限制读取</value></data>
+  <data name="OpenRazerCapabilityBatteryChargeLimiterWrite" xml:space="preserve"><value>充电限制写入</value></data>
+  <data name="OpenRazerCapabilityTimeToDimRead" xml:space="preserve"><value>自动变暗读取</value></data>
+  <data name="OpenRazerCapabilityTimeToDimWrite" xml:space="preserve"><value>自动变暗写入</value></data>
+  <data name="OpenRazerCapabilityIndicatorLedConfigurationRead" xml:space="preserve"><value>指示灯配置读取</value></data>
+  <data name="OpenRazerCapabilityIndicatorLedConfigurationWrite" xml:space="preserve"><value>指示灯配置写入</value></data>
+  <data name="OpenRazerCapabilityGpuCardDetectionRead" xml:space="preserve"><value>GPU 卡检测读取</value></data>
+  <data name="OpenRazerCapabilityGpuCardDetectionWrite" xml:space="preserve"><value>GPU 卡检测写入</value></data>
+  <data name="OpenRazerCapabilityForceChromaCtrlRead" xml:space="preserve"><value>灯光接管读取</value></data>
+  <data name="OpenRazerCapabilityForceChromaCtrlWrite" xml:space="preserve"><value>灯光接管写入</value></data>
+  <data name="OpenRazerCapabilityProfileDebounceTimeRead" xml:space="preserve"><value>按键去抖读取</value></data>
+  <data name="OpenRazerCapabilityProfileDebounceTimeWrite" xml:space="preserve"><value>按键去抖写入</value></data>
+  <data name="OpenRazerCapabilityChromaTapRead" xml:space="preserve"><value>轻触手势读取</value></data>
+  <data name="OpenRazerCapabilityChromaTapWrite" xml:space="preserve"><value>轻触手势写入</value></data>
+  <data name="OpenRazerCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>电池放电曲线读取</value></data>
+  <data name="OpenRazerCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>电池放电曲线写入</value></data>
+  <data name="OpenRazerCapabilityMacroStorageInfoRead" xml:space="preserve"><value>板载宏容量读取</value></data>
+  <data name="OpenRazerCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
+  <data name="OpenRazerCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
+  <data name="OpenRazerCapabilityMappingRead" xml:space="preserve"><value>按键映射读取</value></data>
+  <data name="OpenRazerCapabilityMappingWrite" xml:space="preserve"><value>按键映射写入</value></data>
+  <data name="OpenRazerCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>自由滚动模式读取</value></data>
+  <data name="OpenRazerCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>自由滚动模式写入</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>滚轮加速等级读取</value></data>
+  <data name="OpenRazerCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>滚轮加速等级写入</value></data>
+  <data name="OpenRazerCapabilityOnboardProfileRead" xml:space="preserve"><value>板载配置读取</value></data>
+  <data name="OpenRazerCapabilityOnboardProfileWrite" xml:space="preserve"><value>板载配置写入</value></data>
+  <data name="OpenRazerCapabilityWirelessPairingWrite" xml:space="preserve"><value>无线配对</value></data>
+  <data name="OpenRazerCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>无线连接状态读取</value></data>
+  <data name="OpenRazerCapabilityProximitySensorRead" xml:space="preserve"><value>接近传感器读取</value></data>
+  <data name="OpenRazerCapabilityProximitySensorWrite" xml:space="preserve"><value>接近传感器写入</value></data>
+  <data name="OpenRazerCapabilityKnobRead" xml:space="preserve"><value>旋钮读取</value></data>
+  <data name="OpenRazerCapabilityKnobWrite" xml:space="preserve"><value>旋钮写入</value></data>
+  <data name="OpenRazerCapabilityAnalogKeyRead" xml:space="preserve"><value>模拟键读取</value></data>
+  <data name="OpenRazerCapabilityAnalogKeyWrite" xml:space="preserve"><value>模拟键写入</value></data>
+  <data name="OpenRazerCapabilityOledRead" xml:space="preserve"><value>OLED 屏幕读取</value></data>
+  <data name="OpenRazerCapabilityOledWrite" xml:space="preserve"><value>OLED 屏幕写入</value></data>
+  <data name="OpenRazerCapabilityHapticScrollRead" xml:space="preserve"><value>触觉滚轮读取</value></data>
+  <data name="OpenRazerCapabilityHapticScrollWrite" xml:space="preserve"><value>触觉滚轮写入</value></data>
   <data name="BladeCustomPerformanceTitle" xml:space="preserve"><value>自定义性能</value></data>
   <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU 性能档位</value></data>
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU 性能档位</value></data>
@@ -2390,10 +2432,10 @@
     <value>该设备未连接，无法扫描</value>
   </data>
   <data name="HidScanNoService" xml:space="preserve">
-    <value>当前版本未包含 OpenRazer 支持</value>
+    <value>当前版本未包含设备控制支持</value>
   </data>
   <data name="HidScanNoDevice" xml:space="preserve">
-    <value>未检测到已连接的 OpenRazer 设备</value>
+    <value>未检测到已连接的兼容设备</value>
   </data>
   <data name="BlackSharkHeadsetCategory" xml:space="preserve"><value>游戏耳机</value></data>
   <data name="BlackSharkStatusConnected" xml:space="preserve"><value>已连接</value></data>

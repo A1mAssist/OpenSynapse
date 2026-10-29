@@ -663,6 +663,9 @@ public static class BladeModelCapabilities
             [0x0255] = new(MaxFan: false, CpuBoostModes: None, Modes: Modes0255),
         }.ToFrozenDictionary();
 
+    /// <summary>Product ids with an audited model contract, for structure checks and diagnostics.</summary>
+    internal static IReadOnlyCollection<ushort> AdmittedProductIds => Contracts.Keys;
+
     /// <summary>
     /// Temperature-driven fan curve admission. BladeFanProtocol stores targets only for
     /// the 02C6 fan-target control, so no other model has captured curve evidence yet.
