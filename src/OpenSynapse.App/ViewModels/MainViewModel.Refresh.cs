@@ -195,7 +195,8 @@ public sealed partial class MainViewModel
                     FeatureReportByteLength: RazerFeatureReport.Length,
                 }
                     ? blade.Id
-                    : null);
+                    : null,
+                blade?.ProductId ?? 0);
             await RefreshCoolingPadPresenceAsync(cancellationToken);
             BladeDeviceName = blade?.Name ?? "Razer Blade";
             if (blade is not null)
@@ -386,7 +387,7 @@ public sealed partial class MainViewModel
                 }
             }
             _ = await StopBladeFanControlAsync("refresh-failure");
-            SetBladeControlDevicePath(null);
+            SetBladeControlDevicePath(null, 0);
             _lightingShadowFingerprint = string.Empty;
             _bladeLightingDevicePath = string.Empty;
             _lastPowerState = powerState;

@@ -1132,6 +1132,21 @@ public sealed partial class MainViewModel
     public string BladeIdentityText => Devices.FirstOrDefault(device =>
         DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Identity ?? "VID_1532 / PID_02C6";
     public string BladeStatusText { get => _blade._bladeStatusText; private set => SetField(ref _blade._bladeStatusText, value); }
+    public Visibility BladeFilterDriverVisibility => _blade._bladeFilterDriverMissing
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    internal void SetBladeFilterDriverMissing(bool missing)
+    {
+        if (_blade._bladeFilterDriverMissing == missing)
+        {
+            return;
+        }
+
+        _blade._bladeFilterDriverMissing = missing;
+        OnPropertyChanged(nameof(BladeFilterDriverVisibility));
+    }
+
     public string BladeBrightnessText { get => _blade._bladeBrightnessText; private set => SetField(ref _blade._bladeBrightnessText, value); }
     public string BladeBrightnessSelectionText { get => _blade._bladeBrightnessSelectionText; private set => SetField(ref _blade._bladeBrightnessSelectionText, value); }
     public double BladeBrightnessPercent

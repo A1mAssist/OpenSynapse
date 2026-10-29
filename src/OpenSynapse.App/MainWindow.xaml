@@ -938,6 +938,15 @@
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding BladeDeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding BladeProtocolText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding BladeIdentityText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding BladeSerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="OpenRazerSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding BladeSerial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
                   <TextBlock Text="{Binding ActivePowerSourceText}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                  <Border Visibility="{Binding BladeFilterDriverVisibility}" Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="8">
+                      <TextBlock local:Localized.Uid="BladeFilterDriverTitle" Text="Fn 按键接管需要雷云驱动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource ThermalBrush}" />
+                      <TextBlock local:Localized.Uid="BladeFilterDriverDescription" Text="Fn 快捷键接管依赖雷云安装的 Razer 过滤驱动。请安装一次雷云（Razer Synapse），让驱动写入系统；安装完成后重启 OpenSynapse。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="BladeFilterDriverUninstallHint" Text="装好后可以卸载雷云，驱动会留在系统里，OpenSynapse 仍能接管 Fn 键。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="BladeFilterDriverRecoveryHint" Text="如果驱动被删除（设备管理器删除驱动或系统重置），请以管理员身份运行：" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="BladeFilterDriverCommand" Text="pnputil /add-driver &quot;&lt;DriverStore 里的 inf&gt;&quot; /install" FontFamily="Cascadia Mono,Consolas" FontSize="12" IsTextSelectionEnabled="True" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
                   <StackPanel Spacing="10">
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
                       <Border Visibility="{Binding BladeFanCardVisibility}" Style="{StaticResource CardStyle}" Padding="16" MinHeight="92">
