@@ -2442,6 +2442,7 @@
   <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga 侧键 {0}</value></data>
+  <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>鼠标侧键</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga 侧键</value></data>
   <data name="MacroTriggerDevice.Text" xml:space="preserve"><value>捕获设备按键</value></data>
   <data name="MacroCapturePromptDevice" xml:space="preserve"><value>请按下其他 Razer 设备上的按键。</value></data>

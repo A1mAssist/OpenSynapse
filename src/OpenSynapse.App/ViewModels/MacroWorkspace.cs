@@ -11,7 +11,7 @@ using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class MacroWorkspace : INotifyPropertyChanged
+public sealed partial class MacroWorkspace : INotifyPropertyChanged
 {
     private readonly MacroRuntime _macroRuntime;
     private readonly Func<ProfileDefinition> _getActiveProfile;
@@ -1211,33 +1211,6 @@ public sealed class MacroWorkspace : INotifyPropertyChanged
                 IsMacroTriggerCapturing = false;
             }
         }
-    }
-
-    public async Task SetMacroNagaSideButtonTriggerAsync(
-        int sideButton,
-        CancellationToken cancellationToken = default)
-    {
-        if (SelectedMacro is not { } selected ||
-            !CanEditMacro ||
-            sideButton is < 1 or > 12)
-        {
-            return;
-        }
-
-        CancelMacroCapture();
-        CancelMacroStepCapture();
-        CancelMacroPlaybackShortcutCapture();
-        await ApplyMacroTriggerAsync(
-            selected,
-            new MacroTrigger
-            {
-                Input = new MacroInput
-                {
-                    Kind = MacroInputKind.NagaSideButton,
-                    SideButton = sideButton,
-                },
-            },
-            cancellationToken);
     }
 
     private async Task ApplyMacroTriggerAsync(

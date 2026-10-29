@@ -102,4 +102,65 @@ public sealed class NagaSideButtonTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task MouseSideButtonTriggerRoundTripsThroughMacroFile()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            $"opensynapse-mouse-side-trigger-{Guid.NewGuid():N}.json");
+        try
+        {
+            var trigger = new MacroTrigger
+            {
+                Input = new MacroInput
+                {
+                    Kind = MacroInputKind.MouseButton,
+                    MouseButton = 4,
+                },
+            };
+
+            Assert.True(trigger.Input.IsValid(
+                allowPrimaryMouseButton: false,
+                allowWheel: false));
+            Assert.True(trigger.Matches(
+                new MacroInput
+                {
+                    Kind = MacroInputKind.MouseButton,
+                    MouseButton = 4,
+                },
+                MacroModifierKeys.None));
+            Assert.False(trigger.Matches(
+                new MacroInput
+                {
+                    Kind = MacroInputKind.MouseButton,
+                    MouseButton = 5,
+                },
+                MacroModifierKeys.None));
+
+            var macro = new MacroDefinition
+            {
+                Name = "Mouse side",
+                Trigger = trigger,
+                Steps =
+                [
+                    new MacroStep
+                    {
+                        Kind = MacroStepKind.Text,
+                        Text = "ok",
+                    },
+                ],
+            };
+
+            await MacroFileStore.ExportAsync(macro, path);
+            var loaded = await MacroFileStore.ImportAsync(path);
+
+            Assert.Equal(MacroInputKind.MouseButton, loaded.Trigger!.Input.Kind);
+            Assert.Equal(4, loaded.Trigger.Input.MouseButton);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }
