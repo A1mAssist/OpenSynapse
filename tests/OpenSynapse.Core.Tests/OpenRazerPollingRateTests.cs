@@ -199,6 +199,53 @@ public sealed class OpenRazerPollingRateTests
         Assert.Null(reported);
     }
 
+    /// <summary>
+    /// The Basilisk V4 middleware products use 00:C0/40 high-rate reports. Their
+    /// catalog sibling only declares the legacy 00:85/05 pair, so without these
+    /// reports an 8000 Hz selection cannot be encoded.
+    /// </summary>
+    [Theory]
+    [InlineData(0x00E2)]
+    [InlineData(0x00E3)]
+    [InlineData(0x00EA)]
+    [InlineData(0x00EB)]
+    public void BasiliskV4UsesTheMiddlewareHighRateReports(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId);
+
+        Assert.NotNull(device);
+        var get = OpenRazerMouseProtocol.GetPollingRate(device!).Report;
+        Assert.Equal(0x00, get[2]);
+        Assert.Equal(0x02, get[6]);
+        Assert.Equal(0x00, get[7]);
+        Assert.Equal(0xC0, get[8]);
+        Assert.Equal(0x01, get[RazerFeatureReport.ArgumentsOffset]);
+
+        var set = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, 8000)).Report;
+        Assert.Equal(0x00, set[2]);
+        Assert.Equal(0x02, set[6]);
+        Assert.Equal(0x00, set[7]);
+        Assert.Equal(0x40, set[8]);
+        Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x01, set[RazerFeatureReport.ArgumentsOffset + 1]);
+    }
+
+    [Fact]
+    public void EveryDeclaredRateAboveOneThousandHasTheHighRateReports()
+    {
+        var offenders = OpenRazerDeviceCatalog.BuiltIn.Devices
+            .Where(device => device.PollingRates.Any(rate => rate > 1000))
+            .Where(device =>
+                !device.Transactions.ContainsKey("razer_chroma_misc_get_polling_rate2") ||
+                (!device.Transactions.ContainsKey("razer_chroma_misc_set_polling_rate2") &&
+                 !device.CommandSequences.ContainsKey("razer_chroma_misc_set_polling_rate2")))
+            .Select(device =>
+                $"1532:{device.ProductId:X4} {device.DisplayName} [{string.Join(',', device.PollingRates)}]")
+            .ToArray();
+
+        Assert.True(offenders.Length == 0, string.Join(Environment.NewLine, offenders));
+    }
+
     private sealed class SilentReadBackTransport : IRazerFeatureTransport
     {
         public Task<byte[]> QueryAsync(
