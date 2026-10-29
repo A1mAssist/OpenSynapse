@@ -19,6 +19,8 @@ public static class DedicatedGpuModeServiceProtocol
     public const string StartMacroAgentOperation = "start-macro-agent";
     public const string GpuClockOffsetStatusOperation = "gpu-clock-offset-status";
     public const string SetGpuClockOffsetOperation = "set-gpu-clock-offset";
+    public const string GpuClockLimitStatusOperation = "gpu-clock-limit-status";
+    public const string SetGpuClockLimitOperation = "set-gpu-clock-limit";
     public const int MaximumMessageLength = 4096;
 }
 
@@ -27,7 +29,8 @@ public sealed record DedicatedGpuModeServiceRequest(
     string Operation,
     bool? Enabled,
     int? CoreOffsetMhz = null,
-    int? MemoryOffsetMhz = null);
+    int? MemoryOffsetMhz = null,
+    int? ClockLimitMhz = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -62,6 +65,12 @@ public enum DedicatedGpuModeServiceAction
     /// <summary>Apply the GPU core and memory clock offsets.</summary>
     SetGpuClockOffset,
 
+    /// <summary>Report whether the driver accepts a clock-limit read.</summary>
+    GpuClockLimitStatus,
+
+    /// <summary>Apply the GPU core clock ceiling.</summary>
+    SetGpuClockLimit,
+
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
 }
@@ -75,7 +84,9 @@ public sealed record DedicatedGpuModeServiceResponse(
     string? Error,
     bool? ClockOffsetAvailable = null,
     int? CoreOffsetMhz = null,
-    int? MemoryOffsetMhz = null);
+    int? MemoryOffsetMhz = null,
+    bool? ClockLimitAvailable = null,
+    int? ClockLimitMhz = null);
 
 /// <summary>
 /// What the driver currently holds. Null from the client means the installed service
@@ -85,6 +96,14 @@ public sealed record DedicatedGpuClockOffsetState(
     bool Available,
     int CoreMhz,
     int MemoryMhz);
+
+/// <summary>
+/// The clock ceiling the driver reports. Zero means no lock and maps to the UI's default.
+/// Null from the client means the installed service predates the clock-limit operation.
+/// </summary>
+public sealed record DedicatedGpuClockLimitState(
+    bool Available,
+    int Megahertz);
 
 public static class DedicatedGpuModeServiceRequestParser
 {
@@ -143,6 +162,21 @@ public static class DedicatedGpuModeServiceRequestParser
             request.MemoryOffsetMhz is not null)
         {
             return DedicatedGpuModeServiceAction.SetGpuClockOffset;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.GpuClockLimitStatusOperation))
+        {
+            return DedicatedGpuModeServiceAction.GpuClockLimitStatus;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.SetGpuClockLimitOperation) &&
+            request.ClockLimitMhz is not null)
+        {
+            return DedicatedGpuModeServiceAction.SetGpuClockLimit;
         }
 
         if (StringComparer.Ordinal.Equals(

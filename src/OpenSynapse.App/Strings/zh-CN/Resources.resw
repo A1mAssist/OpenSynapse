@@ -2039,6 +2039,8 @@
   <data name="BladeFanCurveReset" xml:space="preserve"><value>恢复默认</value></data>
   <data name="BladeFanCurveEdit" xml:space="preserve"><value>编辑</value></data>
   <data name="BladeFanCurveApply" xml:space="preserve"><value>应用</value></data>
+  <data name="BladeGpuClockLimitLabel" xml:space="preserve"><value>核心频率上限</value></data>
+  <data name="BladeGpuClockLimitDefault" xml:space="preserve"><value>默认</value></data>
   <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>GPU 频率偏移</value></data>
   <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>驱动级偏移，会一直保留到手动恢复默认。</value></data>
   <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>核心偏移</value></data>

@@ -1008,6 +1008,10 @@
                     <StackPanel Spacing="12">
                       <TextBlock local:Localized.Uid="BladeGpuClockOffsetTitle" Text="GPU 频率偏移" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                       <TextBlock local:Localized.Uid="BladeGpuClockOffsetHint" Text="驱动级偏移，会一直保留到手动恢复默认。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                      <StackPanel Spacing="4" Visibility="{Binding BladeGpuClockLimitVisibility}">
+                        <Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="BladeGpuClockLimitLabel" Text="核心频率上限" Style="{StaticResource MetricLabelStyle}" /><TextBlock Grid.Column="1" Text="{Binding BladeGpuClockLimitText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></Grid>
+                        <Slider Minimum="400" Maximum="3000" StepFrequency="5" Value="{Binding BladeGpuClockLimitMhz, Mode=TwoWay}" />
+                      </StackPanel>
                       <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
                         <StackPanel Spacing="4">
                           <Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="BladeGpuCoreClockLabel" Text="核心偏移" Style="{StaticResource MetricLabelStyle}" /><TextBlock Grid.Column="1" Text="{Binding BladeCoreClockOffsetText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></Grid>

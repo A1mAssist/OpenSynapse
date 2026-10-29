@@ -108,6 +108,44 @@ public static class DedicatedGpuModeServiceClient
         return response?.Outcome == DedicatedGpuSwitchOutcome.Success;
     }
 
+    /// <summary>
+    /// Reads the driver's clock ceiling. Null means the installed service predates the
+    /// clock-limit operation, so the caller hides the control instead of showing an error.
+    /// </summary>
+    public static async Task<DedicatedGpuClockLimitState?> TryGetGpuClockLimitAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.GpuClockLimitStatusOperation,
+            Enabled: null);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        if (response?.ClockLimitAvailable is not { } available)
+        {
+            return null;
+        }
+
+        return new DedicatedGpuClockLimitState(
+            available,
+            response.ClockLimitMhz ?? 0);
+    }
+
+    /// <summary>Applies the GPU core clock ceiling through the machine-wide service.</summary>
+    public static async Task<bool> TrySetGpuClockLimitAsync(
+        int megahertz,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.SetGpuClockLimitOperation,
+            Enabled: null,
+            ClockLimitMhz: megahertz);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Outcome == DedicatedGpuSwitchOutcome.Success;
+    }
+
     private static async Task<DedicatedGpuSwitchResult?> SendWithWakeupRetryAsync(
         DedicatedGpuModeServiceRequest request,
         CancellationToken cancellationToken)

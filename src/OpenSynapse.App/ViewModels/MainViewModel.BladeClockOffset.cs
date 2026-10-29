@@ -9,6 +9,8 @@ public sealed partial class MainViewModel
 {
     private bool _gpuClockOffsetProbeStarted;
     private DateTimeOffset _gpuClockOffsetNextProbe;
+    private bool _bladeGpuClockLimitAvailable;
+    private double _bladeGpuClockLimitMhz = NvApiGpuClockLimit.MaximumMhz;
 
     /// <summary>
     /// Hidden until the driver answers a Pstates20 read. A laptop driver that refuses
@@ -17,6 +19,30 @@ public sealed partial class MainViewModel
     public Visibility BladeGpuClockOffsetVisibility => _blade._bladeGpuClockOffsetAvailable
         ? Visibility.Visible
         : Visibility.Collapsed;
+
+    public Visibility BladeGpuClockLimitVisibility => _bladeGpuClockLimitAvailable
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public double BladeGpuClockLimitMhz
+    {
+        get => _bladeGpuClockLimitMhz;
+        set
+        {
+            var clamped = Math.Clamp(
+                value,
+                NvApiGpuClockLimit.MinimumMhz,
+                NvApiGpuClockLimit.MaximumMhz);
+            if (SetField(ref _bladeGpuClockLimitMhz, clamped))
+            {
+                OnPropertyChanged(nameof(BladeGpuClockLimitText));
+            }
+        }
+    }
+
+    public string BladeGpuClockLimitText => _bladeGpuClockLimitMhz >= NvApiGpuClockLimit.MaximumMhz
+        ? AppStrings.Text("BladeGpuClockLimitDefault")
+        : $"{_bladeGpuClockLimitMhz:0} MHz";
 
     public double BladeCoreClockOffsetMhz
     {
@@ -63,7 +89,7 @@ public sealed partial class MainViewModel
             // A probe fails while the installed service is still the older build, which
             // only matters until the service restarts on its own. Retry slowly instead of
             // hiding the card for the rest of the process.
-            if (_blade._bladeGpuClockOffsetAvailable ||
+            if ((_blade._bladeGpuClockOffsetAvailable && _bladeGpuClockLimitAvailable) ||
                 DateTimeOffset.UtcNow < _gpuClockOffsetNextProbe)
             {
                 return;
@@ -89,12 +115,34 @@ public sealed partial class MainViewModel
         }
         catch (Exception exception) when (
             exception is IOException or InvalidOperationException or TimeoutException or
-                ObjectDisposedException or System.ComponentModel.Win32Exception)
+                ObjectDisposedException or OperationCanceledException or
+                System.ComponentModel.Win32Exception)
         {
             _blade._bladeGpuClockOffsetAvailable = false;
         }
 
+        try
+        {
+            var limit = await DedicatedGpuModeServiceClient.TryGetGpuClockLimitAsync();
+            _bladeGpuClockLimitAvailable = limit?.Available == true;
+            if (limit is { Available: true })
+            {
+                BladeGpuClockLimitMhz =
+                    limit.Megahertz is >= NvApiGpuClockLimit.MinimumMhz and < NvApiGpuClockLimit.MaximumMhz
+                        ? limit.Megahertz
+                        : NvApiGpuClockLimit.MaximumMhz;
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or InvalidOperationException or TimeoutException or
+                ObjectDisposedException or OperationCanceledException or
+                System.ComponentModel.Win32Exception)
+        {
+            _bladeGpuClockLimitAvailable = false;
+        }
+
         OnPropertyChanged(nameof(BladeGpuClockOffsetVisibility));
+        OnPropertyChanged(nameof(BladeGpuClockLimitVisibility));
     }
 
     public async Task ApplyBladeGpuClockOffsetAsync(CancellationToken cancellationToken = default)
@@ -106,6 +154,7 @@ public sealed partial class MainViewModel
 
         var core = (int)Math.Round(_blade._bladeCoreClockOffsetMhz);
         var memory = (int)Math.Round(_blade._bladeMemoryClockOffsetMhz);
+        var limit = (int)Math.Round(_bladeGpuClockLimitMhz);
         await RunDeviceOperationAsync(
             AppStrings.Text("BladeGpuClockOffsetTitle"),
             async () =>
@@ -116,9 +165,27 @@ public sealed partial class MainViewModel
                     throw new InvalidOperationException(AppStrings.Text("BladeGpuClockOffsetFailed"));
                 }
 
+                await ApplyBladeGpuClockLimitAsync(limit, cancellationToken);
                 BladeGpuClockOffsetStatusText = AppStrings.Text("BladeGpuClockOffsetApplied");
             },
             cancellationToken);
+    }
+
+    /// <summary>An older service has no clock-limit operation, so the control stays hidden.</summary>
+    private async Task ApplyBladeGpuClockLimitAsync(
+        int megahertz,
+        CancellationToken cancellationToken)
+    {
+        if (!_bladeGpuClockLimitAvailable)
+        {
+            return;
+        }
+
+        if (!await DedicatedGpuModeServiceClient.TrySetGpuClockLimitAsync(
+                megahertz, cancellationToken))
+        {
+            throw new InvalidOperationException(AppStrings.Text("BladeGpuClockOffsetFailed"));
+        }
     }
 
     /// <summary>Puts the driver back to stock clocks on the user's explicit request.</summary>
@@ -126,6 +193,7 @@ public sealed partial class MainViewModel
     {
         BladeCoreClockOffsetMhz = 0;
         BladeMemoryClockOffsetMhz = 0;
+        BladeGpuClockLimitMhz = NvApiGpuClockLimit.MaximumMhz;
         await ApplyBladeGpuClockOffsetAsync(cancellationToken);
     }
 }
