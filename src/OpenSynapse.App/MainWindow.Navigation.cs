@@ -113,24 +113,24 @@ public sealed partial class MainWindow
             // Rebuilding the list only refreshes the highlight; never change the active page here.
             _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector(CurrentDeviceRoute()));
         }
-        if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerDevice) &&
-            _viewModel.SelectedOpenRazerDevice is null &&
+        if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedDevice) &&
+            _viewModel.OpenRazer.SelectedDevice is null &&
             OpenRazerDevicePanel.Visibility == Visibility.Visible)
         {
             _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
         }
-        else if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerDevice) &&
+        else if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedDevice) &&
             OpenRazerDevicePanel.Visibility == Visibility.Visible)
         {
             _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("openrazer"));
         }
-        if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerKraken) &&
-            _viewModel.SelectedOpenRazerKraken is null &&
+        if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedKraken) &&
+            _viewModel.OpenRazer.SelectedKraken is null &&
             OpenRazerKrakenPanel.Visibility == Visibility.Visible)
         {
             _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
         }
-        else if (args.PropertyName == nameof(MainViewModel.SelectedOpenRazerKraken) &&
+        else if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedKraken) &&
             OpenRazerKrakenPanel.Visibility == Visibility.Visible)
         {
             _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("kraken"));
@@ -174,10 +174,10 @@ public sealed partial class MainWindow
                 DeviceSelectorItemKind.Viper => device == "viper",
                 DeviceSelectorItemKind.OpenRazer => device == "openrazer" &&
                     item.Source is OpenRazerDeviceRowViewModel row &&
-                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerDevice?.InstanceId),
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.OpenRazer.SelectedDevice?.InstanceId),
                 DeviceSelectorItemKind.Kraken => device == "kraken" &&
                     item.Source is OpenRazerKrakenDeviceRowViewModel row &&
-                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.SelectedOpenRazerKraken?.InstanceId),
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.OpenRazer.SelectedKraken?.InstanceId),
                 DeviceSelectorItemKind.BlackShark => device == "blackshark" &&
                     item.Source is BlackSharkDeviceRowViewModel blackSharkRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(

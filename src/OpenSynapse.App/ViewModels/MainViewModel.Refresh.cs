@@ -55,7 +55,7 @@ public sealed partial class MainViewModel
 
         try
         {
-            if (SelectedOpenRazerDevice is { } openRazerDevice)
+            if (OpenRazer.SelectedDevice is { } openRazerDevice)
             {
                 await openRazerDevice.RefreshBatteryStateAsync(cancellationToken);
             }
@@ -101,82 +101,7 @@ public sealed partial class MainViewModel
         try
         {
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
-            if (_openRazerDeviceService is not null)
-            {
-                var openRazerConnections = (await _openRazerDeviceService.DiscoverAsync(cancellationToken))
-                    .OrderBy(connection => DeviceCategoryOrder(connection.Definition.Category))
-                    .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-                await RestoreOpenRazerDriverModeAsync(openRazerConnections, cancellationToken);
-                if (OpenRazerDevices.Count != openRazerConnections.Length ||
-                    !OpenRazerDevices.Zip(openRazerConnections)
-                        .All(pair => OpenRazerConnectionMatches(pair.First.Connection, pair.Second)))
-                {
-                    var selectedInstanceId = SelectedOpenRazerDevice?.InstanceId;
-                    _openRazerSelectionCancellation?.Cancel();
-                    _openRazerSelectionCancellation?.Dispose();
-                    _openRazerSelectionCancellation = null;
-                    OpenRazerDevices.Clear();
-                    foreach (var connection in openRazerConnections)
-                    {
-                        OpenRazerDevices.Add(new OpenRazerDeviceRowViewModel(connection));
-                    }
-                    var selectedRow = OpenRazerDevices.FirstOrDefault(row =>
-                        StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedInstanceId));
-                    if (selectedRow is null)
-                    {
-                        if (SelectedOpenRazerDevice is { } removedDevice)
-                        {
-                            await removedDevice.DisposeAsync().ConfigureAwait(false);
-                        }
-                        SelectedOpenRazerDevice = null;
-                    }
-                    else
-                    {
-                        await SelectOpenRazerDeviceAsync(selectedRow, cancellationToken);
-                    }
-                }
-                else if (SelectedOpenRazerDevice is { } selectedDevice)
-                {
-                    // A device paused after a transport drop stays paused across rescans,
-                    // because every read path returns early while the flag is set. Clear it
-                    // so the rescan the user just asked for can actually recover.
-                    selectedDevice.ClearRequiresRescan();
-                    await selectedDevice.LoadBasicStateAsync(cancellationToken);
-                    await selectedDevice.LoadSoundbarAsync(cancellationToken);
-                }
-            }
-            if (_openRazerSpecialLightingService is not null)
-            {
-                var connections = await _openRazerSpecialLightingService.DiscoverAsync(cancellationToken);
-                _krakenConnections = connections.Where(connection =>
-                        connection.Kind is OpenRazerSpecialLightingKind.Kraken37 or OpenRazerSpecialLightingKind.KrakenV4)
-                    .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-                // Headsets that already own an audio page get the lighting card there, so a
-                // second lighting-only row for the same headset would be a duplicate.
-                var krakenConnections = _krakenConnections
-                    .Where(connection => !connection.IsMergedIntoAudioPage)
-                    .ToArray();
-                if (OpenRazerKrakenDevices.Count != krakenConnections.Length ||
-                    !OpenRazerKrakenDevices.Zip(krakenConnections)
-                        .All(pair => OpenRazerKrakenConnectionMatches(pair.First.Connection, pair.Second)))
-                {
-                    var selectedKrakenId = SelectedOpenRazerKraken?.InstanceId;
-                    OpenRazerKrakenDevices.Clear();
-                    foreach (var connection in krakenConnections)
-                    {
-                        OpenRazerKrakenDevices.Add(new OpenRazerKrakenDeviceRowViewModel(connection));
-                    }
-                    var selectedKraken = OpenRazerKrakenDevices.FirstOrDefault(row =>
-                        StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedKrakenId));
-                    SelectedOpenRazerKraken = selectedKraken is null
-                        ? null
-                        : new OpenRazerKrakenViewModel(_openRazerSpecialLightingService, selectedKraken.Connection);
-                    if (SelectedOpenRazerKraken is { } kraken)
-                        await kraken.LoadSerialAsync(cancellationToken);
-                }
-            }
+            await OpenRazer.RefreshAsync(cancellationToken);
             await RefreshBlackSharkAsync(cancellationToken);
             await RefreshHeadsetAudioAsync(cancellationToken);
             await RefreshKeyboardsAsync(cancellationToken);
@@ -241,11 +166,8 @@ public sealed partial class MainViewModel
             RefreshInternalDisplay(powerState, applyDisplayProfile);
             if (applyDisplayProfile)
             {
-                if (_openRazerDeviceService is not null)
-                {
-                    await RestoreOpenRazerLightingAfterExternalAsync(cancellationToken);
-                }
-                SelectedOpenRazerDevice?.ApplyConfiguredLightingToEditor();
+                await OpenRazer.RestoreLightingAfterExternalAsync(cancellationToken);
+                OpenRazer.SelectedDevice?.ApplyConfiguredLightingToEditor();
             }
             var profileApply = await ApplyLoadedProfileAsync(
                 telemetry,
@@ -308,7 +230,7 @@ public sealed partial class MainViewModel
             RefreshDeviceSelectorItems();
             Devices.Clear();
             foreach (var device in visibleDevices
-                .OrderBy(device => DeviceCategoryOrder(device.Category))
+                .OrderBy(device => DeviceUiCatalog.DeviceCategoryOrder(device.Category))
                 .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase))
             {
                 Devices.Add(new DeviceRowViewModel(device, telemetry));
@@ -342,7 +264,7 @@ public sealed partial class MainViewModel
                 errors.Insert(0, snapshot.ErrorMessage);
             }
 
-            var openRazerErrorCount = CountOpenRazerErrors();
+            var openRazerErrorCount = OpenRazer.ErrorCount;
 
             if (Volatile.Read(ref _displayAvailable) != 0 &&
                 Interlocked.Exchange(ref _displayBrightnessRestorePending, 0) != 0)
@@ -411,44 +333,6 @@ public sealed partial class MainViewModel
             _deviceOperationGate.Release();
             OnPropertyChanged(nameof(CanCheckFirmwareUpdate));
         }
-    }
-
-    private static bool OpenRazerConnectionMatches(
-        OpenRazerDeviceConnection previous,
-        OpenRazerDeviceConnection current) =>
-        StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
-        StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
-        StringComparer.Ordinal.Equals(previous.Definition.DisplayName, current.Definition.DisplayName) &&
-        previous.EndpointState == current.EndpointState &&
-        StringComparer.Ordinal.Equals(previous.Error, current.Error);
-
-    private static bool OpenRazerKrakenConnectionMatches(
-        OpenRazerSpecialLightingConnection previous,
-        OpenRazerSpecialLightingConnection current) =>
-        StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
-        StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
-        StringComparer.Ordinal.Equals(previous.Error, current.Error);
-
-    private int CountOpenRazerErrors()
-    {
-        var count = OpenRazerDevices.Count(row => row.HasError);
-        if (SelectedOpenRazerDevice is { HasError: true } selected &&
-            !OpenRazerDevices.Any(row => StringComparer.OrdinalIgnoreCase.Equals(
-                row.Connection.InstanceId, selected.InstanceId) && row.HasError))
-        {
-            count++;
-        }
-
-        count += OpenRazerKrakenDevices.Count(row => !string.IsNullOrWhiteSpace(row.Error));
-        if (SelectedOpenRazerKraken?.HasError == true &&
-            !OpenRazerKrakenDevices.Any(row => StringComparer.OrdinalIgnoreCase.Equals(
-                row.Connection.InstanceId, SelectedOpenRazerKraken.InstanceId) &&
-                !string.IsNullOrWhiteSpace(row.Error)))
-        {
-            count++;
-        }
-
-        return count;
     }
 
 }

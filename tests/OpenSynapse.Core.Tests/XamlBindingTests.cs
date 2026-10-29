@@ -38,6 +38,7 @@ public sealed class XamlBindingTests
     private static readonly Dictionary<string, string> Workspaces = new(StringComparer.Ordinal)
     {
         ["Macros"] = "src/OpenSynapse.App/ViewModels/MacroWorkspace.cs",
+        ["OpenRazer"] = "src/OpenSynapse.App/ViewModels/OpenRazerWorkspace.cs",
     };
 
     [Fact]

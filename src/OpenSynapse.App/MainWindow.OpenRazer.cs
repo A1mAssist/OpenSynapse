@@ -80,7 +80,7 @@ public sealed partial class MainWindow
         }
 
         SelectDevice("openrazer");
-        await _viewModel.SelectOpenRazerDeviceAsync(row, _lifetime.Token);
+        await _viewModel.OpenRazer.SelectDeviceAsync(row, _lifetime.Token);
         UpdateDeviceSelector("openrazer");
     }
 
@@ -110,12 +110,12 @@ public sealed partial class MainWindow
         {
             case OpenRazerDeviceRowViewModel row:
                 SelectDevice("openrazer");
-                await _viewModel.SelectOpenRazerDeviceAsync(row, _lifetime.Token);
+                await _viewModel.OpenRazer.SelectDeviceAsync(row, _lifetime.Token);
                 break;
             case OpenRazerKrakenDeviceRowViewModel row:
                 SelectDevice("kraken");
-                await _viewModel.SelectOpenRazerKrakenAsync(row);
-                if (_viewModel.SelectedOpenRazerKraken is { } kraken)
+                await _viewModel.OpenRazer.SelectKrakenAsync(row);
+                if (_viewModel.OpenRazer.SelectedKraken is { } kraken)
                 {
                     await kraken.LoadSerialAsync(_lifetime.Token);
                 }
@@ -145,9 +145,9 @@ public sealed partial class MainWindow
     private async void OpenRazerKrakenSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: OpenRazerKrakenDeviceRowViewModel row }) return;
-        await _viewModel.SelectOpenRazerKrakenAsync(row);
+        await _viewModel.OpenRazer.SelectKrakenAsync(row);
         SelectDevice("kraken");
-        if (_viewModel.SelectedOpenRazerKraken is { } kraken)
+        if (_viewModel.OpenRazer.SelectedKraken is { } kraken)
             await kraken.LoadSerialAsync(_lifetime.Token);
     }
 
@@ -159,10 +159,10 @@ public sealed partial class MainWindow
     }
 
     private async void OpenRazerKrakenApplyClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedOpenRazerKraken?.ApplyAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (_viewModel.OpenRazer.SelectedKraken?.ApplyAsync(_lifetime.Token) ?? Task.CompletedTask);
 
-    private OpenRazerDeviceViewModel? SelectedOpenRazerDevice => _viewModel.SelectedOpenRazerDevice;
-    private OpenRazerKrakenViewModel? SelectedOpenRazerKraken => _viewModel.SelectedOpenRazerKraken;
+    private OpenRazerDeviceViewModel? SelectedOpenRazerDevice => _viewModel.OpenRazer.SelectedDevice;
+    private OpenRazerKrakenViewModel? SelectedOpenRazerKraken => _viewModel.OpenRazer.SelectedKraken;
 
     private async void OpenRazerApplyPollingClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyPollingAsync(_lifetime.Token) ?? Task.CompletedTask);
@@ -410,10 +410,10 @@ public sealed partial class MainWindow
         await ConfirmHyperPollingAsync(pair: true);
 
     private async void OpenRazerReadOnboardMacrosClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedOpenRazerDevice?.LoadOnboardMacrosAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (_viewModel.OpenRazer.SelectedDevice?.LoadOnboardMacrosAsync(_lifetime.Token) ?? Task.CompletedTask);
 
     private async void OpenRazerWriteOnboardMacroClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedOpenRazerDevice?.WriteOnboardMacroAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (_viewModel.OpenRazer.SelectedDevice?.WriteOnboardMacroAsync(_lifetime.Token) ?? Task.CompletedTask);
 
     private async void OpenRazerUnpairHyperPollingClick(object sender, RoutedEventArgs e) =>
         await ConfirmHyperPollingAsync(pair: false);

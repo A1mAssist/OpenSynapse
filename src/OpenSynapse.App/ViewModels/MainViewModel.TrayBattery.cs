@@ -30,28 +30,15 @@ public sealed partial class MainViewModel
     public async Task<IReadOnlyList<PeripheralBattery>> ReadBatteriesAsync(
         CancellationToken cancellationToken = default)
     {
-        if (_openRazerDeviceService is null)
-        {
-            return TelemetryBatteries();
-        }
-
         // Telemetry rows keep their polled value; only the OpenRazer rows are read here.
         var results = new List<PeripheralBattery>(TelemetryBatteries());
         foreach (var row in BatteryDevices())
         {
-            int? percent = null;
-            try
-            {
-                percent = await _openRazerDeviceService
-                    .GetBatteryPercentAsync(row.Connection, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception) when (!cancellationToken.IsCancellationRequested)
-            {
-                // No answer means no percentage for this row; the menu still lists it.
-            }
-
-            results.Add(new PeripheralBattery(row.Name, percent, row.IconGlyph, row));
+            results.Add(new PeripheralBattery(
+                row.Name,
+                await OpenRazer.ReadBatteryPercentAsync(row, cancellationToken).ConfigureAwait(false),
+                row.IconGlyph,
+                row));
         }
 
         return results;
@@ -64,7 +51,7 @@ public sealed partial class MainViewModel
             .ToArray();
 
     private IEnumerable<OpenRazerDeviceRowViewModel> BatteryDevices() =>
-        OpenRazerDevices.Where(row => row.Connection.IsReady &&
+        OpenRazer.Devices.Where(row => row.Connection.IsReady &&
             row.HardwareCategory != DeviceCategory.Laptop &&
             row.Connection.Capabilities.Contains(OpenRazerBackendCapability.BatteryRead));
 }

@@ -53,4 +53,12 @@ internal static class DeviceUiCatalog
     public static readonly byte[] BladeAnimationSpeeds = [1, 2, 3];
     public static readonly BladeStarlightColorMode[] BladeStarlightColorModes =
         [BladeStarlightColorMode.Random, BladeStarlightColorMode.Single, BladeStarlightColorMode.Dual];
+
+    public static int DeviceCategoryOrder(DeviceCategory category) => category switch
+    {
+        DeviceCategory.Laptop => 0,
+        DeviceCategory.Keyboard => 1,
+        DeviceCategory.Mouse => 2,
+        _ => 3,
+    };
 }

@@ -99,6 +99,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         RootNavigationView.DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.OpenRazer.PropertyChanged += OnViewModelPropertyChanged;
         WindowAppearance.Apply(this);
         ApplyDarkTheme();
         ApplyTitleBarColors(launchOverlayActive: true);
@@ -345,6 +346,7 @@ public sealed partial class MainWindow : Window
         CloseBladeFanCurveWindow();
         CloseMacroEditorWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.OpenRazer.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
         ShutdownDisplayPowerNotification();

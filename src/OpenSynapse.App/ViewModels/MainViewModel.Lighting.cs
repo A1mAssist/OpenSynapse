@@ -34,7 +34,7 @@ public sealed partial class MainViewModel
         if (_chromaIntegrationEnabled == enabled) return;
         _chromaIntegrationEnabled = enabled;
         OnPropertyChanged(nameof(BladeChromaOverrideVisibility));
-        SelectedOpenRazerDevice?.SetChromaIntegrationEnabled(enabled);
+        OpenRazer.SelectedDevice?.SetChromaIntegrationEnabled(enabled);
     }
 
     public async Task PrepareForSuspendAsync()
