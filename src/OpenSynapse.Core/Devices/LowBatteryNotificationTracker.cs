@@ -1,10 +1,8 @@
-using OpenSynapse.Core.Devices;
+namespace OpenSynapse.Core.Devices;
 
-namespace OpenSynapse.App.Runtime;
-
-internal sealed class LowBatteryNotificationTracker(Dictionary<string, int> notifiedLevels)
+public sealed class LowBatteryNotificationTracker(Dictionary<string, int> notifiedLevels)
 {
-    internal int? Observe(DeviceBatteryReading reading, bool enabled, out bool changed)
+    public int? Observe(DeviceBatteryReading reading, bool enabled, out bool changed)
     {
         changed = false;
         // Zero is ambiguous on receivers whose peripheral is asleep or switched off.

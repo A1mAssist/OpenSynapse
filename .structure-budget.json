@@ -25,7 +25,7 @@
       "maxPublicMembers": 170
     },
     {
-      "path": "src/OpenSynapse.App/Runtime/MacroRuntime.cs",
+      "path": "src/OpenSynapse.Windows/Input/MacroRuntime.cs",
       "maxLines": 1328
     },
     {
@@ -46,7 +46,7 @@
       "maxLines": 1092
     },
     {
-      "path": "src/OpenSynapse.App/Runtime/ChromaRestHost.cs",
+      "path": "src/OpenSynapse.Windows/Lighting/ChromaRestHost.cs",
       "maxLines": 1087
     },
     {

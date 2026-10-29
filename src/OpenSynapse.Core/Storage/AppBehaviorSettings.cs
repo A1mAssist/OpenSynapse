@@ -1,10 +1,9 @@
 using System.Text.Json;
 using OpenSynapse.Core.Devices;
-using OpenSynapse.Core.Storage;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.Core.Storage;
 
-internal sealed class AppBehaviorSettings
+public sealed class AppBehaviorSettings
 {
     internal static readonly BladePerformanceMode[] SupportedPerformanceCycleModes =
     [

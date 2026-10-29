@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
-using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
@@ -218,7 +217,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
             OpenRazerEndpointState.RecognizedButUnresolved => AppStrings.Text("Text_242E08F4"),
             _ => AppStrings.Text("Text_D3632B96"),
         };
-    public int ProtocolAvailableCount => Math.Max(0, Connection.Capabilities.Count - _unsupported.Count);
+    public int ProtocolAvailableCount => Math.Max(0,
+        Connection.Capabilities.Count - _unsupported.Count - (_basicState?.Errors.Count ?? 0));
     public int ProtocolTotalCount => Connection.Capabilities.Count;
     public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails =>
         BuildProtocolDetails(Connection, _unsupported, _basicState?.Errors);
@@ -226,32 +226,38 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged, I
     internal static IReadOnlyList<DeviceProtocolDetailViewModel> BuildProtocolDetails(
         OpenRazerDeviceConnection connection,
         IReadOnlySet<OpenRazerBackendCapability>? unsupported = null,
-        IReadOnlyDictionary<string, string>? errors = null) =>
-        connection.Capabilities
+        IReadOnlyDictionary<string, string>? errors = null)
+    {
+        if (connection.EndpointState != OpenRazerEndpointState.Resolved)
+        {
+            return [];
+        }
+
+        // The diagnostics page only needs the checks that need attention. Listing every
+        // declared capability made one mouse look like a wall of protocol rows.
+        return connection.Capabilities
             .OrderBy(capability => capability.ToString(), StringComparer.Ordinal)
             .Select(capability =>
             {
-                var available = connection.EndpointState == OpenRazerEndpointState.Resolved &&
-                    !(unsupported?.Contains(capability) ?? false);
+                var unsupportedCapability = unsupported?.Contains(capability) ?? false;
                 string? reason = null;
                 var failed = errors is not null &&
                     errors.TryGetValue(capability.ToString(), out reason);
-                var detail = available
-                    ? AppStrings.Text("DiagnosticProtocolAvailable")
+                var available = !unsupportedCapability && !failed;
+                var detail = failed
+                    ? reason ?? AppStrings.Text("DiagnosticProtocolUnavailable")
                     : AppStrings.Text("DiagnosticProtocolUnavailable");
-                if (failed)
-                {
-                    // A capability that was read but failed must not read as "available":
-                    // that is what hid the failing item from every diagnostic report so far.
-                    detail = AppStrings.FormatText("DiagnosticProtocolReadFailed", reason);
-                }
 
                 return new DeviceProtocolDetailViewModel(
                     $"OpenRazerCapability{capability}",
-                    available && !failed,
-                    detail);
+                    available,
+                    detail,
+                    failed: failed);
             })
+            .Where(detail => !detail.IsAvailable)
             .ToArray();
+    }
+
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public string OperationStatusText => _operationSucceeded

@@ -4,10 +4,9 @@ using System.Text.Json.Serialization;
 using System.Text;
 using System.Text.Json;
 using OpenSynapse.Core.Devices;
-using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 
-namespace OpenSynapse.App.Runtime;
+namespace OpenSynapse.Windows.Lighting;
 
 internal sealed class ChromaRestHost : IAsyncDisposable
 {
@@ -426,7 +425,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             await WriteResponseAsync(writer, 200, new
             {
                 sessionid = id,
-                uri = $"http://localhost:{ListeningPort}/razer/chromasdk/{session.Id}"
+                uri = $"http://127.0.0.1:{ListeningPort}/razer/chromasdk/{session.Id}"
             }).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is JsonException or InvalidOperationException)

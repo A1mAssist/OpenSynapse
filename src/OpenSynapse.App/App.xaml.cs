@@ -7,6 +7,7 @@ using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Audio;
 using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Devices;
@@ -16,7 +17,6 @@ using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using OpenSynapse.Windows.Sensors;
 using Velopack;
-
 namespace OpenSynapse.App;
 
 public partial class App : Application

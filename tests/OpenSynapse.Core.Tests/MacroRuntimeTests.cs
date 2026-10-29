@@ -1,5 +1,4 @@
 using System.Reflection;
-using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Input;
 using Xunit;

@@ -1,4 +1,4 @@
-using OpenSynapse.App.Runtime;
+using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Xunit;

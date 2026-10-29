@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using Xunit;
-using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Lighting;
 

@@ -2,9 +2,9 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App.ViewModels;
 

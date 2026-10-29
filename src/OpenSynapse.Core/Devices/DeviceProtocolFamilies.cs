@@ -1,4 +1,4 @@
-namespace OpenSynapse.App.ViewModels;
+namespace OpenSynapse.Core.Devices;
 
 public static class DeviceProtocolFamilies
 {

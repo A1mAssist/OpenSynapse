@@ -1,9 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using OpenSynapse.Core.Devices;
 
-namespace OpenSynapse.App.ViewModels;
+namespace OpenSynapse.Core.Devices;
 
 public enum BladeFanCurveSelection
 {
