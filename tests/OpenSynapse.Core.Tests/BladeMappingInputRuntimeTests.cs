@@ -11,7 +11,7 @@ public sealed class BladeMappingInputRuntimeTests
     {
         var graph = LoadProduct710Graph();
 
-        using var runtime = BladeMappingInputRuntime.FromProduct710Graph(graph);
+        using var runtime = BladeMappingInputRuntime.FromGraph(graph);
 
         Assert.Equal(64, runtime.MappingCount);
         Assert.Equal(32, runtime.Rules.Count);
@@ -48,18 +48,6 @@ public sealed class BladeMappingInputRuntimeTests
 
         graph["mappings"]![0]!["output"]!["type"] = "unknown";
         Assert.Throws<ArgumentException>(() => BladeMappingInputRuntime.FromGraph(graph));
-    }
-
-    [Fact]
-    public void Product710EntryPointRejectsTruncatedGraph()
-    {
-        var graph = LoadProduct710Graph();
-        graph["mappings"]!.AsArray().RemoveRange(2, 62);
-
-        using var partial = BladeMappingInputRuntime.FromGraph(graph);
-        Assert.Single(partial.Rules);
-        Assert.Throws<ArgumentException>(() =>
-            BladeMappingInputRuntime.FromProduct710Graph(graph));
     }
 
     [Fact]
@@ -385,10 +373,30 @@ public sealed class BladeMappingInputRuntimeTests
             runtime.Process(new(BladeMappingInputKind.Keyboard, 0x1E, false)));
     }
 
-    private static JsonObject LoadProduct710Graph()
+    [Fact]
+    public void EveryShippedBladeMappingCompiles()
     {
-        var storage = JsonNode.Parse(File.ReadAllText(
-            Path.Combine(AppContext.BaseDirectory, "Product710Mapping.json")))!.AsObject();
+        var directory = Path.Combine(AppContext.BaseDirectory, "Mappings");
+        var files = Directory.GetFiles(directory, "Product*Mapping.json");
+
+        Assert.True(files.Length >= 39, $"Only {files.Length} mapping files were copied.");
+        foreach (var file in files)
+        {
+            using var runtime = BladeMappingInputRuntime.FromGraph(LoadGraph(file));
+            Assert.True(
+                runtime.Rules.Count >= 19,
+                $"{Path.GetFileName(file)} compiled to {runtime.Rules.Count} rules.");
+            Assert.All(runtime.Rules, static rule =>
+                Assert.True(rule.InputCode is >= 0 and <= ushort.MaxValue));
+        }
+    }
+
+    private static JsonObject LoadProduct710Graph() =>
+        LoadGraph(Path.Combine(AppContext.BaseDirectory, "Mappings", "Product710Mapping.json"));
+
+    private static JsonObject LoadGraph(string path)
+    {
+        var storage = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
         return storage["defaultMappings"]!["appEngine"]!.AsObject();
     }
 

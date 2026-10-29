@@ -662,6 +662,14 @@ public partial class App : Application
                 return;
             }
 
+            if (!BladeFnRuntime.HasMapping(productId))
+            {
+                _diagnosticLog.TryWrite(
+                    "audio-mute-sync",
+                    $"no Fn mapping for Product {productId}; the keyboard stays in firmware mode.");
+                return;
+            }
+
             BladeFnRuntime? fnRuntime = null;
             BladeAudioMuteRuntime? audioRuntime = null;
             try

@@ -9,12 +9,15 @@ public sealed record BladeRecoveryMarker(
     int OwnerPid,
     string DevicePath,
     string FilterDevicePath,
-    DateTimeOffset StartedAtUtc);
+    DateTimeOffset StartedAtUtc,
+    string Hooks = "");
 
 public static class BladeRecoveryProtocol
 {
-    public const int CurrentMarkerVersion = 2;
+    public const int CurrentMarkerVersion = 3;
+    private const int LegacyMarkerVersion = 2;
     public const int MaximumMarkerBytes = 16 * 1024;
+    private const int MaximumHooks = 64;
 
     public static BladeRecoveryMarker ParseMarker(string json)
     {
@@ -34,8 +37,16 @@ public static class BladeRecoveryProtocol
             if (root.ValueKind != JsonValueKind.Object)
                 throw new ArgumentException("Recovery marker root must be an object.", nameof(json));
 
+            if (!root.TryGetProperty("version", out var versionElement) ||
+                !versionElement.TryGetInt32(out var version) ||
+                version is not (LegacyMarkerVersion or CurrentMarkerVersion))
+            {
+                throw new ArgumentException("Unsupported recovery marker version.", nameof(json));
+            }
             var expected = new HashSet<string>(StringComparer.Ordinal)
                 { "version", "ownerPid", "devicePath", "filterDevicePath", "startedAtUtc" };
+            if (version >= CurrentMarkerVersion)
+                expected.Add("hooks");
             foreach (var property in root.EnumerateObject())
             {
                 if (!expected.Remove(property.Name))
@@ -44,10 +55,13 @@ public static class BladeRecoveryProtocol
             if (expected.Count != 0)
                 throw new ArgumentException("Recovery marker is missing required fields.", nameof(json));
 
-            if (!root.GetProperty("version").TryGetInt32(out var version) || version != CurrentMarkerVersion)
-                throw new ArgumentException("Unsupported recovery marker version.", nameof(json));
             if (!root.GetProperty("ownerPid").TryGetInt32(out var ownerPid) || ownerPid <= 0)
                 throw new ArgumentException("Recovery marker ownerPid must be positive.", nameof(json));
+            var hooks = version >= CurrentMarkerVersion
+                ? root.GetProperty("hooks").GetString() is { Length: > 0 } value ? value : string.Empty
+                : string.Empty;
+            if (version >= CurrentMarkerVersion)
+                ParseHooks(hooks);
             var devicePath = root.GetProperty("devicePath").GetString();
             ValidateBladeDevicePath(devicePath);
             var filterDevicePath = root.GetProperty("filterDevicePath").GetString();
@@ -63,7 +77,7 @@ public static class BladeRecoveryProtocol
                 throw new ArgumentException("Recovery marker startedAtUtc must be a UTC timestamp.", nameof(json));
             }
 
-            return new(version, ownerPid, devicePath!, filterDevicePath!, startedAtUtc);
+            return new(version, ownerPid, devicePath!, filterDevicePath!, startedAtUtc, hooks);
         }
         catch (JsonException exception)
         {
@@ -78,6 +92,17 @@ public static class BladeRecoveryProtocol
     public static string SerializeMarker(BladeRecoveryMarker marker)
     {
         ValidateMarker(marker);
+        if (marker.Version < CurrentMarkerVersion)
+        {
+            return JsonSerializer.Serialize(new
+            {
+                version = marker.Version,
+                ownerPid = marker.OwnerPid,
+                devicePath = marker.DevicePath,
+                filterDevicePath = marker.FilterDevicePath,
+                startedAtUtc = marker.StartedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+            });
+        }
         return JsonSerializer.Serialize(new
         {
             version = marker.Version,
@@ -85,7 +110,41 @@ public static class BladeRecoveryProtocol
             devicePath = marker.DevicePath,
             filterDevicePath = marker.FilterDevicePath,
             startedAtUtc = marker.StartedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+            hooks = marker.Hooks,
         });
+    }
+
+    public static string FormatHooks(IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks)
+    {
+        ArgumentNullException.ThrowIfNull(hooks);
+        if (hooks.Count is 0 or > MaximumHooks)
+            throw new ArgumentOutOfRangeException(nameof(hooks), "Recovery hook count is out of range.");
+        return string.Join(';', hooks.Select(static hook => $"{hook.ScanCode:X4}:{hook.Flag}"));
+    }
+
+    public static IReadOnlyList<(ushort ScanCode, ushort Flag)> ParseHooks(string hooks)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(hooks);
+        var parts = hooks.Split(';');
+        if (parts.Length is 0 or > MaximumHooks)
+            throw new ArgumentException("Recovery hook count is out of range.", nameof(hooks));
+        var parsed = new List<(ushort ScanCode, ushort Flag)>(parts.Length);
+        var seen = new HashSet<(ushort ScanCode, ushort Flag)>();
+        foreach (var part in parts)
+        {
+            if (part.Length != 6 || part[4] != ':' ||
+                !ushort.TryParse(part.AsSpan(0, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var scanCode) ||
+                !byte.TryParse(part.AsSpan(5, 1), NumberStyles.None, CultureInfo.InvariantCulture, out var flag) ||
+                flag > 3 ||
+                !seen.Add((scanCode, flag)))
+            {
+                throw new ArgumentException($"Recovery hook '{part}' is invalid.", nameof(hooks));
+            }
+
+            parsed.Add((scanCode, flag));
+        }
+
+        return parsed;
     }
 
     public static async Task<BladeRecoveryMarker> ReadMarkerAsync(
@@ -157,29 +216,43 @@ public static class BladeRecoveryProtocol
     private static void ValidateMarker(BladeRecoveryMarker marker)
     {
         ArgumentNullException.ThrowIfNull(marker);
-        if (marker.Version != CurrentMarkerVersion || marker.OwnerPid <= 0 || marker.StartedAtUtc.Offset != TimeSpan.Zero)
+        if (marker.Version is not (LegacyMarkerVersion or CurrentMarkerVersion) ||
+            marker.OwnerPid <= 0 || marker.StartedAtUtc.Offset != TimeSpan.Zero)
             throw new ArgumentException("Recovery marker values are invalid.", nameof(marker));
+        if (marker.Version >= CurrentMarkerVersion)
+            ParseHooks(marker.Hooks);
+        else if (marker.Hooks.Length != 0)
+            throw new ArgumentException("Legacy recovery markers cannot carry hooks.", nameof(marker));
         ValidateBladeDevicePath(marker.DevicePath);
         ValidateFilterDevicePath(marker.FilterDevicePath);
     }
 
     private static void ValidateBladeDevicePath(string? devicePath)
     {
-        if (string.IsNullOrWhiteSpace(devicePath) || devicePath.Length > 4096 ||
-            !devicePath.StartsWith(@"\\?\hid#", StringComparison.OrdinalIgnoreCase) ||
-            !devicePath.Contains("vid_1532&pid_02c6&", StringComparison.OrdinalIgnoreCase))
+        const string prefix = @"\\?\hid#vid_1532&pid_";
+        if (!HasRazerPid(devicePath, prefix))
         {
-            throw new ArgumentException("Recovery marker devicePath is not a Product 710 HID path.", nameof(devicePath));
+            throw new ArgumentException("Recovery marker devicePath is not a Razer HID path.", nameof(devicePath));
         }
     }
 
     private static void ValidateFilterDevicePath(string? devicePath)
     {
-        if (string.IsNullOrWhiteSpace(devicePath) || devicePath.Length > 4096 ||
-            !devicePath.StartsWith(@"\\?\RZCONTROL#", StringComparison.OrdinalIgnoreCase) ||
-            !devicePath.Contains("VID_1532&PID_02C6&MI_00#", StringComparison.OrdinalIgnoreCase))
+        const string prefix = @"\\?\RZCONTROL#VID_1532&PID_";
+        if (!HasRazerPid(devicePath, prefix))
         {
-            throw new ArgumentException("Recovery marker filterDevicePath is not the Product 710 filter endpoint.", nameof(devicePath));
+            throw new ArgumentException("Recovery marker filterDevicePath is not a Razer filter endpoint.", nameof(devicePath));
         }
     }
+
+    private static bool HasRazerPid(string? devicePath, string prefix) =>
+        !string.IsNullOrWhiteSpace(devicePath) &&
+        devicePath.Length > prefix.Length + 5 &&
+        devicePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+        devicePath[prefix.Length + 4] == '&' &&
+        ushort.TryParse(
+            devicePath.AsSpan(prefix.Length, 4),
+            NumberStyles.HexNumber,
+            CultureInfo.InvariantCulture,
+            out _);
 }

@@ -34,8 +34,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\OpenSynapse.App\Native\Razer\Product710Mapping.json"
-          Link="Product710Mapping.json"
+    <None Include="..\..\src\OpenSynapse.App\Native\Razer\Mappings\*.json"
+          Link="Mappings\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -16,11 +16,6 @@ internal sealed class BladeFilterEndpointMissingException(string message) : Inva
 internal sealed class BladeFnRuntime : IAsyncDisposable
 {
     private static readonly TimeSpan RecoveryReadyTimeout = TimeSpan.FromSeconds(5);
-    private static readonly string MappingPath = Path.Combine(
-        AppContext.BaseDirectory,
-        "Native",
-        "Razer",
-        "Product710Mapping.json");
     private static readonly string RecoveryHostPath = Path.Combine(
         AppContext.BaseDirectory,
         "OpenSynapse.RecoveryHost.exe");
@@ -80,6 +75,9 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
 
     internal Task Completion => _consumer ?? Task.CompletedTask;
 
+    /// <summary>The filter runtime only runs for a model whose key graph we ship.</summary>
+    internal static bool HasMapping(ushort productId) => File.Exists(MappingPathFor(productId));
+
     internal async Task StartAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
@@ -99,7 +97,16 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 ?? throw new BladeFilterEndpointMissingException(
                     $"Could not uniquely identify the RZCONTROL endpoint for PID 0x{_productId:X4}.");
 
-            _mapping = await LoadMappingAsync(_mappingPreset, cancellationToken).ConfigureAwait(false);
+            _mapping = await LoadMappingAsync(_productId, _mappingPreset, cancellationToken)
+                .ConfigureAwait(false);
+            var hooks = _mapping.Rules
+                .Where(static rule => rule.InputKind == BladeMappingInputKind.Keyboard)
+                .Select(static rule => (
+                    ScanCode: checked((ushort)rule.InputCode),
+                    Flag: (ushort)(rule.InputExtended ? 2 : 0)))
+                .Distinct()
+                .OrderBy(static hook => hook.ScanCode)
+                .ToArray();
             _session = await _transport
                 .OpenSessionAsync(_featureDevicePath, cancellationToken)
                 .ConfigureAwait(false);
@@ -112,6 +119,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     RecoveryMarkerPath,
                     _featureDevicePath,
                     filterDevicePath,
+                    hooks,
                     RecoveryReadyTimeout,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -122,6 +130,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             _executor.SendRuntimeOutputs(_mapping.SetSnapTapEnabled(_initialSnapTapEnabled));
             _filter = new RazerFilterInputHost(
                 filterDevicePath,
+                hooks,
                 input =>
                 {
                     if (!_queue.Writer.TryWrite(input))
@@ -410,6 +419,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     }
 
     private static async Task<BladeMappingInputRuntime> LoadMappingAsync(
+        ushort productId,
         string mappingPreset,
         CancellationToken cancellationToken)
     {
@@ -419,14 +429,21 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         {
             throw new InvalidDataException($"Unsupported Blade mapping preset: {mappingPreset}.");
         }
-        var json = await File.ReadAllTextAsync(MappingPath, cancellationToken)
+        var json = await File.ReadAllTextAsync(MappingPathFor(productId), cancellationToken)
             .ConfigureAwait(false);
         var root = JsonNode.Parse(json) as JsonObject
-            ?? throw new InvalidDataException("Product 710 mapping root is invalid.");
+            ?? throw new InvalidDataException($"Product {productId} mapping root is invalid.");
         var graph = root["defaultMappings"]?["appEngine"] as JsonObject
-            ?? throw new InvalidDataException("Product 710 default mapping graph is missing.");
-        return BladeMappingInputRuntime.FromProduct710Graph(graph);
+            ?? throw new InvalidDataException($"Product {productId} default mapping graph is missing.");
+        return BladeMappingInputRuntime.FromGraph(graph);
     }
+
+    private static string MappingPathFor(ushort productId) => Path.Combine(
+        AppContext.BaseDirectory,
+        "Native",
+        "Razer",
+        "Mappings",
+        $"Product{productId}Mapping.json");
 
     private static void Try(Action action, ICollection<Exception> errors)
     {

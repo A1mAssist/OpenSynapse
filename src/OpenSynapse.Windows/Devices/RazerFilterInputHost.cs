@@ -8,25 +8,17 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Product 710 keyboard input reader for the installed Razer filter driver.
-/// This host does not discover the RZCONTROL path and is not wired to App startup.
+/// Keyboard input reader for the installed Razer filter driver. The hook list is
+/// per model: the driver only reports the scancodes the caller registers.
 /// </summary>
 public sealed class RazerFilterInputHost : IAsyncDisposable
 {
     internal const uint EnableInputHooks = 0x88883034;
     internal const uint EnableInputNotify = 0x88883038;
 
-    private static readonly (ushort ScanCode, ushort Flag)[] Product710Hooks =
-    [
-        (0x13, 0), (0x14, 0), (0x19, 0), (0x2A, 0), (0x30, 0),
-        (0x3B, 0), (0x3C, 0), (0x3D, 0), (0x3E, 0), (0x3F, 0),
-        (0x40, 0), (0x41, 0), (0x42, 0), (0x43, 0), (0x44, 0),
-        (0x48, 2), (0x49, 2), (0x4B, 2), (0x4D, 2), (0x50, 2),
-        (0x51, 2), (0x57, 0), (0x58, 0),
-    ];
-
     private readonly IRazerFilterDriverChannel _driver;
     private readonly Action<BladeMappingInputEvent> _eventHandler;
+    private readonly (ushort ScanCode, ushort Flag)[] _hooks;
     private readonly CancellationTokenSource _stop = new();
     private readonly object _disposeSync = new();
     private readonly Channel<BladeMappingInputEvent> _events =
@@ -53,23 +45,26 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
 
     public RazerFilterInputHost(
         string devicePath,
+        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks,
         Action<BladeMappingInputEvent> eventHandler)
-        : this(new WindowsRazerFilterDriverChannel(devicePath), eventHandler)
+        : this(new WindowsRazerFilterDriverChannel(devicePath), hooks, eventHandler)
     {
     }
 
     internal RazerFilterInputHost(
         IRazerFilterDriverChannel driver,
+        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks,
         Action<BladeMappingInputEvent> eventHandler)
     {
         _driver = driver ?? throw new ArgumentNullException(nameof(driver));
+        ArgumentNullException.ThrowIfNull(hooks);
+        _hooks = hooks.Count > 0
+            ? [.. hooks]
+            : throw new ArgumentException("At least one input hook is required.", nameof(hooks));
         _eventHandler = eventHandler ?? throw new ArgumentNullException(nameof(eventHandler));
     }
 
     public Task Completion => _completion ?? Task.CompletedTask;
-
-    internal static IReadOnlyList<(ushort ScanCode, ushort Flag)> OfficialProduct710Hooks =>
-        Product710Hooks;
 
     public void SendConsumerUsage(ushort usage)
     {
@@ -163,7 +158,7 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
             WriteEnabled(EnableInputNotify, true);
             _notifyEnabled = true;
 
-            foreach (var hook in Product710Hooks)
+            foreach (var hook in _hooks)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 _driver.WriteControl(

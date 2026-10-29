@@ -12,7 +12,7 @@ public static class BladeRecoveryCoordinator
     internal static async Task RecoverAsync(
         BladeRecoveryMarker marker,
         IReadOnlyList<BladeRecoverySyntheticKey> keys,
-        Action<string> restoreFilter,
+        Action<string, IReadOnlyList<(ushort ScanCode, ushort Flag)>> restoreFilter,
         Func<string, Task> restoreNormalMode,
         Action<IReadOnlyList<BladeRecoverySyntheticKey>> releaseKeys)
     {
@@ -21,8 +21,11 @@ public static class BladeRecoveryCoordinator
         ArgumentNullException.ThrowIfNull(restoreFilter);
         ArgumentNullException.ThrowIfNull(restoreNormalMode);
         ArgumentNullException.ThrowIfNull(releaseKeys);
+        var hooks = marker.Hooks.Length == 0
+            ? []
+            : BladeRecoveryProtocol.ParseHooks(marker.Hooks);
         var errors = new List<Exception>();
-        try { restoreFilter(marker.FilterDevicePath); } catch (Exception exception) { errors.Add(exception); }
+        try { restoreFilter(marker.FilterDevicePath, hooks); } catch (Exception exception) { errors.Add(exception); }
         try { await restoreNormalMode(marker.DevicePath).ConfigureAwait(false); } catch (Exception exception) { errors.Add(exception); }
         try { releaseKeys(keys); } catch (Exception exception) { errors.Add(exception); }
         if (errors.Count != 0) throw new AggregateException("Blade recovery was incomplete.", errors);
