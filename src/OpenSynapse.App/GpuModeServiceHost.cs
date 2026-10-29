@@ -379,13 +379,13 @@ internal static class GpuModeServiceHost
         /// firmware lock or a broken PawnIO install cannot take the whole service down.
         /// </summary>
         private static DedicatedGpuModeServiceResponse WithPowerLimit(
-            Func<CpuPowerLimitController, CpuPowerLimitReport> action)
+            Func<ICpuPowerLimitController, CpuPowerLimitReport> action)
         {
-            CpuPowerLimitController? controller = null;
+            ICpuPowerLimitController? controller = null;
             CpuPowerLimitReport report;
             try
             {
-                var availability = CpuPowerLimitController.TryOpen(out controller, out var detail);
+                var availability = CpuPowerLimitLocal.TryOpen(out controller, out var detail);
                 report = controller is null
                     ? CpuPowerLimitReport.Unavailable(availability, detail)
                     : action(controller);
