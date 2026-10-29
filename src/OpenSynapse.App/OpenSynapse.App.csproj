@@ -49,6 +49,14 @@
              Link="IntelMSR-LICENSE.txt"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\RyzenSMU.bin"
+             Link="RyzenSMU.bin"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\RyzenSMU-LICENSE.txt"
+             Link="RyzenSMU-LICENSE.txt"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
