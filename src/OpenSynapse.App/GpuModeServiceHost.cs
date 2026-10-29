@@ -242,6 +242,10 @@ internal static class GpuModeServiceHost
 
                 case DedicatedGpuModeServiceAction.GpuClockOffsetStatus:
                     var clockAvailable = NvApiGpuClockOffset.TryProbe(out var clockProbeError);
+                    var clockCore = 0;
+                    var clockMemory = 0;
+                    var clockRead = clockAvailable &&
+                        NvApiGpuClockOffset.TryRead(out clockCore, out clockMemory, out _);
                     return new DedicatedGpuModeServiceResponse(
                         DedicatedGpuModeServiceProtocol.Version,
                         Handled: true,
@@ -249,7 +253,9 @@ internal static class GpuModeServiceHost
                         ExitCode: 0,
                         Status: null,
                         Error: clockAvailable ? null : clockProbeError,
-                        ClockOffsetAvailable: clockAvailable);
+                        ClockOffsetAvailable: clockAvailable,
+                        CoreOffsetMhz: clockRead ? clockCore : null,
+                        MemoryOffsetMhz: clockRead ? clockMemory : null);
 
                 case DedicatedGpuModeServiceAction.SetGpuClockOffset:
                     var clockApplied = NvApiGpuClockOffset.TryApply(

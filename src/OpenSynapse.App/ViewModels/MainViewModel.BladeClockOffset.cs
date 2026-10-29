@@ -3,8 +3,8 @@ using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.App.ViewModels;
 
-// The GPU offset is driver state, not profile state, so it is never saved into a
-// profile: leaving the performance mode or closing the app puts it back to zero.
+// The GPU offset is driver state, not profile state. It outlives this process, so the
+// card reads the driver value on load and only zeroes it when the user asks.
 public sealed partial class MainViewModel
 {
     private bool _gpuClockOffsetProbeStarted;
@@ -70,8 +70,13 @@ public sealed partial class MainViewModel
     {
         try
         {
-            var available = await DedicatedGpuModeServiceClient.TryGetGpuClockOffsetCapabilityAsync();
-            _blade._bladeGpuClockOffsetAvailable = available == true;
+            var state = await DedicatedGpuModeServiceClient.TryGetGpuClockOffsetAsync();
+            _blade._bladeGpuClockOffsetAvailable = state?.Available == true;
+            if (state is { Available: true })
+            {
+                BladeCoreClockOffsetMhz = state.CoreMhz;
+                BladeMemoryClockOffsetMhz = state.MemoryMhz;
+            }
         }
         catch (Exception exception) when (
             exception is IOException or InvalidOperationException or TimeoutException or
@@ -107,38 +112,11 @@ public sealed partial class MainViewModel
             cancellationToken);
     }
 
-    /// <summary>
-    /// The driver keeps the offset after this process exits, so leaving the performance
-    /// mode or closing the app has to write zero back. Skipped when nothing was applied.
-    /// </summary>
-    internal async Task ResetBladeGpuClockOffsetAsync(CancellationToken cancellationToken = default)
+    /// <summary>Puts the driver back to stock clocks on the user's explicit request.</summary>
+    public async Task ResetBladeGpuClockOffsetDefaultsAsync(CancellationToken cancellationToken = default)
     {
-        if (_blade._bladeCoreClockOffsetMhz == 0 && _blade._bladeMemoryClockOffsetMhz == 0)
-        {
-            return;
-        }
-
         BladeCoreClockOffsetMhz = 0;
         BladeMemoryClockOffsetMhz = 0;
-        BladeGpuClockOffsetStatusText = string.Empty;
-        await DedicatedGpuModeServiceClient.TrySetGpuClockOffsetAsync(0, 0, cancellationToken);
-    }
-
-    /// <summary>
-    /// The window-close path cannot await, so this blocks briefly. The pipe write is local
-    /// and normally finishes in milliseconds; the timeout only stops a dead service from
-    /// holding the app open.
-    /// </summary>
-    internal void ResetBladeGpuClockOffsetOnExit()
-    {
-        try
-        {
-            ResetBladeGpuClockOffsetAsync(CancellationToken.None)
-                .Wait(TimeSpan.FromSeconds(2));
-        }
-        catch (AggregateException)
-        {
-            // The app is closing; a refused offset write is already logged by the service.
-        }
+        await ApplyBladeGpuClockOffsetAsync(cancellationToken);
     }
 }

@@ -73,7 +73,18 @@ public sealed record DedicatedGpuModeServiceResponse(
     int ExitCode,
     DedicatedGpuModeStatus? Status,
     string? Error,
-    bool? ClockOffsetAvailable = null);
+    bool? ClockOffsetAvailable = null,
+    int? CoreOffsetMhz = null,
+    int? MemoryOffsetMhz = null);
+
+/// <summary>
+/// What the driver currently holds. Null from the client means the installed service
+/// predates the clock-offset operation, not that the driver refused it.
+/// </summary>
+public sealed record DedicatedGpuClockOffsetState(
+    bool Available,
+    int CoreMhz,
+    int MemoryMhz);
 
 public static class DedicatedGpuModeServiceRequestParser
 {

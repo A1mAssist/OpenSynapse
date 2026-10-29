@@ -998,7 +998,7 @@
                   <Border Visibility="{Binding BladeGpuClockOffsetVisibility}" Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
                       <TextBlock local:Localized.Uid="BladeGpuClockOffsetTitle" Text="GPU 频率偏移" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="BladeGpuClockOffsetHint" Text="驱动级偏移，切换性能模式或退出应用时自动归零。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                      <TextBlock local:Localized.Uid="BladeGpuClockOffsetHint" Text="驱动级偏移，会一直保留到手动恢复默认。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" />
                       <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
                         <StackPanel Spacing="4">
                           <Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="BladeGpuCoreClockLabel" Text="核心偏移" Style="{StaticResource MetricLabelStyle}" /><TextBlock Grid.Column="1" Text="{Binding BladeCoreClockOffsetText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></Grid>
@@ -1009,9 +1009,10 @@
                           <Slider Minimum="-500" Maximum="2000" StepFrequency="5" Value="{Binding BladeMemoryClockOffsetMhz, Mode=TwoWay}" />
                         </StackPanel>
                       </Grid>
-                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                         <TextBlock Text="{Binding BladeGpuClockOffsetStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
-                        <Button Grid.Column="1" local:Localized.Uid="BladeGpuClockOffsetApply" Content="应用" Click="ApplyBladeGpuClockOffsetClick" Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button Grid.Column="1" local:Localized.Uid="BladeGpuClockOffsetReset" Content="恢复默认" Click="ResetBladeGpuClockOffsetClick" Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button Grid.Column="2" local:Localized.Uid="BladeGpuClockOffsetApply" Content="应用" Click="ApplyBladeGpuClockOffsetClick" Style="{StaticResource PrimaryButtonStyle}" />
                       </Grid>
                     </StackPanel>
                   </Border>

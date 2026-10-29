@@ -87,6 +87,15 @@ public sealed class GpuClockOffsetTests
             DedicatedGpuModeServiceRequestParser.Parse(request));
     }
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(150, 150)]
+    [InlineData(-500, -500)]
+    [InlineData(201, 0)]
+    [InlineData(-501, 0)]
+    public void AReadBackValueOutsideTheEnvelopeIsDroppedRatherThanClamped(int input, int expected) =>
+        Assert.Equal(expected, NvApiGpuClockOffset.Sanitize(input, -500, 200));
+
     private static uint ReadUInt32(byte[] buffer, int offset) =>
         BinaryPrimitives.ReadUInt32LittleEndian(buffer.AsSpan(offset, sizeof(uint)));
 }
