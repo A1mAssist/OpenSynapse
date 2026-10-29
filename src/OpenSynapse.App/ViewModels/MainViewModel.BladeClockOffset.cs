@@ -8,6 +8,7 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private bool _gpuClockOffsetProbeStarted;
+    private DateTimeOffset _gpuClockOffsetNextProbe;
 
     /// <summary>
     /// Hidden until the driver answers a Pstates20 read. A laptop driver that refuses
@@ -59,10 +60,18 @@ public sealed partial class MainViewModel
     {
         if (_gpuClockOffsetProbeStarted)
         {
-            return;
+            // A probe fails while the installed service is still the older build, which
+            // only matters until the service restarts on its own. Retry slowly instead of
+            // hiding the card for the rest of the process.
+            if (_blade._bladeGpuClockOffsetAvailable ||
+                DateTimeOffset.UtcNow < _gpuClockOffsetNextProbe)
+            {
+                return;
+            }
         }
 
         _gpuClockOffsetProbeStarted = true;
+        _gpuClockOffsetNextProbe = DateTimeOffset.UtcNow.AddMinutes(2);
         _ = ProbeBladeGpuClockOffsetCoreAsync();
     }
 
