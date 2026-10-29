@@ -10,6 +10,7 @@ public static class RazerOnboardMacroDevices
     public static readonly IReadOnlySet<ushort> Keyboards = new HashSet<ushort>
     {
         0x02D0, 0x02D1, 0x02D8, 0x02E3, 0x02E4, 0x02E5, 0x02E6, 0x02EA, 0x02EB, 0x02F4, 0x02CC,
+        0x0227, 0x0257, 0x0266, 0x0269, 0x0282, 0x02A6, 0x02A7, 0x02B0, 0x02CF,
     };
 
     public static readonly IReadOnlySet<ushort> Mice = new HashSet<ushort>

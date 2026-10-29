@@ -9,7 +9,7 @@ public sealed partial class OpenRazerDeviceViewModel
 
     public OnboardMacroListViewModel Onboard =>
         _onboard ??= new OnboardMacroListViewModel(
-            RazerOnboardMacroDevices.Mice.Contains(Connection.Definition.ProductId));
+            RazerOnboardMacroDevices.Products.Contains(Connection.Definition.ProductId));
 
     public Task LoadOnboardMacrosAsync(CancellationToken cancellationToken = default) =>
         Onboard.LoadAsync(CreateService, cancellationToken);

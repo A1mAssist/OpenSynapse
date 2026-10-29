@@ -198,6 +198,22 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(CanApplyBladeLocalDimming));
             OnPropertyChanged(nameof(BladeLocalDimmingVisibility));
         }
+        if (telemetry.BladeCpuPowerBoostEnabled is bool cpuPowerBoostEnabled)
+        {
+            _blade._bladeCpuPowerBoostEnabled = cpuPowerBoostEnabled;
+            BladeCpuPowerBoostEnabled = cpuPowerBoostEnabled;
+            OnPropertyChanged(nameof(CanSetBladeCpuPowerBoost));
+            OnPropertyChanged(nameof(CanApplyBladeCpuPowerBoost));
+            OnPropertyChanged(nameof(BladeCpuPowerBoostVisibility));
+        }
+        else
+        {
+            _blade._bladeCpuPowerBoostEnabled = null;
+            BladeCpuPowerBoostEnabled = false;
+            OnPropertyChanged(nameof(CanSetBladeCpuPowerBoost));
+            OnPropertyChanged(nameof(CanApplyBladeCpuPowerBoost));
+            OnPropertyChanged(nameof(BladeCpuPowerBoostVisibility));
+        }
         if (telemetry.BladeOneTimeFullChargeEnabled is bool oneTimeFullChargeEnabled)
         {
             _blade._bladeOneTimeFullChargeEnabled = oneTimeFullChargeEnabled;
@@ -554,6 +570,11 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanSetBladeLocalDimming));
         OnPropertyChanged(nameof(CanApplyBladeLocalDimming));
         OnPropertyChanged(nameof(BladeLocalDimmingVisibility));
+        _blade._bladeCpuPowerBoostEnabled = null;
+        BladeCpuPowerBoostEnabled = false;
+        OnPropertyChanged(nameof(CanSetBladeCpuPowerBoost));
+        OnPropertyChanged(nameof(CanApplyBladeCpuPowerBoost));
+        OnPropertyChanged(nameof(BladeCpuPowerBoostVisibility));
         _blade._bladeOneTimeFullChargeEnabled = null;
         BladeOneTimeFullChargeEnabled = false;
         BladeOneTimeFullChargeText = "--";

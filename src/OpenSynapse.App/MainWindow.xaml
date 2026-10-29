@@ -1135,6 +1135,15 @@
                       <ToggleSwitch Grid.Column="1" Tag="localDimming" IsOn="{Binding BladeLocalDimmingEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeLocalDimming}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeLocalDimmingLabel}" />
                     </Grid>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding BladeCpuPowerBoostVisibility}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock x:Name="BladeCpuPowerBoostLabel" local:Localized.Uid="BladeCpuPowerBoostTitle" Text="CPU Boost" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="BladeCpuPowerBoostDescription" Text="GPU 空闲时允许 CPU 使用更高功耗。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch Grid.Column="1" Tag="cpuPowerBoost" IsOn="{Binding BladeCpuPowerBoostEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSetBladeCpuPowerBoost}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeCpuPowerBoostLabel}" />
+                    </Grid>
+                  </Border>
                   <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
                     <Border Style="{StaticResource CardStyle}" Padding="16">
                       <StackPanel Spacing="8">

@@ -293,6 +293,9 @@ public sealed partial class MainWindow
             case "localDimming":
                 await _viewModel.ApplyBladeLocalDimmingAsync(_lifetime.Token);
                 break;
+            case "cpuPowerBoost":
+                await _viewModel.ApplyBladeCpuPowerBoostAsync(_lifetime.Token);
+                break;
         }
     }
 

@@ -270,7 +270,8 @@ public static class BladeModelCapabilities
                 FixedFan: true,
                 MinimumFanTargetRpm: 3300,
                 MaximumFanTargetRpm: 5400,
-                FixedFanRequiresCustomMode: true),
+                FixedFanRequiresCustomMode: true,
+                CpuPowerBoost: true),
             // Blade 14 (2023) RZ09-0482 and Blade 14 (2024) RZ09-0509. The middleware
             // enables both the maximum-fan bit and custom CPU levels.
             [0x029D] = new(
@@ -286,7 +287,8 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Silent, 2200, 3800, 3000),
                     (BladePerformanceMode.Custom, 2000, 5400, 3800),
                     (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
-                Modes: Modes029D),
+                Modes: Modes029D,
+                CpuPowerBoost: true),
             [0x02B6] = new(
                 MaxFan: true,
                 LowMediumHigh,
@@ -299,7 +301,8 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Silent, 2200, 3800, 3000),
                     (BladePerformanceMode.Gaming, 2000, 5400, 3800),
                     (BladePerformanceMode.Custom, 3300, 5400, 4300)),
-                Modes: Modes02B6),
+                Modes: Modes02B6,
+                CpuPowerBoost: true),
 
             // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
             // It has no CPU-level flag, so the custom CPU control stays closed.
@@ -786,7 +789,8 @@ public static class BladeModelCapabilities
         bool HyperBoost = false,
         bool FixedFanRequiresCustomMode = false,
         IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange>? ModeFanRanges = null,
-        IReadOnlyList<BladePerformanceMode>? Modes = null);
+        IReadOnlyList<BladePerformanceMode>? Modes = null,
+        bool CpuPowerBoost = false);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay
@@ -797,6 +801,14 @@ public static class BladeModelCapabilities
 
     public static bool SupportsMaxFan(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.MaxFan;
+
+    /// <summary>
+    /// True only where the deviceUI publishes hasCpuBoostEnabled (028C, 029D, 02B6).
+    /// The bit reads back on every model that shares the Power Mode Control mask, so a
+    /// readable bit is not evidence of support.
+    /// </summary>
+    public static bool SupportsCpuPowerBoost(ushort productId) =>
+        Contracts.TryGetValue(productId, out var contract) && contract.CpuPowerBoost;
 
     /// <summary>
     /// True when the exact model has audited Custom CPU levels to show. Decided by the
