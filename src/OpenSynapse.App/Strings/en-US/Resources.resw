@@ -1670,6 +1670,8 @@
   <data name="BladeFanCurveReset" xml:space="preserve"><value>Reset</value></data>
   <data name="BladeFanCurveEdit" xml:space="preserve"><value>Edit</value></data>
   <data name="BladeFanCurveApply" xml:space="preserve"><value>Apply</value></data>
+  <data name="BladeGpuClockLimitLabel" xml:space="preserve"><value>Core clock limit</value></data>
+  <data name="BladeGpuClockLimitDefault" xml:space="preserve"><value>Default</value></data>
   <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>GPU clock offset</value></data>
   <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>Driver-level offset. It stays until you reset it.</value></data>
   <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>Core offset</value></data>

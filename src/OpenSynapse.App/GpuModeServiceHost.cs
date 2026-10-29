@@ -271,6 +271,37 @@ internal static class GpuModeServiceHost
                         Error: clockApplyError,
                         ClockOffsetAvailable: clockApplied);
 
+                case DedicatedGpuModeServiceAction.GpuClockLimitStatus:
+                    var limitAvailable = NvApiGpuClockLimit.TryProbe(out var limitProbeError);
+                    var limitMhz = 0;
+                    string? limitReadError = null;
+                    var limitRead = limitAvailable &&
+                        NvApiGpuClockLimit.TryRead(out limitMhz, out limitReadError);
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        DedicatedGpuSwitchOutcome.Success,
+                        ExitCode: 0,
+                        Status: null,
+                        Error: limitAvailable
+                            ? (limitRead ? null : limitReadError)
+                            : limitProbeError,
+                        ClockLimitAvailable: limitAvailable && limitRead,
+                        ClockLimitMhz: limitRead ? limitMhz : null);
+
+                case DedicatedGpuModeServiceAction.SetGpuClockLimit:
+                    var limitApplied = NvApiGpuClockLimit.TryApply(
+                        request.ClockLimitMhz!.Value,
+                        out var limitApplyError);
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        limitApplied ? DedicatedGpuSwitchOutcome.Success : DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: limitApplied ? 0 : 1,
+                        Status: null,
+                        Error: limitApplyError,
+                        ClockLimitAvailable: limitApplied);
+
                 default:
                     return Invalid("Invalid GPU service command.");
             }
