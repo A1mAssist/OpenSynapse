@@ -2839,7 +2839,7 @@
   <data name="HueLightsTitle" xml:space="preserve"><value>灯光</value></data>
   <data name="HueBridgeRequired" xml:space="preserve"><value>请先扫描或填写 Hue 桥地址。</value></data>
   <data name="RazerOnboardMacroTitle.Text" xml:space="preserve"><value>板载宏</value></data>
-  <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>这些宏存在键盘的板载内存里，换一台电脑也能用。这里只读取，不改写。</value></data>
+  <data name="RazerOnboardMacroDescription.Text" xml:space="preserve"><value>这些宏存在设备的板载内存里，换一台电脑也能用。可以从本机宏写入板载槽位，写入后会回读校验。</value></data>
   <data name="RazerOnboardMacroReadButton.Content" xml:space="preserve"><value>读取板载宏</value></data>
   <data name="RazerOnboardMacroLoaded" xml:space="preserve"><value>已读取 {0} 个板载宏。</value></data>
   <data name="RazerOnboardMacroUnavailable" xml:space="preserve"><value>这个固件没有响应板载宏命令。</value></data>
@@ -2851,9 +2851,10 @@
   <data name="RazerOnboardMacroSlotLabel.Header" xml:space="preserve"><value>板载槽位</value></data>
   <data name="RazerOnboardMacroWriteButton.Content" xml:space="preserve"><value>写入板载</value></data>
   <data name="RazerOnboardMacroWriteDone" xml:space="preserve"><value>已写入板载槽位 {0}。</value></data>
-  <data name="RazerOnboardMacroWriteUnsupported" xml:space="preserve"><value>这个宏含有板载内存放不下的步骤，只支持按键、鼠标键、滚轮和延迟。</value></data>
   <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>没有选中要写入的宏。</value></data>
-  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>写入失败：{0}</value></data></root>
+  <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>写入失败：{0}</value></data>
+  <data name="RazerOnboardMacroWriteStepFailed" xml:space="preserve"><value>第 {0} 步：{1}</value></data>
+  <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>已用 {0} / {1} 字节 · 剩余 {2} 字节 · {3} 个槽位</value></data></root>
 
 
 

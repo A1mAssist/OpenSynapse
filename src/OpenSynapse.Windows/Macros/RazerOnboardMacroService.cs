@@ -129,6 +129,16 @@ public sealed class RazerOnboardMacroService
             throw new ArgumentException("An onboard macro needs at least one item.", nameof(items));
         }
 
+        var allocation = RazerOnboardMacroProtocol.RequiredAllocation(payload.Length);
+        // Only the firmware's hard ceiling is checked. `availableMemory` is not used:
+        // overwriting a slot frees its old allocation first, which is unverified on hardware.
+        if (await ProbeStorageAsync(cancellationToken).ConfigureAwait(false) is { } storage &&
+            allocation > storage.MaxMemory)
+        {
+            throw new InvalidOperationException(
+                $"Onboard macro needs {allocation} bytes of device storage, but this device holds at most {storage.MaxMemory}.");
+        }
+
         // Keep whatever the slot held so a failed write cannot silently destroy it.
         var backup = await TryReadRawAsync(id, cancellationToken).ConfigureAwait(false);
         try
