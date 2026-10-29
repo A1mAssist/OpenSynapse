@@ -79,7 +79,7 @@ public sealed partial class MainWindow
         if (message == WmDeviceChange &&
             (unchecked((nuint)wParam.ToInt64()) is DbtDeviceArrival or DbtDeviceRemoveComplete or DbtDevNodesChanged))
         {
-            _viewModel.RequestDeviceRefresh();
+            _viewModel.Refresh.RequestDeviceRefresh();
         }
 
         if (message == WmPowerBroadcast)
@@ -87,7 +87,7 @@ public sealed partial class MainWindow
             switch (unchecked((uint)wParam.ToInt64()))
             {
                 case PbtApmPowerStatusChange:
-                    _viewModel.RequestDeviceRefresh();
+                    _viewModel.Refresh.RequestDeviceRefresh();
                     break;
                 case PbtApmSuspend:
                     PrepareForSuspend();
@@ -155,7 +155,7 @@ public sealed partial class MainWindow
                 return;
             }
             _systemSuspended = false;
-            _viewModel.RequestDeviceRefresh();
+            _viewModel.Refresh.RequestDeviceRefresh();
             QueueDisplayTransition(suspending: false);
         }
     }

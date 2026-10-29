@@ -895,10 +895,10 @@ public sealed partial class MainWindow
         await _viewModel.Blade.ApplyLogoAsync(_lifetime.Token);
 
     private async void CheckFirmwareUpdateClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.CheckFirmwareUpdateAsync(_lifetime.Token);
+        await _viewModel.Firmware.CheckUpdateAsync(_lifetime.Token);
 
     private async void OpenFirmwareDownloadClick(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri(_viewModel.FirmwareDownloadUrl));
+        await Launcher.LaunchUriAsync(new Uri(_viewModel.Firmware.DownloadUrl));
 
     private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
     {

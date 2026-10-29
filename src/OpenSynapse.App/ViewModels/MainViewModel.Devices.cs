@@ -1,10 +1,12 @@
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private readonly Dictionary<string, string> _deviceSerials = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<ConnectedDeviceRowViewModel>? _connectedDevicesCache;
 
     public IReadOnlyList<ConnectedDeviceRowViewModel> ConnectedDevices =>
@@ -47,8 +49,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(AdditionalDevices));
         OnPropertyChanged(nameof(ConnectedDevices));
         Blade.RefreshDeviceOverview();
-        OnPropertyChanged(nameof(ViperProtocolText));
-        OnPropertyChanged(nameof(ViperIdentityText));
+        Viper.RefreshDeviceRow();
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
     }
 
@@ -62,11 +63,11 @@ public sealed partial class MainViewModel
                 Blade.DeviceName,
                 "\uE7F8"));
         }
-        if (ViperDeviceVisibility == Microsoft.UI.Xaml.Visibility.Visible)
+        if (Viper.DeviceVisibility == Microsoft.UI.Xaml.Visibility.Visible)
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Viper,
-                ViperDeviceName,
+                Viper.DeviceName,
                 "\uE962"));
         }
 
@@ -143,5 +144,24 @@ public sealed partial class MainViewModel
         }
 
         OnPropertyChanged(nameof(DeviceSelectorItems));
+    }
+
+    private async Task<string?> GetDeviceSerialAsync(DeviceDescriptor? device, CancellationToken cancellationToken)
+    {
+        if (device is not { Access: DeviceAccessState.Available }) return null;
+        if (_deviceSerials.TryGetValue(device.Id, out var serial)) return serial;
+        serial = await WindowsHidDiscovery.TryReadSerialNumberAsync(device.Id, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(serial)) _deviceSerials[device.Id] = serial;
+        return serial;
+    }
+
+    private async Task RefreshAttachedDevicesAsync(CancellationToken cancellationToken)
+    {
+        await RefreshBlackSharkAsync(cancellationToken);
+        await RefreshHeadsetAudioAsync(cancellationToken);
+        await RefreshKeyboardsAsync(cancellationToken);
+        await RefreshGamepadsAsync(cancellationToken);
+        await RefreshChromaAsync(cancellationToken);
+        await RefreshBleAsync(cancellationToken);
     }
 }

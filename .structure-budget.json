@@ -200,6 +200,31 @@
       "maxPublicMembers": 10
     },
     {
+      "path": "src/OpenSynapse.App/ViewModels/ViperWorkspace.cs",
+      "maxLines": 753,
+      "maxPublicMembers": 47
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/FirmwareWorkspace.cs",
+      "maxLines": 169,
+      "maxPublicMembers": 13
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/TrayWorkspace.cs",
+      "maxLines": 69,
+      "maxPublicMembers": 2
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/RefreshWorkspace.cs",
+      "maxLines": 659,
+      "maxPublicMembers": 5
+    },
+    {
+      "path": "src/OpenSynapse.App/ViewModels/DiagnosticsWorkspace.cs",
+      "maxLines": 266,
+      "maxPublicMembers": 2
+    },
+    {
       "path": "src/OpenSynapse.App/ViewModels/ProfilesWorkspace.cs",
       "maxLines": 528,
       "maxPublicMembers": 23
@@ -213,8 +238,8 @@
   "groups": [
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
-        "maxLines": 2897,
-        "maxPublicMembers": 118
+        "maxLines": 1443,
+        "maxPublicMembers": 57
     }
   ]
 }
