@@ -40,19 +40,21 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
 
         source.Start();
         Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
-        Assert.Empty(published);
+        Assert.Equal(
+            new BladeAudioMuteState(BladeAudioMuteTarget.Speaker, false),
+            Assert.Single(published));
 
         Thread.Sleep(100);
         Assert.Equal(1, reader.ReadCount);
 
         reader.Snapshot = new WindowsAudioMuteSnapshot(true, false);
         reader.RaiseChanged();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 1, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
         Assert.Equal(new BladeAudioMuteState(BladeAudioMuteTarget.Speaker, true), published.Last());
 
         reader.Snapshot = new WindowsAudioMuteSnapshot(true, true);
         reader.RaiseChanged();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 3, TimeSpan.FromSeconds(2)));
         Assert.Equal(new BladeAudioMuteState(BladeAudioMuteTarget.Microphone, true), published.Last());
 
         source.Dispose();
@@ -77,10 +79,31 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
 
         source.Start();
         Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
-        Assert.Empty(published);
+        Assert.Single(published);
         source.Refresh();
-        Assert.True(SpinWait.SpinUntil(() => published.Count == 2, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(() => published.Count == 3, TimeSpan.FromSeconds(2)));
         Assert.Equal(2, reader.ReadCount);
+    }
+
+    [Fact]
+    public void SeedsTheSpeakerButNotAnUnusedMutedMicrophone()
+    {
+        var reader = new FakeReader
+        {
+            Snapshot = new WindowsAudioMuteSnapshot(SpeakerMuted: false, MicrophoneMuted: true),
+        };
+        var published = new ConcurrentQueue<BladeAudioMuteState>();
+        using var source = new WindowsCoreAudioMuteEventSource(
+            published.Enqueue,
+            () => reader,
+            TimeSpan.FromMilliseconds(20));
+
+        source.Start();
+        Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
+
+        var state = Assert.Single(published);
+        Assert.Equal(new BladeAudioMuteState(BladeAudioMuteTarget.Speaker, false), state);
+        Assert.DoesNotContain(published, item => item.Target == BladeAudioMuteTarget.Microphone);
     }
 
     private sealed class FakeReader : IWindowsAudioMuteSnapshotReader

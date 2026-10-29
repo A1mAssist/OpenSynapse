@@ -142,10 +142,15 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                     }
                     var current = reader.Read();
                     var forcePublish = Interlocked.Exchange(ref _forcePublish, 0) != 0;
-                    // Razer's own service only pushes an indicator state when an endpoint
-                    // changes. Seeding the first snapshot keeps a pre-muted endpoint, such as
-                    // an unused microphone array, from lighting the key LED at startup.
-                    if (previous is not null || forcePublish)
+                    if (previous is null && !forcePublish)
+                    {
+                        // The keyboard is already in software mode here, so the F1
+                        // speaker indicator needs its real state once. Do not seed the
+                        // microphone: an unused capture endpoint is commonly muted and
+                        // would light the M5 indicator at startup.
+                        PublishSpeaker(current.SpeakerMuted);
+                    }
+                    else
                     {
                         PublishChanges(forcePublish ? null : previous, current);
                     }
@@ -249,6 +254,18 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             {
                 _publish(new(BladeAudioMuteTarget.Microphone, current.MicrophoneMuted));
             }
+        }
+        catch (Exception exception)
+        {
+            Volatile.Write(ref _lastError, exception.Message);
+        }
+    }
+
+    private void PublishSpeaker(bool muted)
+    {
+        try
+        {
+            _publish(new(BladeAudioMuteTarget.Speaker, muted));
         }
         catch (Exception exception)
         {
