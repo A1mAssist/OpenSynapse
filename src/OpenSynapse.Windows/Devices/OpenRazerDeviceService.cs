@@ -26,6 +26,7 @@ public sealed partial class OpenRazerDeviceService
     private readonly IRazerFeatureTransport _transport;
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly OpenRazerRequestExecutor _executor;
     private readonly ConcurrentDictionary<(ushort ProductId, string Probe), (bool Supported, DateTimeOffset ExpiresAt)>
         _middlewareProbeCache = new();
     private static readonly TimeSpan MiddlewareProbePositiveTtl = TimeSpan.FromHours(12);
@@ -63,6 +64,7 @@ public sealed partial class OpenRazerDeviceService
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _diagnosticLog = diagnosticLog;
+        _executor = new OpenRazerRequestExecutor(transport, _endpointCache, WriteDiagnostic);
     }
 
     public LeviathanV2XAudioService? CreateLeviathanV2XAudio(OpenRazerDeviceConnection connection)
@@ -1727,48 +1729,20 @@ public sealed partial class OpenRazerDeviceService
         }
     }
 
-    private async Task<byte[]> ExecuteAsync(
-        OpenRazerDeviceConnection connection,
-        OpenRazerRequest request,
-        CancellationToken cancellationToken)
-    {
-        RequireReady(connection);
-        // The transport log only records a request once it reaches the HID layer, so a
-        // command dropped before that point would be invisible. Record the application
-        // side as well to tell "never sent" apart from "sent and refused".
-        WriteDiagnostic(connection.Definition.ProductId,
-            $"send {request.BuilderName}: txn=0x{request.Report[2]:X2}, size={request.Report[6]}, class=0x{request.Report[7]:X2}, command=0x{request.Report[8]:X2}, args={Convert.ToHexString(request.Report.AsSpan(RazerFeatureReport.ArgumentsOffset, request.Report[6]))}");
-        try
-        {
-            return await _transport.QueryPreparedAsync(
-                connection.DevicePath!, request.Report, connection.Definition.DeviceWait,
-                cancellationToken).ConfigureAwait(false);
-        }
-        catch (RazerCommandRejectedException exception)
-        {
-            throw new NotSupportedException(exception.Message, exception);
-        }
-        catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException)
-        {
-            _endpointCache.TryRemove(connection.InstanceId, out _);
-            throw;
-        }
-    }
-
-    private async Task ExecuteWithoutResultAsync(
+    private Task<byte[]> ExecuteAsync(
         OpenRazerDeviceConnection connection,
         OpenRazerRequest request,
         CancellationToken cancellationToken) =>
-        _ = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+        _executor.ExecuteAsync(connection, request, cancellationToken);
 
-    private static void RequireReady(OpenRazerDeviceConnection connection)
-    {
-        ArgumentNullException.ThrowIfNull(connection);
-        if (!connection.IsReady || string.IsNullOrWhiteSpace(connection.DevicePath))
-        {
-            throw new InvalidOperationException("The OpenRazer Windows feature endpoint is not resolved.");
-        }
-    }
+    private Task ExecuteWithoutResultAsync(
+        OpenRazerDeviceConnection connection,
+        OpenRazerRequest request,
+        CancellationToken cancellationToken) =>
+        _executor.ExecuteWithoutResultAsync(connection, request, cancellationToken);
+
+    private static void RequireReady(OpenRazerDeviceConnection connection) =>
+        OpenRazerRequestExecutor.RequireReady(connection);
 
     private static void RequireLightingZone(
         OpenRazerDeviceConnection connection,
