@@ -80,6 +80,7 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
     private string _statusText = string.Empty;
     private int _selectedLocalMacroIndex = -1;
     private double _targetMacroId = 1;
+    private RazerOnboardMacroStorageInfo? _storage;
 
     public OnboardMacroListViewModel(bool supported)
     {
@@ -127,7 +128,7 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
         get => _targetMacroId;
         set
         {
-            var clamped = Math.Clamp(value, 1, byte.MaxValue);
+            var clamped = Math.Clamp(value, 1, MaxMacroId);
             if (_targetMacroId == clamped)
             {
                 return;
@@ -137,6 +138,25 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
             Raise(nameof(TargetMacroId));
         }
     }
+
+    /// <summary>Highest slot the firmware reports; 255 until it answers.</summary>
+    public double MaxMacroId => _storage is { MaxId: > 0 } storage
+        ? Math.Min(storage.MaxId, byte.MaxValue)
+        : byte.MaxValue;
+
+    public string StorageSummary => _storage is { } storage
+        ? string.Format(
+            CultureInfo.CurrentCulture,
+            AppStrings.Text("RazerOnboardMacroStorageSummary"),
+            Math.Max(storage.MaxMemory - storage.AvailableMemory, 0),
+            storage.MaxMemory,
+            storage.AvailableMemory,
+            storage.MaxId)
+        : string.Empty;
+
+    public Microsoft.UI.Xaml.Visibility StorageSummaryVisibility => _storage is null
+        ? Microsoft.UI.Xaml.Visibility.Collapsed
+        : Microsoft.UI.Xaml.Visibility.Visible;
 
     public string StatusText
     {
@@ -222,12 +242,6 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
         }
 
         var macro = macros[SelectedLocalMacroIndex];
-        if (macro.Steps.Any(step => step.Kind is not (MacroStepKind.Input or MacroStepKind.Delay)))
-        {
-            StatusText = AppStrings.Text("RazerOnboardMacroWriteUnsupported");
-            return;
-        }
-
         _isLoading = true;
         Raise(nameof(CanLoad));
         Raise(nameof(CanWrite));
@@ -244,6 +258,14 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+        }
+        catch (OnboardMacroUnsupportedException exception)
+        {
+            StatusText = string.Format(
+                CultureInfo.CurrentCulture,
+                AppStrings.Text("RazerOnboardMacroWriteStepFailed"),
+                exception.StepIndex,
+                exception.Reason);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -262,10 +284,19 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
 
     private async Task ReloadAsync(RazerOnboardMacroService service, CancellationToken cancellationToken)
     {
-        if (await service.ProbeStorageAsync(cancellationToken).ConfigureAwait(true) is null)
+        _storage = await service.ProbeStorageAsync(cancellationToken).ConfigureAwait(true);
+        Raise(nameof(MaxMacroId));
+        Raise(nameof(StorageSummaryVisibility));
+        if (_storage is null)
         {
             StatusText = AppStrings.Text("RazerOnboardMacroUnavailable");
+            Raise(nameof(StorageSummary));
             return;
+        }
+
+        if (_targetMacroId > MaxMacroId)
+        {
+            TargetMacroId = MaxMacroId;
         }
 
         var macros = await service.ReadAllAsync(cancellationToken).ConfigureAwait(true);
@@ -275,6 +306,7 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
             Rows.Add(new OnboardMacroRowViewModel(macro));
         }
 
+        Raise(nameof(StorageSummary));
         StatusText = string.Format(
             CultureInfo.CurrentCulture,
             AppStrings.Text("RazerOnboardMacroLoaded"),

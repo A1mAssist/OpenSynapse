@@ -254,7 +254,9 @@ public sealed class OnboardMacroProtocolTests
     public void StepsTheSlotCannotHoldAreRejected()
     {
         var steps = new List<MacroStep> { new() { Kind = MacroStepKind.Text, Text = "hello" } };
-        Assert.Throws<InvalidOperationException>(() => OnboardMacroTranslation.FromSteps(steps));
+        var exception = Assert.Throws<OnboardMacroUnsupportedException>(
+            () => OnboardMacroTranslation.FromSteps(steps));
+        Assert.Equal(1, exception.StepIndex);
     }
 
     [Fact]
