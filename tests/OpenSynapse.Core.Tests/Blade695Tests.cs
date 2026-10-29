@@ -1,4 +1,3 @@
-using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using Xunit;

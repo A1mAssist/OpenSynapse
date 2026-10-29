@@ -1,7 +1,7 @@
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
-namespace OpenSynapse.App.Runtime;
+namespace OpenSynapse.Windows.Lighting;
 
 /// <summary>
 /// A device-independent software-lighting frame. The producer creates one frame

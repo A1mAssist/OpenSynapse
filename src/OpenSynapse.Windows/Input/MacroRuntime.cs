@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using OpenSynapse.Core.Macros;
-using OpenSynapse.Windows.Input;
 
-namespace OpenSynapse.App.Runtime;
+namespace OpenSynapse.Windows.Input;
 
 internal sealed class MacroRuntime : IDisposable
 {

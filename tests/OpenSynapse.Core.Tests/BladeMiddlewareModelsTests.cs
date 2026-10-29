@@ -1,4 +1,3 @@
-using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -52,6 +51,8 @@ public sealed class BladeMiddlewareModelsTests
     [InlineData(0x02C5, true)]
     [InlineData(0x02C6, true)]
     [InlineData(0x02C7, true)]
+    [InlineData(0x02E0, true)]
+    [InlineData(0x02E1, true)]
     public void StartupAnimationIsExposedOnlyWhereTheBundlePublishesIt(ushort productId, bool expected)
     {
         var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, productId);
@@ -77,7 +78,7 @@ public sealed class BladeMiddlewareModelsTests
         // write it as Turbo in their mode table, which is the same byte.
         Assert.Equal(
             BladePerformanceMode.Gaming,
-            RazerDeviceTelemetryReader.ParseBladePerformanceMode(0x01));
+            BladeTelemetryReader.ParseBladePerformanceMode(0x01));
         // The mode tables that publish it name the same byte, whatever they call it.
         Assert.Equal(
             productId is 0x02B6 or 0x02B7 or 0x02B8 or 0x02C7 or 0x02E1,

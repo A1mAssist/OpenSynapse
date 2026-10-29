@@ -11,14 +11,6 @@ public sealed class TestProjectHygieneTests
 {
     private static readonly string[] AppSourcesCompiledIntoTheTestProject =
     [
-        "src/OpenSynapse.App/AppBehaviorSettings.cs",
-        "src/OpenSynapse.App/Runtime/ChromaRestHost.cs",
-        "src/OpenSynapse.App/Runtime/LowBatteryNotificationTracker.cs",
-        "src/OpenSynapse.App/Runtime/MacroRuntime.cs",
-        "src/OpenSynapse.App/Runtime/OpenRazerSoftwareLightingRuntime.cs",
-        "src/OpenSynapse.App/ViewModels/BladeFanCurveEditorViewModel.cs",
-        "src/OpenSynapse.App/ViewModels/BladeFanCurveViewModel.cs",
-        "src/OpenSynapse.App/ViewModels/DeviceProtocolFamilies.cs",
     ];
 
     [Fact]

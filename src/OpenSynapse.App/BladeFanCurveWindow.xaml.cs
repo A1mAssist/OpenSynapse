@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Devices;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
 using Windows.UI;

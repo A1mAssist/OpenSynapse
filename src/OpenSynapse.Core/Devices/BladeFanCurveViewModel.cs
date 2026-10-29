@@ -1,9 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using OpenSynapse.Core.Devices;
 
-namespace OpenSynapse.App.ViewModels;
+namespace OpenSynapse.Core.Devices;
 
 /// <summary>One editable tier of the fan curve: a temperature and the two fan targets.</summary>
 public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged

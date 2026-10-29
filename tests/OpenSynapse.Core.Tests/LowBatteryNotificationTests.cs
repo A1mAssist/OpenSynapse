@@ -1,8 +1,7 @@
 using System.Text.Json;
 using Xunit;
-using OpenSynapse.App;
-using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.Core.Tests;
 
