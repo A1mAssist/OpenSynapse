@@ -190,24 +190,6 @@ public sealed class BladeMappingInputRuntime : IDisposable
         return new BladeMappingInputRuntime(rules);
     }
 
-    internal static BladeMappingInputRuntime FromProduct710Graph(JsonObject graph)
-    {
-        var runtime = FromGraph(graph);
-        if (graph["mappings"] is not JsonArray { Count: 64 } ||
-            runtime.Rules.Count != 32 ||
-            runtime.Rules
-                .Where(static rule => rule.InputKind == BladeMappingInputKind.Keyboard)
-                .Select(static rule => (rule.InputCode, rule.InputExtended))
-                .Distinct()
-                .Count() != 23)
-        {
-            runtime.Dispose();
-            throw new ArgumentException("The Product 710 default mapping must contain all 64 records.", nameof(graph));
-        }
-
-        return runtime;
-    }
-
     public BladeMappingInputRuntime(IEnumerable<BladeMappingRule> rules)
     {
         ArgumentNullException.ThrowIfNull(rules);

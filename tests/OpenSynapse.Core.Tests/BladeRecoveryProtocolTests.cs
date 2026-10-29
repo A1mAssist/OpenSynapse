@@ -8,12 +8,28 @@ public sealed class BladeRecoveryProtocolTests
 {
     private const string DevicePath = @"\\?\hid#vid_1532&pid_02c6&mi_00#test#{00000000-0000-0000-0000-000000000000}";
     private const string FilterPath = @"\\?\RZCONTROL#VID_1532&PID_02C6&MI_00#test#{E3BE005D-D130-4910-88FF-09AE02F680E9}";
+    private static readonly (ushort ScanCode, ushort Flag)[] Hooks =
+    [
+        (0x13, 0), (0x14, 0), (0x19, 0), (0x2A, 0), (0x30, 0),
+        (0x3B, 0), (0x3C, 0), (0x3D, 0), (0x3E, 0), (0x3F, 0),
+        (0x40, 0), (0x41, 0), (0x42, 0), (0x43, 0), (0x44, 0),
+        (0x48, 2), (0x49, 2), (0x4B, 2), (0x4D, 2), (0x50, 2),
+        (0x51, 2), (0x57, 0), (0x58, 0),
+    ];
 
     [Fact]
     public void MarkerRoundTripsAndRejectsUnknownFieldsAndVersions()
     {
         var marker = new BladeRecoveryMarker(2, 1234, DevicePath, FilterPath, DateTimeOffset.Parse("2026-08-20T00:00:00Z"));
         Assert.Equal(marker, BladeRecoveryProtocol.ParseMarker(BladeRecoveryProtocol.SerializeMarker(marker)));
+
+        var current = marker with
+        {
+            Version = BladeRecoveryProtocol.CurrentMarkerVersion,
+            Hooks = BladeRecoveryProtocol.FormatHooks(Hooks),
+        };
+        Assert.Equal(current, BladeRecoveryProtocol.ParseMarker(BladeRecoveryProtocol.SerializeMarker(current)));
+        Assert.Throws<ArgumentException>(() => BladeRecoveryProtocol.SerializeMarker(current with { Hooks = "" }));
 
         Assert.Throws<ArgumentException>(() => BladeRecoveryProtocol.ParseMarker(
             $$"""{"version":2,"ownerPid":1234,"devicePath":"{{DevicePath.Replace("\\", "\\\\")}}","filterDevicePath":"{{FilterPath.Replace("\\", "\\\\")}}","startedAtUtc":"2026-08-20T00:00:00Z","extra":1}"""));
@@ -61,19 +77,21 @@ public sealed class BladeRecoveryProtocolTests
     [Fact]
     public async Task CoordinatorUsesFailClosedRecoveryOrder()
     {
-        var marker = new BladeRecoveryMarker(2, 1234, DevicePath, FilterPath, DateTimeOffset.Parse("2026-08-20T00:00:00Z"));
+        var marker = new BladeRecoveryMarker(
+            BladeRecoveryProtocol.CurrentMarkerVersion, 1234, DevicePath, FilterPath,
+            DateTimeOffset.Parse("2026-08-20T00:00:00Z"), "001E:0");
         var order = new List<string>();
         await BladeRecoveryCoordinator.RecoverAsync(marker, [new(0x1E, false)],
-            path => order.Add($"filter:{path}"),
+            (path, hooks) => order.Add($"filter:{path}:{hooks.Count}"),
             path => { order.Add($"normal:{path}"); return Task.CompletedTask; },
             keys => order.Add($"keys:{keys.Count}"));
-        Assert.Equal([$"filter:{FilterPath}", $"normal:{DevicePath}", "keys:1"], order);
+        Assert.Equal([$"filter:{FilterPath}:1", $"normal:{DevicePath}", "keys:1"], order);
     }
 
     [Fact]
     public void FilterRecoveryPlanDisablesRedirectBeforeClearingHooksAndNotifications()
     {
-        var plan = BladeRecoveryFilterRestorer.CreateRecoveryPlan();
+        var plan = BladeRecoveryFilterRestorer.CreateRecoveryPlan(Hooks);
         Assert.Equal(26, plan.Count);
         Assert.Equal(0x8888301Cu, plan[0].Code);
         Assert.Equal([1, 0, 0, 0, 0], plan[0].Payload);

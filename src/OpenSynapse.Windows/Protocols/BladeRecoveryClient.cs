@@ -22,7 +22,8 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
     public Task Completion => _completion;
 
     public static async Task<BladeRecoveryClient> StartAsync(string recoveryHostPath, string markerPath,
-        string featureDevicePath, string filterDevicePath, TimeSpan readyTimeout,
+        string featureDevicePath, string filterDevicePath,
+        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks, TimeSpan readyTimeout,
         CancellationToken cancellationToken = default)
     {
         if (readyTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(readyTimeout));
@@ -38,7 +39,8 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
                 stale => BladeRecoveryCoordinator.RecoverAsync(stale, []),
                 cancellationToken).ConfigureAwait(false);
             marker = new BladeRecoveryMarker(BladeRecoveryProtocol.CurrentMarkerVersion,
-                Environment.ProcessId, featureDevicePath, filterDevicePath, DateTimeOffset.UtcNow);
+                Environment.ProcessId, featureDevicePath, filterDevicePath, DateTimeOffset.UtcNow,
+                BladeRecoveryProtocol.FormatHooks(hooks));
             await BladeRecoveryProtocol.WriteMarkerAtomicAsync(markerPath, marker, cancellationToken)
                 .ConfigureAwait(false);
         }

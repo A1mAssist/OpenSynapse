@@ -6,11 +6,21 @@ namespace OpenSynapse.Core.Tests;
 
 public sealed class RazerFilterInputHostTests
 {
+    // The 23 scancodes Product 710 registers with the filter driver.
+    private static readonly (ushort ScanCode, ushort Flag)[] Product710Hooks =
+    [
+        (0x13, 0), (0x14, 0), (0x19, 0), (0x2A, 0), (0x30, 0),
+        (0x3B, 0), (0x3C, 0), (0x3D, 0), (0x3E, 0), (0x3F, 0),
+        (0x40, 0), (0x41, 0), (0x42, 0), (0x43, 0), (0x44, 0),
+        (0x48, 2), (0x49, 2), (0x4B, 2), (0x4D, 2), (0x50, 2),
+        (0x51, 2), (0x57, 0), (0x58, 0),
+    ];
+
     [Fact]
     public async Task StartsFailClosedAndStopsInReverseSafetyOrder()
     {
         var driver = new FakeDriverChannel();
-        await using var host = new RazerFilterInputHost(driver, static _ => { });
+        await using var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
 
         await host.StartAsync();
 
@@ -27,7 +37,7 @@ public sealed class RazerFilterInputHostTests
 
         var cleanup = driver.Controls.Skip(25).ToArray();
         Assert.Equal(
-            RazerFilterInputHost.OfficialProduct710Hooks.Reverse().Select(static hook => hook.ScanCode),
+            Product710Hooks.Reverse().Select(static hook => hook.ScanCode),
             cleanup.Take(23).Select(static item => BitConverter.ToUInt16(item.Payload, 10)));
         Assert.Equal(RazerFilterInputHost.EnableInputNotify, cleanup[23].Code);
         Assert.Equal(RazerFilterInputHost.EnableInputHooks, cleanup[24].Code);
@@ -39,7 +49,7 @@ public sealed class RazerFilterInputHostTests
     public async Task ReaderFailureCancelsTheOtherReadAndRestoresDriverState()
     {
         var driver = new FakeDriverChannel();
-        var host = new RazerFilterInputHost(driver, static _ => { });
+        var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
         await host.StartAsync();
 
         driver.FailRead(0, new IOException("read failed"));
@@ -59,6 +69,7 @@ public sealed class RazerFilterInputHostTests
         var driver = new FakeDriverChannel();
         var host = new RazerFilterInputHost(
             driver,
+        Product710Hooks,
             static _ => throw new InvalidOperationException("handler failed"));
         await host.StartAsync();
 
@@ -76,7 +87,7 @@ public sealed class RazerFilterInputHostTests
     public async Task PartialHookFailureClearsOnlyInstalledHooks()
     {
         var driver = new FakeDriverChannel { FailControlAt = 4 };
-        var host = new RazerFilterInputHost(driver, static _ => { });
+        var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
 
         var failure = await Assert.ThrowsAsync<IOException>(() => host.StartAsync());
 
@@ -98,7 +109,7 @@ public sealed class RazerFilterInputHostTests
             FailPostAt = 2,
             AutoCompleteCancellation = false,
         };
-        var host = new RazerFilterInputHost(driver, static _ => { });
+        var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
 
         var start = host.StartAsync();
 
@@ -118,7 +129,7 @@ public sealed class RazerFilterInputHostTests
     public async Task ConcurrentDisposeRunsNativeCleanupOnce()
     {
         var driver = new FakeDriverChannel();
-        var host = new RazerFilterInputHost(driver, static _ => { });
+        var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
         await host.StartAsync();
 
         await Task.WhenAll(
@@ -133,7 +144,7 @@ public sealed class RazerFilterInputHostTests
     public async Task ConsumerUsageUsesOfficialInputIoctlAndIsReleasedOnStop()
     {
         var driver = new FakeDriverChannel();
-        var host = new RazerFilterInputHost(driver, static _ => { });
+        var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
         await host.StartAsync();
 
         host.SendConsumerUsage(0x6F);
@@ -153,7 +164,7 @@ public sealed class RazerFilterInputHostTests
     public async Task KeyboardInputUsesOfficialSubmitInputIoctl()
     {
         var driver = new FakeDriverChannel();
-        await using var host = new RazerFilterInputHost(driver, static _ => { });
+        await using var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
         await host.StartAsync();
 
         host.SendKeyboardInput(new BladeMappingInputEvent(
@@ -179,7 +190,7 @@ public sealed class RazerFilterInputHostTests
     public async Task ReleasesSubmittedKeyboardInputOnStop()
     {
         var driver = new FakeDriverChannel();
-        var host = new RazerFilterInputHost(driver, static _ => { });
+        var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
         await host.StartAsync();
 
         host.SendKeyboardInput(new BladeMappingInputEvent(
@@ -196,7 +207,7 @@ public sealed class RazerFilterInputHostTests
     public async Task FailedConsumerPressIsStillReleasedOnStop()
     {
         var driver = new FakeDriverChannel { FailControlAt = 26 };
-        var host = new RazerFilterInputHost(driver, static _ => { });
+        var host = new RazerFilterInputHost(driver, Product710Hooks, static _ => { });
         await host.StartAsync();
 
         await Assert.ThrowsAsync<IOException>(() =>

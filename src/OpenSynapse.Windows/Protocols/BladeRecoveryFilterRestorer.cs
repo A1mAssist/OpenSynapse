@@ -10,28 +10,32 @@ public static class BladeRecoveryFilterRestorer
     private const uint ShareReadWrite = 3;
     private const uint OpenExisting = 3;
 
-    public static void DisableAndClear(string filterDevicePath)
+    public static void DisableAndClear(
+        string filterDevicePath,
+        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filterDevicePath);
         using var handle = CreateFile(filterDevicePath, 0, ShareReadWrite, 0, OpenExisting, 0, 0);
         if (handle.IsInvalid)
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the Product 710 filter endpoint.");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the Razer filter endpoint.");
 
         var errors = new List<Exception>();
-        foreach (var (code, payload) in CreateRecoveryPlan())
+        foreach (var (code, payload) in CreateRecoveryPlan(hooks))
             TryControl(handle, code, payload, errors);
         if (errors.Count != 0)
-            throw new AggregateException("Product 710 filter recovery was incomplete.", errors);
+            throw new AggregateException("Razer filter recovery was incomplete.", errors);
     }
 
-    internal static IReadOnlyList<(uint Code, byte[] Payload)> CreateRecoveryPlan()
+    internal static IReadOnlyList<(uint Code, byte[] Payload)> CreateRecoveryPlan(
+        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks)
     {
-        var plan = new List<(uint, byte[])>(RazerFilterInputHost.OfficialProduct710Hooks.Count + 3)
+        ArgumentNullException.ThrowIfNull(hooks);
+        var plan = new List<(uint, byte[])>(hooks.Count + 3)
         {
             (RazerFilterInputProtocol.EnableInputRedirect,
                 RazerFilterInputProtocol.CreateKeyboardRedirect(false)),
         };
-        plan.AddRange(RazerFilterInputHost.OfficialProduct710Hooks.Reverse().Select(static hook =>
+        plan.AddRange(hooks.Reverse().Select(static hook =>
             (RazerFilterInputProtocol.ClearInputHook,
                 RazerFilterInputProtocol.CreateKeyboardClearKey(hook.ScanCode, hook.Flag))));
         plan.Add((RazerFilterInputHost.EnableInputNotify, BitConverter.GetBytes(0)));

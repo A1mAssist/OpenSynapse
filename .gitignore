@@ -28,6 +28,7 @@ docs/*
 !docs/WEBCAM_LIGHTING_ALIGNMENT.md
 !docs/GAMEPAD_FEASIBILITY.md
 !docs/POWER_LIMIT_ALIGNMENT.md
+!docs/BLADE_FN_MAPPINGS.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/
@@ -41,6 +42,7 @@ dist/
 src/OpenSynapse.App/artifacts/
 scripts/*
 !scripts/scan-device-transport.ps1
+!scripts/extract-blade-mappings.mjs
 
 # IDE and user state
 .vs/
