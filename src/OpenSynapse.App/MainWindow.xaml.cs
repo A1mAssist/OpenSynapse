@@ -63,6 +63,8 @@ public sealed partial class MainWindow : Window
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(false);
         _viewModel.Refresh.SetDeviceWatchActive(false);
         InitializeComponent();
+        // The card needs a real value on first open without delaying the window.
+        _ = _viewModel.RefreshCpuPowerLimitSafelyAsync();
         RootNavigationView.DataContext = _viewModel;
         DiagnosticsPage.Host = this;
         SettingsPage.Host = this;

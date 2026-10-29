@@ -1,3 +1,5 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.Windows.Lifecycle;
 
 /// <summary>
@@ -21,6 +23,9 @@ public static class DedicatedGpuModeServiceProtocol
     public const string SetGpuClockOffsetOperation = "set-gpu-clock-offset";
     public const string GpuClockLimitStatusOperation = "gpu-clock-limit-status";
     public const string SetGpuClockLimitOperation = "set-gpu-clock-limit";
+    public const string CpuPowerLimitStatusOperation = "power-limit-status";
+    public const string SetCpuPowerLimitOperation = "set-power-limit";
+    public const string RestoreCpuPowerLimitOperation = "restore-power-limit";
     public const int MaximumMessageLength = 4096;
 }
 
@@ -30,7 +35,9 @@ public sealed record DedicatedGpuModeServiceRequest(
     bool? Enabled,
     int? CoreOffsetMhz = null,
     int? MemoryOffsetMhz = null,
-    int? ClockLimitMhz = null);
+    int? ClockLimitMhz = null,
+    double? Pl1Watts = null,
+    double? Pl2Watts = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -71,6 +78,15 @@ public enum DedicatedGpuModeServiceAction
     /// <summary>Apply the GPU core clock ceiling.</summary>
     SetGpuClockLimit,
 
+    /// <summary>Report the current CPU package power wall.</summary>
+    CpuPowerLimitStatus,
+
+    /// <summary>Apply user-requested CPU package power walls.</summary>
+    SetCpuPowerLimit,
+
+    /// <summary>Restore explicit walls, or the open-time firmware walls.</summary>
+    RestoreCpuPowerLimit,
+
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
 }
@@ -86,7 +102,8 @@ public sealed record DedicatedGpuModeServiceResponse(
     int? CoreOffsetMhz = null,
     int? MemoryOffsetMhz = null,
     bool? ClockLimitAvailable = null,
-    int? ClockLimitMhz = null);
+    int? ClockLimitMhz = null,
+    CpuPowerLimitReport? PowerLimit = null);
 
 /// <summary>
 /// What the driver currently holds. Null from the client means the installed service
@@ -177,6 +194,30 @@ public static class DedicatedGpuModeServiceRequestParser
             request.ClockLimitMhz is not null)
         {
             return DedicatedGpuModeServiceAction.SetGpuClockLimit;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.CpuPowerLimitStatusOperation))
+        {
+            return DedicatedGpuModeServiceAction.CpuPowerLimitStatus;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.SetCpuPowerLimitOperation) &&
+            request.Pl1Watts is not null &&
+            request.Pl2Watts is not null)
+        {
+            return DedicatedGpuModeServiceAction.SetCpuPowerLimit;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.RestoreCpuPowerLimitOperation) &&
+            (request.Pl1Watts is null) == (request.Pl2Watts is null))
+        {
+            return DedicatedGpuModeServiceAction.RestoreCpuPowerLimit;
         }
 
         if (StringComparer.Ordinal.Equals(
