@@ -150,6 +150,33 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanSetCpuPowerLimit));
     }
 
+    /// <summary>
+    /// Resume replay: firmware resets the wall during sleep, so write the chosen preset
+    /// again. Auto (0) must not overwrite the firmware default, and a failure here is
+    /// background noise rather than a user-visible error.
+    /// </summary>
+    public async Task ReplayCpuPowerLimitAfterResumeAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var requestedIndex = _cpuPowerLimitIndex;
+        if (requestedIndex <= 0 || requestedIndex >= CpuPowerLimitPresets.Length)
+        {
+            return;
+        }
+
+        try
+        {
+            var report = await ApplyCpuPowerLimitPresetAsync(requestedIndex, cancellationToken);
+            if (report.Availability == CpuPowerLimitAvailability.Available)
+            {
+                PublishCpuPowerLimit(report);
+            }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
     private static Task<CpuPowerLimitReport> ApplyCpuPowerLimitPresetAsync(
         int index,
         CancellationToken cancellationToken)
