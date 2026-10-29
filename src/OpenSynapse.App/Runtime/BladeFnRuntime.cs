@@ -142,12 +142,9 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 _stop.Token);
             _lease = await _modeCoordinator.AcquireAsync(
                     _featureDevicePath,
-                    // See BladeAudioMuteRuntime: software mode turns off the keyboard's
-                    // own M-keys and Fn indicator lights, which this runtime does not
-                    // reimplement. Acquiring only clears a mode an older build left.
                     token => BladeAudioMuteRuntime.SetDeviceModeAsync(
                         _session,
-                        softwareMode: false,
+                        softwareMode: true,
                         token),
                     () => BladeAudioMuteRuntime.SetDeviceModeAsync(
                         _session,
