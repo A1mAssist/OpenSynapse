@@ -112,7 +112,7 @@ public sealed class VerifiedProfileApplier
                         if (requested != current)
                         {
                             effectivePerformanceMode = await reader.SetBladePerformanceModeAsync(
-                                devices, requested, cancellationToken);
+                                devices, requested, cancellationToken, coolingPadConnected);
                             applied++;
                         }
                     }
