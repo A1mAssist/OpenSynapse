@@ -251,6 +251,9 @@ public sealed class OpenRazerWindowsPortTests
             request.CommandClass == 0x03 &&
             request.CommandId == 0x0A &&
             request.Arguments.SequenceEqual(new byte[] { 0x00 }));
+        Assert.DoesNotContain(transport.Requests, request =>
+            request.CommandClass == 0x0F &&
+            request.CommandId == 0x02);
     }
 
     [Fact]
