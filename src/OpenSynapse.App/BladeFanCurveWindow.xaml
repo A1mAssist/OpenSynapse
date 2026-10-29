@@ -11,21 +11,23 @@
           <TextBlock local:Localized.Uid="BladeFanCurveHint" Text="拖动圆点调整转速，也可以在下方输入精确数值。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
           <ComboBox Grid.Column="1" ItemsSource="{Binding BladeFanCurveModeOptions}" SelectedIndex="{Binding BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="160" />
         </Grid>
+        <StackPanel Orientation="Horizontal" Spacing="16">
+          <RadioButton local:Localized.Uid="BladeFanCurveCpuTab" Content="CPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding BladeFanCurveEditor.IsCpuCurveSelected, Mode=TwoWay}" />
+          <RadioButton local:Localized.Uid="BladeFanCurveGpuTab" Content="GPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding BladeFanCurveEditor.IsGpuCurveSelected, Mode=TwoWay}" />
+        </StackPanel>
         <local:BladeFanCurvePlot DataContext="{Binding BladeFanCurveEditor}" Height="280" />
         <StackPanel Spacing="8">
-          <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10">
+          <Grid ColumnDefinitions="110,*,44" ColumnSpacing="10">
             <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Text="温度" Style="{StaticResource MetricLabelStyle}" />
-            <TextBlock Grid.Column="1" local:Localized.Uid="BladeFanCurveColumnCpu" Text="CPU 风扇" Style="{StaticResource MetricLabelStyle}" />
-            <TextBlock Grid.Column="2" local:Localized.Uid="BladeFanCurveColumnGpu" Text="GPU 风扇" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Grid.Column="1" Text="RPM" Style="{StaticResource MetricLabelStyle}" />
           </Grid>
           <ItemsControl ItemsSource="{Binding BladeFanCurveEditor.Points}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Grid ColumnDefinitions="110,*,*,44" ColumnSpacing="10" Padding="0,3">
+                <Grid ColumnDefinitions="110,*,44" ColumnSpacing="10" Padding="0,3">
                   <NumberBox Value="{Binding TemperatureInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="35" Maximum="120" SpinButtonPlacementMode="Compact" />
-                  <NumberBox Grid.Column="1" Value="{Binding CpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5400" SmallChange="100" SpinButtonPlacementMode="Compact" />
-                  <NumberBox Grid.Column="2" Value="{Binding GpuRpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5400" SmallChange="100" SpinButtonPlacementMode="Compact" />
-                  <Button Grid.Column="3" Content="×" Tag="{Binding}" Click="RemoveBladeFanCurveTierClick" HorizontalAlignment="Right" Padding="0" MinWidth="30" />
+                  <NumberBox Grid.Column="1" Value="{Binding RpmInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1900" Maximum="5400" SmallChange="100" SpinButtonPlacementMode="Compact" />
+                  <Button Grid.Column="2" Content="×" Tag="{Binding}" Click="RemoveBladeFanCurveTierClick" HorizontalAlignment="Right" Padding="0" MinWidth="30" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

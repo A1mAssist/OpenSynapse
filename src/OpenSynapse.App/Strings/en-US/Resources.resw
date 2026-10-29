@@ -1688,6 +1688,9 @@
   <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU temperature</value></data>
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU temperature</value></data>
   <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>Higher of the two</value></data>
+  <data name="BladeFanCurveModeIndependent" xml:space="preserve"><value>Independent CPU/GPU</value></data>
+  <data name="BladeFanCurveCpuTab" xml:space="preserve"><value>CPU curve</value></data>
+  <data name="BladeFanCurveGpuTab" xml:space="preserve"><value>GPU curve</value></data>
   <data name="BladeCpuBoostHighestOption" xml:space="preserve"><value>Boost (highest)</value></data>
   <data name="BladeHyperboostUnsupportedModel" xml:space="preserve"><value>This model does not support HyperBoost.</value></data>
   <data name="BladeHyperboostDisclaimerTitle" xml:space="preserve"><value>No Razer Cooling Pad connected</value></data>

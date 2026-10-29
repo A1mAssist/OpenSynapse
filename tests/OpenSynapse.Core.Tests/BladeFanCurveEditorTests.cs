@@ -104,4 +104,52 @@ public sealed class BladeFanCurveEditorTests
 
         Assert.Equal(BladeFanCurve.CreateDefault().CpuPoints[0].CpuFanSpeedRpm, editor.Points[0].CpuRpm);
     }
+
+    [Fact]
+    public void EditorLoadsAndBuildsSeparateCpuAndGpuCurves()
+    {
+        BladeFanCurvePoint[] cpuPoints =
+        [
+            new(52, 3000, 2300),
+            new(80, 4800, 2300),
+        ];
+        BladeFanCurvePoint[] gpuPoints =
+        [
+            new(44, 2300, 3600),
+            new(90, 2300, 5200),
+        ];
+        var editor = new BladeFanCurveEditorViewModel(new BladeFanCurve(
+            BladeFanCurveTemperatureMode.Independent,
+            cpuPoints,
+            gpuPoints));
+
+        Assert.Equal(52, editor.CpuPoints[0].TemperatureCelsius);
+        Assert.Equal(44, editor.GpuPoints[0].TemperatureCelsius);
+
+        var curve = editor.BuildCurve();
+
+        Assert.Equal(BladeFanCurveTemperatureMode.Independent, curve.TemperatureMode);
+        Assert.Equal(cpuPoints, curve.CpuPoints);
+        Assert.Equal(gpuPoints, curve.GpuPoints);
+    }
+
+    [Fact]
+    public void PointEditsOnlyTouchTheSelectedCurve()
+    {
+        var editor = new BladeFanCurveEditorViewModel();
+        var cpuCount = editor.CpuPoints.Count;
+        var gpuCount = editor.GpuPoints.Count;
+
+        editor.SelectCurve(BladeFanCurveSelection.Gpu);
+        editor.AddPoint();
+
+        Assert.Equal(cpuCount, editor.CpuPoints.Count);
+        Assert.Equal(gpuCount + 1, editor.GpuPoints.Count);
+
+        editor.CpuPoints[0].CpuRpm = 4900;
+        editor.ResetToDefault();
+
+        Assert.Equal(4900, editor.CpuPoints[0].CpuRpm);
+        Assert.Equal(gpuCount, editor.GpuPoints.Count);
+    }
 }

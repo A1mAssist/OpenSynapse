@@ -111,7 +111,11 @@ public sealed partial class MainViewModel
         EditablePerformanceBladeProfile.FanCurve is not null;
 
     public IReadOnlyList<string> BladeFanCurveModeOptions =>
-        AppStrings.Texts("BladeFanCurveModeCpu", "BladeFanCurveModeGpu", "BladeFanCurveModeBoth");
+        AppStrings.Texts(
+            "BladeFanCurveModeCpu",
+            "BladeFanCurveModeGpu",
+            "BladeFanCurveModeBoth",
+            "BladeFanCurveModeIndependent");
 
     public int BladeFanCurveModeIndex
     {

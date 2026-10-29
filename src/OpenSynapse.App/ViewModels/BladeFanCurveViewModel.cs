@@ -8,12 +8,14 @@ namespace OpenSynapse.App.ViewModels;
 /// <summary>One editable tier of the fan curve: a temperature and the two fan targets.</summary>
 public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
 {
+    private readonly bool _isGpu;
     private int _temperatureCelsius;
     private int _cpuRpm;
     private int _gpuRpm;
 
-    public BladeFanCurvePointViewModel(BladeFanCurvePoint point)
+    public BladeFanCurvePointViewModel(BladeFanCurvePoint point, bool isGpu = false)
     {
+        _isGpu = isGpu;
         _temperatureCelsius = point.TemperatureCelsius;
         _cpuRpm = point.CpuFanSpeedRpm;
         _gpuRpm = point.GpuFanSpeedRpm;
@@ -39,6 +41,23 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
         set => Set(ref _gpuRpm, Clamp(value, BladeFanCurve.MinimumPointFanSpeedRpm, BladeFanCurve.MaximumPointFanSpeedRpm));
     }
 
+    /// <summary>The speed column this point owns in the selected CPU or GPU curve.</summary>
+    public int Rpm
+    {
+        get => _isGpu ? _gpuRpm : _cpuRpm;
+        set
+        {
+            if (_isGpu)
+            {
+                GpuRpm = value;
+            }
+            else
+            {
+                CpuRpm = value;
+            }
+        }
+    }
+
     // NumberBox is double-typed and can briefly report NaN while the field is empty or
     // holds text, so the editable surface stays double and clamps on write.
     public double TemperatureInput
@@ -57,6 +76,12 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
     {
         get => _gpuRpm;
         set => GpuRpm = (int)Math.Round(double.IsFinite(value) ? value : _gpuRpm);
+    }
+
+    public double RpmInput
+    {
+        get => Rpm;
+        set => Rpm = (int)Math.Round(double.IsFinite(value) ? value : Rpm);
     }
 
     public string TemperatureText => $"{_temperatureCelsius} °C";
@@ -95,9 +120,13 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
                 break;
             case nameof(CpuRpm):
                 OnPropertyChanged(nameof(CpuText));
+                OnPropertyChanged(nameof(Rpm));
+                OnPropertyChanged(nameof(RpmInput));
                 break;
             case nameof(GpuRpm):
                 OnPropertyChanged(nameof(GpuText));
+                OnPropertyChanged(nameof(Rpm));
+                OnPropertyChanged(nameof(RpmInput));
                 break;
         }
     }

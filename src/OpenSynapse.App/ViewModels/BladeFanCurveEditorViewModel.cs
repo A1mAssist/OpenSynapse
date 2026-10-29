@@ -5,6 +5,12 @@ using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.App.ViewModels;
 
+public enum BladeFanCurveSelection
+{
+    Cpu,
+    Gpu,
+}
+
 /// <summary>
 /// Editing surface for the Blade fan curve. Holds the tiers, keeps temperatures ordered,
 /// and produces a validated <see cref="BladeFanCurve"/> for apply.
@@ -13,6 +19,7 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
 {
     private const int MaximumPoints = 8;
     private BladeFanCurveTemperatureMode _temperatureMode = BladeFanCurveTemperatureMode.Both;
+    private BladeFanCurveSelection _selectedCurve = BladeFanCurveSelection.Cpu;
     private int _selectedIndex = -1;
 
     public BladeFanCurveEditorViewModel(BladeFanCurve? curve = null)
@@ -21,13 +28,72 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
         _temperatureMode = source.TemperatureMode;
         foreach (var point in source.CpuPoints)
         {
-            Points.Add(new BladeFanCurvePointViewModel(point));
+            CpuPoints.Add(new BladeFanCurvePointViewModel(point));
+        }
+
+        foreach (var point in source.GpuPoints)
+        {
+            GpuPoints.Add(new BladeFanCurvePointViewModel(point, isGpu: true));
         }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ObservableCollection<BladeFanCurvePointViewModel> Points { get; } = [];
+    public ObservableCollection<BladeFanCurvePointViewModel> CpuPoints { get; } = [];
+
+    public ObservableCollection<BladeFanCurvePointViewModel> GpuPoints { get; } = [];
+
+    /// <summary>The collection the table, add/remove and plot selection act on.</summary>
+    public ObservableCollection<BladeFanCurvePointViewModel> Points =>
+        _selectedCurve == BladeFanCurveSelection.Cpu ? CpuPoints : GpuPoints;
+
+    public BladeFanCurveSelection SelectedCurve
+    {
+        get => _selectedCurve;
+        set
+        {
+            if (!Enum.IsDefined(value) || _selectedCurve == value)
+            {
+                return;
+            }
+
+            _selectedCurve = value;
+            _selectedIndex = -1;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsCpuCurveSelected));
+            OnPropertyChanged(nameof(IsGpuCurveSelected));
+            OnPropertyChanged(nameof(Points));
+            OnPropertyChanged(nameof(SelectedIndex));
+            OnPropertyChanged(nameof(SelectedPoint));
+            OnPropertyChanged(nameof(CanAddPoint));
+        }
+    }
+
+    public bool IsCpuCurveSelected
+    {
+        get => _selectedCurve == BladeFanCurveSelection.Cpu;
+        set
+        {
+            if (value)
+            {
+                SelectedCurve = BladeFanCurveSelection.Cpu;
+            }
+        }
+    }
+
+    public bool IsGpuCurveSelected
+    {
+        get => _selectedCurve == BladeFanCurveSelection.Gpu;
+        set
+        {
+            if (value)
+            {
+                SelectedCurve = BladeFanCurveSelection.Gpu;
+            }
+        }
+    }
+
+    public void SelectCurve(BladeFanCurveSelection curve) => SelectedCurve = curve;
 
     public BladeFanCurveTemperatureMode TemperatureMode
     {
@@ -62,25 +128,36 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
             return;
         }
 
-        var temperature = Points.Count == 0
+        var points = Points;
+        var temperature = points.Count == 0
             ? BladeFanCurvePointViewModel.MinimumTemperatureCelsius + 10
-            : Math.Min(Points[^1].TemperatureCelsius + 5, BladeFanCurvePointViewModel.MaximumTemperatureCelsius);
-        Points.Add(new BladeFanCurvePointViewModel(new BladeFanCurvePoint(
+            : Math.Min(points[^1].TemperatureCelsius + 5, BladeFanCurvePointViewModel.MaximumTemperatureCelsius);
+        points.Add(new BladeFanCurvePointViewModel(new BladeFanCurvePoint(
             temperature,
-            Points.Count == 0 ? BladeFanCurve.DefaultMinimumFanSpeedRpm : Points[^1].CpuRpm,
-            Points.Count == 0 ? BladeFanCurve.DefaultMinimumFanSpeedRpm : Points[^1].GpuRpm)));
+            points.Count == 0 ? BladeFanCurve.DefaultMinimumFanSpeedRpm : points[^1].CpuRpm,
+            points.Count == 0 ? BladeFanCurve.DefaultMinimumFanSpeedRpm : points[^1].GpuRpm),
+            isGpu: _selectedCurve == BladeFanCurveSelection.Gpu));
         Sort();
-        SelectedIndex = Points.Count - 1;
+        SelectedIndex = points.Count - 1;
         OnPropertyChanged(nameof(CanAddPoint));
     }
 
     /// <summary>Selects a tier so the plot highlights it, used by the table's delete button.</summary>
     public void Select(BladeFanCurvePointViewModel point)
     {
-        var index = Points.IndexOf(point);
-        if (index >= 0)
+        var cpuIndex = CpuPoints.IndexOf(point);
+        if (cpuIndex >= 0)
         {
-            SelectedIndex = index;
+            SelectedCurve = BladeFanCurveSelection.Cpu;
+            SelectedIndex = cpuIndex;
+            return;
+        }
+
+        var gpuIndex = GpuPoints.IndexOf(point);
+        if (gpuIndex >= 0)
+        {
+            SelectedCurve = BladeFanCurveSelection.Gpu;
+            SelectedIndex = gpuIndex;
         }
     }
 
@@ -95,54 +172,68 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
         Points.Remove(point);
         Sort();
         SelectedIndex = Math.Clamp(index, 0, Points.Count - 1);
+        OnPropertyChanged(nameof(CanAddPoint));
     }
 
     public void ResetToDefault()
     {
         var source = BladeFanCurve.CreateDefault();
-        _temperatureMode = source.TemperatureMode;
-        Points.Clear();
-        foreach (var point in source.CpuPoints)
+        var points = Points;
+        var sourcePoints = _selectedCurve == BladeFanCurveSelection.Cpu
+            ? source.CpuPoints
+            : source.GpuPoints;
+        points.Clear();
+        foreach (var point in sourcePoints)
         {
-            Points.Add(new BladeFanCurvePointViewModel(point));
+            points.Add(new BladeFanCurvePointViewModel(
+                point,
+                isGpu: _selectedCurve == BladeFanCurveSelection.Gpu));
         }
 
-        OnPropertyChanged(nameof(TemperatureMode));
+        SelectedIndex = -1;
         OnPropertyChanged(nameof(CanAddPoint));
     }
 
     /// <summary>Keeps tiers ordered so the model accepts them.</summary>
-    public void Sort()
+    public void Sort() => Sort(Points);
+
+    private static void Sort(ObservableCollection<BladeFanCurvePointViewModel> points)
     {
-        var ordered = Points.OrderBy(point => point.TemperatureCelsius).ToArray();
+        var ordered = points.OrderBy(point => point.TemperatureCelsius).ToArray();
         for (var index = 0; index < ordered.Length; index++)
         {
-            var currentIndex = Points.IndexOf(ordered[index]);
+            var currentIndex = points.IndexOf(ordered[index]);
             if (currentIndex != index)
             {
-                Points.Move(currentIndex, index);
+                points.Move(currentIndex, index);
             }
         }
     }
 
     /// <summary>Enforces a strictly increasing temperature without rejecting the edit.</summary>
-    public void EnforceStrictlyIncreasing()
+    public void EnforceStrictlyIncreasing() => EnforceStrictlyIncreasing(Points);
+
+    private static void EnforceStrictlyIncreasing(
+        ObservableCollection<BladeFanCurvePointViewModel> points)
     {
-        Sort();
-        for (var index = 1; index < Points.Count; index++)
+        Sort(points);
+        for (var index = 1; index < points.Count; index++)
         {
-            if (Points[index].TemperatureCelsius <= Points[index - 1].TemperatureCelsius)
+            if (points[index].TemperatureCelsius <= points[index - 1].TemperatureCelsius)
             {
-                Points[index].TemperatureCelsius = Points[index - 1].TemperatureCelsius + 1;
+                points[index].TemperatureCelsius = points[index - 1].TemperatureCelsius + 1;
             }
         }
     }
 
     public BladeFanCurve BuildCurve()
     {
-        EnforceStrictlyIncreasing();
-        var points = Points.Select(point => point.ToPoint()).ToArray();
-        return new BladeFanCurve(_temperatureMode, points, points);
+        EnforceStrictlyIncreasing(CpuPoints);
+        EnforceStrictlyIncreasing(GpuPoints);
+        return new BladeFanCurve(
+            _temperatureMode,
+            CpuPoints.Select(point => point.ToPoint()).ToArray(),
+            GpuPoints.Select(point => point.ToPoint()).ToArray());
     }
 
     private void Set(ref int field, int value, [CallerMemberName] string? propertyName = null)
