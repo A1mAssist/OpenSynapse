@@ -227,6 +227,14 @@ public sealed class OpenRazerSpecialLightingService
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            // Synapse sends this general command when it opens the device. The
+            // firmware ignores the lighting commands without it.
+            await _transport.SendOutputAsync(
+                connection.DevicePath!,
+                OpenRazerKrakenV4Protocol.CreateConnect(),
+                cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+
             foreach (var report in reports)
             {
                 await _transport.SendOutputAsync(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
