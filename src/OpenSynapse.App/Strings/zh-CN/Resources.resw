@@ -2047,6 +2047,11 @@
   <data name="BladeGpuClockOffsetReset" xml:space="preserve"><value>恢复默认</value></data>
   <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>已应用，会一直保留到恢复默认。</value></data>
   <data name="BladeGpuClockOffsetFailed" xml:space="preserve"><value>GPU 驱动拒绝了这次频率偏移。</value></data>
+  <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn 按键接管需要雷云驱动</value></data>
+  <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn 快捷键接管依赖雷云安装的 Razer 过滤驱动。请安装一次雷云（Razer Synapse），让驱动写入系统；安装完成后重启 OpenSynapse。</value></data>
+  <data name="BladeFilterDriverUninstallHint.Text" xml:space="preserve"><value>装好后可以卸载雷云，驱动会留在系统里，OpenSynapse 仍能接管 Fn 键。</value></data>
+  <data name="BladeFilterDriverRecoveryHint.Text" xml:space="preserve"><value>如果驱动被删除（设备管理器删除驱动或系统重置），请以管理员身份运行：</value></data>
+  <data name="BladeFilterDriverCommand.Text" xml:space="preserve"><value>pnputil /add-driver "&lt;DriverStore 里的 inf&gt;" /install</value></data>
   <data name="BladeFanCurveModeCpu" xml:space="preserve"><value>CPU 温度</value></data>
   <data name="BladeFanCurveModeGpu" xml:space="preserve"><value>GPU 温度</value></data>
   <data name="BladeFanCurveModeBoth" xml:space="preserve"><value>两者取较高值</value></data>

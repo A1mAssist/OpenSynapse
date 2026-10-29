@@ -96,6 +96,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private string _bladeFanControlFingerprint = string.Empty;
     private Task? _bladeFanControlCompletion;
     private string? _bladeControlDevicePath;
+    private ushort _bladeControlProductId;
     private int _bladeLightingPowerProfileIndex;
     private int _bladePerformancePowerProfileIndex;
     private int _bladeRefreshRatePowerProfileIndex;
@@ -170,7 +171,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    internal event Action<string?>? BladeControlDevicePathChanged;
+    internal event Action<string?, ushort>? BladeControlDeviceChanged;
     internal event Action<BladePerformanceMode>? BladePerformanceModeChangedByUser;
     internal event Action<bool>? BladeGamingModeChangedByUser;
     internal event Action<bool>? BladeTouchpadChangedByUser;
@@ -776,15 +777,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 .Where(message => !string.IsNullOrWhiteSpace(message)));
     }
 
-    private void SetBladeControlDevicePath(string? value)
+    private void SetBladeControlDevicePath(string? value, ushort productId)
     {
-        if (StringComparer.OrdinalIgnoreCase.Equals(_bladeControlDevicePath, value))
+        if (StringComparer.OrdinalIgnoreCase.Equals(_bladeControlDevicePath, value) &&
+            _bladeControlProductId == productId)
         {
             return;
         }
 
         _bladeControlDevicePath = value;
-        BladeControlDevicePathChanged?.Invoke(value);
+        _bladeControlProductId = productId;
+        SetBladeFilterDriverMissing(false);
+        BladeControlDeviceChanged?.Invoke(value, productId);
     }
 
     private static string FormatDeviceStatus(DeviceDescriptor? device) => device switch

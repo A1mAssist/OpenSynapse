@@ -40,6 +40,7 @@ public partial class App : Application
     private IRazerFeatureTransport? _razerTransport;
     private MainViewModel? _audioMuteViewModel;
     private string? _activeBladeControlDevicePath;
+    private ushort _activeBladeProductId;
     private int _audioMuteGeneration;
     private int _displayAvailable = 1;
     private int _closing;
@@ -186,7 +187,7 @@ public partial class App : Application
             macroInputSink: _elevatedMacroSink);
         _ = EnsureMacroAgentAsync();
         _audioMuteViewModel = viewModel;
-        viewModel.BladeControlDevicePathChanged += OnBladeControlDevicePathChanged;
+        viewModel.BladeControlDeviceChanged += OnBladeControlDeviceChanged;
         viewModel.BladePerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
         viewModel.BladeGamingModeChangedByUser += OnBladeGamingModeChangedByUser;
         viewModel.BladeTouchpadChangedByUser += OnBladeTouchpadChangedByUser;
@@ -394,7 +395,7 @@ public partial class App : Application
         }
         if (_audioMuteViewModel is not null)
         {
-            _audioMuteViewModel.BladeControlDevicePathChanged -= OnBladeControlDevicePathChanged;
+            _audioMuteViewModel.BladeControlDeviceChanged -= OnBladeControlDeviceChanged;
             _audioMuteViewModel.BladePerformanceModeChangedByUser -= OnBladePerformanceModeChangedByUser;
             _audioMuteViewModel.BladeGamingModeChangedByUser -= OnBladeGamingModeChangedByUser;
             _audioMuteViewModel.BladeTouchpadChangedByUser -= OnBladeTouchpadChangedByUser;
@@ -623,20 +624,27 @@ public partial class App : Application
         }
     }
 
-    private void OnBladeControlDevicePathChanged(string? devicePath)
+    private void OnBladeControlDeviceChanged(string? devicePath, ushort productId)
     {
         _activeBladeControlDevicePath = devicePath;
+        _activeBladeProductId = productId;
         var generation = Interlocked.Increment(ref _audioMuteGeneration);
-        _ = SwitchBladeAudioMuteRuntimeAsync(devicePath, generation);
+        _ = SwitchBladeAudioMuteRuntimeAsync(devicePath, productId, generation);
     }
 
     private void OnBladeInputProfileChanged()
     {
         var generation = Interlocked.Increment(ref _audioMuteGeneration);
-        _ = SwitchBladeAudioMuteRuntimeAsync(_activeBladeControlDevicePath, generation);
+        _ = SwitchBladeAudioMuteRuntimeAsync(
+            _activeBladeControlDevicePath,
+            _activeBladeProductId,
+            generation);
     }
 
-    private async Task SwitchBladeAudioMuteRuntimeAsync(string? devicePath, int generation)
+    private async Task SwitchBladeAudioMuteRuntimeAsync(
+        string? devicePath,
+        ushort productId,
+        int generation)
     {
         await _audioMuteRuntimeGate.WaitAsync().ConfigureAwait(false);
         try
@@ -661,6 +669,7 @@ public partial class App : Application
                 fnRuntime = new BladeFnRuntime(
                     _razerTransport,
                     devicePath,
+                    productId,
                     _bladeModeCoordinator,
                     (action, token) => ExecuteBladeFnLeafAsync(action, generation, token),
                     input => _bladeLightingController?.ObserveMappingInput(input),
@@ -669,6 +678,10 @@ public partial class App : Application
                     _audioMuteViewModel?.ActiveSnapTapEnabled == true,
                     enabled => PersistBladeSnapTap(enabled, generation));
                 await fnRuntime.StartAsync().ConfigureAwait(false);
+                if (generation == Volatile.Read(ref _audioMuteGeneration))
+                {
+                    SetBladeFilterDriverMissing(false);
+                }
                 _bladeFnRuntime = fnRuntime;
                 if (Volatile.Read(ref _closing) != 0 ||
                     generation != Volatile.Read(ref _audioMuteGeneration))
@@ -696,7 +709,11 @@ public partial class App : Application
                 _diagnosticLog.TryWrite(
                     "audio-mute-sync",
                     "Blade Fn runtime and endpoint synchronization started without MappingEngine/AppEngine.");
-                _ = ObserveBladeFnRuntimeAsync(_bladeFnRuntime, devicePath, generation);
+                _ = ObserveBladeFnRuntimeAsync(
+                    _bladeFnRuntime,
+                    devicePath,
+                    productId,
+                    generation);
             }
             catch
             {
@@ -721,8 +738,10 @@ public partial class App : Application
             _diagnosticLog.TryWrite("audio-mute-sync", $"switch failed: {exception}");
             if (exception is BladeFilterEndpointMissingException)
             {
-                // No filter driver on this model: neither a retry nor a banner can fix it,
-                // and retrying repainted the banner every retry interval.
+                if (generation == Volatile.Read(ref _audioMuteGeneration))
+                {
+                    SetBladeFilterDriverMissing(true);
+                }
                 return;
             }
 
@@ -732,7 +751,7 @@ public partial class App : Application
                 Volatile.Read(ref _closing) == 0 &&
                 generation == Volatile.Read(ref _audioMuteGeneration))
             {
-                _ = RetryBladeAudioMuteRuntimeAsync(devicePath, generation);
+                _ = RetryBladeAudioMuteRuntimeAsync(devicePath, productId, generation);
             }
         }
         finally
@@ -1027,6 +1046,7 @@ public partial class App : Application
     private async Task ObserveBladeFnRuntimeAsync(
         BladeFnRuntime? runtime,
         string devicePath,
+        ushort productId,
         int generation)
     {
         if (runtime is null)
@@ -1071,7 +1091,7 @@ public partial class App : Application
             if (Volatile.Read(ref _closing) == 0 &&
                 generation == Volatile.Read(ref _audioMuteGeneration))
             {
-                _ = RetryBladeAudioMuteRuntimeAsync(devicePath, generation);
+                _ = RetryBladeAudioMuteRuntimeAsync(devicePath, productId, generation);
             }
         }
     }
@@ -1089,13 +1109,29 @@ public partial class App : Application
             AppStrings.FormatText("FnKeyError", exception.Message)));
     }
 
-    private async Task RetryBladeAudioMuteRuntimeAsync(string devicePath, int generation)
+    private void SetBladeFilterDriverMissing(bool missing)
+    {
+        var dispatcher = _window?.DispatcherQueue;
+        var viewModel = _audioMuteViewModel;
+        if (dispatcher is null || viewModel is null)
+        {
+            return;
+        }
+
+        dispatcher.TryEnqueue(() => viewModel.SetBladeFilterDriverMissing(missing));
+    }
+
+    private async Task RetryBladeAudioMuteRuntimeAsync(
+        string devicePath,
+        ushort productId,
+        int generation)
     {
         await Task.Delay(AudioMuteRetryDelay).ConfigureAwait(false);
         if (Volatile.Read(ref _closing) == 0 &&
             generation == Volatile.Read(ref _audioMuteGeneration))
         {
-            await SwitchBladeAudioMuteRuntimeAsync(devicePath, generation).ConfigureAwait(false);
+            await SwitchBladeAudioMuteRuntimeAsync(devicePath, productId, generation)
+                .ConfigureAwait(false);
         }
     }
 

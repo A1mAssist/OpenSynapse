@@ -11,6 +11,7 @@ internal sealed class BladeViewModel
     internal string _bladeDeviceName = "Razer Blade 16 2025";
     internal ushort _bladeProductId;
     internal string _bladeStatusText = AppStrings.Text("Text_DB0974DC");
+    internal bool _bladeFilterDriverMissing;
     internal string _bladeBrightnessText = "--";
     internal string _bladeBrightnessSelectionText = "--";
     internal double _bladeBrightnessPercent;

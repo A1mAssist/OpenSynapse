@@ -7,7 +7,7 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.App.Runtime;
 
 /// <summary>
-/// The Razer filter driver (Product 710) is absent or not bound to this device, so Fn
+/// The Razer filter driver for this Blade model is absent or not bound to this device, so Fn
 /// remapping cannot work here at all. Retrying cannot change that, so callers must treat
 /// this as unsupported rather than as a transient failure.
 /// </summary>
@@ -29,6 +29,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _featureDevicePath;
+    private readonly ushort _productId;
     private readonly BladeSoftwareModeCoordinator _modeCoordinator;
     private readonly Func<BladeMappingAction, CancellationToken, ValueTask> _leafExecutor;
     private readonly Action<BladeMappingInputEvent> _inputObserver;
@@ -56,6 +57,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     internal BladeFnRuntime(
         IRazerFeatureTransport transport,
         string featureDevicePath,
+        ushort productId,
         BladeSoftwareModeCoordinator modeCoordinator,
         Func<BladeMappingAction, CancellationToken, ValueTask> leafExecutor,
         Action<BladeMappingInputEvent> inputObserver,
@@ -66,6 +68,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         ArgumentException.ThrowIfNullOrWhiteSpace(featureDevicePath);
         _featureDevicePath = featureDevicePath;
+        _productId = productId;
         _modeCoordinator = modeCoordinator ?? throw new ArgumentNullException(nameof(modeCoordinator));
         _leafExecutor = leafExecutor ?? throw new ArgumentNullException(nameof(leafExecutor));
         _inputObserver = inputObserver ?? throw new ArgumentNullException(nameof(inputObserver));
@@ -90,10 +93,11 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             var filterDevicePath = await RazerFilterEndpointDiscovery
                 .DiscoverProduct710ForFeatureAsync(
                     _featureDevicePath,
+                    _productId,
                     cancellationToken)
                 .ConfigureAwait(false)
                 ?? throw new BladeFilterEndpointMissingException(
-                    "Could not uniquely identify the Product 710 RZCONTROL endpoint.");
+                    $"Could not uniquely identify the RZCONTROL endpoint for PID 0x{_productId:X4}.");
 
             _mapping = await LoadMappingAsync(_mappingPreset, cancellationToken).ConfigureAwait(false);
             _session = await _transport

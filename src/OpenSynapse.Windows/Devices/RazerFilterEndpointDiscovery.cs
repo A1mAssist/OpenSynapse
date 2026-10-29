@@ -12,14 +12,18 @@ public static class RazerFilterEndpointDiscovery
     internal static readonly Guid InterfaceClassGuid =
         new("E3BE005D-D130-4910-88FF-09AE02F680E9");
 
-    private const string Product710PathFragment =
-        "RZCONTROL#VID_1532&PID_02C6&MI_00#";
+    public const ushort Product710ProductId = 0x02C6;
+
+    internal static string BuildPathFragment(ushort productId) =>
+        $"RZCONTROL#VID_1532&PID_{productId:X4}&MI_00#";
 
     public static ValueTask<string?> DiscoverProduct710Async(
+        ushort productId = Product710ProductId,
         CancellationToken cancellationToken = default) =>
-        DiscoverProduct710Async(null, cancellationToken);
+        DiscoverProduct710Async(productId, null, cancellationToken);
 
     public static ValueTask<string?> DiscoverProduct710Async(
+        ushort productId,
         Guid expectedContainerId,
         CancellationToken cancellationToken = default)
     {
@@ -30,11 +34,12 @@ public static class RazerFilterEndpointDiscovery
                 nameof(expectedContainerId));
         }
 
-        return DiscoverProduct710Async((Guid?)expectedContainerId, cancellationToken);
+        return DiscoverProduct710Async(productId, (Guid?)expectedContainerId, cancellationToken);
     }
 
     public static ValueTask<string?> DiscoverProduct710ForFeatureAsync(
         string featureDevicePath,
+        ushort productId = Product710ProductId,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(featureDevicePath);
@@ -52,6 +57,7 @@ public static class RazerFilterEndpointDiscovery
             return containerIds.Length == 1
                 ? SelectProduct710Endpoint(
                     EnumerateCandidates(InterfaceClassGuid, cancellationToken),
+                    productId,
                     containerIds[0])
                 : null;
         }, cancellationToken));
@@ -74,7 +80,7 @@ public static class RazerFilterEndpointDiscovery
         ushort productId)
     {
         ArgumentNullException.ThrowIfNull(candidates);
-        var fragment = $"RZCONTROL#VID_1532&PID_{productId:X4}&MI_00#";
+        var fragment = BuildPathFragment(productId);
         var matches = candidates
             .Where(candidate => candidate.Path.Contains(fragment, StringComparison.OrdinalIgnoreCase))
             .Select(static candidate => candidate.Path)
@@ -85,6 +91,7 @@ public static class RazerFilterEndpointDiscovery
 
     internal static string? SelectProduct710Endpoint(
         IEnumerable<RazerFilterEndpointCandidate> candidates,
+        ushort productId = Product710ProductId,
         Guid? expectedContainerId = null)
     {
         ArgumentNullException.ThrowIfNull(candidates);
@@ -95,12 +102,12 @@ public static class RazerFilterEndpointDiscovery
                 nameof(expectedContainerId));
         }
 
+        var fragment = BuildPathFragment(productId);
         var matches = candidates
             .Where(static candidate =>
-                candidate.ContainerId != Guid.Empty &&
-                candidate.Path.Contains(
-                    Product710PathFragment,
-                    StringComparison.OrdinalIgnoreCase))
+                candidate.ContainerId != Guid.Empty)
+            .Where(candidate =>
+                candidate.Path.Contains(fragment, StringComparison.OrdinalIgnoreCase))
             .Where(candidate =>
                 expectedContainerId is null ||
                 candidate.ContainerId == expectedContainerId.Value)
@@ -112,11 +119,13 @@ public static class RazerFilterEndpointDiscovery
     }
 
     private static ValueTask<string?> DiscoverProduct710Async(
+        ushort productId,
         Guid? expectedContainerId,
         CancellationToken cancellationToken) =>
         new(Task.Run(
             () => SelectProduct710Endpoint(
                 EnumerateCandidates(InterfaceClassGuid, cancellationToken),
+                productId,
                 expectedContainerId),
             cancellationToken));
 

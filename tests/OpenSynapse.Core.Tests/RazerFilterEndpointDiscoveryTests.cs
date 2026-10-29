@@ -28,9 +28,13 @@ public sealed class RazerFilterEndpointDiscoveryTests
             RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates));
         Assert.Equal(
             blade,
-            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates, BladeContainer));
+            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(
+                candidates,
+                RazerFilterEndpointDiscovery.Product710ProductId,
+                BladeContainer));
         Assert.Null(RazerFilterEndpointDiscovery.SelectProduct710Endpoint(
             candidates,
+            RazerFilterEndpointDiscovery.Product710ProductId,
             OtherContainer));
     }
 
@@ -46,9 +50,15 @@ public sealed class RazerFilterEndpointDiscoveryTests
         Assert.Null(RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates));
         Assert.Equal(
             candidates[0].Path,
-            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates, BladeContainer));
+            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(
+                candidates,
+                RazerFilterEndpointDiscovery.Product710ProductId,
+                BladeContainer));
         Assert.Throws<ArgumentException>(() =>
-            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates, Guid.Empty));
+            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(
+                candidates,
+                RazerFilterEndpointDiscovery.Product710ProductId,
+                Guid.Empty));
     }
 
     [Fact]
@@ -66,7 +76,49 @@ public sealed class RazerFilterEndpointDiscoveryTests
                 Candidate(path, BladeContainer),
                 Candidate(path.ToLowerInvariant(), BladeContainer),
             ],
+            RazerFilterEndpointDiscovery.Product710ProductId,
             BladeContainer));
+    }
+
+    [Theory]
+    [InlineData(0x02C6, @"RZCONTROL#VID_1532&PID_02C6&MI_00#")]
+    [InlineData(0x02C5, @"RZCONTROL#VID_1532&PID_02C5&MI_00#")]
+    public void BuildsTheFilterPathFromTheProductId(ushort productId, string expected)
+    {
+        Assert.Equal(expected, RazerFilterEndpointDiscovery.BuildPathFragment(productId));
+    }
+
+    [Fact]
+    public void SelectsTheEndpointForTheRequestedProductId()
+    {
+        const string blade16 =
+            @"\\?\RZCONTROL#VID_1532&PID_02C6&MI_00#BLADE16";
+        const string blade14 =
+            @"\\?\RZCONTROL#VID_1532&PID_02C5&MI_00#BLADE14";
+        var candidates = new[]
+        {
+            Candidate(blade16, BladeContainer),
+            Candidate(blade14, OtherContainer),
+        };
+
+        Assert.Equal(
+            blade16,
+            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates, 0x02C6));
+        Assert.Equal(
+            blade14,
+            RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates, 0x02C5));
+    }
+
+    [Fact]
+    public void ReturnsNullWhenTheRequestedProductEndpointIsMissing()
+    {
+        var candidates = new[]
+        {
+            Candidate(@"\\?\RZCONTROL#VID_1532&PID_02C6&MI_00#BLADE16", BladeContainer),
+        };
+
+        Assert.Null(RazerFilterEndpointDiscovery.SelectProduct710Endpoint(candidates, 0x02C5));
+        Assert.Null(RazerFilterEndpointDiscovery.SelectProduct710Endpoint([], 0x02C6));
     }
 
     [Fact]
