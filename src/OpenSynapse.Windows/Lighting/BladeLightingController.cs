@@ -182,10 +182,7 @@ public sealed class BladeLightingController : IBladeLightingController
                 cancellationToken).ConfigureAwait(false);
             try
             {
-                await SendAsync(
-                    device.Id,
-                    BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
-                    cancellationToken).ConfigureAwait(false);
+                await SendLightingEngineGateAsync(device.Id, cancellationToken).ConfigureAwait(false);
                 if (TryCreateNativeEffectRequest(effect, out var nativeRequest))
                 {
                     await SendAsync(
@@ -307,9 +304,7 @@ public sealed class BladeLightingController : IBladeLightingController
                 cancellationToken).ConfigureAwait(false);
             try
             {
-                await SendAsync(device.Id,
-                    BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
-                    cancellationToken).ConfigureAwait(false);
+                await SendLightingEngineGateAsync(device.Id, cancellationToken).ConfigureAwait(false);
                 var pump = new BladeMatrixFramePump(
                     _transport,
                     device.Id,
@@ -792,6 +787,18 @@ public sealed class BladeLightingController : IBladeLightingController
             MatrixWait,
             cancellationToken);
     }
+
+    /// <summary>
+    /// The 2026 matrix dialect has no 0F:02 lighting-engine gate. Sending the 2025
+    /// gate makes the device reject the whole apply with 0x05 and leaves the old frame.
+    /// </summary>
+    private Task SendLightingEngineGateAsync(string devicePath, CancellationToken cancellationToken) =>
+        _ledMatrixProtocol
+            ? Task.CompletedTask
+            : SendAsync(
+                devicePath,
+                BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
+                cancellationToken);
 
     private byte NextTransactionId()
     {
