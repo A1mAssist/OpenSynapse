@@ -38,10 +38,10 @@ public sealed class BladeLightingLedMatrixTests
         Assert.Equal(0xFF, request[2]);
         Assert.Equal(0x03, request[7]);
         Assert.Equal(0x02, request[8]);
-        Assert.Equal(4, request[6]);
+        Assert.Equal(6, request[6]);
         Assert.Equal(
-            [0x06, 0x12, 0x34, 0x56],
-            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 4)]);
+            [0x01, 0x05, 0x06, 0x12, 0x34, 0x56],
+            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 6)]);
         Assert.Equal(RazerFeatureReport.CalculateCrc(request), request[89]);
     }
 
@@ -62,7 +62,10 @@ public sealed class BladeLightingLedMatrixTests
 
         Assert.Equal(0x03, request[7]);
         Assert.Equal(0x02, request[8]);
-        Assert.Equal(expectedEffect, request[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(3, request[6]);
+        Assert.Equal(
+            [0x01, 0x05, expectedEffect],
+            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 3)]);
     }
 
     [Fact]
@@ -70,10 +73,10 @@ public sealed class BladeLightingLedMatrixTests
     {
         var request = BladeLightingLedMatrixProtocol.CreateWaveRequest(BladeWaveDirection.Left);
 
-        Assert.Equal(2, request[6]);
+        Assert.Equal(4, request[6]);
         Assert.Equal(
-            [0x01, 0x01],
-            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 2)]);
+            [0x01, 0x05, 0x01, 0x01],
+            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 4)]);
     }
 
     [Fact]
@@ -108,6 +111,9 @@ public sealed class BladeLightingLedMatrixTests
         }
         Assert.Equal(0x03, requests[6][7]);
         Assert.Equal(0x02, requests[6][8]);
-        Assert.Equal(0x05, requests[6][RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(3, requests[6][6]);
+        Assert.Equal(
+            [0x01, 0x05, 0x05],
+            requests[6][RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 3)]);
     }
 }
