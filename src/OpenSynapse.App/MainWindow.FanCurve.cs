@@ -6,7 +6,7 @@ public sealed partial class MainWindow
 {
     private BladeFanCurveWindow? _bladeFanCurveWindow;
 
-    private void OpenBladeFanCurveWindowClick(object sender, RoutedEventArgs e)
+    internal void OpenBladeFanCurveWindow()
     {
         if (_bladeFanCurveWindow is not null)
         {

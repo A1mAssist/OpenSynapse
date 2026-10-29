@@ -1,0 +1,83 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.DiagnosticsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+  <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
+                <StackPanel Spacing="5">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <TextBlock local:Localized.Uid="Loc_97C848E235" Text="诊断" Style="{StaticResource PageTitleStyle}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                      <Button local:Localized.Uid="Loc_B2441B64DA" Content="重新检查" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" />
+                      <Button local:Localized.Uid="CopyDiagnostics" Content="复制诊断信息" Click="CopyDiagnosticsClick" Style="{StaticResource PrimaryButtonStyle}" />
+                      <Button local:Localized.Uid="ScanHidCommands" Content="扫描 HID 命令" Click="ScanHidCommandsClick" IsEnabled="{Binding OpenRazer.CanScanHidCommands}" Style="{StaticResource SecondaryButtonStyle}" />
+                      <TextBlock x:Name="DiagnosticsCopyStatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock local:Localized.Uid="Loc_2316E0EB08" Text="检查设备通信和最近一次读取结果；只列出需要处理的项目。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="13">
+                    <TextBlock local:Localized.Uid="Loc_BD61CEC3FA" Text="查询记录" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <ItemsRepeater ItemsSource="{Binding Diagnostics.Rows}">
+                      <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
+                      <ItemsRepeater.ItemTemplate>
+                        <DataTemplate>
+                          <Expander HorizontalAlignment="Stretch" IsExpanded="False">
+                            <Expander.Header>
+                              <Grid ColumnDefinitions="4,*,Auto,Auto" ColumnSpacing="12" MinHeight="32">
+                                <Border Background="{Binding StatusBrush}" CornerRadius="2" />
+                                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Device}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                  <TextBlock Text="{Binding Capability}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Text="{Binding IssueCountText}" Visibility="{Binding IssueCountVisibility}" FontSize="11" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11" Foreground="{Binding StatusBrush}" VerticalAlignment="Center" />
+                              </Grid>
+                            </Expander.Header>
+                            <StackPanel Spacing="10" Padding="18,0,0,8">
+                              <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                              <StackPanel Visibility="{Binding ProtocolDetailsVisibility}" Spacing="6">
+                                <TextBlock local:Localized.Uid="DiagnosticProtocolDetailsTitle" Text="协议明细" Style="{StaticResource MetricLabelStyle}" />
+                                <ItemsControl ItemsSource="{Binding ProtocolDetails}">
+                                  <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                      <Grid ColumnDefinitions="4,*,Auto,Auto" ColumnSpacing="10" MinHeight="28">
+                                        <Border Background="{Binding StatusBrush}" CornerRadius="2" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Capability}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Detail}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11" Foreground="{Binding StatusBrush}" VerticalAlignment="Center" />
+                                      </Grid>
+                                    </DataTemplate>
+                                  </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                              </StackPanel>
+                              <ItemsRepeater ItemsSource="{Binding Issues}">
+                                <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                  <DataTemplate>
+                                    <Grid ColumnDefinitions="4,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="4">
+                                      <Border Grid.RowSpan="2" Background="{Binding StatusBrush}" CornerRadius="2" />
+                                      <TextBlock Grid.Column="1" Text="{Binding Capability}" Foreground="{StaticResource MutedBrush}" />
+                                      <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="11" Foreground="{Binding StatusBrush}" />
+                                      <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Detail}" TextWrapping="Wrap" />
+                                    </Grid>
+                                  </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                              </ItemsRepeater>
+                            </StackPanel>
+                          </Expander>
+                        </DataTemplate>
+                      </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                  </StackPanel>
+                </Border>
+                <TextBlock local:Localized.Uid="Loc_C153F25A3D" Text="未通过读回的能力始终保持禁用；OpenSynapse 不会结束 Synapse 进程。" Foreground="{StaticResource MutedBrush}" />
+              </StackPanel>
+  </ScrollViewer>
+</UserControl>

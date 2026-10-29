@@ -199,20 +199,41 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
 
 }
 
-public sealed class DeviceProtocolDetailViewModel(
-    string capabilityResourceKey,
-    bool isAvailable,
-    string detail,
-    bool capabilityIsLiteral = false) : INotifyPropertyChanged
+public sealed class DeviceProtocolDetailViewModel : INotifyPropertyChanged
 {
+    private readonly string _capabilityResourceKey;
+    private readonly string _detail;
+    private readonly bool _capabilityIsLiteral;
+    private readonly bool _failed;
+
+    public DeviceProtocolDetailViewModel(
+        string capabilityResourceKey,
+        bool isAvailable,
+        string detail,
+        bool capabilityIsLiteral = false,
+        bool failed = false)
+    {
+        _capabilityResourceKey = capabilityResourceKey;
+        _detail = detail;
+        _capabilityIsLiteral = capabilityIsLiteral;
+        _failed = failed;
+        IsAvailable = isAvailable;
+        StatusBrush = new SolidColorBrush(failed
+            ? Color.FromArgb(255, 255, 107, 107)
+            : isAvailable
+            ? Color.FromArgb(255, 153, 221, 114)
+            : Color.FromArgb(255, 255, 181, 71));
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public string Capability => capabilityIsLiteral ? capabilityResourceKey : AppStrings.Text(capabilityResourceKey);
-    public string Status => AppStrings.Text(isAvailable ? "DiagnosticProtocolAvailable" : "DiagnosticProtocolUnavailable");
-    public string Detail => detail;
-    public Brush StatusBrush { get; } = new SolidColorBrush(isAvailable
-        ? Color.FromArgb(255, 153, 221, 114)
-        : Color.FromArgb(255, 255, 181, 71));
+    public bool IsAvailable { get; }
+    public string Capability => _capabilityIsLiteral ? _capabilityResourceKey : AppStrings.Text(_capabilityResourceKey);
+    public string Status => AppStrings.Text(_failed
+        ? "DiagnosticProtocolFailedStatus"
+        : IsAvailable ? "DiagnosticProtocolAvailable" : "DiagnosticProtocolUnavailable");
+    public string Detail => _detail;
+    public Brush StatusBrush { get; }
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }

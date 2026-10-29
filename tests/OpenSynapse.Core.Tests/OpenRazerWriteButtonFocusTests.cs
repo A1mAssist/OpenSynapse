@@ -17,7 +17,7 @@ public sealed class OpenRazerWriteButtonFocusTests
         var repository = FindRepositoryRoot();
         var appRoot = Path.Combine(repository, "src", "OpenSynapse.App");
         var viewModelPath = Path.Combine(appRoot, "ViewModels", "OpenRazerDeviceViewModel.cs");
-        var xaml = File.ReadAllText(Path.Combine(appRoot, "MainWindow.xaml"));
+        var xaml = File.ReadAllText(Path.Combine(appRoot, "Views", "DevicesPage.xaml"));
         var panel = ReadPanel(xaml, "OpenRazerDevicePanel");
 
         var properties = ReadBooleanProperties(viewModelPath);

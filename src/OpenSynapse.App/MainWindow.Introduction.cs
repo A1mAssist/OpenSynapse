@@ -21,12 +21,10 @@ public sealed partial class MainWindow
     private int IntroductionStepCount =>
         _viewModel.Viper.DeviceVisibility == Visibility.Visible ? 4 : 3;
 
-    private void ShowIntroductionClick(object sender, RoutedEventArgs e) =>
+    internal void ShowIntroduction() =>
         _ = ShowIntroductionStepAsync(0);
 
-    private void OpenAboutClick(object sender, RoutedEventArgs e) => ShowAboutWindow();
-
-    private void ShowAboutWindow()
+    internal void ShowAboutWindow()
     {
         if (_aboutWindow is null)
         {
@@ -88,21 +86,21 @@ public sealed partial class MainWindow
                     break;
                 case 1:
                     RootNavigationView.SelectedItem = OverviewNavigationItem;
-                    OverviewPage.ChangeView(null, 0, null, disableAnimation: true);
-                    target = SystemTelemetrySection;
+                    OverviewPage.ScrollToTop();
+                    target = OverviewPage.TelemetrySection;
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
                     break;
                 case 2:
                     RootNavigationView.SelectedItem = DevicesNavigationItem;
-                    DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
-                    target = DeviceCardsRepeater;
+                    DevicesPage.ScrollToTop();
+                    target = DevicesPage.DeviceCardsRepeaterElement;
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
                     break;
                 default:
                     RootNavigationView.SelectedItem = DevicesNavigationItem;
-                    SelectDevice("viper");
-                    DevicesPage.ChangeView(null, 0, null, disableAnimation: true);
-                    target = ViperPollingRateSaveButton;
+                    DevicesPage.SelectDevice("viper");
+                    DevicesPage.ScrollToTop();
+                    target = DevicesPage.ViperAnchor;
                     IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Top;
                     break;
             }
@@ -123,22 +121,13 @@ public sealed partial class MainWindow
             if (_introductionStep == 2)
             {
                 // ItemsRepeater virtualizes its children; resolve the first real card after layout.
-                target = DeviceCardsRepeater.TryGetElement(0) as FrameworkElement
-                    ?? DeviceCardsRepeater;
+                target = DevicesPage.DeviceCardsRepeaterElement.TryGetElement(0) as FrameworkElement
+                    ?? DevicesPage.DeviceCardsRepeaterElement;
             }
 
             if (_introductionStep == IntroductionStepCount - 1)
             {
-                var targetTop = target.TransformToVisual(DevicesPage)
-                    .TransformPoint(new global::Windows.Foundation.Point(0, 0)).Y +
-                    DevicesPage.VerticalOffset;
-                var centeredOffset = targetTop -
-                    Math.Max(0, (DevicesPage.ViewportHeight - target.ActualHeight) / 2);
-                DevicesPage.ChangeView(
-                    null,
-                    Math.Clamp(centeredOffset, 0, DevicesPage.ScrollableHeight),
-                    null,
-                    disableAnimation: true);
+                DevicesPage.CenterOn(target);
             }
             else
             {

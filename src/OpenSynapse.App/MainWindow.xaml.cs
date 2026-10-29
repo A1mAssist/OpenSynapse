@@ -1,6 +1,7 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
@@ -20,13 +21,26 @@ public sealed partial class MainWindow : Window
     private const int ShowWindowRestore = 9;
     private const int MinimumLaunchDurationMilliseconds = 650;
     private readonly MainViewModel _viewModel;
+    private readonly AppBehaviorSettings _behaviorSettings;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly bool _silentLaunch;
     private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
+    private readonly Func<bool, Task>? _setChromaRestEnabled;
+    private readonly Func<ChromaRestSnapshot>? _getChromaRestSnapshot;
+    private readonly Func<string, bool, Task>? _setChromaSourceAllowed;
+    private DisplayPowerNotification? _displayPowerNotification;
     private bool _trayLifecycleEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
+
+    internal MainViewModel ViewModel => _viewModel;
+    internal CancellationToken LifetimeToken => _lifetime.Token;
+    internal AppBehaviorSettings BehaviorSettings => _behaviorSettings;
+    internal Func<bool, Task>? SetChromaRestEnabled => _setChromaRestEnabled;
+    internal Func<ChromaRestSnapshot>? GetChromaRestSnapshot => _getChromaRestSnapshot;
+    internal Func<string, bool, Task>? SetChromaSourceAllowed => _setChromaSourceAllowed;
+    internal Grid RootLayoutElement => RootLayout;
 
     internal MainWindow(
         MainViewModel viewModel,
@@ -49,6 +63,14 @@ public sealed partial class MainWindow : Window
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(false);
         _viewModel.Refresh.SetDeviceWatchActive(false);
         InitializeComponent();
+        RootNavigationView.DataContext = _viewModel;
+        DiagnosticsPage.Host = this;
+        SettingsPage.Host = this;
+        MacrosPage.Host = this;
+        ProfilesPage.Host = this;
+        DevicesPage.Host = this;
+        MacrosPage.OpenEditorRequested += (_, _) => OpenMacroEditorWindow();
+        OverviewPage.DeviceRequested += OnOverviewDeviceRequested;
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
         _viewModel.Hue.Persist = (host, appKey) =>
         {
@@ -59,21 +81,9 @@ public sealed partial class MainWindow : Window
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _viewModel.Macros.SetMacroDispatcher(_dispatcherQueue);
         _viewModel.Macros.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
-        _viewModel.Blade.SetPadlessHyperBoostConfirmation(ConfirmPadlessHyperBoostAsync);
+        _viewModel.Blade.SetPadlessHyperBoostConfirmation(DevicesPage.ConfirmPadlessHyperBoostAsync);
         _viewModel.Blade.SetPadlessHyperBoostAccepted(_behaviorSettings.PadlessHyperBoostAccepted);
-        BladeBrightnessSlider.AddHandler(
-            UIElement.PointerPressedEvent,
-            new PointerEventHandler(BladeBrightnessPointerPressed),
-            handledEventsToo: true);
-        BladeBrightnessSlider.AddHandler(
-            UIElement.PointerReleasedEvent,
-            new PointerEventHandler(BladeBrightnessPointerReleased),
-            handledEventsToo: true);
-        BladeBrightnessSlider.AddHandler(
-            UIElement.PointerCaptureLostEvent,
-            new PointerEventHandler(BladeBrightnessPointerCaptureLost),
-            handledEventsToo: true);
-        RefreshLightingPresetOptions();
+        DevicesPage.RefreshLightingPresetOptions();
         Localized.RefreshTree(RootLayout);
         RootLayout.Loaded += (_, _) =>
         {
@@ -83,13 +93,10 @@ public sealed partial class MainWindow : Window
             // to the minimum size for the rest of the session.
             ResizeForCurrentDisplay();
         };
-        SelectLanguage(AppLanguageSettings.Current);
-        _languageSelectionReady = true;
-        InitializeBehaviorSettingsUi();
-        _chromaRestStatusTimer = _dispatcherQueue.CreateTimer();
-        _chromaRestStatusTimer.Interval = TimeSpan.FromSeconds(1);
-        _chromaRestStatusTimer.Tick += OnChromaRestStatusTick;
-        InitializeUpdateUi();
+        SettingsPage.Initialize();
+        SettingsPage.InitializeBehaviorSettingsUi();
+        ProfilesPage.InitializeBehaviorSettingsUi();
+        SettingsPage.InitializeUpdateUi();
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {
@@ -97,7 +104,6 @@ public sealed partial class MainWindow : Window
         }
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-        RootNavigationView.DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.OpenRazer.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
@@ -110,9 +116,32 @@ public sealed partial class MainWindow : Window
         Closed += OnClosed;
         AppWindow.Closing += OnAppWindowClosing;
         AppWindow.Changed += OnAppWindowChanged;
-        InitializeDisplayPowerNotification();
-        UpdateChromaRestStatusTimer();
+        _displayPowerNotification = new DisplayPowerNotification(
+            this,
+            _viewModel,
+            _dispatcherQueue,
+            _setBladeIndicatorDisplayAvailable);
+        _displayPowerNotification.Initialize();
+        SettingsPage.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
     }
+
+    internal void RefreshLocalizationAfterLanguageChange()
+    {
+        Localized.RefreshTree(RootLayout);
+        DevicesPage.RefreshLightingPresetOptions();
+        DevicesPage.RefreshDedicatedGpuMode();
+        _aboutWindow?.RefreshLocalization();
+        _macroEditorWindow?.RefreshLocalization();
+        ((App)Application.Current).RefreshTrayLocalization();
+        RefreshIntroductionLocalization();
+    }
+
+    internal void RefreshLightingPresetOptions() => DevicesPage.RefreshLightingPresetOptions();
+
+    internal void InitializePicker(object picker) =>
+        WinRT.Interop.InitializeWithWindow.Initialize(
+            picker,
+            WinRT.Interop.WindowNative.GetWindowHandle(this));
 
     internal void RequestActivation() => _dispatcherQueue.TryEnqueue(RestoreAndActivate);
 
@@ -203,7 +232,7 @@ public sealed partial class MainWindow : Window
         {
             UpdatePerformanceSamplingState();
             _viewModel.Refresh.SetDeviceWatchActive(sender.IsVisible);
-            UpdateChromaRestStatusTimer();
+            SettingsPage.UpdateChromaRestStatusTimer(sender.IsVisible);
             if (sender.IsVisible)
             {
                 _viewModel.Refresh.RequestDeviceRefresh();
@@ -308,9 +337,9 @@ public sealed partial class MainWindow : Window
                 AppStrings.Text("Text_C2463C0F"));
             _viewModel.Refresh.RequestDeviceRefresh();
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
-            if (AutomaticUpdatesToggle.IsOn && AppUpdateSettings.AutomaticCheckDue)
+            if (SettingsPage.AutomaticUpdatesEnabled && AppUpdateSettings.AutomaticCheckDue)
             {
-                _ = CheckForUpdatesAsync(downloadAutomatically: true);
+                _ = SettingsPage.CheckForUpdatesAsync(downloadAutomatically: true);
             }
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
@@ -341,8 +370,7 @@ public sealed partial class MainWindow : Window
     private void OnClosed(object sender, WindowEventArgs args)
     {
         SaveWindowSize();
-        _chromaRestStatusTimer.Stop();
-        _chromaRestStatusTimer.Tick -= OnChromaRestStatusTick;
+        SettingsPage.Shutdown();
         _aboutWindow?.Close();
         _aboutWindow = null;
         CloseThxAudioWindow();
@@ -355,7 +383,8 @@ public sealed partial class MainWindow : Window
         _viewModel.Viper.PropertyChanged -= OnViewModelPropertyChanged;
         AppWindow.Closing -= OnAppWindowClosing;
         AppWindow.Changed -= OnAppWindowChanged;
-        ShutdownDisplayPowerNotification();
+        _displayPowerNotification?.Dispose();
+        _displayPowerNotification = null;
         _lifetime.Cancel();
         _lifetime.Dispose();
     }

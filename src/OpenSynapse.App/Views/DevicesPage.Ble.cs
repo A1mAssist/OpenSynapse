@@ -2,9 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.App.Views;
 
-public sealed partial class MainWindow
+public sealed partial class DevicesPage : UserControl
 {
     private async void BleSelectorClick(object sender, RoutedEventArgs e)
     {
@@ -14,37 +14,37 @@ public sealed partial class MainWindow
         }
 
         SelectDevice("ble");
-        await _viewModel.SelectBleAsync(row, _lifetime.Token);
+        await ViewModel.SelectBleAsync(row, Lifetime);
         UpdateDeviceSelector("ble");
     }
 
     private async void BleRefreshClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedBle?.LoadAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.LoadAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void BleApplyPollingClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBlePollingRateAsync(_lifetime.Token);
+        await ViewModel.ApplyBlePollingRateAsync(Lifetime);
 
     private async void BleApplyDpiClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.ApplyBleDpiAsync(_lifetime.Token);
+        await ViewModel.ApplyBleDpiAsync(Lifetime);
 
     private async void BleApplyLightingClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedBle?.ApplyLightingAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void BleApplyMappingClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedBle?.ApplyMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.ApplyMappingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void BleApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedBle?.ApplyDpiStagesAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.ApplyDpiStagesAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void BleApplyScrollClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedBle?.ApplyScrollAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.ApplyScrollAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void BleApplyPowerClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedBle?.ApplyPowerAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.ApplyPowerAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void BleApplyProfileClick(object sender, RoutedEventArgs e) =>
-        await (_viewModel.SelectedBle?.ApplyProfileAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.ApplyProfileAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void BleMappingLayerChanged(object sender, SelectionChangedEventArgs e) =>
-        await (_viewModel.SelectedBle?.LoadMappingAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedBle?.LoadMappingAsync(Lifetime) ?? Task.CompletedTask);
 }

@@ -1,0 +1,73 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.ProfilesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+  <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                  <StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_14933D7587" Text="配置" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_3453A83F8E" Text="管理设备设置组合、应用绑定和快捷键循环。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom"><Button local:Localized.Uid="Loc_E622287D8A" Content="导入" Click="ImportProfilesClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /><Button local:Localized.Uid="Loc_58DC9A24FF" Content="导出" Click="ExportProfilesClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /></StackPanel>
+                </Grid>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="14">
+                    <TextBlock local:Localized.Uid="Loc_CA6E17DD3A" Text="活动配置" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                      <ComboBox ItemsSource="{Binding Profiles.ProfileNames}" SelectedItem="{Binding Profiles.ActiveProfileName, Mode=OneWay}" SelectionChanged="ProfileSelectionChanged" IsEnabled="{Binding CanRefresh}" HorizontalAlignment="Stretch" />
+                      <Button local:Localized.Uid="Loc_311EB20F8C" Grid.Column="1" Click="DeleteProfileClick" IsEnabled="{Binding Profiles.CanDeleteProfile}" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="删除当前配置" AutomationProperties.Name="删除当前配置"><SymbolIcon Symbol="Delete" /></Button>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+                      <TextBox local:Localized.Uid="Loc_00DC0BB70D" Text="{Binding Profiles.ProfileNameInput, Mode=TwoWay}" PlaceholderText="新配置名称" MaxLength="64" />
+                      <Button local:Localized.Uid="Loc_9D032642E0" Grid.Column="1" Click="CreateProfileClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource PrimaryButtonStyle}" Content="新建" />
+                      <Button local:Localized.Uid="Loc_212999B9CD" Grid.Column="2" Click="CloneProfileClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" Content="克隆" />
+                      <Button local:Localized.Uid="Loc_12964C8CFC" Grid.Column="3" Click="RenameProfileClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" Content="重命名" />
+                    </Grid>
+                    <TextBlock Text="{Binding Profiles.ProfileStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    <TextBlock local:Localized.Uid="Loc_95B9EC6E0F" Text="前台应用或电源状态变化时会自动应用已验证的设备设置。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_2A6762CB42" Text="应用绑定" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_0EAF4E604F" Text="应用进入前台时自动切换到当前配置。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button local:Localized.Uid="Loc_EB8ED8250D" Grid.Column="1" Content="添加应用" Click="BindApplicationClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" /></Grid>
+                    <ItemsRepeater ItemsSource="{Binding Profiles.ApplicationBindings}">
+                      <ItemsRepeater.Layout><StackLayout Spacing="6" /></ItemsRepeater.Layout>
+                      <ItemsRepeater.ItemTemplate><DataTemplate><Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" MinHeight="34"><StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding ExecutableName}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding ExecutablePath}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" /></StackPanel><TextBlock Grid.Column="1" Text="{Binding ProfileName}" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" /><Button local:Localized.Uid="Loc_5DAE9E5AB4" Grid.Column="2" Tag="{Binding ExecutablePath}" Click="UnbindApplicationClick" Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="移除应用绑定" AutomationProperties.Name="移除应用绑定"><SymbolIcon Symbol="Delete" /></Button></Grid></DataTemplate></ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="ActiveProfileShortcutsTitle" Text="活动配置快捷键" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                        <TextBlock local:Localized.Uid="ActiveProfileShortcutsScope" Text="保存到当前活动配置：" Foreground="{StaticResource MutedBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Profiles.ActiveProfileName}" Foreground="{StaticResource AccentBrush}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      </Grid>
+                      <TextBlock local:Localized.Uid="ActiveProfileDeviceSettingsDescription" Text="设备页中的 Snap Tap、Blade 已验证快捷键预设和 Viper 板载映射也保存到当前活动配置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <StackPanel Spacing="8">
+                      <TextBlock local:Localized.Uid="PerformanceCycleTitle" Text="按键循环包含的性能模式" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="PerformanceCycleDescription" Text="取消不想通过 M4/Fn+P 切换到的模式；手动选择不受影响。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Grid x:Name="PerformanceCycleModesPanel" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="12">
+                        <CheckBox local:Localized.Uid="PerformanceCycleBalanced" Tag="Balanced" Content="平衡" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox x:Name="PerformanceCyclePerformanceCheckBox" local:Localized.Uid="PerformanceCyclePerformance" Grid.Column="1" Tag="Performance" Content="性能" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox local:Localized.Uid="PerformanceCycleCustom" Grid.Column="2" Tag="Custom" Content="自定义" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox local:Localized.Uid="PerformanceCycleSilent" Grid.Column="3" Tag="Silent" Content="静音" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                        <CheckBox Grid.Column="4" Tag="Hyperboost" Content="HyperBoost" Visibility="{Binding Blade.HyperboostOptionVisibility}" Checked="PerformanceCycleModeChanged" Unchecked="PerformanceCycleModeChanged" />
+                      </Grid>
+                    </StackPanel>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <StackPanel x:Name="RefreshRateCycleSection" Spacing="8" Visibility="Collapsed">
+                      <TextBlock local:Localized.Uid="RefreshRateCycleTitle" Text="Fn+R 循环包含的刷新率" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="RefreshRateCycleDescription" Text="取消不想通过 Fn+R 切换到的刷新率；手动选择不受影响。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Grid x:Name="RefreshRateCycleModesPanel" ColumnSpacing="12" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+  </ScrollViewer>
+</UserControl>

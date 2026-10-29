@@ -19,7 +19,7 @@ public sealed partial class MainWindow
             (foreground == mainWindowHandle || _macroEditorWindow?.OwnsWindow(foreground) == true);
     }
 
-    private void OpenMacroEditorWindowClick(object sender, RoutedEventArgs e)
+    internal void OpenMacroEditorWindow()
     {
         if (_macroEditorWindow is not null)
         {

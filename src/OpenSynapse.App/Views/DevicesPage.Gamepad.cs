@@ -2,33 +2,33 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.App.Views;
 
-public sealed partial class MainWindow
+public sealed partial class DevicesPage : UserControl
 {
     private async void GamepadSelectorClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: RazerGamepadDeviceRowViewModel row }) return;
         SelectDevice("gamepad");
-        await _viewModel.SelectGamepadAsync(row, _lifetime.Token);
+        await ViewModel.SelectGamepadAsync(row, Lifetime);
         UpdateDeviceSelector("gamepad");
     }
 
     private async void GamepadRefreshClick(object sender, RoutedEventArgs e)
     {
-        await (_viewModel.SelectedGamepad?.LoadAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedGamepad?.LoadAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadRefreshAssignmentsClick(object sender, RoutedEventArgs e)
     {
-        await (_viewModel.SelectedGamepad?.RefreshButtonAssignmentsAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedGamepad?.RefreshButtonAssignmentsAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadApplyStickClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: RazerGamepadStickRowViewModel row })
         {
-            await (_viewModel.SelectedGamepad?.ApplyStickAsync(row, _lifetime.Token) ?? Task.CompletedTask);
+            await (ViewModel.SelectedGamepad?.ApplyStickAsync(row, Lifetime) ?? Task.CompletedTask);
         }
     }
 
@@ -36,17 +36,17 @@ public sealed partial class MainWindow
     {
         if (sender is Button { Tag: RazerGamepadTriggerRowViewModel row })
         {
-            await (_viewModel.SelectedGamepad?.ApplyTriggerAsync(row, _lifetime.Token) ?? Task.CompletedTask);
+            await (ViewModel.SelectedGamepad?.ApplyTriggerAsync(row, Lifetime) ?? Task.CompletedTask);
         }
     }
 
     private async void GamepadApplyDpadClick(object sender, RoutedEventArgs e)
     {
-        await (_viewModel.SelectedGamepad?.ApplyDpadAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedGamepad?.ApplyDpadAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadApplyVibrationClick(object sender, RoutedEventArgs e)
     {
-        await (_viewModel.SelectedGamepad?.ApplyVibrationAsync(_lifetime.Token) ?? Task.CompletedTask);
+        await (ViewModel.SelectedGamepad?.ApplyVibrationAsync(Lifetime) ?? Task.CompletedTask);
     }
 }

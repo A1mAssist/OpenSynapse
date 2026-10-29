@@ -1,8 +1,11 @@
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+using OpenSynapse.App.ViewModels;
 using System.Runtime.InteropServices;
 
 namespace OpenSynapse.App;
 
-public sealed partial class MainWindow
+internal sealed class DisplayPowerNotification
 {
     private const uint WmDeviceChange = 0x0219;
     private const uint WmPowerBroadcast = 0x0218;
@@ -15,6 +18,11 @@ public sealed partial class MainWindow
     private const uint PbtApmResumeAutomatic = 0x0012;
     private const uint DeviceNotifyCallback = 0x00000002;
     private static readonly Guid ConsoleDisplayStateGuid = new("6fe69556-704a-47a0-8f24-c28d936fda47");
+
+    private readonly Window _window;
+    private readonly MainViewModel _viewModel;
+    private readonly DispatcherQueue _dispatcherQueue;
+    private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
     private SubclassProcedure? _powerSubclassProcedure;
     private SuspendResumeCallback? _displayStateCallback;
     private SuspendResumeCallback? _suspendResumeCallback;
@@ -25,10 +33,22 @@ public sealed partial class MainWindow
     private readonly object _powerTransitionGate = new();
     private Task _powerTransition = Task.CompletedTask;
 
-    private void InitializeDisplayPowerNotification()
+    internal DisplayPowerNotification(
+        Window window,
+        MainViewModel viewModel,
+        DispatcherQueue dispatcherQueue,
+        Func<bool, Task>? setBladeIndicatorDisplayAvailable)
+    {
+        _window = window;
+        _viewModel = viewModel;
+        _dispatcherQueue = dispatcherQueue;
+        _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
+    }
+
+    internal void Initialize()
     {
         _powerSubclassProcedure = HandlePowerWindowMessage;
-        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(_window);
         if (!SetWindowSubclass(windowHandle, _powerSubclassProcedure, 0x4F5350, UIntPtr.Zero)) return;
         _displayStateCallback = HandleDisplayStateNotification;
         var guid = ConsoleDisplayStateGuid;
@@ -55,9 +75,9 @@ public sealed partial class MainWindow
             out _suspendResumeNotificationHandle);
     }
 
-    private void ShutdownDisplayPowerNotification()
+    internal void Dispose()
     {
-        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(_window);
         if (_powerNotificationHandle != 0)
         {
             PowerSettingUnregisterNotification(_powerNotificationHandle);
@@ -176,11 +196,11 @@ public sealed partial class MainWindow
         {
             if (suspending)
             {
-            await _viewModel.Lighting.PrepareForSuspendAsync().ConfigureAwait(false);
+                await _viewModel.Lighting.PrepareForSuspendAsync().ConfigureAwait(false);
             }
             else
             {
-            await _viewModel.Lighting.SetDisplayAvailableAsync(available).ConfigureAwait(false);
+                await _viewModel.Lighting.SetDisplayAvailableAsync(available).ConfigureAwait(false);
             }
 
             if (_setBladeIndicatorDisplayAvailable is not null)

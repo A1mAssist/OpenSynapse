@@ -3,12 +3,21 @@ using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
 using Windows.Storage.Pickers;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.App.Views;
 
-public sealed partial class MainWindow
+public sealed partial class MacrosPage : UserControl
 {
+    internal MainWindow Host { get; set; } = null!;
+
+    internal event EventHandler? OpenEditorRequested;
+
+    private MainViewModel ViewModel => (MainViewModel)DataContext;
+    private CancellationToken Lifetime => Host.LifetimeToken;
+
+    public MacrosPage() => InitializeComponent();
+
     private async void CreateMacroClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Macros.CreateMacroAsync(_lifetime.Token);
+        await ViewModel.Macros.CreateMacroAsync(Lifetime);
 
     private async void MacroRowEnabledToggled(object sender, RoutedEventArgs e)
     {
@@ -19,7 +28,7 @@ public sealed partial class MainWindow
             } toggle)
         {
             row.Enabled = toggle.IsOn;
-            await _viewModel.Macros.SaveMacroEnabledAsync(row, _lifetime.Token);
+            await ViewModel.Macros.SaveMacroEnabledAsync(row, Lifetime);
         }
     }
 
@@ -27,8 +36,8 @@ public sealed partial class MainWindow
     {
         if (MacroRowFromSender(sender) is { } row)
         {
-            _viewModel.Macros.SelectedMacro = row;
-            await _viewModel.Macros.CopySelectedMacroAsync(_lifetime.Token);
+            ViewModel.Macros.SelectedMacro = row;
+            await ViewModel.Macros.CopySelectedMacroAsync(Lifetime);
         }
     }
 
@@ -39,15 +48,15 @@ public sealed partial class MainWindow
             return;
         }
 
-        if (_viewModel.Macros.IsMacroRecording &&
-            !await _viewModel.Macros.StopMacroRecordingAsync(_lifetime.Token))
+        if (ViewModel.Macros.IsMacroRecording &&
+            !await ViewModel.Macros.StopMacroRecordingAsync(Lifetime))
         {
             return;
         }
 
-        if (!ReferenceEquals(_viewModel.Macros.SelectedMacro, row))
+        if (!ReferenceEquals(ViewModel.Macros.SelectedMacro, row))
         {
-            _viewModel.Macros.SelectedMacro = row;
+            ViewModel.Macros.SelectedMacro = row;
         }
 
         var dialog = new ContentDialog
@@ -57,11 +66,11 @@ public sealed partial class MainWindow
             PrimaryButtonText = AppStrings.Text("MacroDeleteConfirm"),
             CloseButtonText = AppStrings.Text("MacroCancel"),
             DefaultButton = ContentDialogButton.Close,
-            XamlRoot = RootNavigationView.XamlRoot,
+            XamlRoot = XamlRoot,
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {
-            await _viewModel.Macros.DeleteSelectedMacroAsync(_lifetime.Token);
+            await ViewModel.Macros.DeleteSelectedMacroAsync(Lifetime);
         }
     }
 
@@ -69,7 +78,7 @@ public sealed partial class MainWindow
     {
         if (MacroRowFromSender(sender) is { } row)
         {
-            _viewModel.Macros.SelectedMacro = row;
+            ViewModel.Macros.SelectedMacro = row;
             await ExportSelectedMacroAsync();
         }
     }
@@ -82,11 +91,11 @@ public sealed partial class MainWindow
         };
         picker.FileTypeFilter.Add(".json");
         picker.FileTypeFilter.Add(".xml");
-        InitializePicker(picker);
+        Host.InitializePicker(picker);
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.Macros.ImportMacroAsync(file.Path, _lifetime.Token);
+            await ViewModel.Macros.ImportMacroAsync(file.Path, Lifetime);
         }
     }
 
@@ -95,7 +104,7 @@ public sealed partial class MainWindow
 
     private async Task ExportSelectedMacroAsync()
     {
-        if (_viewModel.Macros.SelectedMacro is not { } selected)
+        if (ViewModel.Macros.SelectedMacro is not { } selected)
         {
             return;
         }
@@ -106,16 +115,19 @@ public sealed partial class MainWindow
             SuggestedFileName = SafeMacroFileName(selected.Name),
         };
         picker.FileTypeChoices.Add(AppStrings.Text("MacroJsonFileType"), [".json"]);
-        InitializePicker(picker);
+        Host.InitializePicker(picker);
         var file = await picker.PickSaveFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.Macros.ExportSelectedMacroAsync(file.Path, _lifetime.Token);
+            await ViewModel.Macros.ExportSelectedMacroAsync(file.Path, Lifetime);
         }
     }
 
     private async void CaptureMacroTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Macros.CaptureMacroTriggerAsync(_lifetime.Token);
+        await ViewModel.Macros.CaptureMacroTriggerAsync(Lifetime);
+
+    private void OpenMacroEditorWindowClick(object sender, RoutedEventArgs e) =>
+        OpenEditorRequested?.Invoke(this, EventArgs.Empty);
 
     private static MacroRowViewModel? MacroRowFromSender(object sender) =>
         sender switch

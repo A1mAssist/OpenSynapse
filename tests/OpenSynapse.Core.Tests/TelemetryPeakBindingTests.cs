@@ -19,7 +19,7 @@ public sealed partial class TelemetryPeakBindingTests
     [Fact]
     public void EveryPeakTooltipIsBoundInTheTelemetryCard()
     {
-        var xaml = ReadRepositoryFile(Path.Combine("src", "OpenSynapse.App", "MainWindow.xaml"));
+        var xaml = ReadRepositoryFile(Path.Combine("src", "OpenSynapse.App", "Views", "OverviewPage.xaml"));
 
         foreach (var property in PeakProperties)
         {
@@ -37,7 +37,7 @@ public sealed partial class TelemetryPeakBindingTests
         {
             Assert.True(
                 sources.Contains($"public string {property} =>", StringComparison.Ordinal),
-                $"MainWindow.xaml binds {property} but TelemetryWorkspace does not expose it.");
+                $"OverviewPage.xaml binds {property} but TelemetryWorkspace does not expose it.");
         }
     }
 

@@ -2,7 +2,6 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using OpenSynapse.App.ViewModels;
 using Windows.Graphics;
 using Windows.UI;
 
@@ -10,12 +9,6 @@ namespace OpenSynapse.App;
 
 public sealed partial class MainWindow
 {
-    private async void RefreshClick(object sender, RoutedEventArgs e)
-    {
-        await _viewModel.Refresh.RefreshDevicesAsync(_lifetime.Token);
-        _ = _viewModel.RefreshHueAsync(_lifetime.Token);
-    }
-
     internal void RequestNavigation(string page) => _dispatcherQueue.TryEnqueue(() =>
     {
         if (StringComparer.Ordinal.Equals(page, "about"))
@@ -37,175 +30,18 @@ public sealed partial class MainWindow
         RestoreAndActivate();
     });
 
-    private void DeviceSelectorClick(object sender, RoutedEventArgs e)
+    internal void RequestDeviceNavigation(object source)
     {
-        if (sender is Button { Tag: string device })
-        {
-            SelectDevice(device);
-        }
+        RequestNavigation("devices");
+        _dispatcherQueue.TryEnqueue(async () => await DevicesPage.ShowDeviceAsync(source));
     }
 
-    private void SelectDevice(string device)
-    {
-        if (device == "blade" &&
-            !_viewModel.DeviceSelectorItems.Any(item => item.Kind == DeviceSelectorItemKind.Blade))
-        {
-            // Without a Blade entry, stay on the overview instead of jumping to another device.
-            device = "none";
-        }
-        if (device == "viper" && _viewModel.Viper.DeviceVisibility != Visibility.Visible)
-        {
-            device = "none";
-        }
-        BladeDevicePanel.Visibility = device == "blade" ? Visibility.Visible : Visibility.Collapsed;
-        ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
-        OpenRazerDevicePanel.Visibility = device == "openrazer" ? Visibility.Visible : Visibility.Collapsed;
-        OpenRazerKrakenPanel.Visibility = device == "kraken" ? Visibility.Visible : Visibility.Collapsed;
-        BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
-        HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
-        KeyboardPanel.Visibility = device == "keyboard" ? Visibility.Visible : Visibility.Collapsed;
-        GamepadPanel.Visibility = device == "gamepad" ? Visibility.Visible : Visibility.Collapsed;
-        ChromaPanel.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
-        BlePanel.Visibility = device == "ble" ? Visibility.Visible : Visibility.Collapsed;
-        HuePanel.Visibility = device == "hue" ? Visibility.Visible : Visibility.Collapsed;
-        UpdateDeviceSelector(device);
-        if (device == "blade")
-        {
-            RefreshDedicatedGpuMode();
-        }
-    }
+    private void OnOverviewDeviceRequested(object source) => RequestDeviceNavigation(source);
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(DisplayWorkspace.InternalDisplayRefreshRates))
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                _behaviorUiReady = false;
-                RebuildRefreshRateCycleOptions();
-                _behaviorUiReady = true;
-            });
-        }
-        if (args.PropertyName == nameof(BladeWorkspace.PerformanceCycleModes))
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                _behaviorUiReady = false;
-                InitializeBehaviorSettingsUi();
-            });
-        }
-        if (args.PropertyName == nameof(MainViewModel.InternalDisplayRefreshRateCycleHertz))
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                _behaviorUiReady = false;
-                RebuildRefreshRateCycleOptions(force: true);
-                _behaviorUiReady = true;
-            });
-        }
-        if (args.PropertyName == nameof(ViperWorkspace.DeviceVisibility) &&
-            _viewModel.Viper.DeviceVisibility != Visibility.Visible)
-        {
-            _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
-        }
-        if (args.PropertyName == nameof(MainViewModel.DeviceSelectorItems))
-        {
-            // Rebuilding the list only refreshes the highlight; never change the active page here.
-            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector(CurrentDeviceRoute()));
-        }
-        if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedDevice) &&
-            _viewModel.OpenRazer.SelectedDevice is null &&
-            OpenRazerDevicePanel.Visibility == Visibility.Visible)
-        {
-            _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
-        }
-        else if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedDevice) &&
-            OpenRazerDevicePanel.Visibility == Visibility.Visible)
-        {
-            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("openrazer"));
-        }
-        if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedKraken) &&
-            _viewModel.OpenRazer.SelectedKraken is null &&
-            OpenRazerKrakenPanel.Visibility == Visibility.Visible)
-        {
-            _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
-        }
-        else if (args.PropertyName == nameof(OpenRazerWorkspace.SelectedKraken) &&
-            OpenRazerKrakenPanel.Visibility == Visibility.Visible)
-        {
-            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("kraken"));
-        }
-        if (args.PropertyName == nameof(MainViewModel.SelectedBlackShark) &&
-            _viewModel.SelectedBlackShark is null &&
-            BlackSharkPanel.Visibility == Visibility.Visible)
-        {
-            _dispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
-        }
-        else if (args.PropertyName == nameof(MainViewModel.SelectedBlackShark) &&
-            BlackSharkPanel.Visibility == Visibility.Visible)
-        {
-            _dispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("blackshark"));
-        }
-    }
-
-    private string CurrentDeviceRoute() =>
-        OpenRazerKrakenPanel.Visibility == Visibility.Visible ? "kraken" :
-        BlackSharkPanel.Visibility == Visibility.Visible ? "blackshark" :
-        OpenRazerDevicePanel.Visibility == Visibility.Visible ? "openrazer" :
-        HeadsetAudioPanel.Visibility == Visibility.Visible ? "headsetaudio" :
-        KeyboardPanel.Visibility == Visibility.Visible ? "keyboard" :
-        GamepadPanel.Visibility == Visibility.Visible ? "gamepad" :
-        ChromaPanel.Visibility == Visibility.Visible ? "chroma" :
-        BlePanel.Visibility == Visibility.Visible ? "ble" :
-        HuePanel.Visibility == Visibility.Visible ? "hue" :
-        ViperDevicePanel.Visibility == Visibility.Visible ? "viper" :
-        BladeDevicePanel.Visibility == Visibility.Visible ? "blade" :
-        string.Empty;
-
-    private void UpdateDeviceSelector(string device)
-    {
-        var selected = (Brush)Application.Current.Resources["SurfaceRaisedBrush"];
-        var transparent = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
-        foreach (var item in _viewModel.DeviceSelectorItems)
-        {
-            var isSelected = item.Kind switch
-            {
-                DeviceSelectorItemKind.Blade => device == "blade",
-                DeviceSelectorItemKind.Viper => device == "viper",
-                DeviceSelectorItemKind.OpenRazer => device == "openrazer" &&
-                    item.Source is OpenRazerDeviceRowViewModel row &&
-                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.OpenRazer.SelectedDevice?.InstanceId),
-                DeviceSelectorItemKind.Kraken => device == "kraken" &&
-                    item.Source is OpenRazerKrakenDeviceRowViewModel row &&
-                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, _viewModel.OpenRazer.SelectedKraken?.InstanceId),
-                DeviceSelectorItemKind.BlackShark => device == "blackshark" &&
-                    item.Source is BlackSharkDeviceRowViewModel blackSharkRow &&
-                    StringComparer.OrdinalIgnoreCase.Equals(
-                        blackSharkRow.Connection.DevicePath, _viewModel.SelectedBlackShark?.DevicePath),
-                DeviceSelectorItemKind.HeadsetAudio => device == "headsetaudio" &&
-                    item.Source is RazerHeadsetAudioDeviceRowViewModel headsetAudioRow &&
-                    StringComparer.OrdinalIgnoreCase.Equals(
-                        headsetAudioRow.Connection.DevicePath, _viewModel.SelectedHeadsetAudio?.DevicePath),
-                DeviceSelectorItemKind.Keyboard => device == "keyboard" &&
-                    item.Source is RazerKeyboardDeviceRowViewModel keyboardRow &&
-                    StringComparer.OrdinalIgnoreCase.Equals(
-                        keyboardRow.Connection.DevicePath, _viewModel.SelectedKeyboard?.DevicePath),
-                DeviceSelectorItemKind.Gamepad => device == "gamepad" &&
-                    item.Source is RazerGamepadDeviceRowViewModel gamepadRow &&
-                    StringComparer.OrdinalIgnoreCase.Equals(
-                        gamepadRow.Connection.DevicePath, _viewModel.SelectedGamepad?.DevicePath),
-                DeviceSelectorItemKind.Ble => device == "ble" &&
-                    item.Source is RazerBleDeviceRowViewModel bleRow &&
-                    StringComparer.OrdinalIgnoreCase.Equals(
-                        bleRow.Device.Id, _viewModel.SelectedBle?.DeviceId),
-                DeviceSelectorItemKind.Chroma => device == "chroma" &&
-                    item.Source is RazerChromaDeviceRowViewModel chromaRow &&
-                    StringComparer.OrdinalIgnoreCase.Equals(
-                        chromaRow.Connection.DevicePath, _viewModel.SelectedChroma?.DevicePath),
-                _ => false,
-            };
-            item.SetSelectorBackground(isSelected ? selected : transparent);
-        }
+        ProfilesPage.OnViewModelPropertyChanged(args.PropertyName);
+        DevicesPage.OnViewModelPropertyChanged(args.PropertyName);
     }
 
     private void NavigationChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -222,11 +58,10 @@ public sealed partial class MainWindow
             _ = _viewModel.RefreshHueAsync(_lifetime.Token);
         }
         UpdatePerformanceSamplingState();
-        UpdateChromaRestStatusTimer();
-        if (DevicesPage.Visibility == Visibility.Visible &&
-            BladeDevicePanel.Visibility == Visibility.Visible)
+        SettingsPage.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
+        if (DevicesPage.Visibility == Visibility.Visible && DevicesPage.IsBladePanelVisible)
         {
-            RefreshDedicatedGpuMode();
+            DevicesPage.RefreshDedicatedGpuMode();
         }
         if (DiagnosticsPage.Visibility == Visibility.Visible)
         {
@@ -250,7 +85,7 @@ public sealed partial class MainWindow
     {
         RootNavigationView.RequestedTheme = ElementTheme.Dark;
         ApplyTitleBarColors();
-        UpdateDeviceSelector(CurrentDeviceRoute());
+        DevicesPage.RefreshSelectorHighlight();
     }
 
     private void ApplyTitleBarColors(bool launchOverlayActive = false)
@@ -316,4 +151,3 @@ public sealed partial class MainWindow
         AppWindow.MoveAndResize(bounds);
     }
 }
-

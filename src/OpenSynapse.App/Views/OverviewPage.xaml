@@ -1,0 +1,65 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.OverviewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+  <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+              <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
+                <StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_16E65B7F4A" Text="概览" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_6F843C9A12" Text="系统状态、资源使用与已连接设备概览。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+                <StackPanel x:Name="SystemTelemetrySection" Spacing="12">
+                  <TextBlock local:Localized.Uid="Loc_643DCA0BC0" Text="系统遥测" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <StackPanel Spacing="3"><TextBlock Text="CPU" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Telemetry.CpuName}" FontSize="14" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" TextWrapping="WrapWholeWords" /></StackPanel>
+                      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_7A745D34B1" Text="温度" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.CpuTemperatureText}" FontFamily="Cascadia Mono,Consolas" FontSize="16" ToolTipService.ToolTip="{Binding Telemetry.CpuTemperaturePeakText}" /></StackPanel><StackPanel Grid.Column="1" Spacing="4"><TextBlock local:Localized.Uid="Loc_B391411492" Text="功耗" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.CpuPowerText}" FontFamily="Cascadia Mono,Consolas" FontSize="16" ToolTipService.ToolTip="{Binding Telemetry.CpuPowerPeakText}" /></StackPanel><StackPanel Grid.Column="2" Spacing="4"><TextBlock local:Localized.Uid="Loc_F58BD88A2E" Text="负载" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.CpuValue}" FontFamily="Cascadia Mono,Consolas" FontSize="16" Foreground="{StaticResource AccentBrush}" /></StackPanel><StackPanel Grid.Column="3" Spacing="4"><TextBlock local:Localized.Uid="Loc_38C653FB6C" Text="频率" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.CpuClockText}" FontFamily="Cascadia Mono,Consolas" FontSize="16" ToolTipService.ToolTip="{Binding Telemetry.CpuClockPeakText}" /></StackPanel></Grid>
+                      <ProgressBar Value="{Binding Telemetry.CpuPercent}" Maximum="100" Style="{StaticResource TelemetryBarStyle}" Foreground="{StaticResource AccentBrush}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <StackPanel Spacing="3"><TextBlock Text="GPU" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Telemetry.GpuName}" FontSize="14" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" TextWrapping="WrapWholeWords" /></StackPanel>
+                      <Grid ColumnDefinitions="*,*,*,1.35*,2.15*" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_7A745D34B1" Text="温度" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.GpuTemperatureText}" FontFamily="Cascadia Mono,Consolas" FontSize="14" ToolTipService.ToolTip="{Binding Telemetry.GpuTemperaturePeakText}" /></StackPanel><StackPanel Grid.Column="1" Spacing="4"><TextBlock local:Localized.Uid="Loc_B391411492" Text="功耗" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.GpuPowerText}" FontFamily="Cascadia Mono,Consolas" FontSize="14" ToolTipService.ToolTip="{Binding Telemetry.GpuPowerPeakText}" /></StackPanel><StackPanel Grid.Column="2" Spacing="4"><TextBlock local:Localized.Uid="Loc_F58BD88A2E" Text="负载" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.GpuValue}" FontFamily="Cascadia Mono,Consolas" FontSize="14" Foreground="{StaticResource GpuBrush}" /></StackPanel><StackPanel Grid.Column="3" Spacing="4"><TextBlock local:Localized.Uid="Loc_38C653FB6C" Text="频率" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.GpuClockText}" FontFamily="Cascadia Mono,Consolas" FontSize="14" ToolTipService.ToolTip="{Binding Telemetry.GpuClockPeakText}" /></StackPanel><StackPanel Grid.Column="4" Spacing="4"><TextBlock Text="{Binding Telemetry.GpuMemoryLabel}" Foreground="{StaticResource MutedBrush}" FontSize="11" /><TextBlock Text="{Binding Telemetry.GpuMemoryText}" FontFamily="Cascadia Mono,Consolas" FontSize="12" TextWrapping="WrapWholeWords" /></StackPanel></Grid>
+                      <ProgressBar Value="{Binding Telemetry.GpuPercent}" Maximum="100" Style="{StaticResource TelemetryBarStyle}" Foreground="{StaticResource GpuBrush}" />
+                    </StackPanel>
+                  </Border>
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="MEMORY" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Telemetry.MemoryValue}" Style="{StaticResource MetricValueStyle}" /><ProgressBar Value="{Binding Telemetry.MemoryPercent}" Maximum="100" Style="{StaticResource TelemetryBarStyle}" Foreground="{StaticResource ThermalBrush}" /><TextBlock Text="{Binding Telemetry.MemoryDetail}" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></StackPanel></Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="STORAGE" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Telemetry.StorageValue}" Style="{StaticResource MetricValueStyle}" /><ProgressBar Value="{Binding Telemetry.StoragePercent}" Maximum="100" Style="{StaticResource TelemetryBarStyle}" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="{Binding Telemetry.StorageDetail}" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></StackPanel></Border>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="8"><Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="Loc_B7D0B7C1CD" Text="已连接设备" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" /><TextBlock Grid.Column="1" Text="{Binding ConnectedDevices.Count}" Style="{StaticResource MetricLabelStyle}" /></Grid>
+                  <ListView ItemsSource="{Binding ConnectedDevices}" SelectionMode="None" Background="Transparent" BorderThickness="0">
+                    <ListView.ItemContainerStyle>
+                      <Style TargetType="ListViewItem">
+                        <Setter Property="Margin" Value="0,0,0,8" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                      </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                      <DataTemplate>
+                        <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
+                          <Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13">
+                            <Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
+                              <FontIcon Glyph="{Binding IconGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                              <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+                              <TextBlock Text="{Binding Access}" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="3">
+                              <TextBlock Text="{Binding Capability}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{Binding StatusBrush}" HorizontalAlignment="Right" />
+                              <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
+                            </StackPanel>
+                          </Grid>
+                        </Button>
+                      </DataTemplate>
+                    </ListView.ItemTemplate>
+                  </ListView>
+                  <TextBlock Text="{Binding EmptyStateText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+              </StackPanel>
+  </ScrollViewer>
+</UserControl>

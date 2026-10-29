@@ -2,9 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
 
-namespace OpenSynapse.App;
+namespace OpenSynapse.App.Views;
 
-public sealed partial class MainWindow
+public sealed partial class DevicesPage : UserControl
 {
     private void ViperActionComboBoxLoaded(object sender, RoutedEventArgs e)
     {
@@ -41,26 +41,26 @@ public sealed partial class MainWindow
     }
 
     private async void ApplyPollingRateClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ApplyPollingRateAsync(_lifetime.Token);
+        await ViewModel.Viper.ApplyPollingRateAsync(Lifetime);
 
     private async void ApplyDpiClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ApplyDpiAsync(_lifetime.Token);
+        await ViewModel.Viper.ApplyDpiAsync(Lifetime);
 
     private async void ApplyIdleClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ApplyIdleAsync(_lifetime.Token);
+        await ViewModel.Viper.ApplyIdleAsync(Lifetime);
 
     private async void ApplyLowBatteryThresholdClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ApplyLowBatteryThresholdAsync(_lifetime.Token);
+        await ViewModel.Viper.ApplyLowBatteryThresholdAsync(Lifetime);
 
     private async void ApplyBatteryChemistryClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ApplyBatteryChemistryAsync(_lifetime.Token);
+        await ViewModel.Viper.ApplyBatteryChemistryAsync(Lifetime);
 
     private async void ApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ApplyDpiStagesAsync(_lifetime.Token);
+        await ViewModel.Viper.ApplyDpiStagesAsync(Lifetime);
 
     private async void ReadViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ReadButtonMappingsAsync(_lifetime.Token);
+        await ViewModel.Viper.ReadButtonMappingsAsync(Lifetime);
 
     private async void ApplyAllViperButtonMappingsClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Viper.ApplyAllButtonMappingsAsync(_lifetime.Token);
+        await ViewModel.Viper.ApplyAllButtonMappingsAsync(Lifetime);
 }

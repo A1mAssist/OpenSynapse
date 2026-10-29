@@ -13,6 +13,9 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
 {
+    private static readonly TimeSpan BatteryRefreshInterval = TimeSpan.FromSeconds(10);
+    private DateTimeOffset _lastBatteryRefresh;
+
     public async Task LoadBasicStateAsync(CancellationToken cancellationToken = default)
     {
         if (!IsReady || RequiresRescan || IsBasicBusy)
@@ -24,6 +27,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         {
             var state = await _service.ReadBasicStateAsync(Connection, cancellationToken, _unsupported);
             _basicState = state;
+            _lastBatteryRefresh = DateTimeOffset.UtcNow;
             if (state.UnsupportedCapabilities.Count > 0)
             {
                 _unsupported.UnionWith(state.UnsupportedCapabilities);
@@ -95,6 +99,58 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         _unsupported.Clear();
         ErrorText = string.Empty;
         OnCapabilityChanged();
+        OnBasicStateChanged();
+    }
+
+    /// <summary>
+    /// Keeps the battery and charging readout current while the device page is open.
+    /// The device watch loop already refreshes live readouts; without this, a mouse
+    /// plugged in after the page opened kept showing its old charging state.
+    /// </summary>
+    public async Task RefreshBatteryStateAsync(CancellationToken cancellationToken = default)
+    {
+        if (_basicState is null || !IsReady || RequiresRescan || IsBasicBusy ||
+            DateTimeOffset.UtcNow - _lastBatteryRefresh < BatteryRefreshInterval)
+        {
+            return;
+        }
+
+        _lastBatteryRefresh = DateTimeOffset.UtcNow;
+        int? battery = null;
+        bool? charging = null;
+        try
+        {
+            if (Has(OpenRazerBackendCapability.BatteryRead))
+            {
+                battery = await _service.GetBatteryPercentAsync(Connection, cancellationToken);
+            }
+            if (Has(OpenRazerBackendCapability.ChargingRead))
+            {
+                charging = await _service.GetChargingAsync(Connection, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or
+            InvalidOperationException or NotSupportedException or InvalidDataException)
+        {
+            // Keep the last known values; the next poll can recover without turning the
+            // whole device page into an error.
+            return;
+        }
+
+        if (battery is null && charging is null)
+        {
+            return;
+        }
+
+        _basicState = _basicState with
+        {
+            BatteryPercent = battery ?? _basicState.BatteryPercent,
+            IsCharging = charging ?? _basicState.IsCharging,
+        };
         OnBasicStateChanged();
     }
 
