@@ -356,15 +356,19 @@ public sealed partial class RazerAwBleHeadsetService : IDisposable
         int minutes,
         CancellationToken cancellationToken = default)
     {
-        var index = RazerAwBleProtocol.AutoPowerOffIndexFromMinutes(minutes);
+        if (minutes is < 0 or > byte.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minutes));
+        }
+
         var applied = await WriteControlAsync(
             RazerAwBleProtocol.AutoPowerOffGetCommand,
             RazerAwBleProtocol.AutoPowerOffSetCommand,
-            index,
+            (byte)minutes,
             "auto power-off",
             verifyStatus: true,
             cancellationToken).ConfigureAwait(false);
-        return RazerAwBleProtocol.AutoPowerOffMinuteOptions[applied];
+        return applied;
     }
 
     public async Task<byte> ReadChromaBrightnessAsync(CancellationToken cancellationToken = default)

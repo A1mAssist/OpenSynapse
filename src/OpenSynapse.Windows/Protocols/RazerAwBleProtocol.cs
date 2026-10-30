@@ -89,8 +89,8 @@ public static class RazerAwBleProtocol
     public const byte GameModeSetCommand = 0x94;
     public const byte EqPresetGetCommand = 0x13;
     public const byte EqPresetSetCommand = 0x93;
-    public const byte AutoPowerOffGetCommand = 0x27;
-    public const byte AutoPowerOffSetCommand = 0xA7;
+    public const byte AutoPowerOffGetCommand = 0x2C;
+    public const byte AutoPowerOffSetCommand = 0xAC;
     public const byte ChromaEffectGetCommand = 0x40;
     public const byte ChromaEffectSetCommand = 0xC0;
     public const byte ChromaBrightnessGetCommand = 0x41;
@@ -216,48 +216,19 @@ public static class RazerAwBleProtocol
 
     public static readonly int[] AutoPowerOffMinuteOptions = [0, 5, 15, 30, 45, 60];
 
-    /// <summary>
-    /// The Kitty BLE bundle stores auto power-off as a five-step index, not a raw
-    /// minute byte: 0 off, then 5/15/30/45/60 minutes.
-    /// </summary>
+    /// <summary>The Kitty BLE bundle stores auto power-off as a raw minute byte.</summary>
     public static bool TryParseAutoPowerOff(
         ReadOnlySpan<byte> notification,
         out int minutes)
     {
         minutes = 0;
-        if (!TryParseByteReply(notification, AutoPowerOffGetCommand, out var index) ||
-            index >= AutoPowerOffMinuteOptions.Length)
+        if (!TryParseByteReply(notification, AutoPowerOffGetCommand, out var value))
         {
             return false;
         }
 
-        minutes = AutoPowerOffMinuteOptions[index];
+        minutes = value;
         return true;
-    }
-
-    public static byte AutoPowerOffIndexFromMinutes(int minutes)
-    {
-        if (minutes <= 0)
-        {
-            return 0;
-        }
-
-        if (minutes <= 10)
-        {
-            return 1;
-        }
-
-        if (minutes <= 20)
-        {
-            return 2;
-        }
-
-        if (minutes <= 40)
-        {
-            return 3;
-        }
-
-        return minutes <= 50 ? (byte)4 : (byte)5;
     }
 
     /// <summary>

@@ -169,16 +169,29 @@ public sealed class RazerAwBleHeadsetServiceTests
     }
 
     [Fact]
-    public async Task AutoPowerOffWritesTheBundleStepIndex()
+    public async Task AutoPowerOffWritesRawMinutes()
     {
         var transport = new FakeTransport(
-            new byte[] { 0x27, 0x02, 0x01, 0 },
-            new byte[] { 0xA7, 0x02, 0x01, 0 },
-            new byte[] { 0x27, 0x02, 0x01, 3 });
+            new byte[] { 0x2C, 0x02, 0x01, 0 },
+            new byte[] { 0xAC, 0x02, 0x01, 0 },
+            new byte[] { 0x2C, 0x02, 0x01, 30 });
         var service = CreateService(transport);
 
         Assert.Equal(30, await service.SetAutoPowerOffMinutesAsync(30));
-        Assert.Equal(new byte[] { 0xA7, 0x00, 0x01, 3 }, transport.Frames[1]);
+        Assert.Equal(new byte[] { 0xAC, 0x00, 0x01, 30 }, transport.Frames[1]);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(256)]
+    public async Task AutoPowerOffRejectsValuesOutsideOneByte(int minutes)
+    {
+        var transport = new FakeTransport();
+        var service = CreateService(transport);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => service.SetAutoPowerOffMinutesAsync(minutes));
+        Assert.Empty(transport.Frames);
     }
 
     [Fact]
