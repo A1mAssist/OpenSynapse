@@ -3101,6 +3101,8 @@
   <data name="KiyoContrastLabel/Text" xml:space="preserve"><value>对比度</value></data>
   <data name="KiyoSaturationLabel/Text" xml:space="preserve"><value>饱和度</value></data>
   <data name="KiyoWhiteBalanceLabel/Text" xml:space="preserve"><value>白平衡</value></data>
+  <data name="KiyoFocusLabel/Text" xml:space="preserve"><value>对焦</value></data>
+  <data name="KiyoZoomLabel/Text" xml:space="preserve"><value>缩放</value></data>
   <data name="KiyoAutoWhiteBalance/Text" xml:space="preserve"><value>自动白平衡</value></data>
   <data name="KiyoSettingsDescription/Text" xml:space="preserve"><value>亮度和对比度写入使用雷蛇原生设置页；这里读取当前值并应用白平衡。</value></data>
   <data name="KiyoApplyWhiteBalance/Text" xml:space="preserve"><value>应用白平衡</value></data>
@@ -3119,6 +3121,16 @@
   <data name="RazerMixer053EApplyBrightness/Content" xml:space="preserve"><value>应用亮度</value></data>
   <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>音频混音器 HID 路径不可用</value></data>
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>已写入并回读</value></data>
+  <data name="SeirenEmoteTitle/Text" xml:space="preserve"><value>8×8 点阵</value></data>
+  <data name="SeirenEmoteDescription/Text" xml:space="preserve"><value>按 4 行 × 16 像素发送完整 8×8 画面；这里提供纯色填充和清屏。</value></data>
+  <data name="SeirenEmoteColor/Text" xml:space="preserve"><value>画面颜色</value></data>
+  <data name="SeirenEmoteClear/Content" xml:space="preserve"><value>清屏</value></data>
+  <data name="SeirenEmoteApply/Content" xml:space="preserve"><value>填充颜色</value></data>
+  <data name="SeirenEmoteStatusConnected/Text" xml:space="preserve"><value>8×8 点阵端点已连接。</value></data>
+  <data name="SeirenEmoteStatusApplied/Text" xml:space="preserve"><value>纯色帧已发送。</value></data>
+  <data name="SeirenEmoteStatusCleared/Text" xml:space="preserve"><value>清屏帧已发送。</value></data>
+  <data name="SeirenEmoteErrorConnect/Text" xml:space="preserve"><value>无法打开 0F1B 点阵端点：{0}</value></data>
+  <data name="SeirenEmoteErrorWrite/Text" xml:space="preserve"><value>点阵写入失败：{0}</value></data>
 </root>
 
 

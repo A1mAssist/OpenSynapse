@@ -86,7 +86,7 @@ public sealed class RazerHeadsetThxBandViewModel : INotifyPropertyChanged
     }
 }
 
-public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncDisposable
+public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
     private static readonly (byte Value, string Key)[] Presets =
     [
@@ -239,6 +239,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             Mixer053E = new RazerMixer053EViewModel(connection.DevicePath, diagnostic);
         }
 
+        InitializeSeirenEmote();
         if (ThxHeadsetAdmission.IsSupported(connection.ProductId))
         {
             _thxStatus = ThxHeadsetAdmission.Check(connection.ProductId);
@@ -408,13 +409,6 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     public string ThxSidetoneText => $"{ThxSidetoneLevel}%";
     public Visibility ThxSidetoneVisibility =>
         _thxState?.Sidetone is not null ? Visibility.Visible : Visibility.Collapsed;
-
-    /// <summary>
-    /// Mic-body lighting (the Seiren Emote matrix) uses the shared class 0x10 Chroma
-    /// commands. Devices that do not answer keep the whole card hidden.
-    /// </summary>
-    public Microsoft.UI.Xaml.Visibility MatrixLightingVisibility =>
-        _hasLighting ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public IReadOnlyList<string> LightingEffectOptions =>
     [
@@ -805,7 +799,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 _ => await OpenService().ReadStateAsync(cancellationToken),
             };
             ApplyState(state);
-            if (IsFeature91)
+            if (IsFeature91 && !IsSeirenEmote)
             {
                 ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
             }
@@ -828,6 +822,7 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
         if (!cancellationToken.IsCancellationRequested)
         {
+            await LoadSeirenEmoteAsync(cancellationToken).ConfigureAwait(false);
             await RefreshThxAsync(cancellationToken);
         }
     }
@@ -1348,6 +1343,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         {
             await mixer053E.DisposeAsync();
         }
+
+        await DisposeSeirenEmoteAsync().ConfigureAwait(false);
     }
 
     private RazerHeadsetAudioService OpenService() =>
