@@ -1450,8 +1450,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         }
     }
     public bool CanSetStartupAnimation => _blade._bladeStartupAnimationEnabled is not null;
-    public bool CanApplyStartupAnimation =>
-        CanSetStartupAnimation && StartupAnimationEnabled != _blade._bladeStartupAnimationEnabled;
+    public bool CanApplyStartupAnimation => CanSetStartupAnimation && StartupAnimationEnabled != _blade._bladeStartupAnimationEnabled;
     public IReadOnlyList<string> NativeDisplayModeOptions => AppStrings.Texts("UHD", "FHD");
     public int NativeDisplayModeIndex
     {
@@ -2571,6 +2570,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         StartupAnimationText = "--";
         _blade._bladeStartupAnimationEnabled = null;
         StartupAnimationEnabled = false;
+        OnPropertyChanged(nameof(CanSetStartupAnimation));
         _blade._bladeFnKeyMultimediaPrimary = null;
         _blade._bladeFnKeyText = "--";
         OnPropertyChanged(nameof(FnKeyText));

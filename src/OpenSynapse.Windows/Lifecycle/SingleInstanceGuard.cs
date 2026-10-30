@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace OpenSynapse.Windows.Lifecycle;
 
 public enum SingleInstanceSignal
@@ -7,25 +9,42 @@ public enum SingleInstanceSignal
     Shutdown,
 }
 
+/// <summary>
+/// An older instance only publishes the activation event, and an elevated instance
+/// cannot always be opened from a medium process. The app shows a recovery message
+/// instead of exiting silently.
+/// </summary>
+public sealed class ExistingInstanceNotTakeoverableException : Exception
+{
+    public ExistingInstanceNotTakeoverableException()
+        : base("Another OpenSynapse instance is running without the shutdown channel.")
+    {
+    }
+}
+
 public sealed class SingleInstanceGuard : IDisposable
 {
-    private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan ShutdownPollInterval = TimeSpan.FromMilliseconds(25);
 
     private Mutex? _mutex;
     private EventWaitHandle? _activationEvent;
     private EventWaitHandle? _shutdownEvent;
     private EventWaitHandle? _exitedEvent;
+    private readonly bool _ownsMutex;
 
     private SingleInstanceGuard(
         Mutex mutex,
         EventWaitHandle activationEvent,
         EventWaitHandle shutdownEvent,
-        EventWaitHandle exitedEvent)
+        EventWaitHandle exitedEvent,
+        bool ownsMutex)
     {
         _mutex = mutex;
         _activationEvent = activationEvent;
         _shutdownEvent = shutdownEvent;
         _exitedEvent = exitedEvent;
+        _ownsMutex = ownsMutex;
     }
 
     public static bool TryAcquire(
@@ -36,96 +55,162 @@ public sealed class SingleInstanceGuard : IDisposable
         TimeSpan? shutdownTimeout = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        var activationEventName = $"{name}.Activate";
-        var shutdownEventName = $"{name}.Shutdown";
-        var exitedEventName = $"{name}.Exited";
-        var activationEvent = new EventWaitHandle(
-            initialState: false,
-            EventResetMode.AutoReset,
-            activationEventName);
-        var shutdownEvent = new EventWaitHandle(
-            initialState: false,
-            EventResetMode.AutoReset,
-            shutdownEventName,
-            out var shutdownEventCreated);
-        var exitedEvent = new EventWaitHandle(
-            initialState: false,
-            EventResetMode.ManualReset,
-            exitedEventName);
         Mutex mutex;
         bool createdNew;
         try
         {
-            mutex = new Mutex(initiallyOwned: false, name, out createdNew);
+            // Ownership lets a takeover distinguish a live instance from a crashed one.
+            mutex = new Mutex(initiallyOwned: true, name, out createdNew);
         }
-        catch
+        catch (UnauthorizedAccessException)
         {
-            activationEvent.Dispose();
-            shutdownEvent.Dispose();
-            exitedEvent.Dispose();
-            throw;
+            throw new ExistingInstanceNotTakeoverableException();
         }
 
-        if (!createdNew)
+        EventWaitHandle? activationEvent = null;
+        EventWaitHandle? shutdownEvent = null;
+        EventWaitHandle? exitedEvent = null;
+        try
         {
-            if (requestExistingShutdown && !shutdownEventCreated)
+            activationEvent = new EventWaitHandle(
+                initialState: false,
+                EventResetMode.AutoReset,
+                $"{name}.Activate");
+            shutdownEvent = new EventWaitHandle(
+                initialState: false,
+                EventResetMode.AutoReset,
+                $"{name}.Shutdown",
+                out var shutdownEventCreated);
+            exitedEvent = new EventWaitHandle(
+                initialState: false,
+                EventResetMode.ManualReset,
+                $"{name}.Exited");
+
+            if (createdNew)
             {
-                shutdownEvent.Set();
-                if (exitedEvent.WaitOne(shutdownTimeout ?? DefaultShutdownTimeout))
-                {
-                    var deadline = DateTime.UtcNow + (shutdownTimeout ?? DefaultShutdownTimeout);
-                    while (!createdNew && DateTime.UtcNow < deadline)
-                    {
-                        mutex.Dispose();
-                        try
-                        {
-                            mutex = new Mutex(initiallyOwned: false, name, out createdNew);
-                        }
-                        catch
-                        {
-                            activationEvent.Dispose();
-                            shutdownEvent.Dispose();
-                            exitedEvent.Dispose();
-                            throw;
-                        }
-
-                        if (!createdNew)
-                        {
-                            Thread.Sleep(10);
-                        }
-                    }
-
-                    if (createdNew)
-                    {
-                        exitedEvent.Reset();
-                        guard = new SingleInstanceGuard(mutex, activationEvent, shutdownEvent, exitedEvent);
-                        return true;
-                    }
-                }
+                shutdownEvent.Reset();
+                exitedEvent.Reset();
+                guard = new SingleInstanceGuard(
+                    mutex, activationEvent, shutdownEvent, exitedEvent, ownsMutex: true);
+                return true;
             }
 
-            try
+            if (requestExistingShutdown && shutdownEventCreated)
             {
                 if (activateExisting)
                 {
                     activationEvent.Set();
                 }
-            }
-            finally
-            {
-                activationEvent.Dispose();
-                shutdownEvent.Dispose();
-                exitedEvent.Dispose();
-                mutex.Dispose();
+
+                throw new ExistingInstanceNotTakeoverableException();
             }
 
+            if (requestExistingShutdown && TryTakeOver(
+                    name,
+                    mutex,
+                    activationEvent,
+                    shutdownEvent,
+                    exitedEvent,
+                    shutdownTimeout ?? DefaultShutdownTimeout,
+                    out guard))
+            {
+                return true;
+            }
+
+            if (activateExisting)
+            {
+                activationEvent.Set();
+            }
+
+            activationEvent.Dispose();
+            shutdownEvent.Dispose();
+            exitedEvent.Dispose();
+            mutex.Dispose();
             guard = null;
             return false;
         }
+        catch (UnauthorizedAccessException)
+        {
+            activationEvent?.Dispose();
+            shutdownEvent?.Dispose();
+            exitedEvent?.Dispose();
+            mutex.Dispose();
+            throw new ExistingInstanceNotTakeoverableException();
+        }
+        catch
+        {
+            activationEvent?.Dispose();
+            shutdownEvent?.Dispose();
+            exitedEvent?.Dispose();
+            mutex.Dispose();
+            throw;
+        }
+    }
 
+    private static bool TryTakeOver(
+        string name,
+        Mutex mutex,
+        EventWaitHandle activationEvent,
+        EventWaitHandle shutdownEvent,
+        EventWaitHandle exitedEvent,
+        TimeSpan timeout,
+        out SingleInstanceGuard? guard)
+    {
+        guard = null;
+        Mutex? existing;
+        try
+        {
+            existing = Mutex.OpenExisting(name);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        shutdownEvent.Set();
+        var stopwatch = Stopwatch.StartNew();
+        var ownsExisting = false;
+        var oldExited = false;
+        while (stopwatch.Elapsed < timeout && !ownsExisting)
+        {
+            if (exitedEvent.WaitOne(ShutdownPollInterval))
+            {
+                oldExited = true;
+                break;
+            }
+
+            ownsExisting = TryTakeOwnership(existing);
+        }
+
+        if (!ownsExisting)
+        {
+            ownsExisting = TryTakeOwnership(existing);
+        }
+
+        if (!ownsExisting && !oldExited)
+        {
+            existing.Dispose();
+            return false;
+        }
+
+        mutex.Dispose();
+        shutdownEvent.Reset();
         exitedEvent.Reset();
-        guard = new SingleInstanceGuard(mutex, activationEvent, shutdownEvent, exitedEvent);
+        guard = new SingleInstanceGuard(
+            existing, activationEvent, shutdownEvent, exitedEvent, ownsMutex: ownsExisting);
         return true;
+    }
+
+    private static bool TryTakeOwnership(Mutex mutex)
+    {
+        try
+        {
+            return mutex.WaitOne(0);
+        }
+        catch (AbandonedMutexException)
+        {
+            return true;
+        }
     }
 
     public bool WaitForActivation(CancellationToken cancellationToken)
@@ -161,7 +246,22 @@ public sealed class SingleInstanceGuard : IDisposable
     public void Dispose()
     {
         var mutex = Interlocked.Exchange(ref _mutex, null);
-        mutex?.Dispose();
+        if (mutex is not null)
+        {
+            if (_ownsMutex)
+            {
+                try
+                {
+                    mutex.ReleaseMutex();
+                }
+                catch (ApplicationException)
+                {
+                    // Ownership is thread-affine; closing the last handle still frees the name.
+                }
+            }
+
+            mutex.Dispose();
+        }
 
         var exitedEvent = Volatile.Read(ref _exitedEvent);
         try

@@ -98,11 +98,23 @@ public partial class App : Application
             .Any(argument => StringComparer.OrdinalIgnoreCase.Equals(argument, "--silent"));
         var isElevated = ProcessIntegrityLevel.IsElevated(ProcessIntegrityLevel.Current());
         // An elevated launch must replace the tray instance; otherwise it exits before device discovery.
-        if (!SingleInstanceGuard.TryAcquire(
+        bool acquired;
+        try
+        {
+            acquired = SingleInstanceGuard.TryAcquire(
                 @"Local\OpenSynapse",
                 out _singleInstanceGuard,
                 activateExisting: !silentLaunch,
-                requestExistingShutdown: isElevated && !silentLaunch))
+                requestExistingShutdown: isElevated && !silentLaunch);
+        }
+        catch (ExistingInstanceNotTakeoverableException)
+        {
+            ShowLegacyInstanceMessage();
+            Environment.Exit(0);
+            return;
+        }
+
+        if (!acquired)
         {
             Environment.Exit(0);
             return;

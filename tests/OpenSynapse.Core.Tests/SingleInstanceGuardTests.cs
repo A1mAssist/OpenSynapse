@@ -38,6 +38,16 @@ public sealed class SingleInstanceGuardTests
             Assert.Equal(SingleInstanceSignal.Shutdown, await sawShutdown.Task.WaitAsync(TimeSpan.FromSeconds(5)));
             Assert.True(acquired);
             Assert.NotNull(second);
+            using (var idle = new CancellationTokenSource(TimeSpan.FromMilliseconds(150)))
+            {
+                Assert.Equal(SingleInstanceSignal.None, second!.WaitForSignal(idle.Token));
+            }
+
+            var activation = Task.Run(() => second!.WaitForSignal(CancellationToken.None));
+            Assert.False(SingleInstanceGuard.TryAcquire(name, out _, activateExisting: true));
+            Assert.Equal(
+                SingleInstanceSignal.Activate,
+                await activation.WaitAsync(TimeSpan.FromSeconds(5)));
             second!.Dispose();
         }
         finally
@@ -70,5 +80,23 @@ public sealed class SingleInstanceGuardTests
             first!.Dispose();
             await observer.WaitAsync(TimeSpan.FromSeconds(5));
         }
+    }
+
+    [Fact]
+    public void ALegacyInstanceWithoutAShutdownEventIsReportedInsteadOfSilentlyExiting()
+    {
+        var name = $@"Local\OpenSynapse.Test.{Guid.NewGuid():N}";
+        using var legacyMutex = new Mutex(initiallyOwned: true, name);
+        using var legacyActivation = new EventWaitHandle(
+            false,
+            EventResetMode.AutoReset,
+            $"{name}.Activate");
+
+        Assert.Throws<ExistingInstanceNotTakeoverableException>(() =>
+            SingleInstanceGuard.TryAcquire(
+                name,
+                out _,
+                activateExisting: false,
+                requestExistingShutdown: true));
     }
 }
