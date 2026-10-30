@@ -405,3 +405,16 @@ analysis-dkm/RzCommon.dispatchchain.txt queue 注册和 EvtIoDeviceControl
 analysis-dkm/RzDev_02c6.core.txt        SetFeature/GetFeature、初始化、虚拟 HID
 analysis-dkm/RzDev_02c6.all.txt         全部函数反编译，用于交叉搜索结构偏移
 ```
+
+## 7. 当前实现
+
+只读读取已落在 `src/OpenSynapse.Windows/Devices/RazerDkmTableReader.cs`：打开现有
+RZCONTROL 端点，只发送一次 `0x88883108`，输入 0 字节，输出缓冲固定 `0x100` 字节，
+单次等待上限 200 ms；失败通过 `false` 和可读错误返回。
+
+单测在 `tests/OpenSynapse.Core.Tests/RazerDkmTableReaderTests.cs`，覆盖 256 字节成功
+读取、短缓冲拒绝、底层失败与异常转换，并通过最小 `IRazerDkmControl` 接口隔离真实
+句柄。测试不会调用驱动。
+
+写入 `0x88883104` 仍未实现；256 个槽字节的语义仍未验证。以上代码和测试没有在
+Blade 16 实机上执行。
