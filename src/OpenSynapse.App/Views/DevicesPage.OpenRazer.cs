@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
+using Windows.System;
 
 namespace OpenSynapse.App.Views;
 
@@ -155,6 +156,33 @@ public sealed partial class DevicesPage : UserControl
 
     private async void OpenRazerKrakenApplyClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.OpenRazer.SelectedKraken?.ApplyAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void OpenRazerKrakenInstallThxClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedOpenRazerKraken is { ThxInstallerUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
+
+    private async void OpenRazerKrakenOpenThxGameProfilesClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedOpenRazerKraken is { ThxGameProfilesUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
+
+    private async void OpenRazerKrakenOpenThxPatcherClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedOpenRazerKraken is { ThxPatcherUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
+
+    private async void OpenRazerKrakenDownloadThxClick(object sender, RoutedEventArgs e) =>
+        await (SelectedOpenRazerKraken?.InstallThxNativeAsync(Lifetime) ?? Task.CompletedTask);
 
     private OpenRazerDeviceViewModel? SelectedOpenRazerDevice => ViewModel.OpenRazer.SelectedDevice;
     private OpenRazerKrakenViewModel? SelectedOpenRazerKraken => ViewModel.OpenRazer.SelectedKraken;
