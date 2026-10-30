@@ -202,6 +202,7 @@ public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(curve);
+        curve = curve.ClampMaximumFanSpeed(BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId));
         await _runDeviceOperation(AppStrings.Text("Text_0982EC10"), async () =>
         {
             var previous = _getProfile().Clone();
@@ -424,7 +425,7 @@ public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
                     return new(AppStrings.Text("Text_780EB5E5"), Changed: false);
                 }
 
-                curve = profile.FanCurve.CreateCurve();
+                curve = profile.FanCurve.CreateCurve().ClampMaximumFanSpeed(BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId));
             }
             else if (profile.FanMode is byte rawMode)
             {
@@ -702,7 +703,6 @@ public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
         {
             return false;
         }
-
         field = value;
         OnPropertyChanged(propertyName);
         return true;

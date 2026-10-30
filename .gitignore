@@ -30,6 +30,8 @@ docs/*
 !docs/WEBCAM_LIGHTING_ALIGNMENT.md
 !docs/GAMEPAD_FEASIBILITY.md
 !docs/POWER_LIMIT_ALIGNMENT.md
+!docs/CPU_POWER_PATCH_ANALYSIS.zh-CN.md
+!docs/BLADE_2026_GPU_FOUR_MODE_FEASIBILITY.zh-CN.md
 !docs/BLADE_FN_MAPPINGS.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj

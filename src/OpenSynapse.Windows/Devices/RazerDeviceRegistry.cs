@@ -167,7 +167,7 @@ internal sealed class RazerDeviceRegistry
                 .Where(capability => capability is not (CapabilityIds.AdapterPowerGet or
                     CapabilityIds.DisplayMuxGet or CapabilityIds.DisplayMuxSet or CapabilityIds.DisplayMuxCapabilitiesGet or
                     CapabilityIds.SkuHardwareConfigurationGet or
-                    CapabilityIds.NativeDisplayModeGet or CapabilityIds.NativeDisplayModeSet or CapabilityIds.GamingModeGet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
+                    CapabilityIds.NativeDisplayModeGet or CapabilityIds.NativeDisplayModeSet or CapabilityIds.GamingModeGet or CapabilityIds.GamingModeSet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),

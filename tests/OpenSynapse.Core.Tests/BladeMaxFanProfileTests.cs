@@ -138,7 +138,7 @@ public sealed class BladeMaxFanProfileTests
     /// <summary>
     /// The Blade 16 (2023) middleware drives a fixed speed from every performance mode,
     /// so no custom-mode gate applies. Its official modes reach 5200 RPM and Custom
-    /// reaches 5300, which is also the ceiling the write guard allows.
+    /// reaches 5300; the EC can retain a 5500 readback, but writes stay at 5300.
     /// </summary>
     [Fact]
     public void TheBlade16_2023AdmitsAFixedSpeedWithoutTheCustomModeGate()
@@ -148,7 +148,7 @@ public sealed class BladeMaxFanProfileTests
         Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
         Assert.False(BladeModelCapabilities.FixedFanRequiresCustomMode(productId));
         Assert.Equal(3400, BladeModelCapabilities.MinimumFanTargetRpmFor(productId));
-        Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+        Assert.Equal(5500, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
 
         Assert.Equal(5300, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
     }
@@ -177,7 +177,6 @@ public sealed class BladeMaxFanProfileTests
     [Theory]
     [InlineData(0x02C6, 5400)] // Blade 16 (2025)
     [InlineData(0x0245, 5300)] // Blade 15 (2019)
-    [InlineData(0x029F, 5300)] // Blade 16 (2023)
     [InlineData(0x028C, 5400)] // Blade 14 (2022)
     [InlineData(0x029D, 5400)] // Blade 14 (2023)
     [InlineData(0x02B6, 5400)] // Blade 14 (2024)

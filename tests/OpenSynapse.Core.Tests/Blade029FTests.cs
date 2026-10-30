@@ -34,24 +34,20 @@ public sealed class Blade029FTests
     }
 
     /// <summary>
-    /// The 2023 bundle exposes both settings through the shared 00:88 read and
-    /// 0F:98/18 startup-animation reports. The set command was already present;
-    /// the read paths are what let the cards leave the unknown "--" state.
+    /// The 2023 bundle has no startupAnimationControlFWVersion feature, and the
+    /// hardware rejects both 00:88 (game mode) and 0F:98/18 (startup animation).
+    /// Keep those controls out of the 029F manifest instead of probing every launch.
     /// </summary>
     [Fact]
-    public void TheBlade16_2023ManifestCarriesGameModeAndStartupAnimationReads()
+    public void TheBlade16_2023ManifestOmitsUnsupportedGameModeAndStartupAnimation()
     {
         var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x029F);
 
         Assert.NotNull(manifest);
-        var gameMode = manifest!.GetRequiredCapability("gaming-mode.get");
-        Assert.Equal((byte)0x04, gameMode.MaximumDataSize);
-        Assert.Equal((byte)0x00, gameMode.CommandClass);
-        Assert.Equal((byte)0x88, gameMode.CommandId);
-        Assert.Equal((byte)0x1F, manifest.GetRequiredCapability("startup-animation.get").TransactionId);
-        Assert.Equal((byte)0x98, manifest.GetRequiredCapability("startup-animation.get").CommandId);
-        Assert.Equal((byte)0x1F, manifest.GetRequiredCapability("startup-animation.set").TransactionId);
-        Assert.Equal((byte)0x18, manifest.GetRequiredCapability("startup-animation.set").CommandId);
+        Assert.False(manifest!.Capabilities.ContainsKey("gaming-mode.get"));
+        Assert.False(manifest.Capabilities.ContainsKey("gaming-mode.set"));
+        Assert.False(manifest.Capabilities.ContainsKey("startup-animation.get"));
+        Assert.False(manifest.Capabilities.ContainsKey("startup-animation.set"));
     }
 
     /// <summary>
@@ -101,22 +97,22 @@ public sealed class Blade029FTests
     }
 
     /// <summary>
-    /// The Blade 16 (2023) official modes reach 5200 RPM and Custom reaches 5300, but
-    /// the shared fan-target report takes the same rpm/100 value the official middleware
-    /// writes, so the slider and the write guard reach the ceiling the model reports.
+    /// The Blade 16 (2023) official modes reach 5200 RPM and Custom reaches 5300.
+    /// The EC can still retain a 5500 RPM readback, so reads accept that value while
+    /// writes stay inside the bundle-published 5300 ceiling.
     /// </summary>
     [Fact]
-    public void TheFixedFanSliderReachesTheCeilingTheFirmwareReports()
+    public void TheFixedFanSliderKeepsTheBundleCeilingWhileAcceptingTheLargerReadback()
     {
         const ushort productId = 0x029F;
 
-        Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+        Assert.Equal(5500, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
         Assert.Equal(5300, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
     }
 
     /// <summary>
     /// A target the firmware already stored above the write ceiling must still read
-    /// back, so the readback ceiling stays the model maximum.
+    /// back, otherwise the pre-write snapshot aborts the whole fan edit.
     /// </summary>
     [Fact]
     public void AStoredTargetAboveTheWriteCeilingStillReadsBack()
@@ -124,16 +120,17 @@ public sealed class Blade029FTests
         var request = BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu);
         var response = request.ToArray();
         response[1] = 0x02;
-        response[RazerFeatureReport.ArgumentsOffset + 2] = 0x35;
+        response[RazerFeatureReport.ArgumentsOffset + 2] = 0x37;
         response[89] = RazerFeatureReport.CalculateCrc(response);
 
         Assert.Equal(
-            5300,
+            5500,
             BladeFanProtocol.ParseTarget(
                 response,
                 BladeFanProtocol.ZoneCpu,
                 request,
                 BladeModelCapabilities.MaximumFanTargetRpmFor(0x029F)));
+        Assert.Equal(5300, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(0x029F));
     }
 
     /// <summary>
@@ -184,8 +181,8 @@ public sealed class Blade029FTests
         Assert.Empty(telemetry.Errors);
         Assert.Equal(BladePerformanceMode.Gaming, telemetry.BladePerformanceMode);
         Assert.Equal(BladeFanMode.Automatic, telemetry.BladeFanMode);
-        Assert.Equal((byte)1, telemetry.BladeGameMode?.GameMode);
-        Assert.True(telemetry.BladeStartupAnimationEnabled);
+        Assert.Null(telemetry.BladeGameMode);
+        Assert.Null(telemetry.BladeStartupAnimationEnabled);
     }
 
     /// <summary>

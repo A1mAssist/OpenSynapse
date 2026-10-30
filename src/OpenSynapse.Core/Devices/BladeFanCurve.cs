@@ -208,6 +208,38 @@ public sealed class BladeFanCurve
         new($"Fan curve requires a valid {sensor} temperature.");
 
     /// <summary>
+    /// Returns a curve whose fan targets do not exceed the model's writable ceiling.
+    /// The editor publishes a global 5400 RPM maximum, but some ECs stop lower.
+    /// </summary>
+    public BladeFanCurve ClampMaximumFanSpeed(int maximumRpm)
+    {
+        if (maximumRpm is < MinimumPointFanSpeedRpm or > MaximumPointFanSpeedRpm)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumRpm));
+        }
+
+        if (maximumRpm == MaximumPointFanSpeedRpm)
+        {
+            return this;
+        }
+
+        static BladeFanCurvePoint Clamp(BladeFanCurvePoint point, int maximum) =>
+            point with
+            {
+                CpuFanSpeedRpm = Math.Min(point.CpuFanSpeedRpm, maximum),
+                GpuFanSpeedRpm = Math.Min(point.GpuFanSpeedRpm, maximum),
+            };
+
+        return new BladeFanCurve(
+            TemperatureMode,
+            CpuPoints.Select(point => Clamp(point, maximumRpm)).ToArray(),
+            GpuPoints.Select(point => Clamp(point, maximumRpm)).ToArray(),
+            MinimumCpuTemperatureCelsius,
+            MinimumGpuTemperatureCelsius,
+            Math.Min(MinimumFanSpeedRpm, maximumRpm));
+    }
+
+    /// <summary>
     /// Conservative starting curve: near-idle while the machine is cool, then a steady
     /// climb to full speed before the chip reaches its thermal limit. Both sensors share
     /// one shape because the GPU runs hotter than the CPU under the same load.
