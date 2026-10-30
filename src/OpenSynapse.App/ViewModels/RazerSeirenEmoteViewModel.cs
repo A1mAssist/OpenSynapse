@@ -78,6 +78,10 @@ public sealed class RazerSeirenEmoteViewModel : INotifyPropertyChanged, IAsyncDi
                 StatusText = AppStrings.Text("SeirenEmoteStatusConnected");
                 SetError(string.Empty);
             }
+            else
+            {
+                SetError(AppStrings.Text("SeirenEmoteErrorEndpointMissing"));
+            }
         }
         catch (Exception exception) when (IsExpected(exception))
         {

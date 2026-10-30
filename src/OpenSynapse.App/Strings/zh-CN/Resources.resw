@@ -3130,6 +3130,7 @@
   <data name="SeirenEmoteStatusApplied/Text" xml:space="preserve"><value>纯色帧已发送。</value></data>
   <data name="SeirenEmoteStatusCleared/Text" xml:space="preserve"><value>清屏帧已发送。</value></data>
   <data name="SeirenEmoteErrorConnect/Text" xml:space="preserve"><value>无法打开 0F1B 点阵端点：{0}</value></data>
+  <data name="SeirenEmoteErrorEndpointMissing/Text" xml:space="preserve"><value>没有找到 0F1B 点阵接口。</value></data>
   <data name="SeirenEmoteErrorWrite/Text" xml:space="preserve"><value>点阵写入失败：{0}</value></data>
 </root>
 
