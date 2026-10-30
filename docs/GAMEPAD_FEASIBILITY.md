@@ -8,7 +8,7 @@
 
 ## 结论
 
-**`NeedsNewTransport`（report-id variant）**
+**已实现：report-id 变体（2026-10-28）**
 
 - 这些手柄的配置通道是 **91 字节 HID feature report**，middleware 标记 `protocol:"25"`；不是 XInput，也不是 64 字节 output report。
 - 帧格式与现有 `RazerFeatureReport` 相同：`[1]` status、`[2]` transaction、`[6]` dataSize、`[7]` class、`[8]` command、`[9..]` arguments、`[89]` XOR CRC、`[90]` 0。
@@ -18,7 +18,7 @@
   - `QueryAsync` / `QueryPreparedAsync` 传 `responseReportId: 0`；
   - `ValidatePreparedRequest` 要求 `report[0] == 0x00`；
   - `MatchesReportId(response, 0)` 只接受 `response[0] == 0`。
-- 这不是 `NotReachable`：命令表清楚，缺的是 report-id-aware 的传输层。最小改动是把 report id 参数化（或新增一个 report 4 的 HID feature transport），91 字节帧和 CRC 本身可以复用。
+- 这不是 `NotReachable`：命令表清楚。2026-10-28 已把 report id 参数化；`RazerGamepadProtocol` 发送 report id 4（0A57/0A74/0A7C 为 10），91 字节帧和 CRC 继续复用。实机描述符仍需确认。
 
 ## 1. 每个 PID 的 class:id
 
@@ -58,7 +58,7 @@ J=[2,12,28], P=[80,12,152], G=[51,12,153], B=[51,12,25]
 | 控制器模式切换 | `0C:9C` | `0C:1C` | 2 | `[profileId, option]` | `classId, option` |
 | 原始模拟输入 | `0C:98` | — | 80 | JS 把命令元组 `[80,12,152]` 本身当参数块 | `Lx, Ly, Rx, Ry, Lt, Rt` 各 BE16 |
 | 校准数据 | `0C:99` | `0C:19` | 51 | 复杂结构，本次不展开 | 同结构 |
-| 按键 ID 列表 | `02:80` | — | 80 | 空 | `total, idList[]` |
+| 按键 ID 列表 | `02:84` | — | 80 | 空 | `total, idList[]` |
 | 单键映射 | `02:8C` | `02:0C` | 80 | get `[profileId, buttonId, mode]`；set `[profileId, buttonId, mode, functionId, dataSize, ...data]` | `classId, buttonId, mode, functionId, dataSize, data[5]` |
 
 `BE16` 是高字节在前：setter 先写 `E4(value)` 再写 `l7(value)`，parser 用 `Jz(data[n], data[n+1])` 读回。`0C:07` 的 `setAnalogVibrationMotorPlayOnce` 在压缩代码里出现 `o[0]=0,o[1]=n,o[2]=E4(i),o[3]=l7(i)`，但外层只传两个参数，参数语义不闭合，因此不列入逐字节可验证集合。
@@ -231,7 +231,7 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 | ADC masking | `0C:91` | `0C:11` | `[maskBE16]`，无 profile/control |
 | 原始输入 | `0C:98` | — | JS 把 `[80,12,152]` 本身当参数块；六个 BE16 |
 | 校准数据 | `0C:99` | `0C:19` | 51 字节，`analogId` + 16 个 BE16 |
-| 按键 ID 列表 | `02:80` | — | 80 字节零 |
+| 按键 ID 列表 | `02:84` | — | 80 字节零 |
 | 单键映射 | `02:8C` | `02:0C` | 80 字节；get `[profileId, buttonId, mode]`，set `[profileId, buttonId, mode, functionId, dataSize, ...data]` |
 
 响应解析按 bundle 的 parser 逐字段对应：`[classId, controlId, value...]`，16 位值全部大端。
@@ -247,8 +247,7 @@ report id 10，活动 profile 读取失败时不会在多 Profile 型号上猜�
 声明 `supportsLighting:true` 的 0A4C / 1013 开放。页面层已加入 `DeviceCategory.Gamepad`、Gamepad 面板、
 连接设置和灯效卡；缺项自动折叠。
 
-**仍缺**：实机 HID 描述符验证；1013 的矩阵行列与逐帧显示方向；0A4C/1013 灯效写入的实机接受度；
-9 个 PID 的完整轮询档位 UI 子集仍需抓包或实机确认。
+**仍缺**：实机 HID 描述符验证；1013 的矩阵行列与逐帧显示方向；0A4C/1013 灯效写入的实机接受度；9 个 PID 的轮询率与 Profile 读写在实机上的确认。
 
 ## 6. 功能编码（2026-10-28）
 

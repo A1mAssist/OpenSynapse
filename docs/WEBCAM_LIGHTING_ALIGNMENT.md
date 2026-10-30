@@ -23,4 +23,4 @@
 - `0E08`：`main.d22061960b49b1064eba.js` 选中 `rzCamKiyoProUltra`；`rzCamKiyoProUltra.1daa9c2dbea30936c698.js` 没有 `sendCommand`。该型号没有灯环。
 - `0E0A` / `0E0B` / `0E0C`：三个 `main.*.js` 都选中 `rzCamKimberly`；对应 chunk 分别为 `rzCamKimberly.5f8231d265c0b932b7a2.js`、`rzCamKimberly.70808b8fad24939bffe8.js`、`rzCamKimberly.38ef1ae91c20a35597d0.js`，均没有 `sendCommand`、`commandClass`、`Chroma` 或 `0x10`。Kiyo V2 Pro、Kiyo V2、Kiyo V2 X 的官方功能页都没有灯环。
 - `out9/protocols.json` 会给这些 PID 带出共享 bundle 里的 `8:4`/`8:132` EQ 命令，或 `rzDevice25*` 的通用 Chroma 命令；那些来自未被 `rzDeviceType` 选中的音频/外设模块，不能当作这些摄像头的灯光能力。
-- 摄像头非灯光参数（曝光、视野、白平衡、HDR 等）走 UVC/Media Foundation，本次明确不做；本次也没有向 `RazerChromaStandardService.Products` 添加任何 Kiyo PID。
+- 摄像头参数通过雷蛇已安装的相机 DLL 读取/写入，不走 Chroma。当前应用读取亮度、对比度、饱和度、白平衡、对焦、变焦、固件和序列号，并写入白平衡模式；曝光、视野、HDR 等其余参数仍在雷蛇原生设置中。没有向 `RazerChromaStandardService.Products` 添加任何 Kiyo PID。

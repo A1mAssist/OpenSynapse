@@ -1,6 +1,6 @@
 # Supported devices
 
-OpenSynapse creates a page only for a connected device whose Windows HID endpoint and protocol are recognized. The Razer Kiyo camera (`1532:0E03`) is the exception: its page uses Razer's camera DLL instead of HID. The list is grouped by device type, not by protocol or catalogue source.
+OpenSynapse creates a page only for a connected device whose Windows HID endpoint and protocol are recognized. The Razer Kiyo camera family (`1532:0E03`, `0E05`, `0E06`, `0E08`, `0E0A`, `0E0B`, `0E0C`) is the exception: its page uses Razer's camera DLL instead of HID. The list is grouped by device type, not by protocol or catalogue source.
 
 The current tables contain 389 recognized device IDs: 136 mice, 96 keyboards, 50 laptops, 40 headsets, 8 speakers, 4 microphones, 8 mouse pads, 2 monitors, 44 accessories and 1 network lighting bridge.
 
@@ -496,7 +496,7 @@ Philips Hue is controlled over the bridge HTTPS API after pairing.
 
 A listed ID means a code path exists for that device. It does not mean every control has been tested on physical hardware. An unresolved or busy endpoint stays read-only until the next scan. Writes are read back where the protocol allows, and a failed write restores the previous value when the device exposes one.
 
-The THX V3/V4 headset path and parts of the middleware-derived device set are built from native clients and protocol evidence; hardware acceptance is still required where noted. BLE devices must expose Razer protocol 30 service `52401523`; the BLE page targets protocol 30 mice such as the Basilisk V3 Pro and Viper V4 Pro, with battery, polling, DPI, lighting and button mapping where the device answers those commands.
+The THX V3/V4 headset path and parts of the middleware-derived device set are built from native clients and protocol evidence; hardware acceptance is still required where noted. BLE mice must expose Razer protocol 30 service `52401523`; that page targets devices such as the Basilisk V3 Pro and Viper V4 Pro, with battery, polling, DPI, lighting and button mapping where the device answers those commands. AudioAWKittyBLE headsets (`0309`, `0530`, `0534`, `0562`) use service `416d656c-2d52-617a-6572-424c4501f40a` and a separate GATT control page.
 
 For external lighting integrations, see [Chroma-supported devices](CHROMA_SUPPORTED_DEVICES.md).
 
