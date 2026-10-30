@@ -1529,8 +1529,9 @@
   <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>Zone lighting</value></data>
   <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
   <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
-  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>Select a swatch to edit one pixel, then apply the complete frame.</value></data>
+  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>Select a swatch to edit one pixel, or fill the frame with the current color, then apply it.</value></data>
   <data name="OpenRazerApplyMatrixButton.Content" xml:space="preserve"><value>Apply frame</value></data>
+  <data name="OpenRazerFillMatrixButton.Content" xml:space="preserve"><value>Fill with current color</value></data>
   <data name="OpenRazerMatrixCellLabel" xml:space="preserve"><value>Row {0}, column {1}</value></data>
   <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>Headset</value></data>
   <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>Headset lighting</value></data>
@@ -2722,8 +2723,8 @@
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>Written and read back</value></data>
   <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>Microphone equalizer bands</value></data>
   <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>Apply microphone bands</value></data>
+  <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>Another OpenSynapse instance is already running and cannot be taken over by this launch. Exit it from the tray and try again; if it is running as administrator, start OpenSynapse as administrator too.</value></data>
 </root>
-
 
 
 

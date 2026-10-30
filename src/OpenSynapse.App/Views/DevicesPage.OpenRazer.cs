@@ -374,6 +374,9 @@ public sealed partial class DevicesPage : UserControl
     private async void OpenRazerApplyMatrixClick(object sender, RoutedEventArgs e) =>
         await (SelectedOpenRazerDevice?.ApplyMatrixAsync(Lifetime) ?? Task.CompletedTask);
 
+    private void OpenRazerFillMatrixClick(object sender, RoutedEventArgs e) =>
+        SelectedOpenRazerDevice?.FillMatrixWithPrimaryColor();
+
     private async void OpenRazerLightingSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var device = SelectedOpenRazerDevice;

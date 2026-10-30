@@ -1,9 +1,23 @@
 using OpenSynapse.Windows.Lifecycle;
+using System.Runtime.InteropServices;
 
 namespace OpenSynapse.App;
 
 public partial class App
 {
+    private const uint MessageBoxInformation = 0x00000040;
+    private const uint MessageBoxTopmost = 0x00040000;
+
+    private static void ShowLegacyInstanceMessage() =>
+        MessageBoxW(
+            IntPtr.Zero,
+            AppStrings.Text("LegacyInstanceRunningMessage"),
+            "OpenSynapse",
+            MessageBoxInformation | MessageBoxTopmost);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int MessageBoxW(IntPtr window, string text, string caption, uint type);
+
     private async Task ObserveActivationRequestsAsync(CancellationToken cancellationToken)
     {
         var guard = _singleInstanceGuard;

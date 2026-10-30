@@ -1899,8 +1899,9 @@
   <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
   <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
   <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
-  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>选择色块调整单个像素，然后应用整帧。</value></data>
+  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>选择色块调整单个像素，或点「填充当前颜色」一次铺满，然后应用整帧。</value></data>
   <data name="OpenRazerApplyMatrixButton.Content" xml:space="preserve"><value>应用整帧</value></data>
+  <data name="OpenRazerFillMatrixButton.Content" xml:space="preserve"><value>填充当前颜色</value></data>
   <data name="OpenRazerMatrixCellLabel" xml:space="preserve"><value>第 {0} 行，第 {1} 列</value></data>
   <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>耳机</value></data>
   <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>耳机灯光</value></data>
@@ -3146,8 +3147,8 @@
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>已写入并回读</value></data>
   <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>麦克风均衡器频段</value></data>
   <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>应用麦克风频段</value></data>
+  <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>检测到另一个 OpenSynapse 实例正在运行，当前启动方式无法接管。请从托盘退出旧实例后重试；如果旧实例以管理员身份运行，请也用管理员身份启动。</value></data>
 </root>
-
 
 
 

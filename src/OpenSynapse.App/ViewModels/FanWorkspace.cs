@@ -21,7 +21,7 @@ public enum BladeFanControlMode
     Curve = 2,
 }
 
-public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
+public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
     private readonly BladeFanCurveRuntime _bladeFanRuntime;
     private readonly Func<ProfileDocument> _getProfile;
@@ -89,7 +89,7 @@ public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
 
     /// <summary>Draggable curve editor. Created lazily so non-Blade sessions pay nothing.</summary>
     public BladeFanCurveEditorViewModel BladeFanCurveEditor =>
-        _bladeFanCurveEditor ??= new BladeFanCurveEditorViewModel();
+        _bladeFanCurveEditor ??= new BladeFanCurveEditorViewModel(DefaultBladeFanCurve());
 
     /// <summary>
     /// Which of the three fan control surfaces is showing. Curve mode only exists on models
@@ -279,7 +279,8 @@ public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
         OnPropertyChanged(nameof(BladeFanFixedMinimumRpm));
         OnPropertyChanged(nameof(BladeFanFixedMaximumRpm));
 
-        _bladeFanCurveEditor = new BladeFanCurveEditorViewModel(TryCreateCurve(resolved));
+        _bladeFanCurveEditor = new BladeFanCurveEditorViewModel(
+            TryCreateCurve(resolved) ?? DefaultBladeFanCurve());
         OnPropertyChanged(nameof(BladeFanCurveEditor));
         OnPropertyChanged(nameof(BladeFanCurveModeIndex));
         OnPropertyChanged(nameof(BladeFanCurveActive));
@@ -294,6 +295,12 @@ public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
     public void ResetBladeFanCurveToDefault()
     {
         BladeFanCurveEditor.ResetToDefault();
+        var maximum = BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId);
+        foreach (var point in BladeFanCurveEditor.Points)
+        {
+            point.CpuRpm = Math.Min(point.CpuRpm, maximum);
+            point.GpuRpm = Math.Min(point.GpuRpm, maximum);
+        }
         OnPropertyChanged(nameof(BladeFanCurveModeIndex));
     }
 
@@ -650,25 +657,6 @@ public sealed class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
         var minimum = BladeFanFixedMinimumRpm;
         var clamped = Math.Clamp(value, minimum, BladeFanFixedMaximumRpm);
         return minimum + ((clamped - minimum) / BladeFanLimits.StepRpm) * BladeFanLimits.StepRpm;
-    }
-
-    private static BladeFanCurve? TryCreateCurve(BladeProfileSettings resolved)
-    {
-        if (resolved.FanCurve is not { } profile)
-        {
-            return null;
-        }
-
-        try
-        {
-            return profile.CreateCurve();
-        }
-        catch (ArgumentException)
-        {
-            // A hand-edited profile file can hold tiers the model rejects; fall back to the
-            // default curve rather than blocking the card.
-            return null;
-        }
     }
 
     private static string CreateBladeFanFingerprint(
