@@ -62,6 +62,34 @@ public sealed class RazerBleProtocol30Tests
         Assert.Empty(parsed.Payload);
     }
 
+    [Fact]
+    public void FragmentedReplyWaitsForTheDeclaredPayload()
+    {
+        var reply = Response(0x03, 0x0B, 0x81, 0x02, Enumerable.Range(0, 24).Select(i => (byte)i).ToArray());
+
+        Assert.False(RazerBleProtocol30.TryGetCompleteResponseLength(reply.AsSpan(0, 20), out _));
+        Assert.True(RazerBleProtocol30.TryGetCompleteResponseLength(reply, out var length));
+        Assert.Equal(reply.Length, length);
+    }
+
+    [Fact]
+    public void CompactReplyCompletesWithoutTheTwentyByteHeader()
+    {
+        var reply = new byte[] { 0x03, 0x01, 0x00, 0x00, 0x05, 0x81, 0x00, 0x02, 0x80 };
+
+        Assert.True(RazerBleProtocol30.TryGetCompleteResponseLength(reply, out var length));
+        Assert.Equal(reply.Length, length);
+    }
+
+    [Fact]
+    public void ShortFirmwarePayloadThrowsInsteadOfCrashingThePage()
+    {
+        var response = Parse(0x00, 0x81, 0x01, 0x02, 0x03);
+
+        Assert.Throws<InvalidOperationException>(
+            () => RazerBleProtocol30.ReadFirmware(response));
+    }
+
     [Theory]
     [InlineData(0x01, 1000)]
     [InlineData(0x02, 500)]
@@ -233,8 +261,17 @@ public sealed class RazerBleProtocol30Tests
         Assert.Equal(
             new byte[] { 0x00, 0x00, 0x00, 0x00, 0x05, 0x8A, 0x00, 0x00 },
             RazerBleProtocol30.CreateGetTimeToDim(0x00));
+        var state = RazerBleProtocol30.ReadTimeToDim(Parse(
+            0x05, 0x8A, 0x01, 0x1E, 0x00, 0x14));
+        Assert.True(state.Enabled);
+        Assert.Equal(30, state.Seconds);
+        Assert.Equal((byte)20, state.Percentage);
         Assert.Equal(30, RazerBleProtocol30.ReadTimeToDimSeconds(Parse(
             0x05, 0x8A, 0x01, 0x1E, 0x00, 0x14)));
+
+        Assert.Equal(
+            new byte[] { 0x00, 0x04, 0x00, 0x00, 0x05, 0x0A, 0x00, 0x00, 0x01, 0x3C, 0x00, 0x14 },
+            RazerBleProtocol30.CreateSetTimeToDim(0x00, new(true, 60, 20)));
     }
 
     [Fact]
@@ -322,6 +359,46 @@ public sealed class RazerBleProtocol30Tests
         Assert.True(response.IsSuccess);
         Assert.Equal(2, transport.Frames.Count);
         Assert.Equal(new byte[] { 0x00, 0x01 }, transport.Frames.Select(frame => frame[0]));
+    }
+
+    [Fact]
+    public async Task TimeToDimWriteIsVerifiedThroughReadBack()
+    {
+        var device = (Enabled: false, Seconds: 30, Percentage: (byte)20);
+        var transport = new FakeTransport((frame, _) =>
+        {
+            switch (frame[5])
+            {
+                case 0x82:
+                    return Response(frame[0], 0x05, 0x82, 0x02, 0x1A);
+                case 0x87:
+                    return Response(frame[0], 0x05, 0x87, 0x02, 0x01);
+                case 0x84:
+                    return Response(frame[0], 0x05, 0x84, 0x02, 0x05, 0x00);
+                case 0x8A:
+                    return Response(frame[0], 0x05, 0x8A, 0x02,
+                        device.Enabled ? (byte)1 : (byte)0,
+                        (byte)device.Seconds,
+                        (byte)(device.Seconds >> 8),
+                        device.Percentage);
+                case 0x0A:
+                    device.Enabled = frame[8] != 0;
+                    device.Seconds = frame[9] | (frame[10] << 8);
+                    device.Percentage = frame[11];
+                    return Response(frame[0], 0x05, 0x0A, 0x02);
+                default:
+                    return Response(frame[0], frame[4], frame[5], 0x02);
+            }
+        });
+        using var session = new RazerBleSession(transport, retryDelay: TimeSpan.Zero);
+        using var service = new RazerBleDeviceService(session, "test");
+
+        var state = await service.SetPowerAsync(
+            null, null, null, new RazerBleTimeToDimState(true, 60, 20));
+
+        Assert.Equal(new RazerBleTimeToDimState(true, 60, 20), state.TimeToDim);
+        Assert.Contains(transport.Frames, frame =>
+            frame[5] == 0x0A && frame[8] == 1 && frame[9] == 60 && frame[11] == 20);
     }
 
     [Fact]

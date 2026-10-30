@@ -41,7 +41,7 @@ public sealed record RazerGamepadState(
 /// report id 4; every value is probed, so a model that does not answer a command
 /// simply hides that row instead of receiving a guessed payload.
 /// </summary>
-public sealed class RazerGamepadService
+public sealed partial class RazerGamepadService
 {
     public static readonly IReadOnlyDictionary<ushort, string> Products =
         new Dictionary<ushort, string>
@@ -67,6 +67,8 @@ public sealed class RazerGamepadService
     private readonly string _devicePath;
     private readonly TimeSpan _deviceWait;
     private readonly Action<string>? _diagnostic;
+    private readonly byte _reportId;
+    private readonly ushort _productId;
     private byte _transactionId = 0x1F;
     private byte _profileId;
 
@@ -74,7 +76,8 @@ public sealed class RazerGamepadService
         IRazerFeatureTransport transport,
         string devicePath,
         TimeSpan deviceWait,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        ushort productId = 0)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _devicePath = string.IsNullOrWhiteSpace(devicePath)
@@ -82,6 +85,8 @@ public sealed class RazerGamepadService
             : devicePath;
         _deviceWait = deviceWait;
         _diagnostic = diagnostic;
+        _productId = productId;
+        _reportId = productId is 0x0A57 or 0x0A74 or 0x0A7C ? (byte)10 : RazerGamepadProtocol.ReportId;
     }
 
     public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
@@ -591,8 +596,10 @@ public sealed class RazerGamepadService
         CancellationToken cancellationToken)
     {
         var report = request(NextTransactionId());
+        // The CRC starts at byte 3, so the per-product HID report id is outside it.
+        report[0] = _reportId;
         _diagnostic?.Invoke(
-            $"gamepad {label}: size={report[6]}, class=0x{report[7]:X2}, command=0x{report[8]:X2}");
+            $"gamepad {label}: report={report[0]}, size={report[6]}, class=0x{report[7]:X2}, command=0x{report[8]:X2}");
         return await _transport.QueryPreparedAsync(
             _devicePath, report, _deviceWait, cancellationToken).ConfigureAwait(false);
     }

@@ -43,12 +43,13 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
 
     public static bool IsSupported(ushort productId) => productId is
         0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F or
-        0x0567 or 0x056B;
+        0x0567 or 0x056B or 0x0587;
 
     private static HeadsetProfile GetProfile(ushort productId) => productId switch
     {
         0x0567 => HeadsetProfile.BillieT1Wired,
         0x056B => HeadsetProfile.BillieT2,
+        0x0587 => HeadsetProfile.BillieT2,
         0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F => HeadsetProfile.Valkyrie,
         _ => throw new NotSupportedException(
             $"AudioValkyrie is not supported on product 0x{productId:X4}."),

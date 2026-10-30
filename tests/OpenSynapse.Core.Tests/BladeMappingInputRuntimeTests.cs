@@ -357,6 +357,26 @@ public sealed class BladeMappingInputRuntimeTests
     }
 
     [Fact]
+    public void GameModeSuppressesWindowsKeysOnlyWhileEnabled()
+    {
+        using var runtime = new BladeMappingInputRuntime([]);
+        runtime.AddGameModeWindowsKeySuppression();
+
+        Assert.Equal(
+            [new BladeMappingOutputEvent(0x5B, true, true)],
+            runtime.Process(new(BladeMappingInputKind.Keyboard, 0x5B, true, true)));
+        Assert.Equal(
+            [new BladeMappingOutputEvent(0x5B, false, true)],
+            runtime.Process(new(BladeMappingInputKind.Keyboard, 0x5B, false, true)));
+
+        runtime.SetGameModeEnabled(true);
+        Assert.Empty(runtime.Process(new(BladeMappingInputKind.Keyboard, 0x5B, true, true)));
+        Assert.Empty(runtime.Process(new(BladeMappingInputKind.Keyboard, 0x5B, false, true)));
+        Assert.Empty(runtime.Process(new(BladeMappingInputKind.Keyboard, 0x5C, true, true)));
+        Assert.Empty(runtime.Process(new(BladeMappingInputKind.Keyboard, 0x5C, false, true)));
+    }
+
+    [Fact]
     public void EnablingSnapTapMigratesAlreadyPressedKeysWithoutSticking()
     {
         using var runtime = new BladeMappingInputRuntime(

@@ -42,14 +42,23 @@ public static class RazerKeyboardProtocol
     public static byte[] SetGameModeState(byte transactionId, byte gameMode) =>
         Create(transactionId, 4, 0x00, 0x08, gameMode);
 
+    public static byte[] GetActiveProfile(byte transactionId) =>
+        Create(transactionId, 1, 0x05, 0x84, 0x00);
+
     // The 8 kHz boards configure polling through the USB high-speed pair, and both
     // commands carry the profile id in the first byte. 00:0E/00:8E are the per-profile
     // variants the polling UI does not use.
     public static byte[] GetPollingRate(byte transactionId) =>
-        Create(transactionId, 2, 0x00, 0xC0, 0x00);
+        GetPollingRate(transactionId, profileId: 0);
+
+    public static byte[] GetPollingRate(byte transactionId, byte profileId) =>
+        Create(transactionId, 2, 0x00, 0xC0, profileId);
 
     public static byte[] SetPollingRate(byte transactionId, byte code) =>
-        Create(transactionId, 2, 0x00, 0x40, 0x00, code);
+        SetPollingRate(transactionId, profileId: 0, code);
+
+    public static byte[] SetPollingRate(byte transactionId, byte profileId, byte code) =>
+        Create(transactionId, 2, 0x00, 0x40, profileId, code);
 
     public static byte[] GetBatteryLevel(byte transactionId) =>
         Create(transactionId, 2, 0x07, 0x80);
@@ -82,6 +91,13 @@ public static class RazerKeyboardProtocol
         var data = Arguments(response);
         Require(data, 3);
         return (data[0], data[1], data[2]);
+    }
+
+    public static byte ReadActiveProfileId(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        Require(data, 1);
+        return data[0];
     }
 
     public static int? ReadPollingRate(ReadOnlySpan<byte> response)

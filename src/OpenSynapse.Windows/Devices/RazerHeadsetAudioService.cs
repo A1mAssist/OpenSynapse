@@ -9,7 +9,7 @@ public enum RazerHeadsetAudioTransport
     Feature91,
     Mxic64,
     Valkyrie64,
-    Billie64,
+    Billie64, Mixer053E,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -229,9 +229,8 @@ public sealed class RazerHeadsetAudioService
         channel switch
         {
             RazerHeadsetChannel.Feature91 => item.FeatureReportByteLength == RazerFeatureReport.Length,
-            RazerHeadsetChannel.Mxic64 or RazerHeadsetChannel.Valkyrie64 or RazerHeadsetChannel.Billie64 =>
-                item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength &&
-                item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
+            RazerHeadsetChannel.Mxic64 or RazerHeadsetChannel.Valkyrie64 or RazerHeadsetChannel.Billie64 => item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength && item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
+            RazerHeadsetChannel.Mixer053E => item.FeatureReportByteLength == RazerMixer053EProtocol.FeatureReportLength && item.InputReportByteLength == RazerMixer053EProtocol.StatusReportLength && item.OutputReportByteLength == RazerMixer053EProtocol.OutputReportLength,
             _ => false,
         };
 
@@ -241,7 +240,7 @@ public sealed class RazerHeadsetAudioService
             RazerHeadsetChannel.Mxic64 => RazerHeadsetAudioTransport.Mxic64,
             RazerHeadsetChannel.Valkyrie64 => RazerHeadsetAudioTransport.Valkyrie64,
             RazerHeadsetChannel.Billie64 => RazerHeadsetAudioTransport.Billie64,
-            _ => RazerHeadsetAudioTransport.Feature91,
+            _ => channel == RazerHeadsetChannel.Mixer053E ? RazerHeadsetAudioTransport.Mixer053E : RazerHeadsetAudioTransport.Feature91,
         };
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken = default)

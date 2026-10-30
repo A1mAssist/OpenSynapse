@@ -33,26 +33,65 @@ public sealed class RazerGamepadDeviceRowViewModel : INotifyPropertyChanged
 
 public sealed class RazerGamepadButtonAssignmentRowViewModel : INotifyPropertyChanged
 {
+    private RazerGamepadButtonAssignment _assignment;
+    private int _selectedAssignmentIndex;
+
     public RazerGamepadButtonAssignmentRowViewModel(RazerGamepadButtonAssignment assignment)
     {
         ArgumentNullException.ThrowIfNull(assignment);
-        Assignment = assignment;
+        _assignment = assignment;
         ButtonName = Enum.GetName((RazerGamepadButtonId)assignment.ButtonId) ??
             $"Button 0x{assignment.ButtonId:X2}";
-        var function = Enum.GetName(assignment.Function) ?? $"0x{(byte)assignment.Function:X2}";
-        var dataSize = Math.Min(assignment.DataSize, assignment.Data.Count);
-        AssignmentText = $"{function} [{string.Join(" ", assignment.Data.Take(dataSize).Select(value => $"{value:X2}"))}]";
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    public RazerGamepadButtonAssignment Assignment { get; }
+    public RazerGamepadButtonAssignment Assignment => _assignment;
     public string ButtonName { get; }
-    public string AssignmentText { get; }
-    public string ModeText => AppStrings.Text(Assignment.Mode == RazerGamepadButtonMode.Hypershift
+
+    public string AssignmentText
+    {
+        get
+        {
+            var function = Enum.GetName(_assignment.Function) ?? $"0x{(byte)_assignment.Function:X2}";
+            var dataSize = Math.Min(_assignment.DataSize, _assignment.Data.Count);
+            return $"{function} [{string.Join(" ", _assignment.Data.Take(dataSize).Select(value => $"{value:X2}"))}]";
+        }
+    }
+
+    public string ModeText => AppStrings.Text(_assignment.Mode == RazerGamepadButtonMode.Hypershift
         ? "RazerGamepadModeHypershift"
         : "RazerGamepadModeNormal");
+    public IReadOnlyList<string> AssignmentOptions =>
+        RazerGamepadAssignmentPresets.All.Select(preset => AppStrings.Text(preset.LabelKey)).ToArray();
 
-    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(nameof(ModeText)));
+    public int SelectedAssignmentIndex
+    {
+        get => _selectedAssignmentIndex;
+        set
+        {
+            var index = Math.Clamp(value, 0, RazerGamepadAssignmentPresets.All.Count - 1);
+            if (_selectedAssignmentIndex == index) return;
+            _selectedAssignmentIndex = index;
+            PropertyChanged?.Invoke(this, new(nameof(SelectedAssignmentIndex)));
+            PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+        }
+    }
+
+    public bool CanApply => SelectedAssignmentIndex > 0;
+
+    internal RazerGamepadAssignmentPreset SelectedPreset =>
+        RazerGamepadAssignmentPresets.All[SelectedAssignmentIndex];
+
+    internal void UpdateAssignment(RazerGamepadButtonAssignment assignment)
+    {
+        ArgumentNullException.ThrowIfNull(assignment);
+        _assignment = assignment;
+        PropertyChanged?.Invoke(this, new(nameof(Assignment)));
+        PropertyChanged?.Invoke(this, new(nameof(AssignmentText)));
+        PropertyChanged?.Invoke(this, new(nameof(ModeText)));
+    }
+
+    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }
 
 public sealed class RazerGamepadStickRowViewModel : INotifyPropertyChanged
@@ -256,7 +295,7 @@ public sealed class RazerGamepadTriggerRowViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new(propertyName));
 }
 
-public sealed class RazerGamepadViewModel : INotifyPropertyChanged
+public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
 {
     private readonly RazerGamepadConnection _connection;
     private readonly RazerGamepadService _service;
@@ -284,7 +323,8 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
             new RazerFeatureTransport(),
             connection.DevicePath,
             TimeSpan.FromMilliseconds(20),
-            diagnostic);
+            diagnostic,
+            connection.ProductId);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -369,6 +409,7 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         {
             var state = await _service.ReadStateAsync(cancellationToken);
             ApplyState(state);
+            await LoadPollingProfileCoreAsync(cancellationToken);
             if (state.ButtonIds.Count > 0)
             {
                 try
@@ -423,6 +464,48 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
             OperationStatusText = assignments.Count == 0
                 ? AppStrings.Text("RazerGamepadAssignmentsReadFailed")
                 : AppStrings.Text("RazerGamepadAssignmentsRefreshed");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = exception.Message;
+            OperationStatusText = string.Empty;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task ApplyButtonAssignmentAsync(
+        RazerGamepadButtonAssignmentRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (!BeginOperation()) return;
+        try
+        {
+            var preset = row.SelectedPreset;
+            if (preset.IsUnchanged) return;
+
+            var encoded = preset.Encode();
+            await _service.SetButtonAssignmentAsync(
+                row.Assignment.ButtonId,
+                row.Assignment.Mode,
+                encoded,
+                cancellationToken);
+
+            // The service only returns after its readback matched, so the encoded block is the device state.
+            row.UpdateAssignment(new RazerGamepadButtonAssignment(
+                row.Assignment.ButtonId,
+                row.Assignment.Mode,
+                encoded.Function,
+                encoded.Size,
+                encoded.Data.ToArray()));
+            ErrorText = string.Empty;
+            OperationStatusText = AppStrings.Text("BlackSharkSaved");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -579,7 +662,9 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         if (!BeginOperation()) return;
         try
         {
-            await _service.SetVibrationScaleAsync((byte)VibrationIndex, cancellationToken);
+            await _service.SetVibrationScaleAsync(
+                RazerGamepadProtocol.ToVibrationScale((byte)VibrationIndex),
+                cancellationToken);
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
         }
@@ -597,7 +682,14 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         }
     }
 
-    public void RefreshLocalization() => OnPropertyChanged(string.Empty);
+    public void RefreshLocalization()
+    {
+        OnPropertyChanged(string.Empty);
+        foreach (var row in ButtonAssignments)
+        {
+            row.RefreshLocalization();
+        }
+    }
 
     private void ApplyButtonAssignments(IReadOnlyList<RazerGamepadButtonAssignment> assignments)
     {
@@ -636,7 +728,7 @@ public sealed class RazerGamepadViewModel : INotifyPropertyChanged
         _hasRaw = state.RawInput is not null;
         IgnoreDPadDiagonals = state.IgnoreDPadDiagonals ?? false;
         SocdIndex = (int)(state.SocdMode ?? RazerGamepadSocdMode.Neutral);
-        VibrationIndex = state.VibrationScale ?? 0;
+        VibrationIndex = RazerGamepadProtocol.ToVibrationIndex(state.VibrationScale ?? 0);
         AdcMaskText = state.AdcMask is ushort mask ? $"0x{mask:X4}" : "--";
         RawInputText = state.RawInput is { } raw
             ? $"LX {raw.LeftX}  LY {raw.LeftY}  RX {raw.RightX}  RY {raw.RightY}  LT {raw.LeftTrigger}  RT {raw.RightTrigger}"

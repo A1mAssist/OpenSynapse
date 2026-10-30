@@ -50,9 +50,8 @@ public readonly record struct BladeDisplayMuxSwitchResult(
 public static class BladeDisplayMuxModes
 {
     /// <summary>
-    /// Masks the modes a model may expose. The 2026 bundle only defines the
-    /// Microsoft Hybrid (0) and Discrete MUX (1) mode values, so callers drop the
-    /// hardware DDS capability bit before building the switcher.
+    /// Masks the modes a model may expose. A DDS-capable SKU publishes the
+    /// DynamicDisplaySwitch bit; models without that bit keep Hybrid/Discrete only.
     /// </summary>
     public static BladeDisplayMuxCapabilities AdmittedCapabilities(
         BladeDisplayMuxCapabilities capabilities,

@@ -1,6 +1,6 @@
 # Supported devices
 
-OpenSynapse creates a page only for a connected device whose Windows HID endpoint and protocol are recognized. The list is grouped by device type, not by protocol or catalogue source.
+OpenSynapse creates a page only for a connected device whose Windows HID endpoint and protocol are recognized. The Razer Kiyo camera (`1532:0E03`) is the exception: its page uses Razer's camera DLL instead of HID. The list is grouped by device type, not by protocol or catalogue source.
 
 The current tables contain 389 recognized device IDs: 136 mice, 96 keyboards, 50 laptops, 40 headsets, 8 speakers, 4 microphones, 8 mouse pads, 2 monitors, 44 accessories and 1 network lighting bridge.
 
@@ -284,14 +284,14 @@ Blade models with a dedicated manifest expose telemetry, performance, fans, disp
 | Razer Blade 16 (2023) | `1532:029F` | Dedicated Blade controls; firmware-rendered keyboard effects |
 | Razer Blade 16 (2024) | `1532:02B7` | Dedicated Blade controls |
 | Razer Blade 16 (2025) | `1532:02C6` | Dedicated Blade controls |
-| Razer Blade 16 (2026) | `1532:02E0` | Dedicated Blade controls; native keyboard effects and software frame pump; MUX exposes Hybrid and Discrete only |
+| Razer Blade 16 (2026) | `1532:02E0` | Dedicated Blade controls; native keyboard effects and software frame pump; MUX follows the 0D:8A capability bits (DDS only when reported) |
 | Razer Blade 17 (2022) | `1532:028B` | — |
 | Razer Blade 17 Pro (Early 2021) | `1532:026E` | — |
 | Razer Blade 17 Pro (Mid 2021) | `1532:0279` | — |
 | Razer Blade 18 (2023) | `1532:02A0` | — |
 | Razer Blade 18 (2024) | `1532:02B8` | Dedicated Blade controls |
 | Razer Blade 18 (2025) | `1532:02C7` | Dedicated Blade controls |
-| Razer Blade 18 (2026) | `1532:02E1` | Dedicated Blade controls; native keyboard effects and software frame pump; MUX exposes Hybrid and Discrete only |
+| Razer Blade 18 (2026) | `1532:02E1` | Dedicated Blade controls; native keyboard effects and software frame pump; MUX follows the 0D:8A capability bits (DDS only when reported) |
 | Razer Blade Advanced (Late 2019) | `1532:024B` | — |
 | Razer Blade Base (Early 2020) | `1532:0255` | Dedicated Blade controls; percentage fan target is not exposed as RPM |
 | Razer Blade Base (Early 2021) | `1532:026F` | — |
@@ -313,7 +313,7 @@ Blade models with a dedicated manifest expose telemetry, performance, fans, disp
 | Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
 | Razer Book (2020) | `1532:026A` | — |
 
-Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effects and has no per-key matrix channel. The 2026 Blade 16/18 bundles align with P23/P24 for thermal state, fixed fan speed, the software fan curve, charge limit, power mode, adapter power and VGA MUX. Their native keyboard lighting uses the middleware's 03:02 firmware-effect report and 03:0B software-frame report. MUX writes are limited to Hybrid and Discrete because the 2026 bundle defines no DDS mode value. The 2026 deviceFeatures do not list the maximum-fan switch, so Max Fan remains hidden. The Blade 18 (2026) bundle lists Turbo in its UI but has no confirmed dedicated wire value, so Turbo remains unexposed. The Blade 16 (2026) HyperBoost and fan reads were checked on one physical unit; the Blade 18 (2026) remains bundle-aligned.
+Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effects and has no per-key matrix channel. The Blade 15 Advanced (2019, `023A`) uses the inherited 6x16 `03:0A` effect and `03:0B` frame path. The 2026 Blade 16/18 bundles align with P23/P24 for thermal state, fixed fan speed, the software fan curve, charge limit, power mode, adapter power and VGA MUX. Their native keyboard lighting uses the middleware's 03:0A firmware-effect report and 03:0B software-frame report. MUX writes follow the 0D:8A capability bits; DDS is exposed only when the unit reports DynamicDisplaySwitch, otherwise only Hybrid/Discrete are offered. The 2026 deviceFeatures do not list the maximum-fan switch, so Max Fan remains hidden. The Blade 18 (2026) bundle labels wire value `Gaming` (0x01) as Turbo in its UI, so OpenSynapse shows the same display alias and does not publish a second mode. The Blade 16 (2026) HyperBoost and fan reads were checked on one physical unit; the Blade 18 (2026) remains bundle-aligned.
 
 ## Headsets
 
@@ -321,13 +321,13 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Barracuda | `1532:053C` | Audio page |
+| Razer Barracuda | `1532:053C` | Not shown: no bundle evidence for the protocol family |
 | Razer Barracuda 2.4 | `1532:053B` | Audio page |
 | Razer Barracuda 2.4 | `1532:0584` | Audio page |
 | Razer Barracuda Pro | `1532:0539` | Audio page |
 | Razer Barracuda Pro | `1532:0583` | Audio page |
-| Razer Barracuda V2 Pro | `1532:0593` | Audio page; THX V4 installer |
-| Razer BlackShark V2 HyperSpeed | `1532:0565` | Audio page |
+| Razer Barracuda V2 Pro | `1532:0593` | Audio page (battery/charging); THX V4 installer |
+| Razer BlackShark V2 HyperSpeed | `1532:0565` | Not shown: no bundle evidence for the protocol family |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | Audio page |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | Audio page; THX installer |
 | Razer BlackShark V2 Pro (2023) | `1532:0555` | Audio page; THX installer |
@@ -339,21 +339,22 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Kraken 7.1 | `1532:0506` | Lighting only |
 | Razer Kraken 7.1 Chroma | `1532:0504` | Lighting only |
 | Razer Kraken 7.1 V2 | `1532:0510` | Lighting only |
-| Razer Kraken BT Kitty Edition | `1532:0530` | Audio page |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | Audio page |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | Audio page |
+| Razer Kraken BT Kitty Edition | `1532:0530` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
 | Razer Kraken Kitty Edition | `1532:0521` | Audio page |
 | Razer Kraken Kitty V2 | `1532:0560` | Audio page plus lighting |
-| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | Audio page |
+| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
 | Razer Kraken Kitty V2 Pro | `1532:0554` | Audio page |
-| Razer Kraken Kitty V3 Pro | `1532:0587` | Audio page; THX V4 installer |
+| Razer Kraken Kitty V3 Pro | `1532:0587` | Audio page (EQ/battery/charging); THX V4 installer |
 | Razer Kraken Tournament Edition | `1532:0520` | Audio page plus lighting; THX installer for Kraken TE |
 | Razer Kraken Ultimate | `1532:0527` | Audio page plus lighting; THX installer |
 | Razer Kraken V3 | `1532:0549` | Audio page |
 | Razer Kraken V3 HyperSense | `1532:0533` | Audio page |
-| Razer Kraken V3 Pro | `1532:052D` | Audio page |
+| Razer Kraken V3 Pro | `1532:052D` | Not shown: serial audio transport not implemented |
 | Razer Kraken V3 X | `1532:0537` | Audio page |
 | Razer Kraken V4 | `1532:056B` | Lighting page (wired) |
+| Razer Kraken V4 | `1532:056C` | Lighting page (2.4 GHz receiver) |
 | Razer Kraken V4 Pro | `1532:0567` | Audio page |
 | Razer Kraken V4 X | `1532:056D` | Audio page |
 | Razer Kraken X USB | `1532:0526` | Audio page |
@@ -362,7 +363,7 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Nari Essential | `1532:051E` | Audio page; THX installer |
 | Razer Nari Ultimate | `1532:051A` | Audio page |
 
-Kraken 7.1 uses the 37-byte output-report path; Kraken V4 wired uses the 64-byte report-0x02 path. The Kraken V4 2.4 GHz receiver (`056C`) is not exposed yet.
+Kraken 7.1 uses the 37-byte output-report path; Kraken V4 wired and its 2.4 GHz receiver (`056C`) use the 64-byte report-0x02 path. The receiver sets byte 9 to `0x80`; the wired model uses `0x00`.
 
 ## Speakers
 
@@ -387,7 +388,7 @@ Microphone controls cover EQ, microphone volume and LED effects where available.
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Seiren Emote | `1532:0F1B` | Audio page; 8x8 LED matrix |
+| Razer Seiren Emote | `1532:0F1B` | Audio page and brightness/effect controls; 8x8 panel frames are not exposed |
 | Razer Seiren V2 Pro | `1532:0542` | Audio page |
 | Razer Seiren V2 X | `1532:0543` | Audio page |
 | Razer Seiren V3 Mini | `1532:056A` | Audio page |
@@ -447,7 +448,7 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Aether Light Strip | `1532:0310` | Lighting only |
 | Razer Aether Monitor Light Bar | `1532:0316` | Lighting only |
 | Razer Aether Standing Light Bars | `1532:0317` | Lighting only |
-| Razer Audio Mixer | `1532:053E` | Audio controller page; mixer controls |
+| Razer Audio Mixer | `1532:053E` | Dedicated HID subset: firmware/serial/device mode, fader and mute status, channel/mic mute, brightness; faders/routing/EQ stay in Razer's native mixer |
 | Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | — |
 | Razer Base Station V2 Chroma | `1532:0F20` | — |
 | Razer Base Station V3 Chroma | `1532:0F6A` | Lighting only |
@@ -465,7 +466,7 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Handheld Dock Chroma | `1532:0F5C` | Lighting only |
 | Razer Head Cushion Chroma | `1532:0F36` | Lighting only |
 | Razer Key Light Chroma | `1532:030C` | Lighting only |
-| Razer Laptop Cooling Pad | `1532:0F43` | Presence signal for HyperBoost; no standalone control page |
+| Razer Laptop Cooling Pad | `1532:0F43` | Standalone fan page: current/target RPM with read-back, fixed low/mid/high presets, smart quiet/balanced/performance curves, and lighting; still gates HyperBoost |
 | Razer Laptop Monitor Stand Chroma | `1532:0F5A` | Lighting only |
 | Razer Laptop Stand Chroma | `1532:0F0D` | — |
 | Razer Laptop Stand Chroma V2 | `1532:0F2B` | — |

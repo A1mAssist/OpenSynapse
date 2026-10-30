@@ -119,11 +119,11 @@ public sealed class FirmwareWorkspace : INotifyPropertyChanged
         UpdateStatusText = AppStrings.Text("FirmwareUpdateChecking");
         try
         {
-            var result = await _firmwareUpdateClient.CheckAsync(_firmwareVersions, cancellationToken);
+            var result = await _firmwareUpdateClient.CheckAsync(_firmwareVersions, _deviceDescriptors(), cancellationToken);
             DownloadUrl = result.DownloadUrl ?? string.Empty;
             HasUpdate = result.HasUpdate;
             UpdateStatusText = result.HasUpdate
-                ? AppStrings.FormatText("FirmwareUpdateAvailable", string.Join(", ", result.NewerComponents))
+                ? AppStrings.FormatText("FirmwareUpdateAvailable", result.DeviceName is { Length: > 0 } name ? $"{name}: {string.Join(", ", result.NewerComponents)}" : string.Join(", ", result.NewerComponents))
                 : AppStrings.Text("FirmwareUpdateCurrent");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -134,9 +134,9 @@ public sealed class FirmwareWorkspace : INotifyPropertyChanged
             exception is HttpRequestException or IOException or InvalidOperationException or
             UriFormatException or TaskCanceledException)
         {
-            UpdateStatusText = AppStrings.FormatText(
-                "FirmwareUpdateFailed",
-                exception.Message);
+            UpdateStatusText = exception is RazerSupportPageNotFoundException
+                ? AppStrings.Text("FirmwareUpdateSupportPageUnavailable")
+                : AppStrings.FormatText("FirmwareUpdateFailed", exception.Message);
         }
         finally
         {

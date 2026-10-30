@@ -252,6 +252,11 @@ public sealed class RazerMxicHeadsetProtocolTests
         var getBands = RazerMxicHeadsetProtocol.CreateGetEqBandsValkyrie();
         Assert.Equal(new byte[] { 0x02, 0x18, 0x81, 0x00, 0x00 }, getBands[10..15]);
 
+        var getMute = RazerMxicHeadsetProtocol.CreateGetMicMuteClass18(
+            RazerMxicHeadsetProtocol.ValkyrieReportId);
+        Assert.Equal(7, getMute[0]);
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x84, 0x00, 0x02 }, getMute[10..15]);
+
         byte[] bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         var setBands = RazerMxicHeadsetProtocol.CreateSetEqBandsValkyrie(bands);
         Assert.Equal(7, setBands[0]);
@@ -280,6 +285,19 @@ public sealed class RazerMxicHeadsetProtocolTests
         Assert.DoesNotContain(transport.Requests, request => request[0] is not (2 or 7));
     }
 
+    [Fact]
+    public async Task ValkyrieMicMuteWriteIsRejectedBeforeItReachesTheDevice()
+    {
+        var transport = new FakeTransport();
+        var service = new RazerMxicHeadsetService(transport, 0x0A54);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SetMicMuteAsync(true));
+
+        Assert.DoesNotContain(
+            transport.Requests,
+            request => request[11] == 0x18 && request[12] == 0x04);
+    }
+
     private sealed class FakeTransport : IRazerMxicHeadsetTransport
     {
         public List<byte[]> Requests { get; } = [];
@@ -297,9 +315,35 @@ public sealed class RazerMxicHeadsetProtocolTests
             if (report[7] == RazerMxicHeadsetProtocol.RemoteCommand)
             {
                 SawRemoteMode = true;
+                return Task.CompletedTask;
+            }
+
+            // Valkyrie T3 setters are fire-and-forget; emulate the device state so the
+            // service's readback can verify the write.
+            if (report.Length >= 13 && report[11] == 0x18)
+            {
+                ApplyClass18Payload(report);
             }
 
             return Task.CompletedTask;
+        }
+
+        private void ApplyClass18Payload(byte[] report)
+        {
+            var id = report[12];
+            var payload = report.AsSpan(13, report[10]).ToArray();
+            switch (id)
+            {
+                case 0x00 when payload.Length >= 4 && !IgnorePresetWrites:
+                    Preset = payload[3];
+                    break;
+                case 0x01 when payload.Length >= 12:
+                    Bands = payload[2..].ToArray();
+                    break;
+                case 0x04 when payload.Length >= 3:
+                    MicMuted = payload[2] == 1;
+                    break;
+            }
         }
 
         public Task<byte[]?> QueryAsync(

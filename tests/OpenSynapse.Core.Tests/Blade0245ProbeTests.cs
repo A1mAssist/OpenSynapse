@@ -35,21 +35,23 @@ public sealed class Blade0245ProbeTests
     }
 
     [Fact]
-    public void TheProbeStaysReadOnlyBecauseNoModelContractAdmitsIt()
+    public void TheProbeKeepsMaximumFanAndFanCurveClosed()
     {
-        // The manifest declares the family contract so reads can be attempted, but every write
-        // stays blocked until the 0245 power-mode mask and fan behaviour are confirmed on the
-        // owner's hardware. BladeModelCapabilities is the only gate that can unlock them.
+        // Maximum fan and the fan curve stay closed; fixed fan and the Low/Medium/High
+        // CPU levels are admitted by the bundle-backed model contract.
         foreach (var productId in new ushort[] { 0x0245 })
         {
             Assert.False(BladeModelCapabilities.SupportsMaxFan(productId));
             Assert.False(BladeModelCapabilities.SupportsFanCurve(productId));
             Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
             Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
-            Assert.Empty(BladeModelCapabilities.CpuBoostModesFor(productId));
-            Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Low));
-            Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Medium));
-            Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.High));
+            Assert.Equal(
+                [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High],
+                BladeModelCapabilities.CpuBoostModesFor(productId));
+            Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Low));
+            Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Medium));
+            Assert.True(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.High));
+            Assert.False(BladeModelCapabilities.AllowsCpuBoost(productId, BladeCpuBoostMode.Boost));
         }
     }
 

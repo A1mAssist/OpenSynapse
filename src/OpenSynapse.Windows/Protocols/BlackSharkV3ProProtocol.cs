@@ -46,6 +46,9 @@ public static class BlackSharkV3ProProtocol
     private const byte GameChatReadClass = 0x5C;
     private const byte GameChatSetClass = 0xDC;
 
+    public static bool IsWiredProductId(ushort productId) =>
+        productId is WiredProductId or UsbProductId;
+
     public static string DescribeProduct(ushort productId) => productId switch
     {
         WiredProductId => "Razer BlackShark V3 Pro (USB)",
@@ -116,8 +119,8 @@ public static class BlackSharkV3ProProtocol
         }
 
         // The middleware sends a one-byte payload for 0xDC:0x01 (its command table
-        // declares size 1); a trailing zero made our frame one byte longer.
-        return Create(GameChatSetClass, 0x01, wireless, checked((byte)balance));
+        // declares size 1). Its wire value is inverted: 20 - balance.
+        return Create(GameChatSetClass, 0x01, wireless, checked((byte)(20 - balance)));
     }
 
     public static bool TryParseResponse(ReadOnlySpan<byte> report, out BlackSharkV3ProResponse response)

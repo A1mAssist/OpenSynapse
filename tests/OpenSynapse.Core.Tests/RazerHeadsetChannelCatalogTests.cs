@@ -7,7 +7,7 @@ public sealed class RazerHeadsetChannelCatalogTests
 {
     private static readonly HashSet<ushort> KnownUnsupported =
     [
-        0x0309, 0x052D, 0x0530, 0x0534, 0x053C, 0x0562, 0x0565, 0x0587, 0x0593,
+        0x0309, 0x052D, 0x0530, 0x0534, 0x053C, 0x0562, 0x0565,
     ];
 
     [Fact]
@@ -31,6 +31,8 @@ public sealed class RazerHeadsetChannelCatalogTests
     [InlineData(0x0A51, RazerHeadsetChannel.Valkyrie64)]
     [InlineData(0x101E, RazerHeadsetChannel.Valkyrie64)]
     [InlineData(0x101F, RazerHeadsetChannel.Valkyrie64)]
+    [InlineData(0x0587, RazerHeadsetChannel.Billie64)]
+    [InlineData(0x0593, RazerHeadsetChannel.Mxic64)]
     [InlineData(0x0555, RazerHeadsetChannel.Mxic64)]
     // AudioKrakenKittyV2Pro only appends a 37-byte Chroma frame to AudioKittyV2Pro;
     // the audio base class still uses the 91-byte feature channel.

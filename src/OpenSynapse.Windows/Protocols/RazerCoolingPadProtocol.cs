@@ -17,7 +17,7 @@ namespace OpenSynapse.Windows.Protocols;
 /// The speed byte is an 8-bit protocol unit; one unit is 50 RPM.
 /// The fan-information pairs are big-endian 16-bit values.
 /// </summary>
-public static class RazerCoolingPadProtocol
+public static partial class RazerCoolingPadProtocol
 {
     public const ushort VendorId = 0x1532;
     public const ushort ProductId = 0x0F43;
@@ -45,14 +45,24 @@ public static class RazerCoolingPadProtocol
     /// </summary>
     public const int MinimumRpm = 150;
 
+    /// <summary>Lowest speed in the bundle's smart-curve tables (quiet, 30 C).</summary>
+    public const int MinimumCurveRpm = 500;
+
+    /// <summary>Highest speed in the bundle's smart-curve tables (performance).</summary>
+    public const int MaximumCurveRpm = 2700;
+
     private const byte TransactionId = 0x1F;
     private const byte CommandClass = 0x0D;
     private const byte SetSpeedCommandId = 0x01;
     private const byte GetSpeedCommandId = 0x81;
     private const byte GetFanInformationCommandId = 0x83;
+    private const byte SetCoolingModeCommandId = 0x10;
+    private const byte GetCoolingModeCommandId = 0x90;
+    private const byte CoolingModeSourceSynapse = 0x01;
     private const byte SetSpeedDataSize = 0x03;
     private const byte GetSpeedDataSize = 0x03;
     private const byte GetFanInformationDataSize = 0x0C;
+    private const byte CoolingModeDataSize = 0x03;
 
     public static byte[] CreateGetSpeedRequest() =>
         RazerFeatureReport.CreateRequest(
@@ -73,6 +83,29 @@ public static class RazerCoolingPadProtocol
             new[] { ClassId, ThermalId, (byte)units });
     }
 
+    /// <summary>
+    /// Writes a smart-curve target. The curve tables top out at 2700 RPM, above the
+    /// manual slider's 2600 ceiling, so this path validates against the table range
+    /// instead of <see cref="ToUnits"/>.
+    /// </summary>
+    public static byte[] CreateSetCurveSpeedRequest(int rpm)
+    {
+        if (rpm is < MinimumCurveRpm or > MaximumCurveRpm || rpm % RpmPerUnit != 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(rpm),
+                rpm,
+                $"Cooling pad curve speed must be {MinimumCurveRpm}..{MaximumCurveRpm} RPM in {RpmPerUnit} RPM steps.");
+        }
+
+        return RazerFeatureReport.CreateRequest(
+            TransactionId,
+            SetSpeedDataSize,
+            CommandClass,
+            SetSpeedCommandId,
+            new[] { ClassId, ThermalId, (byte)(rpm / RpmPerUnit) });
+    }
+
     public static byte[] CreateGetFanInformationRequest() =>
         RazerFeatureReport.CreateRequest(
             TransactionId,
@@ -80,6 +113,60 @@ public static class RazerCoolingPadProtocol
             CommandClass,
             GetFanInformationCommandId,
             new[] { ClassId });
+
+    /// <summary>Gets the fixed cooling-mode state the 0F43 bundle writes with 0D:10.</summary>
+    public static byte[] CreateGetCoolingModeRequest() =>
+        RazerFeatureReport.CreateRequest(
+            TransactionId,
+            CoolingModeDataSize,
+            CommandClass,
+            GetCoolingModeCommandId,
+            new[] { ClassId });
+
+    /// <summary>
+    /// Selects one of the bundle's fixed presets. The first byte is the bundle's
+    /// source flag (1 = Synapse/UI), not the thermal class; the pad stores speed
+    /// as 50-RPM units. High is the bundle's 2700 RPM, above the slider's
+    /// 2600 RPM ceiling, which stays unchanged until hardware confirms it.
+    /// </summary>
+    public static byte[] CreateSetCoolingModeRequest(RazerCoolingPadFixedMode mode)
+    {
+        var units = UnitsFor(mode);
+        return RazerFeatureReport.CreateRequest(
+            TransactionId,
+            CoolingModeDataSize,
+            CommandClass,
+            SetCoolingModeCommandId,
+            new[] { CoolingModeSourceSynapse, (byte)mode, units });
+    }
+
+    public static int RpmFor(RazerCoolingPadFixedMode mode) => mode switch
+    {
+        RazerCoolingPadFixedMode.Low => 1600,
+        RazerCoolingPadFixedMode.Mid => 2200,
+        RazerCoolingPadFixedMode.High => 2700,
+        _ => throw new ArgumentOutOfRangeException(nameof(mode)),
+    };
+
+    public static byte UnitsFor(RazerCoolingPadFixedMode mode) => mode switch
+    {
+        RazerCoolingPadFixedMode.Low => 32,
+        RazerCoolingPadFixedMode.Mid => 44,
+        RazerCoolingPadFixedMode.High => 54,
+        _ => throw new ArgumentOutOfRangeException(nameof(mode)),
+    };
+
+    /// <summary>Reads the 0D:90 reply: [firmware/synapse source, mode, raw 50-RPM units].</summary>
+    public static RazerCoolingPadCoolingMode ParseCoolingMode(ReadOnlySpan<byte> response)
+    {
+        ValidateResponse(response, CreateGetCoolingModeRequest(), expectedArguments: 3);
+        var arguments = response[RazerFeatureReport.ArgumentsOffset..];
+        return new RazerCoolingPadCoolingMode(
+            arguments[0],
+            arguments[1],
+            arguments[2],
+            arguments[2] * RpmPerUnit);
+    }
 
     /// <summary>
     /// Reads the fan speed byte at data[2]. Unlike 0F3C, this is one byte,
@@ -167,6 +254,21 @@ public static class RazerCoolingPadProtocol
         }
     }
 }
+
+/// <summary>Fixed cooling-mode presets from the 0F43 bundle.</summary>
+public enum RazerCoolingPadFixedMode : byte
+{
+    Low = 0,
+    Mid = 1,
+    High = 2,
+}
+
+/// <summary>State returned by 0D:90; ModeId also carries quiet/balanced/performance/off.</summary>
+public readonly record struct RazerCoolingPadCoolingMode(
+    byte Source,
+    byte ModeId,
+    byte SpeedUnits,
+    int Rpm);
 
 /// <summary>Fan-curve description the cooling pad reports for its thermal fan.</summary>
 public readonly record struct RazerCoolingPadFanInformation(

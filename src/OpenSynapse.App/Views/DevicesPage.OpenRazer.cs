@@ -55,6 +55,9 @@ public sealed partial class DevicesPage : UserControl
             case RazerBleDeviceRowViewModel:
                 BleSelectorClick(sender, e);
                 break;
+            case RazerAwBleHeadsetRowViewModel:
+                AwBleHeadsetSelectorClick(sender, e);
+                break;
             case PhilipsHueViewModel:
                 HueSelectorClick(sender, e);
                 break;
@@ -123,6 +126,22 @@ public sealed partial class DevicesPage : UserControl
             case RazerGamepadDeviceRowViewModel row:
                 SelectDevice("gamepad");
                 await ViewModel.SelectGamepadAsync(row, Lifetime);
+                break;
+            case RazerCoolingPadViewModel pad:
+                SelectDevice("coolingpad");
+                await pad.RefreshAsync(Lifetime);
+                if (!pad.IsConnected)
+                {
+                    SelectDevice("none");
+                }
+                break;
+            case RazerKiyoViewModel kiyo:
+                SelectDevice("kiyo");
+                await kiyo.RefreshAsync(Lifetime);
+                if (!kiyo.IsConnected)
+                {
+                    SelectDevice("none");
+                }
                 break;
             case DeviceRowViewModel row
                 when DeviceProtocolFamilies.IsBlade(row.ProtocolFamily):

@@ -140,17 +140,45 @@ public static class BladeModelCapabilities
     ];
 
     // 0255 lists Balanced, Productivity_Creator and Gaming. Productivity_Creator is the
-    // same wire value as Performance (0x02); Gaming (0x01) has no BladePerformanceMode.
+    // same wire value as Performance (0x02); Gaming is 0x01.
     private static readonly BladePerformanceMode[] Modes0255 =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Performance,
+        BladePerformanceMode.Gaming,
     ];
 
     private static readonly BladePerformanceMode[] ModesBalancedPerformance =
     [
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Performance,
+    ];
+
+    private static readonly BladePerformanceMode[] ModesBalancedGaming =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Gaming,
+    ];
+
+    private static readonly BladePerformanceMode[] ModesBalancedPerformanceGaming =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Performance,
+        BladePerformanceMode.Gaming,
+    ];
+
+    private static readonly BladePerformanceMode[] ModesBalancedBatterySaverGaming =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.BatterySaver,
+        BladePerformanceMode.Gaming,
+    ];
+
+    private static readonly BladePerformanceMode[] ModesBalancedPerformanceBatterySaver =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.Performance,
+        BladePerformanceMode.BatterySaver,
     ];
 
     private static readonly BladePerformanceMode[] ModesBalancedCustom =
@@ -217,9 +245,11 @@ public static class BladeModelCapabilities
             // stays closed because the official Synapse 4 for this model offers only
             // automatic and a fixed-speed slider, so there is no OEM curve to match.
             // Maximum fan stays closed too: never exercised, and the OEM has no such mode.
+            // Its bundle publishes boost.get/set and Custom CPU/GPU levels, so the
+            // Low/Medium/High baseline is admitted even though the boost toggle is not.
             [0x0245] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FixedFan: true,
                 MinimumFanTargetRpm: 3700,
                 MaximumFanTargetRpm: 5300,
@@ -252,7 +282,14 @@ public static class BladeModelCapabilities
 
             // Blade 18 (2023) RZ09-0484. Owner-reported maximum fans; its fixed fan
             // targets were reported ignored, so no fixed target is admitted.
-            [0x02A0] = new(MaxFan: true, LowMediumHigh, Modes: Modes028A),
+            [0x02A0] = new(
+                MaxFan: true,
+                LowMediumHigh,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2200, 3800, 3000),
+                    (BladePerformanceMode.Silent, 3700, 5300, 4500),
+                    (BladePerformanceMode.Custom, 1700, 4300, 3000)),
+                Modes: Modes028A),
 
             // Blade 14 (2022) RZ09-0427. Owner readings on 028C answered all ten Blade
             // controls, including both live fan tachometers. The owner then confirmed a
@@ -271,6 +308,10 @@ public static class BladeModelCapabilities
                 MinimumFanTargetRpm: 3300,
                 MaximumFanTargetRpm: 5400,
                 FixedFanRequiresCustomMode: true,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 3300, 5400, 4300),
+                    (BladePerformanceMode.Silent, 3300, 5400, 4300),
+                    (BladePerformanceMode.Custom, 3300, 5400, 4300)),
                 CpuPowerBoost: true),
             // Blade 14 (2023) RZ09-0482 and Blade 14 (2024) RZ09-0509. The middleware
             // enables both the maximum-fan bit and custom CPU levels.
@@ -305,14 +346,15 @@ public static class BladeModelCapabilities
                 CpuPowerBoost: true),
 
             // Blade 18 (2024) enables maximum fan and exposes the 0D fan-target reports.
-            // It has no CPU-level flag, so the custom CPU control stays closed.
+            // Its bundle publishes boost.get/set and Custom CPU/GPU levels, but not the
+            // hasCpuBoostEnabled toggle, so it admits Low/Medium/High only.
             [0x02B8] = new(
                 MaxFan: true,
-                None,
+                LowMediumHigh,
                 FanCurve: true,
                 FixedFan: true,
-                MinimumFanTargetRpm: 3700,
-                MaximumFanTargetRpm: 5300,
+                MinimumFanTargetRpm: 3300,
+                MaximumFanTargetRpm: 5400,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
                     (BladePerformanceMode.Silent, 3700, 5300, 4500),
@@ -321,10 +363,11 @@ public static class BladeModelCapabilities
                 Modes: Modes02B8),
 
             // Blade 14 (2025) and Blade 18 (2025) expose the 710 fan-target reports but
-            // do not enable the maximum-fan bit or custom CPU levels in their middleware.
+            // do not enable the maximum-fan bit in their middleware. Both still publish
+            // boost.get/set and Custom CPU/GPU levels, so the Low/Medium/High baseline applies.
             [0x02C5] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FanCurve: true,
                 FixedFan: true,
                 MinimumFanTargetRpm: 3300,
@@ -338,7 +381,7 @@ public static class BladeModelCapabilities
                 Modes: Modes02C5),
             [0x02C7] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FanCurve: true,
                 FixedFan: true,
                 MinimumFanTargetRpm: 3300,
@@ -354,12 +397,13 @@ public static class BladeModelCapabilities
 
             // Blade 16 (2024) 1532:02B7. The 695 middleware uses the same fan-target,
             // panel and power reports as 02C6; Max Fan stays off because its injected
-            // configuration does not enable the Custom maximum-fan bit. CPU Boost is
-            // likewise not enabled by its deviceUI configuration. Its performance-mode
-            // table lists HyperBoost, so the pad-less path applies here too.
+            // configuration does not enable the Custom maximum-fan bit. The
+            // hasCpuBoostEnabled toggle is not published either, but the bundle's
+            // boost.get/set and Custom CPU/GPU levels still admit Low/Medium/High.
+            // Its performance-mode table lists HyperBoost, so the pad-less path applies here too.
             [0x02B7] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FanCurve: true,
                 FixedFan: true,
                 HyperBoost: true,
@@ -390,8 +434,9 @@ public static class BladeModelCapabilities
                 MaxFan: false,
                 None,
                 ModeFanRanges: Ranges(
-                    (BladePerformanceMode.Balanced, 3700, 5300, 4500)),
-                Modes: ModesBalancedOnly),
+                    (BladePerformanceMode.Balanced, 3700, 5300, 4500),
+                    (BladePerformanceMode.Gaming, 4000, 5300, 4600)),
+                Modes: ModesBalancedGaming),
 
             [0x0240] = new(
                 MaxFan: false,
@@ -406,20 +451,22 @@ public static class BladeModelCapabilities
                 None,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3500, 5500, 4200),
-                    (BladePerformanceMode.Performance, 3900, 5500, 4500)),
-                Modes: ModesBalancedPerformance),
+                    (BladePerformanceMode.Performance, 3900, 5500, 4500),
+                    (BladePerformanceMode.Gaming, 3900, 5500, 4500)),
+                Modes: ModesBalancedPerformanceGaming),
 
             [0x024A] = new(
                 MaxFan: false,
                 None,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2500, 5500, 4000),
-                    (BladePerformanceMode.BatterySaver, 2500, 5500, 4000)),
-                Modes: ModesBalancedBatterySaver),
+                    (BladePerformanceMode.BatterySaver, 2500, 5500, 4000),
+                    (BladePerformanceMode.Gaming, 2500, 5500, 4000)),
+                Modes: ModesBalancedBatterySaverGaming),
 
             [0x024B] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
@@ -427,7 +474,7 @@ public static class BladeModelCapabilities
 
             [0x024C] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
@@ -435,7 +482,7 @@ public static class BladeModelCapabilities
 
             [0x024D] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
@@ -443,7 +490,7 @@ public static class BladeModelCapabilities
 
             [0x0253] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
@@ -451,7 +498,7 @@ public static class BladeModelCapabilities
 
             [0x0256] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2300, 4300, 2900),
                     (BladePerformanceMode.Custom, 2300, 4300, 2900)),
@@ -462,12 +509,13 @@ public static class BladeModelCapabilities
                 None,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3600, 5200, 4300),
-                    (BladePerformanceMode.Performance, 3600, 5200, 4300)),
-                Modes: ModesBalancedPerformance),
+                    (BladePerformanceMode.Performance, 3600, 5200, 4300),
+                    (BladePerformanceMode.Gaming, 3600, 5200, 4300)),
+                Modes: ModesBalancedPerformanceGaming),
 
             [0x026D] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
@@ -475,7 +523,7 @@ public static class BladeModelCapabilities
 
             [0x026E] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2300, 4300, 2900),
                     (BladePerformanceMode.Custom, 2300, 4300, 2900)),
@@ -486,12 +534,13 @@ public static class BladeModelCapabilities
                 None,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 4200, 5400, 4800),
-                    (BladePerformanceMode.Performance, 4200, 5400, 4800)),
-                Modes: ModesBalancedPerformance),
+                    (BladePerformanceMode.Performance, 4200, 5400, 4800),
+                    (BladePerformanceMode.Gaming, 4200, 5400, 4800)),
+                Modes: ModesBalancedPerformanceGaming),
 
             [0x0270] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 3300, 5400, 4300)),
@@ -499,7 +548,7 @@ public static class BladeModelCapabilities
 
             [0x0276] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
@@ -507,7 +556,7 @@ public static class BladeModelCapabilities
 
             [0x0279] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2300, 4300, 2900),
                     (BladePerformanceMode.Custom, 2300, 4300, 2900)),
@@ -518,7 +567,7 @@ public static class BladeModelCapabilities
             // so fixed RPM is admitted for the same report.
             [0x0234] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FixedFan: true,
                 MinimumFanTargetRpm: 3400,
                 MaximumFanTargetRpm: 5300,
@@ -527,16 +576,19 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
                 Modes: ModesBalancedCustom),
 
+            // Blade Stealth (2019). Its bundle publishes BatterySaver with a
+            // 2200..5500 range, so the mode and the readback ceiling both follow it.
             [0x0239] = new(
                 MaxFan: false,
                 None,
                 FixedFan: true,
                 MinimumFanTargetRpm: 2200,
-                MaximumFanTargetRpm: 5300,
+                MaximumFanTargetRpm: 5500,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2200, 5300, 3800),
-                    (BladePerformanceMode.Performance, 2200, 5300, 3800)),
-                Modes: ModesBalancedPerformance),
+                    (BladePerformanceMode.Performance, 2200, 5300, 3800),
+                    (BladePerformanceMode.BatterySaver, 2200, 5500, 3800)),
+                Modes: ModesBalancedPerformanceBatterySaver),
 
             [0x023A] = new(
                 MaxFan: false,
@@ -546,8 +598,9 @@ public static class BladeModelCapabilities
                 MaximumFanTargetRpm: 5300,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3700, 5300, 4500),
-                    (BladePerformanceMode.Performance, 4000, 5300, 4600)),
-                Modes: ModesBalancedPerformance),
+                    (BladePerformanceMode.Performance, 4000, 5300, 4600),
+                    (BladePerformanceMode.Gaming, 4000, 5300, 4600)),
+                Modes: ModesBalancedPerformanceGaming),
 
             [0x0252] = new(
                 MaxFan: false,
@@ -557,8 +610,9 @@ public static class BladeModelCapabilities
                 MaximumFanTargetRpm: 5500,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2500, 5500, 4000),
-                    (BladePerformanceMode.BatterySaver, 2500, 5500, 4000)),
-                Modes: ModesBalancedBatterySaver),
+                    (BladePerformanceMode.BatterySaver, 2500, 5500, 4000),
+                    (BladePerformanceMode.Gaming, 2500, 5500, 4000)),
+                Modes: ModesBalancedBatterySaverGaming),
 
             [0x0259] = new(
                 MaxFan: false,
@@ -568,8 +622,9 @@ public static class BladeModelCapabilities
                 MaximumFanTargetRpm: 5600,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 2500, 5600, 4000),
-                    (BladePerformanceMode.BatterySaver, 2500, 5600, 4000)),
-                Modes: ModesBalancedBatterySaver),
+                    (BladePerformanceMode.BatterySaver, 2500, 5600, 4000),
+                    (BladePerformanceMode.Gaming, 2500, 5600, 4000)),
+                Modes: ModesBalancedBatterySaverGaming),
 
             [0x027A] = new(
                 MaxFan: false,
@@ -579,12 +634,13 @@ public static class BladeModelCapabilities
                 MaximumFanTargetRpm: 5400,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 4200, 5400, 4800),
-                    (BladePerformanceMode.Performance, 4800, 5400, 5100)),
-                Modes: ModesBalancedPerformance),
+                    (BladePerformanceMode.Performance, 4800, 5400, 5100),
+                    (BladePerformanceMode.Gaming, 4800, 5400, 5100)),
+                Modes: ModesBalancedPerformanceGaming),
 
             [0x028A] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FixedFan: true,
                 MinimumFanTargetRpm: 3400,
                 MaximumFanTargetRpm: 5300,
@@ -596,7 +652,7 @@ public static class BladeModelCapabilities
 
             [0x028B] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FixedFan: true,
                 MinimumFanTargetRpm: 2200,
                 MaximumFanTargetRpm: 5300,
@@ -608,7 +664,7 @@ public static class BladeModelCapabilities
 
             [0x029E] = new(
                 MaxFan: true,
-                None,
+                LowMediumHigh,
                 FixedFan: true,
                 MinimumFanTargetRpm: 3400,
                 MaximumFanTargetRpm: 5300,
@@ -622,7 +678,7 @@ public static class BladeModelCapabilities
             // Its deviceFeatures omit hasMaxFanSpeedModeEnabled, so Max Fan stays closed.
             [0x02E0] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FanCurve: true,
                 FixedFan: true,
                 HyperBoost: true,
@@ -642,7 +698,7 @@ public static class BladeModelCapabilities
             // performance deviceFeatures omit hasMaxFanSpeedModeEnabled.
             [0x02E1] = new(
                 MaxFan: false,
-                None,
+                LowMediumHigh,
                 FanCurve: true,
                 FixedFan: true,
                 MinimumFanTargetRpm: 3300,
@@ -660,15 +716,23 @@ public static class BladeModelCapabilities
             // brightness, thermal, charge-limit, adapter-power and power-mode reports.
             // Fixed RPM targets stay closed because 0x0D:0x81 reports a percentage,
             // not the newer RPM layout.
-            [0x0255] = new(MaxFan: false, CpuBoostModes: None, Modes: Modes0255),
+            [0x0255] = new(
+                MaxFan: false,
+                None,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 4200, 5500, 4900),
+                    (BladePerformanceMode.Performance, 4900, 5500, 5200),
+                    (BladePerformanceMode.Gaming, 4900, 5500, 5200)),
+                Modes: Modes0255),
         }.ToFrozenDictionary();
 
     /// <summary>Product ids with an audited model contract, for structure checks and diagnostics.</summary>
     internal static IReadOnlyCollection<ushort> AdmittedProductIds => Contracts.Keys;
 
     /// <summary>
-    /// Temperature-driven fan curve admission. BladeFanProtocol stores targets only for
-    /// the 02C6 fan-target control, so no other model has captured curve evidence yet.
+    /// Temperature-driven fan curve admission. The curve is user-defined and reuses the
+    /// same 0D:01 fan-target write as fixed speed; the bundle does not need to publish an
+    /// OEM curve table for it. Models remain gated by their fan-target family.
     /// </summary>
     public static bool SupportsFanCurve(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.FanCurve;
@@ -693,8 +757,19 @@ public static class BladeModelCapabilities
     /// <summary>Lower bound the exact model accepts for a fixed fan target.</summary>
     public static int MinimumFanTargetRpmFor(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract)
-            ? contract.MinimumFanTargetRpm
+            ? FanTargetBounds(contract).Minimum
             : BladeFanLimits.MinimumRpm;
+
+    /// <summary>
+    /// Effective model-wide bounds. A per-mode range can sit outside the base bounds
+    /// (02B8 Gaming starts at 3300, 0239 battery saver reaches 5500), and the readback
+    /// and write guards must cover every range the bundle publishes.
+    /// </summary>
+    private static (int Minimum, int Maximum) FanTargetBounds(Contract contract) =>
+        contract.FixedFan && contract.ModeFanRanges is { } ranges
+            ? (Math.Min(contract.MinimumFanTargetRpm, ranges.Values.Min(range => range.MinimumRpm)),
+               Math.Max(contract.MaximumFanTargetRpm, ranges.Values.Max(range => range.MaximumRpm)))
+            : (contract.MinimumFanTargetRpm, contract.MaximumFanTargetRpm);
 
     /// <summary>
     /// True when the exact model publishes the given performance mode. Firmware can
@@ -753,12 +828,12 @@ public static class BladeModelCapabilities
         SupportsHyperBoost(productId);
 
     /// <summary>
-    /// Upper bound for parsing a stored fan target. This can exceed the fixed-write
-    /// ceiling when a model reports a higher maximum than OpenSynapse exposes.
+    /// Upper bound for parsing a stored fan target, covering every per-mode range
+    /// the model publishes, including modes the UI does not expose.
     /// </summary>
     public static int MaximumFanTargetRpmFor(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract)
-            ? contract.MaximumFanTargetRpm
+            ? FanTargetBounds(contract).Maximum
             : BladeFanLimits.MaximumRpm;
 
     /// <summary>

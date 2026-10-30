@@ -35,8 +35,11 @@ public sealed class BladeLighting2023Tests
         var effectGet = manifest.GetRequiredCapability("keyboard-effect.get");
         Assert.Equal(0x0F, effectGet.CommandClass);
         Assert.Equal(0x82, effectGet.CommandId);
-        Assert.Equal(0x0F, manifest.GetRequiredCapability("keyboard-effect.set").CommandClass);
-        Assert.Equal(0x02, manifest.GetRequiredCapability("keyboard-effect.set").CommandId);
+        var effectSet = manifest.GetRequiredCapability("keyboard-effect.set");
+        Assert.Equal(0x0F, effectSet.CommandClass);
+        Assert.Equal(0x02, effectSet.CommandId);
+        Assert.Equal(0x06, effectSet.MaximumDataSize);
+        Assert.Equal(0x06, effectSet.CreateRequest([0x01, 0x05, 0x04, 0x02, 0x00, 0x00], 0x06)[6]);
     }
 
     [Fact]
@@ -55,11 +58,11 @@ public sealed class BladeLighting2023Tests
     }
 
     [Theory]
-    [InlineData(0x00, 3)]
-    [InlineData(0x02, 3)]
-    [InlineData(0x03, 3)]
-    [InlineData(0x04, 4)]
-    public void EffectRequestsPrefixTheEffectWithItsOwnParameters(byte effect, int expectedLength)
+    [InlineData(0x00, 6)]
+    [InlineData(0x02, 6)]
+    [InlineData(0x03, 6)]
+    [InlineData(0x04, 6)]
+    public void EffectRequestsCarryTheMiddlewareControlBytes(byte effect, int expectedLength)
     {
         var request = BladeLighting2023Protocol.CreateSetEffectRequest(effect, effect == 0x04 ? [0x01] : []);
 
@@ -75,9 +78,11 @@ public sealed class BladeLighting2023Tests
     {
         var wave = BladeLighting2023Protocol.CreateWaveRequest();
 
-        Assert.Equal(4, wave[6]);
+        Assert.Equal(6, wave[6]);
         // WAVE_DIRECTION.RIGHT is 2 in the middleware; 1 is the leftward default.
         Assert.Equal(0x02, wave[RazerFeatureReport.ArgumentsOffset + 3]);
+        Assert.Equal(0x00, wave[RazerFeatureReport.ArgumentsOffset + 4]);
+        Assert.Equal(0x00, wave[RazerFeatureReport.ArgumentsOffset + 5]);
     }
 
     [Fact]
@@ -131,11 +136,17 @@ public sealed class BladeLighting2023Tests
     }
 
     [Fact]
-    public void Blade14_2022UsesTheSameFirmwareKeyboardEffectPath()
+    public void FirmwareEffectDialectCoversThe2022And2023Models()
     {
-        Assert.True(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x028C));
-        Assert.True(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x029F));
-        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x02C6));
+        Assert.Equal(BladeLightingDialect.FirmwareEffect,
+            RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x028C)!.LightingDialect);
+        Assert.Equal(BladeLightingDialect.FirmwareEffect,
+            RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x029F)!.LightingDialect);
+        Assert.Equal(BladeLightingDialect.LedMatrixBlade,
+            RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x023A)!.LightingDialect);
+        Assert.True(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(BladeLightingDialect.FirmwareEffect));
+        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(BladeLightingDialect.LedMatrixBlade));
+        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(BladeLightingDialect.LedMatrix710));
     }
 
     [Fact]

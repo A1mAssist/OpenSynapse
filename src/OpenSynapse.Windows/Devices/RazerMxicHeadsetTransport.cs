@@ -99,8 +99,17 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
                     while (_reports.Reader.TryRead(out var data))
                     {
                         // The input report id matches the request's, so 0555 stays on 2 and
-                        // the Valkyrie T3 family reads its id-7 replies.
-                        if (RazerMxicHeadsetProtocol.TryReadValue(data, report[0], expectedHeader, out var value))
+                        // the Valkyrie T3 family reads its id-7 replies. An empty expected
+                        // header selects the protocol40 reply layout.
+                        if (expectedHeader.Length == 0)
+                        {
+                            if (RazerProtocol40HeadsetProtocol.TryReadValue(data, report, out var protocol40))
+                            {
+                                return protocol40;
+                            }
+                        }
+                        else if (RazerMxicHeadsetProtocol.TryReadValue(
+                            data, report[0], expectedHeader, out var value))
                         {
                             return value;
                         }

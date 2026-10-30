@@ -634,6 +634,9 @@
   <data name="Text_GamingPerformanceMode" xml:space="preserve">
     <value>Gaming</value>
   </data>
+  <data name="BladePerformanceModeTurbo" xml:space="preserve">
+    <value>Turbo</value>
+  </data>
   <data name="Text_10C83C81" xml:space="preserve">
     <value>Next</value>
   </data>
@@ -1775,6 +1778,7 @@
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>Firmware is up to date.</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>Update available: {0}.</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>Check failed: {0}</value></data>
+  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer's support site has no automatic update page for this model. Check BIOS and EC manually at mysupport.razer.com.</value></data>
   <data name="FirmwareDownloadButton" xml:space="preserve"><value>Open download page</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn row behavior</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>Multimedia keys first</value></data>
@@ -2455,6 +2459,34 @@
   <data name="RazerGamepadAssignmentsReadFailed" xml:space="preserve"><value>Could not read button assignments</value></data>
   <data name="RazerGamepadMappingTitle.Text" xml:space="preserve"><value>Button mapping</value></data>
   <data name="RazerGamepadMappingRefresh.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="RazerGamepadAssignmentAction.Header" xml:space="preserve"><value>Action</value></data>
+  <data name="RazerGamepadAssignmentApply.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="RazerGamepadAssignmentKeep" xml:space="preserve"><value>Keep current</value></data>
+  <data name="RazerGamepadAssignmentOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerGamepadAssignmentControllerA" xml:space="preserve"><value>Controller A</value></data>
+  <data name="RazerGamepadAssignmentControllerB" xml:space="preserve"><value>Controller B</value></data>
+  <data name="RazerGamepadAssignmentControllerX" xml:space="preserve"><value>Controller X</value></data>
+  <data name="RazerGamepadAssignmentControllerY" xml:space="preserve"><value>Controller Y</value></data>
+  <data name="RazerGamepadAssignmentControllerLB" xml:space="preserve"><value>Controller LB</value></data>
+  <data name="RazerGamepadAssignmentControllerRB" xml:space="preserve"><value>Controller RB</value></data>
+  <data name="RazerGamepadAssignmentControllerLT" xml:space="preserve"><value>Controller LT</value></data>
+  <data name="RazerGamepadAssignmentControllerRT" xml:space="preserve"><value>Controller RT</value></data>
+  <data name="RazerGamepadAssignmentControllerLS" xml:space="preserve"><value>Controller LS</value></data>
+  <data name="RazerGamepadAssignmentControllerRS" xml:space="preserve"><value>Controller RS</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadUp" xml:space="preserve"><value>Controller D-pad up</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadDown" xml:space="preserve"><value>Controller D-pad down</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadLeft" xml:space="preserve"><value>Controller D-pad left</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadRight" xml:space="preserve"><value>Controller D-pad right</value></data>
+  <data name="RazerGamepadAssignmentControllerView" xml:space="preserve"><value>Controller View</value></data>
+  <data name="RazerGamepadAssignmentControllerMenu" xml:space="preserve"><value>Controller Menu</value></data>
+  <data name="RazerGamepadAssignmentKeyW" xml:space="preserve"><value>Key W</value></data>
+  <data name="RazerGamepadAssignmentKeyA" xml:space="preserve"><value>Key A</value></data>
+  <data name="RazerGamepadAssignmentKeyS" xml:space="preserve"><value>Key S</value></data>
+  <data name="RazerGamepadAssignmentKeyD" xml:space="preserve"><value>Key D</value></data>
+  <data name="RazerGamepadAssignmentKeySpace" xml:space="preserve"><value>Key Space</value></data>
+  <data name="RazerGamepadAssignmentKeyEnter" xml:space="preserve"><value>Key Enter</value></data>
+  <data name="RazerGamepadAssignmentKeyEscape" xml:space="preserve"><value>Key Escape</value></data>
+  <data name="RazerGamepadAssignmentKeyTab" xml:space="preserve"><value>Key Tab</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>Speaker</value></data>
   <data name="RazerLightingEffectOff" xml:space="preserve"><value>Off</value></data>
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>Static</value></data>
@@ -2501,7 +2533,154 @@
   <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>No macro is selected to write.</value></data>
   <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>Write failed: {0}</value></data>
   <data name="RazerOnboardMacroWriteStepFailed" xml:space="preserve"><value>Step {0}: {1}</value></data>
-  <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>Used {0} / {1} bytes · {2} free · {3} slots</value></data></root>
+  <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>Used {0} / {1} bytes · {2} free · {3} slots</value></data>
+  <data name="BladeBatteryOptimizerTitle/Text" xml:space="preserve"><value>Battery optimizer</value></data>
+  <data name="BladeBatteryOptimizerDescription/Text" xml:space="preserve"><value>Limits the charge ceiling to reduce time spent at full charge.</value></data>
+  <data name="BladeBatteryOptimizerEnabledLabel/Text" xml:space="preserve"><value>Enabled</value></data>
+  <data name="BladeBatteryOptimizerThresholdLabel/Text" xml:space="preserve"><value>Charge ceiling</value></data>
+  <data name="BladeBatteryOptimizerOverrideLabel/Text" xml:space="preserve"><value>Full charge once</value></data>
+  <data name="BladeBatteryOptimizerApply/Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="BladeBatteryOptimizerOperation" xml:space="preserve"><value>Battery optimizer</value></data>
+  <data name="BladeBatteryOptimizerApplied" xml:space="preserve"><value>Battery optimizer applied.</value></data>
+  <data name="CoolingPadCategory" xml:space="preserve"><value>Cooling pad</value></data>
+  <data name="CoolingPadStatusConnected" xml:space="preserve"><value>Connected</value></data>
+  <data name="CoolingPadStatusNotConnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="CoolingPadStatusRead" xml:space="preserve"><value>Current speed {0} RPM</value></data>
+  <data name="CoolingPadStatusApplied" xml:space="preserve"><value>Set to {0} RPM; read back {1} RPM</value></data>
+  <data name="CoolingPadErrorRead" xml:space="preserve"><value>Fan speed read failed: {0}</value></data>
+  <data name="CoolingPadErrorApply" xml:space="preserve"><value>Fan speed update failed: {0}</value></data>
+  <data name="CoolingPadFanTitle/Text" xml:space="preserve"><value>Fan</value></data>
+  <data name="CoolingPadDescription/Text" xml:space="preserve"><value>Read the current speed or set a target; writes are verified by reading back.</value></data>
+  <data name="CoolingPadCurrentLabel/Text" xml:space="preserve"><value>Current speed</value></data>
+  <data name="CoolingPadTargetLabel/Text" xml:space="preserve"><value>Target speed</value></data>
+  <data name="CoolingPadRefreshButton/Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="CoolingPadApplyButton/Content" xml:space="preserve"><value>Apply</value></data>  <data name="CoolingPadFixedModeTitle/Text" xml:space="preserve"><value>Fixed presets</value></data>
+  <data name="CoolingPadFixedModeDescription/Text" xml:space="preserve"><value>Low, Mid and High are the device's fixed presets; writes are verified by reading back.</value></data>
+  <data name="CoolingPadFixedModeLabel/Header" xml:space="preserve"><value>Preset</value></data>
+  <data name="CoolingPadFixedModeApplyButton/Content" xml:space="preserve"><value>Apply preset</value></data>
+  <data name="CoolingPadFixedModeStatus/Text" xml:space="preserve"><value>Switched to {0}; read back {1} RPM</value></data>
+  <data name="CoolingPadFixedModeError/Text" xml:space="preserve"><value>Fixed preset switch failed: {0}</value></data>
+  <data name="CoolingPadFixedLow/Text" xml:space="preserve"><value>Low</value></data>
+  <data name="CoolingPadFixedMid/Text" xml:space="preserve"><value>Mid</value></data>
+  <data name="CoolingPadFixedHigh/Text" xml:space="preserve"><value>High</value></data>
+  <data name="CoolingPadLightingTitle/Text" xml:space="preserve"><value>Lighting</value></data>
+  <data name="CoolingPadLightingDescription/Text" xml:space="preserve"><value>Regions and effects come from the device; this card stays hidden when it does not answer.</value></data>
+  <data name="CoolingPadLightingEffectHeader/Header" xml:space="preserve"><value>Effect</value></data>
+  <data name="CoolingPadLightingApplyButton/Content" xml:space="preserve"><value>Apply lighting</value></data>
+  <data name="CoolingPadFixedModeCurrent/Text" xml:space="preserve"><value>Current {0}, {1} RPM</value></data>
+  <data name="CoolingPadModeQuiet/Text" xml:space="preserve"><value>Quiet</value></data>
+  <data name="CoolingPadModeBalanced/Text" xml:space="preserve"><value>Balanced</value></data>
+  <data name="CoolingPadModePerformance/Text" xml:space="preserve"><value>Performance</value></data>
+  <data name="CoolingPadModeOff/Text" xml:space="preserve"><value>Off</value></data>
+  <data name="CoolingPadModeUnknown/Text" xml:space="preserve"><value>Mode {0}</value></data>
+  <data name="AwBleHeadsetBatteryLabel/Text" xml:space="preserve"><value>Battery</value></data>
+  <data name="AwBleHeadsetDescription/Text" xml:space="preserve"><value>Battery and device info are read-only; controls appear only when supported.</value></data>
+  <data name="AwBleHeadsetControlsTitle/Text" xml:space="preserve"><value>Device controls</value></data>
+  <data name="AwBleHeadsetBundleNote/Text" xml:space="preserve"><value>Controls mirror the Razer bundle command and readback layouts; not hardware-verified.</value></data>
+  <data name="AwBleHeadsetVolumeLabel/Text" xml:space="preserve"><value>Master volume</value></data>
+  <data name="AwBleHeadsetSidetoneLabel/Text" xml:space="preserve"><value>Sidetone</value></data>
+  <data name="AwBleHeadsetGameModeLabel/Text" xml:space="preserve"><value>Game mode</value></data>
+  <data name="AwBleHeadsetEqPresetLabel/Header" xml:space="preserve"><value>EQ preset</value></data>
+  <data name="AwBleHeadsetAutoPowerOffLabel/Header" xml:space="preserve"><value>Auto power-off (minutes)</value></data>
+  <data name="AwBleHeadsetAutoPowerOffHint/Text" xml:space="preserve"><value>0 turns it off.</value></data>
+  <data name="AwBleHeadsetChromaBrightnessLabel/Text" xml:space="preserve"><value>Chroma brightness</value></data>
+  <data name="AwBleHeadsetBassLabel/Text" xml:space="preserve"><value>Bass</value></data>
+  <data name="AwBleHeadsetHapticsLabel/Text" xml:space="preserve"><value>Haptic intensity</value></data>
+  <data name="AwBleHeadsetHapticsValue" xml:space="preserve"><value>{0}/6</value></data>
+  <data name="AwBleHeadsetHapticsHint/Text" xml:space="preserve"><value>0 off; 1-2 low, 3-5 medium, 6 high.</value></data>
+  <data name="AwBleHeadsetMicEqLabel/Header" xml:space="preserve"><value>Mic EQ preset</value></data>
+  <data name="AwBleHeadsetCustomEqTitle/Text" xml:space="preserve"><value>Custom EQ</value></data>
+  <data name="AwBleHeadsetFirmwareLabel/Text" xml:space="preserve"><value>Firmware</value></data>
+  <data name="AwBleHeadsetSerialLabel/Text" xml:space="preserve"><value>Serial</value></data>
+  <data name="AwBleHeadsetConnectionLabel/Text" xml:space="preserve"><value>Connection</value></data>
+  <data name="AwBleHeadsetChargingLabel/Text" xml:space="preserve"><value>Charging</value></data>
+  <data name="AwBleHeadsetConnectionNone" xml:space="preserve"><value>Not connected</value></data>
+  <data name="AwBleHeadsetConnectionBle" xml:space="preserve"><value>BLE connected</value></data>
+  <data name="AwBleHeadsetConnectionDongle" xml:space="preserve"><value>Dongle connected</value></data>
+  <data name="AwBleHeadsetConnectionMaster" xml:space="preserve"><value>Master</value></data>
+  <data name="AwBleHeadsetConnectionSlave" xml:space="preserve"><value>Slave</value></data>
+  <data name="AwBleHeadsetEarbudConnection" xml:space="preserve"><value>R {0} / L {1}</value></data>
+  <data name="AwBleHeadsetChargingNone" xml:space="preserve"><value>Not charging</value></data>
+  <data name="AwBleHeadsetChargingActive" xml:space="preserve"><value>Charging</value></data>
+  <data name="AwBleHeadsetChargingFailed" xml:space="preserve"><value>Charging failed</value></data>
+  <data name="AwBleHeadsetMicEqDefault" xml:space="preserve"><value>Default</value></data>
+  <data name="AwBleHeadsetMicEqBoost" xml:space="preserve"><value>Mic boost</value></data>
+  <data name="AwBleHeadsetMicEqBroadcast" xml:space="preserve"><value>Broadcast</value></data>
+  <data name="AwBleHeadsetMicEqConference" xml:space="preserve"><value>Conference</value></data>
+  <data name="AwBleHeadsetMicEqCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="AwBleHeadsetSaved" xml:space="preserve"><value>Applied</value></data>
+  <data name="AwBleHeadsetErrorWrite" xml:space="preserve"><value>Write failed: {0}</value></data>
+  <data name="AwBleHeadsetPercent" xml:space="preserve"><value>{0}%</value></data>
+  <data name="AwBleHeadsetEqDefault" xml:space="preserve"><value>Default</value></data>
+  <data name="AwBleHeadsetEqAmplified" xml:space="preserve"><value>Amplified</value></data>
+  <data name="AwBleHeadsetEqVocal" xml:space="preserve"><value>Vocal</value></data>
+  <data name="AwBleHeadsetEqBass" xml:space="preserve"><value>Enhanced bass</value></data>
+  <data name="AwBleHeadsetEqClarity" xml:space="preserve"><value>Enhanced clarity</value></data>
+  <data name="AwBleHeadsetEqTreble" xml:space="preserve"><value>Treble boost</value></data>
+  <data name="AwBleHeadsetEqFps" xml:space="preserve"><value>FPS footsteps</value></data>
+  <data name="AwBleHeadsetEqGame" xml:space="preserve"><value>Game</value></data>
+  <data name="AwBleHeadsetEqMusic" xml:space="preserve"><value>Music</value></data>
+  <data name="AwBleHeadsetEqMovie" xml:space="preserve"><value>Movie</value></data>
+  <data name="AwBleHeadsetEqApex" xml:space="preserve"><value>Apex Legends</value></data>
+  <data name="AwBleHeadsetEqCsgo" xml:space="preserve"><value>CS:GO</value></data>
+  <data name="AwBleHeadsetEqValorant" xml:space="preserve"><value>Valorant</value></data>
+  <data name="AwBleHeadsetEqFortnite" xml:space="preserve"><value>Fortnite</value></data>
+  <data name="AwBleHeadsetEqCustom2" xml:space="preserve"><value>Custom 2</value></data>
+  <data name="AwBleHeadsetEqCustom1" xml:space="preserve"><value>Custom 1</value></data>
+  <data name="AwBleHeadsetStatusRead/Text" xml:space="preserve"><value>Battery read: {0}</value></data>
+  <data name="AwBleHeadsetErrorRead/Text" xml:space="preserve"><value>Battery read failed: {0}</value></data>
+  <data name="AwBleHeadsetEarbudBattery/Text" xml:space="preserve"><value>R {0}% / L {1}%</value></data>
+  <data name="CoolingPadCurveTitle/Text" xml:space="preserve"><value>Smart curve</value></data>
+  <data name="CoolingPadCurveDescription/Text" xml:space="preserve"><value>Reads temperature every second and writes the next step from Razer's table, only when the target changes.</value></data>
+  <data name="CoolingPadCurveModeHeader/Header" xml:space="preserve"><value>Mode</value></data>
+  <data name="CoolingPadCurveSourceHeader/Header" xml:space="preserve"><value>Temperature source</value></data>
+  <data name="CoolingPadCurveApplyButton/Content" xml:space="preserve"><value>Apply curve</value></data>
+  <data name="CoolingPadCurveManual/Text" xml:space="preserve"><value>Manual</value></data>
+  <data name="CoolingPadCurveQuiet/Text" xml:space="preserve"><value>Quiet</value></data>
+  <data name="CoolingPadCurveBalanced/Text" xml:space="preserve"><value>Balanced</value></data>
+  <data name="CoolingPadCurvePerformance/Text" xml:space="preserve"><value>Performance</value></data>
+  <data name="CoolingPadCurveSourceCpu/Text" xml:space="preserve"><value>CPU</value></data>
+  <data name="CoolingPadCurveSourceGpu/Text" xml:space="preserve"><value>GPU</value></data>
+  <data name="CoolingPadCurveSourceBoth/Text" xml:space="preserve"><value>CPU + GPU</value></data>
+  <data name="CoolingPadCurveApplied/Text" xml:space="preserve"><value>{0} curve enabled; waiting for temperature</value></data>
+  <data name="CoolingPadCurveActive/Text" xml:space="preserve"><value>{0}: {1} RPM</value></data>
+  <data name="CoolingPadCurveManualStatus/Text" xml:space="preserve"><value>Switched to manual</value></data>
+  <data name="CoolingPadCurveTemperatureUnavailable/Text" xml:space="preserve"><value>Temperature unavailable; skipped this cycle</value></data>
+  <data name="CoolingPadCurveError/Text" xml:space="preserve"><value>Curve write failed: {0}</value></data>
+  <data name="KiyoCategory" xml:space="preserve"><value>Camera</value></data>
+  <data name="KiyoStatusConnected" xml:space="preserve"><value>Connected</value></data>
+  <data name="KiyoStatusNotConnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="KiyoAuto" xml:space="preserve"><value>Auto</value></data>
+  <data name="KiyoStatusRead" xml:space="preserve"><value>Camera settings read</value></data>
+  <data name="KiyoErrorRead" xml:space="preserve"><value>Camera read failed: {0}</value></data>
+  <data name="KiyoWhiteBalanceApplied" xml:space="preserve"><value>White balance written and read back</value></data>
+  <data name="KiyoWhiteBalanceError" xml:space="preserve"><value>White balance write failed: {0}</value></data>
+  <data name="KiyoSettingsError" xml:space="preserve"><value>Could not open Razer camera settings</value></data>
+  <data name="KiyoSettingsErrorText" xml:space="preserve"><value>Could not open Razer camera settings: {0}</value></data>
+  <data name="KiyoImageSettingsTitle/Text" xml:space="preserve"><value>Image settings</value></data>
+  <data name="KiyoBrightnessLabel/Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="KiyoContrastLabel/Text" xml:space="preserve"><value>Contrast</value></data>
+  <data name="KiyoSaturationLabel/Text" xml:space="preserve"><value>Saturation</value></data>
+  <data name="KiyoWhiteBalanceLabel/Text" xml:space="preserve"><value>White balance</value></data>
+  <data name="KiyoAutoWhiteBalance/Text" xml:space="preserve"><value>Auto white balance</value></data>
+  <data name="KiyoSettingsDescription/Text" xml:space="preserve"><value>Brightness and contrast writes use Razer's native settings dialog; this page reads the current values and applies white balance.</value></data>
+  <data name="KiyoApplyWhiteBalance/Text" xml:space="preserve"><value>Apply white balance</value></data>
+  <data name="KiyoOpenSettings/Text" xml:space="preserve"><value>Open Razer camera settings</value></data>
+  <data name="RazerMixer053ETitle/Text" xml:space="preserve"><value>Audio Mixer</value></data>
+  <data name="RazerMixer053EInfoFormat" xml:space="preserve"><value>Firmware {0} · Serial {1} · Mode {2}</value></data>
+  <data name="RazerMixer053EFadersFormat" xml:space="preserve"><value>Faders 1-4 (raw): {0} / {1} / {2} / {3}</value></data>
+  <data name="RazerMixer053EStatusFormat" xml:space="preserve"><value>Mute 1-4: {0} / {1} / {2} / {3} · Beep: {4} · Mic: {5} · 48V: {6} · Mic-in: {7} · Line-in: {8}</value></data>
+  <data name="RazerMixer053EMuteButton" xml:space="preserve"><value>M{0}: {1}</value></data>
+  <data name="RazerMixer053EMicMuteButton" xml:space="preserve"><value>Mic: {0}</value></data>
+  <data name="RazerMixer053EOn" xml:space="preserve"><value>On</value></data>
+  <data name="RazerMixer053EOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerMixer053EMuted" xml:space="preserve"><value>Muted</value></data>
+  <data name="RazerMixer053EUnmuted" xml:space="preserve"><value>Live</value></data>
+  <data name="RazerMixer053EBrightnessLabel/Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="RazerMixer053EApplyBrightness/Content" xml:space="preserve"><value>Apply brightness</value></data>
+  <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>Audio Mixer HID path unavailable</value></data>
+  <data name="RazerMixer053ESaved" xml:space="preserve"><value>Written and read back</value></data>
+</root>
 
 
 

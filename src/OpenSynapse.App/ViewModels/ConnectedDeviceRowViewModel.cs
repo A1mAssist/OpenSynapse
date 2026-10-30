@@ -70,6 +70,18 @@ public sealed class ConnectedDeviceRowViewModel
         IsReady = true;
         IsVisible = true;
     }
+    public ConnectedDeviceRowViewModel(RazerAwBleHeadsetRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
     public ConnectedDeviceRowViewModel(RazerKeyboardDeviceRowViewModel source)
     {
         Source = source;
@@ -92,6 +104,30 @@ public sealed class ConnectedDeviceRowViewModel
         Category = source.HardwareCategory;
         IsReady = true;
         IsVisible = true;
+    }
+
+    public ConnectedDeviceRowViewModel(RazerCoolingPadViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = DeviceCategory.Accessory;
+        IsReady = source.IsConnected;
+        IsVisible = source.IsConnected;
+    }
+
+    public ConnectedDeviceRowViewModel(RazerKiyoViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = source.IsConnected;
+        IsVisible = source.IsConnected;
     }
 
     public ConnectedDeviceRowViewModel(RazerHeadsetAudioDeviceRowViewModel source)
@@ -146,6 +182,7 @@ public sealed class ConnectedDeviceRowViewModel
         RazerBleDeviceRowViewModel row => row.Status,
         BlackSharkDeviceRowViewModel row => row.Status,
         RazerGamepadDeviceRowViewModel row => row.Status,
+        RazerCoolingPadViewModel row => row.CapabilityText,
         PhilipsHueViewModel row => row.IsConfigured ? AppStrings.Text("HuePaired") : string.Empty,
         _ => string.Empty,
     };
@@ -154,6 +191,7 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerDeviceRowViewModel row => row.Error,
         OpenRazerKrakenDeviceRowViewModel row => row.Error,
         BlackSharkDeviceRowViewModel row => row.Error,
+        RazerCoolingPadViewModel row => row.ErrorText,
         PhilipsHueViewModel row => row.ErrorText,
         _ => string.Empty,
     };
@@ -165,6 +203,7 @@ public sealed class ConnectedDeviceRowViewModel
         RazerBleDeviceRowViewModel row => row.StatusBrush,
         BlackSharkDeviceRowViewModel row => row.StatusBrush,
         RazerGamepadDeviceRowViewModel row => row.StatusBrush,
+        RazerCoolingPadViewModel row => row.StatusBrush,
         PhilipsHueViewModel row => row.StatusBrush,
         _ => throw new InvalidOperationException(),
     };

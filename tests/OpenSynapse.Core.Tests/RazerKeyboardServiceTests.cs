@@ -67,6 +67,27 @@ public sealed class RazerKeyboardServiceTests
             request[8] == 0x40 && request[9] == 0x00 && request[10] == 0x08);
     }
 
+    [Fact]
+    public async Task SetPollingRate_UsesTheActiveProfile()
+    {
+        var simulator = new KeyboardSimulator
+        {
+            SupportsProfile = true,
+            ProfileId = 3,
+            PollingCode = 0x01,
+        };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerKeyboardService(transport, "test", TimeSpan.Zero);
+
+        await service.SetPollingRateAsync(1_000);
+
+        Assert.Contains(transport.Requests, request =>
+            request[7] == 0x00 && request[8] == 0xC0 && request[9] == 0x03);
+        Assert.Contains(transport.Requests, request =>
+            request[7] == 0x00 && request[8] == 0x40 &&
+            request[9] == 0x03 && request[10] == 0x08);
+    }
+
     [Theory]
     [InlineData(0x023E)]
     [InlineData(0x024F)]
@@ -127,11 +148,13 @@ public sealed class RazerKeyboardServiceTests
         public bool SupportsGameMode { get; init; } = true;
         public bool SupportsBattery { get; init; } = true;
         public bool SupportsPolling { get; init; } = true;
+        public bool SupportsProfile { get; init; }
         public bool IgnoreWrites { get; init; }
         public byte GameMode { get; set; } = 1;
         public byte KeyCover { get; set; }
         public byte Lifted { get; set; }
         public byte PollingCode { get; set; } = 0x01;
+        public byte ProfileId { get; set; } = 0;
 
         public byte[] Handle(byte[] request)
         {
@@ -139,6 +162,7 @@ public sealed class RazerKeyboardServiceTests
             var commandClass = request[7];
             return (commandClass, command) switch
             {
+                (0x05, 0x84) when SupportsProfile => Response(request, 1, ProfileId),
                 (0x00, 0x87) => Response(request, 4, 2, 7, 0),
                 (0x00, 0x82) => Response(request, 22, [.. "PM1234"u8, .. new byte[16]]),
                 (0x00, 0x88) when SupportsGameMode => Response(request, 4, GameMode, KeyCover, Lifted),

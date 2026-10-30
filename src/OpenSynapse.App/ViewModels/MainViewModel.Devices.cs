@@ -20,12 +20,19 @@ public sealed partial class MainViewModel
             .Concat(HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(GamepadDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(CoolingPad.IsConnected
+                ? [new ConnectedDeviceRowViewModel(CoolingPad)]
+                : [])
+            .Concat(Kiyo.IsConnected
+                ? [new ConnectedDeviceRowViewModel(Kiyo)]
+                : [])
             // The Viper owns a native page and still answers Chroma discovery; its lighting page
             // opens from there, so list the device once.
             .Concat(ChromaDevices
                 .Where(chroma => !Devices.Any(native => native.ProductId == chroma.Connection.ProductId))
                 .Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(AwBleHeadsetDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat([new ConnectedDeviceRowViewModel(Hue)])
             .Where(device => device.IsVisible)
             .OrderByDescending(device => device.IsReady)
@@ -125,6 +132,24 @@ public sealed partial class MainViewModel
                 row));
         }
 
+        if (CoolingPad.IsConnected)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.CoolingPad,
+                CoolingPad.Name,
+                CoolingPad.IconGlyph,
+                CoolingPad));
+        }
+
+        if (Kiyo.IsConnected)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.Kiyo,
+                Kiyo.Name,
+                Kiyo.IconGlyph,
+                Kiyo));
+        }
+
         foreach (var row in ChromaDevices)
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
@@ -138,6 +163,15 @@ public sealed partial class MainViewModel
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Ble,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
+        foreach (var row in AwBleHeadsetDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.AwBleHeadset,
                 row.Name,
                 row.IconGlyph,
                 row));
@@ -161,7 +195,10 @@ public sealed partial class MainViewModel
         await RefreshHeadsetAudioAsync(cancellationToken);
         await RefreshKeyboardsAsync(cancellationToken);
         await RefreshGamepadsAsync(cancellationToken);
+        await CoolingPad.RefreshAsync(cancellationToken);
+        await Kiyo.RefreshAsync(cancellationToken);
         await RefreshChromaAsync(cancellationToken);
         await RefreshBleAsync(cancellationToken);
+        await RefreshAwBleAsync(cancellationToken);
     }
 }

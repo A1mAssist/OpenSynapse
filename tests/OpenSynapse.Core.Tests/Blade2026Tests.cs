@@ -30,6 +30,10 @@ public sealed class Blade2026Tests
         Assert.Equal(0x92, manifest.GetRequiredCapability("charge-limit.get").CommandId);
         Assert.Equal(0x8C, manifest.GetRequiredCapability("adapter-power.get").CommandId);
         Assert.Equal(0x89, manifest.GetRequiredCapability("display-mux.get").CommandId);
+        Assert.Equal(0x8E, manifest.GetRequiredCapability("native-display-mode.get").CommandId);
+        Assert.Equal(0x0E, manifest.GetRequiredCapability("native-display-mode.set").CommandId);
+        Assert.True(manifest.GetRequiredCapability("native-display-mode.get")
+            .AllowRemainingPacketsMismatch);
         Assert.Equal(0x8F, manifest.GetRequiredCapability("sku-hardware-configuration.get").CommandId);
         Assert.True(manifest.GetRequiredCapability("sku-hardware-configuration.get")
             .AllowRemainingPacketsMismatch);
@@ -133,31 +137,38 @@ public sealed class Blade2026Tests
     [Fact]
     public void The2026LightingStaysOnTheNativeMatrixPath()
     {
-        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x02E0));
-        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x02E1));
+        Assert.Equal(BladeLightingDialect.LedMatrix2026,
+            RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x02E0)!.LightingDialect);
+        Assert.Equal(BladeLightingDialect.LedMatrix2026,
+            RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x02E1)!.LightingDialect);
+        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(BladeLightingDialect.LedMatrix2026));
 
-        var frame = Enumerable.Repeat(new RazerRgb(1, 2, 3), 6 * 17).ToArray();
-        var requests = BladeLightingLedMatrixProtocol.CreateMatrixFrameRequests(frame);
+        var frame = Enumerable.Repeat(new RazerRgb(1, 2, 3), 6 * 19).ToArray();
+        var requests = BladeLightingProtocol.CreateMatrixFrameRequests(frame, 6, 19);
         Assert.Equal(7, requests.Length);
-        Assert.All(requests[..6], request => Assert.Equal(0x03, request[7]));
-        Assert.Equal(0x02, requests[6][8]);
+        Assert.All(requests[..6], request =>
+        {
+            Assert.Equal(0x03, request[7]);
+            Assert.Equal(0x0B, request[8]);
+        });
+        Assert.Equal(0x0A, requests[6][8]);
     }
 
     [Fact]
-    public void The2026MuxPolicyKeepsDdsOutOfTheSwitcher()
+    public void The2026MuxPolicyAdmitsDdsWhenTheCapabilityBitIsSet()
     {
         var capabilities = BladeDisplayMuxCapabilities.Hybrid |
             BladeDisplayMuxCapabilities.Discrete |
             BladeDisplayMuxCapabilities.DynamicDisplaySwitch;
 
         Assert.Equal(
-            BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
-            BladeDisplayMuxModes.AdmittedCapabilities(capabilities, allowDds: false));
-        Assert.False(BladeDisplayMuxModes.Supports(
-            capabilities, BladeDisplayMuxMode.Dds, allowDds: false));
-        Assert.True(BladeDisplayMuxModes.CanSwitch(capabilities, allowDds: false));
+            capabilities,
+            BladeDisplayMuxModes.AdmittedCapabilities(capabilities, allowDds: true));
+        Assert.True(BladeDisplayMuxModes.Supports(
+            capabilities, BladeDisplayMuxMode.Dds, allowDds: true));
+        Assert.True(BladeDisplayMuxModes.CanSwitch(capabilities, allowDds: true));
         Assert.Equal(
-            new[] { BladeDisplayMuxMode.Hybrid, BladeDisplayMuxMode.Discrete },
-            BladeDisplayMuxModes.GetSupportedModes(capabilities, allowDds: false));
+            new[] { BladeDisplayMuxMode.Hybrid, BladeDisplayMuxMode.Dds, BladeDisplayMuxMode.Discrete },
+            BladeDisplayMuxModes.GetSupportedModes(capabilities, allowDds: true));
     }
 }

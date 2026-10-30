@@ -239,7 +239,7 @@ public sealed record RazerGamepadCalibration(byte AnalogId, IReadOnlyList<ushort
 /// class and control id before the value. Analog-control and calibration commands use
 /// their own documented argument blocks.
 /// </summary>
-public static class RazerGamepadProtocol
+public static partial class RazerGamepadProtocol
 {
     public const byte ReportId = 4;
     public const byte CommandClass = 0x0C;
@@ -274,7 +274,7 @@ public static class RazerGamepadProtocol
     private const byte ControllerModeSwitchGet = 0x9C;
     private const byte ControllerModeSwitchSet = 0x1C;
     private const byte ActiveProfileGet = 0x84;
-    private const byte ButtonIdListGet = 0x80;
+    private const byte ButtonIdListGet = 0x84;
     private const byte SingleButtonAssignmentGet = 0x8C;
     private const byte SingleButtonAssignmentSet = 0x0C;
 
@@ -366,7 +366,7 @@ public static class RazerGamepadProtocol
         Create(transactionId, 3, TriggerModeSet, [profileId, controlId, mode]);
 
     public static byte[] CreateGetAdcMaskRequest(byte transactionId) =>
-        Create(transactionId, 2, AdcMaskGet, [0x00, 0x00]);
+        Create(transactionId, 2, AdcMaskGet, []);
 
     public static byte[] CreateSetAdcMaskRequest(byte transactionId, ushort mask) =>
         Create(transactionId, 2, AdcMaskSet,
@@ -434,6 +434,28 @@ public static class RazerGamepadProtocol
 
     public static byte[] CreateGetButtonIdListRequest(byte transactionId) =>
         CreateForClass(transactionId, 80, ButtonCommandClass, ButtonIdListGet, new byte[80]);
+
+    private static readonly byte[] VibrationScaleSteps = [0, 17, 33, 50, 67, 83, 100];
+
+    /// <summary>Maps the seven UI vibration steps to the middleware's 0..100 wire values.</summary>
+    public static byte ToVibrationScale(byte index) =>
+        VibrationScaleSteps[Math.Clamp(index, (byte)0, (byte)6)];
+
+    /// <summary>Maps a raw 0..100 wire value back to the nearest UI step.</summary>
+    public static byte ToVibrationIndex(byte scale)
+    {
+        var best = 0;
+        for (var index = 1; index < VibrationScaleSteps.Length; index++)
+        {
+            if (Math.Abs(scale - VibrationScaleSteps[index]) <
+                Math.Abs(scale - VibrationScaleSteps[best]))
+            {
+                best = index;
+            }
+        }
+
+        return (byte)best;
+    }
 
     public static IReadOnlyList<byte> ReadButtonIdList(ReadOnlySpan<byte> response)
     {

@@ -174,6 +174,10 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     private int _selectedAncIndex;
     private double _ancLevel = 1;
     private bool _hasEqBands;
+    private bool _hasMicMuted;
+    private bool _hasMicVolume;
+    private bool _hasAudioSource;
+    private bool _hasNoiseSuppression;
     private bool _hasBass;
     private bool _hasAnc;
     private bool _hasLighting;
@@ -199,9 +203,11 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
     private bool IsMxic => _connection.Transport == RazerHeadsetAudioTransport.Mxic64;
+    private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
+    private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
     private bool IsValkyrie => _connection.Transport is
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
-    private bool IsFeature91 => !IsMxic && !IsValkyrie;
+    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E;
     private (byte Value, string Key)[] ActivePresets => IsFeature91 ? Presets : MxicPresets;
 
     private byte ToFirmwareBand(double level) => _connection.Transport switch
@@ -228,6 +234,11 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         _connection = connection;
         _diagnostic = diagnostic;
         Lighting = lighting;
+        if (IsMixer053E)
+        {
+            Mixer053E = new RazerMixer053EViewModel(connection.DevicePath, diagnostic);
+        }
+
         if (ThxHeadsetAdmission.IsSupported(connection.ProductId))
         {
             _thxStatus = ThxHeadsetAdmission.Check(connection.ProductId);
@@ -241,6 +252,12 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     /// devices get one card that carries both the audio settings and that lighting.
     /// </summary>
     public OpenRazerKrakenViewModel? Lighting { get; }
+
+    public RazerMixer053EViewModel? Mixer053E { get; }
+
+    public Visibility Mixer053EVisibility => Mixer053E is null ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility GenericStatusVisibility => IsMixer053E ? Visibility.Collapsed : Visibility.Visible;
 
     public Microsoft.UI.Xaml.Visibility LightingVisibility => !IsFeature91 || Lighting is null
         ? Microsoft.UI.Xaml.Visibility.Collapsed
@@ -475,6 +492,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
     public Visibility EqBandsVisibility => _hasEqBands ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility EqPresetVisibility => IsMixer053E || IsProtocol40 ? Visibility.Collapsed : Visibility.Visible;
+
     public double Bass
     {
         get => _bass;
@@ -489,7 +508,10 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
     public Visibility BassVisibility => _hasBass ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility MicCardVisibility => IsValkyrie ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility MicCardVisibility =>
+        IsValkyrie || IsProtocol40
+            ? Visibility.Collapsed
+            : _hasMicMuted || _hasMicVolume ? Visibility.Visible : Visibility.Collapsed;
 
     public bool MicMuted
     {
@@ -508,7 +530,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
     }
 
     public string MicVolumeText => $"{Math.Round(MicVolume)}";
-    public Visibility MicVolumeVisibility => IsFeature91 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility MicVolumeVisibility =>
+        IsFeature91 && _hasMicVolume ? Visibility.Visible : Visibility.Collapsed;
 
     public IReadOnlyList<string> AudioSourceOptions =>
     [
@@ -519,7 +542,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         AppStrings.Text("RazerHeadsetSourceUsb"),
     ];
 
-    public Visibility AudioSourceVisibility => IsFeature91 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility AudioSourceVisibility =>
+        IsFeature91 && _hasAudioSource ? Visibility.Visible : Visibility.Collapsed;
 
     public int SelectedSourceIndex
     {
@@ -533,7 +557,8 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         set => SetField(ref _noiseSuppression, value);
     }
 
-    public Visibility NoiseSuppressionVisibility => IsFeature91 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility NoiseSuppressionVisibility =>
+        IsFeature91 && _hasNoiseSuppression ? Visibility.Visible : Visibility.Collapsed;
 
     public bool Dnd { get => _dnd; set => SetField(ref _dnd, value); }
     public Visibility DndVisibility => _hasDnd ? Visibility.Visible : Visibility.Collapsed;
@@ -763,6 +788,12 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
+        if (Mixer053E is { } mixer053E)
+        {
+            await mixer053E.LoadAsync(cancellationToken);
+            return;
+        }
+
         if (!BeginOperation()) return;
         try
         {
@@ -1298,7 +1329,11 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
                 (service, token) => service.SetAncAsync(AncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
                 cancellationToken);
 
-    public void RefreshLocalization() => OnPropertyChanged(string.Empty);
+    public void RefreshLocalization()
+    {
+        OnPropertyChanged(string.Empty);
+        Mixer053E?.RefreshLocalization();
+    }
 
     public async ValueTask DisposeAsync()
     {
@@ -1307,6 +1342,11 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
         if (controller is not null)
         {
             await controller.DisposeAsync();
+        }
+
+        if (Mixer053E is { } mixer053E)
+        {
+            await mixer053E.DisposeAsync();
         }
     }
 
@@ -1492,7 +1532,12 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             OnPropertyChanged(nameof(BassVisibility));
         }
 
-        if (state.MicMuted is bool muted) MicMuted = muted;
+        if (state.MicMuted is bool muted)
+        {
+            MicMuted = muted;
+            _hasMicMuted = true;
+            OnPropertyChanged(nameof(MicCardVisibility));
+        }
         if (state.Dnd is bool dnd) { Dnd = dnd; _hasDnd = true; OnPropertyChanged(nameof(DndVisibility)); }
         if (state.AutoPause is bool autoPause)
         {
@@ -1575,7 +1620,13 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
 
         OnPropertyChanged(nameof(AdvancedAudioVisibility));
         OnPropertyChanged(nameof(MicProcessingVisibility));
-        if (state.MicVolume is byte volume) MicVolume = volume;
+        if (state.MicVolume is byte volume)
+        {
+            MicVolume = volume;
+            _hasMicVolume = true;
+            OnPropertyChanged(nameof(MicVolumeVisibility));
+            OnPropertyChanged(nameof(MicCardVisibility));
+        }
         if (state.AudioSource is RazerAudioSource source)
         {
             var index = Array.IndexOf(Sources, source);
@@ -1583,8 +1634,16 @@ public sealed class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncD
             {
                 SelectedSourceIndex = index;
             }
+
+            _hasAudioSource = true;
+            OnPropertyChanged(nameof(AudioSourceVisibility));
         }
-        if (state.NoiseSuppression is bool noise) NoiseSuppression = noise;
+        if (state.NoiseSuppression is bool noise)
+        {
+            NoiseSuppression = noise;
+            _hasNoiseSuppression = true;
+            OnPropertyChanged(nameof(NoiseSuppressionVisibility));
+        }
         if (state.AncState is RazerAncState anc)
         {
             var index = Array.IndexOf(AncStates, anc);

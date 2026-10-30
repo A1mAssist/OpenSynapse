@@ -104,12 +104,41 @@ public sealed class WindowsRazerBleTransport : IRazerBleTransport
 
             using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutSource.CancelAfter(timeout);
+            var response = new List<byte>(RazerBleProtocol30.ResponseHeaderLength + 32);
             try
             {
-                return await _incoming.Reader.ReadAsync(timeoutSource.Token).ConfigureAwait(false);
+                while (true)
+                {
+                    var fragment = await _incoming.Reader.ReadAsync(timeoutSource.Token).ConfigureAwait(false);
+                    if (response.Count + fragment.Length >
+                        RazerBleProtocol30.ResponseHeaderLength + RazerBleProtocol30.MaximumPayloadLength)
+                    {
+                        return null;
+                    }
+
+                    response.AddRange(fragment);
+                    if (RazerBleProtocol30.TryGetCompleteResponseLength(response.ToArray(), out var length))
+                    {
+                        return response.Take(length).ToArray();
+                    }
+                }
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
+                // A compact 8-byte header can only be distinguished from a fragment after
+                // the notification window closes; give it one final parse attempt.
+                if (response.Count > 0)
+                {
+                    try
+                    {
+                        _ = RazerBleProtocol30.ParseResponse(response.ToArray());
+                        return response.ToArray();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                    }
+                }
+
                 return null;
             }
         }

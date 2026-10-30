@@ -837,6 +837,10 @@
     <value>游戏</value>
     <comment>游戏</comment>
   </data>
+  <data name="BladePerformanceModeTurbo" xml:space="preserve">
+    <value>Turbo</value>
+    <comment>Blade 18 2026 的 Gaming wire value 在雷云里显示为 Turbo</comment>
+  </data>
   <data name="Text_10C83C81" xml:space="preserve">
     <value>下一步</value>
     <comment>下一步</comment>
@@ -2144,6 +2148,7 @@
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>已是最新版本。</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>有可用更新：{0}。</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>检查失败：{0}</value></data>
+  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer 官方支持页没有这款机型的自动更新入口，请手动访问 mysupport.razer.com 检查 BIOS 和 EC。</value></data>
   <data name="FirmwareDownloadButton" xml:space="preserve"><value>前往下载</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn 行行为</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>多媒体键优先</value></data>
@@ -2878,6 +2883,34 @@
   <data name="RazerGamepadAssignmentsReadFailed" xml:space="preserve"><value>无法读取按键映射</value></data>
   <data name="RazerGamepadMappingTitle.Text" xml:space="preserve"><value>按键映射</value></data>
   <data name="RazerGamepadMappingRefresh.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="RazerGamepadAssignmentAction.Header" xml:space="preserve"><value>动作</value></data>
+  <data name="RazerGamepadAssignmentApply.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="RazerGamepadAssignmentKeep" xml:space="preserve"><value>保持当前</value></data>
+  <data name="RazerGamepadAssignmentOff" xml:space="preserve"><value>无操作</value></data>
+  <data name="RazerGamepadAssignmentControllerA" xml:space="preserve"><value>手柄 A</value></data>
+  <data name="RazerGamepadAssignmentControllerB" xml:space="preserve"><value>手柄 B</value></data>
+  <data name="RazerGamepadAssignmentControllerX" xml:space="preserve"><value>手柄 X</value></data>
+  <data name="RazerGamepadAssignmentControllerY" xml:space="preserve"><value>手柄 Y</value></data>
+  <data name="RazerGamepadAssignmentControllerLB" xml:space="preserve"><value>手柄 LB</value></data>
+  <data name="RazerGamepadAssignmentControllerRB" xml:space="preserve"><value>手柄 RB</value></data>
+  <data name="RazerGamepadAssignmentControllerLT" xml:space="preserve"><value>手柄 LT</value></data>
+  <data name="RazerGamepadAssignmentControllerRT" xml:space="preserve"><value>手柄 RT</value></data>
+  <data name="RazerGamepadAssignmentControllerLS" xml:space="preserve"><value>手柄 LS</value></data>
+  <data name="RazerGamepadAssignmentControllerRS" xml:space="preserve"><value>手柄 RS</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadUp" xml:space="preserve"><value>手柄 方向键上</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadDown" xml:space="preserve"><value>手柄 方向键下</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadLeft" xml:space="preserve"><value>手柄 方向键左</value></data>
+  <data name="RazerGamepadAssignmentControllerDPadRight" xml:space="preserve"><value>手柄 方向键右</value></data>
+  <data name="RazerGamepadAssignmentControllerView" xml:space="preserve"><value>手柄 View</value></data>
+  <data name="RazerGamepadAssignmentControllerMenu" xml:space="preserve"><value>手柄 Menu</value></data>
+  <data name="RazerGamepadAssignmentKeyW" xml:space="preserve"><value>键盘 W</value></data>
+  <data name="RazerGamepadAssignmentKeyA" xml:space="preserve"><value>键盘 A</value></data>
+  <data name="RazerGamepadAssignmentKeyS" xml:space="preserve"><value>键盘 S</value></data>
+  <data name="RazerGamepadAssignmentKeyD" xml:space="preserve"><value>键盘 D</value></data>
+  <data name="RazerGamepadAssignmentKeySpace" xml:space="preserve"><value>空格</value></data>
+  <data name="RazerGamepadAssignmentKeyEnter" xml:space="preserve"><value>回车</value></data>
+  <data name="RazerGamepadAssignmentKeyEscape" xml:space="preserve"><value>Esc</value></data>
+  <data name="RazerGamepadAssignmentKeyTab" xml:space="preserve"><value>Tab</value></data>
   <data name="RazerSpeakerCategory" xml:space="preserve"><value>音箱</value></data>
   <data name="RazerLightingEffectOff" xml:space="preserve"><value>关闭</value></data>
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>
@@ -2924,7 +2957,154 @@
   <data name="RazerOnboardMacroWriteFailed" xml:space="preserve"><value>没有选中要写入的宏。</value></data>
   <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>写入失败：{0}</value></data>
   <data name="RazerOnboardMacroWriteStepFailed" xml:space="preserve"><value>第 {0} 步：{1}</value></data>
-  <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>已用 {0} / {1} 字节 · 剩余 {2} 字节 · {3} 个槽位</value></data></root>
+  <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>已用 {0} / {1} 字节 · 剩余 {2} 字节 · {3} 个槽位</value></data>
+  <data name="BladeBatteryOptimizerTitle/Text" xml:space="preserve"><value>电池优化器</value></data>
+  <data name="BladeBatteryOptimizerDescription/Text" xml:space="preserve"><value>限制充电上限，减少满电静置时间。</value></data>
+  <data name="BladeBatteryOptimizerEnabledLabel/Text" xml:space="preserve"><value>启用</value></data>
+  <data name="BladeBatteryOptimizerThresholdLabel/Text" xml:space="preserve"><value>充电上限</value></data>
+  <data name="BladeBatteryOptimizerOverrideLabel/Text" xml:space="preserve"><value>本次充满</value></data>
+  <data name="BladeBatteryOptimizerApply/Content" xml:space="preserve"><value>应用</value></data>
+  <data name="BladeBatteryOptimizerOperation" xml:space="preserve"><value>电池优化器</value></data>
+  <data name="BladeBatteryOptimizerApplied" xml:space="preserve"><value>电池优化器已应用。</value></data>
+  <data name="CoolingPadCategory" xml:space="preserve"><value>散热垫</value></data>
+  <data name="CoolingPadStatusConnected" xml:space="preserve"><value>已连接</value></data>
+  <data name="CoolingPadStatusNotConnected" xml:space="preserve"><value>未连接</value></data>
+  <data name="CoolingPadStatusRead" xml:space="preserve"><value>当前 {0} RPM</value></data>
+  <data name="CoolingPadStatusApplied" xml:space="preserve"><value>已写入 {0} RPM，回读 {1} RPM</value></data>
+  <data name="CoolingPadErrorRead" xml:space="preserve"><value>读取风扇转速失败：{0}</value></data>
+  <data name="CoolingPadErrorApply" xml:space="preserve"><value>设置风扇转速失败：{0}</value></data>
+  <data name="CoolingPadFanTitle/Text" xml:space="preserve"><value>风扇</value></data>
+  <data name="CoolingPadDescription/Text" xml:space="preserve"><value>读取当前转速，或设置目标转速；写入后会回读确认。</value></data>
+  <data name="CoolingPadCurrentLabel/Text" xml:space="preserve"><value>当前转速</value></data>
+  <data name="CoolingPadTargetLabel/Text" xml:space="preserve"><value>目标转速</value></data>
+  <data name="CoolingPadRefreshButton/Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="CoolingPadApplyButton/Content" xml:space="preserve"><value>应用</value></data>  <data name="CoolingPadFixedModeTitle/Text" xml:space="preserve"><value>固定档</value></data>
+  <data name="CoolingPadFixedModeDescription/Text" xml:space="preserve"><value>低、中、高是设备固件固定的三档；写入后会回读确认。</value></data>
+  <data name="CoolingPadFixedModeLabel/Header" xml:space="preserve"><value>档位</value></data>
+  <data name="CoolingPadFixedModeApplyButton/Content" xml:space="preserve"><value>应用档位</value></data>
+  <data name="CoolingPadFixedModeStatus/Text" xml:space="preserve"><value>已切换到{0}，回读 {1} RPM</value></data>
+  <data name="CoolingPadFixedModeError/Text" xml:space="preserve"><value>切换固定档失败：{0}</value></data>
+  <data name="CoolingPadFixedLow/Text" xml:space="preserve"><value>低</value></data>
+  <data name="CoolingPadFixedMid/Text" xml:space="preserve"><value>中</value></data>
+  <data name="CoolingPadFixedHigh/Text" xml:space="preserve"><value>高</value></data>
+  <data name="CoolingPadLightingTitle/Text" xml:space="preserve"><value>灯光</value></data>
+  <data name="CoolingPadLightingDescription/Text" xml:space="preserve"><value>区域和灯效由设备返回；没有响应时这张卡不会显示。</value></data>
+  <data name="CoolingPadLightingEffectHeader/Header" xml:space="preserve"><value>效果</value></data>
+  <data name="CoolingPadLightingApplyButton/Content" xml:space="preserve"><value>应用灯光</value></data>
+  <data name="CoolingPadFixedModeCurrent/Text" xml:space="preserve"><value>当前 {0}，{1} RPM</value></data>
+  <data name="CoolingPadModeQuiet/Text" xml:space="preserve"><value>静音</value></data>
+  <data name="CoolingPadModeBalanced/Text" xml:space="preserve"><value>平衡</value></data>
+  <data name="CoolingPadModePerformance/Text" xml:space="preserve"><value>性能</value></data>
+  <data name="CoolingPadModeOff/Text" xml:space="preserve"><value>关闭</value></data>
+  <data name="CoolingPadModeUnknown/Text" xml:space="preserve"><value>模式 {0}</value></data>
+  <data name="AwBleHeadsetBatteryLabel/Text" xml:space="preserve"><value>电量</value></data>
+  <data name="AwBleHeadsetDescription/Text" xml:space="preserve"><value>电量与设备信息只读；下方控件仅在设备报告支持时显示。</value></data>
+  <data name="AwBleHeadsetControlsTitle/Text" xml:space="preserve"><value>设备控制</value></data>
+  <data name="AwBleHeadsetBundleNote/Text" xml:space="preserve"><value>控件按雷云 bundle 的命令与回读布局对齐；未做硬件验证。</value></data>
+  <data name="AwBleHeadsetVolumeLabel/Text" xml:space="preserve"><value>主音量</value></data>
+  <data name="AwBleHeadsetSidetoneLabel/Text" xml:space="preserve"><value>侧音</value></data>
+  <data name="AwBleHeadsetGameModeLabel/Text" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="AwBleHeadsetEqPresetLabel/Header" xml:space="preserve"><value>EQ 预设</value></data>
+  <data name="AwBleHeadsetAutoPowerOffLabel/Header" xml:space="preserve"><value>自动关机（分钟）</value></data>
+  <data name="AwBleHeadsetAutoPowerOffHint/Text" xml:space="preserve"><value>0 表示关闭。</value></data>
+  <data name="AwBleHeadsetChromaBrightnessLabel/Text" xml:space="preserve"><value>Chroma 亮度</value></data>
+  <data name="AwBleHeadsetBassLabel/Text" xml:space="preserve"><value>低音</value></data>
+  <data name="AwBleHeadsetHapticsLabel/Text" xml:space="preserve"><value>触觉强度</value></data>
+  <data name="AwBleHeadsetHapticsValue" xml:space="preserve"><value>{0}/6</value></data>
+  <data name="AwBleHeadsetHapticsHint/Text" xml:space="preserve"><value>0 关闭；1–2 低；3–5 中；6 高。</value></data>
+  <data name="AwBleHeadsetMicEqLabel/Header" xml:space="preserve"><value>麦克风 EQ 预设</value></data>
+  <data name="AwBleHeadsetCustomEqTitle/Text" xml:space="preserve"><value>自定义 EQ</value></data>
+  <data name="AwBleHeadsetFirmwareLabel/Text" xml:space="preserve"><value>固件</value></data>
+  <data name="AwBleHeadsetSerialLabel/Text" xml:space="preserve"><value>序列号</value></data>
+  <data name="AwBleHeadsetConnectionLabel/Text" xml:space="preserve"><value>连接</value></data>
+  <data name="AwBleHeadsetChargingLabel/Text" xml:space="preserve"><value>充电</value></data>
+  <data name="AwBleHeadsetConnectionNone" xml:space="preserve"><value>未连接</value></data>
+  <data name="AwBleHeadsetConnectionBle" xml:space="preserve"><value>BLE 已连接</value></data>
+  <data name="AwBleHeadsetConnectionDongle" xml:space="preserve"><value>接收器已连接</value></data>
+  <data name="AwBleHeadsetConnectionMaster" xml:space="preserve"><value>主连接</value></data>
+  <data name="AwBleHeadsetConnectionSlave" xml:space="preserve"><value>从连接</value></data>
+  <data name="AwBleHeadsetEarbudConnection" xml:space="preserve"><value>右 {0} / 左 {1}</value></data>
+  <data name="AwBleHeadsetChargingNone" xml:space="preserve"><value>未充电</value></data>
+  <data name="AwBleHeadsetChargingActive" xml:space="preserve"><value>充电中</value></data>
+  <data name="AwBleHeadsetChargingFailed" xml:space="preserve"><value>充电失败</value></data>
+  <data name="AwBleHeadsetMicEqDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="AwBleHeadsetMicEqBoost" xml:space="preserve"><value>麦克风增强</value></data>
+  <data name="AwBleHeadsetMicEqBroadcast" xml:space="preserve"><value>广播</value></data>
+  <data name="AwBleHeadsetMicEqConference" xml:space="preserve"><value>会议</value></data>
+  <data name="AwBleHeadsetMicEqCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="AwBleHeadsetSaved" xml:space="preserve"><value>已应用</value></data>
+  <data name="AwBleHeadsetErrorWrite" xml:space="preserve"><value>写入失败：{0}</value></data>
+  <data name="AwBleHeadsetPercent" xml:space="preserve"><value>{0}%</value></data>
+  <data name="AwBleHeadsetEqDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="AwBleHeadsetEqAmplified" xml:space="preserve"><value>增强</value></data>
+  <data name="AwBleHeadsetEqVocal" xml:space="preserve"><value>人声</value></data>
+  <data name="AwBleHeadsetEqBass" xml:space="preserve"><value>低音增强</value></data>
+  <data name="AwBleHeadsetEqClarity" xml:space="preserve"><value>清晰度增强</value></data>
+  <data name="AwBleHeadsetEqTreble" xml:space="preserve"><value>高音增强</value></data>
+  <data name="AwBleHeadsetEqFps" xml:space="preserve"><value>FPS 脚步声</value></data>
+  <data name="AwBleHeadsetEqGame" xml:space="preserve"><value>游戏</value></data>
+  <data name="AwBleHeadsetEqMusic" xml:space="preserve"><value>音乐</value></data>
+  <data name="AwBleHeadsetEqMovie" xml:space="preserve"><value>电影</value></data>
+  <data name="AwBleHeadsetEqApex" xml:space="preserve"><value>Apex 英雄</value></data>
+  <data name="AwBleHeadsetEqCsgo" xml:space="preserve"><value>CS:GO</value></data>
+  <data name="AwBleHeadsetEqValorant" xml:space="preserve"><value>无畏契约</value></data>
+  <data name="AwBleHeadsetEqFortnite" xml:space="preserve"><value>堡垒之夜</value></data>
+  <data name="AwBleHeadsetEqCustom2" xml:space="preserve"><value>自定义 2</value></data>
+  <data name="AwBleHeadsetEqCustom1" xml:space="preserve"><value>自定义 1</value></data>
+  <data name="AwBleHeadsetStatusRead/Text" xml:space="preserve"><value>已读取电量：{0}</value></data>
+  <data name="AwBleHeadsetErrorRead/Text" xml:space="preserve"><value>读取电量失败：{0}</value></data>
+  <data name="AwBleHeadsetEarbudBattery/Text" xml:space="preserve"><value>右 {0}% / 左 {1}%</value></data>
+  <data name="CoolingPadCurveTitle/Text" xml:space="preserve"><value>智能曲线</value></data>
+  <data name="CoolingPadCurveDescription/Text" xml:space="preserve"><value>每秒读取温度，按雷云阶梯表写入目标转速；仅在目标变化时写入。</value></data>
+  <data name="CoolingPadCurveModeHeader/Header" xml:space="preserve"><value>模式</value></data>
+  <data name="CoolingPadCurveSourceHeader/Header" xml:space="preserve"><value>温度源</value></data>
+  <data name="CoolingPadCurveApplyButton/Content" xml:space="preserve"><value>应用曲线</value></data>
+  <data name="CoolingPadCurveManual/Text" xml:space="preserve"><value>手动</value></data>
+  <data name="CoolingPadCurveQuiet/Text" xml:space="preserve"><value>静音</value></data>
+  <data name="CoolingPadCurveBalanced/Text" xml:space="preserve"><value>平衡</value></data>
+  <data name="CoolingPadCurvePerformance/Text" xml:space="preserve"><value>性能</value></data>
+  <data name="CoolingPadCurveSourceCpu/Text" xml:space="preserve"><value>CPU</value></data>
+  <data name="CoolingPadCurveSourceGpu/Text" xml:space="preserve"><value>GPU</value></data>
+  <data name="CoolingPadCurveSourceBoth/Text" xml:space="preserve"><value>CPU + GPU</value></data>
+  <data name="CoolingPadCurveApplied/Text" xml:space="preserve"><value>已启用{0}曲线，等待温度</value></data>
+  <data name="CoolingPadCurveActive/Text" xml:space="preserve"><value>{0}：{1} RPM</value></data>
+  <data name="CoolingPadCurveManualStatus/Text" xml:space="preserve"><value>已切回手动</value></data>
+  <data name="CoolingPadCurveTemperatureUnavailable/Text" xml:space="preserve"><value>温度不可用，本轮不写入</value></data>
+  <data name="CoolingPadCurveError/Text" xml:space="preserve"><value>曲线写入失败：{0}</value></data>
+  <data name="KiyoCategory" xml:space="preserve"><value>相机</value></data>
+  <data name="KiyoStatusConnected" xml:space="preserve"><value>已连接</value></data>
+  <data name="KiyoStatusNotConnected" xml:space="preserve"><value>未连接</value></data>
+  <data name="KiyoAuto" xml:space="preserve"><value>自动</value></data>
+  <data name="KiyoStatusRead" xml:space="preserve"><value>已读取相机设置</value></data>
+  <data name="KiyoErrorRead" xml:space="preserve"><value>读取相机失败：{0}</value></data>
+  <data name="KiyoWhiteBalanceApplied" xml:space="preserve"><value>白平衡已写入并回读</value></data>
+  <data name="KiyoWhiteBalanceError" xml:space="preserve"><value>白平衡写入失败：{0}</value></data>
+  <data name="KiyoSettingsError" xml:space="preserve"><value>无法打开雷蛇相机设置</value></data>
+  <data name="KiyoSettingsErrorText" xml:space="preserve"><value>打开雷蛇相机设置失败：{0}</value></data>
+  <data name="KiyoImageSettingsTitle/Text" xml:space="preserve"><value>图像设置</value></data>
+  <data name="KiyoBrightnessLabel/Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="KiyoContrastLabel/Text" xml:space="preserve"><value>对比度</value></data>
+  <data name="KiyoSaturationLabel/Text" xml:space="preserve"><value>饱和度</value></data>
+  <data name="KiyoWhiteBalanceLabel/Text" xml:space="preserve"><value>白平衡</value></data>
+  <data name="KiyoAutoWhiteBalance/Text" xml:space="preserve"><value>自动白平衡</value></data>
+  <data name="KiyoSettingsDescription/Text" xml:space="preserve"><value>亮度和对比度写入使用雷蛇原生设置页；这里读取当前值并应用白平衡。</value></data>
+  <data name="KiyoApplyWhiteBalance/Text" xml:space="preserve"><value>应用白平衡</value></data>
+  <data name="KiyoOpenSettings/Text" xml:space="preserve"><value>打开雷蛇相机设置</value></data>
+  <data name="RazerMixer053ETitle/Text" xml:space="preserve"><value>音频混音器</value></data>
+  <data name="RazerMixer053EInfoFormat" xml:space="preserve"><value>固件 {0} · 序列号 {1} · 模式 {2}</value></data>
+  <data name="RazerMixer053EFadersFormat" xml:space="preserve"><value>推子 1-4（原始值）: {0} / {1} / {2} / {3}</value></data>
+  <data name="RazerMixer053EStatusFormat" xml:space="preserve"><value>静音 1-4: {0} / {1} / {2} / {3} · 提示音: {4} · 麦克风: {5} · 48V: {6} · 麦克风输入: {7} · 线路输入: {8}</value></data>
+  <data name="RazerMixer053EMuteButton" xml:space="preserve"><value>M{0}: {1}</value></data>
+  <data name="RazerMixer053EMicMuteButton" xml:space="preserve"><value>麦克风: {0}</value></data>
+  <data name="RazerMixer053EOn" xml:space="preserve"><value>开</value></data>
+  <data name="RazerMixer053EOff" xml:space="preserve"><value>关</value></data>
+  <data name="RazerMixer053EMuted" xml:space="preserve"><value>已静音</value></data>
+  <data name="RazerMixer053EUnmuted" xml:space="preserve"><value>未静音</value></data>
+  <data name="RazerMixer053EBrightnessLabel/Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="RazerMixer053EApplyBrightness/Content" xml:space="preserve"><value>应用亮度</value></data>
+  <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>音频混音器 HID 路径不可用</value></data>
+  <data name="RazerMixer053ESaved" xml:space="preserve"><value>已写入并回读</value></data>
+</root>
 
 
 

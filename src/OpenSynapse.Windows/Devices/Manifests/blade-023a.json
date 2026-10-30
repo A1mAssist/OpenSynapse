@@ -115,11 +115,18 @@
     },
     "keyboard-effect.set": {
       "transactionId": "03",
-      "dataSize": "03",
+      "dataSize": "06",
       "commandClass": "0F",
       "commandId": "02",
       "arguments": "",
       "allowRemainingPacketsMismatch": true
+    },
+    "gaming-mode.get": {
+      "transactionId": "00",
+      "dataSize": "04",
+      "commandClass": "00",
+      "commandId": "88",
+      "arguments": ""
     },
     "gaming-mode.set": {
       "transactionId": "00",
@@ -128,5 +135,34 @@
       "commandId": "08",
       "arguments": ""
     }
-  }
+  },
+  "matrixRows": 6,
+  "matrixColumns": 16,
+  "device": {
+    "name": "Razer Blade 15 Advanced Model",
+    "shortName": "Charlotte2_MW",
+    "editionIds": [
+      0,
+      129
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      12
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBlade",
+    "firmware": {
+      "latest": null,
+      "driver": {
+        "version": "0.1.2.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/570/1.0.0.1/PID023aDrv_v0.1.2.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "LedMatrixBlade"
 }

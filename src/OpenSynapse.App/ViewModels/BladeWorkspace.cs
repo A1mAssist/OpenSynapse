@@ -19,7 +19,7 @@ namespace OpenSynapse.App.ViewModels;
 /// Owns the Blade page: the profile-backed performance, fan, lighting, charge and MUX state
 /// plus every write that follows it. The shell only binds <c>Blade.*</c> and routes shortcuts.
 /// </summary>
-public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
+public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
     private static readonly TimeSpan BrightnessVerificationDelay = TimeSpan.FromMilliseconds(150);
 
@@ -126,10 +126,22 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
         _readSerialAsync = readSerialAsync;
     }
 
+    private BladeBatteryOptimizerWorkspace? _batteryOptimizer;
+
+    public BladeBatteryOptimizerWorkspace BatteryOptimizer =>
+        _batteryOptimizer ??= new BladeBatteryOptimizerWorkspace(
+            new BladeBatteryOptimizerService(_deviceTelemetryReader),
+            () => ActiveDescriptors,
+            RunDeviceOperationAsync);
+
+    internal void UpdateBatteryOptimizer(RazerDeviceTelemetry? telemetry) =>
+        BatteryOptimizer.Update(telemetry);
+
     public event PropertyChangedEventHandler? PropertyChanged;
     internal event Action<string?, ushort>? ControlDeviceChanged;
     internal event Action<BladePerformanceMode>? PerformanceModeChangedByUser;
     internal event Action<bool>? GamingModeChangedByUser;
+    internal event Action<bool>? GamingModeStateChanged;
     internal event Action<bool>? TouchpadChangedByUser;
     internal event Action<bool>? OneTimeFullChargeChangedByUser;
     internal event Action? InputProfileChanged;
@@ -287,8 +299,16 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
             return;
         }
 
-        await _bladeLightingController!.ApplyAsync(
-            ActiveDescriptors, effect, cancellationToken);
+        try
+        {
+            await _bladeLightingController!.ApplyAsync(
+                ActiveDescriptors, effect, cancellationToken);
+        }
+        catch
+        {
+            NotifyLightingDialectChangedIfDowngraded();
+            throw;
+        }
         targetLighting.Effect = encoded.Effect;
         targetLighting.Parameters = encoded.Parameters;
         if (!await SaveProfileAsync(cancellationToken))
@@ -1338,9 +1358,11 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
             .Select(mode => AppStrings.Text(BladePerformanceModeTextKey(mode)))
             .ToArray();
 
-    private static string BladePerformanceModeTextKey(BladePerformanceMode mode) => mode switch
+    private string BladePerformanceModeTextKey(BladePerformanceMode mode) => mode switch
     {
         BladePerformanceMode.Balanced => "Text_9753B259",
+        BladePerformanceMode.Gaming when _blade._bladeProductId == BladeModelCapabilities.Blade18_2026ProductId =>
+            "BladePerformanceModeTurbo",
         BladePerformanceMode.Gaming => "Text_GamingPerformanceMode",
         BladePerformanceMode.Performance => "Text_C1DB7AE1",
         BladePerformanceMode.BatterySaver => "Text_EE43F0B1",
@@ -1586,6 +1608,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
         OnPropertyChanged(nameof(CpuBoostOptions));
         OnPropertyChanged(nameof(LightingCardVisibility));
         OnPropertyChanged(nameof(LightingModeOptions));
+        OnPropertyChanged(nameof(LightingEffectVisibility));
         OnPropertyChanged(nameof(LightingRenderModeVisibility));
         OnPropertyChanged(nameof(LightingPresetVisibility));
         OnPropertyChanged(nameof(LightingColorVisibility));
@@ -1680,17 +1703,16 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
     /// firmware-rendered uniform effects gets a matching short list instead of entries that
     /// would not apply to it.
     /// </summary>
-    public IReadOnlyList<string> LightingModeOptions => UsesFirmwareKeyboardLighting
-    ? AppStrings.Texts(
-        AppStrings.Text("Text_39B523BD"),
-        AppStrings.Text("Text_7EDA32B9"),
-        AppStrings.Text("Text_21BE26F0"),
-        AppStrings.Text("Text_165FCE9D"))
-    : _blade._bladeChromaAnimation is null
-        ? AppStrings.Texts(
-            AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_8FF9138F"), AppStrings.Text("Text_7EDA32B9"), AppStrings.Text("Text_21BE26F0"), AppStrings.Text("Text_165FCE9D"), AppStrings.Text("Text_5DCB722E"), AppStrings.Text("Text_E2309DE4"), AppStrings.Text("Text_D1D985CC"), AppStrings.Text("Text_F3845B2A"), AppStrings.Text("Text_33F4E277"), AppStrings.Text("Text_2A3A07A1"), AppStrings.Text("Text_51212D25"), AppStrings.Text("Text_388555B3"))
-        : AppStrings.Texts(
-            AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_8FF9138F"), AppStrings.Text("Text_7EDA32B9"), AppStrings.Text("Text_21BE26F0"), AppStrings.Text("Text_165FCE9D"), AppStrings.Text("Text_5DCB722E"), AppStrings.Text("Text_E2309DE4"), AppStrings.Text("Text_D1D985CC"), AppStrings.Text("Text_F3845B2A"), AppStrings.Text("Text_33F4E277"), AppStrings.Text("Text_2A3A07A1"), AppStrings.Text("Text_51212D25"), AppStrings.Text("Text_388555B3"), AppStrings.Text("BladeLightingModeChromaFile"));
+    public IReadOnlyList<string> LightingModeOptions =>
+        BladeLightingDialectPresentation.ModeTextKeys(
+                LightingDialect,
+                _blade._bladeChromaAnimation is not null)
+            .Select(AppStrings.Text)
+            .ToArray();
+
+    public Visibility LightingEffectVisibility => ActiveBladeLightingModes.Count > 0
+        ? Visibility.Visible
+        : Visibility.Collapsed;
 
     private void SetChromaAnimation(ChromaFileAnimation? animation)
     {
@@ -1702,6 +1724,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
         }
 
         OnPropertyChanged(nameof(LightingModeOptions));
+        OnPropertyChanged(nameof(LightingEffectVisibility));
         if (animation is null &&
             LightingModeIndex ==
             Array.IndexOf(BladeLightingModes, BladeLightingMode.ChromaFile))
@@ -1751,7 +1774,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
     /// </summary>
     public bool CanSetLightingSettings => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
-        (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
+        CanApplyLightingDialect;
     public int LightingPowerProfileIndex
     {
         get => _bladeLightingPowerProfileIndex;
@@ -1859,7 +1882,8 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
             }
         }
     }
-    public Visibility LightingRenderModeVisibility => !UsesFirmwareKeyboardLighting &&
+    public Visibility LightingRenderModeVisibility =>
+        LightingDialect is not (BladeLightingDialect.FirmwareEffect or BladeLightingDialect.Unknown or BladeLightingDialect.LedMatrixBlade) &&
         SelectedLightingMode is BladeLightingMode.Wave or BladeLightingMode.Spectrum
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -1868,24 +1892,32 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
     public Visibility LightingPresetVisibility => SelectedLightingMode == BladeLightingMode.Starlight
         ? LightingColorVisibility : LightingSecondColorVisibility;
     public Visibility LightingColorVisibility => !BladeFirmwarePaletteHidden &&
-        !UsesFirmwareKeyboardLighting &&
-        (SelectedLightingMode is
-        BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
-        BladeLightingMode.Ripple or BladeLightingMode.Tidal or BladeLightingMode.Spectrum or
-        BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
-        (SelectedLightingMode == BladeLightingMode.Starlight && StarlightColorModeIndex != 0))
+        (LightingDialect == BladeLightingDialect.LedMatrixBlade
+            ? SelectedLightingMode is BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive
+            : !UsesFirmwareKeyboardLighting &&
+                (SelectedLightingMode is
+                BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive or
+                BladeLightingMode.Ripple or BladeLightingMode.Tidal or BladeLightingMode.Spectrum or
+                BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
+                (SelectedLightingMode == BladeLightingMode.Starlight && StarlightColorModeIndex != 0)))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility LightingSecondColorVisibility => !BladeFirmwarePaletteHidden && !UsesFirmwareKeyboardLighting &&
-        (SelectedLightingMode is BladeLightingMode.Tidal or
-        BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
-        (SelectedLightingMode == BladeLightingMode.Starlight && StarlightColorModeIndex == 2))
+    public Visibility LightingSecondColorVisibility => !BladeFirmwarePaletteHidden &&
+        (LightingDialect == BladeLightingDialect.LedMatrixBlade
+            ? false
+            : !UsesFirmwareKeyboardLighting &&
+                (SelectedLightingMode is BladeLightingMode.Tidal or
+                BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or BladeLightingMode.Wheel or BladeLightingMode.AudioMeter ||
+                (SelectedLightingMode == BladeLightingMode.Starlight && StarlightColorModeIndex == 2)))
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility LightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden && !UsesFirmwareKeyboardLighting &&
-        SelectedLightingMode is
-        BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
-        BladeLightingMode.Wheel or BladeLightingMode.AudioMeter
+    public Visibility LightingTertiaryColorVisibility => !BladeFirmwarePaletteHidden &&
+        (LightingDialect == BladeLightingDialect.LedMatrixBlade
+            ? false
+            : !UsesFirmwareKeyboardLighting &&
+                SelectedLightingMode is
+                BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
+                BladeLightingMode.Wheel or BladeLightingMode.AudioMeter)
         ? Visibility.Visible
         : Visibility.Collapsed;
     /// <summary>
@@ -1927,7 +1959,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
     /// </summary>
     public bool CanSetLighting => _blade._canSetBladeBrightness &&
         BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId) &&
-        (UsesFirmwareKeyboardLighting || _bladeLightingController is not null);
+        CanApplyLightingDialect;
 
     /// <summary>
     /// Both Blade generations have an admitted keyboard-lighting report, so the card is
@@ -1946,9 +1978,9 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
     public BladeLightingMode? SelectedLightingModeForPage => SelectedLightingMode;
 
     private IReadOnlyList<BladeLightingMode> ActiveBladeLightingModes =>
-        UsesFirmwareKeyboardLighting
-            ? BladeLighting2023Admitted.Effects
-            : BladeLightingModes;
+        BladeLightingDialectPresentation.Modes(
+            LightingDialect,
+            _blade._bladeChromaAnimation is not null);
 
     /// <summary>
     /// The Blade 16 2023 renders these effects in firmware through its own report, so the
@@ -1967,8 +1999,17 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
 
         await RunDeviceOperationAsync("Keyboard effect", async () =>
         {
-            var actual = await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
-                ActiveDescriptors, effect, cancellationToken);
+            BladeLighting2023Effect actual;
+            try
+            {
+                actual = await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
+                    ActiveDescriptors, effect, cancellationToken);
+            }
+            catch
+            {
+                NotifyLightingDialectChangedIfDowngraded();
+                throw;
+            }
             _blade._bladeKeyboardEffect2023 = actual;
 
             // Go through the shared codec so the persisted key matches the one
@@ -2136,6 +2177,29 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
     private LightingProfile EditableLightingProfile =>
         SelectedLightingPowerOverrides?.Lighting ?? GetActiveProfile().Global.Lighting;
 
+    private void NotifyLightingDialectChangedIfDowngraded()
+    {
+        if (!BladeLightingRuntimeDialect.IsDowngraded(_blade._bladeProductId))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(LightingModeOptions));
+        OnPropertyChanged(nameof(LightingEffectVisibility));
+        OnPropertyChanged(nameof(LightingRenderModeVisibility));
+        OnPropertyChanged(nameof(LightingPresetVisibility));
+        OnPropertyChanged(nameof(LightingColorVisibility));
+        OnPropertyChanged(nameof(LightingSecondColorVisibility));
+        OnPropertyChanged(nameof(LightingTertiaryColorVisibility));
+        OnPropertyChanged(nameof(WaveDirectionVisibility));
+        OnPropertyChanged(nameof(ReactiveSpeedVisibility));
+        OnPropertyChanged(nameof(StarlightSpeedVisibility));
+        OnPropertyChanged(nameof(StarlightColorModeVisibility));
+        OnPropertyChanged(nameof(AnimationSpeedVisibility));
+        OnPropertyChanged(nameof(CanSetLighting));
+        OnPropertyChanged(nameof(CanSetLightingSettings));
+    }
+
     internal void RefreshLightingEditor()
     {
         if (Profile.Profiles.Count == 0)
@@ -2290,6 +2354,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
 
     internal void ApplyTelemetry(RazerDeviceTelemetry telemetry)
     {
+        UpdateBatteryOptimizer(telemetry);
         if (telemetry.BladeKeyboardBrightness is byte brightness)
         {
             if (!_isBrightnessRestorePending())
@@ -2482,6 +2547,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
 
     internal void ResetTelemetry()
     {
+        UpdateBatteryOptimizer(null);
         StatusText = AppStrings.Text("Text_4626A505");
         BrightnessText = "--";
         BrightnessPercent = 0;
@@ -2588,6 +2654,7 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
     private void SetGameMode(BladeGameModeTelemetry? gameMode)
     {
         _blade.SetGameMode(gameMode);
+        GamingModeStateChanged?.Invoke(_blade._bladeGameModeEnabled);
         OnPropertyChanged(nameof(GameModeText));
         OnPropertyChanged(nameof(GameModeEnabled));
         OnPropertyChanged(nameof(CanSetGamingMode));
@@ -2836,8 +2903,18 @@ public sealed class BladeWorkspace : INotifyPropertyChanged, IAsyncDisposable
 
     internal IReadOnlyList<BladePerformanceMode> PerformanceModes => _blade.PerformanceModes;
 
+    internal BladeLightingDialect LightingDialect =>
+        BladeLightingRuntimeDialect.Get(_blade._bladeProductId);
+
     internal bool UsesFirmwareKeyboardLighting =>
-        BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(_blade._bladeProductId);
+        BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(LightingDialect);
+
+    private bool CanApplyLightingDialect =>
+        LightingDialect == BladeLightingDialect.FirmwareEffect ||
+        (_bladeLightingController is not null &&
+         LightingDialect is BladeLightingDialect.LedMatrixBlade or
+             BladeLightingDialect.LedMatrix710 or BladeLightingDialect.LedMatrixBlade2 or
+             BladeLightingDialect.LedMatrix2026);
 
     /// <summary>
     /// The card stays visible when the service cannot answer, so a stale machine service

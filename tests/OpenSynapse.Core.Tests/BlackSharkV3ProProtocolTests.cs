@@ -34,6 +34,24 @@ public sealed class BlackSharkV3ProProtocolTests
     }
 
     [Fact]
+    public void BothUsbProductIdsUseTheWiredDirection()
+    {
+        Assert.True(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.WiredProductId));
+        Assert.True(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.UsbProductId));
+        Assert.False(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.DongleProductId));
+        Assert.False(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.WirelessProductId));
+    }
+
+    [Fact]
+    public void KnownUnsupportedBlackSharkPidDoesNotFallBackToTheV3ProPanel()
+    {
+        Assert.False(BlackSharkHeadsetService.IsBlackSharkControlInterface(
+            0x0565, "Razer BlackShark V2 HyperSpeed", 0xFF14, 0x0001, 64));
+        Assert.True(BlackSharkHeadsetService.IsBlackSharkControlInterface(
+            0x9999, "Razer BlackShark V2 HyperSpeed", 0xFF14, 0x0001, 64));
+    }
+
+    [Fact]
     public void SetSidetone_EncodesLevel()
     {
         var report = BlackSharkV3ProProtocol.CreateSetSidetone(7);
@@ -69,16 +87,19 @@ public sealed class BlackSharkV3ProProtocolTests
         Assert.Equal(0x00, report[14]);
     }
 
-    [Fact]
-    public void SetGameChat_EncodesBalance()
+    [Theory]
+    [InlineData(0, 20)]
+    [InlineData(3, 17)]
+    [InlineData(20, 0)]
+    public void SetGameChat_EncodesTheMiddlewareInvertedBalance(int balance, byte expected)
     {
-        var report = BlackSharkV3ProProtocol.CreateSetGameChat(10);
+        var report = BlackSharkV3ProProtocol.CreateSetGameChat(balance);
 
-        // The middleware declares one payload byte for 0xDC:0x01.
+        // The middleware declares one payload byte for 0xDC:0x01 and writes 20 - balance.
         Assert.Equal(0x05, report[6]);
         Assert.Equal(0xDC, report[10]);
         Assert.Equal(0x01, report[12]);
-        Assert.Equal(0x0A, report[13]);
+        Assert.Equal(expected, report[13]);
         Assert.Equal(0x00, report[14]);
         Assert.True(BlackSharkV3ProProtocol.HasValidCrc(report));
     }

@@ -39,6 +39,8 @@ $channelByDeviceType = @{
     AudioValkyrie = 'Valkyrie64'
     AudioBillieT1 = 'Billie64'
     AudioBillieT2 = 'Billie64'
+    AudioBastetT1 = 'Billie64'
+    rzDevice40HeadsetAiroha = 'Mxic64'
 }
 $dedicatedBlackSharkPids = @('0576', '0577', '101B', '101C')
 

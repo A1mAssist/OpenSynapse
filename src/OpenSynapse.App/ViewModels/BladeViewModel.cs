@@ -110,6 +110,8 @@ internal sealed class BladeViewModel
         _bladePerformanceModeText = mode switch
         {
             BladePerformanceMode.Balanced => AppStrings.Text("Text_9753B259"),
+            BladePerformanceMode.Gaming when _bladeProductId == BladeModelCapabilities.Blade18_2026ProductId =>
+                AppStrings.Text("BladePerformanceModeTurbo"),
             BladePerformanceMode.Gaming => AppStrings.Text("Text_GamingPerformanceMode"),
             BladePerformanceMode.Performance => AppStrings.Text("Text_C1DB7AE1"),
             BladePerformanceMode.BatterySaver => AppStrings.Text("Text_EE43F0B1"),

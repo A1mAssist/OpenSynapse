@@ -16,6 +16,7 @@ internal static class OpenRazerKrakenV4Protocol
     private const byte ReportId = 0x02;
     private const byte TransactionId = 0x60;
     private const byte WiredFlag = 0x00;
+    private const byte DongleFlag = 0x80;
 
     /// <summary>
     /// "Set Chroma Frame". The bundle's command table pairs that name with 0F:03;
@@ -30,11 +31,11 @@ internal static class OpenRazerKrakenV4Protocol
     private const byte SetEffectCommandId = 0xC1;
 
     /// <summary>
-    /// The effect command travels as a three byte header in the payload, the same
-    /// shape the firmware uses for the other general commands. Set Chroma Effect is
-    /// declared as C0 01 01 in the bundle's command table.
+    /// Set Chroma Effect is C0 00 01 in the request; C0 01 01 is the expected
+    /// response header. The bundle's command table declares C0 00 0xFF and the
+    /// caller replaces the last byte with the payload length.
     /// </summary>
-    private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x01, 0x01];
+    private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x00, 0x01];
 
     private const byte EffectOff = 0x00;
     private const byte EffectStatic = 0x01;
@@ -43,28 +44,31 @@ internal static class OpenRazerKrakenV4Protocol
     private const int PayloadOffset = 10;
     private const int ChecksumOffset = ReportLength - 2;
 
-    internal static IReadOnlyList<byte[]> CreateOff() =>
+    internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false) =>
     [
-        CreateEffect(EffectOff),
-        CreateFrame(0, LedCount - 1, new OpenRazerColor(0, 0, 0)),
+        CreateEffect(EffectOff, isDongle),
+        CreateFrame(0, LedCount - 1, new OpenRazerColor(0, 0, 0), isDongle),
     ];
 
     /// <summary>
     /// The bundle's connect handshake is the general command 02 00 00. Synapse
     /// sends it before it issues any lighting command.
     /// </summary>
-    internal static byte[] CreateConnect() =>
-        CreateGeneralReport([0x02, 0x00, 0x00], []);
+    internal static byte[] CreateConnect(bool isDongle = false) =>
+        CreateGeneralReport([0x02, 0x00, 0x00], [], isDongle);
 
-    internal static IReadOnlyList<byte[]> CreateStatic(OpenRazerColor color, byte? intensity = null) =>
+    internal static IReadOnlyList<byte[]> CreateStatic(
+        OpenRazerColor color,
+        byte? intensity = null,
+        bool isDongle = false) =>
     [
-        CreateEffect(EffectStatic),
-        CreateFrame(0, LedCount - 1, Scale(color, intensity)),
+        CreateEffect(EffectStatic, isDongle),
+        CreateFrame(0, LedCount - 1, Scale(color, intensity), isDongle),
     ];
 
-    internal static IReadOnlyList<byte[]> CreateWave(byte? intensity = null) =>
+    internal static IReadOnlyList<byte[]> CreateWave(byte? intensity = null, bool isDongle = false) =>
     [
-        CreateEffect(EffectWave),
+        CreateEffect(EffectWave, isDongle),
     ];
 
     /// <summary>
@@ -72,7 +76,11 @@ internal static class OpenRazerKrakenV4Protocol
     /// bytes. The bounds travel in the payload, so a one row frame starts at
     /// column zero and the colours follow.
     /// </summary>
-    private static byte[] CreateFrame(int row, int column, OpenRazerColor color)
+    private static byte[] CreateFrame(
+        int row,
+        int column,
+        OpenRazerColor color,
+        bool isDongle)
     {
         var payload = new List<byte> { 0x00, 0x00, (byte)row, 0x00, (byte)column };
         for (var led = 0; led < LedCount; led++)
@@ -82,13 +90,17 @@ internal static class OpenRazerKrakenV4Protocol
             payload.Add(color.Blue);
         }
 
-        return CreateReport(FrameCommandClass, FrameCommandId, payload);
+        return CreateReport(FrameCommandClass, FrameCommandId, payload, isDongle);
     }
 
-    private static byte[] CreateEffect(byte effectId) =>
-        CreateGeneralReport(SetEffectHeader, [effectId]);
+    private static byte[] CreateEffect(byte effectId, bool isDongle) =>
+        CreateGeneralReport(SetEffectHeader, [effectId], isDongle);
 
-    private static byte[] CreateReport(byte commandClass, byte commandId, IReadOnlyList<byte> payload)
+    private static byte[] CreateReport(
+        byte commandClass,
+        byte commandId,
+        IReadOnlyList<byte> payload,
+        bool isDongle)
     {
         var report = new byte[ReportLength];
         report[0] = ReportId;
@@ -96,7 +108,7 @@ internal static class OpenRazerKrakenV4Protocol
         report[6] = checked((byte)(payload.Count + 1));
         report[7] = commandClass;
         report[8] = commandId;
-        report[9] = WiredFlag;
+        report[9] = isDongle ? DongleFlag : WiredFlag;
         for (var index = 0; index < payload.Count; index++)
         {
             report[PayloadOffset + index] = payload[index];
@@ -111,7 +123,10 @@ internal static class OpenRazerKrakenV4Protocol
     /// The general command shape carries its command header in the payload instead
     /// of the class and id bytes, and its size counts both the header and the data.
     /// </summary>
-    private static byte[] CreateGeneralReport(IReadOnlyList<byte> command, IReadOnlyList<byte> data)
+    private static byte[] CreateGeneralReport(
+        IReadOnlyList<byte> command,
+        IReadOnlyList<byte> data,
+        bool isDongle)
     {
         var report = new byte[ReportLength];
         report[0] = ReportId;
@@ -127,6 +142,7 @@ internal static class OpenRazerKrakenV4Protocol
             report[PayloadOffset + command.Count + index] = data[index];
         }
 
+        report[9] = isDongle ? DongleFlag : WiredFlag;
         report[ChecksumOffset] = CalculateChecksum(report);
         return report;
     }

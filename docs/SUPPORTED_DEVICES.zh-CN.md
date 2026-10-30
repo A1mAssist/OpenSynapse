@@ -1,6 +1,6 @@
 # 支持设备
 
-OpenSynapse 只为已连接且成功识别 Windows HID 端点和协议的设备创建页面。下表按设备类型分组，不按协议或目录来源分组。
+OpenSynapse 只为已连接且成功识别 Windows HID 端点和协议的设备创建页面。Razer Kiyo 相机（`1532:0E03`）是例外：它的页面使用雷蛇相机 DLL，不走 HID。下表按设备类型分组，不按协议或目录来源分组。
 
 当前表格共收录 389 个可识别设备 ID：鼠标 136、键盘 96、笔记本 50、耳机 40、音箱 8、麦克风 4、鼠标垫 8、显示器 2、配件 44、网络灯光桥 1。
 
@@ -284,14 +284,14 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade 16 (2023) | `1532:029F` | Blade 专用控制；固件渲染键盘灯效 |
 | Razer Blade 16 (2024) | `1532:02B7` | Blade 专用控制 |
 | Razer Blade 16 (2025) | `1532:02C6` | Blade 专用控制 |
-| Razer Blade 16 (2026) | `1532:02E0` | Blade 专用控制；原生键盘固件灯效和软件帧泵；MUX 仅开放 Hybrid 和 Discrete |
+| Razer Blade 16 (2026) | `1532:02E0` | Blade 专用控制；原生键盘固件灯效和软件帧泵；MUX 按 0D:8A 能力位开放（仅报告 DDS 时显示） |
 | Razer Blade 17 (2022) | `1532:028B` | — |
 | Razer Blade 17 Pro (Early 2021) | `1532:026E` | — |
 | Razer Blade 17 Pro (Mid 2021) | `1532:0279` | — |
 | Razer Blade 18 (2023) | `1532:02A0` | — |
 | Razer Blade 18 (2024) | `1532:02B8` | Blade 专用控制 |
 | Razer Blade 18 (2025) | `1532:02C7` | Blade 专用控制 |
-| Razer Blade 18 (2026) | `1532:02E1` | Blade 专用控制；原生键盘固件灯效和软件帧泵；MUX 仅开放 Hybrid 和 Discrete |
+| Razer Blade 18 (2026) | `1532:02E1` | Blade 专用控制；原生键盘固件灯效和软件帧泵；MUX 按 0D:8A 能力位开放（仅报告 DDS 时显示） |
 | Razer Blade Advanced (Late 2019) | `1532:024B` | — |
 | Razer Blade Base (Early 2020) | `1532:0255` | Blade 专用控制；百分比风扇目标不伪装成 RPM |
 | Razer Blade Base (Early 2021) | `1532:026F` | — |
@@ -313,7 +313,7 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
 | Razer Book (2020) | `1532:026A` | — |
 
-Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；原生键盘灯光使用中间件的 03:02 固件灯效报文和 03:0B 软件帧报文。由于 2026 bundle 没有 DDS 模式值，MUX 写入只开放 Hybrid 和 Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle UI 列出了 Turbo，但没有确认的专用 wire value，因此不暴露 Turbo。Blade 16 (2026) 的 HyperBoost 和风扇读取已在一台实机核对；Blade 18 (2026) 仍为 bundle 对齐结果。
+Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。Blade 15 Advanced (2019, `023A`) 使用继承的 6x16 `03:0A` 灯效和 `03:0B` 帧通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；原生键盘灯光使用中间件的 03:0A 固件灯效报文和 03:0B 软件帧报文。MUX 写入按 0D:8A 能力位；只有设备报告 DynamicDisplaySwitch 时才显示 DDS，否则只显示 Hybrid/Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle 把 `Gaming` wire value（0x01）显示为 Turbo，OpenSynapse 只做同一个显示别名，不新增第二种模式。Blade 16 (2026) 的 HyperBoost 和风扇读取已在一台实机核对；Blade 18 (2026) 仍为 bundle 对齐结果。
 
 ## 耳机
 
@@ -321,13 +321,13 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Barracuda | `1532:053C` | 音频页 |
+| Razer Barracuda | `1532:053C` | 不显示：缺少该协议族的 bundle 证据 |
 | Razer Barracuda 2.4 | `1532:053B` | 音频页 |
 | Razer Barracuda 2.4 | `1532:0584` | 音频页 |
 | Razer Barracuda Pro | `1532:0539` | 音频页 |
 | Razer Barracuda Pro | `1532:0583` | 音频页 |
-| Razer Barracuda V2 Pro | `1532:0593` | 音频页；提供 THX V4 安装入口 |
-| Razer BlackShark V2 HyperSpeed | `1532:0565` | 音频页 |
+| Razer Barracuda V2 Pro | `1532:0593` | 音频页（电量/充电）；提供 THX V4 安装入口 |
+| Razer BlackShark V2 HyperSpeed | `1532:0565` | 不显示：缺少该协议族的 bundle 证据 |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | 音频页 |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | 音频页；提供 THX 安装入口 |
 | Razer BlackShark V2 Pro (2023) | `1532:0555` | 音频页；提供 THX 安装入口 |
@@ -339,21 +339,22 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Kraken 7.1 | `1532:0506` | 仅灯光 |
 | Razer Kraken 7.1 Chroma | `1532:0504` | 仅灯光 |
 | Razer Kraken 7.1 V2 | `1532:0510` | 仅灯光 |
-| Razer Kraken BT Kitty Edition | `1532:0530` | 音频页 |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | 音频页 |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | 音频页 |
+| Razer Kraken BT Kitty Edition | `1532:0530` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
 | Razer Kraken Kitty Edition | `1532:0521` | 音频页 |
 | Razer Kraken Kitty V2 | `1532:0560` | 音频页与灯光 |
-| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | 音频页 |
+| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
 | Razer Kraken Kitty V2 Pro | `1532:0554` | 音频页 |
-| Razer Kraken Kitty V3 Pro | `1532:0587` | 音频页；提供 THX V4 安装入口 |
+| Razer Kraken Kitty V3 Pro | `1532:0587` | 音频页（EQ/电量/充电）；提供 THX V4 安装入口 |
 | Razer Kraken Tournament Edition | `1532:0520` | 音频页与灯光；提供 Kraken TE 的 THX 安装入口 |
 | Razer Kraken Ultimate | `1532:0527` | 音频页与灯光；提供 THX 安装入口 |
 | Razer Kraken V3 | `1532:0549` | 音频页 |
 | Razer Kraken V3 HyperSense | `1532:0533` | 音频页 |
-| Razer Kraken V3 Pro | `1532:052D` | 音频页 |
+| Razer Kraken V3 Pro | `1532:052D` | 不显示：串口音频 transport 未实现 |
 | Razer Kraken V3 X | `1532:0537` | 音频页 |
 | Razer Kraken V4 | `1532:056B` | 灯光页（有线） |
+| Razer Kraken V4 | `1532:056C` | 灯光页（2.4 GHz 接收器） |
 | Razer Kraken V4 Pro | `1532:0567` | 音频页 |
 | Razer Kraken V4 X | `1532:056D` | 音频页 |
 | Razer Kraken X USB | `1532:0526` | 音频页 |
@@ -362,7 +363,7 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Nari Essential | `1532:051E` | 音频页；提供 THX 安装入口 |
 | Razer Nari Ultimate | `1532:051A` | 音频页 |
 
-Kraken 7.1 使用 37-byte output-report 通道；Kraken V4 有线版使用 64-byte report-0x02 通道。Kraken V4 的 2.4 GHz 接收器（`056C`）目前未开放。
+Kraken 7.1 使用 37-byte output-report 通道；Kraken V4 有线版及其 2.4 GHz 接收器（`056C`）使用 64-byte report-0x02 通道。接收器把 byte 9 设为 `0x80`，有线版为 `0x00`。
 
 ## 音箱
 
@@ -387,7 +388,7 @@ Leviathan V2 X（`054A`）覆盖 edition ID 0（标准版）、128（Pikachu）�
 
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Seiren Emote | `1532:0F1B` | 音频页；8×8 LED 矩阵 |
+| Razer Seiren Emote | `1532:0F1B` | 音频页及亮度/灯效控制；8×8 面板逐像素帧未开放 |
 | Razer Seiren V2 Pro | `1532:0542` | 音频页 |
 | Razer Seiren V2 X | `1532:0543` | 音频页 |
 | Razer Seiren V3 Mini | `1532:056A` | 音频页 |
@@ -447,7 +448,7 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Aether Light Strip | `1532:0310` | 仅灯光 |
 | Razer Aether Monitor Light Bar | `1532:0316` | 仅灯光 |
 | Razer Aether Standing Light Bars | `1532:0317` | 仅灯光 |
-| Razer Audio Mixer | `1532:053E` | 音频控制器页面；混音器控制 |
+| Razer Audio Mixer | `1532:053E` | 专用 HID 子集：固件/序列号/设备模式、推子与静音状态、通道/麦克风静音、亮度；推子/路由/EQ 仍由雷蛇原生混音器处理 |
 | Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | — |
 | Razer Base Station V2 Chroma | `1532:0F20` | — |
 | Razer Base Station V3 Chroma | `1532:0F6A` | 仅灯光 |
@@ -465,7 +466,7 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Handheld Dock Chroma | `1532:0F5C` | 仅灯光 |
 | Razer Head Cushion Chroma | `1532:0F36` | 仅灯光 |
 | Razer Key Light Chroma | `1532:030C` | 仅灯光 |
-| Razer Laptop Cooling Pad | `1532:0F43` | 用于 HyperBoost 在位检测；没有独立控制页 |
+| Razer Laptop Cooling Pad | `1532:0F43` | 独立风扇页：当前/目标转速与回读、固定低/中/高档、静音/平衡/性能智能曲线、灯光；仍用于 HyperBoost 在位检测 |
 | Razer Laptop Monitor Stand Chroma | `1532:0F5A` | 仅灯光 |
 | Razer Laptop Stand Chroma | `1532:0F0D` | — |
 | Razer Laptop Stand Chroma V2 | `1532:0F2B` | — |

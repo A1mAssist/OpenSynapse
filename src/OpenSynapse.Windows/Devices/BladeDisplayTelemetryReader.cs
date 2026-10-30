@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
+using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -115,7 +116,15 @@ internal sealed class BladeDisplayTelemetryReader
             BladeLighting2023Effect.Wave => BladeLighting2023Protocol.CreateWaveRequest(),
             _ => throw new ArgumentOutOfRangeException(nameof(effect)),
         };
-        await _client.QueryBuiltRequestAsync(blade, CapabilityIds.KeyboardEffectSet, request, cancellationToken);
+        try
+        {
+            await _client.QueryBuiltRequestAsync(blade, CapabilityIds.KeyboardEffectSet, request, cancellationToken);
+        }
+        catch (Exception exception) when (BladeLightingRuntimeDialect.IsExplicitRejection(exception))
+        {
+            BladeLightingRuntimeDialect.Downgrade(blade.Descriptor.ProductId, exception.Message);
+            throw;
+        }
 
         var actual = BladeLighting2023Protocol.ParseEffect(
             await _client.QueryAsync(blade, CapabilityIds.KeyboardEffectGet, cancellationToken));
@@ -516,8 +525,8 @@ internal sealed class BladeDisplayTelemetryReader
             }
 
             var mode = await ReadDisplayMuxModeAsync(blade, cancellationToken);
-            // A 2026 unit that reports DDS cannot be restored safely because its
-            // bundle has no DDS mode value to write. Do not offer a change there.
+            // DDS is writable through the same 0D:09 payload; capability bits decide
+            // whether a unit exposes it, so a DDS readback can be restored normally.
             var canChange = allowDds || mode != BladeDisplayMuxMode.Dds;
             return new BladeDisplayMuxStatus(
                 IsSupported: true,
@@ -657,9 +666,9 @@ internal sealed class BladeDisplayTelemetryReader
         blade.Owns(CapabilityIds.DisplayMuxCapabilitiesGet);
 
     private static bool AllowsDds(ResolvedRazerDevice blade) =>
-        // The 2026 bundle defines only Microsoft_Hybrid (0) and Discrete_MUX (1);
-        // it has no DDS mode value, so do not invent a 0x02 write for these models.
-        !blade.IsBlade2026;
+        // The 2026 bundle writes DDS as mode 0x02 through the same 0D:09 payload;
+        // the dynamic capability bit from 0D:8A decides whether the SKU exposes it.
+        true;
 
     private static BladeDisplayMuxStatus UnsupportedDisplayMux(BladeDisplayMuxBlockReason reason) =>
         new(

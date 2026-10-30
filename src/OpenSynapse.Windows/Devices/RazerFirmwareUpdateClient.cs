@@ -10,9 +10,17 @@ public sealed record FirmwareUpdateCheckResult(
     string? PublishedMcu,
     string? PublishedVbios,
     IReadOnlyList<string> NewerComponents,
-    string? DownloadUrl = null)
+    string? DownloadUrl = null,
+    string? DeviceName = null)
 {
     public bool HasUpdate => NewerComponents.Count > 0;
+}
+
+public sealed class RazerSupportPageNotFoundException : InvalidOperationException
+{
+    public RazerSupportPageNotFoundException(string message) : base(message)
+    {
+    }
 }
 
 public sealed partial class RazerFirmwareUpdateClient
@@ -20,9 +28,26 @@ public sealed partial class RazerFirmwareUpdateClient
     private const string SupportHost = "https://mysupport.razer.com";
 
     private static readonly HttpClient Client = CreateClient();
+    private readonly RazerDeviceRegistry _registry;
+
+    public RazerFirmwareUpdateClient()
+        : this(RazerDeviceRegistry.BuiltIn)
+    {
+    }
+
+    internal RazerFirmwareUpdateClient(RazerDeviceRegistry registry) =>
+        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
 
     public async Task<FirmwareUpdateCheckResult> CheckAsync(
         FirmwareVersions installed,
+        CancellationToken cancellationToken = default)
+    {
+        return await CheckAsync(installed, (string?)null, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<FirmwareUpdateCheckResult> CheckAsync(
+        FirmwareVersions installed,
+        string? modelName,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installed);
@@ -32,8 +57,8 @@ public sealed partial class RazerFirmwareUpdateClient
             throw new InvalidOperationException("Could not identify this Razer Blade model.");
         }
 
-        var query = RazerHostModel.ReadModelCode() ?? model;
-        var html = await ReadDriversPageAsync(query, cancellationToken);
+        var queries = BuildSearchQueries(RazerHostModel.ReadModelCode(), modelName, model);
+        var html = await ReadDriversPageAsync(queries, cancellationToken);
         var result = Parse(html, installed);
         if (!result.HasUpdate)
         {
@@ -60,6 +85,88 @@ public sealed partial class RazerFirmwareUpdateClient
 
         return result with { DownloadUrl = downloadUrl };
     }
+
+    public Task<FirmwareUpdateCheckResult> CheckAsync(
+        FirmwareVersions installed,
+        IReadOnlyList<DeviceDescriptor> devices,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(installed);
+        ArgumentNullException.ThrowIfNull(devices);
+        var device = devices.FirstOrDefault(device =>
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
+            device.Access == DeviceAccessState.Available);
+        var manifest = device is null ? null : _registry.Find(device.VendorId, device.ProductId);
+        if (TryCreateManifestResult(installed, manifest?.Device) is { } result)
+        {
+            return Task.FromResult(result);
+        }
+
+        return CheckAsync(
+            installed,
+            ResolveModelName(manifest?.Device?.Name, device?.Name),
+            cancellationToken);
+    }
+
+    internal static string? ResolveModelName(string? manifestName, string? fallbackName) =>
+        string.IsNullOrWhiteSpace(manifestName) ? fallbackName : manifestName.Trim();
+
+    internal static FirmwareUpdateCheckResult? TryCreateManifestResult(
+        FirmwareVersions installed,
+        RazerDeviceMetadata? device)
+    {
+        ArgumentNullException.ThrowIfNull(installed);
+        var firmware = device?.Firmware;
+        if (firmware?.Latest is { } latest)
+        {
+            // latestFirmwareInfo is the model's firmware package version; the MCU
+            // reading is the closest installed component that Razer publishes.
+            var newer = IsNewerOrUnknown(installed.Mcu, latest.Version);
+            return new FirmwareUpdateCheckResult(
+                PublishedBios: null,
+                PublishedEc: null,
+                PublishedMcu: latest.Version,
+                PublishedVbios: null,
+                NewerComponents: newer ? [$"Firmware {latest.Version}"] : [],
+                DownloadUrl: newer ? latest.Url : null,
+                DeviceName: device?.Name);
+        }
+        if (firmware?.Driver is { } driver)
+        {
+            // Windows exposes no installed driver version, so the manifest link is the only offer.
+            return new FirmwareUpdateCheckResult(
+                PublishedBios: null,
+                PublishedEc: null,
+                PublishedMcu: null,
+                PublishedVbios: null,
+                NewerComponents: [$"Driver {driver.Version}"],
+                DownloadUrl: driver.Url,
+                DeviceName: device?.Name);
+        }
+        return null;
+    }
+
+    private static bool IsNewerOrUnknown(string installed, string published)
+    {
+        var value = installed.Trim();
+        if (value is "" or "--" ||
+            !Version.TryParse(value.TrimStart('v', 'V'), out var installedVersion))
+        {
+            return true;
+        }
+        return Version.TryParse(published.Trim().TrimStart('v', 'V'), out var publishedVersion) &&
+               publishedVersion > installedVersion;
+    }
+
+    internal static IReadOnlyList<string> BuildSearchQueries(
+        string? modelCode,
+        string? modelName,
+        string? systemModel) =>
+        new[] { modelCode, modelName, systemModel }
+            .Where(query => !string.IsNullOrWhiteSpace(query))
+            .Select(query => query!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
     internal static FirmwareUpdateCheckResult Parse(string html, FirmwareVersions installed)
     {
@@ -152,16 +259,27 @@ public sealed partial class RazerFirmwareUpdateClient
     }
 
     private static async Task<string> ReadDriversPageAsync(
-        string modelQuery,
+        IReadOnlyList<string> modelQueries,
         CancellationToken cancellationToken)
     {
-        var searchUri = new Uri(
-            $"{SupportHost}/app/answers/list/kw/{Uri.EscapeDataString(modelQuery)}");
-        var searchHtml = await ReadPageAsync(searchUri, cancellationToken);
-        var driversHref = FindDriversPageHref(searchHtml)
-            ?? throw new InvalidOperationException(
+        RazerSupportPageNotFoundException? lastFailure = null;
+        foreach (var modelQuery in modelQueries)
+        {
+            var searchUri = new Uri(
+                $"{SupportHost}/app/answers/list/kw/{Uri.EscapeDataString(modelQuery)}");
+            var searchHtml = await ReadPageAsync(searchUri, cancellationToken);
+            var driversHref = FindDriversPageHref(searchHtml);
+            if (driversHref is not null)
+            {
+                return await ReadPageAsync(ResolveSupportUri(driversHref), cancellationToken);
+            }
+
+            lastFailure = new RazerSupportPageNotFoundException(
                 $"Razer's support search did not find a drivers page for {modelQuery}.");
-        return await ReadPageAsync(ResolveSupportUri(driversHref), cancellationToken);
+        }
+
+        throw lastFailure ?? new RazerSupportPageNotFoundException(
+            "Razer's support search did not find a drivers page for this model.");
     }
 
     private static async Task<string?> FindUpdaterUrlAsync(

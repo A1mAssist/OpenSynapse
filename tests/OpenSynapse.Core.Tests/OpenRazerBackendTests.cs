@@ -1462,6 +1462,32 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(expected, string.Join(",", device.PollingRates));
     }
 
+    /// <summary>
+    /// These mice declare polling control in their OpenRazer capability sets, but their
+    /// catalog rows previously carried no rates. The local middleware bundles list
+    /// 125/500/1000 for each of them, so the selector can appear without guessing.
+    /// </summary>
+    [Theory]
+    [InlineData(0x0060)]
+    [InlineData(0x0062)]
+    [InlineData(0x008C)]
+    [InlineData(0x008D)]
+    [InlineData(0x0096)]
+    [InlineData(0x0099)]
+    [InlineData(0x00A1)]
+    [InlineData(0x00CB)]
+    public void BundleBackedPollingRatesAreNonEmptyAndEncodable(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+
+        Assert.NotEmpty(device.PollingRates);
+        Assert.Equal([125, 500, 1000], device.PollingRates);
+        foreach (var rate in device.PollingRates)
+        {
+            Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, rate));
+        }
+    }
+
     [Fact]
     public void DeathAdderV3HyperSpeedPublishesItsPollingRatesForBothIdentities()
     {
@@ -1475,6 +1501,36 @@ public sealed class OpenRazerBackendTests
             Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
             Assert.Contains("razer_chroma_misc_set_polling_rate", device.Transactions.Keys);
         }
+    }
+
+    [Fact]
+    public void HuntsmanV3Pro8kPublishesTheBundleHighSpeedPollingRates()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x02CF)!;
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+
+        Assert.Equal([125, 250, 500, 1_000, 2_000, 4_000, 8_000], device.PollingRates);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
+        Assert.Contains("razer_chroma_misc_get_polling_rate2", device.Transactions.Keys);
+        Assert.Contains("razer_chroma_misc_set_polling_rate2", device.Transactions.Keys);
+
+        var get = OpenRazerMouseProtocol.GetPollingRate(device).Report;
+        Assert.Equal((0x02, 0x00, 0xC0), (get[6], get[7], get[8]));
+        Assert.Equal(0x00, get[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x03, OpenRazerMouseProtocol.GetPollingRate(device, 0x03).Report[RazerFeatureReport.ArgumentsOffset]);
+
+        var set = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, 8_000)).Report;
+        Assert.Equal((0x02, 0x00, 0x40), (set[6], set[7], set[8]));
+        Assert.Equal(0x01, set[10]);
+
+        var profile = OpenRazerMouseProtocol.GetActiveProfile(device);
+        Assert.NotNull(profile);
+        Assert.Equal((0x01, 0x05, 0x84), (profile.Report[6], profile.Report[7], profile.Report[8]));
+
+        var activeProfileSet = Assert.Single(OpenRazerMouseProtocol.SetPollingRate(device, 8_000, 0x03)).Report;
+        Assert.Equal(0x03, activeProfileSet[9]);
+        Assert.Equal(0x01, activeProfileSet[10]);
     }
 
     /// <summary>

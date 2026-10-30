@@ -4,8 +4,10 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Audio controls for the 2023 BlackShark V2 Pro (1532:0555). This model uses the
-/// 64-byte MXIC channel instead of the 91-byte protocol 25 feature reports.
+/// Audio controls for the 64-byte MXIC / class-0x18 channels and the protocol40
+/// headset channel (1532:0593). These models use report id 2 instead of the
+/// 91-byte protocol 25 feature reports; protocol40 only exposes battery and
+/// charging in its selected device class.
 /// </summary>
 public sealed class RazerMxicHeadsetService : IAsyncDisposable
 {
@@ -14,6 +16,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         Legacy,
         Class18,
         ValkyrieT3,
+        Protocol40,
     }
 
     private readonly IRazerMxicHeadsetTransport _transport;
@@ -35,13 +38,16 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         Action<string>? diagnostic = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
-        _dialect = RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ? MxicDialect.ValkyrieT3
+        _dialect = RazerProtocol40HeadsetProtocol.IsSupported(productId) ? MxicDialect.Protocol40
+            : RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ? MxicDialect.ValkyrieT3
             : RazerMxicHeadsetProtocol.UsesClass18Commands(productId) ? MxicDialect.Class18
             : MxicDialect.Legacy;
         _diagnostic = diagnostic;
     }
 
-    public static bool IsSupported(ushort productId) => RazerMxicHeadsetProtocol.IsSupported(productId);
+    public static bool IsSupported(ushort productId) =>
+        RazerMxicHeadsetProtocol.IsSupported(productId) ||
+        RazerProtocol40HeadsetProtocol.IsSupported(productId);
 
     private byte ReportId => _dialect == MxicDialect.ValkyrieT3
         ? RazerMxicHeadsetProtocol.ValkyrieReportId
@@ -86,17 +92,16 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         _ => RazerMxicHeadsetProtocol.CreateSetEqBands(bands),
     };
 
-    // The Valkyrie T3 setters only check the reply status, so any sub-response is a valid
-    // acknowledgement and the readback below verifies the value.
+    // Valkyrie T3 writes are fire-and-forget and verified by the readback below; these
+    // headers remain only for the class-0x18 and legacy paths.
     private byte[] SetEqBandsHeader => _dialect switch
     {
-        MxicDialect.ValkyrieT3 => [],
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
         _ => RazerMxicHeadsetProtocol.SetEqBandsHeader,
     };
 
     private byte[] CreateMicMuteRead() => _dialect != MxicDialect.Legacy
-        ? RazerMxicHeadsetProtocol.CreateGetMicMuteClass18()
+        ? RazerMxicHeadsetProtocol.CreateGetMicMuteClass18(ReportId)
         : RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetMicMute, reportId: ReportId);
 
     private byte[] MicMuteHeader => _dialect != MxicDialect.Legacy
@@ -104,7 +109,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         : RazerMxicHeadsetProtocol.MicMuteHeader;
 
     private byte[] CreateSetMicMute(bool muted) => _dialect != MxicDialect.Legacy
-        ? RazerMxicHeadsetProtocol.CreateSetMicMuteClass18(muted)
+        ? RazerMxicHeadsetProtocol.CreateSetMicMuteClass18(muted, ReportId)
         : RazerMxicHeadsetProtocol.CreateSetMicMute(muted);
 
     private byte[] SetMicMuteHeader => _dialect != MxicDialect.Legacy
@@ -120,7 +125,6 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
     private byte[] SetEqPresetHeader => _dialect switch
     {
-        MxicDialect.ValkyrieT3 => [],
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
         _ => RazerMxicHeadsetProtocol.SetEqPresetHeader,
     };
@@ -128,6 +132,11 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
     public async Task<RazerHeadsetAudioState> ReadStateAsync(
         CancellationToken cancellationToken = default)
     {
+        if (_dialect == MxicDialect.Protocol40)
+        {
+            return await ReadProtocol40StateAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         var errors = new List<string>();
         var firmware = await ProbeAsync(
             "firmware",
@@ -194,8 +203,48 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
             Errors: errors);
     }
 
+    private async Task<RazerHeadsetAudioState> ReadProtocol40StateAsync(
+        CancellationToken cancellationToken)
+    {
+        var errors = new List<string>();
+        await _transport.SendAsync(
+            RazerProtocol40HeadsetProtocol.CreateConnect(), cancellationToken).ConfigureAwait(false);
+        var battery = await ProbeAsync(
+            "battery",
+            RazerProtocol40HeadsetProtocol.CreateGetBattery(),
+            [],
+            RazerProtocol40HeadsetProtocol.ReadBatteryPercent,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var charging = await ProbeAsync(
+            "charging",
+            RazerProtocol40HeadsetProtocol.CreateGetCharging(),
+            [],
+            RazerProtocol40HeadsetProtocol.ReadChargingStatus,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+
+        return new RazerHeadsetAudioState(
+            Firmware: null,
+            BatteryPercent: battery.Ok ? battery.Value : null,
+            Charging: charging.Ok ? charging.Value : null,
+            EqPreset: null,
+            EqBands: null,
+            Bass: null,
+            MicMuted: null,
+            MicVolume: null,
+            AudioSource: null,
+            NoiseSuppression: null,
+            AncState: null,
+            AncLevel: null,
+            Errors: errors);
+    }
+
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>
-        WriteAsync(
+        _dialect == MxicDialect.Protocol40
+            ? Task.FromException(new InvalidOperationException(
+                "The protocol40 headset bundle does not expose an EQ preset command."))
+            : WriteAsync(
             CreateEqPresetRead(),
             EqPresetHeader,
             ReadEqPreset,
@@ -210,6 +259,12 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         IReadOnlyList<byte> bands,
         CancellationToken cancellationToken = default)
     {
+        if (_dialect == MxicDialect.Protocol40)
+        {
+            throw new InvalidOperationException(
+                "The protocol40 headset bundle does not expose an EQ band command.");
+        }
+
         ArgumentNullException.ThrowIfNull(bands);
         if (bands.Count != RazerMxicHeadsetProtocol.TenBandCount)
         {
@@ -230,16 +285,23 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
     }
 
     public Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default) =>
-        WriteAsync(
-            CreateMicMuteRead(),
-            MicMuteHeader,
-            RazerMxicHeadsetProtocol.ReadMicMute,
-            muted,
-            CreateSetMicMute,
-            SetMicMuteHeader,
-            value => value == muted,
-            "microphone mute",
-            cancellationToken);
+        _dialect switch
+        {
+            MxicDialect.Protocol40 => Task.FromException(new InvalidOperationException(
+                "The protocol40 headset bundle does not expose a microphone mute command.")),
+            MxicDialect.ValkyrieT3 => Task.FromException(new InvalidOperationException(
+                "The Valkyrie T3 bundle exposes Get Mute State but no microphone mute setter.")),
+            _ => WriteAsync(
+                CreateMicMuteRead(),
+                MicMuteHeader,
+                RazerMxicHeadsetProtocol.ReadMicMute,
+                muted,
+                CreateSetMicMute,
+                SetMicMuteHeader,
+                value => value == muted,
+                "microphone mute",
+                cancellationToken),
+        };
 
     private async Task WriteAsync<T>(
         byte[] readRequest,
@@ -261,7 +323,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
         try
         {
-            await QueryReportAsync(
+            await WriteReportAsync(
                 writeRequest(value), writeHeader, $"set {label}", cancellationToken).ConfigureAwait(false);
             var actual = parse(await QueryReportAsync(
                 readRequest, readHeader, $"read back {label}", cancellationToken).ConfigureAwait(false));
@@ -303,13 +365,31 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
     {
         try
         {
-            await QueryReportAsync(request, expectedHeader, label, CancellationToken.None)
+            await WriteReportAsync(request, expectedHeader, label, CancellationToken.None)
                 .ConfigureAwait(false);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
             _diagnostic?.Invoke($"mxic {label} failed: {exception.Message}");
         }
+    }
+
+    private async Task WriteReportAsync(
+        byte[] report,
+        byte[] expectedHeader,
+        string label,
+        CancellationToken cancellationToken)
+    {
+        if (_dialect == MxicDialect.ValkyrieT3)
+        {
+            await EnsureRemoteModeAsync(cancellationToken).ConfigureAwait(false);
+            _diagnostic?.Invoke(
+                $"mxic {label}: report id {report[0]} size=0x{report[9]:X2} sent without an ack");
+            await _transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await QueryReportAsync(report, expectedHeader, label, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<byte[]> QueryReportAsync(
@@ -319,8 +399,9 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         CancellationToken cancellationToken)
     {
         await EnsureRemoteModeAsync(cancellationToken).ConfigureAwait(false);
-        _diagnostic?.Invoke(
-            $"mxic {label}: command=0x{report[10]:X2} 0x{report[11]:X2} 0x{report[12]:X2}");
+        _diagnostic?.Invoke(_dialect == MxicDialect.Protocol40
+            ? $"protocol40 {label}: class=0x{report[6]:X2} id=0x{report[7]:X2} size=0x{report[8]:X2}"
+            : $"mxic {label}: command=0x{report[10]:X2} 0x{report[11]:X2} 0x{report[12]:X2}");
         var value = await _transport.QueryAsync(report, expectedHeader, cancellationToken)
             .ConfigureAwait(false);
         return value ?? throw new InvalidOperationException(
@@ -329,7 +410,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
     private async Task EnsureRemoteModeAsync(CancellationToken cancellationToken)
     {
-        if (_remoteMode)
+        if (_remoteMode || _dialect == MxicDialect.Protocol40)
         {
             return;
         }

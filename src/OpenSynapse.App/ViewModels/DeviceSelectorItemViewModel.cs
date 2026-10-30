@@ -14,8 +14,11 @@ public enum DeviceSelectorItemKind
     HeadsetAudio,
     Keyboard,
     Gamepad,
+    CoolingPad,
     Chroma,
     Ble,
+    AwBleHeadset,
+    Kiyo,
 }
 
 public sealed class DeviceSelectorItemViewModel : INotifyPropertyChanged

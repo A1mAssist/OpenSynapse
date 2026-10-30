@@ -115,7 +115,7 @@
     },
     "keyboard-effect.set": {
       "transactionId": "03",
-      "dataSize": "03",
+      "dataSize": "06",
       "commandClass": "0F",
       "commandId": "02",
       "arguments": "",
@@ -128,5 +128,32 @@
       "commandId": "08",
       "arguments": ""
     }
-  }
+  },
+  "matrixRows": 6,
+  "matrixColumns": 16,
+  "device": {
+    "name": "Razer Blade Pro 17",
+    "shortName": "Dana17-2_MW",
+    "editionIds": [
+      0
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      9,
+      12
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBlade",
+    "firmware": {
+      "latest": null,
+      "driver": {
+        "version": "0.1.2.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/564/1.0.0.1/PID0234Drv_v0.1.2.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "LedMatrixBlade"
 }

@@ -58,11 +58,12 @@ public sealed record RazerBleScrollState(
     bool? Acceleration,
     IReadOnlyList<string> Errors);
 
+public readonly record struct RazerBleTimeToDimState(bool Enabled, int Seconds, byte Percentage);
 public sealed record RazerBlePowerState(
     int? LowBatteryPercent,
     bool? AutoSleep,
     int? SleepMinutes,
-    int? TimeToDimSeconds,
+    RazerBleTimeToDimState? TimeToDim,
     IReadOnlyList<string> Errors);
 
 public sealed record RazerBleProfileState(IReadOnlyList<byte> Ids, byte? ActiveId);
@@ -167,6 +168,19 @@ public static class RazerBleProtocol30
             response[7],
             response[headerLength..].ToArray(),
             headerLength);
+    }
+
+    /// <summary>Returns the complete reply length after reassembling BLE notifications.</summary>
+    public static bool TryGetCompleteResponseLength(ReadOnlySpan<byte> response, out int length)
+    {
+        length = 0;
+        if (response.Length < RequestHeaderLength) return false;
+        var declared = response[1] | (response[2] << 8) | (response[3] << 16);
+        var standard = ResponseHeaderLength + declared;
+        if (response.Length >= standard) { length = standard; return true; }
+        var compact = RequestHeaderLength + declared;
+        if (compact < ResponseHeaderLength && response.Length == compact) { length = compact; return true; }
+        return false;
     }
 
     public static byte[] CreateGetDeviceMode(byte transactionId) =>
@@ -348,8 +362,22 @@ public static class RazerBleProtocol30
     public static byte[] CreateGetTimeToDim(byte transactionId, byte profileId = 0, byte batteryId = 0) =>
         CreateFrame(transactionId, 0x05, 0x8A, param6: profileId, param7: batteryId);
 
-    public static int ReadTimeToDimSeconds(RazerBleResponse response) =>
-        ReadUInt16(response, 1);
+    public static RazerBleTimeToDimState ReadTimeToDim(RazerBleResponse response) =>
+        response.Payload.Count >= 4
+            ? new(response.Payload[0] != 0, ReadUInt16(response, 1), response.Payload[3])
+            : throw new InvalidOperationException(
+                $"Protocol 30 time-to-dim reply carried {response.Payload.Count} bytes, expected 4.");
+
+    public static int ReadTimeToDimSeconds(RazerBleResponse response) => ReadTimeToDim(response).Seconds;
+
+    public static byte[] CreateSetTimeToDim(byte transactionId, RazerBleTimeToDimState state,
+        byte profileId = 0, byte batteryId = 0)
+    {
+        if (state.Seconds is < 0 or > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(state));
+        var payload = new byte[] { state.Enabled ? (byte)1 : (byte)0, 0, 0, state.Percentage };
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(1), (ushort)state.Seconds);
+        return CreateFrame(transactionId, 0x05, 0x0A, param6: profileId, param7: batteryId, payload);
+    }
 
     public static bool ReadBoolean(RazerBleResponse response) => First(response) != 0;
 
@@ -510,8 +538,16 @@ public static class RazerBleProtocol30
     public static (byte Mode, byte Parameter) ReadDeviceMode(RazerBleResponse response) =>
         (response.Payload[0], response.Payload[1]);
 
-    public static RazerBleFirmware ReadFirmware(RazerBleResponse response) =>
-        new(response.Payload[0], response.Payload[1], response.Payload[2], response.Payload[3]);
+    public static RazerBleFirmware ReadFirmware(RazerBleResponse response)
+    {
+        if (response.Payload.Count < 4)
+        {
+            throw new InvalidOperationException(
+                $"Protocol 30 firmware reply carried {response.Payload.Count} bytes, expected 4.");
+        }
+
+        return new(response.Payload[0], response.Payload[1], response.Payload[2], response.Payload[3]);
+    }
 
     public static (int X, int Y, int Z) ReadDpi(RazerBleResponse response)
     {

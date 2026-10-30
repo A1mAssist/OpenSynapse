@@ -363,7 +363,7 @@ public sealed class OpenRazerDeviceCatalog
                 sibling.Category,
                 sibling.SourceCapabilities,
                 sibling.MaximumDpi,
-                sibling.PollingRates,
+                Array.AsReadOnly(Array.Empty<int>()), // Read-only probe: no writable ladder.
                 sibling.MatrixDimensions,
                 sibling.DeviceWait,
                 readOnly,

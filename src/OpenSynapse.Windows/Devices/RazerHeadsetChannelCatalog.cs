@@ -8,6 +8,7 @@ public enum RazerHeadsetChannel
     Mxic64,
     Valkyrie64,
     Billie64,
+    Mixer053E,
     DedicatedBlackShark,
     Unsupported,
 }
@@ -24,7 +25,8 @@ public static class RazerHeadsetChannelCatalog
     private static readonly FrozenDictionary<ushort, Entry> Entries =
         new Dictionary<ushort, Entry>
         {
-            // AudioMxicDevice: 64-byte output reports with the 50 41 envelope.
+            // Mxic64: 64-byte report-id-2 HID channel. AudioMxicDevice uses the
+            // 50 41 envelope; 0593 uses the protocol40 header on the same channel.
             [0x0539] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
             [0x053B] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
             [0x0555] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
@@ -52,6 +54,15 @@ public static class RazerHeadsetChannelCatalog
             // AudioBillieT1/T2: the 64-byte Billie channel.
             [0x0567] = new("AudioBillieT1", RazerHeadsetChannel.Billie64),
             [0x056B] = new("AudioBillieT2", RazerHeadsetChannel.Billie64),
+
+            // AudioBastetT1: same 64-byte report-id-2 frame and shared 56555 command
+            // table as AudioBillieT2.
+            [0x0587] = new("AudioBastetT1", RazerHeadsetChannel.Billie64),
+
+            // rzDevice40HeadsetAiroha: 64-byte report-id-2 frame with the protocol40
+            // header (class/id/size at 5..8), selected as the Mxic64 HID channel and
+            // dispatched by the Protocol40 dialect in RazerMxicHeadsetService.
+            [0x0593] = new("rzDevice40HeadsetAiroha", RazerHeadsetChannel.Mxic64),
 
             // BlackShark V3 Pro keeps its own THX panel instead of the generic headset page.
             // 0576 and 101C declare AudioValkyrie, but that channel belongs to the dedicated
@@ -91,16 +102,17 @@ public static class RazerHeadsetChannelCatalog
             [0x056A] = new("rzDevice25AudioCamyT3V2", RazerHeadsetChannel.Feature91),
             [0x0F66] = new("rzDevice25MarciT1", RazerHeadsetChannel.Feature91),
             [0x056E] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Feature91),
-            [0x053E] = new("AudioMixer", RazerHeadsetChannel.Feature91),
+
+            // AudioMixer uses the dedicated 64-byte feature / 16-byte report-9
+            // collection; it must not fall back to the 91-byte feature channel.
+            [0x053E] = new("AudioMixer", RazerHeadsetChannel.Mixer053E),
 
             // Bundles that declare a channel this app does not build.
             [0x0309] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
             [0x0530] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
             [0x0534] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
             [0x0562] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
-            [0x0587] = new("AudioBastetT1", RazerHeadsetChannel.Unsupported),
             [0x052D] = new("AudioNXPDevice", RazerHeadsetChannel.Unsupported),
-            [0x0593] = new("rzDevice40HeadsetAiroha", RazerHeadsetChannel.Unsupported),
             // These two have no bundle in the CDN snapshot, so their device type is unknown.
             [0x053C] = new("unknown", RazerHeadsetChannel.Unsupported),
             [0x0565] = new("unknown", RazerHeadsetChannel.Unsupported),
@@ -111,6 +123,9 @@ public static class RazerHeadsetChannelCatalog
 
     public static bool IsSupported(ushort productId) =>
         Resolve(productId) != RazerHeadsetChannel.Unsupported;
+
+    /// <summary>True when the PID has an audited catalog entry, even if that entry is Unsupported.</summary>
+    internal static bool IsKnown(ushort productId) => Entries.ContainsKey(productId);
 
     public static string Describe(ushort productId) =>
         Entries.TryGetValue(productId, out var entry)

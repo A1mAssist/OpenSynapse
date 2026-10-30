@@ -81,11 +81,16 @@ public sealed class OpenRazerSpecialLightingService
             [0x0527] = Kylie("Razer Kraken Ultimate"),
             [0x0560] = Kylie("Razer Kraken Kitty V2"),
             // The Kraken V4 exposes a 64-byte FF14 output report on the USB-C cable.
-            // The 2.4 GHz receiver (056C) enumerates the same collection, but the
-            // vendor bundle ships no lighting writes for the dongle, so it stays
-            // out of this list.
+            // The 2.4 GHz receiver (056C) inherits the same collection and lighting
+            // methods from AudioBillieT2Dongle; its report byte 9 is 0x80.
             [0x056B] = new(
                 "Razer Kraken V4 (Wired)",
+                OpenRazerKrakenLayout.Kylie,
+                Effects(OpenRazerLightingEffect.Off, OpenRazerLightingEffect.Static, OpenRazerLightingEffect.Wave),
+                true,
+                OpenRazerSpecialLightingKind.KrakenV4),
+            [0x056C] = new(
+                "Razer Kraken V4 (2.4 GHz)",
                 OpenRazerKrakenLayout.Kylie,
                 Effects(OpenRazerLightingEffect.Off, OpenRazerLightingEffect.Static, OpenRazerLightingEffect.Wave),
                 true,
@@ -263,11 +268,13 @@ public sealed class OpenRazerSpecialLightingService
                 $"OpenRazer Kraken V4 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
         }
 
+        var isDongle = connection.ProductId == 0x056C;
         IReadOnlyList<byte[]> reports = settings.Effect switch
         {
-            OpenRazerLightingEffect.Off => OpenRazerKrakenV4Protocol.CreateOff(),
-            OpenRazerLightingEffect.Static => OpenRazerKrakenV4Protocol.CreateStatic(settings.Primary, intensity),
-            OpenRazerLightingEffect.Wave => OpenRazerKrakenV4Protocol.CreateWave(intensity),
+            OpenRazerLightingEffect.Off => OpenRazerKrakenV4Protocol.CreateOff(isDongle),
+            OpenRazerLightingEffect.Static => OpenRazerKrakenV4Protocol.CreateStatic(
+                settings.Primary, intensity, isDongle),
+            OpenRazerLightingEffect.Wave => OpenRazerKrakenV4Protocol.CreateWave(intensity, isDongle),
             _ => throw new NotSupportedException(),
         };
 
@@ -275,6 +282,12 @@ public sealed class OpenRazerSpecialLightingService
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            await _transport.SendOutputAsync(
+                connection.DevicePath!,
+                OpenRazerKrakenV4Protocol.CreateConnect(isDongle),
+                cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+
             foreach (var report in reports)
             {
                 await _transport.SendOutputAsync(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);

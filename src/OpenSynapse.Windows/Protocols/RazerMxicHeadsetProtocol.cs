@@ -142,11 +142,11 @@ public static class RazerMxicHeadsetProtocol
         return Create(RazerCommand, [12, Class18, 0x01], payload);
     }
 
-    public static byte[] CreateGetMicMuteClass18() =>
-        Create(RazerCommand, MicMuteRequestClass18, [LiveProfile, MicrophoneSource]);
+    public static byte[] CreateGetMicMuteClass18(byte reportId = ReportId) =>
+        Create(reportId, RazerCommand, MicMuteRequestClass18, [LiveProfile, MicrophoneSource]);
 
-    public static byte[] CreateSetMicMuteClass18(bool muted) =>
-        Create(RazerCommand, [3, Class18, 0x04], [LiveProfile, MicrophoneSource, muted ? (byte)1 : (byte)0]);
+    public static byte[] CreateSetMicMuteClass18(bool muted, byte reportId = ReportId) =>
+        Create(reportId, RazerCommand, [3, Class18, 0x04], [LiveProfile, MicrophoneSource, muted ? (byte)1 : (byte)0]);
 
     // rzDevice25ValkyrieT3: S=[2,24,128] A=[4,24,0] U=[2,24,129] E=[12,24,1]. The second
     // payload byte is the preset group (0/1, validated by setPresetEQIndex), not a source.

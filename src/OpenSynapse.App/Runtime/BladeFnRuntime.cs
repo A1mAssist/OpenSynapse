@@ -82,6 +82,8 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     /// <summary>The filter runtime only runs for a model whose key graph we ship.</summary>
     internal static bool HasMapping(ushort productId) => File.Exists(MappingPathFor(productId));
 
+    internal void SetGameModeEnabled(bool enabled) => _mapping?.SetGameModeEnabled(enabled);
+
     private void WriteDiagnostic(string message)
     {
         try
@@ -143,6 +145,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
 
             _mapping = await LoadMappingAsync(_productId, _mappingPreset, cancellationToken)
                 .ConfigureAwait(false);
+            _mapping.AddGameModeWindowsKeySuppression();
             var hooks = _mapping.Rules
                 .Where(static rule => rule.InputKind == BladeMappingInputKind.Keyboard)
                 .Select(static rule => (

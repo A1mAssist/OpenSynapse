@@ -10,18 +10,21 @@ public sealed class RazerKeyboardProtocolTests
     {
         var getMode = RazerKeyboardProtocol.GetGameModeState(0x03);
         var setMode = RazerKeyboardProtocol.SetGameModeState(0x04, 1);
-        var getPolling = RazerKeyboardProtocol.GetPollingRate(0x05);
-        var setPolling = RazerKeyboardProtocol.SetPollingRate(0x06, 0x01);
+        var getProfile = RazerKeyboardProtocol.GetActiveProfile(0x05);
+        var getPolling = RazerKeyboardProtocol.GetPollingRate(0x06, profileId: 3);
+        var setPolling = RazerKeyboardProtocol.SetPollingRate(0x07, profileId: 3, code: 0x01);
 
         Assert.Equal((0x04, 0x00, 0x88), Command(getMode));
         Assert.Equal((0x04, 0x00, 0x08), Command(setMode));
-        // The 8 kHz boards use the USB high-speed pair, and the middleware writes only
-        // the game-mode byte: the rest of the four-byte payload stays zero.
+        Assert.Equal((0x01, 0x05, 0x84), Command(getProfile));
+        // The 8 kHz boards use the USB high-speed pair, and both requests carry the
+        // active profile so the write lands on the profile the user is editing.
         Assert.Equal((0x02, 0x00, 0xC0), Command(getPolling));
         Assert.Equal((0x02, 0x00, 0x40), Command(setPolling));
         Assert.Equal([1, 0, 0], setMode[9..12]);
-        Assert.Equal(0x00, getPolling[9]);
-        Assert.Equal(0x00, setPolling[9]);
+        Assert.Equal(0x00, getProfile[9]);
+        Assert.Equal(0x03, getPolling[9]);
+        Assert.Equal(0x03, setPolling[9]);
         Assert.Equal(0x01, setPolling[10]);
         Assert.Equal(RazerFeatureReport.CalculateCrc(setPolling), setPolling[89]);
     }
@@ -42,6 +45,7 @@ public sealed class RazerKeyboardProtocolTests
         Assert.Equal((byte)100, RazerKeyboardProtocol.ReadBatteryPercent(Response(1, 1, 0xFF)));
         Assert.Equal((byte)50, RazerKeyboardProtocol.ReadBatteryPercent(Response(1, 1, 0x80)));
         Assert.True(RazerKeyboardProtocol.ReadChargingStatus(Response(1, 1, 1)));
+        Assert.Equal((byte)3, RazerKeyboardProtocol.ReadActiveProfileId(Response(1, 1, 3)));
         Assert.Equal(new Version(2, 7), RazerKeyboardProtocol.ReadFirmware(Response(1, 2, 2, 7)));
         Assert.Equal("PM1234", RazerKeyboardProtocol.ReadSerialNumber(
             Response(1, 22, [.. "PM1234"u8, .. new byte[16]])));

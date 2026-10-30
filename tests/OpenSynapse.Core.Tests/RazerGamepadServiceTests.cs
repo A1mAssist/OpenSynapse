@@ -143,6 +143,64 @@ public sealed class RazerGamepadServiceTests
         Assert.Contains(transport.Requests, request => request[8] == 0x1B && request[10] == 4);
     }
 
+    [Fact]
+    public async Task ReportIdTenModelsRewriteTheFrameHeader()
+    {
+        var simulator = new GamepadSimulator();
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerGamepadService(
+            transport, "test", TimeSpan.Zero, productId: 0x0A57);
+
+        await service.ReadStateAsync();
+
+        Assert.NotEmpty(transport.Requests);
+        Assert.All(transport.Requests, request => Assert.Equal(10, request[0]));
+    }
+
+    [Fact]
+    public async Task PollingAndProfileReadWriteUseTheBundleRoutes()
+    {
+        var simulator = new GamepadSimulator
+        {
+            ProfileId = 1,
+            ProfileIds = [1, 2],
+            StandardPollingCode = 0x01,
+        };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerGamepadService(
+            transport, "test", TimeSpan.Zero, productId: 0x0A45);
+
+        var state = await service.ReadPollingProfileAsync();
+        Assert.Equal([1, 2], state.ProfileIds);
+        Assert.Equal((byte)1, state.ActiveProfileId);
+        Assert.Equal(1_000, state.PollingRateHertz);
+        Assert.Empty(state.Errors);
+
+        await service.SetPollingRateAsync(500);
+        Assert.Equal((byte)0x02, simulator.StandardPollingCode);
+        await service.SetActiveProfileAsync(2);
+        Assert.Equal((byte)2, simulator.ProfileId);
+    }
+
+    [Fact]
+    public async Task HighSpeedPollingUsesTheEightKilohertzLadder()
+    {
+        var simulator = new GamepadSimulator
+        {
+            ProfileId = 1,
+            HighSpeedPollingCode = 0x01,
+        };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerGamepadService(
+            transport, "test", TimeSpan.Zero, productId: 0x0A57);
+
+        var state = await service.ReadPollingProfileAsync();
+        Assert.Equal(8_000, state.PollingRateHertz);
+
+        await service.SetPollingRateAsync(1_000);
+        Assert.Equal((byte)0x08, simulator.HighSpeedPollingCode);
+    }
+
     [Theory]
     [InlineData(0x0A45)]
     [InlineData(0x0A4C)]
@@ -198,7 +256,10 @@ public sealed class RazerGamepadServiceTests
 
     private sealed class GamepadSimulator
     {
-        public byte ProfileId { get; init; }
+        public byte ProfileId { get; set; }
+        public byte[] ProfileIds { get; set; } = [1, 2];
+        public byte StandardPollingCode { get; set; } = 0x01;
+        public byte HighSpeedPollingCode { get; set; } = 0x01;
         public byte SensitivityLeft { get; set; } = 50;
         public byte SensitivityRight { get; set; } = 50;
         public RazerGamepadZones Zones { get; set; } = new(7, 0, 0, false);
@@ -220,8 +281,14 @@ public sealed class RazerGamepadServiceTests
             return (commandClass, command) switch
             {
                 (0x05, 0x84) => Response(request, 1, ProfileId),
+                (0x05, 0x81) => Response(request, 0x50, [(byte)ProfileIds.Length, .. ProfileIds]),
+                (0x05, 0x04) => WriteActiveProfile(request),
+                (0x00, 0x8E) => Response(request, 2, request[9], StandardPollingCode),
+                (0x00, 0x0E) => WritePollingCode(request, highSpeed: false),
+                (0x00, 0xC0) => Response(request, 2, request[9], HighSpeedPollingCode),
+                (0x00, 0x40) => WritePollingCode(request, highSpeed: true),
                 (0x0C, 0x80) => Response(request, 3, 2, 1, 2),
-                (0x02, 0x80) => Response(request, 3, [(byte)ButtonIds.Length, .. ButtonIds]),
+                (0x02, 0x84) => Response(request, 3, [(byte)ButtonIds.Length, .. ButtonIds]),
                 (0x02, 0x8C) => Response(
                     request,
                     10,
@@ -257,6 +324,19 @@ public sealed class RazerGamepadServiceTests
                 (0x0C, 0x98) => Response(request, 12, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6),
                 _ => throw new NotSupportedException($"Unexpected command 0x{commandClass:X2}:0x{command:X2}."),
             };
+        }
+
+        private byte[] WriteActiveProfile(byte[] request)
+        {
+            ProfileId = request[9];
+            return Response(request, 1, ProfileId);
+        }
+
+        private byte[] WritePollingCode(byte[] request, bool highSpeed)
+        {
+            if (highSpeed) HighSpeedPollingCode = request[10];
+            else StandardPollingCode = request[10];
+            return Response(request, 2, request[9], request[10]);
         }
 
         private byte Sensitivity(byte controlId) => controlId == 1 ? SensitivityLeft : SensitivityRight;
