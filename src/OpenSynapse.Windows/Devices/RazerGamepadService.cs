@@ -37,9 +37,9 @@ public sealed record RazerGamepadState(
     IReadOnlyList<string> Errors);
 
 /// <summary>
-/// Protocol 25 gamepad settings. The device exposes a 91-byte feature report on
-/// report id 4; every value is probed, so a model that does not answer a command
-/// simply hides that row instead of receiving a guessed payload.
+/// Protocol 25 gamepad settings. The device exposes a 91-byte feature report; report id
+/// is 4 except for 0A57/0A74/0A7C, whose bundles declare 10. Every value is probed, so
+/// a model that does not answer a command hides that row instead of receiving a guess.
 /// </summary>
 public sealed partial class RazerGamepadService
 {

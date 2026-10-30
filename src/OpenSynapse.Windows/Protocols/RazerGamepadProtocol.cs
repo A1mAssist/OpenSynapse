@@ -227,8 +227,9 @@ public sealed record RazerGamepadCalibration(byte AnalogId, IReadOnlyList<ushort
 
 /// <summary>
 /// Protocol 25 class 0x0C gamepad commands shared by the Wolverine V3/V4 and Raiju V3
-/// bundles (chunk 2620). Every request is a 91-byte feature report with report id 4
-/// instead of 0; the rest of the frame matches <see cref="RazerFeatureReport"/>.
+/// bundles (chunk 2620). Every request is a 91-byte feature report; the service supplies
+/// report id 4, or 10 for 0A57/0A74/0A7C as those bundles declare. The rest of the frame
+/// matches <see cref="RazerFeatureReport"/>.
 /// Triples are [dataSize, class, id]:
 ///   sensitivity   get [3,12,130] set [3,12,2]
 ///   zones         get [9,12,133] set [9,12,5]
