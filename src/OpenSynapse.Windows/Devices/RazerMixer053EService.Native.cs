@@ -28,6 +28,7 @@ public sealed partial class RazerMixer053EService
         var peaks = new List<RazerMixer053ENativeDevicePeak>();
         foreach (var device in capture.Concat(render))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_native.ReadPeak(device) is { } peak)
             {
                 peaks.Add(new RazerMixer053ENativeDevicePeak(device, peak));

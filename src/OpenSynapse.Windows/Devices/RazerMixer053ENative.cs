@@ -161,6 +161,15 @@ public sealed class RazerMixer053ENative : IDisposable
             _diagnostic?.Invoke("053E native Initialize timed out; using HID subset.");
             return false;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _diagnostic?.Invoke($"053E native Initialize failed: {exception.Message}");
+            return false;
+        }
     }
 
     public IReadOnlyList<RazerMixer053ENativeDevice> EnumerateDevices(int dataFlow)
@@ -178,7 +187,7 @@ public sealed class RazerMixer053ENative : IDisposable
                 count = _exports!.GetDeviceCount(dataFlow);
             }
         }
-        catch (Exception exception) when (IsLoadFailure(exception))
+        catch (Exception exception)
         {
             _diagnostic?.Invoke($"053E native GetDeviceCount failed: {exception.Message}");
             return [];
@@ -203,7 +212,7 @@ public sealed class RazerMixer053ENative : IDisposable
 
                 json = ReadString(pointer);
             }
-            catch (Exception exception) when (IsLoadFailure(exception))
+            catch (Exception exception)
             {
                 _diagnostic?.Invoke($"053E native GetDeviceById({dataFlow}, {index}) failed: {exception.Message}");
                 continue;
@@ -266,7 +275,7 @@ public sealed class RazerMixer053ENative : IDisposable
             _diagnostic?.Invoke($"053E native peak response was not recognized: {json}");
             return null;
         }
-        catch (Exception exception) when (IsLoadFailure(exception))
+        catch (Exception exception)
         {
             _diagnostic?.Invoke($"053E native peak read failed: {exception.Message}");
             return null;
@@ -292,7 +301,7 @@ public sealed class RazerMixer053ENative : IDisposable
             {
                 _exports!.Terminate();
             }
-            catch (Exception exception) when (IsLoadFailure(exception))
+            catch (Exception exception)
             {
                 _diagnostic?.Invoke($"053E native Terminate failed: {exception.Message}");
             }
@@ -439,7 +448,7 @@ public sealed class RazerMixer053ENative : IDisposable
         {
             return _exports!.Initialize();
         }
-        catch (Exception exception) when (IsLoadFailure(exception))
+        catch (Exception exception)
         {
             _initializeError = exception;
             return false;
