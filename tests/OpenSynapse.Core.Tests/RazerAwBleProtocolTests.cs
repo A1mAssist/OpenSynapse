@@ -63,7 +63,7 @@ public sealed class RazerAwBleProtocolTests
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.GameModeGetCommand));
         Assert.Equal(new byte[] { 0x13, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.EqPresetGetCommand));
-        Assert.Equal(new byte[] { 0x27, 0x00, 0x00 },
+        Assert.Equal(new byte[] { 0x2C, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.AutoPowerOffGetCommand));
         Assert.Equal(new byte[] { 0x40, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.ChromaEffectGetCommand));
@@ -100,8 +100,8 @@ public sealed class RazerAwBleProtocolTests
             RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.GameModeSetCommand, 1));
         Assert.Equal(new byte[] { 0x93, 0x00, 0x01, 10 },
             RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.EqPresetSetCommand, 10));
-        Assert.Equal(new byte[] { 0xA7, 0x00, 0x01, 3 },
-            RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.AutoPowerOffSetCommand, 3));
+        Assert.Equal(new byte[] { 0xAC, 0x00, 0x01, 30 },
+            RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.AutoPowerOffSetCommand, 30));
         Assert.Equal(new byte[] { 0xC0, 0x00, 0x01, 1 },
             RazerAwBleProtocol.CreateWriteRequest(
                 RazerAwBleProtocol.ChromaEffectSetCommand, (byte)RazerAwChromaEffect.Spectrum));
@@ -138,7 +138,7 @@ public sealed class RazerAwBleProtocolTests
     [InlineData(0x19, 15)]
     [InlineData(0x14, 1)]
     [InlineData(0x13, 255)]
-    [InlineData(0x27, 3)]
+    [InlineData(0x2C, 30)]
     [InlineData(0x40, 3)]
     [InlineData(0x41, 127)]
     [InlineData(0x1B, 55)]
@@ -226,33 +226,16 @@ public sealed class RazerAwBleProtocolTests
         Assert.False(RazerAwBleProtocol.IsKnownEqPreset(preset));
     }
 
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(5, 1)]
-    [InlineData(10, 1)]
-    [InlineData(15, 2)]
-    [InlineData(30, 3)]
-    [InlineData(45, 4)]
-    [InlineData(60, 5)]
-    [InlineData(90, 5)]
-    public void AutoPowerOffMinutesUseTheBundleStepIndex(int minutes, byte index)
-    {
-        Assert.Equal(index, RazerAwBleProtocol.AutoPowerOffIndexFromMinutes(minutes));
-    }
-
     [Fact]
-    public void AutoPowerOffReplyUsesTheBundleStepTable()
+    public void AutoPowerOffReplyUsesRawMinutes()
     {
         Assert.True(RazerAwBleProtocol.TryParseAutoPowerOff(
-            [0x27, 0x02, 0x01, 3], out var minutes));
+            [0x2C, 0x02, 0x01, 30], out var minutes));
         Assert.Equal(30, minutes);
 
         Assert.True(RazerAwBleProtocol.TryParseAutoPowerOff(
-            [0x27, 0x02, 0x01, 0], out var off));
+            [0x2C, 0x02, 0x01, 0], out var off));
         Assert.Equal(0, off);
-
-        Assert.False(RazerAwBleProtocol.TryParseAutoPowerOff(
-            [0x27, 0x02, 0x01, 6], out _));
     }
 
     [Fact]

@@ -87,7 +87,7 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 | 专用面板 | 0576 0577 101B 101C | BlackShark V3 Pro 已有 ANC/侧音/THX 面板，不再进通用耳机页 |
 | Billie64 | 0587 | `AudioBastetT1`，与 `AudioBillieT2` 共用 64 字节 report id 2 和 56555 命令表 |
 | Mxic64（protocol40） | 0593 | `rzDevice40HeadsetAiroha`，64 字节 report id 2；class/id/size 在 5..8，只开放电量/充电 |
-| BLE 电量/控制页 | 0309 0530 0534 0562 | `AudioAWKittyBLE`：service `416d656c-...`、write `416d0000-...`、notify `416d0001-...`；电量、主音量、侧音、游戏模式、扬声器/麦克风 EQ、低音、触觉、自动关机、Chroma 亮度、固件/序列号/连接/充电读取；音频输出仍由 Windows 负责 |
+| BLE 电量/控制页 | 0309 0530 0534 0562 | `AudioAWKittyBLE`：service `416d656c-...`、write `416d0000-...`、notify `416d0001-...`；电量、主音量、侧音、游戏模式、扬声器/麦克风 EQ、低音、触觉、自动关机（`0x2C:00`/`0xAC:00`，原始分钟字节；`0x27`/`0xA7` 是 DND）、Chroma 亮度、固件/序列号/连接/充电读取；音频输出仍由 Windows 负责 |
 | HID mixer 子集 | 053E | `AudioMixer`：64 字节 report-7 feature、report-9 状态；固件/序列号/设备模式、推子原始值、通道/麦克风静音、亮度；推子/路由/EQ/peak 需要 `CmMixerLib` |
 | Feature91（音频） | 0F1B | Seiren Emote 的音频/EQ 走 91 字节通道；本 bundle 声明 `AudioCamyT3Device` / `isChromaDevice:false`，没有矩阵帧命令，8×8 点阵不开放 |
 | 不显示（串口） | 052D | `AudioNXPDevice` 走 `rzSerial`（28 字节包头），没有串口 transport |
