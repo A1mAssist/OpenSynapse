@@ -79,7 +79,7 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         // we have actually observed on hardware map to a direction; an unknown variant such as the
         // PlayStation build starts on the wireless byte, and the diagnostic below records the
         // choice so a failing link becomes evidence instead of another guess.
-        var wireless = chosen.ProductId != BlackSharkV3ProProtocol.WiredProductId;
+        var wireless = !BlackSharkV3ProProtocol.IsWiredProductId(chosen.ProductId);
         diagnostic?.Invoke(
             $"BlackShark selected vid_{chosen.VendorId:X4}&pid_{chosen.ProductId:X4} " +
             $"product='{chosen.ProductName}' usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} " +
@@ -149,7 +149,7 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             thx is null ? null : thx != 0,
             anc.Mode,
             anc.Level,
-            gameChat);
+            gameChat is byte rawGameChat ? InvertGameChat(rawGameChat) : null);
     }
 
     public async Task SetSidetoneAsync(int level, CancellationToken cancellationToken = default)
@@ -240,7 +240,7 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
 
     public async Task SetGameChatAsync(int balance, CancellationToken cancellationToken = default)
     {
-        var previous = await ReadValueAsync(
+        var previousWire = await ReadValueAsync(
             BlackSharkV3ProProtocol.CreateGetGameChat(_connection.Wireless),
             0x5C,
             cancellationToken).ConfigureAwait(false);
@@ -250,22 +250,27 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
                 BlackSharkV3ProProtocol.CreateSetGameChat(balance, _connection.Wireless), false, cancellationToken)
                 .ConfigureAwait(false);
             var actual = await ReadValueWithRetryAsync(0x5C, cancellationToken).ConfigureAwait(false);
-            if (actual != balance)
+            var actualBalance = actual is byte raw ? InvertGameChat(raw) : (byte?)null;
+            if (actualBalance != balance)
             {
-                throw new InvalidOperationException($"BlackShark game/chat readback was {actual?.ToString() ?? "empty"}, expected {balance}.");
+                throw new InvalidOperationException(
+                    $"BlackShark game/chat readback was {actualBalance?.ToString() ?? "empty"}, expected {balance}.");
             }
         }
         catch
         {
-            if (previous is byte restore)
+            if (previousWire is byte restore)
             {
-                await TrySendAsync(BlackSharkV3ProProtocol.CreateSetGameChat(restore, _connection.Wireless))
-                    .ConfigureAwait(false);
+                await TrySendAsync(BlackSharkV3ProProtocol.CreateSetGameChat(
+                    InvertGameChat(restore), _connection.Wireless)).ConfigureAwait(false);
             }
 
             throw;
         }
     }
+
+    private static byte InvertGameChat(byte wireValue) =>
+        checked((byte)(20 - Math.Clamp(wireValue, (byte)0, (byte)20)));
 
     private async Task<(BlackSharkAncMode? Mode, int? Level)> ReadAncAsync(CancellationToken cancellationToken)
     {
@@ -373,6 +378,14 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         var channel = RazerHeadsetChannelCatalog.Resolve(productId);
         var namedBlackShark =
             productName?.Contains("BlackShark", StringComparison.OrdinalIgnoreCase) == true;
+        // A known catalog entry that resolves Unsupported is a deliberate exclusion, not an
+        // unknown SKU; the product-name fallback would pull 0565 into the V3 Pro protocol.
+        if (channel == RazerHeadsetChannel.Unsupported &&
+            RazerHeadsetChannelCatalog.IsKnown(productId))
+        {
+            return false;
+        }
+
         if (channel != RazerHeadsetChannel.DedicatedBlackShark &&
             (channel != RazerHeadsetChannel.Unsupported || !namedBlackShark))
         {

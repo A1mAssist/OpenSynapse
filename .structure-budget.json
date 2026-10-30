@@ -9,12 +9,12 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs",
-      "maxLines": 3046,
-      "maxPublicMembers": 168
+      "maxLines": 3123,
+      "maxPublicMembers": 170
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/OpenRazerDeviceService.cs",
-      "maxLines": 1827
+      "maxLines": 1830
     },
     {
       "path": "src/OpenSynapse.App/MainWindow.xaml",
@@ -26,16 +26,16 @@
     },
     {
       "path": "src/OpenSynapse.App/Views/DevicesPage.xaml",
-      "maxLines": 1270
+      "maxLines": 1440
     },
     {
       "path": "src/OpenSynapse.App/Views/DevicesPage.Blade.cs",
-      "maxLines": 930
+      "maxLines": 933
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerHeadsetAudioViewModel.cs",
-      "maxLines": 1630,
-      "maxPublicMembers": 170
+      "maxLines": 1689,
+      "maxPublicMembers": 174
     },
     {
       "path": "src/OpenSynapse.Windows/Input/MacroRuntime.cs",
@@ -43,16 +43,16 @@
     },
     {
       "path": "src/OpenSynapse.App/App.xaml.cs",
-      "maxLines": 1167
+      "maxLines": 1173
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerBleDeviceViewModel.cs",
-      "maxLines": 1148,
-      "maxPublicMembers": 111
+      "maxLines": 1184,
+      "maxPublicMembers": 114
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/BladeMappingInputRuntime.cs",
-      "maxLines": 1135
+      "maxLines": 1168
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/MainViewModel.cs",
@@ -69,7 +69,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Lighting/BladeLightingController.cs",
-      "maxLines": 955
+      "maxLines": 1015
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerHeadsetAudioService.cs",
@@ -77,7 +77,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerBleDeviceService.cs",
-      "maxLines": 898
+      "maxLines": 921
     },
     {
       "path": "src/OpenSynapse.App/MacroEditorWindow.xaml.cs",
@@ -89,7 +89,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerDeviceRegistry.cs",
-      "maxLines": 853
+      "maxLines": 875
     },
     {
       "path": "src/OpenSynapse.Windows/Lighting/WindowsDisplayCaptureAdapter.cs",
@@ -97,7 +97,7 @@
     },
     {
       "path": "src/OpenSynapse.Core/Devices/BladeModelCapabilities.cs",
-      "maxLines": 842
+      "maxLines": 917
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/BladePowerTelemetryReader.cs",
@@ -117,7 +117,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/RazerGamepadProtocol.cs",
-      "maxLines": 746
+      "maxLines": 768
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/WindowsHidDiscovery.cs",
@@ -139,12 +139,12 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/LightingWorkspace.cs",
-      "maxLines": 477,
+      "maxLines": 493,
       "maxPublicMembers": 5
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerGamepadViewModel.cs",
-      "maxLines": 681
+      "maxLines": 773
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/RazerHapticoreScrollProtocol.cs",
@@ -152,7 +152,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/BladeDisplayTelemetryReader.cs",
-      "maxLines": 678
+      "maxLines": 687
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/BladeMappingActionExecutor.cs",
@@ -172,7 +172,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerGamepadService.cs",
-      "maxLines": 636
+      "maxLines": 643
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/OpenRazerLightingProtocol.cs",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/OpenRazerMouseProtocol.cs",
-      "maxLines": 602
+      "maxLines": 609
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/OpenRazerWorkspace.cs",
@@ -247,7 +247,7 @@
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
         "maxLines": 1443,
-        "maxPublicMembers": 67
+        "maxPublicMembers": 72
     }
   ]
 }

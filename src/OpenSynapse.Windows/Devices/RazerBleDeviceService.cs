@@ -608,7 +608,7 @@ public sealed class RazerBleDeviceService : IDisposable
                     "get time to dim",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "get time to dim");
-                return RazerBleProtocol30.ReadTimeToDimSeconds(response);
+                return RazerBleProtocol30.ReadTimeToDim(response);
             },
             errors,
             cancellationToken).ConfigureAwait(false);
@@ -620,6 +620,7 @@ public sealed class RazerBleDeviceService : IDisposable
         int? lowBatteryPercent,
         bool? autoSleep,
         int? sleepMinutes,
+        RazerBleTimeToDimState? timeToDim = null,
         CancellationToken cancellationToken = default)
     {
         var current = await ReadPowerAsync(cancellationToken).ConfigureAwait(false);
@@ -652,11 +653,21 @@ public sealed class RazerBleDeviceService : IDisposable
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "set sleep time");
             }
+            if (timeToDim is { } requestedTimeToDim)
+            {
+                var response = await _session.SendAsync(
+                    transaction => RazerBleProtocol30.CreateSetTimeToDim(
+                        transaction, requestedTimeToDim, BleProfileId, BatteryId),
+                    "set time to dim",
+                    cancellationToken).ConfigureAwait(false);
+                EnsureSuccess(response, "set time to dim");
+            }
 
             var applied = await ReadPowerAsync(cancellationToken).ConfigureAwait(false);
             if ((lowBatteryPercent is null || applied.LowBatteryPercent == lowBatteryPercent) &&
                 (autoSleep is null || applied.AutoSleep == autoSleep) &&
-                (sleepMinutes is null || applied.SleepMinutes == sleepMinutes))
+                (sleepMinutes is null || applied.SleepMinutes == sleepMinutes) &&
+                (timeToDim is null || applied.TimeToDim == timeToDim))
             {
                 return applied;
             }
@@ -822,6 +833,18 @@ public sealed class RazerBleDeviceService : IDisposable
                     "restore sleep time",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "restore sleep time");
+            }).ConfigureAwait(false);
+        }
+        if (state.TimeToDim is { } timeToDim)
+        {
+            await TryRestoreAsync("restore time to dim", async () =>
+            {
+                var response = await _session.SendAsync(
+                    transaction => RazerBleProtocol30.CreateSetTimeToDim(
+                        transaction, timeToDim, BleProfileId, BatteryId),
+                    "restore time to dim",
+                    cancellationToken).ConfigureAwait(false);
+                EnsureSuccess(response, "restore time to dim");
             }).ConfigureAwait(false);
         }
     }

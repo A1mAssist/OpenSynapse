@@ -1,3 +1,4 @@
+using System.Text.Json;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -7,6 +8,113 @@ internal sealed record RazerHidCollection(
     ushort UsagePage,
     ushort Usage,
     ushort FeatureReportLength);
+
+internal sealed record RazerFirmwareRelease(string Version, string Url);
+
+internal sealed record RazerFirmwareInfo(
+    RazerFirmwareRelease? Latest,
+    RazerFirmwareRelease? Driver);
+
+internal sealed record RazerDeviceMetadata(
+    string? Name,
+    string? ShortName,
+    IReadOnlyList<int> EditionIds,
+    IReadOnlyList<int> LayoutIds,
+    string? RzDeviceType,
+    RazerFirmwareInfo? Firmware)
+{
+    internal static RazerDeviceMetadata? Parse(
+        JsonElement? source,
+        string manifestId,
+        JsonSerializerOptions options)
+    {
+        if (source is null || source.Value.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+        if (source.Value.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException(
+                $"Manifest '{manifestId}' device must be an object.");
+        }
+
+        var json = source.Value.Deserialize<RazerDeviceJson>(options)
+            ?? throw new InvalidOperationException(
+                $"Manifest '{manifestId}' device deserialized to null.");
+        return new RazerDeviceMetadata(
+            OptionalText(json.Name, "device.name", manifestId),
+            OptionalText(json.ShortName, "device.shortName", manifestId),
+            json.EditionIds ?? [],
+            json.LayoutIds ?? [],
+            OptionalText(json.RzDeviceType, "device.rzDeviceType", manifestId),
+            json.Firmware is null
+                ? null
+                : new RazerFirmwareInfo(
+                    Release(json.Firmware.Latest, "latest", manifestId),
+                    Release(json.Firmware.Driver, "driver", manifestId)));
+    }
+
+    private static string? OptionalText(string? value, string field, string manifestId)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException(
+                $"Manifest '{manifestId}' {field} cannot be empty.");
+        }
+        return value.Trim();
+    }
+
+    private static RazerFirmwareRelease? Release(
+        RazerFirmwareReleaseJson? source,
+        string kind,
+        string manifestId)
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        var version = OptionalText(source.Version, $"device.firmware.{kind}.version", manifestId)
+            ?? throw new InvalidOperationException(
+                $"Manifest '{manifestId}' device.firmware.{kind}.version is required.");
+        var url = OptionalText(source.Url, $"device.firmware.{kind}.url", manifestId)
+            ?? throw new InvalidOperationException(
+                $"Manifest '{manifestId}' device.firmware.{kind}.url is required.");
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+        {
+            throw new InvalidOperationException(
+                $"Manifest '{manifestId}' device.firmware.{kind}.url must be an absolute HTTP(S) URL.");
+        }
+        return new RazerFirmwareRelease(version, url);
+    }
+}
+
+internal sealed class RazerDeviceJson
+{
+    public string? Name { get; init; }
+    public string? ShortName { get; init; }
+    public List<int>? EditionIds { get; init; }
+    public List<int>? LayoutIds { get; init; }
+    public string? RzDeviceType { get; init; }
+    public RazerFirmwareJson? Firmware { get; init; }
+}
+
+internal sealed class RazerFirmwareJson
+{
+    public RazerFirmwareReleaseJson? Latest { get; init; }
+    public RazerFirmwareReleaseJson? Driver { get; init; }
+}
+
+internal sealed class RazerFirmwareReleaseJson
+{
+    public string? Version { get; init; }
+    public string? Url { get; init; }
+}
 
 internal sealed class RazerRequestDescriptor
 {
@@ -76,7 +184,9 @@ internal sealed class RazerDeviceManifest
         IReadOnlyDictionary<string, RazerRequestDescriptor> capabilities,
         DeviceCategory category,
         int matrixRows = 0,
-        int matrixColumns = 0)
+        int matrixColumns = 0,
+        RazerDeviceMetadata? device = null,
+        BladeLightingDialect lightingDialect = BladeLightingDialect.Unknown)
     {
         SourceName = sourceName;
         Id = id;
@@ -89,6 +199,8 @@ internal sealed class RazerDeviceManifest
         Category = category;
         MatrixRows = matrixRows;
         MatrixColumns = matrixColumns;
+        Device = device;
+        LightingDialect = lightingDialect;
     }
 
     internal string SourceName { get; }
@@ -102,6 +214,8 @@ internal sealed class RazerDeviceManifest
     internal DeviceCategory Category { get; }
     internal int MatrixRows { get; }
     internal int MatrixColumns { get; }
+    internal RazerDeviceMetadata? Device { get; }
+    internal BladeLightingDialect LightingDialect { get; }
 
     internal RazerRequestDescriptor GetRequiredCapability(string capabilityId) =>
         Capabilities.TryGetValue(capabilityId, out var descriptor)

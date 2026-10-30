@@ -3,7 +3,9 @@
   "id": "blade-02e0",
   "displayName": "Razer Blade 16 (2026)",
   "vendorId": "1532",
-  "productIds": ["02E0"],
+  "productIds": [
+    "02E0"
+  ],
   "collection": {
     "usagePage": "0001",
     "usage": "0002",
@@ -15,29 +17,216 @@
     "waitMilliseconds": 2
   },
   "capabilities": {
-    "thermal-state.get": { "transactionId": "1F", "dataSize": "04", "commandClass": "0D", "commandId": "82", "arguments": "" },
-    "thermal-state.set": { "transactionId": "1F", "dataSize": "04", "commandClass": "0D", "commandId": "02", "arguments": "" },
-    "fan-target.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "81", "arguments": "" },
-    "current-fan-rpm.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "88", "arguments": "" },
-    "boost.get": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "87", "arguments": "" },
-    "boost.set": { "transactionId": "1F", "dataSize": "03", "commandClass": "0D", "commandId": "07", "arguments": "" },
-    "adapter-power.get": { "transactionId": "00", "dataSize": "02", "commandClass": "07", "commandId": "8C", "arguments": "0000", "allowRemainingPacketsMismatch": true },
-    "charge-limit.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "92", "arguments": "00", "allowRemainingPacketsMismatch": true },
-    "charge-limit.set": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "12", "arguments": "" },
-    "power-mode.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "8F", "arguments": "00", "allowRemainingPacketsMismatch": true },
-    "power-mode.set": { "transactionId": "1F", "dataSize": "01", "commandClass": "07", "commandId": "0F", "arguments": "" },
-    "sku-hardware-configuration.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "0D", "commandId": "8F", "arguments": "00", "allowRemainingPacketsMismatch": true },
-    "keyboard-brightness.get": { "transactionId": "03", "dataSize": "03", "commandClass": "03", "commandId": "83", "arguments": "010500", "allowRemainingPacketsMismatch": true },
-    "keyboard-brightness.set": { "transactionId": "03", "dataSize": "03", "commandClass": "03", "commandId": "03", "arguments": "", "allowRemainingPacketsMismatch": true },
-    "keyboard-effect.get": { "transactionId": "03", "dataSize": "03", "commandClass": "0F", "commandId": "82", "arguments": "010500", "allowRemainingPacketsMismatch": true },
-    "keyboard-effect.set": { "transactionId": "03", "dataSize": "03", "commandClass": "0F", "commandId": "02", "arguments": "", "allowRemainingPacketsMismatch": true },
-    "display-mux.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "89", "arguments": "0000" },
-    "display-mux.set": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "09", "arguments": "" },
-    "display-mux-capabilities.get": { "transactionId": "1F", "dataSize": "02", "commandClass": "0D", "commandId": "8A", "arguments": "0000" },
-    "gaming-mode.set": { "transactionId": "00", "dataSize": "04", "commandClass": "00", "commandId": "08", "arguments": "" },
-    "startup-animation.get": { "transactionId": "1F", "dataSize": "01", "commandClass": "0F", "commandId": "98", "arguments": "00" },
-    "startup-animation.set": { "transactionId": "1F", "dataSize": "02", "commandClass": "0F", "commandId": "18", "arguments": "" }
+    "thermal-state.get": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "82",
+      "arguments": ""
+    },
+    "thermal-state.set": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "fan-target.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "81",
+      "arguments": ""
+    },
+    "current-fan-rpm.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "88",
+      "arguments": ""
+    },
+    "boost.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "87",
+      "arguments": ""
+    },
+    "boost.set": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "07",
+      "arguments": ""
+    },
+    "adapter-power.get": {
+      "transactionId": "00",
+      "dataSize": "02",
+      "commandClass": "07",
+      "commandId": "8C",
+      "arguments": "0000",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "92",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "12",
+      "arguments": ""
+    },
+    "power-mode.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "8F",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "power-mode.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "0F",
+      "arguments": ""
+    },
+    "sku-hardware-configuration.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0D",
+      "commandId": "8F",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-brightness.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "83",
+      "arguments": "010500",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-brightness.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "03",
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-effect.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "0F",
+      "commandId": "82",
+      "arguments": "010500",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-effect.set": {
+      "transactionId": "03",
+      "dataSize": "06",
+      "commandClass": "0F",
+      "commandId": "02",
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
+    },
+    "display-mux.get": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "89",
+      "arguments": "0000"
+    },
+    "display-mux.set": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "09",
+      "arguments": ""
+    },
+    "display-mux-capabilities.get": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "8A",
+      "arguments": "0000"
+    },
+    "native-display-mode.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0D",
+      "commandId": "8E",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "native-display-mode.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0D",
+      "commandId": "0E",
+      "arguments": ""
+    },
+    "gaming-mode.set": {
+      "transactionId": "00",
+      "dataSize": "04",
+      "commandClass": "00",
+      "commandId": "08",
+      "arguments": ""
+    },
+    "startup-animation.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "0F",
+      "commandId": "98",
+      "arguments": "00"
+    },
+    "startup-animation.set": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0F",
+      "commandId": "18",
+      "arguments": ""
+    }
   },
   "matrixRows": 6,
-  "matrixColumns": 17
+  "matrixColumns": 17,
+  "device": {
+    "name": "Razer Blade 16",
+    "shortName": "Sonya12_MW",
+    "editionIds": [
+      0,
+      129,
+      131
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      12,
+      16
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBlade2",
+    "firmware": {
+      "latest": {
+        "version": "0.2.0.0",
+        "url": "https://rzr.to/2787wk"
+      },
+      "driver": {
+        "version": "26.0.2.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/736/PID02e0Drv_v26.0.2.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "LedMatrix2026"
 }

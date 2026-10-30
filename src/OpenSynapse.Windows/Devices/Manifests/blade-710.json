@@ -250,5 +250,36 @@
     }
   },
   "matrixRows": 6,
-  "matrixColumns": 17
+  "matrixColumns": 17,
+  "device": {
+    "name": "Razer Blade 16",
+    "shortName": "Sonya11_MW",
+    "editionIds": [
+      0,
+      129
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      12,
+      16
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBlade2",
+    "firmware": {
+      "latest": {
+        "version": "1.8.0.0",
+        "url": "https://rzr.to/k1kflh"
+      },
+      "driver": {
+        "version": "24.0.0.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/710/PID02c6Drv_v24.0.0.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "LedMatrix710"
 }

@@ -90,7 +90,9 @@ public sealed class RazerGamepadProtocolTests
     public void OptionalCommandsKeepTheirJSSizes()
     {
         Assert.Equal(80, RazerGamepadProtocol.CreateGetControlIdListRequest(0x01)[6]);
-        Assert.Equal(2, RazerGamepadProtocol.CreateGetAdcMaskRequest(0x01)[6]);
+        var adcMask = RazerGamepadProtocol.CreateGetAdcMaskRequest(0x01);
+        Assert.Equal(2, adcMask[6]);
+        Assert.All(adcMask[9..89], value => Assert.Equal(0, value));
         Assert.Equal(51, RazerGamepadProtocol.CreateGetCalibrationRequest(
             0x01, RazerGamepadCalibrationControl.LeftJoystick)[6]);
 
@@ -153,6 +155,51 @@ public sealed class RazerGamepadProtocolTests
             () => RazerGamepadProtocol.ReadSensitivity(new byte[90], 0x01));
         Assert.Throws<ArgumentException>(
             () => RazerGamepadProtocol.ReadZones(new byte[90], 0x01));
+    }
+
+    [Fact]
+    public void PollingAndProfileFramesMatchTheBundle()
+    {
+        var profiles = RazerGamepadProtocol.CreateGetProfileIdListRequest(0x01);
+        Assert.Equal(0x50, profiles[6]);
+        Assert.Equal(0x05, profiles[7]);
+        Assert.Equal(0x81, profiles[8]);
+
+        var setProfile = RazerGamepadProtocol.CreateSetActiveProfileIdRequest(0x01, 2);
+        Assert.Equal(0x05, setProfile[7]);
+        Assert.Equal(0x04, setProfile[8]);
+        Assert.Equal([2], setProfile[9..10]);
+
+        var profilePolling = RazerGamepadProtocol.CreateSetProfilePollingRateRequest(0x01, 1, 0x02);
+        Assert.Equal(0x00, profilePolling[7]);
+        Assert.Equal(0x0E, profilePolling[8]);
+        Assert.Equal([1, 0x02], profilePolling[9..11]);
+
+        var highSpeedPolling = RazerGamepadProtocol.CreateSetHighSpeedPollingRateRequest(0x01, 1, 0x08);
+        Assert.Equal(0x00, highSpeedPolling[7]);
+        Assert.Equal(0x40, highSpeedPolling[8]);
+        Assert.Equal([1, 0x08], highSpeedPolling[9..11]);
+
+        Assert.Equal((byte)0x08, RazerGamepadProtocol.EncodeStandardPollingRate(125));
+        Assert.Equal(8_000, RazerGamepadProtocol.DecodeHighSpeedPollingRate(0x01));
+        Assert.Throws<InvalidDataException>(
+            () => RazerGamepadProtocol.DecodeHighSpeedPollingRate(0x03));
+    }
+
+    [Fact]
+    public void ButtonListAndVibrationUseTheBundleValues()
+    {
+        var list = RazerGamepadProtocol.CreateGetButtonIdListRequest(0x01);
+        Assert.Equal(0x02, list[7]);
+        Assert.Equal(0x84, list[8]);
+
+        Assert.Equal((byte)0, RazerGamepadProtocol.ToVibrationScale(0));
+        Assert.Equal((byte)17, RazerGamepadProtocol.ToVibrationScale(1));
+        Assert.Equal((byte)50, RazerGamepadProtocol.ToVibrationScale(3));
+        Assert.Equal((byte)100, RazerGamepadProtocol.ToVibrationScale(6));
+        Assert.Equal((byte)5, RazerGamepadProtocol.ToVibrationIndex(83));
+        Assert.Equal((byte)3, RazerGamepadProtocol.ToVibrationIndex(50));
+        Assert.Equal((byte)6, RazerGamepadProtocol.ToVibrationIndex(100));
     }
 
     private static byte[] Reply(byte controlId, params byte[] value)

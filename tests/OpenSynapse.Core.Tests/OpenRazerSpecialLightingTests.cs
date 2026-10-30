@@ -37,6 +37,14 @@ public sealed class OpenRazerSpecialLightingTests
     }
 
     [Fact]
+    public void KrakenV4DongleAlsoKeepsItsLightingRow()
+    {
+        Assert.False(
+            OpenRazerSpecialLightingService.IsMergedIntoAudioPage(0x056C, hasAudioFeatureInterface: false),
+            "0x056C");
+    }
+
+    [Fact]
     public void ArgbFrameCarriesChannelAndColorBytes()
     {
         var frame = OpenRazerArgbFrame.Create(2,

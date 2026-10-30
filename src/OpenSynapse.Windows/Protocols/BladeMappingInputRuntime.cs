@@ -97,7 +97,8 @@ public readonly record struct BladeMappingRule(
     bool OutputExtended = false,
     BladeMappingAction? PressAction = null,
     BladeMappingAction? ReleaseAction = null,
-    bool InputExtended = false);
+    bool InputExtended = false,
+    bool GameModeOnly = false);
 
 public readonly record struct BladeMappingInputEvent(
     BladeMappingInputKind Kind,
@@ -128,6 +129,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
     private long _sequence;
     private bool _hyperShift;
     private bool _snapTapEnabled;
+    private volatile bool _gameModeEnabled;
     private bool _disposed;
 
     public static BladeMappingInputRuntime FromGraph(JsonObject graph)
@@ -213,6 +215,7 @@ public sealed class BladeMappingInputRuntime : IDisposable
 
     public bool HyperShiftEnabled => _hyperShift;
     public bool SnapTapEnabled => _snapTapEnabled;
+    public bool GameModeEnabled => _gameModeEnabled;
     public int MappingCount => checked(_rules.Count * 2);
     public IReadOnlyCollection<BladeMappingRule> Rules => _rules.Values;
 
@@ -363,6 +366,33 @@ public sealed class BladeMappingInputRuntime : IDisposable
         return enabledOutput;
     }
 
+    public void SetGameModeEnabled(bool enabled) => _gameModeEnabled = enabled;
+
+    /// <summary>
+    /// Synapse adds scancode 91 (left Windows) to the driver mapping only while
+    /// game mode is active. The hardware mode byte alone drives the indicator.
+    /// </summary>
+    public void AddGameModeWindowsKeySuppression()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        foreach (var scanCode in new[] { 0x5B, 0x5C })
+        {
+            var key = new RuleKey(BladeMappingInputKind.Keyboard, scanCode, false, true);
+            var rule = new BladeMappingRule(
+                BladeMappingInputKind.Keyboard,
+                scanCode,
+                HyperShiftLayer: false,
+                BladeMappingOutputKind.Disable,
+                OutputCode: 0,
+                PressAction: new BladeDisabledMappingAction(),
+                ReleaseAction: new BladeDisabledMappingAction(),
+                InputExtended: true,
+                GameModeOnly: true);
+            Validate(rule);
+            _rules.TryAdd(key, rule);
+        }
+    }
+
     public IReadOnlyList<BladeMappingOutputEvent> Stop()
     {
         if (_disposed)
@@ -401,9 +431,12 @@ public sealed class BladeMappingInputRuntime : IDisposable
     private BladeMappingRule? ResolveRule(BladeMappingInputEvent input)
     {
         var key = new RuleKey(input.Kind, input.Code, _hyperShift, input.Extended);
-        return _rules.TryGetValue(key, out var rule)
-            ? rule
-            : null;
+        if (!_rules.TryGetValue(key, out var rule))
+        {
+            return null;
+        }
+
+        return rule.GameModeOnly && !_gameModeEnabled ? null : rule;
     }
 
     private IReadOnlyList<BladeMappingOutputEvent> ProcessOutput(

@@ -26,7 +26,9 @@ public sealed class Blade695Tests
         Assert.True(BladeModelCapabilities.SupportsFanCurve(0x02B7));
         Assert.True(BladeModelCapabilities.SupportsFixedFan(0x02B7));
         Assert.False(BladeModelCapabilities.SupportsMaxFan(0x02B7));
-        Assert.Empty(BladeModelCapabilities.CpuBoostModesFor(0x02B7));
+        Assert.Equal(
+            [BladeCpuBoostMode.Low, BladeCpuBoostMode.Medium, BladeCpuBoostMode.High],
+            BladeModelCapabilities.CpuBoostModesFor(0x02B7));
         Assert.True(DeviceProtocolFamilies.IsBlade(manifest.ProtocolFamily));
         Assert.True(DeviceProtocolFamilies.UsesBladeMatrix(manifest.ProtocolFamily));
         Assert.Equal(6, manifest.MatrixRows);

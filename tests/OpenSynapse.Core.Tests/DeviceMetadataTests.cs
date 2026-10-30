@@ -48,6 +48,18 @@ public sealed class DeviceMetadataTests
     }
 
     [Fact]
+    public void UnknownLightingDialectIsRejectedInsteadOfFallingBackToUnknown()
+    {
+        var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
+        root["lightingDialect"] = "1";
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            RazerDeviceRegistry.LoadJson([root.ToJsonString()]));
+
+        Assert.Contains("unknown lightingDialect", exception.Message);
+    }
+
+    [Fact]
     public void ExternalManifestCannotChangeItsProtocolFamilyCategory()
     {
         var root = JsonNode.Parse(BuiltInManifestJson("viper-184"))!.AsObject();
@@ -344,7 +356,7 @@ public sealed class DeviceMetadataTests
     [InlineData(0x028C, true)]
     [InlineData(0x029D, true)]
     [InlineData(0x02B6, true)]
-    [InlineData(0x0245, false)] // Blade 15 (2019): no audited Custom CPU levels
+    [InlineData(0x0245, true)] // Blade 15 (2019): bundle publishes Custom CPU/GPU levels
     [InlineData(0xFFFF, false)]
     public void CpuBoostVisibilityFollowsTheModelContract(ushort productId, bool expected)
     {

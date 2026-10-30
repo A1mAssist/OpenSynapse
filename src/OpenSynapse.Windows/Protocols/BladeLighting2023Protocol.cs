@@ -75,7 +75,17 @@ public static class BladeLighting2023Protocol
     /// </summary>
     public static byte[] CreateSetEffectRequest(byte effect, ReadOnlySpan<byte> parameters)
     {
-        var payload = new byte[SelectorDataSize + parameters.Length];
+        // The middleware's 0F:02 effect frame is
+        // [profile, region, effect, flags, rate, colorCount, colors...]. Simple
+        // effects still carry the three trailing control bytes as zero.
+        if (parameters.Length > SelectorDataSize)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(parameters),
+                "Simple Blade effects carry at most one flag byte.");
+        }
+
+        var payload = new byte[6];
         payload[0] = Store;
         payload[1] = KeyboardRegion;
         payload[2] = effect;

@@ -115,7 +115,7 @@
     },
     "keyboard-effect.set": {
       "transactionId": "03",
-      "dataSize": "03",
+      "dataSize": "06",
       "commandClass": "0F",
       "commandId": "02",
       "arguments": "",
@@ -128,5 +128,31 @@
       "commandId": "08",
       "arguments": ""
     }
-  }
+  },
+  "device": {
+    "name": "Razer Blade 15 Base Model",
+    "shortName": "Dana7_MW",
+    "editionIds": [
+      0
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      9,
+      12,
+      16
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBlade",
+    "firmware": {
+      "latest": null,
+      "driver": {
+        "version": "0.1.1.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/634/1.0.0.0/PID027aDrv_v0.1.1.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "FirmwareEffect"
 }

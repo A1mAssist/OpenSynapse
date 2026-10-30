@@ -459,8 +459,9 @@ public sealed partial class OpenRazerDeviceService
     public async Task<int> GetPollingRateAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default)
     {
         var highRate = connection.Definition.Transactions.ContainsKey("razer_chroma_misc_get_polling_rate2");
+        var profileId = await ReadActiveProfileIdAsync(connection, cancellationToken).ConfigureAwait(false) ?? 0x00;
         return OpenRazerMouseProtocol.ParsePollingRate(await ExecuteAsync(connection,
-            OpenRazerMouseProtocol.GetPollingRate(connection.Definition), cancellationToken).ConfigureAwait(false), highRate);
+            OpenRazerMouseProtocol.GetPollingRate(connection.Definition, profileId), cancellationToken).ConfigureAwait(false), highRate);
     }
 
     /// <summary>
@@ -471,7 +472,8 @@ public sealed partial class OpenRazerDeviceService
     /// <returns>The reported rate, or null when the device cannot be read back.</returns>
     public async Task<int?> SetPollingRateAsync(OpenRazerDeviceConnection connection, int hertz, CancellationToken cancellationToken = default)
     {
-        foreach (var request in OpenRazerMouseProtocol.SetPollingRate(connection.Definition, hertz))
+        var profileId = await ReadActiveProfileIdAsync(connection, cancellationToken).ConfigureAwait(false) ?? 0x00;
+        foreach (var request in OpenRazerMouseProtocol.SetPollingRate(connection.Definition, hertz, profileId))
         {
             await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
         }
@@ -489,6 +491,29 @@ public sealed partial class OpenRazerDeviceService
         {
             // The write already landed. A device that cannot answer the read-back must not
             // turn a completed write into a failure.
+            return null;
+        }
+    }
+
+    private async Task<byte?> ReadActiveProfileIdAsync(
+        OpenRazerDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        var request = OpenRazerMouseProtocol.GetActiveProfile(connection.Definition);
+        if (request is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            return response[RazerFeatureReport.ArgumentsOffset];
+        }
+        catch (Exception exception) when (exception is RazerDeviceTimeoutException or RazerCommandRejectedException or NotSupportedException or InvalidDataException)
+        {
+            // The write can still be attempted with the default profile; a read failure
+            // must not turn a working polling-rate write into a no-op.
             return null;
         }
     }

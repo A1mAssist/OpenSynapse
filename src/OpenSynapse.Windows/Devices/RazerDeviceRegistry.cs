@@ -103,10 +103,12 @@ internal sealed class RazerDeviceRegistry
                 [CapabilityIds.KeyboardBrightnessGet] = new(0x03, 0x03, 0x83, "010500", true),
                 [CapabilityIds.KeyboardBrightnessSet] = new(0x03, 0x03, 0x03, "", true),
                 [CapabilityIds.KeyboardEffectGet] = new(0x03, 0x0F, 0x82, "010500", true),
-                [CapabilityIds.KeyboardEffectSet] = new(0x03, 0x0F, 0x02, "", true),
+                [CapabilityIds.KeyboardEffectSet] = new(0x06, 0x0F, 0x02, "", true),
                 [CapabilityIds.DisplayMuxGet] = new(0x02, 0x0D, 0x89, "0000"),
                 [CapabilityIds.DisplayMuxSet] = new(0x02, 0x0D, 0x09, ""),
                 [CapabilityIds.DisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8A, "0000"),
+                [CapabilityIds.NativeDisplayModeGet] = new(0x01, 0x0D, 0x8E, "00", true),
+                [CapabilityIds.NativeDisplayModeSet] = new(0x01, 0x0D, 0x0E, ""),
             },
             // Blade 15 Base (Early 2020) 1532:0255. Only these reports answer on the unit:
             // the 0D thermal channel, the Chroma brightness region and the 07:92 charge
@@ -134,8 +136,8 @@ internal sealed class RazerDeviceRegistry
                 [CapabilityIds.IdleTimeoutGet] = new(0x02, 0x07, 0x83, ""),
                 [CapabilityIds.IdleTimeoutSet] = new(0x02, 0x07, 0x03, ""),
                 [CapabilityIds.BatteryChemistrySet] = new(0x01, 0x07, 0x14, ""),
-                [CapabilityIds.DpiStagesGet] = new(0x26, 0x04, 0x86, "01"),
-                [CapabilityIds.DpiStagesSet] = new(0x26, 0x04, 0x06, ""),
+                [CapabilityIds.DpiStagesGet] = new(0x50, 0x04, 0x86, "01"),
+                [CapabilityIds.DpiStagesSet] = new(0x50, 0x04, 0x06, ""),
                 [CapabilityIds.LowBatteryThresholdGet] = new(0x01, 0x07, 0x81, ""),
                 [CapabilityIds.LowBatteryThresholdSet] = new(0x01, 0x07, 0x01, ""),
                 [CapabilityIds.ObmMaximumProfilesGet] = new(0x01, 0x05, 0x8A, ""),
@@ -165,7 +167,7 @@ internal sealed class RazerDeviceRegistry
                 .Where(capability => capability is not (CapabilityIds.AdapterPowerGet or
                     CapabilityIds.DisplayMuxGet or CapabilityIds.DisplayMuxSet or CapabilityIds.DisplayMuxCapabilitiesGet or
                     CapabilityIds.SkuHardwareConfigurationGet or
-                    CapabilityIds.GamingModeGet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
+                    CapabilityIds.NativeDisplayModeGet or CapabilityIds.NativeDisplayModeSet or CapabilityIds.GamingModeGet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
@@ -674,7 +676,7 @@ internal sealed class RazerDeviceRegistry
                         CapabilityIds.PowerModeGet or CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet or
                         CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet),
                     "blade-671" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or CapabilityIds.PowerModeGet or
-                        CapabilityIds.SkuHardwareConfigurationGet or
+                        CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet or
                         CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet or
                         CapabilityIds.KeyboardEffectGet or CapabilityIds.KeyboardEffectSet),
                     "blade-597" => capabilityId is not (CapabilityIds.KeyboardBrightnessGet or
@@ -712,7 +714,6 @@ internal sealed class RazerDeviceRegistry
             throw new InvalidOperationException(
                 $"Manifest '{source.Id}' is missing required protocol family capabilities: {string.Join(", ", missing)}.");
         }
-
         return new RazerDeviceManifest(
             sourceName,
             source.Id,
@@ -727,7 +728,26 @@ internal sealed class RazerDeviceRegistry
             capabilities,
             ParseCategory(source.Category, source.ProtocolFamily),
             source.MatrixRows ?? 0,
-            source.MatrixColumns ?? 0);
+            source.MatrixColumns ?? 0,
+            RazerDeviceMetadata.Parse(source.Device, source.Id, JsonOptions),
+            ParseLightingDialect(source.LightingDialect, source.Id));
+    }
+
+    private static BladeLightingDialect ParseLightingDialect(string? value, string manifestId)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return BladeLightingDialect.Unknown;
+        }
+
+        var name = Enum.GetNames<BladeLightingDialect>()
+            .FirstOrDefault(item => string.Equals(item, value, StringComparison.OrdinalIgnoreCase));
+        if (name is null)
+        {
+            throw new InvalidOperationException(
+                $"Manifest '{manifestId}' has an unknown lightingDialect '{value}'.");
+        }
+        return Enum.Parse<BladeLightingDialect>(name);
     }
 
     private static DeviceCategory ParseCategory(string? value, string protocolFamily) => value switch
@@ -817,6 +837,8 @@ internal sealed class RazerDeviceRegistry
         public int? MatrixColumns { get; init; }
         public required TransportJson Transport { get; init; }
         public required Dictionary<string, RequestJson> Capabilities { get; init; }
+        public JsonElement? Device { get; init; }
+        public string? LightingDialect { get; init; }
     }
 
     private sealed class CollectionJson

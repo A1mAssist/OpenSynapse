@@ -236,5 +236,38 @@
     }
   },
   "matrixRows": 6,
-  "matrixColumns": 16
+  "matrixColumns": 16,
+  "device": {
+    "name": "Razer Blade 18",
+    "shortName": "Kira10_MW",
+    "editionIds": [
+      0,
+      129
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      11,
+      12,
+      16
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBlade2",
+    "firmware": {
+      "latest": {
+        "version": "1.0.0.0",
+        "url": "https://rzr.to/9vg4q6"
+      },
+      "driver": {
+        "version": "24.0.1.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/696/1.0.0.1/PID02b8Drv_v24.0.1.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "LedMatrix710"
 }

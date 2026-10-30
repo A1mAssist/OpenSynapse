@@ -239,22 +239,28 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         await session.SendBatchAsync(requests, DeviceWait, cancellationToken).ConfigureAwait(false);
     }
 
-    private RazerRgb[] ScaleFrame(IReadOnlyList<RazerRgb> frame)
+    private RazerRgb[] ScaleFrame(IReadOnlyList<RazerRgb> frame) =>
+        ScaleFrame(frame, _matrixRows, _matrixColumns);
+
+    internal static RazerRgb[] ScaleFrame(
+        IReadOnlyList<RazerRgb> frame,
+        int matrixRows,
+        int matrixColumns)
     {
-        if (_matrixRows == BladeLightingProtocol.Rows &&
-            _matrixColumns == BladeLightingProtocol.Columns)
+        if (matrixRows == BladeLightingProtocol.Rows &&
+            matrixColumns == BladeLightingProtocol.Columns)
         {
             return frame.ToArray();
         }
 
-        var scaled = new RazerRgb[_matrixRows * _matrixColumns];
-        for (var row = 0; row < _matrixRows; row++)
+        var scaled = new RazerRgb[matrixRows * matrixColumns];
+        for (var row = 0; row < matrixRows; row++)
         {
-            var sourceRow = row * BladeLightingProtocol.Rows / _matrixRows;
-            for (var column = 0; column < _matrixColumns; column++)
+            var sourceRow = row * BladeLightingProtocol.Rows / matrixRows;
+            for (var column = 0; column < matrixColumns; column++)
             {
-                var sourceColumn = column * BladeLightingProtocol.Columns / _matrixColumns;
-                scaled[row * _matrixColumns + column] =
+                var sourceColumn = column * BladeLightingProtocol.Columns / matrixColumns;
+                scaled[row * matrixColumns + column] =
                     frame[sourceRow * BladeLightingProtocol.Columns + sourceColumn];
             }
         }

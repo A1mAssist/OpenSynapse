@@ -182,12 +182,12 @@ public sealed class BladeMaxFanProfileTests
     [InlineData(0x029D, 5400)] // Blade 14 (2023)
     [InlineData(0x02B6, 5400)] // Blade 14 (2024)
     [InlineData(0x02B7, 5400)] // Blade 16 (2024)
-    [InlineData(0x02B8, 5300)] // Blade 18 (2024)
+    [InlineData(0x02B8, 5400)] // Blade 18 (2024): Gaming/Turbo range reaches 5400
     [InlineData(0x02C5, 5400)] // Blade 14 (2025)
     [InlineData(0x02C7, 5400)] // Blade 18 (2025)
     [InlineData(0x02E0, 5400)] // Blade 16 (2026)
     [InlineData(0x0234, 5300)] // Blade Pro 17 (2019)
-    [InlineData(0x0239, 5300)] // Blade Stealth (2019)
+    [InlineData(0x0239, 5500)] // Blade Stealth (2019): battery-saver range reaches 5500
     [InlineData(0x023A, 5300)] // Blade 15 Advanced (2019)
     [InlineData(0x0252, 5500)] // Blade Stealth (Early 2020)
     [InlineData(0x0259, 5600)] // Blade Stealth (Late 2020)

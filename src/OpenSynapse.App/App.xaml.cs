@@ -190,6 +190,7 @@ public partial class App : Application
         viewModel.Blade.ControlDeviceChanged += OnBladeControlDeviceChanged;
         viewModel.Blade.PerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
         viewModel.Blade.GamingModeChangedByUser += OnBladeGamingModeChangedByUser;
+        viewModel.Blade.GamingModeStateChanged += OnBladeGamingModeStateChanged;
         viewModel.Blade.TouchpadChangedByUser += OnBladeTouchpadChangedByUser;
         viewModel.Blade.OneTimeFullChargeChangedByUser += OnBladeOneTimeFullChargeChangedByUser;
         viewModel.InternalDisplayRefreshRateChangedByUser += OnInternalDisplayRefreshRateChangedByUser;
@@ -398,6 +399,7 @@ public partial class App : Application
             _audioMuteViewModel.Blade.ControlDeviceChanged -= OnBladeControlDeviceChanged;
             _audioMuteViewModel.Blade.PerformanceModeChangedByUser -= OnBladePerformanceModeChangedByUser;
             _audioMuteViewModel.Blade.GamingModeChangedByUser -= OnBladeGamingModeChangedByUser;
+            _audioMuteViewModel.Blade.GamingModeStateChanged -= OnBladeGamingModeStateChanged;
             _audioMuteViewModel.Blade.TouchpadChangedByUser -= OnBladeTouchpadChangedByUser;
             _audioMuteViewModel.Blade.OneTimeFullChargeChangedByUser -= OnBladeOneTimeFullChargeChangedByUser;
             _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
@@ -484,6 +486,9 @@ public partial class App : Application
         enabled
             ? AppStrings.Text("Text_4D59EFD5")
             : AppStrings.Text("Text_7D9D5842"));
+
+    private void OnBladeGamingModeStateChanged(bool enabled) =>
+        _bladeFnRuntime?.SetGameModeEnabled(enabled);
 
     private void OnBladeTouchpadChangedByUser(bool enabled) => ShowModeNotification(
         AppStrings.Text("Text_0A982CB6"),
@@ -686,6 +691,7 @@ public partial class App : Application
                     _audioMuteViewModel?.Blade.ActiveSnapTapEnabled == true, enabled => PersistBladeSnapTap(enabled, generation),
                     message => _diagnosticLog.TryWrite("blade-input", message));
                 await fnRuntime.StartAsync().ConfigureAwait(false);
+                fnRuntime.SetGameModeEnabled(_audioMuteViewModel?.Blade.GameModeEnabled == true);
                 if (generation == Volatile.Read(ref _audioMuteGeneration))
                 {
                     SetBladeFilterDriverMissing(false);

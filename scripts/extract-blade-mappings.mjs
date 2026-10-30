@@ -326,8 +326,13 @@ function canonical(graph) {
 
 // BladeModelCapabilities is the single source of truth for which PIDs are
 // Blades, so this script never keeps a second model list.
-const bladeBundles = [...fs.readFileSync(capabilityTable, 'utf8')
-  .matchAll(/\[0x([0-9A-F]{4})\]/g)].map(match => match[1]);
+const capabilitySource = fs.readFileSync(capabilityTable, 'utf8');
+const productIdConstants = new Map(
+  [...capabilitySource.matchAll(/public const ushort (\w+) = 0x([0-9A-F]{4});/g)]
+    .map(match => [match[1], match[2]]));
+const bladeBundles = [...new Set([...capabilitySource.matchAll(/\[([A-Za-z_]\w*|0x[0-9A-F]{4})\]/g)]
+  .map(match => match[1].startsWith('0x') ? match[1].slice(2) : productIdConstants.get(match[1]))
+  .filter(Boolean))];
 
 if (bladeBundles.length === 0) throw new Error('No Blade bundles found.');
 if (!dryRun) fs.mkdirSync(outDir, { recursive: true });

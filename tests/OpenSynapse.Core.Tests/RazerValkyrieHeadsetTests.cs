@@ -146,6 +146,7 @@ public sealed class RazerValkyrieHeadsetTests
         Assert.True(RazerValkyrieHeadsetService.IsSupported(0x101F));
         Assert.True(RazerValkyrieHeadsetService.IsSupported(0x0567));
         Assert.True(RazerValkyrieHeadsetService.IsSupported(0x056B));
+        Assert.True(RazerValkyrieHeadsetService.IsSupported(0x0587));
         Assert.False(RazerValkyrieHeadsetService.IsSupported(0x0576));
         Assert.False(RazerValkyrieHeadsetService.IsSupported(0x0555));
     }
@@ -225,6 +226,7 @@ public sealed class RazerValkyrieHeadsetTests
     [InlineData(0x0579, true)]
     [InlineData(0x0567, true)]
     [InlineData(0x056B, true)]
+    [InlineData(0x0587, true)]
     public async Task ProfileSelectsTheBundledEqBandShape(ushort productId, bool withProfile)
     {
         var transport = new FakeTransport
@@ -254,6 +256,7 @@ public sealed class RazerValkyrieHeadsetTests
     [InlineData(0x0A4E)]
     [InlineData(0x0567)]
     [InlineData(0x056B)]
+    [InlineData(0x0587)]
     public async Task ProfileFramesShareTheFixedTransactionAndZeroDirection(ushort productId)
     {
         // bundle 对齐: Valkyrie, T1Wired and T2 all leave byte 9 zero for audio commands.

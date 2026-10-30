@@ -66,6 +66,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _profileStore = profileStore ?? new ProfileStore();
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
+        CoolingPad = new RazerCoolingPadViewModel(
+            message => _diagnosticLog.TryWrite("cooling-pad", message),
+            performanceMonitor);
+        Kiyo = new RazerKiyoViewModel(message => _diagnosticLog.TryWrite("kiyo", message));
         Telemetry = new TelemetryWorkspace(
             performanceMonitor,
             _powerSourceProvider,
@@ -167,7 +171,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => _deviceDescriptors,
             () => _profile,
             () => CurrentPowerSource,
-            () => Blade.UsesFirmwareKeyboardLighting,
+            () => Blade.LightingDialect,
             available => Refresh!.SetDisplayAvailableFlag(available),
             () => Refresh!.IsDisplayAvailable,
             _deviceOperationGate,
@@ -249,6 +253,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<DeviceSelectorItemViewModel> DeviceSelectorItems { get; } = new();
+    public RazerCoolingPadViewModel CoolingPad { get; }
+    public RazerKiyoViewModel Kiyo { get; }
     public FirmwareWorkspace Firmware { get; }
     public ViperWorkspace Viper { get; }
     public RefreshWorkspace Refresh { get; }
@@ -347,6 +353,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             row.RefreshLocalization();
         }
         SelectedBlackShark?.RefreshLocalization();
+        SelectedGamepad?.RefreshLocalization();
+        CoolingPad.RefreshLocalization();
+        Kiyo.RefreshLocalization();
         foreach (var row in Diagnostics.Rows)
         {
             row.RefreshLocalization();
@@ -381,8 +390,22 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         await OpenRazer.DisposeAsync().ConfigureAwait(false);
         Macros.Dispose();
         _hue?.Dispose();
+        CoolingPad.Dispose();
+        Kiyo.Dispose();
 
         SelectedBlackShark = null;
+
+        if (SelectedBle is { } ble)
+        {
+            await ble.DisposeAsync().ConfigureAwait(false);
+            SelectedBle = null;
+        }
+
+        if (SelectedAwBleHeadset is { } awBleHeadset)
+        {
+            await awBleHeadset.DisposeAsync().ConfigureAwait(false);
+            SelectedAwBleHeadset = null;
+        }
         _selectedBlackSharkDevice = null;
         BlackSharkDevices.Clear();
 

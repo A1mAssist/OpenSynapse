@@ -48,12 +48,12 @@ internal static class OpenRazerMouseProtocol
     internal static OpenRazerRequest GetCharging(OpenRazerDeviceDefinition device) =>
         OpenRazerStandardProtocol.Create(device, "razer_chroma_misc_get_charging_status", 0x02, 0x07, 0x84, []);
 
-    internal static OpenRazerRequest GetPollingRate(OpenRazerDeviceDefinition device)
+    internal static OpenRazerRequest GetPollingRate(OpenRazerDeviceDefinition device, byte profileId = 0x00)
     {
         if (device.Transactions.ContainsKey("razer_chroma_misc_get_polling_rate2"))
         {
             var profile = device.GetFixedArgumentOrNull("razer_chroma_misc_get_polling_rate2", 0);
-            var arguments = profile is byte value ? new[] { value } : [];
+            var arguments = profile is byte value ? new[] { value } : new[] { profileId };
             return OpenRazerStandardProtocol.Create(device,
                 "razer_chroma_misc_get_polling_rate2",
                 // The middleware declares the USB high speed polling read as two
@@ -65,9 +65,16 @@ internal static class OpenRazerMouseProtocol
             "razer_chroma_misc_get_polling_rate", 0x01, 0x00, 0x85, []);
     }
 
+    internal static OpenRazerRequest? GetActiveProfile(OpenRazerDeviceDefinition device) =>
+        device.Transactions.ContainsKey("razer_chroma_misc_get_active_profile")
+            ? OpenRazerStandardProtocol.Create(
+                device, "razer_chroma_misc_get_active_profile", 0x01, 0x05, 0x84, [])
+            : null;
+
     internal static IReadOnlyList<OpenRazerRequest> SetPollingRate(
         OpenRazerDeviceDefinition device,
-        int hertz)
+        int hertz,
+        byte profileId = 0x00)
     {
         if (device.PollingRates.Count > 0 && !device.PollingRates.Contains(hertz))
         {
@@ -93,7 +100,7 @@ internal static class OpenRazerMouseProtocol
         {
             return [OpenRazerStandardProtocol.Create(device,
                 "razer_chroma_misc_set_polling_rate2", 0x02, 0x00, 0x40,
-                [0x00, EncodeHighPollingRate(hertz)])];
+                [profileId, EncodeHighPollingRate(hertz)])];
         }
         return [OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_polling_rate", 0x01, 0x00, 0x05,

@@ -72,6 +72,7 @@ public sealed class RazerKeyboardService
     private readonly TimeSpan _deviceWait;
     private readonly Action<string>? _diagnostic;
     private byte _transactionId = 0x1F;
+    private byte _profileId;
 
     internal RazerKeyboardService(
         IRazerFeatureTransport transport,
@@ -163,8 +164,21 @@ public sealed class RazerKeyboardService
             "game mode", RazerKeyboardProtocol.GetGameModeState,
             response => RazerKeyboardProtocol.ReadGameModeState(response).GameMode != 0,
             errors, cancellationToken).ConfigureAwait(false);
+        var profile = await ProbeAsync(
+            "active profile",
+            RazerKeyboardProtocol.GetActiveProfile,
+            RazerKeyboardProtocol.ReadActiveProfileId,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        if (profile.Ok)
+        {
+            _profileId = profile.Value;
+        }
+
         var polling = await ProbeAsync(
-            "polling rate", RazerKeyboardProtocol.GetPollingRate, RazerKeyboardProtocol.ReadPollingRate,
+            "polling rate",
+            transaction => RazerKeyboardProtocol.GetPollingRate(transaction, _profileId),
+            RazerKeyboardProtocol.ReadPollingRate,
             errors, cancellationToken).ConfigureAwait(false);
 
         return new RazerKeyboardState(
@@ -216,9 +230,13 @@ public sealed class RazerKeyboardService
     {
         var code = RazerKeyboardProtocol.PollingCode(hertz)
             ?? throw new ArgumentOutOfRangeException(nameof(hertz), "Unsupported polling rate.");
+        _profileId = await TryReadActiveProfileAsync(cancellationToken).ConfigureAwait(false);
+        var profileId = _profileId;
         var previous = RazerKeyboardProtocol.ReadPollingRate(
-            await QueryAsync(RazerKeyboardProtocol.GetPollingRate, "read polling rate", cancellationToken)
-                .ConfigureAwait(false));
+            await QueryAsync(
+                transaction => RazerKeyboardProtocol.GetPollingRate(transaction, profileId),
+                "read polling rate",
+                cancellationToken).ConfigureAwait(false));
         if (previous == hertz)
         {
             return;
@@ -227,12 +245,14 @@ public sealed class RazerKeyboardService
         try
         {
             await QueryAsync(
-                transaction => RazerKeyboardProtocol.SetPollingRate(transaction, code),
+                transaction => RazerKeyboardProtocol.SetPollingRate(transaction, profileId, code),
                 "set polling rate",
                 cancellationToken).ConfigureAwait(false);
             var actual = RazerKeyboardProtocol.ReadPollingRate(
-                await QueryAsync(RazerKeyboardProtocol.GetPollingRate, "read back polling rate", cancellationToken)
-                    .ConfigureAwait(false));
+                await QueryAsync(
+                    transaction => RazerKeyboardProtocol.GetPollingRate(transaction, profileId),
+                    "read back polling rate",
+                    cancellationToken).ConfigureAwait(false));
             if (actual != hertz)
             {
                 throw new InvalidOperationException($"Polling readback was {actual?.ToString() ?? "unknown"}, expected {hertz}.");
@@ -243,11 +263,28 @@ public sealed class RazerKeyboardService
             if (previous is int restore && RazerKeyboardProtocol.PollingCode(restore) is byte restoreCode)
             {
                 await TryRestoreAsync(
-                    transaction => RazerKeyboardProtocol.SetPollingRate(transaction, restoreCode),
+                    transaction => RazerKeyboardProtocol.SetPollingRate(transaction, profileId, restoreCode),
                     "restore polling rate").ConfigureAwait(false);
             }
 
             throw;
+        }
+    }
+
+    private async Task<byte> TryReadActiveProfileAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return RazerKeyboardProtocol.ReadActiveProfileId(
+                await QueryAsync(
+                    RazerKeyboardProtocol.GetActiveProfile,
+                    "read active profile",
+                    cancellationToken).ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke($"keyboard active profile unavailable: {exception.Message}");
+            return _profileId;
         }
     }
 

@@ -10,10 +10,10 @@ public sealed class BladeMiddlewareModelsTests
     [Theory]
     [InlineData(0x029D, "blade-669", "Razer Blade 14 (2023)", 6, 16, true, 3)]
     [InlineData(0x02B6, "blade-694", "Razer Blade 14 (2024)", 6, 16, true, 3)]
-    [InlineData(0x02B7, "blade-695", "Razer Blade 16 (2024)", 6, 17, false, 0)]
-    [InlineData(0x02B8, "blade-696", "Razer Blade 18 (2024)", 6, 16, true, 0)]
-    [InlineData(0x02C5, "blade-709", "Razer Blade 14 (2025)", 6, 16, false, 0)]
-    [InlineData(0x02C7, "blade-711", "Razer Blade 18 (2025)", 6, 19, false, 0)]
+    [InlineData(0x02B7, "blade-695", "Razer Blade 16 (2024)", 6, 17, false, 3)]
+    [InlineData(0x02B8, "blade-696", "Razer Blade 18 (2024)", 6, 16, true, 3)]
+    [InlineData(0x02C5, "blade-709", "Razer Blade 14 (2025)", 6, 16, false, 3)]
+    [InlineData(0x02C7, "blade-711", "Razer Blade 18 (2025)", 6, 19, false, 3)]
     public void MiddlewareModelsAreRegisteredWithTheirMatrixAndCapabilities(
         ushort productId,
         string manifestId,
@@ -81,7 +81,7 @@ public sealed class BladeMiddlewareModelsTests
             BladeTelemetryReader.ParseBladePerformanceMode(0x01));
         // The mode tables that publish it name the same byte, whatever they call it.
         Assert.Equal(
-            productId is 0x02B6 or 0x02B7 or 0x02B8 or 0x02C7 or 0x02E1,
+            productId is 0x0255 or 0x02B6 or 0x02B7 or 0x02B8 or 0x02C7 or 0x02E1,
             BladeModelCapabilities.PublishesPerformanceMode(productId, BladePerformanceMode.Gaming));
     }
 

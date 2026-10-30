@@ -219,6 +219,7 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
     private Visibility _powerLowBatteryVisibility = Visibility.Collapsed;
     private Visibility _powerAutoSleepVisibility = Visibility.Collapsed;
     private Visibility _powerSleepTimeVisibility = Visibility.Collapsed;
+    private Visibility _powerTimeToDimVisibility = Visibility.Collapsed;
     private Visibility _profilesVisibility = Visibility.Collapsed;
     private int _brightness = 50;
     private int _selectedLightingEffectIndex;
@@ -237,6 +238,8 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
     private double _lowBatteryThresholdPercent = 10;
     private bool _autoSleepEnabled = true;
     private double _sleepMinutes = 5;
+    private bool _timeToDimEnabled = true;
+    private double _timeToDimMinutes = 5;
     private string _powerStatusText = string.Empty;
     private IReadOnlyList<byte> _profileIds = [];
     private int _selectedProfileIndex;
@@ -423,6 +426,13 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
             ref _powerSleepTimeVisibility, value, nameof(PowerSleepTimeVisibility));
     }
 
+    public Visibility PowerTimeToDimVisibility
+    {
+        get => _powerTimeToDimVisibility;
+        private set => SetVisibility(
+            ref _powerTimeToDimVisibility, value, nameof(PowerTimeToDimVisibility));
+    }
+
     public double LowBatteryThresholdPercent
     {
         get => _lowBatteryThresholdPercent;
@@ -439,6 +449,18 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
     {
         get => _sleepMinutes;
         set => SetField(ref _sleepMinutes, Math.Clamp(value, 1d, 65_535d));
+    }
+
+    public bool TimeToDimEnabled
+    {
+        get => _timeToDimEnabled;
+        set => SetField(ref _timeToDimEnabled, value);
+    }
+
+    public double TimeToDimMinutes
+    {
+        get => _timeToDimMinutes;
+        set => SetField(ref _timeToDimMinutes, Math.Clamp(value, 1d, 15d));
     }
 
     public string PowerStatusText
@@ -858,6 +880,12 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
                 PowerSleepTimeVisibility == Visibility.Visible
                     ? (int)Math.Round(SleepMinutes)
                     : null,
+                PowerTimeToDimVisibility == Visibility.Visible
+                    ? new RazerBleTimeToDimState(
+                        TimeToDimEnabled,
+                        (int)Math.Round(TimeToDimMinutes * 60d),
+                        20)
+                    : null,
                 cancellationToken),
             state =>
             {
@@ -1070,6 +1098,11 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
         {
             SleepMinutes = sleepMinutes;
         }
+        if (state.TimeToDim is { } timeToDim)
+        {
+            TimeToDimEnabled = timeToDim.Enabled;
+            TimeToDimMinutes = Math.Clamp(timeToDim.Seconds / 60d, 1d, 15d);
+        }
 
         PowerLowBatteryVisibility = state.LowBatteryPercent is null
             ? Visibility.Collapsed
@@ -1080,8 +1113,11 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
         PowerSleepTimeVisibility = state.SleepMinutes is null
             ? Visibility.Collapsed
             : Visibility.Visible;
+        PowerTimeToDimVisibility = state.TimeToDim is null
+            ? Visibility.Collapsed
+            : Visibility.Visible;
         PowerVisibility = state.LowBatteryPercent is not null || state.AutoSleep is not null ||
-            state.SleepMinutes is not null
+            state.SleepMinutes is not null || state.TimeToDim is not null
             ? Visibility.Visible
             : Visibility.Collapsed;
     }

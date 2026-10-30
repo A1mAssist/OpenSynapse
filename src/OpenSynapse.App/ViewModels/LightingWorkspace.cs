@@ -22,7 +22,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _deviceDescriptors;
     private readonly Func<ProfileDocument> _getProfile;
     private readonly Func<PowerSourceKind> _currentPowerSource;
-    private readonly Func<bool> _usesFirmwareKeyboardLighting;
+    private readonly Func<BladeLightingDialect> _lightingDialect;
     private readonly Action<bool> _setDisplayAvailable;
     private readonly Func<bool> _isDisplayAvailable;
     private readonly SemaphoreSlim _deviceOperationGate;
@@ -43,7 +43,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
         Func<IReadOnlyList<DeviceDescriptor>> deviceDescriptors,
         Func<ProfileDocument> getProfile,
         Func<PowerSourceKind> currentPowerSource,
-        Func<bool> usesFirmwareKeyboardLighting,
+        Func<BladeLightingDialect> lightingDialect,
         Action<bool> setDisplayAvailable,
         Func<bool> isDisplayAvailable,
         SemaphoreSlim deviceOperationGate,
@@ -59,7 +59,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
         _deviceDescriptors = deviceDescriptors;
         _getProfile = getProfile;
         _currentPowerSource = currentPowerSource;
-        _usesFirmwareKeyboardLighting = usesFirmwareKeyboardLighting;
+        _lightingDialect = lightingDialect;
         _setDisplayAvailable = setDisplayAvailable;
         _isDisplayAvailable = isDisplayAvailable;
         _deviceOperationGate = deviceOperationGate;
@@ -77,7 +77,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
     /// not have, so the override is hidden there even when Chroma is enabled globally.
     /// </summary>
     public Visibility BladeChromaOverrideVisibility =>
-        _chromaIntegrationEnabled && !_usesFirmwareKeyboardLighting()
+        _chromaIntegrationEnabled && SupportsMatrixLighting
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -85,9 +85,9 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
     /// Firmware-rendered models have no matrix to hand a .chroma file to, so the import button
     /// stays hidden rather than accepting a file the device cannot play.
     /// </summary>
-    public Visibility BladeChromaImportVisibility => _usesFirmwareKeyboardLighting()
-        ? Visibility.Collapsed
-        : Visibility.Visible;
+    public Visibility BladeChromaImportVisibility => SupportsMatrixLighting
+        ? Visibility.Visible
+        : Visibility.Collapsed;
 
     /// <summary>What the shell last pushed as the lighting shadow, shared with the Blade editor.</summary>
     internal bool IsChromaIntegrationEnabled => _chromaIntegrationEnabled;
@@ -246,14 +246,14 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
             }
             try
             {
-                if (_usesFirmwareKeyboardLighting())
+                if (UsesFirmwareKeyboardLighting)
                 {
                     await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
                         _deviceDescriptors(),
                         BladeLighting2023Effect.Off,
                         cancellationToken).ConfigureAwait(false);
                 }
-                else
+                else if (CanApplyLightingEffects)
                 {
                     await _bladeLightingController.ApplyAsync(
                         _deviceDescriptors(),
@@ -308,7 +308,14 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
             return null;
         }
 
-        if (_usesFirmwareKeyboardLighting())
+        if (!CanApplyLightingEffects)
+        {
+            _bladeLightingDevicePath = string.Empty;
+            _lightingShadowFingerprint = string.Empty;
+            return null;
+        }
+
+        if (UsesFirmwareKeyboardLighting)
         {
             return await ApplyFirmwareKeyboardLightingProfileAsync(
                 blade,
@@ -398,6 +405,15 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
             return RuntimeErrors.Format(exception);
         }
     }
+
+    private BladeLightingDialect LightingDialect => _lightingDialect();
+    private bool UsesFirmwareKeyboardLighting => LightingDialect == BladeLightingDialect.FirmwareEffect;
+    private bool SupportsMatrixLighting => LightingDialect is
+        BladeLightingDialect.LedMatrix710 or BladeLightingDialect.LedMatrixBlade or
+        BladeLightingDialect.LedMatrixBlade2 or
+        BladeLightingDialect.LedMatrix2026;
+    private bool CanApplyLightingEffects => UsesFirmwareKeyboardLighting || SupportsMatrixLighting ||
+        LightingDialect == BladeLightingDialect.LedMatrixBlade;
 
     internal string CreateFingerprint(
         LightingProfile profile,

@@ -21,18 +21,18 @@ data size 在 byte 5，class 在 byte 6，command 在 byte 7，XOR 在 byte 88
 
 | PID | 设备名（manifest en） | 音频 chunk（选中类） | class:id 集合 | 与现有协议的差异 | 结论 |
 |---|---|---|---|---|---|
-| `0A4E` | Razer BlackShark V3 Pro For Xbox | `AudioValkyrie.ae788284bca26f67c622.js`（module 90254）<br>命令表 `6555.49fa8c750b03dc1d4b27.js`（module 56555） | EQ preset `0x13:00/0x93:00`；EQ bands `0x15:00/0x95:00`；mic preset `0x16:00/0x96:00`；mic bands `0x17:00/0x97:00`；sidetone status `0x18:00/0x98:00`；sidetone volume `0x19:00/0x99:00`；ANC `0x12:00/0x92:00`；mic mute `0x55:00/0xE9:00`；battery `0x21:00`；charging `0x2A:00`；DND `0x27:00/0xA7:00` | 64-byte report id 2；class 0x13/0x93；现有协议是 91-byte class 0x08（`08:82/08:02` 等） | Blocked |
-| `0A51` | Razer BlackShark V3 For Xbox | `AudioValkyrie.589a975d6e8397fb08c1.js`（module 90254）<br>命令表 `6555.9a4f40feab0bc8f0f579.js` | 同 0A4E | 同 0A4E | Blocked |
-| `0A54` | Razer BlackShark V3 X Hyperspeed For Xbox | `rzDevice25ValkyrieT3.b0468303787a6b47ecb2.js`（module 7025） | EQ preset `0x18:80/0x18:00`；EQ bands `0x18:81/0x18:01`；mic mute `0x18:84/0x18:04`；sidetone `0x18:83/0x18:03`；DND `0x18:85/0x18:05`；silence detect `0x18:8F/0x18:0F`；battery `0x07:80`；reset `0x00:0B` | 64-byte report id 7；EQ/mute/sidetone 走 class 0x18；只有 DND `18:85/18:05` 和 battery `07:80` 与现协议重合 | Blocked |
-| `0A61` | Razer Hammerhead V3 HyperSpeed | `rzDevice40.5e322395ea5fe2b013f4.js`（module 84892） | EQ preset `0x18:80/0x18:00`；EQ bands `0x18:81/0x18:01`；EQ status `0x18:82/0x18:02`；mute `0x18:84/0x18:04`；DND `0x18:85/0x18:05`；bass `0x08:87/0x08:07`；mic volume `0x08:97/0x08:17`；audio source `0x08:8A/0x08:0A`；Dolby `0x08:8C/0x08:0C`；master volume `0x08:86/0x08:06` | 64-byte report id 2；只有 bass/mic volume/source/Dolby 的 0x08 子集重合；EQ/mute 走 0x18 | Blocked |
-| `0A64` | Razer Hammerhead V3 X Hyperspeed | `rzDevice40.fcbfcb8041004338a920.js`（module 84892） | 同 0A61 | 同 0A61 | Blocked |
-| `0A68` | Razer Hammerhead V3 X HyperSpeed for Xbox | `rzDevice40.0e84cb4c36efa7056054.js` | 同 0A61（`He/Be/Fe/Ve/Ye/Xe` 常量相同） | 同 0A61 | Blocked |
-| `0A6C` | Razer Hammerhead V3 X HyperSpeed For PlayStation | `rzDevice40.8c12e02a23ccb7b6a9b6.js` | 同 0A61（`He/Be/Fe/Ve/Ye/Xe` 常量相同） | 同 0A61 | Blocked |
-| `0A81` | Razer Hammerhead V3 X Hyperspeed Kuromi Edition | `rzDevice40.fcbfcb8041004338a920.js`（module 84892） | 同 0A61 | 同 0A61 | Blocked |
-| `101C` | Razer BlackShark V3 Pro For Playstation | `AudioValkyrie.fa0f38e58477ff55f355.js`（module 90254）<br>命令表 `6555.ec89cb99ea82ae4ff8fd.js` | 同 0A4E | 同 0A4E | Blocked |
-| `101E` | Razer BlackShark V3 For Playstation | `AudioValkyrie.9a50b92c456273c62681.js`（module 90254）<br>命令表 `6555.ef40c53b5cf27792e4ef.js` | 同 0A4E | 同 0A4E | Blocked |
-| `101F` | Razer BlackShark V3 For Playstation | `AudioValkyrie.f96ce3a5d92ceda5a451.js`（module 90254）<br>命令表 `6555.f7b7fa8e755dc0407835.js` | 同 0A4E | 同 0A4E；该 bundle 是 2025 旧构建，没有 `rzDevice25Audio*.js` | Blocked |
-| `1022` | Razer BlackShark V3 X Hyperspeed For Playstation | `rzDevice25ValkyrieT3.735dd11f4a7bacc421de.js`（module 7025） | 同 0A54 | 同 0A54 | Blocked |
+| `0A4E` | Razer BlackShark V3 Pro For Xbox | `AudioValkyrie.ae788284bca26f67c622.js`（module 90254）<br>命令表 `6555.49fa8c750b03dc1d4b27.js`（module 56555） | EQ preset `0x13:00/0x93:00`；EQ bands `0x15:00/0x95:00`；mic preset `0x16:00/0x96:00`；mic bands `0x17:00/0x97:00`；sidetone status `0x18:00/0x98:00`；sidetone volume `0x19:00/0x99:00`；ANC `0x12:00/0x92:00`；mic mute `0x55:00/0xE9:00`；battery `0x21:00`；charging `0x2A:00`；DND `0x27:00/0xA7:00` | 64-byte report id 2；class 0x13/0x93；现有协议是 91-byte class 0x08（`08:82/08:02` 等） | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `0A51` | Razer BlackShark V3 For Xbox | `AudioValkyrie.589a975d6e8397fb08c1.js`（module 90254）<br>命令表 `6555.9a4f40feab0bc8f0f579.js` | 同 0A4E | 同 0A4E | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `0A54` | Razer BlackShark V3 X Hyperspeed For Xbox | `rzDevice25ValkyrieT3.b0468303787a6b47ecb2.js`（module 7025） | EQ preset `0x18:80/0x18:00`；EQ bands `0x18:81/0x18:01`；mic mute `0x18:84/0x18:04`；sidetone `0x18:83/0x18:03`；DND `0x18:85/0x18:05`；silence detect `0x18:8F/0x18:0F`；battery `0x07:80`；reset `0x00:0B` | 64-byte report id 7；EQ/mute/sidetone 走 class 0x18；只有 DND `18:85/18:05` 和 battery `07:80` 与现协议重合 | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `0A61` | Razer Hammerhead V3 HyperSpeed | `rzDevice40.5e322395ea5fe2b013f4.js`（module 84892） | EQ preset `0x18:80/0x18:00`；EQ bands `0x18:81/0x18:01`；EQ status `0x18:82/0x18:02`；mute `0x18:84/0x18:04`；DND `0x18:85/0x18:05`；bass `0x08:87/0x08:07`；mic volume `0x08:97/0x08:17`；audio source `0x08:8A/0x08:0A`；Dolby `0x08:8C/0x08:0C`；master volume `0x08:86/0x08:06` | 64-byte report id 2；只有 bass/mic volume/source/Dolby 的 0x08 子集重合；EQ/mute 走 0x18 | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `0A64` | Razer Hammerhead V3 X Hyperspeed | `rzDevice40.fcbfcb8041004338a920.js`（module 84892） | 同 0A61 | 同 0A61 | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `0A68` | Razer Hammerhead V3 X HyperSpeed for Xbox | `rzDevice40.0e84cb4c36efa7056054.js` | 同 0A61（`He/Be/Fe/Ve/Ye/Xe` 常量相同） | 同 0A61 | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `0A6C` | Razer Hammerhead V3 X HyperSpeed For PlayStation | `rzDevice40.8c12e02a23ccb7b6a9b6.js` | 同 0A61（`He/Be/Fe/Ve/Ye/Xe` 常量相同） | 同 0A61 | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `0A81` | Razer Hammerhead V3 X Hyperspeed Kuromi Edition | `rzDevice40.fcbfcb8041004338a920.js`（module 84892） | 同 0A61 | 同 0A61 | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `101C` | Razer BlackShark V3 Pro For Playstation | `AudioValkyrie.fa0f38e58477ff55f355.js`（module 90254）<br>命令表 `6555.ec89cb99ea82ae4ff8fd.js` | 同 0A4E | 同 0A4E | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `101E` | Razer BlackShark V3 For Playstation | `AudioValkyrie.9a50b92c456273c62681.js`（module 90254）<br>命令表 `6555.ef40c53b5cf27792e4ef.js` | 同 0A4E | 同 0A4E | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `101F` | Razer BlackShark V3 For Playstation | `AudioValkyrie.f96ce3a5d92ceda5a451.js`（module 90254）<br>命令表 `6555.f7b7fa8e755dc0407835.js` | 同 0A4E | 同 0A4E；该 bundle 是 2025 旧构建，没有 `rzDevice25Audio*.js` | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
+| `1022` | Razer BlackShark V3 X Hyperspeed For Playstation | `rzDevice25ValkyrieT3.735dd11f4a7bacc421de.js`（module 7025） | 同 0A54 | 同 0A54 | Superseded: see conclusion; mapped to Valkyrie64/Mxic64, live check pending |
 
 ## 关键 JS 片段
 
@@ -82,11 +82,36 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 | Mxic64 | 0539 053B 0555 0583 0584 | `AudioMxicDevice`，`50 41`/`50 49` 信封（原有实现） |
 | Mxic64（report id 7） | 0A54 1022 | `rzDevice25ValkyrieT3` |
 | Mxic64（class 0x18） | 0A61 0A64 0A68 0A6C 0A81 | `rzDevice40` |
-| Feature91 | 051A 051C 051E 0528 0529 0520 0527 0526 0521 0560 0533 0549 0537 056D 0542 0543 0F1B 0532 0548 055A 055C 055E 056A 0F66 056E 053E | `AudioAvnera*` / `AudioKraken*` / `AudioKrystal*` / `rzDevice25*` 的 91 字节族 |
+| Feature91 | 051A 051C 051E 0528 0529 0520 0527 0526 0521 0560 0533 0549 0537 056D 0542 0543 0F1B 0532 0548 055A 055C 055E 056A 0F66 056E | `AudioAvnera*` / `AudioKraken*` / `AudioKrystal*` / `rzDevice25*` 的 91 字节族 |
 | Feature91（音频） | 0554 | `AudioKrakenKittyV2Pro` 只在 91 字节音频基类上追加 37 字节 Chroma 帧，没有独立音频通道 |
 | 专用面板 | 0576 0577 101B 101C | BlackShark V3 Pro 已有 ANC/侧音/THX 面板，不再进通用耳机页 |
-| 不显示 | 0309 0530 0534 0562 0587 052D 0593 | BLE / Bastet / NXP / Airoha，未实现 |
+| Billie64 | 0587 | `AudioBastetT1`，与 `AudioBillieT2` 共用 64 字节 report id 2 和 56555 命令表 |
+| Mxic64（protocol40） | 0593 | `rzDevice40HeadsetAiroha`，64 字节 report id 2；class/id/size 在 5..8，只开放电量/充电 |
+| BLE 电量/控制页 | 0309 0530 0534 0562 | `AudioAWKittyBLE`：service `416d656c-...`、write `416d0000-...`、notify `416d0001-...`；电量、主音量、侧音、游戏模式、扬声器/麦克风 EQ、低音、触觉、自动关机、Chroma 亮度、固件/序列号/连接/充电读取；音频输出仍由 Windows 负责 |
+| HID mixer 子集 | 053E | `AudioMixer`：64 字节 report-7 feature、report-9 状态；固件/序列号/设备模式、推子原始值、通道/麦克风静音、亮度；推子/路由/EQ/peak 需要 `CmMixerLib` |
+| Feature91（音频） | 0F1B | Seiren Emote 的音频/EQ 走 91 字节通道；逐像素 8×8 帧缺几何/命令/latch 证据，不开放 |
+| 不显示（串口） | 052D | `AudioNXPDevice` 走 `rzSerial`（28 字节包头），没有串口 transport |
 | 不显示（无 bundle） | 053C 0565 | CDN 快照里没有 main.js，无法核实 `rzDeviceType` |
+
+### 0593 protocol40 帧
+
+`rzDevice40HeadsetAiroha` 继承 `rzDevice40Headset`，帧是 64 字节 report id 2：
+
+```
+0      02
+1      00
+2      60（设备固定事务号；DockDongle 为 E0）
+5..6   class（高字节 + 低字节）
+7      command id
+8      size
+9..    payload
+62     XOR(3..61)
+63     00
+```
+
+只从该 chunk 取到电量 `[00,07,80]` 和充电 `[02,07,84]`（payload 为电池索引 0）。
+响应 byte 1 状态 2 成功，byte 6 为数据长度，byte 7/8 回显 id/size，数据从 byte 9 开始。
+`rzDevice40` 的 EQ/mute 命令没有被这个 `rzDeviceType` 选中，因此不开放。
 
 ### AudioValkyrie / AudioBillie 帧
 

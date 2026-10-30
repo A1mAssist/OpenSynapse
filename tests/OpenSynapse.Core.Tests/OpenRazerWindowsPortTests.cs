@@ -111,6 +111,26 @@ public sealed class OpenRazerWindowsPortTests
     }
 
     [Fact]
+    public void ViperDpiStageCapabilitiesAcceptTheFiftyByteMiddlewareRequests()
+    {
+        var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x00B8);
+        Assert.NotNull(manifest);
+
+        var getRequest = ViperProduct184Protocol.CreateGetDpiStagesRequest();
+        var getCapability = manifest.GetRequiredCapability(CapabilityIds.DpiStagesGet);
+        var configuredGet = getCapability.CreateRequest(
+            getRequest.AsSpan(RazerFeatureReport.ArgumentsOffset, getRequest[6]), getRequest[6]);
+        Assert.Equal(0x50, configuredGet[6]);
+
+        var setRequest = ViperProduct184Protocol.CreateSetDpiStagesRequest(
+            new ViperDpiStagesState(1, [new(1, 800, 800)]));
+        var setCapability = manifest.GetRequiredCapability(CapabilityIds.DpiStagesSet);
+        var configuredSet = setCapability.CreateRequest(
+            setRequest.AsSpan(RazerFeatureReport.ArgumentsOffset, setRequest[6]), setRequest[6]);
+        Assert.Equal(0x50, configuredSet[6]);
+    }
+
+    [Fact]
     public void ViperDpiStagesAcceptThe38ByteReplyTheDeviceActuallySends()
     {
         var request = ViperProduct184Protocol.CreateGetDpiStagesRequest();
@@ -241,19 +261,119 @@ public sealed class OpenRazerWindowsPortTests
 
         Assert.Contains(transport.Requests, request =>
             request.CommandClass == 0x03 &&
-            request.CommandId == 0x02 &&
-            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x05, 0x06, 0x11, 0x22, 0x33 }));
+            request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x06, 0x11, 0x22, 0x33 }));
         Assert.Equal(2, transport.Requests.Count(request =>
             request.CommandClass == 0x03 &&
-            request.CommandId == 0x02 &&
-            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x05, 0x00 })));
+            request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x00 })));
         Assert.DoesNotContain(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x02);
+        Assert.DoesNotContain(transport.Requests, request =>
+            request.CommandClass == 0x0F &&
+            request.CommandId == 0x02);
+    }
+
+    [Fact]
+    public async Task Blade15_2019UsesTheLedMatrixBladeEffectCommandWithoutThe2026GateOrModeLease()
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(transport);
+        var device = new DeviceDescriptor(
+            "blade-023a",
+            "Blade 15 (2019)",
+            0x1532,
+            0x023A,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-671");
+
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Static, new RazerRgb(0x11, 0x22, 0x33)));
+        await controller.StopAsync();
+
+        Assert.Contains(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x06, 0x11, 0x22, 0x33 }));
+        Assert.Contains(transport.Requests, request =>
             request.CommandClass == 0x03 &&
             request.CommandId == 0x0A &&
             request.Arguments.SequenceEqual(new byte[] { 0x00 }));
         Assert.DoesNotContain(transport.Requests, request =>
-            request.CommandClass == 0x0F &&
-            request.CommandId == 0x02);
+            request.CommandClass == 0x0F && request.CommandId == 0x02);
+        Assert.DoesNotContain(transport.Requests, request =>
+            request.CommandClass == 0x0D && request.CommandId == 0x02);
+    }
+
+    [Fact]
+    public async Task Blade15_2019SendsWaveThroughTheNativeEffectCommand()
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(transport);
+        var device = new DeviceDescriptor(
+            "blade-023a",
+            "Blade 15 (2019)",
+            0x1532,
+            0x023A,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-671");
+
+        await controller.ApplyAsync(
+            [device],
+            new BladeLightingEffect(BladeLightingMode.Wave));
+        await controller.StopAsync();
+
+        Assert.Contains(transport.Requests, request =>
+            request.CommandClass == 0x03 && request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x02 }));
+    }
+
+    [Fact]
+    public async Task Blade15_2019SendsSixteenColumnFramesForSoftwareLighting()
+    {
+        var transport = new PreparedReportRecordingTransport();
+        await using var controller = new BladeLightingController(transport);
+        var device = new DeviceDescriptor(
+            "blade-023a",
+            "Blade 15 (2019)",
+            0x1532,
+            0x023A,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blade-671");
+
+        await controller.ApplyExternalAsync(
+            [device],
+            new ConstantFrameSource(Enumerable.Repeat(new RazerRgb(0x11, 0x22, 0x33), 6 * 17).ToArray()));
+        await controller.StopAsync();
+
+        var row = Assert.Single(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x0B &&
+            request.Arguments.Length == 52 &&
+            request.Arguments[1] == 0x00 &&
+            request.Arguments[4] == 0x11);
+        Assert.Equal(0xFF, row.Arguments[0]);
+        Assert.Equal(0x00, row.Arguments[2]);
+        Assert.Equal(0x0F, row.Arguments[3]);
+        Assert.Equal([0x11, 0x22, 0x33], row.Arguments[4..7]);
+        Assert.Contains(transport.Requests, request =>
+            request.CommandClass == 0x03 &&
+            request.CommandId == 0x0A &&
+            request.Arguments.SequenceEqual(new byte[] { 0x05, 0x00 }));
     }
 
     [Fact]
@@ -656,6 +776,13 @@ public sealed class OpenRazerWindowsPortTests
             PreparedRequests.Enqueue(request.ToArray());
             return Task.FromResult(new byte[RazerFeatureReport.Length]);
         }
+    }
+
+    private sealed class ConstantFrameSource(IReadOnlyList<RazerRgb> frame) : ISoftwareLightingFrameSource
+    {
+        public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
+            TimeSpan elapsed,
+            CancellationToken cancellationToken) => ValueTask.FromResult(frame);
     }
 
     private static void AssertOpenRazerLogicalReport(

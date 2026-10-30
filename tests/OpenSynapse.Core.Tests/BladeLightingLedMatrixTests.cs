@@ -5,8 +5,8 @@ using Xunit;
 namespace OpenSynapse.Core.Tests;
 
 /// <summary>
-/// Locks the rzDevice25LedMatrixBlade2 lighting bytes to the 02E0 middleware handler:
-/// firmware effects use 03:02 and software frames use 03:0B.
+/// Locks the rzDevice25LedMatrixBlade2 lighting bytes to the 02E0 middleware
+/// handler: firmware effects use 03:0A and software frames use 03:0B.
 /// </summary>
 public sealed class BladeLightingLedMatrixTests
 {
@@ -27,7 +27,8 @@ public sealed class BladeLightingLedMatrixTests
     public void Blade16_2026KeepsBothFirmwareAndFrameChannels()
     {
         // The 2023 selector-only admission must not swallow the 2026 matrix keyboard.
-        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(0x02E0));
+        Assert.False(BladeLighting2023Admitted.UsesFirmwareKeyboardLighting(
+            RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x02E0)!.LightingDialect));
     }
 
     [Fact]
@@ -37,11 +38,11 @@ public sealed class BladeLightingLedMatrixTests
 
         Assert.Equal(0xFF, request[2]);
         Assert.Equal(0x03, request[7]);
-        Assert.Equal(0x02, request[8]);
-        Assert.Equal(6, request[6]);
+        Assert.Equal(0x0A, request[8]);
+        Assert.Equal(4, request[6]);
         Assert.Equal(
-            [0x01, 0x05, 0x06, 0x12, 0x34, 0x56],
-            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 6)]);
+            [0x06, 0x12, 0x34, 0x56],
+            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 4)]);
         Assert.Equal(RazerFeatureReport.CalculateCrc(request), request[89]);
     }
 
@@ -61,11 +62,11 @@ public sealed class BladeLightingLedMatrixTests
         };
 
         Assert.Equal(0x03, request[7]);
-        Assert.Equal(0x02, request[8]);
-        Assert.Equal(3, request[6]);
+        Assert.Equal(0x0A, request[8]);
+        Assert.Equal(expectedEffect == 0x05 ? 2 : 1, request[6]);
         Assert.Equal(
-            [0x01, 0x05, expectedEffect],
-            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 3)]);
+            expectedEffect == 0x05 ? [expectedEffect, 0x00] : [expectedEffect],
+            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + request[6])]);
     }
 
     [Fact]
@@ -73,10 +74,10 @@ public sealed class BladeLightingLedMatrixTests
     {
         var request = BladeLightingLedMatrixProtocol.CreateWaveRequest(BladeWaveDirection.Left);
 
-        Assert.Equal(4, request[6]);
+        Assert.Equal(2, request[6]);
         Assert.Equal(
-            [0x01, 0x05, 0x01, 0x01],
-            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 4)]);
+            [0x01, 0x01],
+            request[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 2)]);
     }
 
     [Fact]
@@ -85,9 +86,9 @@ public sealed class BladeLightingLedMatrixTests
         var colors = Enumerable.Repeat(new RazerRgb(0x0A, 0x0B, 0x0C), 17).ToArray();
         var request = BladeLightingLedMatrixProtocol.CreateMatrixRowRequest(2, 0, colors);
 
-        Assert.Equal(0xFF, request[2]);
+        Assert.Equal(3, request[2]);
         Assert.Equal(0x03, request[7]);
-        Assert.Equal(0x03, request[8]);
+        Assert.Equal(0x0B, request[8]);
         Assert.Equal(4 + 17 * 3, request[6]);
         Assert.Equal(0xFF, request[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(2, request[RazerFeatureReport.ArgumentsOffset + 1]);
@@ -107,13 +108,14 @@ public sealed class BladeLightingLedMatrixTests
         for (var row = 0; row < 6; row++)
         {
             Assert.Equal(0x03, requests[row][7]);
+            Assert.Equal(0x0B, requests[row][8]);
             Assert.Equal(row, requests[row][RazerFeatureReport.ArgumentsOffset + 1]);
         }
         Assert.Equal(0x03, requests[6][7]);
-        Assert.Equal(0x02, requests[6][8]);
-        Assert.Equal(3, requests[6][6]);
+        Assert.Equal(0x0A, requests[6][8]);
+        Assert.Equal(2, requests[6][6]);
         Assert.Equal(
-            [0x01, 0x05, 0x05],
-            requests[6][RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 3)]);
+            [0x05, 0x00],
+            requests[6][RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + 2)]);
     }
 }

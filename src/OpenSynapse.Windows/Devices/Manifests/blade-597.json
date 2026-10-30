@@ -61,5 +61,33 @@
       "commandId": "12",
       "arguments": ""
     }
-  }
+  },
+  "device": {
+    "name": "Razer Blade 15 Base Model",
+    "shortName": "Dana5_MW",
+    "editionIds": [
+      0,
+      128,
+      129
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      12
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBladeWattage",
+    "firmware": {
+      "latest": null,
+      "driver": {
+        "version": "0.1.2.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/597/1.0.0.1/PID0255Drv_v0.1.2.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "Unknown"
 }

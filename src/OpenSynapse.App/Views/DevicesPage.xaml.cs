@@ -53,6 +53,14 @@ public sealed partial class DevicesPage : UserControl
         {
             device = "none";
         }
+        if (device == "coolingpad" && !ViewModel.CoolingPad.IsConnected)
+        {
+            device = "none";
+        }
+        if (device == "kiyo" && !ViewModel.Kiyo.IsConnected)
+        {
+            device = "none";
+        }
         BladeDevicePanel.Visibility = device == "blade" ? Visibility.Visible : Visibility.Collapsed;
         ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
         OpenRazerDevicePanel.Visibility = device == "openrazer" ? Visibility.Visible : Visibility.Collapsed;
@@ -61,8 +69,11 @@ public sealed partial class DevicesPage : UserControl
         HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
         KeyboardPanel.Visibility = device == "keyboard" ? Visibility.Visible : Visibility.Collapsed;
         GamepadPanel.Visibility = device == "gamepad" ? Visibility.Visible : Visibility.Collapsed;
+        CoolingPadPanel.Visibility = device == "coolingpad" ? Visibility.Visible : Visibility.Collapsed;
         ChromaPanel.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
         BlePanel.Visibility = device == "ble" ? Visibility.Visible : Visibility.Collapsed;
+        AwBleHeadsetPanel.Visibility = device == "awbleheadset" ? Visibility.Visible : Visibility.Collapsed;
+        KiyoPanel.Visibility = device == "kiyo" ? Visibility.Visible : Visibility.Collapsed;
         HuePanel.Visibility = device == "hue" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
         if (device == "blade")
@@ -103,10 +114,16 @@ public sealed partial class DevicesPage : UserControl
                     item.Source is RazerGamepadDeviceRowViewModel gamepadRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         gamepadRow.Connection.DevicePath, ViewModel.SelectedGamepad?.DevicePath),
+                DeviceSelectorItemKind.CoolingPad => device == "coolingpad",
+                DeviceSelectorItemKind.Kiyo => device == "kiyo",
                 DeviceSelectorItemKind.Ble => device == "ble" &&
                     item.Source is RazerBleDeviceRowViewModel bleRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         bleRow.Device.Id, ViewModel.SelectedBle?.DeviceId),
+                DeviceSelectorItemKind.AwBleHeadset => device == "awbleheadset" &&
+                    item.Source is RazerAwBleHeadsetRowViewModel awRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        awRow.Device.Id, ViewModel.SelectedAwBleHeadset?.Device.Id),
                 DeviceSelectorItemKind.Chroma => device == "chroma" &&
                     item.Source is RazerChromaDeviceRowViewModel chromaRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
@@ -126,8 +143,11 @@ public sealed partial class DevicesPage : UserControl
         HeadsetAudioPanel.Visibility == Visibility.Visible ? "headsetaudio" :
         KeyboardPanel.Visibility == Visibility.Visible ? "keyboard" :
         GamepadPanel.Visibility == Visibility.Visible ? "gamepad" :
+        CoolingPadPanel.Visibility == Visibility.Visible ? "coolingpad" :
+        KiyoPanel.Visibility == Visibility.Visible ? "kiyo" :
         ChromaPanel.Visibility == Visibility.Visible ? "chroma" :
         BlePanel.Visibility == Visibility.Visible ? "ble" :
+        AwBleHeadsetPanel.Visibility == Visibility.Visible ? "awbleheadset" :
         HuePanel.Visibility == Visibility.Visible ? "hue" :
         ViperDevicePanel.Visibility == Visibility.Visible ? "viper" :
         BladeDevicePanel.Visibility == Visibility.Visible ? "blade" :
@@ -144,6 +164,18 @@ public sealed partial class DevicesPage : UserControl
         {
             // Rebuilding the list only refreshes the highlight; never change the active page here.
             DispatcherQueue.TryEnqueue(RefreshSelectorHighlight);
+        }
+        if (propertyName == nameof(MainViewModel.ConnectedDevices) &&
+            !ViewModel.CoolingPad.IsConnected &&
+            CoolingPadPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
+        if (propertyName == nameof(MainViewModel.ConnectedDevices) &&
+            !ViewModel.Kiyo.IsConnected &&
+            KiyoPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
         }
         if (propertyName == nameof(OpenRazerWorkspace.SelectedDevice) &&
             ViewModel.OpenRazer.SelectedDevice is null &&

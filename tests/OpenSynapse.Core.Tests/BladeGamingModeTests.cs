@@ -26,6 +26,19 @@ public sealed class BladeGamingModeTests
     }
 
     [Fact]
+    public void Blade15_2019UsesTheSharedGameModeReadAndWriteReports()
+    {
+        var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x023A);
+
+        Assert.NotNull(manifest);
+        var getter = manifest!.GetRequiredCapability("gaming-mode.get");
+        Assert.Equal(0x04, getter.MaximumDataSize);
+        Assert.Equal(0x00, getter.CommandClass);
+        Assert.Equal(0x88, getter.CommandId);
+        Assert.Equal(0x08, manifest.GetRequiredCapability("gaming-mode.set").CommandId);
+    }
+
+    [Fact]
     public void GamingModeFollowsExistingProfilePrecedence()
     {
         var document = ProfileDocument.CreateDefault();

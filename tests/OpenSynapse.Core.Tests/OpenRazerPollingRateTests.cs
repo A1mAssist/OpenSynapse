@@ -148,6 +148,66 @@ public sealed class OpenRazerPollingRateTests
         Assert.Equal(2000, reported);
     }
 
+    /// <summary>
+    /// The middleware DeviceInfo links each wireless or Bluetooth identity to its wired
+    /// product with dongleId/bleId and declares one rate ladder for the family. Pin the
+    /// identities that inherit that ladder so a future catalog edit cannot drop it.
+    /// </summary>
+    [Fact]
+    public void WirelessIdentitiesInheritTheMiddlewareRateLadder()
+    {
+        ushort[] productIds =
+        [
+            0x005A, // 0059 dongleId 90
+            0x006F, // 0070 dongleId 111
+            0x0072, // 0073 dongleId 114
+            0x007B, // 007A dongleId 123
+            0x007D, // 007C dongleId 125
+            0x0088, // 0086 dongleId 136
+            0x0090, // 008F dongleId 144
+            0x0095, // 0094 bleId 149
+            0x00A6, // 00A5 dongleId 166
+            0x00A8, // 00A7 dongleId 168
+            0x00B0, // 00AF dongleId 176
+            0x00CD, // 00CC dongleId 205
+            0x00D4, // 00D3 dongleId 212
+            0x00D7, // 00D6 dongleId 215
+        ];
+
+        foreach (var productId in productIds)
+        {
+            var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId);
+            Assert.NotNull(device);
+            Assert.Equal([125, 500, 1000], device!.PollingRates);
+        }
+    }
+
+    /// <summary>
+    /// OpenRazer's device base assigns 125/500/1000 to every class that exposes
+    /// set_poll_rate without overriding POLL_RATES. These legacy mice also take the
+    /// driver's generic polling-rate branch, so pin the ladder the catalog publishes.
+    /// </summary>
+    [Fact]
+    public void LegacyDevicesUseTheOpenRazerDefaultPollRateLadder()
+    {
+        // 0013 is excluded: it uses the Orochi 2011 poll-DPI command, which the
+        // catalog has no transaction for. 0046 and 004C do not expose poll_rate.
+        ushort[] productIds =
+        [
+            0x0015, 0x001F, 0x0020, 0x0024, 0x0025, 0x002E, 0x002F, 0x0032,
+            0x0034, 0x0036, 0x0037, 0x0038, 0x0039, 0x003E, 0x003F, 0x0040,
+            0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0048, 0x004F, 0x0054,
+            0x005B, 0x005E, 0x006A, 0x006B, 0x0085,
+        ];
+
+        foreach (var productId in productIds)
+        {
+            var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId);
+            Assert.NotNull(device);
+            Assert.Equal([125, 500, 1000], device!.PollingRates);
+        }
+    }
+
     private sealed class ShortPollingRateTransport : IRazerFeatureTransport
     {
         internal List<byte[]> Requests { get; } = [];
@@ -244,6 +304,115 @@ public sealed class OpenRazerPollingRateTests
             .ToArray();
 
         Assert.True(offenders.Length == 0, string.Join(Environment.NewLine, offenders));
+    }
+
+    [Fact]
+    public async Task HighSpeedPollingUsesTheActiveProfile()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x02CF)!;
+        var transport = new ActiveProfilePollingTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.PollingRateRead,
+                OpenRazerBackendCapability.PollingRateWrite,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var reported = await service.SetPollingRateAsync(connection, 8_000);
+
+        Assert.Equal(8_000, reported);
+        var write = Assert.Single(transport.Requests, request => request[8] == 0x40);
+        Assert.Equal(0x03, write[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x01, write[RazerFeatureReport.ArgumentsOffset + 1]);
+
+        var read = Assert.Single(transport.Requests, request => request[8] == 0xC0);
+        Assert.Equal(0x03, read[RazerFeatureReport.ArgumentsOffset]);
+    }
+
+    [Fact]
+    public async Task HighSpeedPollingFallsBackWhenTheActiveProfileReadIsRejected()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x02CF)!;
+        var transport = new RejectedProfilePollingTransport();
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability>
+            {
+                OpenRazerBackendCapability.PollingRateRead,
+                OpenRazerBackendCapability.PollingRateWrite,
+            },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        var reported = await service.SetPollingRateAsync(connection, 8_000);
+
+        Assert.Equal(8_000, reported);
+        var write = Assert.Single(transport.Requests, request => request[8] == 0x40);
+        Assert.Equal(0x00, write[RazerFeatureReport.ArgumentsOffset]);
+    }
+
+    private sealed class RejectedProfilePollingTransport : IRazerFeatureTransport
+    {
+        internal List<byte[]> Requests { get; } = [];
+
+        public Task<byte[]> QueryAsync(
+            string devicePath, byte transactionId, byte dataSize, byte commandClass, byte commandId,
+            ReadOnlyMemory<byte> arguments, TimeSpan deviceWait, CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) => throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath, ReadOnlyMemory<byte> request, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false)
+        {
+            var response = request.ToArray();
+            Requests.Add(response.ToArray());
+            if (request.Span[8] == 0x84)
+            {
+                throw new RazerCommandRejectedException("The device rejected the active-profile read.");
+            }
+
+            response[1] = 0x02;
+            if (request.Span[8] == 0xC0)
+            {
+                response[6] = 0x01;
+                response[RazerFeatureReport.ArgumentsOffset + 1] = 0x01;
+            }
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class ActiveProfilePollingTransport : IRazerFeatureTransport
+    {
+        internal List<byte[]> Requests { get; } = [];
+
+        public Task<byte[]> QueryAsync(
+            string devicePath, byte transactionId, byte dataSize, byte commandClass, byte commandId,
+            ReadOnlyMemory<byte> arguments, TimeSpan deviceWait, CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) => throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath, ReadOnlyMemory<byte> request, TimeSpan deviceWait,
+            CancellationToken cancellationToken, bool allowRemainingPacketsMismatch = false)
+        {
+            var response = request.ToArray();
+            Requests.Add(response.ToArray());
+            response[1] = 0x02;
+            if (request.Span[8] == 0x84)
+            {
+                response[RazerFeatureReport.ArgumentsOffset] = 0x03;
+            }
+            else if (request.Span[8] == 0xC0)
+            {
+                response[6] = 0x01;
+                response[RazerFeatureReport.ArgumentsOffset + 1] = 0x01;
+            }
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
     }
 
     private sealed class SilentReadBackTransport : IRazerFeatureTransport
