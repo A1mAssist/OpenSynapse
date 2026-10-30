@@ -26,6 +26,8 @@ public static class DedicatedGpuModeServiceProtocol
     public const string CpuPowerLimitStatusOperation = "power-limit-status";
     public const string SetCpuPowerLimitOperation = "set-power-limit";
     public const string RestoreCpuPowerLimitOperation = "restore-power-limit";
+    public const string CurveOptimizerStatusOperation = "curve-optimizer-status";
+    public const string SetCurveOptimizerOperation = "set-curve-optimizer";
     public const int MaximumMessageLength = 4096;
 }
 
@@ -37,7 +39,8 @@ public sealed record DedicatedGpuModeServiceRequest(
     int? MemoryOffsetMhz = null,
     int? ClockLimitMhz = null,
     double? Pl1Watts = null,
-    double? Pl2Watts = null);
+    double? Pl2Watts = null,
+    int? CurveSteps = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -87,6 +90,12 @@ public enum DedicatedGpuModeServiceAction
     /// <summary>Restore explicit walls, or the open-time firmware walls.</summary>
     RestoreCpuPowerLimit,
 
+    /// <summary>Report whether the Ryzen SMU accepts a Curve Optimizer write.</summary>
+    CurveOptimizerStatus,
+
+    /// <summary>Apply an all-core Curve Optimizer offset.</summary>
+    SetCurveOptimizer,
+
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
 }
@@ -103,7 +112,8 @@ public sealed record DedicatedGpuModeServiceResponse(
     int? MemoryOffsetMhz = null,
     bool? ClockLimitAvailable = null,
     int? ClockLimitMhz = null,
-    CpuPowerLimitReport? PowerLimit = null);
+    CpuPowerLimitReport? PowerLimit = null,
+    bool? CurveOptimizerAvailable = null);
 
 /// <summary>
 /// What the driver currently holds. Null from the client means the installed service
@@ -121,6 +131,11 @@ public sealed record DedicatedGpuClockOffsetState(
 public sealed record DedicatedGpuClockLimitState(
     bool Available,
     int Megahertz);
+
+/// <summary>Null from the client means the installed service predates the operation.</summary>
+public sealed record DedicatedGpuCurveOptimizerState(bool Available, string? Error);
+
+public sealed record DedicatedGpuCurveOptimizerResult(bool Applied, string? Error);
 
 public static class DedicatedGpuModeServiceRequestParser
 {
@@ -218,6 +233,21 @@ public static class DedicatedGpuModeServiceRequestParser
             (request.Pl1Watts is null) == (request.Pl2Watts is null))
         {
             return DedicatedGpuModeServiceAction.RestoreCpuPowerLimit;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.CurveOptimizerStatusOperation))
+        {
+            return DedicatedGpuModeServiceAction.CurveOptimizerStatus;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.SetCurveOptimizerOperation) &&
+            request.CurveSteps is not null)
+        {
+            return DedicatedGpuModeServiceAction.SetCurveOptimizer;
         }
 
         if (StringComparer.Ordinal.Equals(

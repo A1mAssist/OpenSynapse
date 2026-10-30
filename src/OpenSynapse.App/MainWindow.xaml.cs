@@ -65,6 +65,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         // The card needs a real value on first open without delaying the window.
         _ = _viewModel.RefreshCpuPowerLimitSafelyAsync();
+        _ = _viewModel.CpuCurve.RefreshSafelyAsync();
         RootNavigationView.DataContext = _viewModel;
         DiagnosticsPage.Host = this;
         SettingsPage.Host = this;

@@ -200,6 +200,43 @@ public static class DedicatedGpuModeServiceClient
         return response?.PowerLimit;
     }
 
+    /// <summary>
+    /// Reports whether the SMU accepts a Curve Optimizer write. Null means the installed
+    /// service predates the operation or the pipe is unreachable.
+    /// </summary>
+    public static async Task<DedicatedGpuCurveOptimizerState?> TryGetCurveOptimizerAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.CurveOptimizerStatusOperation,
+            Enabled: null);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.CurveOptimizerAvailable is { } available
+            ? new DedicatedGpuCurveOptimizerState(available, response.Error)
+            : null;
+    }
+
+    /// <summary>Applies an all-core Curve Optimizer offset through the machine service.</summary>
+    public static async Task<DedicatedGpuCurveOptimizerResult?> TrySetCurveOptimizerAsync(
+        int steps,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.SetCurveOptimizerOperation,
+            Enabled: null,
+            CurveSteps: steps);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response is null
+            ? null
+            : new DedicatedGpuCurveOptimizerResult(
+                response.Outcome == DedicatedGpuSwitchOutcome.Success,
+                response.Error);
+    }
+
     private static async Task<DedicatedGpuSwitchResult?> SendWithWakeupRetryAsync(
         DedicatedGpuModeServiceRequest request,
         CancellationToken cancellationToken)

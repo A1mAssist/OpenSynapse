@@ -321,6 +321,17 @@ internal static class GpuModeServiceHost
                             ? controller.RestoreTo(pl1, pl2)
                             : controller.RestoreFirmware());
 
+                case DedicatedGpuModeServiceAction.CurveOptimizerStatus:
+                    return WithCurveOptimizer(_ => (true, null));
+
+                case DedicatedGpuModeServiceAction.SetCurveOptimizer:
+                    var curveSteps = request.CurveSteps!.Value;
+                    return WithCurveOptimizer(controller =>
+                    {
+                        var applied = controller.TryApply(new CpuCurveOptimizer(curveSteps), out var curveError);
+                        return (applied, applied ? null : curveError);
+                    });
+
                 default:
                     return Invalid("Invalid GPU service command.");
             }
@@ -411,6 +422,53 @@ internal static class GpuModeServiceHost
                 Status: null,
                 Error: report.Detail,
                 PowerLimit: report);
+        }
+
+        /// <summary>
+        /// Runs one Curve Optimizer operation. The SMU cannot read the offset back, so a
+        /// write is reported as accepted rather than verified.
+        /// </summary>
+        private static DedicatedGpuModeServiceResponse WithCurveOptimizer(
+            Func<ICurveOptimizerController, (bool Applied, string? Error)> action)
+        {
+            ICurveOptimizerController? controller = null;
+            bool applied;
+            string? error;
+            try
+            {
+                RyzenSmuCurveOptimizer.TryOpen(out controller, out var detail);
+                if (controller is null)
+                {
+                    return new DedicatedGpuModeServiceResponse(
+                        DedicatedGpuModeServiceProtocol.Version,
+                        Handled: true,
+                        DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: 1,
+                        Status: null,
+                        Error: detail,
+                        CurveOptimizerAvailable: false);
+                }
+
+                (applied, error) = action(controller);
+            }
+            catch (Exception exception)
+            {
+                applied = false;
+                error = exception.Message;
+            }
+            finally
+            {
+                controller?.Dispose();
+            }
+
+            return new DedicatedGpuModeServiceResponse(
+                DedicatedGpuModeServiceProtocol.Version,
+                Handled: true,
+                applied ? DedicatedGpuSwitchOutcome.Success : DedicatedGpuSwitchOutcome.Failed,
+                ExitCode: applied ? 0 : 1,
+                Status: null,
+                Error: error,
+                CurveOptimizerAvailable: applied);
         }
 
         private static DedicatedGpuModeServiceResponse Invalid(string error) =>

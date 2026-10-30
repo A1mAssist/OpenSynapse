@@ -1725,6 +1725,16 @@
   <data name="BladeGpuClockOffsetServiceMissing" xml:space="preserve"><value>Install or update the OpenSynapse machine service.</value></data>
   <data name="BladeGpuClockOffsetUnsupported" xml:space="preserve"><value>This driver does not accept clock offsets.</value></data>
   <data name="CpuPowerLimitTitle" xml:space="preserve"><value>CPU power limit</value></data>
+  <data name="CpuCurveTitle" xml:space="preserve"><value>Curve Optimizer</value></data>
+  <data name="CpuCurveDescription" xml:space="preserve"><value>All-core PBO undervolt offset. The firmware cannot read it back and a reboot restores the default.</value></data>
+  <data name="CpuCurveOff" xml:space="preserve"><value>Off</value></data>
+  <data name="CpuCurveStepsValue" xml:space="preserve"><value>{0} steps</value></data>
+  <data name="CpuCurveChecking" xml:space="preserve"><value>Checking…</value></data>
+  <data name="CpuCurveReady" xml:space="preserve"><value>Available; the offset cannot be read back.</value></data>
+  <data name="CpuCurveApplied" xml:space="preserve"><value>Wrote {0} (not read back; a reboot resets it).</value></data>
+  <data name="CpuCurveServiceMissing" xml:space="preserve"><value>Install or update the OpenSynapse machine service.</value></data>
+  <data name="CpuCurveUnavailable" xml:space="preserve"><value>This platform does not support a Curve Optimizer.</value></data>
+  <data name="CpuCurveApply" xml:space="preserve"><value>Apply</value></data>
   <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Cap the CPU package power wall (PL1/PL2).</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>Automatic (firmware)</value></data>

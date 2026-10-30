@@ -148,6 +148,9 @@ public sealed partial class DevicesPage : UserControl
     private async void ApplyPerformanceModeClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Blade.ApplyPerformanceModeAsync(Lifetime);
 
+    private async void CpuCurveApplyClick(object sender, RoutedEventArgs e) =>
+        await ViewModel.CpuCurve.ApplyAsync(Lifetime);
+
     private async void ApplyBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Blade.ApplyGpuClockOffsetAsync(Lifetime);
 
