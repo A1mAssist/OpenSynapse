@@ -3,6 +3,8 @@
 证据等级：`static`（雷云中间件 JS bundle + 中间件 manifest 静态分析 + 本机 `nvidia-smi` 实测）。
 没有 Blade 实机，所有 HID 写入结论均为「bundle 对齐」，未做硬件验证。
 
+> 2026-10-31 状态更新：CPU 瓦特数（Intel RAPL / AMD Ryzen SMU）、CPU Boost bit `0x01`、GPU 频率偏移（NVAPI Pstates20）均已落地到代码和 UI；GPU TGP 瓦特滑杆仍未实现。下文保留最初的调研与取舍记录，涉及“未实现”的旧表述以本段为准。
+
 ## 0. 结论
 
 「整机功耗墙」在雷云里不是一个统一控件，而是三条互不相通的通道：
@@ -10,8 +12,8 @@
 | 通道 | 能否直接用 HID 写 | 我们现状 |
 |---|---|---|
 | CPU 档位（Boost / HyperBoost 预设） | 能 | 已实现 |
-| CPU 瓦特数（PL1 / PL2 / PL2 时间窗） | 不能，走原生 XTU / AMD DLL | 未实现 |
-| CPU 功耗开关（Power Mode Control bit 0x01） | **能，而且报文我们已经在读写** | **未解码，见第 5 节** |
+| CPU 瓦特数（PL1 / PL2 / PL2 时间窗） | 走 PawnIO：Intel RAPL / AMD Ryzen SMU | 已实现：机器服务 + 设置页 + 休眠重放（未实机） |
+| CPU 功耗开关（Power Mode Control bit 0x01） | **能，而且报文我们已经在读写** | **已解码并接入，见第 5 节** |
 | GPU 功耗（TGP 瓦特数） | 雷云根本没有这个控件 | 未实现，可借 `nvidia-smi` 自己做 |
 
 CPU 瓦特数要蹭 Intel XTU / AMD 驱动，成本最高；GPU 瓦特数雷云自己都不提供，
@@ -105,7 +107,7 @@ bundle `deviceUI` 的 `performance` / `power` 分组里的标志位：
 | 雷云功能 | 通道 | 我们现状 |
 |---|---|---|
 | GPU Boost 档位（Low/Medium/High） | `setAdvFanModeWattage(1, GPU_Fan, level)` → HID `0D:07` fan=0x02，读 `0D:87` | 已有 |
-| GPU Clock Offset / Memory Clock Offset (MHz) | 原生 `BladeNativeExe` 传参 `SetGPUValue gpu vram`，或 `BladeDLL` FFI action | 非 HID，未实现 |
+| GPU Clock Offset / Memory Clock Offset (MHz) | 原生 `BladeNativeExe` 传参 `SetGPUValue gpu vram`，或 `BladeDLL` FFI action | 已实现：NVAPI Pstates20 + 机器服务 + UI（未实机） |
 | HyperBoost | 切 Gaming 预设：`setOverClockingMode(Gaming)` → 读 `0D:83` 拿出厂 GPU/VRAM 值 → `SetGPUValue` 复位 | 已有 |
 
 搜遍全部 bundle：**没有任何 GPU 瓦特数字段**。翻译文件里 GPU 相关文案只有
@@ -168,7 +170,7 @@ nvidia-smi -lgc 200,2000
   这个试一次就出结果 —— 通再写代码，不通整条砍掉。
   范围读值（`default_limit` / `max_limit`）现在就能做，不依赖那个未知。
 
-## 5. 一条被漏掉的 CPU 功耗开关（零协议成本）
+## 5. CPU 功耗开关（已解码并接入）
 
 雷云的 Power Mode Control 报告是一个 4 bit 掩码。bundle 里的解码原文
 （`bundles/0046/6120.<hash>.js`，290 个 bundle 同款）：
@@ -190,7 +192,7 @@ public const byte OneTimeFullChargeBit = 0x04;
 public const byte LocalDimmingBit      = 0x08;
 ```
 
-**bit 0x01 = `cpuBoost`，我们没解码。** 它的语义（雷云英文文案原文）：
+**bit 0x01 = `cpuBoost`，当前已解码并接入。** 它的语义（雷云英文文案原文）：
 
 > `CPU Boost` — *Allows the CPU to draw more power when GPU is idle*
 
