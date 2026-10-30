@@ -7,7 +7,7 @@ namespace OpenSynapse.Windows.Devices;
 /// protocol's fixed transaction id. Calls are serialized so a latch cannot overtake
 /// another frame's rows.
 /// </summary>
-public sealed class RazerSeirenEmoteService : IAsyncDisposable
+public sealed partial class RazerSeirenEmoteService : IAsyncDisposable
 {
     private static readonly TimeSpan RowDelay = TimeSpan.FromMilliseconds(5);
 

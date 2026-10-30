@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
@@ -6,6 +7,21 @@ namespace OpenSynapse.Core.Tests;
 
 public sealed class RazerSeirenEmoteTests
 {
+    [Fact]
+    public void SelectInterface_RequiresTheMatrixCollectionAndAdmitsOnlyTheEmotePid()
+    {
+        var ready = Interface(0x0F1B, 0x000C, 0x0001, 91, DeviceAccessState.Available, "ready");
+        var list = new[]
+        {
+            Interface(0x0F1B, 0x000C, 0x0001, 91, DeviceAccessState.BusyOrUnavailable, "unavailable"),
+            Interface(0x0F1B, 0x0001, 0x0001, 91, DeviceAccessState.Available, "wrong-usage"),
+            Interface(0x04D8, 0x000C, 0x0001, 91, DeviceAccessState.Available, "wrong-pid"),
+            ready,
+        };
+
+        Assert.Equal("ready", RazerSeirenEmoteService.SelectInterface(list)?.DevicePath);
+    }
+
     [Fact]
     public void CreateFrameRequests_BuildsFourSixteenPixelRowsAndLatch()
     {
@@ -171,6 +187,16 @@ public sealed class RazerSeirenEmoteTests
 
         return checksum;
     }
+
+    private static WindowsHidDiscovery.HidInterfaceDescriptor Interface(
+        ushort productId,
+        ushort usagePage,
+        ushort usage,
+        ushort featureLength,
+        DeviceAccessState access,
+        string path) =>
+        new(path, path, RazerSeirenEmoteService.VendorId, productId, 0, 0, featureLength,
+            usagePage, usage, access, "Razer Seiren Emote");
 
     private sealed class RecordingTransport(RecordingSession session) : IRazerFeatureTransport
     {
