@@ -54,7 +54,7 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
         ? AppStrings.Text("CpuCurveOff")
         : AppStrings.FormatText("CpuCurveStepsValue", _steps);
 
-    /// <summary>The shared operation gate already blocks a second write while busy.</summary>
+    /// <summary>The shared operation gate serializes writes; a queued second click is harmless.</summary>
     public bool CanEdit => _available;
 
     public string StatusText => !_probed
@@ -73,9 +73,14 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
         }
 
         DedicatedGpuCurveOptimizerState? state = null;
+        var timedOut = false;
         try
         {
             state = await DedicatedGpuModeServiceClient.TryGetCurveOptimizerAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            timedOut = true;
         }
         catch (Exception exception) when (
             exception is IOException or InvalidOperationException or TimeoutException or
@@ -86,11 +91,11 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
         _available = state?.Available == true;
         _detail = _available
             ? string.Empty
-            : state is null
-                ? AppStrings.Text("CpuCurveServiceMissing")
-                : state.Error is { Length: > 0 } error
-                    ? error
-                    : AppStrings.Text("CpuCurveUnavailable");
+            : timedOut
+                ? AppStrings.Text("CpuCurveTimeout")
+                : state is null
+                    ? AppStrings.Text("CpuCurveServiceMissing")
+                    : ErrorText(state.Error);
         _probed = true;
         NotifyAll();
     }
@@ -103,23 +108,60 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
         }
 
         var steps = _steps;
-        await _runOperation(
-            AppStrings.Text("CpuCurveTitle"),
-            async () =>
-            {
-                var result = await DedicatedGpuModeServiceClient.TrySetCurveOptimizerAsync(
-                    steps, cancellationToken);
-                if (result is null || !result.Applied)
+        try
+        {
+            await _runOperation(
+                AppStrings.Text("CpuCurveTitle.Text"),
+                async () =>
                 {
-                    throw new InvalidOperationException(
-                        result?.Error ?? AppStrings.Text("CpuCurveUnavailable"));
-                }
+                    try
+                    {
+                        var result = await DedicatedGpuModeServiceClient.TrySetCurveOptimizerAsync(
+                            steps, cancellationToken);
+                        if (result is null || !result.Applied)
+                        {
+                            throw new InvalidOperationException(
+                                result?.Error ?? AppStrings.Text("CpuCurveUnavailable"));
+                        }
 
-                _lastApplied = steps;
-                _detail = string.Empty;
-            },
-            cancellationToken);
-        NotifyAll();
+                        _lastApplied = steps;
+                        _detail = string.Empty;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        _detail = AppStrings.Text("CpuCurveApplyFailed");
+                        throw;
+                    }
+                },
+                cancellationToken);
+        }
+        finally
+        {
+            NotifyAll();
+        }
+    }
+
+    private static string ErrorText(string? error)
+    {
+        // shortcut: the service returns an English detail; map the actionable cases
+        // here until the protocol carries a stable error code.
+        if (error is { Length: > 0 } &&
+            error.Contains("PawnIO is not installed", StringComparison.Ordinal))
+        {
+            return AppStrings.Text("CpuCurvePawnIoMissing");
+        }
+
+        if (error is { Length: > 0 } &&
+            error.Contains("module is missing", StringComparison.Ordinal))
+        {
+            return AppStrings.Text("CpuCurveModuleMissing");
+        }
+
+        return AppStrings.Text("CpuCurveUnavailable");
     }
 
     private static string Format(int steps) => steps == 0

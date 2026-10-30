@@ -9,7 +9,7 @@ public interface ICurveOptimizerController : IDisposable
 
 /// <summary>
 /// PBO Curve Optimizer rides the same MP1 mailbox as the package wall: message 0x4C on
-/// the mobile families we already open, 0x55 on Renoir/Lucienne. The SMU has no
+/// the mobile families with a documented command, 0x55 on Renoir/Lucienne. The SMU has no
 /// read-back for the offset, so callers record what they wrote instead of claiming a
 /// firmware readback. Availability reuses the SMU probe enum because the failures are
 /// identical (PawnIO missing, module rejected, access denied).
@@ -22,12 +22,8 @@ public sealed class RyzenSmuCurveOptimizer : ICurveOptimizerController
     private const ulong Lucienne = 22;
     private const ulong Phoenix = 23;
     private const ulong Phoenix2 = 24;
-    private const ulong Mendocino = 25;
     private const ulong HawkPoint = 30;
     private const ulong StrixPoint = 31;
-    private const ulong StrixHalo = 32;
-    private const ulong KrackanPoint = 33;
-    private const ulong KrackanPoint2 = 34;
 
     private readonly RyzenSmuSession _session;
     private readonly uint _message;
@@ -69,8 +65,7 @@ public sealed class RyzenSmuCurveOptimizer : ICurveOptimizerController
     internal static uint? MessageFor(ulong codeName) => codeName switch
     {
         Renoir or Lucienne => 0x55,
-        Rembrandt or Cezanne or Phoenix or Phoenix2 or Mendocino or HawkPoint or
-            StrixPoint or StrixHalo or KrackanPoint or KrackanPoint2 => 0x4C,
+        Rembrandt or Cezanne or Phoenix or Phoenix2 or HawkPoint or StrixPoint => 0x4C,
         _ => null,
     };
 }

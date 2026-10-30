@@ -21,4 +21,25 @@ public sealed class CpuCurveOptimizerTests
     [InlineData(-99, -30)]
     public void ValuesOutsideTheSliderAreClamped(int steps, int expected) =>
         Assert.Equal(expected, new CpuCurveOptimizer(steps).Clamp().Steps);
+
+    [Theory]
+    [InlineData(1UL, 0x55u)]   // Renoir
+    [InlineData(22UL, 0x55u)]  // Lucienne
+    [InlineData(10UL, 0x4Cu)]  // Rembrandt
+    [InlineData(13UL, 0x4Cu)]  // Cezanne
+    [InlineData(23UL, 0x4Cu)]  // Phoenix
+    [InlineData(24UL, 0x4Cu)]  // Phoenix 2
+    [InlineData(30UL, 0x4Cu)]  // Hawk Point
+    [InlineData(31UL, 0x4Cu)]  // Strix Point
+    public void OnlyDocumentedFamiliesGetACurveCommand(ulong codeName, uint message) =>
+        Assert.Equal(message, OpenSynapse.Windows.Devices.RyzenSmuCurveOptimizer.MessageFor(codeName));
+
+    [Theory]
+    [InlineData(25UL)]  // Mendocino: no Curve Optimizer evidence
+    [InlineData(32UL)]  // Strix Halo: no Curve Optimizer evidence
+    [InlineData(33UL)]  // Krackan Point: no Curve Optimizer evidence
+    [InlineData(34UL)]  // Krackan Point 2: no Curve Optimizer evidence
+    [InlineData(99UL)]
+    public void UnknownFamiliesAreRejected(ulong codeName) =>
+        Assert.Null(OpenSynapse.Windows.Devices.RyzenSmuCurveOptimizer.MessageFor(codeName));
 }
