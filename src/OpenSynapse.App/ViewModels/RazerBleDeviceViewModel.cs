@@ -240,17 +240,16 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
     private double _sleepMinutes = 5;
     private bool _timeToDimEnabled = true;
     private double _timeToDimMinutes = 5;
+    private byte _timeToDimPercentage = 20;
     private string _powerStatusText = string.Empty;
     private IReadOnlyList<byte> _profileIds = [];
     private int _selectedProfileIndex;
     private string _profileStatusText = string.Empty;
-
     public RazerBleDeviceViewModel(RazerBleDevice device, Action<string>? diagnostic = null)
     {
         _device = device;
         _diagnostic = diagnostic;
     }
-
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Name => string.IsNullOrWhiteSpace(_device.Name) ? "Razer BLE" : _device.Name;
@@ -884,7 +883,7 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
                     ? new RazerBleTimeToDimState(
                         TimeToDimEnabled,
                         (int)Math.Round(TimeToDimMinutes * 60d),
-                        20)
+                        _timeToDimPercentage)
                     : null,
                 cancellationToken),
             state =>
@@ -1102,6 +1101,7 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
         {
             TimeToDimEnabled = timeToDim.Enabled;
             TimeToDimMinutes = Math.Clamp(timeToDim.Seconds / 60d, 1d, 15d);
+            _timeToDimPercentage = timeToDim.Percentage;
         }
 
         PowerLowBatteryVisibility = state.LowBatteryPercent is null
