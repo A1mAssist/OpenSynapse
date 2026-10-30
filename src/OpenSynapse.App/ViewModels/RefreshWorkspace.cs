@@ -448,9 +448,10 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             _blade.RefreshLightingEditor();
             _blade.RefreshPerformanceEditor();
             _blade.RefreshLogoEditor();
-            var viperAvailable = viper is not null &&
-                (telemetry.CapabilitySummaries?.GetValueOrDefault(viper.Id)
-                    ?? DeviceCapabilitySummaryCalculator.Calculate(viper, telemetry)).Available > 0;
+            var viperPresent = viper is not null;
+            var viperAvailable = viper is { } viperDevice &&
+                (telemetry.CapabilitySummaries?.GetValueOrDefault(viperDevice.Id)
+                    ?? DeviceCapabilitySummaryCalculator.Calculate(viperDevice, telemetry)).Available > 0;
             var bladeProfileBlocked = profileApply?.Errors.Any(error =>
                 error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
             var fanApply = bladeProfileBlocked
@@ -470,7 +471,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
                 ? null
                 : await _lighting.ApplyLoadedProfileAsync(blade, powerState, cancellationToken);
             var profileOperationErrors = profileApply?.Errors
-                .Where(error => viperAvailable ||
+                .Where(error => viperPresent ||
                     !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
                 .ToArray() ?? [];
             var profileOperationError = profileOperationErrors.Length == 0
@@ -484,12 +485,11 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
                     profileOperationError,
                     viperAvailable ? viperMappingError : null,
                 }.Where(error => !string.IsNullOrWhiteSpace(error))));
-            var visibleDevices = viperAvailable
-                ? snapshot.Devices
-                : snapshot.Devices.Where(device => device.ProtocolFamily != DeviceProtocolFamilies.Viper).ToArray();
+            // Presence and telemetry health are different; a timeout must not remove the device.
+            var visibleDevices = snapshot.Devices;
             _setDeviceDescriptors(visibleDevices);
-            _viper.SetVisibility(viperAvailable);
-            if (!viperAvailable)
+            _viper.SetVisibility(viperPresent);
+            if (!viperPresent)
             {
                 _viper.ResetTelemetry();
             }
@@ -504,13 +504,13 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             _refreshDeviceOverview();
 
             var errors = telemetry.Errors
-                .Where(error => viperAvailable ||
+                .Where(error => viperPresent ||
                     !error.StartsWith(AppStrings.Text("Text_4B32CEE8"), StringComparison.Ordinal))
                 .ToList();
             if (profileApply is { Errors.Count: > 0 })
             {
                 errors.AddRange(profileApply.Errors
-                    .Where(error => viperAvailable || !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
+                    .Where(error => viperPresent || !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
                     .Select(error => AppStrings.FormatText("ProfileApplyError", error)));
             }
             if (!string.IsNullOrWhiteSpace(lightingError))

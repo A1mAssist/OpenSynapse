@@ -206,6 +206,26 @@ public sealed class OpenRazerBackendTests
     }
 
     [Theory]
+    [InlineData(0x028D)]
+    [InlineData(0x02A5)]
+    public void BlackWidowV4FamilyExposesStaticAndUsesTheMatrixFrame(ushort productId)
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+        var zone = OpenRazerDeviceService.GetLightingZoneCapabilities(device)[OpenRazerLedZone.Backlight];
+
+        Assert.Contains(OpenRazerLightingEffect.Static, zone.LightingEffects);
+
+        var request = OpenRazerLightingProtocol.CreateEffect(device,
+            new OpenRazerLightingSettings(
+                OpenRazerLightingEffect.Static,
+                Primary: new OpenRazerColor(0xFF, 0xFF, 0xFF))).Report;
+        Assert.Equal((byte)4, request[6]);
+        Assert.Equal(0x03, request[7]);
+        Assert.Equal(0x0A, request[8]);
+        Assert.Equal([0x06, 0xFF, 0xFF, 0xFF], request[9..13]);
+    }
+
+    [Theory]
     [InlineData(0x0091, 0xFF)]
     [InlineData(0x00B3, 0xFF)]
     [InlineData(0x009E, 0x1F)]

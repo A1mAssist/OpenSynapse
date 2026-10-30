@@ -269,7 +269,7 @@ public static class BladeModelCapabilities
             [0x029F] = new(
                 MaxFan: true,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
-                FixedFan: true,
+                FanCurve: true, FixedFan: true,
                 MinimumFanTargetRpm: 3400,
                 MaximumFanTargetRpm: 5300,
                 HyperBoost: true,

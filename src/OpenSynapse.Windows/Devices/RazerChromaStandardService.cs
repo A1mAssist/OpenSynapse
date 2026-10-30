@@ -41,6 +41,7 @@ public sealed class RazerChromaStandardService
     private readonly TimeSpan _deviceWait;
     private readonly Action<string>? _diagnostic;
     private readonly RazerChromaChannel _channel;
+    private readonly ushort? _productId;
     private byte _transactionId = 0x1F;
 
     internal RazerChromaStandardService(
@@ -48,9 +49,11 @@ public sealed class RazerChromaStandardService
         string devicePath,
         TimeSpan deviceWait,
         Action<string>? diagnostic = null,
-        RazerChromaChannel channel = RazerChromaChannel.Standard)
+        RazerChromaChannel channel = RazerChromaChannel.Standard,
+        ushort? productId = null)
     {
         _channel = channel;
+        _productId = productId;
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _devicePath = string.IsNullOrWhiteSpace(devicePath)
             ? throw new ArgumentException("A HID device path is required.", nameof(devicePath))
@@ -368,6 +371,20 @@ public sealed class RazerChromaStandardService
         byte[] payload,
         CancellationToken cancellationToken)
     {
+        if (_productId == 0x02B3 && effect == RazerChromaEffect.Static)
+        {
+            if (payload.Length != 3)
+            {
+                throw new ArgumentException("Matrix static takes one RGB colour.", nameof(payload));
+            }
+
+            await QueryAsync(
+                transaction => RazerLegacyChromaProtocol.SetMatrixStatic(transaction, payload),
+                "set matrix static effect",
+                cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         var previous = await TryReadLegacyEffectAsync(cancellationToken).ConfigureAwait(false);
         if (previous is { } current &&
             current.EffectId == (byte)effect && current.Colors.SequenceEqual(payload))

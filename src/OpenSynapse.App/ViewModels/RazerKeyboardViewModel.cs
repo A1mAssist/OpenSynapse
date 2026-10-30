@@ -241,7 +241,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             _connection.DevicePath,
             TimeSpan.FromMilliseconds(20),
             _diagnostic,
-            _connection.UsesLegacyChroma ? RazerChromaChannel.Legacy : RazerChromaChannel.Standard);
+            _connection.UsesLegacyChroma ? RazerChromaChannel.Legacy : RazerChromaChannel.Standard,
+            _connection.ProductId);
 
     private async Task RunChromaWriteAsync(
         Func<RazerChromaStandardService, CancellationToken, Task> write,

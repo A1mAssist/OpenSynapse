@@ -69,25 +69,10 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
     {
         try
         {
-            var engines = ReadEngines();
-            double Usage(GpuAdapter adapter, bool external) =>
-                engines.TryGetValue(adapter.Luid, out var values) && values.Count > 0
-                    ? values.Values.Max(value => external ? value.External : value.Total)
-                    : 0;
-
-            var nvidia = _adapters.Values
-                .Where(adapter => adapter.VendorId == NvidiaVendorId)
-                .OrderByDescending(adapter => Usage(adapter, external: true))
-                .FirstOrDefault();
-            var selected = nvidia is not null && Usage(nvidia, external: true) >= 0.1
-                ? nvidia
-                : _adapters.Values
-                    .Where(adapter => adapter.IsIntegrated)
-                    .OrderByDescending(adapter => Usage(adapter, external: false))
-                    .FirstOrDefault();
+            var selected = SelectDisplayGpu(Read());
             return selected is null
                 ? null
-                : (selected.VendorId, ReadTemperature(selected.NativeLuid));
+                : (selected.VendorId, selected.TemperatureCelsius);
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or UnauthorizedAccessException or
@@ -111,6 +96,21 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
             .Where(sample => sample.IsIntegrated)
             .OrderByDescending(sample => sample.UsagePercent)
             .FirstOrDefault();
+
+    /// <summary>
+    /// The adapter whose counters feed the overview and fan curve. Prefer an active
+    /// NVIDIA GPU, then a discrete AMD adapter, then the integrated adapter.
+    /// </summary>
+    internal static WindowsGpuSample? SelectDisplayGpu(IReadOnlyList<WindowsGpuSample> samples) =>
+        samples
+            .Where(sample => sample.VendorId == NvidiaVendorId && sample.ExternalUsagePercent >= 0.1)
+            .OrderByDescending(sample => sample.ExternalUsagePercent)
+            .FirstOrDefault()
+        ?? samples
+            .Where(sample => sample.VendorId == AmdVendorId && !sample.IsIntegrated)
+            .OrderByDescending(sample => sample.ExternalUsagePercent)
+            .FirstOrDefault()
+        ?? SelectIntegrated(samples);
 
     public void Dispose()
     {

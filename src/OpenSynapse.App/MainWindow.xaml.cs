@@ -329,13 +329,15 @@ public sealed partial class MainWindow : Window
         await Task.Yield();
         try
         {
-            await _viewModel.InitializeProfileAsync(_lifetime.Token);
-            LaunchStatusText.Text = AppStrings.Text("Text_C2463C0F");
+            // Start the cheap system sampler before profile and device work so CPU,
+            // memory and storage have a first frame while the launch overlay is up.
             UpdatePerformanceSamplingState();
-            _viewModel.Refresh.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.Telemetry.RunPerformanceLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_79DA5816"));
+            await _viewModel.InitializeProfileAsync(_lifetime.Token);
+            LaunchStatusText.Text = AppStrings.Text("Text_C2463C0F");
+            _viewModel.Refresh.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.Refresh.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));

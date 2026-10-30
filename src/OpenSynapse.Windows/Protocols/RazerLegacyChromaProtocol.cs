@@ -11,6 +11,11 @@ public static class RazerLegacyChromaProtocol
     public const byte CommandClass = 0x0F;
     public const int MaxColors = 2;
 
+    // 02B3 uses the rzDevice25 matrix selector for static colours instead of the
+    // class 0x0F effect command. The bundle payload is [0x06, r, g, b].
+    public const byte MatrixCommandClass = 0x03;
+    public const byte MatrixSetEffectCommandId = 0x0A;
+
     // The middleware only ever reads profile 1, region 0 (6737.*.js, BLE effect read).
     public const byte ReadProfileId = 1;
     public const byte ReadRegionId = 0;
@@ -64,6 +69,21 @@ public static class RazerLegacyChromaProtocol
             CommandClass,
             0x02,
             arguments);
+    }
+
+    public static byte[] SetMatrixStatic(byte transactionId, ReadOnlySpan<byte> color)
+    {
+        if (color.Length != 3)
+        {
+            throw new ArgumentException("Matrix static takes one RGB colour.", nameof(color));
+        }
+
+        return RazerFeatureReport.CreateRequest(
+            transactionId,
+            4,
+            MatrixCommandClass,
+            MatrixSetEffectCommandId,
+            [0x06, color[0], color[1], color[2]]);
     }
 
     public static (byte EffectId, byte Flags, byte Rate, byte[] Colors) ReadEffect(
