@@ -95,6 +95,13 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             value => RazerValkyrieHeadsetProtocol.ReadEqBands(value, _eqBandsWithProfile),
             errors,
             cancellationToken).ConfigureAwait(false);
+        var micBands = await ProbeAsync(
+            "microphone EQ bands",
+            RazerValkyrieHeadsetProtocol.CreateGetMicBands(),
+            RazerValkyrieHeadsetProtocol.MicBandsHeader,
+            RazerValkyrieHeadsetProtocol.ReadMicBands,
+            errors,
+            cancellationToken).ConfigureAwait(false);
         var micMute = await ProbeAsync(
             "microphone mute",
             RazerValkyrieHeadsetProtocol.CreateGetMicMute(),
@@ -116,7 +123,7 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             NoiseSuppression: null,
             AncState: null,
             AncLevel: null,
-            Errors: errors);
+            Errors: errors) { MicBands = micBands.Ok ? micBands.Value : null };
     }
 
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>
@@ -165,6 +172,29 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             RazerValkyrieHeadsetProtocol.SetEqBandsHeader,
             actual => actual.SequenceEqual(requested),
             "EQ bands",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task SetMicBandsAsync(
+        IReadOnlyList<byte> bands,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bands);
+        if (bands.Count != RazerValkyrieHeadsetProtocol.TenBandCount)
+        {
+            throw new ArgumentException("Microphone equalizer data must contain 10 bands.", nameof(bands));
+        }
+
+        var requested = bands.ToArray();
+        await WriteAsync(
+            RazerValkyrieHeadsetProtocol.CreateGetMicBands(),
+            RazerValkyrieHeadsetProtocol.MicBandsHeader,
+            RazerValkyrieHeadsetProtocol.ReadMicBands,
+            requested,
+            bands => RazerValkyrieHeadsetProtocol.CreateSetMicBands(bands),
+            RazerValkyrieHeadsetProtocol.SetMicBandsHeader,
+            actual => actual.SequenceEqual(requested),
+            "microphone EQ bands",
             cancellationToken).ConfigureAwait(false);
     }
 

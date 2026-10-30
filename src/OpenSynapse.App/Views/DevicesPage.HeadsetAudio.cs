@@ -55,6 +55,9 @@ public sealed partial class DevicesPage : UserControl
     private async void HeadsetAudioApplyEqBandsClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedHeadsetAudio?.ApplyEqBandsAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void HeadsetAudioApplyMicEqBandsClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.SelectedHeadsetAudio?.ApplyMicEqBandsAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void HeadsetAudioApplyBassClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedHeadsetAudio?.ApplyBassAsync(Lifetime) ?? Task.CompletedTask);
 

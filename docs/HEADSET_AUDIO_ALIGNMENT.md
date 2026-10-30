@@ -77,8 +77,8 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 
 | 结论 | PID | 依据 |
 |---|---|---|
-| Billie64 | 0567 056B | `AudioBillieT1` / `AudioBillieT2`，64 字节 report id 2，`0x60` 事务号 |
-| Valkyrie64 | 0579 0A4E 0A51 101E 101F | `AudioValkyrie`，同一 64 字节信封；0576/101C 保留专用面板 |
+| Billie64 | 0567 056B | `AudioBillieT1` / `AudioBillieT2`，64 字节 report id 2，`0x60` 事务号；扬声器与麦克风 10 段 EQ 已接，写入后读回 |
+| Valkyrie64 | 0579 0A4E 0A51 101E 101F | `AudioValkyrie`，同一 64 字节信封；0576/101C 保留专用面板；扬声器与麦克风 10 段 EQ 已接，写入后读回 |
 | Mxic64 | 0539 053B 0555 0583 0584 | `AudioMxicDevice`，`50 41`/`50 49` 信封（原有实现） |
 | Mxic64（report id 7） | 0A54 1022 | `rzDevice25ValkyrieT3` |
 | Mxic64（class 0x18） | 0A61 0A64 0A68 0A6C 0A81 | `rzDevice40` |
