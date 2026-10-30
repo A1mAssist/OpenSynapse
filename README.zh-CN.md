@@ -80,7 +80,7 @@ MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应�
 ## 当前不包含
 
 - 固件更新、Razer 账号、云服务和 Chroma Studio。
-- AMD Curve Optimizer、GPU MUX 和未经验证的硬件写入。
+- 除 Hybrid/Discrete 之外的 GPU MUX 模式，以及没有协议证据的硬件写入。
 - 缺少 Windows 传输实现的旧式固定报告设备。
 
 ## 构建

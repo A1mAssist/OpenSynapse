@@ -80,7 +80,7 @@ The application does not require Razer Synapse, AppEngine, or `mapping_engine.dl
 ## Not included
 
 - Firmware updates, Razer accounts, cloud services, and Chroma Studio.
-- AMD Curve Optimizer, GPU MUX controls, and unverified hardware writes.
+- GPU MUX modes beyond Hybrid/Discrete, and hardware writes without protocol evidence.
 - Legacy fixed-report devices whose Windows transport is unavailable.
 
 ## Build

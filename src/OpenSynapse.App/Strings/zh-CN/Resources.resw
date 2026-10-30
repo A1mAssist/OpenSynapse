@@ -2094,16 +2094,20 @@
   <data name="BladeGpuClockOffsetServiceMissing" xml:space="preserve"><value>需要安装或更新 OpenSynapse 机器服务。</value></data>
   <data name="BladeGpuClockOffsetUnsupported" xml:space="preserve"><value>当前驱动不接受频率偏移。</value></data>
   <data name="CpuPowerLimitTitle" xml:space="preserve"><value>CPU 功耗墙</value></data>
-  <data name="CpuCurveTitle" xml:space="preserve"><value>Curve Optimizer</value></data>
-  <data name="CpuCurveDescription" xml:space="preserve"><value>全核 PBO 降压偏移。固件无法读回，写入后重启恢复默认。</value></data>
+  <data name="CpuCurveTitle.Text" xml:space="preserve"><value>Curve Optimizer</value></data>
+  <data name="CpuCurveDescription.Text" xml:space="preserve"><value>全核 PBO 降压偏移。固件无法读回当前值；重启电脑恢复默认，应用重启后需重新选择并应用。</value></data>
   <data name="CpuCurveOff" xml:space="preserve"><value>关闭</value></data>
   <data name="CpuCurveStepsValue" xml:space="preserve"><value>{0} 档</value></data>
   <data name="CpuCurveChecking" xml:space="preserve"><value>正在检查…</value></data>
-  <data name="CpuCurveReady" xml:space="preserve"><value>可用；写入后无法读回。</value></data>
-  <data name="CpuCurveApplied" xml:space="preserve"><value>已写入 {0}（未读回，重启后复位）。</value></data>
+  <data name="CpuCurveReady" xml:space="preserve"><value>可用；固件无法读回当前值。</value></data>
+  <data name="CpuCurveApplied" xml:space="preserve"><value>已发送 {0}；未读回，重启电脑复位。</value></data>
   <data name="CpuCurveServiceMissing" xml:space="preserve"><value>需要安装或更新 OpenSynapse 机器服务。</value></data>
   <data name="CpuCurveUnavailable" xml:space="preserve"><value>当前平台不支持 Curve Optimizer。</value></data>
-  <data name="CpuCurveApply" xml:space="preserve"><value>应用</value></data>
+  <data name="CpuCurveApply.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="CpuCurveTimeout" xml:space="preserve"><value>机器服务没有响应。</value></data>
+  <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>需要安装 PawnIO 驱动。</value></data>
+  <data name="CpuCurveModuleMissing" xml:space="preserve"><value>缺少 RyzenSMU.bin，请重新安装应用。</value></data>
+  <data name="CpuCurveApplyFailed" xml:space="preserve"><value>写入失败，详情见上方提示。</value></data>
   <data name="CpuPowerLimitDescription" xml:space="preserve"><value>限制 CPU 封装功耗上限（PL1/PL2）。</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>自动（固件）</value></data>
