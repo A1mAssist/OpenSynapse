@@ -39,6 +39,9 @@ public sealed partial class DevicesPage : UserControl
     private async void AwBleHeadsetApplyChromaBrightnessClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedAwBleHeadset?.ApplyChromaBrightnessAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void AwBleHeadsetApplyChromaEffectClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.SelectedAwBleHeadset?.ApplyChromaEffectAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void AwBleHeadsetApplyBassClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedAwBleHeadset?.ApplyBassAsync(Lifetime) ?? Task.CompletedTask);
 
@@ -50,4 +53,7 @@ public sealed partial class DevicesPage : UserControl
 
     private async void AwBleHeadsetApplyCustomEqClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedAwBleHeadset?.ApplyCustomEqAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void AwBleHeadsetApplyMicCustomEqClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.SelectedAwBleHeadset?.ApplyMicCustomEqAsync(Lifetime) ?? Task.CompletedTask);
 }

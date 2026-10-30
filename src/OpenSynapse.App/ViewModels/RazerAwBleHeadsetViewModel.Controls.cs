@@ -47,12 +47,20 @@ public sealed partial class RazerAwBleHeadsetViewModel
             SelectedEqPresetIndex = eqIndex;
         }
 
+        if (eqPreset is { } currentEqPreset)
+        {
+            CustomEqEnabled = RazerAwBleProtocol.IsCustomEqPreset(currentEqPreset);
+        }
+
         var autoPowerOff = await TryReadAsync(
             () => _service.ReadAutoPowerOffMinutesAsync(cancellationToken)).ConfigureAwait(false);
-        AutoPowerOffVisibility = SetVisibility(autoPowerOff is not null, ref any);
-        if (autoPowerOff is { } autoPowerOffValue)
+        var autoPowerOffIndex = autoPowerOff is { } minutes
+            ? Array.IndexOf(RazerAwBleProtocol.AutoPowerOffMinuteOptions, minutes)
+            : -1;
+        AutoPowerOffVisibility = SetVisibility(autoPowerOffIndex >= 0, ref any);
+        if (autoPowerOffIndex >= 0)
         {
-            AutoPowerOffMinutes = autoPowerOffValue;
+            SelectedAutoPowerOffIndex = autoPowerOffIndex;
         }
 
         var chromaBrightness = await TryReadAsync(
@@ -61,6 +69,17 @@ public sealed partial class RazerAwBleHeadsetViewModel
         if (chromaBrightness is { } chromaValue)
         {
             ChromaBrightness = chromaValue;
+        }
+
+        var chromaEffect = await TryReadAsync(
+            () => _service.ReadChromaEffectAsync(cancellationToken)).ConfigureAwait(false);
+        if (chromaEffect is { } chromaState)
+        {
+            ApplyChromaState(chromaState);
+        }
+        else
+        {
+            ChromaEffectVisibility = Visibility.Collapsed;
         }
 
         var bass = await TryReadAsync(() => _service.ReadBassAsync(cancellationToken))
@@ -88,6 +107,19 @@ public sealed partial class RazerAwBleHeadsetViewModel
             SelectedMicEqPresetIndex = micIndex;
         }
 
+        if (micEq is { } currentMicPreset)
+        {
+            MicCustomEqEnabled = currentMicPreset == RazerAwBleProtocol.CustomEqPreset;
+        }
+
+        var micCustomEq = await TryReadReferenceAsync(
+            () => _service.ReadMicCustomEqBandsAsync(cancellationToken)).ConfigureAwait(false);
+        MicCustomEqVisibility = SetVisibility(micCustomEq is { Count: 10 }, ref any);
+        if (micCustomEq is { Count: 10 } micCustomLevels)
+        {
+            ApplyMicCustomEqBands(micCustomLevels);
+        }
+
         var customEq = await TryReadReferenceAsync(
             () => _service.ReadCustomEqBandsAsync(cancellationToken)).ConfigureAwait(false);
         CustomEqVisibility = SetVisibility(customEq is { Count: 10 }, ref any);
@@ -108,9 +140,13 @@ public sealed partial class RazerAwBleHeadsetViewModel
         EqPresetVisibility = Visibility.Collapsed;
         AutoPowerOffVisibility = Visibility.Collapsed;
         ChromaBrightnessVisibility = Visibility.Collapsed;
+        ChromaEffectVisibility = Visibility.Collapsed;
+        ChromaPrimaryColorVisibility = Visibility.Collapsed;
+        ChromaSecondaryColorVisibility = Visibility.Collapsed;
         BassVisibility = Visibility.Collapsed;
         HapticsVisibility = Visibility.Collapsed;
         MicEqVisibility = Visibility.Collapsed;
+        MicCustomEqVisibility = Visibility.Collapsed;
         CustomEqVisibility = Visibility.Collapsed;
         FirmwareVisibility = Visibility.Collapsed;
         SerialVisibility = Visibility.Collapsed;
@@ -166,6 +202,31 @@ public sealed partial class RazerAwBleHeadsetViewModel
         for (var index = 0; index < levels.Count; index++)
         {
             CustomEqBands[index].Level = levels[index];
+        }
+    }
+
+    private void ApplyMicCustomEqBands(IReadOnlyList<sbyte> levels)
+    {
+        if (levels.Count != RazerAwBleProtocol.CustomEqBandCount)
+        {
+            return;
+        }
+
+        if (MicCustomEqBands.Count != levels.Count)
+        {
+            MicCustomEqBands.Clear();
+            for (var index = 0; index < levels.Count; index++)
+            {
+                MicCustomEqBands.Add(new RazerAwBleEqBandViewModel(
+                    MicCustomEqFrequencies[index], levels[index]));
+            }
+
+            return;
+        }
+
+        for (var index = 0; index < levels.Count; index++)
+        {
+            MicCustomEqBands[index].Level = levels[index];
         }
     }
 

@@ -169,16 +169,16 @@ public sealed class RazerAwBleHeadsetServiceTests
     }
 
     [Fact]
-    public async Task AutoPowerOffWritesTheMinuteByte()
+    public async Task AutoPowerOffWritesTheBundleStepIndex()
     {
         var transport = new FakeTransport(
-            new byte[] { 0x2C, 0x02, 0x01, 0 },
-            new byte[] { 0xAC, 0x02, 0x01, 0 },
-            new byte[] { 0x2C, 0x02, 0x01, 30 });
+            new byte[] { 0x27, 0x02, 0x01, 0 },
+            new byte[] { 0xA7, 0x02, 0x01, 0 },
+            new byte[] { 0x27, 0x02, 0x01, 3 });
         var service = CreateService(transport);
 
-        Assert.Equal((byte)30, await service.SetAutoPowerOffMinutesAsync(30));
-        Assert.Equal(new byte[] { 0xAC, 0x00, 0x01, 30 }, transport.Frames[1]);
+        Assert.Equal(30, await service.SetAutoPowerOffMinutesAsync(30));
+        Assert.Equal(new byte[] { 0xA7, 0x00, 0x01, 3 }, transport.Frames[1]);
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public sealed class RazerAwBleHeadsetServiceTests
     public async Task ReadCharging_ReturnsTheBundleEnum()
     {
         var service = CreateService(new FakeTransport(
-            new byte[] { 0x2A, 0x02, 0x01, 1 }));
+            new byte[] { 0x29, 0x02, 0x01, 1 }));
 
         Assert.Equal(RazerAwChargingStatus.Charging, await service.ReadChargingAsync());
     }
@@ -321,6 +321,67 @@ public sealed class RazerAwBleHeadsetServiceTests
         Assert.Equal(
             new byte[] { 0x95, 0x00, 0x0A, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
             transport.Frames[3]);
+    }
+
+    [Fact]
+    public async Task CustomEq_SwitchesToTheCustomPresetBeforeWritingBands()
+    {
+        sbyte[] target = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 5];
+        var transport = new FakeTransport(
+            new byte[] { 0x13, 0x02, 0x01, 0 },
+            new byte[] { 0x13, 0x02, 0x01, 0 },
+            new byte[] { 0x93, 0x02, 0x01, 0 },
+            new byte[] { 0x13, 0x02, 0x01, 255 },
+            new byte[] { 0x15, 0x02, 0x0A, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
+            new byte[] { 0x95, 0x02, 0x01, 0 },
+            new byte[] { 0x15, 0x02, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10 });
+        var service = CreateService(transport);
+
+        Assert.Equal(target, await service.SetCustomEqAsync(target, true));
+
+        Assert.Equal(new byte[] { 0x93, 0x00, 0x01, 255 }, transport.Frames[2]);
+        Assert.Equal(
+            new byte[] { 0x95, 0x00, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10 },
+            transport.Frames[5]);
+    }
+
+    [Fact]
+    public async Task MicCustomEq_SwitchesToTheCustomPresetBeforeWritingBands()
+    {
+        sbyte[] target = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 5];
+        var transport = new FakeTransport(
+            new byte[] { 0x16, 0x02, 0x01, 0 },
+            new byte[] { 0x16, 0x02, 0x01, 0 },
+            new byte[] { 0x96, 0x02, 0x01, 0 },
+            new byte[] { 0x16, 0x02, 0x01, 255 },
+            new byte[] { 0x17, 0x02, 0x0A, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
+            new byte[] { 0x97, 0x02, 0x01, 0 },
+            new byte[] { 0x17, 0x02, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10 });
+        var service = CreateService(transport);
+
+        Assert.Equal(target, await service.SetMicCustomEqAsync(target, true));
+
+        Assert.Equal(new byte[] { 0x96, 0x00, 0x01, 255 }, transport.Frames[2]);
+        Assert.Equal(
+            new byte[] { 0x97, 0x00, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10 },
+            transport.Frames[5]);
+    }
+
+    [Fact]
+    public async Task ChromaStaticEffectWritesRgbAndReadsItBack()
+    {
+        var transport = new FakeTransport(
+            new byte[] { 0xC3, 0x02, 0x01, 0 },
+            new byte[] { 0x40, 0x02, 0x01, 3 },
+            new byte[] { 0x43, 0x02, 0x03, 1, 2, 3 });
+        var service = CreateService(transport);
+
+        var state = await service.SetChromaEffectAsync(
+            RazerAwChromaEffect.Static, [1, 2, 3], []);
+
+        Assert.Equal(RazerAwChromaEffect.Static, state.Effect);
+        Assert.Equal(new byte[] { 1, 2, 3 }, state.PrimaryColor);
+        Assert.Equal(new byte[] { 0xC3, 0x00, 0x03, 1, 2, 3 }, transport.Frames[0]);
     }
 
     [Fact]

@@ -63,8 +63,10 @@ public sealed class RazerAwBleProtocolTests
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.GameModeGetCommand));
         Assert.Equal(new byte[] { 0x13, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.EqPresetGetCommand));
-        Assert.Equal(new byte[] { 0x2C, 0x00, 0x00 },
+        Assert.Equal(new byte[] { 0x27, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.AutoPowerOffGetCommand));
+        Assert.Equal(new byte[] { 0x40, 0x00, 0x00 },
+            RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.ChromaEffectGetCommand));
         Assert.Equal(new byte[] { 0x41, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.ChromaBrightnessGetCommand));
         Assert.Equal(new byte[] { 0x1B, 0x00, 0x00 },
@@ -75,13 +77,15 @@ public sealed class RazerAwBleProtocolTests
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.MicEqPresetGetCommand));
         Assert.Equal(new byte[] { 0x15, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.CustomEqBandsGetCommand));
+        Assert.Equal(new byte[] { 0x17, 0x00, 0x00 },
+            RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.MicCustomEqBandsGetCommand));
         Assert.Equal(new byte[] { 0x02, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.FirmwareGetCommand));
         Assert.Equal(new byte[] { 0x00, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.SerialGetCommand));
         Assert.Equal(new byte[] { 0x25, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.ConnectionGetCommand));
-        Assert.Equal(new byte[] { 0x2A, 0x00, 0x00 },
+        Assert.Equal(new byte[] { 0x29, 0x00, 0x00 },
             RazerAwBleProtocol.CreateReadRequest(RazerAwBleProtocol.ChargingGetCommand));
     }
 
@@ -96,8 +100,11 @@ public sealed class RazerAwBleProtocolTests
             RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.GameModeSetCommand, 1));
         Assert.Equal(new byte[] { 0x93, 0x00, 0x01, 10 },
             RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.EqPresetSetCommand, 10));
-        Assert.Equal(new byte[] { 0xAC, 0x00, 0x01, 30 },
-            RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.AutoPowerOffSetCommand, 30));
+        Assert.Equal(new byte[] { 0xA7, 0x00, 0x01, 3 },
+            RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.AutoPowerOffSetCommand, 3));
+        Assert.Equal(new byte[] { 0xC0, 0x00, 0x01, 1 },
+            RazerAwBleProtocol.CreateWriteRequest(
+                RazerAwBleProtocol.ChromaEffectSetCommand, (byte)RazerAwChromaEffect.Spectrum));
         Assert.Equal(new byte[] { 0xC1, 0x00, 0x01, 127 },
             RazerAwBleProtocol.CreateWriteRequest(RazerAwBleProtocol.ChromaBrightnessSetCommand, 127));
         Assert.Equal(new byte[] { 0x9B, 0x00, 0x01, 55 },
@@ -117,17 +124,27 @@ public sealed class RazerAwBleProtocolTests
             RazerAwBleProtocol.CreateEqBandsRequest(levels));
     }
 
+    [Fact]
+    public void MicCustomEqRequestCarriesTenOffsetLevels()
+    {
+        sbyte[] levels = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4];
+        Assert.Equal(
+            new byte[] { 0x97, 0x00, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 },
+            RazerAwBleProtocol.CreateMicEqBandsRequest(levels));
+    }
+
     [Theory]
     [InlineData(0x11, 55)]
     [InlineData(0x19, 15)]
     [InlineData(0x14, 1)]
     [InlineData(0x13, 255)]
-    [InlineData(0x2C, 30)]
+    [InlineData(0x27, 3)]
+    [InlineData(0x40, 3)]
     [InlineData(0x41, 127)]
     [InlineData(0x1B, 55)]
     [InlineData(0x54, 6)]
     [InlineData(0x16, 2)]
-    [InlineData(0x2A, 1)]
+    [InlineData(0x29, 1)]
     public void OneByteRepliesAreParsed(byte command, byte value)
     {
         Assert.True(RazerAwBleProtocol.TryParseByteReply(
@@ -209,6 +226,87 @@ public sealed class RazerAwBleProtocolTests
         Assert.False(RazerAwBleProtocol.IsKnownEqPreset(preset));
     }
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(5, 1)]
+    [InlineData(10, 1)]
+    [InlineData(15, 2)]
+    [InlineData(30, 3)]
+    [InlineData(45, 4)]
+    [InlineData(60, 5)]
+    [InlineData(90, 5)]
+    public void AutoPowerOffMinutesUseTheBundleStepIndex(int minutes, byte index)
+    {
+        Assert.Equal(index, RazerAwBleProtocol.AutoPowerOffIndexFromMinutes(minutes));
+    }
+
+    [Fact]
+    public void AutoPowerOffReplyUsesTheBundleStepTable()
+    {
+        Assert.True(RazerAwBleProtocol.TryParseAutoPowerOff(
+            [0x27, 0x02, 0x01, 3], out var minutes));
+        Assert.Equal(30, minutes);
+
+        Assert.True(RazerAwBleProtocol.TryParseAutoPowerOff(
+            [0x27, 0x02, 0x01, 0], out var off));
+        Assert.Equal(0, off);
+
+        Assert.False(RazerAwBleProtocol.TryParseAutoPowerOff(
+            [0x27, 0x02, 0x01, 6], out _));
+    }
+
+    [Fact]
+    public void ChromaRequestsMatchTheKittyBundle()
+    {
+        Assert.Equal(
+            new byte[] { 0xC0, 0x00, 0x01, 0 },
+            RazerAwBleProtocol.CreateChromaEffectRequest(RazerAwChromaEffect.Off));
+        Assert.Equal(
+            new byte[] { 0xC0, 0x00, 0x01, 1 },
+            RazerAwBleProtocol.CreateChromaEffectRequest(RazerAwChromaEffect.Spectrum));
+        Assert.Equal(
+            new byte[] { 0xC3, 0x00, 0x03, 1, 2, 3 },
+            RazerAwBleProtocol.CreateChromaStaticColorRequest([1, 2, 3]));
+        Assert.Equal(
+            new byte[] { 0xC2, 0x00, 0x06, 1, 2, 3, 4, 5, 6 },
+            RazerAwBleProtocol.CreateChromaBreathingColorRequest([1, 2, 3], [4, 5, 6]));
+        Assert.Equal(
+            new byte[] { 0xC5, 0x00, 0x03, 7, 8, 9 },
+            RazerAwBleProtocol.CreateChromaAudioMeterColorRequest([7, 8, 9]));
+    }
+
+    [Fact]
+    public void ChromaRepliesCarryTheEffectAndRgbColors()
+    {
+        Assert.True(RazerAwBleProtocol.TryParseChromaEffect(
+            [0x40, 0x02, 0x01, 3], out var effect, out _));
+        Assert.Equal(RazerAwChromaEffect.Static, effect);
+
+        Assert.True(RazerAwBleProtocol.TryParseChromaColor(
+            [0x43, 0x02, 0x03, 1, 2, 3], 0x43, 3, out var staticColor));
+        Assert.Equal(new byte[] { 1, 2, 3 }, staticColor);
+
+        Assert.True(RazerAwBleProtocol.TryParseChromaColor(
+            [0x42, 0x02, 0x06, 1, 2, 3, 4, 5, 6], 0x42, 6, out var breathing));
+        Assert.Equal(new byte[] { 1, 2, 3, 4, 5, 6 }, breathing);
+
+        Assert.False(RazerAwBleProtocol.TryParseChromaColor(
+            [0x45, 0x02, 0x03, 1, 2], 0x45, 3, out _));
+    }
+
+    [Fact]
+    public void MicCustomEqReplySubtractsTheBundleOffset()
+    {
+        Assert.True(RazerAwBleProtocol.TryParseMicEqBands(
+            [0x17, 0x02, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10], out var levels));
+        Assert.Equal(
+            new sbyte[] { -5, -4, -3, -2, -1, 0, 1, 2, 3, 5 },
+            levels);
+
+        Assert.False(RazerAwBleProtocol.TryParseMicEqBands(
+            [0x15, 0x02, 0x0A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 10], out _));
+    }
+
     [Fact]
     public void FirmwareReplyCarriesFourBytes()
     {
@@ -255,13 +353,13 @@ public sealed class RazerAwBleProtocolTests
     public void ChargingReplyUsesTheBundleEnum()
     {
         Assert.True(RazerAwBleProtocol.TryParseCharging(
-            [0x2A, 0x02, 0x01, 1], out var charging));
+            [0x29, 0x02, 0x01, 1], out var charging));
         Assert.Equal(RazerAwChargingStatus.Charging, charging);
         Assert.True(RazerAwBleProtocol.TryParseCharging(
-            [0x2A, 0x02, 0x01, 2], out var failed));
+            [0x29, 0x02, 0x01, 2], out var failed));
         Assert.Equal(RazerAwChargingStatus.ChargingFailed, failed);
         Assert.False(RazerAwBleProtocol.TryParseCharging(
-            [0x2A, 0x02, 0x01, 3], out _));
+            [0x29, 0x02, 0x01, 3], out _));
     }
 
     [Fact]
