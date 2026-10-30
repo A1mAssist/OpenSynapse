@@ -98,14 +98,17 @@ public partial class App : Application
             .Any(argument => StringComparer.OrdinalIgnoreCase.Equals(argument, "--silent"));
         var isElevated = ProcessIntegrityLevel.IsElevated(ProcessIntegrityLevel.Current());
         // An elevated launch must replace the tray instance; otherwise it exits before device discovery.
+        const string instanceName = @"Local\OpenSynapse";
+        var replaceExisting = isElevated && !silentLaunch &&
+            !SingleInstanceGuard.IsExistingElevated(instanceName);
         bool acquired;
         try
         {
             acquired = SingleInstanceGuard.TryAcquire(
-                @"Local\OpenSynapse",
+                instanceName,
                 out _singleInstanceGuard,
                 activateExisting: !silentLaunch,
-                requestExistingShutdown: isElevated && !silentLaunch);
+                requestExistingShutdown: replaceExisting);
         }
         catch (ExistingInstanceNotTakeoverableException)
         {
@@ -113,6 +116,8 @@ public partial class App : Application
             Environment.Exit(0);
             return;
         }
+
+        MarkElevatedIfNeeded(isElevated);
 
         if (!acquired)
         {

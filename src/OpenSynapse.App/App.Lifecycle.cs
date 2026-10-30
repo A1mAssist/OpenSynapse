@@ -18,6 +18,14 @@ public partial class App
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern int MessageBoxW(IntPtr window, string text, string caption, uint type);
 
+    private void MarkElevatedIfNeeded(bool isElevated)
+    {
+        if (isElevated)
+        {
+            _singleInstanceGuard?.MarkElevated();
+        }
+    }
+
     private async Task ObserveActivationRequestsAsync(CancellationToken cancellationToken)
     {
         var guard = _singleInstanceGuard;
