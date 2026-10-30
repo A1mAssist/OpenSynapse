@@ -114,4 +114,86 @@ public sealed class SingleInstanceGuardTests
         guard.Dispose();
         Assert.False(SingleInstanceGuard.IsExistingElevated(name));
     }
+
+    [Fact]
+    public async Task ATakeoverClearsAShutdownRequestTheOldInstanceNeverConsumed()
+    {
+        var name = $@"Local\OpenSynapse.Test.{Guid.NewGuid():N}";
+        Assert.True(SingleInstanceGuard.TryAcquire(name, out var first));
+        Assert.NotNull(first);
+
+        // The old instance never observes shutdown; a stale AutoReset signal must not
+        // make the new instance exit right after it takes over.
+        using var seededShutdown = new EventWaitHandle(
+            false,
+            EventResetMode.AutoReset,
+            $"{name}.Shutdown");
+        seededShutdown.Set();
+
+        var takeover = Task.Run(() =>
+        {
+            var acquired = SingleInstanceGuard.TryAcquire(
+                name,
+                out var second,
+                activateExisting: false,
+                requestExistingShutdown: true,
+                shutdownTimeout: TimeSpan.FromSeconds(5));
+            return (acquired, second);
+        });
+
+        await Task.Delay(100);
+        first!.Dispose();
+        var (acquired, second) = await takeover.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            Assert.True(acquired);
+            Assert.NotNull(second);
+            using var idle = new CancellationTokenSource(TimeSpan.FromMilliseconds(150));
+            Assert.Equal(SingleInstanceSignal.None, second!.WaitForSignal(idle.Token));
+        }
+        finally
+        {
+            second?.Dispose();
+        }
+    }
+
+    [Fact]
+    public void ATakeoverRecoversFromACrashedOwner()
+    {
+        var name = $@"Local\OpenSynapse.Test.{Guid.NewGuid():N}";
+        SingleInstanceGuard? crashed = null;
+        Exception? threadError = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                Assert.True(SingleInstanceGuard.TryAcquire(name, out crashed));
+            }
+            catch (Exception exception)
+            {
+                threadError = exception;
+            }
+        });
+        thread.Start();
+        Assert.True(thread.Join(TimeSpan.FromSeconds(5)));
+        Assert.Null(threadError);
+        Assert.NotNull(crashed);
+
+        var acquired = SingleInstanceGuard.TryAcquire(
+            name,
+            out var recovered,
+            activateExisting: false,
+            requestExistingShutdown: true,
+            shutdownTimeout: TimeSpan.FromSeconds(2));
+        try
+        {
+            Assert.True(acquired);
+            Assert.NotNull(recovered);
+        }
+        finally
+        {
+            recovered?.Dispose();
+            crashed!.Dispose();
+        }
+    }
 }
