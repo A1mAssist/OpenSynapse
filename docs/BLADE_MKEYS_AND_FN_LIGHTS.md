@@ -236,6 +236,10 @@ Set LED Brightness:       [4,3,4]    // 参数 [profile, ledId, 0..255]
 
 仍然没有 02C6 实机证据。下一步是让 02C6 用户在 driver mode 下按 M1-M5（以及 AI、Mic）后回传 `blade-input` 日志；只有日志里确实出现 `0x0A/0x0B/0x03/0xD2/0xD3/0xD4`，才能确认当前 hook 集合下驱动会持续上报 kind=3。
 
+2026-10-30 在 02C6 上读回 DKM 槽表（`--probe-dkm`）为 256 个 0x00。也就是说，
+当前这台机器的 DKM 槽表是空的；M1-M5 的功能不是由已写入的 DKM 槽位驱动的。
+这进一步说明下一步该抓的是 `blade-input` 的 kind=3 帧，而不是先写 DKM 表。
+
 等实机日志和灯光标定结果出来后，再决定是否需要：
 
 1. 为缺失的 RazerKey 帧调整 filter hook / notify；

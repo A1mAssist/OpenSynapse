@@ -1,5 +1,6 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
 using Velopack;
@@ -22,6 +23,11 @@ public static class Program
                     ? "OpenSynapseGpuMode service registration failed: install under Program Files first."
                     : "OpenSynapseGpuMode service registration failed: run the command as administrator.");
             Environment.Exit(ok ? 0 : 1);
+        }
+
+        if (args.Contains("--probe-dkm", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.Exit(ProbeDkmTable());
         }
 
         if (GpuModeServiceHost.TryRun(args))
@@ -78,6 +84,29 @@ public static class Program
                 new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread()));
             new App();
         });
+    }
+
+    private static int ProbeDkmTable()
+    {
+        var productId = RazerFilterEndpointDiscovery.Product710ProductId;
+        var path = RazerFilterEndpointDiscovery.DiscoverAsync(productId)
+            .GetAwaiter()
+            .GetResult();
+        if (path is null)
+        {
+            Console.Error.WriteLine($"RZCONTROL endpoint not found for PID 0x{productId:X4}.");
+            return 2;
+        }
+
+        if (!RazerDkmTableReader.TryRead(path, out var table, out var error))
+        {
+            Console.Error.WriteLine(error);
+            return 3;
+        }
+
+        Console.WriteLine($"pid=0x{productId:X4} bytes={table.Length}");
+        Console.WriteLine(Convert.ToHexString(table));
+        return 0;
     }
 
     private static void MigrateLegacyInstall()
