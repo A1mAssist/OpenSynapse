@@ -2706,6 +2706,7 @@
   <data name="SeirenEmoteStatusApplied/Text" xml:space="preserve"><value>Solid-color frame sent.</value></data>
   <data name="SeirenEmoteStatusCleared/Text" xml:space="preserve"><value>Clear frame sent.</value></data>
   <data name="SeirenEmoteErrorConnect/Text" xml:space="preserve"><value>Could not open the 0F1B matrix endpoint: {0}</value></data>
+  <data name="SeirenEmoteErrorEndpointMissing/Text" xml:space="preserve"><value>The 0F1B matrix interface was not found.</value></data>
   <data name="SeirenEmoteErrorWrite/Text" xml:space="preserve"><value>Matrix write failed: {0}</value></data>
 </root>
 
