@@ -324,6 +324,28 @@ target，不是删除 `RAZER\VKBDDevice` 等虚拟子设备。
 `VBusDevice`、`Mou2Device`、`Kbd2Device` 也在这个函数中读取，但它们的后续用途没有
 完全追完；不要据此推断更多设备类型。
 
+### 4.4 02C6 实测设备树（2026-10-30）
+
+本机（Blade 16 2025，RzDev_02c6 1.0.0.78）的注册表开关是开的：
+
+```
+USB\VID_1532&PID_02C6&MI_01\...\Device Parameters
+  DkmKeyDevice   = 1
+  DkmMouseDevice = 1
+  Virtual_Con_02c6 = 1
+```
+
+但 `Get-PnpDevice` 里只有 `RZVIRTUAL\VID_1532&PID_02C6&MI_00&COL03`
+（consumer control）一个虚拟设备；没有虚拟键盘、虚拟鼠标或虚拟摇杆实例。
+DriverStore 里也只有 `rzdevu_02c6_vcon.inf`，没有 `rzvkeyboard` /
+`rzvmouse` 一类 INF。`Get-PnpDevice` 的未知设备列表里也没有待安装的
+`RZVIRTUAL` 键盘/鼠标节点。
+
+结论：在这台没装雷云的机器上，光写 DKM 槽表不会产生虚拟键盘/鼠标输出；
+虚拟 HID 的键盘/鼠标组件不在当前驱动包里。DKM 写入因此不是“命令号未知”
+一个问题，而是“写完之后没有可用的输出设备”两个问题。先不要实现写入，
+也不要为了验证写入去改注册表或重装驱动。
+
 ## 5. 未确定
 
 1. `0x88883040/44/48` 的 20 字节键字段没有语义名称。只知道 `+0x10` 是查找时比较的
