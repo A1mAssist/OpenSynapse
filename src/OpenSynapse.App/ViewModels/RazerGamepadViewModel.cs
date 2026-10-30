@@ -27,7 +27,6 @@ public sealed class RazerGamepadDeviceRowViewModel : INotifyPropertyChanged
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
     public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
     public string Error => string.Empty;
-
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }
 
@@ -410,6 +409,7 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
             var state = await _service.ReadStateAsync(cancellationToken);
             ApplyState(state);
             await LoadPollingProfileCoreAsync(cancellationToken);
+            await LoadLightingCoreAsync(cancellationToken);
             if (state.ButtonIds.Count > 0)
             {
                 try

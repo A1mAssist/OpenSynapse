@@ -225,6 +225,65 @@ public sealed class RazerGamepadServiceTests
         }
     }
 
+    [Fact]
+    public async Task LightingReadsTheRuntimeRegionAndEffectLists()
+    {
+        var simulator = new GamepadSimulator
+        {
+            ProfileId = 1,
+            ChromaEffectId = 13,
+            ChromaBrightness = 128,
+        };
+        var service = new RazerGamepadService(
+            new FakeTransport(simulator.Handle), "test", TimeSpan.Zero, productId: 0x0A4C);
+        await service.ReadStateAsync();
+
+        var state = await service.ReadLightingAsync();
+
+        var region = Assert.Single(state.Regions);
+        Assert.Equal(4, region.Region.RegionId);
+        Assert.Equal([0, 1, 5, 13], region.EffectIds);
+        Assert.Equal((byte?)13, region.Effect?.EffectId);
+        Assert.Equal((byte?)128, region.Brightness);
+        Assert.Empty(state.Errors);
+    }
+
+    [Fact]
+    public async Task LightingWritesEffectAndBrightnessWithReadback()
+    {
+        var simulator = new GamepadSimulator { ProfileId = 1, ChromaEffectId = 1, ChromaBrightness = 128 };
+        var service = new RazerGamepadService(
+            new FakeTransport(simulator.Handle), "test", TimeSpan.Zero, productId: 0x0A4C);
+        await service.ReadStateAsync();
+
+        await service.SetLightingEffectAsync(
+            4, 13, 0, 0, [new RazerRgb(0x11, 0x22, 0x33)]);
+        await service.SetLightingBrightnessAsync(4, 100);
+
+        Assert.Equal((byte)13, simulator.ChromaEffectId);
+        Assert.Equal([new RazerRgb(0x11, 0x22, 0x33)], simulator.ChromaColors);
+        Assert.Equal((byte)255, simulator.ChromaBrightness);
+    }
+
+    [Theory]
+    [InlineData(0x0A4C, true)]
+    [InlineData(0x1013, true)]
+    [InlineData(0x0A45, false)]
+    [InlineData(0x0A57, false)]
+    public void LightingSupportMatchesTheBundleProductFlags(ushort productId, bool expected) =>
+        Assert.Equal(expected, RazerGamepadService.SupportsLighting(productId));
+
+    [Fact]
+    public async Task PollingWriteRefusesAnUnknownProfileOnAMultiProfileModel()
+    {
+        var simulator = new GamepadSimulator { FailActiveProfileRead = true };
+        var service = new RazerGamepadService(
+            new FakeTransport(simulator.Handle), "test", TimeSpan.Zero, productId: 0x0A4C);
+        await service.ReadStateAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SetPollingRateAsync(500));
+    }
+
     private sealed class FakeTransport(Func<byte[], byte[]> handler) : IRazerFeatureTransport
     {
         public List<byte[]> Requests { get; } = [];
@@ -260,6 +319,12 @@ public sealed class RazerGamepadServiceTests
         public byte[] ProfileIds { get; set; } = [1, 2];
         public byte StandardPollingCode { get; set; } = 0x01;
         public byte HighSpeedPollingCode { get; set; } = 0x01;
+        public byte ChromaEffectId { get; set; } = 1;
+        public byte ChromaFlags { get; set; }
+        public byte ChromaRate { get; set; }
+        public List<RazerRgb> ChromaColors { get; } = [new(0x11, 0x22, 0x33)];
+        public byte ChromaBrightness { get; set; } = 128;
+        public bool FailActiveProfileRead { get; set; }
         public byte SensitivityLeft { get; set; } = 50;
         public byte SensitivityRight { get; set; } = 50;
         public RazerGamepadZones Zones { get; set; } = new(7, 0, 0, false);
@@ -280,13 +345,21 @@ public sealed class RazerGamepadServiceTests
             var command = request[8];
             return (commandClass, command) switch
             {
-                (0x05, 0x84) => Response(request, 1, ProfileId),
+                (0x05, 0x84) => FailActiveProfileRead
+                    ? throw new IOException("No active profile.")
+                    : Response(request, 1, ProfileId),
                 (0x05, 0x81) => Response(request, 0x50, [(byte)ProfileIds.Length, .. ProfileIds]),
                 (0x05, 0x04) => WriteActiveProfile(request),
                 (0x00, 0x8E) => Response(request, 2, request[9], StandardPollingCode),
                 (0x00, 0x0E) => WritePollingCode(request, highSpeed: false),
                 (0x00, 0xC0) => Response(request, 2, request[9], HighSpeedPollingCode),
                 (0x00, 0x40) => WritePollingCode(request, highSpeed: true),
+                (0x0F, 0x80) => Response(request, 5, 4, 10, 3, 0, 0),
+                (0x0F, 0x81) => Response(request, 5, 4, 0, 1, 5, 13),
+                (0x0F, 0x82) => Response(request, 9, ChromaEffect()),
+                (0x0F, 0x02) => WriteChromaEffect(request),
+                (0x0F, 0x84) => Response(request, 3, request[9], request[10], ChromaBrightness),
+                (0x0F, 0x04) => WriteChromaBrightness(request),
                 (0x0C, 0x80) => Response(request, 3, 2, 1, 2),
                 (0x02, 0x84) => Response(request, 3, [(byte)ButtonIds.Length, .. ButtonIds]),
                 (0x02, 0x8C) => Response(
@@ -338,6 +411,34 @@ public sealed class RazerGamepadServiceTests
             else StandardPollingCode = request[10];
             return Response(request, 2, request[9], request[10]);
         }
+
+        private byte[] ChromaEffect() =>
+            [requestProfile(), 4, ChromaEffectId, ChromaFlags, ChromaRate, (byte)ChromaColors.Count,
+                .. ChromaColors.SelectMany(color => new[] { color.Red, color.Green, color.Blue })];
+
+        private byte[] WriteChromaEffect(byte[] request)
+        {
+            ChromaEffectId = request[11];
+            ChromaFlags = request[12];
+            ChromaRate = request[13];
+            var count = request[14];
+            ChromaColors.Clear();
+            for (var index = 0; index < count; index++)
+            {
+                var offset = 15 + index * 3;
+                ChromaColors.Add(new RazerRgb(request[offset], request[offset + 1], request[offset + 2]));
+            }
+
+            return Response(request, (byte)(6 + count * 3), ChromaEffect());
+        }
+
+        private byte[] WriteChromaBrightness(byte[] request)
+        {
+            ChromaBrightness = request[11];
+            return Response(request, 3, request[9], request[10], ChromaBrightness);
+        }
+
+        private byte requestProfile() => 1;
 
         private byte Sensitivity(byte controlId) => controlId == 1 ? SensitivityLeft : SensitivityRight;
 

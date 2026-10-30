@@ -2461,6 +2461,13 @@
   <data name="RazerGamepadMappingRefresh.Content" xml:space="preserve"><value>Refresh</value></data>
   <data name="RazerGamepadAssignmentAction.Header" xml:space="preserve"><value>Action</value></data>
   <data name="RazerGamepadAssignmentApply.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="RazerGamepadLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
+  <data name="RazerGamepadLightingRegion.Header" xml:space="preserve"><value>Region</value></data>
+  <data name="RazerGamepadLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
+  <data name="RazerGamepadLightingSpeed.Header" xml:space="preserve"><value>Reactive duration</value></data>
+  <data name="RazerGamepadLightingBrightness.Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="RazerGamepadLightingApply.Content" xml:space="preserve"><value>Apply lighting</value></data>
+  <data name="RazerGamepadLightingEffectStaticExtended" xml:space="preserve"><value>Static (extended)</value></data>
   <data name="RazerGamepadAssignmentKeep" xml:space="preserve"><value>Keep current</value></data>
   <data name="RazerGamepadAssignmentOff" xml:space="preserve"><value>Off</value></data>
   <data name="RazerGamepadAssignmentControllerA" xml:space="preserve"><value>Controller A</value></data>

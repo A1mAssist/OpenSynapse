@@ -241,10 +241,14 @@ void 0===this.claimInterface&&(this.claimInterface=0);
 
 设备层 `RazerGamepadService` 已按 9 个 PID 发现设备，读活动 profile、整个 `0C` 表和 `02:80` 按键列表；
 `ReadButtonAssignmentsAsync` 可按 Normal/Hypershift 逐个读取 `02:8C`。写入做读回校验，失败时恢复旧值。
-页面层已加入 `DeviceCategory.Gamepad`、Gamepad 面板和概览卡片；缺项自动折叠。
+`RazerGamepadService.PollingProfile.cs` 已覆盖两套轮询率读写、Profile 列表和切换；0A57/0A74/0A7C 使用
+report id 10，活动 profile 读取失败时不会在多 Profile 型号上猜测 profile 1。
+`RazerGamepadService.Lighting.cs` 已按运行时 `0F:80/81/82/02/84/04` 探测区域、效果和亮度，只对 bundle
+声明 `supportsLighting:true` 的 0A4C / 1013 开放。页面层已加入 `DeviceCategory.Gamepad`、Gamepad 面板、
+连接设置和灯效卡；缺项自动折叠。
 
-**仍缺**：实机 HID 描述符验证；按键映射的写入 UI（协议、功能编码和写读回已就绪）；
-板载 profile 页面。
+**仍缺**：实机 HID 描述符验证；1013 的矩阵行列与逐帧显示方向；0A4C/1013 灯效写入的实机接受度；
+9 个 PID 的完整轮询档位 UI 子集仍需抓包或实机确认。
 
 ## 6. 功能编码（2026-10-28）
 

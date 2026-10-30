@@ -18,6 +18,9 @@ public sealed partial class RazerGamepadService
 
     public static bool SupportsProfileSwitch(ushort productId) => productId != 0x1013;
 
+    public static bool SupportsSingleProfile(ushort productId) => productId is
+        0x0A45 or 0x0A57 or 0x0A5A or 0x0A74 or 0x0A7C or 0x1025 or 0x1030 or 0x1013;
+
     public async Task<RazerGamepadPollingProfileState> ReadPollingProfileAsync(
         CancellationToken cancellationToken = default)
     {
@@ -51,26 +54,32 @@ public sealed partial class RazerGamepadService
         }
 
         int? polling = null;
-        try
+        if (PollingProfileId is not byte profile)
         {
-            var profile = PollingProfileId;
-            var highSpeed = UsesHighSpeedPolling(_productId);
-            var code = RazerGamepadProtocol.ReadPollingCode(
-                await QueryAsync(
-                    transaction => highSpeed
-                        ? RazerGamepadProtocol.CreateGetHighSpeedPollingRateRequest(transaction, profile)
-                        : RazerGamepadProtocol.CreateGetProfilePollingRateRequest(transaction, profile),
-                    "read polling rate",
-                    cancellationToken).ConfigureAwait(false),
-                profile);
-            polling = highSpeed
-                ? RazerGamepadProtocol.DecodeHighSpeedPollingRate(code)
-                : RazerGamepadProtocol.DecodeStandardPollingRate(code);
+            errors.Add("active profile");
         }
-        catch (Exception exception) when (IsExpected(exception))
+        else
         {
-            errors.Add("polling rate");
-            _diagnostic?.Invoke($"gamepad polling rate unavailable: {exception.Message}");
+            try
+            {
+                var highSpeed = UsesHighSpeedPolling(_productId);
+                var code = RazerGamepadProtocol.ReadPollingCode(
+                    await QueryAsync(
+                        transaction => highSpeed
+                            ? RazerGamepadProtocol.CreateGetHighSpeedPollingRateRequest(transaction, profile)
+                            : RazerGamepadProtocol.CreateGetProfilePollingRateRequest(transaction, profile),
+                        "read polling rate",
+                        cancellationToken).ConfigureAwait(false),
+                    profile);
+                polling = highSpeed
+                    ? RazerGamepadProtocol.DecodeHighSpeedPollingRate(code)
+                    : RazerGamepadProtocol.DecodeStandardPollingRate(code);
+            }
+            catch (Exception exception) when (IsExpected(exception))
+            {
+                errors.Add("polling rate");
+                _diagnostic?.Invoke($"gamepad polling rate unavailable: {exception.Message}");
+            }
         }
 
         return new RazerGamepadPollingProfileState(
@@ -88,7 +97,11 @@ public sealed partial class RazerGamepadService
             throw new ArgumentOutOfRangeException(nameof(hertz), "Polling rate is not declared for this gamepad.");
         }
 
-        var profile = PollingProfileId;
+        if (PollingProfileId is not byte profile)
+        {
+            throw new InvalidOperationException(
+                "The active gamepad profile is unknown; refusing to write a polling rate.");
+        }
         var current = await QueryAsync(
             transaction => highSpeed
                 ? RazerGamepadProtocol.CreateGetHighSpeedPollingRateRequest(transaction, profile)
@@ -188,5 +201,25 @@ public sealed partial class RazerGamepadService
     private static bool UsesHighSpeedPolling(ushort productId) => productId is
         0x0A57 or 0x0A5A or 0x0A74 or 0x0A7C or 0x1025 or 0x1030 or 0x1013;
 
-    private byte PollingProfileId => _profileId == 0 ? (byte)1 : _profileId;
+    public async Task<int> ReadPollingRateForProfileAsync(
+        byte profileId,
+        CancellationToken cancellationToken = default)
+    {
+        var highSpeed = UsesHighSpeedPolling(_productId);
+        var code = RazerGamepadProtocol.ReadPollingCode(
+            await QueryAsync(
+                transaction => highSpeed
+                    ? RazerGamepadProtocol.CreateGetHighSpeedPollingRateRequest(transaction, profileId)
+                    : RazerGamepadProtocol.CreateGetProfilePollingRateRequest(transaction, profileId),
+                "read polling rate",
+                cancellationToken).ConfigureAwait(false),
+            profileId);
+        return highSpeed
+            ? RazerGamepadProtocol.DecodeHighSpeedPollingRate(code)
+            : RazerGamepadProtocol.DecodeStandardPollingRate(code);
+    }
+
+    private byte? PollingProfileId => _profileId != 0
+        ? _profileId
+        : SupportsSingleProfile(_productId) ? (byte)1 : null;
 }

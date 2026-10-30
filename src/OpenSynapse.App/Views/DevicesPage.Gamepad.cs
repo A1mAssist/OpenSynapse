@@ -29,6 +29,16 @@ public sealed partial class DevicesPage : UserControl
         await (ViewModel.SelectedGamepad?.ApplyPollingProfileAsync(Lifetime) ?? Task.CompletedTask);
     }
 
+    private async void GamepadProfileSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        await (ViewModel.SelectedGamepad?.LoadPollingForSelectedProfileAsync(Lifetime) ?? Task.CompletedTask);
+    }
+
+    private async void GamepadApplyLightingClick(object sender, RoutedEventArgs e)
+    {
+        await (ViewModel.SelectedGamepad?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
+    }
+
     private async void GamepadApplyButtonAssignmentClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: RazerGamepadButtonAssignmentRowViewModel row })
