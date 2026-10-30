@@ -3574,6 +3574,8 @@
 
 设备：`0F43` RAZER LAPTOP COOLING PAD
 
+> 这张 P33 生成表不是 0F43 的运行时路径。0F43 的默认 profile 选择 `rzDevice25`，应用使用 `0D:01/10/81/83/90` 风扇命令和旧版 `0F:02/03/04/80/82/84` Chroma；不要把 `16:*` 套到该设备。
+
 | class:cmd | dataSize | 命令 |
 |---|---:|---|
 | `07:162` | 0 | Exit Dim Status |
