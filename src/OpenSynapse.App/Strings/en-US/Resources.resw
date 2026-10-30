@@ -2585,6 +2585,9 @@
   <data name="CoolingPadFixedHigh/Text" xml:space="preserve"><value>High</value></data>
   <data name="CoolingPadLightingTitle/Text" xml:space="preserve"><value>Lighting</value></data>
   <data name="CoolingPadLightingDescription/Text" xml:space="preserve"><value>Regions and effects come from the device; this card stays hidden when it does not answer.</value></data>
+  <data name="CoolingPadStarlightColorMode.Header" xml:space="preserve"><value>Color mode</value></data>
+  <data name="CoolingPadStarlightSpeed.Header" xml:space="preserve"><value>Speed</value></data>
+  <data name="CoolingPadLightingSecondColor/Text" xml:space="preserve"><value>Color 2</value></data>
   <data name="CoolingPadLightingEffectHeader/Header" xml:space="preserve"><value>Effect</value></data>
   <data name="CoolingPadLightingApplyButton/Content" xml:space="preserve"><value>Apply lighting</value></data>
   <data name="CoolingPadFixedModeCurrent/Text" xml:space="preserve"><value>Current {0}, {1} RPM</value></data>

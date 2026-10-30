@@ -346,6 +346,58 @@ public sealed class RazerCoolingPadProtocolTests
         Assert.Equal(expected, RazerCoolingPadProtocol.LightingRateFor(effectId));
     }
 
+    [Theory]
+    [InlineData(false, false, 1)]
+    [InlineData(false, true, 2)]
+    [InlineData(true, false, 0)]
+    [InlineData(true, true, 0)]
+    public void LightingFlagsForStarlight_UsesTheBundleTriState(
+        bool random,
+        bool dualColor,
+        byte expected)
+    {
+        Assert.Equal(expected, RazerCoolingPadProtocol.LightingFlagsForStarlight(random, dualColor));
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(2, 2)]
+    [InlineData(3, 3)]
+    public void LightingRateForStarlight_UsesTheBundleDuration(int duration, byte expected)
+    {
+        Assert.Equal(expected, RazerCoolingPadProtocol.LightingRateForStarlight(duration));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(4)]
+    public void LightingRateForStarlight_RejectsUnverifiedDurations(int duration)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => RazerCoolingPadProtocol.LightingRateForStarlight(duration));
+    }
+
+    [Fact]
+    public void SetLightingEffect_StarlightUsesRandomSingleAndDualLayouts()
+    {
+        var random = RazerCoolingPadProtocol.CreateSetLightingEffectRequest(0x07, 0x07, 0x00, 0x02, []);
+        var single = RazerCoolingPadProtocol.CreateSetLightingEffectRequest(
+            0x07, 0x07, 0x01, 0x02, [0x00, 0xFF, 0x00]);
+        var dual = RazerCoolingPadProtocol.CreateSetLightingEffectRequest(
+            0x07, 0x07, 0x02, 0x02, [0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF]);
+
+        Assert.Equal(new byte[] { 0x00, 0x07, 0x07, 0x00, 0x02, 0x00 }, random[9..15].ToArray());
+        Assert.Equal(6, random[6]);
+        Assert.Equal(
+            new byte[] { 0x00, 0x07, 0x07, 0x01, 0x02, 0x01, 0x00, 0xFF, 0x00 },
+            single[9..18].ToArray());
+        Assert.Equal(9, single[6]);
+        Assert.Equal(
+            new byte[] { 0x00, 0x07, 0x07, 0x02, 0x02, 0x02, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF },
+            dual[9..21].ToArray());
+        Assert.Equal(12, dual[6]);
+    }
+
     [Fact]
     public void ParseLightingBrightness_RoundsUpToPercent()
     {
