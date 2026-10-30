@@ -119,6 +119,38 @@ public sealed class RazerCoolingPadServiceTests
     }
 
     [Fact]
+    public async Task SetSmartMode_WritesSourceZeroAndReadsBack()
+    {
+        var pad = new CoolingPadSimulator();
+        var service = CreateService(pad);
+
+        var actual = await service.SetSmartModeAsync(RazerCoolingPadSmartMode.Balanced);
+
+        Assert.Equal((byte)4, actual.ModeId);
+        var write = Assert.Single(pad.Transport.Requests, request => request[7] == 0x0D && request[8] == 0x10);
+        Assert.Equal(new byte[] { 0, 4, 0 }, write[9..12].ToArray());
+        Assert.Equal((byte)4, pad.CoolingModeId);
+    }
+
+    [Fact]
+    public async Task SetFixedMode_OffRestoresThePreviousModeWhenTheReadbackDoesNotMatch()
+    {
+        var pad = new CoolingPadSimulator { IgnoreCoolingModeWrites = true };
+        var service = CreateService(pad);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.SetFixedModeAsync(RazerCoolingPadFixedMode.Off));
+
+        Assert.Contains("fixed mode Off", exception.Message, StringComparison.OrdinalIgnoreCase);
+        var writes = pad.Transport.Requests
+            .Where(request => request[7] == 0x0D && request[8] == 0x10)
+            .ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal(new byte[] { 0, 6, 0 }, writes[0][9..12].ToArray());
+        Assert.Equal(new byte[] { 1, 1, 44 }, writes[1][9..12].ToArray());
+    }
+
+    [Fact]
     public async Task SetCurveSpeed_WritesThePerformanceCeilingAndReadsBack()
     {
         var pad = new CoolingPadSimulator { SpeedUnits = 24 };

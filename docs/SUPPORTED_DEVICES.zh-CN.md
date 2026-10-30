@@ -466,7 +466,7 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Handheld Dock Chroma | `1532:0F5C` | 仅灯光 |
 | Razer Head Cushion Chroma | `1532:0F36` | 仅灯光 |
 | Razer Key Light Chroma | `1532:030C` | 仅灯光 |
-| Razer Laptop Cooling Pad | `1532:0F43` | 独立风扇页：当前/目标转速与回读、固定低/中/高档、静音/平衡/性能智能曲线、灯光；仍用于 HyperBoost 在位检测 |
+| Razer Laptop Cooling Pad | `1532:0F43` | 独立风扇页：当前/目标转速与回读、固定低/中/高/关闭档、静音/平衡/性能智能曲线、灯光 |
 | Razer Laptop Monitor Stand Chroma | `1532:0F5A` | 仅灯光 |
 | Razer Laptop Stand Chroma | `1532:0F0D` | — |
 | Razer Laptop Stand Chroma V2 | `1532:0F2B` | — |

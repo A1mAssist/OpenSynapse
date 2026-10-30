@@ -2986,7 +2986,7 @@
   <data name="CoolingPadTargetLabel/Text" xml:space="preserve"><value>目标转速</value></data>
   <data name="CoolingPadRefreshButton/Content" xml:space="preserve"><value>刷新</value></data>
   <data name="CoolingPadApplyButton/Content" xml:space="preserve"><value>应用</value></data>  <data name="CoolingPadFixedModeTitle/Text" xml:space="preserve"><value>固定档</value></data>
-  <data name="CoolingPadFixedModeDescription/Text" xml:space="preserve"><value>低、中、高是设备固件固定的三档；写入后会回读确认。</value></data>
+  <data name="CoolingPadFixedModeDescription/Text" xml:space="preserve"><value>低、中、高和关闭都由设备固件执行；写入后会回读确认。</value></data>
   <data name="CoolingPadFixedModeLabel/Header" xml:space="preserve"><value>档位</value></data>
   <data name="CoolingPadFixedModeApplyButton/Content" xml:space="preserve"><value>应用档位</value></data>
   <data name="CoolingPadFixedModeStatus/Text" xml:space="preserve"><value>已切换到{0}，回读 {1} RPM</value></data>

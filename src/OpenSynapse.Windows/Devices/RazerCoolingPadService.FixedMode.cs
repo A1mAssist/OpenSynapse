@@ -4,7 +4,7 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerCoolingPadService
 {
-    /// <summary>Reads 0D:90; mode 0/1/2 are the fixed presets, 3/4/5 are the smart curves.</summary>
+    /// <summary>Reads 0D:90; mode 0/1/2 are fixed, 3/4/5 are smart curves, 6 is off.</summary>
     public async Task<RazerCoolingPadCoolingMode> ReadCoolingModeAsync(
         CancellationToken cancellationToken = default)
     {
@@ -23,12 +23,30 @@ public sealed partial class RazerCoolingPadService
         }
     }
 
-    public async Task<RazerCoolingPadCoolingMode> SetFixedModeAsync(
+    public Task<RazerCoolingPadCoolingMode> SetFixedModeAsync(
         RazerCoolingPadFixedMode mode,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        SetCoolingModeCoreAsync(
+            (byte)mode,
+            mode == RazerCoolingPadFixedMode.Off ? (byte)0 : (byte)1,
+            RazerCoolingPadProtocol.UnitsFor(mode),
+            $"fixed mode {mode}",
+            cancellationToken);
+
+    public Task<RazerCoolingPadCoolingMode> SetSmartModeAsync(
+        RazerCoolingPadSmartMode mode,
+        CancellationToken cancellationToken = default) =>
+        SetCoolingModeCoreAsync((byte)mode, 0, 0, $"smart mode {mode}", cancellationToken);
+
+    private async Task<RazerCoolingPadCoolingMode> SetCoolingModeCoreAsync(
+        byte modeId,
+        byte source,
+        byte speedUnits,
+        string label,
+        CancellationToken cancellationToken)
     {
-        // Validate the preset before touching the device.
-        _ = RazerCoolingPadProtocol.CreateSetCoolingModeRequest(mode);
+        // Validate the frame before reading the device.
+        _ = RazerCoolingPadProtocol.CreateSetCoolingModeRequest(modeId, source, speedUnits);
         RazerCoolingPadCoolingMode? original = null;
         try
         {
@@ -39,50 +57,48 @@ public sealed partial class RazerCoolingPadService
             catch (Exception exception) when (IsExpected(exception))
             {
                 _diagnostic?.Invoke(
-                    $"cooling pad fixed mode: original state unavailable ({exception.Message})");
+                    $"cooling pad {label}: original state unavailable ({exception.Message})");
             }
 
             await QueryAsync(
-                RazerCoolingPadProtocol.CreateSetCoolingModeRequest(mode),
-                "set fixed mode",
+                RazerCoolingPadProtocol.CreateSetCoolingModeRequest(modeId, source, speedUnits),
+                label,
                 cancellationToken).ConfigureAwait(false);
             var actual = await ReadCoolingModeAsync(cancellationToken).ConfigureAwait(false);
-            if (actual.ModeId != (byte)mode ||
-                actual.SpeedUnits != RazerCoolingPadProtocol.UnitsFor(mode))
+            if (actual.ModeId != modeId || actual.SpeedUnits != speedUnits)
             {
                 throw new InvalidOperationException(
-                    $"Cooling pad fixed-mode readback mismatch: wrote {mode}, " +
+                    $"Cooling pad {label} readback mismatch: wrote mode {modeId}/{speedUnits} units, " +
                     $"read mode {actual.ModeId}/{actual.SpeedUnits} units.");
             }
 
-            _diagnostic?.Invoke($"cooling pad fixed mode set to {mode} ({actual.Rpm} RPM)");
+            _diagnostic?.Invoke($"cooling pad {label} set (readback {actual.ModeId}/{actual.Rpm} RPM)");
             return actual;
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            // Only a fixed preset can be restored; the smart curves and off have no
-            // 0D:10 payload this app has evidence for.
-            if (original is { ModeId: <= 2 })
+            if (original is { } restore &&
+                (restore.ModeId != modeId || restore.Source != source || restore.SpeedUnits != speedUnits))
             {
                 try
                 {
                     await QueryAsync(
                         RazerCoolingPadProtocol.CreateSetCoolingModeRequest(
-                            (RazerCoolingPadFixedMode)original.Value.ModeId),
-                        "restore fixed mode",
+                            restore.ModeId, restore.Source, restore.SpeedUnits),
+                        "restore cooling mode",
                         CancellationToken.None).ConfigureAwait(false);
                     _diagnostic?.Invoke(
-                        $"cooling pad fixed mode restored to {(RazerCoolingPadFixedMode)original.Value.ModeId} after a failed update");
+                        $"cooling pad {label} restored mode {restore.ModeId}/{restore.SpeedUnits} units after a failed update");
                 }
                 catch (Exception restoreException) when (IsExpected(restoreException))
                 {
                     _diagnostic?.Invoke(
-                        $"cooling pad fixed mode restore failed: {restoreException.Message}");
+                        $"cooling pad {label} restore failed: {restoreException.Message}");
                 }
             }
 
             throw new InvalidOperationException(
-                $"Cooling pad fixed-mode update failed: {exception.Message}", exception);
+                $"Cooling pad {label} update failed: {exception.Message}", exception);
         }
     }
 }

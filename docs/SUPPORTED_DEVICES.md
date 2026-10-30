@@ -466,7 +466,7 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Handheld Dock Chroma | `1532:0F5C` | Lighting only |
 | Razer Head Cushion Chroma | `1532:0F36` | Lighting only |
 | Razer Key Light Chroma | `1532:030C` | Lighting only |
-| Razer Laptop Cooling Pad | `1532:0F43` | Standalone fan page: current/target RPM with read-back, fixed low/mid/high presets, smart quiet/balanced/performance curves, and lighting; still gates HyperBoost |
+| Razer Laptop Cooling Pad | `1532:0F43` | Standalone fan page: current/target RPM with read-back, fixed low/mid/high/off presets, smart quiet/balanced/performance curves, and lighting |
 | Razer Laptop Monitor Stand Chroma | `1532:0F5A` | Lighting only |
 | Razer Laptop Stand Chroma | `1532:0F0D` | — |
 | Razer Laptop Stand Chroma V2 | `1532:0F2B` | — |

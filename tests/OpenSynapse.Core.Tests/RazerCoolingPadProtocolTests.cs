@@ -175,6 +175,33 @@ public sealed class RazerCoolingPadProtocolTests
     }
 
     [Fact]
+    public void SetCoolingMode_OffUsesTheFirmwareSourceAndZeroSpeed()
+    {
+        var report = RazerCoolingPadProtocol.CreateSetCoolingModeRequest(RazerCoolingPadFixedMode.Off);
+
+        Assert.Equal(new byte[] { 0x00, 0x06, 0x00 }, report[9..12].ToArray());
+        Assert.Equal(0, RazerCoolingPadProtocol.RpmFor(RazerCoolingPadFixedMode.Off));
+        Assert.Equal(RazerFeatureReport.CalculateCrc(report), report[89]);
+    }
+
+    [Theory]
+    [InlineData(RazerCoolingPadSmartMode.Quiet, 3)]
+    [InlineData(RazerCoolingPadSmartMode.Balanced, 4)]
+    [InlineData(RazerCoolingPadSmartMode.Performance, 5)]
+    public void SetSmartMode_WritesTheBundleModeWithoutSpeed(
+        RazerCoolingPadSmartMode mode,
+        byte expectedMode)
+    {
+        var report = RazerCoolingPadProtocol.CreateSetSmartModeRequest(mode);
+
+        Assert.Equal(0x03, report[6]);
+        Assert.Equal(0x0D, report[7]);
+        Assert.Equal(0x10, report[8]);
+        Assert.Equal(new byte[] { 0x00, expectedMode, 0x00 }, report[9..12].ToArray());
+        Assert.Equal(RazerFeatureReport.CalculateCrc(report), report[89]);
+    }
+
+    [Fact]
     public void ParseCoolingMode_ReadsSourceModeAndRawUnits()
     {
         var response = Response(3, 0x0D, 0x90, [0x01, 0x02, 54]);
