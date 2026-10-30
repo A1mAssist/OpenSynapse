@@ -742,7 +742,6 @@ public static partial class RazerGamepadProtocol
 
     private static ushort ReadUInt16(ReadOnlySpan<byte> data, int offset) =>
         (ushort)((data[offset] << 8) | data[offset + 1]);
-
     private static byte[] Create(
         byte transactionId,
         byte dataSize,
