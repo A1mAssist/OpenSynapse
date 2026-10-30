@@ -14,10 +14,11 @@ public sealed record RazerMixer053EState(
 
 /// <summary>
 /// Safe 053E HID subset: firmware, serial, device mode, brightness, channel mute and
-/// microphone mute. Faders, routing, EQ, peak reads and the native mixer DLL are absent.
+/// microphone mute. The optional native provider adds read-only device/peak probes;
+/// routing, EQ writes and faders remain HID-absent until separately implemented.
 /// The frame layouts are bundle-aligned; no live 053E hardware was available to verify them.
 /// </summary>
-public sealed class RazerMixer053EService : IAsyncDisposable
+public sealed partial class RazerMixer053EService : IAsyncDisposable
 {
     private static readonly TimeSpan ReadbackDelay = TimeSpan.FromMilliseconds(20);
     private static readonly TimeSpan BrightnessFrameDelay = TimeSpan.FromMilliseconds(5);
@@ -25,20 +26,33 @@ public sealed class RazerMixer053EService : IAsyncDisposable
 
     private readonly IRazerMixer053ETransport _transport;
     private readonly Action<string>? _diagnostic;
+    private readonly RazerMixer053ENative? _native;
     private readonly SemaphoreSlim _connectGate = new(1, 1);
     private int _connected;
 
     public RazerMixer053EService(string devicePath, Action<string>? diagnostic = null)
-        : this(new RazerMixer053ETransport(devicePath), diagnostic)
+        : this(
+            new RazerMixer053ETransport(devicePath),
+            diagnostic,
+            RazerMixer053ENative.Load(diagnostic))
     {
     }
 
     internal RazerMixer053EService(
         IRazerMixer053ETransport transport,
         Action<string>? diagnostic = null)
+        : this(transport, diagnostic, native: null)
+    {
+    }
+
+    internal RazerMixer053EService(
+        IRazerMixer053ETransport transport,
+        Action<string>? diagnostic,
+        RazerMixer053ENative? native)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _diagnostic = diagnostic;
+        _native = native;
     }
 
     public static bool IsSupported(ushort productId) =>
@@ -572,6 +586,7 @@ public sealed class RazerMixer053EService : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _native?.Dispose();
         _connectGate.Dispose();
         await _transport.DisposeAsync().ConfigureAwait(false);
     }
