@@ -683,8 +683,8 @@ public partial class App : Application
                     input => _bladeLightingController?.ObserveMappingInput(input),
                     _audioMuteViewModel?.Blade.ActiveMappingPreset ??
                         OpenSynapse.Core.Profiles.BladeProfileSettings.Product710DefaultMappingPreset,
-                    _audioMuteViewModel?.Blade.ActiveSnapTapEnabled == true,
-                    enabled => PersistBladeSnapTap(enabled, generation));
+                    _audioMuteViewModel?.Blade.ActiveSnapTapEnabled == true, enabled => PersistBladeSnapTap(enabled, generation),
+                    message => _diagnosticLog.TryWrite("blade-input", message));
                 await fnRuntime.StartAsync().ConfigureAwait(false);
                 if (generation == Volatile.Read(ref _audioMuteGeneration))
                 {
