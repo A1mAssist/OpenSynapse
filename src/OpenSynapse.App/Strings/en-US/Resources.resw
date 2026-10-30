@@ -2704,18 +2704,6 @@
   <data name="RazerMixer053EApplyBrightness/Content" xml:space="preserve"><value>Apply brightness</value></data>
   <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>Audio Mixer HID path unavailable</value></data>
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>Written and read back</value></data>
-  <data name="SeirenEmoteTitle/Text" xml:space="preserve"><value>8×8 matrix</value></data>
-  <data name="SeirenEmoteDescription/Text" xml:space="preserve"><value>Click a cell to paint it, then send the 8×8 frame. The protocol sends four 16-pixel rows and a latch.</value></data>
-  <data name="SeirenEmoteColor/Text" xml:space="preserve"><value>Brush color</value></data>
-  <data name="SeirenEmoteClear/Content" xml:space="preserve"><value>Clear</value></data>
-  <data name="SeirenEmoteFill/Content" xml:space="preserve"><value>Fill</value></data>
-  <data name="SeirenEmoteApply/Content" xml:space="preserve"><value>Send frame</value></data>
-  <data name="SeirenEmoteStatusConnected/Text" xml:space="preserve"><value>8×8 matrix endpoint connected.</value></data>
-  <data name="SeirenEmoteStatusApplied/Text" xml:space="preserve"><value>Solid-color frame sent.</value></data>
-  <data name="SeirenEmoteStatusCleared/Text" xml:space="preserve"><value>Clear frame sent.</value></data>
-  <data name="SeirenEmoteErrorConnect/Text" xml:space="preserve"><value>Could not open the 0F1B matrix endpoint: {0}</value></data>
-  <data name="SeirenEmoteErrorEndpointMissing/Text" xml:space="preserve"><value>The 0F1B matrix interface was not found.</value></data>
-  <data name="SeirenEmoteErrorWrite/Text" xml:space="preserve"><value>Matrix write failed: {0}</value></data>
 </root>
 
 

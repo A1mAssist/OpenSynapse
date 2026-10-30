@@ -239,7 +239,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             Mixer053E = new RazerMixer053EViewModel(connection.DevicePath, diagnostic);
         }
 
-        InitializeSeirenEmote();
         if (ThxHeadsetAdmission.IsSupported(connection.ProductId))
         {
             _thxStatus = ThxHeadsetAdmission.Check(connection.ProductId);
@@ -822,7 +821,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
         if (!cancellationToken.IsCancellationRequested)
         {
-            await LoadSeirenEmoteAsync(cancellationToken).ConfigureAwait(false);
             await RefreshThxAsync(cancellationToken);
         }
     }
@@ -1344,7 +1342,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             await mixer053E.DisposeAsync();
         }
 
-        await DisposeSeirenEmoteAsync().ConfigureAwait(false);
     }
 
     private RazerHeadsetAudioService OpenService() =>

@@ -388,7 +388,7 @@ Leviathan V2 X（`054A`）覆盖 edition ID 0（标准版）、128（Pikachu）�
 
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Seiren Emote | `1532:0F1B` | 音频页，以及 8×8 逐像素画布、填充和清屏（4×16 像素行 + latch） |
+| Razer Seiren Emote | `1532:0F1B` | 音频页；0F1B bundle 没有帧命令，因此不开放 8×8 点阵 |
 | Razer Seiren V2 Pro | `1532:0542` | 音频页 |
 | Razer Seiren V2 X | `1532:0543` | 音频页 |
 | Razer Seiren V3 Mini | `1532:056A` | 音频页 |
