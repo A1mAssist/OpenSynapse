@@ -19,6 +19,8 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
     private RazerKiyoValue? _contrast;
     private RazerKiyoValue? _saturation;
     private RazerKiyoValue? _whiteBalance;
+    private RazerKiyoValue? _focus;
+    private RazerKiyoValue? _zoom;
     private bool _isBusy;
     private bool _whiteBalanceAuto;
     private string _firmwareText = "--";
@@ -53,10 +55,9 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
     public string BrightnessText => FormatValue(_brightness);
     public string ContrastText => FormatValue(_contrast);
     public string SaturationText => FormatValue(_saturation);
-    public string WhiteBalanceText => _whiteBalance is { } value
-        ? $"{value.Value.ToString(CultureInfo.InvariantCulture)}" +
-          (value.IsAuto ? $" ({AppStrings.Text("KiyoAuto")})" : string.Empty)
-        : "--";
+    public string WhiteBalanceText => FormatAutoValue(_whiteBalance);
+    public string FocusText => FormatAutoValue(_focus);
+    public string ZoomText => FormatAutoValue(_zoom);
 
     public bool IsBusy
     {
@@ -203,6 +204,8 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
         _contrast = snapshot.Contrast;
         _saturation = snapshot.Saturation;
         _whiteBalance = snapshot.WhiteBalance;
+        _focus = snapshot.Focus;
+        _zoom = snapshot.Zoom;
         _whiteBalanceAuto = snapshot.WhiteBalance?.IsAuto ?? false;
         _firmwareText = string.IsNullOrWhiteSpace(snapshot.FirmwareVersion) ? "--" : snapshot.FirmwareVersion;
         _serialText = string.IsNullOrWhiteSpace(snapshot.SerialNumber) ? "--" : snapshot.SerialNumber;
@@ -216,12 +219,20 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(ContrastText));
         OnPropertyChanged(nameof(SaturationText));
         OnPropertyChanged(nameof(WhiteBalanceText));
+        OnPropertyChanged(nameof(FocusText));
+        OnPropertyChanged(nameof(ZoomText));
         OnPropertyChanged(nameof(IsWhiteBalanceAuto));
         OnPropertyChanged(nameof(CanApplyWhiteBalance));
     }
 
     private static string FormatValue(RazerKiyoValue? value) =>
         value is { } reading ? reading.Value.ToString(CultureInfo.InvariantCulture) : "--";
+
+    private static string FormatAutoValue(RazerKiyoValue? value) =>
+        value is { } reading
+            ? reading.Value.ToString(CultureInfo.InvariantCulture) +
+              (reading.IsAuto ? $" ({AppStrings.Text("KiyoAuto")})" : string.Empty)
+            : "--";
 
     private void SetError(string error)
     {

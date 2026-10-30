@@ -12,6 +12,8 @@ public sealed record RazerKiyoSnapshot(
     RazerKiyoValue? Contrast,
     RazerKiyoValue? Saturation,
     RazerKiyoValue? WhiteBalance,
+    RazerKiyoValue? Focus,
+    RazerKiyoValue? Zoom,
     string FirmwareVersion,
     string SerialNumber);
 
@@ -359,6 +361,12 @@ public sealed class RazerKiyoService : IDisposable
                 : null,
             api.HasFlag(RazerKiyoApi.ReadWhiteBalance)
                 ? RazerKiyoJson.ParseValue(_native.GetWhiteBalance(_containerId))
+                : null,
+            api.HasFlag(RazerKiyoApi.ReadCameraFocus)
+                ? RazerKiyoJson.ParseValue(_native.GetCameraFocus(_containerId))
+                : null,
+            api.HasFlag(RazerKiyoApi.ReadCameraZoom)
+                ? RazerKiyoJson.ParseValue(_native.GetCameraZoom(_containerId))
                 : null,
             api.HasFlag(RazerKiyoApi.ReadFirmwareVersion)
                 ? RazerKiyoJson.ParseFirmwareVersion(_native.GetFirmwareVersion(_containerId))
