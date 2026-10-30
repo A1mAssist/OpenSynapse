@@ -1073,6 +1073,8 @@
 
 设备：`0F1B` 、`0F27` Tomahawk Gaming Desktop、`0F36` Razer Head Cushion Chroma、`0F51` Razer Core X V2、`0F6A` Razer Base Station V3 Chroma
 
+> `0F1B` 的自身 bundle 使用 `AudioCamyT3Device` 且声明 `isChromaDevice:false`；它没有调用本组的 `16:04` 帧命令，P10 只是共享命令表，不能据此开放 Seiren Emote 8×8。
+
 | class:cmd | dataSize | 命令 |
 |---|---:|---|
 | `01:19` | 2 | Set Device Wireless Connection Status |

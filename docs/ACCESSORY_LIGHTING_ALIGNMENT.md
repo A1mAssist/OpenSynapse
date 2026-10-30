@@ -5,7 +5,7 @@
 | PID | JS / 官方名称 | 兄弟型号 | 关键 class:id | 结论 |
 |---|---|---|---|---|
 | `0F36` | Razer Head Cushion Chroma | 无 | `10:03/04/05/08/83/85/88` | Blocked：只有 class `0x10` 标准 Chroma，没有 `0F:*` 扩展矩阵；现有 accessories 条目会发 `0x0F`/`0x03`，加入后会发错命令。该设备已由 `RazerChromaStandardService` 提供灯光页。 |
-| `0F43` | RAZER LAPTOP COOLING PAD | 无 | 未作为灯光设备处理 | Skipped：已由 `RazerCoolingPad` 作为 HyperBoost 存在性探测处理（只读，永不写入），不加 accessories。 |
+| `0F43` | RAZER LAPTOP COOLING PAD | 无 | `0D:01/10/81/83/90` + `0F:02/03/04/80/82/84` | Own page：`RazerCoolingPad` 提供转速、固定档、智能曲线和旧版 `0F:*` 灯光；不加入 accessories，避免通用灯光页抢先接管。 |
 | `0F45` | Razer Freyja（manifest `Esther`） | 无（P9 命令表相同，但产品不是灯效外设） | `0F:02/03/04/08/10/13/80/82/84/88/90/93` | Blocked：JS 与 master guide 都表明它是 HD 触觉坐垫，设备 profile 没有 Chroma family/quick effects，Chroma 命令只是通用表；没有可证明的灯光矩阵。 |
 | `0F51` | Razer Core X V2 | 无 | `10:03/04/05/08/83/85/88` | Blocked：只有 class `0x10`；现有 `accessory-00x` 集合不支持该 class。已由 `RazerChromaStandardService` 提供标准灯光页。 |
 | `0F52` | Razer Thunderbolt 5 Dock Chroma | `0F21` | `0F:02/03/04/08/10/13/80/82/84/88/90/93` + `0D:01/02/0D/10/81/82/83/85/8D/90` | Added：`0F` 扩展矩阵命令与 `0F21` 同类；OpenRazer PR #2829 让 TB5 直接继承 TB4 dock 类，矩阵取 `1x12`，复用 `accessory-006`。 |
