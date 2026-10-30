@@ -232,7 +232,7 @@ Set LED Brightness:       [4,3,4]    // 参数 [profile, ledId, 0..255]
 - `BladeFnRuntime` 接收一个可选的诊断 sink，`App.xaml.cs` 把它接到 `blade-input` 日志分类；
 - `ConsumeAsync` 只记录 `BladeMappingInputKind.RazerKey`，在 `mapping.Process` 之后写，不改变 pass-through 或动作顺序；
 - 每个 `(Code, IsDown)` 组合每会话只记录一次，日志 sink 抛异常会被吞掉，不影响输入处理；
-- 格式为 `razerKey {code} (0x{code:X2}) {down|up}`，只记录帧和方向，不推断映射结果；HyperShift、Disable 这类规则本来就不产生可执行输出，用输出判据会把它们误报成未映射。
+- 格式为 `razerKey {code} (0x{code:X2}) {down|up} [-> {action}]`；有 action 时附带 CommandKind/Command，M3/M4/M5 能直接看出是否命中。HyperShift、Disable 本来就不产生 action，因此不附带后缀，不会被误报成未映射。
 
 仍然没有 02C6 实机证据。下一步是让 02C6 用户在 driver mode 下按 M1-M5（以及 AI、Mic）后回传 `blade-input` 日志；只有日志里确实出现 `0x0A/0x0B/0x03/0xD2/0xD3/0xD4`，才能确认当前 hook 集合下驱动会持续上报 kind=3。
 
