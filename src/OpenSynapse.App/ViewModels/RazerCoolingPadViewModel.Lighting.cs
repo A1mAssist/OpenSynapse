@@ -10,6 +10,7 @@ public sealed partial class RazerCoolingPadViewModel
     private IReadOnlyList<byte> _lightingEffects = [];
     private int _lightingBrightness = 100;
     private int _selectedLightingEffectIndex;
+    private int _selectedLightingDirectionIndex;
     private Color _lightingColor = Color.FromArgb(255, 0, 255, 0);
     private string _lightingStatusText = string.Empty;
     private bool _hasLighting;
@@ -42,7 +43,41 @@ public sealed partial class RazerCoolingPadViewModel
             if (SetField(ref _selectedLightingEffectIndex,
                     Math.Clamp(value, 0, Math.Max(0, _lightingEffects.Count - 1))))
             {
+                _selectedLightingDirectionIndex = 0;
                 OnPropertyChanged(nameof(LightingColorVisibility));
+                OnPropertyChanged(nameof(LightingDirectionVisibility));
+                OnPropertyChanged(nameof(LightingDirectionOptions));
+                OnPropertyChanged(nameof(SelectedLightingDirectionIndex));
+            }
+        }
+    }
+
+    private byte SelectedLightingEffectId =>
+        _lightingEffects.Count == 0
+            ? (byte)0
+            : _lightingEffects[Math.Clamp(_selectedLightingEffectIndex, 0, _lightingEffects.Count - 1)];
+
+    public Visibility LightingDirectionVisibility =>
+        SelectedLightingEffectId is 4 or 13 ? Visibility.Visible : Visibility.Collapsed;
+
+    public IReadOnlyList<string> LightingDirectionOptions =>
+        SelectedLightingEffectId == 13
+            ? [AppStrings.Text("CoolingPadLightingDirectionClockwise"),
+               AppStrings.Text("CoolingPadLightingDirectionCounterClockwise")]
+            : [AppStrings.Text("CoolingPadLightingDirectionLeft"),
+               AppStrings.Text("CoolingPadLightingDirectionRight"),
+               AppStrings.Text("CoolingPadLightingDirectionUp"),
+               AppStrings.Text("CoolingPadLightingDirectionDown")];
+
+    public int SelectedLightingDirectionIndex
+    {
+        get => _selectedLightingDirectionIndex;
+        set
+        {
+            var maximum = SelectedLightingEffectId == 13 ? 1 : 3;
+            if (SetField(ref _selectedLightingDirectionIndex, Math.Clamp(value, 0, maximum)))
+            {
+                OnPropertyChanged(nameof(LightingDirectionOptions));
             }
         }
     }
@@ -83,8 +118,8 @@ public sealed partial class RazerCoolingPadViewModel
             var state = await _service.SetLightingAsync(
                 LightingBrightness,
                 effect,
-                flags: RazerCoolingPadProtocol.LightingFlagsFor(effect),
-                rate: 0,
+                flags: RazerCoolingPadProtocol.LightingFlagsFor(effect, SelectedLightingDirectionIndex),
+                rate: RazerCoolingPadProtocol.LightingRateFor(effect),
                 colors,
                 cancellationToken).ConfigureAwait(false);
             ApplyLightingState(state);
@@ -135,11 +170,17 @@ public sealed partial class RazerCoolingPadViewModel
     {
         _hasLighting = true;
         _lightingEffects = state.EffectIds
-            .Where(id => id is 1 or 2 or 3 or 8 or 11 or 12 or 19)
+            .Where(id => id is 1 or 2 or 3 or 4 or 8 or 11 or 12 or 13 or 19)
             .ToArray();
         LightingBrightness = state.BrightnessPercent;
         var selected = _lightingEffects.ToList().IndexOf(state.EffectId);
         _selectedLightingEffectIndex = selected >= 0 ? selected : 0;
+        if (state.EffectId is 4 or 13)
+        {
+            _selectedLightingDirectionIndex = state.EffectId == 13
+                ? Math.Clamp(state.Flags - 1, 0, 1)
+                : Math.Clamp(state.Flags - 1, 0, 3);
+        }
         if (state.Colors.Count >= 3)
         {
             LightingColor = Color.FromArgb(255, state.Colors[0], state.Colors[1], state.Colors[2]);
@@ -149,6 +190,9 @@ public sealed partial class RazerCoolingPadViewModel
         OnPropertyChanged(nameof(LightingEffectOptions));
         OnPropertyChanged(nameof(SelectedLightingEffectIndex));
         OnPropertyChanged(nameof(LightingColorVisibility));
+        OnPropertyChanged(nameof(LightingDirectionVisibility));
+        OnPropertyChanged(nameof(LightingDirectionOptions));
+        OnPropertyChanged(nameof(SelectedLightingDirectionIndex));
         OnPropertyChanged(nameof(CanApplyLighting));
     }
 
@@ -157,9 +201,11 @@ public sealed partial class RazerCoolingPadViewModel
         1 => AppStrings.Text("RazerLightingEffectStatic"),
         2 => AppStrings.Text("RazerLightingEffectBreathing"),
         3 => AppStrings.Text("RazerLightingEffectSpectrum"),
+        4 => AppStrings.Text("RazerLightingEffectWave"),
         8 => AppStrings.Text("RazerLightingEffectFire"),
         11 => AppStrings.Text("RazerLightingEffectAmbient"),
         12 => AppStrings.Text("RazerLightingEffectAudioMeter"),
+        13 => AppStrings.Text("RazerLightingEffectWheel"),
         19 => AppStrings.Text("RazerLightingEffectTidal"),
         _ => $"Effect {effectId}",
     };

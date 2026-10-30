@@ -324,6 +324,28 @@ public sealed class RazerCoolingPadProtocolTests
         Assert.Equal(expected, RazerCoolingPadProtocol.LightingFlagsFor(effectId));
     }
 
+    [Theory]
+    [InlineData(4, 0, 1)]
+    [InlineData(4, 1, 2)]
+    [InlineData(4, 2, 3)]
+    [InlineData(4, 3, 4)]
+    [InlineData(13, 0, 1)]
+    [InlineData(13, 1, 2)]
+    [InlineData(11, 3, 0)]
+    public void LightingFlagsFor_MapsWaveAndWheelDirections(byte effectId, int direction, byte expected)
+    {
+        Assert.Equal(expected, RazerCoolingPadProtocol.LightingFlagsFor(effectId, direction));
+    }
+
+    [Theory]
+    [InlineData(4, 40)]
+    [InlineData(13, 0)]
+    [InlineData(8, 0)]
+    public void LightingRateFor_UsesTheBundleRate(byte effectId, byte expected)
+    {
+        Assert.Equal(expected, RazerCoolingPadProtocol.LightingRateFor(effectId));
+    }
+
     [Fact]
     public void ParseLightingBrightness_RoundsUpToPercent()
     {

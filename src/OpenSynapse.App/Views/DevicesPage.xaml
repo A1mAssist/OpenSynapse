@@ -435,6 +435,7 @@
                         <TextBlock Grid.Column="1" Text="{Binding LightingBrightnessText}" FontFamily="Cascadia Mono,Consolas" VerticalAlignment="Center" />
                       </Grid>
                       <ComboBox local:Localized.Uid="CoolingPadLightingEffectHeader" Header="效果" ItemsSource="{Binding LightingEffectOptions}" SelectedIndex="{Binding SelectedLightingEffectIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding CanApplyLighting}" />
+                      <ComboBox local:Localized.Uid="CoolingPadLightingDirectionHeader" Header="方向" ItemsSource="{Binding LightingDirectionOptions}" SelectedIndex="{Binding SelectedLightingDirectionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" Visibility="{Binding LightingDirectionVisibility}" IsEnabled="{Binding CanApplyLighting}" />
                       <ColorPicker Color="{Binding LightingColor, Mode=TwoWay}" Visibility="{Binding LightingColorVisibility}" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="False" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="260" HorizontalAlignment="Left" />
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <TextBlock Text="{Binding LightingStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
