@@ -83,7 +83,7 @@ public sealed partial class RazerCoolingPadViewModel
             var state = await _service.SetLightingAsync(
                 LightingBrightness,
                 effect,
-                flags: effect == 2 ? (byte)1 : (byte)0,
+                flags: RazerCoolingPadProtocol.LightingFlagsFor(effect),
                 rate: 0,
                 colors,
                 cancellationToken).ConfigureAwait(false);
@@ -134,7 +134,9 @@ public sealed partial class RazerCoolingPadViewModel
     private void ApplyLightingState(RazerCoolingPadLightingState state)
     {
         _hasLighting = true;
-        _lightingEffects = state.EffectIds.Where(id => id is 1 or 2 or 3).ToArray();
+        _lightingEffects = state.EffectIds
+            .Where(id => id is 1 or 2 or 3 or 8 or 11 or 12 or 19)
+            .ToArray();
         LightingBrightness = state.BrightnessPercent;
         var selected = _lightingEffects.ToList().IndexOf(state.EffectId);
         _selectedLightingEffectIndex = selected >= 0 ? selected : 0;
@@ -155,6 +157,10 @@ public sealed partial class RazerCoolingPadViewModel
         1 => AppStrings.Text("RazerLightingEffectStatic"),
         2 => AppStrings.Text("RazerLightingEffectBreathing"),
         3 => AppStrings.Text("RazerLightingEffectSpectrum"),
+        8 => AppStrings.Text("RazerLightingEffectFire"),
+        11 => AppStrings.Text("RazerLightingEffectAmbient"),
+        12 => AppStrings.Text("RazerLightingEffectAudioMeter"),
+        19 => AppStrings.Text("RazerLightingEffectTidal"),
         _ => $"Effect {effectId}",
     };
 }

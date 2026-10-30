@@ -74,6 +74,14 @@ public static partial class RazerCoolingPadProtocol
             TransactionId, (byte)payload.Length, ChromaClass, SetEffectCommand, payload);
     }
 
+    /// <summary>Flags used by the bundle for each parameter-free quick effect.</summary>
+    public static byte LightingFlagsFor(byte effectId) => effectId switch
+    {
+        2 => 0x01,
+        8 => 0x0A,
+        _ => 0x00,
+    };
+
     public static IReadOnlyList<RazerCoolingPadLightingRegion> ParseLightingRegions(ReadOnlySpan<byte> response)
     {
         ValidateChromaResponse(response, CreateGetLightingRegionsRequest(), 1);
