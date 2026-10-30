@@ -19,9 +19,10 @@ public sealed class BladeFanModeRangeTests
         Assert.Equal(
             new BladeFanTargetRange(3400, 5200, 4100),
             BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Hyperboost));
-        // The read-back ceiling must still cover the Custom maximum, or a stored 5300 target
-        // would fail to parse while the device is in Custom mode.
-        Assert.Equal(5300, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+        // The read-back ceiling must cover the 5500 RPM value this EC can retain;
+        // writes remain capped at the bundle-published 5300 RPM.
+        Assert.Equal(5500, BladeModelCapabilities.MaximumFanTargetRpmFor(productId));
+        Assert.Equal(5300, BladeModelCapabilities.MaximumWritableFanTargetRpmFor(productId));
     }
 
     [Fact]

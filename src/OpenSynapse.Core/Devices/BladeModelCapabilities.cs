@@ -263,15 +263,15 @@ public static class BladeModelCapabilities
             // wattage level through the same 07:8C report the other models use.
             // The official middleware drives a fixed fan speed from every performance
             // mode, not only from Custom, so no custom-mode gate applies here. The
-            // official modes span 3400 to 5200 RPM and Custom reaches 5300, and the
-            // shared fan-target report takes the same rpm/100 value the official
-            // middleware writes, so the write ceiling follows the firmware too.
+            // official modes span 3400 to 5200 RPM and Custom reaches 5300. A user
+            // readback from this EC can retain 5500 RPM, so accept that as a read
+            // ceiling while keeping writes inside the bundle-published 5300 limit.
             [0x029F] = new(
                 MaxFan: true,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
                 FanCurve: true, FixedFan: true,
                 MinimumFanTargetRpm: 3400,
-                MaximumFanTargetRpm: 5300,
+                MaximumFanTargetRpm: 5500,
                 HyperBoost: true,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
@@ -840,10 +840,10 @@ public static class BladeModelCapabilities
     /// Upper bound for a fixed fan write and for the slider that offers one. The shared
     /// fan-target report stores the speed in 100 RPM steps, and the official middleware
     /// writes the same rpm/100 value, so each model writes up to the ceiling its own
-    /// firmware reports.
+    /// firmware reports. The 029F EC can retain a 5500 RPM readback; its write ceiling is 5300.
     /// </summary>
     public static int MaximumWritableFanTargetRpmFor(ushort productId) =>
-        MaximumFanTargetRpmFor(productId);
+        productId == 0x029F ? 5300 : MaximumFanTargetRpmFor(productId);
 
     /// <summary>
     /// True for the 2026 Blade generation. Its thermal reports select profile 1 and its

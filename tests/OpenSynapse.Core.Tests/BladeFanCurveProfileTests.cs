@@ -45,4 +45,18 @@ public sealed class BladeFanCurveProfileTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void ClampingTheDefaultCurveUsesTheModelWriteCeiling()
+    {
+        var curve = BladeFanCurve.CreateDefault();
+
+        var clamped = curve.ClampMaximumFanSpeed(5300);
+
+        Assert.All(clamped.CpuPoints, point => Assert.True(point.CpuFanSpeedRpm <= 5300));
+        Assert.All(clamped.GpuPoints, point => Assert.True(point.GpuFanSpeedRpm <= 5300));
+        Assert.Equal(5300, clamped.CpuPoints[^1].CpuFanSpeedRpm);
+        Assert.Equal(5300, clamped.GpuPoints[^1].GpuFanSpeedRpm);
+        Assert.Same(curve, curve.ClampMaximumFanSpeed(BladeFanCurve.MaximumPointFanSpeedRpm));
+    }
 }
