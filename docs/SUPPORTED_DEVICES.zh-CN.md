@@ -419,7 +419,7 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 
 ## 手柄
 
-手柄配置走 91 字节、report id 4 的 feature report。页面提供摇杆/扳机、震动、D-pad、SOCD 和按键映射读取；设备不回应的命令会自动隐藏对应行。
+手柄配置走 91 字节 feature report；report id 默认为 4，`0A57`/`0A74`/`0A7C` 使用 10。页面提供摇杆/扳机、震动、D-pad、SOCD、按键映射、按 Profile 的轮询率和 Profile 切换；`0A4C` 和 `1013` 还会开放 bundle 声明的 Chroma 区域、效果和亮度。设备不回应的命令会自动隐藏对应行。
 
 | 设备 | USB VID:PID | 备注 |
 |---|---|---|

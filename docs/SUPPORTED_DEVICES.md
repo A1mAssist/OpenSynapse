@@ -419,7 +419,7 @@ The Raptor 27 exposes its model-dependent Chroma lighting controls.
 
 ## Gamepads
 
-Gamepad configuration uses the 91-byte, report-id-4 feature transport. Analog sticks and triggers, vibration, D-pad, SOCD and button-assignment reads are exposed; a model that does not answer a command hides that row.
+Gamepad configuration uses the 91-byte feature transport; report id is 4 except for `0A57`/`0A74`/`0A7C`, which use 10. Analog sticks and triggers, vibration, D-pad, SOCD, button assignments, per-profile polling and profile switching are exposed. `0A4C` and `1013` also expose their bundle-declared Chroma regions, effects and brightness. A model that does not answer a command hides that row.
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
