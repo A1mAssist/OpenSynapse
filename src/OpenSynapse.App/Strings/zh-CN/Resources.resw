@@ -2927,6 +2927,15 @@
   <data name="RazerLightingEffectAmbient" xml:space="preserve"><value>环境</value></data>
   <data name="RazerLightingEffectAudioMeter" xml:space="preserve"><value>音频律动</value></data>
   <data name="RazerLightingEffectTidal" xml:space="preserve"><value>潮汐</value></data>
+  <data name="RazerLightingEffectWave" xml:space="preserve"><value>波浪</value></data>
+  <data name="RazerLightingEffectWheel" xml:space="preserve"><value>旋转</value></data>
+  <data name="CoolingPadLightingDirectionHeader/Header" xml:space="preserve"><value>方向</value></data>
+  <data name="CoolingPadLightingDirectionLeft" xml:space="preserve"><value>左</value></data>
+  <data name="CoolingPadLightingDirectionRight" xml:space="preserve"><value>右</value></data>
+  <data name="CoolingPadLightingDirectionUp" xml:space="preserve"><value>上</value></data>
+  <data name="CoolingPadLightingDirectionDown" xml:space="preserve"><value>下</value></data>
+  <data name="CoolingPadLightingDirectionClockwise" xml:space="preserve"><value>顺时针</value></data>
+  <data name="CoolingPadLightingDirectionCounterClockwise" xml:space="preserve"><value>逆时针</value></data>
   <data name="RazerMicrophoneCategory" xml:space="preserve"><value>麦克风</value></data>
   <data name="BleChargingFailed" xml:space="preserve"><value>充电失败</value></data>
   <data name="BleChargingLimit" xml:space="preserve"><value>已达充电上限</value></data>

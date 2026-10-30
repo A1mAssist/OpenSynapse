@@ -2503,6 +2503,15 @@
   <data name="RazerLightingEffectAmbient" xml:space="preserve"><value>Ambient</value></data>
   <data name="RazerLightingEffectAudioMeter" xml:space="preserve"><value>Audio Meter</value></data>
   <data name="RazerLightingEffectTidal" xml:space="preserve"><value>Tidal</value></data>
+  <data name="RazerLightingEffectWave" xml:space="preserve"><value>Wave</value></data>
+  <data name="RazerLightingEffectWheel" xml:space="preserve"><value>Wheel</value></data>
+  <data name="CoolingPadLightingDirectionHeader/Header" xml:space="preserve"><value>Direction</value></data>
+  <data name="CoolingPadLightingDirectionLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="CoolingPadLightingDirectionRight" xml:space="preserve"><value>Right</value></data>
+  <data name="CoolingPadLightingDirectionUp" xml:space="preserve"><value>Up</value></data>
+  <data name="CoolingPadLightingDirectionDown" xml:space="preserve"><value>Down</value></data>
+  <data name="CoolingPadLightingDirectionClockwise" xml:space="preserve"><value>Clockwise</value></data>
+  <data name="CoolingPadLightingDirectionCounterClockwise" xml:space="preserve"><value>Counter-clockwise</value></data>
   <data name="RazerMicrophoneCategory" xml:space="preserve"><value>Microphone</value></data>
   <data name="BleChargingFailed" xml:space="preserve"><value>Charging failed</value></data>
   <data name="BleChargingLimit" xml:space="preserve"><value>Charging limit reached</value></data>

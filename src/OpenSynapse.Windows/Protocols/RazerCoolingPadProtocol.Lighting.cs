@@ -82,6 +82,20 @@ public static partial class RazerCoolingPadProtocol
         _ => 0x00,
     };
 
+    /// <summary>
+    /// Wave flags are 1..4 (left/right/up/down); Wheel flags are 1..2
+    /// (clockwise/counter-clockwise). Other effects ignore the direction index.
+    /// </summary>
+    public static byte LightingFlagsFor(byte effectId, int directionIndex) => effectId switch
+    {
+        4 => (byte)(1 + Math.Clamp(directionIndex, 0, 3)),
+        13 => (byte)(1 + Math.Clamp(directionIndex, 0, 1)),
+        _ => LightingFlagsFor(effectId),
+    };
+
+    /// <summary>Wave uses the bundle's fixed rate 40; the other quick effects use 0.</summary>
+    public static byte LightingRateFor(byte effectId) => effectId == 4 ? (byte)40 : (byte)0;
+
     public static IReadOnlyList<RazerCoolingPadLightingRegion> ParseLightingRegions(ReadOnlySpan<byte> response)
     {
         ValidateChromaResponse(response, CreateGetLightingRegionsRequest(), 1);
