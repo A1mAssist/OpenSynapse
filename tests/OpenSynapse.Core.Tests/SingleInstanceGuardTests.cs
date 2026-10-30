@@ -14,9 +14,10 @@ public sealed class SingleInstanceGuardTests
 
         var sawShutdown = new TaskCompletionSource<SingleInstanceSignal>(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellation = new CancellationTokenSource();
         var observer = Task.Run(() =>
         {
-            var signal = first!.WaitForSignal(CancellationToken.None);
+            var signal = first!.WaitForSignal(cancellation.Token);
             sawShutdown.TrySetResult(signal);
             if (signal == SingleInstanceSignal.Shutdown)
             {
@@ -41,6 +42,7 @@ public sealed class SingleInstanceGuardTests
         }
         finally
         {
+            cancellation.Cancel();
             first!.Dispose();
             await observer.WaitAsync(TimeSpan.FromSeconds(5));
         }

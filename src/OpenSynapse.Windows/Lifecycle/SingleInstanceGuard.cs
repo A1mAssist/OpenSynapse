@@ -9,6 +9,8 @@ public enum SingleInstanceSignal
 
 public sealed class SingleInstanceGuard : IDisposable
 {
+    private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(20);
+
     private Mutex? _mutex;
     private EventWaitHandle? _activationEvent;
     private EventWaitHandle? _shutdownEvent;
@@ -44,7 +46,8 @@ public sealed class SingleInstanceGuard : IDisposable
         var shutdownEvent = new EventWaitHandle(
             initialState: false,
             EventResetMode.AutoReset,
-            shutdownEventName);
+            shutdownEventName,
+            out var shutdownEventCreated);
         var exitedEvent = new EventWaitHandle(
             initialState: false,
             EventResetMode.ManualReset,
@@ -65,12 +68,12 @@ public sealed class SingleInstanceGuard : IDisposable
 
         if (!createdNew)
         {
-            if (requestExistingShutdown)
+            if (requestExistingShutdown && !shutdownEventCreated)
             {
                 shutdownEvent.Set();
-                if (exitedEvent.WaitOne(shutdownTimeout ?? TimeSpan.FromSeconds(10)))
+                if (exitedEvent.WaitOne(shutdownTimeout ?? DefaultShutdownTimeout))
                 {
-                    var deadline = DateTime.UtcNow + (shutdownTimeout ?? TimeSpan.FromSeconds(10));
+                    var deadline = DateTime.UtcNow + (shutdownTimeout ?? DefaultShutdownTimeout);
                     while (!createdNew && DateTime.UtcNow < deadline)
                     {
                         mutex.Dispose();
