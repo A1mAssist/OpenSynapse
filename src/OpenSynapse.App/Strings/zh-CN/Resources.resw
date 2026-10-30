@@ -3005,9 +3005,24 @@
   <data name="AwBleHeadsetSidetoneLabel/Text" xml:space="preserve"><value>侧音</value></data>
   <data name="AwBleHeadsetGameModeLabel/Text" xml:space="preserve"><value>游戏模式</value></data>
   <data name="AwBleHeadsetEqPresetLabel/Header" xml:space="preserve"><value>EQ 预设</value></data>
-  <data name="AwBleHeadsetAutoPowerOffLabel/Header" xml:space="preserve"><value>自动关机（分钟）</value></data>
+  <data name="AwBleHeadsetAutoPowerOffLabel/Header" xml:space="preserve"><value>自动关机</value></data>
   <data name="AwBleHeadsetAutoPowerOffHint/Text" xml:space="preserve"><value>0 表示关闭。</value></data>
+  <data name="AwBleHeadsetAutoPowerOffOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="AwBleHeadsetAutoPowerOffMinutes" xml:space="preserve"><value>{0} 分钟</value></data>
   <data name="AwBleHeadsetChromaBrightnessLabel/Text" xml:space="preserve"><value>Chroma 亮度</value></data>
+  <data name="AwBleHeadsetChromaEffectLabel/Header" xml:space="preserve"><value>Chroma 灯效</value></data>
+  <data name="AwBleHeadsetChromaOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="AwBleHeadsetChromaStatic" xml:space="preserve"><value>静态</value></data>
+  <data name="AwBleHeadsetChromaBreathing" xml:space="preserve"><value>呼吸</value></data>
+  <data name="AwBleHeadsetChromaSpectrum" xml:space="preserve"><value>光谱</value></data>
+  <data name="AwBleHeadsetChromaAudioMeter" xml:space="preserve"><value>音频律动</value></data>
+  <data name="AwBleHeadsetChromaPrimaryColor" xml:space="preserve"><value>颜色</value></data>
+  <data name="AwBleHeadsetChromaSecondaryColor" xml:space="preserve"><value>颜色 2</value></data>
+  <data name="AwBleHeadsetCustomEqEnable" xml:space="preserve"><value>启用自定义 EQ</value></data>
+  <data name="AwBleHeadsetCustomEqHint" xml:space="preserve"><value>应用时先切到 Custom 预设，再写入 10 段。</value></data>
+  <data name="AwBleHeadsetMicCustomEqTitle" xml:space="preserve"><value>自定义麦克风 EQ</value></data>
+  <data name="AwBleHeadsetMicCustomEqEnable" xml:space="preserve"><value>启用自定义麦克风 EQ</value></data>
+  <data name="AwBleHeadsetMicCustomEqHint" xml:space="preserve"><value>应用时先切到 Custom 麦克风预设，再写入 10 段。</value></data>
   <data name="AwBleHeadsetBassLabel/Text" xml:space="preserve"><value>低音</value></data>
   <data name="AwBleHeadsetHapticsLabel/Text" xml:space="preserve"><value>触觉强度</value></data>
   <data name="AwBleHeadsetHapticsValue" xml:space="preserve"><value>{0}/6</value></data>

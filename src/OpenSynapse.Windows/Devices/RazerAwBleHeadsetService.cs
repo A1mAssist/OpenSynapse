@@ -8,7 +8,7 @@ namespace OpenSynapse.Windows.Devices;
 /// implemented from the commands in the Razer bundle; unsupported commands are expected
 /// to time out or reject and are hidden by the page.
 /// </summary>
-public sealed class RazerAwBleHeadsetService : IDisposable
+public sealed partial class RazerAwBleHeadsetService : IDisposable
 {
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan ProbeTimeout = TimeSpan.FromMilliseconds(500);
@@ -335,23 +335,37 @@ public sealed class RazerAwBleHeadsetService : IDisposable
         }
     }
 
-    public Task<byte> ReadAutoPowerOffMinutesAsync(CancellationToken cancellationToken = default) =>
-        ReadControlAsync(
+    public async Task<int> ReadAutoPowerOffMinutesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var response = await ReadFrameAsync(
             RazerAwBleProtocol.AutoPowerOffGetCommand,
             "auto power-off",
             cancellationToken,
-            ProbeTimeout);
+            ProbeTimeout).ConfigureAwait(false);
+        if (!RazerAwBleProtocol.TryParseAutoPowerOff(response, out var minutes))
+        {
+            throw new InvalidDataException(
+                "The headset returned an invalid auto power-off reply.");
+        }
 
-    public Task<byte> SetAutoPowerOffMinutesAsync(
-        byte minutes,
-        CancellationToken cancellationToken = default) =>
-        WriteControlAsync(
+        return minutes;
+    }
+
+    public async Task<int> SetAutoPowerOffMinutesAsync(
+        int minutes,
+        CancellationToken cancellationToken = default)
+    {
+        var index = RazerAwBleProtocol.AutoPowerOffIndexFromMinutes(minutes);
+        var applied = await WriteControlAsync(
             RazerAwBleProtocol.AutoPowerOffGetCommand,
             RazerAwBleProtocol.AutoPowerOffSetCommand,
-            minutes,
+            index,
             "auto power-off",
             verifyStatus: true,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
+        return RazerAwBleProtocol.AutoPowerOffMinuteOptions[applied];
+    }
 
     public async Task<byte> ReadChromaBrightnessAsync(CancellationToken cancellationToken = default)
     {

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using Windows.UI;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -61,6 +62,18 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     private static readonly int[] CustomEqFrequencies =
         [31, 63, 125, 250, 500, 1_000, 2_000, 4_000, 8_000, 16_000];
 
+    private static readonly int[] MicCustomEqFrequencies =
+        [250, 750, 1_000, 1_200, 1_500, 2_300, 3_000, 4_000, 5_000, 7_000];
+
+    private static readonly (RazerAwChromaEffect Value, string Key)[] ChromaEffects =
+    [
+        (RazerAwChromaEffect.Off, "AwBleHeadsetChromaOff"),
+        (RazerAwChromaEffect.Static, "AwBleHeadsetChromaStatic"),
+        (RazerAwChromaEffect.Breathing, "AwBleHeadsetChromaBreathing"),
+        (RazerAwChromaEffect.Spectrum, "AwBleHeadsetChromaSpectrum"),
+        (RazerAwChromaEffect.AudioMeter, "AwBleHeadsetChromaAudioMeter"),
+    ];
+
     private readonly Func<CancellationToken, Task<RazerAwBleHeadsetService?>> _connect;
     private readonly RazerBleDevice _device;
     private RazerAwBleHeadsetService? _service;
@@ -73,11 +86,16 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     private double _sidetone;
     private bool _gameMode;
     private int _selectedEqPresetIndex;
-    private double _autoPowerOffMinutes;
+    private bool _customEqEnabled;
+    private int _selectedAutoPowerOffIndex;
     private double _chromaBrightness;
+    private int _selectedChromaEffectIndex;
+    private Color _chromaPrimaryColor = Color.FromArgb(255, 0, 255, 0);
+    private Color _chromaSecondaryColor = Color.FromArgb(255, 0, 0, 255);
     private double _bassLevel;
     private double _hapticsLevel;
     private int _selectedMicEqPresetIndex;
+    private bool _micCustomEqEnabled;
     private string _firmwareText = "—";
     private string _serialText = "—";
     private string _connectionText = "—";
@@ -89,9 +107,13 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     private Visibility _eqPresetVisibility = Visibility.Collapsed;
     private Visibility _autoPowerOffVisibility = Visibility.Collapsed;
     private Visibility _chromaBrightnessVisibility = Visibility.Collapsed;
+    private Visibility _chromaEffectVisibility = Visibility.Collapsed;
+    private Visibility _chromaPrimaryColorVisibility = Visibility.Collapsed;
+    private Visibility _chromaSecondaryColorVisibility = Visibility.Collapsed;
     private Visibility _bassVisibility = Visibility.Collapsed;
     private Visibility _hapticsVisibility = Visibility.Collapsed;
     private Visibility _micEqVisibility = Visibility.Collapsed;
+    private Visibility _micCustomEqVisibility = Visibility.Collapsed;
     private Visibility _customEqVisibility = Visibility.Collapsed;
     private Visibility _firmwareVisibility = Visibility.Collapsed;
     private Visibility _serialVisibility = Visibility.Collapsed;
@@ -173,26 +195,26 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         set => SetField(ref _selectedEqPresetIndex, Math.Clamp(value, 0, EqPresets.Length - 1));
     }
 
-    public double AutoPowerOffMinutes
+    public IReadOnlyList<string> AutoPowerOffOptions =>
+        RazerAwBleProtocol.AutoPowerOffMinuteOptions
+            .Select(minutes => minutes == 0
+                ? AppStrings.Text("AwBleHeadsetAutoPowerOffOff")
+                : AppStrings.FormatText("AwBleHeadsetAutoPowerOffMinutes", minutes))
+            .ToArray();
+
+    public int SelectedAutoPowerOffIndex
     {
-        get => _autoPowerOffMinutes;
-        set => SetField(ref _autoPowerOffMinutes, Math.Clamp(value, 0d, 255d));
+        get => _selectedAutoPowerOffIndex;
+        set => SetField(
+            ref _selectedAutoPowerOffIndex,
+            Math.Clamp(value, 0, RazerAwBleProtocol.AutoPowerOffMinuteOptions.Length - 1));
     }
 
-    public double ChromaBrightness
+    public bool CustomEqEnabled
     {
-        get => _chromaBrightness;
-        set
-        {
-            if (SetField(ref _chromaBrightness, Math.Clamp(value, 0d, 100d)))
-            {
-                OnPropertyChanged(nameof(ChromaBrightnessText));
-            }
-        }
+        get => _customEqEnabled;
+        set => SetField(ref _customEqEnabled, value);
     }
-
-    public string ChromaBrightnessText =>
-        AppStrings.FormatText("AwBleHeadsetPercent", (int)Math.Round(ChromaBrightness));
 
     public double BassLevel
     {
@@ -235,7 +257,15 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         set => SetField(ref _selectedMicEqPresetIndex, Math.Clamp(value, 0, MicEqPresets.Length - 1));
     }
 
+    public bool MicCustomEqEnabled
+    {
+        get => _micCustomEqEnabled;
+        set => SetField(ref _micCustomEqEnabled, value);
+    }
+
     public ObservableCollection<RazerAwBleEqBandViewModel> CustomEqBands { get; } = [];
+
+    public ObservableCollection<RazerAwBleEqBandViewModel> MicCustomEqBands { get; } = [];
 
     public string FirmwareText
     {
@@ -297,13 +327,6 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         private set => SetVisibility(ref _autoPowerOffVisibility, value, nameof(AutoPowerOffVisibility));
     }
 
-    public Visibility ChromaBrightnessVisibility
-    {
-        get => _chromaBrightnessVisibility;
-        private set => SetVisibility(
-            ref _chromaBrightnessVisibility, value, nameof(ChromaBrightnessVisibility));
-    }
-
     public Visibility BassVisibility
     {
         get => _bassVisibility;
@@ -320,6 +343,12 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     {
         get => _micEqVisibility;
         private set => SetVisibility(ref _micEqVisibility, value, nameof(MicEqVisibility));
+    }
+
+    public Visibility MicCustomEqVisibility
+    {
+        get => _micCustomEqVisibility;
+        private set => SetVisibility(ref _micCustomEqVisibility, value, nameof(MicCustomEqVisibility));
     }
 
     public Visibility CustomEqVisibility
@@ -419,17 +448,14 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
             applied => SelectedEqPresetIndex = IndexOfPreset(applied));
     }
 
-    public Task ApplyAutoPowerOffAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(
-            service => service.SetAutoPowerOffMinutesAsync(
-                (byte)Math.Round(AutoPowerOffMinutes), cancellationToken),
-            applied => AutoPowerOffMinutes = applied);
-
-    public Task ApplyChromaBrightnessAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(
-            service => service.SetChromaBrightnessAsync(
-                (int)Math.Round(ChromaBrightness), cancellationToken),
-            applied => ChromaBrightness = applied);
+    public Task ApplyAutoPowerOffAsync(CancellationToken cancellationToken = default)
+    {
+        var minutes = RazerAwBleProtocol.AutoPowerOffMinuteOptions[SelectedAutoPowerOffIndex];
+        return RunWriteAsync(
+            service => service.SetAutoPowerOffMinutesAsync(minutes, cancellationToken),
+            applied => SelectedAutoPowerOffIndex = Array.IndexOf(
+                RazerAwBleProtocol.AutoPowerOffMinuteOptions, applied));
+    }
 
     public Task ApplyBassAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
@@ -448,16 +474,6 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         return RunWriteAsync(
             service => service.SetMicEqPresetAsync(preset, cancellationToken),
             applied => SelectedMicEqPresetIndex = IndexOfMicPreset(applied));
-    }
-
-    public Task ApplyCustomEqAsync(CancellationToken cancellationToken = default)
-    {
-        var levels = CustomEqBands
-            .Select(band => (sbyte)Math.Round(band.Level))
-            .ToArray();
-        return RunWriteAsync(
-            service => service.SetCustomEqBandsAsync(levels, cancellationToken),
-            ApplyCustomEqBands);
     }
 
     public async ValueTask DisposeAsync()

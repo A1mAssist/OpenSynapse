@@ -32,6 +32,22 @@ public enum RazerAwChargingStatus : byte
     ChargingFailed = 2,
 }
 
+public enum RazerAwChromaEffect : byte
+{
+    Off = 0,
+    Spectrum = 1,
+    Breathing = 2,
+    Static = 3,
+    AudioMeter = 4,
+    Streaming = 5,
+    On = 255,
+}
+
+public readonly record struct RazerAwChromaState(
+    RazerAwChromaEffect Effect,
+    byte[] PrimaryColor,
+    byte[] SecondaryColor);
+
 public readonly record struct RazerAwConnectionState(
     RazerAwHeadsetConnectionStatus? Headset,
     RazerAwEarbudConnectionStatus? Right,
@@ -73,20 +89,33 @@ public static class RazerAwBleProtocol
     public const byte GameModeSetCommand = 0x94;
     public const byte EqPresetGetCommand = 0x13;
     public const byte EqPresetSetCommand = 0x93;
-    public const byte AutoPowerOffGetCommand = 0x2C;
-    public const byte AutoPowerOffSetCommand = 0xAC;
+    public const byte AutoPowerOffGetCommand = 0x27;
+    public const byte AutoPowerOffSetCommand = 0xA7;
+    public const byte ChromaEffectGetCommand = 0x40;
+    public const byte ChromaEffectSetCommand = 0xC0;
     public const byte ChromaBrightnessGetCommand = 0x41;
     public const byte ChromaBrightnessSetCommand = 0xC1;
+    public const byte ChromaBreathingColorGetCommand = 0x42;
+    public const byte ChromaBreathingColorSetCommand = 0xC2;
+    public const byte ChromaStaticColorGetCommand = 0x43;
+    public const byte ChromaStaticColorSetCommand = 0xC3;
+    public const byte ChromaAudioMeterColorGetCommand = 0x45;
+    public const byte ChromaAudioMeterColorSetCommand = 0xC5;
     public const byte BassGetCommand = 0x1B;
     public const byte BassSetCommand = 0x9B;
     public const byte HapticsGetCommand = 0x54;
     public const byte HapticsSetCommand = 0xD4;
     public const byte MicEqPresetGetCommand = 0x16;
     public const byte MicEqPresetSetCommand = 0x96;
+    public const byte MicCustomEqBandsGetCommand = 0x17;
+    public const byte MicCustomEqBandsSetCommand = 0x97;
     public const byte ConnectionGetCommand = 0x25;
-    public const byte ChargingGetCommand = 0x2A;
+    public const byte ChargingGetCommand = 0x29;
     public const byte CustomEqBandsGetCommand = 0x15;
     public const byte CustomEqBandsSetCommand = 0x95;
+
+    public const byte DefaultEqPreset = 0;
+    public const byte CustomEqPreset = 255;
 
     public const byte ResponseTransferType = 0x02;
     public const int ResponseHeaderLength = 3;
@@ -110,7 +139,13 @@ public static class RazerAwBleProtocol
         return frame;
     }
 
-    public static byte[] CreateEqBandsRequest(IReadOnlyList<sbyte> levels)
+    public static byte[] CreateEqBandsRequest(IReadOnlyList<sbyte> levels) =>
+        CreateEqBandsRequest(CustomEqBandsSetCommand, levels);
+
+    public static byte[] CreateMicEqBandsRequest(IReadOnlyList<sbyte> levels) =>
+        CreateEqBandsRequest(MicCustomEqBandsSetCommand, levels);
+
+    private static byte[] CreateEqBandsRequest(byte command, IReadOnlyList<sbyte> levels)
     {
         ArgumentNullException.ThrowIfNull(levels);
         if (levels.Count != CustomEqBandCount)
@@ -132,7 +167,7 @@ public static class RazerAwBleProtocol
             payload[index] = (byte)(level + 5);
         }
 
-        return CreateWriteRequest(CustomEqBandsSetCommand, payload);
+        return CreateWriteRequest(command, payload);
     }
 
     /// <summary>
@@ -177,6 +212,52 @@ public static class RazerAwBleProtocol
 
         value = payload[0];
         return true;
+    }
+
+    public static readonly int[] AutoPowerOffMinuteOptions = [0, 5, 15, 30, 45, 60];
+
+    /// <summary>
+    /// The Kitty BLE bundle stores auto power-off as a five-step index, not a raw
+    /// minute byte: 0 off, then 5/15/30/45/60 minutes.
+    /// </summary>
+    public static bool TryParseAutoPowerOff(
+        ReadOnlySpan<byte> notification,
+        out int minutes)
+    {
+        minutes = 0;
+        if (!TryParseByteReply(notification, AutoPowerOffGetCommand, out var index) ||
+            index >= AutoPowerOffMinuteOptions.Length)
+        {
+            return false;
+        }
+
+        minutes = AutoPowerOffMinuteOptions[index];
+        return true;
+    }
+
+    public static byte AutoPowerOffIndexFromMinutes(int minutes)
+    {
+        if (minutes <= 0)
+        {
+            return 0;
+        }
+
+        if (minutes <= 10)
+        {
+            return 1;
+        }
+
+        if (minutes <= 20)
+        {
+            return 2;
+        }
+
+        if (minutes <= 40)
+        {
+            return 3;
+        }
+
+        return minutes <= 50 ? (byte)4 : (byte)5;
     }
 
     /// <summary>
@@ -297,10 +378,21 @@ public static class RazerAwBleProtocol
 
     public static bool TryParseEqBands(
         ReadOnlySpan<byte> notification,
+        out IReadOnlyList<sbyte> levels) =>
+        TryParseEqBands(notification, CustomEqBandsGetCommand, out levels);
+
+    public static bool TryParseMicEqBands(
+        ReadOnlySpan<byte> notification,
+        out IReadOnlyList<sbyte> levels) =>
+        TryParseEqBands(notification, MicCustomEqBandsGetCommand, out levels);
+
+    private static bool TryParseEqBands(
+        ReadOnlySpan<byte> notification,
+        byte command,
         out IReadOnlyList<sbyte> levels)
     {
         levels = [];
-        if (!TryGetPayload(notification, CustomEqBandsGetCommand, out var payload) ||
+        if (!TryGetPayload(notification, command, out var payload) ||
             payload.Length != CustomEqBandCount)
         {
             return false;
@@ -333,11 +425,100 @@ public static class RazerAwBleProtocol
     public static byte ChromaRawToPercent(byte raw) =>
         (byte)Math.Round(raw * 100d / 255d);
 
+    public static byte[] CreateChromaEffectRequest(RazerAwChromaEffect effect)
+    {
+        if (effect is RazerAwChromaEffect.Static or RazerAwChromaEffect.Breathing or
+            RazerAwChromaEffect.AudioMeter)
+        {
+            throw new ArgumentException(
+                "Static, breathing and audio-meter effects use their color command.",
+                nameof(effect));
+        }
+
+        return CreateWriteRequest(ChromaEffectSetCommand, (byte)effect);
+    }
+
+    public static byte[] CreateChromaStaticColorRequest(ReadOnlySpan<byte> color)
+    {
+        RequireRgb(color, nameof(color));
+        return CreateWriteRequest(ChromaStaticColorSetCommand, color);
+    }
+
+    public static byte[] CreateChromaBreathingColorRequest(
+        ReadOnlySpan<byte> primary,
+        ReadOnlySpan<byte> secondary)
+    {
+        RequireRgb(primary, nameof(primary));
+        RequireRgb(secondary, nameof(secondary));
+        var payload = new byte[6];
+        primary.CopyTo(payload);
+        secondary.CopyTo(payload.AsSpan(3));
+        return CreateWriteRequest(ChromaBreathingColorSetCommand, payload);
+    }
+
+    public static byte[] CreateChromaAudioMeterColorRequest(ReadOnlySpan<byte> color)
+    {
+        RequireRgb(color, nameof(color));
+        return CreateWriteRequest(ChromaAudioMeterColorSetCommand, color);
+    }
+
+    public static bool TryParseChromaEffect(
+        ReadOnlySpan<byte> notification,
+        out RazerAwChromaEffect effect,
+        out byte[] inlineColor)
+    {
+        effect = default;
+        inlineColor = [];
+        if (!TryGetPayload(notification, ChromaEffectGetCommand, out var payload) ||
+            payload.Length == 0)
+        {
+            return false;
+        }
+
+        var value = payload[0];
+        if (value is not (0 or 1 or 2 or 3 or 4 or 5 or 255))
+        {
+            return false;
+        }
+
+        effect = (RazerAwChromaEffect)value;
+        inlineColor = payload[1..].ToArray();
+        return true;
+    }
+
+    public static bool TryParseChromaColor(
+        ReadOnlySpan<byte> notification,
+        byte command,
+        int expectedLength,
+        out byte[] color)
+    {
+        color = [];
+        if (expectedLength is not (3 or 6) ||
+            !TryGetPayload(notification, command, out var payload) ||
+            payload.Length != expectedLength)
+        {
+            return false;
+        }
+
+        color = payload.ToArray();
+        return true;
+    }
+
+    public static bool IsCustomEqPreset(byte preset) => preset is 254 or 255;
+
     public static bool IsKnownEqPreset(byte preset) =>
         preset <= 13 || preset is 254 or 255;
 
     public static bool IsKnownMicEqPreset(byte preset) =>
         preset is 0 or 1 or 2 or 3 or 255;
+
+    private static void RequireRgb(ReadOnlySpan<byte> color, string parameterName)
+    {
+        if (color.Length != 3)
+        {
+            throw new ArgumentException("An RGB color needs exactly three bytes.", parameterName);
+        }
+    }
 
     private static bool TryGetPayload(
         ReadOnlySpan<byte> notification,

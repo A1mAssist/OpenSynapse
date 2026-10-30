@@ -2581,9 +2581,24 @@
   <data name="AwBleHeadsetSidetoneLabel/Text" xml:space="preserve"><value>Sidetone</value></data>
   <data name="AwBleHeadsetGameModeLabel/Text" xml:space="preserve"><value>Game mode</value></data>
   <data name="AwBleHeadsetEqPresetLabel/Header" xml:space="preserve"><value>EQ preset</value></data>
-  <data name="AwBleHeadsetAutoPowerOffLabel/Header" xml:space="preserve"><value>Auto power-off (minutes)</value></data>
+  <data name="AwBleHeadsetAutoPowerOffLabel/Header" xml:space="preserve"><value>Auto power-off</value></data>
   <data name="AwBleHeadsetAutoPowerOffHint/Text" xml:space="preserve"><value>0 turns it off.</value></data>
+  <data name="AwBleHeadsetAutoPowerOffOff" xml:space="preserve"><value>Off</value></data>
+  <data name="AwBleHeadsetAutoPowerOffMinutes" xml:space="preserve"><value>{0} min</value></data>
   <data name="AwBleHeadsetChromaBrightnessLabel/Text" xml:space="preserve"><value>Chroma brightness</value></data>
+  <data name="AwBleHeadsetChromaEffectLabel/Header" xml:space="preserve"><value>Chroma effect</value></data>
+  <data name="AwBleHeadsetChromaOff" xml:space="preserve"><value>Off</value></data>
+  <data name="AwBleHeadsetChromaStatic" xml:space="preserve"><value>Static</value></data>
+  <data name="AwBleHeadsetChromaBreathing" xml:space="preserve"><value>Breathing</value></data>
+  <data name="AwBleHeadsetChromaSpectrum" xml:space="preserve"><value>Spectrum</value></data>
+  <data name="AwBleHeadsetChromaAudioMeter" xml:space="preserve"><value>Audio meter</value></data>
+  <data name="AwBleHeadsetChromaPrimaryColor" xml:space="preserve"><value>Color</value></data>
+  <data name="AwBleHeadsetChromaSecondaryColor" xml:space="preserve"><value>Color 2</value></data>
+  <data name="AwBleHeadsetCustomEqEnable" xml:space="preserve"><value>Enable custom EQ</value></data>
+  <data name="AwBleHeadsetCustomEqHint" xml:space="preserve"><value>Apply switches to the custom preset before writing the ten bands.</value></data>
+  <data name="AwBleHeadsetMicCustomEqTitle" xml:space="preserve"><value>Custom mic EQ</value></data>
+  <data name="AwBleHeadsetMicCustomEqEnable" xml:space="preserve"><value>Enable custom mic EQ</value></data>
+  <data name="AwBleHeadsetMicCustomEqHint" xml:space="preserve"><value>Apply switches to the custom mic preset before writing the ten bands.</value></data>
   <data name="AwBleHeadsetBassLabel/Text" xml:space="preserve"><value>Bass</value></data>
   <data name="AwBleHeadsetHapticsLabel/Text" xml:space="preserve"><value>Haptic intensity</value></data>
   <data name="AwBleHeadsetHapticsValue" xml:space="preserve"><value>{0}/6</value></data>
@@ -2613,8 +2628,8 @@
   <data name="AwBleHeadsetPercent" xml:space="preserve"><value>{0}%</value></data>
   <data name="AwBleHeadsetEqDefault" xml:space="preserve"><value>Default</value></data>
   <data name="AwBleHeadsetEqAmplified" xml:space="preserve"><value>Amplified</value></data>
-  <data name="AwBleHeadsetEqVocal" xml:space="preserve"><value>Vocal</value></data>
-  <data name="AwBleHeadsetEqBass" xml:space="preserve"><value>Enhanced bass</value></data>
+  <data name="AwBleHeadsetEqVocal" xml:space="preserve"><value>Vocals</value></data>
+  <data name="AwBleHeadsetEqBass" xml:space="preserve"><value>Bass boost</value></data>
   <data name="AwBleHeadsetEqClarity" xml:space="preserve"><value>Enhanced clarity</value></data>
   <data name="AwBleHeadsetEqTreble" xml:space="preserve"><value>Treble boost</value></data>
   <data name="AwBleHeadsetEqFps" xml:space="preserve"><value>FPS footsteps</value></data>
