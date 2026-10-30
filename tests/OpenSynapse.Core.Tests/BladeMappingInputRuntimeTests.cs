@@ -71,6 +71,39 @@ public sealed class BladeMappingInputRuntimeTests
     }
 
     [Fact]
+    public void MapsM1ToHyperShift()
+    {
+        using var runtime = BladeMappingInputRuntime.FromGraph(LoadProduct710Graph());
+
+        Assert.False(runtime.HyperShiftEnabled);
+        Assert.Empty(runtime.Process(
+            new BladeMappingInputEvent(BladeMappingInputKind.RazerKey, 0x0A, true)));
+        Assert.True(runtime.HyperShiftEnabled);
+
+        Assert.Empty(runtime.Process(
+            new BladeMappingInputEvent(BladeMappingInputKind.RazerKey, 0x0A, false)));
+        Assert.False(runtime.HyperShiftEnabled);
+    }
+
+    [Fact]
+    public void MapsM5ToMicrophoneMute()
+    {
+        using var runtime = BladeMappingInputRuntime.FromGraph(LoadProduct710Graph());
+
+        Assert.Empty(runtime.Process(
+            new BladeMappingInputEvent(BladeMappingInputKind.RazerKey, 0xD4, true),
+            out var action));
+        Assert.Equal(
+            new BladeAudioMappingAction(BladeMappingCommand.Microphone, 2, 1),
+            action);
+
+        runtime.Process(
+            new BladeMappingInputEvent(BladeMappingInputKind.RazerKey, 0xD4, false),
+            out action);
+        Assert.IsType<BladeDisabledMappingAction>(action);
+    }
+
+    [Fact]
     public void ReturnsReleaseEdgeCommandForM4()
     {
         using var runtime = BladeMappingInputRuntime.FromGraph(LoadProduct710Graph());

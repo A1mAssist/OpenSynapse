@@ -28,6 +28,8 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     private readonly BladeSoftwareModeCoordinator _modeCoordinator;
     private readonly Func<BladeMappingAction, CancellationToken, ValueTask> _leafExecutor;
     private readonly Action<BladeMappingInputEvent> _inputObserver;
+    private readonly Action<string>? _diagnostic;
+    private readonly HashSet<(int Code, bool IsDown)> _diagnosticRazerKeys = [];
     private readonly string _mappingPreset;
     private readonly bool _initialSnapTapEnabled;
     private readonly Action<bool> _snapTapChanged;
@@ -58,7 +60,8 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         Action<BladeMappingInputEvent> inputObserver,
         string mappingPreset,
         bool initialSnapTapEnabled,
-        Action<bool> snapTapChanged)
+        Action<bool> snapTapChanged,
+        Action<string>? diagnostic = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         ArgumentException.ThrowIfNullOrWhiteSpace(featureDevicePath);
@@ -67,6 +70,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         _modeCoordinator = modeCoordinator ?? throw new ArgumentNullException(nameof(modeCoordinator));
         _leafExecutor = leafExecutor ?? throw new ArgumentNullException(nameof(leafExecutor));
         _inputObserver = inputObserver ?? throw new ArgumentNullException(nameof(inputObserver));
+        _diagnostic = diagnostic;
         ArgumentException.ThrowIfNullOrWhiteSpace(mappingPreset);
         _mappingPreset = mappingPreset;
         _initialSnapTapEnabled = initialSnapTapEnabled;
@@ -278,6 +282,22 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 _inputObserver(input);
                 var snapTapBefore = mapping.SnapTapEnabled;
                 var outputs = mapping.Process(input, out var action, out var passThrough);
+                if (input.Kind == BladeMappingInputKind.RazerKey &&
+                    _diagnostic is not null &&
+                    _diagnosticRazerKeys.Add((input.Code, input.IsDown)))
+                {
+                    try
+                    {
+                        _diagnostic(
+                            $"razerKey {input.Code} (0x{input.Code:X2}) " +
+                            $"{(input.IsDown ? "down" : "up")} -> " +
+                            $"{(action is not null || outputs.Count > 0 ? "matched" : "unmapped")}");
+                    }
+                    catch
+                    {
+                        // Diagnostics must never interfere with input routing.
+                    }
+                }
                 if (passThrough)
                 {
                     filter.SendKeyboardInput(input);

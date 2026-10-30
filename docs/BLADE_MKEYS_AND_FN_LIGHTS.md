@@ -227,18 +227,21 @@ Set LED Brightness:       [4,3,4]    // 参数 [profile, ledId, 0..255]
 
 ## 5. 本次实现决策
 
-本次不新增生产代码：
+本分支已给 driver mode 下的 M1-M5、AI Launcher 和 Mic Mute 加 kind=3 诊断日志：
 
-- `BladeMappingInputRuntime` 已经能直接吃 kind=3；
-- `Product710Mapping.json` 已经有 210/211/212 的映射；
-- 静音状态命令已经在 `BladeSynapsePolicyProtocol` 里；
-- 灯的 zone 38 / zone 25 缺少物理覆盖证据，写死会变成猜协议。
+- `BladeFnRuntime` 接收一个可选的诊断 sink，`App.xaml.cs` 把它接到 `blade-input` 日志分类；
+- `ConsumeAsync` 只记录 `BladeMappingInputKind.RazerKey`，在 `mapping.Process` 之后写，不改变 pass-through 或动作顺序；
+- 每个 `(Code, IsDown)` 组合每会话只记录一次，日志 sink 抛异常会被吞掉，不影响输入处理；
+- 格式为 `razerKey {code} (0x{code:X2}) {down|up} -> {matched|unmapped}`，其中 `matched` 的判据是 `action is not null || outputs.Count > 0`。
 
-因此本分支只新增本文档。等实机日志和灯光标定结果出来后，再决定是否需要：
+注意：M1/M2 的 HyperShift 规则会改变运行态但不产生 action 或 outputs，因此日志会显示 `unmapped`。这只表示该帧没有可执行输出，不表示 key 帧没有到达消费点。
+
+仍然没有 02C6 实机证据。下一步是让 02C6 用户在 driver mode 下按 M1-M5（以及 AI、Mic）后回传 `blade-input` 日志；只有日志里确实出现 `0x0A/0x0B/0x03/0xD2/0xD3/0xD4`，才能确认当前 hook 集合下驱动会持续上报 kind=3。
+
+等实机日志和灯光标定结果出来后，再决定是否需要：
 
 1. 为缺失的 RazerKey 帧调整 filter hook / notify；
-2. 为 M1/M2 的 10/11 事件补显式动作或诊断日志；
-3. 为已标定的 zone 增加最小亮度/状态接口。
+2. 为已标定的 zone 增加最小亮度/状态接口。
 
 ## 6. 必须实机确认的项
 
