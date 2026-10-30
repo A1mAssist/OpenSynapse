@@ -2677,6 +2677,8 @@
   <data name="KiyoContrastLabel/Text" xml:space="preserve"><value>Contrast</value></data>
   <data name="KiyoSaturationLabel/Text" xml:space="preserve"><value>Saturation</value></data>
   <data name="KiyoWhiteBalanceLabel/Text" xml:space="preserve"><value>White balance</value></data>
+  <data name="KiyoFocusLabel/Text" xml:space="preserve"><value>Focus</value></data>
+  <data name="KiyoZoomLabel/Text" xml:space="preserve"><value>Zoom</value></data>
   <data name="KiyoAutoWhiteBalance/Text" xml:space="preserve"><value>Auto white balance</value></data>
   <data name="KiyoSettingsDescription/Text" xml:space="preserve"><value>Brightness and contrast writes use Razer's native settings dialog; this page reads the current values and applies white balance.</value></data>
   <data name="KiyoApplyWhiteBalance/Text" xml:space="preserve"><value>Apply white balance</value></data>
@@ -2695,6 +2697,16 @@
   <data name="RazerMixer053EApplyBrightness/Content" xml:space="preserve"><value>Apply brightness</value></data>
   <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>Audio Mixer HID path unavailable</value></data>
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>Written and read back</value></data>
+  <data name="SeirenEmoteTitle/Text" xml:space="preserve"><value>8×8 matrix</value></data>
+  <data name="SeirenEmoteDescription/Text" xml:space="preserve"><value>The full 8×8 frame is sent as four 16-pixel rows. This card provides a solid fill and clear.</value></data>
+  <data name="SeirenEmoteColor/Text" xml:space="preserve"><value>Frame color</value></data>
+  <data name="SeirenEmoteClear/Content" xml:space="preserve"><value>Clear</value></data>
+  <data name="SeirenEmoteApply/Content" xml:space="preserve"><value>Fill color</value></data>
+  <data name="SeirenEmoteStatusConnected/Text" xml:space="preserve"><value>8×8 matrix endpoint connected.</value></data>
+  <data name="SeirenEmoteStatusApplied/Text" xml:space="preserve"><value>Solid-color frame sent.</value></data>
+  <data name="SeirenEmoteStatusCleared/Text" xml:space="preserve"><value>Clear frame sent.</value></data>
+  <data name="SeirenEmoteErrorConnect/Text" xml:space="preserve"><value>Could not open the 0F1B matrix endpoint: {0}</value></data>
+  <data name="SeirenEmoteErrorWrite/Text" xml:space="preserve"><value>Matrix write failed: {0}</value></data>
 </root>
 
 
