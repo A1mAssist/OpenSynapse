@@ -124,6 +124,7 @@ Ghidra 工程：`artifacts/reverse-engineering/ghidra-razer-drivers`（`RazerDri
 里面是 `RzDev_0f1b.sys`，INF 匹配 `HID\Vid_1532&Pid_0f1b`，同样 `ControlDevice=1`、`DeviceType=3`。
 所以 Emote 也有 `RZCONTROL` + `0x88883010` 这条 SET_FEATURE 通道——**发**不是问题。
 
-缺的仍然只有帧内容：OpenRazer 没有 Emote 支持，中间件 JS 里也没有矩阵帧的组包代码。
-需要一次 `0x88883010` 的抓包（或者雷云原生中间件的组帧函数）才能把 8×8 矩阵写进去。
-如果矩阵走的是 output report 而不是 feature report，这条通道用不上，得另找路。
+Emote 的 8×8 帧现在走 91 字节 HID feature report，不依赖 `0x88883010`：
+四行 `0x0F:0x03`（每行 16 像素）后跟一帧 `0x0F:0x02` latch。帧内容已接到界面，
+支持逐像素画布、填充和清屏；显示方向、行序和 5 ms 行延时仍需实机确认。
+该过滤驱动对当前实现不是必需组件，因此不加入口。

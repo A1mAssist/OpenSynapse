@@ -106,7 +106,7 @@ D:\Tools\ghidra_12.1.2_PUBLIC_20260605\support\analyzeHeadless.bat ^
 | THX V4 游戏配置/补丁 | `THXV4GameProfiles-*` / `THXV4Patcher714-*` | 雷云 THX V4 配置，不影响我们的 HID/客户端调用 | 不加 |
 | THX 虚拟音频驱动 | `THXVAD*` | 雷云音频路由 | 不用，不加 |
 | Razer 0F1F 过滤驱动 | `DeviceDriver3871` | ARGB 320 字节逐灯 | 已加入口 |
-| Razer 0F1B 过滤驱动 | `PID0f1bDrv` | Emote 8×8 矩阵（未实现） | 等矩阵 UI 做了再加 |
+| Razer 0F1B 过滤驱动 | `PID0f1bDrv` | Emote 8×8 矩阵 | 当前使用 91 字节 feature report，不依赖该过滤驱动，不加 |
 | 其他 `DeviceDriver*`（5 个） | Kraken V3 / HyperSense、Audio Mixer、HyperFlux V2、0282 | 雷云专用音频/充电功能 | 不加 |
 | `NormalDriver_PID*`（253 个） | 鼠标/键盘/耳机的雷云过滤驱动 | OpenRazer/HID 路径不依赖 | 不加 |
 | `RzAudioUtil` / `audCapNative` | 雷云音频效果 | 我们用 HID 读写 | 不加 |
