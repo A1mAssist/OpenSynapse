@@ -80,6 +80,9 @@ public sealed partial class OpenRazerKrakenViewModel
             _thxStatus = await ThxHeadsetAdmission.InstallNativeComponentAsync(
                 Connection.ProductId, cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or HttpRequestException or
                 InvalidOperationException)
@@ -94,5 +97,15 @@ public sealed partial class OpenRazerKrakenViewModel
             OnPropertyChanged(nameof(ThxDownloadVisibility));
             OnPropertyChanged(nameof(CanDownloadThxComponent));
         }
+    }
+
+    public void RefreshThx()
+    {
+        _thxErrorText = string.Empty;
+        _thxStatus = ThxHeadsetAdmission.Check(Connection.ProductId);
+        OnPropertyChanged(nameof(ThxStatusText));
+        OnPropertyChanged(nameof(ThxInstallerVisibility));
+        OnPropertyChanged(nameof(ThxDownloadVisibility));
+        OnPropertyChanged(nameof(CanDownloadThxComponent));
     }
 }

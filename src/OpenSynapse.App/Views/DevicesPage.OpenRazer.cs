@@ -165,6 +165,9 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
+    private void OpenRazerKrakenRefreshThxClick(object sender, RoutedEventArgs e) =>
+        SelectedOpenRazerKraken?.RefreshThx();
+
     private async void OpenRazerKrakenOpenThxGameProfilesClick(object sender, RoutedEventArgs e)
     {
         if (SelectedOpenRazerKraken is { ThxGameProfilesUri: { Length: > 0 } uri })
