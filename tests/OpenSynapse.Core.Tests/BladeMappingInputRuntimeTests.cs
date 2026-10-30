@@ -86,6 +86,34 @@ public sealed class BladeMappingInputRuntimeTests
     }
 
     [Fact]
+    public void MapsM2ToHyperShift()
+    {
+        using var runtime = BladeMappingInputRuntime.FromGraph(LoadProduct710Graph());
+
+        Assert.Empty(runtime.Process(
+            new BladeMappingInputEvent(BladeMappingInputKind.RazerKey, 0x0B, true)));
+        Assert.True(runtime.HyperShiftEnabled);
+
+        Assert.Empty(runtime.Process(
+            new BladeMappingInputEvent(BladeMappingInputKind.RazerKey, 0x0B, false)));
+        Assert.False(runtime.HyperShiftEnabled);
+    }
+
+    [Fact]
+    public void MapsAiLauncherToItsKeySequence()
+    {
+        using var runtime = BladeMappingInputRuntime.FromGraph(LoadProduct710Graph());
+
+        Assert.Empty(runtime.Process(
+            new BladeMappingInputEvent(BladeMappingInputKind.RazerKey, 0xD2, true),
+            out var action,
+            out _));
+
+        var multi = Assert.IsType<BladeMultiMappingAction>(action);
+        Assert.Equal(3, multi.Actions.Count);
+    }
+
+    [Fact]
     public void MapsM5ToMicrophoneMute()
     {
         using var runtime = BladeMappingInputRuntime.FromGraph(LoadProduct710Graph());
