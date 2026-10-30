@@ -503,7 +503,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public Visibility BassVisibility => _hasBass ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility MicCardVisibility =>
-        IsValkyrie || IsProtocol40
+        IsProtocol40
             ? Visibility.Collapsed
             : _hasMicMuted || _hasMicVolume ? Visibility.Visible : Visibility.Collapsed;
 
@@ -1142,7 +1142,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             RazerHeadsetAudioTransport.Mxic64 =>
                 RunMxicWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-                Task.CompletedTask,
+                RunValkyrieWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
             _ => RunWriteAsync(async (service, token) =>
             {
                 await service.SetMicMuteAsync(MicMuted, token);
