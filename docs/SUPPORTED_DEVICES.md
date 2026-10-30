@@ -339,12 +339,12 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Kraken 7.1 | `1532:0506` | Lighting only |
 | Razer Kraken 7.1 Chroma | `1532:0504` | Lighting only |
 | Razer Kraken 7.1 V2 | `1532:0510` | Lighting only |
-| Razer Kraken BT Kitty Edition | `1532:0530` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
+| Razer Kraken BT Kitty Edition | `1532:0530` | BLE page: battery/charging, volume, sidetone, game mode, bass, haptics, speaker/mic EQ, auto power-off and Chroma |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | BLE page: battery/charging, volume, sidetone, game mode, bass, haptics, speaker/mic EQ, auto power-off and Chroma |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | BLE page: battery/charging, volume, sidetone, game mode, bass, haptics, speaker/mic EQ, auto power-off and Chroma |
 | Razer Kraken Kitty Edition | `1532:0521` | Audio page |
 | Razer Kraken Kitty V2 | `1532:0560` | Audio page plus lighting |
-| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE page: battery only (AudioAWKittyBLE); audio/EQ not implemented |
+| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE page: battery/charging, volume, sidetone, game mode, bass, haptics, speaker/mic EQ, auto power-off and Chroma |
 | Razer Kraken Kitty V2 Pro | `1532:0554` | Audio page |
 | Razer Kraken Kitty V3 Pro | `1532:0587` | Audio page (EQ/battery/charging); THX V4 installer |
 | Razer Kraken Tournament Edition | `1532:0520` | Audio page plus lighting; THX installer for Kraken TE |
@@ -388,7 +388,7 @@ Microphone controls cover EQ, microphone volume and LED effects where available.
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Seiren Emote | `1532:0F1B` | Audio page and brightness/effect controls; 8x8 panel frames are not exposed |
+| Razer Seiren Emote | `1532:0F1B` | Audio page plus 8x8 solid-color and clear frames over the four-row 0x0F:0x03 protocol; arbitrary per-pixel editing is not exposed |
 | Razer Seiren V2 Pro | `1532:0542` | Audio page |
 | Razer Seiren V2 X | `1532:0543` | Audio page |
 | Razer Seiren V3 Mini | `1532:056A` | Audio page |
