@@ -339,12 +339,12 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Kraken 7.1 | `1532:0506` | 仅灯光 |
 | Razer Kraken 7.1 Chroma | `1532:0504` | 仅灯光 |
 | Razer Kraken 7.1 V2 | `1532:0510` | 仅灯光 |
-| Razer Kraken BT Kitty Edition | `1532:0530` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
-| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
+| Razer Kraken BT Kitty Edition | `1532:0530` | BLE 页：电量/充电、音量、侧音、游戏模式、低音、触觉、扬声器/麦克风 EQ、自动关机和 Chroma |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0309` | BLE 页：电量/充电、音量、侧音、游戏模式、低音、触觉、扬声器/麦克风 EQ、自动关机和 Chroma |
+| Razer Kraken BT Sanrio Limited Edition | `1532:0534` | BLE 页：电量/充电、音量、侧音、游戏模式、低音、触觉、扬声器/麦克风 EQ、自动关机和 Chroma |
 | Razer Kraken Kitty Edition | `1532:0521` | 音频页 |
 | Razer Kraken Kitty V2 | `1532:0560` | 音频页与灯光 |
-| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE 页：只读电量（AudioAWKittyBLE）；音频/EQ 未实现 |
+| Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE 页：电量/充电、音量、侧音、游戏模式、低音、触觉、扬声器/麦克风 EQ、自动关机和 Chroma |
 | Razer Kraken Kitty V2 Pro | `1532:0554` | 音频页 |
 | Razer Kraken Kitty V3 Pro | `1532:0587` | 音频页（EQ/电量/充电）；提供 THX V4 安装入口 |
 | Razer Kraken Tournament Edition | `1532:0520` | 音频页与灯光；提供 Kraken TE 的 THX 安装入口 |
@@ -388,7 +388,7 @@ Leviathan V2 X（`054A`）覆盖 edition ID 0（标准版）、128（Pikachu）�
 
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Seiren Emote | `1532:0F1B` | 音频页及亮度/灯效控制；8×8 面板逐像素帧未开放 |
+| Razer Seiren Emote | `1532:0F1B` | 音频页，以及 8×8 逐像素画布、填充和清屏（4×16 像素行 + latch） |
 | Razer Seiren V2 Pro | `1532:0542` | 音频页 |
 | Razer Seiren V2 X | `1532:0543` | 音频页 |
 | Razer Seiren V3 Mini | `1532:056A` | 音频页 |
