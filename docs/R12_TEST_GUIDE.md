@@ -13,7 +13,7 @@
 
 ## 本机可用的测试目标
 
-- Razer Viper V3 HyperSpeed（`00B8`）已连接：验证设备卡是否出现，电量 / DPI / 轮询率是否可读。
+- Razer Viper V3 HyperSpeed（`00B8`）已连接：先移动鼠标唤醒，再打开设备页；本机日志里休眠时所有 GET 都返回 `0x04`。唤醒后验证设备卡、电量 / DPI / 轮询率。
 - Razer Blade 16 2025（`02C6`）已连接：用于启动冒烟和既有 Blade 页回归。
 - 测试前先从托盘退出正在运行的旧实例（例如 powerwall 测试包）；否则 r12 会转发给旧实例，测到的不是新代码。
 
@@ -40,3 +40,4 @@
 - 本包只代表代码、manifest 和协议测试对齐；没有对应机型的实机复测。
 - 管理员接管只覆盖同一用户会话内、带 shutdown 通道的旧实例；旧实例卡死超过 15 秒会回退到激活旧实例。
 - 023A 的 6x16 行序、Wave 方向值和帧方向仍需实机确认。
+- 00B8 的 manifest 命令表与 bundle 一致（battery `02/07/80`、polling `01/00/85`、DPI `07/04/85` 等），`claimInterface` 也是 0；本机日志显示无线休眠时全部命令回 `0x04`，所以先要求移动鼠标唤醒。若唤醒后仍全是 `0x04`，下一步再验证 bundle 里的 `setActiveWirelessConnectionState(1,1)`（class 0, cmd `0x47`）。
