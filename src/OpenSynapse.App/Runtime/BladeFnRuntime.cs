@@ -82,6 +82,44 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     /// <summary>The filter runtime only runs for a model whose key graph we ship.</summary>
     internal static bool HasMapping(ushort productId) => File.Exists(MappingPathFor(productId));
 
+    private void WriteDiagnostic(string message)
+    {
+        try
+        {
+            _diagnostic?.Invoke(message);
+        }
+        catch
+        {
+            // Diagnostics must never interfere with input routing.
+        }
+    }
+
+    private void LogDkmTable(string filterDevicePath)
+    {
+        if (_diagnostic is null)
+        {
+            return;
+        }
+
+        if (!RazerDkmTableReader.TryRead(filterDevicePath, out var table, out var error))
+        {
+            WriteDiagnostic($"dkm table unavailable: {error}");
+            return;
+        }
+
+        var nonZero = 0;
+        foreach (var value in table)
+        {
+            if (value != 0)
+            {
+                nonZero++;
+            }
+        }
+
+        WriteDiagnostic(
+            $"dkm table readable; nonZero={nonZero}; head={Convert.ToHexString(table.AsSpan(0, 16))}");
+    }
+
     internal async Task StartAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
@@ -100,6 +138,8 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 .ConfigureAwait(false)
                 ?? throw new BladeFilterEndpointMissingException(
                     $"Could not uniquely identify the RZCONTROL endpoint for PID 0x{_productId:X4}.");
+
+            LogDkmTable(filterDevicePath);
 
             _mapping = await LoadMappingAsync(_productId, _mappingPreset, cancellationToken)
                 .ConfigureAwait(false);
@@ -286,17 +326,9 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     _diagnostic is not null &&
                     _diagnosticRazerKeys.Add((input.Code, input.IsDown)))
                 {
-                    try
-                    {
-                        _diagnostic(
-                            $"razerKey {input.Code} (0x{input.Code:X2}) " +
-                            $"{(input.IsDown ? "down" : "up")} -> " +
-                            $"{(action is not null || outputs.Count > 0 ? "matched" : "unmapped")}");
-                    }
-                    catch
-                    {
-                        // Diagnostics must never interfere with input routing.
-                    }
+                    WriteDiagnostic(
+                        $"razerKey {input.Code} (0x{input.Code:X2}) " +
+                        $"{(input.IsDown ? "down" : "up")}");
                 }
                 if (passThrough)
                 {
