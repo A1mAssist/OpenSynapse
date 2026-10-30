@@ -311,6 +311,19 @@ public sealed class RazerCoolingPadProtocolTests
             () => RazerCoolingPadProtocol.CreateSetLightingBrightnessRequest(1, -1));
     }
 
+    [Theory]
+    [InlineData(1, 0)]
+    [InlineData(2, 1)]
+    [InlineData(3, 0)]
+    [InlineData(8, 10)]
+    [InlineData(11, 0)]
+    [InlineData(12, 0)]
+    [InlineData(19, 0)]
+    public void LightingFlagsFor_UsesTheBundleQuickEffectFlag(byte effectId, byte expected)
+    {
+        Assert.Equal(expected, RazerCoolingPadProtocol.LightingFlagsFor(effectId));
+    }
+
     [Fact]
     public void ParseLightingBrightness_RoundsUpToPercent()
     {

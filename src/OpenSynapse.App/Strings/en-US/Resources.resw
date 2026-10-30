@@ -2499,6 +2499,10 @@
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>Static</value></data>
   <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>Breathing</value></data>
   <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
+  <data name="RazerLightingEffectFire" xml:space="preserve"><value>Fire</value></data>
+  <data name="RazerLightingEffectAmbient" xml:space="preserve"><value>Ambient</value></data>
+  <data name="RazerLightingEffectAudioMeter" xml:space="preserve"><value>Audio Meter</value></data>
+  <data name="RazerLightingEffectTidal" xml:space="preserve"><value>Tidal</value></data>
   <data name="RazerMicrophoneCategory" xml:space="preserve"><value>Microphone</value></data>
   <data name="BleChargingFailed" xml:space="preserve"><value>Charging failed</value></data>
   <data name="BleChargingLimit" xml:space="preserve"><value>Charging limit reached</value></data>

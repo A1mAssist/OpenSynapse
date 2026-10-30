@@ -2923,6 +2923,10 @@
   <data name="RazerLightingEffectStatic" xml:space="preserve"><value>静态</value></data>
   <data name="RazerLightingEffectBreathing" xml:space="preserve"><value>呼吸</value></data>
   <data name="RazerLightingEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
+  <data name="RazerLightingEffectFire" xml:space="preserve"><value>火焰</value></data>
+  <data name="RazerLightingEffectAmbient" xml:space="preserve"><value>环境</value></data>
+  <data name="RazerLightingEffectAudioMeter" xml:space="preserve"><value>音频律动</value></data>
+  <data name="RazerLightingEffectTidal" xml:space="preserve"><value>潮汐</value></data>
   <data name="RazerMicrophoneCategory" xml:space="preserve"><value>麦克风</value></data>
   <data name="BleChargingFailed" xml:space="preserve"><value>充电失败</value></data>
   <data name="BleChargingLimit" xml:space="preserve"><value>已达充电上限</value></data>
