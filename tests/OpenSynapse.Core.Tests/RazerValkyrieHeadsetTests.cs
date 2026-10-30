@@ -346,6 +346,25 @@ public sealed class RazerValkyrieHeadsetTests
     }
 
     [Fact]
+    public async Task MicBandsWriteRestoresPreviousValuesWhenReadbackMismatches()
+    {
+        byte[] previous = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        var transport = new FakeTransport
+        {
+            MicBands = previous,
+            IgnoreMicBandWrites = true,
+        };
+        var service = new RazerValkyrieHeadsetService(transport, 0x0A4E);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.SetMicBandsAsync([11, 12, 13, 14, 15, 16, 17, 18, 19, 20]));
+
+        var writes = transport.Requests.Where(request => request[10] == 0x97).ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal(previous, writes[^1][13..23]);
+    }
+
+    [Fact]
     public void MicProtocolTuplesMatchTheBundle()
     {
         Assert.Equal(new byte[] { 0x16, 0x00, 0x00 }, RazerValkyrieHeadsetProtocol.CreateGetMicPreset()[10..13]);
@@ -393,6 +412,7 @@ public sealed class RazerValkyrieHeadsetTests
         public bool MicMuted { get; set; }
         public bool IgnorePresetWrites { get; set; }
         public bool IgnoreBandWrites { get; set; }
+        public bool IgnoreMicBandWrites { get; set; }
         public bool ResendBatteryOnce { get; set; }
         private bool _batteryResent;
 
@@ -482,7 +502,11 @@ public sealed class RazerValkyrieHeadsetTests
 
         private byte[] WriteMicBands(byte[] request)
         {
-            MicBands = request.AsSpan(13, request[12]).ToArray();
+            if (!IgnoreMicBandWrites)
+            {
+                MicBands = request.AsSpan(13, request[12]).ToArray();
+            }
+
             return Response(2, [0x97, 0x01, 0x01], [0]);
         }
 
