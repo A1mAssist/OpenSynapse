@@ -1,10 +1,38 @@
 using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
+
+public sealed class RazerSeirenEmotePixelViewModel : INotifyPropertyChanged
+{
+    public RazerSeirenEmotePixelViewModel(int index)
+    {
+        Index = index;
+        Brush = new SolidColorBrush(Color.FromArgb(255, 0, 0, 0));
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public int Index { get; }
+    public SolidColorBrush Brush { get; }
+
+    public Color Color
+    {
+        get => Brush.Color;
+        set
+        {
+            if (Brush.Color == value) return;
+            Brush.Color = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Brush)));
+        }
+    }
+}
 
 /// <summary>
 /// 0F1B 8x8 matrix editor. The protocol supports arbitrary frames; the first
@@ -20,6 +48,10 @@ public sealed class RazerSeirenEmoteViewModel : INotifyPropertyChanged, IAsyncDi
     private Color _frameColor = Color.FromArgb(255, 0, 255, 0);
     private string _statusText = string.Empty;
     private string _errorText = string.Empty;
+
+    public ObservableCollection<RazerSeirenEmotePixelViewModel> Pixels { get; } =
+        new(Enumerable.Range(0, RazerSeirenEmoteProtocol.PixelCount)
+            .Select(index => new RazerSeirenEmotePixelViewModel(index)));
 
     public RazerSeirenEmoteViewModel(Action<string>? diagnostic = null)
         : this(cancellationToken => RazerSeirenEmoteService.ConnectAsync(diagnostic, cancellationToken))
@@ -96,17 +128,44 @@ public sealed class RazerSeirenEmoteViewModel : INotifyPropertyChanged, IAsyncDi
     public async Task ApplyAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApply) return;
-        await SendAsync(pixels => Fill(pixels, FrameColor), "SeirenEmoteStatusApplied", cancellationToken)
+        await SendAsync(
+            CreatePixels,
+            "SeirenEmoteStatusApplied",
+            cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    public async Task FillAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApply) return;
+        foreach (var pixel in Pixels)
+        {
+            pixel.Color = FrameColor;
+        }
+
+        await ApplyAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApply) return;
+        foreach (var pixel in Pixels)
+        {
+            pixel.Color = Color.FromArgb(255, 0, 0, 0);
+        }
+
         await SendAsync(
-            pixels => Array.Clear(pixels),
+            CreatePixels,
             "SeirenEmoteStatusCleared",
             cancellationToken).ConfigureAwait(false);
+    }
+
+    public void Paint(int index)
+    {
+        if (index >= 0 && index < Pixels.Count)
+        {
+            Pixels[index].Color = FrameColor;
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -119,7 +178,7 @@ public sealed class RazerSeirenEmoteViewModel : INotifyPropertyChanged, IAsyncDi
     }
 
     private async Task SendAsync(
-        Action<RazerRgb[]> fill,
+        Func<RazerRgb[]> createPixels,
         string statusKey,
         CancellationToken cancellationToken)
     {
@@ -132,8 +191,12 @@ public sealed class RazerSeirenEmoteViewModel : INotifyPropertyChanged, IAsyncDi
         IsBusy = true;
         try
         {
-            var pixels = new RazerRgb[RazerSeirenEmoteProtocol.PixelCount];
-            fill(pixels);
+            var pixels = createPixels();
+            if (pixels.Length != RazerSeirenEmoteProtocol.PixelCount)
+            {
+                throw new ArgumentException("A Seiren Emote frame needs 64 pixels.", nameof(createPixels));
+            }
+
             await _service.SendFrameAsync(pixels, cancellationToken).ConfigureAwait(false);
             StatusText = AppStrings.Text(statusKey);
             SetError(string.Empty);
@@ -149,11 +212,9 @@ public sealed class RazerSeirenEmoteViewModel : INotifyPropertyChanged, IAsyncDi
         }
     }
 
-    private static void Fill(RazerRgb[] pixels, Color color)
-    {
-        var rgb = new RazerRgb(color.R, color.G, color.B);
-        Array.Fill(pixels, rgb);
-    }
+    private RazerRgb[] CreatePixels() =>
+        Pixels.Select(pixel => new RazerRgb(
+            pixel.Color.R, pixel.Color.G, pixel.Color.B)).ToArray();
 
     private void SetError(string error)
     {
