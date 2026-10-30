@@ -31,6 +31,7 @@ public sealed class SingleInstanceGuard : IDisposable
     private EventWaitHandle? _activationEvent;
     private EventWaitHandle? _shutdownEvent;
     private EventWaitHandle? _exitedEvent;
+    private EventWaitHandle? _elevatedEvent;
     private readonly bool _ownsMutex;
 
     private SingleInstanceGuard(
@@ -38,12 +39,14 @@ public sealed class SingleInstanceGuard : IDisposable
         EventWaitHandle activationEvent,
         EventWaitHandle shutdownEvent,
         EventWaitHandle exitedEvent,
+        EventWaitHandle elevatedEvent,
         bool ownsMutex)
     {
         _mutex = mutex;
         _activationEvent = activationEvent;
         _shutdownEvent = shutdownEvent;
         _exitedEvent = exitedEvent;
+        _elevatedEvent = elevatedEvent;
         _ownsMutex = ownsMutex;
     }
 
@@ -70,6 +73,7 @@ public sealed class SingleInstanceGuard : IDisposable
         EventWaitHandle? activationEvent = null;
         EventWaitHandle? shutdownEvent = null;
         EventWaitHandle? exitedEvent = null;
+        EventWaitHandle? elevatedEvent = null;
         try
         {
             activationEvent = new EventWaitHandle(
@@ -85,13 +89,18 @@ public sealed class SingleInstanceGuard : IDisposable
                 initialState: false,
                 EventResetMode.ManualReset,
                 $"{name}.Exited");
+            elevatedEvent = new EventWaitHandle(
+                initialState: false,
+                EventResetMode.ManualReset,
+                $"{name}.Elevated");
 
             if (createdNew)
             {
                 shutdownEvent.Reset();
                 exitedEvent.Reset();
+                elevatedEvent.Reset();
                 guard = new SingleInstanceGuard(
-                    mutex, activationEvent, shutdownEvent, exitedEvent, ownsMutex: true);
+                    mutex, activationEvent, shutdownEvent, exitedEvent, elevatedEvent, ownsMutex: true);
                 return true;
             }
 
@@ -111,6 +120,7 @@ public sealed class SingleInstanceGuard : IDisposable
                     activationEvent,
                     shutdownEvent,
                     exitedEvent,
+                    elevatedEvent,
                     shutdownTimeout ?? DefaultShutdownTimeout,
                     out guard))
             {
@@ -125,6 +135,7 @@ public sealed class SingleInstanceGuard : IDisposable
             activationEvent.Dispose();
             shutdownEvent.Dispose();
             exitedEvent.Dispose();
+            elevatedEvent.Dispose();
             mutex.Dispose();
             guard = null;
             return false;
@@ -134,6 +145,7 @@ public sealed class SingleInstanceGuard : IDisposable
             activationEvent?.Dispose();
             shutdownEvent?.Dispose();
             exitedEvent?.Dispose();
+            elevatedEvent?.Dispose();
             mutex.Dispose();
             throw new ExistingInstanceNotTakeoverableException();
         }
@@ -153,6 +165,7 @@ public sealed class SingleInstanceGuard : IDisposable
         EventWaitHandle activationEvent,
         EventWaitHandle shutdownEvent,
         EventWaitHandle exitedEvent,
+        EventWaitHandle elevatedEvent,
         TimeSpan timeout,
         out SingleInstanceGuard? guard)
     {
@@ -197,7 +210,7 @@ public sealed class SingleInstanceGuard : IDisposable
         shutdownEvent.Reset();
         exitedEvent.Reset();
         guard = new SingleInstanceGuard(
-            existing, activationEvent, shutdownEvent, exitedEvent, ownsMutex: ownsExisting);
+            existing, activationEvent, shutdownEvent, exitedEvent, elevatedEvent, ownsMutex: ownsExisting);
         return true;
     }
 
@@ -210,6 +223,21 @@ public sealed class SingleInstanceGuard : IDisposable
         catch (AbandonedMutexException)
         {
             return true;
+        }
+    }
+
+    public void MarkElevated() => Volatile.Read(ref _elevatedEvent)?.Set();
+
+    public static bool IsExistingElevated(string name)
+    {
+        try
+        {
+            using var elevatedEvent = EventWaitHandle.OpenExisting($"{name}.Elevated");
+            return elevatedEvent.WaitOne(0);
+        }
+        catch (WaitHandleCannotBeOpenedException)
+        {
+            return false;
         }
     }
 
@@ -277,6 +305,9 @@ public sealed class SingleInstanceGuard : IDisposable
 
         var shutdownEvent = Interlocked.Exchange(ref _shutdownEvent, null);
         shutdownEvent?.Dispose();
+
+        var elevatedEvent = Interlocked.Exchange(ref _elevatedEvent, null);
+        elevatedEvent?.Dispose();
 
         var lifecycleEvent = Interlocked.Exchange(ref _exitedEvent, null);
         lifecycleEvent?.Dispose();

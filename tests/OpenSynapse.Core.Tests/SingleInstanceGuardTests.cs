@@ -99,4 +99,19 @@ public sealed class SingleInstanceGuardTests
                 activateExisting: false,
                 requestExistingShutdown: true));
     }
+
+    [Fact]
+    public void TheElevationMarkerTracksTheRunningInstance()
+    {
+        var name = $@"Local\OpenSynapse.Test.{Guid.NewGuid():N}";
+        Assert.True(SingleInstanceGuard.TryAcquire(name, out var guard));
+        Assert.NotNull(guard);
+        Assert.False(SingleInstanceGuard.IsExistingElevated(name));
+
+        guard!.MarkElevated();
+        Assert.True(SingleInstanceGuard.IsExistingElevated(name));
+
+        guard.Dispose();
+        Assert.False(SingleInstanceGuard.IsExistingElevated(name));
+    }
 }
