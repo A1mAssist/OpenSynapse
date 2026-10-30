@@ -3009,6 +3009,9 @@
   <data name="CoolingPadFixedHigh/Text" xml:space="preserve"><value>高</value></data>
   <data name="CoolingPadLightingTitle/Text" xml:space="preserve"><value>灯光</value></data>
   <data name="CoolingPadLightingDescription/Text" xml:space="preserve"><value>区域和灯效由设备返回；没有响应时这张卡不会显示。</value></data>
+  <data name="CoolingPadStarlightColorMode.Header" xml:space="preserve"><value>颜色模式</value></data>
+  <data name="CoolingPadStarlightSpeed.Header" xml:space="preserve"><value>速度</value></data>
+  <data name="CoolingPadLightingSecondColor/Text" xml:space="preserve"><value>颜色 2</value></data>
   <data name="CoolingPadLightingEffectHeader/Header" xml:space="preserve"><value>效果</value></data>
   <data name="CoolingPadLightingApplyButton/Content" xml:space="preserve"><value>应用灯光</value></data>
   <data name="CoolingPadFixedModeCurrent/Text" xml:space="preserve"><value>当前 {0}，{1} RPM</value></data>

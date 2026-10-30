@@ -96,6 +96,17 @@ public static partial class RazerCoolingPadProtocol
     /// <summary>Wave uses the bundle's fixed rate 40; the other quick effects use 0.</summary>
     public static byte LightingRateFor(byte effectId) => effectId == 4 ? (byte)40 : (byte)0;
 
+    /// <summary>Starlight flags are a tri-state: random, one color, or two colors.</summary>
+    public static byte LightingFlagsForStarlight(bool random, bool dualColor) =>
+        (byte)(random ? 0 : dualColor ? 2 : 1);
+
+    /// <summary>Starlight rate is the bundle's 1..3 duration level.</summary>
+    public static byte LightingRateForStarlight(int duration)
+    {
+        if (duration is < 1 or > 3) throw new ArgumentOutOfRangeException(nameof(duration));
+        return (byte)duration;
+    }
+
     public static IReadOnlyList<RazerCoolingPadLightingRegion> ParseLightingRegions(ReadOnlySpan<byte> response)
     {
         ValidateChromaResponse(response, CreateGetLightingRegionsRequest(), 1);
