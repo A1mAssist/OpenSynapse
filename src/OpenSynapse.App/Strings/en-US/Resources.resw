@@ -2698,10 +2698,11 @@
   <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>Audio Mixer HID path unavailable</value></data>
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>Written and read back</value></data>
   <data name="SeirenEmoteTitle/Text" xml:space="preserve"><value>8×8 matrix</value></data>
-  <data name="SeirenEmoteDescription/Text" xml:space="preserve"><value>The full 8×8 frame is sent as four 16-pixel rows. This card provides a solid fill and clear.</value></data>
-  <data name="SeirenEmoteColor/Text" xml:space="preserve"><value>Frame color</value></data>
+  <data name="SeirenEmoteDescription/Text" xml:space="preserve"><value>Click a cell to paint it, then send the 8×8 frame. The protocol sends four 16-pixel rows and a latch.</value></data>
+  <data name="SeirenEmoteColor/Text" xml:space="preserve"><value>Brush color</value></data>
   <data name="SeirenEmoteClear/Content" xml:space="preserve"><value>Clear</value></data>
-  <data name="SeirenEmoteApply/Content" xml:space="preserve"><value>Fill color</value></data>
+  <data name="SeirenEmoteFill/Content" xml:space="preserve"><value>Fill</value></data>
+  <data name="SeirenEmoteApply/Content" xml:space="preserve"><value>Send frame</value></data>
   <data name="SeirenEmoteStatusConnected/Text" xml:space="preserve"><value>8×8 matrix endpoint connected.</value></data>
   <data name="SeirenEmoteStatusApplied/Text" xml:space="preserve"><value>Solid-color frame sent.</value></data>
   <data name="SeirenEmoteStatusCleared/Text" xml:space="preserve"><value>Clear frame sent.</value></data>

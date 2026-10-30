@@ -3122,10 +3122,11 @@
   <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>音频混音器 HID 路径不可用</value></data>
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>已写入并回读</value></data>
   <data name="SeirenEmoteTitle/Text" xml:space="preserve"><value>8×8 点阵</value></data>
-  <data name="SeirenEmoteDescription/Text" xml:space="preserve"><value>按 4 行 × 16 像素发送完整 8×8 画面；这里提供纯色填充和清屏。</value></data>
-  <data name="SeirenEmoteColor/Text" xml:space="preserve"><value>画面颜色</value></data>
+  <data name="SeirenEmoteDescription/Text" xml:space="preserve"><value>点击格子作画，再发送 8×8 画面。协议按 4 行 × 16 像素下发并补一帧 latch。</value></data>
+  <data name="SeirenEmoteColor/Text" xml:space="preserve"><value>画笔颜色</value></data>
   <data name="SeirenEmoteClear/Content" xml:space="preserve"><value>清屏</value></data>
-  <data name="SeirenEmoteApply/Content" xml:space="preserve"><value>填充颜色</value></data>
+  <data name="SeirenEmoteFill/Content" xml:space="preserve"><value>填充</value></data>
+  <data name="SeirenEmoteApply/Content" xml:space="preserve"><value>发送画布</value></data>
   <data name="SeirenEmoteStatusConnected/Text" xml:space="preserve"><value>8×8 点阵端点已连接。</value></data>
   <data name="SeirenEmoteStatusApplied/Text" xml:space="preserve"><value>纯色帧已发送。</value></data>
   <data name="SeirenEmoteStatusCleared/Text" xml:space="preserve"><value>清屏帧已发送。</value></data>
