@@ -96,10 +96,13 @@ public partial class App : Application
         var silentLaunch = Environment.GetCommandLineArgs()
             .Skip(1)
             .Any(argument => StringComparer.OrdinalIgnoreCase.Equals(argument, "--silent"));
+        var isElevated = ProcessIntegrityLevel.IsElevated(ProcessIntegrityLevel.Current());
+        // An elevated launch must replace the tray instance; otherwise it exits before device discovery.
         if (!SingleInstanceGuard.TryAcquire(
                 @"Local\OpenSynapse",
                 out _singleInstanceGuard,
-                activateExisting: !silentLaunch))
+                activateExisting: !silentLaunch,
+                requestExistingShutdown: isElevated && !silentLaunch))
         {
             Environment.Exit(0);
             return;
@@ -1149,25 +1152,4 @@ public partial class App : Application
         }
     }
 
-    private async Task ObserveActivationRequestsAsync(CancellationToken cancellationToken)
-    {
-        var guard = _singleInstanceGuard;
-        if (guard is null)
-        {
-            return;
-        }
-
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            var requested = await Task.Run(
-                () => guard.WaitForActivation(cancellationToken),
-                CancellationToken.None);
-            if (!requested)
-            {
-                return;
-            }
-
-            _window?.RequestActivation();
-        }
-    }
 }
