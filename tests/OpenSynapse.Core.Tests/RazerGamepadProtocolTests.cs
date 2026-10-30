@@ -187,6 +187,54 @@ public sealed class RazerGamepadProtocolTests
     }
 
     [Fact]
+    public void ChromaEffectAndFramePayloadsMatchTheBundle()
+    {
+        var effect = RazerGamepadProtocol.CreateSetChromaEffectRequest(
+            0x01,
+            profileId: 2,
+            regionId: 4,
+            effectId: 13,
+            flags: 1,
+            rate: 0,
+            [new RazerRgb(0x11, 0x22, 0x33)]);
+        Assert.Equal(0x0F, effect[7]);
+        Assert.Equal(0x02, effect[8]);
+        Assert.Equal(9, effect[6]);
+        Assert.Equal([2, 4, 13, 1, 0, 1, 0x11, 0x22, 0x33], effect[9..18]);
+
+        var frame = RazerGamepadProtocol.CreateSetChromaFrameRequest(
+            0x01,
+            profileId: 0,
+            regionId: 4,
+            row: 2,
+            start: 0,
+            end: 24,
+            Enumerable.Repeat(new RazerRgb(0x44, 0x55, 0x66), 25).ToArray());
+        Assert.Equal(0x0F, frame[7]);
+        Assert.Equal(0x03, frame[8]);
+        Assert.Equal(80, frame[6]);
+        Assert.Equal([0, 4, 2, 0, 24], frame[9..14]);
+        Assert.Equal([0x44, 0x55, 0x66], frame[14..17]);
+    }
+
+    [Fact]
+    public void ChromaReadersParseTheFiveByteRegionAndEffectRecords()
+    {
+        var regions = RazerGamepadProtocol.ReadChromaRegionList(
+            ChromaReply([4, 10, 3, 0, 0, 10, 20, 3, 1, 2]));
+        Assert.Equal(2, regions.Count);
+        Assert.Equal(new RazerGamepadChromaRegion(4, 10, 3, 0, 0), regions[0]);
+        Assert.Equal(new RazerGamepadChromaRegion(10, 20, 3, 1, 2), regions[1]);
+
+        var effect = RazerGamepadProtocol.ReadChromaEffect(
+            ChromaReply([2, 4, 13, 1, 0, 1, 0x11, 0x22, 0x33]));
+        Assert.Equal(4, effect.RegionId);
+        Assert.Equal(13, effect.EffectId);
+        Assert.Equal(1, effect.Flags);
+        Assert.Equal([new RazerRgb(0x11, 0x22, 0x33)], effect.Colors);
+    }
+
+    [Fact]
     public void ButtonListAndVibrationUseTheBundleValues()
     {
         var list = RazerGamepadProtocol.CreateGetButtonIdListRequest(0x01);
@@ -219,6 +267,14 @@ public sealed class RazerGamepadProtocolTests
         var report = new byte[RazerFeatureReport.Length];
         report[0] = RazerGamepadProtocol.ReportId;
         value.CopyTo(report, RazerFeatureReport.ArgumentsOffset);
+        report[89] = RazerFeatureReport.CalculateCrc(report);
+        return report;
+    }
+
+    private static byte[] ChromaReply(params byte[] value)
+    {
+        var report = RawReply(value);
+        report[RazerFeatureReport.DataSizeOffset] = (byte)value.Length;
         report[89] = RazerFeatureReport.CalculateCrc(report);
         return report;
     }

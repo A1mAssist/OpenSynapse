@@ -6,6 +6,7 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class RazerGamepadViewModel
 {
     private IReadOnlyList<byte> _profileIds = [];
+    private byte? _activeProfileId;
     private int _selectedProfileIndex;
     private int _selectedPollingIndex;
     private bool _hasPollingProfile;
@@ -77,8 +78,12 @@ public sealed partial class RazerGamepadViewModel
         {
             if (ProfileVisibility == Visibility.Visible && _profileIds.Count > 0)
             {
-                await _service.SetActiveProfileAsync(
-                    _profileIds[SelectedProfileIndex], cancellationToken);
+                var selected = _profileIds[SelectedProfileIndex];
+                if (_activeProfileId != selected)
+                {
+                    await _service.SetActiveProfileAsync(selected, cancellationToken);
+                    _activeProfileId = selected;
+                }
             }
             if (PollingVisibility == Visibility.Visible && PollingRates.Count > 0)
             {
@@ -102,10 +107,40 @@ public sealed partial class RazerGamepadViewModel
         }
     }
 
+    public async Task LoadPollingForSelectedProfileAsync(CancellationToken cancellationToken = default)
+    {
+        if (!BeginOperation()) return;
+        try
+        {
+            if (_profileIds.Count == 0) return;
+            var hertz = await _service.ReadPollingRateForProfileAsync(
+                _profileIds[SelectedProfileIndex],
+                cancellationToken);
+            _hasPollingProfile = true;
+            _selectedPollingIndex = Math.Max(0, PollingRates.ToList().IndexOf(hertz));
+            PollingProfileStatusText = string.Empty;
+            OnPropertyChanged(nameof(SelectedPollingIndex));
+            OnPropertyChanged(nameof(PollingVisibility));
+            OnPropertyChanged(nameof(PollingProfileVisibility));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            PollingProfileStatusText = exception.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private async Task LoadPollingProfileCoreAsync(CancellationToken cancellationToken)
     {
         var state = await _service.ReadPollingProfileAsync(cancellationToken);
         _profileIds = state.ProfileIds;
+        _activeProfileId = state.ActiveProfileId;
         _hasPollingProfile = state.PollingRateHertz is not null;
         _selectedProfileIndex = state.ActiveProfileId is { } active
             ? Math.Max(0, _profileIds.ToList().IndexOf(active))

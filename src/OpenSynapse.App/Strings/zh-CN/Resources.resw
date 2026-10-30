@@ -2885,6 +2885,13 @@
   <data name="RazerGamepadMappingRefresh.Content" xml:space="preserve"><value>刷新</value></data>
   <data name="RazerGamepadAssignmentAction.Header" xml:space="preserve"><value>动作</value></data>
   <data name="RazerGamepadAssignmentApply.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="RazerGamepadLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
+  <data name="RazerGamepadLightingRegion.Header" xml:space="preserve"><value>区域</value></data>
+  <data name="RazerGamepadLightingEffect.Header" xml:space="preserve"><value>灯效</value></data>
+  <data name="RazerGamepadLightingSpeed.Header" xml:space="preserve"><value>响应持续时间</value></data>
+  <data name="RazerGamepadLightingBrightness.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="RazerGamepadLightingApply.Content" xml:space="preserve"><value>应用灯光</value></data>
+  <data name="RazerGamepadLightingEffectStaticExtended" xml:space="preserve"><value>静态（扩展）</value></data>
   <data name="RazerGamepadAssignmentKeep" xml:space="preserve"><value>保持当前</value></data>
   <data name="RazerGamepadAssignmentOff" xml:space="preserve"><value>无操作</value></data>
   <data name="RazerGamepadAssignmentControllerA" xml:space="preserve"><value>手柄 A</value></data>
