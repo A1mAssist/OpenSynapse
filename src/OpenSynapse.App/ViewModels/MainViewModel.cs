@@ -237,6 +237,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             },
             OnPropertyChanged);
         Tray = new TrayWorkspace(() => Devices, OpenRazer);
+        CpuCurve = new CpuCurveWorkspace(
+            (label, operation, token) => RunDeviceOperationAsync(label, operation, token));
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
     }
 
@@ -251,6 +253,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public ViperWorkspace Viper { get; }
     public RefreshWorkspace Refresh { get; }
     public BladeWorkspace Blade { get; }
+    public CpuCurveWorkspace CpuCurve { get; }
     public ThxAudioViewModel ThxAudio { get; }
     public MacroWorkspace Macros { get; }
     public OpenRazerWorkspace OpenRazer { get; }
