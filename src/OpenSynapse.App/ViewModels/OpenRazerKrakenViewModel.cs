@@ -7,7 +7,7 @@ using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class OpenRazerKrakenViewModel : INotifyPropertyChanged
+public sealed partial class OpenRazerKrakenViewModel : INotifyPropertyChanged
 {
     private readonly OpenRazerSpecialLightingService _service;
     private readonly HashSet<OpenRazerLightingEffect> _unsupported = [];
