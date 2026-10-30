@@ -388,7 +388,7 @@ Microphone controls cover EQ, microphone volume and LED effects where available.
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Seiren Emote | `1532:0F1B` | Audio page plus 8x8 solid-color and clear frames over the four-row 0x0F:0x03 protocol; arbitrary per-pixel editing is not exposed |
+| Razer Seiren Emote | `1532:0F1B` | Audio page plus an 8x8 paint canvas, fill and clear over the four-row 0x0F:0x03 protocol |
 | Razer Seiren V2 Pro | `1532:0542` | Audio page |
 | Razer Seiren V2 X | `1532:0543` | Audio page |
 | Razer Seiren V3 Mini | `1532:056A` | Audio page |

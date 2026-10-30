@@ -89,7 +89,7 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 | Mxic64（protocol40） | 0593 | `rzDevice40HeadsetAiroha`，64 字节 report id 2；class/id/size 在 5..8，只开放电量/充电 |
 | BLE 电量/控制页 | 0309 0530 0534 0562 | `AudioAWKittyBLE`：service `416d656c-...`、write `416d0000-...`、notify `416d0001-...`；电量、主音量、侧音、游戏模式、扬声器/麦克风 EQ、低音、触觉、自动关机、Chroma 亮度、固件/序列号/连接/充电读取；音频输出仍由 Windows 负责 |
 | HID mixer 子集 | 053E | `AudioMixer`：64 字节 report-7 feature、report-9 状态；固件/序列号/设备模式、推子原始值、通道/麦克风静音、亮度；推子/路由/EQ/peak 需要 `CmMixerLib` |
-| Feature91（音频） | 0F1B | Seiren Emote 的音频/EQ 走 91 字节通道；8×8 画面使用独立的 4×16 像素行 + latch 帧，已提供纯色填充和清屏，未做逐像素编辑器 |
+| Feature91（音频） | 0F1B | Seiren Emote 的音频/EQ 走 91 字节通道；8×8 画面使用独立的 4×16 像素行 + latch 帧，已提供逐像素画布、填充和清屏 |
 | 不显示（串口） | 052D | `AudioNXPDevice` 走 `rzSerial`（28 字节包头），没有串口 transport |
 | 不显示（无 bundle） | 053C 0565 | CDN 快照里没有 main.js，无法核实 `rzDeviceType` |
 
