@@ -86,6 +86,7 @@ public sealed class BladeContractAlignmentTests
     [InlineData(0x02C5)]
     [InlineData(0x02C6)]
     [InlineData(0x02C7)]
+    [InlineData(0x029F)]
     [InlineData(0x02E0)]
     [InlineData(0x02E1)]
     public void FanCurveModelsReuseTheFixedTargetWritePath(ushort productId)

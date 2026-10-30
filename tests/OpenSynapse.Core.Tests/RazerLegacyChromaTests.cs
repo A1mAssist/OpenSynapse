@@ -32,6 +32,18 @@ public sealed class RazerLegacyChromaTests
     }
 
     [Fact]
+    public void MatrixStaticMatchesTheRzDevice25Payload()
+    {
+        var request = RazerLegacyChromaProtocol.SetMatrixStatic(0x05, [0x11, 0x22, 0x33]);
+
+        Assert.Equal((byte)4, request[6]);
+        Assert.Equal(0x03, request[7]);
+        Assert.Equal(0x0A, request[8]);
+        Assert.Equal([0x06, 0x11, 0x22, 0x33], request[9..13]);
+        Assert.Equal(RazerFeatureReport.CalculateCrc(request), request[89]);
+    }
+
+    [Fact]
     public void CustomFrameModeUsesTheArgbEffectSelector()
     {
         var request = RazerLegacyChromaProtocol.SetCustomFrameMode(0x3F);
@@ -103,6 +115,30 @@ public sealed class RazerLegacyChromaTests
 
         Assert.Equal(1, simulator.EffectId);
         Assert.Equal([0x11, 0x22, 0x33], simulator.Colors);
+    }
+
+    [Fact]
+    public async Task BlackWidowV4Pro75UsesTheMatrixStaticSelector()
+    {
+        var transport = new FakeTransport(request =>
+        {
+            if (request[7] != 0x03 || request[8] != 0x0A)
+            {
+                throw new NotSupportedException($"Unexpected command 0x{request[7]:X2}:0x{request[8]:X2}.");
+            }
+
+            return Response(request[2]);
+        });
+        var service = new RazerChromaStandardService(
+            transport, "test", TimeSpan.Zero, null, RazerChromaChannel.Legacy, 0x02B3);
+
+        await service.SetEffectAsync(RazerChromaEffect.Static, [0x11, 0x22, 0x33]);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Equal((byte)4, request[6]);
+        Assert.Equal(0x03, request[7]);
+        Assert.Equal(0x0A, request[8]);
+        Assert.Equal([0x06, 0x11, 0x22, 0x33], request[9..13]);
     }
 
     [Fact]

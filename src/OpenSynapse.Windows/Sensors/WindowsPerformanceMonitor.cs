@@ -45,9 +45,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var windowsGpus = _gpuActivity.Read();
         var nvidiaActive = WindowsGpuActivityReader.IsNvidiaActive(windowsGpus);
         var nvidia = nvidiaActive ? await ReadNvidiaGpuThrottledAsync(cancellationToken) : null;
-        var integrated = WindowsGpuActivityReader.SelectIntegrated(windowsGpus);
-        var windowsNvidia = WindowsGpuActivityReader.SelectNvidia(windowsGpus);
-        var selected = nvidiaActive ? windowsNvidia : integrated;
+        var selected = WindowsGpuActivityReader.SelectDisplayGpu(windowsGpus);
         var amd = selected?.VendorId == 0x1002 ? _amdGpu.Read() : default;
         var intel = selected?.VendorId == 0x8086 ? _intelGpu.Read() : default;
         var gpuName = nvidia?.Name ?? selected?.Name ?? "GPU";

@@ -25,15 +25,18 @@ internal sealed class AmdAdlTelemetryReader : IDisposable
                 return;
             }
 
+            var adapters = new List<(int Family, int Valid)>(count);
             for (var index = 0; index < count; index++)
             {
-                if (Adl2AdapterAsicFamilyTypeGet(_context, index, out var family, out var valid) == Success &&
-                    (family & valid & Integrated) != 0)
+                if (Adl2AdapterAsicFamilyTypeGet(_context, index, out var family, out var valid) == Success)
                 {
-                    _adapterIndex = index;
-                    break;
+                    adapters.Add((family, valid));
+                    continue;
                 }
+
+                adapters.Add((0, 0));
             }
+            _adapterIndex = SelectAdapterIndex(adapters);
         }
         catch (Exception exception) when (
             exception is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
@@ -79,6 +82,30 @@ internal sealed class AmdAdlTelemetryReader : IDisposable
             Read(sensors, EdgeTemperature, 1, 125),
             Read(sensors, AsicPower, 1, 1000),
             Read(sensors, GfxClock, 1, 10000));
+    }
+
+    /// <summary>Prefers a discrete AMD adapter, then falls back to the integrated one.</summary>
+    internal static int SelectAdapterIndex(IReadOnlyList<(int Family, int Valid)> adapters)
+    {
+        for (var index = 0; index < adapters.Count; index++)
+        {
+            var (family, valid) = adapters[index];
+            if (valid != 0 && (family & Integrated) == 0)
+            {
+                return index;
+            }
+        }
+
+        for (var index = 0; index < adapters.Count; index++)
+        {
+            var (family, valid) = adapters[index];
+            if ((family & valid & Integrated) != 0)
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     public void Dispose()

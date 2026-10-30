@@ -111,7 +111,7 @@ public sealed class BladeMaxFanProfileTests
     [InlineData(0x02C5, true)]
     [InlineData(0x02E0, true)]
     [InlineData(0x02E1, true)]
-    [InlineData(0x029F, false)]
+    [InlineData(0x029F, true)]
     [InlineData(0x02A0, false)]
     [InlineData(0x029D, true)]
     [InlineData(0x0000, false)]
