@@ -160,6 +160,7 @@ public sealed class RazerValkyrieHeadsetTests
             Charging = 1,
             Preset = 7,
             Bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            MicMuted = true,
         };
         var service = new RazerValkyrieHeadsetService(transport, 0x0567);
 
@@ -172,7 +173,7 @@ public sealed class RazerValkyrieHeadsetTests
         Assert.Equal<byte>(transport.Bands, state.EqBands!);
         Assert.Null(state.Firmware);
         Assert.Null(state.Bass);
-        Assert.Null(state.MicMuted);
+        Assert.True(state.MicMuted);
         Assert.Null(state.MicVolume);
         Assert.Null(state.AudioSource);
         Assert.Null(state.NoiseSuppression);
@@ -312,6 +313,18 @@ public sealed class RazerValkyrieHeadsetTests
         await service.SetEqBandsAsync(raw);
 
         Assert.Equal(raw, transport.Bands);
+    }
+
+    [Fact]
+    public async Task MicMuteWritesAndReadsBack()
+    {
+        var transport = new FakeTransport { MicMuted = false };
+        var service = new RazerValkyrieHeadsetService(transport, 0x0A4E);
+
+        await service.SetMicMuteAsync(true);
+
+        Assert.True(transport.MicMuted);
+        Assert.Equal(3, transport.Requests.Count(request => request[10] is 0x55 or 0xE9));
     }
 
     [Fact]

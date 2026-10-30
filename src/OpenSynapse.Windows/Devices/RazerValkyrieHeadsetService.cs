@@ -95,6 +95,13 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             value => RazerValkyrieHeadsetProtocol.ReadEqBands(value, _eqBandsWithProfile),
             errors,
             cancellationToken).ConfigureAwait(false);
+        var micMute = await ProbeAsync(
+            "microphone mute",
+            RazerValkyrieHeadsetProtocol.CreateGetMicMute(),
+            RazerValkyrieHeadsetProtocol.MicMuteHeader,
+            RazerValkyrieHeadsetProtocol.ReadMicMute,
+            errors,
+            cancellationToken).ConfigureAwait(false);
 
         return new RazerHeadsetAudioState(
             Firmware: null,
@@ -103,7 +110,7 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             EqPreset: preset.Ok ? preset.Value : null,
             EqBands: bands.Ok ? bands.Value : null,
             Bass: null,
-            MicMuted: null,
+            MicMuted: micMute.Ok ? micMute.Value : null,
             MicVolume: null,
             AudioSource: null,
             NoiseSuppression: null,
@@ -122,6 +129,18 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             RazerValkyrieHeadsetProtocol.SetEqPresetHeader,
             value => value == preset,
             "EQ preset",
+            cancellationToken);
+
+    public Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default) =>
+        WriteAsync(
+            RazerValkyrieHeadsetProtocol.CreateGetMicMute(),
+            RazerValkyrieHeadsetProtocol.MicMuteHeader,
+            RazerValkyrieHeadsetProtocol.ReadMicMute,
+            muted,
+            RazerValkyrieHeadsetProtocol.CreateSetMicMute,
+            RazerValkyrieHeadsetProtocol.SetMicMuteHeader,
+            value => value == muted,
+            "microphone mute",
             cancellationToken);
 
     public async Task SetEqBandsAsync(
