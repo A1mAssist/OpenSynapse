@@ -326,9 +326,20 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     _diagnostic is not null &&
                     _diagnosticRazerKeys.Add((input.Code, input.IsDown)))
                 {
+                    var detail = action switch
+                    {
+                        BladeCommandMappingAction command =>
+                            $" -> {command.CommandKind}:{command.Command}",
+                        BladeAudioMappingAction audio =>
+                            $" -> audio:{audio.Command}:{audio.Mute}",
+                        BladeBacklightMappingAction backlight =>
+                            $" -> backlight:{backlight.Command}",
+                        _ when outputs.Count > 0 => $" -> keys:{outputs.Count}",
+                        _ => string.Empty,
+                    };
                     WriteDiagnostic(
                         $"razerKey {input.Code} (0x{input.Code:X2}) " +
-                        $"{(input.IsDown ? "down" : "up")}");
+                        $"{(input.IsDown ? "down" : "up")}{detail}");
                 }
                 if (passThrough)
                 {
