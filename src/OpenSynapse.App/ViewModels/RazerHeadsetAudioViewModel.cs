@@ -1518,6 +1518,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             _hasEqBands = true;
             OnPropertyChanged(nameof(EqBandsVisibility));
         }
+        ApplyMicEqBands(state);
 
         if (state.Bass is byte bass)
         {
@@ -1654,6 +1655,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     private static bool HasAnyValue(RazerHeadsetAudioState state) =>
         state.BatteryPercent is not null || state.EqPreset is not null || state.EqBands is not null ||
+        state.MicBands is not null ||
         state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null;
 
     private bool BeginOperation()

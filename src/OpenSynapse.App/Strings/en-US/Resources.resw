@@ -2704,6 +2704,8 @@
   <data name="RazerMixer053EApplyBrightness/Content" xml:space="preserve"><value>Apply brightness</value></data>
   <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>Audio Mixer HID path unavailable</value></data>
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>Written and read back</value></data>
+  <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>Microphone equalizer bands</value></data>
+  <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>Apply microphone bands</value></data>
 </root>
 
 

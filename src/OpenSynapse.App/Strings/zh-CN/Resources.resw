@@ -3128,6 +3128,8 @@
   <data name="RazerMixer053EApplyBrightness/Content" xml:space="preserve"><value>应用亮度</value></data>
   <data name="RazerMixer053EUnavailable" xml:space="preserve"><value>音频混音器 HID 路径不可用</value></data>
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>已写入并回读</value></data>
+  <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>麦克风均衡器频段</value></data>
+  <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>应用麦克风频段</value></data>
 </root>
 
 

@@ -160,6 +160,7 @@ public sealed class RazerValkyrieHeadsetTests
             Charging = 1,
             Preset = 7,
             Bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            MicBands = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
             MicMuted = true,
         };
         var service = new RazerValkyrieHeadsetService(transport, 0x0567);
@@ -171,6 +172,7 @@ public sealed class RazerValkyrieHeadsetTests
         Assert.True(state.Charging);
         Assert.Equal((byte)7, state.EqPreset);
         Assert.Equal<byte>(transport.Bands, state.EqBands!);
+        Assert.Equal<byte>(transport.MicBands, state.MicBands!);
         Assert.Null(state.Firmware);
         Assert.Null(state.Bass);
         Assert.True(state.MicMuted);
@@ -325,6 +327,22 @@ public sealed class RazerValkyrieHeadsetTests
 
         Assert.True(transport.MicMuted);
         Assert.Equal(3, transport.Requests.Count(request => request[10] is 0x55 or 0xE9));
+    }
+
+    [Fact]
+    public async Task MicBandsWriteWritesAndReadsBack()
+    {
+        var transport = new FakeTransport();
+        var service = new RazerValkyrieHeadsetService(transport, 0x0A4E);
+        byte[] requested = [140, 12, 0, 1, 2, 3, 4, 5, 6, 7];
+
+        await service.SetMicBandsAsync(requested);
+
+        Assert.Equal(requested, transport.MicBands);
+        var write = Assert.Single(transport.Requests, request => request[10] == 0x97);
+        Assert.Equal(new byte[] { 0x97, 0x00, 0x0A }, write[10..13]);
+        Assert.Equal(requested, write[13..23]);
+        Assert.Equal(3, transport.Requests.Count(request => request[10] is 0x17 or 0x97));
     }
 
     [Fact]

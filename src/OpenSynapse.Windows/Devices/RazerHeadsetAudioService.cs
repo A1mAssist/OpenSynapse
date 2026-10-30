@@ -48,6 +48,7 @@ public sealed record RazerHeadsetAudioState(
     public bool? NightMode { get; init; }
     public RazerHapticsControlState? Haptics { get; init; }
     public bool? MicReturnSwitch { get; init; }
+    public IReadOnlyList<byte>? MicBands { get; init; }
 }
 
 /// <summary>
