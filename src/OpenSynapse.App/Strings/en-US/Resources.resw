@@ -2562,7 +2562,7 @@
   <data name="CoolingPadTargetLabel/Text" xml:space="preserve"><value>Target speed</value></data>
   <data name="CoolingPadRefreshButton/Content" xml:space="preserve"><value>Refresh</value></data>
   <data name="CoolingPadApplyButton/Content" xml:space="preserve"><value>Apply</value></data>  <data name="CoolingPadFixedModeTitle/Text" xml:space="preserve"><value>Fixed presets</value></data>
-  <data name="CoolingPadFixedModeDescription/Text" xml:space="preserve"><value>Low, Mid and High are the device's fixed presets; writes are verified by reading back.</value></data>
+  <data name="CoolingPadFixedModeDescription/Text" xml:space="preserve"><value>Low, Mid, High and Off are device presets; writes are verified by reading back.</value></data>
   <data name="CoolingPadFixedModeLabel/Header" xml:space="preserve"><value>Preset</value></data>
   <data name="CoolingPadFixedModeApplyButton/Content" xml:space="preserve"><value>Apply preset</value></data>
   <data name="CoolingPadFixedModeStatus/Text" xml:space="preserve"><value>Switched to {0}; read back {1} RPM</value></data>

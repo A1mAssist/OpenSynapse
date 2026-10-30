@@ -79,6 +79,18 @@ public sealed partial class RazerCoolingPadViewModel
             return;
         }
 
+        try
+        {
+            await _service.SetSmartModeAsync(
+                (RazerCoolingPadSmartMode)(SelectedCurveModeIndex + 2),
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            SetCurveStatus(AppStrings.FormatText("CoolingPadCurveError", exception.Message));
+            return;
+        }
+
         _lastCurveUnits = null;
         EnsureCurveTimer();
         _curveTimer!.Start();

@@ -17,6 +17,7 @@ public sealed partial class RazerCoolingPadViewModel
         AppStrings.Text("CoolingPadFixedLow"),
         AppStrings.Text("CoolingPadFixedMid"),
         AppStrings.Text("CoolingPadFixedHigh"),
+        AppStrings.Text("CoolingPadModeOff"),
     ];
 
     public int SelectedFixedModeIndex
@@ -24,7 +25,7 @@ public sealed partial class RazerCoolingPadViewModel
         get => _selectedFixedModeIndex;
         set
         {
-            if (SetField(ref _selectedFixedModeIndex, Math.Clamp(value, 0, 2)))
+            if (SetField(ref _selectedFixedModeIndex, Math.Clamp(value, 0, 3)))
             {
                 OnPropertyChanged(nameof(CanApplyFixedMode));
             }
@@ -45,11 +46,17 @@ public sealed partial class RazerCoolingPadViewModel
         IsBusy = true;
         try
         {
-            var mode = (RazerCoolingPadFixedMode)SelectedFixedModeIndex;
+            var mode = SelectedFixedModeIndex switch
+            {
+                0 => RazerCoolingPadFixedMode.Low,
+                2 => RazerCoolingPadFixedMode.High,
+                3 => RazerCoolingPadFixedMode.Off,
+                _ => RazerCoolingPadFixedMode.Mid,
+            };
             var actual = await _service.SetFixedModeAsync(mode, cancellationToken).ConfigureAwait(false);
             _fixedModeStatusText = AppStrings.FormatText(
                 "CoolingPadFixedModeStatus",
-                FixedModeOptions[(int)mode],
+                DescribeMode((byte)mode),
                 actual.Rpm);
             SetError(string.Empty);
             OnPropertyChanged(nameof(FixedModeStatusText));
@@ -74,6 +81,10 @@ public sealed partial class RazerCoolingPadViewModel
             if (state.ModeId <= 2)
             {
                 _selectedFixedModeIndex = state.ModeId;
+            }
+            else if (state.ModeId == 6)
+            {
+                _selectedFixedModeIndex = 3;
             }
 
             _fixedModeStatusText = AppStrings.FormatText(

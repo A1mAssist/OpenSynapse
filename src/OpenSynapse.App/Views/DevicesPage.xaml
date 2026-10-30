@@ -405,7 +405,7 @@
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding FixedModeVisibility}">
                     <StackPanel Spacing="12">
                       <TextBlock local:Localized.Uid="CoolingPadFixedModeTitle" Text="固定档" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="CoolingPadFixedModeDescription" Text="低、中、高是设备固件固定的三档；写入后会回读确认。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="CoolingPadFixedModeDescription" Text="低、中、高和关闭都由设备固件执行；写入后会回读确认。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       <ComboBox local:Localized.Uid="CoolingPadFixedModeLabel" Header="档位" ItemsSource="{Binding FixedModeOptions}" SelectedIndex="{Binding SelectedFixedModeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding CanApplyFixedMode}" />
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <TextBlock Text="{Binding FixedModeStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />

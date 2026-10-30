@@ -58,6 +58,7 @@ public static partial class RazerCoolingPadProtocol
     private const byte GetFanInformationCommandId = 0x83;
     private const byte SetCoolingModeCommandId = 0x10;
     private const byte GetCoolingModeCommandId = 0x90;
+    private const byte CoolingModeSourceFirmware = 0x00;
     private const byte CoolingModeSourceSynapse = 0x01;
     private const byte SetSpeedDataSize = 0x03;
     private const byte GetSpeedDataSize = 0x03;
@@ -131,13 +132,33 @@ public static partial class RazerCoolingPadProtocol
     /// </summary>
     public static byte[] CreateSetCoolingModeRequest(RazerCoolingPadFixedMode mode)
     {
-        var units = UnitsFor(mode);
+        var source = mode == RazerCoolingPadFixedMode.Off
+            ? CoolingModeSourceFirmware
+            : CoolingModeSourceSynapse;
+        return CreateSetCoolingModeRequest((byte)mode, source, UnitsFor(mode));
+    }
+
+    /// <summary>Selects one of the bundle's smart-curve modes without a target speed.</summary>
+    public static byte[] CreateSetSmartModeRequest(RazerCoolingPadSmartMode mode) =>
+        CreateSetCoolingModeRequest((byte)mode, CoolingModeSourceFirmware, 0);
+
+    public static byte[] CreateSetCoolingModeRequest(byte mode, byte source, byte units)
+    {
+        if (mode > 6)
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode), mode, "Cooling mode must be 0..6.");
+        }
+        if (source > CoolingModeSourceSynapse)
+        {
+            throw new ArgumentOutOfRangeException(nameof(source), source, "Cooling mode source must be 0 or 1.");
+        }
+
         return RazerFeatureReport.CreateRequest(
             TransactionId,
             CoolingModeDataSize,
             CommandClass,
             SetCoolingModeCommandId,
-            new[] { CoolingModeSourceSynapse, (byte)mode, units });
+            new[] { source, mode, units });
     }
 
     public static int RpmFor(RazerCoolingPadFixedMode mode) => mode switch
@@ -145,6 +166,7 @@ public static partial class RazerCoolingPadProtocol
         RazerCoolingPadFixedMode.Low => 1600,
         RazerCoolingPadFixedMode.Mid => 2200,
         RazerCoolingPadFixedMode.High => 2700,
+        RazerCoolingPadFixedMode.Off => 0,
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
 
@@ -153,6 +175,7 @@ public static partial class RazerCoolingPadProtocol
         RazerCoolingPadFixedMode.Low => 32,
         RazerCoolingPadFixedMode.Mid => 44,
         RazerCoolingPadFixedMode.High => 54,
+        RazerCoolingPadFixedMode.Off => 0,
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
 
@@ -261,6 +284,15 @@ public enum RazerCoolingPadFixedMode : byte
     Low = 0,
     Mid = 1,
     High = 2,
+    Off = 6,
+}
+
+/// <summary>Smart-curve modes the 0F43 bundle selects with 0D:10 source 0.</summary>
+public enum RazerCoolingPadSmartMode : byte
+{
+    Quiet = 3,
+    Balanced = 4,
+    Performance = 5,
 }
 
 /// <summary>State returned by 0D:90; ModeId also carries quiet/balanced/performance/off.</summary>
