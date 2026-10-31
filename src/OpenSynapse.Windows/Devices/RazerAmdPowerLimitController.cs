@@ -28,6 +28,7 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
     private readonly CpuPowerLimit _firmware;
     private readonly double _minimumWatts;
     private readonly double _maximumWatts;
+    private readonly double _readCeilingWatts;
     private bool _disposed;
 
     private RazerAmdPowerLimitController(
@@ -41,7 +42,8 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
         SetPptLimitDelegate setPptLimit,
         CpuPowerLimit firmware,
         double minimumWatts,
-        double maximumWatts)
+        double maximumWatts,
+        double readCeilingWatts)
     {
         _deviceLibrary = deviceLibrary;
         _platformLibrary = platformLibrary;
@@ -54,6 +56,7 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
         _firmware = firmware;
         _minimumWatts = minimumWatts;
         _maximumWatts = maximumWatts;
+        _readCeilingWatts = readCeilingWatts;
     }
 
     public static CpuPowerLimitAvailability TryOpen(
@@ -95,9 +98,13 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
 
             parameters = Marshal.AllocHGlobal(ParameterBufferSize);
             capability = Marshal.AllocHGlobal(CapabilityBufferSize);
-            if (getCapabilities(PptCapability, capability) == CapabilityNotSupported)
+            var capabilityStatus = getCapabilities(PptCapability, capability);
+            if (capabilityStatus != 0)
             {
-                throw new InvalidOperationException("PPT control is not supported.");
+                throw new InvalidOperationException(
+                    capabilityStatus == CapabilityNotSupported
+                        ? "PPT control is not supported."
+                        : $"GetCapabilities failed ({capabilityStatus}).");
             }
 
             var info = Marshal.PtrToStructure<CapabilityInfo>(capability);
@@ -113,7 +120,8 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
             {
                 throw new InvalidOperationException("The CPU PPT range is empty.");
             }
-            if (!TryReadParameters(getCpuParameters, parameters, maximumWatts, out var current, out var readError))
+            var readCeiling = Math.Max(info.Maximum, maximumWatts);
+            if (!TryReadParameters(getCpuParameters, parameters, readCeiling, out var current, out var readError))
             {
                 throw new InvalidOperationException(readError);
             }
@@ -134,7 +142,8 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
                 setPptLimit,
                 firmware,
                 minimumWatts,
-                maximumWatts);
+                maximumWatts,
+                readCeiling);
             detail = null;
             return CpuPowerLimitAvailability.Available;
         }
@@ -143,8 +152,10 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
                 BadImageFormatException or IOException or InvalidOperationException or
                 UnauthorizedAccessException)
         {
+            // The files exist, so this is a real failure; falling back to the SMU path
+            // would hide it behind a write the firmware ignores.
             detail = $"The Razer AMD OverClock path could not be opened: {exception.Message}";
-            return CpuPowerLimitAvailability.AmdDriverMissing;
+            return CpuPowerLimitAvailability.Failed;
         }
         finally
         {
@@ -179,7 +190,7 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
         return TryReadParameters(
                 _getCpuParameters,
                 _parameters,
-                _maximumWatts,
+                _readCeilingWatts,
                 out var current,
                 out var error)
             ? BuildReport(current)
@@ -205,11 +216,11 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
         if (!TryReadParameters(
                 _getCpuParameters,
                 _parameters,
-                _maximumWatts,
+                _readCeilingWatts,
                 out var actual,
-                out _))
+                out var readError))
         {
-            return BuildReport(requested);
+            return CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed, readError);
         }
 
         if (Math.Abs(actual - requested) > 1)
