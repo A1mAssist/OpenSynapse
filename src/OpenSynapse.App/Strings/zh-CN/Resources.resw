@@ -1675,6 +1675,17 @@
   <data name="DisplayMuxModeStatusRestored" xml:space="preserve"><value>切换失败，已恢复原显示模式。</value><comment>MUX 已恢复</comment></data>
   <data name="DisplayMuxModeStatusRestoreFailed" xml:space="preserve"><value>切换失败，恢复原模式也失败；请重启并检查 BIOS 显示模式。</value><comment>MUX 恢复失败</comment></data>
   <data name="DisplayMuxModeStatusDedicatedGpuDisabled" xml:space="preserve"><value>请先关闭“仅核显（禁用独显）”，再切换 MUX。</value><comment>MUX 被仅核显模式阻断</comment></data>
+  <data name="GpuModeTitle.Text" xml:space="preserve"><value>显卡模式</value><comment>四显卡模式标题</comment></data>
+  <data name="GpuModeDescription.Text" xml:space="preserve"><value>选择内置屏走哪块显卡。集显省电；标准由核显输出、独显按需渲染；独显直连需要重启；自动在插电时用标准、电池时用集显。</value><comment>四显卡模式说明</comment></data>
+  <data name="GpuModeRestart.Text" xml:space="preserve"><value>重启独显设备</value><comment>重启故障独显</comment></data>
+  <data name="GpuModeIntegrated" xml:space="preserve"><value>集显</value><comment>集显模式</comment></data>
+  <data name="GpuModeStandard" xml:space="preserve"><value>标准</value><comment>标准模式</comment></data>
+  <data name="GpuModeDiscrete" xml:space="preserve"><value>独显直连</value><comment>独显直连模式</comment></data>
+  <data name="GpuModeAuto" xml:space="preserve"><value>自动</value><comment>自动模式</comment></data>
+  <data name="GpuModeStatusCurrent" xml:space="preserve"><value>当前：{0}。</value><comment>当前显卡模式</comment></data>
+  <data name="GpuModeStatusAuto" xml:space="preserve"><value>自动：插电用标准，电池用集显；当前按{0}运行。</value><comment>自动模式状态</comment></data>
+  <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>当前挂在独显直连，先切回标准并重启，才能关闭独显。</value><comment>独显直连下不能禁用独显</comment></data>
+  <data name="GpuModeStatusNoHybrid" xml:space="preserve"><value>这台设备没有报告混合输出能力，无法切到标准。</value><comment>缺少 Hybrid 能力</comment></data>
   <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX 模式设置：{0}</value><comment>MUX 模式异常</comment></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>关于 OpenSynapse</value><comment>设置页关于入口标题</comment></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>查看版本、项目主页和许可信息。</value><comment>设置页关于入口说明</comment></data>

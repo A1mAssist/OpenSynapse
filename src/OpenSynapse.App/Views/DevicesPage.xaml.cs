@@ -33,6 +33,7 @@ public sealed partial class DevicesPage : UserControl
             UIElement.PointerCaptureLostEvent,
             new PointerEventHandler(BladeBrightnessPointerCaptureLost),
             handledEventsToo: true);
+        Microsoft.Win32.SystemEvents.PowerModeChanged += SystemPowerModeChanged;
     }
 
     private async void RefreshClick(object sender, RoutedEventArgs e)
