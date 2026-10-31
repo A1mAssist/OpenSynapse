@@ -4,6 +4,8 @@
 没有 Blade 实机，所有 HID 写入结论均为「bundle 对齐」，未做硬件验证。
 
 > 2026-10-31 状态更新：CPU 瓦特数（Intel RAPL / AMD Ryzen SMU）、CPU Boost bit `0x01`、GPU 频率偏移（NVAPI Pstates20）均已落地到代码和 UI；GPU TGP 瓦特滑杆仍未实现。下文保留最初的调研与取舍记录，涉及“未实现”的旧表述以本段为准。
+>
+> 同日修正：02C6（Blade 16 2025）实测 PawnIO 直写 SMU 会返回成功但 PM table 不变，因此 AMD 路径优先调用 Razer `RzAMDOverClockSetup` 安装的 `Platform.dll` / `SetPPTLimit`；未安装该组件时保留直写回退，并在写后比对 PM table，读数不变就报失败而不是假装成功。官方组件仍未在本机安装验证。安装包地址：`https://app-assets.razer.com/files/synapse/devices/common/blades/RazerAMDOverClockSetup-v1.0.4.0.exe`。
 
 ## 0. 结论
 

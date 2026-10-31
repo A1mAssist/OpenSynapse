@@ -33,8 +33,8 @@ public sealed class RyzenSmuTests
     public void ThePowerTableMapsFastAndSlowPptToTheTwoWalls()
     {
         var table = new ulong[64];
-        table[1] = Pack(65000f, 0);
-        table[2] = Pack(45000f, 0);
+        table[1] = Pack(65f, 0);
+        table[2] = Pack(45f, 0);
 
         Assert.True(RyzenSmuCpuPowerLimit.TryDecode(table, out var limit, out var error));
         Assert.Null(error);
@@ -46,8 +46,8 @@ public sealed class RyzenSmuTests
     public void AReversedTableStillYieldsOrderedWalls()
     {
         var table = new ulong[64];
-        table[1] = Pack(40000f, 0);
-        table[2] = Pack(55000f, 0);
+        table[1] = Pack(40f, 0);
+        table[2] = Pack(55f, 0);
 
         Assert.True(RyzenSmuCpuPowerLimit.TryDecode(table, out var limit, out _));
         Assert.Equal(40, limit.Pl1Watts);
@@ -56,9 +56,10 @@ public sealed class RyzenSmuTests
 
     [Theory]
     [InlineData(0f, 0f)]
-    [InlineData(45000f, 0f)]
-    [InlineData(0f, 65000f)]
-    [InlineData(900000f, 900000f)]
+    [InlineData(45f, 0f)]
+    [InlineData(0f, 65f)]
+    [InlineData(0.06f, 0.071f)]
+    [InlineData(900f, 900f)]
     public void ImplausibleTablesAreRejected(float slow, float fast)
     {
         var table = new ulong[64];

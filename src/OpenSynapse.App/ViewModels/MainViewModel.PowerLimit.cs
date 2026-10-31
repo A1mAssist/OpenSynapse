@@ -41,6 +41,8 @@ public sealed partial class MainViewModel
             AppStrings.Text("CpuPowerLimitModuleMissing"),
         { Availability: CpuPowerLimitAvailability.AccessDenied } =>
             AppStrings.Text("CpuPowerLimitAccessDenied"),
+        { Availability: CpuPowerLimitAvailability.AmdDriverMissing } =>
+            AppStrings.Text("CpuPowerLimitAmdDriverMissing"),
         _ => AppStrings.Text("CpuPowerLimitUnavailable"),
     };
 
@@ -48,8 +50,12 @@ public sealed partial class MainViewModel
     {
         null => AppStrings.Text("CpuPowerLimitChecking"),
         { IsLocked: true } => AppStrings.Text("CpuPowerLimitLocked"),
+        { Availability: CpuPowerLimitAvailability.Available, UsesDirectSmu: true } report =>
+            $"{AppStrings.FormatText("CpuPowerLimitCeiling", report.MaximumWatts)} · " +
+            AppStrings.Text("CpuPowerLimitDirectSmu"),
         { Availability: CpuPowerLimitAvailability.Available } report =>
             AppStrings.FormatText("CpuPowerLimitCeiling", report.MaximumWatts),
+        { Detail: { Length: > 0 } detail } => detail,
         _ => string.Empty,
     };
 

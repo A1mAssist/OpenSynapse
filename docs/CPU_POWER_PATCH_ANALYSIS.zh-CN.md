@@ -295,7 +295,7 @@ main 的基线文件：
 - `RyzenSmuSession` 加载 `RyzenSMU.bin`，调用 `ioctl_get_code_name`、`ioctl_resolve_pm_table`、`ioctl_update_pm_table`、`ioctl_read_pm_table`、`ioctl_send_smu_command`；
 - `RyzenSmuCpuPowerLimit` 支持 Renoir、Lucienne、Cezanne、Rembrandt、Phoenix、Phoenix2、Mendocino、HawkPoint、StrixPoint、StrixHalo、KrackanPoint、KrackanPoint2 共 12 个 family；
 - 用 MP1 的 `0x14`（STAPM）、`0x15`（fast PPT）、`0x16`（slow PPT）；
-- 从 PM table 的 float index 2（fast）和 4（slow）读毫瓦值，映射成 PL1=min(slow, fast)、PL2=max(slow, fast)；
+- 从 PM table 的 float index 2（fast）和 4（slow）读瓦特值，映射成 PL1=min(slow, fast)、PL2=max(slow, fast)；
 - 写入时 STAPM=slow、Slow=slow、Fast=fast；
 - `BuildReport` 不报告锁位，`IsLocked` 固定 false。
 

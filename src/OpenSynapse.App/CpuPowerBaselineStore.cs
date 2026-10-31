@@ -23,10 +23,7 @@ internal sealed class CpuPowerBaselineStore
     {
         if (Current is not null ||
             report.Availability != CpuPowerLimitAvailability.Available ||
-            !double.IsFinite(report.Pl1Watts) ||
-            !double.IsFinite(report.Pl2Watts) ||
-            report.Pl1Watts <= 0 ||
-            report.Pl2Watts <= 0)
+            !IsPlausible(report.Pl1Watts, report.Pl2Watts))
         {
             return;
         }
@@ -69,10 +66,7 @@ internal sealed class CpuPowerBaselineStore
             if (parts.Length != 2 ||
                 !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var pl1) ||
                 !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var pl2) ||
-                !double.IsFinite(pl1) ||
-                !double.IsFinite(pl2) ||
-                pl1 <= 0 ||
-                pl2 <= 0)
+                !IsPlausible(pl1, pl2))
             {
                 return null;
             }
@@ -90,4 +84,13 @@ internal sealed class CpuPowerBaselineStore
             return null;
         }
     }
+
+    // 0.06 W was the old Ryzen decode bug; it must not become an 8 W Auto restore.
+    private static bool IsPlausible(double pl1, double pl2) =>
+        double.IsFinite(pl1) &&
+        double.IsFinite(pl2) &&
+        pl1 >= CpuPowerLimit.MinimumWatts &&
+        pl2 >= CpuPowerLimit.MinimumWatts &&
+        pl1 <= CpuPowerLimit.MaximumRestoreWatts &&
+        pl2 <= CpuPowerLimit.MaximumRestoreWatts;
 }

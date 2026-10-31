@@ -2130,9 +2130,11 @@
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>未安装 PawnIO，无法读写 CPU 功耗墙。</value></data>
   <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>缺少 PawnIO 模块文件（IntelMSR.bin / RyzenSMU.bin），请重新部署 OpenSynapse。</value></data>
   <data name="CpuPowerLimitAccessDenied" xml:space="preserve"><value>需要管理员权限，或安装 OpenSynapse 机器服务。</value></data>
+  <data name="CpuPowerLimitAmdDriverMissing" xml:space="preserve"><value>需要先安装 Razer AMD OverClock 组件（含 AMD Ryzen Master 驱动）。</value></data>
   <data name="CpuPowerLimitUnavailable" xml:space="preserve"><value>无法读取 CPU 功耗墙。</value></data>
   <data name="CpuPowerLimitChecking" xml:space="preserve"><value>正在读取功耗墙…</value></data>
   <data name="CpuPowerLimitCeiling" xml:space="preserve"><value>上限 {0:0} W</value></data>
+  <data name="CpuPowerLimitDirectSmu" xml:space="preserve"><value>直写 SMU，部分固件会忽略写入；安装 Razer AMD OverClock 组件后可获得可靠控制。</value></data>
   <data name="CpuPowerLimitLocked" xml:space="preserve"><value>固件已锁定功耗墙，当前不可写。</value></data>
   <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn 按键接管需要雷云驱动</value></data>
   <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn 快捷键接管依赖雷云安装的 Razer 过滤驱动。请安装一次雷云（Razer Synapse），让驱动写入系统；安装完成后重启 OpenSynapse。</value></data>
