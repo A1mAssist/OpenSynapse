@@ -1214,10 +1214,10 @@ public sealed class OpenRazerBackendTests
                     _ => null,
                 };
                 var prefix = zone == device.DefaultLedZone;
-                Assert.False(facts.CanReadBrightness && !(prefix && device.HasSourceCapability("get_brightness")) &&
+                Assert.False(facts.CanReadBrightness && !prefix &&
                     (sourceZone is null || !device.HasSourceCapability($"get_{sourceZone}_brightness")),
                     $"1532:{device.ProductId:X4} published unlisted {zone} brightness read.");
-                Assert.False(facts.CanWriteBrightness && !(prefix && device.HasSourceCapability("set_brightness")) &&
+                Assert.False(facts.CanWriteBrightness && !prefix &&
                     (sourceZone is null || !device.HasSourceCapability($"set_{sourceZone}_brightness")),
                     $"1532:{device.ProductId:X4} published unlisted {zone} brightness write.");
                 Assert.False(facts.CanReadState && (zone != OpenRazerLedZone.Logo ||
@@ -1275,8 +1275,8 @@ public sealed class OpenRazerBackendTests
         Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
         // The middleware bundle declares the newer power, lighting and scroll
         // commands for this mouse, so all of them are declared rather than
-        // inherited from a generic mouse.
-        Assert.Equal(35, capabilities.Count);
+        // inherited from a generic mouse. Time-to-dim is keyboard-only over USB.
+        Assert.Equal(33, capabilities.Count);
         Assert.Contains(OpenRazerBackendCapability.AutoSleepRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BatteryChargeLimiterRead, capabilities);
         Assert.Equal([125, 500, 1000], device.PollingRates);
@@ -1393,6 +1393,37 @@ public sealed class OpenRazerBackendTests
                 var error = await Record.ExceptionAsync(async () => await service.SetBrightnessAsync(connection, 128));
                 Assert.True(error is null, $"1532:{device.ProductId:X4} brightness write: {error}");
             }
+        }
+    }
+
+    [Fact]
+    public void ExtendedMatrixKeyboardsPublishTheInheritedBrightnessControl()
+    {
+        // RazerDeviceBrightnessSuspend adds get_brightness/set_brightness at runtime, so the
+        // extracted capability list omits them on these keyboards.
+        foreach (var productId in new ushort[] { 0x0271, 0x02A5 })
+        {
+            var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
+            var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+            Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
+            Assert.Contains(OpenRazerBackendCapability.BrightnessWrite, capabilities);
+        }
+    }
+
+    [Fact]
+    public void TimeToDimStaysOnTheKeyboardUsbProtocol()
+    {
+        var keyboard = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x02A5)!;
+        Assert.Contains(
+            OpenRazerBackendCapability.TimeToDimWrite,
+            OpenRazerDeviceService.GetCapabilities(keyboard));
+
+        foreach (var device in OpenRazerDeviceCatalog.BuiltIn.Devices.Where(
+            device => device.Category is DeviceCategory.Mouse or DeviceCategory.Accessory))
+        {
+            Assert.DoesNotContain(
+                OpenRazerBackendCapability.TimeToDimWrite,
+                OpenRazerDeviceService.GetCapabilities(device));
         }
     }
 
