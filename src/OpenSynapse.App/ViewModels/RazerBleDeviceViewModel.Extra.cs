@@ -33,6 +33,9 @@ public sealed partial class RazerBleDeviceViewModel
     private int _selectedTactileModeIndex;
     private double _scrollAccelerationLevel;
     private double _scrollMaskingTime;
+    private Visibility _hapticStageVisibility = Visibility.Collapsed;
+    private double _selectedHapticStage = 1;
+    private int _maxHapticStage = 1;
 
     public IReadOnlyList<string> BatteryChemistryOptions =>
         AppStrings.Texts("BleBatteryTypeAlkaline", "BleBatteryTypeNiMH", "BleBatteryTypeLithium");
@@ -189,6 +192,29 @@ public sealed partial class RazerBleDeviceViewModel
         set => SetField(ref _scrollMaskingTime, Math.Clamp(value, 0d, 255d));
     }
 
+    public Visibility HapticStageVisibility
+    {
+        get => _hapticStageVisibility;
+        private set => SetVisibility(ref _hapticStageVisibility, value, nameof(HapticStageVisibility));
+    }
+
+    public double SelectedHapticStage
+    {
+        get => _selectedHapticStage;
+        set => SetField(ref _selectedHapticStage, Math.Clamp(value, 1d, _maxHapticStage));
+    }
+
+    public int MaxHapticStage
+    {
+        get => _maxHapticStage;
+        private set => SetField(ref _maxHapticStage, value < 1 ? 1 : value);
+    }
+
+    /// <summary>Haptic stages live on the active onboard profile; profile 1 is the middleware default.</summary>
+    private byte HapticProfileId => _profileIds.Count == 0
+        ? (byte)1
+        : _profileIds[Math.Clamp(SelectedProfileIndex, 0, _profileIds.Count - 1)];
+
     public async Task LoadExtrasAsync(CancellationToken cancellationToken = default)
     {
         await LoadExtraAsync(
@@ -265,6 +291,16 @@ public sealed partial class RazerBleDeviceViewModel
                 MaskingTimeVisibility = Visibility.Visible;
             },
             () => MaskingTimeVisibility = Visibility.Collapsed);
+
+        await LoadExtraAsync(
+            () => _service!.ReadHapticStageAsync(HapticProfileId, cancellationToken),
+            state =>
+            {
+                MaxHapticStage = state.Max;
+                SelectedHapticStage = state.Active;
+                HapticStageVisibility = Visibility.Visible;
+            },
+            () => HapticStageVisibility = Visibility.Collapsed);
     }
 
     public Task ApplyPowerPlanAsync(CancellationToken cancellationToken = default) =>
@@ -298,6 +334,15 @@ public sealed partial class RazerBleDeviceViewModel
                 service => service.SetScrollMaskingTimeAsync(
                     (byte)Math.Round(ScrollMaskingTime), cancellationToken),
                 milliseconds => ScrollMaskingTime = milliseconds);
+        }
+
+        if (HapticStageVisibility == Visibility.Visible)
+        {
+            var profileId = HapticProfileId;
+            await RunWriteAsync(
+                service => service.SetHapticStageAsync(
+                    (byte)Math.Round(SelectedHapticStage), profileId, cancellationToken),
+                stage => SelectedHapticStage = stage);
         }
     }
 
