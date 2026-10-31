@@ -644,6 +644,18 @@ public sealed class OpenRazerDeviceCatalog
             AddPrefix("razer_chroma_standard_set_led_rgb", new byte[] { 0x01 });
         }
 
+        // Many generated extended-matrix keyboards omit static although the firmware takes
+        // effect 0x01 on the same transaction as none; reuse that builder's arguments.
+        if (transactions.TryGetValue("razer_chroma_extended_matrix_effect_none", out var noneTransaction) &&
+            !transactions.ContainsKey("razer_chroma_extended_matrix_effect_static"))
+        {
+            AddTransaction("razer_chroma_extended_matrix_effect_static", noneTransaction);
+            if (prefixes.TryGetValue("razer_chroma_extended_matrix_effect_none", out var nonePrefixes))
+            {
+                foreach (var prefix in nonePrefixes) AddPrefix("razer_chroma_extended_matrix_effect_static", prefix);
+            }
+        }
+
         // OpenRazer's Anansi static and macro branches issue these as the second/third
         // report; the source-derived single-builder inventory cannot attribute them.
         if (productId == 0x010F)

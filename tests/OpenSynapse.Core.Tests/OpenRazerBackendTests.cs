@@ -228,6 +228,25 @@ public sealed class OpenRazerBackendTests
         Assert.Equal([0x01, 0x05, 0x01, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF], request[9..18]);
     }
 
+    [Fact]
+    public void BlackWidowV3MiniHyperSpeedStaticReusesTheMatrixNoneBuilder()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0271)!;
+        var zone = OpenRazerDeviceService.GetLightingZoneCapabilities(device)[OpenRazerLedZone.Backlight];
+
+        Assert.Contains(OpenRazerLightingEffect.Static, zone.LightingEffects);
+
+        var request = OpenRazerLightingProtocol.CreateEffect(device,
+            new OpenRazerLightingSettings(
+                OpenRazerLightingEffect.Static,
+                Primary: new OpenRazerColor(0xFF, 0xFF, 0xFF))).Report;
+        Assert.Equal(0x9F, request[2]);
+        Assert.Equal((byte)9, request[6]);
+        Assert.Equal(0x0F, request[7]);
+        Assert.Equal(0x02, request[8]);
+        Assert.Equal([0x01, 0x05, 0x01, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF], request[9..18]);
+    }
+
     [Theory]
     [InlineData(0x0091, 0xFF)]
     [InlineData(0x00B3, 0xFF)]
