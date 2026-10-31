@@ -135,12 +135,23 @@ public enum ViperButtonMappingFunction : byte
     Off = 0,
     MouseButton = 1,
     KeyboardKey = 2,
+    MacroTypeI = 3,
+    MacroTypeII = 4,
+    MacroTypeIII = 5,
     Dpi = 6,
+    Profile = 7,
+    Lighting = 8,
+    Power = 9,
     MediaKey = 10,
     DoubleClick = 11,
     HyperShift = 12,
     KeyboardTurbo = 13,
     MouseTurbo = 14,
+    MacroTypeIV = 15,
+    Controller = 16,
+    RazerKey = 17,
+    ScrollWheelMode = 18,
+    WindowsShortcut = 21,
 }
 
 public sealed record ViperButtonAssignment(

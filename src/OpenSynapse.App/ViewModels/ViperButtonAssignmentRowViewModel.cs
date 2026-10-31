@@ -7,10 +7,32 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
 {
-    private static readonly byte[] MouseButtonCodes = [1, 2, 3, 4, 5, 9, 10];
+    private static readonly ViperMappingActionGroup[] GroupOrder =
+    [
+        ViperMappingActionGroup.Mouse,
+        ViperMappingActionGroup.Keyboard,
+        ViperMappingActionGroup.Dpi,
+        ViperMappingActionGroup.Profile,
+        ViperMappingActionGroup.Media,
+        ViperMappingActionGroup.Power,
+        ViperMappingActionGroup.Scroll,
+        ViperMappingActionGroup.RazerKey,
+        ViperMappingActionGroup.WindowsShortcut,
+        ViperMappingActionGroup.HyperShift,
+        ViperMappingActionGroup.Turbo,
+    ];
+
+    private static readonly byte[] TurboButtonCodes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    private int _selectedActionGroupIndex;
     private int _selectedActionIndex;
     private double _keyboardModifierValue;
     private double _keyboardUsageValue = 4;
+    private double _dpiClutchX = 800;
+    private double _dpiClutchY = 800;
+    private double _turboRate = 7;
+    private int _turboButtonIndex;
+    private bool _isUnsupported;
 
     public ViperButtonAssignmentRowViewModel(ViperButtonAssignment assignment)
     {
@@ -23,65 +45,140 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 
-    private static readonly (string NameKey, ushort Code)[] MediaKeyOptions =
-    [
-        ("MacroMediaMute", 0x00E2),
-        ("MacroMediaVolumeDown", 0x00EA),
-        ("MacroMediaVolumeUp", 0x00E9),
-        ("MacroMediaPrevious", 0x00B6),
-        ("MacroMediaPlayPause", 0x00CD),
-        ("MacroMediaNext", 0x00B5),
-        ("MacroMediaStop", 0x00B7),
-    ];
+    public IReadOnlyList<string> ActionGroupOptions =>
+        GroupOrder.Select(GroupName).ToArray();
+
+    public int SelectedActionGroupIndex
+    {
+        get => _selectedActionGroupIndex;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, GroupOrder.Length - 1);
+            if (_selectedActionGroupIndex == clamped)
+            {
+                return;
+            }
+
+            _selectedActionGroupIndex = clamped;
+            _selectedActionIndex = 0;
+            _isUnsupported = false;
+            NotifyActionChanged();
+        }
+    }
 
     public IReadOnlyList<string> ActionOptions =>
-    [
-        .. AppStrings.Texts(
-            "Text_39B523BD", "Text_794A1C95", "Text_78980344", "Text_6D40E761", "Text_61DF3243",
-            "Text_290DA6F9", "Text_10DDDE56", "Text_11DDDFE9", "Text_80A48F18", "Text_45977270",
-            "Text_D9D5D89A"),
-        .. MediaKeyOptions.Select(option => AppStrings.Text(option.NameKey)),
-    ];
-    public string ButtonText => FormatButton(Assignment.ButtonId);
-    public string LayerText => Assignment.Layer == ViperButtonMappingLayer.Normal ? AppStrings.Text("Text_190B5DB1") : "HyperShift";
-    public string CurrentActionText => FormatAction(Assignment);
-    public ViperButtonAssignment Assignment { get; private set; }
+        DefinitionsInSelectedGroup.Select(ActionName).ToArray();
+
     public int SelectedActionIndex
     {
         get => _selectedActionIndex;
         set
         {
-            if (_selectedActionIndex == value)
+            var count = DefinitionsInSelectedGroup.Count;
+            var clamped = count == 0 ? 0 : Math.Clamp(value, 0, count - 1);
+            if (_selectedActionIndex == clamped)
             {
                 return;
             }
-            _selectedActionIndex = value;
-            PropertyChanged?.Invoke(this, new(nameof(SelectedActionIndex)));
-            PropertyChanged?.Invoke(this, new(nameof(KeyboardParameterVisibility)));
-            PropertyChanged?.Invoke(this, new(nameof(DoubleClickParameterVisibility)));
-            PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+
+            _selectedActionIndex = clamped;
+            _isUnsupported = false;
+            NotifyActionChanged();
         }
     }
+
+    public string ButtonText => FormatButton(Assignment.ButtonId);
+    public string LayerText => Assignment.Layer == ViperButtonMappingLayer.Normal
+        ? AppStrings.Text("Text_190B5DB1")
+        : "HyperShift";
+    public string CurrentActionText => Describe(Assignment);
+    public ViperButtonAssignment Assignment { get; private set; }
+
     public double KeyboardModifierValue
     {
         get => _keyboardModifierValue;
-        set => SetKeyboardByte(ref _keyboardModifierValue, value);
+        set => SetByte(ref _keyboardModifierValue, value);
     }
+
     public double KeyboardUsageValue
     {
         get => _keyboardUsageValue;
-        set => SetKeyboardByte(ref _keyboardUsageValue, value);
+        set => SetByte(ref _keyboardUsageValue, value);
     }
-    public Visibility KeyboardParameterVisibility => SelectedActionIndex == 8
+
+    public double DpiClutchX
+    {
+        get => _dpiClutchX;
+        set => SetDpi(ref _dpiClutchX, value);
+    }
+
+    public double DpiClutchY
+    {
+        get => _dpiClutchY;
+        set => SetDpi(ref _dpiClutchY, value);
+    }
+
+    public double TurboRate
+    {
+        get => _turboRate;
+        set => SetRate(ref _turboRate, value);
+    }
+
+    public IReadOnlyList<string> TurboButtonOptions => TurboButtonCodes.Select(FormatButton).ToArray();
+
+    public int TurboButtonIndex
+    {
+        get => _turboButtonIndex;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, TurboButtonCodes.Length - 1);
+            if (_turboButtonIndex == clamped)
+            {
+                return;
+            }
+
+            _turboButtonIndex = clamped;
+            PropertyChanged?.Invoke(this, new(nameof(TurboButtonIndex)));
+            PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+        }
+    }
+
+    public Visibility KeyboardParameterVisibility => Definition?.UsesKeyboard == true
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility DoubleClickParameterVisibility => SelectedActionIndex == 9
+
+    public Visibility DpiClutchParameterVisibility => Definition?.UsesDpiClutch == true
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public bool CanApply => TryCreateAssignment(out var requested) && !AssignmentsEqual(Assignment, requested);
+
+    public Visibility TurboButtonParameterVisibility => Definition?.UsesTurboButton == true
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public Visibility TurboRateVisibility => Definition?.UsesTurboRate == true
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public Visibility TurboKeyRateVisibility => Definition is { UsesTurboRate: true, UsesTurboButton: false }
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public Visibility DoubleClickParameterVisibility =>
+        Definition?.Function == ViperButtonMappingFunction.DoubleClick
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public bool CanApply => !_isUnsupported &&
+        TryCreateAssignment(out var requested) &&
+        !AssignmentsEqual(Assignment, requested);
 
     public ViperButtonAssignment CreateAssignment()
     {
+        // An unknown Synapse assignment (for example a macro) is preserved verbatim.
+        if (_isUnsupported)
+        {
+            return Assignment;
+        }
         if (!TryCreateAssignment(out var assignment))
         {
             throw new InvalidOperationException(AppStrings.Text("Text_8F4E16B7"));
@@ -93,159 +190,249 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
     {
         Assignment = assignment;
         RestoreEditorFromAssignment();
-        NotifyEditorChanged();
+        NotifyActionChanged();
     }
 
     public void RestoreSelection()
     {
         RestoreEditorFromAssignment();
-        NotifyEditorChanged();
+        NotifyActionChanged();
+    }
+
+    private ViperMappingActionDefinition? Definition
+    {
+        get
+        {
+            var index = GlobalActionIndex;
+            return index >= 0 && index < ViperMappingActions.Definitions.Count
+                ? ViperMappingActions.Definitions[index]
+                : null;
+        }
+    }
+
+    private IReadOnlyList<ViperMappingActionDefinition> DefinitionsInSelectedGroup
+    {
+        get
+        {
+            var group = GroupOrder[Math.Clamp(_selectedActionGroupIndex, 0, GroupOrder.Length - 1)];
+            return ViperMappingActions.Definitions
+                .Where(definition => definition.Group == group)
+                .ToArray();
+        }
+    }
+
+    private int GlobalActionIndex
+    {
+        get
+        {
+            var group = GroupOrder[Math.Clamp(_selectedActionGroupIndex, 0, GroupOrder.Length - 1)];
+            var start = ViperMappingActions.GroupStart(group);
+            return start < 0 ? -1 : start + _selectedActionIndex;
+        }
     }
 
     private bool TryCreateAssignment(out ViperButtonAssignment assignment)
     {
-        if (SelectedActionIndex >= 11 && SelectedActionIndex < 11 + MediaKeyOptions.Length)
-        {
-            var code = MediaKeyOptions[SelectedActionIndex - 11].Code;
-            assignment = Assignment with
-            {
-                Function = ViperButtonMappingFunction.MediaKey,
-                FunctionData = [(byte)(code >> 8), (byte)code],
-            };
-            return true;
-        }
-
-        var (function, data) = SelectedActionIndex switch
-        {
-            0 => (ViperButtonMappingFunction.Off, Array.Empty<byte>()),
-            >= 1 and <= 7 => (
-                ViperButtonMappingFunction.MouseButton,
-                new byte[] { MouseButtonCodes[SelectedActionIndex - 1] }),
-            8 => (
-                ViperButtonMappingFunction.KeyboardKey,
-                new byte[] { checked((byte)KeyboardModifierValue), checked((byte)KeyboardUsageValue) }),
-            9 => (ViperButtonMappingFunction.DoubleClick, new byte[] { 1 }),
-            10 => (ViperButtonMappingFunction.Dpi, new byte[] { 6 }),
-            _ => default,
-        };
-        if (SelectedActionIndex is < 0 or > 10)
+        if (_isUnsupported)
         {
             assignment = Assignment;
             return false;
         }
 
-        assignment = Assignment with { Function = function, FunctionData = data };
+        var global = GlobalActionIndex;
+        if (global < 0 || !ViperMappingActions.TryApply(
+            Assignment,
+            global,
+            checked((byte)KeyboardModifierValue),
+            checked((byte)KeyboardUsageValue),
+            checked((int)DpiClutchX),
+            checked((int)DpiClutchY),
+            checked((int)TurboRate),
+            TurboButtonCodes[Math.Clamp(_turboButtonIndex, 0, TurboButtonCodes.Length - 1)],
+            out assignment))
+        {
+            assignment = Assignment;
+            return false;
+        }
         return true;
     }
 
     private void RestoreEditorFromAssignment()
     {
-        _selectedActionIndex = GetActionIndex(Assignment);
-        if (Assignment.Function == ViperButtonMappingFunction.KeyboardKey &&
-            Assignment.FunctionData.Count == 2)
+        var global = ViperMappingActions.IndexOf(Assignment);
+        _isUnsupported = global < 0;
+        if (_isUnsupported)
+        {
+            _selectedActionGroupIndex = 0;
+            _selectedActionIndex = 0;
+            return;
+        }
+
+        var definition = ViperMappingActions.Definitions[global];
+        _selectedActionGroupIndex = Array.IndexOf(GroupOrder, definition.Group);
+        var start = ViperMappingActions.GroupStart(definition.Group);
+        _selectedActionIndex = start < 0 ? 0 : global - start;
+
+        if (Assignment.Function is ViperButtonMappingFunction.KeyboardKey or
+            ViperButtonMappingFunction.KeyboardTurbo &&
+            Assignment.FunctionData.Count >= 2)
         {
             _keyboardModifierValue = Assignment.FunctionData[0];
             _keyboardUsageValue = Assignment.FunctionData[1];
         }
-        else
+
+        if (Assignment.Function == ViperButtonMappingFunction.Dpi &&
+            Assignment.FunctionData.Count == 5 && Assignment.FunctionData[0] == 5)
         {
-            _keyboardModifierValue = 0;
-            _keyboardUsageValue = 4;
+            _dpiClutchX = (Assignment.FunctionData[1] << 8) | Assignment.FunctionData[2];
+            _dpiClutchY = (Assignment.FunctionData[3] << 8) | Assignment.FunctionData[4];
+        }
+
+        if (Assignment.Function is ViperButtonMappingFunction.KeyboardTurbo or
+            ViperButtonMappingFunction.MouseTurbo)
+        {
+            if (Assignment.Function == ViperButtonMappingFunction.KeyboardTurbo &&
+                Assignment.FunctionData.Count >= 4)
+            {
+                _turboRate = IntervalToRate(Assignment.FunctionData[2], Assignment.FunctionData[3]);
+            }
+            else if (Assignment.Function == ViperButtonMappingFunction.MouseTurbo &&
+                Assignment.FunctionData.Count >= 3)
+            {
+                _turboRate = IntervalToRate(Assignment.FunctionData[1], Assignment.FunctionData[2]);
+            }
+
+            if (Assignment.Function == ViperButtonMappingFunction.MouseTurbo &&
+                Assignment.FunctionData.Count >= 1)
+            {
+                var buttonIndex = Array.IndexOf(TurboButtonCodes, Assignment.FunctionData[0]);
+                _turboButtonIndex = buttonIndex < 0 ? 0 : buttonIndex;
+            }
         }
     }
 
-    private void SetKeyboardByte(ref double field, double value, [CallerMemberName] string? propertyName = null)
+    private void NotifyActionChanged()
     {
-        var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), byte.MinValue, byte.MaxValue) : field;
-        if (field == normalized)
-        {
-            return;
-        }
-        field = normalized;
-        PropertyChanged?.Invoke(this, new(propertyName));
-        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
-    }
-
-    private void NotifyEditorChanged()
-    {
-        PropertyChanged?.Invoke(this, new(nameof(CurrentActionText)));
+        PropertyChanged?.Invoke(this, new(nameof(SelectedActionGroupIndex)));
+        PropertyChanged?.Invoke(this, new(nameof(ActionOptions)));
         PropertyChanged?.Invoke(this, new(nameof(SelectedActionIndex)));
-        PropertyChanged?.Invoke(this, new(nameof(KeyboardModifierValue)));
-        PropertyChanged?.Invoke(this, new(nameof(KeyboardUsageValue)));
+        PropertyChanged?.Invoke(this, new(nameof(CurrentActionText)));
         PropertyChanged?.Invoke(this, new(nameof(KeyboardParameterVisibility)));
+        PropertyChanged?.Invoke(this, new(nameof(DpiClutchParameterVisibility)));
+        PropertyChanged?.Invoke(this, new(nameof(TurboButtonParameterVisibility)));
+        PropertyChanged?.Invoke(this, new(nameof(TurboRateVisibility)));
+        PropertyChanged?.Invoke(this, new(nameof(TurboKeyRateVisibility)));
         PropertyChanged?.Invoke(this, new(nameof(DoubleClickParameterVisibility)));
         PropertyChanged?.Invoke(this, new(nameof(CanApply)));
     }
 
-    private static int GetActionIndex(ViperButtonAssignment assignment)
+    private void SetByte(ref double field, double value)
     {
-        if (assignment.Function == ViperButtonMappingFunction.Off)
+        var normalized = double.IsFinite(value)
+            ? Math.Clamp(Math.Round(value), byte.MinValue, byte.MaxValue)
+            : field;
+        if (field == normalized)
         {
-            return 0;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.KeyboardKey &&
-            assignment.FunctionData.Count == 2)
-        {
-            return 8;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.DoubleClick &&
-            assignment.FunctionData.Count == 1 && assignment.FunctionData[0] == 1)
-        {
-            return 9;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.Dpi &&
-            assignment.FunctionData.Count == 1 && assignment.FunctionData[0] == 6)
-        {
-            return 10;
-        }
-        if (assignment.Function == ViperButtonMappingFunction.MediaKey &&
-            assignment.FunctionData.Count == 2)
-        {
-            var code = (ushort)((assignment.FunctionData[0] << 8) | assignment.FunctionData[1]);
-            var mediaIndex = Array.FindIndex(MediaKeyOptions, option => option.Code == code);
-            if (mediaIndex >= 0)
-            {
-                return 11 + mediaIndex;
-            }
-        }
-        if (assignment.Function != ViperButtonMappingFunction.MouseButton ||
-            assignment.FunctionData.Count != 1)
-        {
-            return -1;
+            return;
         }
 
-        var index = Array.IndexOf(MouseButtonCodes, assignment.FunctionData[0]);
-        return index < 0 ? -1 : index + 1;
+        field = normalized;
+        PropertyChanged?.Invoke(this, new(string.Empty));
+        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
     }
 
-    private static string FormatAction(ViperButtonAssignment assignment) =>
-        assignment.Function switch
+    private void SetDpi(ref double field, double value)
+    {
+        var normalized = double.IsFinite(value)
+            ? Math.Clamp(Math.Round(value / 50) * 50, 100, 30000)
+            : field;
+        if (field == normalized)
         {
-            ViperButtonMappingFunction.Off => AppStrings.Text("Text_39B523BD"),
-            ViperButtonMappingFunction.MouseButton when assignment.FunctionData.Count == 1 =>
-                FormatButton(assignment.FunctionData[0]),
-            ViperButtonMappingFunction.KeyboardKey when assignment.FunctionData.Count == 2 =>
-                AppStrings.FormatText("KeyboardMappingDescription",
-                    assignment.FunctionData[0],
-                    assignment.FunctionData[1]),
-            ViperButtonMappingFunction.DoubleClick when assignment.FunctionData.Count == 1 &&
-                assignment.FunctionData[0] == 1 => AppStrings.Text("Text_45977270"),
-            ViperButtonMappingFunction.Dpi when assignment.FunctionData.Count == 1 &&
-                assignment.FunctionData[0] == 6 => AppStrings.Text("Text_D9D5D89A"),
-            ViperButtonMappingFunction.MediaKey when assignment.FunctionData.Count == 2 =>
-                FormatMediaKey(assignment.FunctionData[0], assignment.FunctionData[1]),
+            return;
+        }
+
+        field = normalized;
+        PropertyChanged?.Invoke(this, new(string.Empty));
+        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+    }
+
+    private void SetRate(ref double field, double value)
+    {
+        var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), 1, 50) : field;
+        if (field == normalized)
+        {
+            return;
+        }
+
+        field = normalized;
+        PropertyChanged?.Invoke(this, new(string.Empty));
+        PropertyChanged?.Invoke(this, new(nameof(CanApply)));
+    }
+
+    private static double IntervalToRate(byte high, byte low)
+    {
+        var interval = Math.Max(1, (high << 8) | low);
+        return Math.Clamp(Math.Round(1000d / interval), 1, 50);
+    }
+
+    private static string GroupName(ViperMappingActionGroup group) => group switch
+    {
+        ViperMappingActionGroup.Mouse => AppStrings.Text("ViperMappingGroupMouse"),
+        ViperMappingActionGroup.Keyboard => AppStrings.Text("ViperMappingGroupKeyboard"),
+        ViperMappingActionGroup.Dpi => AppStrings.Text("ViperMappingGroupDpi"),
+        ViperMappingActionGroup.Profile => AppStrings.Text("ViperMappingGroupProfile"),
+        ViperMappingActionGroup.Media => AppStrings.Text("ViperMappingGroupMedia"),
+        ViperMappingActionGroup.Power => AppStrings.Text("ViperMappingGroupPower"),
+        ViperMappingActionGroup.Scroll => AppStrings.Text("ViperMappingGroupScroll"),
+        ViperMappingActionGroup.RazerKey => AppStrings.Text("ViperMappingGroupRazer"),
+        ViperMappingActionGroup.WindowsShortcut => AppStrings.Text("ViperMappingGroupWindows"),
+        ViperMappingActionGroup.HyperShift => AppStrings.Text("ViperMappingGroupHyperShift"),
+        ViperMappingActionGroup.Turbo => AppStrings.Text("ViperMappingGroupTurbo"),
+        _ => group.ToString(),
+    };
+
+    private static string ActionName(ViperMappingActionDefinition definition) =>
+        definition.Function == ViperButtonMappingFunction.MouseButton
+            ? FormatButton(definition.Value)
+            : AppStrings.Text(definition.NameKey);
+
+    private static string Describe(ViperButtonAssignment assignment)
+    {
+        var index = ViperMappingActions.IndexOf(assignment);
+        if (index >= 0)
+        {
+            var definition = ViperMappingActions.Definitions[index];
+            var name = ActionName(definition);
+            if (definition.UsesDpiClutch && assignment.FunctionData.Count == 5)
+            {
+                var x = (assignment.FunctionData[1] << 8) | assignment.FunctionData[2];
+                var y = (assignment.FunctionData[3] << 8) | assignment.FunctionData[4];
+                return $"{name} {x}×{y}";
+            }
+
+            if (definition.Function == ViperButtonMappingFunction.MouseTurbo &&
+                assignment.FunctionData.Count >= 1)
+            {
+                return $"{name} {FormatButton(assignment.FunctionData[0])}";
+            }
+
+            return name;
+        }
+
+        return assignment.Function switch
+        {
+            ViperButtonMappingFunction.MacroTypeI when assignment.FunctionData.Count >= 3 =>
+                $"Macro {assignment.FunctionData[0]:X2}{assignment.FunctionData[1]:X2} ×{assignment.FunctionData[2]}",
+            ViperButtonMappingFunction.MacroTypeII when assignment.FunctionData.Count >= 2 =>
+                $"Macro {assignment.FunctionData[0]:X2}{assignment.FunctionData[1]:X2} (hold)",
+            ViperButtonMappingFunction.MacroTypeIII when assignment.FunctionData.Count >= 2 =>
+                $"Macro {assignment.FunctionData[0]:X2}{assignment.FunctionData[1]:X2} (toggle)",
+            ViperButtonMappingFunction.MacroTypeIV when assignment.FunctionData.Count >= 2 =>
+                $"Macro {assignment.FunctionData[0]:X2}{assignment.FunctionData[1]:X2} (sequence)",
             _ => assignment.FunctionData.Count == 0
                 ? assignment.Function.ToString()
                 : $"{assignment.Function} · {Convert.ToHexString(assignment.FunctionData.ToArray())}",
         };
-
-    private static string FormatMediaKey(byte high, byte low)
-    {
-        var code = (ushort)((high << 8) | low);
-        var index = Array.FindIndex(MediaKeyOptions, option => option.Code == code);
-        return index >= 0
-            ? AppStrings.Text(MediaKeyOptions[index].NameKey)
-            : $"Media key 0x{code:X4}";
     }
 
     private static string FormatButton(byte buttonId) => buttonId switch

@@ -26,7 +26,8 @@ public enum ViperObmFunctionId : byte
     MacroTypeIV = 15,
     Controller = 16,
     RazerKey = 17,
-    WindowsShortcutsKey = 18,
+    ScrollWheelMode = 18,
+    WindowsShortcutsKey = 21,
 }
 
 public sealed record ViperObmAssignment(
@@ -264,13 +265,25 @@ public static class ViperObmProtocol
             ViperObmFunctionId.Off => data.Count == 0,
             ViperObmFunctionId.ButtonCode => data.Count == 1,
             ViperObmFunctionId.KeyCode => data.Count == 2,
+            ViperObmFunctionId.MacroTypeI => data.Count == 3 && data[2] >= 1,
+            ViperObmFunctionId.MacroTypeII or ViperObmFunctionId.MacroTypeIII or
+                ViperObmFunctionId.MacroTypeIV => data.Count == 2,
             ViperObmFunctionId.Dpi => data.Count == 1 && data[0] is 1 or 2 or 6 or 7 ||
                 data.Count == 5 && data[0] == 5,
+            ViperObmFunctionId.Profile => data.Count == 1 && data[0] is 1 or 2 or 4 or 5 ||
+                data.Count == 2 && data[0] == 3 && data[1] != 0,
+            ViperObmFunctionId.PowerKeys => data.Count == 1 &&
+                Enum.IsDefined((RazerGamepadPowerKey)data[0]),
             ViperObmFunctionId.MediaKeys => data.Count == 2,
             ViperObmFunctionId.DoubleClick => data.Count == 1 && data[0] == 1,
             ViperObmFunctionId.ModeButtonKey => data.Count == 1 && data[0] == 1,
             ViperObmFunctionId.TurboModeKey => data.Count == 4,
             ViperObmFunctionId.TurboModeButton => data.Count == 3,
+            ViperObmFunctionId.RazerKey => data.Count == 1 &&
+                Enum.IsDefined((RazerGamepadRazerKey)data[0]),
+            ViperObmFunctionId.ScrollWheelMode => data.Count == 1 && data[0] is 2 or 3 or 4 or 5,
+            ViperObmFunctionId.WindowsShortcutsKey => data.Count == 1 &&
+                Enum.IsDefined((RazerGamepadWindowsShortcut)data[0]),
             _ => false,
         };
 

@@ -471,12 +471,21 @@ internal sealed class ViperTelemetryReader
             ViperButtonMappingFunction.Off => ViperObmFunctionId.Off,
             ViperButtonMappingFunction.MouseButton => ViperObmFunctionId.ButtonCode,
             ViperButtonMappingFunction.KeyboardKey => ViperObmFunctionId.KeyCode,
+            ViperButtonMappingFunction.MacroTypeI => ViperObmFunctionId.MacroTypeI,
+            ViperButtonMappingFunction.MacroTypeII => ViperObmFunctionId.MacroTypeII,
+            ViperButtonMappingFunction.MacroTypeIII => ViperObmFunctionId.MacroTypeIII,
             ViperButtonMappingFunction.Dpi => ViperObmFunctionId.Dpi,
+            ViperButtonMappingFunction.Profile => ViperObmFunctionId.Profile,
+            ViperButtonMappingFunction.Power => ViperObmFunctionId.PowerKeys,
             ViperButtonMappingFunction.MediaKey => ViperObmFunctionId.MediaKeys,
             ViperButtonMappingFunction.DoubleClick => ViperObmFunctionId.DoubleClick,
             ViperButtonMappingFunction.HyperShift => ViperObmFunctionId.ModeButtonKey,
             ViperButtonMappingFunction.KeyboardTurbo => ViperObmFunctionId.TurboModeKey,
             ViperButtonMappingFunction.MouseTurbo => ViperObmFunctionId.TurboModeButton,
+            ViperButtonMappingFunction.MacroTypeIV => ViperObmFunctionId.MacroTypeIV,
+            ViperButtonMappingFunction.RazerKey => ViperObmFunctionId.RazerKey,
+            ViperButtonMappingFunction.ScrollWheelMode => ViperObmFunctionId.ScrollWheelMode,
+            ViperButtonMappingFunction.WindowsShortcut => ViperObmFunctionId.WindowsShortcutsKey,
             _ => throw new ArgumentOutOfRangeException(nameof(assignment), "Product 184 does not support this mapping function."),
         };
         var snapshot = new ViperObmAssignment(
@@ -488,24 +497,34 @@ internal sealed class ViperTelemetryReader
 
         // Reuse the source-backed Product 184 payload validator before any HID read or write.
         _ = ViperObmProtocol.CreateSetAssignmentRequest(snapshot);
-        var verified = snapshot.Function switch
+        // Bundle-aligned: the payloads come from the 00B8 middleware mapping engine.
+        // Write/readback/restore is exercised for every assignment, but these types
+        // have not been individually confirmed against hardware.
+        var bundleAligned = snapshot.Function switch
         {
             ViperObmFunctionId.Off => true,
             ViperObmFunctionId.ButtonCode =>
                 ViperProduct184MouseButtonCodes.Contains(snapshot.FunctionData[0]),
             ViperObmFunctionId.KeyCode => true,
+            ViperObmFunctionId.MacroTypeI or ViperObmFunctionId.MacroTypeII or
+                ViperObmFunctionId.MacroTypeIII or ViperObmFunctionId.MacroTypeIV => true,
             ViperObmFunctionId.Dpi => true,
+            ViperObmFunctionId.Profile => true,
+            ViperObmFunctionId.PowerKeys => true,
             ViperObmFunctionId.MediaKeys => true,
             ViperObmFunctionId.DoubleClick => true,
             ViperObmFunctionId.ModeButtonKey => true,
             ViperObmFunctionId.TurboModeKey => true,
             ViperObmFunctionId.TurboModeButton => true,
+            ViperObmFunctionId.RazerKey => true,
+            ViperObmFunctionId.ScrollWheelMode => true,
+            ViperObmFunctionId.WindowsShortcutsKey => true,
             _ => false,
         };
-        if (!verified)
+        if (!bundleAligned)
         {
             throw new NotSupportedException(
-                "This Product 184 mapping type has static protocol evidence only and has not passed physical write/readback/restore validation.");
+                "This Product 184 mapping type is not exposed by the verified mapping engine.");
         }
         return snapshot;
     }
@@ -525,12 +544,21 @@ internal sealed class ViperTelemetryReader
                 ViperObmFunctionId.Off => ViperButtonMappingFunction.Off,
                 ViperObmFunctionId.ButtonCode => ViperButtonMappingFunction.MouseButton,
                 ViperObmFunctionId.KeyCode => ViperButtonMappingFunction.KeyboardKey,
+                ViperObmFunctionId.MacroTypeI => ViperButtonMappingFunction.MacroTypeI,
+                ViperObmFunctionId.MacroTypeII => ViperButtonMappingFunction.MacroTypeII,
+                ViperObmFunctionId.MacroTypeIII => ViperButtonMappingFunction.MacroTypeIII,
                 ViperObmFunctionId.Dpi => ViperButtonMappingFunction.Dpi,
+                ViperObmFunctionId.Profile => ViperButtonMappingFunction.Profile,
+                ViperObmFunctionId.PowerKeys => ViperButtonMappingFunction.Power,
                 ViperObmFunctionId.MediaKeys => ViperButtonMappingFunction.MediaKey,
                 ViperObmFunctionId.DoubleClick => ViperButtonMappingFunction.DoubleClick,
                 ViperObmFunctionId.ModeButtonKey => ViperButtonMappingFunction.HyperShift,
                 ViperObmFunctionId.TurboModeKey => ViperButtonMappingFunction.KeyboardTurbo,
                 ViperObmFunctionId.TurboModeButton => ViperButtonMappingFunction.MouseTurbo,
+                ViperObmFunctionId.MacroTypeIV => ViperButtonMappingFunction.MacroTypeIV,
+                ViperObmFunctionId.RazerKey => ViperButtonMappingFunction.RazerKey,
+                ViperObmFunctionId.ScrollWheelMode => ViperButtonMappingFunction.ScrollWheelMode,
+                ViperObmFunctionId.WindowsShortcutsKey => ViperButtonMappingFunction.WindowsShortcut,
                 _ => throw new InvalidOperationException(
                     $"The device returned Product 184 mapping function {(byte)assignment.Function}, which is not enabled."),
             },
