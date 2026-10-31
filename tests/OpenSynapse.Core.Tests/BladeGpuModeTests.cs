@@ -91,6 +91,22 @@ public sealed class BladeGpuModeTests
     }
 
     [Fact]
+    public void ADdsRouteWithoutHybridCapabilityStillOffersStandardAsTheCurrentMode()
+    {
+        // 0D:8A can report Discrete only while 0D:89 says DDS; the panel is already on the
+        // iGPU route, so Standard must stay selectable or the selector would show nothing.
+        var snapshot = new BladeGpuModeSnapshot(
+            DedicatedGpuSupported: true,
+            DedicatedGpuEnabled: true,
+            Mux: Mux(BladeDisplayMuxCapabilities.Discrete, BladeDisplayMuxMode.Dds, switchable: false));
+
+        Assert.Equal(
+            [BladeGpuMode.Integrated, BladeGpuMode.Standard, BladeGpuMode.Auto],
+            BladeGpuModes.GetAvailableModes(snapshot));
+        Assert.Equal(BladeGpuMode.Standard, BladeGpuModes.GetCurrentMode(snapshot));
+    }
+
+    [Fact]
     public void AHybridOnlyMuxHasNoDiscreteMode()
     {
         var snapshot = new BladeGpuModeSnapshot(

@@ -88,7 +88,8 @@ public sealed partial class DevicesPage
                 options.Any(option => option.Mode == BladeGpuMode.Auto)
                     ? BladeGpuMode.Auto
                     : BladeGpuModes.GetCurrentMode(snapshot);
-            GpuModeCombo.SelectedItem = options.FirstOrDefault(option => option.Mode == preferred);
+            GpuModeCombo.SelectedItem = options.FirstOrDefault(option => option.Mode == preferred) ??
+                options.FirstOrDefault();
             GpuModeStatusText.Text = GpuModeStatusMessage(dedicated, faulted, snapshot, stored);
         }
         finally
@@ -165,7 +166,8 @@ public sealed partial class DevicesPage
 
         if (mode == BladeGpuMode.Standard)
         {
-            if (!snapshot.MuxPresent || snapshot.Mux.Mode == BladeDisplayMuxMode.Hybrid)
+            if (!snapshot.MuxPresent ||
+                snapshot.Mux.Mode is BladeDisplayMuxMode.Hybrid or BladeDisplayMuxMode.Dds)
             {
                 return new(AppStrings.Text("DisplayMuxModeStatusSuccess"), false);
             }
