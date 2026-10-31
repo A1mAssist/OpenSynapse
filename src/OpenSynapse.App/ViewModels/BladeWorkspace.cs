@@ -126,17 +126,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _readSerialAsync = readSerialAsync;
     }
 
-    private BladeBatteryOptimizerWorkspace? _batteryOptimizer;
-
-    public BladeBatteryOptimizerWorkspace BatteryOptimizer =>
-        _batteryOptimizer ??= new BladeBatteryOptimizerWorkspace(
-            new BladeBatteryOptimizerService(_deviceTelemetryReader),
-            () => ActiveDescriptors,
-            RunDeviceOperationAsync);
-
-    internal void UpdateBatteryOptimizer(RazerDeviceTelemetry? telemetry) =>
-        BatteryOptimizer.Update(telemetry);
-
     public event PropertyChangedEventHandler? PropertyChanged;
     internal event Action<string?, ushort>? ControlDeviceChanged;
     internal event Action<BladePerformanceMode>? PerformanceModeChangedByUser;
@@ -2353,7 +2342,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
     internal void ApplyTelemetry(RazerDeviceTelemetry telemetry)
     {
-        UpdateBatteryOptimizer(telemetry);
         if (telemetry.BladeKeyboardBrightness is byte brightness)
         {
             if (!_isBrightnessRestorePending())
@@ -2546,7 +2534,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
     internal void ResetTelemetry()
     {
-        UpdateBatteryOptimizer(null);
         StatusText = AppStrings.Text("Text_4626A505");
         BrightnessText = "--";
         BrightnessPercent = 0;

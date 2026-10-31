@@ -509,9 +509,6 @@ public sealed partial class DevicesPage : UserControl
     private async void ApplyChargeLimitClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Blade.ApplyChargeLimitAsync(Lifetime);
 
-    private async void ApplyBladeBatteryOptimizerClick(object sender, RoutedEventArgs e) =>
-        await ViewModel.Blade.BatteryOptimizer.ApplyAsync(Lifetime);
-
     private async void ApplyCpuBoostClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Blade.ApplyCpuBoostAsync(Lifetime);
 

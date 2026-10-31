@@ -2990,14 +2990,6 @@
   <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>写入失败：{0}</value></data>
   <data name="RazerOnboardMacroWriteStepFailed" xml:space="preserve"><value>第 {0} 步：{1}</value></data>
   <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>已用 {0} / {1} 字节 · 剩余 {2} 字节 · {3} 个槽位</value></data>
-  <data name="BladeBatteryOptimizerTitle/Text" xml:space="preserve"><value>电池优化器</value></data>
-  <data name="BladeBatteryOptimizerDescription/Text" xml:space="preserve"><value>限制充电上限，减少满电静置时间。</value></data>
-  <data name="BladeBatteryOptimizerEnabledLabel/Text" xml:space="preserve"><value>启用</value></data>
-  <data name="BladeBatteryOptimizerThresholdLabel/Text" xml:space="preserve"><value>充电上限</value></data>
-  <data name="BladeBatteryOptimizerOverrideLabel/Text" xml:space="preserve"><value>本次充满</value></data>
-  <data name="BladeBatteryOptimizerApply/Content" xml:space="preserve"><value>应用</value></data>
-  <data name="BladeBatteryOptimizerOperation" xml:space="preserve"><value>电池优化器</value></data>
-  <data name="BladeBatteryOptimizerApplied" xml:space="preserve"><value>电池优化器已应用。</value></data>
   <data name="CoolingPadCategory" xml:space="preserve"><value>散热垫</value></data>
   <data name="CoolingPadStatusConnected" xml:space="preserve"><value>已连接</value></data>
   <data name="CoolingPadStatusNotConnected" xml:space="preserve"><value>未连接</value></data>

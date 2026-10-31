@@ -1043,30 +1043,6 @@
                       </Border>
                     </Grid>
                   </StackPanel>
-                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding Blade.BatteryOptimizer.CardVisibility}">
-                    <StackPanel Spacing="10">
-                      <TextBlock local:Localized.Uid="BladeBatteryOptimizerTitle" Text="电池优化器" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="BladeBatteryOptimizerDescription" Text="限制充电上限，减少满电静置时间。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
-                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <StackPanel Spacing="4">
-                          <TextBlock local:Localized.Uid="BladeBatteryOptimizerEnabledLabel" Text="启用" Style="{StaticResource MetricLabelStyle}" />
-                          <ToggleSwitch IsOn="{Binding Blade.BatteryOptimizer.IsEnabled, Mode=TwoWay}" IsEnabled="{Binding Blade.BatteryOptimizer.CanEdit}" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="4">
-                          <TextBlock local:Localized.Uid="BladeBatteryOptimizerThresholdLabel" Text="上限" Style="{StaticResource MetricLabelStyle}" />
-                          <ComboBox ItemsSource="{Binding Blade.BatteryOptimizer.ThresholdOptions}" SelectedIndex="{Binding Blade.BatteryOptimizer.ThresholdIndex, Mode=TwoWay}" IsEnabled="{Binding Blade.BatteryOptimizer.CanEdit}" MinWidth="120" />
-                        </StackPanel>
-                      </Grid>
-                      <StackPanel Spacing="4" Visibility="{Binding Blade.BatteryOptimizer.OverrideVisibility}">
-                        <TextBlock local:Localized.Uid="BladeBatteryOptimizerOverrideLabel" Text="本次充满" Style="{StaticResource MetricLabelStyle}" />
-                        <ToggleSwitch IsOn="{Binding Blade.BatteryOptimizer.OneTimeOverrideEnabled, Mode=TwoWay}" IsEnabled="{Binding Blade.BatteryOptimizer.CanEdit}" />
-                      </StackPanel>
-                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <TextBlock Text="{Binding Blade.BatteryOptimizer.StatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
-                        <Button Grid.Column="1" local:Localized.Uid="BladeBatteryOptimizerApply" Content="应用" Click="ApplyBladeBatteryOptimizerClick" IsEnabled="{Binding Blade.BatteryOptimizer.CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" />
-                      </Grid>
-                    </StackPanel>
-                  </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxAudio.DeviceCardVisibility}">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
