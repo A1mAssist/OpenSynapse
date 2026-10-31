@@ -655,6 +655,7 @@
                       <ComboBox Header="滚轮手感" ItemsSource="{Binding TactileModeOptions}" SelectedIndex="{Binding SelectedTactileModeIndex, Mode=TwoWay}" Visibility="{Binding TactileModeVisibility}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
                       <NumberBox Header="加速等级" Value="{Binding ScrollAccelerationLevel, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding AccelerationLevelVisibility}" IsEnabled="{Binding CanEdit}" />
                       <NumberBox Header="滚轮屏蔽时间 (ms)" Value="{Binding ScrollMaskingTime, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding MaskingTimeVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <NumberBox Header="触感档位" Value="{Binding SelectedHapticStage, Mode=TwoWay}" Minimum="1" Maximum="{Binding MaxHapticStage}" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding HapticStageVisibility}" IsEnabled="{Binding CanEdit}" />
                       <Button Content="应用滚轮设置" Click="BleApplyScrollClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
                       <TextBlock Text="{Binding ScrollStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                     </StackPanel>

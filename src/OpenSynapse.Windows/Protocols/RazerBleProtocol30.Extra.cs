@@ -171,4 +171,13 @@ public static partial class RazerBleProtocol30
         CreateFrame(transactionId, 0x05, 0x0B, param6: profileId, payload: [(byte)plan]);
 
     public static byte ReadSingleByte(RazerBleResponse response) => First(response);
+
+    public static byte[] CreateGetHapticActiveStage(byte transactionId, byte profileId) =>
+        CreateFrame(transactionId, 0x15, 0x80, payload: [profileId, 0]);
+
+    public static byte[] CreateGetHapticMaxStage(byte transactionId, byte profileId) =>
+        CreateFrame(transactionId, 0x15, 0x81, payload: [profileId, 0]);
+
+    public static byte[] CreateSetHapticActiveStage(byte transactionId, byte profileId, byte stage) =>
+        CreateFrame(transactionId, 0x15, 0x00, payload: [profileId, stage]);
 }

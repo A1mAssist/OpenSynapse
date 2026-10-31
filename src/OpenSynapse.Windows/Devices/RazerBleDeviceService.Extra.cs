@@ -332,4 +332,53 @@ public sealed partial class RazerBleDeviceService
         }).ConfigureAwait(false);
         throw new InvalidOperationException(
             "The device kept a different power plan; the previous value was restored.");
+    }
+
+    public async Task<(byte Active, byte Max)> ReadHapticStageAsync(
+        byte profileId = 1,
+        CancellationToken cancellationToken = default)
+    {
+        var active = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateGetHapticActiveStage(transaction, profileId),
+            "get haptic active stage",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(active, "get haptic active stage");
+
+        var max = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateGetHapticMaxStage(transaction, profileId),
+            "get haptic max stage",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(max, "get haptic max stage");
+
+        return (RazerBleProtocol30.ReadSingleByte(active), RazerBleProtocol30.ReadSingleByte(max));
+    }
+
+    public async Task<byte> SetHapticStageAsync(
+        byte stage,
+        byte profileId = 1,
+        CancellationToken cancellationToken = default)
+    {
+        var (current, _) = await ReadHapticStageAsync(profileId, cancellationToken).ConfigureAwait(false);
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateSetHapticActiveStage(transaction, profileId, stage),
+            "set haptic active stage",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "set haptic active stage");
+
+        var (applied, _) = await ReadHapticStageAsync(profileId, cancellationToken).ConfigureAwait(false);
+        if (applied == stage)
+        {
+            return applied;
+        }
+
+        await TryRestoreAsync("restore haptic active stage", async () =>
+        {
+            var restore = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateSetHapticActiveStage(transaction, profileId, current),
+                "restore haptic active stage",
+                cancellationToken).ConfigureAwait(false);
+            EnsureSuccess(restore, "restore haptic active stage");
+        }).ConfigureAwait(false);
+        throw new InvalidOperationException(
+            "The device kept a different haptic stage; the previous stage was restored.");
     }}

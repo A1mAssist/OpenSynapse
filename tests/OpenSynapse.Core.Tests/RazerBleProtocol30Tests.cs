@@ -670,6 +670,39 @@ public sealed class RazerBleProtocol30Tests
         Assert.Equal((byte)0, writes[1][8]);
     }
 
+    [Fact]
+    public void HapticStageFramesCarryTheProfileInThePayload()
+    {
+        Assert.Equal(
+            new byte[] { 0x01, 0x02, 0x00, 0x00, 0x15, 0x80, 0x00, 0x00, 0x02, 0x00 },
+            RazerBleProtocol30.CreateGetHapticActiveStage(0x01, 2));
+        Assert.Equal(
+            new byte[] { 0x02, 0x02, 0x00, 0x00, 0x15, 0x81, 0x00, 0x00, 0x02, 0x00 },
+            RazerBleProtocol30.CreateGetHapticMaxStage(0x02, 2));
+        Assert.Equal(
+            new byte[] { 0x03, 0x02, 0x00, 0x00, 0x15, 0x00, 0x00, 0x00, 0x02, 0x03 },
+            RazerBleProtocol30.CreateSetHapticActiveStage(0x03, 2, 3));
+    }
+
+    [Fact]
+    public async Task HapticStageWriteRestoresThePreviousStageWhenTheDeviceIgnoresIt()
+    {
+        var transport = new FakeTransport((frame, _) => Response(
+            frame[0], frame[4], frame[5], 0x02,
+            frame[5] == 0x81 ? (byte)3 : (byte)1));
+        using var session = new RazerBleSession(transport, retryDelay: TimeSpan.Zero);
+        using var service = new RazerBleDeviceService(session, "test");
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.SetHapticStageAsync(2, 1));
+
+        Assert.Contains("restored", error.Message);
+        var writes = transport.Frames.Where(frame => frame[5] == 0x00).ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal(new byte[] { 1, 2 }, writes[0][8..]);
+        Assert.Equal(new byte[] { 1, 1 }, writes[1][8..]);
+    }
+
     private static RazerBleResponse Parse(byte commandClass, byte commandId, params byte[] payload) =>
         RazerBleProtocol30.ParseResponse(Response(0x00, commandClass, commandId, 0x02, payload));
 
