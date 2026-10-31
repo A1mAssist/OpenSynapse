@@ -2566,14 +2566,6 @@
   <data name="RazerOnboardMacroWriteFailedWithReason" xml:space="preserve"><value>Write failed: {0}</value></data>
   <data name="RazerOnboardMacroWriteStepFailed" xml:space="preserve"><value>Step {0}: {1}</value></data>
   <data name="RazerOnboardMacroStorageSummary" xml:space="preserve"><value>Used {0} / {1} bytes · {2} free · {3} slots</value></data>
-  <data name="BladeBatteryOptimizerTitle/Text" xml:space="preserve"><value>Battery optimizer</value></data>
-  <data name="BladeBatteryOptimizerDescription/Text" xml:space="preserve"><value>Limits the charge ceiling to reduce time spent at full charge.</value></data>
-  <data name="BladeBatteryOptimizerEnabledLabel/Text" xml:space="preserve"><value>Enabled</value></data>
-  <data name="BladeBatteryOptimizerThresholdLabel/Text" xml:space="preserve"><value>Charge ceiling</value></data>
-  <data name="BladeBatteryOptimizerOverrideLabel/Text" xml:space="preserve"><value>Full charge once</value></data>
-  <data name="BladeBatteryOptimizerApply/Content" xml:space="preserve"><value>Apply</value></data>
-  <data name="BladeBatteryOptimizerOperation" xml:space="preserve"><value>Battery optimizer</value></data>
-  <data name="BladeBatteryOptimizerApplied" xml:space="preserve"><value>Battery optimizer applied.</value></data>
   <data name="CoolingPadCategory" xml:space="preserve"><value>Cooling pad</value></data>
   <data name="CoolingPadStatusConnected" xml:space="preserve"><value>Connected</value></data>
   <data name="CoolingPadStatusNotConnected" xml:space="preserve"><value>Not connected</value></data>
