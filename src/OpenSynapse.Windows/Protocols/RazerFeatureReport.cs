@@ -165,7 +165,7 @@ public static class RazerFeatureReport
     {
         return request.Length == Length &&
                response.Length == Length &&
-               response[2] == request[2] &&
+               (response[2] == request[2] || request[2] == 0xFF) &&
                (allowRemainingPacketsMismatch ||
                 (response[3] == request[3] && response[4] == request[4])) &&
                response[7] == request[7] &&
@@ -205,7 +205,7 @@ public static class RazerFeatureReport
     {
         return request.Length == Length &&
                response.Length == Length &&
-               response[2] == request[2] &&
+               (response[2] == request[2] || request[2] == 0xFF) &&
                (allowRemainingPacketsMismatch ||
                 (response[3] == request[3] && response[4] == request[4])) &&
                response[7] == request[7] &&
