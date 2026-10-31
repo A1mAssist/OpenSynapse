@@ -23,8 +23,25 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 
-    public IReadOnlyList<string> ActionOptions => AppStrings.Texts(
-        AppStrings.Text("Text_39B523BD"), AppStrings.Text("Text_794A1C95"), AppStrings.Text("Text_78980344"), AppStrings.Text("Text_6D40E761"), AppStrings.Text("Text_61DF3243"), AppStrings.Text("Text_290DA6F9"), AppStrings.Text("Text_10DDDE56"), AppStrings.Text("Text_11DDDFE9"), AppStrings.Text("Text_80A48F18"), AppStrings.Text("Text_45977270"), AppStrings.Text("Text_D9D5D89A"));
+    private static readonly (string NameKey, ushort Code)[] MediaKeyOptions =
+    [
+        ("MacroMediaMute", 0x00E2),
+        ("MacroMediaVolumeDown", 0x00EA),
+        ("MacroMediaVolumeUp", 0x00E9),
+        ("MacroMediaPrevious", 0x00B6),
+        ("MacroMediaPlayPause", 0x00CD),
+        ("MacroMediaNext", 0x00B5),
+        ("MacroMediaStop", 0x00B7),
+    ];
+
+    public IReadOnlyList<string> ActionOptions =>
+    [
+        .. AppStrings.Texts(
+            "Text_39B523BD", "Text_794A1C95", "Text_78980344", "Text_6D40E761", "Text_61DF3243",
+            "Text_290DA6F9", "Text_10DDDE56", "Text_11DDDFE9", "Text_80A48F18", "Text_45977270",
+            "Text_D9D5D89A"),
+        .. MediaKeyOptions.Select(option => AppStrings.Text(option.NameKey)),
+    ];
     public string ButtonText => FormatButton(Assignment.ButtonId);
     public string LayerText => Assignment.Layer == ViperButtonMappingLayer.Normal ? AppStrings.Text("Text_190B5DB1") : "HyperShift";
     public string CurrentActionText => FormatAction(Assignment);
@@ -87,6 +104,17 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
 
     private bool TryCreateAssignment(out ViperButtonAssignment assignment)
     {
+        if (SelectedActionIndex >= 11 && SelectedActionIndex < 11 + MediaKeyOptions.Length)
+        {
+            var code = MediaKeyOptions[SelectedActionIndex - 11].Code;
+            assignment = Assignment with
+            {
+                Function = ViperButtonMappingFunction.MediaKey,
+                FunctionData = [(byte)(code >> 8), (byte)code],
+            };
+            return true;
+        }
+
         var (function, data) = SelectedActionIndex switch
         {
             0 => (ViperButtonMappingFunction.Off, Array.Empty<byte>()),
@@ -170,6 +198,16 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
         {
             return 10;
         }
+        if (assignment.Function == ViperButtonMappingFunction.MediaKey &&
+            assignment.FunctionData.Count == 2)
+        {
+            var code = (ushort)((assignment.FunctionData[0] << 8) | assignment.FunctionData[1]);
+            var mediaIndex = Array.FindIndex(MediaKeyOptions, option => option.Code == code);
+            if (mediaIndex >= 0)
+            {
+                return 11 + mediaIndex;
+            }
+        }
         if (assignment.Function != ViperButtonMappingFunction.MouseButton ||
             assignment.FunctionData.Count != 1)
         {
@@ -194,10 +232,21 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
                 assignment.FunctionData[0] == 1 => AppStrings.Text("Text_45977270"),
             ViperButtonMappingFunction.Dpi when assignment.FunctionData.Count == 1 &&
                 assignment.FunctionData[0] == 6 => AppStrings.Text("Text_D9D5D89A"),
+            ViperButtonMappingFunction.MediaKey when assignment.FunctionData.Count == 2 =>
+                FormatMediaKey(assignment.FunctionData[0], assignment.FunctionData[1]),
             _ => assignment.FunctionData.Count == 0
                 ? assignment.Function.ToString()
                 : $"{assignment.Function} · {Convert.ToHexString(assignment.FunctionData.ToArray())}",
         };
+
+    private static string FormatMediaKey(byte high, byte low)
+    {
+        var code = (ushort)((high << 8) | low);
+        var index = Array.FindIndex(MediaKeyOptions, option => option.Code == code);
+        return index >= 0
+            ? AppStrings.Text(MediaKeyOptions[index].NameKey)
+            : $"Media key 0x{code:X4}";
+    }
 
     private static string FormatButton(byte buttonId) => buttonId switch
     {
