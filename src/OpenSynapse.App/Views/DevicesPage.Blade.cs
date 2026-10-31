@@ -189,6 +189,9 @@ public sealed partial class DevicesPage : UserControl
         return true;
     }
 
+    private async void CpuPowerLimitDownloadAmdClick(object sender, RoutedEventArgs e) =>
+        await Launcher.LaunchUriAsync(new Uri(MainViewModel.AmdOverClockDownloadUri));
+
     private async void AutoApplyComboSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is not ComboBox combo || combo.Tag is not string setting ||
