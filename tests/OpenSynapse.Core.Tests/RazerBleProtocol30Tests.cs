@@ -703,6 +703,30 @@ public sealed class RazerBleProtocol30Tests
         Assert.Equal(new byte[] { 1, 1 }, writes[1][8..]);
     }
 
+    [Fact]
+    public async Task ProfileNameIsReadInChunksAndDecoded()
+    {
+        var block = new byte[250];
+        System.Text.Encoding.UTF8.GetBytes("Night Ops").CopyTo(block, 16);
+        var transport = new FakeTransport((frame, _) =>
+        {
+            Assert.Equal((byte)0x03, frame[4]);
+            Assert.Equal((byte)0x84, frame[5]);
+            Assert.Equal((byte)4, frame[1]);
+            var offset = frame[8] | (frame[9] << 8);
+            var length = frame[10] | (frame[11] << 8);
+            var chunk = block.Skip(offset).Take(length).ToArray();
+            return Response(frame[0], frame[4], frame[5], 0x02, [0, 0, .. chunk]);
+        });
+        using var session = new RazerBleSession(transport, retryDelay: TimeSpan.Zero);
+        using var service = new RazerBleDeviceService(session, "test");
+
+        var name = await service.ReadProfileNameAsync(1);
+
+        Assert.Equal("Night Ops", name);
+        Assert.Equal(4, transport.Frames.Count);
+    }
+
     private static RazerBleResponse Parse(byte commandClass, byte commandId, params byte[] payload) =>
         RazerBleProtocol30.ParseResponse(Response(0x00, commandClass, commandId, 0x02, payload));
 
