@@ -199,7 +199,9 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
             return BuildReport(actual);
         }
 
-        return BuildReport(limit);
+        return CpuPowerLimitReport.Unavailable(
+            CpuPowerLimitAvailability.Failed,
+            "The SMU accepted the command but the power table could not be read back.");
     }
 
     private CpuPowerLimitReport BuildReport(CpuPowerLimit current) => new(
