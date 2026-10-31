@@ -2724,6 +2724,74 @@
   <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>Microphone equalizer bands</value></data>
   <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>Apply microphone bands</value></data>
   <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>Another OpenSynapse instance is already running and cannot be taken over by this launch. Exit it from the tray and try again; if it is running as administrator, start OpenSynapse as administrator too.</value></data>
+  <data name="ViperMappingGroupMouse" xml:space="preserve"><value>Mouse</value></data>
+  <data name="ViperMappingGroupKeyboard" xml:space="preserve"><value>Keyboard</value></data>
+  <data name="ViperMappingGroupDpi" xml:space="preserve"><value>DPI</value></data>
+  <data name="ViperMappingGroupProfile" xml:space="preserve"><value>Profile</value></data>
+  <data name="ViperMappingGroupMedia" xml:space="preserve"><value>Media</value></data>
+  <data name="ViperMappingGroupPower" xml:space="preserve"><value>Power</value></data>
+  <data name="ViperMappingGroupScroll" xml:space="preserve"><value>Scroll</value></data>
+  <data name="ViperMappingGroupRazer" xml:space="preserve"><value>Razer keys</value></data>
+  <data name="ViperMappingGroupWindows" xml:space="preserve"><value>Windows shortcuts</value></data>
+  <data name="ViperMappingGroupHyperShift" xml:space="preserve"><value>HyperShift</value></data>
+  <data name="ViperMappingGroupTurbo" xml:space="preserve"><value>Turbo</value></data>
+  <data name="ViperMappingDpiUp" xml:space="preserve"><value>DPI up</value></data>
+  <data name="ViperMappingDpiDown" xml:space="preserve"><value>DPI down</value></data>
+  <data name="ViperMappingDpiCycleDown" xml:space="preserve"><value>DPI cycle down</value></data>
+  <data name="ViperMappingDpiClutch" xml:space="preserve"><value>DPI clutch</value></data>
+  <data name="ViperMappingProfileUp" xml:space="preserve"><value>Profile up</value></data>
+  <data name="ViperMappingProfileDown" xml:space="preserve"><value>Profile down</value></data>
+  <data name="ViperMappingProfileCycleUp" xml:space="preserve"><value>Profile cycle up</value></data>
+  <data name="ViperMappingProfileCycleDown" xml:space="preserve"><value>Profile cycle down</value></data>
+  <data name="ViperMappingMediaEject" xml:space="preserve"><value>Eject</value></data>
+  <data name="ViperMappingMediaCycleApps" xml:space="preserve"><value>Cycle apps</value></data>
+  <data name="ViperMappingMediaBrightnessUp" xml:space="preserve"><value>Brightness up</value></data>
+  <data name="ViperMappingMediaBrightnessDown" xml:space="preserve"><value>Brightness down</value></data>
+  <data name="ViperMappingMediaSpotlight" xml:space="preserve"><value>Spotlight</value></data>
+  <data name="ViperMappingPower" xml:space="preserve"><value>Power</value></data>
+  <data name="ViperMappingSleep" xml:space="preserve"><value>Sleep</value></data>
+  <data name="ViperMappingWake" xml:space="preserve"><value>Wake</value></data>
+  <data name="ViperMappingScrollUp" xml:space="preserve"><value>Scroll up</value></data>
+  <data name="ViperMappingScrollDown" xml:space="preserve"><value>Scroll down</value></data>
+  <data name="ViperMappingScrollCycleUp" xml:space="preserve"><value>Scroll cycle up</value></data>
+  <data name="ViperMappingScrollCycleDown" xml:space="preserve"><value>Scroll cycle down</value></data>
+  <data name="ViperMappingRazerFn" xml:space="preserve"><value>Fn key</value></data>
+  <data name="ViperMappingRazerKey" xml:space="preserve"><value>Razer key</value></data>
+  <data name="ViperMappingGameMode" xml:space="preserve"><value>Game mode</value></data>
+  <data name="ViperMappingMacroRecord" xml:space="preserve"><value>Macro record</value></data>
+  <data name="ViperMappingSwitchDisplay" xml:space="preserve"><value>Switch internal display</value></data>
+  <data name="ViperMappingDisplayBrightnessUp" xml:space="preserve"><value>Display brightness up</value></data>
+  <data name="ViperMappingDisplayBrightnessDown" xml:space="preserve"><value>Display brightness down</value></data>
+  <data name="ViperMappingKeyboardBacklightUp" xml:space="preserve"><value>Keyboard backlight up</value></data>
+  <data name="ViperMappingKeyboardBacklightDown" xml:space="preserve"><value>Keyboard backlight down</value></data>
+  <data name="ViperMappingLowPower" xml:space="preserve"><value>Low power mode</value></data>
+  <data name="ViperMappingRazerDpiUp" xml:space="preserve"><value>DPI up</value></data>
+  <data name="ViperMappingRazerDpiDown" xml:space="preserve"><value>DPI down</value></data>
+  <data name="ViperMappingBack" xml:space="preserve"><value>Back</value></data>
+  <data name="ViperMappingForward" xml:space="preserve"><value>Forward</value></data>
+  <data name="ViperMappingMacroKeys" xml:space="preserve"><value>Macro keys</value></data>
+  <data name="ViperMappingPrintScreen" xml:space="preserve"><value>Print Screen</value></data>
+  <data name="ViperMappingSystemSleep" xml:space="preserve"><value>System sleep</value></data>
+  <data name="ViperMappingProfileSwitch" xml:space="preserve"><value>Profile switch</value></data>
+  <data name="ViperMappingSniper" xml:space="preserve"><value>Sniper</value></data>
+  <data name="ViperMappingRazerDpiCycleUp" xml:space="preserve"><value>DPI cycle up</value></data>
+  <data name="ViperMappingRazerDpiCycleDown" xml:space="preserve"><value>DPI cycle down</value></data>
+  <data name="ViperMappingScrollModeSwitch" xml:space="preserve"><value>Scroll mode switch</value></data>
+  <data name="ViperMappingHapticScrollUp" xml:space="preserve"><value>Haptic scroll up</value></data>
+  <data name="ViperMappingHapticScrollDown" xml:space="preserve"><value>Haptic scroll down</value></data>
+  <data name="ViperMappingHapticScrollCycleUp" xml:space="preserve"><value>Haptic scroll cycle up</value></data>
+  <data name="ViperMappingHapticScrollCycleDown" xml:space="preserve"><value>Haptic scroll cycle down</value></data>
+  <data name="ViperMappingHyperShift" xml:space="preserve"><value>HyperShift</value></data>
+  <data name="ViperMappingActuation" xml:space="preserve"><value>Actuation adjustment</value></data>
+  <data name="ViperMappingRapidTrigger" xml:space="preserve"><value>Rapid trigger adjustment</value></data>
+  <data name="ViperMappingSnapTap" xml:space="preserve"><value>SnapTap toggle</value></data>
+  <data name="ViperMappingMicMute" xml:space="preserve"><value>Mic mute</value></data>
+  <data name="ViperMappingScreenshot" xml:space="preserve"><value>Screenshot</value></data>
+  <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>Cycle apps</value></data>
+  <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift toggle</value></data>
+  <data name="ViperMappingTurboKey" xml:space="preserve"><value>Turbo key</value></data>
+  <data name="ViperMappingTurboButton" xml:space="preserve"><value>Turbo button</value></data>
 </root>
 
 

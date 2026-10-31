@@ -3148,6 +3148,74 @@
   <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>麦克风均衡器频段</value></data>
   <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>应用麦克风频段</value></data>
   <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>检测到另一个 OpenSynapse 实例正在运行，当前启动方式无法接管。请从托盘退出旧实例后重试；如果旧实例以管理员身份运行，请也用管理员身份启动。</value></data>
+  <data name="ViperMappingGroupMouse" xml:space="preserve"><value>鼠标</value></data>
+  <data name="ViperMappingGroupKeyboard" xml:space="preserve"><value>键盘</value></data>
+  <data name="ViperMappingGroupDpi" xml:space="preserve"><value>DPI</value></data>
+  <data name="ViperMappingGroupProfile" xml:space="preserve"><value>配置</value></data>
+  <data name="ViperMappingGroupMedia" xml:space="preserve"><value>媒体</value></data>
+  <data name="ViperMappingGroupPower" xml:space="preserve"><value>电源</value></data>
+  <data name="ViperMappingGroupScroll" xml:space="preserve"><value>滚轮</value></data>
+  <data name="ViperMappingGroupRazer" xml:space="preserve"><value>Razer 键</value></data>
+  <data name="ViperMappingGroupWindows" xml:space="preserve"><value>Windows 快捷键</value></data>
+  <data name="ViperMappingGroupHyperShift" xml:space="preserve"><value>HyperShift</value></data>
+  <data name="ViperMappingGroupTurbo" xml:space="preserve"><value>Turbo</value></data>
+  <data name="ViperMappingDpiUp" xml:space="preserve"><value>DPI 上</value></data>
+  <data name="ViperMappingDpiDown" xml:space="preserve"><value>DPI 下</value></data>
+  <data name="ViperMappingDpiCycleDown" xml:space="preserve"><value>DPI 循环下</value></data>
+  <data name="ViperMappingDpiClutch" xml:space="preserve"><value>DPI 离合</value></data>
+  <data name="ViperMappingProfileUp" xml:space="preserve"><value>配置上</value></data>
+  <data name="ViperMappingProfileDown" xml:space="preserve"><value>配置下</value></data>
+  <data name="ViperMappingProfileCycleUp" xml:space="preserve"><value>配置循环上</value></data>
+  <data name="ViperMappingProfileCycleDown" xml:space="preserve"><value>配置循环下</value></data>
+  <data name="ViperMappingMediaEject" xml:space="preserve"><value>弹出</value></data>
+  <data name="ViperMappingMediaCycleApps" xml:space="preserve"><value>切换应用</value></data>
+  <data name="ViperMappingMediaBrightnessUp" xml:space="preserve"><value>亮度 +</value></data>
+  <data name="ViperMappingMediaBrightnessDown" xml:space="preserve"><value>亮度 -</value></data>
+  <data name="ViperMappingMediaSpotlight" xml:space="preserve"><value>聚光灯</value></data>
+  <data name="ViperMappingPower" xml:space="preserve"><value>电源</value></data>
+  <data name="ViperMappingSleep" xml:space="preserve"><value>睡眠</value></data>
+  <data name="ViperMappingWake" xml:space="preserve"><value>唤醒</value></data>
+  <data name="ViperMappingScrollUp" xml:space="preserve"><value>滚轮上</value></data>
+  <data name="ViperMappingScrollDown" xml:space="preserve"><value>滚轮下</value></data>
+  <data name="ViperMappingScrollCycleUp" xml:space="preserve"><value>滚轮循环上</value></data>
+  <data name="ViperMappingScrollCycleDown" xml:space="preserve"><value>滚轮循环下</value></data>
+  <data name="ViperMappingRazerFn" xml:space="preserve"><value>Fn 键</value></data>
+  <data name="ViperMappingRazerKey" xml:space="preserve"><value>Razer 键</value></data>
+  <data name="ViperMappingGameMode" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="ViperMappingMacroRecord" xml:space="preserve"><value>宏录制</value></data>
+  <data name="ViperMappingSwitchDisplay" xml:space="preserve"><value>切换内屏</value></data>
+  <data name="ViperMappingDisplayBrightnessUp" xml:space="preserve"><value>屏幕亮度 +</value></data>
+  <data name="ViperMappingDisplayBrightnessDown" xml:space="preserve"><value>屏幕亮度 -</value></data>
+  <data name="ViperMappingKeyboardBacklightUp" xml:space="preserve"><value>键盘背光 +</value></data>
+  <data name="ViperMappingKeyboardBacklightDown" xml:space="preserve"><value>键盘背光 -</value></data>
+  <data name="ViperMappingLowPower" xml:space="preserve"><value>低功耗模式</value></data>
+  <data name="ViperMappingRazerDpiUp" xml:space="preserve"><value>Razer DPI 上</value></data>
+  <data name="ViperMappingRazerDpiDown" xml:space="preserve"><value>Razer DPI 下</value></data>
+  <data name="ViperMappingBack" xml:space="preserve"><value>后退</value></data>
+  <data name="ViperMappingForward" xml:space="preserve"><value>前进</value></data>
+  <data name="ViperMappingMacroKeys" xml:space="preserve"><value>宏按键</value></data>
+  <data name="ViperMappingPrintScreen" xml:space="preserve"><value>打印屏幕</value></data>
+  <data name="ViperMappingSystemSleep" xml:space="preserve"><value>系统睡眠</value></data>
+  <data name="ViperMappingProfileSwitch" xml:space="preserve"><value>配置切换</value></data>
+  <data name="ViperMappingSniper" xml:space="preserve"><value>狙击</value></data>
+  <data name="ViperMappingRazerDpiCycleUp" xml:space="preserve"><value>Razer DPI 循环上</value></data>
+  <data name="ViperMappingRazerDpiCycleDown" xml:space="preserve"><value>Razer DPI 循环下</value></data>
+  <data name="ViperMappingScrollModeSwitch" xml:space="preserve"><value>滚轮模式切换</value></data>
+  <data name="ViperMappingHapticScrollUp" xml:space="preserve"><value>触感滚轮上</value></data>
+  <data name="ViperMappingHapticScrollDown" xml:space="preserve"><value>触感滚轮下</value></data>
+  <data name="ViperMappingHapticScrollCycleUp" xml:space="preserve"><value>触感滚轮循环上</value></data>
+  <data name="ViperMappingHapticScrollCycleDown" xml:space="preserve"><value>触感滚轮循环下</value></data>
+  <data name="ViperMappingHyperShift" xml:space="preserve"><value>HyperShift</value></data>
+  <data name="ViperMappingActuation" xml:space="preserve"><value>触发点调节</value></data>
+  <data name="ViperMappingRapidTrigger" xml:space="preserve"><value>快速触发调节</value></data>
+  <data name="ViperMappingSnapTap" xml:space="preserve"><value>SnapTap 切换</value></data>
+  <data name="ViperMappingMicMute" xml:space="preserve"><value>麦克风静音</value></data>
+  <data name="ViperMappingScreenshot" xml:space="preserve"><value>截图</value></data>
+  <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>切换应用</value></data>
+  <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift 切换</value></data>
+  <data name="ViperMappingTurboKey" xml:space="preserve"><value>Turbo 键</value></data>
+  <data name="ViperMappingTurboButton" xml:space="preserve"><value>Turbo 按钮</value></data>
 </root>
 
 
