@@ -343,7 +343,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 - `BladeDisplayMuxMode.Dds = 0x02`；
 - `BladeDisplayMuxProtocol.CreateSetModeRequest` 会生成 `0D:09`，参数 `[0x00, 0x02]`；
 - `BladeDisplayTelemetryReader.SetBladeDisplayMuxModeAsync` 会检查能力位、读原模式、写入、回读、失败恢复；
-- `AllowsDds` 当前恒为 true，DDS 的真正门禁是 `0D:8A` 的 bit 0x04；
+- `AllowsDds` 现在恒为 false，DDS 从可选模式中隐藏；等 9.3 的实机矩阵通过后再打开；
 - 单元测试覆盖了 `0x02` 的 set 字节和 `0x02 -> Dds` 的解析。
 
 ### 9.2 还没有验证什么

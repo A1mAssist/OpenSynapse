@@ -666,9 +666,9 @@ internal sealed class BladeDisplayTelemetryReader
         blade.Owns(CapabilityIds.DisplayMuxCapabilitiesGet);
 
     private static bool AllowsDds(ResolvedRazerDevice blade) =>
-        // The 2026 bundle writes DDS as mode 0x02 through the same 0D:09 payload;
-        // the dynamic capability bit from 0D:8A decides whether the SKU exposes it.
-        true;
+        // DDS=2 has no hardware-verified write/persistence/restore path yet.
+        // Keep the MUX control to Hybrid/Discrete until the 2026 test matrix passes.
+        false;
 
     private static BladeDisplayMuxStatus UnsupportedDisplayMux(BladeDisplayMuxBlockReason reason) =>
         new(
