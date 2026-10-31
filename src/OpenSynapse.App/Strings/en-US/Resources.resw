@@ -1760,9 +1760,11 @@
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO is not installed, so the CPU power wall cannot be read or written.</value></data>
   <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>A PawnIO module file is missing (IntelMSR.bin / RyzenSMU.bin); redeploy OpenSynapse.</value></data>
   <data name="CpuPowerLimitAccessDenied" xml:space="preserve"><value>Administrator rights or the OpenSynapse machine service is required.</value></data>
+  <data name="CpuPowerLimitAmdDriverMissing" xml:space="preserve"><value>Install the Razer AMD OverClock component (including the AMD Ryzen Master driver) first.</value></data>
   <data name="CpuPowerLimitUnavailable" xml:space="preserve"><value>The CPU power wall could not be read.</value></data>
   <data name="CpuPowerLimitChecking" xml:space="preserve"><value>Reading the power wall…</value></data>
   <data name="CpuPowerLimitCeiling" xml:space="preserve"><value>Ceiling {0:0} W</value></data>
+  <data name="CpuPowerLimitDirectSmu" xml:space="preserve"><value>Direct SMU writes may be ignored by some firmware; install the Razer AMD OverClock component for reliable control.</value></data>
   <data name="CpuPowerLimitLocked" xml:space="preserve"><value>The firmware has locked the power wall.</value></data>
   <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn key takeover needs the Razer driver</value></data>
   <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn shortcut takeover depends on the Razer filter driver that Razer Synapse installs. Install Razer Synapse once so Windows receives the driver, then restart OpenSynapse.</value></data>

@@ -11,6 +11,7 @@ public enum CpuPowerLimitAvailability
     ModuleMissing,
     AccessDenied,
     Failed,
+    AmdDriverMissing,
 }
 
 /// <summary>
@@ -147,7 +148,8 @@ public sealed record CpuPowerLimitReport(
     double FirmwarePl1Watts,
     double FirmwarePl2Watts,
     double MaximumWatts,
-    bool IsLocked)
+    bool IsLocked,
+    bool UsesDirectSmu = false)
 {
     public static CpuPowerLimitReport Unavailable(
         CpuPowerLimitAvailability availability,

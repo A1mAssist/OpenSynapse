@@ -145,9 +145,10 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
             return false;
         }
 
-        var fast = FloatAt(table, 2) / MilliwattsPerWatt;
-        var slow = FloatAt(table, 4) / MilliwattsPerWatt;
-        if (!(fast > 0 && slow > 0 && fast < 500 && slow < 500))
+        // This table stores watts. The mailbox write below still takes milliwatts.
+        var fast = FloatAt(table, 2);
+        var slow = FloatAt(table, 4);
+        if (!(fast >= 1 && slow >= 1 && fast < 500 && slow < 500))
         {
             error = $"The SMU power table returned implausible limits ({slow} W / {fast} W).";
             return false;
@@ -180,12 +181,25 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
             return CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed, error);
         }
 
-        // A rejected message is the only reliable failure signal; when the table cannot
-        // be re-read, report what was accepted instead of failing a write that worked.
-        return _session.TryReadPowerTable(out var table, out _) &&
-            TryDecode(table, out var actual, out _)
-                ? BuildReport(actual)
-                : BuildReport(limit);
+        // PawnIO only sees whether the mailbox accepted the message. On Razer firmware the
+        // message can be accepted while the EC keeps the old table, so treat an unchanged
+        // readback as a failed write instead of showing the requested value as active.
+        if (_session.TryReadPowerTable(out var table, out _) &&
+            TryDecode(table, out var actual, out _))
+        {
+            if (Math.Abs(actual.Pl1Watts - limit.Pl1Watts) > 1 ||
+                Math.Abs(actual.Pl2Watts - limit.Pl2Watts) > 1)
+            {
+                return CpuPowerLimitReport.Unavailable(
+                    CpuPowerLimitAvailability.Failed,
+                    $"The SMU accepted the command but the power table still reports " +
+                    $"{actual.Pl1Watts:0.#} W / {actual.Pl2Watts:0.#} W.");
+            }
+
+            return BuildReport(actual);
+        }
+
+        return BuildReport(limit);
     }
 
     private CpuPowerLimitReport BuildReport(CpuPowerLimit current) => new(
@@ -196,7 +210,8 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
         _firmware.Pl1Watts,
         _firmware.Pl2Watts,
         CpuPowerLimit.MaximumWatts,
-        false);
+        false,
+        UsesDirectSmu: true);
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
