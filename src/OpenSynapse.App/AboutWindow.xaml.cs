@@ -62,7 +62,9 @@ public sealed partial class AboutWindow : Window
     {
         Localized.RefreshTree(RootLayout);
         Title = AppStrings.Text("AboutWindowTitle");
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "--";
+        var version = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "--";
         VersionText.Text = AppStrings.FormatText("AboutVersion", version);
     }
 }
