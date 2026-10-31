@@ -668,6 +668,36 @@
                       <TextBlock Text="{Binding PowerStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding BatteryChemistryVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="电池" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <ComboBox Header="电池类型" ItemsSource="{Binding BatteryChemistryOptions}" SelectedIndex="{Binding SelectedBatteryChemistryIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <TextBlock Text="电量百分比按电池类型换算；换电池后要选对，否则读数会偏。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Button Content="应用电池类型" Click="BleApplyBatteryChemistryClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding SmartIlluminationVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="智能照明" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <ToggleSwitch Header="闲置时自动调暗" IsOn="{Binding SmartIlluminationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" />
+                      <ComboBox Header="调暗档位" ItemsSource="{Binding SmartIlluminationModeOptions}" SelectedIndex="{Binding SelectedSmartIlluminationModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <Button Content="应用照明设置" Click="BleApplySmartIlluminationClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding KeysVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="按键响应" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding SnapTapVisibility}">
+                        <ToggleSwitch Header="Snap Tap" IsOn="{Binding SnapTapEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" />
+                        <TextBlock Grid.Column="1" Text="{Binding SnapTapSummary}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Visibility="{Binding DebounceVisibility}">
+                        <NumberBox Header="按下 (ms)" Value="{Binding DebounceMake, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" />
+                        <NumberBox Grid.Column="1" Header="释放 (ms)" Value="{Binding DebounceBreak, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" />
+                      </Grid>
+                      <Button Content="应用按键设置" Click="BleApplyKeysClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ProfilesVisibility}">
                     <StackPanel Spacing="10">
                       <TextBlock Text="配置文件" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />

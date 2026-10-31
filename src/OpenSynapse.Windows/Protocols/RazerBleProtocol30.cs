@@ -73,7 +73,7 @@ public sealed record RazerBleProfileState(IReadOnlyList<byte> Ids, byte? ActiveI
 /// Requests carry an 8-byte header and no CRC; replies carry a 20-byte header with the
 /// status byte at offset 7, falling back to an 8-byte header when the declared length disagrees.
 /// </summary>
-public static class RazerBleProtocol30
+public static partial class RazerBleProtocol30
 {
     public static readonly Guid ServiceUuid = new("52401523-f97c-7f90-0e7f-6c6f4e36db1c");
     public static readonly Guid WriteCharacteristicUuid = new("52401524-f97c-7f90-0e7f-6c6f4e36db1c");

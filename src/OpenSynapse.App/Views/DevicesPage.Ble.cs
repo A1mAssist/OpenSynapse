@@ -47,4 +47,25 @@ public sealed partial class DevicesPage : UserControl
 
     private async void BleMappingLayerChanged(object sender, SelectionChangedEventArgs e) =>
         await (ViewModel.SelectedBle?.LoadMappingAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void BleApplyBatteryChemistryClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.SelectedBle?.ApplyBatteryChemistryAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void BleApplySmartIlluminationClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.SelectedBle?.ApplySmartIlluminationAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void BleApplyKeysClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedBle is not { } ble) return;
+
+        if (ble.SnapTapVisibility == Visibility.Visible)
+        {
+            await ble.ApplySnapTapAsync(Lifetime);
+        }
+
+        if (ble.DebounceVisibility == Visibility.Visible)
+        {
+            await ble.ApplyDebounceAsync(Lifetime);
+        }
+    }
 }

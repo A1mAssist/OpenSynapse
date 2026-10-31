@@ -2799,9 +2799,11 @@
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift toggle</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>Turbo key</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>Turbo button</value></data>
+  <data name="BleBatteryTypeAlkaline" xml:space="preserve"><value>Alkaline</value></data>
+  <data name="BleBatteryTypeNiMH" xml:space="preserve"><value>NiMH</value></data>
+  <data name="BleBatteryTypeLithium" xml:space="preserve"><value>Lithium</value></data>
+  <data name="BleSmartDimHalf" xml:space="preserve"><value>Half</value></data>
+  <data name="BleSmartDimQuarter" xml:space="preserve"><value>Quarter</value></data>
+  <data name="BleSmartDimOff" xml:space="preserve"><value>Off</value></data>
+  <data name="BleSnapTapPairCount" xml:space="preserve"><value>{0} pairs</value></data>
 </root>
-
-
-
-
-

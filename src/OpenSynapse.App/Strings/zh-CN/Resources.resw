@@ -3223,9 +3223,11 @@
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift 切换</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>Turbo 键</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>Turbo 按钮</value></data>
+  <data name="BleBatteryTypeAlkaline" xml:space="preserve"><value>碱性</value></data>
+  <data name="BleBatteryTypeNiMH" xml:space="preserve"><value>镍氢 (NiMH)</value></data>
+  <data name="BleBatteryTypeLithium" xml:space="preserve"><value>锂</value></data>
+  <data name="BleSmartDimHalf" xml:space="preserve"><value>半亮</value></data>
+  <data name="BleSmartDimQuarter" xml:space="preserve"><value>四分之一</value></data>
+  <data name="BleSmartDimOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="BleSnapTapPairCount" xml:space="preserve"><value>{0} 组按键</value></data>
 </root>
-
-
-
-
-

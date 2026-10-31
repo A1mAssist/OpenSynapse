@@ -114,7 +114,7 @@ public sealed class RazerBleSession : IDisposable
 /// Battery, polling rate, DPI and identity for a protocol 30 BLE device. Writes follow the
 /// house rule: read the current value, write, read back, restore the old value on mismatch.
 /// </summary>
-public sealed class RazerBleDeviceService : IDisposable
+public sealed partial class RazerBleDeviceService : IDisposable
 {
     private const byte BleProfileId = 0;
     private const byte MappingClassId = 0;
