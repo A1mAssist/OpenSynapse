@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
@@ -180,4 +182,19 @@ public static partial class RazerBleProtocol30
 
     public static byte[] CreateSetHapticActiveStage(byte transactionId, byte profileId, byte stage) =>
         CreateFrame(transactionId, 0x15, 0x00, payload: [profileId, stage]);
-}
+
+    public static byte[] CreateGetProfileName(
+        byte transactionId,
+        byte profileId,
+        ushort offset,
+        ushort length)
+    {
+        var payload = new byte[4];
+        BinaryPrimitives.WriteUInt16LittleEndian(payload, offset);
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(2), length);
+        return CreateFrame(transactionId, 0x03, 0x84, param6: profileId, payload: payload);
+    }
+
+    /// <summary>The reply prefixes two header bytes; the requested chunk starts at index 2.</summary>
+    public static byte[] ReadProfileNameChunk(RazerBleResponse response) =>
+        response.Payload.Count <= 2 ? [] : response.Payload.Skip(2).ToArray();}

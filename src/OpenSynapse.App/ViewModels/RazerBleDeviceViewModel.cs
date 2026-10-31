@@ -474,8 +474,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         private set => SetVisibility(ref _profilesVisibility, value, nameof(ProfilesVisibility));
     }
 
-    public IReadOnlyList<string> ProfileOptions =>
-        _profileIds.Select(id => $"Profile {id}").ToArray();
+    public IReadOnlyList<string> ProfileOptions => _profileIds.Select(DescribeProfile).ToArray();
 
     public int SelectedProfileIndex
     {

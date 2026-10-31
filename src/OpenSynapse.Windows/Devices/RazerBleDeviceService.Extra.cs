@@ -1,3 +1,4 @@
+using System.Text;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -381,4 +382,46 @@ public sealed partial class RazerBleDeviceService
         }).ConfigureAwait(false);
         throw new InvalidOperationException(
             "The device kept a different haptic stage; the previous stage was restored.");
-    }}
+    }
+
+    /// <summary>
+    /// Reads the 250-byte onboard profile block in 78-byte chunks and returns the name at
+    /// bytes 16..115. Returns null when the device refuses the read.
+    /// </summary>
+    public async Task<string?> ReadProfileNameAsync(
+        byte profileId,
+        CancellationToken cancellationToken = default)
+    {
+        const int TotalLength = 250;
+        const int ChunkLength = 78;
+        var buffer = new byte[TotalLength];
+
+        for (var offset = 0; offset < TotalLength; offset += ChunkLength)
+        {
+            var length = Math.Min(ChunkLength, TotalLength - offset);
+            var response = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateGetProfileName(
+                    transaction, profileId, (ushort)offset, (ushort)length),
+                "get profile name",
+                cancellationToken).ConfigureAwait(false);
+            EnsureSuccess(response, "get profile name");
+
+            var chunk = RazerBleProtocol30.ReadProfileNameChunk(response);
+            if (chunk.Length == 0)
+            {
+                return null;
+            }
+
+            Array.Copy(chunk, 0, buffer, offset, Math.Min(chunk.Length, length));
+        }
+
+        return DecodeProfileName(buffer);
+    }
+
+    private static string DecodeProfileName(byte[] buffer)
+    {
+        var name = Encoding.UTF8.GetString(buffer, 16, 100);
+        var end = name.IndexOf('\0');
+        return (end >= 0 ? name[..end] : name).Trim();
+    }
+}

@@ -36,6 +36,7 @@ public sealed partial class RazerBleDeviceViewModel
     private Visibility _hapticStageVisibility = Visibility.Collapsed;
     private double _selectedHapticStage = 1;
     private int _maxHapticStage = 1;
+    private readonly Dictionary<byte, string> _profileNames = [];
 
     public IReadOnlyList<string> BatteryChemistryOptions =>
         AppStrings.Texts("BleBatteryTypeAlkaline", "BleBatteryTypeNiMH", "BleBatteryTypeLithium");
@@ -210,6 +211,9 @@ public sealed partial class RazerBleDeviceViewModel
         private set => SetField(ref _maxHapticStage, value < 1 ? 1 : value);
     }
 
+    private string DescribeProfile(byte id) =>
+        _profileNames.TryGetValue(id, out var name) && name.Length > 0 ? name : $"Profile {id}";
+
     /// <summary>Haptic stages live on the active onboard profile; profile 1 is the middleware default.</summary>
     private byte HapticProfileId => _profileIds.Count == 0
         ? (byte)1
@@ -301,6 +305,34 @@ public sealed partial class RazerBleDeviceViewModel
                 HapticStageVisibility = Visibility.Visible;
             },
             () => HapticStageVisibility = Visibility.Collapsed);
+
+        await LoadProfileNamesAsync(cancellationToken);
+    }
+
+    private async Task LoadProfileNamesAsync(CancellationToken cancellationToken)
+    {
+        if (_service is null || _profileIds.Count == 0 || !BeginOperation()) return;
+        try
+        {
+            foreach (var id in _profileIds)
+            {
+                var name = await _service.ReadProfileNameAsync(id, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    _profileNames[id] = name;
+                }
+            }
+
+            OnPropertyChanged(nameof(ProfileOptions));
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            // Profile names are cosmetic: the id labels stay when the read is refused.
+        }
+        finally
+        {
+            EndOperation();
+        }
     }
 
     public Task ApplyPowerPlanAsync(CancellationToken cancellationToken = default) =>
