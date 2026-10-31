@@ -42,7 +42,20 @@ public sealed partial class OpenRazerDeviceViewModel
         get => _timeToDimSeconds;
         set
         {
-            if (SetField(ref _timeToDimSeconds, value)) OnPropertyChanged(nameof(CanEditTimeToDim));
+            if (SetField(ref _timeToDimSeconds, value))
+            {
+                OnPropertyChanged(nameof(TimeToDimMinutes));
+                OnPropertyChanged(nameof(CanEditTimeToDim));
+            }
+        }
+    }
+    public double TimeToDimMinutes
+    {
+        get => TimeToDimSeconds / 60d;
+        set
+        {
+            var seconds = (int)Math.Round(Math.Clamp(value, 1d, 15d) * 60d);
+            TimeToDimSeconds = seconds;
         }
     }
     public int TimeToDimPercent
@@ -54,12 +67,12 @@ public sealed partial class OpenRazerDeviceViewModel
         }
     }
     public string TimeToDimText => _basicState is { TimeToDimEnabled: { } enabled, TimeToDimSeconds: { } seconds, TimeToDimPercent: { } percent }
-        ? $"{(enabled ? OnText : OffText)} / {seconds} s / {percent}%"
+        ? $"{(enabled ? OnText : OffText)} / {seconds / 60d:0.#} min / {percent}%"
         : "--";
     public bool IsTimeToDimBusy { get => _isTimeToDimBusy; private set => SetBusy(ref _isTimeToDimBusy, value, nameof(CanEditTimeToDim), nameof(CanWriteTimeToDim)); }
     public bool CanWriteTimeToDim => CanUse(OpenRazerBackendCapability.TimeToDimWrite) && !IsTimeToDimBusy;
     public bool CanEditTimeToDim => CanWriteTimeToDim &&
-        TimeToDimSeconds is >= 60 and <= 900 && TimeToDimPercent is >= 0 and <= 100;
+        TimeToDimSeconds is >= 60 and <= 900 && TimeToDimPercent is >= 1 and <= 100;
 
     public Visibility IndicatorLedVisibility => VisibleWhen(HasAny(
         OpenRazerBackendCapability.IndicatorLedConfigurationRead,
@@ -335,7 +348,7 @@ public sealed partial class OpenRazerDeviceViewModel
     {
         if (state.TimeToDimEnabled is { } timeEnabled) TimeToDimEnabled = timeEnabled;
         if (state.TimeToDimSeconds is { } seconds) TimeToDimSeconds = seconds;
-        if (state.TimeToDimPercent is { } percent) TimeToDimPercent = percent;
+        if (state.TimeToDimPercent is { } percent) TimeToDimPercent = percent is >= 1 ? percent : 20;
         if (state.IndicatorLedConfiguration is { } indicator) IndicatorLedEnabled = indicator != 0;
         if (state.BatteryDischargeCurve is { } curve) SelectedBatteryCurveIndex = curve;
         if (state.GpuCardDetectionEnabled is { } gpu) GpuCardDetectionEnabled = gpu;
