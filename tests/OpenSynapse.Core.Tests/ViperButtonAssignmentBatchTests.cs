@@ -28,6 +28,23 @@ public sealed class ViperButtonAssignmentBatchTests
             ViperTelemetryReader.ValidateViperButtonAssignmentBatch(complete));
     }
 
+    [Fact]
+    public void MediaKeyAssignmentUsesTheTwoByteUsage()
+    {
+        var request = ViperObmProtocol.CreateSetAssignmentRequest(
+            new ViperObmAssignment(
+                1,
+                4,
+                ViperObmMappingMode.Normal,
+                ViperObmFunctionId.MediaKeys,
+                [0x00, 0xEA]));
+
+        var offset = RazerFeatureReport.ArgumentsOffset;
+        Assert.Equal((byte)ViperObmFunctionId.MediaKeys, request[offset + 3]);
+        Assert.Equal((byte)2, request[offset + 4]);
+        Assert.Equal([0x00, 0xEA], request[(offset + 5)..(offset + 7)]);
+    }
+
     private static ViperButtonAssignment Assignment(
         byte buttonId,
         ViperButtonMappingLayer layer) =>
