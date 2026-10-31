@@ -151,7 +151,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private RazerDeviceTelemetry? LastTelemetry => _lastTelemetry();
     private bool IsDisplayAvailable => _isDisplayAvailable();
     private bool IsDisposed => _isDisposed();
-    private PowerSourceKind CurrentPowerSource => _currentPowerSource();
+    internal PowerSourceKind CurrentPowerSource => _currentPowerSource();
 
     private Task<bool> SaveProfileAsync(CancellationToken cancellationToken) =>
         _saveProfileAsync(cancellationToken);

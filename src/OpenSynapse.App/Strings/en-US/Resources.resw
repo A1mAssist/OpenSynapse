@@ -1305,6 +1305,17 @@
   <data name="DisplayMuxModeStatusRestored" xml:space="preserve"><value>The update failed and the previous display mode was restored.</value></data>
   <data name="DisplayMuxModeStatusRestoreFailed" xml:space="preserve"><value>The update failed and the previous mode could not be restored. Restart and check the BIOS display mode.</value></data>
   <data name="DisplayMuxModeStatusDedicatedGpuDisabled" xml:space="preserve"><value>Turn off Integrated-only (disable discrete GPU) before changing the MUX mode.</value></data>
+  <data name="GpuModeTitle.Text" xml:space="preserve"><value>Graphics mode</value></data>
+  <data name="GpuModeDescription.Text" xml:space="preserve"><value>Choose which GPU drives the built-in display. Integrated saves power; Standard renders through the iGPU on demand; Discrete direct requires a restart; Auto uses Standard on AC and Integrated on battery.</value></data>
+  <data name="GpuModeRestart.Text" xml:space="preserve"><value>Restart discrete GPU</value></data>
+  <data name="GpuModeIntegrated" xml:space="preserve"><value>Integrated</value></data>
+  <data name="GpuModeStandard" xml:space="preserve"><value>Standard</value></data>
+  <data name="GpuModeDiscrete" xml:space="preserve"><value>Discrete direct</value></data>
+  <data name="GpuModeAuto" xml:space="preserve"><value>Auto</value></data>
+  <data name="GpuModeStatusCurrent" xml:space="preserve"><value>Current: {0}.</value></data>
+  <data name="GpuModeStatusAuto" xml:space="preserve"><value>Auto: Standard on AC, Integrated on battery; running {0} now.</value></data>
+  <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>The panel is on the discrete route. Switch back to Standard and restart before disabling the GPU.</value></data>
+  <data name="GpuModeStatusNoHybrid" xml:space="preserve"><value>This device did not report hybrid output, so Standard is unavailable.</value></data>
   <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX mode: {0}</value></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>About OpenSynapse</value></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>View the version, project page, and license information.</value></data>

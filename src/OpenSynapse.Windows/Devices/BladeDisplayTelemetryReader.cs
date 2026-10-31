@@ -514,17 +514,17 @@ internal sealed class BladeDisplayTelemetryReader
             var capabilities = BladeDisplayMuxModes.AdmittedCapabilities(
                 await ReadDisplayMuxCapabilitiesAsync(blade, cancellationToken),
                 allowDds);
+            var mode = await ReadDisplayMuxModeAsync(blade, cancellationToken);
             if (!BladeDisplayMuxModes.CanSwitch(capabilities, allowDds))
             {
+                // Report the real route even when switching is unavailable.
                 return new BladeDisplayMuxStatus(
                     IsSupported: false,
                     CanChange: false,
-                    Mode: BladeDisplayMuxMode.Hybrid,
+                    Mode: mode,
                     BlockReason: BladeDisplayMuxBlockReason.MissingCapability,
                     Capabilities: capabilities);
             }
-
-            var mode = await ReadDisplayMuxModeAsync(blade, cancellationToken);
             // DDS is writable through the same 0D:09 payload; capability bits decide
             // whether a unit exposes it, so a DDS readback can be restored normally.
             var canChange = allowDds || mode != BladeDisplayMuxMode.Dds;

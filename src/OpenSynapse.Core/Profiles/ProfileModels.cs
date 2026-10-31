@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Macros;
 
 namespace OpenSynapse.Core.Profiles;
@@ -205,6 +206,7 @@ public sealed class ProfileDefinition
         MappingPreset = source.MappingPreset,
         LightingEnabled = source.LightingEnabled,
         ChromaOverrideEnabled = source.ChromaOverrideEnabled,
+        GpuMode = source.GpuMode,
     };
 
     private static ViperProfileSettings CloneViper(ViperProfileSettings source) => new()
@@ -364,6 +366,7 @@ public sealed class BladeProfileSettings
     public string? MappingPreset { get; set; }
     public bool? LightingEnabled { get; set; }
     public bool? ChromaOverrideEnabled { get; set; }
+    public BladeGpuMode? GpuMode { get; set; }
 
     internal void ApplySafeDefaults()
     {
