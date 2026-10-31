@@ -2806,4 +2806,10 @@
   <data name="BleSmartDimQuarter" xml:space="preserve"><value>Quarter</value></data>
   <data name="BleSmartDimOff" xml:space="preserve"><value>Off</value></data>
   <data name="BleSnapTapPairCount" xml:space="preserve"><value>{0} pairs</value></data>
+  <data name="BlePowerPlanSave" xml:space="preserve"><value>Power save</value></data>
+  <data name="BlePowerPlanBalance" xml:space="preserve"><value>Balanced</value></data>
+  <data name="BlePowerPlanPerformance" xml:space="preserve"><value>High performance</value></data>
+  <data name="BleScrollTactile" xml:space="preserve"><value>Tactile</value></data>
+  <data name="BleScrollFreeSpin" xml:space="preserve"><value>Free spin</value></data>
+  <data name="BleScrollMicroTactile" xml:space="preserve"><value>Micro tactile</value></data>
 </root>

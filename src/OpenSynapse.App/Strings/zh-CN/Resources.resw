@@ -3230,4 +3230,10 @@
   <data name="BleSmartDimQuarter" xml:space="preserve"><value>四分之一</value></data>
   <data name="BleSmartDimOff" xml:space="preserve"><value>关闭</value></data>
   <data name="BleSnapTapPairCount" xml:space="preserve"><value>{0} 组按键</value></data>
+  <data name="BlePowerPlanSave" xml:space="preserve"><value>省电</value></data>
+  <data name="BlePowerPlanBalance" xml:space="preserve"><value>均衡</value></data>
+  <data name="BlePowerPlanPerformance" xml:space="preserve"><value>高性能</value></data>
+  <data name="BleScrollTactile" xml:space="preserve"><value>触感</value></data>
+  <data name="BleScrollFreeSpin" xml:space="preserve"><value>自由滚动</value></data>
+  <data name="BleScrollMicroTactile" xml:space="preserve"><value>微触感</value></data>
 </root>

@@ -652,6 +652,9 @@
                       <ToggleSwitch Header="Smart Reel" IsOn="{Binding ScrollSmartReelEnabled, Mode=TwoWay}" Visibility="{Binding ScrollSmartReelVisibility}" IsEnabled="{Binding CanEdit}" />
                       <NumberBox Header="Smart Reel 阈值" Value="{Binding ScrollSmartReelThreshold, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding ScrollSmartReelThresholdVisibility}" IsEnabled="{Binding CanEdit}" />
                       <ToggleSwitch Header="滚轮加速" IsOn="{Binding ScrollAccelerationEnabled, Mode=TwoWay}" Visibility="{Binding ScrollAccelerationVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <ComboBox Header="滚轮手感" ItemsSource="{Binding TactileModeOptions}" SelectedIndex="{Binding SelectedTactileModeIndex, Mode=TwoWay}" Visibility="{Binding TactileModeVisibility}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <NumberBox Header="加速等级" Value="{Binding ScrollAccelerationLevel, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding AccelerationLevelVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <NumberBox Header="滚轮屏蔽时间 (ms)" Value="{Binding ScrollMaskingTime, Mode=TwoWay}" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding MaskingTimeVisibility}" IsEnabled="{Binding CanEdit}" />
                       <Button Content="应用滚轮设置" Click="BleApplyScrollClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
                       <TextBlock Text="{Binding ScrollStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                     </StackPanel>
@@ -664,6 +667,7 @@
                       <NumberBox Header="休眠时间 (分钟)" Value="{Binding SleepMinutes, Mode=TwoWay}" Minimum="1" Maximum="65535" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding PowerSleepTimeVisibility}" IsEnabled="{Binding CanEdit}" />
                       <ToggleSwitch Header="自动变暗" IsOn="{Binding TimeToDimEnabled, Mode=TwoWay}" Visibility="{Binding PowerTimeToDimVisibility}" IsEnabled="{Binding CanEdit}" />
                       <NumberBox Header="变暗时间 (分钟)" Value="{Binding TimeToDimMinutes, Mode=TwoWay}" Minimum="1" Maximum="15" SmallChange="1" SpinButtonPlacementMode="Compact" Visibility="{Binding PowerTimeToDimVisibility}" IsEnabled="{Binding CanEdit}" />
+                      <ComboBox Header="电源方案" ItemsSource="{Binding PowerPlanOptions}" SelectedIndex="{Binding SelectedPowerPlanIndex, Mode=TwoWay}" Visibility="{Binding PowerPlanVisibility}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
                       <Button Content="应用电源设置" Click="BleApplyPowerClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Left" />
                       <TextBlock Text="{Binding PowerStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                     </StackPanel>

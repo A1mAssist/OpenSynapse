@@ -36,11 +36,21 @@ public sealed partial class DevicesPage : UserControl
     private async void BleApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedBle?.ApplyDpiStagesAsync(Lifetime) ?? Task.CompletedTask);
 
-    private async void BleApplyScrollClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedBle?.ApplyScrollAsync(Lifetime) ?? Task.CompletedTask);
+    private async void BleApplyScrollClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedBle is not { } ble) return;
 
-    private async void BleApplyPowerClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedBle?.ApplyPowerAsync(Lifetime) ?? Task.CompletedTask);
+        await ble.ApplyScrollAsync(Lifetime);
+        await ble.ApplyScrollExtrasAsync(Lifetime);
+    }
+
+    private async void BleApplyPowerClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.SelectedBle is not { } ble) return;
+
+        await ble.ApplyPowerAsync(Lifetime);
+        await ble.ApplyPowerPlanAsync(Lifetime);
+    }
 
     private async void BleApplyProfileClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedBle?.ApplyProfileAsync(Lifetime) ?? Task.CompletedTask);

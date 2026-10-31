@@ -25,6 +25,14 @@ public sealed partial class RazerBleDeviceViewModel
     private double _debounceBreak = 8;
     private byte _debounceMakeMask;
     private byte _debounceBreakMask;
+    private Visibility _powerPlanVisibility = Visibility.Collapsed;
+    private Visibility _tactileModeVisibility = Visibility.Collapsed;
+    private Visibility _accelerationLevelVisibility = Visibility.Collapsed;
+    private Visibility _maskingTimeVisibility = Visibility.Collapsed;
+    private int _selectedPowerPlanIndex;
+    private int _selectedTactileModeIndex;
+    private double _scrollAccelerationLevel;
+    private double _scrollMaskingTime;
 
     public IReadOnlyList<string> BatteryChemistryOptions =>
         AppStrings.Texts("BleBatteryTypeAlkaline", "BleBatteryTypeNiMH", "BleBatteryTypeLithium");
@@ -126,6 +134,61 @@ public sealed partial class RazerBleDeviceViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+    public Visibility PowerPlanVisibility
+    {
+        get => _powerPlanVisibility;
+        private set => SetVisibility(ref _powerPlanVisibility, value, nameof(PowerPlanVisibility));
+    }
+
+    public IReadOnlyList<string> PowerPlanOptions =>
+        AppStrings.Texts("BlePowerPlanSave", "BlePowerPlanBalance", "BlePowerPlanPerformance");
+
+    public int SelectedPowerPlanIndex
+    {
+        get => _selectedPowerPlanIndex;
+        set => SetField(ref _selectedPowerPlanIndex, Math.Clamp(value, 0, 2));
+    }
+
+    public Visibility TactileModeVisibility
+    {
+        get => _tactileModeVisibility;
+        private set => SetVisibility(ref _tactileModeVisibility, value, nameof(TactileModeVisibility));
+    }
+
+    public IReadOnlyList<string> TactileModeOptions =>
+        AppStrings.Texts("BleScrollTactile", "BleScrollFreeSpin", "BleScrollMicroTactile");
+
+    public int SelectedTactileModeIndex
+    {
+        get => _selectedTactileModeIndex;
+        set => SetField(ref _selectedTactileModeIndex, Math.Clamp(value, 0, 2));
+    }
+
+    public Visibility AccelerationLevelVisibility
+    {
+        get => _accelerationLevelVisibility;
+        private set => SetVisibility(
+            ref _accelerationLevelVisibility, value, nameof(AccelerationLevelVisibility));
+    }
+
+    public double ScrollAccelerationLevel
+    {
+        get => _scrollAccelerationLevel;
+        set => SetField(ref _scrollAccelerationLevel, Math.Clamp(value, 0d, 255d));
+    }
+
+    public Visibility MaskingTimeVisibility
+    {
+        get => _maskingTimeVisibility;
+        private set => SetVisibility(ref _maskingTimeVisibility, value, nameof(MaskingTimeVisibility));
+    }
+
+    public double ScrollMaskingTime
+    {
+        get => _scrollMaskingTime;
+        set => SetField(ref _scrollMaskingTime, Math.Clamp(value, 0d, 255d));
+    }
+
     public async Task LoadExtrasAsync(CancellationToken cancellationToken = default)
     {
         await LoadExtraAsync(
@@ -166,6 +229,76 @@ public sealed partial class RazerBleDeviceViewModel
                 DebounceVisibility = Visibility.Visible;
             },
             () => DebounceVisibility = Visibility.Collapsed);
+
+        await LoadExtraAsync(
+            () => _service!.ReadPowerPlanAsync(cancellationToken: cancellationToken),
+            plan =>
+            {
+                SelectedPowerPlanIndex = (int)plan;
+                PowerPlanVisibility = Visibility.Visible;
+            },
+            () => PowerPlanVisibility = Visibility.Collapsed);
+
+        await LoadExtraAsync(
+            () => _service!.ReadScrollTactileModeAsync(cancellationToken),
+            mode =>
+            {
+                SelectedTactileModeIndex = (int)mode;
+                TactileModeVisibility = Visibility.Visible;
+            },
+            () => TactileModeVisibility = Visibility.Collapsed);
+
+        await LoadExtraAsync(
+            () => _service!.ReadScrollAccelerationLevelAsync(cancellationToken),
+            level =>
+            {
+                ScrollAccelerationLevel = level;
+                AccelerationLevelVisibility = Visibility.Visible;
+            },
+            () => AccelerationLevelVisibility = Visibility.Collapsed);
+
+        await LoadExtraAsync(
+            () => _service!.ReadScrollMaskingTimeAsync(cancellationToken),
+            milliseconds =>
+            {
+                ScrollMaskingTime = milliseconds;
+                MaskingTimeVisibility = Visibility.Visible;
+            },
+            () => MaskingTimeVisibility = Visibility.Collapsed);
+    }
+
+    public Task ApplyPowerPlanAsync(CancellationToken cancellationToken = default) =>
+        RunWriteAsync(
+            service => service.SetPowerPlanAsync(
+                (RazerBlePowerPlan)SelectedPowerPlanIndex, cancellationToken: cancellationToken),
+            plan => SelectedPowerPlanIndex = (int)plan);
+
+    /// <summary>Applies the three scroll settings the wheel card owns, in one go.</summary>
+    public async Task ApplyScrollExtrasAsync(CancellationToken cancellationToken = default)
+    {
+        if (TactileModeVisibility == Visibility.Visible)
+        {
+            await RunWriteAsync(
+                service => service.SetScrollTactileModeAsync(
+                    (RazerBleScrollTactileMode)SelectedTactileModeIndex, cancellationToken),
+                mode => SelectedTactileModeIndex = (int)mode);
+        }
+
+        if (AccelerationLevelVisibility == Visibility.Visible)
+        {
+            await RunWriteAsync(
+                service => service.SetScrollAccelerationLevelAsync(
+                    (byte)Math.Round(ScrollAccelerationLevel), cancellationToken),
+                level => ScrollAccelerationLevel = level);
+        }
+
+        if (MaskingTimeVisibility == Visibility.Visible)
+        {
+            await RunWriteAsync(
+                service => service.SetScrollMaskingTimeAsync(
+                    (byte)Math.Round(ScrollMaskingTime), cancellationToken),
+                milliseconds => ScrollMaskingTime = milliseconds);
+        }
     }
 
     public Task ApplyBatteryChemistryAsync(CancellationToken cancellationToken = default) =>
