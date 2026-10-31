@@ -115,7 +115,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 | 集显 | PnP 禁用 NVIDIA 显示设备 | `WindowsDedicatedGpuMode` + `DedicatedGpuModePolicy` + UI 开关 | E0；无 2026 实机 | 内屏不能由 dGPU 驱动；不能有走 dGPU 的外接屏；可能需要重启 |
 | 标准 | `0D:09` 写 `0x00`（Hybrid） | `BladeDisplayTelemetryReader` + `BladeDisplayMuxMode.Hybrid` | E0；无 2026 实机 | `0D:8A` 必须报告 bit 0x01；若只报 0x06 则 HID 不可用 |
 | 独显直连 | `0D:09` 写 `0x01`（Discrete） | `BladeDisplayTelemetryReader` + `BladeDisplayMuxMode.Discrete` | E0；无 2026 实机 | `0D:8A` 必须报告 bit 0x02；写入后需重启 |
-| 自动 | `0D:09` 写 `0x02`（DDS） | 代码路径存在；`AllowsDds` 当前恒为 true | E0（仅字节/解析）；**无 2026 实机写入** | `0D:8A` 必须报告 bit 0x04；BIOS 需为 DDS；重启后仍生效才算通过 |
+| 自动 | `0D:09` 写 `0x02`（DDS） | 代码路径存在；`AllowsDds` 现在恒为 false，DDS 暂不开放 | E0（仅字节/解析）；**无 2026 实机写入** | `0D:8A` 必须报告 bit 0x04；BIOS 需为 DDS；重启后仍生效才算通过 |
 
 ### 4.4 2026 款 `0D:8A` 的两种情形
 
@@ -187,8 +187,8 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 当前代码的两个关键事实：
 
-- `AllowsDds(blade)` 当前**无条件返回 true**，注释说 2026 bundle 通过同一个 `0D:09` 写 `0x02`，由 `0D:8A` 的 DDS 位决定 SKU 是否暴露；
-- 因此 `BladeDisplayMuxStatus.CanChange` 在 `CanSwitch` 通过后实际上恒为 true；当前没有额外的 DDS 写入策略门禁，真正的门禁只剩 `0D:8A` 的 bit 0x04。
+- `AllowsDds(blade)` 现在**恒为 false**，DDS 从可选模式中隐藏；等第 9.3 节的实机矩阵通过后再打开；
+- 因此 `BladeDisplayMuxStatus.CanChange` 不再对 DDS 放行；真实门禁是代码里的 DDS 开关和 `0D:8A` 的 bit 0x04。
 
 当前证据：协议层有 `BladeDisplayMuxTests` 覆盖 manifest、get/set 字节、模式解析、能力位和未知模式拒绝；**没有 reader 层的“同模式不写、写入后回读、回读不一致恢复”单元测试**；本文没有取得 2026 实机读写记录。
 
