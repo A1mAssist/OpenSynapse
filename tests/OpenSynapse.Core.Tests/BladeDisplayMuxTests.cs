@@ -93,6 +93,23 @@ public sealed class BladeDisplayMuxTests
     }
 
     [Fact]
+    public void DdsIsMaskedWhenWritesAreNotAdmitted()
+    {
+        var capabilities =
+            BladeDisplayMuxCapabilities.Hybrid |
+            BladeDisplayMuxCapabilities.Discrete |
+            BladeDisplayMuxCapabilities.DynamicDisplaySwitch;
+
+        var admitted = BladeDisplayMuxModes.AdmittedCapabilities(capabilities, allowDds: false);
+
+        Assert.False(admitted.HasFlag(BladeDisplayMuxCapabilities.DynamicDisplaySwitch));
+        Assert.Equal(
+            new[] { BladeDisplayMuxMode.Hybrid, BladeDisplayMuxMode.Discrete },
+            BladeDisplayMuxModes.GetSupportedModes(admitted, allowDds: false));
+        Assert.True(BladeDisplayMuxModes.CanSwitch(admitted, allowDds: false));
+    }
+
+    [Fact]
     public void UnknownModeIsRejected()
     {
         var request = BladeDisplayMuxProtocol.CreateGetModeRequest();
