@@ -13,6 +13,10 @@ public sealed partial class MainViewModel
     private static readonly double[] CpuPowerLimitPresets =
         [0, 15, 25, 35, 45, 55, 65, 75, 85, 95];
 
+    /// <summary>The component Razer ships with Synapse for AMD PPT control.</summary>
+    internal const string AmdOverClockDownloadUri =
+        "https://app-assets.razer.com/files/synapse/devices/common/blades/RazerAMDOverClockSetup-v1.0.4.0.exe";
+
     private CpuPowerLimitReport? _cpuPowerLimitReport;
     private int _cpuPowerLimitIndex = -1;
     private bool _isRefreshingCpuPowerLimit;
@@ -61,6 +65,11 @@ public sealed partial class MainViewModel
 
     public Visibility CpuPowerLimitDetailVisibility =>
         CpuPowerLimitDetailText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility CpuPowerLimitAmdDownloadVisibility =>
+        _cpuPowerLimitReport?.Availability == CpuPowerLimitAvailability.AmdDriverMissing
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public bool CanSetCpuPowerLimit =>
         !IsBusy &&
@@ -206,6 +215,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CpuPowerLimitText));
         OnPropertyChanged(nameof(CpuPowerLimitDetailText));
         OnPropertyChanged(nameof(CpuPowerLimitDetailVisibility));
+        OnPropertyChanged(nameof(CpuPowerLimitAmdDownloadVisibility));
         OnPropertyChanged(nameof(CanSetCpuPowerLimit));
     }
 

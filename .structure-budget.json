@@ -247,7 +247,7 @@
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
         "maxLines": 1443,
-        "maxPublicMembers": 72
+        "maxPublicMembers": 73
     }
   ]
 }

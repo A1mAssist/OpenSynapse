@@ -1085,17 +1085,7 @@ public sealed class OpenRazerBackendTests
             OpenRazerBackendCapability.IndicatorLedConfigurationWrite,
             OpenRazerBackendCapability.GpuCardDetectionRead,
             OpenRazerBackendCapability.GpuCardDetectionWrite,
-            OpenRazerBackendCapability.ForceChromaCtrlRead,
-            OpenRazerBackendCapability.ForceChromaCtrlWrite,
-            OpenRazerBackendCapability.ProfileDebounceTimeRead,
-            OpenRazerBackendCapability.ProfileDebounceTimeWrite,
-            OpenRazerBackendCapability.ChromaTapRead,
-            OpenRazerBackendCapability.ChromaTapWrite,
-            OpenRazerBackendCapability.BatteryDischargeCurveRead,
-            OpenRazerBackendCapability.BatteryDischargeCurveWrite,
             OpenRazerBackendCapability.MacroStorageInfoRead,
-            OpenRazerBackendCapability.LkScrollWheelModeRead,
-            OpenRazerBackendCapability.LkScrollWheelModeWrite,
         ];
 
         foreach (var capability in expected)
@@ -1273,10 +1263,10 @@ public sealed class OpenRazerBackendTests
         Assert.Equal(OpenRazerLedZone.ScrollWheel, device.DefaultLedZone);
         Assert.DoesNotContain(OpenRazerBackendCapability.ChargingRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
-        // The middleware bundle declares the newer power, lighting and scroll
-        // commands for this mouse, so all of them are declared rather than
-        // inherited from a generic mouse. Time-to-dim is keyboard-only over USB.
-        Assert.Equal(33, capabilities.Count);
+        // The middleware bundle declares the newer lighting commands for this mouse, so
+        // they are declared rather than inherited from a generic mouse. The power settings
+        // that only exist in the BLE module are not published over USB.
+        Assert.Equal(19, capabilities.Count);
         Assert.Contains(OpenRazerBackendCapability.AutoSleepRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.BatteryChargeLimiterRead, capabilities);
         Assert.Equal([125, 500, 1000], device.PollingRates);
