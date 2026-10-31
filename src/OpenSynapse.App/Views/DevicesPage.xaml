@@ -816,17 +816,17 @@
                         <Button Grid.Column="3" Content="保存" Click="OpenRazerApplyMappingClick" IsEnabled="{Binding Mapping.CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>
                       <InfoBar IsOpen="{Binding Mapping.HasError}" IsClosable="False" Severity="Warning" Message="{Binding Mapping.ErrorText}" />
-                      <Grid ColumnDefinitions="110,1.2*,1*,1.3*,110" ColumnSpacing="12">
+                      <Grid ColumnDefinitions="110,1.1*,1*,1.4*,260" ColumnSpacing="12">
                         <TextBlock Text="按键" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="1" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="2" Text="类型" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="3" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="4" Text="修饰键" Style="{StaticResource MetricLabelStyle}" />
+                        <TextBlock Grid.Column="4" Text="参数" Style="{StaticResource MetricLabelStyle}" />
                       </Grid>
                       <ItemsControl ItemsSource="{Binding Mapping.Rows}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
-                            <Grid ColumnDefinitions="110,1.2*,1*,1.3*,110" ColumnSpacing="12" MinHeight="38">
+                            <Grid ColumnDefinitions="110,1.1*,1*,1.4*,260" ColumnSpacing="12" MinHeight="38">
                               <TextBlock Text="{Binding ButtonName}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
                               <ComboBox Grid.Column="2" SelectedIndex="{Binding GroupIndex, Mode=TwoWay}" AutomationProperties.Name="目标映射类型" HorizontalAlignment="Stretch">
@@ -843,10 +843,10 @@
                                 <ComboBoxItem Content="Razer 键" />
                                 <ComboBoxItem Content="Windows 快捷键" />
                                 <ComboBoxItem Content="HyperShift 切换" />
-                                <ComboBoxItem Content="宏" />
+                                <ComboBoxItem Content="宏" /><ComboBoxItem Content="Turbo 键" /><ComboBoxItem Content="Turbo 按钮" /><ComboBoxItem Content="DPI 离合" /><ComboBoxItem Content="指定配置" />
                               </ComboBox>
                               <ComboBox Grid.Column="3" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding OptionIndex, Mode=TwoWay}" IsEnabled="{Binding CanApply}" AutomationProperties.Name="目标映射动作" HorizontalAlignment="Stretch" />
-                              <ComboBox Grid.Column="4" ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" AutomationProperties.Name="键盘修饰键" HorizontalAlignment="Stretch" />
+                              <StackPanel Grid.Column="4" Spacing="4" VerticalAlignment="Center"><ComboBox ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" AutomationProperties.Name="键盘修饰键" HorizontalAlignment="Stretch" /><ComboBox ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" AutomationProperties.Name="宏播放方式" HorizontalAlignment="Stretch" /><NumberBox Header="Turbo 次/秒" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" /><NumberBox Header="配置 ID" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" /><StackPanel Orientation="Horizontal" Spacing="4" Visibility="{Binding DpiClutchVisibility}"><NumberBox Header="DPI X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchX, Mode=TwoWay}" /><NumberBox Header="DPI Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchY, Mode=TwoWay}" /></StackPanel><NumberBox Header="宏次数" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding MacroRepeatCount, Mode=TwoWay}" Visibility="{Binding MacroRepeatVisibility}" /></StackPanel>
                             </Grid>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -1424,7 +1424,7 @@
                                     <Grid Grid.Column="3" RowDefinitions="Auto,Auto" RowSpacing="4" VerticalAlignment="Center"><Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Visibility="{Binding KeyboardParameterVisibility}"><NumberBox local:Localized.Uid="Loc_A931F2A16F" Header="修饰键 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding KeyboardModifierValue, Mode=TwoWay}" AutomationProperties.Name="键盘修饰键码" /><NumberBox local:Localized.Uid="Loc_0E422F6A72" Grid.Column="1" Header="Usage 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding KeyboardUsageValue, Mode=TwoWay}" AutomationProperties.Name="键盘 HID Usage" /><NumberBox Grid.Column="2" Header="每秒次数" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboKeyRateVisibility}" AutomationProperties.Name="Turbo 每秒次数" /></Grid>
                                       <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Visibility="{Binding DpiClutchParameterVisibility}"><NumberBox Header="DPI 离合 X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchX, Mode=TwoWay}" AutomationProperties.Name="DPI 离合 X" /><NumberBox Grid.Column="1" Header="DPI 离合 Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchY, Mode=TwoWay}" AutomationProperties.Name="DPI 离合 Y" /></Grid>
                                       <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Visibility="{Binding TurboButtonParameterVisibility}"><ComboBox Header="Turbo 按钮" ItemsSource="{Binding TurboButtonOptions}" SelectedIndex="{Binding TurboButtonIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="Turbo 目标按钮" /><NumberBox Grid.Column="1" Header="每秒次数" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" AutomationProperties.Name="Turbo 每秒次数" /></Grid>
-                                      <TextBlock local:Localized.Uid="Loc_9F41F9592F" Grid.Row="1" Text="固定双击" Visibility="{Binding DoubleClickParameterVisibility}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                      <TextBlock local:Localized.Uid="Loc_9F41F9592F" Grid.Row="1" Text="固定双击" Visibility="{Binding DoubleClickParameterVisibility}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" /><NumberBox Grid.Row="1" Header="配置 ID" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" AutomationProperties.Name="配置 ID" />
                                     </Grid>
                                   </Grid>
                                 </DataTemplate>

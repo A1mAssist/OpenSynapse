@@ -13,6 +13,12 @@ public sealed class OpenRazerMappingRowViewModel : INotifyPropertyChanged
     private int _groupIndex;
     private int _optionIndex;
     private int _modifierIndex;
+    private double _turboRate = 7;
+    private double _profileId = 1;
+    private double _dpiClutchX = 800;
+    private double _dpiClutchY = 800;
+    private int _macroPlaybackIndex;
+    private double _macroRepeatCount = 1;
     private IReadOnlyList<string> _optionNames = [];
 
     internal OpenRazerMappingRowViewModel(
@@ -53,6 +59,11 @@ public sealed class OpenRazerMappingRowViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(OptionIndex));
             OnPropertyChanged(nameof(ModifierVisibility));
+            OnPropertyChanged(nameof(TurboRateVisibility));
+            OnPropertyChanged(nameof(ProfileIdVisibility));
+            OnPropertyChanged(nameof(DpiClutchVisibility));
+            OnPropertyChanged(nameof(MacroPlaybackVisibility));
+            OnPropertyChanged(nameof(MacroRepeatVisibility));
             OnPropertyChanged(nameof(CanApply));
         }
     }
@@ -76,14 +87,115 @@ public sealed class OpenRazerMappingRowViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    public Visibility ModifierVisibility => _groupIndex == (int)OpenRazerMappingGroup.KeyboardKey
+    public double TurboRate
+    {
+        get => _turboRate;
+        set
+        {
+            var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), 1, 50) : _turboRate;
+            if (_turboRate == normalized) return;
+            _turboRate = normalized;
+            OnPropertyChanged();
+        }
+    }
+    public double ProfileId
+    {
+        get => _profileId;
+        set
+        {
+            var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), 1, 5) : _profileId;
+            if (_profileId == normalized) return;
+            _profileId = normalized;
+            OnPropertyChanged();
+        }
+    }
+    public double DpiClutchX
+    {
+        get => _dpiClutchX;
+        set => SetDpi(ref _dpiClutchX, value);
+    }
+    public double DpiClutchY
+    {
+        get => _dpiClutchY;
+        set => SetDpi(ref _dpiClutchY, value);
+    }
+    public IReadOnlyList<string> MacroPlaybackOptions => OpenRazerMappingActions.MacroPlaybackNames;
+    public int MacroPlaybackIndex
+    {
+        get => _macroPlaybackIndex;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, OpenRazerMappingActions.MacroPlaybackNames.Count - 1);
+            if (_macroPlaybackIndex == clamped) return;
+            _macroPlaybackIndex = clamped;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(MacroRepeatVisibility));
+        }
+    }
+    public double MacroRepeatCount
+    {
+        get => _macroRepeatCount;
+        set
+        {
+            var normalized = double.IsFinite(value)
+                ? Math.Clamp(Math.Round(value), 1, byte.MaxValue)
+                : _macroRepeatCount;
+            if (_macroRepeatCount == normalized) return;
+            _macroRepeatCount = normalized;
+            OnPropertyChanged();
+        }
+    }
+    public Visibility ModifierVisibility => _groupIndex == (int)OpenRazerMappingGroup.KeyboardKey ||
+        _groupIndex == (int)OpenRazerMappingGroup.TurboKey
         ? Visibility.Visible
         : Visibility.Collapsed;
+    public Visibility TurboRateVisibility => _groupIndex == (int)OpenRazerMappingGroup.TurboKey ||
+        _groupIndex == (int)OpenRazerMappingGroup.TurboButton
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility ProfileIdVisibility => _groupIndex == (int)OpenRazerMappingGroup.ProfileSpecific
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility DpiClutchVisibility => _groupIndex == (int)OpenRazerMappingGroup.DpiClutch
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+    public Visibility MacroPlaybackVisibility =>
+        _groupIndex == (int)OpenRazerMappingGroup.Macro && _macros.Count > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    public Visibility MacroRepeatVisibility =>
+        MacroPlaybackVisibility == Visibility.Visible &&
+        _macroPlaybackIndex == (int)OpenRazerMacroPlayback.Repeat
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     public bool CanApply => _groupIndex > 0 &&
         (_groupIndex != (int)OpenRazerMappingGroup.Macro || _macros.Count > 0);
+    public OpenRazerMappingAction? CreateAction() =>
+        OpenRazerMappingActions.CreateAction(
+            (OpenRazerMappingGroup)_groupIndex,
+            _optionIndex,
+            OpenRazerMappingActions.ModifierMasks[Math.Clamp(
+                _modifierIndex, 0, OpenRazerMappingActions.ModifierMasks.Count - 1)],
+            _macros,
+            checked((int)TurboRate),
+            checked((int)ProfileId),
+            checked((int)DpiClutchX),
+            checked((int)DpiClutchY),
+            (OpenRazerMacroPlayback)_macroPlaybackIndex,
+            checked((int)MacroRepeatCount));
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    private void SetDpi(ref double field, double value)
+    {
+        var normalized = double.IsFinite(value)
+            ? Math.Clamp(Math.Round(value / 50) * 50, 100, 30000)
+            : field;
+        if (field == normalized) return;
+        field = normalized;
+        OnPropertyChanged();
+    }
 }
 
 public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
@@ -241,11 +353,7 @@ public sealed class OpenRazerMappingViewModel : INotifyPropertyChanged
         {
             foreach (var row in Rows.Where(row => row.CanApply).ToArray())
             {
-                var action = OpenRazerMappingActions.CreateAction(
-                    (OpenRazerMappingGroup)row.GroupIndex,
-                    row.OptionIndex,
-                    OpenRazerMappingActions.ModifierMasks[row.ModifierIndex],
-                    _macros);
+                var action = row.CreateAction();
                 if (action is null)
                 {
                     continue;

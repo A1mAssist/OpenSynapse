@@ -22,21 +22,37 @@ public enum OpenRazerMappingGroup
     WindowsShortcut,
     HyperShiftToggle,
     Macro,
+    TurboKey,
+    TurboButton,
+    DpiClutch,
+    ProfileSpecific,
 }
 
 public sealed record OpenRazerMappingAction(string Name, byte FunctionId, byte[] Data);
 
 public sealed record OpenRazerMacroOption(byte Id, string Name);
 
+public enum OpenRazerMacroPlayback
+{
+    Once,
+    Repeat,
+    Hold,
+    Toggle,
+    Sequence,
+}
+
 /// <summary>
 /// Selectable onboard mappings, transcribed from the middleware's fnId switch
-/// (chunk 6120, module 56415). Groups that need data this app cannot read from the device
-/// (DPI-clutch thresholds, turbo rates, profile ids, controller buttons) are not listed: the
-/// writer would have to invent values. Macro slots are listed only when the caller supplies
-/// the ids read from the device.
+/// (chunk 6120, module 56415). DPI-clutch thresholds, turbo rates and profile ids are
+/// explicit caller inputs; controller buttons are not listed because their ids are not
+/// available from this protocol. Macro slots are listed only when the caller supplies the
+/// ids read from the device.
 /// </summary>
 public static class OpenRazerMappingActions
 {
+    public static IReadOnlyList<string> MacroPlaybackNames { get; } =
+        ["Once", "N times", "Hold", "Toggle", "Sequence"];
+
     public static IReadOnlyList<string> ModifierNames { get; } = ["None", "Ctrl", "Shift", "Alt", "Win"];
 
     public static IReadOnlyList<byte> ModifierMasks { get; } = [0x00, 0x01, 0x02, 0x04, 0x08];
@@ -143,6 +159,11 @@ public static class OpenRazerMappingActions
         OpenRazerMappingGroup.Macro when macros is { Count: > 0 } =>
             macros.Select(macro => macro.Name).ToArray(),
         OpenRazerMappingGroup.Macro => ["No readable macro slots"],
+        OpenRazerMappingGroup.TurboKey => Names(Keys).Select(name => $"Turbo {name}").ToArray(),
+        OpenRazerMappingGroup.TurboButton =>
+            Names(MouseButtons).Select(name => $"Turbo {name}").ToArray(),
+        OpenRazerMappingGroup.DpiClutch => ["DPI clutch"],
+        OpenRazerMappingGroup.ProfileSpecific => ["Specific profile"],
         _ => [],
     };
 
@@ -150,7 +171,13 @@ public static class OpenRazerMappingActions
         OpenRazerMappingGroup group,
         int optionIndex,
         byte modifierMask = 0,
-        IReadOnlyList<OpenRazerMacroOption>? macros = null)
+        IReadOnlyList<OpenRazerMacroOption>? macros = null,
+        int turboRate = 7,
+        int profileId = 1,
+        int dpiClutchX = 800,
+        int dpiClutchY = 800,
+        OpenRazerMacroPlayback macroPlayback = OpenRazerMacroPlayback.Once,
+        int macroRepeatCount = 1)
     {
         if (optionIndex < 0)
         {
@@ -198,7 +225,39 @@ public static class OpenRazerMappingActions
                 return new("HyperShift", OpenRazerMappingFunctions.ModeButtonkey, [0x01]);
             case OpenRazerMappingGroup.Macro when macros is not null && optionIndex < macros.Count:
                 var macro = macros[optionIndex];
-                return new(macro.Name, OpenRazerMappingFunctions.MacroTypeI, [0x00, macro.Id, 0x01]);
+                return macroPlayback switch
+                {
+                    OpenRazerMacroPlayback.Once => new(
+                        macro.Name, OpenRazerMappingFunctions.MacroTypeI, [0x00, macro.Id, 0x01]),
+                    OpenRazerMacroPlayback.Repeat => new(
+                        macro.Name, OpenRazerMappingFunctions.MacroTypeI,
+                        [0x00, macro.Id, (byte)Math.Clamp(macroRepeatCount, 1, byte.MaxValue)]),
+                    OpenRazerMacroPlayback.Hold => new(
+                        macro.Name, OpenRazerMappingFunctions.MacroTypeII, [0x00, macro.Id]),
+                    OpenRazerMacroPlayback.Toggle => new(
+                        macro.Name, OpenRazerMappingFunctions.MacroTypeIII, [0x00, macro.Id]),
+                    OpenRazerMacroPlayback.Sequence => new(
+                        macro.Name, OpenRazerMappingFunctions.MacroTypeIV, [0x00, macro.Id]),
+                    _ => null,
+                };
+            case OpenRazerMappingGroup.TurboKey when optionIndex < Keys.Length:
+                var turboKey = Keys[optionIndex];
+                var turboKeyInterval = Interval(turboRate);
+                return new($"Turbo {turboKey.Name}", OpenRazerMappingFunctions.TurboModeKey,
+                    [modifierMask, turboKey.Hid, High(turboKeyInterval), Low(turboKeyInterval)]);
+            case OpenRazerMappingGroup.TurboButton when optionIndex < MouseButtons.Length:
+                var turboButton = MouseButtons[optionIndex];
+                var turboButtonInterval = Interval(turboRate);
+                return new($"Turbo {turboButton.Name}", OpenRazerMappingFunctions.TurboModeButton,
+                    [turboButton.Id, High(turboButtonInterval), Low(turboButtonInterval)]);
+            case OpenRazerMappingGroup.DpiClutch:
+                var clutchX = ClampDpi(dpiClutchX);
+                var clutchY = ClampDpi(dpiClutchY);
+                return new("DPI clutch", OpenRazerMappingFunctions.Dpi,
+                    [0x05, High(clutchX), Low(clutchX), High(clutchY), Low(clutchY)]);
+            case OpenRazerMappingGroup.ProfileSpecific:
+                return new("Specific profile", OpenRazerMappingFunctions.Profile,
+                    [0x03, (byte)Math.Clamp(profileId, 1, 5)]);
             default:
                 return null;
         }
@@ -214,8 +273,11 @@ public static class OpenRazerMappingActions
         OpenRazerMappingFunctions.ButtonCode => "Mouse button",
         OpenRazerMappingFunctions.KeyCode when data.Count >= 2 => DescribeKey(data[0], data[1]),
         OpenRazerMappingFunctions.KeyCode => "Keyboard key",
+        OpenRazerMappingFunctions.Dpi when data.Count >= 5 && data[0] == 0x05 => "DPI clutch",
         OpenRazerMappingFunctions.Dpi when data.Count > 0 => DpiActions
             .FirstOrDefault(action => action.Code == data[0]).Name ?? $"DPI {data[0]}",
+        OpenRazerMappingFunctions.Profile when data.Count >= 2 && data[0] == 0x03 =>
+            "Specific profile",
         OpenRazerMappingFunctions.Profile when data.Count > 0 => ProfileActions
             .FirstOrDefault(action => action.Code == data[0]).Name ?? $"Profile {data[0]}",
         OpenRazerMappingFunctions.MediaKeys when data.Count >= 2 =>
@@ -231,8 +293,11 @@ public static class OpenRazerMappingActions
         OpenRazerMappingFunctions.Win8ShortcutsKey when data.Count > 0 => WindowsShortcuts
             .FirstOrDefault(key => key.Code == data[0]).Name ?? $"Shortcut {data[0]}",
         OpenRazerMappingFunctions.ModeButtonkey => "HyperShift",
-        OpenRazerMappingFunctions.TurboModeButton or OpenRazerMappingFunctions.TurboModeKey =>
-            "Turbo" + (data.Count > 0 ? $" {DescribeButton(data[0])}" : string.Empty),
+        OpenRazerMappingFunctions.TurboModeButton when data.Count > 0 =>
+            $"Turbo {DescribeButton(data[0])}",
+        OpenRazerMappingFunctions.TurboModeKey when data.Count >= 2 =>
+            $"Turbo {DescribeKey(data[0], data[1])}",
+        OpenRazerMappingFunctions.TurboModeButton or OpenRazerMappingFunctions.TurboModeKey => "Turbo",
         OpenRazerMappingFunctions.MacroTypeI or OpenRazerMappingFunctions.MacroTypeII or
             OpenRazerMappingFunctions.MacroTypeIII or OpenRazerMappingFunctions.MacroTypeIV =>
             DescribeMacro(functionId, data, macros),
@@ -258,6 +323,7 @@ public static class OpenRazerMappingActions
                 $"{name} ×{data[2]}",
             OpenRazerMappingFunctions.MacroTypeII => $"{name} (hold)",
             OpenRazerMappingFunctions.MacroTypeIII => $"{name} (toggle)",
+            OpenRazerMappingFunctions.MacroTypeIV => $"{name} (sequence)",
             _ => name,
         };
     }
@@ -290,4 +356,16 @@ public static class OpenRazerMappingActions
 
     private static IReadOnlyList<string> Names<T>(IReadOnlyList<(string Name, T Code)> entries) =>
         entries.Select(entry => entry.Name).ToArray();
+
+    private static ushort Interval(int keysPerSecond)
+    {
+        var rate = Math.Clamp(keysPerSecond, 1, 50);
+        return (ushort)Math.Clamp(1000 / rate, 1, ushort.MaxValue);
+    }
+
+    private static int ClampDpi(int value) =>
+        Math.Clamp((int)Math.Round(value / 50d, MidpointRounding.AwayFromZero) * 50, 100, 30000);
+
+    private static byte High(int value) => (byte)(value >> 8);
+    private static byte Low(int value) => (byte)value;
 }

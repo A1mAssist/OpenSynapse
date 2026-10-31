@@ -31,6 +31,7 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
     private double _dpiClutchX = 800;
     private double _dpiClutchY = 800;
     private double _turboRate = 7;
+    private double _profileId = 1;
     private int _turboButtonIndex;
     private bool _isUnsupported;
 
@@ -124,6 +125,22 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
         set => SetRate(ref _turboRate, value);
     }
 
+    public double ProfileId
+    {
+        get => _profileId;
+        set
+        {
+            var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), 1, 5) : _profileId;
+            if (_profileId == normalized)
+            {
+                return;
+            }
+
+            _profileId = normalized;
+            PropertyChanged?.Invoke(this, new(nameof(ProfileId)));
+        }
+    }
+
     public IReadOnlyList<string> TurboButtonOptions => TurboButtonCodes.Select(FormatButton).ToArray();
 
     public int TurboButtonIndex
@@ -160,6 +177,10 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
         : Visibility.Collapsed;
 
     public Visibility TurboKeyRateVisibility => Definition is { UsesTurboRate: true, UsesTurboButton: false }
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public Visibility ProfileIdVisibility => Definition?.UsesProfileId == true
         ? Visibility.Visible
         : Visibility.Collapsed;
 
@@ -249,7 +270,8 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
             checked((int)DpiClutchY),
             checked((int)TurboRate),
             TurboButtonCodes[Math.Clamp(_turboButtonIndex, 0, TurboButtonCodes.Length - 1)],
-            out assignment))
+            out assignment,
+            checked((int)ProfileId)))
         {
             assignment = Assignment;
             return false;
@@ -272,6 +294,11 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
         _selectedActionGroupIndex = Array.IndexOf(GroupOrder, definition.Group);
         var start = ViperMappingActions.GroupStart(definition.Group);
         _selectedActionIndex = start < 0 ? 0 : global - start;
+
+        if (definition.UsesProfileId && Assignment.FunctionData.Count >= 2)
+        {
+            _profileId = Assignment.FunctionData[1];
+        }
 
         if (Assignment.Function is ViperButtonMappingFunction.KeyboardKey or
             ViperButtonMappingFunction.KeyboardTurbo &&
@@ -322,6 +349,7 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new(nameof(TurboButtonParameterVisibility)));
         PropertyChanged?.Invoke(this, new(nameof(TurboRateVisibility)));
         PropertyChanged?.Invoke(this, new(nameof(TurboKeyRateVisibility)));
+        PropertyChanged?.Invoke(this, new(nameof(ProfileIdVisibility)));
         PropertyChanged?.Invoke(this, new(nameof(DoubleClickParameterVisibility)));
         PropertyChanged?.Invoke(this, new(nameof(CanApply)));
     }
@@ -403,6 +431,11 @@ public sealed class ViperButtonAssignmentRowViewModel : INotifyPropertyChanged
         {
             var definition = ViperMappingActions.Definitions[index];
             var name = ActionName(definition);
+            if (definition.UsesProfileId && assignment.FunctionData.Count >= 2)
+            {
+                return $"{name} {assignment.FunctionData[1]}";
+            }
+
             if (definition.UsesDpiClutch && assignment.FunctionData.Count == 5)
             {
                 var x = (assignment.FunctionData[1] << 8) | assignment.FunctionData[2];

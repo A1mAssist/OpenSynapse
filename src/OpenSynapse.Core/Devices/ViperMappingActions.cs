@@ -29,7 +29,8 @@ public sealed record ViperMappingActionDefinition(
     bool UsesKeyboard = false,
     bool UsesDpiClutch = false,
     bool UsesTurboRate = false,
-    bool UsesTurboButton = false);
+    bool UsesTurboButton = false,
+    bool UsesProfileId = false);
 
 public static class ViperMappingActions
 {
@@ -51,6 +52,8 @@ public static class ViperMappingActions
         new(ViperMappingActionGroup.Profile, "ViperMappingProfileDown", ViperButtonMappingFunction.Profile, 2),
         new(ViperMappingActionGroup.Profile, "ViperMappingProfileCycleUp", ViperButtonMappingFunction.Profile, 4),
         new(ViperMappingActionGroup.Profile, "ViperMappingProfileCycleDown", ViperButtonMappingFunction.Profile, 5),
+        new(ViperMappingActionGroup.Profile, "ViperMappingProfileSpecific", ViperButtonMappingFunction.Profile,
+            3, UsesProfileId: true),
         Media("MacroMediaMute", 0x00E2),
         Media("MacroMediaVolumeDown", 0x00EA),
         Media("MacroMediaVolumeUp", 0x00E9),
@@ -120,7 +123,8 @@ public static class ViperMappingActions
         int dpiY,
         int turboRate,
         byte turboButton,
-        out ViperButtonAssignment result)
+        out ViperButtonAssignment result,
+        int profileId = 1)
     {
         if (index < 0 || index >= Definitions.Count)
         {
@@ -140,6 +144,8 @@ public static class ViperMappingActions
                 [(byte)5, High(ClampDpi(dpiX)), Low(ClampDpi(dpiX)),
                     High(ClampDpi(dpiY)), Low(ClampDpi(dpiY))],
             ViperButtonMappingFunction.Dpi => [definition.Value],
+            ViperButtonMappingFunction.Profile when definition.UsesProfileId =>
+                [(byte)3, (byte)Math.Clamp(profileId, 1, 5)],
             ViperButtonMappingFunction.Profile => [definition.Value],
             ViperButtonMappingFunction.Power => [definition.Value],
             ViperButtonMappingFunction.ScrollWheelMode => [definition.Value],
@@ -181,6 +187,9 @@ public static class ViperMappingActions
                 Find(ViperButtonMappingFunction.Dpi,
                     definition => !definition.UsesDpiClutch &&
                         definition.Value == assignment.FunctionData[0]),
+            ViperButtonMappingFunction.Profile when assignment.FunctionData.Count >= 2 &&
+                assignment.FunctionData[0] == 3 =>
+                Find(ViperButtonMappingFunction.Profile, definition => definition.UsesProfileId),
             ViperButtonMappingFunction.Profile when assignment.FunctionData.Count == 1 =>
                 Find(ViperButtonMappingFunction.Profile,
                     definition => definition.Value == assignment.FunctionData[0]),

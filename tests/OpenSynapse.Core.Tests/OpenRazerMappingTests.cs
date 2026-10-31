@@ -203,6 +203,89 @@ public sealed class OpenRazerMappingTests
     }
 
     [Fact]
+    public void TurboKeyUsesModifierUsageAndInterval()
+    {
+        var action = OpenRazerMappingActions.CreateAction(
+            OpenRazerMappingGroup.TurboKey,
+            IndexOf(OpenRazerMappingGroup.TurboKey, "Turbo A"),
+            modifierMask: 0x01,
+            turboRate: 7);
+
+        Assert.NotNull(action);
+        Assert.Equal(OpenRazerMappingFunctions.TurboModeKey, action.FunctionId);
+        Assert.Equal([0x01, 0x04, 0x00, 0x8E], action.Data);
+    }
+
+    [Fact]
+    public void TurboButtonUsesButtonAndInterval()
+    {
+        var action = OpenRazerMappingActions.CreateAction(
+            OpenRazerMappingGroup.TurboButton,
+            IndexOf(OpenRazerMappingGroup.TurboButton, "Turbo Forward"),
+            turboRate: 10);
+
+        Assert.NotNull(action);
+        Assert.Equal(OpenRazerMappingFunctions.TurboModeButton, action.FunctionId);
+        Assert.Equal([0x05, 0x00, 0x64], action.Data);
+    }
+
+    [Fact]
+    public void DpiClutchUsesTheFiveByteXYPayload()
+    {
+        var action = OpenRazerMappingActions.CreateAction(
+            OpenRazerMappingGroup.DpiClutch,
+            0,
+            dpiClutchX: 800,
+            dpiClutchY: 1600);
+
+        Assert.NotNull(action);
+        Assert.Equal(OpenRazerMappingFunctions.Dpi, action.FunctionId);
+        Assert.Equal([0x05, 0x03, 0x20, 0x06, 0x40], action.Data);
+        Assert.Equal("DPI clutch", OpenRazerMappingActions.Describe(action.FunctionId, action.Data));
+    }
+
+    [Fact]
+    public void SpecificProfileUsesTheProfileId()
+    {
+        var action = OpenRazerMappingActions.CreateAction(
+            OpenRazerMappingGroup.ProfileSpecific,
+            0,
+            profileId: 3);
+
+        Assert.NotNull(action);
+        Assert.Equal(OpenRazerMappingFunctions.Profile, action.FunctionId);
+        Assert.Equal([0x03, 0x03], action.Data);
+        Assert.Equal(
+            "Specific profile",
+            OpenRazerMappingActions.Describe(action.FunctionId, action.Data));
+    }
+
+    [Theory]
+    [InlineData(OpenRazerMacroPlayback.Once, OpenRazerMappingFunctions.MacroTypeI, new byte[] { 0x00, 0x07, 0x01 })]
+    [InlineData(OpenRazerMacroPlayback.Repeat, OpenRazerMappingFunctions.MacroTypeI, new byte[] { 0x00, 0x07, 0x04 })]
+    [InlineData(OpenRazerMacroPlayback.Hold, OpenRazerMappingFunctions.MacroTypeII, new byte[] { 0x00, 0x07 })]
+    [InlineData(OpenRazerMacroPlayback.Toggle, OpenRazerMappingFunctions.MacroTypeIII, new byte[] { 0x00, 0x07 })]
+    [InlineData(OpenRazerMacroPlayback.Sequence, OpenRazerMappingFunctions.MacroTypeIV, new byte[] { 0x00, 0x07 })]
+    public void MacroPlaybackModesUseTheMiddlewareFunctionIds(
+        OpenRazerMacroPlayback playback,
+        byte functionId,
+        byte[] data)
+    {
+        OpenRazerMacroOption[] macros = [new(7, "Macro 7")];
+
+        var action = OpenRazerMappingActions.CreateAction(
+            OpenRazerMappingGroup.Macro,
+            0,
+            macros: macros,
+            macroPlayback: playback,
+            macroRepeatCount: 4);
+
+        Assert.NotNull(action);
+        Assert.Equal(functionId, action.FunctionId);
+        Assert.Equal(data, action.Data);
+    }
+
+    [Fact]
     public void MacroGroupExplainsWhenTheDeviceHasNoSlots()
     {
         Assert.Equal(
