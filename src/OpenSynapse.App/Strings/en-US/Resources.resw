@@ -2743,6 +2743,7 @@
   <data name="ViperMappingProfileDown" xml:space="preserve"><value>Profile down</value></data>
   <data name="ViperMappingProfileCycleUp" xml:space="preserve"><value>Profile cycle up</value></data>
   <data name="ViperMappingProfileCycleDown" xml:space="preserve"><value>Profile cycle down</value></data>
+  <data name="ViperMappingProfileSpecific" xml:space="preserve"><value>Specific profile</value></data>
   <data name="ViperMappingMediaEject" xml:space="preserve"><value>Eject</value></data>
   <data name="ViperMappingMediaCycleApps" xml:space="preserve"><value>Cycle apps</value></data>
   <data name="ViperMappingMediaBrightnessUp" xml:space="preserve"><value>Brightness up</value></data>

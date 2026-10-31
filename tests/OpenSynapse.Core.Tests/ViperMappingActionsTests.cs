@@ -96,6 +96,18 @@ public sealed class ViperMappingActionsTests
         Assert.Equal(index, ViperMappingActions.IndexOf(result));
     }
 
+    [Fact]
+    public void SpecificProfileCarriesTheProfileId()
+    {
+        var index = IndexByName("ViperMappingProfileSpecific");
+
+        Assert.True(ViperMappingActions.TryApply(
+            Source, index, 0, 4, 800, 800, 7, 1, out var result, profileId: 3));
+        Assert.Equal(ViperButtonMappingFunction.Profile, result.Function);
+        Assert.Equal([0x03, 0x03], result.FunctionData);
+        Assert.Equal(index, ViperMappingActions.IndexOf(result));
+    }
+
     [Theory]
     [InlineData(ViperObmFunctionId.Profile, new byte[] { 3, 1 })]
     [InlineData(ViperObmFunctionId.PowerKeys, new byte[] { 130 })]

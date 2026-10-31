@@ -3167,6 +3167,7 @@
   <data name="ViperMappingProfileDown" xml:space="preserve"><value>配置下</value></data>
   <data name="ViperMappingProfileCycleUp" xml:space="preserve"><value>配置循环上</value></data>
   <data name="ViperMappingProfileCycleDown" xml:space="preserve"><value>配置循环下</value></data>
+  <data name="ViperMappingProfileSpecific" xml:space="preserve"><value>指定配置</value></data>
   <data name="ViperMappingMediaEject" xml:space="preserve"><value>弹出</value></data>
   <data name="ViperMappingMediaCycleApps" xml:space="preserve"><value>切换应用</value></data>
   <data name="ViperMappingMediaBrightnessUp" xml:space="preserve"><value>亮度 +</value></data>
