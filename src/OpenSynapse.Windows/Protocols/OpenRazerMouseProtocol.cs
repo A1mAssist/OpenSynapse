@@ -137,7 +137,7 @@ internal static class OpenRazerMouseProtocol
         ValidateDpi(device, y, nameof(y));
         return OpenRazerStandardProtocol.Create(device,
             "razer_chroma_misc_set_dpi_xy", 0x07, 0x04, 0x05,
-            [OpenRazerStandardProtocol.VariableStore, High(x), Low(x), High(y), Low(y), 0x00, 0x00]);
+            [device.GetFixedArgumentOrNull("razer_chroma_misc_set_dpi_xy", 0) ?? OpenRazerStandardProtocol.VariableStore, High(x), Low(x), High(y), Low(y), 0x00, 0x00]);
     }
 
     internal static OpenRazerRequest GetDpiStages(

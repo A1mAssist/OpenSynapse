@@ -596,12 +596,15 @@ public sealed class OpenRazerBackendTests
         var imperator = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x002F)!;
         var viper8K = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0091)!;
         var viperV3Pro = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00C1)!;
+        var deathAdder = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0098)!;
         var legacy = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0015)!;
 
         Assert.Equal(0x01, OpenRazerMouseProtocol.GetDpi(imperator).Report[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x00, OpenRazerMouseProtocol.GetDpi(viper8K).Report[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x01, OpenRazerMouseProtocol.SetDpi(imperator, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
-        Assert.Equal(0x01, OpenRazerMouseProtocol.SetDpi(viper8K, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x00, OpenRazerMouseProtocol.SetDpi(viper8K, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x00, OpenRazerMouseProtocol.GetDpi(deathAdder).Report[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal(0x00, OpenRazerMouseProtocol.SetDpi(deathAdder, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x01, OpenRazerMouseProtocol.GetDpi(viperV3Pro).Report[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal(0x01, OpenRazerMouseProtocol.SetDpi(viperV3Pro, 1600, 1600).Report[RazerFeatureReport.ArgumentsOffset]);
 
@@ -611,6 +614,44 @@ public sealed class OpenRazerBackendTests
         legacyRequest[RazerFeatureReport.ArgumentsOffset] = 60;
         legacyRequest[RazerFeatureReport.ArgumentsOffset + 1] = 60;
         Assert.Equal((1588, 1588), OpenRazerMouseProtocol.ParseDpi(legacyRequest, byteEncoding: true));
+    }
+
+    [Fact]
+    public void DeathAdderEssential2021PublishesLegacyPollingWithTheFFTransaction()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0098)!;
+        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+
+        Assert.Equal([500, 1000], device.PollingRates);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
+        Assert.Equal(0xFF, device.GetRequiredTransaction("razer_chroma_misc_get_polling_rate"));
+
+        var request = OpenRazerMouseProtocol.GetPollingRate(device).Report;
+        Assert.Equal(0xFF, request[2]);
+        Assert.Equal(0x01, request[6]);
+        Assert.Equal(0x00, request[7]);
+        Assert.Equal(0x85, request[8]);
+    }
+
+    [Fact]
+    public void LegacyFFReportsAcceptTheReplyTransactionAsAWildcard()
+    {
+        var request = RazerFeatureReport.CreateRequest(0xFF, 0x01, 0x00, 0x85, [0x00]);
+        var response = request.ToArray();
+        response[1] = 0x02;
+        response[2] = 0x1F;
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+
+        Assert.True(RazerFeatureReport.Matches(request, response));
+
+        var rotatedRequest = RazerFeatureReport.CreateRequest(0x1F, 0x01, 0x00, 0x85, [0x00]);
+        var rotatedResponse = rotatedRequest.ToArray();
+        rotatedResponse[1] = 0x02;
+        rotatedResponse[2] = 0x20;
+        rotatedResponse[89] = RazerFeatureReport.CalculateCrc(rotatedResponse);
+
+        Assert.False(RazerFeatureReport.Matches(rotatedRequest, rotatedResponse));
     }
 
     [Theory]
@@ -1391,12 +1432,15 @@ public sealed class OpenRazerBackendTests
     {
         // RazerDeviceBrightnessSuspend adds get_brightness/set_brightness at runtime, so the
         // extracted capability list omits them on these keyboards.
-        foreach (var productId in new ushort[] { 0x0271, 0x02A5 })
+        foreach (var productId in new ushort[] { 0x0258, 0x0271, 0x028D, 0x02A5 })
         {
             var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
             var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+            var backlight = OpenRazerDeviceService.GetLightingZoneCapabilities(device)[OpenRazerLedZone.Backlight];
             Assert.Contains(OpenRazerBackendCapability.BrightnessRead, capabilities);
             Assert.Contains(OpenRazerBackendCapability.BrightnessWrite, capabilities);
+            Assert.True(backlight.CanReadBrightness);
+            Assert.True(backlight.CanWriteBrightness);
         }
     }
 
