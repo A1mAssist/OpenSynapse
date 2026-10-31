@@ -247,6 +247,22 @@ public sealed class OpenRazerBackendTests
         Assert.Equal([0x01, 0x05, 0x01, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF], request[9..18]);
     }
 
+    [Fact]
+    public void EveryMatrixFamilyDeviceThatDeclaresStaticExposesIt()
+    {
+        var missing = OpenRazerDeviceCatalog.BuiltIn.Devices
+            .Where(device => device.HasSourceCapability("set_static_effect"))
+            .Where(device => device.Transactions.Keys.Any(key =>
+                key.EndsWith("matrix_effect_none", StringComparison.Ordinal)))
+            .Where(device => OpenRazerDeviceService.GetLightingZoneCapabilities(device)
+                .Values.SelectMany(zone => zone.LightingEffects)
+                .All(effect => effect != OpenRazerLightingEffect.Static))
+            .Select(device => device.ProductId)
+            .ToArray();
+
+        Assert.Empty(missing);
+    }
+
     [Theory]
     [InlineData(0x0091, 0xFF)]
     [InlineData(0x00B3, 0xFF)]

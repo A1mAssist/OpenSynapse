@@ -109,7 +109,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/OpenRazerDeviceCatalog.cs",
-      "maxLines": 766
+      "maxLines": 776
     },
     {
       "path": "src/OpenSynapse.App/TrayMenuWindow.xaml.cs",

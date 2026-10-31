@@ -644,15 +644,25 @@ public sealed class OpenRazerDeviceCatalog
             AddPrefix("razer_chroma_standard_set_led_rgb", new byte[] { 0x01 });
         }
 
-        // Many generated extended-matrix keyboards omit static although the firmware takes
-        // effect 0x01 on the same transaction as none; reuse that builder's arguments.
-        if (transactions.TryGetValue("razer_chroma_extended_matrix_effect_none", out var noneTransaction) &&
-            !transactions.ContainsKey("razer_chroma_extended_matrix_effect_static"))
+        // Static is the base effect of every lighting family. The generated inventory drops
+        // it on many devices even though none/wave/... prove the family exists, so reuse
+        // the none builder's transaction and prefixes.
+        foreach (var family in new[]
         {
-            AddTransaction("razer_chroma_extended_matrix_effect_static", noneTransaction);
-            if (prefixes.TryGetValue("razer_chroma_extended_matrix_effect_none", out var nonePrefixes))
+            "razer_chroma_standard_matrix_effect_",
+            "razer_chroma_extended_matrix_effect_",
+            "razer_chroma_mouse_extended_matrix_effect_",
+        })
+        {
+            if (!transactions.TryGetValue(family + "none", out var noneTransaction) ||
+                transactions.ContainsKey(family + "static"))
             {
-                foreach (var prefix in nonePrefixes) AddPrefix("razer_chroma_extended_matrix_effect_static", prefix);
+                continue;
+            }
+            AddTransaction(family + "static", noneTransaction);
+            if (prefixes.TryGetValue(family + "none", out var nonePrefixes))
+            {
+                foreach (var prefix in nonePrefixes) AddPrefix(family + "static", prefix);
             }
         }
 
