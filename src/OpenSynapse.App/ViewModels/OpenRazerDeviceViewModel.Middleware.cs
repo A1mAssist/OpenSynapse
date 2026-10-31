@@ -235,7 +235,7 @@ public sealed partial class OpenRazerDeviceViewModel
                     var applied = await _service.GetTimeToDimAsync(Connection, cancellationToken);
                     TimeToDimEnabled = applied.Enabled;
                     TimeToDimSeconds = applied.Seconds;
-                    TimeToDimPercent = applied.Percentage;
+                    TimeToDimPercent = applied.Percentage is >= 1 ? applied.Percentage : 20;
                 }
                 UpdateBasic(state => state with
                 {
