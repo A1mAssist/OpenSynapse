@@ -179,7 +179,7 @@ public sealed class RazerBleDpiStageRowViewModel(byte index, int x, int y, int z
 /// device. Every write is verified by the service with a read-back and a restore of the
 /// previous value when the write is rejected.
 /// </summary>
-public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisposable
+public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
     public static readonly IReadOnlyList<int> PollingRates = [1_000, 500, 333, 250, 200, 125, 100];
 
@@ -651,6 +651,7 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
         await LoadScrollAsync(cancellationToken);
         await LoadPowerAsync(cancellationToken);
         await LoadProfilesAsync(cancellationToken);
+        await LoadExtrasAsync(cancellationToken);
     }
 
     public Task ApplyPollingRateAsync(CancellationToken cancellationToken = default) =>

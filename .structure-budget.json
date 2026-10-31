@@ -47,7 +47,7 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerBleDeviceViewModel.cs",
-      "maxLines": 1184,
+      "maxLines": 1185,
       "maxPublicMembers": 114
     },
     {

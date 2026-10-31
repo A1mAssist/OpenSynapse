@@ -524,6 +524,115 @@ public sealed class RazerBleProtocol30Tests
         Assert.Equal((byte)0, modeWrites[2][8]);
     }
 
+    [Fact]
+    public void SnapTapUsesTheSixteenBytePayloadFromTheMiddleware()
+    {
+        Assert.Equal(
+            new byte[] { 0x04, 0x00, 0x00, 0x00, 0x07, 0x8A, 0x00, 0x00 },
+            RazerBleProtocol30.CreateGetSnapTap(0x04));
+
+        var set = RazerBleProtocol30.CreateSetSnapTap(0x05, 0, true,
+            [new RazerBleSnapTapPair(4, 5, 0), new RazerBleSnapTapPair(6, 7, 1)]);
+        Assert.Equal(new byte[] { 0x05, 0x10, 0x00, 0x00, 0x07, 0x0A, 0x00, 0x00 }, set[..8]);
+        Assert.Equal(new byte[] { 2, 1, 4, 5, 0, 6, 7, 1 }, set[8..16]);
+        Assert.All(set[16..], value => Assert.Equal(0, value));
+
+        var state = RazerBleProtocol30.ReadSnapTap(
+            Parse(0x07, 0x8A, 0, 2, 1, 4, 5, 0, 6, 7, 1));
+        Assert.Equal((byte)0, state.ProfileId);
+        Assert.True(state.Enabled);
+        Assert.Equal(
+            [new RazerBleSnapTapPair(4, 5, 0), new RazerBleSnapTapPair(6, 7, 1)],
+            state.Pairs);
+    }
+
+    [Fact]
+    public void DebounceDischargeAndSmartIlluminationMatchTheMiddleware()
+    {
+        Assert.Equal(
+            new byte[] { 0x01, 0x04, 0x00, 0x00, 0x07, 0x02, 0x00, 0x00, 10, 2, 8, 3 },
+            RazerBleProtocol30.CreateSetDebounce(0x01, new RazerBleDebounceState(10, 2, 8, 3)));
+
+        // The middleware descriptor for Get Debounce Time is [0,7,130]: no payload at all.
+        Assert.Equal(
+            new byte[] { 0x01, 0x00, 0x00, 0x00, 0x07, 0x82, 0x00, 0x00 },
+            RazerBleProtocol30.CreateGetDebounce(0x01));
+
+        Assert.Equal(
+            new byte[] { 0x02, 0x01, 0x00, 0x00, 0x05, 0x0F, 0x00, 0x00, 1 },
+            RazerBleProtocol30.CreateSetBatteryDischargeCurve(0x02, 1));
+
+        Assert.Equal(
+            new byte[] { 0x03, 0x02, 0x00, 0x00, 0x05, 0x0D, 0x01, 0x00, 1, 2 },
+            RazerBleProtocol30.CreateSetSmartIllumination(0x03, 1, 1, 2));
+    }
+
+    [Fact]
+    public async Task BatteryChemistryWriteKeepsTheAppliedValue()
+    {
+        byte applied = 0;
+        var transport = new FakeTransport((frame, _) =>
+        {
+            if (frame[5] == 0x0F)
+            {
+                applied = frame[8];
+            }
+
+            return Response(frame[0], frame[4], frame[5], 0x02, applied);
+        });
+        using var session = new RazerBleSession(transport, retryDelay: TimeSpan.Zero);
+        using var service = new RazerBleDeviceService(session, "test");
+
+        var chemistry = await service.SetBatteryChemistryAsync(RazerBleBatteryChemistry.Lithium);
+
+        Assert.Equal(RazerBleBatteryChemistry.Lithium, chemistry);
+        Assert.Contains(transport.Frames, frame =>
+            frame[4] == 0x05 && frame[5] == 0x0F && frame[8] == (byte)RazerBleBatteryChemistry.Lithium);
+    }
+
+    [Fact]
+    public async Task SmartIlluminationWritesProfileOneAndKeepsTheMode()
+    {
+        var state = (Status: (byte)1, Mode: (byte)0);
+        var transport = new FakeTransport((frame, _) =>
+        {
+            if (frame[5] == 0x0D)
+            {
+                state.Status = frame[8];
+                state.Mode = frame[9];
+            }
+
+            return Response(frame[0], frame[4], frame[5], 0x02, state.Status, state.Mode);
+        });
+        using var session = new RazerBleSession(transport, retryDelay: TimeSpan.Zero);
+        using var service = new RazerBleDeviceService(session, "test");
+
+        var applied = await service.SetSmartIlluminationAsync(0, 2);
+
+        Assert.Equal(new RazerBleSmartIlluminationState(0, 2), applied);
+        Assert.Contains(transport.Frames, frame =>
+            frame[5] == 0x0D && frame[6] == 1 && frame[8] == 0 && frame[9] == 2);
+    }
+
+    [Fact]
+    public async Task DebounceWriteRestoresThePreviousValueWhenTheDeviceIgnoresIt()
+    {
+        var previous = new RazerBleDebounceState(8, 2, 8, 3);
+        var transport = new FakeTransport((frame, _) => Response(
+            frame[0], frame[4], frame[5], 0x02,
+            previous.Make, previous.MakeMask, previous.Break, previous.BreakMask));
+        using var session = new RazerBleSession(transport, retryDelay: TimeSpan.Zero);
+        using var service = new RazerBleDeviceService(session, "test");
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.SetDebounceAsync(new RazerBleDebounceState(20, 2, 20, 3)));
+
+        Assert.Contains("restored", error.Message);
+        var writes = transport.Frames.Where(frame => frame[5] == 0x02).ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal(new byte[] { 8, 2, 8, 3 }, writes[1][8..]);
+    }
+
     private static RazerBleResponse Parse(byte commandClass, byte commandId, params byte[] payload) =>
         RazerBleProtocol30.ParseResponse(Response(0x00, commandClass, commandId, 0x02, payload));
 
