@@ -28,6 +28,28 @@ public sealed class BladeDisplayMuxTests
     }
 
     [Fact]
+    public void Blade15Advanced2021UsesTheBundleVgaConfigureReports()
+    {
+        var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x0276);
+        Assert.NotNull(manifest);
+
+        var getter = manifest!.GetRequiredCapability("legacy-display-mux.get");
+        Assert.Equal((byte)0x03, getter.MaximumDataSize);
+        Assert.Equal((byte)0x90, getter.CommandId);
+        Assert.Equal(new byte[] { 0x00, 0x00, 0x00 }, getter.Arguments.ToArray());
+
+        var setter = manifest.GetRequiredCapability("legacy-display-mux.set");
+        Assert.Equal((byte)0x03, setter.MaximumDataSize);
+        Assert.Equal((byte)0x10, setter.CommandId);
+        var setRequest = setter.CreateRequest([0x00, (byte)BladeDisplayMuxMode.Discrete]);
+        Assert.Equal((byte)0x03, setRequest[6]);
+        Assert.Equal((byte)0x00, setRequest[11]);
+
+        var capabilities = manifest.GetRequiredCapability("legacy-display-mux-capabilities.get");
+        Assert.Equal((byte)0x8B, capabilities.CommandId);
+    }
+
+    [Fact]
     public void GetRequestUsesTheVgaConfigureCommand()
     {
         var request = BladeDisplayMuxProtocol.CreateGetModeRequest();

@@ -44,14 +44,14 @@ public static class BladeGpuModes
             // Already being on the iGPU route counts even when the capability bits do not
             // offer a Hybrid write: no write is needed to stay there.
             BladeGpuMode.Standard =>
-                snapshot.DedicatedGpuSupported &&
-                (!snapshot.MuxPresent ||
-                 BladeDisplayMuxModes.Supports(snapshot.Mux.Capabilities, BladeDisplayMuxMode.Hybrid) ||
-                 snapshot.Mux.Mode is BladeDisplayMuxMode.Hybrid or BladeDisplayMuxMode.Dds),
-            // Offer discrete only when the switch is admitted, or when the panel already
-            // sits on it. A dead option that always fails the write is worse than absent.
+                snapshot.MuxPresent
+                    ? BladeDisplayMuxModes.Supports(snapshot.Mux.Capabilities, BladeDisplayMuxMode.Hybrid) ||
+                      snapshot.Mux.Mode is BladeDisplayMuxMode.Hybrid or BladeDisplayMuxMode.Dds
+                    : snapshot.DedicatedGpuSupported,
+            // A panel already on the discrete route blocks the PnP switch but not the
+            // firmware MUX, so the MUX modes stay available without it.
             BladeGpuMode.Discrete =>
-                snapshot.DedicatedGpuSupported &&
+                snapshot.MuxPresent &&
                 ((snapshot.Mux.IsSupported &&
                   BladeDisplayMuxModes.Supports(snapshot.Mux.Capabilities, BladeDisplayMuxMode.Discrete)) ||
                  snapshot.Mux.Mode == BladeDisplayMuxMode.Discrete),

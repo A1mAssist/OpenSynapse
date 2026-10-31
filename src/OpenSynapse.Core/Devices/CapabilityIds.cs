@@ -20,6 +20,9 @@ public static class CapabilityIds
     public const string DisplayMuxCapabilitiesGet = "display-mux-capabilities.get";
     public const string DisplayMuxGet = "display-mux.get";
     public const string DisplayMuxSet = "display-mux.set";
+    public const string LegacyDisplayMuxCapabilitiesGet = "legacy-display-mux-capabilities.get";
+    public const string LegacyDisplayMuxGet = "legacy-display-mux.get";
+    public const string LegacyDisplayMuxSet = "legacy-display-mux.set";
     public const string DpiStagesGet = "dpi-stages.get";
     public const string DpiStagesSet = "dpi-stages.set";
     public const string FanTargetGet = "fan-target.get";
@@ -91,6 +94,9 @@ public static class CapabilityIds
         KeyboardBrightnessSet,
         KeyboardEffectGet,
         KeyboardEffectSet,
+        LegacyDisplayMuxCapabilitiesGet,
+        LegacyDisplayMuxGet,
+        LegacyDisplayMuxSet,
         LogoEffectSet,
         LogoModeGet,
         LogoModeSet,

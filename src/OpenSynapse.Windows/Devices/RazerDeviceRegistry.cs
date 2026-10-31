@@ -107,16 +107,14 @@ internal sealed class RazerDeviceRegistry
                 [CapabilityIds.DisplayMuxGet] = new(0x02, 0x0D, 0x89, "0000"),
                 [CapabilityIds.DisplayMuxSet] = new(0x02, 0x0D, 0x09, ""),
                 [CapabilityIds.DisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8A, "0000"),
+                [CapabilityIds.LegacyDisplayMuxGet] = new(0x03, 0x0D, 0x90, "000000"),
+                [CapabilityIds.LegacyDisplayMuxSet] = new(0x03, 0x0D, 0x10, ""),
+                [CapabilityIds.LegacyDisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8B, "0000"),
                 [CapabilityIds.NativeDisplayModeGet] = new(0x01, 0x0D, 0x8E, "00", true),
                 [CapabilityIds.NativeDisplayModeSet] = new(0x01, 0x0D, 0x0E, ""),
             },
-            // Blade 15 Base (Early 2020) 1532:0255. Only these reports answer on the unit:
-            // the 0D thermal channel, the Chroma brightness region and the 07:92 charge
-            // limiter. Its middleware data declares no hasGPUmode and no SKU report, and
-            // the hardware rejects 0D:88 (fan RPM), 0D:8E (native display mode), 0D:8F (SKU
-            // hardware configuration), 07:8C (adapter wattage) and 07:8F (power-mode mask)
-            // with "does not support this command" or a malformed reply. The performance
-            // mode runs over the thermal channel, so the power-mode mask is not needed.
+            // 0255 answers only 0D thermal, Chroma brightness and 07:92 charge; its
+            // middleware declares no hasGPUmode or SKU report and the other reports fail.
             ["blade-597"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal)
             {
                 [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
@@ -166,6 +164,7 @@ internal sealed class RazerDeviceRegistry
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys
                 .Where(capability => capability is not (CapabilityIds.AdapterPowerGet or
                     CapabilityIds.DisplayMuxGet or CapabilityIds.DisplayMuxSet or CapabilityIds.DisplayMuxCapabilitiesGet or
+                    CapabilityIds.LegacyDisplayMuxGet or CapabilityIds.LegacyDisplayMuxSet or CapabilityIds.LegacyDisplayMuxCapabilitiesGet or
                     CapabilityIds.SkuHardwareConfigurationGet or
                     CapabilityIds.NativeDisplayModeGet or CapabilityIds.NativeDisplayModeSet or CapabilityIds.GamingModeGet or CapabilityIds.GamingModeSet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
                 .ToHashSet(StringComparer.Ordinal),
