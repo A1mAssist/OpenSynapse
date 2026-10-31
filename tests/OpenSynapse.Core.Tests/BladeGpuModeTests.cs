@@ -74,6 +74,22 @@ public sealed class BladeGpuModeTests
     }
 
     [Fact]
+    public void ADirectDiscreteRouteKeepsTheFirmwareMuxModesAvailableWhenPnPIsBlocked()
+    {
+        var snapshot = new BladeGpuModeSnapshot(
+            DedicatedGpuSupported: false,
+            DedicatedGpuEnabled: true,
+            Mux: Mux(
+                BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+                BladeDisplayMuxMode.Discrete));
+
+        Assert.Equal(
+            [BladeGpuMode.Standard, BladeGpuMode.Discrete],
+            BladeGpuModes.GetAvailableModes(snapshot));
+        Assert.Equal(BladeGpuMode.Discrete, BladeGpuModes.GetCurrentMode(snapshot));
+    }
+
+    [Fact]
     public void AMuxStuckOnDiscreteStillReportsDiscreteButHidesStandardAndAuto()
     {
         var snapshot = new BladeGpuModeSnapshot(

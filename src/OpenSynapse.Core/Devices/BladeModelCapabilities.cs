@@ -548,7 +548,7 @@ public static class BladeModelCapabilities
 
             [0x0276] = new(
                 MaxFan: false,
-                LowMediumHigh,
+                LowMediumHigh, FixedFan: true,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),

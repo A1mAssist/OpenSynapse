@@ -66,9 +66,10 @@ public sealed partial class DevicesPage
 
     private void ApplyGpuModeStatus(DedicatedGpuModeStatus dedicated, bool faulted)
     {
-        GpuModeCard.Visibility = DedicatedGpuModePolicy.ShouldShow(dedicated.BlockReason)
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        GpuModeCard.Visibility =
+            DedicatedGpuModePolicy.ShouldShow(dedicated.BlockReason) || _gpuModeSnapshot?.MuxPresent == true
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         _gpuModeUiReady = false;
         try
         {
@@ -109,7 +110,7 @@ public sealed partial class DevicesPage
             return AppStrings.FormatText("DedicatedGpuModeStatusFaulted", dedicated.ProblemCode);
         }
 
-        if (!dedicated.IsSupported)
+        if (!dedicated.IsSupported && !snapshot.MuxPresent)
         {
             return AppStrings.Text("DedicatedGpuModeStatusBlockedUnsupported");
         }

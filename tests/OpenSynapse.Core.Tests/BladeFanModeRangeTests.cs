@@ -42,6 +42,20 @@ public sealed class BladeFanModeRangeTests
     }
 
     [Fact]
+    public void Blade15Advanced2021PublishesFixedFanFromItsBundle()
+    {
+        const ushort productId = 0x0276;
+
+        Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
+        Assert.Equal(
+            new BladeFanTargetRange(3400, 5200, 4100),
+            BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Balanced));
+        Assert.Equal(
+            new BladeFanTargetRange(4000, 5300, 4600),
+            BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Custom));
+    }
+
+    [Fact]
     public void TheModeListsMatchTheMiddleware()
     {
         // 029F: four modes, no Performance. 02C6: six, with BatterySaver.
