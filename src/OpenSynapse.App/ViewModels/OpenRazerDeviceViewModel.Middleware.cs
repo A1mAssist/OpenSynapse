@@ -42,7 +42,7 @@ public sealed partial class OpenRazerDeviceViewModel
         get => _timeToDimSeconds;
         set
         {
-            if (SetField(ref _timeToDimSeconds, value))
+            if (SetField(ref _timeToDimSeconds, Math.Clamp(value, 60, 900)))
             {
                 OnPropertyChanged(nameof(TimeToDimMinutes));
                 OnPropertyChanged(nameof(CanEditTimeToDim));
@@ -63,7 +63,8 @@ public sealed partial class OpenRazerDeviceViewModel
         get => _timeToDimPercent;
         set
         {
-            if (SetField(ref _timeToDimPercent, value)) OnPropertyChanged(nameof(CanEditTimeToDim));
+            if (SetField(ref _timeToDimPercent, Math.Clamp(value, 1, 100)))
+                OnPropertyChanged(nameof(CanEditTimeToDim));
         }
     }
     public string TimeToDimText => _basicState is { TimeToDimEnabled: { } enabled, TimeToDimSeconds: { } seconds, TimeToDimPercent: { } percent }
