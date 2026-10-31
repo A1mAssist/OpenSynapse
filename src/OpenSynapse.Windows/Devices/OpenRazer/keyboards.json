@@ -4970,7 +4970,7 @@
         "razer_chroma_extended_matrix_set_custom_frame": "1F",
         "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_polling_rate2": "1F",
-        "razer_chroma_standard_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_static": "1F",
         "razer_chroma_standard_get_led_state": "FF",
         "razer_chroma_standard_set_led_effect": "1F",
         "razer_chroma_standard_set_led_state": "FF",
@@ -5004,6 +5004,9 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_starlight_dual": [
@@ -5071,7 +5074,7 @@
         "razer_chroma_extended_matrix_effect_none": "1F",
         "razer_chroma_extended_matrix_effect_reactive": "1F",
         "razer_chroma_extended_matrix_effect_spectrum": "1F",
-        "razer_chroma_standard_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_static": "1F",
         "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
         "razer_chroma_extended_matrix_effect_starlight_random": "1F",
         "razer_chroma_extended_matrix_effect_starlight_single": "1F",
@@ -5116,6 +5119,9 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_starlight_dual": [
@@ -5178,7 +5184,7 @@
         "razer_chroma_extended_matrix_effect_wave": "1F",
         "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_extended_matrix_set_custom_frame": "1F",
-        "razer_chroma_standard_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_static": "1F",
         "razer_chroma_standard_get_led_state": "FF",
         "razer_chroma_standard_set_led_effect": "1F",
         "razer_chroma_standard_set_led_state": "FF",
@@ -5212,6 +5218,9 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_wave": [
@@ -5435,7 +5444,7 @@
         "razer_chroma_extended_matrix_effect_wheel": "1F",
         "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_extended_matrix_set_custom_frame": "1F",
-        "razer_chroma_standard_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_static": "3F",
         "razer_chroma_standard_get_led_state": "FF",
         "razer_chroma_standard_set_led_effect": "1F",
         "razer_chroma_standard_set_led_state": "FF",
@@ -5471,6 +5480,9 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_starlight_dual": [
@@ -6114,7 +6126,7 @@
         "razer_chroma_extended_matrix_effect_none": "1F",
         "razer_chroma_extended_matrix_effect_reactive": "1F",
         "razer_chroma_extended_matrix_effect_spectrum": "1F",
-        "razer_chroma_standard_matrix_effect_static": "1F",
+        "razer_chroma_extended_matrix_effect_static": "1F",
         "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
         "razer_chroma_extended_matrix_effect_starlight_random": "1F",
         "razer_chroma_extended_matrix_effect_starlight_single": "1F",
@@ -6157,6 +6169,9 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_static": [
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_starlight_dual": [
