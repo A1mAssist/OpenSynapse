@@ -1573,7 +1573,9 @@ public sealed partial class OpenRazerDeviceService
     private static bool HasSourceBrightness(OpenRazerDeviceDefinition device, OpenRazerLedZone zone, bool write)
     {
         var operation = write ? "set" : "get";
-        if (zone == device.DefaultLedZone && device.HasSourceCapability($"{operation}_brightness"))
+        // OpenRazer adds get/set_brightness at runtime and routes them to the backlight zone.
+        if (zone == device.DefaultLedZone &&
+            (device.HasSourceCapability($"{operation}_brightness") || zone == OpenRazerLedZone.Backlight))
         {
             return true;
         }
