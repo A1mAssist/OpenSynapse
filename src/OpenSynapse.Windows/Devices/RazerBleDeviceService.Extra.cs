@@ -178,4 +178,158 @@ public sealed partial class RazerBleDeviceService
         throw new InvalidOperationException(
             "The device kept different smart illumination settings; the previous values were restored.");
     }
-}
+
+    public async Task<byte> ReadScrollMaskingTimeAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateGetScrollMaskingTime(transaction),
+            "get scroll masking time",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "get scroll masking time");
+        return RazerBleProtocol30.ReadSingleByte(response);
+    }
+
+    public async Task<byte> SetScrollMaskingTimeAsync(byte milliseconds, CancellationToken cancellationToken = default)
+    {
+        var current = await ReadScrollMaskingTimeAsync(cancellationToken).ConfigureAwait(false);
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateSetScrollMaskingTime(transaction, milliseconds),
+            "set scroll masking time",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "set scroll masking time");
+
+        var applied = await ReadScrollMaskingTimeAsync(cancellationToken).ConfigureAwait(false);
+        if (applied == milliseconds)
+        {
+            return applied;
+        }
+
+        await TryRestoreAsync("restore scroll masking time", async () =>
+        {
+            var restore = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateSetScrollMaskingTime(transaction, current),
+                "restore scroll masking time",
+                cancellationToken).ConfigureAwait(false);
+            EnsureSuccess(restore, "restore scroll masking time");
+        }).ConfigureAwait(false);
+        throw new InvalidOperationException(
+            "The device kept a different scroll masking time; the previous value was restored.");
+    }
+
+    public async Task<byte> ReadScrollAccelerationLevelAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateGetScrollAccelerationLevel(transaction),
+            "get scroll acceleration level",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "get scroll acceleration level");
+        return RazerBleProtocol30.ReadSingleByte(response);
+    }
+
+    public async Task<byte> SetScrollAccelerationLevelAsync(byte level, CancellationToken cancellationToken = default)
+    {
+        var current = await ReadScrollAccelerationLevelAsync(cancellationToken).ConfigureAwait(false);
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateSetScrollAccelerationLevel(transaction, level),
+            "set scroll acceleration level",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "set scroll acceleration level");
+
+        var applied = await ReadScrollAccelerationLevelAsync(cancellationToken).ConfigureAwait(false);
+        if (applied == level)
+        {
+            return applied;
+        }
+
+        await TryRestoreAsync("restore scroll acceleration level", async () =>
+        {
+            var restore = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateSetScrollAccelerationLevel(transaction, current),
+                "restore scroll acceleration level",
+                cancellationToken).ConfigureAwait(false);
+            EnsureSuccess(restore, "restore scroll acceleration level");
+        }).ConfigureAwait(false);
+        throw new InvalidOperationException(
+            "The device kept a different scroll acceleration level; the previous value was restored.");
+    }
+
+    public async Task<RazerBleScrollTactileMode> ReadScrollTactileModeAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateGetScrollTactileMode(transaction),
+            "get scroll tactile mode",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "get scroll tactile mode");
+        return (RazerBleScrollTactileMode)RazerBleProtocol30.ReadSingleByte(response);
+    }
+
+    public async Task<RazerBleScrollTactileMode> SetScrollTactileModeAsync(
+        RazerBleScrollTactileMode mode,
+        CancellationToken cancellationToken = default)
+    {
+        var current = await ReadScrollTactileModeAsync(cancellationToken).ConfigureAwait(false);
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateSetScrollTactileMode(transaction, mode),
+            "set scroll tactile mode",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "set scroll tactile mode");
+
+        var applied = await ReadScrollTactileModeAsync(cancellationToken).ConfigureAwait(false);
+        if (applied == mode)
+        {
+            return applied;
+        }
+
+        await TryRestoreAsync("restore scroll tactile mode", async () =>
+        {
+            var restore = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateSetScrollTactileMode(transaction, current),
+                "restore scroll tactile mode",
+                cancellationToken).ConfigureAwait(false);
+            EnsureSuccess(restore, "restore scroll tactile mode");
+        }).ConfigureAwait(false);
+        throw new InvalidOperationException(
+            "The device kept a different scroll tactile mode; the previous value was restored.");
+    }
+
+    public async Task<RazerBlePowerPlan> ReadPowerPlanAsync(
+        byte profileId = BleProfileId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateGetPowerPlan(transaction, profileId),
+            "get power plan",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "get power plan");
+        return (RazerBlePowerPlan)RazerBleProtocol30.ReadSingleByte(response);
+    }
+
+    public async Task<RazerBlePowerPlan> SetPowerPlanAsync(
+        RazerBlePowerPlan plan,
+        byte profileId = BleProfileId,
+        CancellationToken cancellationToken = default)
+    {
+        var current = await ReadPowerPlanAsync(profileId, cancellationToken).ConfigureAwait(false);
+        var response = await _session.SendAsync(
+            transaction => RazerBleProtocol30.CreateSetPowerPlan(transaction, plan, profileId),
+            "set power plan",
+            cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response, "set power plan");
+
+        var applied = await ReadPowerPlanAsync(profileId, cancellationToken).ConfigureAwait(false);
+        if (applied == plan)
+        {
+            return applied;
+        }
+
+        await TryRestoreAsync("restore power plan", async () =>
+        {
+            var restore = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateSetPowerPlan(transaction, current, profileId),
+                "restore power plan",
+                cancellationToken).ConfigureAwait(false);
+            EnsureSuccess(restore, "restore power plan");
+        }).ConfigureAwait(false);
+        throw new InvalidOperationException(
+            "The device kept a different power plan; the previous value was restored.");
+    }}

@@ -27,6 +27,20 @@ public enum RazerBleBatteryChemistry : byte
     Lithium = 2,
 }
 
+public enum RazerBleScrollTactileMode : byte
+{
+    Tactile = 0,
+    FreeSpin = 1,
+    MicroTactile = 2,
+}
+
+public enum RazerBlePowerPlan : byte
+{
+    PowerSave = 0,
+    Balance = 1,
+    HighPerformance = 2,
+}
+
 public static partial class RazerBleProtocol30
 {
     public static byte[] CreateGetSnapTap(byte transactionId, byte profileId = 0) =>
@@ -131,4 +145,30 @@ public static partial class RazerBleProtocol30
         byte status,
         byte mode) =>
         CreateFrame(transactionId, 0x05, 0x0D, param6: profileId, payload: [status, mode]);
+
+    public static byte[] CreateGetScrollMaskingTime(byte transactionId, byte classId = 0) =>
+        CreateFrame(transactionId, 0x08, 0x88, param6: classId);
+
+    public static byte[] CreateSetScrollMaskingTime(byte transactionId, byte milliseconds, byte classId = 0) =>
+        CreateFrame(transactionId, 0x08, 0x08, param6: classId, payload: [milliseconds]);
+
+    public static byte[] CreateGetScrollAccelerationLevel(byte transactionId, byte classId = 0) =>
+        CreateFrame(transactionId, 0x08, 0x89, param6: classId);
+
+    public static byte[] CreateSetScrollAccelerationLevel(byte transactionId, byte level, byte classId = 0) =>
+        CreateFrame(transactionId, 0x08, 0x09, param6: classId, payload: [level]);
+
+    public static byte[] CreateGetScrollTactileMode(byte transactionId, byte classId = 0) =>
+        CreateFrame(transactionId, 0x08, 0xB0, param6: classId);
+
+    public static byte[] CreateSetScrollTactileMode(byte transactionId, RazerBleScrollTactileMode mode, byte classId = 0) =>
+        CreateFrame(transactionId, 0x08, 0x30, param6: classId, payload: [(byte)mode]);
+
+    public static byte[] CreateGetPowerPlan(byte transactionId, byte profileId = 0) =>
+        CreateFrame(transactionId, 0x05, 0x8B, param6: profileId);
+
+    public static byte[] CreateSetPowerPlan(byte transactionId, RazerBlePowerPlan plan, byte profileId = 0) =>
+        CreateFrame(transactionId, 0x05, 0x0B, param6: profileId, payload: [(byte)plan]);
+
+    public static byte ReadSingleByte(RazerBleResponse response) => First(response);
 }

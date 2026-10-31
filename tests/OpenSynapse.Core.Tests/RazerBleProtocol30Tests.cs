@@ -633,6 +633,43 @@ public sealed class RazerBleProtocol30Tests
         Assert.Equal(new byte[] { 8, 2, 8, 3 }, writes[1][8..]);
     }
 
+    [Fact]
+    public void ScrollAndPowerPlanFramesMatchTheMiddleware()
+    {
+        Assert.Equal(
+            new byte[] { 0x01, 0x01, 0x00, 0x00, 0x08, 0x09, 0x00, 0x00, 0x04 },
+            RazerBleProtocol30.CreateSetScrollAccelerationLevel(0x01, 4));
+        Assert.Equal(
+            new byte[] { 0x02, 0x01, 0x00, 0x00, 0x08, 0x30, 0x00, 0x00, 0x02 },
+            RazerBleProtocol30.CreateSetScrollTactileMode(0x02, RazerBleScrollTactileMode.MicroTactile));
+        Assert.Equal(
+            new byte[] { 0x03, 0x01, 0x00, 0x00, 0x05, 0x0B, 0x00, 0x00, 0x01 },
+            RazerBleProtocol30.CreateSetPowerPlan(0x03, RazerBlePowerPlan.Balance));
+        Assert.Equal(
+            new byte[] { 0x04, 0x00, 0x00, 0x00, 0x08, 0xB0, 0x00, 0x00 },
+            RazerBleProtocol30.CreateGetScrollTactileMode(0x04));
+        Assert.Equal(
+            new byte[] { 0x05, 0x00, 0x00, 0x00, 0x08, 0x88, 0x00, 0x00 },
+            RazerBleProtocol30.CreateGetScrollMaskingTime(0x05));
+    }
+
+    [Fact]
+    public async Task TactileModeWriteRestoresThePreviousValueWhenTheDeviceIgnoresIt()
+    {
+        var transport = new FakeTransport((frame, _) => Response(frame[0], frame[4], frame[5], 0x02, 0));
+        using var session = new RazerBleSession(transport, retryDelay: TimeSpan.Zero);
+        using var service = new RazerBleDeviceService(session, "test");
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.SetScrollTactileModeAsync(RazerBleScrollTactileMode.MicroTactile));
+
+        Assert.Contains("restored", error.Message);
+        var writes = transport.Frames.Where(frame => frame[5] == 0x30).ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal((byte)2, writes[0][8]);
+        Assert.Equal((byte)0, writes[1][8]);
+    }
+
     private static RazerBleResponse Parse(byte commandClass, byte commandId, params byte[] payload) =>
         RazerBleProtocol30.ParseResponse(Response(0x00, commandClass, commandId, 0x02, payload));
 
