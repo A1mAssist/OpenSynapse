@@ -1101,7 +1101,7 @@ public sealed class RazerBleDeviceViewModel : INotifyPropertyChanged, IAsyncDisp
         {
             TimeToDimEnabled = timeToDim.Enabled;
             TimeToDimMinutes = Math.Clamp(timeToDim.Seconds / 60d, 1d, 15d);
-            _timeToDimPercentage = timeToDim.Percentage;
+            _timeToDimPercentage = timeToDim.Percentage is >= 1 ? timeToDim.Percentage : (byte)20; // Synapse uses 20%.
         }
 
         PowerLowBatteryVisibility = state.LowBatteryPercent is null

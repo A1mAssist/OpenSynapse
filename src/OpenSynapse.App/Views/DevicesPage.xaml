@@ -869,8 +869,8 @@
                           <TextBlock Text="{Binding TimeToDimText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" />
                           <Grid ColumnDefinitions="Auto,*,*" ColumnSpacing="8" Visibility="{Binding TimeToDimWriteVisibility}">
                             <ToggleSwitch IsOn="{Binding TimeToDimEnabled, Mode=TwoWay}" OnContent="" OffContent="" IsEnabled="{Binding CanWriteTimeToDim}" />
-                            <NumberBox Grid.Column="1" Header="秒" Value="{Binding TimeToDimSeconds, Mode=TwoWay}" Minimum="60" Maximum="900" SmallChange="60" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteTimeToDim}" />
-                            <NumberBox Grid.Column="2" Header="变暗 %" Value="{Binding TimeToDimPercent, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="5" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteTimeToDim}" />
+                            <NumberBox Grid.Column="1" Header="分钟" Value="{Binding TimeToDimMinutes, Mode=TwoWay}" Minimum="1" Maximum="15" SmallChange="1" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteTimeToDim}" />
+                            <NumberBox Grid.Column="2" Header="变暗 %" Value="{Binding TimeToDimPercent, Mode=TwoWay}" Minimum="1" Maximum="100" SmallChange="5" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteTimeToDim}" />
                           </Grid>
                           <Button local:Localized.Uid="OpenRazerSaveButton" Content="保存" Visibility="{Binding TimeToDimWriteVisibility}" Click="OpenRazerApplyTimeToDimClick" IsEnabled="{Binding CanEditTimeToDim}" Style="{StaticResource OpenRazerSaveButtonStyle}" HorizontalAlignment="Right" />
                         </StackPanel>
