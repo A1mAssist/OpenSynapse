@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>OpenSynapse.ThxHelper</RootNamespace>
     <AssemblyName>OpenSynapse.ThxHelper</AssemblyName>
+    <CetCompat>false</CetCompat>
     <!-- Task Manager shows the default .NET icon without this. -->
     <ApplicationIcon>..\OpenSynapse.App\Assets\OpenSynapse.ico</ApplicationIcon>
   </PropertyGroup>

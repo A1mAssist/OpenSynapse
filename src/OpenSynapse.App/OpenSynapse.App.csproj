@@ -10,6 +10,8 @@
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Win10 22H2 without the 2024 CET update cannot launch a CET-marked apphost. -->
+    <CetCompat>false</CetCompat>
     <ApplicationIcon>Assets\OpenSynapse.ico</ApplicationIcon>
     <Version>1.6.1-beta.7</Version>
     <AssemblyVersion>1.6.1.0</AssemblyVersion>
