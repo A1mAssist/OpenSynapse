@@ -4,7 +4,8 @@ namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
 /// Exact Blade fan-target protocol. The 2026 generation passes class 1; the older
-/// 710/671/02C6 reports keep the shared default class 0.
+/// 710/671 firmware was verified with class 0. The response parser accepts either
+/// selector because the middleware treats it as payload rather than a request echo.
 /// SET construction is source-backed only; production writes stay gated by the
 /// controller until process-exit and sleep recovery are owned by the caller.
 /// </summary>
@@ -17,6 +18,7 @@ public static class BladeFanProtocol
     public const int StepRpm = BladeFanLimits.StepRpm;
     internal const int MinimumCurveRpm = 1900;
     internal const byte DefaultClassId = 0x00;
+    internal const byte Blade2026ClassId = 0x01;
 
     private const byte TransactionId = 0x1F;
     private const byte DataSize = 0x03;
@@ -147,15 +149,20 @@ public static class BladeFanProtocol
         }
 
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        if (arguments[0] != expectedClassId || arguments[1] != expectedZone)
+        // The official middleware treats both selector bytes as payload, not as a
+        // request echo. Older firmware returns 0 for one or both of them.
+        if ((arguments[0] != 0x00 && arguments[0] != expectedClassId) ||
+            (arguments[1] != 0x00 && arguments[1] != expectedZone))
         {
             throw new InvalidOperationException(
                 $"Blade returned an incorrect fan object: 0x{arguments[0]:X2}/0x{arguments[1]:X2}; " +
-                $"expected 0x{expectedClassId:X2}/0x{expectedZone:X2}.");
+                $"expected 0x{expectedClassId:X2}/0x{expectedZone:X2} or an omitted selector.");
         }
 
         var rpm = arguments[2] * StepRpm;
-        if (rpm < minimumRpm || rpm > maximumRpm || rpm % StepRpm != 0)
+        // 0 means the firmware has no stored target (automatic mode). Writes still
+        // validate against the model floor; reads must not turn that into a failure.
+        if (rpm != 0 && (rpm < minimumRpm || rpm > maximumRpm || rpm % StepRpm != 0))
         {
             var kind = minimumRpm == MinimumRpm ? "fixed fan speed" : "fan-curve speed";
             throw new InvalidOperationException(

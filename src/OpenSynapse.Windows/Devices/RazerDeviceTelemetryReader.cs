@@ -89,6 +89,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             ViperLowBatteryThresholdRaw: mouseResult?.LowBatteryThresholdRaw,
             BladeLogoMode: bladeResult?.BladeLogoMode,
             BladeGameMode: bladeResult?.BladeGameMode,
+            BladeGamingModeWritable: bladeResult?.BladeGamingModeWritable ?? false,
             BladeStartupAnimationEnabled: bladeResult?.BladeStartupAnimationEnabled,
             BladeNativeDisplayMode: bladeResult?.BladeNativeDisplayMode,
             BladeSkuHardwareConfiguration: bladeResult?.BladeSkuHardwareConfiguration,

@@ -51,7 +51,7 @@ public sealed partial class OpenRazerDeviceViewModel
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, OpenRazerBackendCapability.KnobRead);
+            HandleOptionalFailure(exception, OpenRazerBackendCapability.KnobRead);
         }
         finally
         {

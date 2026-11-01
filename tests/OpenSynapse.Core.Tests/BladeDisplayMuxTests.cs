@@ -112,6 +112,9 @@ public sealed class BladeDisplayMuxTests
             new[] { BladeDisplayMuxMode.Dds, BladeDisplayMuxMode.Discrete },
             BladeDisplayMuxModes.GetSupportedModes(capabilities));
         Assert.True(BladeDisplayMuxModes.CanSwitch(capabilities));
+        Assert.Equal(
+            BladeDisplayMuxMode.Dds,
+            BladeDisplayMuxModes.GetStandardMode(capabilities));
     }
 
     [Fact]
@@ -129,6 +132,19 @@ public sealed class BladeDisplayMuxTests
             new[] { BladeDisplayMuxMode.Hybrid, BladeDisplayMuxMode.Discrete },
             BladeDisplayMuxModes.GetSupportedModes(admitted, allowDds: false));
         Assert.True(BladeDisplayMuxModes.CanSwitch(admitted, allowDds: false));
+    }
+
+    [Fact]
+    public void StandardPrefersHybridOverDdsWhenBothAreAvailable()
+    {
+        var capabilities =
+            BladeDisplayMuxCapabilities.Hybrid |
+            BladeDisplayMuxCapabilities.Discrete |
+            BladeDisplayMuxCapabilities.DynamicDisplaySwitch;
+
+        Assert.Equal(
+            BladeDisplayMuxMode.Hybrid,
+            BladeDisplayMuxModes.GetStandardMode(capabilities));
     }
 
     [Fact]

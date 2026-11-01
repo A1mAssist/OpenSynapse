@@ -110,6 +110,30 @@ public sealed class OpenRazerDockLinkTests
         Assert.Equal(0, transport.Count);
     }
 
+    [Fact]
+    public async Task BasiliskUltimateWirelessReceiverUsesTheDualLinkQuery()
+    {
+        var transport = new RecordingTransport(request =>
+        {
+            var arguments = new byte[80];
+            arguments[0] = 1;
+            arguments[1] = 0x01;
+            arguments[2] = 0x00;
+            arguments[3] = 0x86;
+            arguments[4] = 0xFF;
+            arguments[5] = 0xFF;
+            return Reply(request, 0x02, arguments);
+        });
+        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
+        var receiver = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0088)!;
+
+        var ids = await service.ReadLinkedProductIdsAsync(receiver, "receiver-path", default);
+
+        Assert.Equal([0x0086], ids);
+        Assert.Equal(0x00, transport.Requests[0][7]);
+        Assert.Equal(0xBF, transport.Requests[0][8]);
+    }
+
     private static byte[] Reply(byte[] request, byte status, params byte[] arguments)
     {
         var response = new byte[RazerFeatureReport.Length];

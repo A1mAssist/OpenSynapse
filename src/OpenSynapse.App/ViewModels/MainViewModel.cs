@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Audio;
@@ -564,7 +565,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     private static bool IsExpectedRuntimeException(Exception exception) =>
         exception is Win32Exception or IOException or UnauthorizedAccessException or
-        InvalidOperationException or NotSupportedException;
+        InvalidOperationException or NotSupportedException or COMException;
 
     private static int FindDiagnosticSeparator(string value)
     {

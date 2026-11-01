@@ -49,17 +49,13 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 _brightnessKnown = true;
                 Brightness = brightness;
             }
-            if (state.Errors.Count > 0)
+            ErrorText = string.Empty;
+            if (state.Errors.Count > 0 || state.UnsupportedCapabilities.Count > 0)
             {
-                MarkRequiresRescan();
-            }
-            else
-            {
-                ErrorText = string.Empty;
-                if (state.UnsupportedCapabilities.Count > 0)
-                {
-                    OnCapabilityChanged();
-                }
+                // A failed optional read is a partial device, not a lost transport.
+                // Keeping the connection usable avoids turning one unsupported
+                // capability into a device-wide "communication interrupted" state.
+                OnCapabilityChanged();
             }
             OnBasicStateChanged();
             await LoadMappingIfNeededAsync(cancellationToken);

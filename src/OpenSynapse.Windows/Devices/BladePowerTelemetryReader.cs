@@ -313,14 +313,8 @@ internal sealed class BladePowerTelemetryReader
         var original = await BladePowerTelemetryShared.ReadChargeLimitAsync(_client, blade, cancellationToken);
         try
         {
-            await BladePowerTelemetryShared.WriteChargeLimitAsync(_client, blade, raw, cancellationToken);
-            var actual = await BladePowerTelemetryShared.ReadChargeLimitAsync(_client, blade, cancellationToken);
-            if (actual != percent)
-            {
-                throw new InvalidOperationException($"Charge limit readback mismatch: wrote {percent}%, read {actual}%.");
-            }
-
-            return actual;
+            return await BladePowerTelemetryShared.WriteAndReadChargeLimitAsync(
+                _client, blade, raw, percent, cancellationToken);
         }
         catch (Exception exception) when (
             RazerCapabilityClient.IsExpectedHardwareException(exception) || exception is OperationCanceledException)
@@ -709,11 +703,10 @@ internal sealed class BladePowerTelemetryReader
     {
         try
         {
-            await BladePowerTelemetryShared.WriteChargeLimitAsync(
-                _client, device, BladePowerTelemetryShared.EncodeChargeLimit(percent), CancellationToken.None);
-            var restored = await BladePowerTelemetryShared.ReadChargeLimitAsync(
-                _client, device, CancellationToken.None);
-            return restored == percent;
+            await BladePowerTelemetryShared.WriteAndReadChargeLimitAsync(
+                _client, device, BladePowerTelemetryShared.EncodeChargeLimit(percent),
+                percent, CancellationToken.None);
+            return true;
         }
         catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
         {

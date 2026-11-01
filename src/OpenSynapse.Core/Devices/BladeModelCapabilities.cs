@@ -540,7 +540,7 @@ public static class BladeModelCapabilities
 
             [0x0270] = new(
                 MaxFan: false,
-                LowMediumHigh,
+                LowMediumHigh, FixedFan: true,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3300, 5400, 4300),
                     (BladePerformanceMode.Custom, 3300, 5400, 4300)),
@@ -895,7 +895,7 @@ public static class BladeModelCapabilities
     /// </summary>
     public static bool SupportsCpuBoost(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.CpuBoostModes.Count > 0;
-
+    public static bool SupportsGpuBoost(ushort productId) => productId != 0x029F && SupportsCpuBoost(productId); // 029F's bundle has no GPU level.
     public static bool AllowsCpuBoost(ushort productId, BladeCpuBoostMode mode) =>
         Contracts.TryGetValue(productId, out var contract) && contract.CpuBoostModes.Contains(mode);
 

@@ -64,7 +64,6 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
     private int _deviceWatchActive = 1;
     private int _displayAvailable = 1;
     private int _displayBrightnessRestorePending;
-
     internal RefreshWorkspace(
         IDeviceDiscovery discovery,
         IRazerDeviceTelemetryReader deviceTelemetryReader,
@@ -225,7 +224,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             {
                 var interval = Volatile.Read(ref _deviceWatchActive) != 0 &&
                                IsDisplayAvailable
-                    ? TimeSpan.FromSeconds(3)
+                    ? TimeSpan.FromSeconds(1)
                     : Profile.ApplicationBindings.Count > 0
                         ? TimeSpan.FromSeconds(10)
                         : Timeout.InfiniteTimeSpan;
@@ -321,8 +320,9 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
                 {
                     throw;
                 }
-                catch (Exception exception) when (IsExpectedRuntimeException(exception))
+                catch (Exception exception)
                 {
+                    _diagnosticLog.TryWrite("device-watch", exception.ToString());
                     _setDeviceQueryError(AppStrings.FormatText("DeviceWatchError", exception.Message));
                 }
             }
@@ -648,7 +648,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
 
     private static bool IsExpectedRuntimeException(Exception exception) =>
         exception is Win32Exception or IOException or UnauthorizedAccessException or
-        InvalidOperationException or NotSupportedException;
+        InvalidOperationException or NotSupportedException or System.Runtime.InteropServices.COMException;
 
     private ProfileDocument Profile => _getProfile();
 

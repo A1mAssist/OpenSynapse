@@ -13,6 +13,17 @@ namespace OpenSynapse.Core.Tests;
 public sealed class Blade029FTests
 {
     [Fact]
+    public void TheBlade16_2023AdmitsTheCustomPerformanceControls()
+    {
+        // Visibility must follow the model contract, not the last telemetry read:
+        // a missing read used to blank the CPU/Max Fan controls in Custom mode.
+        Assert.True(BladeModelCapabilities.SupportsCpuBoost(0x029F));
+        Assert.False(BladeModelCapabilities.SupportsGpuBoost(0x029F));
+        Assert.True(BladeModelCapabilities.SupportsMaxFan(0x029F));
+        Assert.True(BladeModelCapabilities.AllowsControlWrites(0x029F));
+    }
+
+    [Fact]
     public void TheBlade16_2023ManifestCarriesTheDisplayMuxReports()
     {
         var manifest = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x029F);
@@ -202,6 +213,46 @@ public sealed class Blade029FTests
         Assert.Equal((byte)0x01, transport.LastPerformanceByte);
     }
 
+    [Fact]
+    public async Task AFanChangeWritesTheModeBeforeTheTarget()
+    {
+        var transport = new Blade029FTransport(performanceMode: 0x01);
+        var reader = new RazerDeviceTelemetryReader(transport, RazerDeviceRegistry.BuiltIn);
+        var devices = new[] { Blade029FDescriptor() };
+        await reader.ReadAsync(devices);
+        transport.Commands.Clear();
+
+        await reader.SetBladeFanAsync(devices, BladeFanMode.Manual, 4800, 4800);
+
+        var firstModeWrite = transport.Commands.IndexOf((0x0D, 0x02));
+        var lastModeWrite = transport.Commands.LastIndexOf((0x0D, 0x02));
+        var firstTargetWrite = transport.Commands.IndexOf((0x0D, 0x01));
+        var lastTargetWrite = transport.Commands.LastIndexOf((0x0D, 0x01));
+        Assert.True(firstModeWrite >= 0);
+        Assert.True(firstTargetWrite >= 0);
+        Assert.True(firstTargetWrite < firstModeWrite);
+        Assert.True(lastTargetWrite > lastModeWrite);
+    }
+
+    /// <summary>
+    /// Live RPM is diagnostic data. A dead 0D:88 must not stop the mode and target
+    /// writes, or the whole fixed-fan card fails before it sends anything.
+    /// </summary>
+    [Fact]
+    public async Task ATachometerFailureDoesNotBlockFixedFan()
+    {
+        var transport = new Blade029FTransport(performanceMode: 0x00) { FailTachometer = true };
+        var reader = new RazerDeviceTelemetryReader(transport, RazerDeviceRegistry.BuiltIn);
+        var devices = new[] { Blade029FDescriptor() };
+
+        await reader.SetBladeFanAsync(devices, BladeFanMode.Manual, 4600, 4600);
+
+        var targetWrite = ((byte)0x0D, (byte)0x01);
+        var tachometerRead = ((byte)0x0D, (byte)0x88);
+        Assert.Contains(targetWrite, transport.Commands);
+        Assert.DoesNotContain(tachometerRead, transport.Commands);
+    }
+
     /// <summary>
     /// A performance byte no contract knows must still leave the fan controls usable:
     /// the two travel in one report but they are separate facts.
@@ -267,6 +318,8 @@ public sealed class Blade029FTests
         public Blade029FTransport(byte performanceMode) => _performanceMode = performanceMode;
 
         public byte LastPerformanceByte { get; private set; }
+        public bool FailTachometer { get; init; }
+        public List<(byte CommandClass, byte CommandId)> Commands { get; } = [];
 
         public Task<byte[]> QueryAsync(
             string devicePath,
@@ -283,6 +336,7 @@ public sealed class Blade029FTests
                 transactionId, dataSize, commandClass, commandId, arguments.Span);
             var response = request.ToArray();
             response[1] = 0x02;
+            Commands.Add((commandClass, commandId));
             switch (commandClass, commandId)
             {
                 case (0x0D, 0x02):
@@ -314,6 +368,10 @@ public sealed class Blade029FTests
 
                     break;
                 case (0x0D, 0x88):
+                    if (FailTachometer)
+                    {
+                        throw new IOException("The tachometer did not answer.");
+                    }
                     response[RazerFeatureReport.ArgumentsOffset + 2] = 30;
                     break;
                 case (0x0D, 0x87):

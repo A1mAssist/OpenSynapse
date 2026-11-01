@@ -11,6 +11,7 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
     private readonly OpenRazerDeviceConnection _connection;
     private OpenRazerDeviceViewModel? _detail;
     private readonly Brush _statusBrush;
+    private readonly Brush _partialStatusBrush;
 
     public OpenRazerDeviceRowViewModel(OpenRazerDeviceConnection connection)
     {
@@ -18,6 +19,7 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
         _statusBrush = new SolidColorBrush(connection.EndpointState == OpenRazerEndpointState.Resolved
             ? Color.FromArgb(255, 153, 221, 114)
             : Color.FromArgb(255, 240, 185, 90));
+        _partialStatusBrush = new SolidColorBrush(Color.FromArgb(255, 240, 185, 90));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -55,7 +57,7 @@ public sealed class OpenRazerDeviceRowViewModel : INotifyPropertyChanged
     };
     public Brush StatusBrush => _detail is { ProtocolTotalCount: > 0 } detail &&
         detail.ProtocolAvailableCount < detail.ProtocolTotalCount
-            ? new SolidColorBrush(Color.FromArgb(255, 240, 185, 90))
+            ? _partialStatusBrush
             : _statusBrush;
     public string Error => string.IsNullOrWhiteSpace(_connection.Error)
         ? string.Empty

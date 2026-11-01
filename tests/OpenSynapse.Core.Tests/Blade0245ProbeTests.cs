@@ -78,4 +78,44 @@ public sealed class Blade0245ProbeTests
         Assert.Throws<InvalidOperationException>(() =>
             BladeFanProtocol.ParseTarget(response, BladeFanProtocol.ZoneCpu, 5000));
     }
+
+    [Fact]
+    public void AZeroStoredTargetStillReads()
+    {
+        var request = BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu);
+        var response = request.ToArray();
+        response[1] = 0x02;
+        response[RazerFeatureReport.ArgumentsOffset + 1] = BladeFanProtocol.ZoneCpu;
+        response[RazerFeatureReport.ArgumentsOffset + 2] = 0x00;
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+
+        Assert.Equal(
+            0,
+            BladeFanProtocol.ParseCurveTarget(
+                response,
+                BladeFanProtocol.ZoneCpu,
+                request,
+                BladeModelCapabilities.MaximumFanTargetRpmFor(0x023A)));
+    }
+
+    [Fact]
+    public void AnOmittedFanSelectorStillReads()
+    {
+        var request = BladeFanProtocol.CreateGetTargetRequest(BladeFanProtocol.ZoneCpu, 0x01);
+        var response = request.ToArray();
+        response[1] = 0x02;
+        response[RazerFeatureReport.ArgumentsOffset] = 0x00;
+        response[RazerFeatureReport.ArgumentsOffset + 1] = 0x00;
+        response[RazerFeatureReport.ArgumentsOffset + 2] = 0x2D;
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+
+        Assert.Equal(
+            4500,
+            BladeFanProtocol.ParseTarget(
+                response,
+                BladeFanProtocol.ZoneCpu,
+                request,
+                BladeModelCapabilities.MaximumFanTargetRpmFor(0x023A),
+                0x01));
+    }
 }

@@ -761,11 +761,14 @@ public sealed class BladeLightingController : IBladeLightingController
         IReadOnlyList<RazerRgb> frame,
         CancellationToken cancellationToken)
     {
-        await _transport.SendBatchAsync(
-            devicePath,
-            CreateFrameRequestBuilder()(frame, _matrixRows, _matrixColumns),
-            MatrixWait,
-            cancellationToken).ConfigureAwait(false);
+        foreach (var request in CreateFrameRequestBuilder()(frame, _matrixRows, _matrixColumns))
+        {
+            // The EC answers every 03:0B row write. A batch that only calls
+            // HidD_SetFeature leaves those replies queued for the next query.
+            await SendAsync(
+                devicePath, request, cancellationToken, allowRemainingPacketsMismatch: true)
+                .ConfigureAwait(false);
+        }
     }
 
     private async Task RestoreAsync(string devicePath, CancellationToken cancellationToken)
@@ -815,7 +818,8 @@ public sealed class BladeLightingController : IBladeLightingController
     private Task<byte[]> SendAsync(
         string devicePath,
         byte[] request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowRemainingPacketsMismatch = false)
     {
         if (request[6] == 0x01 && request[7] == 0x03 && request[8] == 0x0A &&
             request[RazerFeatureReport.ArgumentsOffset] == 0x19)
@@ -824,7 +828,8 @@ public sealed class BladeLightingController : IBladeLightingController
                 devicePath,
                 request,
                 MatrixWait,
-                cancellationToken);
+                cancellationToken,
+                allowRemainingPacketsMismatch);
         }
 
         return _transport.QueryAsync(
@@ -835,7 +840,8 @@ public sealed class BladeLightingController : IBladeLightingController
             request[8],
             request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
             MatrixWait,
-            cancellationToken);
+            cancellationToken,
+            allowRemainingPacketsMismatch);
     }
 
     /// <summary>

@@ -24,6 +24,7 @@ public sealed class BladeLightingSuspendTests
         var expected = BladeLightingProtocol.CreateMatrixFrameRequests(new RazerRgb[6 * 17]);
         Assert.True(session.Disposed);
         Assert.Equal(expected.Length * 2, session.Sent.Count);
+        Assert.Equal(expected.Length * 2, session.QueryCount);
         for (var index = 0; index < expected.Length; index++)
         {
             Assert.Equal(expected[index], session.Sent[session.Sent.Count - expected.Length + index]);
@@ -51,6 +52,7 @@ public sealed class BladeLightingSuspendTests
     private sealed class RecordingSession : IRazerFeatureSession
     {
         internal List<byte[]> Sent { get; } = [];
+        internal int QueryCount { get; private set; }
         internal bool Disposed { get; private set; }
 
         public byte NextTransactionId() => 0;
@@ -71,7 +73,16 @@ public sealed class BladeLightingSuspendTests
             TimeSpan deviceWait,
             byte responseReportId,
             CancellationToken cancellationToken,
-            bool allowRemainingPacketsMismatch = false) => throw new NotSupportedException();
+            bool allowRemainingPacketsMismatch = false)
+        {
+            Assert.False(Disposed);
+            QueryCount++;
+            var request = RazerFeatureReport.CreateRequest(
+                transactionId, dataSize, commandClass, commandId, arguments.Span);
+            request[0] = responseReportId;
+            Sent.Add(request);
+            return Task.FromResult(request);
+        }
 
         public ValueTask DisposeAsync()
         {

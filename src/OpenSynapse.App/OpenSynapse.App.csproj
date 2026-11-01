@@ -13,10 +13,10 @@
     <!-- Win10 22H2 without the 2024 CET update cannot launch a CET-marked apphost. -->
     <CetCompat>false</CetCompat>
     <ApplicationIcon>Assets\OpenSynapse.ico</ApplicationIcon>
-    <Version>1.6.1-beta.7</Version>
+    <Version>1.6.1-beta.29</Version>
     <AssemblyVersion>1.6.1.0</AssemblyVersion>
     <FileVersion>1.6.1.0</FileVersion>
-    <InformationalVersion>1.6.1-beta.7</InformationalVersion>
+    <InformationalVersion>1.6.1-beta.29</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <SatelliteResourceLanguages>zh-CN;en-US</SatelliteResourceLanguages>
     <DefaultLanguage>zh-CN</DefaultLanguage>
@@ -147,6 +147,8 @@
                                   $(PublishDir)mscordbi.dll;
                                   $(PublishDir)OpenSynapse.Core.pdb;
                                   $(PublishDir)OpenSynapse.Windows.pdb;
+                                  $(PublishDir)PawnIO_setup.exe;
+                                  $(PublishDir)PawnIO-LICENSE.txt;
                                   $(PublishDir)WebView2Loader.dll" />
     </ItemGroup>
     <Delete Files="@(_UnusedMui);@(_UnusedReleaseFile)" />

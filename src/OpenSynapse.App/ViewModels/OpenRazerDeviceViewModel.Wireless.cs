@@ -59,7 +59,7 @@ public sealed partial class OpenRazerDeviceViewModel
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, OpenRazerBackendCapability.WirelessConnectionStateRead);
+            HandleOptionalFailure(exception, OpenRazerBackendCapability.WirelessConnectionStateRead);
         }
         finally
         {

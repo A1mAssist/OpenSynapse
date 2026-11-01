@@ -45,8 +45,10 @@ public static class BladeGpuModes
             // offer a Hybrid write: no write is needed to stay there.
             BladeGpuMode.Standard =>
                 snapshot.MuxPresent
-                    ? BladeDisplayMuxModes.Supports(snapshot.Mux.Capabilities, BladeDisplayMuxMode.Hybrid) ||
-                      snapshot.Mux.Mode is BladeDisplayMuxMode.Hybrid or BladeDisplayMuxMode.Dds
+                    ? snapshot.Mux.Mode is BladeDisplayMuxMode.Hybrid or BladeDisplayMuxMode.Dds ||
+                      (snapshot.Mux.IsSupported &&
+                       BladeDisplayMuxModes.CanSwitch(snapshot.Mux.Capabilities) &&
+                       BladeDisplayMuxModes.GetStandardMode(snapshot.Mux.Capabilities) is not null)
                     : snapshot.DedicatedGpuSupported,
             // A panel already on the discrete route blocks the PnP switch but not the
             // firmware MUX, so the MUX modes stay available without it.

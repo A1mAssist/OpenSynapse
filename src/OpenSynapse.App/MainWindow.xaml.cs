@@ -369,7 +369,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            _viewModel.ReportApplicationError($"{label}: {exception.Message}");
+            _viewModel.ReportApplicationError($"{label}: {exception.GetType().Name}: {exception.Message}");
         }
     }
 

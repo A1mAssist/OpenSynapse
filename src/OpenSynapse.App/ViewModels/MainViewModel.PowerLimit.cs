@@ -17,6 +17,9 @@ public sealed partial class MainViewModel
     internal const string AmdOverClockDownloadUri =
         "https://app-assets.razer.com/files/synapse/devices/common/blades/RazerAMDOverClockSetup-v1.0.4.0.exe";
 
+    internal const string PawnIoDownloadUri =
+        "https://github.com/namazso/PawnIO.Setup/releases/latest";
+
     private CpuPowerLimitReport? _cpuPowerLimitReport;
     private int _cpuPowerLimitIndex = -1;
     private bool _isRefreshingCpuPowerLimit;
@@ -71,6 +74,14 @@ public sealed partial class MainViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+    public Visibility CpuPowerLimitPawnIoInstallVisibility =>
+        _cpuPowerLimitReport?.Availability == CpuPowerLimitAvailability.PawnIoMissing
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public bool CanInstallCpuPowerLimitPawnIo =>
+        !IsBusy && _cpuPowerLimitReport?.Availability == CpuPowerLimitAvailability.PawnIoMissing;
+
     public bool CanSetCpuPowerLimit =>
         !IsBusy &&
         _cpuPowerLimitReport is
@@ -114,7 +125,7 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>Startup path: a failed read must explain itself, not fault the window.</summary>
-    public async Task RefreshCpuPowerLimitSafelyAsync()
+    internal async Task RefreshCpuPowerLimitSafelyAsync()
     {
         try
         {
@@ -160,6 +171,7 @@ public sealed partial class MainViewModel
         // The report is published while RunDeviceOperationAsync still holds IsBusy, so the
         // picker would stay disabled. Re-raise CanSet now that the operation has cleared it.
         OnPropertyChanged(nameof(CanSetCpuPowerLimit));
+        OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
     }
 
     /// <summary>
@@ -167,7 +179,7 @@ public sealed partial class MainViewModel
     /// again. Auto (0) must not overwrite the firmware default, and a failure here is
     /// background noise rather than a user-visible error.
     /// </summary>
-    public async Task ReplayCpuPowerLimitAfterResumeAsync(
+    internal async Task ReplayCpuPowerLimitAfterResumeAsync(
         CancellationToken cancellationToken = default)
     {
         var requestedIndex = _cpuPowerLimitIndex;
@@ -216,6 +228,8 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CpuPowerLimitDetailText));
         OnPropertyChanged(nameof(CpuPowerLimitDetailVisibility));
         OnPropertyChanged(nameof(CpuPowerLimitAmdDownloadVisibility));
+        OnPropertyChanged(nameof(CpuPowerLimitPawnIoInstallVisibility));
+        OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
         OnPropertyChanged(nameof(CanSetCpuPowerLimit));
     }
 
@@ -238,6 +252,7 @@ public sealed partial class MainViewModel
             if (args.PropertyName is null or "" || args.PropertyName == nameof(IsBusy))
             {
                 OnPropertyChanged(nameof(CanSetCpuPowerLimit));
+                OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
             }
         };
     }

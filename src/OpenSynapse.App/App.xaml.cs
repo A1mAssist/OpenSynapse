@@ -508,7 +508,7 @@ public partial class App : Application
             : AppStrings.Text("Text_7D9D5842"));
 
     private void OnBladeGamingModeStateChanged(bool enabled) =>
-        _bladeFnRuntime?.SetGameModeEnabled(enabled);
+        BladeGameModeRuntime.Apply(_bladeFnRuntime, enabled, _diagnosticLog);
 
     private void OnBladeTouchpadChangedByUser(bool enabled) => ShowModeNotification(
         AppStrings.Text("Text_0A982CB6"),

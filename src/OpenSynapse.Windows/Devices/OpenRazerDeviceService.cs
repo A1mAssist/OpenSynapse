@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.ComponentModel;
 using OpenSynapse.Core.Diagnostics;
@@ -108,8 +109,7 @@ public sealed partial class OpenRazerDeviceService
             {
                 results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
                     OpenRazerEndpointState.BusyOrUnavailable,
-                    // Name the rejected collections: a wireless mouse often leaves a wired
-                    // collection enumerated whose descriptor does not match, and "busy" hides why.
+                    // Name the rejected collections: a wired receiver collection can hide why.
                     $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
                 continue;
             }
@@ -119,7 +119,9 @@ public sealed partial class OpenRazerDeviceService
                     string.Equals(candidate.DevicePath, cachedPath, StringComparison.OrdinalIgnoreCase)).ToArray()
                 : available;
             string? lastError = null;
-            string? resolvedPath = null;
+            string? resolvedPath = cachedPath is not null && available.Any(candidate =>
+                string.Equals(candidate.DevicePath, cachedPath, StringComparison.OrdinalIgnoreCase))
+                    ? cachedPath : null;
             foreach (var candidate in ordered)
             {
                 WriteDiagnostic(definition.ProductId,
@@ -143,7 +145,6 @@ public sealed partial class OpenRazerDeviceService
                         $"probe failed path={RazerFeatureTransport.DescribeDevicePath(candidate.DevicePath)}: {exception.GetType().Name}: {exception.Message}");
                 }
             }
-
             if (resolvedPath is null)
             {
                 _endpointCache.TryRemove(group.Key.PhysicalDeviceKey, out _);
@@ -202,6 +203,7 @@ public sealed partial class OpenRazerDeviceService
         byte? brightness = null;
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);
         var unsupported = new HashSet<OpenRazerBackendCapability>();
+        var liveTimeouts = new HashSet<OpenRazerBackendCapability>();
 
         async Task ReadAsync<T>(OpenRazerBackendCapability capability, string key, Func<Task<T>> read, Action<T> assign)
         {
@@ -213,22 +215,19 @@ public sealed partial class OpenRazerDeviceService
             {
                 assign(await read().ConfigureAwait(false));
             }
-            catch (Exception exception) when (exception is Win32Exception or IOException or
+            catch (Exception exception) when (exception is Win32Exception or IOException or COMException or
                 InvalidOperationException or NotSupportedException or InvalidDataException)
             {
-                if (exception is NotSupportedException or InvalidDataException or RazerDeviceTimeoutException)
+                if (exception is NotSupportedException or InvalidDataException or RazerDeviceTimeoutException or COMException)
                 {
-                    // A manifest can advertise an optional transaction that a particular firmware
-                    // rejects, returns malformed data for, or simply never answers. Keep the rest of
-                    // the device state usable and let the UI render that field as unknown.
+                    // Optional transaction the firmware rejects or never answers; keep the rest usable.
+                    if (exception is RazerDeviceTimeoutException && capability is (OpenRazerBackendCapability.BatteryRead or OpenRazerBackendCapability.ChargingRead)) liveTimeouts.Add(capability);
                     unsupported.Add(capability);
                     WriteDiagnostic(connection.Definition.ProductId,
                         $"optional state read '{key}' is unavailable: {exception.GetType().Name}: {exception.Message}");
                     return;
                 }
-
-                // Key the failure by capability, not by the internal field name, so the UI can
-                // line it up with the protocol detail row that reports the same capability.
+                // Key the failure by capability so it lines up with the protocol detail row.
                 errors[capability.ToString()] = exception.Message;
                 WriteDiagnostic(connection.Definition.ProductId,
                     $"state read '{key}' failed: {exception.GetType().Name}: {exception.Message}");
@@ -253,7 +252,7 @@ public sealed partial class OpenRazerDeviceService
                 {
                     throw;
                 }
-                catch (Exception exception) when (exception is Win32Exception or IOException or
+                catch (Exception exception) when (exception is Win32Exception or IOException or COMException or
                     InvalidOperationException or NotSupportedException or InvalidDataException)
                 {
                     WriteDiagnostic(connection.Definition.ProductId,
@@ -272,6 +271,7 @@ public sealed partial class OpenRazerDeviceService
             () => GetBatteryPercentAsync(connection, cancellationToken), value => battery = value);
         await ReadAsync(OpenRazerBackendCapability.ChargingRead, "charging",
             () => GetChargingAsync(connection, cancellationToken), value => charging = value);
+        KeepBatteryRetryableWhenBothUnanswered(battery, charging, liveTimeouts, unsupported, errors);
         await ReadAsync(OpenRazerBackendCapability.PollingRateRead, "pollingRate",
             () => GetPollingRateAsync(connection, cancellationToken), value => pollingRate = value);
         await ReadAsync(OpenRazerBackendCapability.DpiRead, "dpi",
@@ -396,7 +396,6 @@ public sealed partial class OpenRazerDeviceService
         return report.ToString();
     }
 
-
     public async Task<Version> GetFirmwareAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default) =>
         OpenRazerStandardProtocol.ParseFirmware(await ExecuteAsync(connection,
             OpenRazerStandardProtocol.GetFirmware(connection.Definition), cancellationToken).ConfigureAwait(false));
@@ -520,9 +519,10 @@ public sealed partial class OpenRazerDeviceService
 
     public async Task<(int X, int Y)> GetDpiAsync(OpenRazerDeviceConnection connection, CancellationToken cancellationToken = default)
     {
-        var byteEncoding = connection.Definition.Transactions.ContainsKey("razer_chroma_misc_get_dpi_xy_byte");
-        return OpenRazerMouseProtocol.ParseDpi(await ExecuteAsync(connection,
-            OpenRazerMouseProtocol.GetDpi(connection.Definition), cancellationToken).ConfigureAwait(false), byteEncoding);
+        var dpi = OpenRazerMouseProtocol.ParseDpi(await ExecuteAsync(connection,
+            OpenRazerMouseProtocol.GetDpi(connection.Definition), cancellationToken).ConfigureAwait(false),
+            connection.Definition.Transactions.ContainsKey("razer_chroma_misc_get_dpi_xy_byte"));
+        return dpi.X > 0 && dpi.Y > 0 ? dpi : throw new InvalidDataException("The DPI response contained no values.");
     }
 
     /// <summary>

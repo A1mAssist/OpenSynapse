@@ -82,6 +82,18 @@ public static class BladeDisplayMuxModes
         (Supports(capabilities, BladeDisplayMuxMode.Hybrid) ||
          Supports(capabilities, BladeDisplayMuxMode.Dds, allowDds));
 
+    /// <summary>
+    /// The route behind the user-facing "Standard" mode. Hybrid is preferred;
+    /// DDS is the fallback when the firmware publishes dynamic switching only.
+    /// </summary>
+    public static BladeDisplayMuxMode? GetStandardMode(
+        BladeDisplayMuxCapabilities capabilities) =>
+        Supports(capabilities, BladeDisplayMuxMode.Hybrid)
+            ? BladeDisplayMuxMode.Hybrid
+            : Supports(capabilities, BladeDisplayMuxMode.Dds)
+                ? BladeDisplayMuxMode.Dds
+                : null;
+
     public static IReadOnlyList<BladeDisplayMuxMode> GetSupportedModes(
         BladeDisplayMuxCapabilities capabilities,
         bool allowDds = true)

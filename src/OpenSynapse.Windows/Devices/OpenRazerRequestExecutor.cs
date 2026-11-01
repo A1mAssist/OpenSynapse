@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -45,7 +46,12 @@ internal sealed class OpenRazerRequestExecutor
         {
             throw new NotSupportedException(exception.Message, exception);
         }
-        catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException)
+        catch (RazerDeviceTimeoutException)
+        {
+            // Busy/silent is a capability result, not a dead endpoint.
+            throw;
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or COMException or InvalidOperationException)
         {
             _endpointCache.TryRemove(connection.InstanceId, out _);
             throw;

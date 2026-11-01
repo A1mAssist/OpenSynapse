@@ -31,7 +31,7 @@ internal sealed class BladeViewModel
     internal string _bladeAdvancedFanGpuModeRawText = "--";
     internal string _bladeGameModeText = "--";
     internal byte? _bladeGameModeState;
-    internal bool _bladeGameModeWriteSupported = true;
+    internal bool _bladeGameModeWriteSupported;
     internal bool _bladeGameModeEnabled;
     internal string _bladeStartupAnimationText = "--";
     internal bool? _bladeStartupAnimationEnabled;
@@ -104,9 +104,6 @@ internal sealed class BladeViewModel
     internal void SetPerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {
         var index = IndexOf(PerformanceModes, mode);
-        var modeChanged = _confirmedBladePerformanceModeIndex < 0 ||
-            _confirmedBladePerformanceModeIndex >= PerformanceModes.Count ||
-            PerformanceModes[_confirmedBladePerformanceModeIndex] != mode;
         _bladePerformanceModeText = mode switch
         {
             BladePerformanceMode.Balanced => AppStrings.Text("Text_9753B259"),
@@ -124,14 +121,10 @@ internal sealed class BladeViewModel
         _bladePerformanceModeIndex = index;
         if (confirm)
         {
+            // Keep the last Custom levels. The Custom card is already gated by the
+            // confirmed mode, so clearing them only left the controls blank until
+            // the next successful telemetry read.
             _confirmedBladePerformanceModeIndex = _bladePerformanceModeIndex;
-            // A mode the model does not publish is not a mode change: the machine may
-            // still be in Custom, and clearing that would hide the CPU/GPU level and
-            // Max Fan controls the firmware is reporting.
-            if (modeChanged && BladeModelCapabilities.PublishesPerformanceMode(_bladeProductId, mode))
-            {
-                ClearCustomPerformance();
-            }
         }
     }
 
@@ -173,20 +166,26 @@ internal sealed class BladeViewModel
         _confirmedBladeChargeLimitIndex = _bladeChargeLimitIndex;
     }
 
+    internal void ResetCustomCapabilityFlags()
+    {
+        _hasBladeCpuBoost = SupportsCpuBoost;
+        _hasBladeGpuBoost = SupportsGpuBoost;
+        _hasBladeMaxFan = SupportsMaxFan;
+    }
+
     internal void ClearCustomPerformance()
     {
+        // Reset the values, not the capability flags: the flags describe the model
+        // contract and the Custom card must stay available after a mode change.
         _bladeCpuBoostText = "--";
         _bladeCpuBoostIndex = -1;
         _confirmedBladeCpuBoostIndex = -1;
-        _hasBladeCpuBoost = false;
         _bladeGpuBoostText = "--";
         _bladeGpuBoostIndex = -1;
         _confirmedBladeGpuBoostIndex = -1;
-        _hasBladeGpuBoost = false;
         _bladeMaxFanText = "--";
         _bladeMaxFanEnabled = false;
         _confirmedBladeMaxFanEnabled = false;
-        _hasBladeMaxFan = false;
     }
 
     internal void SetCpuBoost(BladeCpuBoostMode mode)
@@ -218,7 +217,7 @@ internal sealed class BladeViewModel
         };
         _bladeGpuBoostIndex = Array.IndexOf(BladeGpuBoostModes, mode);
         _confirmedBladeGpuBoostIndex = _bladeGpuBoostIndex;
-        _hasBladeGpuBoost = _bladeGpuBoostIndex >= 0;
+        _hasBladeGpuBoost = SupportsGpuBoost;
     }
 
     /// <summary>
@@ -227,6 +226,8 @@ internal sealed class BladeViewModel
     /// to no admitted index, and the ComboBox would render an empty selection.
     /// </summary>
     internal bool SupportsCpuBoost => BladeModelCapabilities.SupportsCpuBoost(_bladeProductId);
+
+    internal bool SupportsGpuBoost => BladeModelCapabilities.SupportsGpuBoost(_bladeProductId);
 
     /// <summary>
     /// True when the exact model has an audited Custom maximum-fan switch. A readable

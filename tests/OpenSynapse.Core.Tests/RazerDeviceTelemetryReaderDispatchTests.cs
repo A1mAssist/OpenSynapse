@@ -25,6 +25,22 @@ public sealed class RazerDeviceTelemetryReaderDispatchTests
         Assert.Equal(2, telemetry.CapabilitySummaries!.Count);
     }
 
+    [Fact]
+    public async Task ReadAsyncMarksGamingModeWritableOnlyWhenTheManifestOwnsTheSetter()
+    {
+        var reader = new RazerDeviceTelemetryReader(
+            new RecordingTransport(),
+            RazerDeviceRegistry.BuiltIn);
+
+        var blade14 = await reader.ReadAsync(
+            [CreateDevice(0x0270, "blade-671", DeviceCategory.Laptop)]);
+        var blade16 = await reader.ReadAsync(
+            [CreateDevice(0x02C6, "blade-710", DeviceCategory.Laptop)]);
+
+        Assert.False(blade14.BladeGamingModeWritable);
+        Assert.True(blade16.BladeGamingModeWritable);
+    }
+
     private static DeviceDescriptor CreateDevice(
         ushort productId,
         string family,

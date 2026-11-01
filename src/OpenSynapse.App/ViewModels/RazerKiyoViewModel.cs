@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 
@@ -242,7 +243,7 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
     }
 
     private static bool IsExpected(Exception exception) =>
-        exception is IOException or InvalidDataException or InvalidOperationException or
+        exception is IOException or InvalidDataException or InvalidOperationException or COMException or
             NotSupportedException or UnauthorizedAccessException or ArgumentException or
             BadImageFormatException or DllNotFoundException or EntryPointNotFoundException or Win32Exception;
 

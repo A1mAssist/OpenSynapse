@@ -285,6 +285,7 @@ public sealed record RazerDeviceTelemetry(
     byte? ViperLowBatteryThresholdRaw = null,
     BladeLogoMode? BladeLogoMode = null,
     BladeGameModeTelemetry? BladeGameMode = null,
+    bool BladeGamingModeWritable = false,
     bool? BladeStartupAnimationEnabled = null,
     BladeNativeDisplayMode? BladeNativeDisplayMode = null,
     BladeSkuHardwareConfiguration? BladeSkuHardwareConfiguration = null,

@@ -74,6 +74,22 @@ public sealed class BladeGpuModeTests
     }
 
     [Fact]
+    public void ADiscreteRouteWithDdsExposesStandardAsTheDynamicPath()
+    {
+        var snapshot = new BladeGpuModeSnapshot(
+            DedicatedGpuSupported: false,
+            DedicatedGpuEnabled: true,
+            Mux: Mux(
+                BladeDisplayMuxCapabilities.Discrete |
+                BladeDisplayMuxCapabilities.DynamicDisplaySwitch,
+                BladeDisplayMuxMode.Discrete));
+
+        Assert.Equal(
+            [BladeGpuMode.Standard, BladeGpuMode.Discrete],
+            BladeGpuModes.GetAvailableModes(snapshot));
+    }
+
+    [Fact]
     public void ADirectDiscreteRouteKeepsTheFirmwareMuxModesAvailableWhenPnPIsBlocked()
     {
         var snapshot = new BladeGpuModeSnapshot(
