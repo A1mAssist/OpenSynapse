@@ -234,6 +234,32 @@ public sealed class BladeMappingInputRuntimeTests
     }
 
     [Fact]
+    public void PageUpAndPageDownPassThroughWhenOnlyTheHyperShiftLayerHooksThem()
+    {
+        using var runtime = new BladeMappingInputRuntime(
+        [
+            new(BladeMappingInputKind.Keyboard, 73, true,
+                BladeMappingOutputKind.Disable, 0),
+            new(BladeMappingInputKind.Keyboard, 81, true,
+                BladeMappingOutputKind.Disable, 0),
+        ]);
+
+        var pageUp = runtime.Process(
+            new(BladeMappingInputKind.Keyboard, 73, true),
+            out _,
+            out var pageUpPassThrough);
+        Assert.True(pageUpPassThrough);
+        Assert.Equal([new BladeMappingOutputEvent(73, true)], pageUp);
+
+        var pageDown = runtime.Process(
+            new(BladeMappingInputKind.Keyboard, 81, true),
+            out _,
+            out var pageDownPassThrough);
+        Assert.True(pageDownPassThrough);
+        Assert.Equal([new BladeMappingOutputEvent(81, true)], pageDown);
+    }
+
+    [Fact]
     public void DoesNotPassThroughExplicitHyperShiftMapping()
     {
         using var runtime = new BladeMappingInputRuntime(

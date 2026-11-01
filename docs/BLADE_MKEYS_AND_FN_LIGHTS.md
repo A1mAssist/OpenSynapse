@@ -13,14 +13,14 @@
 
 | 问题 | 结论 |
 |---|---|
-| M1-M5 的 DKM slot | M1=`10`，M2=`11`，M3=`3`，M4=`211`，M5=`212`。[code] M1/M2 不在 02C6 bundle 的 `DKMKEYS` 数组里，但现有 `Product710Mapping.json` 和 02C6 灯光布局都把 `0x0A/0x0B` 放在 M1/M2 位置。 |
-| M1-M5 默认动作 | M1/M2=HyperShift [code]；M3=Game Mode、M4=Next Performance Mode、M5=Mic Mute [bundle][code]。 |
+| M1-M5 的键值 | M1/M2 是普通键盘 PageUp/PageDown；M3=`3`、M4=`211`、M5=`212` 才是 DKM RazerKey。[code][inference] |
+| M1-M5 默认动作 | M1=PageUp、M2=PageDown；M3=Game Mode、M4=Next Performance Mode、M5=Mic Mute [bundle][code]。 |
 | 210 / 211 / 212 的物理键 | 210=AI Launcher（额外的一颗 AI 键，物理丝印是否为 Copilot 不在 bundle 证据内）；211=M4/Performance；212=M5/Mic Mute。[bundle][code][inference] |
 | Fn 图标灯 / M 键背光 | 没有找到独立的 Fn 图标 zone 或亮度命令；它们落在主键盘背光矩阵里，官方亮度入口是 `Backlight_LED=5`。[bundle] F1-F12 图标是否完全由同一颗键背光点亮，仍需实机遮挡确认。[unverified] |
 | 静音键红灯 | 不是普通亮度 zone。官方走 `Set Audio Mute Status`：class `0x18`、command `0x04`、参数 `[0, 1|2, muted]`，麦克风用 target `2`。[bundle] |
 | `BladeMappingInputRuntime` 能否直接吃 kind=3 | 能。解析器和映射表已经直接支持 `BladeMappingInputKind.RazerKey`，不需要新增一层。[code] |
 
-## 1. M1-M5 的 DKM slot 和默认动作
+## 1. M1-M5 的键值和默认动作
 
 ### 1.1 bundle 里的 DKM 对象
 
@@ -58,14 +58,14 @@ _="keyboardGroup"
 
 | 物理键 | DKM slot | 默认动作 | 证据 |
 |---|---:|---|---|
-| M1 | `10` / `0x0A` | HyperShift | [code] `Product710Mapping.json` 里有 `razerKey 10 -> hypershift`；`WindowsKeyboardLightingAdapter` 把 `0x0A` 放到第 1 行 M1 位置。 |
-| M2 | `11` / `0x0B` | HyperShift | 同上，`0x0B` 放到第 2 行 M2 位置。 |
+| M1 | 普通键盘 PageUp | PageUp | [code] `ChromaKeyboardFrameMapper` 注释写明 Page Up/M1；它不是 DKM 键。 |
+| M2 | 普通键盘 PageDown | PageDown | [code] 同上，注释写明 Page Down/M2。 |
 | M3 | `3` | Game Mode | [bundle] `DKM_03` 映射到 `gameModeGroup`；现有 `RazerPrivateKeyCatalog` 也把 02C6 的 `3` 标成 Game Mode。 |
 | M4 | `211` / `0xD3` | Next Performance Mode | [bundle] `DKM_D3` 映射到 `bladePerformanceGroup.nextPerformanceMode`；[code] resw 说明 M4 是性能模式循环键。 |
 | M5 | `212` / `0xD4` | Mic Mute | [bundle] `DKM_D4` 映射到 `multimediaGroup.MuteMic`；[code] 现有布局把 `0xD4` 放在第 5 行 M5 位置。 |
 | AI Launcher | `210` / `0xD2` | 非 HyperShift：`Win+Shift+F23`；HyperShift：Application 键 | [bundle] `DKM_D2` 的两条映射；[code] catalog 把 `210` 标成 AI Launcher。它不是 M1-M5 那五个键。 |
 
-**注意**：02C6 bundle 的 `DKMKEYS` 只列了 `3`、`210`、`211`、`212`，没有列 `10/11`。因此 M1/M2 的 slot 号来自现有 `Product710Mapping.json` 和灯光布局，不是这四行 bundle 对象直接给出的。把 `10/11` 写成“bundle 已命名 M1/M2”不准确；写成“固件/驱动把这些键报告为 10/11，项目现有映射和布局按 M1/M2 处理”才准确。
+**注意**：`Product710Mapping.json` 里的 `razerKey 10/11 -> hypershift` 是 HyperShift 键，不是 M1/M2；`RazerPrivateKeyCatalog` 明确写着 `10=HyperShift;11=HyperShift`。`WindowsKeyboardLightingAdapter` 里的 `0x0A/0x0B` 是灯光矩阵位置，不是按键 ID。M1/M2 走普通键盘 PageUp/PageDown，不需要 DKM 映射。
 
 ## 2. 210 / 211 / 212 分别是什么键
 
@@ -76,7 +76,7 @@ bundle 把 `210` 叫 `DKM_D2`，并给它两条默认动作：
 - 普通层：`KEY_LEFT_SHIFT + KEY_LEFT_GUI + KEY_F23`。
 - HyperShift 层：`KEY_APPLICATION`。
 
-项目 `RazerPrivateKeyCatalog` 把 02C6 的 `210` 命名为 `AI Launcher`。从按键位置看，它不是右侧 M1-M5 那一列；现有 02C6 灯光布局只把 `0x0A/0x0B/0x03/0xD3/0xD4` 放在第 1-5 行的 M1-M5 位置，没有把 `0xD2` 放进这一列。[code][inference]
+项目 `RazerPrivateKeyCatalog` 把 02C6 的 `210` 命名为 `AI Launcher`。从按键位置看，它不是右侧 M1-M5 那一列；M1/M2 是普通 PageUp/PageDown，M3-M5 才是 DKM 键，现有 02C6 灯光布局不会把 `0xD2` 放进 M1-M5 那一列。[code][inference]
 
 因此，和 M1-M5 一起讨论时，应把 210 单独写成“AI Launcher 键”，不要把它算成 M4 或 M5。物理丝印是否为 Copilot 或别的图标，bundle 没有给出，必须看实机键盘。
 
@@ -194,7 +194,7 @@ Set LED Brightness:       [4,3,4]    // 参数 [profile, ledId, 0..255]
 | 目标 | 证据支持的结论 | 还需要什么 |
 |---|---|---|
 | F1-F12 上的 Fn 图标 | 没有独立 zone/亮度命令；属于主键盘背光表面 `Backlight_LED=5` 的候选范围。 | 实机遮挡或逐键矩阵测试，确认图标是否与键帽共用 LED。 |
-| M1-M5 键背光 | 属于主矩阵；现有布局把 5 个 M 键放在第 1-5 行最右列。 | 实机确认 M1/M2 的 10/11 事件和背光位置。 |
+| M1-M5 键背光 | 属于主矩阵；现有布局把 5 个 M 键放在第 1-5 行最右列。 | 实机确认 M3-M5 的 3/211/212 事件；M1/M2 是普通 PageUp/PageDown。 |
 | 麦克风静音红灯 | `0x18:0x04` 状态命令，target `2`；不是亮度 zone。 | 实机确认该命令能点亮/熄灭 02C6 的红灯，并确认是否还需要初始化。 |
 | zone 38 VCLED | 独立通道，支持 `0x03:0x00`、`0x03:0x21`、`0x03:0x04`。 | 必须实机逐区标定它对应哪些物理灯。 |
 
@@ -220,24 +220,24 @@ Set LED Brightness:       [4,3,4]    // 参数 [profile, ledId, 0..255]
 - `src/OpenSynapse.App/Native/Razer/Product710Mapping.json`：`razerKey` 默认规则。
 - `src/OpenSynapse.App/Runtime/BladeFnRuntime.cs`：`ConsumeAsync`。
 - `src/OpenSynapse.App/App.xaml.cs`：`ExecuteBladeFnLeafOnUiThreadAsync`。
-- `src/OpenSynapse.Windows/Lighting/WindowsKeyboardLightingAdapter.cs`：`RazerKeyMap` 的 M1-M5 行/列。
+- `src/OpenSynapse.Windows/Lighting/WindowsKeyboardLightingAdapter.cs`：M1/M2 的 PageUp/PageDown 与 M3-M5 的 DKM 键在灯光矩阵里的行/列。
 - `src/OpenSynapse.Windows/Protocols/BladeSynapsePolicyProtocol.cs`：`CreateSetAudioMuteStatusRequest`。
 
-**剩余风险**：`RazerFilterInputHost` 目前只安装 23 个键盘扫描码 hook。解析器能处理 kind=3，不等于当前的 23 个 hook 一定能让固件把所有 RazerKey 帧送上来。这个“驱动是否在当前 hook 集合下持续上报 kind=3”的问题只能靠 02C6 实机日志确认；如果日志里没有 `0x0A/0x0B/0x03/0xD2/0xD3/0xD4`，下一步才是调整 hook/通知策略，而不是在应用层再加一层映射。[code][unverified]
+**剩余风险**：`RazerFilterInputHost` 目前只安装 23 个键盘扫描码 hook。解析器能处理 kind=3，不等于当前的 23 个 hook 一定能让固件把所有 RazerKey 帧送上来。这个“驱动是否在当前 hook 集合下持续上报 kind=3”的问题只能靠 02C6 实机日志确认；如果日志里没有 `0x03/0xD2/0xD3/0xD4`，下一步才是调整 hook/通知策略，而不是在应用层再加一层映射。M1/M2 走普通 PageUp/PageDown，不依赖 kind=3。[code][unverified]
 
 ## 5. 本次实现决策
 
-本分支已给 driver mode 下的 M1-M5、AI Launcher 和 Mic Mute 加 kind=3 诊断日志：
+本分支已给 driver mode 下的 M3-M5、AI Launcher 和 Mic Mute 加 kind=3 诊断日志：
 
 - `BladeFnRuntime` 接收一个可选的诊断 sink，`App.xaml.cs` 把它接到 `blade-input` 日志分类；
 - `ConsumeAsync` 只记录 `BladeMappingInputKind.RazerKey`，在 `mapping.Process` 之后写，不改变 pass-through 或动作顺序；
 - 每个 `(Code, IsDown)` 组合每会话只记录一次，日志 sink 抛异常会被吞掉，不影响输入处理；
 - 格式为 `razerKey {code} (0x{code:X2}) {down|up} [-> {action}]`；有 action 时附带 CommandKind/Command，M3/M4/M5 能直接看出是否命中。HyperShift、Disable 本来就不产生 action，因此不附带后缀，不会被误报成未映射。
 
-仍然没有 02C6 实机证据。下一步是让 02C6 用户在 driver mode 下按 M1-M5（以及 AI、Mic）后回传 `blade-input` 日志；只有日志里确实出现 `0x0A/0x0B/0x03/0xD2/0xD3/0xD4`，才能确认当前 hook 集合下驱动会持续上报 kind=3。
+仍然没有 02C6 实机证据。下一步是让 02C6 用户在 driver mode 下按 M3-M5（以及 AI、Mic）后回传 `blade-input` 日志；只有日志里确实出现 `0x03/0xD2/0xD3/0xD4`，才能确认当前 hook 集合下驱动会持续上报 kind=3。M1/M2 另按普通 PageUp/PageDown 验证。
 
 2026-10-30 在 02C6 上读回 DKM 槽表（`--probe-dkm`）为 256 个 0x00。也就是说，
-当前这台机器的 DKM 槽表是空的；M1-M5 的功能不是由已写入的 DKM 槽位驱动的。
+当前这台机器的 DKM 槽表是空的；M3-M5 的功能不是由已写入的 DKM 槽位驱动的，M1/M2 是普通 PageUp/PageDown。
 这进一步说明下一步该抓的是 `blade-input` 的 kind=3 帧，而不是先写 DKM 表。
 
 等实机日志和灯光标定结果出来后，再决定是否需要：
@@ -247,8 +247,8 @@ Set LED Brightness:       [4,3,4]    // 参数 [profile, ledId, 0..255]
 
 ## 6. 必须实机确认的项
 
-1. 在 driver mode 下抓 `kind=3`：依次按 M1-M5、AI Launcher、Mic Mute，确认事件码是否为 `0x0A/0x0B/0x03/0xD2/0xD3/0xD4`。
-2. 确认 M3/M4/M5 是否分别触发 Game Mode、Next Performance Mode、Mic Mute；M1/M2 是否仍作为 HyperShift 工作。
+1. 在 driver mode 下抓 `kind=3`：依次按 M3-M5、AI Launcher、Mic Mute，确认事件码是否为 `0x03/0xD2/0xD3/0xD4`。
+2. 确认 M3/M4/M5 是否分别触发 Game Mode、Next Performance Mode、Mic Mute；M1/M2 是否仍正常发出 PageUp/PageDown。
 3. 调 `0x18:0x04`，target `2`，观察麦克风静音红灯是否随 `0/1` 变化；同时确认是否需要先执行现有初始化或 `0D:02` software mode。
 4. 单独写 `Backlight_LED=5` 的亮度，确认 F1-F12 图标和 M1-M5 背光是否一起变化；用遮挡法确认图标是否与键帽共用 LED。
 5. 单独写 zone `38` 的 `0x03:0x04`，记录哪些物理灯变化。未记录前不要把 38 写进任何面向用户的灯光映射。
