@@ -333,7 +333,7 @@ main 的基线文件：
 
 两边共同的前置条件：
 
-1. 安装 PawnIO（驱动服务 + `%ProgramFiles%\PawnIO\PawnIOLib.dll`）；
+1. 安装 PawnIO（驱动服务 + `%ProgramFiles%\PawnIO\PawnIOLib.dll`）；便携包不再附带安装器，CPU 功耗墙卡片只打开官方下载页，用户安装后重启 OpenSynapse 重新检测；
 2. app 目录有对应模块：Intel 用 `IntelMSR.bin`，AMD 用 `RyzenSMU.bin`；
 3. 调整功耗墙需要能打开 PawnIO executor：
    - app 以管理员运行，或

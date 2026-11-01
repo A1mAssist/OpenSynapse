@@ -87,7 +87,7 @@ public sealed partial class OpenRazerDeviceViewModel
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, OpenRazerBackendCapability.HapticScrollRead);
+            HandleOptionalFailure(exception, OpenRazerBackendCapability.HapticScrollRead);
         }
         finally
         {

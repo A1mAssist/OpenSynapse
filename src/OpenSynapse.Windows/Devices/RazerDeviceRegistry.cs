@@ -158,9 +158,9 @@ internal sealed class RazerDeviceRegistry
             ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys
                 .Where(capability => capability is not (CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
                 .ToHashSet(StringComparer.Ordinal),
-            // adapter-power.get and the display MUX reports are optional in this family:
-            // only the 029F manifest answers the adapter-wattage level and owns the
-            // MUX reports, so they are not required here.
+            // Per-model reports are optional in this family. The 2021 Blade 14 (0270)
+            // rejects 00:08, so gaming-mode support stays manifest-driven. Its charge
+            // limit (07:12 / 07:92) is implemented and required.
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys
                 .Where(capability => capability is not (CapabilityIds.AdapterPowerGet or
                     CapabilityIds.DisplayMuxGet or CapabilityIds.DisplayMuxSet or CapabilityIds.DisplayMuxCapabilitiesGet or

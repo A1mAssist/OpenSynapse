@@ -53,7 +53,6 @@ public interface IRazerFeatureTransport
         }
     }
 }
-
 public interface IRazerFeatureSession : IAsyncDisposable
 {
     byte NextTransactionId();
@@ -187,7 +186,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             allowRemainingPacketsMismatch);
     }
 
-    public Task SendBatchAsync(
+    public async Task SendBatchAsync(
         string devicePath,
         IReadOnlyList<byte[]> requests,
         TimeSpan rowDelay,
@@ -200,57 +199,20 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         if (requests.Any(request => request.Length != RazerFeatureReport.Length))
             throw new ArgumentException("Every HID report in the batch must be 91 bytes.", nameof(requests));
 
-        return ExecuteBatchAsync(devicePath, requests, rowDelay, cancellationToken);
-    }
-
-    private async Task ExecuteBatchAsync(
-        string devicePath,
-        IReadOnlyList<byte[]> requests,
-        TimeSpan rowDelay,
-        CancellationToken cancellationToken)
-    {
-        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
-        var leviathanSequence = UsesLeviathanReportId(devicePath)
-            ? _leviathanTransactions.GetOrAdd(devicePath, static _ => [-1])
-            : null;
-        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        // Every report is answered. Leaving the replies queued makes the next query
+        // decode the wrong report, so a batch must consume each response in order.
+        foreach (var request in requests)
         {
-            await Task.Run(() =>
-            {
-                var handle = NativeMethods.CreateFile(
-                    devicePath,
-                    NativeMethods.GENERIC_WRITE,
-                    NativeMethods.FILE_SHARE_READ | NativeMethods.FILE_SHARE_WRITE,
-                    IntPtr.Zero,
-                    NativeMethods.OPEN_EXISTING,
-                    0,
-                    IntPtr.Zero);
-                var openError = Marshal.GetLastWin32Error();
-                using (handle)
-                {
-                    if (handle.IsInvalid)
-                        throw new Win32Exception(openError, "Could not open the Razer feature collection.");
-
-                    foreach (var request in requests)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (leviathanSequence is not null)
-                        {
-                            request[0] = LeviathanV2XProtocol.ReportId;
-                            request[2] = NextLeviathanTransactionId(ref leviathanSequence[0]);
-                        }
-                        if (!NativeMethods.HidD_SetFeature(handle, request, request.Length))
-                            throw new Win32Exception(Marshal.GetLastWin32Error(), "Razer matrix batch write failed.");
-                        if (rowDelay > TimeSpan.Zero)
-                            Thread.Sleep(rowDelay);
-                    }
-                }
-            }, cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            gate.Release();
+            await QueryAsync(
+                devicePath,
+                request[2],
+                request[6],
+                request[7],
+                request[8],
+                request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
+                rowDelay,
+                cancellationToken,
+                allowRemainingPacketsMismatch: true).ConfigureAwait(false);
         }
     }
 
@@ -428,9 +390,10 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             {
                 if (IsRetryableBusyResponse(response[1], request[8]))
                 {
-                    // A busy read carries no payload. Treating it as data makes a
-                    // zero-filled response look like a real 0 (brightness, DPI, ...).
+                    // A busy read has no trustworthy payload; firmware may echo the requested
+                    // length while returning an empty reply, so the length alone is not data.
                     lastError = "The device is busy (0x01).";
+                    silentResponses++;
                     diagnostic?.Invoke($"attempt {attempt}: {lastError}; retrying read");
                 }
                 else
@@ -472,8 +435,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         if (rejectedResponses == MaxQueryAttempts)
             throw new RazerCommandRejectedException(lastError!);
 
-        // A dead endpoint fails every command on its path, so one silent command means the
-        // firmware does not answer it, not that the transport is gone.
+        // A dead endpoint fails every command on its path, so busy/silent means the
+        // firmware does not answer this command, not that the transport is gone.
         if (silentResponses == MaxQueryAttempts)
             throw new RazerDeviceTimeoutException(lastError ?? "The device did not answer this command.");
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
@@ -567,30 +530,18 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 throw new ArgumentException("A Razer feature report batch must contain at least one 91-byte report.", nameof(requests));
             }
 
-            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
+            foreach (var request in requests)
             {
-                await Task.Run(() =>
-                {
-                    foreach (var request in requests)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (!NativeMethods.HidD_SetFeature(handle, request, request.Length))
-                        {
-                            throw new Win32Exception(
-                                Marshal.GetLastWin32Error(),
-                                "Razer feature batch write failed.");
-                        }
-                        if (rowDelay > TimeSpan.Zero)
-                        {
-                            Thread.Sleep(rowDelay);
-                        }
-                    }
-                }, cancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                gate.Release();
+                await QueryAsync(
+                    request[2],
+                    request[6],
+                    request[7],
+                    request[8],
+                    request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
+                    rowDelay,
+                    request[0],
+                    cancellationToken,
+                    allowRemainingPacketsMismatch: true).ConfigureAwait(false);
             }
         }
 

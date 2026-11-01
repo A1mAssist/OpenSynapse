@@ -977,6 +977,9 @@
   <data name="DiagnosticsCopied" xml:space="preserve">
     <value>Diagnostics copied</value>
   </data>
+  <data name="DiagnosticsCopyFailed" xml:space="preserve">
+    <value>Copy failed: {0}</value>
+  </data>
   <data name="OpenRazerOperationApplied" xml:space="preserve">
     <value>Applied to device</value>
   </data>
@@ -997,6 +1000,9 @@
   </data>
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
     <value>Device communication stopped; writes are paused. Rescan the device to restore control.</value>
+  </data>
+  <data name="OpenRazerLightingProfileSaveFailed" xml:space="preserve">
+    <value>The lighting was applied, but the profile could not be saved; the device is still controllable.</value>
   </data>
   <data name="OpenRazerCapabilityUnanswered" xml:space="preserve">
     <value>The firmware did not answer "{0}"; that capability is disabled and the rest still works.</value>
@@ -1316,6 +1322,7 @@
   <data name="GpuModeStatusAuto" xml:space="preserve"><value>Auto: Standard on AC, Integrated on battery; running {0} now.</value></data>
   <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>The panel is on the discrete route. Switch back to Standard and restart before disabling the GPU.</value></data>
   <data name="GpuModeStatusNoHybrid" xml:space="preserve"><value>This device did not report hybrid output, so Standard is unavailable.</value></data>
+  <data name="GpuModeStatusOnlyDiscrete" xml:space="preserve"><value>The firmware currently reports discrete-direct only. Enable dynamic display switching in BIOS or NVIDIA Control Panel to unlock Standard or Auto.</value></data>
   <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX mode: {0}</value></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>About OpenSynapse</value></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>View the version, project page, and license information.</value></data>
@@ -1751,13 +1758,13 @@
   <data name="CpuCurveUnavailable" xml:space="preserve"><value>This platform does not support a Curve Optimizer.</value></data>
   <data name="CpuCurveApply.Content" xml:space="preserve"><value>Apply</value></data>
   <data name="CpuCurveTimeout" xml:space="preserve"><value>The machine service did not respond.</value></data>
-  <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>PawnIO is required for the Ryzen SMU path.</value></data>
+  <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>PawnIO is required for the Ryzen SMU path. Open its download page from the CPU power wall card.</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>RyzenSMU.bin is missing; reinstall the app.</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>The write failed; see the message above.</value></data>
   <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Cap the CPU package power wall (PL1/PL2).</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>Automatic (firmware)</value></data>
-  <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO is not installed, so the CPU power wall cannot be read or written.</value></data>
+  <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO is not installed. Choose Download PawnIO, install it, then restart OpenSynapse.</value></data>
   <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>A PawnIO module file is missing (IntelMSR.bin / RyzenSMU.bin); redeploy OpenSynapse.</value></data>
   <data name="CpuPowerLimitAccessDenied" xml:space="preserve"><value>Administrator rights or the OpenSynapse machine service is required.</value></data>
   <data name="CpuPowerLimitAmdDriverMissing" xml:space="preserve"><value>Install the Razer AMD OverClock component (including the AMD Ryzen Master driver) first.</value></data>
@@ -1766,6 +1773,7 @@
   <data name="CpuPowerLimitCeiling" xml:space="preserve"><value>Ceiling {0:0} W</value></data>
   <data name="CpuPowerLimitDirectSmu" xml:space="preserve"><value>Direct SMU writes may be ignored by some firmware; install the Razer AMD OverClock component for reliable control.</value></data>
   <data name="CpuPowerLimitAmdDownload" xml:space="preserve"><value>Download AMD component</value></data>
+  <data name="CpuPowerLimitPawnIoInstall" xml:space="preserve"><value>Download PawnIO</value></data>
   <data name="CpuPowerLimitLocked" xml:space="preserve"><value>The firmware has locked the power wall.</value></data>
   <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn key takeover needs the Razer driver</value></data>
   <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn shortcut takeover depends on the Razer filter driver that Razer Synapse installs. Install Razer Synapse once so Windows receives the driver, then restart OpenSynapse.</value></data>
@@ -2729,7 +2737,7 @@
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>Written and read back</value></data>
   <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>Microphone equalizer bands</value></data>
   <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>Apply microphone bands</value></data>
-  <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>Another OpenSynapse instance is already running and cannot be taken over by this launch. Exit it from the tray and try again; if it is running as administrator, start OpenSynapse as administrator too.</value></data>
+  <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>Another OpenSynapse instance is already running and cannot be taken over by this launch. Exit it from the tray and start OpenSynapse normally. Administrator rights are not required to detect devices.</value></data>
   <data name="ViperMappingGroupMouse" xml:space="preserve"><value>Mouse</value></data>
   <data name="ViperMappingGroupKeyboard" xml:space="preserve"><value>Keyboard</value></data>
   <data name="ViperMappingGroupDpi" xml:space="preserve"><value>DPI</value></data>

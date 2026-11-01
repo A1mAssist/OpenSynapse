@@ -26,6 +26,21 @@ public sealed class BladeFanModeRangeTests
     }
 
     [Fact]
+    public void TheBlade14_2021PublishesFixedFanFromItsBundle()
+    {
+        // 0270 bundle: performance.hasFanSpeed=true, both modes 3300..5400, default 4300.
+        const ushort productId = 0x0270;
+
+        Assert.True(BladeModelCapabilities.SupportsFixedFan(productId));
+        Assert.Equal(
+            new BladeFanTargetRange(3300, 5400, 4300),
+            BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Balanced));
+        Assert.Equal(
+            new BladeFanTargetRange(3300, 5400, 4300),
+            BladeModelCapabilities.FanTargetRangeFor(productId, BladePerformanceMode.Custom));
+    }
+
+    [Fact]
     public void TheBlade14_2024PublishesBalancedSilentAndCustomRanges()
     {
         // 02B6 bundle: Balanced 2000..5400, Silent 2200..3800, Custom 3300..5400.

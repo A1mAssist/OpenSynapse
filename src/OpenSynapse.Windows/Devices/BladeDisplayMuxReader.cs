@@ -190,8 +190,9 @@ internal static class BladeDisplayMuxReader
         blade.Owns(get) && blade.Owns(set) && blade.Owns(capabilities);
 
     private static bool AllowsDds() =>
-        // DDS=2 has no hardware-verified write/persistence/restore path yet.
-        false;
+        // 0D:8A is the gate. DDS writes still go through the existing readback and
+        // restore path, so a unit without the capability bit never sees the option.
+        true;
 
     private static BladeDisplayMuxStatus Unsupported(BladeDisplayMuxBlockReason reason) =>
         new(

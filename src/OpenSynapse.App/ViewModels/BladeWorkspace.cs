@@ -1426,6 +1426,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _blade._bladeGameModeState is byte state && state != 2;
     public bool CanApplyGamingMode =>
         CanSetGamingMode && GameModeEnabled != (_blade._bladeGameModeState != 0);
+    public Visibility GamingModeVisibility =>
+        CanSetGamingMode ? Visibility.Visible : Visibility.Collapsed;
     public string StartupAnimationText { get => _blade._bladeStartupAnimationText; private set => SetField(ref _blade._bladeStartupAnimationText, value); }
     public bool StartupAnimationEnabled
     {
@@ -1576,6 +1578,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         // The model can change the exposed performance-mode list, so the selected index
         // and the shortcut cycle have to be rebuilt against the new list.
         var performanceModes = _blade.PerformanceModes;
+        _blade.ResetCustomCapabilityFlags();
         _blade._bladePerformanceModeIndex = -1;
         _blade._confirmedBladePerformanceModeIndex = -1;
         OnPropertyChanged(nameof(PerformanceModeIndex));
@@ -1585,13 +1588,13 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             _bladePerformanceCycleModes = [.. performanceModes];
         }
         OnPropertyChanged(nameof(PerformanceCycleModes));
-
         OnPropertyChanged(nameof(CanWriteBrightness));
         OnPropertyChanged(nameof(CanWritePerformanceMode));
         OnPropertyChanged(nameof(HyperboostOptionVisibility));
         OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
         OnPropertyChanged(nameof(PerformanceModeOptions));
         OnPropertyChanged(nameof(CanSetGamingMode));
+        OnPropertyChanged(nameof(GamingModeVisibility));
         OnPropertyChanged(nameof(CustomPerformanceVisibility));
         OnPropertyChanged(nameof(CpuBoostOptions));
         OnPropertyChanged(nameof(LightingCardVisibility));
@@ -2092,6 +2095,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             _blade._bladeGameModeWriteSupported = false;
             OnPropertyChanged(nameof(CanSetGamingMode));
             OnPropertyChanged(nameof(CanApplyGamingMode));
+            OnPropertyChanged(nameof(GamingModeVisibility));
             throw;
         }
     }
@@ -2418,6 +2422,10 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         {
             AdvancedFanGpuModeRawText = FormatRawByte(gpuFanMode);
         }
+        _blade._bladeGameModeWriteSupported = telemetry.BladeGamingModeWritable;
+        OnPropertyChanged(nameof(CanSetGamingMode));
+        OnPropertyChanged(nameof(CanApplyGamingMode));
+        OnPropertyChanged(nameof(GamingModeVisibility));
         if (telemetry.BladeGameMode is { } gameMode)
         {
             SetGameMode(gameMode);
@@ -2554,6 +2562,10 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         AdvancedFanCpuModeRawText = "--";
         AdvancedFanGpuModeRawText = "--";
         SetGameMode(null);
+        _blade._bladeGameModeWriteSupported = false;
+        OnPropertyChanged(nameof(CanSetGamingMode));
+        OnPropertyChanged(nameof(CanApplyGamingMode));
+        OnPropertyChanged(nameof(GamingModeVisibility));
         StartupAnimationText = "--";
         _blade._bladeStartupAnimationEnabled = null;
         StartupAnimationEnabled = false;
@@ -2646,6 +2658,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(GameModeEnabled));
         OnPropertyChanged(nameof(CanSetGamingMode));
         OnPropertyChanged(nameof(CanApplyGamingMode));
+        OnPropertyChanged(nameof(GamingModeVisibility));
     }
 
     private void SetFnKey(bool multimediaPrimary)

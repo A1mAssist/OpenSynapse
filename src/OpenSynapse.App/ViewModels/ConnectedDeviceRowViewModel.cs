@@ -1,11 +1,17 @@
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
+using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed class ConnectedDeviceRowViewModel
 {
+    private static readonly Brush ConnectedBrush =
+        new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+    private static readonly Brush NeutralBrush =
+        new SolidColorBrush(Color.FromArgb(255, 255, 181, 71));
+
     public ConnectedDeviceRowViewModel(DeviceRowViewModel source)
     {
         Source = source;
@@ -201,11 +207,16 @@ public sealed class ConnectedDeviceRowViewModel
         OpenRazerDeviceRowViewModel row => row.StatusBrush,
         OpenRazerKrakenDeviceRowViewModel row => row.StatusBrush,
         RazerBleDeviceRowViewModel row => row.StatusBrush,
+        RazerAwBleHeadsetRowViewModel => ConnectedBrush,
         BlackSharkDeviceRowViewModel row => row.StatusBrush,
+        RazerKeyboardDeviceRowViewModel row => row.StatusBrush,
         RazerGamepadDeviceRowViewModel row => row.StatusBrush,
+        RazerHeadsetAudioDeviceRowViewModel row => row.StatusBrush,
+        RazerKiyoViewModel => ConnectedBrush,
+        RazerChromaDeviceRowViewModel row => row.StatusBrush,
         RazerCoolingPadViewModel row => row.StatusBrush,
         PhilipsHueViewModel row => row.StatusBrush,
-        _ => throw new InvalidOperationException(),
+        _ => NeutralBrush,
     };
     public int SortOrder => Category switch
     {

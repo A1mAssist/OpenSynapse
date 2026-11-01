@@ -67,6 +67,7 @@ public sealed partial class MainWindow
         {
             // The rebuild is skipped while this page is hidden, so entering it must refresh
             // once or the list would show whatever was captured before the user left.
+            _viewModel.Diagnostics.EnsureOpenRazerRows();
             _viewModel.Refresh.RequestDeviceRefresh();
         }
     }

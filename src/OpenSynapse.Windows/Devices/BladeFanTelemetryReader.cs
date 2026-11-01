@@ -49,7 +49,7 @@ internal sealed class BladeFanTelemetryReader
         {
             throw new InvalidOperationException("Fixed fan control is not admitted for this Blade model.");
         }
-        var original = await ReadFanTransactionStateAsync(blade, cancellationToken, readTachometers: true);
+        var original = await ReadFanTransactionStateAsync(blade, cancellationToken);
         if (mode == BladeFanMode.Manual)
         {
             // Synapse publishes a different fixed-speed range per performance mode, so the
@@ -76,8 +76,7 @@ internal sealed class BladeFanTelemetryReader
         ArgumentNullException.ThrowIfNull(devices);
         var blade = _resolver.FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade fan control channel is unavailable.");
-        var state = await ReadFanTransactionStateAsync(
-            blade, cancellationToken, readTachometers: true);
+        var state = await ReadFanTransactionStateAsync(blade, cancellationToken);
         return state.ToPublic();
     }
 
@@ -102,8 +101,7 @@ internal sealed class BladeFanTelemetryReader
         var maximumRpm = blade.MaximumWritableFanTargetRpm;
         BladeFanProtocol.ValidateCurveTargetRpm(cpuTargetRpm, maximumRpm);
         BladeFanProtocol.ValidateCurveTargetRpm(gpuTargetRpm, maximumRpm);
-        var original = await ReadFanTransactionStateAsync(
-            blade, cancellationToken, readTachometers: true);
+        var original = await ReadFanTransactionStateAsync(blade, cancellationToken);
         var actual = await SetFanTargetsCoreAsync(
             blade,
             mode,
@@ -134,17 +132,17 @@ internal sealed class BladeFanTelemetryReader
                 ? (byte)BladePerformanceMode.Custom
                 : original.Thermal.PerformanceModeByte;
 
-            // The 028C EC only acts on a fixed target after the matching Custom/manual
-            // mode write, so the mode has to go out first. Every other audited model
-            // keeps the original order.
             if (requiresCustomMode)
             {
+                // The 028C EC only acts on a fixed target after the Custom/manual
+                // mode write, so the mode has to go out first.
                 await WriteThermalZoneAsync(
                     blade, BladeFanProtocol.ZoneCpu, performanceModeByte, mode, cancellationToken);
                 await WriteThermalZoneAsync(
                     blade, BladeFanProtocol.ZoneGpu, performanceModeByte, mode, cancellationToken);
                 if (writeTargets)
                 {
+                    await Task.Delay(200, cancellationToken);
                     await WriteFanTargetAsync(
                         blade, BladeFanProtocol.ZoneCpu, cpuTargetRpm, cancellationToken, curveTarget: true);
                     await WriteFanTargetAsync(
@@ -153,8 +151,11 @@ internal sealed class BladeFanTelemetryReader
             }
             else
             {
-                if (writeTargets)
+                if (writeTargets && !blade.UsesBlade2026ThermalSelector)
                 {
+                    // Older 710/671 firmware acts on the target before the mode write.
+                    // The final target write below covers models whose mode write resets
+                    // the pre-seeded value, which showed up as a 4100 RPM floor on 029F.
                     await WriteFanTargetAsync(
                         blade, BladeFanProtocol.ZoneCpu, cpuTargetRpm, cancellationToken, curveTarget: true);
                     await WriteFanTargetAsync(
@@ -165,10 +166,18 @@ internal sealed class BladeFanTelemetryReader
                     blade, BladeFanProtocol.ZoneCpu, performanceModeByte, mode, cancellationToken);
                 await WriteThermalZoneAsync(
                     blade, BladeFanProtocol.ZoneGpu, performanceModeByte, mode, cancellationToken);
+
+                if (writeTargets)
+                {
+                    await Task.Delay(200, cancellationToken);
+                    await WriteFanTargetAsync(
+                        blade, BladeFanProtocol.ZoneCpu, cpuTargetRpm, cancellationToken, curveTarget: true);
+                    await WriteFanTargetAsync(
+                        blade, BladeFanProtocol.ZoneGpu, gpuTargetRpm, cancellationToken, curveTarget: true);
+                }
             }
 
-            var actual = await ReadFanTransactionStateAsync(
-                blade, cancellationToken, readTachometers: false);
+            var actual = await ReadFanTransactionStateAsync(blade, cancellationToken);
             if (actual.Thermal.PerformanceModeByte != performanceModeByte ||
                 actual.Thermal.FanMode != mode ||
                 actual.CpuTargetRpm != cpuTargetRpm ||
@@ -243,10 +252,12 @@ internal sealed class BladeFanTelemetryReader
                 new byte[] { profileId, zone, 0x00, 0x00 },
                 cancellationToken);
             RazerCapabilityClient.EnsureDataSize(response, 4, "Blade performance mode");
-            if (response[RazerFeatureReport.ArgumentsOffset + 1] != zone)
+            // The transaction already matched this zone's request. Older firmware
+            // leaves the selector byte at 0 instead of echoing the zone.
+            var selector = response[RazerFeatureReport.ArgumentsOffset + 1];
+            if (selector != 0x00 && selector != zone)
             {
-                throw new InvalidOperationException(
-                    $"Blade returned the wrong fan zone: {response[RazerFeatureReport.ArgumentsOffset + 1]}.");
+                throw new InvalidOperationException($"Blade returned the wrong fan zone: {selector}.");
             }
 
             reports.Add(response);
@@ -304,21 +315,15 @@ internal sealed class BladeFanTelemetryReader
 
     private async Task<BladeFanTransactionState> ReadFanTransactionStateAsync(
         ResolvedRazerDevice device,
-        CancellationToken cancellationToken,
-        bool readTachometers)
+        CancellationToken cancellationToken)
     {
         var thermal = await ReadThermalStateAsync(device, cancellationToken);
         var cpuTargetRpm = await ReadFanTargetRpmAsync(
             device, BladeFanProtocol.ZoneCpu, cancellationToken, curveTarget: true);
         var gpuTargetRpm = await ReadFanTargetRpmAsync(
             device, BladeFanProtocol.ZoneGpu, cancellationToken, curveTarget: true);
-        if (readTachometers)
-        {
-            _ = await ReadCurrentFanRpmAsync(
-                device, BladeThermalProtocol.CpuFanId, cancellationToken);
-            _ = await ReadCurrentFanRpmAsync(
-                device, BladeThermalProtocol.GpuFanId, cancellationToken);
-        }
+        // Live RPM is a separate telemetry field. Reading 0D:88 here made a
+        // tachometer failure abort a fan write before it was sent.
         return new BladeFanTransactionState(thermal, cpuTargetRpm, gpuTargetRpm);
     }
 
@@ -385,18 +390,6 @@ internal sealed class BladeFanTelemetryReader
             }
         }
 
-        await AttemptAsync("Restore CPU fan target", () => WriteFanTargetAsync(
-            device,
-            BladeFanProtocol.ZoneCpu,
-            original.CpuTargetRpm,
-            CancellationToken.None,
-            curveTarget: true));
-        await AttemptAsync("Restore GPU fan target", () => WriteFanTargetAsync(
-            device,
-            BladeFanProtocol.ZoneGpu,
-            original.GpuTargetRpm,
-            CancellationToken.None,
-            curveTarget: true));
         await AttemptAsync("Restore CPU fan mode", () => WriteThermalZoneAsync(
             device,
             BladeFanProtocol.ZoneCpu,
@@ -409,10 +402,22 @@ internal sealed class BladeFanTelemetryReader
             original.Thermal.PerformanceModeByte,
             original.Thermal.FanMode,
             CancellationToken.None));
+        await Task.Delay(200, CancellationToken.None);
+        await AttemptAsync("Restore CPU fan target", () => WriteFanTargetAsync(
+            device,
+            BladeFanProtocol.ZoneCpu,
+            original.CpuTargetRpm,
+            CancellationToken.None,
+            curveTarget: true));
+        await AttemptAsync("Restore GPU fan target", () => WriteFanTargetAsync(
+            device,
+            BladeFanProtocol.ZoneGpu,
+            original.GpuTargetRpm,
+            CancellationToken.None,
+            curveTarget: true));
         await AttemptAsync("Restore readback", async () =>
         {
-            var restored = await ReadFanTransactionStateAsync(
-                device, CancellationToken.None, readTachometers: false);
+            var restored = await ReadFanTransactionStateAsync(device, CancellationToken.None);
             if (restored != original)
             {
                 throw new InvalidOperationException(
@@ -522,7 +527,7 @@ internal sealed class BladeFanTelemetryReader
 
     private static byte GetFanClassId(ResolvedRazerDevice device) =>
         device.UsesBlade2026ThermalSelector
-            ? (byte)0x01
+            ? BladeFanProtocol.Blade2026ClassId
             : BladeFanProtocol.DefaultClassId;
 
     internal static BladePerformanceMode ParsePerformanceMode(byte value) => value switch

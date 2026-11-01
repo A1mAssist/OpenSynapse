@@ -81,8 +81,8 @@ public sealed partial class DevicesPage
                 .Select(mode => new GpuModeOption(GpuModeLabel(mode), mode))
                 .ToArray();
             GpuModeCombo.ItemsSource = options;
-            GpuModeCombo.Visibility = options.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-            GpuModeCombo.IsEnabled = !_gpuModeBusy && options.Length > 0;
+            GpuModeCombo.Visibility = options.Length > 1 ? Visibility.Visible : Visibility.Collapsed;
+            GpuModeCombo.IsEnabled = !_gpuModeBusy && options.Length > 1;
 
             var stored = ViewModel.Blade.StoredGpuMode;
             var preferred = stored == BladeGpuMode.Auto &&
@@ -113,6 +113,12 @@ public sealed partial class DevicesPage
         if (!dedicated.IsSupported && !snapshot.MuxPresent)
         {
             return AppStrings.Text("DedicatedGpuModeStatusBlockedUnsupported");
+        }
+
+        var available = BladeGpuModes.GetAvailableModes(snapshot);
+        if (available is [BladeGpuMode.Discrete])
+        {
+            return AppStrings.Text("GpuModeStatusOnlyDiscrete");
         }
 
         if (stored == BladeGpuMode.Auto)
@@ -165,6 +171,7 @@ public sealed partial class DevicesPage
             }
         }
 
+        BladeDisplayMuxMode? standardTarget = null;
         if (mode == BladeGpuMode.Standard)
         {
             if (!snapshot.MuxPresent ||
@@ -173,7 +180,8 @@ public sealed partial class DevicesPage
                 return new(AppStrings.Text("DisplayMuxModeStatusSuccess"), false);
             }
 
-            if (!BladeDisplayMuxModes.Supports(snapshot.Mux.Capabilities, BladeDisplayMuxMode.Hybrid))
+            standardTarget = BladeDisplayMuxModes.GetStandardMode(snapshot.Mux.Capabilities);
+            if (standardTarget is null)
             {
                 return new(AppStrings.Text("GpuModeStatusNoHybrid"), false);
             }
@@ -194,7 +202,7 @@ public sealed partial class DevicesPage
 
         var target = mode == BladeGpuMode.Discrete
             ? BladeDisplayMuxMode.Discrete
-            : BladeDisplayMuxMode.Hybrid;
+            : standardTarget!.Value;
         var result = await ViewModel.Blade.SetDisplayMuxModeAsync(target, cancellationToken);
         return result.Outcome switch
         {

@@ -160,7 +160,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         {
             await read();
         }
-        catch (NotSupportedException)
+        catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException)
         {
             unsupported.Add(zone);
             OnLightingSelectionChanged();
@@ -172,7 +172,8 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
         _operationSucceeded = false;
         _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
-        if (exception is (NotSupportedException or InvalidDataException) && capability is { } unsupported)
+        if (exception is (NotSupportedException or InvalidDataException or InvalidOperationException) &&
+            capability is { } unsupported)
         {
             _unsupported.Add(unsupported);
             OnCapabilityChanged();
@@ -188,7 +189,12 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
             OnCapabilityChanged();
             return;
         }
-        if (exception is IOException or Win32Exception or InvalidOperationException)
+        if (exception is OpenRazerProfileSaveException)
+        {
+            ErrorText = AppStrings.Text("OpenRazerLightingProfileSaveFailed");
+            return;
+        }
+        if (exception is IOException or Win32Exception or UnauthorizedAccessException)
         {
             MarkRequiresRescan();
             return;
@@ -200,6 +206,26 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     {
         ErrorText = AppStrings.Text("OpenRazerProtocolRescanRequired");
         RequiresRescan = true;
+        OnCapabilityChanged();
+    }
+
+    /// <summary>
+    /// Optional cards must not turn a transport hiccup into a device-wide pause. The main
+    /// state read already proved the endpoint answers, so disable only the failing card.
+    /// </summary>
+    private void HandleOptionalFailure(Exception exception, OpenRazerBackendCapability capability)
+    {
+        if (exception is RazerDeviceTimeoutException)
+        {
+            HandleFailure(exception, capability);
+            return;
+        }
+
+        _operationSucceeded = false;
+        _operationStatusOverride = null;
+        OnPropertyChanged(nameof(OperationStatusText));
+        _unsupported.Add(capability);
+        ErrorText = LocalizeProtocolError(exception, capability);
         OnCapabilityChanged();
     }
 
@@ -485,3 +511,5 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
+
+internal sealed class OpenRazerProfileSaveException(string message) : IOException(message);

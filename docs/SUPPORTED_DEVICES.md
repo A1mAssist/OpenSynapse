@@ -149,7 +149,7 @@ Standard mouse controls include DPI, polling rate, battery, lighting and onboard
 | Razer Viper V3 Pro SE (Wireless) | `1532:00DF` | Alias of 00C1; dedicated Viper V3 Pro controls |
 | Razer Viper V4 Pro (Wired) | `1532:00E5` | DPI, polling, battery and onboard mapping; BLE page over Bluetooth; no lighting |
 | Razer Viper V4 Pro (Wireless) | `1532:00E6` | DPI, polling, battery and onboard mapping; BLE page over Bluetooth; no lighting |
-| RazerBasiliskUltimateReceiver | `1532:0088` | — |
+| Razer Basilisk Ultimate (Wireless) | `1532:0088` | — |
 
 The Naga V3 Pro (`00E7`/`00E8`) uses the Naga V2 Pro (`00A8`) protocol. The Viper V4 Pro and DeathAdder V4 Pro Carbon Fiber Edition have no lighting. The Viper V3 HyperSpeed uses a dedicated Viper page instead of the standard mouse layout.
 

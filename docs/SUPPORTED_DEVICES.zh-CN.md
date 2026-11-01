@@ -149,7 +149,7 @@ Chroma REST 是软件集成，不是设备，因此不放进下表。
 | Razer Viper V3 Pro SE (Wireless) | `1532:00DF` | 00C1 的别名；Viper V3 Pro 专用控制 |
 | Razer Viper V4 Pro (Wired) | `1532:00E5` | DPI、轮询率、电量和板载映射；蓝牙连接时提供 BLE 页面；无灯光 |
 | Razer Viper V4 Pro (Wireless) | `1532:00E6` | DPI、轮询率、电量和板载映射；蓝牙连接时提供 BLE 页面；无灯光 |
-| RazerBasiliskUltimateReceiver | `1532:0088` | — |
+| Razer Basilisk Ultimate (Wireless) | `1532:0088` | — |
 
 Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pro 和 DeathAdder V4 Pro Carbon Fiber Edition 没有灯光。Viper V3 HyperSpeed 使用 Viper 专用页面，不使用标准鼠标布局。
 

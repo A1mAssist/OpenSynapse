@@ -776,6 +776,13 @@ public sealed class OpenRazerWindowsPortTests
             PreparedRequests.Enqueue(request.ToArray());
             return Task.FromResult(new byte[RazerFeatureReport.Length]);
         }
+
+        public Task SendBatchAsync(
+            string devicePath,
+            IReadOnlyList<byte[]> requests,
+            TimeSpan rowDelay,
+            CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Matrix rows must be queried one by one.");
     }
 
     private sealed class ConstantFrameSource(IReadOnlyList<RazerRgb> frame) : ISoftwareLightingFrameSource

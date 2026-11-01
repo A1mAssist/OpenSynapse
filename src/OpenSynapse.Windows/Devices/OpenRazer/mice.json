@@ -3161,6 +3161,19 @@
       "set_static_effect",
       "set_wave_effect",
       "get_macro_storage_info"
+    ],
+    "mice-js-044": [
+      "get_device_type_mouse",
+      "get_dpi_xy",
+      "get_logo_brightness",
+      "get_poll_rate",
+      "max_dpi",
+      "set_dpi_xy",
+      "set_logo_breath_single",
+      "set_logo_brightness",
+      "set_logo_none",
+      "set_logo_static",
+      "set_poll_rate"
     ]
   },
   "devices": [
@@ -6702,7 +6715,7 @@
     },
     {
       "productId": "0088",
-      "displayName": "RazerBasiliskUltimateReceiver",
+      "displayName": "Razer Basilisk Ultimate (Wireless)",
       "category": "mouse",
       "capabilitySet": "mice-024",
       "maximumDpi": 20000,
@@ -7559,7 +7572,7 @@
       "productId": "0098",
       "displayName": "Razer DeathAdder Essential (2021)",
       "category": "mouse",
-      "capabilitySet": "mice-js-026",
+      "capabilitySet": "mice-js-044",
       "maximumDpi": 6400,
       "pollRates": [
         500,

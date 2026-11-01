@@ -123,6 +123,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 await _service.GetMaxOnboardProfilesAsync(Connection, cancellationToken);
             ActiveOnboardProfileId =
                 await _service.GetActiveOnboardProfileIdAsync(Connection, cancellationToken);
+            OnboardProfileStatusText = string.Empty;
             if (OnboardMaxProfiles > 0)
             {
                 SelectedOnboardProfileId = ActiveOnboardProfileId;

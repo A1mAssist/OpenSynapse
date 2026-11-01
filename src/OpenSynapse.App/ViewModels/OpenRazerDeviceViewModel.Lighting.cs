@@ -163,7 +163,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                     ChromaOverrideEnabled,
                     cancellationToken))
             {
-                throw new IOException("OpenRazer lighting settings could not be saved.");
+                throw new OpenRazerProfileSaveException("OpenRazer lighting settings could not be saved.");
             }
             _operationSucceeded = true;
             OnPropertyChanged(nameof(OperationStatusText));
@@ -601,7 +601,7 @@ public sealed partial class OpenRazerDeviceViewModel : INotifyPropertyChanged
                 CreateLightingProfile(),
                 cancellationToken))
             {
-                throw new IOException("OpenRazer lighting profile could not be saved.");
+                throw new OpenRazerProfileSaveException("OpenRazer lighting profile could not be saved.");
             }
         }
     }

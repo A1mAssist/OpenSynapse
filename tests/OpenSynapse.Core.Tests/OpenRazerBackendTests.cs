@@ -617,6 +617,20 @@ public sealed class OpenRazerBackendTests
     }
 
     [Fact]
+    public async Task DpiRejectsAZeroFilledBusyResponse()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0098)!;
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved,
+            new HashSet<OpenRazerBackendCapability> { OpenRazerBackendCapability.DpiRead },
+            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, new ZeroDpiTransport())
+                .GetDpiAsync(connection));
+    }
+
+    [Fact]
     public void DeathAdderEssential2021PublishesLegacyPollingWithTheFFTransaction()
     {
         var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0098)!;
@@ -625,6 +639,11 @@ public sealed class OpenRazerBackendTests
         Assert.Equal([500, 1000], device.PollingRates);
         Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
         Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
+        Assert.Contains(OpenRazerBackendCapability.DpiRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.BatteryRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.ChargingRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.BatteryChargeLimiterRead, capabilities);
+        Assert.DoesNotContain(OpenRazerBackendCapability.AutoSleepRead, capabilities);
         Assert.Equal(0xFF, device.GetRequiredTransaction("razer_chroma_misc_get_polling_rate"));
 
         var request = OpenRazerMouseProtocol.GetPollingRate(device).Report;
@@ -1074,11 +1093,37 @@ public sealed class OpenRazerBackendTests
     [InlineData(0x01, 0x83, true)]
     [InlineData(0x01, 0x03, false)]
     [InlineData(0x02, 0x83, false)]
-    public void BusyResponsesAreRetriedOnlyForReads(int status, int commandId, bool retry)
+    public void BusyReadResponsesAreRetriedRegardlessOfTheEchoedLength(
+        int status, int commandId, bool retry)
     {
         Assert.Equal(
             retry,
             RazerFeatureTransport.IsRetryableBusyResponse((byte)status, (byte)commandId));
+    }
+
+    [Fact]
+    public async Task AProtocolTimeoutKeepsTheResolvedEndpointCached()
+    {
+        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0098)!;
+        var connection = new OpenRazerDeviceConnection(device, "test-path", "test-device",
+            OpenRazerEndpointState.Resolved, OpenRazerDeviceService.GetCapabilities(device),
+            OpenRazerDeviceService.GetLightingZoneCapabilities(device), null);
+        var cache = new System.Collections.Concurrent.ConcurrentDictionary<string, string>
+        {
+            [connection.InstanceId] = connection.DevicePath!,
+        };
+        var executor = new OpenRazerRequestExecutor(
+            new FailingReadTransport(new RazerDeviceTimeoutException("The device is busy (0x01).")),
+            cache,
+            (_, _) => { });
+        var request = new OpenRazerRequest(
+            "test",
+            RazerFeatureReport.CreateRequest(0x1F, 0x01, 0x00, 0xC0, [0x00]));
+
+        await Assert.ThrowsAsync<RazerDeviceTimeoutException>(() =>
+            executor.ExecuteAsync(connection, request, CancellationToken.None));
+
+        Assert.Equal("test-path", cache[connection.InstanceId]);
     }
 
     [Fact]
@@ -2034,6 +2079,33 @@ public sealed class OpenRazerBackendTests
         {
             var response = request.ToArray();
             Requests.Add(response.ToArray());
+            response[1] = 0x02;
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class ZeroDpiTransport : IRazerFeatureTransport
+    {
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            var response = request.ToArray();
             response[1] = 0x02;
             return Task.FromResult(response);
         }

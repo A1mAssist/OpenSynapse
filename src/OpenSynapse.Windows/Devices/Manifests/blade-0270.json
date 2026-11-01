@@ -59,21 +59,6 @@
       "commandId": "07",
       "arguments": ""
     },
-    "charge-limit.get": {
-      "transactionId": "1F",
-      "dataSize": "01",
-      "commandClass": "07",
-      "commandId": "92",
-      "arguments": "00",
-      "allowRemainingPacketsMismatch": true
-    },
-    "charge-limit.set": {
-      "transactionId": "1F",
-      "dataSize": "01",
-      "commandClass": "07",
-      "commandId": "12",
-      "arguments": ""
-    },
     "power-mode.get": {
       "transactionId": "1F",
       "dataSize": "01",
@@ -87,6 +72,21 @@
       "dataSize": "01",
       "commandClass": "07",
       "commandId": "0F",
+      "arguments": ""
+    },
+    "charge-limit.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "92",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "12",
       "arguments": ""
     },
     "keyboard-brightness.get": {
@@ -120,13 +120,6 @@
       "commandId": "02",
       "arguments": "",
       "allowRemainingPacketsMismatch": true
-    },
-    "gaming-mode.set": {
-      "transactionId": "00",
-      "dataSize": "04",
-      "commandClass": "00",
-      "commandId": "08",
-      "arguments": ""
     }
   },
   "matrixRows": 6,

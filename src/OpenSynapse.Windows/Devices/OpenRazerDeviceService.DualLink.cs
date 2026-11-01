@@ -8,15 +8,17 @@ public sealed partial class OpenRazerDeviceService
 {
     // The Mouse Dock Pro exposes the paired mouse as a second product id on the
     // dock's own HID collection. Razor's 25-protocol bundle calls this "dual link":
-    // the dock declares isDualLinkDevice/LINKER and asks 00:BF for the child ids.
+    // the parent declares LINKER and asks 00:BF for the child ids. The 0086 bundle
+    // uses the same linker for the Basilisk Ultimate, whose wireless identity is 0088.
     private const ushort MouseDockProProductId = 0x00A4;
+    private const ushort BasiliskUltimateWirelessProductId = 0x0088;
 
     internal async Task<IReadOnlyList<ushort>> ReadLinkedProductIdsAsync(
-        OpenRazerDeviceDefinition dockDefinition,
+        OpenRazerDeviceDefinition parentDefinition,
         string devicePath,
         CancellationToken cancellationToken)
     {
-        if (dockDefinition.ProductId != MouseDockProProductId)
+        if (!IsDualLinkParent(parentDefinition.ProductId))
         {
             return [];
         }
@@ -26,7 +28,7 @@ public sealed partial class OpenRazerDeviceService
         try
         {
             var response = await _transport.QueryPreparedAsync(
-                devicePath, request, dockDefinition.DeviceWait, cancellationToken).ConfigureAwait(false);
+                devicePath, request, parentDefinition.DeviceWait, cancellationToken).ConfigureAwait(false);
             return RazerPairingProtocol
                 .ParseMultipleDeviceWirelessConnectionStatusV2(response, request)
                 // The bundle treats 0xFFFF as the empty slot and does not interpret the
@@ -40,11 +42,14 @@ public sealed partial class OpenRazerDeviceService
             InvalidOperationException or NotSupportedException or InvalidDataException or TimeoutException or
             UnauthorizedAccessException)
         {
-            WriteDiagnostic(dockDefinition.ProductId,
+            WriteDiagnostic(parentDefinition.ProductId,
                 $"dual-link query failed: {exception.GetType().Name}: {exception.Message}");
             return [];
         }
     }
+
+    internal static bool IsDualLinkParent(ushort productId) =>
+        productId is MouseDockProProductId or BasiliskUltimateWirelessProductId;
 
     internal async Task<OpenRazerDeviceConnection?> TryCreateLinkedConnectionAsync(
         ushort productId,

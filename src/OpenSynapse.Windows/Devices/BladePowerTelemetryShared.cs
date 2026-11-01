@@ -28,6 +28,62 @@ internal static class BladePowerTelemetryShared
         CancellationToken cancellationToken) =>
         client.QueryAsync(device, CapabilityIds.ChargeLimitSet, new byte[] { raw }, cancellationToken);
 
+    internal static async Task<int> WriteAndReadChargeLimitAsync(
+        RazerCapabilityClient client,
+        ResolvedRazerDevice device,
+        byte raw,
+        int expected,
+        CancellationToken cancellationToken)
+    {
+        Exception? unacknowledgedWrite = null;
+        try
+        {
+            await WriteChargeLimitAsync(client, device, raw, cancellationToken);
+        }
+        catch (InvalidOperationException exception)
+        {
+            // Some Blade ECs persist the limiter but do not return a report the
+            // transport can match. The charge-limit read is the authoritative result.
+            unacknowledgedWrite = exception;
+        }
+
+        var actual = await ReadChargeLimitAfterWriteAsync(
+            client, device, expected, cancellationToken);
+        if (actual != expected)
+        {
+            var detail = unacknowledgedWrite is null
+                ? string.Empty
+                : $" The write was not acknowledged: {unacknowledgedWrite.Message}";
+            throw new InvalidOperationException(
+                $"Charge limit readback mismatch: wrote {expected}%, read {actual}%.{detail}");
+        }
+
+        return actual;
+    }
+
+    /// <summary>
+    /// Some ECs acknowledge the limiter write before the new threshold is visible on
+    /// the read path. Poll briefly so a stale first report does not roll the choice back.
+    /// </summary>
+    internal static async Task<int> ReadChargeLimitAfterWriteAsync(
+        RazerCapabilityClient client,
+        ResolvedRazerDevice device,
+        int expected,
+        CancellationToken cancellationToken)
+    {
+        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(2.5);
+        while (true)
+        {
+            var actual = await ReadChargeLimitAsync(client, device, cancellationToken);
+            if (actual == expected || DateTimeOffset.UtcNow >= deadline)
+            {
+                return actual;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(200), cancellationToken);
+        }
+    }
+
     /// <summary>
     /// Decodes the charge-limiter report the way the official middleware does: the low
     /// seven bits hold the threshold and the top bit holds the enabled flag. A disabled

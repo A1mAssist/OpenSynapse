@@ -1282,6 +1282,10 @@
     <value>诊断信息已复制</value>
     <comment>诊断信息已复制</comment>
   </data>
+  <data name="DiagnosticsCopyFailed" xml:space="preserve">
+    <value>复制失败：{0}</value>
+    <comment>复制诊断信息失败</comment>
+  </data>
   <data name="OpenRazerOperationApplied" xml:space="preserve">
     <value>已应用到设备</value>
     <comment>已应用到设备</comment>
@@ -1309,6 +1313,10 @@
   <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
     <value>设备通信中断，已暂停写入。请重新扫描设备以恢复控制。</value>
     <comment>设备通信中断，已暂停写入。请重新扫描设备以恢复控制。</comment>
+  </data>
+  <data name="OpenRazerLightingProfileSaveFailed" xml:space="preserve">
+    <value>灯效已写入，但配置保存失败；设备仍可继续控制。</value>
+    <comment>灯效已写入，但配置保存失败；设备仍可继续控制。</comment>
   </data>
   <data name="OpenRazerCapabilityUnanswered" xml:space="preserve">
     <value>固件未回应「{0}」，已停用该能力，其余功能仍可使用。</value>
@@ -1686,6 +1694,7 @@
   <data name="GpuModeStatusAuto" xml:space="preserve"><value>自动：插电用标准，电池用集显；当前按{0}运行。</value><comment>自动模式状态</comment></data>
   <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>当前挂在独显直连，先切回标准并重启，才能关闭独显。</value><comment>独显直连下不能禁用独显</comment></data>
   <data name="GpuModeStatusNoHybrid" xml:space="preserve"><value>这台设备没有报告混合输出能力，无法切到标准。</value><comment>缺少 Hybrid 能力</comment></data>
+  <data name="GpuModeStatusOnlyDiscrete" xml:space="preserve"><value>固件当前只报告独显直连。标准/自动需要 BIOS 或 NVIDIA 控制面板开放动态显示切换。</value><comment>只有独显直连可选</comment></data>
   <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX 模式设置：{0}</value><comment>MUX 模式异常</comment></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>关于 OpenSynapse</value><comment>设置页关于入口标题</comment></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>查看版本、项目主页和许可信息。</value><comment>设置页关于入口说明</comment></data>
@@ -2121,13 +2130,13 @@
   <data name="CpuCurveUnavailable" xml:space="preserve"><value>当前平台不支持 Curve Optimizer。</value></data>
   <data name="CpuCurveApply.Content" xml:space="preserve"><value>应用</value></data>
   <data name="CpuCurveTimeout" xml:space="preserve"><value>机器服务没有响应。</value></data>
-  <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>需要安装 PawnIO 驱动。</value></data>
+  <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>需要安装 PawnIO，可在 CPU 功耗墙卡片打开下载页。</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>缺少 RyzenSMU.bin，请重新安装应用。</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>写入失败，详情见上方提示。</value></data>
   <data name="CpuPowerLimitDescription" xml:space="preserve"><value>限制 CPU 封装功耗上限（PL1/PL2）。</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>自动（固件）</value></data>
-  <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>未安装 PawnIO，无法读写 CPU 功耗墙。</value></data>
+  <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>未安装 PawnIO。点“下载 PawnIO”安装后重启 OpenSynapse。</value></data>
   <data name="CpuPowerLimitModuleMissing" xml:space="preserve"><value>缺少 PawnIO 模块文件（IntelMSR.bin / RyzenSMU.bin），请重新部署 OpenSynapse。</value></data>
   <data name="CpuPowerLimitAccessDenied" xml:space="preserve"><value>需要管理员权限，或安装 OpenSynapse 机器服务。</value></data>
   <data name="CpuPowerLimitAmdDriverMissing" xml:space="preserve"><value>需要先安装 Razer AMD OverClock 组件（含 AMD Ryzen Master 驱动）。</value></data>
@@ -2136,6 +2145,7 @@
   <data name="CpuPowerLimitCeiling" xml:space="preserve"><value>上限 {0:0} W</value></data>
   <data name="CpuPowerLimitDirectSmu" xml:space="preserve"><value>直写 SMU，部分固件会忽略写入；安装 Razer AMD OverClock 组件后可获得可靠控制。</value></data>
   <data name="CpuPowerLimitAmdDownload" xml:space="preserve"><value>下载 AMD 组件</value></data>
+  <data name="CpuPowerLimitPawnIoInstall" xml:space="preserve"><value>下载 PawnIO</value></data>
   <data name="CpuPowerLimitLocked" xml:space="preserve"><value>固件已锁定功耗墙，当前不可写。</value></data>
   <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn 按键接管需要雷云驱动</value></data>
   <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn 快捷键接管依赖雷云安装的 Razer 过滤驱动。请安装一次雷云（Razer Synapse），让驱动写入系统；安装完成后重启 OpenSynapse。</value></data>
@@ -3153,7 +3163,7 @@
   <data name="RazerMixer053ESaved" xml:space="preserve"><value>已写入并回读</value></data>
   <data name="RazerHeadsetMicEqBandsTitle/Text" xml:space="preserve"><value>麦克风均衡器频段</value></data>
   <data name="RazerHeadsetMicEqBandsApply/Content" xml:space="preserve"><value>应用麦克风频段</value></data>
-  <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>检测到另一个 OpenSynapse 实例正在运行，当前启动方式无法接管。请从托盘退出旧实例后重试；如果旧实例以管理员身份运行，请也用管理员身份启动。</value></data>
+  <data name="LegacyInstanceRunningMessage" xml:space="preserve"><value>检测到另一个 OpenSynapse 实例正在运行，当前启动无法接管。请从托盘退出旧实例，再普通启动。设备页识别设备不需要管理员权限。</value></data>
   <data name="ViperMappingGroupMouse" xml:space="preserve"><value>鼠标</value></data>
   <data name="ViperMappingGroupKeyboard" xml:space="preserve"><value>键盘</value></data>
   <data name="ViperMappingGroupDpi" xml:space="preserve"><value>DPI</value></data>

@@ -150,7 +150,7 @@
 | 鼠标 | Razer DeathAdder V2 | `1532:0084` | 1x1 | Extended 91-byte HID；仍需运行时解析设备端点 |
 | 鼠标 | Razer Basilisk V2 | `1532:0085` | 1x2 | Extended 91-byte HID；仍需运行时解析设备端点 |
 | 鼠标 | Razer Basilisk Ultimate | `1532:0086` | 1x14 | Extended 91-byte HID；仍需运行时解析设备端点 |
-| 鼠标 | RazerBasiliskUltimateReceiver | `1532:0088` | 1x14 | Extended 91-byte HID；仍需运行时解析设备端点 |
+| 鼠标 | Razer Basilisk Ultimate (Wireless) | `1532:0088` | 1x14 | Extended 91-byte HID；仍需运行时解析设备端点 |
 | 鼠标 | Razer Viper Mini | `1532:008A` | 1x1 | Extended 91-byte HID；仍需运行时解析设备端点 |
 | 鼠标 | Razer DeathAdder V2 Mini | `1532:008C` | 1x1 | Extended 91-byte HID；仍需运行时解析设备端点 |
 | 鼠标 | Razer Naga Left Handed Edition 2020 | `1532:008D` | 1x3 | Extended2 91-byte HID；仍需运行时解析设备端点 |

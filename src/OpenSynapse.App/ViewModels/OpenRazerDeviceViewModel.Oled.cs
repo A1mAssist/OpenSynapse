@@ -70,7 +70,7 @@ public sealed partial class OpenRazerDeviceViewModel
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, OpenRazerBackendCapability.OledRead);
+            HandleOptionalFailure(exception, OpenRazerBackendCapability.OledRead);
         }
         finally
         {

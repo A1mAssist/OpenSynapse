@@ -105,7 +105,9 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
     /// </summary>
     public int BladeFanFixedRpm
     {
-        get => _bladeFanFixedRpm;
+        // The field starts at the shared floor before the device is known. Clamp on
+        // read so a 023A first apply cannot send 2000 RPM below its 3700 RPM floor.
+        get => Math.Clamp(_bladeFanFixedRpm, BladeFanFixedMinimumRpm, BladeFanFixedMaximumRpm);
         set => SetField(ref _bladeFanFixedRpm, SnapBladeFanFixedRpm(value));
     }
 

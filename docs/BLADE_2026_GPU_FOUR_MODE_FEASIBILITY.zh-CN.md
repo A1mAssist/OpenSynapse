@@ -133,7 +133,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 | 集显 | PnP 禁用 NVIDIA 显示设备 | `WindowsDedicatedGpuMode` + `DedicatedGpuModePolicy` + UI 开关 | E0；无 2026 实机 | 内屏不能由 dGPU 驱动；不能有走 dGPU 的外接屏；可能需要重启 |
 | 标准 | `0D:09` 写 `0x00`（Hybrid） | `BladeDisplayTelemetryReader` + `BladeDisplayMuxMode.Hybrid` | E0；无 2026 实机 | `0D:8A` 必须报告 bit 0x01；若只报 0x06 则 HID 不可用 |
 | 独显直连 | `0D:09` 写 `0x01`（Discrete） | `BladeDisplayTelemetryReader` + `BladeDisplayMuxMode.Discrete` | E0；无 2026 实机 | `0D:8A` 必须报告 bit 0x02；写入后需重启 |
-| 自动 | `0D:09` 写 `0x02`（DDS） | 代码路径存在；`AllowsDds` 现在恒为 false，DDS 暂不开放 | E0（仅字节/解析）；**无 2026 实机写入** | `0D:8A` 必须报告 bit 0x04；BIOS 需为 DDS；重启后仍生效才算通过 |
+| 自动 | `0D:09` 写 `0x02`（DDS） | 代码路径存在；`0D:8A` 报 bit 0x04 时作为“标准”的动态回退开放，写入后回读/恢复 | E0（仅字节/解析）；**无 2026 实机写入** | `0D:8A` 必须报告 bit 0x04；BIOS 需为 DDS；重启后仍生效才算通过 |
 
 ### 4.4 2026 款 `0D:8A` 的两种情形
 
@@ -207,7 +207,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 当前代码的两个关键事实：
 
-- `AllowsDds(blade)` 现在**恒为 false**，DDS 从可选模式中隐藏；等第 9.3 节的实机矩阵通过后再打开；
+- `AllowsDds` 现在按 `0D:8A` 的 DynamicDisplaySwitch 位动态放行；没有该位的机器不会看到 DDS；写入仍走回读/恢复，实机矩阵尚未通过；
 - 因此 `BladeDisplayMuxStatus.CanChange` 不再对 DDS 放行；真实门禁是代码里的 DDS 开关和 `0D:8A` 的 bit 0x04。
 
 当前证据：协议层有 `BladeDisplayMuxTests` 覆盖 manifest、get/set 字节、模式解析、能力位和未知模式拒绝；**没有 reader 层的“同模式不写、写入后回读、回读不一致恢复”单元测试**；本文没有取得 2026 实机读写记录。
@@ -233,7 +233,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 - 自动 = 插电标准、电池集显，只走 PnP；不按电源事件写 MUX，避免重启循环；
 - `0D:8A` 只报 Discrete 且不可切时，仍按真实 `0D:89` 显示“独显直连”；切集显会被拦下并提示先切回标准；
 - 只有一个值需要持久化：`Global.Blade.GpuMode` 为 Auto；另外三档每次从硬件状态反推；
-- DDS 仍隐藏；外接屏前置检查、NVIDIA 控制面板 UIAutomation、BIOS 显示模式都没有做。
+- DDS 仅在 `0D:8A` 报 bit 0x04 时作为“标准”的动态回退出现；外接屏前置检查、NVIDIA 控制面板 UIAutomation、BIOS 显示模式都没有做。
 
 ### 5.5 已实现/未实现总表
 
@@ -368,7 +368,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 - `BladeDisplayMuxMode.Dds = 0x02`；
 - `BladeDisplayMuxProtocol.CreateSetModeRequest` 会生成 `0D:09`，参数 `[0x00, 0x02]`；
 - `BladeDisplayTelemetryReader.SetBladeDisplayMuxModeAsync` 会检查能力位、读原模式、写入、回读、失败恢复；
-- `AllowsDds` 现在恒为 false，DDS 从可选模式中隐藏；等 9.3 的实机矩阵通过后再打开；
+- `AllowsDds` 现在按 `0D:8A` bit 0x04 放行；写入仍走回读/恢复，9.3 的实机矩阵尚未通过；
 - 单元测试覆盖了 `0x02` 的 set 字节和 `0x02 -> Dds` 的解析。
 
 ### 9.2 还没有验证什么

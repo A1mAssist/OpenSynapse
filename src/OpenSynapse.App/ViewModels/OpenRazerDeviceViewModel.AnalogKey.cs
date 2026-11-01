@@ -54,7 +54,7 @@ public sealed partial class OpenRazerDeviceViewModel
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, OpenRazerBackendCapability.AnalogKeyRead);
+            HandleOptionalFailure(exception, OpenRazerBackendCapability.AnalogKeyRead);
         }
         finally
         {
