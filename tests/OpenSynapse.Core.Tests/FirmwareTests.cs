@@ -114,6 +114,25 @@ public sealed class FirmwareTests
     }
 
     [Fact]
+    public void EveryBladeManifestProvidesTheFilterDriverInstaller()
+    {
+        var blades = RazerDeviceRegistry.BuiltIn.Manifests
+            .Where(manifest => DeviceProtocolFamilies.IsBlade(manifest.ProtocolFamily))
+            .ToArray();
+
+        Assert.NotEmpty(blades);
+        Assert.All(blades, manifest =>
+        {
+            var url = manifest.FilterDriverInstallerUrl;
+            Assert.False(string.IsNullOrWhiteSpace(url), manifest.Id);
+            Assert.True(
+                Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                uri.Scheme == Uri.UriSchemeHttps,
+                manifest.Id);
+        });
+    }
+
+    [Fact]
     public void Blade023AUsesTheManifestDriverInsteadOfTheSupportPage()
     {
         var device = RazerDeviceRegistry.BuiltIn.Find(0x1532, 0x023A)!.Device!;

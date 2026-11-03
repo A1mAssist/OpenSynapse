@@ -247,6 +247,12 @@ internal sealed class RazerDeviceManifest
     internal RazerDeviceMetadata? Device { get; }
     internal BladeLightingDialect LightingDialect { get; }
 
+    /// <summary>
+    /// Per-model Razer driver package from the Synapse device manifest. It installs the
+    /// keyboard filter (RzDev_&lt;pid&gt;) that exposes the RZCONTROL interface used by Fn takeover.
+    /// </summary>
+    internal string? FilterDriverInstallerUrl => Device?.Firmware?.Driver?.Url;
+
     internal RazerRequestDescriptor GetRequiredCapability(string capabilityId) =>
         Capabilities.TryGetValue(capabilityId, out var descriptor)
             ? descriptor
