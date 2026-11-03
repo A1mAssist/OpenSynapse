@@ -6,6 +6,13 @@ namespace OpenSynapse.App.ViewModels;
 
 internal static class DeviceUiCatalog
 {
+    internal static string FormatDeviceStatus(DeviceDescriptor? device) => device switch
+    {
+        null => AppStrings.Text("Text_DB0974DC"),
+        { Access: DeviceAccessState.Available, Capability: DeviceCapabilityState.PendingValidation } => AppStrings.Text("Text_95979F99"),
+        _ => AppStrings.Text("Text_A14B88EA"),
+    };
+
     public static readonly BladePerformanceMode[] BladePerformanceModes =
     [
         .. BladeModelCapabilities.PerformanceModesFor(0x02C6),

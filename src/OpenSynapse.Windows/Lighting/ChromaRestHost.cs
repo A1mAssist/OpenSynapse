@@ -33,6 +33,8 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private readonly HashSet<string> _knownSources;
     private readonly int _port;
     private readonly object _gate = new();
+    private readonly Dictionary<TcpClient, Task> _clients = [];
+    private readonly TimeSpan _requestTimeout;
     private readonly SemaphoreSlim _effectGate = new(1, 1);
     private readonly SemaphoreSlim _sessionAvailable = new(0, 1);
     private readonly CancellationTokenSource _stop = new();
@@ -55,7 +57,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         Func<IReadOnlyList<RazerRgb>, CancellationToken, Task<bool>>? additionalFrameSink = null,
         Func<bool>? bladeChromaOverrideEnabled = null,
         IEnumerable<string>? blockedSources = null,
-        int port = Port)
+        int port = Port, TimeSpan? requestTimeout = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _lighting = lighting ?? throw new ArgumentNullException(nameof(lighting));
@@ -66,6 +68,8 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         _blockedSources = new HashSet<string>(blockedSources ?? [], StringComparer.OrdinalIgnoreCase);
         _knownSources = new HashSet<string>(_blockedSources, StringComparer.OrdinalIgnoreCase);
         _port = port;
+        _requestTimeout = requestTimeout ?? TimeSpan.FromSeconds(10);
+        if (_requestTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(requestTimeout));
     }
 
     internal bool IsRunning => Volatile.Read(ref _started) != 0;
@@ -122,6 +126,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
     }
     internal long SessionRecoveryFailures => Interlocked.Read(ref _sessionRecoveryFailures);
+    internal int ActiveClientCount { get { lock (_gate) return _clients.Count; } }
 
     internal string? ActiveSessionTitle
     {
@@ -170,16 +175,30 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         var loops = new[] { _acceptLoop, _sweepLoop }.Where(task => task is not null).Cast<Task>().ToArray();
         try
         {
-            await Task.WhenAll(loops).ConfigureAwait(false);
+            try
+            {
+                try { await Task.WhenAll(loops).ConfigureAwait(false); }
+                catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+            }
+            finally
+            {
+                Task[] clients;
+                lock (_gate) clients = _clients.Values.ToArray();
+                try { await Task.WhenAll(clients).ConfigureAwait(false); }
+                finally
+                {
+                    lock (_gate) _clients.Clear();
+                    await StopAllSessionsAsync().ConfigureAwait(false);
+                }
+            }
         }
-        catch (OperationCanceledException) when (_stop.IsCancellationRequested)
+        finally
         {
+            Interlocked.Exchange(ref _started, 0);
+            _effectGate.Dispose();
+            _sessionAvailable.Dispose();
+            _stop.Dispose();
         }
-
-        await StopAllSessionsAsync().ConfigureAwait(false);
-        _effectGate.Dispose();
-        _sessionAvailable.Dispose();
-        _stop.Dispose();
     }
 
     private async Task AcceptLoopAsync()
@@ -189,7 +208,14 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             while (!_stop.IsCancellationRequested)
             {
                 var client = await _listener!.AcceptTcpClientAsync(_stop.Token).ConfigureAwait(false);
-                _ = HandleClientAsync(client);
+                Task handler;
+                lock (_gate)
+                {
+                    if (_stop.IsCancellationRequested) { client.Dispose(); break; }
+                    handler = HandleClientAsync(client);
+                    _clients.Add(client, handler);
+                }
+                _ = handler.ContinueWith(_ => { lock (_gate) _clients.Remove(client); }, TaskScheduler.Default);
             }
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested)
@@ -198,67 +224,40 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         catch (ObjectDisposedException) when (_stop.IsCancellationRequested)
         {
         }
+        catch (SocketException) when (_stop.IsCancellationRequested) { }
     }
 
     private async Task HandleClientAsync(TcpClient client)
     {
         using (client)
-        using (var stream = client.GetStream())
-        using (var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true))
-        using (var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true) { NewLine = "\r\n", AutoFlush = true })
+        using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token))
         {
+            deadline.CancelAfter(_requestTimeout);
+            using var abort = deadline.Token.Register(client.Dispose);
             try
             {
-                var requestLine = await reader.ReadLineAsync(_stop.Token).ConfigureAwait(false);
-                if (string.IsNullOrWhiteSpace(requestLine))
+                using var stream = new BufferedStream(client.GetStream(), 4096);
+                using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true) { NewLine = "\r\n", AutoFlush = true };
+                try
                 {
-                    return;
-                }
-                var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                string? line;
-                while (!string.IsNullOrEmpty(line = await reader.ReadLineAsync(_stop.Token).ConfigureAwait(false)))
-                {
-                    var separator = line.IndexOf(':');
-                    if (separator > 0)
+                    var request = await ChromaRestRequest.ReadAsync(stream, deadline.Token).ConfigureAwait(false);
+                    if (request is not null)
                     {
-                        headers[line[..separator].Trim()] = line[(separator + 1)..].Trim();
+                        deadline.Token.ThrowIfCancellationRequested();
+                        await DispatchAsync(writer, request.Method, request.Path, request.Body).ConfigureAwait(false);
                     }
                 }
-                var contentLength = 0;
-                if (headers.TryGetValue("Transfer-Encoding", out var transferEncoding) &&
-                    !transferEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
+                catch (ChromaRestRequest.InvalidRequest exception)
                 {
-                    await WriteResponseAsync(writer, 400, new { result = InvalidParameter }).ConfigureAwait(false);
-                    return;
+                    await WriteResponseAsync(writer, exception.Status, new { result = InvalidParameter }).ConfigureAwait(false);
                 }
-                if (headers.TryGetValue("Content-Length", out var rawLength) &&
-                    (!int.TryParse(rawLength, out contentLength) || contentLength < 0))
+                catch (Exception) when (!deadline.IsCancellationRequested)
                 {
-                    await WriteResponseAsync(writer, 400, new { result = InvalidParameter }).ConfigureAwait(false);
-                    return;
+                    await WriteResponseAsync(writer, 500, new { result = InvalidParameter }).ConfigureAwait(false);
                 }
-                if (contentLength < 0 || contentLength > 2 * 1024 * 1024)
-                {
-                    await WriteResponseAsync(writer, 413, new { result = InvalidParameter }).ConfigureAwait(false);
-                    return;
-                }
-                var body = contentLength == 0 ? string.Empty : await ReadBodyAsync(reader, contentLength).ConfigureAwait(false);
-                var parts = requestLine.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length != 3)
-                {
-                    await WriteResponseAsync(writer, 400, new { result = InvalidParameter }).ConfigureAwait(false);
-                    return;
-                }
-                await DispatchAsync(writer, parts[0], parts[1], body).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (_stop.IsCancellationRequested)
-            {
-            }
-            catch
-            {
-                try { await WriteResponseAsync(writer, 500, new { result = InvalidParameter }).ConfigureAwait(false); }
-                catch { }
-            }
+            catch (Exception exception) when (deadline.IsCancellationRequested ||
+                exception is IOException or SocketException or ObjectDisposedException) { }
         }
     }
 
@@ -560,7 +559,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 }
                 catch (InvalidOperationException) when (_additionalFrameSink is not null)
                 {
-                    // OpenRazer-only systems do not have a Blade target.
+                    // RazerHid-only systems do not have a Blade target.
                 }
             }
             if (_additionalFrameSink is not null)
@@ -1006,24 +1005,8 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
         catch (InvalidOperationException) when (_additionalFrameSink is not null)
         {
-            // An OpenRazer-only session has no Blade runtime to stop.
+            // An RazerHid-only session has no Blade runtime to stop.
         }
-    }
-
-    private static async Task<string> ReadBodyAsync(StreamReader reader, int length)
-    {
-        var builder = new StringBuilder(Math.Min(length, 16 * 1024));
-        var byteCount = 0;
-        var buffer = new char[Math.Min(Math.Max(length, 1), 4096)];
-        while (byteCount < length)
-        {
-            var read = await reader.ReadAsync(buffer.AsMemory()).ConfigureAwait(false);
-            if (read == 0) throw new EndOfStreamException();
-            byteCount += Encoding.UTF8.GetByteCount(buffer, 0, read);
-            if (byteCount > length) throw new InvalidDataException("Content-Length does not match UTF-8 body.");
-            builder.Append(buffer, 0, read);
-        }
-        return builder.ToString();
     }
 
     private static async Task WriteResponseAsync(StreamWriter writer, int status, object payload)

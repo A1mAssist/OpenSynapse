@@ -5,7 +5,7 @@ using Xunit;
 
 namespace OpenSynapse.Core.Tests;
 
-public sealed class RazerChromaStandardTests
+public sealed partial class RazerChromaStandardTests
 {
     [Fact]
     public void StaticEffectPayloadMatchesTheMiddlewareLayout()
@@ -58,6 +58,24 @@ public sealed class RazerChromaStandardTests
     }
 
     [Fact]
+    public void EffectResponseRejectsColorsOutsideTheDeclaredPayload()
+    {
+        Assert.Throws<InvalidDataException>(() => RazerChromaStandardProtocol.ReadEffect(
+            ResponseWithDeclaredLength(4, 0x01, 0x00, 0x00, 0x01, 0x10, 0x20, 0x30)));
+        Assert.Throws<InvalidDataException>(() => RazerChromaStandardProtocol.ReadEffect(
+            Response(0x03, 0x01, 0x00, 0x00, 0x03)));
+    }
+
+    [Fact]
+    public void BatteryReadersUseTheDeclaredTwoByteBatteryIdLayout()
+    {
+        Assert.Equal((byte)100, RazerChromaStandardProtocol.ReadBatteryPercent(Response(0x03, 0x00, 0xFF)));
+        Assert.True(RazerChromaStandardProtocol.ReadCharging(Response(0x03, 0x07, 0x01)));
+        Assert.Throws<InvalidDataException>(() =>
+            RazerChromaStandardProtocol.ReadBatteryPercent(Response(0x03, 0xFF)));
+    }
+
+    [Fact]
     public async Task SetBrightnessRestoresThePreviousLevelWhenTheDeviceIgnoresTheWrite()
     {
         var simulator = new ChromaSimulator { Brightness = 255, IgnoreWrites = true };
@@ -69,6 +87,46 @@ public sealed class RazerChromaStandardTests
         var writes = transport.Requests.Where(request => request[8] == 0x05).ToArray();
         Assert.Equal(2, writes.Length);
         Assert.Equal(0xFF, writes[^1][9]);
+        Assert.Equal(0x85, transport.Requests[^1][8]);
+    }
+
+    [Fact]
+    public async Task BrightnessRestoreFailureIsReportedToTheCaller()
+    {
+        var simulator = new ChromaSimulator
+        {
+            Brightness = 255,
+            IgnoreWrites = true,
+            FailBrightnessWriteNumber = 2,
+        };
+        var service = new RazerChromaStandardService(
+            new FakeTransport(simulator.Handle), "test", TimeSpan.Zero);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.SetBrightnessAsync(50));
+
+        Assert.Contains("could not be restored", error.Message);
+        Assert.IsType<AggregateException>(error.InnerException);
+    }
+
+    [Fact]
+    public async Task CancellationDoesNotPreventEffectRestoreAndReadback()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var simulator = new ChromaSimulator
+        {
+            Effect = RazerChromaEffect.Static,
+            Colors = [0xFF, 0x00, 0x00],
+            IgnoreWrites = true,
+            AfterEffectWrite = cancellation.Cancel,
+        };
+        var transport = new FakeTransport(simulator.Handle, honorCancellation: true);
+        var service = new RazerChromaStandardService(transport, "test", TimeSpan.Zero);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Static, [0x00, 0x00, 0xFF], cancellation.Token));
+
+        Assert.Equal(2, transport.Requests.Count(request => request[8] == 0x03));
+        Assert.Equal(0x83, transport.Requests[^1][8]);
     }
 
     [Fact]
@@ -82,6 +140,113 @@ public sealed class RazerChromaStandardTests
 
         Assert.Equal(RazerChromaEffect.Spectrum, simulator.Effect);
         Assert.Contains(transport.Requests, request => request[8] == 0x03 && request[9] == 0x03);
+    }
+
+    [Fact]
+    public async Task UnknownPreviousEffectIsRejectedBeforeWriting()
+    {
+        var simulator = new ChromaSimulator { Effect = (RazerChromaEffect)0x7F };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerChromaStandardService(transport, "test", TimeSpan.Zero);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Static, [0x11, 0x22, 0x33]));
+
+        Assert.DoesNotContain(transport.Requests, request => request[8] == 0x03);
+    }
+
+    [Fact]
+    public async Task SetEffectWritesAndVerifiesTheRequestedColor()
+    {
+        var simulator = new ChromaSimulator();
+        var service = new RazerChromaStandardService(
+            new FakeTransport(simulator.Handle), "test", TimeSpan.Zero);
+
+        await service.SetEffectAsync(RazerChromaEffect.Static, [0x00, 0x00, 0xFF]);
+
+        Assert.Equal(RazerChromaEffect.Static, simulator.Effect);
+        Assert.Equal([0x00, 0x00, 0xFF], simulator.Colors);
+    }
+
+    [Fact]
+    public async Task SameEffectWithWrongColorFailsAndRestoresAllPreviousParameters()
+    {
+        var simulator = new ChromaSimulator
+        {
+            Effect = RazerChromaEffect.Static,
+            Flags = 0x01,
+            Rate = 0x28,
+            Colors = [0xFF, 0x00, 0x00],
+            IgnoreWrites = true,
+        };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerChromaStandardService(transport, "test", TimeSpan.Zero);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Static, [0x00, 0x00, 0xFF]));
+
+        var writes = transport.Requests.Where(request => request[8] == 0x03).ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal([0x01, 0x01, 0x28, 0x01, 0xFF, 0x00, 0x00], writes[^1][9..16]);
+        Assert.Equal(0x83, transport.Requests[^1][8]);
+    }
+
+    [Fact]
+    public async Task BreathingSecondColorMismatchFailsAndRestoresBothColors()
+    {
+        var simulator = new ChromaSimulator
+        {
+            Effect = RazerChromaEffect.Breathing,
+            Colors = [1, 2, 3, 4, 5, 6],
+            IgnoreWrites = true,
+        };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerChromaStandardService(transport, "test", TimeSpan.Zero);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Breathing, [1, 2, 3, 7, 8, 9]));
+        var writes = transport.Requests.Where(request => request[8] == 0x03).ToArray();
+        Assert.Equal(2, writes.Length);
+        Assert.Equal(new byte[] { 1, 2, 3, 4, 5, 6 }, writes[^1][13..19]);
+        Assert.Equal(0x83, transport.Requests[^1][8]);
+    }
+
+    [Theory]
+    [InlineData(RazerChromaEffect.Static)]
+    [InlineData(RazerChromaEffect.Breathing)]
+    [InlineData(RazerChromaEffect.Spectrum)]
+    public async Task IdenticalCompleteEffectSucceedsWithoutWriting(RazerChromaEffect effect)
+    {
+        byte[] colors = effect switch
+        {
+            RazerChromaEffect.Static => [1, 2, 3],
+            RazerChromaEffect.Breathing => [1, 2, 3, 4, 5, 6],
+            _ => [],
+        };
+        var simulator = new ChromaSimulator { Effect = effect, Colors = colors };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerChromaStandardService(transport, "test", TimeSpan.Zero);
+        await service.SetEffectAsync(effect, colors);
+        Assert.DoesNotContain(transport.Requests, request => request[8] == 0x03);
+    }
+
+    [Fact]
+    public async Task RestoreFailureIsReportedToTheCaller()
+    {
+        var simulator = new ChromaSimulator
+        {
+            Effect = RazerChromaEffect.Static,
+            Colors = [0xFF, 0x00, 0x00],
+            IgnoreWrites = true,
+            FailEffectWriteNumber = 2,
+        };
+        var service = new RazerChromaStandardService(
+            new FakeTransport(simulator.Handle), "test", TimeSpan.Zero);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Static, [0x00, 0x00, 0xFF]));
+
+        Assert.Contains("could not be restored", error.Message);
+        Assert.IsType<AggregateException>(error.InnerException);
     }
 
     [Fact]
@@ -126,7 +291,7 @@ public sealed class RazerChromaStandardTests
             ]);
 
             var ownedByCatalog =
-                OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId) is not null;
+                RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId) is not null;
             Assert.Equal(ownedByCatalog ? 0 : 1, connections.Count);
         }
     }
@@ -223,7 +388,7 @@ public sealed class RazerChromaStandardTests
         new(devicePath, physicalDeviceKey, 0x1532, productId, 91, 91, 91, 0x0000, 0x0001,
             OpenSynapse.Core.Devices.DeviceAccessState.Available, "test");
 
-    private sealed class FakeTransport(Func<byte[], byte[]> handler) : IRazerFeatureTransport
+    private sealed class FakeTransport(Func<byte[], byte[]> handler, bool honorCancellation = false) : IRazerFeatureTransport
     {
         public List<byte[]> Requests { get; } = [];
 
@@ -246,6 +411,10 @@ public sealed class RazerChromaStandardTests
             CancellationToken cancellationToken,
             bool allowRemainingPacketsMismatch = false)
         {
+            if (honorCancellation)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
             var copy = request.ToArray();
             Requests.Add(copy);
             return Task.FromResult(handler(copy));
@@ -256,6 +425,8 @@ public sealed class RazerChromaStandardTests
     {
         public byte Brightness { get; set; } = 0xFF;
         public RazerChromaEffect Effect { get; set; } = RazerChromaEffect.Off;
+        public byte Flags { get; set; }
+        public byte Rate { get; set; }
         public byte[] Colors { get; set; } = [];
         public byte BatteryRaw { get; set; } = 0x80;
         public bool Charging { get; set; } = true;
@@ -264,6 +435,11 @@ public sealed class RazerChromaStandardTests
         public Version Firmware { get; set; } = new(1, 2);
         public string Serial { get; set; } = "PM123456";
         public bool IgnoreWrites { get; init; }
+        public int? FailEffectWriteNumber { get; init; }
+        public int? FailBrightnessWriteNumber { get; init; }
+        public Action? AfterEffectWrite { get; init; }
+        private int _effectWriteCount;
+        private int _brightnessWriteCount;
 
         public byte[] Handle(byte[] request)
         {
@@ -291,8 +467,8 @@ public sealed class RazerChromaStandardTests
 
                 return request[8] switch
                 {
-                    0x80 => Response(request, request[2], BatteryRaw),
-                    0x84 => Response(request, request[2], Charging ? (byte)1 : (byte)0),
+                    0x80 => Response(request, request[2], 0x00, BatteryRaw),
+                    0x84 => Response(request, request[2], 0x00, Charging ? (byte)1 : (byte)0),
                     _ => throw new NotSupportedException($"Unexpected battery command 0x{request[8]:X2}."),
                 };
             }
@@ -302,6 +478,11 @@ public sealed class RazerChromaStandardTests
                 case 0x85:
                     return Response(request, request[2], Brightness);
                 case 0x05:
+                    _brightnessWriteCount++;
+                    if (FailBrightnessWriteNumber == _brightnessWriteCount)
+                    {
+                        throw new IOException("Brightness restore failed.");
+                    }
                     if (!IgnoreWrites)
                     {
                         Brightness = request[9];
@@ -311,11 +492,19 @@ public sealed class RazerChromaStandardTests
                 case 0x83:
                     return Response(request, request[2], EffectPayload());
                 case 0x03:
+                    _effectWriteCount++;
+                    AfterEffectWrite?.Invoke();
+                    if (FailEffectWriteNumber == _effectWriteCount)
+                    {
+                        throw new IOException("Effect restore failed.");
+                    }
                     if (!IgnoreWrites)
                     {
                         Effect = (RazerChromaEffect)request[9];
-                        var count = request[11];
-                        Colors = request[12..(12 + (count * 3))];
+                        Flags = request[10];
+                        Rate = request[11];
+                        var count = request[12];
+                        Colors = request[13..(13 + (count * 3))];
                     }
 
                     return Response(request, request[2], EffectPayload());
@@ -325,7 +514,7 @@ public sealed class RazerChromaStandardTests
         }
 
         private byte[] EffectPayload() =>
-            [(byte)Effect, 0, 0, (byte)(Colors.Length / 3), .. Colors];
+            [(byte)Effect, Flags, Rate, (byte)(Colors.Length / 3), .. Colors];
 
         private static byte[] Response(byte[] request, byte transaction, params byte[] arguments)
         {
@@ -346,7 +535,16 @@ public sealed class RazerChromaStandardTests
         var response = new byte[RazerFeatureReport.Length];
         response[1] = 0x02;
         response[2] = transaction;
+        response[6] = (byte)arguments.Length;
         arguments.CopyTo(response.AsSpan(RazerFeatureReport.ArgumentsOffset));
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+        return response;
+    }
+
+    private static byte[] ResponseWithDeclaredLength(byte declaredLength, params byte[] arguments)
+    {
+        var response = Response(0x03, arguments);
+        response[6] = declaredLength;
         response[89] = RazerFeatureReport.CalculateCrc(response);
         return response;
     }

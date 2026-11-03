@@ -70,6 +70,21 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
                 : "soundNormalization",
             LevelPercent: levelPercent), cancellationToken);
 
+    public bool CanInstallComponents => ThxAudioAdmission.CanInstallService();
+
+    public async Task<ThxAudioStatus> InstallComponentsAsync(
+        ThxAudioEndpoint endpoint,
+        CancellationToken cancellationToken = default)
+    {
+        var service = await ThxAudioAdmission.InstallServiceAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (service.Error is not (null or "ThxNativeMissing"))
+        {
+            return service;
+        }
+        return await InstallNativeComponentAsync(endpoint, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<ThxAudioStatus> InstallNativeComponentAsync(
         ThxAudioEndpoint endpoint,
         CancellationToken cancellationToken = default)

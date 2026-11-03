@@ -178,8 +178,6 @@ public static partial class RazerBleProtocol30
         var declared = response[1] | (response[2] << 8) | (response[3] << 16);
         var standard = ResponseHeaderLength + declared;
         if (response.Length >= standard) { length = standard; return true; }
-        var compact = RequestHeaderLength + declared;
-        if (compact < ResponseHeaderLength && response.Length == compact) { length = compact; return true; }
         return false;
     }
 

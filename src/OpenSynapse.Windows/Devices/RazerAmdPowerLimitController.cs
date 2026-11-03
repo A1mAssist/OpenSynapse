@@ -21,14 +21,9 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
     private readonly IntPtr _platformLibrary;
     private readonly IntPtr _parameters;
     private readonly IntPtr _capability;
-    private readonly GetPlatformDelegate _getPlatform;
     private readonly GetCpuParametersDelegate _getCpuParameters;
-    private readonly GetCapabilitiesDelegate _getCapabilities;
     private readonly SetPptLimitDelegate _setPptLimit;
-    private readonly CpuPowerLimit _firmware;
-    private readonly double _minimumWatts;
-    private readonly double _maximumWatts;
-    private readonly double _readCeilingWatts;
+    private readonly RazerAmdPptControl _control;
     private bool _disposed;
 
     private RazerAmdPowerLimitController(
@@ -36,27 +31,22 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
         IntPtr platformLibrary,
         IntPtr parameters,
         IntPtr capability,
-        GetPlatformDelegate getPlatform,
         GetCpuParametersDelegate getCpuParameters,
-        GetCapabilitiesDelegate getCapabilities,
         SetPptLimitDelegate setPptLimit,
         CpuPowerLimit firmware,
         double minimumWatts,
-        double maximumWatts,
         double readCeilingWatts)
     {
         _deviceLibrary = deviceLibrary;
         _platformLibrary = platformLibrary;
         _parameters = parameters;
         _capability = capability;
-        _getPlatform = getPlatform;
         _getCpuParameters = getCpuParameters;
-        _getCapabilities = getCapabilities;
         _setPptLimit = setPptLimit;
-        _firmware = firmware;
-        _minimumWatts = minimumWatts;
-        _maximumWatts = maximumWatts;
-        _readCeilingWatts = readCeilingWatts;
+        _control = new(firmware, minimumWatts, readCeilingWatts,
+            () => TryReadParameters(_getCpuParameters, _parameters, readCeilingWatts, out var watts, out var error)
+                ? (watts, null) : (null, error),
+            (watts, enabled) => _setPptLimit(watts, enabled));
     }
 
     public static CpuPowerLimitAvailability TryOpen(
@@ -75,7 +65,6 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
             detail = "The Razer AMD OverClock component is not installed.";
             return CpuPowerLimitAvailability.AmdDriverMissing;
         }
-
         var device = IntPtr.Zero;
         var platform = IntPtr.Zero;
         var parameters = IntPtr.Zero;
@@ -108,7 +97,7 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
             }
 
             var info = Marshal.PtrToStructure<CapabilityInfo>(capability);
-            if (info.IsSupported == 0 || !double.IsFinite(info.Maximum) ||
+            if (info.IsSupported == 0 || !double.IsFinite(info.Minimum) || !double.IsFinite(info.Maximum) ||
                 info.Maximum < CpuPowerLimit.MinimumWatts)
             {
                 throw new InvalidOperationException("The CPU does not expose a usable PPT range.");
@@ -136,13 +125,10 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
                 platform,
                 parameters,
                 capability,
-                getPlatform,
                 getCpuParameters,
-                getCapabilities,
                 setPptLimit,
                 firmware,
                 minimumWatts,
-                maximumWatts,
                 readCeiling);
             detail = null;
             return CpuPowerLimitAvailability.Available;
@@ -187,66 +173,25 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
     public CpuPowerLimitReport Read()
     {
         ThrowIfDisposed();
-        return TryReadParameters(
-                _getCpuParameters,
-                _parameters,
-                _readCeilingWatts,
-                out var current,
-                out var error)
-            ? BuildReport(current)
-            : CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed, error);
+        return _control.Read();
     }
 
     public CpuPowerLimitReport Apply(CpuPowerLimit limit)
     {
         ThrowIfDisposed();
-        var requested = Math.Clamp(
-            limit.Clamp(_maximumWatts).Pl1Watts,
-            _minimumWatts,
-            _maximumWatts);
-        var status = _setPptLimit((uint)Math.Round(requested), 1);
-        if (status != 0)
-        {
-            return CpuPowerLimitReport.Unavailable(
-                CpuPowerLimitAvailability.Failed,
-                $"The AMD Ryzen Master driver rejected the PPT write ({status}).");
-        }
-
-        Thread.Sleep(250);
-        if (!TryReadParameters(
-                _getCpuParameters,
-                _parameters,
-                _readCeilingWatts,
-                out var actual,
-                out var readError))
-        {
-            return CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed, readError);
-        }
-
-        if (Math.Abs(actual - requested) > 1)
-        {
-            return CpuPowerLimitReport.Unavailable(
-                CpuPowerLimitAvailability.Failed,
-                $"The AMD driver accepted the PPT write but reports {actual:0.#} W.");
-        }
-
-        return BuildReport(actual);
+        return _control.Apply(limit);
     }
 
     public CpuPowerLimitReport RestoreTo(double pl1Watts, double pl2Watts)
     {
         ThrowIfDisposed();
-        return Apply(new CpuPowerLimit(
-            pl1Watts,
-            pl2Watts,
-            CpuPowerLimit.MinimumTimeSeconds,
-            CpuPowerLimit.MaximumTimeSeconds));
+        return _control.RestoreTo(pl1Watts, pl2Watts);
     }
 
     public CpuPowerLimitReport RestoreFirmware()
     {
         ThrowIfDisposed();
-        return RestoreTo(_firmware.Pl1Watts, _firmware.Pl2Watts);
+        return _control.RestoreFirmware();
     }
 
     public void Dispose()
@@ -263,16 +208,6 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
         NativeLibrary.Free(_deviceLibrary);
     }
 
-    private CpuPowerLimitReport BuildReport(double current) => new(
-        CpuPowerLimitAvailability.Available,
-        null,
-        current,
-        current,
-        _firmware.Pl1Watts,
-        _firmware.Pl2Watts,
-        _maximumWatts,
-        false);
-
     private static bool TryReadParameters(
         GetCpuParametersDelegate read,
         IntPtr buffer,
@@ -287,29 +222,26 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
             return false;
         }
 
-        var raw = BitConverter.Int32BitsToSingle(
-            Marshal.ReadInt32(buffer, LimitOffset));
+        return TryDecodeWatts(BitConverter.Int32BitsToSingle(
+            Marshal.ReadInt32(buffer, LimitOffset)), maximumWatts, out watts, out error);
+    }
+
+    internal static bool TryDecodeWatts(float raw, double maximumWatts, out double watts, out string? error)
+    {
+        watts = 0;
         if (!float.IsFinite(raw) || raw <= 0)
         {
             error = $"The AMD CPU power data is not usable ({raw}).";
             return false;
         }
 
-        // Ryzen Master reports PPT in tenths of a watt on some families and watts on
-        // others. Normalize only values above the published PPT ceiling.
-        var candidate = raw;
-        if (candidate > maximumWatts)
+        if (!(raw >= CpuPowerLimit.MinimumWatts && raw <= maximumWatts))
         {
-            candidate /= 10;
-        }
-
-        if (!(candidate >= 1 && candidate < 500))
-        {
-            error = $"The AMD CPU power data is not plausible ({candidate} W).";
+            error = $"The AMD CPU power data is not plausible ({raw} W).";
             return false;
         }
 
-        watts = candidate;
+        watts = raw;
         error = null;
         return true;
     }

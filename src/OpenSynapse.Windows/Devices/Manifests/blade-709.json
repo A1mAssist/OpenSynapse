@@ -273,7 +273,19 @@
     "firmware": {
       "latest": {
         "version": "1.3.0.0",
-        "url": "https://rzr.to/br90yn"
+        "url": "https://rzr.to/br90yn",
+        "additional": [
+          {
+            "type": "ec",
+            "version": "1.03",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "bios",
+            "version": "1.06",
+            "url": "https://rzr.to/k1kflh"
+          }
+        ]
       },
       "driver": {
         "version": "24.0.0.0",

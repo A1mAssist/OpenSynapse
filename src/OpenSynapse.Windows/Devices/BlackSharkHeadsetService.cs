@@ -379,7 +379,7 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         var namedBlackShark =
             productName?.Contains("BlackShark", StringComparison.OrdinalIgnoreCase) == true;
         // A known catalog entry that resolves Unsupported is a deliberate exclusion, not an
-        // unknown SKU; the product-name fallback would pull 0565 into the V3 Pro protocol.
+        // unknown SKU; do not let the product-name fallback pull it into the V3 Pro protocol.
         if (channel == RazerHeadsetChannel.Unsupported &&
             RazerHeadsetChannelCatalog.IsKnown(productId))
         {

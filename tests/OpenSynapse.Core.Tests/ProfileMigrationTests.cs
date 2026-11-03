@@ -151,4 +151,124 @@ public sealed class ProfileMigrationTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task Version2RazerHidLightingKeyIsMigratedAndRewritten()
+    {
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            $"opensynapse-razerhid-{Guid.NewGuid():N}");
+        var sourcePath = Path.Combine(directory, "profiles.json");
+        var savedPath = Path.Combine(directory, "saved.json");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            await File.WriteAllTextAsync(
+                sourcePath,
+                """
+                {
+                  "version": 2,
+                  "activeProfileName": "Default",
+                  "profiles": {
+                    "Default": {
+                      "pluggedIn": {
+                        "openRazerLighting": {
+                          "1532:0200": { "effect": "static" }
+                        }
+                      }
+                    }
+                  }
+                }
+                """);
+
+            var document = await ProfileStore.ImportAsync(sourcePath);
+            Assert.Equal(ProfileStore.CurrentVersion, document.Version);
+            Assert.Equal("static", document.PluggedIn.RazerHidLighting["1532:0200"].Effect);
+
+            await new ProfileStore(savedPath).SaveAsync(document);
+            var saved = await File.ReadAllTextAsync(savedPath);
+            Assert.Contains("\"razerHidLighting\"", saved);
+            Assert.DoesNotContain("\"openRazerLighting\"", saved);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task LegacyRazerHidLightingOnlyFillsMissingDevices()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            $"opensynapse-razerhid-merge-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                """
+                {
+                  "version": 2,
+                  "activeProfileName": "Default",
+                  "profiles": {
+                    "Default": {
+                      "pluggedIn": {
+                        "razerHidLighting": {
+                          "1532:0200": { "effect": "spectrum" }
+                        },
+                        "openRazerLighting": {
+                          "1532:0200": { "effect": "static" },
+                          "1532:0201": { "effect": "breathing" }
+                        }
+                      }
+                    }
+                  }
+                }
+                """);
+
+            var document = await ProfileStore.ImportAsync(path);
+
+            Assert.Equal("spectrum", document.PluggedIn.RazerHidLighting["1532:0200"].Effect);
+            Assert.Equal("breathing", document.PluggedIn.RazerHidLighting["1532:0201"].Effect);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task Version2TopLevelRazerHidLightingKeyStillLoads()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            $"opensynapse-razerhid-top-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                """
+                {
+                  "version": 2,
+                  "activeProfileName": "Default",
+                  "pluggedIn": {
+                    "openRazerLighting": {
+                      "1532:0200": { "effect": "off" }
+                    }
+                  }
+                }
+                """);
+
+            var document = await ProfileStore.ImportAsync(path);
+
+            Assert.Equal("off", document.PluggedIn.RazerHidLighting["1532:0200"].Effect);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

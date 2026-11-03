@@ -10,40 +10,40 @@ public sealed partial class DevicesPage : UserControl
     {
         if (sender is not Button { Tag: RazerGamepadDeviceRowViewModel row }) return;
         SelectDevice("gamepad");
-        await ViewModel.SelectGamepadAsync(row, Lifetime);
+        await ViewModel.Accessories.SelectGamepadAsync(row, Lifetime);
         UpdateDeviceSelector("gamepad");
     }
 
     private async void GamepadRefreshClick(object sender, RoutedEventArgs e)
     {
-        await (ViewModel.SelectedGamepad?.LoadAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedGamepad?.LoadAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadRefreshAssignmentsClick(object sender, RoutedEventArgs e)
     {
-        await (ViewModel.SelectedGamepad?.RefreshButtonAssignmentsAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedGamepad?.RefreshButtonAssignmentsAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadApplyPollingProfileClick(object sender, RoutedEventArgs e)
     {
-        await (ViewModel.SelectedGamepad?.ApplyPollingProfileAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedGamepad?.ApplyPollingProfileAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadProfileSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        await (ViewModel.SelectedGamepad?.LoadPollingForSelectedProfileAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedGamepad?.LoadPollingForSelectedProfileAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadApplyLightingClick(object sender, RoutedEventArgs e)
     {
-        await (ViewModel.SelectedGamepad?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedGamepad?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadApplyButtonAssignmentClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: RazerGamepadButtonAssignmentRowViewModel row })
         {
-            await (ViewModel.SelectedGamepad?.ApplyButtonAssignmentAsync(row, Lifetime) ?? Task.CompletedTask);
+            await (ViewModel.Accessories.SelectedGamepad?.ApplyButtonAssignmentAsync(row, Lifetime) ?? Task.CompletedTask);
         }
     }
 
@@ -51,7 +51,7 @@ public sealed partial class DevicesPage : UserControl
     {
         if (sender is Button { Tag: RazerGamepadStickRowViewModel row })
         {
-            await (ViewModel.SelectedGamepad?.ApplyStickAsync(row, Lifetime) ?? Task.CompletedTask);
+            await (ViewModel.Accessories.SelectedGamepad?.ApplyStickAsync(row, Lifetime) ?? Task.CompletedTask);
         }
     }
 
@@ -59,17 +59,17 @@ public sealed partial class DevicesPage : UserControl
     {
         if (sender is Button { Tag: RazerGamepadTriggerRowViewModel row })
         {
-            await (ViewModel.SelectedGamepad?.ApplyTriggerAsync(row, Lifetime) ?? Task.CompletedTask);
+            await (ViewModel.Accessories.SelectedGamepad?.ApplyTriggerAsync(row, Lifetime) ?? Task.CompletedTask);
         }
     }
 
     private async void GamepadApplyDpadClick(object sender, RoutedEventArgs e)
     {
-        await (ViewModel.SelectedGamepad?.ApplyDpadAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedGamepad?.ApplyDpadAsync(Lifetime) ?? Task.CompletedTask);
     }
 
     private async void GamepadApplyVibrationClick(object sender, RoutedEventArgs e)
     {
-        await (ViewModel.SelectedGamepad?.ApplyVibrationAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedGamepad?.ApplyVibrationAsync(Lifetime) ?? Task.CompletedTask);
     }
 }

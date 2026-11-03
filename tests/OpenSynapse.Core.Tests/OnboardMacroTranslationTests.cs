@@ -74,6 +74,32 @@ public sealed class OnboardMacroTranslationTests
     }
 
     [Theory]
+    [InlineData(0x1D, true, 0xE4)]
+    [InlineData(0x38, true, 0xE6)]
+    [InlineData(0x4B, true, 0x50)]
+    [InlineData(0x1C, true, 0x58)]
+    [InlineData(0x1D, false, 0xE0)]
+    [InlineData(0x4B, false, 0x5C)]
+    public void ExistingScanCodeKeepsExtendedMeaning(int scanCode, bool extended, byte usage)
+    {
+        var step = KeyStep(scanCode, isDown: true);
+        step.Input!.Extended = extended;
+
+        Assert.Equal(new byte[] { 0x01, usage },
+            RazerOnboardMacroCodec.Encode(OnboardMacroTranslation.FromSteps([step])));
+    }
+
+    [Fact]
+    public void InputDelayRunsBeforeTheInput()
+    {
+        var step = KeyStep(0x1E, isDown: true);
+        step.DelayMilliseconds = 25;
+
+        Assert.Equal(new byte[] { 0x11, 0x19, 0x01, 0x04 },
+            RazerOnboardMacroCodec.Encode(OnboardMacroTranslation.FromSteps([step])));
+    }
+
+    [Theory]
     [InlineData(MacroInputKind.NagaSideButton)]
     [InlineData(MacroInputKind.RazerKey)]
     public void DeviceSpecificInputsAreRejectedAtTheirStepNumber(MacroInputKind kind)

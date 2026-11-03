@@ -100,15 +100,18 @@ public sealed class VerifiedProfileApplier
                         var padReady = coolingPadConnected || padlessHyperBoostAccepted;
                         if (!modeSupported || !padReady)
                         {
-                            requested = BladePerformanceMode.Performance;
+                            requested = BladeModelCapabilities.PublishesPerformanceMode(blade.ProductId, BladePerformanceMode.Performance)
+                                ? BladePerformanceMode.Performance : BladePerformanceMode.Balanced;
                             bladeErrors.Add(!BladeModelCapabilities.SupportsHyperBoost(blade.ProductId)
-                                ? "HyperBoost is not supported on this model; Performance mode was applied instead."
-                                : "HyperBoost requires the Razer Laptop Cooling Pad and a recorded disclaimer acceptance; Performance mode was applied instead.");
+                                ? $"HyperBoost is not supported on this model; {requested} mode was selected instead."
+                                : $"HyperBoost requires the Razer Laptop Cooling Pad and a recorded disclaimer acceptance; {requested} mode was selected instead.");
                         }
                     }
                     effectivePerformanceMode = current;
                     try
                     {
+                        if (!BladeModelCapabilities.PublishesPerformanceMode(blade.ProductId, requested))
+                            throw new InvalidOperationException($"Performance mode {requested} is not admitted for Blade PID {blade.ProductId:X4}.");
                         if (requested != current)
                         {
                             effectivePerformanceMode = await reader.SetBladePerformanceModeAsync(

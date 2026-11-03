@@ -4,7 +4,7 @@ using Xunit;
 
 namespace OpenSynapse.Core.Tests;
 
-public sealed class RazerHeadsetAudioServiceTests
+public sealed partial class RazerHeadsetAudioServiceTests
 {
     [Theory]
     [InlineData(0x0309)]
@@ -27,6 +27,13 @@ public sealed class RazerHeadsetAudioServiceTests
     [InlineData(0x0F1B)]
     public void AudioPage_CoversTheKrakenBtAndNommoFamilies(ushort productId) =>
         Assert.True(RazerHeadsetAudioService.IsSupported(productId));
+
+    [Fact]
+    public void BlackSharkV2HyperSpeedDongleUsesTheFeatureReportPage()
+    {
+        Assert.True(RazerHeadsetAudioService.UsesFeatureReportTransport(0x0565));
+        Assert.True(RazerHeadsetAudioService.IsSupported(0x0565));
+    }
 
     [Fact]
     public void SeirenEmoteIsAMicrophoneAndStaysOffTheLightingPage()

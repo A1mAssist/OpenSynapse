@@ -23,4 +23,8 @@
           Link="Mappings\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Fixtures\studio-two-tone.mp4" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

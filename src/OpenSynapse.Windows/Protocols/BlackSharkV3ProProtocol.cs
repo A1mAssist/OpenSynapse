@@ -25,7 +25,7 @@ public static class BlackSharkV3ProProtocol
 
     /// <summary>
     /// Hardware enumerated the 2.4 GHz dongle as 0x101B and the USB cable as 0x101C.
-    /// OpenRazer lists 0x0576/0x0577, so both naming schemes are accepted. The control
+    /// RazerHid lists 0x0576/0x0577, so both naming schemes are accepted. The control
     /// report shape is shared with other Razer headsets, so callers must also check the
     /// product name or one of the observed PIDs.
     /// </summary>

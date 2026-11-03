@@ -4,14 +4,14 @@ namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
 /// Source-backed Blade 02C6 lid-logo GET/SET reports and strict response parsing.
-/// Value 0x02 uses the generic LED-effect command; OpenRazer documents it as
+/// Value 0x02 uses the generic LED-effect command; RazerHid documents it as
 /// technically unsupported on Blade laptops, so callers must keep it gated.
 /// </summary>
 public static class BladeLogoProtocol
 {
     private const byte DataSize = 0x03;
     private const byte CommandClass = 0x03;
-    // OpenRazer's VARSTORE for Blade logo state is the persistent slot 0x01.
+    // RazerHid's VARSTORE for Blade logo state is the persistent slot 0x01.
     private const byte RuntimeProfileId = 0x01;
     private const byte LogoLedId = 0x04;
     private const byte TransactionId = 0xFF;

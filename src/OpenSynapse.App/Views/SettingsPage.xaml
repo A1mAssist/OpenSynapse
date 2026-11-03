@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:OpenSynapse.App"
+    xmlns:controls="using:OpenSynapse.App.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -24,6 +25,15 @@
                       <ToggleSwitch local:Localized.Uid="SilentStartupToggle" Grid.Column="1" IsOn="{Binding Profiles.IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding Profiles.CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="静默启动" />
                     </Grid>
                   </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="AdvancedFeaturesTitle" Text="高级功能（危险）" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+                      <TextBlock local:Localized.Uid="AdvancedFeaturesSettingDescription" Text="在设备页显示 GPU 超频、CPU 功耗墙和 Curve Optimizer 等直接写入硬件的设置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch x:Name="AdvancedFeaturesToggle" Grid.Column="1" Toggled="AdvancedFeaturesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开启高级功能" />
+                  </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">

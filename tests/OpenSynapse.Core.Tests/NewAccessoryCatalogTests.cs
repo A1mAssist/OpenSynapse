@@ -13,12 +13,12 @@ public sealed class NewAccessoryCatalogTests
     [InlineData(0x0F5C, "Razer Handheld Dock Chroma")]
     public void NewAccessoryEntriesLoadWithLightingMatrix(ushort productId, string displayName)
     {
-        var device = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId);
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId);
 
         Assert.NotNull(device);
         Assert.Equal(displayName, device!.DisplayName);
         Assert.Equal(DeviceCategory.Accessory, device.Category);
-        Assert.Equal(new OpenRazerMatrixDimensions(1, 12), device.MatrixDimensions);
+        Assert.Equal(new RazerHidMatrixDimensions(1, 12), device.MatrixDimensions);
         Assert.Equal(TimeSpan.FromMilliseconds(31), device.DeviceWait);
     }
 }

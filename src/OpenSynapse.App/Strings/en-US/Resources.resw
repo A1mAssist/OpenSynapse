@@ -689,7 +689,7 @@
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>Not read</value></data>
   <data name="DiagnosticProtocolFailedStatus" xml:space="preserve"><value>Read failed</value></data>
   <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>On</value></data>
-  <data name="OpenRazerFailedReadsDetail" xml:space="preserve"><value>Failed reads: {0}</value></data>
+  <data name="RazerHidFailedReadsDetail" xml:space="preserve"><value>Failed reads: {0}</value></data>
   <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>Off</value></data>
   <data name="DiagnosticCpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
   <data name="DiagnosticGpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
@@ -980,61 +980,61 @@
   <data name="DiagnosticsCopyFailed" xml:space="preserve">
     <value>Copy failed: {0}</value>
   </data>
-  <data name="OpenRazerOperationApplied" xml:space="preserve">
+  <data name="RazerHidOperationApplied" xml:space="preserve">
     <value>Applied to device</value>
   </data>
-  <data name="OpenRazerPollingRateMismatch" xml:space="preserve">
+  <data name="RazerHidPollingRateMismatch" xml:space="preserve">
     <value>Device reports {0} Hz, expected {1} Hz</value>
   </data>
-  <data name="OpenRazerDpiMismatch" xml:space="preserve">
+  <data name="RazerHidDpiMismatch" xml:space="preserve">
     <value>Device reports {0} x {1} DPI, expected {2} x {3} DPI</value>
   </data>
-  <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
+  <data name="RazerHidProtocolMalformedResponse" xml:space="preserve">
     <value>The device returned malformed protocol data.</value>
   </data>
-  <data name="OpenRazerDpiStagesMalformedResponse" xml:space="preserve">
+  <data name="RazerHidDpiStagesMalformedResponse" xml:space="preserve">
     <value>The device returned malformed DPI stage data. DPI stages have been disabled.</value>
   </data>
-  <data name="OpenRazerProtocolUnsupported" xml:space="preserve">
+  <data name="RazerHidProtocolUnsupported" xml:space="preserve">
     <value>The device rejected this command. This capability has been disabled.</value>
   </data>
-  <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
+  <data name="RazerHidProtocolRescanRequired" xml:space="preserve">
     <value>Device communication stopped; writes are paused. Rescan the device to restore control.</value>
   </data>
-  <data name="OpenRazerLightingProfileSaveFailed" xml:space="preserve">
+  <data name="RazerHidLightingProfileSaveFailed" xml:space="preserve">
     <value>The lighting was applied, but the profile could not be saved; the device is still controllable.</value>
   </data>
-  <data name="OpenRazerCapabilityUnanswered" xml:space="preserve">
-    <value>The firmware did not answer "{0}"; that capability is disabled and the rest still works.</value>
+  <data name="RazerHidCapabilityUnanswered" xml:space="preserve">
+    <value>The firmware did not answer "{0}" this time. Try again shortly.</value>
   </data>
-  <data name="OpenRazerDeviceNotReady" xml:space="preserve">
+  <data name="RazerHidDeviceNotReady" xml:space="preserve">
     <value>The {0} may be powered off or asleep. Check the device power.</value>
   </data>
-  <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
+  <data name="RazerHidProtocolQueryFailed" xml:space="preserve">
     <value>The device channel could not be read.</value>
   </data>
-  <data name="OpenRazerMappingNoButtons" xml:space="preserve">
+  <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>Device reported no mapping buttons</value>
   </data>
-  <data name="OpenRazerMappingReadCount" xml:space="preserve">
+  <data name="RazerHidMappingReadCount" xml:space="preserve">
     <value>Read {0} buttons</value>
   </data>
-  <data name="OpenRazerMappingReadCountWithMacros" xml:space="preserve">
+  <data name="RazerHidMappingReadCountWithMacros" xml:space="preserve">
     <value>Read {0} buttons · {1} macros</value>
   </data>
-  <data name="OpenRazerMappingMacroName" xml:space="preserve">
+  <data name="RazerHidMappingMacroName" xml:space="preserve">
     <value>Macro {0}</value>
   </data>
-  <data name="OpenRazerMappingUnreadable" xml:space="preserve">
+  <data name="RazerHidMappingUnreadable" xml:space="preserve">
     <value>unreadable</value>
   </data>
-  <data name="OpenRazerMappingReadFailed" xml:space="preserve">
+  <data name="RazerHidMappingReadFailed" xml:space="preserve">
     <value>Could not read button mapping.</value>
   </data>
-  <data name="OpenRazerMappingNothingChanged" xml:space="preserve">
+  <data name="RazerHidMappingNothingChanged" xml:space="preserve">
     <value>Nothing changed</value>
   </data>
-  <data name="OpenRazerMappingSavedCount" xml:space="preserve">
+  <data name="RazerHidMappingSavedCount" xml:space="preserve">
     <value>Saved {0} assignments</value>
   </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
@@ -1167,7 +1167,7 @@
   <data name="DeviceWatchError" xml:space="preserve">
     <value>Device monitoring: {0}</value>
   </data>
-  <data name="OpenRazerDriverModeRestoreFailed" xml:space="preserve">
+  <data name="RazerHidDriverModeRestoreFailed" xml:space="preserve">
     <value>Could not restore the wireless mode of {0}: {1}</value>
   </data>
   <data name="LightingRuntimeError" xml:space="preserve">
@@ -1311,13 +1311,43 @@
   <data name="DisplayMuxModeStatusRestored" xml:space="preserve"><value>The update failed and the previous display mode was restored.</value></data>
   <data name="DisplayMuxModeStatusRestoreFailed" xml:space="preserve"><value>The update failed and the previous mode could not be restored. Restart and check the BIOS display mode.</value></data>
   <data name="DisplayMuxModeStatusDedicatedGpuDisabled" xml:space="preserve"><value>Turn off Integrated-only (disable discrete GPU) before changing the MUX mode.</value></data>
+  <data name="GpuModeStatusApplied" xml:space="preserve"><value>The graphics mode was applied.</value></data>
+  <data name="GpuModeStatusPendingRestart" xml:space="preserve"><value>The previous GPU operation has no confirmed final result, so further writes are paused. Use Windows Restart, then reopen the app to attempt recovery; restarting only the app is not enough. If this persists, keep the logs and avoid repeated switching.</value></data>
+  <data name="GpuModeStatusRolledBack" xml:space="preserve"><value>The display path failed after the switch, so the previous mode was restored automatically. Restart if the external display does not return.</value></data>
+  <data name="GpuModeStatusRollbackFailed" xml:space="preserve"><value>The display path failed and automatic recovery also failed. Restart the PC; if the external display still does not return, reinstall the graphics driver.</value></data>
+  <data name="GpuModeStatusRecoveryNeedsElevation" xml:space="preserve"><value>A legacy integrated-only state was found, but the background service is unavailable. Recover it from Diagnostics or restart.</value></data>
+  <data name="GpuModeStatusBlockedNotDeclared" xml:space="preserve"><value>This model does not declare a safe discrete-GPU disable path.</value></data>
+  <data name="GpuModeStatusBlockedNoMux" xml:space="preserve"><value>No usable display MUX was found for this mode.</value></data>
+  <data name="DiagnosticsGpuRecoveryTitle" xml:space="preserve"><value>Graphics and external display</value></data>
+  <data name="DiagnosticsGpuRecoveryDescription" xml:space="preserve"><value>If an external display disappears after a graphics-mode change, re-enable the discrete GPU and refresh the display path.</value></data>
+  <data name="DiagnosticsGpuRecoveryButton" xml:space="preserve"><value>Restore discrete GPU</value></data>
+  <data name="DiagnosticsGpuRecoverySuccess" xml:space="preserve"><value>The discrete GPU is enabled again; the display path is recovering.</value></data>
+  <data name="DiagnosticsGpuRecoveryRestart" xml:space="preserve"><value>The discrete GPU is enabled again. Restart if the external display does not return.</value></data>
+  <data name="DiagnosticsGpuRecoveryNoDevice" xml:space="preserve"><value>No NVIDIA discrete GPU was found.</value></data>
+  <data name="DiagnosticsGpuRecoveryFailed" xml:space="preserve"><value>Recovery failed: {0}</value></data>
+  <data name="DiagnosticsGpuRecoveryBlocked" xml:space="preserve"><value>The background service is unavailable, so recovery cannot run. Install the machine-wide build or run as administrator.</value></data>
+  <data name="DiagnosticsGpuRecoveryBusy" xml:space="preserve"><value>Restoring the discrete GPU...</value></data>
   <data name="GpuModeTitle.Text" xml:space="preserve"><value>Graphics mode</value></data>
-  <data name="GpuModeDescription.Text" xml:space="preserve"><value>Choose which GPU drives the built-in display. Integrated saves power; Standard renders through the iGPU on demand; Discrete direct requires a restart; Auto uses Standard on AC and Integrated on battery.</value></data>
+  <data name="GpuModeDescription.Text" xml:space="preserve"><value>Choose which GPU drives the built-in display and whether the discrete GPU is enabled.</value></data>
+  <data name="GpuModeIntegratedSummary" xml:space="preserve"><value>Disable the discrete GPU. On battery, temporarily lower the internal refresh rate, preferring 60 Hz. An existing refresh-rate profile takes priority.</value></data>
+  <data name="GpuModePreferenceSaveFailed" xml:space="preserve"><value>Could not save the graphics-mode preference. The previous preference is retained; check the actual GPU state.</value></data>
+  <data name="GpuModeOperationNotApplied" xml:space="preserve"><value>Graphics mode was not applied: {0} / {1} (error code {2}).</value></data>
+  <data name="BladeGpuCardClockOffsetTitle.Text" xml:space="preserve"><value>GPU overclocking</value></data>
+  <data name="BladeGpuCardClockOffsetReset.Content" xml:space="preserve"><value>Restore defaults</value></data>
+  <data name="BladeGpuCardCoreClockLabel.Text" xml:space="preserve"><value>Core clock offset</value></data>
+  <data name="BladeGpuCardMemoryClockLabel.Text" xml:space="preserve"><value>Memory clock offset</value></data>
+  <data name="BladeGpuCardClockLimitLabel.Text" xml:space="preserve"><value>Core clock ceiling</value></data>
+  <data name="BladeGpuCardCoreClockLabel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Core clock offset</value></data>
+  <data name="BladeGpuCardMemoryClockLabel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Memory clock offset</value></data>
+  <data name="BladeGpuCardClockLimitLabel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Core clock ceiling</value></data>
+  <data name="GpuModeStandardSummary" xml:space="preserve"><value>The iGPU drives the display and the discrete GPU wakes on demand.</value></data>
+  <data name="GpuModeDiscreteSummary" xml:space="preserve"><value>The display connects directly to the discrete GPU. Highest performance; restart required.</value></data>
+  <data name="GpuModeAutoSummary" xml:space="preserve"><value>Standard on AC power; Integrated on battery.</value></data>
   <data name="GpuModeRestart.Text" xml:space="preserve"><value>Restart discrete GPU</value></data>
-  <data name="GpuModeIntegrated" xml:space="preserve"><value>Integrated</value></data>
-  <data name="GpuModeStandard" xml:space="preserve"><value>Standard</value></data>
+  <data name="GpuModeIntegrated" xml:space="preserve"><value>Integrated mode</value></data>
+  <data name="GpuModeStandard" xml:space="preserve"><value>Standard mode</value></data>
   <data name="GpuModeDiscrete" xml:space="preserve"><value>Discrete direct</value></data>
-  <data name="GpuModeAuto" xml:space="preserve"><value>Auto</value></data>
+  <data name="GpuModeAuto" xml:space="preserve"><value>Auto switch</value></data>
   <data name="GpuModeStatusCurrent" xml:space="preserve"><value>Current: {0}.</value></data>
   <data name="GpuModeStatusAuto" xml:space="preserve"><value>Auto: Standard on AC, Integrated on battery; running {0} now.</value></data>
   <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>The panel is on the discrete route. Switch back to Standard and restart before disabling the GPU.</value></data>
@@ -1349,58 +1379,67 @@
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore lighting after external control</value></data>
-  <data name="OpenRazerInformationTitle.Text" xml:space="preserve"><value>Device information</value></data>
-  <data name="OpenRazerFirmwareLabel.Text" xml:space="preserve"><value>Firmware</value></data>
-  <data name="OpenRazerSerialLabel.Text" xml:space="preserve"><value>Serial number</value></data>
-  <data name="OpenRazerModeLabel.Text" xml:space="preserve"><value>Device mode</value></data>
-  <data name="OpenRazerBatteryLabel.Text" xml:space="preserve"><value>Battery</value></data>
-  <data name="OpenRazerPollingTitle.Text" xml:space="preserve"><value>Polling rate</value></data>
-  <data name="OpenRazerPowerTitle.Text" xml:space="preserve"><value>Power management</value></data>
-  <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
-  <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>Low battery warning (%)</value></data>
-  <data name="OpenRazerAutoSleepLabel.Text" xml:space="preserve"><value>Auto sleep</value></data>
-  <data name="OpenRazerChargeLimiterLabel.Text" xml:space="preserve"><value>Charge limit (%)</value></data>
-  <data name="Text_OpenRazerAutoSleepOn" xml:space="preserve"><value>On</value></data>
-  <data name="Text_OpenRazerAutoSleepOff" xml:space="preserve"><value>Off</value></data>
-  <data name="OpenRazerTimeToDimLabel.Text" xml:space="preserve"><value>Time to dim</value></data>
-  <data name="OpenRazerIndicatorLedLabel.Text" xml:space="preserve"><value>Indicator LED</value></data>
-  <data name="OpenRazerBatteryCurveLabel.Text" xml:space="preserve"><value>Battery discharge curve</value></data>
-  <data name="OpenRazerGpuCardLabel.Text" xml:space="preserve"><value>GPU card detection</value></data>
-  <data name="OpenRazerForceChromaLabel.Text" xml:space="preserve"><value>Force Chroma control</value></data>
-  <data name="OpenRazerChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
-  <data name="OpenRazerLkScrollLabel.Text" xml:space="preserve"><value>LK scroll wheel modes</value></data>
-  <data name="OpenRazerProfileDebounceTitle.Text" xml:space="preserve"><value>Key response</value></data>
-  <data name="OpenRazerMacroStorageTitle.Text" xml:space="preserve"><value>Onboard macro storage</value></data>
-  <data name="Text_OpenRazerOn" xml:space="preserve"><value>On</value></data>
-  <data name="Text_OpenRazerOff" xml:space="preserve"><value>Off</value></data>
-  <data name="Text_OpenRazerIndicatorHalf" xml:space="preserve"><value>Half</value></data>
-  <data name="Text_OpenRazerIndicatorQuarter" xml:space="preserve"><value>Quarter</value></data>
-  <data name="Text_OpenRazerIndicatorOff" xml:space="preserve"><value>Off</value></data>
-  <data name="Text_OpenRazerBatteryAlkaline" xml:space="preserve"><value>Alkaline</value></data>
-  <data name="Text_OpenRazerBatteryNiMH" xml:space="preserve"><value>NiMH</value></data>
-  <data name="Text_OpenRazerBatteryLithium" xml:space="preserve"><value>Lithium</value></data>
-  <data name="Text_OpenRazerChromaTapDouble" xml:space="preserve"><value>Double tap</value></data>
-  <data name="Text_OpenRazerChromaTapTriple" xml:space="preserve"><value>Triple tap</value></data>
-  <data name="Text_OpenRazerChromaTapCycle" xml:space="preserve"><value>Cycle effect</value></data>
-  <data name="Text_OpenRazerChromaTapEffect" xml:space="preserve"><value>Specific effect</value></data>
-  <data name="Text_OpenRazerChromaTapSpecific" xml:space="preserve"><value>Specific quick effect</value></data>
-  <data name="Text_OpenRazerChromaTapLimiter" xml:space="preserve"><value>Toggle digital/analog limiter</value></data>
-  <data name="Text_OpenRazerLkTactile" xml:space="preserve"><value>Tactile</value></data>
-  <data name="Text_OpenRazerLkFreeSpin" xml:space="preserve"><value>FreeSpin</value></data>
-  <data name="Text_OpenRazerLkMicroTactile" xml:space="preserve"><value>MicroTactile</value></data>
-  <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
-  <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>Lighting enabled</value></data>
-  <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>Allow Chroma override</value></data>
+  <data name="RazerHidInformationTitle.Text" xml:space="preserve"><value>Device information</value></data>
+  <data name="RazerHidFirmwareLabel.Text" xml:space="preserve"><value>Firmware</value></data>
+  <data name="RazerHidSerialLabel.Text" xml:space="preserve"><value>Serial number</value></data>
+  <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>Device mode</value></data>
+  <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>Battery</value></data>
+  <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>Polling rate</value></data>
+  <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>Power management</value></data>
+  <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
+  <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>Low battery warning (%)</value></data>
+  <data name="RazerHidAutoSleepLabel.Text" xml:space="preserve"><value>Auto sleep</value></data>
+  <data name="RazerHidChargeLimiterLabel.Text" xml:space="preserve"><value>Charge limit (%)</value></data>
+  <data name="Text_RazerHidAutoSleepOn" xml:space="preserve"><value>On</value></data>
+  <data name="Text_RazerHidAutoSleepOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerHidTimeToDimLabel.Text" xml:space="preserve"><value>Time to dim</value></data>
+  <data name="RazerHidIndicatorLedLabel.Text" xml:space="preserve"><value>Indicator LED</value></data>
+  <data name="RazerHidIndicatorLedV2Title.Text" xml:space="preserve"><value>Receiver indicator LEDs</value></data>
+  <data name="RazerHidIndicatorLed1Label.Header" xml:space="preserve"><value>LED 1</value></data>
+  <data name="RazerHidIndicatorLed2Label.Header" xml:space="preserve"><value>LED 2</value></data>
+  <data name="RazerHidIndicatorLed3Label.Header" xml:space="preserve"><value>LED 3</value></data>
+  <data name="Text_RazerHidIndicatorV2Off" xml:space="preserve"><value>Always off</value></data>
+  <data name="Text_RazerHidIndicatorV2Battery" xml:space="preserve"><value>Battery level</value></data>
+  <data name="Text_RazerHidIndicatorV2Connection" xml:space="preserve"><value>Connection quality</value></data>
+  <data name="Text_RazerHidIndicatorV2Polling" xml:space="preserve"><value>Polling rate</value></data>
+  <data name="Text_RazerHidIndicatorV2Dpi" xml:space="preserve"><value>DPI stage</value></data>
+  <data name="RazerHidBatteryCurveLabel.Text" xml:space="preserve"><value>Battery discharge curve</value></data>
+  <data name="RazerHidGpuCardLabel.Text" xml:space="preserve"><value>GPU card detection</value></data>
+  <data name="RazerHidForceChromaLabel.Text" xml:space="preserve"><value>Force Chroma control</value></data>
+  <data name="RazerHidChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
+  <data name="RazerHidLkScrollLabel.Text" xml:space="preserve"><value>LK scroll wheel modes</value></data>
+  <data name="RazerHidProfileDebounceTitle.Text" xml:space="preserve"><value>Key response</value></data>
+  <data name="RazerHidMacroStorageTitle.Text" xml:space="preserve"><value>Onboard macro storage</value></data>
+  <data name="Text_RazerHidOn" xml:space="preserve"><value>On</value></data>
+  <data name="Text_RazerHidOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Text_RazerHidIndicatorHalf" xml:space="preserve"><value>Half</value></data>
+  <data name="Text_RazerHidIndicatorQuarter" xml:space="preserve"><value>Quarter</value></data>
+  <data name="Text_RazerHidIndicatorOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Text_RazerHidBatteryAlkaline" xml:space="preserve"><value>Alkaline</value></data>
+  <data name="Text_RazerHidBatteryNiMH" xml:space="preserve"><value>NiMH</value></data>
+  <data name="Text_RazerHidBatteryLithium" xml:space="preserve"><value>Lithium</value></data>
+  <data name="Text_RazerHidChromaTapDouble" xml:space="preserve"><value>Double tap</value></data>
+  <data name="Text_RazerHidChromaTapTriple" xml:space="preserve"><value>Triple tap</value></data>
+  <data name="Text_RazerHidChromaTapCycle" xml:space="preserve"><value>Cycle effect</value></data>
+  <data name="Text_RazerHidChromaTapEffect" xml:space="preserve"><value>Specific effect</value></data>
+  <data name="Text_RazerHidChromaTapSpecific" xml:space="preserve"><value>Specific quick effect</value></data>
+  <data name="Text_RazerHidChromaTapLimiter" xml:space="preserve"><value>Toggle digital/analog limiter</value></data>
+  <data name="Text_RazerHidLkTactile" xml:space="preserve"><value>Tactile</value></data>
+  <data name="Text_RazerHidLkFreeSpin" xml:space="preserve"><value>FreeSpin</value></data>
+  <data name="Text_RazerHidLkMicroTactile" xml:space="preserve"><value>MicroTactile</value></data>
+  <data name="RazerHidLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
+  <data name="RazerHidLightingEnabled.Header" xml:space="preserve"><value>Lighting enabled</value></data>
+  <data name="RazerHidChromaOverride.Header" xml:space="preserve"><value>Allow Chroma override</value></data>
   <data name="BladeLightingEnabled.Header" xml:space="preserve"><value>Lighting enabled</value></data>
   <data name="BladeChromaOverride.Header" xml:space="preserve"><value>Allow Chroma override</value></data>
-  <data name="OpenRazerLightingPowerLabel.Text" xml:space="preserve"><value>Power profile</value></data>
-  <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
-  <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
-  <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
-  <data name="OpenRazerLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Effect speed or duration</value></data>
-  <data name="OpenRazerLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting direction</value></data>
-  <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>
-  <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>Left / counterclockwise</value></data>
+  <data name="RazerHidLightingPowerLabel.Text" xml:space="preserve"><value>Power profile</value></data>
+  <data name="RazerHidLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
+  <data name="RazerHidLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
+  <data name="RazerHidBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="RazerHidLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Effect speed or duration</value></data>
+  <data name="RazerHidLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting direction</value></data>
+  <data name="RazerHidLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>
+  <data name="RazerHidLightingDirectionReverse.Content" xml:space="preserve"><value>Left / counterclockwise</value></data>
   <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Reactive duration</value></data>
   <data name="BladeLightingStarlightSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Starlight speed</value></data>
   <data name="BladeLightingStarlightColorMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Starlight color mode</value></data>
@@ -1411,74 +1450,74 @@
   <data name="BladeStarlightRandom" xml:space="preserve"><value>Random</value></data>
   <data name="BladeStarlightSingle" xml:space="preserve"><value>Single color</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>Dual color</value></data>
-  <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>Save</value></data>
-  <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>Apply effect</value></data>
-  <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>
-  <data name="OpenRazerOnboardProfileTitle.Text" xml:space="preserve"><value>Onboard profiles</value></data>
-  <data name="OpenRazerOnboardProfileCountLabel.Text" xml:space="preserve"><value>Used / max</value></data>
-  <data name="OpenRazerOnboardProfileActiveLabel.Text" xml:space="preserve"><value>Active</value></data>
-  <data name="OpenRazerOnboardProfileSelectLabel.Text" xml:space="preserve"><value>Profile id</value></data>
-  <data name="OpenRazerOnboardProfileApplyButton.Content" xml:space="preserve"><value>Activate</value></data>
-  <data name="OpenRazerOnboardProfileCreateButton.Content" xml:space="preserve"><value>New</value></data>
-  <data name="OpenRazerOnboardProfileDeleteButton.Content" xml:space="preserve"><value>Delete</value></data>
-  <data name="OpenRazerOnboardProfileResetButton.Content" xml:space="preserve"><value>Reset</value></data>
-  <data name="OpenRazerScrollFreeNotchedLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
-  <data name="OpenRazerScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>Scroll acceleration level</value></data>
-  <data name="OpenRazerScrollNotchedMode.Text" xml:space="preserve"><value>Notched</value></data>
-  <data name="OpenRazerScrollFreeSpinMode.Text" xml:space="preserve"><value>Free spin</value></data>
-  <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
-  <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>Scroll acceleration</value></data>
-  <data name="OpenRazerSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel threshold</value></data>
-  <data name="OpenRazerKeyswitchExpander.Header" xml:space="preserve"><value>Keyswitch optimization</value></data>
-  <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>Choose function keys or media keys as the primary layer.</value></data>
-  <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>Function keys first</value></data>
-  <data name="OpenRazerMediaPrimaryButton.Content" xml:space="preserve"><value>Media keys first</value></data>
-  <data name="OpenRazerWirelessTitle.Text" xml:space="preserve"><value>Wireless connections</value></data>
-  <data name="OpenRazerWirelessDescription.Text" xml:space="preserve"><value>Devices reported by the wireless link. Unpair removes the selected device.</value></data>
-  <data name="OpenRazerWirelessRefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
-  <data name="OpenRazerWirelessUnpairButton.Content" xml:space="preserve"><value>Unpair</value></data>
-  <data name="OpenRazerWirelessEmpty.Text" xml:space="preserve"><value>No wireless devices reported.</value></data>
-  <data name="OpenRazerWirelessStatus" xml:space="preserve"><value>Status {0}</value></data>
-  <data name="OpenRazerKnobTitle.Text" xml:space="preserve"><value>Knob</value></data>
-  <data name="OpenRazerKnobDescription.Text" xml:space="preserve"><value>Configure the eight knob stages. Applying also updates the active stage.</value></data>
-  <data name="OpenRazerKnobCurrentLabel.Text" xml:space="preserve"><value>Current mode</value></data>
-  <data name="OpenRazerKnobStageColumn.Text" xml:space="preserve"><value>Stage</value></data>
-  <data name="OpenRazerKnobModeColumn.Text" xml:space="preserve"><value>Mode</value></data>
-  <data name="OpenRazerKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>Keyboard brightness</value></data>
-  <data name="OpenRazerKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>Cycle knob lighting</value></data>
-  <data name="OpenRazerKnobModeMicVolumeUpDown" xml:space="preserve"><value>Microphone volume</value></data>
-  <data name="OpenRazerKnobModeTrackJogging" xml:space="preserve"><value>Track jogging</value></data>
-  <data name="OpenRazerKnobModeWindowZoomInOut" xml:space="preserve"><value>Window zoom</value></data>
-  <data name="OpenRazerKnobModeWindowScrollUpDown" xml:space="preserve"><value>Vertical scroll</value></data>
-  <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>Horizontal scroll</value></data>
-  <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>Switch application</value></data>
-  <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>Apply</value></data>
-  <data name="OpenRazerHapticScrollTitle.Text" xml:space="preserve"><value>Haptic scroll stages</value></data>
-  <data name="OpenRazerHapticScrollDescription.Text" xml:space="preserve"><value>Pick the stages that take part in switching, then choose the one in effect.</value></data>
-  <data name="OpenRazerHapticScrollActiveLabel.Header" xml:space="preserve"><value>Active stage</value></data>
-  <data name="OpenRazerHapticScrollStandard.Text" xml:space="preserve"><value>Standard</value></data>
-  <data name="OpenRazerHapticScrollDistinct.Text" xml:space="preserve"><value>Distinct</value></data>
-  <data name="OpenRazerHapticScrollUltraFine.Text" xml:space="preserve"><value>Ultra-fine</value></data>
-  <data name="OpenRazerHapticScrollAdaptive.Text" xml:space="preserve"><value>Adaptive</value></data>
-  <data name="OpenRazerHapticScrollSmooth.Text" xml:space="preserve"><value>Smooth scroll</value></data>
-  <data name="OpenRazerHapticScrollCustom.Text" xml:space="preserve"><value>Custom</value></data>
-  <data name="OpenRazerOledLanguage.Text" xml:space="preserve"><value>Language</value></data>
-  <data name="OpenRazerOledLanguageEnglish.Text" xml:space="preserve"><value>English</value></data>
-  <data name="OpenRazerOledLanguageChinese.Text" xml:space="preserve"><value>Simplified Chinese</value></data>
-  <data name="OpenRazerOledLanguageJapanese.Text" xml:space="preserve"><value>Japanese</value></data>
-  <data name="OpenRazerOledLanguageGerman.Text" xml:space="preserve"><value>German</value></data>
-  <data name="OpenRazerOledLanguageKorean.Text" xml:space="preserve"><value>Korean</value></data>
-  <data name="OpenRazerOledLanguageFrench.Text" xml:space="preserve"><value>French</value></data>
-  <data name="OpenRazerAnalogKeyTitle.Text" xml:space="preserve"><value>Analog keys</value></data>
-  <data name="OpenRazerAnalogKeyDescription.Text" xml:space="preserve"><value>Apply continuous Rapid Trigger, bottom dead zone and report mode together.</value></data>
-  <data name="OpenRazerAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>Continuous Rapid Trigger</value></data>
-  <data name="OpenRazerAnalogBottomDeadZone.Header" xml:space="preserve"><value>Bottom dead zone</value></data>
-  <data name="OpenRazerAnalogReportMode.Header" xml:space="preserve"><value>Analog report mode</value></data>
-  <data name="OpenRazerOledTitle.Text" xml:space="preserve"><value>OLED display</value></data>
-  <data name="OpenRazerOledBrightness.Text" xml:space="preserve"><value>Brightness</value></data>
-  <data name="OpenRazerOledScreensaverMode.Header" xml:space="preserve"><value>Screensaver mode</value></data>
-  <data name="OpenRazerOledScreensaverItem.Header" xml:space="preserve"><value>Screensaver item</value></data>
-  <data name="OpenRazerOledScreensaverReadOnly.Text" xml:space="preserve"><value>Screensaver options are read-only: the protocol exposes no setter.</value></data>
+  <data name="RazerHidSaveButton.Content" xml:space="preserve"><value>Save</value></data>
+  <data name="RazerHidApplyLightingButton.Content" xml:space="preserve"><value>Apply effect</value></data>
+  <data name="RazerHidScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>
+  <data name="RazerHidOnboardProfileTitle.Text" xml:space="preserve"><value>Onboard profiles</value></data>
+  <data name="RazerHidOnboardProfileCountLabel.Text" xml:space="preserve"><value>Used / max</value></data>
+  <data name="RazerHidOnboardProfileActiveLabel.Text" xml:space="preserve"><value>Active</value></data>
+  <data name="RazerHidOnboardProfileSelectLabel.Text" xml:space="preserve"><value>Profile id</value></data>
+  <data name="RazerHidOnboardProfileApplyButton.Content" xml:space="preserve"><value>Activate</value></data>
+  <data name="RazerHidOnboardProfileCreateButton.Content" xml:space="preserve"><value>New</value></data>
+  <data name="RazerHidOnboardProfileDeleteButton.Content" xml:space="preserve"><value>Delete</value></data>
+  <data name="RazerHidOnboardProfileResetButton.Content" xml:space="preserve"><value>Reset</value></data>
+  <data name="RazerHidScrollFreeNotchedLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
+  <data name="RazerHidScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>Scroll acceleration level</value></data>
+  <data name="RazerHidScrollNotchedMode.Text" xml:space="preserve"><value>Notched</value></data>
+  <data name="RazerHidScrollFreeSpinMode.Text" xml:space="preserve"><value>Free spin</value></data>
+  <data name="RazerHidScrollModeLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
+  <data name="RazerHidScrollAccelerationLabel.Text" xml:space="preserve"><value>Scroll acceleration</value></data>
+  <data name="RazerHidSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel threshold</value></data>
+  <data name="RazerHidKeyswitchExpander.Header" xml:space="preserve"><value>Keyswitch optimization</value></data>
+  <data name="RazerHidFnDescription.Text" xml:space="preserve"><value>Choose function keys or media keys as the primary layer.</value></data>
+  <data name="RazerHidFnPrimaryButton.Content" xml:space="preserve"><value>Function keys first</value></data>
+  <data name="RazerHidMediaPrimaryButton.Content" xml:space="preserve"><value>Media keys first</value></data>
+  <data name="RazerHidWirelessTitle.Text" xml:space="preserve"><value>Wireless connections</value></data>
+  <data name="RazerHidWirelessDescription.Text" xml:space="preserve"><value>Devices reported by the wireless link. Unpair removes the selected device.</value></data>
+  <data name="RazerHidWirelessRefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="RazerHidWirelessUnpairButton.Content" xml:space="preserve"><value>Unpair</value></data>
+  <data name="RazerHidWirelessEmpty.Text" xml:space="preserve"><value>No wireless devices reported.</value></data>
+  <data name="RazerHidWirelessStatus" xml:space="preserve"><value>Status {0}</value></data>
+  <data name="RazerHidKnobTitle.Text" xml:space="preserve"><value>Knob</value></data>
+  <data name="RazerHidKnobDescription.Text" xml:space="preserve"><value>Configure the eight knob stages. Applying also updates the active stage.</value></data>
+  <data name="RazerHidKnobCurrentLabel.Text" xml:space="preserve"><value>Current mode</value></data>
+  <data name="RazerHidKnobStageColumn.Text" xml:space="preserve"><value>Stage</value></data>
+  <data name="RazerHidKnobModeColumn.Text" xml:space="preserve"><value>Mode</value></data>
+  <data name="RazerHidKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>Keyboard brightness</value></data>
+  <data name="RazerHidKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>Cycle knob lighting</value></data>
+  <data name="RazerHidKnobModeMicVolumeUpDown" xml:space="preserve"><value>Microphone volume</value></data>
+  <data name="RazerHidKnobModeTrackJogging" xml:space="preserve"><value>Track jogging</value></data>
+  <data name="RazerHidKnobModeWindowZoomInOut" xml:space="preserve"><value>Window zoom</value></data>
+  <data name="RazerHidKnobModeWindowScrollUpDown" xml:space="preserve"><value>Vertical scroll</value></data>
+  <data name="RazerHidKnobModeWindowScrollLeftRight" xml:space="preserve"><value>Horizontal scroll</value></data>
+  <data name="RazerHidKnobModeSwitchApplication" xml:space="preserve"><value>Switch application</value></data>
+  <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>Haptic scroll stages</value></data>
+  <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>Pick the stages that take part in switching, then choose the one in effect.</value></data>
+  <data name="RazerHidHapticScrollActiveLabel.Header" xml:space="preserve"><value>Active stage</value></data>
+  <data name="RazerHidHapticScrollStandard.Text" xml:space="preserve"><value>Standard</value></data>
+  <data name="RazerHidHapticScrollDistinct.Text" xml:space="preserve"><value>Distinct</value></data>
+  <data name="RazerHidHapticScrollUltraFine.Text" xml:space="preserve"><value>Ultra-fine</value></data>
+  <data name="RazerHidHapticScrollAdaptive.Text" xml:space="preserve"><value>Adaptive</value></data>
+  <data name="RazerHidHapticScrollSmooth.Text" xml:space="preserve"><value>Smooth scroll</value></data>
+  <data name="RazerHidHapticScrollCustom.Text" xml:space="preserve"><value>Custom</value></data>
+  <data name="RazerHidOledLanguage.Text" xml:space="preserve"><value>Language</value></data>
+  <data name="RazerHidOledLanguageEnglish.Text" xml:space="preserve"><value>English</value></data>
+  <data name="RazerHidOledLanguageChinese.Text" xml:space="preserve"><value>Simplified Chinese</value></data>
+  <data name="RazerHidOledLanguageJapanese.Text" xml:space="preserve"><value>Japanese</value></data>
+  <data name="RazerHidOledLanguageGerman.Text" xml:space="preserve"><value>German</value></data>
+  <data name="RazerHidOledLanguageKorean.Text" xml:space="preserve"><value>Korean</value></data>
+  <data name="RazerHidOledLanguageFrench.Text" xml:space="preserve"><value>French</value></data>
+  <data name="RazerHidAnalogKeyTitle.Text" xml:space="preserve"><value>Analog keys</value></data>
+  <data name="RazerHidAnalogKeyDescription.Text" xml:space="preserve"><value>Apply continuous Rapid Trigger, bottom dead zone and report mode together.</value></data>
+  <data name="RazerHidAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>Continuous Rapid Trigger</value></data>
+  <data name="RazerHidAnalogBottomDeadZone.Header" xml:space="preserve"><value>Bottom dead zone</value></data>
+  <data name="RazerHidAnalogReportMode.Header" xml:space="preserve"><value>Analog report mode</value></data>
+  <data name="RazerHidOledTitle.Text" xml:space="preserve"><value>OLED display</value></data>
+  <data name="RazerHidOledBrightness.Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="RazerHidOledScreensaverMode.Header" xml:space="preserve"><value>Screensaver mode</value></data>
+  <data name="RazerHidOledScreensaverItem.Header" xml:space="preserve"><value>Screensaver item</value></data>
+  <data name="RazerHidOledScreensaverReadOnly.Text" xml:space="preserve"><value>Screensaver options are read-only: the protocol exposes no setter.</value></data>
   <data name="Text_4B32CEE8" xml:space="preserve"><value>Mouse</value></data>
   <data name="Text_66E7127F" xml:space="preserve"><value>Laptop</value></data>
   <data name="Text_7D4E2D8B" xml:space="preserve"><value>Keyboard</value></data>
@@ -1493,71 +1532,71 @@
   <data name="Text_B252C327" xml:space="preserve"><value>Hardware mode</value></data>
   <data name="Text_8FF04F66" xml:space="preserve"><value>Charging</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>Not charging</value></data>
-  <data name="OpenRazerDpiStagesTitle.Text" xml:space="preserve"><value>DPI stages</value></data>
-  <data name="OpenRazerActiveDpiStage.Header" xml:space="preserve"><value>Active stage</value></data>
-  <data name="OpenRazerDpiStageLabel" xml:space="preserve"><value>Stage {0}</value></data>
-  <data name="OpenRazerHyperPollingDescription.Text" xml:space="preserve"><value>Manage the receiver indicator and mouse pairing. Pairing actions require confirmation.</value></data>
-  <data name="OpenRazerHyperPollingIndicator.Header" xml:space="preserve"><value>Indicator mode</value></data>
-  <data name="OpenRazerApplyIndicatorButton.Content" xml:space="preserve"><value>Apply</value></data>
-  <data name="OpenRazerPairButton.Content" xml:space="preserve"><value>Pair</value></data>
-  <data name="OpenRazerUnpairButton.Content" xml:space="preserve"><value>Unpair</value></data>
-  <data name="OpenRazerMouseProductIdLabel" xml:space="preserve"><value>Mouse PID (hex)</value></data>
-  <data name="OpenRazerPairTitle" xml:space="preserve"><value>Confirm HyperPolling pairing</value></data>
-  <data name="OpenRazerUnpairTitle" xml:space="preserve"><value>Confirm HyperPolling unpairing</value></data>
-  <data name="OpenRazerPairAction" xml:space="preserve"><value>Pair</value></data>
-  <data name="OpenRazerUnpairAction" xml:space="preserve"><value>Unpair</value></data>
-  <data name="OpenRazerInvalidProductId" xml:space="preserve"><value>Enter a four-digit hexadecimal mouse PID.</value></data>
-  <data name="OpenRazerKeyswitchTyping" xml:space="preserve"><value>Typing</value></data>
-  <data name="OpenRazerKeyswitchGaming" xml:space="preserve"><value>Gaming</value></data>
-  <data name="OpenRazerZoneAll" xml:space="preserve"><value>All</value></data>
-  <data name="OpenRazerZoneScrollWheel" xml:space="preserve"><value>Scroll wheel</value></data>
-  <data name="OpenRazerZoneBattery" xml:space="preserve"><value>Battery</value></data>
-  <data name="OpenRazerZoneLogo" xml:space="preserve"><value>Logo</value></data>
-  <data name="OpenRazerZoneBacklight" xml:space="preserve"><value>Backlight</value></data>
-  <data name="OpenRazerZoneMacro" xml:space="preserve"><value>Macro keys</value></data>
-  <data name="OpenRazerZoneGame" xml:space="preserve"><value>Gaming mode</value></data>
-  <data name="OpenRazerZoneProfileRed" xml:space="preserve"><value>Profile red</value></data>
-  <data name="OpenRazerZoneProfileGreen" xml:space="preserve"><value>Profile green</value></data>
-  <data name="OpenRazerZoneProfileBlue" xml:space="preserve"><value>Profile blue</value></data>
-  <data name="OpenRazerZoneRightSide" xml:space="preserve"><value>Right side</value></data>
-  <data name="OpenRazerZoneLeftSide" xml:space="preserve"><value>Left side</value></data>
-  <data name="OpenRazerZoneCharging" xml:space="preserve"><value>Charging</value></data>
-  <data name="OpenRazerZoneFastCharging" xml:space="preserve"><value>Fast charging</value></data>
-  <data name="OpenRazerZoneFullyCharged" xml:space="preserve"><value>Fully charged</value></data>
-  <data name="OpenRazerEffectOff" xml:space="preserve"><value>Off</value></data>
-  <data name="OpenRazerEffectStatic" xml:space="preserve"><value>Static</value></data>
-  <data name="OpenRazerEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
-  <data name="OpenRazerEffectWave" xml:space="preserve"><value>Wave</value></data>
-  <data name="OpenRazerEffectReactive" xml:space="preserve"><value>Reactive</value></data>
-  <data name="OpenRazerEffectBlinking" xml:space="preserve"><value>Blinking</value></data>
-  <data name="OpenRazerEffectBreathingRandom" xml:space="preserve"><value>Random breathing</value></data>
-  <data name="OpenRazerEffectBreathingSingle" xml:space="preserve"><value>Single-color breathing</value></data>
-  <data name="OpenRazerEffectBreathingDual" xml:space="preserve"><value>Dual-color breathing</value></data>
-  <data name="OpenRazerEffectBreathingTriple" xml:space="preserve"><value>Triple-color breathing</value></data>
-  <data name="OpenRazerEffectStarlightRandom" xml:space="preserve"><value>Random starlight</value></data>
-  <data name="OpenRazerEffectStarlightSingle" xml:space="preserve"><value>Single-color starlight</value></data>
-  <data name="OpenRazerEffectStarlightDual" xml:space="preserve"><value>Dual-color starlight</value></data>
-  <data name="OpenRazerEffectWheel" xml:space="preserve"><value>Wheel</value></data>
-  <data name="OpenRazerEffectCustom" xml:space="preserve"><value>Custom</value></data>
-  <data name="OpenRazerEffectSoftwareSpectrum" xml:space="preserve"><value>Software spectrum</value></data>
-  <data name="OpenRazerEffectSoftwareWave" xml:space="preserve"><value>Software wave</value></data>
-  <data name="OpenRazerEffectSoftwareFire" xml:space="preserve"><value>Software fire</value></data>
-  <data name="OpenRazerEffectSoftwareAudioMeter" xml:space="preserve"><value>Audio reactive</value></data>
-  <data name="OpenRazerEffectSoftwareWheel" xml:space="preserve"><value>Software wheel</value></data>
-  <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>Zone lighting</value></data>
-  <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
-  <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
-  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>Select a swatch to edit one pixel, or fill the frame with the current color, then apply it.</value></data>
-  <data name="OpenRazerApplyMatrixButton.Content" xml:space="preserve"><value>Apply frame</value></data>
-  <data name="OpenRazerFillMatrixButton.Content" xml:space="preserve"><value>Fill with current color</value></data>
-  <data name="OpenRazerMatrixCellLabel" xml:space="preserve"><value>Row {0}, column {1}</value></data>
-  <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>Headset</value></data>
-  <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>Headset lighting</value></data>
-  <data name="OpenRazerKrakenLightingTitle.Text" xml:space="preserve"><value>Lighting effect</value></data>
-  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>Color</value></data>
-  <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>Color 2</value></data>
-  <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>Color 3</value></data>
-  <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>Apply effect</value></data>
+  <data name="RazerHidDpiStagesTitle.Text" xml:space="preserve"><value>DPI stages</value></data>
+  <data name="RazerHidActiveDpiStage.Header" xml:space="preserve"><value>Active stage</value></data>
+  <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>Stage {0}</value></data>
+  <data name="RazerHidHyperPollingDescription.Text" xml:space="preserve"><value>Manage the receiver indicator and mouse pairing. Pairing actions require confirmation.</value></data>
+  <data name="RazerHidHyperPollingIndicator.Header" xml:space="preserve"><value>Indicator mode</value></data>
+  <data name="RazerHidApplyIndicatorButton.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="RazerHidPairButton.Content" xml:space="preserve"><value>Pair</value></data>
+  <data name="RazerHidUnpairButton.Content" xml:space="preserve"><value>Unpair</value></data>
+  <data name="RazerHidMouseProductIdLabel" xml:space="preserve"><value>Mouse PID (hex)</value></data>
+  <data name="RazerHidPairTitle" xml:space="preserve"><value>Confirm HyperPolling pairing</value></data>
+  <data name="RazerHidUnpairTitle" xml:space="preserve"><value>Confirm HyperPolling unpairing</value></data>
+  <data name="RazerHidPairAction" xml:space="preserve"><value>Pair</value></data>
+  <data name="RazerHidUnpairAction" xml:space="preserve"><value>Unpair</value></data>
+  <data name="RazerHidInvalidProductId" xml:space="preserve"><value>Enter a four-digit hexadecimal mouse PID.</value></data>
+  <data name="RazerHidKeyswitchTyping" xml:space="preserve"><value>Typing</value></data>
+  <data name="RazerHidKeyswitchGaming" xml:space="preserve"><value>Gaming</value></data>
+  <data name="RazerHidZoneAll" xml:space="preserve"><value>All</value></data>
+  <data name="RazerHidZoneScrollWheel" xml:space="preserve"><value>Scroll wheel</value></data>
+  <data name="RazerHidZoneBattery" xml:space="preserve"><value>Battery</value></data>
+  <data name="RazerHidZoneLogo" xml:space="preserve"><value>Logo</value></data>
+  <data name="RazerHidZoneBacklight" xml:space="preserve"><value>Backlight</value></data>
+  <data name="RazerHidZoneMacro" xml:space="preserve"><value>Macro keys</value></data>
+  <data name="RazerHidZoneGame" xml:space="preserve"><value>Gaming mode</value></data>
+  <data name="RazerHidZoneProfileRed" xml:space="preserve"><value>Profile red</value></data>
+  <data name="RazerHidZoneProfileGreen" xml:space="preserve"><value>Profile green</value></data>
+  <data name="RazerHidZoneProfileBlue" xml:space="preserve"><value>Profile blue</value></data>
+  <data name="RazerHidZoneRightSide" xml:space="preserve"><value>Right side</value></data>
+  <data name="RazerHidZoneLeftSide" xml:space="preserve"><value>Left side</value></data>
+  <data name="RazerHidZoneCharging" xml:space="preserve"><value>Charging</value></data>
+  <data name="RazerHidZoneFastCharging" xml:space="preserve"><value>Fast charging</value></data>
+  <data name="RazerHidZoneFullyCharged" xml:space="preserve"><value>Fully charged</value></data>
+  <data name="RazerHidEffectOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerHidEffectStatic" xml:space="preserve"><value>Static</value></data>
+  <data name="RazerHidEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
+  <data name="RazerHidEffectWave" xml:space="preserve"><value>Wave</value></data>
+  <data name="RazerHidEffectReactive" xml:space="preserve"><value>Reactive</value></data>
+  <data name="RazerHidEffectBlinking" xml:space="preserve"><value>Blinking</value></data>
+  <data name="RazerHidEffectBreathingRandom" xml:space="preserve"><value>Random breathing</value></data>
+  <data name="RazerHidEffectBreathingSingle" xml:space="preserve"><value>Single-color breathing</value></data>
+  <data name="RazerHidEffectBreathingDual" xml:space="preserve"><value>Dual-color breathing</value></data>
+  <data name="RazerHidEffectBreathingTriple" xml:space="preserve"><value>Triple-color breathing</value></data>
+  <data name="RazerHidEffectStarlightRandom" xml:space="preserve"><value>Random starlight</value></data>
+  <data name="RazerHidEffectStarlightSingle" xml:space="preserve"><value>Single-color starlight</value></data>
+  <data name="RazerHidEffectStarlightDual" xml:space="preserve"><value>Dual-color starlight</value></data>
+  <data name="RazerHidEffectWheel" xml:space="preserve"><value>Wheel</value></data>
+  <data name="RazerHidEffectCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="RazerHidEffectSoftwareSpectrum" xml:space="preserve"><value>Software spectrum</value></data>
+  <data name="RazerHidEffectSoftwareWave" xml:space="preserve"><value>Software wave</value></data>
+  <data name="RazerHidEffectSoftwareFire" xml:space="preserve"><value>Software fire</value></data>
+  <data name="RazerHidEffectSoftwareAudioMeter" xml:space="preserve"><value>Audio reactive</value></data>
+  <data name="RazerHidEffectSoftwareWheel" xml:space="preserve"><value>Software wheel</value></data>
+  <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>Zone lighting</value></data>
+  <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
+  <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
+  <data name="RazerHidMatrixDescription.Text" xml:space="preserve"><value>Select a swatch to edit one pixel, or fill the frame with the current color, then apply it.</value></data>
+  <data name="RazerHidApplyMatrixButton.Content" xml:space="preserve"><value>Apply frame</value></data>
+  <data name="RazerHidFillMatrixButton.Content" xml:space="preserve"><value>Fill with current color</value></data>
+  <data name="RazerHidMatrixCellLabel" xml:space="preserve"><value>Row {0}, column {1}</value></data>
+  <data name="RazerHidHeadsetCategory" xml:space="preserve"><value>Headset</value></data>
+  <data name="RazerHidKrakenSubtitle.Text" xml:space="preserve"><value>Headset lighting</value></data>
+  <data name="RazerHidKrakenLightingTitle.Text" xml:space="preserve"><value>Lighting effect</value></data>
+  <data name="RazerHidPrimaryColorLabel.Text" xml:space="preserve"><value>Color</value></data>
+  <data name="RazerHidSecondaryColorLabel.Text" xml:space="preserve"><value>Color 2</value></data>
+  <data name="RazerHidTertiaryColorLabel.Text" xml:space="preserve"><value>Color 3</value></data>
+  <data name="RazerHidKrakenApplyButton.Content" xml:space="preserve"><value>Apply effect</value></data>
   <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>Current power source</value></data>
   <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>AC power</value></data>
   <data name="BladeLightingPowerLowAdapter" xml:space="preserve"><value>Low-power adapter</value></data>
@@ -1616,7 +1655,7 @@
   <data name="BladeAnimationSpeedSlow" xml:space="preserve"><value>Slow</value></data>
   <data name="BladeAnimationSpeedMedium" xml:space="preserve"><value>Medium</value></data>
   <data name="BladeAnimationSpeedFast" xml:space="preserve"><value>Fast</value></data>
-  <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
+  <data name="RazerHidMoreDevicesExpander.Header" xml:space="preserve">
     <value>More devices</value>
   </data>
   <data name="LowBatteryNotificationTitle.Text" xml:space="preserve"><value>Peripheral low battery notifications</value></data>
@@ -1635,88 +1674,90 @@
   <data name="ChromaSourceConnected" xml:space="preserve"><value>Connected · waiting for control</value></data>
   <data name="ChromaSourceOffline" xml:space="preserve"><value>Not connected</value></data>
   <data name="ChromaSourceAllowName" xml:space="preserve"><value>Allow Chroma lighting from {0}</value></data>
-  <data name="OpenRazerCapabilityFirmwareRead" xml:space="preserve"><value>Firmware read</value></data>
-  <data name="OpenRazerCapabilitySerialRead" xml:space="preserve"><value>Serial number read</value></data>
-  <data name="OpenRazerCapabilityDeviceModeRead" xml:space="preserve"><value>Device mode read</value></data>
-  <data name="OpenRazerCapabilityBatteryRead" xml:space="preserve"><value>Battery read</value></data>
-  <data name="OpenRazerCapabilityChargingRead" xml:space="preserve"><value>Charging state read</value></data>
-  <data name="OpenRazerCapabilityPollingRateRead" xml:space="preserve"><value>Polling rate read</value></data>
-  <data name="OpenRazerCapabilityPollingRateWrite" xml:space="preserve"><value>Polling rate write</value></data>
-  <data name="OpenRazerCapabilityDpiRead" xml:space="preserve"><value>DPI read</value></data>
-  <data name="OpenRazerCapabilityDpiWrite" xml:space="preserve"><value>DPI write</value></data>
-  <data name="OpenRazerCapabilityDpiStagesRead" xml:space="preserve"><value>DPI stages read</value></data>
-  <data name="OpenRazerCapabilityDpiStagesWrite" xml:space="preserve"><value>DPI stages write</value></data>
-  <data name="OpenRazerCapabilityIdleTimeoutRead" xml:space="preserve"><value>Idle timeout read</value></data>
-  <data name="OpenRazerCapabilityIdleTimeoutWrite" xml:space="preserve"><value>Idle timeout write</value></data>
-  <data name="OpenRazerCapabilityLowBatteryThresholdRead" xml:space="preserve"><value>Low-battery threshold read</value></data>
-  <data name="OpenRazerCapabilityLowBatteryThresholdWrite" xml:space="preserve"><value>Low-battery threshold write</value></data>
-  <data name="OpenRazerCapabilityBrightnessRead" xml:space="preserve"><value>Brightness read</value></data>
-  <data name="OpenRazerCapabilityBrightnessWrite" xml:space="preserve"><value>Brightness write</value></data>
-  <data name="OpenRazerCapabilityLedStateRead" xml:space="preserve"><value>LED state read</value></data>
-  <data name="OpenRazerCapabilityLedStateWrite" xml:space="preserve"><value>LED state write</value></data>
-  <data name="OpenRazerCapabilityLedEffectRead" xml:space="preserve"><value>LED effect read</value></data>
-  <data name="OpenRazerCapabilityLedEffectWrite" xml:space="preserve"><value>LED effect write</value></data>
-  <data name="OpenRazerCapabilityLedColorWrite" xml:space="preserve"><value>LED color write</value></data>
-  <data name="OpenRazerCapabilityLedBlinkingWrite" xml:space="preserve"><value>LED blinking write</value></data>
-  <data name="OpenRazerCapabilityLightingEffectWrite" xml:space="preserve"><value>Lighting effect write</value></data>
-  <data name="OpenRazerCapabilityMatrixFrameWrite" xml:space="preserve"><value>Matrix frame write</value></data>
-  <data name="OpenRazerCapabilityReactiveTriggerWrite" xml:space="preserve"><value>Reactive trigger</value></data>
-  <data name="OpenRazerCapabilityScrollModeRead" xml:space="preserve"><value>Scroll mode read</value></data>
-  <data name="OpenRazerCapabilityScrollModeWrite" xml:space="preserve"><value>Scroll mode write</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationRead" xml:space="preserve"><value>Scroll acceleration read</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationWrite" xml:space="preserve"><value>Scroll acceleration write</value></data>
-  <data name="OpenRazerCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel read</value></data>
-  <data name="OpenRazerCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel write</value></data>
-  <data name="OpenRazerCapabilitySmartReelThresholdRead" xml:space="preserve"><value>Smart Reel threshold read</value></data>
-  <data name="OpenRazerCapabilitySmartReelThresholdWrite" xml:space="preserve"><value>Smart Reel threshold write</value></data>
-  <data name="OpenRazerCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn primary layer write</value></data>
-  <data name="OpenRazerCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>Keyswitch optimization read</value></data>
-  <data name="OpenRazerCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>Keyswitch optimization write</value></data>
-  <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling indicator write</value></data>
-  <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling pairing</value></data>
-  <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling unpairing</value></data>
-  <data name="OpenRazerCapabilityDeviceModeWrite" xml:space="preserve"><value>Device mode write</value></data>
-  <data name="OpenRazerCapabilityAutoSleepRead" xml:space="preserve"><value>Auto sleep read</value></data>
-  <data name="OpenRazerCapabilityAutoSleepWrite" xml:space="preserve"><value>Auto sleep write</value></data>
-  <data name="OpenRazerCapabilityBatteryChargeLimiterRead" xml:space="preserve"><value>Charge limit read</value></data>
-  <data name="OpenRazerCapabilityBatteryChargeLimiterWrite" xml:space="preserve"><value>Charge limit write</value></data>
-  <data name="OpenRazerCapabilityTimeToDimRead" xml:space="preserve"><value>Auto-dim read</value></data>
-  <data name="OpenRazerCapabilityTimeToDimWrite" xml:space="preserve"><value>Auto-dim write</value></data>
-  <data name="OpenRazerCapabilityIndicatorLedConfigurationRead" xml:space="preserve"><value>Indicator LED configuration read</value></data>
-  <data name="OpenRazerCapabilityIndicatorLedConfigurationWrite" xml:space="preserve"><value>Indicator LED configuration write</value></data>
-  <data name="OpenRazerCapabilityGpuCardDetectionRead" xml:space="preserve"><value>GPU card detection read</value></data>
-  <data name="OpenRazerCapabilityGpuCardDetectionWrite" xml:space="preserve"><value>GPU card detection write</value></data>
-  <data name="OpenRazerCapabilityForceChromaCtrlRead" xml:space="preserve"><value>Lighting override read</value></data>
-  <data name="OpenRazerCapabilityForceChromaCtrlWrite" xml:space="preserve"><value>Lighting override write</value></data>
-  <data name="OpenRazerCapabilityProfileDebounceTimeRead" xml:space="preserve"><value>Key debounce read</value></data>
-  <data name="OpenRazerCapabilityProfileDebounceTimeWrite" xml:space="preserve"><value>Key debounce write</value></data>
-  <data name="OpenRazerCapabilityChromaTapRead" xml:space="preserve"><value>Tap gesture read</value></data>
-  <data name="OpenRazerCapabilityChromaTapWrite" xml:space="preserve"><value>Tap gesture write</value></data>
-  <data name="OpenRazerCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>Battery discharge curve read</value></data>
-  <data name="OpenRazerCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>Battery discharge curve write</value></data>
-  <data name="OpenRazerCapabilityMacroStorageInfoRead" xml:space="preserve"><value>Onboard macro storage read</value></data>
-  <data name="OpenRazerCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>Scroll wheel mode read</value></data>
-  <data name="OpenRazerCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>Scroll wheel mode write</value></data>
-  <data name="OpenRazerCapabilityMappingRead" xml:space="preserve"><value>Button mapping read</value></data>
-  <data name="OpenRazerCapabilityMappingWrite" xml:space="preserve"><value>Button mapping write</value></data>
-  <data name="OpenRazerCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>Free-scroll mode read</value></data>
-  <data name="OpenRazerCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>Free-scroll mode write</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>Scroll acceleration level read</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>Scroll acceleration level write</value></data>
-  <data name="OpenRazerCapabilityOnboardProfileRead" xml:space="preserve"><value>Onboard profile read</value></data>
-  <data name="OpenRazerCapabilityOnboardProfileWrite" xml:space="preserve"><value>Onboard profile write</value></data>
-  <data name="OpenRazerCapabilityWirelessPairingWrite" xml:space="preserve"><value>Wireless pairing</value></data>
-  <data name="OpenRazerCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>Wireless connection state read</value></data>
-  <data name="OpenRazerCapabilityProximitySensorRead" xml:space="preserve"><value>Proximity sensor read</value></data>
-  <data name="OpenRazerCapabilityProximitySensorWrite" xml:space="preserve"><value>Proximity sensor write</value></data>
-  <data name="OpenRazerCapabilityKnobRead" xml:space="preserve"><value>Knob read</value></data>
-  <data name="OpenRazerCapabilityKnobWrite" xml:space="preserve"><value>Knob write</value></data>
-  <data name="OpenRazerCapabilityAnalogKeyRead" xml:space="preserve"><value>Analog key read</value></data>
-  <data name="OpenRazerCapabilityAnalogKeyWrite" xml:space="preserve"><value>Analog key write</value></data>
-  <data name="OpenRazerCapabilityOledRead" xml:space="preserve"><value>OLED display read</value></data>
-  <data name="OpenRazerCapabilityOledWrite" xml:space="preserve"><value>OLED display write</value></data>
-  <data name="OpenRazerCapabilityHapticScrollRead" xml:space="preserve"><value>Haptic scroll read</value></data>
-  <data name="OpenRazerCapabilityHapticScrollWrite" xml:space="preserve"><value>Haptic scroll write</value></data>
+  <data name="RazerHidCapabilityFirmwareRead" xml:space="preserve"><value>Firmware read</value></data>
+  <data name="RazerHidCapabilitySerialRead" xml:space="preserve"><value>Serial number read</value></data>
+  <data name="RazerHidCapabilityDeviceModeRead" xml:space="preserve"><value>Device mode read</value></data>
+  <data name="RazerHidCapabilityBatteryRead" xml:space="preserve"><value>Battery read</value></data>
+  <data name="RazerHidCapabilityChargingRead" xml:space="preserve"><value>Charging state read</value></data>
+  <data name="RazerHidCapabilityPollingRateRead" xml:space="preserve"><value>Polling rate read</value></data>
+  <data name="RazerHidCapabilityPollingRateWrite" xml:space="preserve"><value>Polling rate write</value></data>
+  <data name="RazerHidCapabilityDpiRead" xml:space="preserve"><value>DPI read</value></data>
+  <data name="RazerHidCapabilityDpiWrite" xml:space="preserve"><value>DPI write</value></data>
+  <data name="RazerHidCapabilityDpiStagesRead" xml:space="preserve"><value>DPI stages read</value></data>
+  <data name="RazerHidCapabilityDpiStagesWrite" xml:space="preserve"><value>DPI stages write</value></data>
+  <data name="RazerHidCapabilityIdleTimeoutRead" xml:space="preserve"><value>Idle timeout read</value></data>
+  <data name="RazerHidCapabilityIdleTimeoutWrite" xml:space="preserve"><value>Idle timeout write</value></data>
+  <data name="RazerHidCapabilityLowBatteryThresholdRead" xml:space="preserve"><value>Low-battery threshold read</value></data>
+  <data name="RazerHidCapabilityLowBatteryThresholdWrite" xml:space="preserve"><value>Low-battery threshold write</value></data>
+  <data name="RazerHidCapabilityBrightnessRead" xml:space="preserve"><value>Brightness read</value></data>
+  <data name="RazerHidCapabilityBrightnessWrite" xml:space="preserve"><value>Brightness write</value></data>
+  <data name="RazerHidCapabilityLedStateRead" xml:space="preserve"><value>LED state read</value></data>
+  <data name="RazerHidCapabilityLedStateWrite" xml:space="preserve"><value>LED state write</value></data>
+  <data name="RazerHidCapabilityLedEffectRead" xml:space="preserve"><value>LED effect read</value></data>
+  <data name="RazerHidCapabilityLedEffectWrite" xml:space="preserve"><value>LED effect write</value></data>
+  <data name="RazerHidCapabilityLedColorWrite" xml:space="preserve"><value>LED color write</value></data>
+  <data name="RazerHidCapabilityLedBlinkingWrite" xml:space="preserve"><value>LED blinking write</value></data>
+  <data name="RazerHidCapabilityLightingEffectWrite" xml:space="preserve"><value>Lighting effect write</value></data>
+  <data name="RazerHidCapabilityMatrixFrameWrite" xml:space="preserve"><value>Matrix frame write</value></data>
+  <data name="RazerHidCapabilityReactiveTriggerWrite" xml:space="preserve"><value>Reactive trigger</value></data>
+  <data name="RazerHidCapabilityScrollModeRead" xml:space="preserve"><value>Scroll mode read</value></data>
+  <data name="RazerHidCapabilityScrollModeWrite" xml:space="preserve"><value>Scroll mode write</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationRead" xml:space="preserve"><value>Scroll acceleration read</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationWrite" xml:space="preserve"><value>Scroll acceleration write</value></data>
+  <data name="RazerHidCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel read</value></data>
+  <data name="RazerHidCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel write</value></data>
+  <data name="RazerHidCapabilitySmartReelThresholdRead" xml:space="preserve"><value>Smart Reel threshold read</value></data>
+  <data name="RazerHidCapabilitySmartReelThresholdWrite" xml:space="preserve"><value>Smart Reel threshold write</value></data>
+  <data name="RazerHidCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn primary layer write</value></data>
+  <data name="RazerHidCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>Keyswitch optimization read</value></data>
+  <data name="RazerHidCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>Keyswitch optimization write</value></data>
+  <data name="RazerHidCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling indicator write</value></data>
+  <data name="RazerHidCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling pairing</value></data>
+  <data name="RazerHidCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling unpairing</value></data>
+  <data name="RazerHidCapabilityDeviceModeWrite" xml:space="preserve"><value>Device mode write</value></data>
+  <data name="RazerHidCapabilityAutoSleepRead" xml:space="preserve"><value>Auto sleep read</value></data>
+  <data name="RazerHidCapabilityAutoSleepWrite" xml:space="preserve"><value>Auto sleep write</value></data>
+  <data name="RazerHidCapabilityBatteryChargeLimiterRead" xml:space="preserve"><value>Charge limit read</value></data>
+  <data name="RazerHidCapabilityBatteryChargeLimiterWrite" xml:space="preserve"><value>Charge limit write</value></data>
+  <data name="RazerHidCapabilityTimeToDimRead" xml:space="preserve"><value>Auto-dim read</value></data>
+  <data name="RazerHidCapabilityTimeToDimWrite" xml:space="preserve"><value>Auto-dim write</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationRead" xml:space="preserve"><value>Indicator LED configuration read</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationWrite" xml:space="preserve"><value>Indicator LED configuration write</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationV2Read" xml:space="preserve"><value>Receiver indicator LED configuration read</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationV2Write" xml:space="preserve"><value>Receiver indicator LED configuration write</value></data>
+  <data name="RazerHidCapabilityGpuCardDetectionRead" xml:space="preserve"><value>GPU card detection read</value></data>
+  <data name="RazerHidCapabilityGpuCardDetectionWrite" xml:space="preserve"><value>GPU card detection write</value></data>
+  <data name="RazerHidCapabilityForceChromaCtrlRead" xml:space="preserve"><value>Lighting override read</value></data>
+  <data name="RazerHidCapabilityForceChromaCtrlWrite" xml:space="preserve"><value>Lighting override write</value></data>
+  <data name="RazerHidCapabilityProfileDebounceTimeRead" xml:space="preserve"><value>Key debounce read</value></data>
+  <data name="RazerHidCapabilityProfileDebounceTimeWrite" xml:space="preserve"><value>Key debounce write</value></data>
+  <data name="RazerHidCapabilityChromaTapRead" xml:space="preserve"><value>Tap gesture read</value></data>
+  <data name="RazerHidCapabilityChromaTapWrite" xml:space="preserve"><value>Tap gesture write</value></data>
+  <data name="RazerHidCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>Battery discharge curve read</value></data>
+  <data name="RazerHidCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>Battery discharge curve write</value></data>
+  <data name="RazerHidCapabilityMacroStorageInfoRead" xml:space="preserve"><value>Onboard macro storage read</value></data>
+  <data name="RazerHidCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>Scroll wheel mode read</value></data>
+  <data name="RazerHidCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>Scroll wheel mode write</value></data>
+  <data name="RazerHidCapabilityMappingRead" xml:space="preserve"><value>Button mapping read</value></data>
+  <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>Button mapping write</value></data>
+  <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>Free-scroll mode read</value></data>
+  <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>Free-scroll mode write</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>Scroll acceleration level read</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>Scroll acceleration level write</value></data>
+  <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>Onboard profile read</value></data>
+  <data name="RazerHidCapabilityOnboardProfileWrite" xml:space="preserve"><value>Onboard profile write</value></data>
+  <data name="RazerHidCapabilityWirelessPairingWrite" xml:space="preserve"><value>Wireless pairing</value></data>
+  <data name="RazerHidCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>Wireless connection state read</value></data>
+  <data name="RazerHidCapabilityProximitySensorRead" xml:space="preserve"><value>Proximity sensor read</value></data>
+  <data name="RazerHidCapabilityProximitySensorWrite" xml:space="preserve"><value>Proximity sensor write</value></data>
+  <data name="RazerHidCapabilityKnobRead" xml:space="preserve"><value>Knob read</value></data>
+  <data name="RazerHidCapabilityKnobWrite" xml:space="preserve"><value>Knob write</value></data>
+  <data name="RazerHidCapabilityAnalogKeyRead" xml:space="preserve"><value>Analog key read</value></data>
+  <data name="RazerHidCapabilityAnalogKeyWrite" xml:space="preserve"><value>Analog key write</value></data>
+  <data name="RazerHidCapabilityOledRead" xml:space="preserve"><value>OLED display read</value></data>
+  <data name="RazerHidCapabilityOledWrite" xml:space="preserve"><value>OLED display write</value></data>
+  <data name="RazerHidCapabilityHapticScrollRead" xml:space="preserve"><value>Haptic scroll read</value></data>
+  <data name="RazerHidCapabilityHapticScrollWrite" xml:space="preserve"><value>Haptic scroll write</value></data>
   <data name="BladeCustomPerformanceTitle" xml:space="preserve"><value>Custom performance</value></data>
   <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU performance level</value></data>
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU performance level</value></data>
@@ -1736,13 +1777,15 @@
   <data name="BladeFanCurveApply" xml:space="preserve"><value>Apply</value></data>
   <data name="BladeGpuClockLimitLabel" xml:space="preserve"><value>Core clock limit</value></data>
   <data name="BladeGpuClockLimitDefault" xml:space="preserve"><value>Default</value></data>
-  <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>GPU clock offset</value></data>
-  <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>Driver-level offset. It stays until you reset it.</value></data>
-  <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>Core offset</value></data>
-  <data name="BladeGpuMemoryClockLabel" xml:space="preserve"><value>Memory offset</value></data>
+  <data name="BladeGpuClockLimitNoLimit" xml:space="preserve"><value>No limit</value></data>
+  <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>GPU overclock</value></data>
+  <data name="BladeGpuClockOffsetReading" xml:space="preserve"><value>Reading GPU clocks...</value></data>
+  <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>Takes effect immediately. Windows resets these settings after a restart; offsets that are too high may make the GPU unstable.</value></data>
+  <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>Core frequency offset</value></data>
+  <data name="BladeGpuMemoryClockLabel" xml:space="preserve"><value>Memory frequency offset</value></data>
   <data name="BladeGpuClockOffsetApply" xml:space="preserve"><value>Apply</value></data>
   <data name="BladeGpuClockOffsetReset" xml:space="preserve"><value>Reset</value></data>
-  <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>Applied. It stays until you reset it.</value></data>
+  <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>Applied. Windows resets these settings after a restart.</value></data>
   <data name="BladeGpuClockOffsetFailed" xml:space="preserve"><value>The GPU driver refused this clock offset.</value></data>
   <data name="BladeGpuClockOffsetServiceMissing" xml:space="preserve"><value>Install or update the OpenSynapse machine service.</value></data>
   <data name="BladeGpuClockOffsetUnsupported" xml:space="preserve"><value>This driver does not accept clock offsets.</value></data>
@@ -1792,6 +1835,21 @@
   <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost raises the sustained CPU and GPU power limits; without the Razer Cooling Pad it also pins the fans to maximum speed on models that support it. Without the Razer Laptop Cooling Pad, cooling still depends on your own third-party setup. Sustained heavy load may cause thermal throttling or hardware damage. Continuing means you accept this risk.</value></data>
   <data name="BladeHyperboostDisclaimerAccept" xml:space="preserve"><value>I understand the risk, enable it</value></data>
   <data name="BladeHyperboostLimitedAdapter" xml:space="preserve"><value>HyperBoost is enabled, but the current power adapter is below the recommended wattage, so the machine may not sustain full power and will throttle.</value></data>
+  <data name="AdvancedFeaturesTitle" xml:space="preserve"><value>Advanced features (danger)</value></data>
+  <data name="AdvancedFeaturesSettingDescription" xml:space="preserve"><value>Show GPU overclocking, CPU power limits, Curve Optimizer, and other direct-hardware settings on the Devices page.</value></data>
+  <data name="BladeChargeLimitHelp" xml:space="preserve"><value>Set the charge level where the battery stops charging; around 80% helps battery life when mostly plugged in.</value></data>
+  <data name="BladeCustomPerformanceHelp" xml:space="preserve"><value>Adjust CPU/GPU performance levels and maximum fan speed for the current profile.</value></data>
+  <data name="BladeLightingHelp" xml:space="preserve"><value>Control keyboard lighting power, brightness, effect, and colors.</value></data>
+  <data name="BladeLogoHelp" xml:space="preserve"><value>Control the lid logo lighting and its power profile.</value></data>
+  <data name="BladeDisplayHelp" xml:space="preserve"><value>Adjust the internal display refresh rate, brightness, and panel mode.</value></data>
+  <data name="BladeGamingModeHelp" xml:space="preserve"><value>Reduce background interference and tune system behavior for games.</value></data>
+  <data name="BladeStartupAnimationHelp" xml:space="preserve"><value>Control the Razer boot animation.</value></data>
+  <data name="BladeOneTimeFullChargeHelp" xml:space="preserve"><value>Charge to 100% once for travel; normal charging still stops at the configured limit.</value></data>
+  <data name="BladeFirmwareHelp" xml:space="preserve"><value>View BIOS, EC, MCU, and vBIOS versions and check for official updates.</value></data>
+  <data name="AdvancedFeaturesWarning" xml:space="preserve"><value>These settings write directly to firmware, the EC, or the graphics driver. Incorrect values can cause abnormal power draw, fan failure, system instability, or hardware damage.</value></data>
+  <data name="AdvancedFeaturesDisclaimerTitle" xml:space="preserve"><value>Dangerous features</value></data>
+  <data name="AdvancedFeaturesDisclaimerMessage" xml:space="preserve"><value>Advanced features write directly to firmware, the EC, or the graphics driver and can change power, fan, or frequency behavior. Incorrect settings can cause system instability, device faults, or hardware damage. Continue only if you understand and accept these risks.</value></data>
+  <data name="AdvancedFeaturesDisclaimerAccept" xml:space="preserve"><value>I understand the risk, continue</value></data>
   <data name="FirmwareTitle" xml:space="preserve"><value>Firmware</value></data>
   <data name="FirmwareCheckButton" xml:space="preserve"><value>Check for updates</value></data>
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>
@@ -1836,7 +1894,7 @@
     <value>The Razer THX control component is missing. Download it from Razer's official server with the button below; the file is verified before use. OpenSynapse does not bundle this component.</value>
   </data>
   <data name="ThxInstallButton.Content" xml:space="preserve">
-    <value>Open Razer download page</value>
+    <value>Install THX components</value>
   </data>
   <data name="ThxOutputLabel.Header" xml:space="preserve">
     <value>Output</value>
@@ -1977,7 +2035,7 @@
     <value>Close Razer Synapse, Razer App Engine, and the THX client, then read again.</value>
   </data>
   <data name="ThxHintServiceMissing" xml:space="preserve">
-    <value>The THX service is not running. Repair or reinstall the Razer audio components.</value>
+    <value>The THX service is not running. Supported models can install the official THX audio components here without Synapse.</value>
   </data>
   <data name="ThxHintHelperMissing" xml:space="preserve">
     <value>The THX helper was not deployed with OpenSynapse. Reinstall the app.</value>
@@ -2004,7 +2062,7 @@
     <value>Download THX control component</value>
   </data>
   <data name="ThxStatusDownloading" xml:space="preserve">
-    <value>Downloading the THX control component from Razer...</value>
+    <value>Downloading and installing THX components...</value>
   </data>
   <data name="ThxStatusDownloadFailed" xml:space="preserve">
     <value>The THX control component could not be downloaded. Check the network and try again.</value>
@@ -2014,6 +2072,9 @@
   </data>
   <data name="ThxStatusDownloadWriteFailed" xml:space="preserve">
     <value>The THX control component could not be written. Check permissions for the current user profile.</value>
+  </data>
+  <data name="ThxStatusInstallFailed" xml:space="preserve">
+    <value>THX components could not be downloaded, verified, or installed. Allow administrator rights and try again.</value>
   </data>
   <data name="ThxWindowTitle" xml:space="preserve">
     <value>THX Spatial Audio</value>
@@ -2112,8 +2173,8 @@
   <data name="MacroMouseButton1" xml:space="preserve"><value>Left</value></data>
   <data name="MacroMouseButton2" xml:space="preserve"><value>Right</value></data>
   <data name="MacroMouseButton3" xml:space="preserve"><value>Middle</value></data>
-  <data name="MacroMouseButton4" xml:space="preserve"><value>Mouse 4</value></data>
-  <data name="MacroMouseButton5" xml:space="preserve"><value>Mouse 5</value></data>
+  <data name="MacroMouseButton4" xml:space="preserve"><value>Side 1 (Mouse 4)</value></data>
+  <data name="MacroMouseButton5" xml:space="preserve"><value>Side 2 (Mouse 5)</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga side {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>Mouse side buttons</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga side buttons</value></data>
@@ -2127,7 +2188,7 @@
   <data name="MacroRecorded" xml:space="preserve"><value>Recorded {0} actions.</value></data>
   <data name="MacroRecordingEmptyTake" xml:space="preserve"><value>No actions were recorded. The macro's existing content was kept.</value></data>
   <data name="MacroRecording" xml:space="preserve"><value>Recording actions. Select Stop recording to finish.</value></data>
-  <data name="MacroCapturePrompt" xml:space="preserve"><value>Press the key or mouse side button to bind.</value></data>
+  <data name="MacroCapturePrompt" xml:space="preserve"><value>Press the key or mouse side button to bind (Side 1 = Mouse 4, Side 2 = Mouse 5).</value></data>
   <data name="MacroCaptureCanceled" xml:space="preserve"><value>Trigger capture canceled.</value></data>
   <data name="MacroTriggerCaptured" xml:space="preserve"><value>Trigger set to {0}.</value></data>
   <data name="MacroEmpty" xml:space="preserve"><value>This macro has no actions.</value></data>
@@ -2204,8 +2265,8 @@
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Insert</value></data>
   <data name="MacroKeyPickerMouseHint.Text" xml:space="preserve"><value>Hover a region to see it, click to add a step.</value></data>
   <data name="MacroMouseSideButtons.Text" xml:space="preserve"><value>Optional side keys</value></data>
-  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>Side 1</value></data>
-  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>Side 2</value></data>
+  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>Side 1 (Mouse 4)</value></data>
+  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>Side 2 (Mouse 5)</value></data>
   <data name="MacroAdd" xml:space="preserve"><value>Add</value></data>
   <data name="MacroCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="MacroComboDialogTitle" xml:space="preserve"><value>Insert key combination</value></data>
@@ -2401,15 +2462,15 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>Per-LED control needs Razer's 0F1F control driver. Install it, then refresh.</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>Download ARGB driver</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio comes from Razer's THX service and audio components. Install them here when missing; the installer needs administrator rights.</value></data>
-  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>Download THX installer</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio needs the THX audio service and components. OpenSynapse downloads and installs the official THX package only; it does not install Synapse or require an activation code. Administrator rights are required.</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>Install THX components</value></data>
   <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>Download THX component</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>Update THX game profiles</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>Update THX patcher</value></data>
-  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>The THX service (VSSrv) is not running. Download and run Razer's THX installer, then refresh.</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>The THX service is ready, but the control component is missing. Download it below.</value></data>
-  <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Downloading the THX control component...</value></data>
-  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX control component could not be downloaded or verified. Try again.</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>The THX service is not running. Install the official THX audio components here; Synapse is not included.</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>The THX service is ready, but the control component is missing. Download it above.</value></data>
+  <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Downloading and installing THX components...</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX components could not be downloaded, verified, or installed. Allow administrator rights and try again.</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX components are installed.</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>Spatial audio</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>Apply spatial audio</value></data>
@@ -2820,4 +2881,334 @@
   <data name="BleScrollTactile" xml:space="preserve"><value>Tactile</value></data>
   <data name="BleScrollFreeSpin" xml:space="preserve"><value>Free spin</value></data>
   <data name="BleScrollMicroTactile" xml:space="preserve"><value>Micro tactile</value></data>
+  <data name="BladePerformanceModeBalancedDescription" xml:space="preserve"><value>Everyday use</value></data>
+  <data name="BladePerformanceModeSilentDescription" xml:space="preserve"><value>Quieter operation</value></data>
+  <data name="BladePerformanceModePerformanceDescription" xml:space="preserve"><value>High performance</value></data>
+  <data name="BladePerformanceModeCustomDescription" xml:space="preserve"><value>Custom settings</value></data>
+  <data name="BladePerformanceModeGamingDescription" xml:space="preserve"><value>Game optimized</value></data>
+  <data name="BladePerformanceModeHyperboostDescription" xml:space="preserve"><value>Higher power limit</value></data>
+  <data name="BladePerformanceModeBatterySaverDescription" xml:space="preserve"><value>Extend battery life</value></data>
+  <data name="BladePerformanceModeBalancedDcDescription" xml:space="preserve"><value>Balanced on battery</value></data>
+  <data name="BladePerformanceModeTurboDescription" xml:space="preserve"><value>Turbo performance</value></data>
+  <data name="BladeFanSpeedHelp" xml:space="preserve"><value>Current CPU and GPU fan speeds reported by the controller.</value></data>
+  <data name="BladeFanControlHelp" xml:space="preserve"><value>Automatic follows firmware; fixed speed and manual curves override it.</value></data>
+  <data name="BladePerformanceModeHelp" xml:space="preserve"><value>Switching applies the mode and reads it back.</value></data>
+  <data name="BladeFanSummaryHelp" xml:space="preserve"><value>Current fan mode, target, and measured speed.</value></data>
+  <data name="BladeFanTargetRpmLabel" xml:space="preserve"><value>Target speed</value></data>
+  <data name="BladeChromaOverride.OffContent" xml:space="preserve"><value>Off</value></data>
+  <data name="BladeChromaOverride.OnContent" xml:space="preserve"><value>On</value></data>
+  <data name="BladeLightingEnabled.OffContent" xml:space="preserve"><value>Off</value></data>
+  <data name="BladeLightingEnabled.OnContent" xml:space="preserve"><value>On</value></data>
+  <data name="DiagnosticPreviouslyObserved" xml:space="preserve"><value>Previously observed; device no longer present</value></data>
+  <data name="GpuModeRestart.Content" xml:space="preserve"><value>Restart GPU device</value></data>
+  <data name="HueBridgeComboView.Header" xml:space="preserve"><value>Hue bridge</value></data>
+  <data name="HueBridgeComboView.PlaceholderText" xml:space="preserve"><value>Scan the network or enter an address</value></data>
+  <data name="KiyoApplyWhiteBalance.Content" xml:space="preserve"><value>Apply white balance</value></data>
+  <data name="KiyoOpenSettings.Content" xml:space="preserve"><value>Open Razer camera settings</value></data>
+  <data name="Loc_0E422F6A72.Header" xml:space="preserve"><value>Usage 0–255</value></data>
+  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>Add delay</value></data>
+  <data name="RazerHeadsetAdvancedAudioApply.Content" xml:space="preserve"><value>Apply audio enhancements</value></data>
+  <data name="RazerHeadsetAdvancedAudioTitle.Text" xml:space="preserve"><value>Audio enhancements</value></data>
+  <data name="RazerHeadsetAncApply.Content" xml:space="preserve"><value>Apply noise cancellation mode</value></data>
+  <data name="RazerHeadsetAncLevelLabel.Header" xml:space="preserve"><value>Level</value></data>
+  <data name="RazerHeadsetAncModeLabel.Header" xml:space="preserve"><value>Mode</value></data>
+  <data name="RazerHeadsetAncTitle.Text" xml:space="preserve"><value>Active noise cancellation</value></data>
+  <data name="RazerHeadsetAutoPauseToggle.Header" xml:space="preserve"><value>Auto-pause when removed</value></data>
+  <data name="RazerHeadsetBassApply.Content" xml:space="preserve"><value>Apply bass</value></data>
+  <data name="RazerHeadsetBassTitle.Text" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="RazerHeadsetBatteryLabel.Text" xml:space="preserve"><value>Battery</value></data>
+  <data name="RazerHeadsetChargingLabel.Text" xml:space="preserve"><value>Charging</value></data>
+  <data name="RazerHeadsetCompressorApply.Content" xml:space="preserve"><value>Apply compressor</value></data>
+  <data name="RazerHeadsetCompressorAttack.Header" xml:space="preserve"><value>Attack (raw value)</value></data>
+  <data name="RazerHeadsetCompressorDb.Header" xml:space="preserve"><value>Threshold (dB)</value></data>
+  <data name="RazerHeadsetCompressorRatio.Header" xml:space="preserve"><value>Ratio (raw value)</value></data>
+  <data name="RazerHeadsetCompressorRelease.Header" xml:space="preserve"><value>Release (raw value)</value></data>
+  <data name="RazerHeadsetCompressorTitle.Text" xml:space="preserve"><value>Microphone compressor</value></data>
+  <data name="RazerHeadsetCompressorToggle.Header" xml:space="preserve"><value>Enable compressor</value></data>
+  <data name="RazerHeadsetDeEsserLabel.Text" xml:space="preserve"><value>De-esser</value></data>
+  <data name="RazerHeadsetDndToggle.Header" xml:space="preserve"><value>Do not disturb</value></data>
+  <data name="RazerHeadsetDolbyToggle.Header" xml:space="preserve"><value>Dolby audio</value></data>
+  <data name="RazerHeadsetEqBandsApply.Content" xml:space="preserve"><value>Apply bands</value></data>
+  <data name="RazerHeadsetEqBandsTitle.Text" xml:space="preserve"><value>EQ bands</value></data>
+  <data name="RazerHeadsetEqPresetApply.Content" xml:space="preserve"><value>Apply preset</value></data>
+  <data name="RazerHeadsetEqPresetTitle.Text" xml:space="preserve"><value>Equalizer preset</value></data>
+  <data name="RazerHeadsetFirmwareLabel.Text" xml:space="preserve"><value>Firmware</value></data>
+  <data name="RazerHeadsetGestureToggle.Header" xml:space="preserve"><value>Gesture controls</value></data>
+  <data name="RazerHeadsetHapticsApply.Content" xml:space="preserve"><value>Apply haptics</value></data>
+  <data name="RazerHeadsetHapticsStrength.Header" xml:space="preserve"><value>Level</value></data>
+  <data name="RazerHeadsetHapticsTitle.Text" xml:space="preserve"><value>Haptics</value></data>
+  <data name="RazerHeadsetHapticsToggle.Header" xml:space="preserve"><value>Enable haptics</value></data>
+  <data name="RazerHeadsetLimiterLabel.Text" xml:space="preserve"><value>Limiter threshold</value></data>
+  <data name="RazerHeadsetMicApply.Content" xml:space="preserve"><value>Apply microphone settings</value></data>
+  <data name="RazerHeadsetMicMonitoringApply.Content" xml:space="preserve"><value>Apply monitoring</value></data>
+  <data name="RazerHeadsetMicMonitoringTitle.Text" xml:space="preserve"><value>Microphone monitoring</value></data>
+  <data name="RazerHeadsetMicMonitoringToggle.Header" xml:space="preserve"><value>Enable monitoring</value></data>
+  <data name="RazerHeadsetMicMuteToggle.Header" xml:space="preserve"><value>Mic mute</value></data>
+  <data name="RazerHeadsetMicProcessingApply.Content" xml:space="preserve"><value>Apply microphone processing</value></data>
+  <data name="RazerHeadsetMicProcessingTitle.Text" xml:space="preserve"><value>Microphone processing</value></data>
+  <data name="RazerHeadsetMicTitle.Text" xml:space="preserve"><value>Microphone</value></data>
+  <data name="RazerHeadsetNightModeToggle.Header" xml:space="preserve"><value>Night mode</value></data>
+  <data name="RazerHeadsetNoiseApply.Content" xml:space="preserve"><value>Apply noise cancellation</value></data>
+  <data name="RazerHeadsetNoiseTitle.Text" xml:space="preserve"><value>AI noise cancellation</value></data>
+  <data name="RazerHeadsetNoiseToggle.Header" xml:space="preserve"><value>AI noise cancellation</value></data>
+  <data name="RazerHeadsetParametricEqApply.Content" xml:space="preserve"><value>Apply bands</value></data>
+  <data name="RazerHeadsetParametricEqBand.Header" xml:space="preserve"><value>Band</value></data>
+  <data name="RazerHeadsetParametricEqFrequency.Header" xml:space="preserve"><value>Frequency (Hz)</value></data>
+  <data name="RazerHeadsetParametricEqGain.Header" xml:space="preserve"><value>Gain (raw value)</value></data>
+  <data name="RazerHeadsetParametricEqQ.Header" xml:space="preserve"><value>Q (raw value)</value></data>
+  <data name="RazerHeadsetParametricEqTitle.Text" xml:space="preserve"><value>Parametric equalizer</value></data>
+  <data name="RazerHeadsetParametricEqToggle.Header" xml:space="preserve"><value>Enable this band</value></data>
+  <data name="RazerHeadsetRefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="RazerHeadsetReverbLabel.Text" xml:space="preserve"><value>Reverb</value></data>
+  <data name="RazerHeadsetSourceApply.Content" xml:space="preserve"><value>Apply input</value></data>
+  <data name="RazerHeadsetSourceTitle.Text" xml:space="preserve"><value>Audio input</value></data>
+  <data name="RazerHeadsetStatusTitle.Text" xml:space="preserve"><value>Device status</value></data>
+  <data name="RazerHeadsetVoicePromptToggle.Header" xml:space="preserve"><value>Voice prompts</value></data>
+  <data name="RazerKeyboardGameModeTitle.Text" xml:space="preserve"><value>Gaming mode</value></data>
+  <data name="RazerKeyboardGameModeToggle.Header" xml:space="preserve"><value>Disable Windows key</value></data>
+  <data name="RazerKeyboardIdentityTitle.Text" xml:space="preserve"><value>Device information</value></data>
+  <data name="RazerKeyboardPollingTitle.Text" xml:space="preserve"><value>Polling rate</value></data>
+  <data name="RazerKeyboardRefreshButton.Content" xml:space="preserve"><value>Refresh</value></data>
+  <data name="RazerLightingApplyBrightness.Content" xml:space="preserve"><value>Apply brightness</value></data>
+  <data name="RazerLightingApplyEffect.Content" xml:space="preserve"><value>Apply effect</value></data>
+  <data name="RazerLightingBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="RazerLightingEffectLabel.Text" xml:space="preserve"><value>Effect</value></data>
+  <data name="RazerLightingPrimaryColor.Text" xml:space="preserve"><value>Primary color</value></data>
+  <data name="RazerLightingSecondaryColor.Text" xml:space="preserve"><value>Secondary color</value></data>
+  <data name="RazerLightingTitle.Text" xml:space="preserve"><value>Lighting</value></data>
+  <data name="ViperBatteryChemistryInput.PlaceholderText" xml:space="preserve"><value>Choose battery type</value></data>
+  <data name="ViperBatteryChemistryInput.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Battery type</value></data>
+  <data name="ViperSettingAppliedProfileSaveFailed" xml:space="preserve"><value>The mouse setting was applied to the device, but the profile could not be saved. The in-memory profile field was restored.</value></data>
+  <data name="FirmwareUpdatePartial" xml:space="preserve"><value>Check incomplete; could not compare: {0}. Check the model's Razer support page.</value></data>
+  <data name="FirmwareUpdateAvailablePartial" xml:space="preserve"><value>Component update available: {0}. Could not compare: {1}.</value></data>
+  <data name="FirmwareUpdateComparedCurrent" xml:space="preserve"><value>Comparable component versions match or exceed the published data. Check Razer support for newer releases.</value></data>
+  <data name="RazerHeadsetReverbSmall" xml:space="preserve"><value>Small</value></data>
+  <data name="RazerHeadsetReverbMedium" xml:space="preserve"><value>Medium</value></data>
+  <data name="RazerHeadsetReverbLarge" xml:space="preserve"><value>Large</value></data>
+  <data name="RazerHeadsetReverbPlate" xml:space="preserve"><value>Plate</value></data>
+  <data name="HueLightsHelp" xml:space="preserve"><value>Lists the lights on the Hue bridge. Toggle them, set brightness, or apply a color to the selected light; changes are sent when you click Apply.</value></data>
+  <data name="RazerHidKrakenLightingHelp" xml:space="preserve"><value>Set the Kraken lighting effect, primary/secondary colors, and brightness; click Apply lighting to write them to the device.</value></data>
+  <data name="BlackSharkBatteryHelp" xml:space="preserve"><value>Shows the headset's reported battery level and charging state; read-only.</value></data>
+  <data name="BlackSharkThxHelp" xml:space="preserve"><value>Turns THX Spatial Audio on the headset on or off; Save writes it to the device.</value></data>
+  <data name="BlackSharkSidetoneHelp" xml:space="preserve"><value>Sets how much of your microphone is fed back into the headset (0–15); Save applies it.</value></data>
+  <data name="BlackSharkGameChatHelp" xml:space="preserve"><value>Balances game audio against voice chat; Save writes the mix to the headset.</value></data>
+  <data name="BlackSharkAncHelp" xml:space="preserve"><value>Selects the active noise cancellation mode and level; Save writes it to the headset.</value></data>
+  <data name="RazerMixer053EHelp" xml:space="preserve"><value>Controls mute for the mixer's four channels and microphone, plus brightness; mute buttons write immediately, brightness is written with Apply brightness.</value></data>
+  <data name="RazerHeadsetStatusHelp" xml:space="preserve"><value>Shows the headset's reported firmware, battery level, and charging state; read-only.</value></data>
+  <data name="RazerHeadsetEqPresetHelp" xml:space="preserve"><value>Selects and applies one of the headset's built-in equalizer presets.</value></data>
+  <data name="RazerHeadsetEqBandsHelp" xml:space="preserve"><value>Adjusts the headset equalizer band by band; Apply bands writes the whole curve.</value></data>
+  <data name="RazerHeadsetMicEqBandsHelp" xml:space="preserve"><value>Adjusts the microphone equalizer band by band; Apply microphone bands writes the whole curve.</value></data>
+  <data name="RazerHeadsetBassHelp" xml:space="preserve"><value>Sets the bass boost level; Apply bass writes it to the headset.</value></data>
+  <data name="RazerHeadsetMicHelp" xml:space="preserve"><value>Toggles microphone mute and sets input volume; Apply microphone writes both to the device.</value></data>
+  <data name="RazerHeadsetSourceHelp" xml:space="preserve"><value>Selects the audio input source for the headset; Apply input applies it.</value></data>
+  <data name="RazerHeadsetNoiseHelp" xml:space="preserve"><value>Turns AI noise suppression on or off; Apply noise enables it on the headset's microphone input.</value></data>
+  <data name="RazerHeadsetAncHelp" xml:space="preserve"><value>Selects the ANC mode and level; Apply noise mode writes it to the headset.</value></data>
+  <data name="RazerHeadsetAdvancedAudioHelp" xml:space="preserve"><value>Toggles Do Not Disturb, auto-pause, gestures, Dolby, night mode, and voice prompts; Apply writes them to the device.</value></data>
+  <data name="RazerHeadsetMicProcessingHelp" xml:space="preserve"><value>Adjusts de-esser, limiter threshold, and reverb; Apply writes them to the microphone processing chain.</value></data>
+  <data name="RazerHeadsetMicMonitoringHelp" xml:space="preserve"><value>Feeds the microphone signal back into the headset (sidetone); toggle and apply it separately.</value></data>
+  <data name="RazerHeadsetParametricEqHelp" xml:space="preserve"><value>Reads and writes gain and Q per band; the protocol exposes raw values and Razer does not document a conversion.</value></data>
+  <data name="RazerHeadsetCompressorHelp" xml:space="preserve"><value>Adjusts threshold, ratio, attack, and release; ratio and timing are written as protocol raw values.</value></data>
+  <data name="RazerHeadsetHapticsHelp" xml:space="preserve"><value>Turns haptic feedback on or off and sets its strength; Apply writes it to the headset.</value></data>
+  <data name="RazerHeadsetLightingHelp" xml:space="preserve"><value>Sets the headset matrix lighting effect, brightness, and primary/secondary colors; Apply writes them to the device.</value></data>
+  <data name="RazerKeyboardIdentityHelp" xml:space="preserve"><value>Shows the keyboard's reported firmware version and serial number; read-only.</value></data>
+  <data name="RazerKeyboardGameModeHelp" xml:space="preserve"><value>Disables the Windows key to prevent accidental presses in games; Save writes it to the keyboard.</value></data>
+  <data name="RazerKeyboardPollingHelp" xml:space="preserve"><value>Selects the keyboard polling rate; available options are reported by the device.</value></data>
+  <data name="RazerKeyboardLightingHelp" xml:space="preserve"><value>Sets keyboard lighting effect, brightness, and primary/secondary colors; Apply writes them to the keyboard.</value></data>
+  <data name="RazerGamepadConnectionHelp" xml:space="preserve"><value>Sets the controller polling rate and profile; Apply writes them to the device.</value></data>
+  <data name="RazerGamepadLightingHelp" xml:space="preserve"><value>Sets the lighting effect, color, duration, and brightness per zone; Apply writes them to the controller.</value></data>
+  <data name="RazerGamepadSticksHelp" xml:space="preserve"><value>Adjusts sensitivity, dead zone, and stick shape for each analog stick.</value></data>
+  <data name="RazerGamepadStickHelp" xml:space="preserve"><value>Adjusts this stick's sensitivity, dead zone, double-dead-zone guard, and shape.</value></data>
+  <data name="RazerGamepadTriggersHelp" xml:space="preserve"><value>Sets the mode, analog range, and actuation range for each trigger.</value></data>
+  <data name="RazerGamepadTriggerHelp" xml:space="preserve"><value>Adjusts this trigger's mode, range, actuation point, and rapid trigger.</value></data>
+  <data name="RazerGamepadDpadHelp" xml:space="preserve"><value>Sets diagonal input handling and SOCD cleaning for the D-pad; Apply writes them to the device.</value></data>
+  <data name="RazerGamepadVibrationHelp" xml:space="preserve"><value>Selects the controller vibration strength; Apply writes it to the device.</value></data>
+  <data name="RazerGamepadRawInputHelp" xml:space="preserve"><value>Shows the controller's raw input and ADC mask for mapping diagnostics; read-only.</value></data>
+  <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>Assigns actions to controller buttons; read or edit them, then Apply to write to the device.</value></data>
+  <data name="RazerHidInformationHelp" xml:space="preserve"><value>Shows the device's reported firmware, serial number, battery, and related details; read-only.</value></data>
+  <data name="RazerChromaLightingHelp" xml:space="preserve"><value>Sets the device lighting effect, brightness, and primary/secondary colors; Apply writes them to the device.</value></data>
+  <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>Shows volume, sidetone, EQ, lighting, and other controls the device reports; each Apply writes to the headset.</value></data>
+  <data name="RazerHidPollingHelp" xml:space="preserve"><value>Selects the mouse polling rate; Save writes it to the device.</value></data>
+  <data name="BlePollingHelp" xml:space="preserve"><value>Selects the wireless mouse polling rate; higher rates use more power.</value></data>
+  <data name="BleDpiHelp" xml:space="preserve"><value>Sets the mouse X/Y DPI; Save writes it to the device.</value></data>
+  <data name="BleLightingHelp" xml:space="preserve"><value>Sets lighting brightness, effect, direction, and color; Apply writes them to the device.</value></data>
+  <data name="BleMappingHelp" xml:space="preserve"><value>Reassigns button actions per layer; Apply writes them to the onboard mapping.</value></data>
+  <data name="BleDpiStagesHelp" xml:space="preserve"><value>Sets each DPI stage and the active stage; Apply writes the whole table.</value></data>
+  <data name="BleScrollHelp" xml:space="preserve"><value>Sets scroll mode, Smart Reel, acceleration, and tactile steps; Apply writes them to the device.</value></data>
+  <data name="BlePowerHelp" xml:space="preserve"><value>Sets low-battery alerts, auto sleep, auto dim, and power plan; Apply writes them to the device.</value></data>
+  <data name="BleBatteryHelp" xml:space="preserve"><value>Selects the battery chemistry used to convert the charge percentage; reselect it after replacing the battery.</value></data>
+  <data name="BleSmartIlluminationHelp" xml:space="preserve"><value>Dims lighting when idle and selects the dim level; Apply writes it to the device.</value></data>
+  <data name="BleKeysHelp" xml:space="preserve"><value>Configures Snap Tap and key debounce timing; Apply writes them to the device.</value></data>
+  <data name="BleProfilesHelp" xml:space="preserve"><value>Switches the device's onboard profile; the change takes effect immediately.</value></data>
+  <data name="RazerHidDpiHelp" xml:space="preserve"><value>Reads or writes the mouse X/Y DPI; the maximum depends on the device.</value></data>
+  <data name="RazerHidDpiStagesHelp" xml:space="preserve"><value>Sets each DPI stage and the active stage; Save writes the whole table.</value></data>
+  <data name="RazerHidMappingHelp" xml:space="preserve"><value>Reads and edits onboard button mappings per layer; Save writes them to the device.</value></data>
+  <data name="RazerHidPowerHelp" xml:space="preserve"><value>Sets idle sleep, low-battery alerts, charge limit, auto dim, and battery curve; Save writes them to the device.</value></data>
+  <data name="RazerHidMacroStorageHelp" xml:space="preserve"><value>Shows onboard macro storage capacity and usage; read-only.</value></data>
+  <data name="RazerHidLightingHelp" xml:space="preserve"><value>Sets lighting effect, brightness, color, direction, and speed per zone; Save writes them to the device.</value></data>
+  <data name="RazerHidOnboardProfileHelp" xml:space="preserve"><value>View, switch, create, or delete onboard profiles.</value></data>
+  <data name="RazerHidOledHelp" xml:space="preserve"><value>Adjusts OLED brightness, language, and screensaver options; screensaver settings are read-only.</value></data>
+  <data name="RazerHidProfileDebounceHelp" xml:space="preserve"><value>Sets make/break debounce and mask times; Save writes them to the current profile.</value></data>
+  <data name="ViperDpiStagesHelp" xml:space="preserve"><value>Sets the stage count, active stage, and X/Y DPI for each stage; saves the whole table.</value></data>
+  <data name="ViperMappingHelp" xml:space="preserve"><value>Reads and edits onboard button mappings per layer; Save writes them to the device.</value></data>
+  <data name="BatteryHealthHelp" xml:space="preserve"><value>Shows the current battery health reading, design capacity, full-charge capacity, and cycle count; read-only.</value></data>
+  <data name="BatteryChargeHelp" xml:space="preserve"><value>Shows the current charge level and charging state; read-only.</value></data>
+  <data name="BladeFilterDriverHelp" xml:space="preserve"><value>Without the filter driver, Fn-row keys are handled by firmware/EC; installing the Razer filter driver lets the driver take over.</value></data>
+  <data name="RazerHidScrollHelp" xml:space="preserve"><value>Sets scroll mode, Smart Reel, acceleration, and tactile steps; Save writes them to the device.</value></data>
+  <data name="RazerHidKeyswitchHelp" xml:space="preserve"><value>Selects the keyswitch optimization profile and saves it to the device; available profiles are reported by the device.</value></data>
+  <data name="RazerHidMatrixHelp" xml:space="preserve"><value>Sets individual matrix LED colors, or fills with the current color, then applies the whole frame.</value></data>
+  <data name="RazerKeyboardStatusHelp" xml:space="preserve"><value>Shows the keyboard's reported battery level and charging state; read-only.</value></data>
+  <data name="ViperLowBatteryHelp" xml:space="preserve"><value>Sets the low-battery notification threshold used by OpenSynapse.</value></data>
+  <data name="ViperBatteryChemistryHelp" xml:space="preserve"><value>Selects the battery chemistry; the percentage is scaled by this type, so update it after replacing the battery.</value></data>
+  <data name="ViperDpiHelp" xml:space="preserve"><value>Sets the current X/Y DPI; range 100–30000 in steps of 50.</value></data>
+  <data name="ViperBatteryHelp" xml:space="preserve"><value>Read-only: shows the mouse battery level reported over the wireless link; no value is written to the device.</value></data>
+  <data name="ViperIdleHelp" xml:space="preserve"><value>Sets how long the mouse stays idle before sleeping; range 1–15 minutes.</value></data>
+  <data name="ViperPollingHelp" xml:space="preserve"><value>Sets the mouse polling rate; Save writes it to the device and reads it back.</value></data>
+  <data name="LightingStudioTitle" xml:space="preserve"><value>Lighting Studio</value></data>
+  <data name="LightingStudioSubtitle" xml:space="preserve"><value>Layer, region and effect preview with multi-device matrix output and Chroma file import/export.</value></data>
+  <data name="LightingStudioPlay" xml:space="preserve"><value>Play</value></data>
+  <data name="LightingStudioPause" xml:space="preserve"><value>Pause</value></data>
+  <data name="LightingStudioApply" xml:space="preserve"><value>Apply to device</value></data>
+  <data name="LightingStudioStop" xml:space="preserve"><value>Stop</value></data>
+  <data name="LightingStudioDeviceLabel" xml:space="preserve"><value>Device</value></data>
+  <data name="LightingStudioNoDevice" xml:space="preserve"><value>No Blade keyboard detected</value></data>
+  <data name="LightingStudioNameLabel" xml:space="preserve"><value>Studio name</value></data>
+  <data name="LightingStudioUntitled" xml:space="preserve"><value>Untitled Studio</value></data>
+  <data name="LightingStudioAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="LightingStudioRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="LightingStudioMoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="LightingStudioMoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="LightingStudioSave" xml:space="preserve"><value>Save</value></data>
+  <data name="LightingStudioLoad" xml:space="preserve"><value>Load</value></data>
+  <data name="LightingStudioNew" xml:space="preserve"><value>New</value></data>
+  <data name="LightingStudioLayerProperties" xml:space="preserve"><value>Layer properties</value></data>
+  <data name="LightingStudioLayerNameLabel" xml:space="preserve"><value>Name</value></data>
+  <data name="LightingStudioEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="LightingStudioEffect" xml:space="preserve"><value>Effect</value></data>
+  <data name="LightingStudioBlend" xml:space="preserve"><value>Blend</value></data>
+  <data name="LightingStudioOpacity" xml:space="preserve"><value>Opacity</value></data>
+  <data name="LightingStudioSpeed" xml:space="preserve"><value>Speed</value></data>
+  <data name="LightingStudioPrimary" xml:space="preserve"><value>Primary color</value></data>
+  <data name="LightingStudioSecondary" xml:space="preserve"><value>Secondary color</value></data>
+  <data name="LightingStudioLayerName" xml:space="preserve"><value>Layer {0}</value></data>
+  <data name="LightingStudioProfileName" xml:space="preserve"><value>Profile {0}</value></data>
+  <data name="LightingStudioGroupName" xml:space="preserve"><value>Group {0}</value></data>
+  <data name="LightingStudioAllRegions" xml:space="preserve"><value>Whole layer</value></data>
+  <data name="LightingStudioRegionLabel" xml:space="preserve"><value>Region</value></data>
+  <data name="LightingStudioRegionName" xml:space="preserve"><value>Region {0}</value></data>
+  <data name="LightingStudioProfileLabel" xml:space="preserve"><value>Profiles</value></data>
+  <data name="LightingStudioAddGroup" xml:space="preserve"><value>Group</value></data>
+  <data name="LightingStudioDuplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="LightingStudioMoveIntoGroup" xml:space="preserve"><value>Into group</value></data>
+  <data name="LightingStudioMoveToRoot" xml:space="preserve"><value>Out of group</value></data>
+  <data name="LightingStudioUndo" xml:space="preserve"><value>Undo</value></data>
+  <data name="LightingStudioRedo" xml:space="preserve"><value>Redo</value></data>
+  <data name="LightingStudioToolSelect" xml:space="preserve"><value>Select</value></data>
+  <data name="LightingStudioToolPen" xml:space="preserve"><value>Pen</value></data>
+  <data name="LightingStudioToolBucket" xml:space="preserve"><value>Bucket</value></data>
+  <data name="LightingStudioToolMove" xml:space="preserve"><value>Move</value></data>
+  <data name="LightingStudioBackgroundLayer" xml:space="preserve"><value>Background</value></data>
+  <data name="LightingStudioEffectSolid" xml:space="preserve"><value>Solid</value></data>
+  <data name="LightingStudioEffectBreathing" xml:space="preserve"><value>Breathing</value></data>
+  <data name="LightingStudioEffectSpectrum" xml:space="preserve"><value>Spectrum</value></data>
+  <data name="LightingStudioEffectWave" xml:space="preserve"><value>Wave</value></data>
+  <data name="LightingStudioEffectGradient" xml:space="preserve"><value>Gradient</value></data>
+  <data name="LightingStudioEffectFire" xml:space="preserve"><value>Fire</value></data>
+  <data name="LightingStudioEffectReactive" xml:space="preserve"><value>Reactive</value></data>
+  <data name="LightingStudioEffectRipple" xml:space="preserve"><value>Ripple</value></data>
+  <data name="LightingStudioEffectStarlight" xml:space="preserve"><value>Starlight</value></data>
+  <data name="LightingStudioEffectAmbient" xml:space="preserve"><value>Ambient</value></data>
+  <data name="LightingStudioEffectAudio" xml:space="preserve"><value>Audio</value></data>
+  <data name="LightingStudioEffectWheel" xml:space="preserve"><value>Wheel</value></data>
+  <data name="LightingStudioEffectGenerate" xml:space="preserve"><value>Image</value></data>
+  <data name="LightingStudioEffectTidal" xml:space="preserve"><value>Tidal</value></data>
+  <data name="LightingStudioBlendNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="LightingStudioBlendAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="LightingStudioBlendMultiply" xml:space="preserve"><value>Multiply</value></data>
+  <data name="LightingStudioBlendScreen" xml:space="preserve"><value>Screen</value></data>
+  <data name="LightingStudioColorRazerGreen" xml:space="preserve"><value>Razer green</value></data>
+  <data name="LightingStudioColorCyan" xml:space="preserve"><value>Cyan</value></data>
+  <data name="LightingStudioColorBlue" xml:space="preserve"><value>Blue</value></data>
+  <data name="LightingStudioColorPurple" xml:space="preserve"><value>Purple</value></data>
+  <data name="LightingStudioColorRed" xml:space="preserve"><value>Red</value></data>
+  <data name="LightingStudioColorOrange" xml:space="preserve"><value>Orange</value></data>
+  <data name="LightingStudioColorYellow" xml:space="preserve"><value>Yellow</value></data>
+  <data name="LightingStudioColorWhite" xml:space="preserve"><value>White</value></data>
+  <data name="LightingStudioStatusHint" xml:space="preserve"><value>Select a layer and adjust its parameters; the preview updates live.</value></data>
+  <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>Loading device layout...</value></data>
+  <data name="LightingStudioStatusLayoutFailed" xml:space="preserve"><value>Using the matrix layout: {0}</value></data>
+  <data name="LightingStudioStatusSelectLayer" xml:space="preserve"><value>Select a layer first.</value></data>
+  <data name="LightingStudioStatusSelectLeds" xml:space="preserve"><value>Select LEDs on the canvas first.</value></data>
+  <data name="LightingStudioStatusRegionApplied" xml:space="preserve"><value>Region applied to {0} LEDs.</value></data>
+  <data name="LightingStudioStatusRegionCleared" xml:space="preserve"><value>Regions cleared; the layer covers the whole device.</value></data>
+  <data name="LightingStudioApplySelection" xml:space="preserve"><value>Apply selection</value></data>
+  <data name="LightingStudioSelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="LightingStudioClearSelection" xml:space="preserve"><value>Clear region</value></data>
+  <data name="LightingStudioStatusLayerAdded" xml:space="preserve"><value>Added {0}</value></data>
+  <data name="LightingStudioStatusLayerRemoved" xml:space="preserve"><value>Layer removed</value></data>
+  <data name="LightingStudioStatusNoDevice" xml:space="preserve"><value>No available Blade keyboard was found.</value></data>
+  <data name="LightingStudioStatusApplied" xml:space="preserve"><value>Applied to {0}.</value></data>
+  <data name="LightingStudioStatusApplyFailed" xml:space="preserve"><value>Apply failed: {0}</value></data>
+  <data name="LightingStudioStatusStopped" xml:space="preserve"><value>Stopped and restored the device effect.</value></data>
+  <data name="LightingStudioStatusStopFailed" xml:space="preserve"><value>Stop failed: {0}</value></data>
+  <data name="LightingStudioStatusSaved" xml:space="preserve"><value>Saved to {0}</value></data>
+  <data name="LightingStudioStatusSaveFailed" xml:space="preserve"><value>Save failed: {0}</value></data>
+  <data name="LightingStudioStatusNoSave" xml:space="preserve"><value>No saved studio yet.</value></data>
+  <data name="LightingStudioStatusLoaded" xml:space="preserve"><value>Loaded {0}</value></data>
+  <data name="LightingStudioStatusLoadFailed" xml:space="preserve"><value>Load failed: {0}</value></data>
+  <data name="LightingStudioStatusNew" xml:space="preserve"><value>New empty studio created.</value></data>
+  <data name="LightingStudioParamColor" xml:space="preserve"><value>Primary color</value></data>
+  <data name="LightingStudioParamColor2" xml:space="preserve"><value>Secondary color</value></data>
+  <data name="LightingStudioParamColorStops" xml:space="preserve"><value>Palette</value></data>
+  <data name="LightingStudioParamRandomColor" xml:space="preserve"><value>Random color</value></data>
+  <data name="LightingStudioParamDuration" xml:space="preserve"><value>Duration</value></data>
+  <data name="LightingStudioParamPause" xml:space="preserve"><value>Pause</value></data>
+  <data name="LightingStudioParamCycles" xml:space="preserve"><value>Cycles</value></data>
+  <data name="LightingStudioParamPlaybackStart" xml:space="preserve"><value>Playback start</value></data>
+  <data name="LightingStudioParamPlaybackEnd" xml:space="preserve"><value>Playback end</value></data>
+  <data name="LightingStudioParamSpeed" xml:space="preserve"><value>Speed</value></data>
+  <data name="LightingStudioParamWidth" xml:space="preserve"><value>Width</value></data>
+  <data name="LightingStudioParamAngle" xml:space="preserve"><value>Angle</value></data>
+  <data name="LightingStudioParamSplit" xml:space="preserve"><value>Split</value></data>
+  <data name="LightingStudioParamDensity" xml:space="preserve"><value>Density</value></data>
+  <data name="LightingStudioParamBoost" xml:space="preserve"><value>Boost</value></data>
+  <data name="LightingStudioParamAutoBoost" xml:space="preserve"><value>Auto boost</value></data>
+  <data name="LightingStudioParamDecay" xml:space="preserve"><value>Decay</value></data>
+  <data name="LightingStudioParamScreen" xml:space="preserve"><value>Screen area</value></data>
+  <data name="LightingStudioParamScreenRect" xml:space="preserve"><value>Custom region</value></data>
+  <data name="LightingStudioParamScreenRectHint" xml:space="preserve"><value>Edit the custom region on the canvas.</value></data>
+  <data name="LightingStudioParamBlur" xml:space="preserve"><value>Blur</value></data>
+  <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>Media source</value></data>
+  <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>Generate config (JSON)</value></data>
+  <data name="LightingStudioBrowse" xml:space="preserve"><value>Browse…</value></data>
+  <data name="LightingStudioGenerateOffsetX" xml:space="preserve"><value>Offset X</value></data>
+  <data name="LightingStudioGenerateOffsetY" xml:space="preserve"><value>Offset Y</value></data>
+  <data name="LightingStudioGenerateRotation" xml:space="preserve"><value>Rotation (°)</value></data>
+  <data name="LightingStudioGenerateScaleX" xml:space="preserve"><value>Scale X</value></data>
+  <data name="LightingStudioGenerateScaleY" xml:space="preserve"><value>Scale Y</value></data>
+  <data name="LightingStudioGenerateMirrorX" xml:space="preserve"><value>Mirror X</value></data>
+  <data name="LightingStudioGenerateMirrorY" xml:space="preserve"><value>Mirror Y</value></data>
+  <data name="LightingStudioGenerateFlipX" xml:space="preserve"><value>Flip X</value></data>
+  <data name="LightingStudioGenerateFlipY" xml:space="preserve"><value>Flip Y</value></data>
+  <data name="LightingStudioGeneratePattern" xml:space="preserve"><value>Pattern</value></data>
+  <data name="LightingStudioGenerateBlend" xml:space="preserve"><value>Blend</value></data>
+  <data name="LightingStudioGenerateSpread" xml:space="preserve"><value>Spread</value></data>
+  <data name="LightingStudioGenerateSpeed" xml:space="preserve"><value>Speed</value></data>
+  <data name="LightingStudioGenerateTransform" xml:space="preserve"><value>Transform</value></data>
+  <data name="LightingStudioGenerateMirrorFlip" xml:space="preserve"><value>Mirror &amp; flip</value></data>
+  <data name="LightingStudioGeneratePatternSection" xml:space="preserve"><value>Pattern</value></data>
+  <data name="LightingStudioGenerateAi" xml:space="preserve"><value>AI color (local model required)</value></data>
+  <data name="LightingStudioGenerateColorSource" xml:space="preserve"><value>Color source</value></data>
+  <data name="LightingStudioResetPalette" xml:space="preserve"><value>Reset palette</value></data>
+  <data name="LightingStudioSeconds" xml:space="preserve"><value>{0:0.###} s</value></data>
+  <data name="LightingStudioImport" xml:space="preserve"><value>Import</value></data>
+  <data name="LightingStudioExport" xml:space="preserve"><value>Export</value></data>
+  <data name="LightingStudioStatusImported" xml:space="preserve"><value>Imported {0}</value></data>
+  <data name="LightingStudioStatusImportedIssues" xml:space="preserve"><value>Imported {0} with {1} device issues.</value></data>
+  <data name="LightingStudioStatusExported" xml:space="preserve"><value>Exported {0}</value></data>
+  <data name="LightingStudioScreenFull" xml:space="preserve"><value>Full</value></data>
+  <data name="LightingStudioScreenLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="LightingStudioScreenTop" xml:space="preserve"><value>Top</value></data>
+  <data name="LightingStudioScreenRight" xml:space="preserve"><value>Right</value></data>
+  <data name="LightingStudioScreenBottom" xml:space="preserve"><value>Bottom</value></data>
+  <data name="LightingStudioScreenCustom" xml:space="preserve"><value>Custom</value></data>
 </root>

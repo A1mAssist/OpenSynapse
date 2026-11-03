@@ -9,7 +9,10 @@ internal sealed record RazerHidCollection(
     ushort Usage,
     ushort FeatureReportLength);
 
-internal sealed record RazerFirmwareRelease(string Version, string Url);
+internal sealed record RazerFirmwareComponent(string Type, string Version, string? Model = null, string? Url = null);
+
+internal sealed record RazerFirmwareRelease(
+    string Version, string Url, IReadOnlyList<RazerFirmwareComponent>? Additional = null);
 
 internal sealed record RazerFirmwareInfo(
     RazerFirmwareRelease? Latest,
@@ -90,7 +93,25 @@ internal sealed record RazerDeviceMetadata(
             throw new InvalidOperationException(
                 $"Manifest '{manifestId}' device.firmware.{kind}.url must be an absolute HTTP(S) URL.");
         }
-        return new RazerFirmwareRelease(version, url);
+        var additional = source.Additional?.Select(component => component is null
+            ? throw new InvalidOperationException($"Manifest '{manifestId}' firmware component cannot be null.")
+            : new RazerFirmwareComponent(
+            OptionalText(component.Type, $"device.firmware.{kind}.additional.type", manifestId)
+                ?? throw new InvalidOperationException($"Manifest '{manifestId}' firmware component type is required."),
+            OptionalText(component.Version, $"device.firmware.{kind}.additional.version", manifestId)
+                ?? throw new InvalidOperationException($"Manifest '{manifestId}' firmware component version is required."),
+            OptionalText(component.Model, $"device.firmware.{kind}.additional.model", manifestId),
+            ComponentUrl(component.Url, manifestId))).ToArray();
+        return new RazerFirmwareRelease(version, url, additional);
+    }
+
+    private static string? ComponentUrl(string? url, string manifestId)
+    {
+        if (url is null) return null;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+            throw new InvalidOperationException($"Manifest '{manifestId}' component URL must be an absolute HTTP(S) URL.");
+        return url;
     }
 }
 
@@ -113,6 +134,15 @@ internal sealed class RazerFirmwareJson
 internal sealed class RazerFirmwareReleaseJson
 {
     public string? Version { get; init; }
+    public string? Url { get; init; }
+    public List<RazerFirmwareComponentJson>? Additional { get; init; }
+}
+
+internal sealed class RazerFirmwareComponentJson
+{
+    public string? Type { get; init; }
+    public string? Version { get; init; }
+    public string? Model { get; init; }
     public string? Url { get; init; }
 }
 

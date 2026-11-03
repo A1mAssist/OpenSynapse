@@ -1710,7 +1710,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         var owner = row.Owner;
         if (row.HasGroup && row.Step.GroupId is { } groupId)
         {
-            if (!MoveGroup(owner, groupId, offset))
+            if (!MacroStepTree.MoveGroup(owner, groupId, offset))
             {
                 return;
             }
@@ -2270,35 +2270,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             StringComparer.Ordinal.Equals(otherTrigger.DeviceId, trigger.DeviceId) &&
             StringComparer.Ordinal.Equals(otherTrigger.ControlId, trigger.ControlId));
 
-    private static bool MoveGroup(IList<MacroStep> owner, string groupId, int offset)
-    {
-        var indices = Enumerable.Range(0, owner.Count)
-            .Where(index => StringComparer.Ordinal.Equals(owner[index].GroupId, groupId))
-            .ToList();
-        if (indices.Count == 0 ||
-            (offset < 0 && indices[0] == 0) ||
-            (offset > 0 && indices[^1] == owner.Count - 1))
-        {
-            return false;
-        }
-
-        var group = indices.Select(index => owner[index]).ToList();
-        var anchor = offset < 0 ? owner[indices[0] - 1] : owner[indices[^1] + 1];
-        for (var index = indices.Count - 1; index >= 0; index--)
-        {
-            owner.RemoveAt(indices[index]);
-        }
-
-        var anchorIndex = owner.IndexOf(anchor);
-        var target = offset < 0 ? anchorIndex + 1 : anchorIndex;
-        foreach (var step in group)
-        {
-            owner.Insert(target++, step);
-        }
-
-        return true;
-    }
-
     private static int RemoveGroupSteps(List<MacroStep> steps, string groupId)
     {
         var removed = 0;
@@ -2434,9 +2405,19 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         OnPropertyChanged(nameof(MacroUnsavedVisibility));
     }
 
-    private void OnMacroStepChanged()
+    internal bool TryApplyMousePath(MacroDefinition owner, MacroStepRowViewModel row, IReadOnlyList<MacroMousePoint> points)
     {
-        MarkMacroDirty();
+        if (!CanEditMacro || !Steps.Contains(row) ||
+            !MacroStepTree.TryApplyMousePath(owner, SelectedMacro?.Definition, row.Step, points)) return false;
+        row.Refresh();
+        OnMacroStepChanged(owner, row.Step);
+        return true;
+    }
+
+    private void OnMacroStepChanged(MacroDefinition owner, MacroStep step)
+    {
+        if (!_getActiveProfile().Macros.Contains(owner) || !MacroStepTree.Enumerate(owner.Steps).Contains(step)) return;
+        MarkMacroDirtyId(owner.Id);
         OnPropertyChanged(nameof(MacroTotalDurationText));
     }
 
@@ -2522,12 +2503,13 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     {
         foreach (var step in steps)
         {
+            var owner = SelectedMacro!.Definition;
             var row = new MacroStepRowViewModel(
                 step,
                 steps,
                 parentLoop,
                 depth,
-                OnMacroStepChanged,
+                () => OnMacroStepChanged(owner, step),
                 FindMacroName);
             row.SetIndex(index++);
             Steps.Add(row);

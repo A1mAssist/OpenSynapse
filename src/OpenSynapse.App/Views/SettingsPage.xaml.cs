@@ -15,7 +15,6 @@ namespace OpenSynapse.App.Views;
 public sealed partial class SettingsPage : UserControl
 {
     private const string UpdateRepositoryUrl = "https://github.com/A1mAssist/OpenSynapse";
-
     private readonly UpdateManager _updateManager = new(
         new GithubSource(UpdateRepositoryUrl, null, prerelease: false));
     private readonly DispatcherQueueTimer _chromaRestStatusTimer;
@@ -55,6 +54,7 @@ public sealed partial class SettingsPage : UserControl
     {
         var settings = Host.BehaviorSettings;
         _behaviorUiReady = false;
+        AdvancedFeaturesToggle.IsOn = settings.AdvancedFeaturesEnabled;
         ModeNotificationToggle.IsOn = settings.ModeChangeNotificationsEnabled;
         LowBatteryNotificationToggle.IsOn = settings.LowBatteryNotificationsEnabled;
         TrayBatteryToggle.IsOn = settings.TrayBatteryLevelsEnabled;

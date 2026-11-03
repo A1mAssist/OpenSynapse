@@ -13,7 +13,7 @@ public sealed class HidCommandScanTests
     [Fact]
     public void HeaderNamesTheDeviceAndExplainsTheStatusBytes()
     {
-        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0245);
+        var definition = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0245);
         Assert.NotNull(definition);
 
         var header = HidCommandScan.FormatHeader(definition.DisplayName, definition.ProductId);
@@ -47,14 +47,14 @@ public sealed class HidCommandScanTests
     [Fact]
     public async Task ScanOnlySendsDeviceToHostReadCommands()
     {
-        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x0245);
+        var definition = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0245);
         Assert.NotNull(definition);
         var transport = new ScanRecordingTransport();
-        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
-        var connection = new OpenRazerDeviceConnection(
-            definition, "test-path", "test-device", OpenRazerEndpointState.Resolved,
-            new HashSet<OpenRazerBackendCapability>(),
-            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = new RazerHidDeviceConnection(
+            definition, "test-path", "test-device", RazerHidEndpointState.Resolved,
+            new HashSet<RazerHidBackendCapability>(),
+            new Dictionary<RazerHidLedZone, RazerHidLightingZoneCapabilities>(), null);
 
         await service.ScanCommandSpaceAsync(connection);
 
@@ -69,14 +69,14 @@ public sealed class HidCommandScanTests
     /// </summary>
     public async Task MouseScanStaysReadOnly()
     {
-        var definition = OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE);
+        var definition = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE);
         Assert.NotNull(definition);
         var transport = new ScanRecordingTransport();
-        var service = new OpenRazerDeviceService(OpenRazerDeviceCatalog.BuiltIn, transport);
-        var connection = new OpenRazerDeviceConnection(
-            definition, "test-path", "test-device", OpenRazerEndpointState.Resolved,
-            new HashSet<OpenRazerBackendCapability>(),
-            new Dictionary<OpenRazerLedZone, OpenRazerLightingZoneCapabilities>(), null);
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = new RazerHidDeviceConnection(
+            definition, "test-path", "test-device", RazerHidEndpointState.Resolved,
+            new HashSet<RazerHidBackendCapability>(),
+            new Dictionary<RazerHidLedZone, RazerHidLightingZoneCapabilities>(), null);
 
         await service.ScanCommandSpaceAsync(connection);
 

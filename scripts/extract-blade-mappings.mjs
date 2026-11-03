@@ -5,7 +5,7 @@
 // BladeMappingInputRuntime consumes.
 //
 // Usage:
-//   node scripts/extract-blade-mappings.mjs [--out <dir>] [--dry-run]
+//   node scripts/extract-blade-mappings.mjs [--root <repo>] [--out <dir>] [--dry-run]
 //
 // The conversion is table driven: every KEY_* name, group and assignment must be
 // listed below. An unknown value aborts the run instead of guessing a key code.
@@ -14,13 +14,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
-const dryRun = args.includes('--dry-run');
-const outIndex = args.indexOf('--out');
-const outDir = outIndex >= 0
-  ? path.resolve(args[outIndex + 1])
-  : path.join(repoRoot, 'src', 'OpenSynapse.App', 'Native', 'Razer', 'Mappings');
+const options = {};
+for (let index = 0; index < args.length; index++) {
+  const arg = args[index];
+  if (arg === '--dry-run') options.dryRun = true;
+  else if (['--out', '--root'].includes(arg) && args[index + 1] && !args[index + 1].startsWith('--')) {
+    options[arg.slice(2)] = path.resolve(args[++index]);
+  } else throw new Error(`Invalid argument: ${arg}`);
+}
+const repoRoot = options.root ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const dryRun = options.dryRun ?? false;
+const mappingDir = path.join(repoRoot, 'src', 'OpenSynapse.App', 'Native', 'Razer', 'Mappings');
+const outDir = options.out ?? mappingDir;
 const bundleRoot = path.join(repoRoot, 'artifacts', 'razer-mw-full-cdn', 'bundles');
 const capabilityTable = path.join(
   repoRoot, 'src', 'OpenSynapse.Core', 'Devices', 'BladeModelCapabilities.cs');
@@ -335,22 +341,20 @@ const bladeBundles = [...new Set([...capabilitySource.matchAll(/\[([A-Za-z_]\w*|
   .filter(Boolean))];
 
 if (bladeBundles.length === 0) throw new Error('No Blade bundles found.');
-if (!dryRun) fs.mkdirSync(outDir, { recursive: true });
 const product710 = path.join(outDir, 'Product710Mapping.json');
-const previous710 = !dryRun && fs.existsSync(product710)
-  ? fs.readFileSync(product710, 'utf8')
-  : null;
+const reference710 = fs.existsSync(product710) ? product710 : path.join(mappingDir, 'Product710Mapping.json');
+const previous710 = fs.existsSync(reference710) ? fs.readFileSync(reference710, 'utf8') : null;
 
 const summary = [];
+const generated = new Map();
 for (const pid of bladeBundles.sort()) {
   const mapping = readMapping(pid);
   const { mappings, skipped } = convert(pid, mapping);
   const payload = { productId: mapping.productId, defaultMappings: { appEngine: { mappings } } };
-  if (!dryRun) {
-    fs.writeFileSync(
-      path.join(outDir, `Product${mapping.productId}Mapping.json`),
-      `${JSON.stringify(payload)}\n`);
-  }
+  const file = `Product${mapping.productId}Mapping.json`;
+  const text = `${JSON.stringify(payload)}\n`;
+  if (generated.has(file) && generated.get(file) !== text) fail(pid, `conflicting mappings for ${file}`);
+  generated.set(file, text);
   summary.push({ pid, productId: mapping.productId, rules: mappings.length / 2, skipped });
 }
 
@@ -358,16 +362,23 @@ for (const row of summary) {
   const skip = row.skipped.length ? ` skipped: ${row.skipped.join(', ')}` : '';
   console.log(`${row.pid} -> Product${row.productId}Mapping.json (${row.rules} rules)${skip}`);
 }
-console.log(`${summary.length} Blade mappings written to ${outDir}`);
-
 // The Product 710 graph is validated on hardware; regeneration must leave it
 // rule-for-rule unchanged or the converter drifted.
 if (previous710) {
   const before = JSON.parse(previous710).defaultMappings.appEngine.mappings;
-  const after = JSON.parse(fs.readFileSync(product710, 'utf8')).defaultMappings.appEngine.mappings;
+  const candidate = generated.get('Product710Mapping.json');
+  if (!candidate) throw new Error('Product 710 reference has no generated candidate.');
+  const after = JSON.parse(candidate).defaultMappings.appEngine.mappings;
   const same = canonical(before) === canonical(after);
   console.log(same
     ? 'Product 710 mapping matches the hardware-validated graph.'
     : 'Product 710 mapping DIFFERS from the hardware-validated graph.');
-  if (!same) process.exitCode = 1;
+  if (!same) throw new Error('Product 710 mapping differs; no output files were written.');
 }
+
+// Validate every PID and the known-good 710 graph before touching any output.
+if (!dryRun) {
+  fs.mkdirSync(outDir, { recursive: true });
+  for (const [name, text] of generated) fs.writeFileSync(path.join(outDir, name), text);
+}
+console.log(`${summary.length} Blade mappings ${dryRun ? 'validated' : 'written'} to ${outDir}`);

@@ -77,7 +77,8 @@ internal static class AppStrings
 
     private static string Load(string key, string fallback)
     {
-        var value = TryGet(key);
+        // Dynamic option/status text shares the existing XAML Text resource scope.
+        var value = TryGet(key) ?? TryGet($"{key}/Text");
         if (string.IsNullOrEmpty(value))
         {
             return fallback;

@@ -12,7 +12,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
 {
     private readonly RazerDeviceResolver _resolver;
     private readonly BladeTelemetryReader _bladeReader;
-    private readonly OpenRazerTelemetryReader _openRazerReader;
+    private readonly RazerHidTelemetryReader _openRazerReader;
     private readonly ViperTelemetryReader _viperReader;
 
     public RazerDeviceTelemetryReader()
@@ -34,7 +34,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         _resolver = new RazerDeviceResolver(registry);
         var client = new RazerCapabilityClient(transport);
         _bladeReader = new BladeTelemetryReader(_resolver, client);
-        _openRazerReader = new OpenRazerTelemetryReader(_resolver, client);
+        _openRazerReader = new RazerHidTelemetryReader(_resolver, client);
         _viperReader = new ViperTelemetryReader(_resolver, client);
     }
 

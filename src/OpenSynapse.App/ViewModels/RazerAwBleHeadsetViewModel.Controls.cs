@@ -15,7 +15,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         var any = false;
 
         var volume = await TryReadAsync(() => _service.ReadVolumeAsync(cancellationToken))
-            .ConfigureAwait(false);
+            ;
         VolumeVisibility = SetVisibility(volume is not null, ref any);
         if (volume is { } volumeValue)
         {
@@ -23,7 +23,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var sidetone = await TryReadAsync(() => _service.ReadSidetoneAsync(cancellationToken))
-            .ConfigureAwait(false);
+            ;
         SidetoneVisibility = SetVisibility(sidetone is not null, ref any);
         if (sidetone is { } sidetoneValue)
         {
@@ -31,7 +31,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var gameMode = await TryReadAsync(() => _service.ReadGameModeAsync(cancellationToken))
-            .ConfigureAwait(false);
+            ;
         GameModeVisibility = SetVisibility(gameMode is not null, ref any);
         if (gameMode is { } gameModeValue)
         {
@@ -39,7 +39,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var eqPreset = await TryReadAsync(() => _service.ReadEqPresetAsync(cancellationToken))
-            .ConfigureAwait(false);
+            ;
         var eqIndex = eqPreset is { } preset ? IndexOfPreset(preset) : -1;
         EqPresetVisibility = SetVisibility(eqIndex >= 0, ref any);
         if (eqIndex >= 0)
@@ -53,7 +53,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var autoPowerOff = await TryReadAsync(
-            () => _service.ReadAutoPowerOffMinutesAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadAutoPowerOffMinutesAsync(cancellationToken));
         var autoPowerOffIndex = autoPowerOff is { } minutes
             ? Array.IndexOf(RazerAwBleProtocol.AutoPowerOffMinuteOptions, minutes)
             : -1;
@@ -64,7 +64,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var chromaBrightness = await TryReadAsync(
-            () => _service.ReadChromaBrightnessAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadChromaBrightnessAsync(cancellationToken));
         ChromaBrightnessVisibility = SetVisibility(chromaBrightness is not null, ref any);
         if (chromaBrightness is { } chromaValue)
         {
@@ -72,7 +72,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var chromaEffect = await TryReadAsync(
-            () => _service.ReadChromaEffectAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadChromaEffectAsync(cancellationToken));
         if (chromaEffect is { } chromaState)
         {
             ApplyChromaState(chromaState);
@@ -83,7 +83,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var bass = await TryReadAsync(() => _service.ReadBassAsync(cancellationToken))
-            .ConfigureAwait(false);
+            ;
         BassVisibility = SetVisibility(bass is not null, ref any);
         if (bass is { } bassValue)
         {
@@ -91,7 +91,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var haptics = await TryReadAsync(() => _service.ReadHapticsAsync(cancellationToken))
-            .ConfigureAwait(false);
+            ;
         HapticsVisibility = SetVisibility(haptics is not null, ref any);
         if (haptics is { } hapticsValue)
         {
@@ -99,7 +99,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var micEq = await TryReadAsync(
-            () => _service.ReadMicEqPresetAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadMicEqPresetAsync(cancellationToken));
         var micIndex = micEq is { } micPreset ? IndexOfMicPreset(micPreset) : -1;
         MicEqVisibility = SetVisibility(micIndex >= 0, ref any);
         if (micIndex >= 0)
@@ -113,7 +113,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var micCustomEq = await TryReadReferenceAsync(
-            () => _service.ReadMicCustomEqBandsAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadMicCustomEqBandsAsync(cancellationToken));
         MicCustomEqVisibility = SetVisibility(micCustomEq is { Count: 10 }, ref any);
         if (micCustomEq is { Count: 10 } micCustomLevels)
         {
@@ -121,7 +121,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var customEq = await TryReadReferenceAsync(
-            () => _service.ReadCustomEqBandsAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadCustomEqBandsAsync(cancellationToken));
         CustomEqVisibility = SetVisibility(customEq is { Count: 10 }, ref any);
         if (customEq is { Count: 10 } customLevels)
         {
@@ -246,7 +246,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
     {
         try
         {
-            return await read().ConfigureAwait(false);
+            return await read();
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -258,7 +258,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
     {
         try
         {
-            return await read().ConfigureAwait(false);
+            return await read();
         }
         catch (Exception exception) when (IsExpected(exception))
         {

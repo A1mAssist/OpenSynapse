@@ -64,37 +64,51 @@ public sealed class Localized : DependencyObject
 
     private static void Apply(DependencyObject element, string uid)
     {
-        if (element is TextBlock textBlock && AppStrings.TryGet($"{uid}/Text") is { } text)
+        // Bare keys are also used by AppStrings.Text; keep them as a primary-property
+        // fallback instead of creating a conflicting PRI value-and-subtree resource.
+        var primary = AppStrings.TryGet(uid);
+
+        if (element is TextBlock textBlock && (AppStrings.TryGet($"{uid}/Text") ?? primary) is { } text)
         {
             textBlock.Text = text;
         }
-        else if (element is MenuFlyoutItem menuItem && AppStrings.TryGet($"{uid}/Text") is { } menuText)
+        else if (element is MenuFlyoutItem menuItem && (AppStrings.TryGet($"{uid}/Text") ?? primary) is { } menuText)
         {
             menuItem.Text = menuText;
         }
-        else if (element is ToggleMenuFlyoutItem toggleMenuItem && AppStrings.TryGet($"{uid}/Text") is { } toggleMenuText)
+        else if (element is ToggleMenuFlyoutItem toggleMenuItem && (AppStrings.TryGet($"{uid}/Text") ?? primary) is { } toggleMenuText)
         {
             toggleMenuItem.Text = toggleMenuText;
         }
+        else if (element is MenuFlyoutSubItem submenu && (AppStrings.TryGet($"{uid}/Text") ?? primary) is { } submenuText)
+        {
+            submenu.Text = submenuText;
+        }
 
-        if (element is ContentControl contentControl && AppStrings.TryGet($"{uid}/Content") is { } content)
+        if (element is ContentControl contentControl && element is not Expander &&
+            (AppStrings.TryGet($"{uid}/Content") ?? primary) is { } content)
         {
             contentControl.Content = content;
         }
-        if (element is NumberBox numberBox && AppStrings.TryGet($"{uid}/Header") is { } header)
+        var header = AppStrings.TryGet($"{uid}/Header") ?? primary;
+        if (element is NumberBox numberBox && header is not null)
         {
             numberBox.Header = header;
         }
-        if (element is ComboBox comboBox && AppStrings.TryGet($"{uid}/Header") is { } comboHeader)
+        if (element is ComboBox comboBox)
         {
-            comboBox.Header = comboHeader;
+            if (header is not null) comboBox.Header = header;
+            if (AppStrings.TryGet($"{uid}/PlaceholderText") is { } comboPlaceholder)
+                comboBox.PlaceholderText = comboPlaceholder;
         }
+        if (element is Expander expander && header is not null) expander.Header = header;
         if (element is TextBox textBox && AppStrings.TryGet($"{uid}/PlaceholderText") is { } placeholder)
         {
             textBox.PlaceholderText = placeholder;
         }
         if (element is ToggleSwitch toggleSwitch)
         {
+            if (header is not null) toggleSwitch.Header = header;
             toggleSwitch.OnContent = AppStrings.TryGet($"{uid}/OnContent") ?? toggleSwitch.OnContent;
             toggleSwitch.OffContent = AppStrings.TryGet($"{uid}/OffContent") ?? toggleSwitch.OffContent;
         }

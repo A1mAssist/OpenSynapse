@@ -77,10 +77,10 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
 
     private readonly RazerChromaDeviceConnection _connection;
     private readonly Action<string>? _diagnostic;
-    private readonly OpenRazerSpecialLightingService? _specialLighting;
+    private readonly RazerHidSpecialLightingService? _specialLighting;
     private readonly Color[][] _argbPortColors = CreateArgbBuffers();
     private readonly int[] _argbLedCounts = ArgbStripSettings.Load();
-    private OpenRazerSpecialLightingConnection? _argbConnection;
+    private RazerHidSpecialLightingConnection? _argbConnection;
     private bool _argbDriverMissing;
     private int _selectedArgbPortIndex;
     private int _argbLedCount;
@@ -99,7 +99,7 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     public RazerChromaViewModel(
         RazerChromaDeviceConnection connection,
         Action<string>? diagnostic = null,
-        OpenRazerSpecialLightingService? specialLighting = null)
+        RazerHidSpecialLightingService? specialLighting = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
@@ -359,7 +359,7 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
             }
 
             var colors = _argbPortColors[_selectedArgbPortIndex][.._argbLedCount]
-                .Select(color => new OpenRazerColor(color.R, color.G, color.B))
+                .Select(color => new RazerHidColor(color.R, color.G, color.B))
                 .ToArray();
             await _specialLighting.SetArgbFrameAsync(
                 connection,

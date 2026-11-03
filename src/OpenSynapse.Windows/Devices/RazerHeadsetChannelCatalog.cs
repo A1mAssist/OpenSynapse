@@ -11,6 +11,7 @@ public enum RazerHeadsetChannel
     Mixer053E,
     DedicatedBlackShark,
     Unsupported,
+    ValkyrieT3Feature64,
 }
 
 /// <summary>
@@ -34,8 +35,8 @@ public static class RazerHeadsetChannelCatalog
             [0x0584] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
 
             // rzDevice25ValkyrieT3: class 0x18 triplets on 64-byte report id 7.
-            [0x0A54] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.Mxic64),
-            [0x1022] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.Mxic64),
+            [0x0A54] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
+            [0x1022] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
 
             // rzDevice40: class 0x18 triplets inside the 64-byte 50 41 envelope.
             [0x0A61] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
@@ -102,6 +103,9 @@ public static class RazerHeadsetChannelCatalog
             [0x056A] = new("rzDevice25AudioCamyT3V2", RazerHeadsetChannel.Feature91),
             [0x0F66] = new("rzDevice25MarciT1", RazerHeadsetChannel.Feature91),
             [0x056E] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Feature91),
+            // 0565 is the 2.4 GHz dongle endpoint of the 056E BlackShark V2 HyperSpeed
+            // bundle (dongleId 0x0565), not a BlackShark V3 Pro identity.
+            [0x0565] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Feature91),
 
             // AudioMixer uses the dedicated 64-byte feature / 16-byte report-9
             // collection; it must not fall back to the 91-byte feature channel.
@@ -113,9 +117,8 @@ public static class RazerHeadsetChannelCatalog
             [0x0534] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
             [0x0562] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
             [0x052D] = new("AudioNXPDevice", RazerHeadsetChannel.Unsupported),
-            // These two have no bundle in the CDN snapshot, so their device type is unknown.
+            // 053C has no bundle in the CDN snapshot, so its device type is unknown.
             [0x053C] = new("unknown", RazerHeadsetChannel.Unsupported),
-            [0x0565] = new("unknown", RazerHeadsetChannel.Unsupported),
         }.ToFrozenDictionary();
 
     public static RazerHeadsetChannel Resolve(ushort productId) =>

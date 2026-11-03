@@ -75,6 +75,26 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
             },
             levelPercent: levelPercent);
 
+    public bool CanInstallComponents =>
+        ThxHeadsetAdmission.GetProfile(_productId)?.Installer is not null;
+
+    public async Task<ThxAudioStatus> InstallComponentsAsync(
+        ThxAudioEndpoint endpoint,
+        CancellationToken cancellationToken = default)
+    {
+        var installed = await ThxHeadsetAdmission.InstallComponentsAsync(
+            _productId,
+            cancellationToken).ConfigureAwait(false);
+        if (installed.Availability != ThxHeadsetAvailability.Available)
+        {
+            return new ThxAudioStatus(
+                ThxAudioAvailability.ComponentsUnavailable,
+                installed.ErrorCode,
+                null);
+        }
+        return await ReadAsync(endpoint, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<ThxAudioStatus> InstallNativeComponentAsync(
         ThxAudioEndpoint endpoint,
         CancellationToken cancellationToken = default)

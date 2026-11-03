@@ -1,0 +1,333 @@
+using System.Collections.Concurrent;
+using System.Collections.Frozen;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Protocols;
+
+namespace OpenSynapse.Windows.Devices;
+
+public enum RazerHidSpecialLightingKind
+{
+    Argb320,
+    Kraken37,
+    KrakenV4,
+}
+
+public sealed class RazerHidSpecialLightingConnection
+{
+    internal RazerHidSpecialLightingConnection(
+        ushort productId,
+        string displayName,
+        RazerHidSpecialLightingKind kind,
+        string instanceId,
+        string? devicePath,
+        string? controlDevicePath,
+        IReadOnlySet<RazerHidLightingEffect> effects,
+        bool supportsStaticColor,
+        bool isMergedIntoAudioPage,
+        string? error)
+    {
+        ProductId = productId;
+        DisplayName = displayName;
+        Kind = kind;
+        InstanceId = instanceId;
+        DevicePath = devicePath;
+        ControlDevicePath = controlDevicePath;
+        SupportedEffects = effects;
+        SupportsStaticColor = supportsStaticColor;
+        IsMergedIntoAudioPage = isMergedIntoAudioPage;
+        Error = error;
+    }
+
+    public ushort ProductId { get; }
+    public string DisplayName { get; }
+    public RazerHidSpecialLightingKind Kind { get; }
+    public string InstanceId { get; }
+    public IReadOnlySet<RazerHidLightingEffect> SupportedEffects { get; }
+    public bool SupportsStaticColor { get; }
+    /// <summary>
+    /// True when the audio page owns this headset and shows the lighting card there.
+    /// The audio page only discovers a headset that exposes the 91-byte feature
+    /// interface, so a headset without one keeps its own lighting row.
+    /// </summary>
+    public bool IsMergedIntoAudioPage { get; }
+    public string? Error { get; }
+    public bool IsReady => DevicePath is not null || ControlDevicePath is not null;
+    internal string? DevicePath { get; }
+    internal string? ControlDevicePath { get; }
+}
+
+public sealed class RazerHidSpecialLightingService
+{
+    public Task<string?> TryReadSerialAsync(
+        RazerHidSpecialLightingConnection connection,
+        CancellationToken cancellationToken = default) => connection.DevicePath is { } path
+            ? WindowsHidDiscovery.TryReadSerialNumberAsync(path, cancellationToken)
+            : Task.FromResult<string?>(null);
+
+    private const ushort ArgbProductId = 0x0F1F;
+    private static readonly FrozenDictionary<ushort, KrakenDefinition> KrakenDevices =
+        new Dictionary<ushort, KrakenDefinition>
+        {
+            [0x0501] = new("Razer Kraken 7.1", RazerHidKrakenLayout.Rainie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static), false),
+            [0x0504] = new("Razer Kraken 7.1 Chroma", RazerHidKrakenLayout.Rainie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.Spectrum, RazerHidLightingEffect.BreathingSingle,
+                    RazerHidLightingEffect.Custom), true),
+            [0x0506] = new("Razer Kraken 7.1", RazerHidKrakenLayout.Rainie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static), false),
+            [0x0510] = Kylie("Razer Kraken 7.1 V2"),
+            [0x0520] = Kylie("Razer Kraken Tournament Edition"),
+            [0x0527] = Kylie("Razer Kraken Ultimate"),
+            [0x0560] = Kylie("Razer Kraken Kitty V2"),
+            // The Kraken V4 exposes a 64-byte FF14 output report on the USB-C cable.
+            // The 2.4 GHz receiver (056C) inherits the same collection and lighting
+            // methods from AudioBillieT2Dongle; its report byte 9 is 0x80.
+            [0x056B] = new(
+                "Razer Kraken V4 (Wired)",
+                RazerHidKrakenLayout.Kylie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static, RazerHidLightingEffect.Wave),
+                true,
+                RazerHidSpecialLightingKind.KrakenV4),
+            [0x056C] = new(
+                "Razer Kraken V4 (2.4 GHz)",
+                RazerHidKrakenLayout.Kylie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static, RazerHidLightingEffect.Wave),
+                true,
+                RazerHidSpecialLightingKind.KrakenV4),
+        }.ToFrozenDictionary();
+
+    /// <summary>
+    /// Headsets that already own an audio page keep their 37-byte lighting there, so the
+    /// lighting discovery must not emit a second, lighting-only row for the same device.
+    /// </summary>
+    /// <remarks>
+    /// The audio page only discovers a headset that exposes the 91-byte feature
+    /// interface, so the lighting card may only move there for a headset that has one.
+    /// A headset without that interface keeps its own lighting row; otherwise it would
+    /// vanish from the app, because neither page could show it.
+    /// </remarks>
+    public static bool IsMergedIntoAudioPage(ushort productId, bool hasAudioFeatureInterface) =>
+        hasAudioFeatureInterface && RazerHeadsetAudioService.IsSupported(productId);
+
+    private readonly Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> _sendOutput;
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Action<string>? _diagnostic;
+
+    public RazerHidSpecialLightingService(Action<string>? diagnostic = null)
+        : this(new RazerHidHidReportTransport().SendOutputAsync, diagnostic) { }
+
+    internal RazerHidSpecialLightingService(
+        Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput, Action<string>? diagnostic = null)
+    {
+        _sendOutput = sendOutput;
+        _diagnostic = diagnostic;
+    }
+
+    public async Task<IReadOnlyList<RazerHidSpecialLightingConnection>> DiscoverAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
+            RazerHidDeviceDefinition.VendorId, cancellationToken).ConfigureAwait(false);
+        var results = new List<RazerHidSpecialLightingConnection>();
+        foreach (var group in interfaces
+            .Where(item => item.ProductId == ArgbProductId || KrakenDevices.ContainsKey(item.ProductId))
+            .GroupBy(item => (item.ProductId, item.PhysicalDeviceKey)))
+        {
+            var argb = group.Key.ProductId == ArgbProductId;
+            var definition = argb ? null : KrakenDevices[group.Key.ProductId];
+            var krakenV4 = definition?.Kind == RazerHidSpecialLightingKind.KrakenV4;
+            var endpoint = group.FirstOrDefault(item => item.Access == DeviceAccessState.Available &&
+                (krakenV4
+                    ? item.UsagePage == 0xFF14 && item.Usage == 0x0001 &&
+                      item.OutputReportByteLength == RazerHidKrakenV4Protocol.ReportLength
+                    : !argb &&
+                      item.DevicePath.Contains("&MI_03", StringComparison.OrdinalIgnoreCase) &&
+                      item.OutputReportByteLength == RazerHidKrakenProtocol.ReportLength));
+            var name = argb
+                ? "Razer Chroma Addressable RGB Controller"
+                : definition!.Name;
+            var controlDevicePath = argb
+                ? await RazerFilterEndpointDiscovery.DiscoverAsync(ArgbProductId, cancellationToken)
+                    .ConfigureAwait(false)
+                : null;
+            var error = argb && controlDevicePath is null
+                ? "ARGB needs Razer's 0F1F control driver (PID0f1fDrv) to send the 320-byte SET_FEATURE frame; its RZCONTROL endpoint is not installed."
+                : !argb && endpoint is null
+                    ? krakenV4
+                        ? "No available FF14:0001 64-byte Output Report collection was found."
+                        : "No available MI_03 37-byte Output Report collection was found."
+                    : null;
+            // The audio page only finds a headset that exposes the 91-byte feature
+            // interface. The Kraken V4 exposes only a 64-byte FF14 collection, so the
+            // audio page never selects it and the lighting card has to stay on its
+            // own row, otherwise the headset disappears from the app entirely.
+            var mergedIntoAudioPage = !argb && IsMergedIntoAudioPage(
+                group.Key.ProductId,
+                group.Any(item => item.FeatureReportByteLength == RazerFeatureReport.Length));
+            results.Add(new RazerHidSpecialLightingConnection(
+                group.Key.ProductId,
+                name,
+                argb ? RazerHidSpecialLightingKind.Argb320 : definition!.Kind,
+                group.Key.PhysicalDeviceKey,
+                endpoint?.DevicePath,
+                controlDevicePath,
+                argb ? Effects(RazerHidLightingEffect.Custom) : definition!.Effects,
+                !argb && definition!.WritesColor,
+                mergedIntoAudioPage,
+                error));
+        }
+        return results;
+    }
+
+    public Task SetArgbFrameAsync(
+        RazerHidSpecialLightingConnection connection,
+        byte channel,
+        IReadOnlyList<RazerHidColor> colors,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection, RazerHidSpecialLightingKind.Argb320);
+        var frame = RazerHidArgbFrame.Create(channel, colors);
+        return RazerFilterControlTransport
+            .SetFeatureAsync(connection.ControlDevicePath!, frame, cancellationToken)
+            .AsTask();
+    }
+
+    public async Task SetKrakenLightingAsync(
+        RazerHidSpecialLightingConnection connection,
+        RazerHidLightingSettings settings,
+        byte? intensity = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        if (connection.Kind == RazerHidSpecialLightingKind.KrakenV4)
+        {
+            await SetKrakenV4LightingAsync(connection, settings, intensity, cancellationToken)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        RequireReady(connection, RazerHidSpecialLightingKind.Kraken37);
+        if (!connection.SupportedEffects.Contains(settings.Effect))
+        {
+            throw new NotSupportedException(
+                $"RazerHid Kraken 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
+        }
+
+        var device = KrakenDevices[connection.ProductId];
+        var reports = settings.Effect switch
+        {
+            RazerHidLightingEffect.Off => RazerHidKrakenProtocol.CreateOff(device.Layout),
+            RazerHidLightingEffect.Static => RazerHidKrakenProtocol.CreateStatic(
+                device.Layout, settings.Primary, intensity, device.WritesColor),
+            RazerHidLightingEffect.Spectrum => RazerHidKrakenProtocol.CreateSpectrum(device.Layout),
+            RazerHidLightingEffect.BreathingSingle => RazerHidKrakenProtocol.CreateBreathing(
+                device.Layout, [settings.Primary]),
+            RazerHidLightingEffect.BreathingDual => RazerHidKrakenProtocol.CreateBreathing(
+                device.Layout, [settings.Primary, settings.Secondary]),
+            RazerHidLightingEffect.BreathingTriple => RazerHidKrakenProtocol.CreateBreathing(
+                device.Layout, [settings.Primary, settings.Secondary, settings.Tertiary]),
+            RazerHidLightingEffect.Custom => RazerHidKrakenProtocol.CreateCustom(
+                device.Layout, settings.Primary, intensity),
+            _ => throw new NotSupportedException(),
+        };
+
+        var gate = _gates.GetOrAdd(connection.InstanceId, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var report in reports)
+            {
+                await _sendOutput(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
+                if (settings.Effect != RazerHidLightingEffect.Custom)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(report[2] * 15), cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private async Task SetKrakenV4LightingAsync(
+        RazerHidSpecialLightingConnection connection,
+        RazerHidLightingSettings settings,
+        byte? intensity,
+        CancellationToken cancellationToken)
+    {
+        RequireReady(connection, RazerHidSpecialLightingKind.KrakenV4);
+        if (!connection.SupportedEffects.Contains(settings.Effect))
+        {
+            throw new NotSupportedException(
+                $"RazerHid Kraken V4 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
+        }
+
+        var isDongle = connection.ProductId == 0x056C;
+        IReadOnlyList<byte[]> reports = settings.Effect switch
+        {
+            RazerHidLightingEffect.Off => RazerHidKrakenV4Protocol.CreateOff(isDongle),
+            RazerHidLightingEffect.Static => RazerHidKrakenV4Protocol.CreateStatic(
+                settings.Primary, intensity, isDongle),
+            RazerHidLightingEffect.Wave => RazerHidKrakenV4Protocol.CreateWave(intensity, isDongle),
+            _ => throw new NotSupportedException(),
+        };
+
+        var gate = _gates.GetOrAdd(connection.InstanceId, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await _sendOutput(
+                connection.DevicePath!,
+                RazerHidKrakenV4Protocol.CreateConnect(isDongle),
+                cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+
+            foreach (var report in reports)
+            {
+                await _sendOutput(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
+                _diagnostic?.Invoke(
+                    $"kraken lighting 1532:{connection.ProductId:X4} effect={settings.Effect} " +
+                    $"report=[{Convert.ToHexString(report)}]");
+                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private static void RequireReady(
+        RazerHidSpecialLightingConnection connection,
+        RazerHidSpecialLightingKind expectedKind)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        if (connection.Kind != expectedKind)
+        {
+            throw new ArgumentException("The special lighting connection uses a different transport family.", nameof(connection));
+        }
+        if (!connection.IsReady)
+        {
+            throw new InvalidOperationException(connection.Error ?? "The special lighting endpoint is not resolved.");
+        }
+    }
+
+    private static FrozenSet<RazerHidLightingEffect> Effects(params RazerHidLightingEffect[] effects) =>
+        effects.ToFrozenSet();
+
+    private static KrakenDefinition Kylie(string name) => new(name, RazerHidKrakenLayout.Kylie,
+        Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+            RazerHidLightingEffect.Spectrum, RazerHidLightingEffect.BreathingSingle,
+            RazerHidLightingEffect.BreathingDual, RazerHidLightingEffect.BreathingTriple,
+            RazerHidLightingEffect.Custom), true);
+
+    private sealed record KrakenDefinition(
+        string Name,
+        RazerHidKrakenLayout Layout,
+        FrozenSet<RazerHidLightingEffect> Effects,
+        bool WritesColor,
+        RazerHidSpecialLightingKind Kind = RazerHidSpecialLightingKind.Kraken37);
+}

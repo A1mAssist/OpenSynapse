@@ -39,7 +39,7 @@ public sealed partial class DiagnosticsPage : UserControl
         {
             // Keep the last captured rows; copying them is still useful.
         }
-        ViewModel.Diagnostics.EnsureOpenRazerRows();
+        ViewModel.Diagnostics.EnsureRazerHidRows();
 
         try
         {
@@ -71,7 +71,7 @@ public sealed partial class DiagnosticsPage : UserControl
         DiagnosticsCopyStatusText.Text = AppStrings.Text("HidScanRunning");
         try
         {
-            var path = await ViewModel.OpenRazer.ScanSelectedDeviceAsync(Lifetime);
+            var path = await ViewModel.RazerHid.ScanSelectedDeviceAsync(Lifetime);
             DiagnosticsCopyStatusText.Text = AppStrings.FormatText("HidScanDone", path);
         }
         catch (OperationCanceledException)

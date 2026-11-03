@@ -8,7 +8,7 @@ namespace OpenSynapse.Windows.Devices;
 /// The three bundle profiles share the fixed 0x60 transaction and zero direction byte;
 /// they differ in which EQ-band tuple their chunk selects.
 /// </summary>
-public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
+public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
 {
     internal enum HeadsetProfile
     {
@@ -126,7 +126,7 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             Errors: errors) { MicBands = micBands.Ok ? micBands.Value : null };
     }
 
-    public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>
+    private Task SetEqPresetCoreAsync(byte preset, CancellationToken cancellationToken = default) =>
         WriteAsync(
             RazerValkyrieHeadsetProtocol.CreateGetEqPreset(),
             RazerValkyrieHeadsetProtocol.EqPresetHeader,
@@ -150,7 +150,7 @@ public sealed class RazerValkyrieHeadsetService : IAsyncDisposable
             "microphone mute",
             cancellationToken);
 
-    public async Task SetEqBandsAsync(
+    private async Task SetEqBandsCoreAsync(
         IReadOnlyList<byte> bands,
         CancellationToken cancellationToken = default)
     {

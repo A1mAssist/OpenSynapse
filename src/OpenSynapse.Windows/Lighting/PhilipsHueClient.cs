@@ -288,7 +288,7 @@ public sealed class PhilipsHueClient : IDisposable
         return text;
     }
 
-    private static string NormalizeHost(string host)
+    public static string NormalizeHost(string host)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(host);
         var trimmed = host.Trim();

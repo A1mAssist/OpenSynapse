@@ -905,7 +905,7 @@
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>未读取</value></data>
   <data name="DiagnosticProtocolFailedStatus" xml:space="preserve"><value>读取失败</value></data>
   <data name="DiagnosticProtocolEnabled" xml:space="preserve"><value>开启</value></data>
-  <data name="OpenRazerFailedReadsDetail" xml:space="preserve"><value>失败的读取项：{0}</value></data>
+  <data name="RazerHidFailedReadsDetail" xml:space="preserve"><value>失败的读取项：{0}</value></data>
   <data name="DiagnosticProtocolDisabled" xml:space="preserve"><value>关闭</value></data>
   <data name="DiagnosticCpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
   <data name="DiagnosticGpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
@@ -1286,78 +1286,78 @@
     <value>复制失败：{0}</value>
     <comment>复制诊断信息失败</comment>
   </data>
-  <data name="OpenRazerOperationApplied" xml:space="preserve">
+  <data name="RazerHidOperationApplied" xml:space="preserve">
     <value>已应用到设备</value>
     <comment>已应用到设备</comment>
   </data>
-  <data name="OpenRazerPollingRateMismatch" xml:space="preserve">
+  <data name="RazerHidPollingRateMismatch" xml:space="preserve">
     <value>设备报告 {0} Hz，期望 {1} Hz</value>
     <comment>设备报告的实际轮询率与请求值不一致</comment>
   </data>
-  <data name="OpenRazerDpiMismatch" xml:space="preserve">
+  <data name="RazerHidDpiMismatch" xml:space="preserve">
     <value>设备报告 {0} x {1} DPI，期望 {2} x {3} DPI</value>
     <comment>设备报告的实际 DPI 与请求值不一致</comment>
   </data>
-  <data name="OpenRazerProtocolMalformedResponse" xml:space="preserve">
+  <data name="RazerHidProtocolMalformedResponse" xml:space="preserve">
     <value>设备返回的协议数据格式错误。</value>
-    <comment>OpenRazer 协议数据格式错误</comment>
+    <comment>RazerHid 协议数据格式错误</comment>
   </data>
-  <data name="OpenRazerDpiStagesMalformedResponse" xml:space="preserve">
+  <data name="RazerHidDpiStagesMalformedResponse" xml:space="preserve">
     <value>设备返回的 DPI 档位数据格式错误，已停用 DPI 档位功能。</value>
-    <comment>OpenRazer DPI 档位数据格式错误</comment>
+    <comment>RazerHid DPI 档位数据格式错误</comment>
   </data>
-  <data name="OpenRazerProtocolUnsupported" xml:space="preserve">
+  <data name="RazerHidProtocolUnsupported" xml:space="preserve">
     <value>设备拒绝了该命令，对应能力已停用。</value>
     <comment>设备命令不支持</comment>
   </data>
-  <data name="OpenRazerProtocolRescanRequired" xml:space="preserve">
+  <data name="RazerHidProtocolRescanRequired" xml:space="preserve">
     <value>设备通信中断，已暂停写入。请重新扫描设备以恢复控制。</value>
     <comment>设备通信中断，已暂停写入。请重新扫描设备以恢复控制。</comment>
   </data>
-  <data name="OpenRazerLightingProfileSaveFailed" xml:space="preserve">
+  <data name="RazerHidLightingProfileSaveFailed" xml:space="preserve">
     <value>灯效已写入，但配置保存失败；设备仍可继续控制。</value>
     <comment>灯效已写入，但配置保存失败；设备仍可继续控制。</comment>
   </data>
-  <data name="OpenRazerCapabilityUnanswered" xml:space="preserve">
-    <value>固件未回应「{0}」，已停用该能力，其余功能仍可使用。</value>
-    <comment>固件未回应某个能力，已停用该能力，其余功能仍可使用。</comment>
+  <data name="RazerHidCapabilityUnanswered" xml:space="preserve">
+    <value>固件暂时未回应「{0}」，请稍后重试。</value>
+    <comment>固件暂时未回应某个能力，保持可重试。</comment>
   </data>
-  <data name="OpenRazerDeviceNotReady" xml:space="preserve">
+  <data name="RazerHidDeviceNotReady" xml:space="preserve">
     <value>{0}可能未开启或尚未唤醒，请检查设备电源。</value>
   </data>
-  <data name="OpenRazerProtocolQueryFailed" xml:space="preserve">
+  <data name="RazerHidProtocolQueryFailed" xml:space="preserve">
     <value>设备通道读取失败。</value>
     <comment>设备通道读取失败</comment>
   </data>
-  <data name="OpenRazerMappingNoButtons" xml:space="preserve">
+  <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>设备未报告任何映射按键</value>
     <comment>设备未报告任何映射按键</comment>
   </data>
-  <data name="OpenRazerMappingReadCount" xml:space="preserve">
+  <data name="RazerHidMappingReadCount" xml:space="preserve">
     <value>已读取 {0} 个按键</value>
     <comment>已读取 {0} 个按键</comment>
   </data>
-  <data name="OpenRazerMappingReadCountWithMacros" xml:space="preserve">
+  <data name="RazerHidMappingReadCountWithMacros" xml:space="preserve">
     <value>已读取 {0} 个按键 · {1} 个宏</value>
     <comment>已读取 {0} 个按键 · {1} 个宏</comment>
   </data>
-  <data name="OpenRazerMappingMacroName" xml:space="preserve">
+  <data name="RazerHidMappingMacroName" xml:space="preserve">
     <value>宏 {0}</value>
     <comment>宏 {0}</comment>
   </data>
-  <data name="OpenRazerMappingUnreadable" xml:space="preserve">
+  <data name="RazerHidMappingUnreadable" xml:space="preserve">
     <value>无法读取</value>
     <comment>无法读取</comment>
   </data>
-  <data name="OpenRazerMappingReadFailed" xml:space="preserve">
+  <data name="RazerHidMappingReadFailed" xml:space="preserve">
     <value>无法读取按键映射。</value>
     <comment>无法读取按键映射。</comment>
   </data>
-  <data name="OpenRazerMappingNothingChanged" xml:space="preserve">
+  <data name="RazerHidMappingNothingChanged" xml:space="preserve">
     <value>没有需要保存的更改</value>
     <comment>没有需要保存的更改</comment>
   </data>
-  <data name="OpenRazerMappingSavedCount" xml:space="preserve">
+  <data name="RazerHidMappingSavedCount" xml:space="preserve">
     <value>已保存 {0} 个映射</value>
     <comment>已保存 {0} 个映射</comment>
   </data>
@@ -1533,7 +1533,7 @@
     <value>设备状态监听：{0}</value>
     <comment>设备状态监听：{0}</comment>
   </data>
-  <data name="OpenRazerDriverModeRestoreFailed" xml:space="preserve">
+  <data name="RazerHidDriverModeRestoreFailed" xml:space="preserve">
     <value>无法恢复 {0} 的无线连接模式：{1}</value>
     <comment>无法恢复 {0} 的无线连接模式：{1}</comment>
   </data>
@@ -1683,13 +1683,43 @@
   <data name="DisplayMuxModeStatusRestored" xml:space="preserve"><value>切换失败，已恢复原显示模式。</value><comment>MUX 已恢复</comment></data>
   <data name="DisplayMuxModeStatusRestoreFailed" xml:space="preserve"><value>切换失败，恢复原模式也失败；请重启并检查 BIOS 显示模式。</value><comment>MUX 恢复失败</comment></data>
   <data name="DisplayMuxModeStatusDedicatedGpuDisabled" xml:space="preserve"><value>请先关闭“仅核显（禁用独显）”，再切换 MUX。</value><comment>MUX 被仅核显模式阻断</comment></data>
+  <data name="GpuModeStatusApplied" xml:space="preserve"><value>显卡模式已应用。</value></data>
+  <data name="GpuModeStatusPendingRestart" xml:space="preserve"><value>上一次显卡操作的完成状态尚未确认，已暂停后续写入。请通过 Windows“重启”后重新打开软件，以尝试恢复独显；仅重启软件无效。若仍提示，请保留日志，勿反复切换。</value></data>
+  <data name="GpuModeStatusRolledBack" xml:space="preserve"><value>切换后显示链路异常，已自动恢复原模式。若外接屏仍未回来，请重启。</value></data>
+  <data name="GpuModeStatusRollbackFailed" xml:space="preserve"><value>切换后显示链路异常，自动恢复失败。请重启电脑；若外接屏仍未恢复，请重新安装显卡驱动。</value></data>
+  <data name="GpuModeStatusRecoveryNeedsElevation" xml:space="preserve"><value>检测到旧版遗留的独显禁用状态，但后台服务不可用；请到诊断页手动恢复或重启。</value></data>
+  <data name="GpuModeStatusBlockedNotDeclared" xml:space="preserve"><value>此机型没有声明可安全禁用独显。</value></data>
+  <data name="GpuModeStatusBlockedNoMux" xml:space="preserve"><value>没有检测到可用的显示 MUX，无法切换该模式。</value></data>
+  <data name="DiagnosticsGpuRecoveryTitle" xml:space="preserve"><value>显卡模式</value></data>
+  <data name="DiagnosticsGpuRecoveryDescription" xml:space="preserve"><value>切换显卡模式后外接屏消失时，重新启用独显并刷新显示链路。</value></data>
+  <data name="DiagnosticsGpuRecoveryButton" xml:space="preserve"><value>恢复独显</value></data>
+  <data name="DiagnosticsGpuRecoverySuccess" xml:space="preserve"><value>独显已重新启用，显示链路正在恢复。</value></data>
+  <data name="DiagnosticsGpuRecoveryRestart" xml:space="preserve"><value>独显已重新启用；如外接屏仍未回来，请重启电脑。</value></data>
+  <data name="DiagnosticsGpuRecoveryNoDevice" xml:space="preserve"><value>未找到 NVIDIA 独显。</value></data>
+  <data name="DiagnosticsGpuRecoveryFailed" xml:space="preserve"><value>恢复失败：{0}</value></data>
+  <data name="DiagnosticsGpuRecoveryBlocked" xml:space="preserve"><value>后台服务不可用，无法恢复。请安装机器级版本或以管理员身份运行。</value></data>
+  <data name="DiagnosticsGpuRecoveryBusy" xml:space="preserve"><value>正在恢复独显…</value></data>
   <data name="GpuModeTitle.Text" xml:space="preserve"><value>显卡模式</value><comment>四显卡模式标题</comment></data>
-  <data name="GpuModeDescription.Text" xml:space="preserve"><value>选择内置屏走哪块显卡。集显省电；标准由核显输出、独显按需渲染；独显直连需要重启；自动在插电时用标准、电池时用集显。</value><comment>四显卡模式说明</comment></data>
+  <data name="GpuModeDescription.Text" xml:space="preserve"><value>决定内置屏幕由谁驱动，以及独显是否启用。</value><comment>四显卡模式说明</comment></data>
+  <data name="GpuModeIntegratedSummary" xml:space="preserve"><value>禁用独显，只用核显工作；电池供电时临时降低内屏刷新率，优先使用 60 Hz。已有刷新率配置优先。</value></data>
+  <data name="GpuModePreferenceSaveFailed" xml:space="preserve"><value>显卡模式偏好保存失败，已保留原偏好；请检查实际显卡状态。</value></data>
+  <data name="GpuModeOperationNotApplied" xml:space="preserve"><value>显卡模式未应用：{0} / {1}（错误码 {2}）。</value></data>
+  <data name="BladeGpuCardClockOffsetTitle.Text" xml:space="preserve"><value>显卡超频</value></data>
+  <data name="BladeGpuCardClockOffsetReset.Content" xml:space="preserve"><value>恢复默认</value></data>
+  <data name="BladeGpuCardCoreClockLabel.Text" xml:space="preserve"><value>核心频率偏移</value></data>
+  <data name="BladeGpuCardMemoryClockLabel.Text" xml:space="preserve"><value>显存频率偏移</value></data>
+  <data name="BladeGpuCardClockLimitLabel.Text" xml:space="preserve"><value>核心频率上限</value></data>
+  <data name="BladeGpuCardCoreClockLabel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>核心频率偏移</value></data>
+  <data name="BladeGpuCardMemoryClockLabel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>显存频率偏移</value></data>
+  <data name="BladeGpuCardClockLimitLabel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>核心频率上限</value></data>
+  <data name="GpuModeStandardSummary" xml:space="preserve"><value>核显驱动屏幕，独显按需启用。</value></data>
+  <data name="GpuModeDiscreteSummary" xml:space="preserve"><value>屏幕直连独显，性能最高，需要重启。</value></data>
+  <data name="GpuModeAutoSummary" xml:space="preserve"><value>插电用标准模式，用电池切到集显模式。</value></data>
   <data name="GpuModeRestart.Text" xml:space="preserve"><value>重启独显设备</value><comment>重启故障独显</comment></data>
-  <data name="GpuModeIntegrated" xml:space="preserve"><value>集显</value><comment>集显模式</comment></data>
-  <data name="GpuModeStandard" xml:space="preserve"><value>标准</value><comment>标准模式</comment></data>
+  <data name="GpuModeIntegrated" xml:space="preserve"><value>集显模式</value><comment>集显模式</comment></data>
+  <data name="GpuModeStandard" xml:space="preserve"><value>标准模式</value><comment>标准模式</comment></data>
   <data name="GpuModeDiscrete" xml:space="preserve"><value>独显直连</value><comment>独显直连模式</comment></data>
-  <data name="GpuModeAuto" xml:space="preserve"><value>自动</value><comment>自动模式</comment></data>
+  <data name="GpuModeAuto" xml:space="preserve"><value>自动切换</value><comment>自动模式</comment></data>
   <data name="GpuModeStatusCurrent" xml:space="preserve"><value>当前：{0}。</value><comment>当前显卡模式</comment></data>
   <data name="GpuModeStatusAuto" xml:space="preserve"><value>自动：插电用标准，电池用集显；当前按{0}运行。</value><comment>自动模式状态</comment></data>
   <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>当前挂在独显直连，先切回标准并重启，才能关闭独显。</value><comment>独显直连下不能禁用独显</comment></data>
@@ -1721,58 +1751,67 @@
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>会话结束或超时后恢复 OpenSynapse 当前配置的灯效。</value><comment>恢复灯光说明</comment></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光开关</comment></data>
-  <data name="OpenRazerInformationTitle.Text" xml:space="preserve"><value>设备信息</value></data>
-  <data name="OpenRazerFirmwareLabel.Text" xml:space="preserve"><value>固件</value></data>
-  <data name="OpenRazerSerialLabel.Text" xml:space="preserve"><value>序列号</value></data>
-  <data name="OpenRazerModeLabel.Text" xml:space="preserve"><value>设备模式</value></data>
-  <data name="OpenRazerBatteryLabel.Text" xml:space="preserve"><value>电池</value></data>
-  <data name="OpenRazerPollingTitle.Text" xml:space="preserve"><value>轮询率</value></data>
-  <data name="OpenRazerPowerTitle.Text" xml:space="preserve"><value>电源管理</value></data>
-  <data name="OpenRazerIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
-  <data name="OpenRazerLowBatteryLabel.Text" xml:space="preserve"><value>低电量提醒（%）</value></data>
-  <data name="OpenRazerAutoSleepLabel.Text" xml:space="preserve"><value>自动休眠</value></data>
-  <data name="OpenRazerChargeLimiterLabel.Text" xml:space="preserve"><value>充电限制（%）</value></data>
-  <data name="Text_OpenRazerAutoSleepOn" xml:space="preserve"><value>开启</value></data>
-  <data name="Text_OpenRazerAutoSleepOff" xml:space="preserve"><value>关闭</value></data>
-  <data name="OpenRazerTimeToDimLabel.Text" xml:space="preserve"><value>自动变暗</value></data>
-  <data name="OpenRazerIndicatorLedLabel.Text" xml:space="preserve"><value>指示灯亮度</value></data>
-  <data name="OpenRazerBatteryCurveLabel.Text" xml:space="preserve"><value>电池放电曲线</value></data>
-  <data name="OpenRazerGpuCardLabel.Text" xml:space="preserve"><value>GPU 卡检测</value></data>
-  <data name="OpenRazerForceChromaLabel.Text" xml:space="preserve"><value>强制 Chroma 控制</value></data>
-  <data name="OpenRazerChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
-  <data name="OpenRazerLkScrollLabel.Text" xml:space="preserve"><value>LK 滚轮模式</value></data>
-  <data name="OpenRazerProfileDebounceTitle.Text" xml:space="preserve"><value>按键响应</value></data>
-  <data name="OpenRazerMacroStorageTitle.Text" xml:space="preserve"><value>板载宏容量</value></data>
-  <data name="Text_OpenRazerOn" xml:space="preserve"><value>开启</value></data>
-  <data name="Text_OpenRazerOff" xml:space="preserve"><value>关闭</value></data>
-  <data name="Text_OpenRazerIndicatorHalf" xml:space="preserve"><value>一半</value></data>
-  <data name="Text_OpenRazerIndicatorQuarter" xml:space="preserve"><value>四分之一</value></data>
-  <data name="Text_OpenRazerIndicatorOff" xml:space="preserve"><value>关闭</value></data>
-  <data name="Text_OpenRazerBatteryAlkaline" xml:space="preserve"><value>碱性</value></data>
-  <data name="Text_OpenRazerBatteryNiMH" xml:space="preserve"><value>镍氢</value></data>
-  <data name="Text_OpenRazerBatteryLithium" xml:space="preserve"><value>锂离子</value></data>
-  <data name="Text_OpenRazerChromaTapDouble" xml:space="preserve"><value>双击</value></data>
-  <data name="Text_OpenRazerChromaTapTriple" xml:space="preserve"><value>三击</value></data>
-  <data name="Text_OpenRazerChromaTapCycle" xml:space="preserve"><value>循环灯效</value></data>
-  <data name="Text_OpenRazerChromaTapEffect" xml:space="preserve"><value>指定灯效</value></data>
-  <data name="Text_OpenRazerChromaTapSpecific" xml:space="preserve"><value>指定快捷灯效</value></data>
-  <data name="Text_OpenRazerChromaTapLimiter" xml:space="preserve"><value>切换数字/模拟限位</value></data>
-  <data name="Text_OpenRazerLkTactile" xml:space="preserve"><value>Tactile</value></data>
-  <data name="Text_OpenRazerLkFreeSpin" xml:space="preserve"><value>FreeSpin</value></data>
-  <data name="Text_OpenRazerLkMicroTactile" xml:space="preserve"><value>MicroTactile</value></data>
-  <data name="OpenRazerLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
-  <data name="OpenRazerLightingEnabled.Header" xml:space="preserve"><value>启用灯光</value></data>
-  <data name="OpenRazerChromaOverride.Header" xml:space="preserve"><value>允许 Chroma 接管</value></data>
+  <data name="RazerHidInformationTitle.Text" xml:space="preserve"><value>设备信息</value></data>
+  <data name="RazerHidFirmwareLabel.Text" xml:space="preserve"><value>固件</value></data>
+  <data name="RazerHidSerialLabel.Text" xml:space="preserve"><value>序列号</value></data>
+  <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>设备模式</value></data>
+  <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>电池</value></data>
+  <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>轮询率</value></data>
+  <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>电源管理</value></data>
+  <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
+  <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>低电量提醒（%）</value></data>
+  <data name="RazerHidAutoSleepLabel.Text" xml:space="preserve"><value>自动休眠</value></data>
+  <data name="RazerHidChargeLimiterLabel.Text" xml:space="preserve"><value>充电限制（%）</value></data>
+  <data name="Text_RazerHidAutoSleepOn" xml:space="preserve"><value>开启</value></data>
+  <data name="Text_RazerHidAutoSleepOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerHidTimeToDimLabel.Text" xml:space="preserve"><value>自动变暗</value></data>
+  <data name="RazerHidIndicatorLedLabel.Text" xml:space="preserve"><value>指示灯亮度</value></data>
+  <data name="RazerHidIndicatorLedV2Title.Text" xml:space="preserve"><value>接收器指示灯</value></data>
+  <data name="RazerHidIndicatorLed1Label.Header" xml:space="preserve"><value>LED 1</value></data>
+  <data name="RazerHidIndicatorLed2Label.Header" xml:space="preserve"><value>LED 2</value></data>
+  <data name="RazerHidIndicatorLed3Label.Header" xml:space="preserve"><value>LED 3</value></data>
+  <data name="Text_RazerHidIndicatorV2Off" xml:space="preserve"><value>始终关闭</value></data>
+  <data name="Text_RazerHidIndicatorV2Battery" xml:space="preserve"><value>电量</value></data>
+  <data name="Text_RazerHidIndicatorV2Connection" xml:space="preserve"><value>连接质量</value></data>
+  <data name="Text_RazerHidIndicatorV2Polling" xml:space="preserve"><value>轮询率</value></data>
+  <data name="Text_RazerHidIndicatorV2Dpi" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="RazerHidBatteryCurveLabel.Text" xml:space="preserve"><value>电池放电曲线</value></data>
+  <data name="RazerHidGpuCardLabel.Text" xml:space="preserve"><value>GPU 卡检测</value></data>
+  <data name="RazerHidForceChromaLabel.Text" xml:space="preserve"><value>强制 Chroma 控制</value></data>
+  <data name="RazerHidChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
+  <data name="RazerHidLkScrollLabel.Text" xml:space="preserve"><value>LK 滚轮模式</value></data>
+  <data name="RazerHidProfileDebounceTitle.Text" xml:space="preserve"><value>按键响应</value></data>
+  <data name="RazerHidMacroStorageTitle.Text" xml:space="preserve"><value>板载宏容量</value></data>
+  <data name="Text_RazerHidOn" xml:space="preserve"><value>开启</value></data>
+  <data name="Text_RazerHidOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="Text_RazerHidIndicatorHalf" xml:space="preserve"><value>一半</value></data>
+  <data name="Text_RazerHidIndicatorQuarter" xml:space="preserve"><value>四分之一</value></data>
+  <data name="Text_RazerHidIndicatorOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="Text_RazerHidBatteryAlkaline" xml:space="preserve"><value>碱性</value></data>
+  <data name="Text_RazerHidBatteryNiMH" xml:space="preserve"><value>镍氢</value></data>
+  <data name="Text_RazerHidBatteryLithium" xml:space="preserve"><value>锂离子</value></data>
+  <data name="Text_RazerHidChromaTapDouble" xml:space="preserve"><value>双击</value></data>
+  <data name="Text_RazerHidChromaTapTriple" xml:space="preserve"><value>三击</value></data>
+  <data name="Text_RazerHidChromaTapCycle" xml:space="preserve"><value>循环灯效</value></data>
+  <data name="Text_RazerHidChromaTapEffect" xml:space="preserve"><value>指定灯效</value></data>
+  <data name="Text_RazerHidChromaTapSpecific" xml:space="preserve"><value>指定快捷灯效</value></data>
+  <data name="Text_RazerHidChromaTapLimiter" xml:space="preserve"><value>切换数字/模拟限位</value></data>
+  <data name="Text_RazerHidLkTactile" xml:space="preserve"><value>Tactile</value></data>
+  <data name="Text_RazerHidLkFreeSpin" xml:space="preserve"><value>FreeSpin</value></data>
+  <data name="Text_RazerHidLkMicroTactile" xml:space="preserve"><value>MicroTactile</value></data>
+  <data name="RazerHidLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
+  <data name="RazerHidLightingEnabled.Header" xml:space="preserve"><value>启用灯光</value></data>
+  <data name="RazerHidChromaOverride.Header" xml:space="preserve"><value>允许 Chroma 接管</value></data>
   <data name="BladeLightingEnabled.Header" xml:space="preserve"><value>启用灯光</value></data>
   <data name="BladeChromaOverride.Header" xml:space="preserve"><value>允许 Chroma 接管</value></data>
-  <data name="OpenRazerLightingPowerLabel.Text" xml:space="preserve"><value>供电配置</value></data>
-  <data name="OpenRazerLightingZone.Header" xml:space="preserve"><value>区域</value></data>
-  <data name="OpenRazerLightingEffect.Header" xml:space="preserve"><value>效果</value></data>
-  <data name="OpenRazerBrightnessLabel.Text" xml:space="preserve"><value>亮度</value></data>
-  <data name="OpenRazerLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效速度或持续时间</value></data>
-  <data name="OpenRazerLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效方向</value></data>
-  <data name="OpenRazerLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
-  <data name="OpenRazerLightingDirectionReverse.Content" xml:space="preserve"><value>向左 / 逆时针</value></data>
+  <data name="RazerHidLightingPowerLabel.Text" xml:space="preserve"><value>供电配置</value></data>
+  <data name="RazerHidLightingZone.Header" xml:space="preserve"><value>区域</value></data>
+  <data name="RazerHidLightingEffect.Header" xml:space="preserve"><value>效果</value></data>
+  <data name="RazerHidBrightnessLabel.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="RazerHidLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效速度或持续时间</value></data>
+  <data name="RazerHidLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效方向</value></data>
+  <data name="RazerHidLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
+  <data name="RazerHidLightingDirectionReverse.Content" xml:space="preserve"><value>向左 / 逆时针</value></data>
   <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>响应持续时间</value></data>
   <data name="BladeLightingStarlightSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>星光速度</value></data>
   <data name="BladeLightingStarlightColorMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>星光颜色模式</value></data>
@@ -1783,74 +1822,74 @@
   <data name="BladeStarlightRandom" xml:space="preserve"><value>随机</value></data>
   <data name="BladeStarlightSingle" xml:space="preserve"><value>单色</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>双色</value></data>
-  <data name="OpenRazerSaveButton.Content" xml:space="preserve"><value>保存</value></data>
-  <data name="OpenRazerApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
-  <data name="OpenRazerScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
-  <data name="OpenRazerOnboardProfileTitle.Text" xml:space="preserve"><value>板载配置</value></data>
-  <data name="OpenRazerOnboardProfileCountLabel.Text" xml:space="preserve"><value>已用 / 上限</value></data>
-  <data name="OpenRazerOnboardProfileActiveLabel.Text" xml:space="preserve"><value>当前配置</value></data>
-  <data name="OpenRazerOnboardProfileSelectLabel.Text" xml:space="preserve"><value>配置编号</value></data>
-  <data name="OpenRazerOnboardProfileApplyButton.Content" xml:space="preserve"><value>切换</value></data>
-  <data name="OpenRazerOnboardProfileCreateButton.Content" xml:space="preserve"><value>新建</value></data>
-  <data name="OpenRazerOnboardProfileDeleteButton.Content" xml:space="preserve"><value>删除</value></data>
-  <data name="OpenRazerOnboardProfileResetButton.Content" xml:space="preserve"><value>重置</value></data>
-  <data name="OpenRazerScrollFreeNotchedLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
-  <data name="OpenRazerScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>滚轮加速等级</value></data>
-  <data name="OpenRazerScrollNotchedMode.Text" xml:space="preserve"><value>段落感</value></data>
-  <data name="OpenRazerScrollFreeSpinMode.Text" xml:space="preserve"><value>自由滚动</value></data>
-  <data name="OpenRazerScrollModeLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
-  <data name="OpenRazerScrollAccelerationLabel.Text" xml:space="preserve"><value>滚轮加速</value></data>
-  <data name="OpenRazerSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel 阈值</value></data>
-  <data name="OpenRazerKeyswitchExpander.Header" xml:space="preserve"><value>键轴优化</value></data>
-  <data name="OpenRazerFnDescription.Text" xml:space="preserve"><value>选择功能键或媒体键作为第一层。</value></data>
-  <data name="OpenRazerFnPrimaryButton.Content" xml:space="preserve"><value>功能键优先</value></data>
-  <data name="OpenRazerMediaPrimaryButton.Content" xml:space="preserve"><value>媒体键优先</value></data>
-  <data name="OpenRazerWirelessTitle.Text" xml:space="preserve"><value>无线连接</value></data>
-  <data name="OpenRazerWirelessDescription.Text" xml:space="preserve"><value>无线链路报告的设备。取消配对会移除选中项。</value></data>
-  <data name="OpenRazerWirelessRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
-  <data name="OpenRazerWirelessUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
-  <data name="OpenRazerWirelessEmpty.Text" xml:space="preserve"><value>未报告无线设备。</value></data>
-  <data name="OpenRazerWirelessStatus" xml:space="preserve"><value>状态 {0}</value></data>
-  <data name="OpenRazerKnobTitle.Text" xml:space="preserve"><value>旋钮</value></data>
-  <data name="OpenRazerKnobDescription.Text" xml:space="preserve"><value>配置八个旋钮阶段；应用时同步更新当前阶段。</value></data>
-  <data name="OpenRazerKnobCurrentLabel.Text" xml:space="preserve"><value>当前模式</value></data>
-  <data name="OpenRazerKnobStageColumn.Text" xml:space="preserve"><value>阶段</value></data>
-  <data name="OpenRazerKnobModeColumn.Text" xml:space="preserve"><value>模式</value></data>
-  <data name="OpenRazerKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>键盘亮度</value></data>
-  <data name="OpenRazerKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>切换旋钮灯效</value></data>
-  <data name="OpenRazerKnobModeMicVolumeUpDown" xml:space="preserve"><value>麦克风音量</value></data>
-  <data name="OpenRazerKnobModeTrackJogging" xml:space="preserve"><value>曲目快进/后退</value></data>
-  <data name="OpenRazerKnobModeWindowZoomInOut" xml:space="preserve"><value>窗口缩放</value></data>
-  <data name="OpenRazerKnobModeWindowScrollUpDown" xml:space="preserve"><value>上下滚动</value></data>
-  <data name="OpenRazerKnobModeWindowScrollLeftRight" xml:space="preserve"><value>左右滚动</value></data>
-  <data name="OpenRazerKnobModeSwitchApplication" xml:space="preserve"><value>切换应用</value></data>
-  <data name="OpenRazerApplyButton.Content" xml:space="preserve"><value>应用</value></data>
-  <data name="OpenRazerHapticScrollTitle.Text" xml:space="preserve"><value>触觉滚轮档位</value></data>
-  <data name="OpenRazerHapticScrollDescription.Text" xml:space="preserve"><value>勾选参与切换的档位，再选当前生效的那一档。</value></data>
-  <data name="OpenRazerHapticScrollActiveLabel.Header" xml:space="preserve"><value>当前档位</value></data>
-  <data name="OpenRazerHapticScrollStandard.Text" xml:space="preserve"><value>标准</value></data>
-  <data name="OpenRazerHapticScrollDistinct.Text" xml:space="preserve"><value>清晰段落</value></data>
-  <data name="OpenRazerHapticScrollUltraFine.Text" xml:space="preserve"><value>超精细</value></data>
-  <data name="OpenRazerHapticScrollAdaptive.Text" xml:space="preserve"><value>自适应</value></data>
-  <data name="OpenRazerHapticScrollSmooth.Text" xml:space="preserve"><value>顺滑滚动</value></data>
-  <data name="OpenRazerHapticScrollCustom.Text" xml:space="preserve"><value>自定义</value></data>
-  <data name="OpenRazerOledLanguage.Text" xml:space="preserve"><value>语言</value></data>
-  <data name="OpenRazerOledLanguageEnglish.Text" xml:space="preserve"><value>英语</value></data>
-  <data name="OpenRazerOledLanguageChinese.Text" xml:space="preserve"><value>简体中文</value></data>
-  <data name="OpenRazerOledLanguageJapanese.Text" xml:space="preserve"><value>日语</value></data>
-  <data name="OpenRazerOledLanguageGerman.Text" xml:space="preserve"><value>德语</value></data>
-  <data name="OpenRazerOledLanguageKorean.Text" xml:space="preserve"><value>韩语</value></data>
-  <data name="OpenRazerOledLanguageFrench.Text" xml:space="preserve"><value>法语</value></data>
-  <data name="OpenRazerAnalogKeyTitle.Text" xml:space="preserve"><value>模拟键</value></data>
-  <data name="OpenRazerAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger、底部死区和上报模式。</value></data>
-  <data name="OpenRazerAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
-  <data name="OpenRazerAnalogBottomDeadZone.Header" xml:space="preserve"><value>底部死区</value></data>
-  <data name="OpenRazerAnalogReportMode.Header" xml:space="preserve"><value>模拟上报模式</value></data>
-  <data name="OpenRazerOledTitle.Text" xml:space="preserve"><value>OLED 屏幕</value></data>
-  <data name="OpenRazerOledBrightness.Text" xml:space="preserve"><value>亮度</value></data>
-  <data name="OpenRazerOledScreensaverMode.Header" xml:space="preserve"><value>屏保模式</value></data>
-  <data name="OpenRazerOledScreensaverItem.Header" xml:space="preserve"><value>屏保项目</value></data>
-  <data name="OpenRazerOledScreensaverReadOnly.Text" xml:space="preserve"><value>屏保选项只读：协议没有提供写入命令。</value></data>
+  <data name="RazerHidSaveButton.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="RazerHidApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
+  <data name="RazerHidScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
+  <data name="RazerHidOnboardProfileTitle.Text" xml:space="preserve"><value>板载配置</value></data>
+  <data name="RazerHidOnboardProfileCountLabel.Text" xml:space="preserve"><value>已用 / 上限</value></data>
+  <data name="RazerHidOnboardProfileActiveLabel.Text" xml:space="preserve"><value>当前配置</value></data>
+  <data name="RazerHidOnboardProfileSelectLabel.Text" xml:space="preserve"><value>配置编号</value></data>
+  <data name="RazerHidOnboardProfileApplyButton.Content" xml:space="preserve"><value>切换</value></data>
+  <data name="RazerHidOnboardProfileCreateButton.Content" xml:space="preserve"><value>新建</value></data>
+  <data name="RazerHidOnboardProfileDeleteButton.Content" xml:space="preserve"><value>删除</value></data>
+  <data name="RazerHidOnboardProfileResetButton.Content" xml:space="preserve"><value>重置</value></data>
+  <data name="RazerHidScrollFreeNotchedLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="RazerHidScrollAccelerationLevelLabel.Text" xml:space="preserve"><value>滚轮加速等级</value></data>
+  <data name="RazerHidScrollNotchedMode.Text" xml:space="preserve"><value>段落感</value></data>
+  <data name="RazerHidScrollFreeSpinMode.Text" xml:space="preserve"><value>自由滚动</value></data>
+  <data name="RazerHidScrollModeLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="RazerHidScrollAccelerationLabel.Text" xml:space="preserve"><value>滚轮加速</value></data>
+  <data name="RazerHidSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel 阈值</value></data>
+  <data name="RazerHidKeyswitchExpander.Header" xml:space="preserve"><value>键轴优化</value></data>
+  <data name="RazerHidFnDescription.Text" xml:space="preserve"><value>选择功能键或媒体键作为第一层。</value></data>
+  <data name="RazerHidFnPrimaryButton.Content" xml:space="preserve"><value>功能键优先</value></data>
+  <data name="RazerHidMediaPrimaryButton.Content" xml:space="preserve"><value>媒体键优先</value></data>
+  <data name="RazerHidWirelessTitle.Text" xml:space="preserve"><value>无线连接</value></data>
+  <data name="RazerHidWirelessDescription.Text" xml:space="preserve"><value>无线链路报告的设备。取消配对会移除选中项。</value></data>
+  <data name="RazerHidWirelessRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="RazerHidWirelessUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
+  <data name="RazerHidWirelessEmpty.Text" xml:space="preserve"><value>未报告无线设备。</value></data>
+  <data name="RazerHidWirelessStatus" xml:space="preserve"><value>状态 {0}</value></data>
+  <data name="RazerHidKnobTitle.Text" xml:space="preserve"><value>旋钮</value></data>
+  <data name="RazerHidKnobDescription.Text" xml:space="preserve"><value>配置八个旋钮阶段；应用时同步更新当前阶段。</value></data>
+  <data name="RazerHidKnobCurrentLabel.Text" xml:space="preserve"><value>当前模式</value></data>
+  <data name="RazerHidKnobStageColumn.Text" xml:space="preserve"><value>阶段</value></data>
+  <data name="RazerHidKnobModeColumn.Text" xml:space="preserve"><value>模式</value></data>
+  <data name="RazerHidKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>键盘亮度</value></data>
+  <data name="RazerHidKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>切换旋钮灯效</value></data>
+  <data name="RazerHidKnobModeMicVolumeUpDown" xml:space="preserve"><value>麦克风音量</value></data>
+  <data name="RazerHidKnobModeTrackJogging" xml:space="preserve"><value>曲目快进/后退</value></data>
+  <data name="RazerHidKnobModeWindowZoomInOut" xml:space="preserve"><value>窗口缩放</value></data>
+  <data name="RazerHidKnobModeWindowScrollUpDown" xml:space="preserve"><value>上下滚动</value></data>
+  <data name="RazerHidKnobModeWindowScrollLeftRight" xml:space="preserve"><value>左右滚动</value></data>
+  <data name="RazerHidKnobModeSwitchApplication" xml:space="preserve"><value>切换应用</value></data>
+  <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>触觉滚轮档位</value></data>
+  <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>勾选参与切换的档位，再选当前生效的那一档。</value></data>
+  <data name="RazerHidHapticScrollActiveLabel.Header" xml:space="preserve"><value>当前档位</value></data>
+  <data name="RazerHidHapticScrollStandard.Text" xml:space="preserve"><value>标准</value></data>
+  <data name="RazerHidHapticScrollDistinct.Text" xml:space="preserve"><value>清晰段落</value></data>
+  <data name="RazerHidHapticScrollUltraFine.Text" xml:space="preserve"><value>超精细</value></data>
+  <data name="RazerHidHapticScrollAdaptive.Text" xml:space="preserve"><value>自适应</value></data>
+  <data name="RazerHidHapticScrollSmooth.Text" xml:space="preserve"><value>顺滑滚动</value></data>
+  <data name="RazerHidHapticScrollCustom.Text" xml:space="preserve"><value>自定义</value></data>
+  <data name="RazerHidOledLanguage.Text" xml:space="preserve"><value>语言</value></data>
+  <data name="RazerHidOledLanguageEnglish.Text" xml:space="preserve"><value>英语</value></data>
+  <data name="RazerHidOledLanguageChinese.Text" xml:space="preserve"><value>简体中文</value></data>
+  <data name="RazerHidOledLanguageJapanese.Text" xml:space="preserve"><value>日语</value></data>
+  <data name="RazerHidOledLanguageGerman.Text" xml:space="preserve"><value>德语</value></data>
+  <data name="RazerHidOledLanguageKorean.Text" xml:space="preserve"><value>韩语</value></data>
+  <data name="RazerHidOledLanguageFrench.Text" xml:space="preserve"><value>法语</value></data>
+  <data name="RazerHidAnalogKeyTitle.Text" xml:space="preserve"><value>模拟键</value></data>
+  <data name="RazerHidAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger、底部死区和上报模式。</value></data>
+  <data name="RazerHidAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
+  <data name="RazerHidAnalogBottomDeadZone.Header" xml:space="preserve"><value>底部死区</value></data>
+  <data name="RazerHidAnalogReportMode.Header" xml:space="preserve"><value>模拟上报模式</value></data>
+  <data name="RazerHidOledTitle.Text" xml:space="preserve"><value>OLED 屏幕</value></data>
+  <data name="RazerHidOledBrightness.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="RazerHidOledScreensaverMode.Header" xml:space="preserve"><value>屏保模式</value></data>
+  <data name="RazerHidOledScreensaverItem.Header" xml:space="preserve"><value>屏保项目</value></data>
+  <data name="RazerHidOledScreensaverReadOnly.Text" xml:space="preserve"><value>屏保选项只读：协议没有提供写入命令。</value></data>
   <data name="Text_4B32CEE8" xml:space="preserve"><value>鼠标</value></data>
   <data name="Text_66E7127F" xml:space="preserve"><value>笔记本</value></data>
   <data name="Text_7D4E2D8B" xml:space="preserve"><value>键盘</value></data>
@@ -1865,71 +1904,71 @@
   <data name="Text_B252C327" xml:space="preserve"><value>硬件模式</value></data>
   <data name="Text_8FF04F66" xml:space="preserve"><value>充电中</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>未充电</value></data>
-  <data name="OpenRazerDpiStagesTitle.Text" xml:space="preserve"><value>DPI 档位</value></data>
-  <data name="OpenRazerActiveDpiStage.Header" xml:space="preserve"><value>当前档位</value></data>
-  <data name="OpenRazerDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>
-  <data name="OpenRazerHyperPollingDescription.Text" xml:space="preserve"><value>管理接收器指示灯和鼠标配对。配对操作会再次确认。</value></data>
-  <data name="OpenRazerHyperPollingIndicator.Header" xml:space="preserve"><value>指示灯模式</value></data>
-  <data name="OpenRazerApplyIndicatorButton.Content" xml:space="preserve"><value>应用</value></data>
-  <data name="OpenRazerPairButton.Content" xml:space="preserve"><value>配对</value></data>
-  <data name="OpenRazerUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
-  <data name="OpenRazerMouseProductIdLabel" xml:space="preserve"><value>鼠标 PID（十六进制）</value></data>
-  <data name="OpenRazerPairTitle" xml:space="preserve"><value>确认配对 HyperPolling</value></data>
-  <data name="OpenRazerUnpairTitle" xml:space="preserve"><value>确认取消 HyperPolling 配对</value></data>
-  <data name="OpenRazerPairAction" xml:space="preserve"><value>确认配对</value></data>
-  <data name="OpenRazerUnpairAction" xml:space="preserve"><value>确认取消配对</value></data>
-  <data name="OpenRazerInvalidProductId" xml:space="preserve"><value>请输入四位十六进制鼠标 PID。</value></data>
-  <data name="OpenRazerKeyswitchTyping" xml:space="preserve"><value>输入优化</value></data>
-  <data name="OpenRazerKeyswitchGaming" xml:space="preserve"><value>游戏优化</value></data>
-  <data name="OpenRazerZoneAll" xml:space="preserve"><value>全部</value></data>
-  <data name="OpenRazerZoneScrollWheel" xml:space="preserve"><value>滚轮</value></data>
-  <data name="OpenRazerZoneBattery" xml:space="preserve"><value>电量指示</value></data>
-  <data name="OpenRazerZoneLogo" xml:space="preserve"><value>Logo</value></data>
-  <data name="OpenRazerZoneBacklight" xml:space="preserve"><value>背光</value></data>
-  <data name="OpenRazerZoneMacro" xml:space="preserve"><value>宏键</value></data>
-  <data name="OpenRazerZoneGame" xml:space="preserve"><value>游戏模式</value></data>
-  <data name="OpenRazerZoneProfileRed" xml:space="preserve"><value>配置红灯</value></data>
-  <data name="OpenRazerZoneProfileGreen" xml:space="preserve"><value>配置绿灯</value></data>
-  <data name="OpenRazerZoneProfileBlue" xml:space="preserve"><value>配置蓝灯</value></data>
-  <data name="OpenRazerZoneRightSide" xml:space="preserve"><value>右侧</value></data>
-  <data name="OpenRazerZoneLeftSide" xml:space="preserve"><value>左侧</value></data>
-  <data name="OpenRazerZoneCharging" xml:space="preserve"><value>充电</value></data>
-  <data name="OpenRazerZoneFastCharging" xml:space="preserve"><value>快速充电</value></data>
-  <data name="OpenRazerZoneFullyCharged" xml:space="preserve"><value>已充满</value></data>
-  <data name="OpenRazerEffectOff" xml:space="preserve"><value>关闭</value></data>
-  <data name="OpenRazerEffectStatic" xml:space="preserve"><value>静态</value></data>
-  <data name="OpenRazerEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
-  <data name="OpenRazerEffectWave" xml:space="preserve"><value>波浪</value></data>
-  <data name="OpenRazerEffectReactive" xml:space="preserve"><value>响应</value></data>
-  <data name="OpenRazerEffectBlinking" xml:space="preserve"><value>闪烁</value></data>
-  <data name="OpenRazerEffectBreathingRandom" xml:space="preserve"><value>随机呼吸</value></data>
-  <data name="OpenRazerEffectBreathingSingle" xml:space="preserve"><value>单色呼吸</value></data>
-  <data name="OpenRazerEffectBreathingDual" xml:space="preserve"><value>双色呼吸</value></data>
-  <data name="OpenRazerEffectBreathingTriple" xml:space="preserve"><value>三色呼吸</value></data>
-  <data name="OpenRazerEffectStarlightRandom" xml:space="preserve"><value>随机星光</value></data>
-  <data name="OpenRazerEffectStarlightSingle" xml:space="preserve"><value>单色星光</value></data>
-  <data name="OpenRazerEffectStarlightDual" xml:space="preserve"><value>双色星光</value></data>
-  <data name="OpenRazerEffectWheel" xml:space="preserve"><value>色轮</value></data>
-  <data name="OpenRazerEffectCustom" xml:space="preserve"><value>自定义</value></data>
-  <data name="OpenRazerEffectSoftwareSpectrum" xml:space="preserve"><value>软件光谱</value></data>
-  <data name="OpenRazerEffectSoftwareWave" xml:space="preserve"><value>软件波浪</value></data>
-  <data name="OpenRazerEffectSoftwareFire" xml:space="preserve"><value>软件火焰</value></data>
-  <data name="OpenRazerEffectSoftwareAudioMeter" xml:space="preserve"><value>音频律动</value></data>
-  <data name="OpenRazerEffectSoftwareWheel" xml:space="preserve"><value>软件色轮</value></data>
-  <data name="OpenRazerLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
-  <data name="OpenRazerReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
-  <data name="OpenRazerMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
-  <data name="OpenRazerMatrixDescription.Text" xml:space="preserve"><value>选择色块调整单个像素，或点「填充当前颜色」一次铺满，然后应用整帧。</value></data>
-  <data name="OpenRazerApplyMatrixButton.Content" xml:space="preserve"><value>应用整帧</value></data>
-  <data name="OpenRazerFillMatrixButton.Content" xml:space="preserve"><value>填充当前颜色</value></data>
-  <data name="OpenRazerMatrixCellLabel" xml:space="preserve"><value>第 {0} 行，第 {1} 列</value></data>
-  <data name="OpenRazerHeadsetCategory" xml:space="preserve"><value>耳机</value></data>
-  <data name="OpenRazerKrakenSubtitle.Text" xml:space="preserve"><value>耳机灯光</value></data>
-  <data name="OpenRazerKrakenLightingTitle.Text" xml:space="preserve"><value>灯光效果</value></data>
-  <data name="OpenRazerPrimaryColorLabel.Text" xml:space="preserve"><value>颜色</value></data>
-  <data name="OpenRazerSecondaryColorLabel.Text" xml:space="preserve"><value>颜色 2</value></data>
-  <data name="OpenRazerTertiaryColorLabel.Text" xml:space="preserve"><value>颜色 3</value></data>
-  <data name="OpenRazerKrakenApplyButton.Content" xml:space="preserve"><value>应用灯效</value></data>
+  <data name="RazerHidDpiStagesTitle.Text" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="RazerHidActiveDpiStage.Header" xml:space="preserve"><value>当前档位</value></data>
+  <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>
+  <data name="RazerHidHyperPollingDescription.Text" xml:space="preserve"><value>管理接收器指示灯和鼠标配对。配对操作会再次确认。</value></data>
+  <data name="RazerHidHyperPollingIndicator.Header" xml:space="preserve"><value>指示灯模式</value></data>
+  <data name="RazerHidApplyIndicatorButton.Content" xml:space="preserve"><value>应用</value></data>
+  <data name="RazerHidPairButton.Content" xml:space="preserve"><value>配对</value></data>
+  <data name="RazerHidUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
+  <data name="RazerHidMouseProductIdLabel" xml:space="preserve"><value>鼠标 PID（十六进制）</value></data>
+  <data name="RazerHidPairTitle" xml:space="preserve"><value>确认配对 HyperPolling</value></data>
+  <data name="RazerHidUnpairTitle" xml:space="preserve"><value>确认取消 HyperPolling 配对</value></data>
+  <data name="RazerHidPairAction" xml:space="preserve"><value>确认配对</value></data>
+  <data name="RazerHidUnpairAction" xml:space="preserve"><value>确认取消配对</value></data>
+  <data name="RazerHidInvalidProductId" xml:space="preserve"><value>请输入四位十六进制鼠标 PID。</value></data>
+  <data name="RazerHidKeyswitchTyping" xml:space="preserve"><value>输入优化</value></data>
+  <data name="RazerHidKeyswitchGaming" xml:space="preserve"><value>游戏优化</value></data>
+  <data name="RazerHidZoneAll" xml:space="preserve"><value>全部</value></data>
+  <data name="RazerHidZoneScrollWheel" xml:space="preserve"><value>滚轮</value></data>
+  <data name="RazerHidZoneBattery" xml:space="preserve"><value>电量指示</value></data>
+  <data name="RazerHidZoneLogo" xml:space="preserve"><value>Logo</value></data>
+  <data name="RazerHidZoneBacklight" xml:space="preserve"><value>背光</value></data>
+  <data name="RazerHidZoneMacro" xml:space="preserve"><value>宏键</value></data>
+  <data name="RazerHidZoneGame" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="RazerHidZoneProfileRed" xml:space="preserve"><value>配置红灯</value></data>
+  <data name="RazerHidZoneProfileGreen" xml:space="preserve"><value>配置绿灯</value></data>
+  <data name="RazerHidZoneProfileBlue" xml:space="preserve"><value>配置蓝灯</value></data>
+  <data name="RazerHidZoneRightSide" xml:space="preserve"><value>右侧</value></data>
+  <data name="RazerHidZoneLeftSide" xml:space="preserve"><value>左侧</value></data>
+  <data name="RazerHidZoneCharging" xml:space="preserve"><value>充电</value></data>
+  <data name="RazerHidZoneFastCharging" xml:space="preserve"><value>快速充电</value></data>
+  <data name="RazerHidZoneFullyCharged" xml:space="preserve"><value>已充满</value></data>
+  <data name="RazerHidEffectOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerHidEffectStatic" xml:space="preserve"><value>静态</value></data>
+  <data name="RazerHidEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
+  <data name="RazerHidEffectWave" xml:space="preserve"><value>波浪</value></data>
+  <data name="RazerHidEffectReactive" xml:space="preserve"><value>响应</value></data>
+  <data name="RazerHidEffectBlinking" xml:space="preserve"><value>闪烁</value></data>
+  <data name="RazerHidEffectBreathingRandom" xml:space="preserve"><value>随机呼吸</value></data>
+  <data name="RazerHidEffectBreathingSingle" xml:space="preserve"><value>单色呼吸</value></data>
+  <data name="RazerHidEffectBreathingDual" xml:space="preserve"><value>双色呼吸</value></data>
+  <data name="RazerHidEffectBreathingTriple" xml:space="preserve"><value>三色呼吸</value></data>
+  <data name="RazerHidEffectStarlightRandom" xml:space="preserve"><value>随机星光</value></data>
+  <data name="RazerHidEffectStarlightSingle" xml:space="preserve"><value>单色星光</value></data>
+  <data name="RazerHidEffectStarlightDual" xml:space="preserve"><value>双色星光</value></data>
+  <data name="RazerHidEffectWheel" xml:space="preserve"><value>色轮</value></data>
+  <data name="RazerHidEffectCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="RazerHidEffectSoftwareSpectrum" xml:space="preserve"><value>软件光谱</value></data>
+  <data name="RazerHidEffectSoftwareWave" xml:space="preserve"><value>软件波浪</value></data>
+  <data name="RazerHidEffectSoftwareFire" xml:space="preserve"><value>软件火焰</value></data>
+  <data name="RazerHidEffectSoftwareAudioMeter" xml:space="preserve"><value>音频律动</value></data>
+  <data name="RazerHidEffectSoftwareWheel" xml:space="preserve"><value>软件色轮</value></data>
+  <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
+  <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
+  <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
+  <data name="RazerHidMatrixDescription.Text" xml:space="preserve"><value>选择色块调整单个像素，或点「填充当前颜色」一次铺满，然后应用整帧。</value></data>
+  <data name="RazerHidApplyMatrixButton.Content" xml:space="preserve"><value>应用整帧</value></data>
+  <data name="RazerHidFillMatrixButton.Content" xml:space="preserve"><value>填充当前颜色</value></data>
+  <data name="RazerHidMatrixCellLabel" xml:space="preserve"><value>第 {0} 行，第 {1} 列</value></data>
+  <data name="RazerHidHeadsetCategory" xml:space="preserve"><value>耳机</value></data>
+  <data name="RazerHidKrakenSubtitle.Text" xml:space="preserve"><value>耳机灯光</value></data>
+  <data name="RazerHidKrakenLightingTitle.Text" xml:space="preserve"><value>灯光效果</value></data>
+  <data name="RazerHidPrimaryColorLabel.Text" xml:space="preserve"><value>颜色</value></data>
+  <data name="RazerHidSecondaryColorLabel.Text" xml:space="preserve"><value>颜色 2</value></data>
+  <data name="RazerHidTertiaryColorLabel.Text" xml:space="preserve"><value>颜色 3</value></data>
+  <data name="RazerHidKrakenApplyButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="BladeLightingPowerCurrent" xml:space="preserve"><value>当前供电</value></data>
   <data name="BladeLightingPowerPluggedIn" xml:space="preserve"><value>电源</value></data>
   <data name="BladeLightingPowerLowAdapter" xml:space="preserve"><value>低功率适配器</value></data>
@@ -1988,7 +2027,7 @@
   <data name="BladeAnimationSpeedSlow" xml:space="preserve"><value>低速</value></data>
   <data name="BladeAnimationSpeedMedium" xml:space="preserve"><value>中速</value></data>
   <data name="BladeAnimationSpeedFast" xml:space="preserve"><value>高速</value></data>
-  <data name="OpenRazerMoreDevicesExpander.Header" xml:space="preserve">
+  <data name="RazerHidMoreDevicesExpander.Header" xml:space="preserve">
     <value>更多设备</value>
   </data>
   <data name="LowBatteryNotificationTitle.Text" xml:space="preserve"><value>外设低电量通知</value></data>
@@ -2007,88 +2046,90 @@
   <data name="ChromaSourceConnected" xml:space="preserve"><value>已连接 · 等待接管</value></data>
   <data name="ChromaSourceOffline" xml:space="preserve"><value>未连接</value></data>
   <data name="ChromaSourceAllowName" xml:space="preserve"><value>允许 {0} 接管 Chroma 灯光</value></data>
-  <data name="OpenRazerCapabilityFirmwareRead" xml:space="preserve"><value>固件读取</value></data>
-  <data name="OpenRazerCapabilitySerialRead" xml:space="preserve"><value>序列号读取</value></data>
-  <data name="OpenRazerCapabilityDeviceModeRead" xml:space="preserve"><value>设备模式读取</value></data>
-  <data name="OpenRazerCapabilityBatteryRead" xml:space="preserve"><value>电池读取</value></data>
-  <data name="OpenRazerCapabilityChargingRead" xml:space="preserve"><value>充电状态读取</value></data>
-  <data name="OpenRazerCapabilityPollingRateRead" xml:space="preserve"><value>轮询率读取</value></data>
-  <data name="OpenRazerCapabilityPollingRateWrite" xml:space="preserve"><value>轮询率写入</value></data>
-  <data name="OpenRazerCapabilityDpiRead" xml:space="preserve"><value>DPI 读取</value></data>
-  <data name="OpenRazerCapabilityDpiWrite" xml:space="preserve"><value>DPI 写入</value></data>
-  <data name="OpenRazerCapabilityDpiStagesRead" xml:space="preserve"><value>DPI 档位读取</value></data>
-  <data name="OpenRazerCapabilityDpiStagesWrite" xml:space="preserve"><value>DPI 档位写入</value></data>
-  <data name="OpenRazerCapabilityIdleTimeoutRead" xml:space="preserve"><value>空闲超时读取</value></data>
-  <data name="OpenRazerCapabilityIdleTimeoutWrite" xml:space="preserve"><value>空闲超时写入</value></data>
-  <data name="OpenRazerCapabilityLowBatteryThresholdRead" xml:space="preserve"><value>低电量阈值读取</value></data>
-  <data name="OpenRazerCapabilityLowBatteryThresholdWrite" xml:space="preserve"><value>低电量阈值写入</value></data>
-  <data name="OpenRazerCapabilityBrightnessRead" xml:space="preserve"><value>亮度读取</value></data>
-  <data name="OpenRazerCapabilityBrightnessWrite" xml:space="preserve"><value>亮度写入</value></data>
-  <data name="OpenRazerCapabilityLedStateRead" xml:space="preserve"><value>灯光状态读取</value></data>
-  <data name="OpenRazerCapabilityLedStateWrite" xml:space="preserve"><value>灯光状态写入</value></data>
-  <data name="OpenRazerCapabilityLedEffectRead" xml:space="preserve"><value>灯效读取</value></data>
-  <data name="OpenRazerCapabilityLedEffectWrite" xml:space="preserve"><value>灯效写入</value></data>
-  <data name="OpenRazerCapabilityLedColorWrite" xml:space="preserve"><value>灯光颜色写入</value></data>
-  <data name="OpenRazerCapabilityLedBlinkingWrite" xml:space="preserve"><value>闪烁灯效写入</value></data>
-  <data name="OpenRazerCapabilityLightingEffectWrite" xml:space="preserve"><value>灯效模式写入</value></data>
-  <data name="OpenRazerCapabilityMatrixFrameWrite" xml:space="preserve"><value>矩阵帧写入</value></data>
-  <data name="OpenRazerCapabilityReactiveTriggerWrite" xml:space="preserve"><value>响应灯效触发</value></data>
-  <data name="OpenRazerCapabilityScrollModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
-  <data name="OpenRazerCapabilityScrollModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationRead" xml:space="preserve"><value>滚轮加速读取</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationWrite" xml:space="preserve"><value>滚轮加速写入</value></data>
-  <data name="OpenRazerCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel 读取</value></data>
-  <data name="OpenRazerCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel 写入</value></data>
-  <data name="OpenRazerCapabilitySmartReelThresholdRead" xml:space="preserve"><value>Smart Reel 阈值读取</value></data>
-  <data name="OpenRazerCapabilitySmartReelThresholdWrite" xml:space="preserve"><value>Smart Reel 阈值写入</value></data>
-  <data name="OpenRazerCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn 主层写入</value></data>
-  <data name="OpenRazerCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>键轴优化读取</value></data>
-  <data name="OpenRazerCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>键轴优化写入</value></data>
-  <data name="OpenRazerCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling 指示灯写入</value></data>
-  <data name="OpenRazerCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling 配对</value></data>
-  <data name="OpenRazerCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling 取消配对</value></data>
-  <data name="OpenRazerCapabilityDeviceModeWrite" xml:space="preserve"><value>设备模式写入</value></data>
-  <data name="OpenRazerCapabilityAutoSleepRead" xml:space="preserve"><value>自动休眠读取</value></data>
-  <data name="OpenRazerCapabilityAutoSleepWrite" xml:space="preserve"><value>自动休眠写入</value></data>
-  <data name="OpenRazerCapabilityBatteryChargeLimiterRead" xml:space="preserve"><value>充电限制读取</value></data>
-  <data name="OpenRazerCapabilityBatteryChargeLimiterWrite" xml:space="preserve"><value>充电限制写入</value></data>
-  <data name="OpenRazerCapabilityTimeToDimRead" xml:space="preserve"><value>自动变暗读取</value></data>
-  <data name="OpenRazerCapabilityTimeToDimWrite" xml:space="preserve"><value>自动变暗写入</value></data>
-  <data name="OpenRazerCapabilityIndicatorLedConfigurationRead" xml:space="preserve"><value>指示灯配置读取</value></data>
-  <data name="OpenRazerCapabilityIndicatorLedConfigurationWrite" xml:space="preserve"><value>指示灯配置写入</value></data>
-  <data name="OpenRazerCapabilityGpuCardDetectionRead" xml:space="preserve"><value>GPU 卡检测读取</value></data>
-  <data name="OpenRazerCapabilityGpuCardDetectionWrite" xml:space="preserve"><value>GPU 卡检测写入</value></data>
-  <data name="OpenRazerCapabilityForceChromaCtrlRead" xml:space="preserve"><value>灯光接管读取</value></data>
-  <data name="OpenRazerCapabilityForceChromaCtrlWrite" xml:space="preserve"><value>灯光接管写入</value></data>
-  <data name="OpenRazerCapabilityProfileDebounceTimeRead" xml:space="preserve"><value>按键去抖读取</value></data>
-  <data name="OpenRazerCapabilityProfileDebounceTimeWrite" xml:space="preserve"><value>按键去抖写入</value></data>
-  <data name="OpenRazerCapabilityChromaTapRead" xml:space="preserve"><value>轻触手势读取</value></data>
-  <data name="OpenRazerCapabilityChromaTapWrite" xml:space="preserve"><value>轻触手势写入</value></data>
-  <data name="OpenRazerCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>电池放电曲线读取</value></data>
-  <data name="OpenRazerCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>电池放电曲线写入</value></data>
-  <data name="OpenRazerCapabilityMacroStorageInfoRead" xml:space="preserve"><value>板载宏容量读取</value></data>
-  <data name="OpenRazerCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
-  <data name="OpenRazerCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
-  <data name="OpenRazerCapabilityMappingRead" xml:space="preserve"><value>按键映射读取</value></data>
-  <data name="OpenRazerCapabilityMappingWrite" xml:space="preserve"><value>按键映射写入</value></data>
-  <data name="OpenRazerCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>自由滚动模式读取</value></data>
-  <data name="OpenRazerCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>自由滚动模式写入</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>滚轮加速等级读取</value></data>
-  <data name="OpenRazerCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>滚轮加速等级写入</value></data>
-  <data name="OpenRazerCapabilityOnboardProfileRead" xml:space="preserve"><value>板载配置读取</value></data>
-  <data name="OpenRazerCapabilityOnboardProfileWrite" xml:space="preserve"><value>板载配置写入</value></data>
-  <data name="OpenRazerCapabilityWirelessPairingWrite" xml:space="preserve"><value>无线配对</value></data>
-  <data name="OpenRazerCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>无线连接状态读取</value></data>
-  <data name="OpenRazerCapabilityProximitySensorRead" xml:space="preserve"><value>接近传感器读取</value></data>
-  <data name="OpenRazerCapabilityProximitySensorWrite" xml:space="preserve"><value>接近传感器写入</value></data>
-  <data name="OpenRazerCapabilityKnobRead" xml:space="preserve"><value>旋钮读取</value></data>
-  <data name="OpenRazerCapabilityKnobWrite" xml:space="preserve"><value>旋钮写入</value></data>
-  <data name="OpenRazerCapabilityAnalogKeyRead" xml:space="preserve"><value>模拟键读取</value></data>
-  <data name="OpenRazerCapabilityAnalogKeyWrite" xml:space="preserve"><value>模拟键写入</value></data>
-  <data name="OpenRazerCapabilityOledRead" xml:space="preserve"><value>OLED 屏幕读取</value></data>
-  <data name="OpenRazerCapabilityOledWrite" xml:space="preserve"><value>OLED 屏幕写入</value></data>
-  <data name="OpenRazerCapabilityHapticScrollRead" xml:space="preserve"><value>触觉滚轮读取</value></data>
-  <data name="OpenRazerCapabilityHapticScrollWrite" xml:space="preserve"><value>触觉滚轮写入</value></data>
+  <data name="RazerHidCapabilityFirmwareRead" xml:space="preserve"><value>固件读取</value></data>
+  <data name="RazerHidCapabilitySerialRead" xml:space="preserve"><value>序列号读取</value></data>
+  <data name="RazerHidCapabilityDeviceModeRead" xml:space="preserve"><value>设备模式读取</value></data>
+  <data name="RazerHidCapabilityBatteryRead" xml:space="preserve"><value>电池读取</value></data>
+  <data name="RazerHidCapabilityChargingRead" xml:space="preserve"><value>充电状态读取</value></data>
+  <data name="RazerHidCapabilityPollingRateRead" xml:space="preserve"><value>轮询率读取</value></data>
+  <data name="RazerHidCapabilityPollingRateWrite" xml:space="preserve"><value>轮询率写入</value></data>
+  <data name="RazerHidCapabilityDpiRead" xml:space="preserve"><value>DPI 读取</value></data>
+  <data name="RazerHidCapabilityDpiWrite" xml:space="preserve"><value>DPI 写入</value></data>
+  <data name="RazerHidCapabilityDpiStagesRead" xml:space="preserve"><value>DPI 档位读取</value></data>
+  <data name="RazerHidCapabilityDpiStagesWrite" xml:space="preserve"><value>DPI 档位写入</value></data>
+  <data name="RazerHidCapabilityIdleTimeoutRead" xml:space="preserve"><value>空闲超时读取</value></data>
+  <data name="RazerHidCapabilityIdleTimeoutWrite" xml:space="preserve"><value>空闲超时写入</value></data>
+  <data name="RazerHidCapabilityLowBatteryThresholdRead" xml:space="preserve"><value>低电量阈值读取</value></data>
+  <data name="RazerHidCapabilityLowBatteryThresholdWrite" xml:space="preserve"><value>低电量阈值写入</value></data>
+  <data name="RazerHidCapabilityBrightnessRead" xml:space="preserve"><value>亮度读取</value></data>
+  <data name="RazerHidCapabilityBrightnessWrite" xml:space="preserve"><value>亮度写入</value></data>
+  <data name="RazerHidCapabilityLedStateRead" xml:space="preserve"><value>灯光状态读取</value></data>
+  <data name="RazerHidCapabilityLedStateWrite" xml:space="preserve"><value>灯光状态写入</value></data>
+  <data name="RazerHidCapabilityLedEffectRead" xml:space="preserve"><value>灯效读取</value></data>
+  <data name="RazerHidCapabilityLedEffectWrite" xml:space="preserve"><value>灯效写入</value></data>
+  <data name="RazerHidCapabilityLedColorWrite" xml:space="preserve"><value>灯光颜色写入</value></data>
+  <data name="RazerHidCapabilityLedBlinkingWrite" xml:space="preserve"><value>闪烁灯效写入</value></data>
+  <data name="RazerHidCapabilityLightingEffectWrite" xml:space="preserve"><value>灯效模式写入</value></data>
+  <data name="RazerHidCapabilityMatrixFrameWrite" xml:space="preserve"><value>矩阵帧写入</value></data>
+  <data name="RazerHidCapabilityReactiveTriggerWrite" xml:space="preserve"><value>响应灯效触发</value></data>
+  <data name="RazerHidCapabilityScrollModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
+  <data name="RazerHidCapabilityScrollModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationRead" xml:space="preserve"><value>滚轮加速读取</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationWrite" xml:space="preserve"><value>滚轮加速写入</value></data>
+  <data name="RazerHidCapabilitySmartReelRead" xml:space="preserve"><value>Smart Reel 读取</value></data>
+  <data name="RazerHidCapabilitySmartReelWrite" xml:space="preserve"><value>Smart Reel 写入</value></data>
+  <data name="RazerHidCapabilitySmartReelThresholdRead" xml:space="preserve"><value>Smart Reel 阈值读取</value></data>
+  <data name="RazerHidCapabilitySmartReelThresholdWrite" xml:space="preserve"><value>Smart Reel 阈值写入</value></data>
+  <data name="RazerHidCapabilityFnPrimaryWrite" xml:space="preserve"><value>Fn 主层写入</value></data>
+  <data name="RazerHidCapabilityKeyswitchOptimizationRead" xml:space="preserve"><value>键轴优化读取</value></data>
+  <data name="RazerHidCapabilityKeyswitchOptimizationWrite" xml:space="preserve"><value>键轴优化写入</value></data>
+  <data name="RazerHidCapabilityHyperPollingIndicatorWrite" xml:space="preserve"><value>HyperPolling 指示灯写入</value></data>
+  <data name="RazerHidCapabilityHyperPollingPairWrite" xml:space="preserve"><value>HyperPolling 配对</value></data>
+  <data name="RazerHidCapabilityHyperPollingUnpairWrite" xml:space="preserve"><value>HyperPolling 取消配对</value></data>
+  <data name="RazerHidCapabilityDeviceModeWrite" xml:space="preserve"><value>设备模式写入</value></data>
+  <data name="RazerHidCapabilityAutoSleepRead" xml:space="preserve"><value>自动休眠读取</value></data>
+  <data name="RazerHidCapabilityAutoSleepWrite" xml:space="preserve"><value>自动休眠写入</value></data>
+  <data name="RazerHidCapabilityBatteryChargeLimiterRead" xml:space="preserve"><value>充电限制读取</value></data>
+  <data name="RazerHidCapabilityBatteryChargeLimiterWrite" xml:space="preserve"><value>充电限制写入</value></data>
+  <data name="RazerHidCapabilityTimeToDimRead" xml:space="preserve"><value>自动变暗读取</value></data>
+  <data name="RazerHidCapabilityTimeToDimWrite" xml:space="preserve"><value>自动变暗写入</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationRead" xml:space="preserve"><value>指示灯配置读取</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationWrite" xml:space="preserve"><value>指示灯配置写入</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationV2Read" xml:space="preserve"><value>接收器指示灯配置读取</value></data>
+  <data name="RazerHidCapabilityIndicatorLedConfigurationV2Write" xml:space="preserve"><value>接收器指示灯配置写入</value></data>
+  <data name="RazerHidCapabilityGpuCardDetectionRead" xml:space="preserve"><value>GPU 卡检测读取</value></data>
+  <data name="RazerHidCapabilityGpuCardDetectionWrite" xml:space="preserve"><value>GPU 卡检测写入</value></data>
+  <data name="RazerHidCapabilityForceChromaCtrlRead" xml:space="preserve"><value>灯光接管读取</value></data>
+  <data name="RazerHidCapabilityForceChromaCtrlWrite" xml:space="preserve"><value>灯光接管写入</value></data>
+  <data name="RazerHidCapabilityProfileDebounceTimeRead" xml:space="preserve"><value>按键去抖读取</value></data>
+  <data name="RazerHidCapabilityProfileDebounceTimeWrite" xml:space="preserve"><value>按键去抖写入</value></data>
+  <data name="RazerHidCapabilityChromaTapRead" xml:space="preserve"><value>轻触手势读取</value></data>
+  <data name="RazerHidCapabilityChromaTapWrite" xml:space="preserve"><value>轻触手势写入</value></data>
+  <data name="RazerHidCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>电池放电曲线读取</value></data>
+  <data name="RazerHidCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>电池放电曲线写入</value></data>
+  <data name="RazerHidCapabilityMacroStorageInfoRead" xml:space="preserve"><value>板载宏容量读取</value></data>
+  <data name="RazerHidCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
+  <data name="RazerHidCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
+  <data name="RazerHidCapabilityMappingRead" xml:space="preserve"><value>按键映射读取</value></data>
+  <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>按键映射写入</value></data>
+  <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>自由滚动模式读取</value></data>
+  <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>自由滚动模式写入</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>滚轮加速等级读取</value></data>
+  <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>滚轮加速等级写入</value></data>
+  <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>板载配置读取</value></data>
+  <data name="RazerHidCapabilityOnboardProfileWrite" xml:space="preserve"><value>板载配置写入</value></data>
+  <data name="RazerHidCapabilityWirelessPairingWrite" xml:space="preserve"><value>无线配对</value></data>
+  <data name="RazerHidCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>无线连接状态读取</value></data>
+  <data name="RazerHidCapabilityProximitySensorRead" xml:space="preserve"><value>接近传感器读取</value></data>
+  <data name="RazerHidCapabilityProximitySensorWrite" xml:space="preserve"><value>接近传感器写入</value></data>
+  <data name="RazerHidCapabilityKnobRead" xml:space="preserve"><value>旋钮读取</value></data>
+  <data name="RazerHidCapabilityKnobWrite" xml:space="preserve"><value>旋钮写入</value></data>
+  <data name="RazerHidCapabilityAnalogKeyRead" xml:space="preserve"><value>模拟键读取</value></data>
+  <data name="RazerHidCapabilityAnalogKeyWrite" xml:space="preserve"><value>模拟键写入</value></data>
+  <data name="RazerHidCapabilityOledRead" xml:space="preserve"><value>OLED 屏幕读取</value></data>
+  <data name="RazerHidCapabilityOledWrite" xml:space="preserve"><value>OLED 屏幕写入</value></data>
+  <data name="RazerHidCapabilityHapticScrollRead" xml:space="preserve"><value>触觉滚轮读取</value></data>
+  <data name="RazerHidCapabilityHapticScrollWrite" xml:space="preserve"><value>触觉滚轮写入</value></data>
   <data name="BladeCustomPerformanceTitle" xml:space="preserve"><value>自定义性能</value></data>
   <data name="BladeCpuPerformanceLabel" xml:space="preserve"><value>CPU 性能档位</value></data>
   <data name="BladeGpuPerformanceLabel" xml:space="preserve"><value>GPU 性能档位</value></data>
@@ -2108,13 +2149,15 @@
   <data name="BladeFanCurveApply" xml:space="preserve"><value>应用</value></data>
   <data name="BladeGpuClockLimitLabel" xml:space="preserve"><value>核心频率上限</value></data>
   <data name="BladeGpuClockLimitDefault" xml:space="preserve"><value>默认</value></data>
-  <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>GPU 频率偏移</value></data>
-  <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>驱动级偏移，会一直保留到手动恢复默认。</value></data>
-  <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>核心偏移</value></data>
-  <data name="BladeGpuMemoryClockLabel" xml:space="preserve"><value>显存偏移</value></data>
+  <data name="BladeGpuClockLimitNoLimit" xml:space="preserve"><value>不限制</value></data>
+  <data name="BladeGpuClockOffsetTitle" xml:space="preserve"><value>显卡超频</value></data>
+  <data name="BladeGpuClockOffsetReading" xml:space="preserve"><value>正在读取显卡频率…</value></data>
+  <data name="BladeGpuClockOffsetHint" xml:space="preserve"><value>立即生效。Windows 重启后驱动会清除这些设置；偏移过大可能导致显卡不稳定。</value></data>
+  <data name="BladeGpuCoreClockLabel" xml:space="preserve"><value>核心频率偏移</value></data>
+  <data name="BladeGpuMemoryClockLabel" xml:space="preserve"><value>显存频率偏移</value></data>
   <data name="BladeGpuClockOffsetApply" xml:space="preserve"><value>应用</value></data>
   <data name="BladeGpuClockOffsetReset" xml:space="preserve"><value>恢复默认</value></data>
-  <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>已应用，会一直保留到恢复默认。</value></data>
+  <data name="BladeGpuClockOffsetApplied" xml:space="preserve"><value>已应用；Windows 重启后驱动会清除这些设置。</value></data>
   <data name="BladeGpuClockOffsetFailed" xml:space="preserve"><value>GPU 驱动拒绝了这次频率偏移。</value></data>
   <data name="BladeGpuClockOffsetServiceMissing" xml:space="preserve"><value>需要安装或更新 OpenSynapse 机器服务。</value></data>
   <data name="BladeGpuClockOffsetUnsupported" xml:space="preserve"><value>当前驱动不接受频率偏移。</value></data>
@@ -2164,6 +2207,21 @@
   <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost 会提高 CPU 和 GPU 的持续功耗上限；未连接雷蛇散热垫且机型支持时，会同时把风扇拉到最高转速。未连接雷蛇笔记本散热垫时，散热仍依赖你自备的第三方方案。长时间高负载可能导致过热降频或硬件损伤。继续启用即表示你已自行承担这一风险。</value></data>
   <data name="BladeHyperboostDisclaimerAccept" xml:space="preserve"><value>我已了解风险，继续启用</value></data>
   <data name="BladeHyperboostLimitedAdapter" xml:space="preserve"><value>已启用 HyperBoost，但当前电源适配器功率低于建议值，机器可能无法维持满功耗并出现降频。</value></data>
+  <data name="AdvancedFeaturesTitle" xml:space="preserve"><value>高级功能（危险）</value></data>
+  <data name="AdvancedFeaturesSettingDescription" xml:space="preserve"><value>在设备页显示 GPU 超频、CPU 功耗墙和 Curve Optimizer 等直接写入硬件的设置。</value></data>
+  <data name="BladeChargeLimitHelp" xml:space="preserve"><value>设置电池停止充电的电量上限；80% 左右有助于延长长期插电时的电池寿命。</value></data>
+  <data name="BladeCustomPerformanceHelp" xml:space="preserve"><value>调整当前配置下的 CPU/GPU 性能档位和风扇全速。</value></data>
+  <data name="BladeLightingHelp" xml:space="preserve"><value>控制键盘灯光开关、亮度、灯效和颜色。</value></data>
+  <data name="BladeLogoHelp" xml:space="preserve"><value>控制机身 Logo 的灯效与供电配置。</value></data>
+  <data name="BladeDisplayHelp" xml:space="preserve"><value>调整内置屏幕刷新率、亮度和面板模式。</value></data>
+  <data name="BladeGamingModeHelp" xml:space="preserve"><value>降低后台干扰并优化游戏相关系统行为。</value></data>
+  <data name="BladeStartupAnimationHelp" xml:space="preserve"><value>控制开机时的 Razer 启动动画。</value></data>
+  <data name="BladeOneTimeFullChargeHelp" xml:space="preserve"><value>临时充满到 100%，用于长途出行；平时仍按充电上限停止。</value></data>
+  <data name="BladeFirmwareHelp" xml:space="preserve"><value>查看 BIOS、EC、MCU 和 vBIOS 版本，并检查官方更新。</value></data>
+  <data name="AdvancedFeaturesWarning" xml:space="preserve"><value>这些设置会直接写入固件、EC 或显卡驱动，可能导致功耗异常、风扇失控、系统不稳定或硬件损坏。</value></data>
+  <data name="AdvancedFeaturesDisclaimerTitle" xml:space="preserve"><value>危险功能</value></data>
+  <data name="AdvancedFeaturesDisclaimerMessage" xml:space="preserve"><value>高级功能会直接写入固件、EC 或显卡驱动，可能改变功耗、风扇或频率策略。错误设置可能导致系统不稳定、设备异常或硬件损坏。继续前请确认你了解并自行承担这些风险。</value></data>
+  <data name="AdvancedFeaturesDisclaimerAccept" xml:space="preserve"><value>我已了解风险，继续</value></data>
   <data name="FirmwareTitle" xml:space="preserve"><value>固件</value></data>
   <data name="FirmwareCheckButton" xml:space="preserve"><value>检查更新</value></data>
   <data name="FirmwareEcLabel" xml:space="preserve"><value>EC</value></data>
@@ -2211,8 +2269,8 @@
     <value>缺少雷蛇提供的 THX 控制组件。点击“下载 THX 控制组件”从雷蛇官方服务器获取，下载后会校验完整性；OpenSynapse 安装包不附带该组件。</value>
   </data>
   <data name="ThxInstallButton.Content" xml:space="preserve">
-    <value>打开雷蛇下载页</value>
-    <comment>打开雷蛇下载页</comment>
+    <value>安装 THX 组件</value>
+    <comment>安装 THX 组件</comment>
   </data>
   <data name="ThxOutputLabel.Header" xml:space="preserve">
     <value>输出</value>
@@ -2397,7 +2455,7 @@
     <value>关闭雷蛇 Synapse、Razer App Engine 和 THX 客户端后重新读取。</value>
   </data>
   <data name="ThxHintServiceMissing" xml:space="preserve">
-    <value>THX 服务未运行，请修复或重新安装雷蛇音频组件。</value>
+    <value>THX 服务未运行。支持的机型可由 OpenSynapse 安装官方 THX 音频组件。</value>
   </data>
   <data name="ThxHintHelperMissing" xml:space="preserve">
     <value>THX 控制进程没有随应用部署，请重新安装 OpenSynapse。</value>
@@ -2424,16 +2482,19 @@
     <value>下载 THX 控制组件</value>
   </data>
   <data name="ThxStatusDownloading" xml:space="preserve">
-    <value>正在从雷蛇官方服务器下载 THX 控制组件…</value>
+    <value>正在下载并安装 THX 组件…</value>
   </data>
   <data name="ThxStatusDownloadFailed" xml:space="preserve">
-    <value>THX 控制组件下载失败，请检查网络后重试。</value>
+    <value>THX 组件下载或安装失败，请检查网络并确认允许管理员权限后重试。</value>
   </data>
   <data name="ThxStatusDownloadVerificationFailed" xml:space="preserve">
     <value>下载的 THX 控制组件未通过完整性校验，未写入。</value>
   </data>
   <data name="ThxStatusDownloadWriteFailed" xml:space="preserve">
     <value>无法写入 THX 控制组件，请检查当前用户目录权限。</value>
+  </data>
+  <data name="ThxStatusInstallFailed" xml:space="preserve">
+    <value>THX 组件下载、校验或安装失败，请确认允许管理员权限后重试。</value>
   </data>
   <data name="ThxWindowTitle" xml:space="preserve">
     <value>THX Spatial Audio</value>
@@ -2538,8 +2599,8 @@
   <data name="MacroMouseButton1" xml:space="preserve"><value>左键</value></data>
   <data name="MacroMouseButton2" xml:space="preserve"><value>右键</value></data>
   <data name="MacroMouseButton3" xml:space="preserve"><value>中键</value></data>
-  <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1</value></data>
-  <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2</value></data>
+  <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1 (Mouse 4)</value></data>
+  <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2 (Mouse 5)</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga 侧键 {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>鼠标侧键</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga 侧键</value></data>
@@ -2553,7 +2614,7 @@
   <data name="MacroRecorded" xml:space="preserve"><value>已录制 {0} 个动作。</value></data>
   <data name="MacroRecordingEmptyTake" xml:space="preserve"><value>这次没有录到动作，已保留宏原来的内容。</value></data>
   <data name="MacroRecording" xml:space="preserve"><value>正在录制动作，按“停止录制”结束。</value></data>
-  <data name="MacroCapturePrompt" xml:space="preserve"><value>请按下要绑定的键或鼠标侧键。</value></data>
+  <data name="MacroCapturePrompt" xml:space="preserve"><value>请按下要绑定的键或鼠标侧键（侧键 1 = Mouse 4，侧键 2 = Mouse 5）。</value></data>
   <data name="MacroCaptureCanceled" xml:space="preserve"><value>已取消触发键捕获。</value></data>
   <data name="MacroTriggerCaptured" xml:space="preserve"><value>触发键已设为 {0}。</value></data>
   <data name="MacroEmpty" xml:space="preserve"><value>这个宏还没有动作。</value></data>
@@ -2630,8 +2691,8 @@
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>插入</value></data>
   <data name="MacroKeyPickerMouseHint.Text" xml:space="preserve"><value>悬停查看按键，点击即可添加动作。</value></data>
   <data name="MacroMouseSideButtons.Text" xml:space="preserve"><value>可选侧键</value></data>
-  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>侧键 1</value></data>
-  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>侧键 2</value></data>
+  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>侧键 1 (Mouse 4)</value></data>
+  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>侧键 2 (Mouse 5)</value></data>
   <data name="MacroAdd" xml:space="preserve"><value>添加</value></data>
   <data name="MacroCancel" xml:space="preserve"><value>取消</value></data>
   <data name="MacroComboDialogTitle" xml:space="preserve"><value>插入组合键</value></data>
@@ -2827,15 +2888,15 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>逐灯控制需要雷云的 0F1F 控制驱动。下载并安装后，点“刷新”重新检测。</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>下载 ARGB 驱动</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 由雷云的 THX 服务和音频组件提供。缺失时在这里安装；安装包需要管理员权限。</value></data>
-  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>下载 THX 安装包</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 需要 THX 音频服务和组件。这里只下载并安装官方 THX 音频包，不会安装雷云，也不需要激活码；安装时需要管理员权限。</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>安装 THX 组件</value></data>
   <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>下载 THX 控制组件</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>更新 THX 游戏配置</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>更新 THX Patcher</value></data>
-  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未检测到 THX 服务（VSSrv）。下载并运行雷云的 THX 安装包后重新检测。</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点下面的按钮下载。</value></data>
-  <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载 THX 控制组件…</value></data>
-  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 控制组件下载或校验失败，请重试。</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未检测到 THX 服务。点上面的按钮由 OpenSynapse 安装官方 THX 音频组件；不会安装雷云。</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点上面的按钮下载。</value></data>
+  <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载并安装 THX 组件…</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 组件下载、校验或安装失败，请确认允许管理员权限后重试。</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>应用空间音效</value></data>
@@ -2851,7 +2912,7 @@
   <data name="RazerHeadsetThxSidetoneApply.Content" xml:space="preserve"><value>应用侧音</value></data>
   <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>没有拿到耳机音频端点的容器 ID，无法定位 THX。重新连接耳机后刷新。</value></data>
   <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>THX 辅助进程启动失败。重新打开应用后再试。</value></data>
-  <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 组件没有接受这次修改。安装或修复 THX 安装包后刷新。</value></data>
+  <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 组件没有接受这次修改。重新安装 THX 组件后刷新。</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>
@@ -3246,4 +3307,334 @@
   <data name="BleScrollTactile" xml:space="preserve"><value>触感</value></data>
   <data name="BleScrollFreeSpin" xml:space="preserve"><value>自由滚动</value></data>
   <data name="BleScrollMicroTactile" xml:space="preserve"><value>微触感</value></data>
+  <data name="BladePerformanceModeBalancedDescription" xml:space="preserve"><value>日常使用</value></data>
+  <data name="BladePerformanceModeSilentDescription" xml:space="preserve"><value>安静优先</value></data>
+  <data name="BladePerformanceModePerformanceDescription" xml:space="preserve"><value>高性能</value></data>
+  <data name="BladePerformanceModeCustomDescription" xml:space="preserve"><value>自定义设置</value></data>
+  <data name="BladePerformanceModeGamingDescription" xml:space="preserve"><value>游戏优化</value></data>
+  <data name="BladePerformanceModeHyperboostDescription" xml:space="preserve"><value>更高功耗释放</value></data>
+  <data name="BladePerformanceModeBatterySaverDescription" xml:space="preserve"><value>延长续航</value></data>
+  <data name="BladePerformanceModeBalancedDcDescription" xml:space="preserve"><value>电池平衡</value></data>
+  <data name="BladePerformanceModeTurboDescription" xml:space="preserve"><value>Turbo 性能</value></data>
+  <data name="BladeFanSpeedHelp" xml:space="preserve"><value>风扇控制器当前报告的 CPU 与 GPU 转速。</value></data>
+  <data name="BladeFanControlHelp" xml:space="preserve"><value>自动模式交给固件；固定转速和手动曲线会覆盖固件策略。</value></data>
+  <data name="BladePerformanceModeHelp" xml:space="preserve"><value>切换后会立即写入并回读当前供电配置。</value></data>
+  <data name="BladeFanSummaryHelp" xml:space="preserve"><value>当前风扇模式、目标转速与实测转速。</value></data>
+  <data name="BladeFanTargetRpmLabel" xml:space="preserve"><value>目标转速</value></data>
+  <data name="BladeChromaOverride.OffContent" xml:space="preserve"><value>关闭</value></data>
+  <data name="BladeChromaOverride.OnContent" xml:space="preserve"><value>开启</value></data>
+  <data name="BladeLightingEnabled.OffContent" xml:space="preserve"><value>关闭</value></data>
+  <data name="BladeLightingEnabled.OnContent" xml:space="preserve"><value>开启</value></data>
+  <data name="DiagnosticPreviouslyObserved" xml:space="preserve"><value>此前已发现，设备当前不在连接列表</value></data>
+  <data name="GpuModeRestart.Content" xml:space="preserve"><value>重启独显设备</value></data>
+  <data name="HueBridgeComboView.Header" xml:space="preserve"><value>Hue 桥</value></data>
+  <data name="HueBridgeComboView.PlaceholderText" xml:space="preserve"><value>扫描局域网或手动输入地址</value></data>
+  <data name="KiyoApplyWhiteBalance.Content" xml:space="preserve"><value>应用白平衡</value></data>
+  <data name="KiyoOpenSettings.Content" xml:space="preserve"><value>打开雷蛇相机设置</value></data>
+  <data name="Loc_0E422F6A72.Header" xml:space="preserve"><value>Usage 0–255</value></data>
+  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>添加延迟</value></data>
+  <data name="RazerHeadsetAdvancedAudioApply.Content" xml:space="preserve"><value>应用音频增强</value></data>
+  <data name="RazerHeadsetAdvancedAudioTitle.Text" xml:space="preserve"><value>音频增强</value></data>
+  <data name="RazerHeadsetAncApply.Content" xml:space="preserve"><value>应用降噪模式</value></data>
+  <data name="RazerHeadsetAncLevelLabel.Header" xml:space="preserve"><value>强度</value></data>
+  <data name="RazerHeadsetAncModeLabel.Header" xml:space="preserve"><value>模式</value></data>
+  <data name="RazerHeadsetAncTitle.Text" xml:space="preserve"><value>主动降噪</value></data>
+  <data name="RazerHeadsetAutoPauseToggle.Header" xml:space="preserve"><value>取下自动暂停</value></data>
+  <data name="RazerHeadsetBassApply.Content" xml:space="preserve"><value>应用低音</value></data>
+  <data name="RazerHeadsetBassTitle.Text" xml:space="preserve"><value>低音增强</value></data>
+  <data name="RazerHeadsetBatteryLabel.Text" xml:space="preserve"><value>电量</value></data>
+  <data name="RazerHeadsetChargingLabel.Text" xml:space="preserve"><value>充电</value></data>
+  <data name="RazerHeadsetCompressorApply.Content" xml:space="preserve"><value>应用压缩器</value></data>
+  <data name="RazerHeadsetCompressorAttack.Header" xml:space="preserve"><value>启动（原始值）</value></data>
+  <data name="RazerHeadsetCompressorDb.Header" xml:space="preserve"><value>阈值 (dB)</value></data>
+  <data name="RazerHeadsetCompressorRatio.Header" xml:space="preserve"><value>压缩比（原始值）</value></data>
+  <data name="RazerHeadsetCompressorRelease.Header" xml:space="preserve"><value>释放（原始值）</value></data>
+  <data name="RazerHeadsetCompressorTitle.Text" xml:space="preserve"><value>麦克风压缩器</value></data>
+  <data name="RazerHeadsetCompressorToggle.Header" xml:space="preserve"><value>启用压缩器</value></data>
+  <data name="RazerHeadsetDeEsserLabel.Text" xml:space="preserve"><value>齿音消除</value></data>
+  <data name="RazerHeadsetDndToggle.Header" xml:space="preserve"><value>勿扰模式</value></data>
+  <data name="RazerHeadsetDolbyToggle.Header" xml:space="preserve"><value>Dolby 音效</value></data>
+  <data name="RazerHeadsetEqBandsApply.Content" xml:space="preserve"><value>应用频段</value></data>
+  <data name="RazerHeadsetEqBandsTitle.Text" xml:space="preserve"><value>均衡器频段</value></data>
+  <data name="RazerHeadsetEqPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
+  <data name="RazerHeadsetEqPresetTitle.Text" xml:space="preserve"><value>均衡器预设</value></data>
+  <data name="RazerHeadsetFirmwareLabel.Text" xml:space="preserve"><value>固件</value></data>
+  <data name="RazerHeadsetGestureToggle.Header" xml:space="preserve"><value>手势控制</value></data>
+  <data name="RazerHeadsetHapticsApply.Content" xml:space="preserve"><value>应用触觉</value></data>
+  <data name="RazerHeadsetHapticsStrength.Header" xml:space="preserve"><value>强度</value></data>
+  <data name="RazerHeadsetHapticsTitle.Text" xml:space="preserve"><value>触觉反馈</value></data>
+  <data name="RazerHeadsetHapticsToggle.Header" xml:space="preserve"><value>启用触觉反馈</value></data>
+  <data name="RazerHeadsetLimiterLabel.Text" xml:space="preserve"><value>限幅阈值</value></data>
+  <data name="RazerHeadsetMicApply.Content" xml:space="preserve"><value>应用麦克风</value></data>
+  <data name="RazerHeadsetMicMonitoringApply.Content" xml:space="preserve"><value>应用监听</value></data>
+  <data name="RazerHeadsetMicMonitoringTitle.Text" xml:space="preserve"><value>麦克风监听</value></data>
+  <data name="RazerHeadsetMicMonitoringToggle.Header" xml:space="preserve"><value>启用监听</value></data>
+  <data name="RazerHeadsetMicMuteToggle.Header" xml:space="preserve"><value>麦克风静音</value></data>
+  <data name="RazerHeadsetMicProcessingApply.Content" xml:space="preserve"><value>应用麦克风处理</value></data>
+  <data name="RazerHeadsetMicProcessingTitle.Text" xml:space="preserve"><value>麦克风处理</value></data>
+  <data name="RazerHeadsetMicTitle.Text" xml:space="preserve"><value>麦克风</value></data>
+  <data name="RazerHeadsetNightModeToggle.Header" xml:space="preserve"><value>夜间模式</value></data>
+  <data name="RazerHeadsetNoiseApply.Content" xml:space="preserve"><value>应用降噪</value></data>
+  <data name="RazerHeadsetNoiseTitle.Text" xml:space="preserve"><value>AI 降噪</value></data>
+  <data name="RazerHeadsetNoiseToggle.Header" xml:space="preserve"><value>AI 降噪</value></data>
+  <data name="RazerHeadsetParametricEqApply.Content" xml:space="preserve"><value>应用频段</value></data>
+  <data name="RazerHeadsetParametricEqBand.Header" xml:space="preserve"><value>频段</value></data>
+  <data name="RazerHeadsetParametricEqFrequency.Header" xml:space="preserve"><value>频率 (Hz)</value></data>
+  <data name="RazerHeadsetParametricEqGain.Header" xml:space="preserve"><value>增益（原始值）</value></data>
+  <data name="RazerHeadsetParametricEqQ.Header" xml:space="preserve"><value>Q（原始值）</value></data>
+  <data name="RazerHeadsetParametricEqTitle.Text" xml:space="preserve"><value>参数均衡器</value></data>
+  <data name="RazerHeadsetParametricEqToggle.Header" xml:space="preserve"><value>启用该频段</value></data>
+  <data name="RazerHeadsetRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="RazerHeadsetReverbLabel.Text" xml:space="preserve"><value>混响</value></data>
+  <data name="RazerHeadsetSourceApply.Content" xml:space="preserve"><value>应用输入</value></data>
+  <data name="RazerHeadsetSourceTitle.Text" xml:space="preserve"><value>音频输入</value></data>
+  <data name="RazerHeadsetStatusTitle.Text" xml:space="preserve"><value>设备状态</value></data>
+  <data name="RazerHeadsetVoicePromptToggle.Header" xml:space="preserve"><value>语音提示</value></data>
+  <data name="RazerKeyboardGameModeTitle.Text" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="RazerKeyboardGameModeToggle.Header" xml:space="preserve"><value>禁用 Windows 键</value></data>
+  <data name="RazerKeyboardIdentityTitle.Text" xml:space="preserve"><value>设备信息</value></data>
+  <data name="RazerKeyboardPollingTitle.Text" xml:space="preserve"><value>轮询率</value></data>
+  <data name="RazerKeyboardRefreshButton.Content" xml:space="preserve"><value>刷新</value></data>
+  <data name="RazerLightingApplyBrightness.Content" xml:space="preserve"><value>应用亮度</value></data>
+  <data name="RazerLightingApplyEffect.Content" xml:space="preserve"><value>应用灯效</value></data>
+  <data name="RazerLightingBrightnessLabel.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="RazerLightingEffectLabel.Text" xml:space="preserve"><value>效果</value></data>
+  <data name="RazerLightingPrimaryColor.Text" xml:space="preserve"><value>主色</value></data>
+  <data name="RazerLightingSecondaryColor.Text" xml:space="preserve"><value>副色</value></data>
+  <data name="RazerLightingTitle.Text" xml:space="preserve"><value>灯光</value></data>
+  <data name="ViperBatteryChemistryInput.PlaceholderText" xml:space="preserve"><value>请选择电池类型</value></data>
+  <data name="ViperBatteryChemistryInput.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>电池类型</value></data>
+  <data name="ViperSettingAppliedProfileSaveFailed" xml:space="preserve"><value>鼠标设置已在设备上生效，但配置保存失败，已恢复内存中的对应配置字段。</value></data>
+  <data name="FirmwareUpdatePartial" xml:space="preserve"><value>检查未完成，无法比较：{0}。请到对应型号的 Razer 支持页核对。</value></data>
+  <data name="FirmwareUpdateAvailablePartial" xml:space="preserve"><value>发现组件更新：{0}。仍无法比较：{1}。</value></data>
+  <data name="FirmwareUpdateComparedCurrent" xml:space="preserve"><value>可比较的组件版本不低于当前发布数据。请到 Razer 支持页确认是否有更新。</value></data>
+  <data name="RazerHeadsetReverbSmall" xml:space="preserve"><value>小型</value></data>
+  <data name="RazerHeadsetReverbMedium" xml:space="preserve"><value>中型</value></data>
+  <data name="RazerHeadsetReverbLarge" xml:space="preserve"><value>大型</value></data>
+  <data name="RazerHeadsetReverbPlate" xml:space="preserve"><value>板式</value></data>
+  <data name="HueLightsHelp" xml:space="preserve"><value>列出 Hue 桥上的灯，可开关、调亮度，或选中一盏灯应用颜色；点“应用”后发送到桥。</value></data>
+  <data name="RazerHidKrakenLightingHelp" xml:space="preserve"><value>设置 Kraken 的灯效、主色/副色和亮度，点“应用灯效”后写入设备。</value></data>
+  <data name="BlackSharkBatteryHelp" xml:space="preserve"><value>只读显示耳机报告的电量和充电状态。</value></data>
+  <data name="BlackSharkThxHelp" xml:space="preserve"><value>开关耳机的 THX Spatial Audio，保存后写入设备。</value></data>
+  <data name="BlackSharkSidetoneHelp" xml:space="preserve"><value>设置麦克风回送到耳机的侧音强度（0–15），保存后生效。</value></data>
+  <data name="BlackSharkGameChatHelp" xml:space="preserve"><value>调整游戏声与语音通话的混合比例，保存后写入耳机。</value></data>
+  <data name="BlackSharkAncHelp" xml:space="preserve"><value>选择主动降噪模式并设置强度，保存后写入耳机。</value></data>
+  <data name="RazerMixer053EHelp" xml:space="preserve"><value>控制混音器四路声道和麦克风的静音，以及亮度；静音按钮即时写入，亮度点“应用亮度”写入。</value></data>
+  <data name="RazerHeadsetStatusHelp" xml:space="preserve"><value>只读显示耳机报告的固件、电量和充电状态。</value></data>
+  <data name="RazerHeadsetEqPresetHelp" xml:space="preserve"><value>选择并应用耳机内置的均衡器预设。</value></data>
+  <data name="RazerHeadsetEqBandsHelp" xml:space="preserve"><value>逐频段调整耳机均衡器，点“应用频段”后整体写入。</value></data>
+  <data name="RazerHeadsetMicEqBandsHelp" xml:space="preserve"><value>逐频段调整麦克风均衡器，点“应用麦克风频段”后整体写入。</value></data>
+  <data name="RazerHeadsetBassHelp" xml:space="preserve"><value>设置低音增强强度，点“应用低音”后写入耳机。</value></data>
+  <data name="RazerHeadsetMicHelp" xml:space="preserve"><value>切换麦克风静音并调整输入音量，点“应用麦克风”后写入设备。</value></data>
+  <data name="RazerHeadsetSourceHelp" xml:space="preserve"><value>选择耳机使用的音频输入源，点“应用输入”后生效。</value></data>
+  <data name="RazerHeadsetNoiseHelp" xml:space="preserve"><value>开关 AI 降噪，点“应用降噪”后由耳机处理麦克风输入。</value></data>
+  <data name="RazerHeadsetAncHelp" xml:space="preserve"><value>选择主动降噪模式并设置强度，点“应用降噪模式”后写入耳机。</value></data>
+  <data name="RazerHeadsetAdvancedAudioHelp" xml:space="preserve"><value>切换勿扰、自动暂停、手势、Dolby、夜间模式和语音提示等增强项，应用后写入设备。</value></data>
+  <data name="RazerHeadsetMicProcessingHelp" xml:space="preserve"><value>调整齿音消除、限幅阈值和混响强度，应用后写入麦克风处理链路。</value></data>
+  <data name="RazerHeadsetMicMonitoringHelp" xml:space="preserve"><value>把麦克风信号回送到耳机（侧音），可单独开关并应用。</value></data>
+  <data name="RazerHeadsetParametricEqHelp" xml:space="preserve"><value>按频段读写增益和 Q；协议只提供原始值，雷云没有公开换算。</value></data>
+  <data name="RazerHeadsetCompressorHelp" xml:space="preserve"><value>调整阈值、压缩比、启动和释放时间；压缩比和时间按协议原始值写入。</value></data>
+  <data name="RazerHeadsetHapticsHelp" xml:space="preserve"><value>开关触觉反馈并设置强度，应用后写入耳机。</value></data>
+  <data name="RazerHeadsetLightingHelp" xml:space="preserve"><value>调整耳机矩阵灯光的灯效、亮度和主色/副色，应用后写入设备。</value></data>
+  <data name="RazerKeyboardIdentityHelp" xml:space="preserve"><value>只读显示键盘报告的固件版本和序列号。</value></data>
+  <data name="RazerKeyboardGameModeHelp" xml:space="preserve"><value>开启后禁用 Windows 键，避免游戏时误触；保存后写入键盘。</value></data>
+  <data name="RazerKeyboardPollingHelp" xml:space="preserve"><value>选择键盘的轮询率；可选档位由设备报告。</value></data>
+  <data name="RazerKeyboardLightingHelp" xml:space="preserve"><value>调整键盘灯效、亮度和主色/副色，应用后写入键盘。</value></data>
+  <data name="RazerGamepadConnectionHelp" xml:space="preserve"><value>设置手柄的轮询率和配置文件，应用后写入设备。</value></data>
+  <data name="RazerGamepadLightingHelp" xml:space="preserve"><value>按区域选择灯效、颜色、持续时间和亮度，应用后写入手柄。</value></data>
+  <data name="RazerGamepadSticksHelp" xml:space="preserve"><value>分别调整左右摇杆的灵敏度、死区和摇杆形状。</value></data>
+  <data name="RazerGamepadStickHelp" xml:space="preserve"><value>调整该摇杆的灵敏度、死区、防双死区和形状。</value></data>
+  <data name="RazerGamepadTriggersHelp" xml:space="preserve"><value>分别设置左右扳机的模式、模拟行程和触发行程。</value></data>
+  <data name="RazerGamepadTriggerHelp" xml:space="preserve"><value>调整该扳机的模式、行程、触发行程和快速触发。</value></data>
+  <data name="RazerGamepadDpadHelp" xml:space="preserve"><value>设置方向键斜向输入和 SOCD 清理方式，应用后写入设备。</value></data>
+  <data name="RazerGamepadVibrationHelp" xml:space="preserve"><value>选择手柄震动强度，应用后写入设备。</value></data>
+  <data name="RazerGamepadRawInputHelp" xml:space="preserve"><value>只读显示手柄当前上报的原始输入和 ADC 掩码，用于排查映射。</value></data>
+  <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>为手柄按键分配动作；读取或修改后点“应用”写入设备。</value></data>
+  <data name="RazerHidInformationHelp" xml:space="preserve"><value>只读显示设备报告的固件、序列号和电池等信息。</value></data>
+  <data name="RazerChromaLightingHelp" xml:space="preserve"><value>调整设备灯效、亮度和主色/副色，应用后写入设备。</value></data>
+  <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>按设备报告的能力显示音量、侧音、EQ、灯效等控件；每项应用后写入耳机。</value></data>
+  <data name="RazerHidPollingHelp" xml:space="preserve"><value>选择鼠标的轮询率，保存后写入设备。</value></data>
+  <data name="BlePollingHelp" xml:space="preserve"><value>选择无线鼠标的轮询率；高回报率会增加耗电。</value></data>
+  <data name="BleDpiHelp" xml:space="preserve"><value>设置鼠标 X/Y DPI，保存后写入设备。</value></data>
+  <data name="BleLightingHelp" xml:space="preserve"><value>调整灯光亮度、灯效、方向和颜色，应用后写入设备。</value></data>
+  <data name="BleMappingHelp" xml:space="preserve"><value>按层重新分配按键动作，应用后写入板载映射。</value></data>
+  <data name="BleDpiStagesHelp" xml:space="preserve"><value>设置各档 DPI 和当前档位，应用后整体写入。</value></data>
+  <data name="BleScrollHelp" xml:space="preserve"><value>调整滚轮模式、Smart Reel、加速和触感档位，应用后写入设备。</value></data>
+  <data name="BlePowerHelp" xml:space="preserve"><value>设置低电量提醒、自动休眠、自动变暗和电源方案，应用后写入设备。</value></data>
+  <data name="BleBatteryHelp" xml:space="preserve"><value>选择电池类型；电量百分比按该类型换算，换电池后需要重新选择。</value></data>
+  <data name="BleSmartIlluminationHelp" xml:space="preserve"><value>闲置时自动调暗灯光，并可选择调暗档位，应用后写入设备。</value></data>
+  <data name="BleKeysHelp" xml:space="preserve"><value>配置 Snap Tap 和按键去抖时间，应用后写入设备。</value></data>
+  <data name="BleProfilesHelp" xml:space="preserve"><value>切换设备的板载配置文件，应用后立即生效。</value></data>
+  <data name="RazerHidDpiHelp" xml:space="preserve"><value>读取或写入鼠标 X/Y DPI；上限由设备能力决定。</value></data>
+  <data name="RazerHidDpiStagesHelp" xml:space="preserve"><value>设置各档 DPI 和当前档位，保存后整体写入。</value></data>
+  <data name="RazerHidMappingHelp" xml:space="preserve"><value>读取并按层修改板载按键映射，保存后写入设备。</value></data>
+  <data name="RazerHidPowerHelp" xml:space="preserve"><value>设置空闲休眠、低电量提醒、充电限制、自动变暗和电池曲线等电源选项，保存后写入设备。</value></data>
+  <data name="RazerHidMacroStorageHelp" xml:space="preserve"><value>只读显示板载宏存储的容量和占用。</value></data>
+  <data name="RazerHidLightingHelp" xml:space="preserve"><value>按区域设置灯效、亮度、颜色、方向和速度，保存后写入设备。</value></data>
+  <data name="RazerHidOnboardProfileHelp" xml:space="preserve"><value>查看、切换、新建或删除板载配置文件。</value></data>
+  <data name="RazerHidOledHelp" xml:space="preserve"><value>调整 OLED 屏幕亮度、语言和屏保选项；屏保只读。</value></data>
+  <data name="RazerHidProfileDebounceHelp" xml:space="preserve"><value>设置按下/松手的去抖与掩码时间，保存后写入当前配置。</value></data>
+  <data name="ViperDpiStagesHelp" xml:space="preserve"><value>设置档位数、活动档和各档 X/Y DPI，整表保存。</value></data>
+  <data name="ViperMappingHelp" xml:space="preserve"><value>读取并按层修改板载按键映射，保存后写入设备。</value></data>
+  <data name="BatteryHealthHelp" xml:space="preserve"><value>显示当前电池健康读数，以及设计容量、满充容量和循环次数；只读。</value></data>
+  <data name="BatteryChargeHelp" xml:space="preserve"><value>显示当前电量百分比和充电状态；只读。</value></data>
+  <data name="BladeFilterDriverHelp" xml:space="preserve"><value>驱动缺失时 Fn 行由固件/EC 处理；安装雷云过滤驱动后由驱动接管。</value></data>
+  <data name="RazerHidScrollHelp" xml:space="preserve"><value>调整滚轮模式、Smart Reel、加速和触感档位，保存后写入设备。</value></data>
+  <data name="RazerHidKeyswitchHelp" xml:space="preserve"><value>选择键轴优化档位，保存后写入设备；可选档位由设备报告。</value></data>
+  <data name="RazerHidMatrixHelp" xml:space="preserve"><value>逐颗设置矩阵灯珠颜色，或一次填充当前颜色，然后应用整帧。</value></data>
+  <data name="RazerKeyboardStatusHelp" xml:space="preserve"><value>只读显示键盘报告的电量和充电状态。</value></data>
+  <data name="ViperLowBatteryHelp" xml:space="preserve"><value>设置低电量提醒阈值，达到后由 OpenSynapse 发送通知。</value></data>
+  <data name="ViperBatteryChemistryHelp" xml:space="preserve"><value>选择电池类型；电量百分比会按该类型换算，换电池后要选对。</value></data>
+  <data name="ViperDpiHelp" xml:space="preserve"><value>设置当前 X/Y DPI；范围 100–30000，步进 50。</value></data>
+  <data name="ViperBatteryHelp" xml:space="preserve"><value>只读：显示鼠标当前电量；电量由鼠标通过无线链路报告，不会写回设备。</value></data>
+  <data name="ViperIdleHelp" xml:space="preserve"><value>设置鼠标闲置多久后进入休眠；范围 1–15 分钟。</value></data>
+  <data name="ViperPollingHelp" xml:space="preserve"><value>设置鼠标回报率；保存后会写入设备并读回确认。</value></data>
+  <data name="LightingStudioTitle" xml:space="preserve"><value>灯光工作室</value></data>
+  <data name="LightingStudioSubtitle" xml:space="preserve"><value>图层、区域与效果实时预览，支持多设备矩阵输出和 Chroma 文件导入导出。</value></data>
+  <data name="LightingStudioPlay" xml:space="preserve"><value>播放</value></data>
+  <data name="LightingStudioPause" xml:space="preserve"><value>暂停</value></data>
+  <data name="LightingStudioApply" xml:space="preserve"><value>应用到设备</value></data>
+  <data name="LightingStudioStop" xml:space="preserve"><value>停止</value></data>
+  <data name="LightingStudioDeviceLabel" xml:space="preserve"><value>设备</value></data>
+  <data name="LightingStudioNoDevice" xml:space="preserve"><value>未检测到可用的 Blade 键盘</value></data>
+  <data name="LightingStudioNameLabel" xml:space="preserve"><value>工作室名称</value></data>
+  <data name="LightingStudioUntitled" xml:space="preserve"><value>未命名工作室</value></data>
+  <data name="LightingStudioAdd" xml:space="preserve"><value>新增</value></data>
+  <data name="LightingStudioRemove" xml:space="preserve"><value>删除</value></data>
+  <data name="LightingStudioMoveUp" xml:space="preserve"><value>上移</value></data>
+  <data name="LightingStudioMoveDown" xml:space="preserve"><value>下移</value></data>
+  <data name="LightingStudioSave" xml:space="preserve"><value>保存</value></data>
+  <data name="LightingStudioLoad" xml:space="preserve"><value>载入</value></data>
+  <data name="LightingStudioNew" xml:space="preserve"><value>新建</value></data>
+  <data name="LightingStudioLayerProperties" xml:space="preserve"><value>图层属性</value></data>
+  <data name="LightingStudioLayerNameLabel" xml:space="preserve"><value>名称</value></data>
+  <data name="LightingStudioEnabled" xml:space="preserve"><value>启用</value></data>
+  <data name="LightingStudioEffect" xml:space="preserve"><value>效果</value></data>
+  <data name="LightingStudioBlend" xml:space="preserve"><value>混合</value></data>
+  <data name="LightingStudioOpacity" xml:space="preserve"><value>不透明度</value></data>
+  <data name="LightingStudioSpeed" xml:space="preserve"><value>速度</value></data>
+  <data name="LightingStudioPrimary" xml:space="preserve"><value>主色</value></data>
+  <data name="LightingStudioSecondary" xml:space="preserve"><value>副色</value></data>
+  <data name="LightingStudioLayerName" xml:space="preserve"><value>图层 {0}</value></data>
+  <data name="LightingStudioProfileName" xml:space="preserve"><value>配置 {0}</value></data>
+  <data name="LightingStudioGroupName" xml:space="preserve"><value>分组 {0}</value></data>
+  <data name="LightingStudioAllRegions" xml:space="preserve"><value>整个图层</value></data>
+  <data name="LightingStudioRegionLabel" xml:space="preserve"><value>区域</value></data>
+  <data name="LightingStudioRegionName" xml:space="preserve"><value>区域 {0}</value></data>
+  <data name="LightingStudioProfileLabel" xml:space="preserve"><value>配置档</value></data>
+  <data name="LightingStudioAddGroup" xml:space="preserve"><value>组</value></data>
+  <data name="LightingStudioDuplicate" xml:space="preserve"><value>复制</value></data>
+  <data name="LightingStudioMoveIntoGroup" xml:space="preserve"><value>入组</value></data>
+  <data name="LightingStudioMoveToRoot" xml:space="preserve"><value>出组</value></data>
+  <data name="LightingStudioUndo" xml:space="preserve"><value>撤销</value></data>
+  <data name="LightingStudioRedo" xml:space="preserve"><value>重做</value></data>
+  <data name="LightingStudioToolSelect" xml:space="preserve"><value>选择</value></data>
+  <data name="LightingStudioToolPen" xml:space="preserve"><value>画笔</value></data>
+  <data name="LightingStudioToolBucket" xml:space="preserve"><value>油漆桶</value></data>
+  <data name="LightingStudioToolMove" xml:space="preserve"><value>移动</value></data>
+  <data name="LightingStudioBackgroundLayer" xml:space="preserve"><value>底色</value></data>
+  <data name="LightingStudioEffectSolid" xml:space="preserve"><value>纯色</value></data>
+  <data name="LightingStudioEffectBreathing" xml:space="preserve"><value>呼吸</value></data>
+  <data name="LightingStudioEffectSpectrum" xml:space="preserve"><value>光谱</value></data>
+  <data name="LightingStudioEffectWave" xml:space="preserve"><value>波浪</value></data>
+  <data name="LightingStudioEffectGradient" xml:space="preserve"><value>渐变</value></data>
+  <data name="LightingStudioEffectFire" xml:space="preserve"><value>火焰</value></data>
+  <data name="LightingStudioEffectReactive" xml:space="preserve"><value>点击反应</value></data>
+  <data name="LightingStudioEffectRipple" xml:space="preserve"><value>涟漪</value></data>
+  <data name="LightingStudioEffectStarlight" xml:space="preserve"><value>星光</value></data>
+  <data name="LightingStudioEffectAmbient" xml:space="preserve"><value>氛围</value></data>
+  <data name="LightingStudioEffectAudio" xml:space="preserve"><value>音频</value></data>
+  <data name="LightingStudioEffectWheel" xml:space="preserve"><value>色轮</value></data>
+  <data name="LightingStudioEffectGenerate" xml:space="preserve"><value>图片生成</value></data>
+  <data name="LightingStudioEffectTidal" xml:space="preserve"><value>潮汐</value></data>
+  <data name="LightingStudioBlendNormal" xml:space="preserve"><value>正常</value></data>
+  <data name="LightingStudioBlendAdd" xml:space="preserve"><value>叠加</value></data>
+  <data name="LightingStudioBlendMultiply" xml:space="preserve"><value>正片叠底</value></data>
+  <data name="LightingStudioBlendScreen" xml:space="preserve"><value>滤色</value></data>
+  <data name="LightingStudioColorRazerGreen" xml:space="preserve"><value>雷蛇绿</value></data>
+  <data name="LightingStudioColorCyan" xml:space="preserve"><value>青</value></data>
+  <data name="LightingStudioColorBlue" xml:space="preserve"><value>蓝</value></data>
+  <data name="LightingStudioColorPurple" xml:space="preserve"><value>紫</value></data>
+  <data name="LightingStudioColorRed" xml:space="preserve"><value>红</value></data>
+  <data name="LightingStudioColorOrange" xml:space="preserve"><value>橙</value></data>
+  <data name="LightingStudioColorYellow" xml:space="preserve"><value>黄</value></data>
+  <data name="LightingStudioColorWhite" xml:space="preserve"><value>白</value></data>
+  <data name="LightingStudioStatusHint" xml:space="preserve"><value>选择图层后调整参数，预览会实时更新。</value></data>
+  <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>正在获取设备布局...</value></data>
+  <data name="LightingStudioStatusLayoutFailed" xml:space="preserve"><value>已退回矩阵布局：{0}</value></data>
+  <data name="LightingStudioStatusSelectLayer" xml:space="preserve"><value>先选一个图层。</value></data>
+  <data name="LightingStudioStatusSelectLeds" xml:space="preserve"><value>先在画布上选灯。</value></data>
+  <data name="LightingStudioStatusRegionApplied" xml:space="preserve"><value>选区已应用：{0} 个灯。</value></data>
+  <data name="LightingStudioStatusRegionCleared" xml:space="preserve"><value>已清除选区，图层作用于整机。</value></data>
+  <data name="LightingStudioApplySelection" xml:space="preserve"><value>应用选区</value></data>
+  <data name="LightingStudioSelectAll" xml:space="preserve"><value>全选</value></data>
+  <data name="LightingStudioClearSelection" xml:space="preserve"><value>清除选区</value></data>
+  <data name="LightingStudioStatusLayerAdded" xml:space="preserve"><value>已新增 {0}</value></data>
+  <data name="LightingStudioStatusLayerRemoved" xml:space="preserve"><value>已删除图层</value></data>
+  <data name="LightingStudioStatusNoDevice" xml:space="preserve"><value>未找到可用的 Blade 键盘。</value></data>
+  <data name="LightingStudioStatusApplied" xml:space="preserve"><value>已下发到 {0}。</value></data>
+  <data name="LightingStudioStatusApplyFailed" xml:space="preserve"><value>下发失败：{0}</value></data>
+  <data name="LightingStudioStatusStopped" xml:space="preserve"><value>已停止并恢复设备原有效果。</value></data>
+  <data name="LightingStudioStatusStopFailed" xml:space="preserve"><value>停止失败：{0}</value></data>
+  <data name="LightingStudioStatusSaved" xml:space="preserve"><value>已保存到 {0}</value></data>
+  <data name="LightingStudioStatusSaveFailed" xml:space="preserve"><value>保存失败：{0}</value></data>
+  <data name="LightingStudioStatusNoSave" xml:space="preserve"><value>还没有保存过工作室。</value></data>
+  <data name="LightingStudioStatusLoaded" xml:space="preserve"><value>已载入 {0}</value></data>
+  <data name="LightingStudioStatusLoadFailed" xml:space="preserve"><value>载入失败：{0}</value></data>
+  <data name="LightingStudioStatusNew" xml:space="preserve"><value>已新建空白工作室。</value></data>
+  <data name="LightingStudioParamColor" xml:space="preserve"><value>主色</value></data>
+  <data name="LightingStudioParamColor2" xml:space="preserve"><value>副色</value></data>
+  <data name="LightingStudioParamColorStops" xml:space="preserve"><value>调色板</value></data>
+  <data name="LightingStudioParamRandomColor" xml:space="preserve"><value>随机颜色</value></data>
+  <data name="LightingStudioParamDuration" xml:space="preserve"><value>时长</value></data>
+  <data name="LightingStudioParamPause" xml:space="preserve"><value>暂停</value></data>
+  <data name="LightingStudioParamCycles" xml:space="preserve"><value>循环</value></data>
+  <data name="LightingStudioParamPlaybackStart" xml:space="preserve"><value>播放开始</value></data>
+  <data name="LightingStudioParamPlaybackEnd" xml:space="preserve"><value>播放结束</value></data>
+  <data name="LightingStudioParamSpeed" xml:space="preserve"><value>速度</value></data>
+  <data name="LightingStudioParamWidth" xml:space="preserve"><value>宽度</value></data>
+  <data name="LightingStudioParamAngle" xml:space="preserve"><value>角度</value></data>
+  <data name="LightingStudioParamSplit" xml:space="preserve"><value>分割</value></data>
+  <data name="LightingStudioParamDensity" xml:space="preserve"><value>密度</value></data>
+  <data name="LightingStudioParamBoost" xml:space="preserve"><value>增强</value></data>
+  <data name="LightingStudioParamAutoBoost" xml:space="preserve"><value>自动增强</value></data>
+  <data name="LightingStudioParamDecay" xml:space="preserve"><value>衰减</value></data>
+  <data name="LightingStudioParamScreen" xml:space="preserve"><value>屏幕区域</value></data>
+  <data name="LightingStudioParamScreenRect" xml:space="preserve"><value>自定义区域</value></data>
+  <data name="LightingStudioParamScreenRectHint" xml:space="preserve"><value>自定义区域请在画布上编辑。</value></data>
+  <data name="LightingStudioParamBlur" xml:space="preserve"><value>模糊</value></data>
+  <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>媒体来源</value></data>
+  <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>生成配置 (JSON)</value></data>
+  <data name="LightingStudioBrowse" xml:space="preserve"><value>浏览…</value></data>
+  <data name="LightingStudioGenerateOffsetX" xml:space="preserve"><value>偏移 X</value></data>
+  <data name="LightingStudioGenerateOffsetY" xml:space="preserve"><value>偏移 Y</value></data>
+  <data name="LightingStudioGenerateRotation" xml:space="preserve"><value>旋转 (°)</value></data>
+  <data name="LightingStudioGenerateScaleX" xml:space="preserve"><value>横向缩放</value></data>
+  <data name="LightingStudioGenerateScaleY" xml:space="preserve"><value>纵向缩放</value></data>
+  <data name="LightingStudioGenerateMirrorX" xml:space="preserve"><value>镜像 X</value></data>
+  <data name="LightingStudioGenerateMirrorY" xml:space="preserve"><value>镜像 Y</value></data>
+  <data name="LightingStudioGenerateFlipX" xml:space="preserve"><value>翻转 X</value></data>
+  <data name="LightingStudioGenerateFlipY" xml:space="preserve"><value>翻转 Y</value></data>
+  <data name="LightingStudioGeneratePattern" xml:space="preserve"><value>图案</value></data>
+  <data name="LightingStudioGenerateBlend" xml:space="preserve"><value>混合模式</value></data>
+  <data name="LightingStudioGenerateSpread" xml:space="preserve"><value>图案密度</value></data>
+  <data name="LightingStudioGenerateSpeed" xml:space="preserve"><value>图案速度</value></data>
+  <data name="LightingStudioGenerateTransform" xml:space="preserve"><value>变换</value></data>
+  <data name="LightingStudioGenerateMirrorFlip" xml:space="preserve"><value>镜像与翻转</value></data>
+  <data name="LightingStudioGeneratePatternSection" xml:space="preserve"><value>图案</value></data>
+  <data name="LightingStudioGenerateAi" xml:space="preserve"><value>AI 取色（需本机模型）</value></data>
+  <data name="LightingStudioGenerateColorSource" xml:space="preserve"><value>颜色来源</value></data>
+  <data name="LightingStudioResetPalette" xml:space="preserve"><value>重置调色板</value></data>
+  <data name="LightingStudioSeconds" xml:space="preserve"><value>{0:0.###} 秒</value></data>
+  <data name="LightingStudioImport" xml:space="preserve"><value>导入</value></data>
+  <data name="LightingStudioExport" xml:space="preserve"><value>导出</value></data>
+  <data name="LightingStudioStatusImported" xml:space="preserve"><value>已导入 {0}</value></data>
+  <data name="LightingStudioStatusImportedIssues" xml:space="preserve"><value>已导入 {0}，{1} 个设备需要处理。</value></data>
+  <data name="LightingStudioStatusExported" xml:space="preserve"><value>已导出 {0}</value></data>
+  <data name="LightingStudioScreenFull" xml:space="preserve"><value>全屏</value></data>
+  <data name="LightingStudioScreenLeft" xml:space="preserve"><value>左侧</value></data>
+  <data name="LightingStudioScreenTop" xml:space="preserve"><value>顶部</value></data>
+  <data name="LightingStudioScreenRight" xml:space="preserve"><value>右侧</value></data>
+  <data name="LightingStudioScreenBottom" xml:space="preserve"><value>底部</value></data>
+  <data name="LightingStudioScreenCustom" xml:space="preserve"><value>自定义</value></data>
 </root>

@@ -249,7 +249,7 @@ internal sealed class BladeViewModel
 
     internal bool SupportsFixedFan => BladeModelCapabilities.SupportsFixedFan(_bladeProductId);
 
-    internal void SetMaxFan(BladeMaxFanMode mode)
+    internal void SetMaxFan(BladeMaxFanMode mode, bool confirm = true)
     {
         if (!SupportsMaxFan)
         {
@@ -259,7 +259,7 @@ internal sealed class BladeViewModel
 
         _bladeMaxFanText = mode == BladeMaxFanMode.Enabled ? AppStrings.Text("Text_7E6D2390") : AppStrings.Text("Text_39B523BD");
         _bladeMaxFanEnabled = mode == BladeMaxFanMode.Enabled;
-        _confirmedBladeMaxFanEnabled = _bladeMaxFanEnabled;
+        if (confirm) _confirmedBladeMaxFanEnabled = _bladeMaxFanEnabled;
         _hasBladeMaxFan = true;
     }
 

@@ -162,16 +162,18 @@ public sealed class FirmwareTests
 
         Assert.NotNull(older);
         Assert.Equal("Razer Blade 16", older.DeviceName);
-        Assert.Equal("1.8.0.0", older.PublishedMcu);
-        Assert.Equal(["Firmware 1.8.0.0"], older.NewerComponents);
+        Assert.Null(older.PublishedMcu); // Package-to-MCU mapping has no independent evidence.
+        Assert.Equal(["BIOS", "EC"], older.NewerComponents);
+        Assert.False(older.IsComplete);
         Assert.Equal("https://rzr.to/k1kflh", older.DownloadUrl);
 
         var current = RazerFirmwareUpdateClient.TryCreateManifestResult(
             new FirmwareVersions("2.01", "1.08", "1.8.0.0", "--"),
             device);
         Assert.NotNull(current);
-        Assert.False(current.HasUpdate);
-        Assert.Null(current.DownloadUrl);
+        Assert.True(current.HasUpdate); // Equal MCU must not hide the older BIOS/EC.
+        Assert.Equal(["BIOS", "EC"], current.NewerComponents);
+        Assert.Contains("MCU", current.UncheckedComponents!);
     }
 
     [Fact]
@@ -184,7 +186,9 @@ public sealed class FirmwareTests
             FirmwareVersions.Empty,
             DeviceWithFirmware(new RazerFirmwareInfo(latest, driver)))!;
         Assert.Null(latestResult.DeviceName);
-        Assert.Equal("9.9.9.9", latestResult.PublishedMcu);
+        Assert.Null(latestResult.PublishedMcu);
+        Assert.False(latestResult.IsComplete);
+        Assert.Empty(latestResult.NewerComponents);
         Assert.Equal("https://example.com/latest", latestResult.DownloadUrl);
 
         var driverResult = RazerFirmwareUpdateClient.TryCreateManifestResult(

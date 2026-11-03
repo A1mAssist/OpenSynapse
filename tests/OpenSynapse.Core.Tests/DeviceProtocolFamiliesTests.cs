@@ -14,6 +14,7 @@ public sealed class DeviceProtocolFamiliesTests
 {
     [Theory]
     [InlineData(DeviceProtocolFamilies.Blade)]
+    [InlineData(DeviceProtocolFamilies.BladeChroma)]
     [InlineData(DeviceProtocolFamilies.Blade2023)]
     [InlineData(DeviceProtocolFamilies.Blade2020)]
     public void IsBladeAdmitsEveryBladeFamily(string protocolFamily) =>

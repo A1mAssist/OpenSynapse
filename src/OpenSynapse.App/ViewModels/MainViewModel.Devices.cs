@@ -14,12 +14,12 @@ public sealed partial class MainViewModel
 
     private IReadOnlyList<ConnectedDeviceRowViewModel> BuildConnectedDevices() =>
         Devices.Select(device => new ConnectedDeviceRowViewModel(device))
-            .Concat(OpenRazer.Devices.Select(device => new ConnectedDeviceRowViewModel(device)))
-            .Concat(OpenRazer.KrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(RazerHid.Devices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(RazerHid.KrakenDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BlackSharkDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
-            .Concat(HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
-            .Concat(KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
-            .Concat(GamepadDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(Accessories.HeadsetAudioDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(Accessories.KeyboardDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(Accessories.GamepadDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(CoolingPad.IsConnected
                 ? [new ConnectedDeviceRowViewModel(CoolingPad)]
                 : [])
@@ -28,14 +28,16 @@ public sealed partial class MainViewModel
                 : [])
             // The Viper owns a native page and still answers Chroma discovery; its lighting page
             // opens from there, so list the device once.
-            .Concat(ChromaDevices
+            .Concat(Accessories.ChromaDevices
                 .Where(chroma => !Devices.Any(native => native.ProductId == chroma.Connection.ProductId))
                 .Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(AwBleHeadsetDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat([new ConnectedDeviceRowViewModel(Hue)])
             .Where(device => device.IsVisible)
-            .OrderByDescending(device => device.IsReady)
+            // The laptop owns the Blade page and must stay in the first two cards even
+            // when its 91-byte control channel is temporarily unavailable.
+            .OrderBy(device => device.Category == DeviceCategory.Laptop ? 0 : device.IsReady ? 1 : 2)
             .ThenBy(device => device.SortOrder)
             .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -55,6 +57,8 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(PrimaryDevices));
         OnPropertyChanged(nameof(AdditionalDevices));
         OnPropertyChanged(nameof(ConnectedDevices));
+        OnPropertyChanged(nameof(EmptyStateText));
+        OnPropertyChanged(nameof(EmptyStateVisibility));
         Blade.RefreshDeviceOverview();
         Viper.RefreshDeviceRow();
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
@@ -78,16 +82,17 @@ public sealed partial class MainViewModel
                 "\uE962"));
         }
 
-        foreach (var row in OpenRazer.Devices)
+        foreach (var row in RazerHid.Devices.Where(row =>
+                     row.Connection.IsReady && row.Connection.Capabilities.Count > 0))
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.OpenRazer,
+                DeviceSelectorItemKind.RazerHid,
                 row.Name,
                 row.IconGlyph,
                 row));
         }
 
-        foreach (var row in OpenRazer.KrakenDevices)
+        foreach (var row in RazerHid.KrakenDevices.Where(row => row.Connection.IsReady))
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Kraken,
@@ -105,7 +110,7 @@ public sealed partial class MainViewModel
                 row));
         }
 
-        foreach (var row in HeadsetAudioDevices)
+        foreach (var row in Accessories.HeadsetAudioDevices)
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.HeadsetAudio,
@@ -114,7 +119,7 @@ public sealed partial class MainViewModel
                 row));
         }
 
-        foreach (var row in KeyboardDevices)
+        foreach (var row in Accessories.KeyboardDevices)
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Keyboard,
@@ -123,7 +128,7 @@ public sealed partial class MainViewModel
                 row));
         }
 
-        foreach (var row in GamepadDevices)
+        foreach (var row in Accessories.GamepadDevices)
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Gamepad,
@@ -150,7 +155,7 @@ public sealed partial class MainViewModel
                 Kiyo));
         }
 
-        foreach (var row in ChromaDevices)
+        foreach (var row in Accessories.ChromaDevices)
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Chroma,
@@ -191,14 +196,55 @@ public sealed partial class MainViewModel
 
     private async Task RefreshAttachedDevicesAsync(CancellationToken cancellationToken)
     {
+        Diagnostics.CaptureAccessorySnapshot();
         await RefreshBlackSharkAsync(cancellationToken);
-        await RefreshHeadsetAudioAsync(cancellationToken);
-        await RefreshKeyboardsAsync(cancellationToken);
-        await RefreshGamepadsAsync(cancellationToken);
+        await Accessories.RefreshHeadsetAudioAsync(cancellationToken);
+        await Accessories.RefreshKeyboardsAsync(cancellationToken);
+        await Accessories.RefreshGamepadsAsync(cancellationToken);
         await CoolingPad.RefreshAsync(cancellationToken);
         await Kiyo.RefreshAsync(cancellationToken);
-        await RefreshChromaAsync(cancellationToken);
+        await Accessories.RefreshChromaAsync(cancellationToken);
         await RefreshBleAsync(cancellationToken);
         await RefreshAwBleAsync(cancellationToken);
+    }
+
+    private IEnumerable<AccessoryDiagnostic> ReadAccessoryDiagnostics()
+    {
+        static string? Error(string path, string? selectedPath, string? error) =>
+            StringComparer.OrdinalIgnoreCase.Equals(path, selectedPath) ? error : null;
+        foreach (var row in BlackSharkDevices)
+            yield return new("blackshark:" + row.Connection.DevicePath, row.Name, "BlackShark",
+                row.Identity + " | " + row.Connection.DevicePath, row.Status,
+                Error(row.Connection.DevicePath, SelectedBlackShark?.DevicePath, SelectedBlackShark?.ErrorText));
+        foreach (var row in Accessories.HeadsetAudioDevices)
+            yield return new("headset-audio:" + row.Connection.DevicePath, row.Name, "HeadsetAudio",
+                row.Identity + " | " + row.Connection.DevicePath, row.Status,
+                Error(row.Connection.DevicePath, Accessories.SelectedHeadsetAudio?.DevicePath,
+                    string.Join(Environment.NewLine, new[] { Accessories.SelectedHeadsetAudio?.ErrorText,
+                        Accessories.SelectedHeadsetAudio?.Mixer053E?.ErrorText }.Where(error => !string.IsNullOrWhiteSpace(error)))));
+        foreach (var row in Accessories.KeyboardDevices)
+            yield return new("keyboard:" + row.Connection.DevicePath, row.Name, "Keyboard",
+                row.Identity + " | " + row.Connection.DevicePath, row.Status,
+                Error(row.Connection.DevicePath, Accessories.SelectedKeyboard?.DevicePath, Accessories.SelectedKeyboard?.ErrorText));
+        foreach (var row in Accessories.GamepadDevices)
+            yield return new("gamepad:" + row.Connection.DevicePath, row.Name, "Gamepad",
+                row.Identity + " | " + row.Connection.DevicePath, row.Status,
+                Error(row.Connection.DevicePath, Accessories.SelectedGamepad?.DevicePath, Accessories.SelectedGamepad?.ErrorText));
+        foreach (var row in Accessories.ChromaDevices)
+            yield return new("chroma:" + row.Connection.DevicePath, row.Name, "Chroma",
+                row.Identity + " | " + row.Connection.DevicePath, row.Status,
+                Error(row.Connection.DevicePath, Accessories.SelectedChroma?.DevicePath, Accessories.SelectedChroma?.ErrorText));
+        foreach (var row in BleDevices)
+            yield return new("ble:" + row.Device.Id, row.Name, "BLE", row.Identity + " | " + row.Device.Id, row.Status,
+                Error(row.Device.Id, SelectedBle?.DeviceId, SelectedBle?.ErrorText));
+        foreach (var row in AwBleHeadsetDevices)
+            yield return new("aw-ble:" + row.Device.Id, row.Name, "AudioAWKittyBLE", row.Identity + " | " + row.Device.Id, row.Status,
+                Error(row.Device.Id, SelectedAwBleHeadset?.Device.Id, SelectedAwBleHeadset?.ErrorText));
+        if (CoolingPad.IsConnected || CoolingPad.HasError)
+            yield return new("cooling-pad", CoolingPad.Name, "CoolingPad", CoolingPad.Identity, CoolingPad.StatusText, CoolingPad.ErrorText);
+        if (Kiyo.IsConnected || Kiyo.HasError)
+            yield return new("kiyo", Kiyo.Name, "Kiyo", Kiyo.Identity, Kiyo.StatusText, Kiyo.ErrorText);
+        if (Hue.IsReady || Hue.HasError)
+            yield return new("hue:" + Hue.BridgeHost, "Philips Hue", "Hue", Hue.DeviceIdentity, Hue.DeviceStatusText, Hue.ErrorText);
     }
 }

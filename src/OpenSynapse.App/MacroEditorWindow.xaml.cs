@@ -501,14 +501,22 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
+        var owner = _viewModel.Macros.SelectedMacro!.Definition;
         var editor = new MousePathEditorViewModel(row.Step.MouseMoveMode, row.Step.MousePath);
         var window = new MousePathEditorWindow(
             AppWindow,
             editor,
             _scale,
-            points => row.ApplyMousePath(points));
+            points => _viewModel.Macros.TryApplyMousePath(owner, row, points));
+        System.ComponentModel.PropertyChangedEventHandler invalidate = (_, _) =>
+        {
+            if (!ReferenceEquals(_viewModel.Macros.SelectedMacro?.Definition, owner) ||
+                !_viewModel.Macros.CanEditMacro || !_viewModel.Macros.Steps.Contains(row)) window.Close();
+        };
+        _viewModel.Macros.PropertyChanged += invalidate;
         window.Closed += (_, _) =>
         {
+            _viewModel.Macros.PropertyChanged -= invalidate;
             if (ReferenceEquals(_mousePathEditorWindow, window))
             {
                 _mousePathEditorWindow = null;

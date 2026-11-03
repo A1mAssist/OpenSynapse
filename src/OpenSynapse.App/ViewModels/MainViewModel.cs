@@ -56,8 +56,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         string? executablePath = null,
         IReadOnlyList<string>? startupDiagnostics = null,
         WindowsTouchpadController? touchpadController = null,
-        OpenRazerDeviceService? openRazerDeviceService = null,
-        OpenRazerSpecialLightingService? openRazerSpecialLightingService = null,
+        RazerHidDeviceService? openRazerDeviceService = null,
+        RazerHidSpecialLightingService? openRazerSpecialLightingService = null,
         RazerFirmwareUpdateClient? firmwareUpdateClient = null,
         IThxAudioController? thxAudioController = null,
         bool thxAudioSupported = false,
@@ -179,9 +179,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => Refresh!.RequestDeviceRefresh(),
             SetDeviceOperationError,
             () => Fan.StopAsync("suspend"),
-            SetOpenRazerChromaEnabled,
+            SetRazerHidChromaEnabled,
             Blade.State);
-        OpenRazer = new OpenRazerWorkspace(
+        RazerHid = new RazerHidWorkspace(
             openRazerDeviceService,
             openRazerSpecialLightingService,
             () => CurrentPowerSource,
@@ -195,11 +195,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             RefreshDeviceOverviewVisibility,
             SetDeviceOperationError,
             DispatcherQueue.GetForCurrentThread());
+        Accessories = new UsbAccessoriesWorkspace(_diagnosticLog, RazerHid, Macros);
+        Accessories.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Accessories));
         Diagnostics = new DiagnosticsWorkspace(
-            OpenRazer,
+            RazerHid,
             startupDiagnostics?.ToArray() ?? Array.Empty<string>(),
             () => Refresh!.LastRefreshText,
-            () => DeviceTelemetryTimeText);
+            () => DeviceTelemetryTimeText,
+            ReadAccessoryDiagnostics);
         Refresh = new RefreshWorkspace(
             discovery,
             deviceTelemetryReader,
@@ -221,7 +224,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             Display,
             Fan,
             Lighting,
-            OpenRazer,
+            RazerHid,
             Viper,
             Telemetry,
             Profiles,
@@ -234,6 +237,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             ResetDeviceTelemetry,
             ApplyDeviceTelemetry,
             Diagnostics.Rebuild,
+            () => Diagnostics.AccessoryErrorCount,
             () =>
             {
                 BlackSharkDevices.Clear();
@@ -241,9 +245,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 SelectedBlackShark = null;
             },
             OnPropertyChanged);
-        Tray = new TrayWorkspace(() => Devices, OpenRazer);
+        Tray = new TrayWorkspace(() => Devices, RazerHid);
         CpuCurve = new CpuCurveWorkspace(
             (label, operation, token) => RunDeviceOperationAsync(label, operation, token));
+        CpuPower = new CpuPowerLimitWorkspace(() => IsBusy, RunDeviceOperation);
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
     }
 
@@ -261,9 +266,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public RefreshWorkspace Refresh { get; }
     public BladeWorkspace Blade { get; }
     public CpuCurveWorkspace CpuCurve { get; }
+    public CpuPowerLimitWorkspace CpuPower { get; }
+    public UsbAccessoriesWorkspace Accessories { get; }
     public ThxAudioViewModel ThxAudio { get; }
     public MacroWorkspace Macros { get; }
-    public OpenRazerWorkspace OpenRazer { get; }
+    public RazerHidWorkspace RazerHid { get; }
     public TrayWorkspace Tray { get; }
     public ProfilesWorkspace Profiles { get; }
     public TelemetryWorkspace Telemetry { get; }
@@ -306,7 +313,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public bool IsBusy
     {
         get => _isBusy;
-        private set => SetField(ref _isBusy, value);
+        private set
+        {
+            if (SetField(ref _isBusy, value)) CpuPower?.NotifyBusyChanged();
+        }
     }
 
     public bool CanRefresh => true;
@@ -316,6 +326,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public string EmptyStateText => ConnectedDevices.Count == 0
         ? AppStrings.Text("Text_76BEF6E0")
         : string.Empty;
+
+    public Visibility EmptyStateVisibility => ConnectedDevices.Count == 0
+        ? Visibility.Visible
+        : Visibility.Collapsed;
 
     public string ActivePowerSourceText => AppStrings.FormatText(
         "ActivePowerSource",
@@ -329,9 +343,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _ => "--",
     };
 
-    /// <summary>Chroma ownership also gates the selected OpenRazer device's software lighting.</summary>
-    private void SetOpenRazerChromaEnabled(bool enabled) =>
-        OpenRazer.SelectedDevice?.SetChromaIntegrationEnabled(enabled);
+    /// <summary>Chroma ownership also gates the selected RazerHid device's software lighting.</summary>
+    private void SetRazerHidChromaEnabled(bool enabled) =>
+        RazerHid.SelectedDevice?.SetChromaIntegrationEnabled(enabled);
 
     public void RefreshLocalization()
     {
@@ -348,13 +362,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         {
             row.RefreshLocalization();
         }
-        OpenRazer.RefreshLocalization();
+        RazerHid.RefreshLocalization();
         foreach (var row in BlackSharkDevices)
         {
             row.RefreshLocalization();
         }
         SelectedBlackShark?.RefreshLocalization();
-        SelectedGamepad?.RefreshLocalization();
+        Accessories.SelectedGamepad?.RefreshLocalization();
         CoolingPad.RefreshLocalization();
         Kiyo.RefreshLocalization();
         foreach (var row in Diagnostics.Rows)
@@ -388,7 +402,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             return;
         }
 
-        await OpenRazer.DisposeAsync().ConfigureAwait(false);
+        await RazerHid.DisposeAsync().ConfigureAwait(false);
         Macros.Dispose();
         _hue?.Dispose();
         CoolingPad.Dispose();
@@ -410,11 +424,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _selectedBlackSharkDevice = null;
         BlackSharkDevices.Clear();
 
-        if (SelectedHeadsetAudio is { } headsetAudio)
-        {
-            await headsetAudio.DisposeAsync().ConfigureAwait(false);
-            SelectedHeadsetAudio = null;
-        }
+        await Accessories.DisposeAsync().ConfigureAwait(false);
 
         await Blade.DisposeAsync().ConfigureAwait(false);
         _ = await Fan.StopAsync("application-exit").ConfigureAwait(false);
@@ -448,6 +458,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         OnPropertyChanged(nameof(InternalDisplayRefreshRateCycleHertz));
     }
 
+    // False means a reported persistence failure; cancellation and unexpected errors propagate.
     private async Task<bool> SaveProfileAsync(CancellationToken cancellationToken)
     {
         try

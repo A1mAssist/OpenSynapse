@@ -10,10 +10,9 @@ using OpenSynapse.Windows.Devices;
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>
-/// The internal display: refresh rate and brightness, plus the profile refresh rate that
-/// follows the selected power source.
+/// Internal display brightness and refresh rate, including power-source profiles.
 /// </summary>
-public sealed class DisplayWorkspace : INotifyPropertyChanged
+public sealed partial class DisplayWorkspace : INotifyPropertyChanged
 {
     private readonly IInternalDisplayController? _internalDisplayController;
     private readonly Func<bool> _isSelectedRefreshRatePowerActive;
@@ -34,6 +33,7 @@ public sealed class DisplayWorkspace : INotifyPropertyChanged
     private readonly object _internalDisplayBrightnessGate = new();
     private Task _internalDisplayBrightnessWriter = Task.CompletedTask;
     private double? _desiredInternalDisplayBrightness;
+    private double? _internalDisplayBrightnessInFlight;
     private bool _internalDisplayBrightnessWriterActive;
     private double _internalDisplayBrightnessPercent;
     private double _confirmedInternalDisplayBrightnessPercent;
@@ -128,21 +128,29 @@ public sealed class DisplayWorkspace : INotifyPropertyChanged
 
     internal IInternalDisplayController? Controller => _internalDisplayController;
     internal int ConfirmedRefreshRateHertz => _confirmedInternalDisplayRefreshRateHertz;
-
     public async Task ApplyInternalDisplayRefreshRateAsync(CancellationToken cancellationToken = default)
     {
         if (!_canSetInternalDisplayRefreshRate || _internalDisplayController is null)
         {
             return;
         }
-
         if (!_isSelectedRefreshRatePowerActive())
         {
-            var previous = _editableRefreshRateBladeProfile().RefreshRateHertz;
-            _editableRefreshRateBladeProfile().RefreshRateHertz = InternalDisplayRefreshRateHertz;
-            if (!await _saveProfileAsync(cancellationToken))
+            var profile = _editableRefreshRateBladeProfile();
+            var previous = profile.RefreshRateHertz;
+            var saved = false;
+            try
             {
-                _editableRefreshRateBladeProfile().RefreshRateHertz = previous;
+                profile.RefreshRateHertz = InternalDisplayRefreshRateHertz;
+                saved = await _saveProfileAsync(cancellationToken);
+            }
+            finally
+            {
+                if (!saved)
+                {
+                    profile.RefreshRateHertz = previous;
+                    InternalDisplayRefreshRateHertz = previous ?? _confirmedInternalDisplayRefreshRateHertz;
+                }
             }
             return;
         }
@@ -150,9 +158,20 @@ public sealed class DisplayWorkspace : INotifyPropertyChanged
         await _runDeviceOperation(AppStrings.Text("Text_8423206D"), async () =>
         {
             var snapshot = _internalDisplayController.SetRefreshRate(InternalDisplayRefreshRateHertz);
+            _ecoDisplayPolicy.ClearRestore();
             ApplyInternalDisplaySnapshot(snapshot);
-            _editableRefreshRateBladeProfile().RefreshRateHertz = snapshot.RefreshRateHertz;
-            await _saveProfileAsync(cancellationToken);
+            var profile = _editableRefreshRateBladeProfile();
+            var previous = profile.RefreshRateHertz;
+            var saved = false;
+            try
+            {
+                profile.RefreshRateHertz = snapshot.RefreshRateHertz;
+                saved = await _saveProfileAsync(cancellationToken);
+            }
+            finally
+            {
+                if (!saved) profile.RefreshRateHertz = previous;
+            }
         }, cancellationToken, () =>
             InternalDisplayRefreshRateHertz = _confirmedInternalDisplayRefreshRateHertz);
     }
@@ -171,7 +190,8 @@ public sealed class DisplayWorkspace : INotifyPropertyChanged
         InternalDisplayBrightnessPercent = value;
         lock (_internalDisplayBrightnessGate)
         {
-            var previous = _desiredInternalDisplayBrightness ?? _confirmedInternalDisplayBrightnessPercent / 100d;
+            var previous = _desiredInternalDisplayBrightness ?? _internalDisplayBrightnessInFlight ??
+                _confirmedInternalDisplayBrightnessPercent / 100d;
             var requested = value / 100d;
             if (Math.Abs(requested - previous) < 0.005)
             {
@@ -214,7 +234,8 @@ public sealed class DisplayWorkspace : INotifyPropertyChanged
                         0,
                         DeviceProtocolFamilies.Blade);
                 var requested = ProfileResolver.Resolve(_getProfile(), blade, powerState).Blade.RefreshRateHertz;
-                if (requested is int hertz && hertz != snapshot.RefreshRateHertz)
+                if (ResolveDisplayRate(snapshot, requested) is int hertz &&
+                    hertz != snapshot.RefreshRateHertz)
                 {
                     if (!snapshot.SupportedRefreshRates.Contains(hertz))
                     {
@@ -226,6 +247,7 @@ public sealed class DisplayWorkspace : INotifyPropertyChanged
 
                     snapshot = _internalDisplayController.SetRefreshRate(hertz);
                 }
+                _ecoDisplayPolicy.ConfirmApplied(snapshot.RefreshRateHertz, requested);
             }
 
             ApplyInternalDisplaySnapshot(snapshot);
@@ -262,62 +284,6 @@ public sealed class DisplayWorkspace : INotifyPropertyChanged
     {
         CanSetInternalDisplayRefreshRate = false;
         CanSetInternalDisplayBrightness = false;
-    }
-
-    private async Task WriteDesiredInternalDisplayBrightnessAsync()
-    {
-        try
-        {
-            while (!_isDisposed())
-            {
-                double requested;
-                lock (_internalDisplayBrightnessGate)
-                {
-                    if (_desiredInternalDisplayBrightness is not double desired)
-                    {
-                        break;
-                    }
-
-                    requested = desired;
-                    _desiredInternalDisplayBrightness = null;
-                }
-
-                try
-                {
-                    var applied = await _internalDisplayController!.SetBrightnessAsync(
-                        requested, CancellationToken.None);
-                    lock (_internalDisplayBrightnessGate)
-                    {
-                        _confirmedInternalDisplayBrightnessPercent = Math.Clamp(applied * 100, 0, 100);
-                    }
-                    InternalDisplayBrightnessPercent = _confirmedInternalDisplayBrightnessPercent;
-                    _setDisplayError(string.Empty);
-                }
-                catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
-                {
-                    _diagnosticLog.TryWrite("display-brightness", exception.ToString());
-                    _setDisplayError(AppStrings.FormatText("ScreenBrightnessError", exception.Message));
-                    InternalDisplayBrightnessPercent = _confirmedInternalDisplayBrightnessPercent;
-                    lock (_internalDisplayBrightnessGate)
-                    {
-                        _desiredInternalDisplayBrightness = null;
-                    }
-                    break;
-                }
-            }
-        }
-        finally
-        {
-            lock (_internalDisplayBrightnessGate)
-            {
-                _internalDisplayBrightnessWriterActive = false;
-                if (_desiredInternalDisplayBrightness is not null && !_isDisposed())
-                {
-                    _internalDisplayBrightnessWriterActive = true;
-                    _internalDisplayBrightnessWriter = WriteDesiredInternalDisplayBrightnessAsync();
-                }
-            }
-        }
     }
 
     private void ApplyInternalDisplayBrightness(double? level)

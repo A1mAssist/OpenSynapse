@@ -5,7 +5,9 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -29,6 +31,8 @@ public sealed partial class MainWindow : Window
     private readonly Func<bool, Task>? _setChromaRestEnabled;
     private readonly Func<ChromaRestSnapshot>? _getChromaRestSnapshot;
     private readonly Func<string, bool, Task>? _setChromaSourceAllowed;
+    private readonly IBladeLightingController? _bladeLightingController;
+    private readonly StudioInputSampler? _studioInputSampler;
     private DisplayPowerNotification? _displayPowerNotification;
     private bool _trayLifecycleEnabled;
     private bool _exitRequested;
@@ -49,9 +53,11 @@ public sealed partial class MainWindow : Window
         Func<bool, Task>? setChromaRestEnabled = null,
         Func<ChromaRestSnapshot>? getChromaRestSnapshot = null,
         Func<bool, Task>? setBladeIndicatorDisplayAvailable = null,
-        Func<string, bool, Task>? setChromaSourceAllowed = null)
+        Func<string, bool, Task>? setChromaSourceAllowed = null,
+        IBladeLightingController? bladeLightingController = null)
     {
         _viewModel = viewModel;
+        _bladeLightingController = bladeLightingController;
         _behaviorSettings = behaviorSettings;
         _setChromaRestEnabled = setChromaRestEnabled;
         _getChromaRestSnapshot = getChromaRestSnapshot;
@@ -64,7 +70,7 @@ public sealed partial class MainWindow : Window
         _viewModel.Refresh.SetDeviceWatchActive(false);
         InitializeComponent();
         // The card needs a real value on first open without delaying the window.
-        _ = _viewModel.RefreshCpuPowerLimitSafelyAsync();
+        _ = _viewModel.CpuPower.RefreshCpuPowerLimitSafelyAsync();
         _ = _viewModel.CpuCurve.RefreshSafelyAsync();
         RootNavigationView.DataContext = _viewModel;
         DiagnosticsPage.Host = this;
@@ -72,6 +78,15 @@ public sealed partial class MainWindow : Window
         MacrosPage.Host = this;
         ProfilesPage.Host = this;
         DevicesPage.Host = this;
+        LightingStudioPage.Host = this;
+        _studioInputSampler = new StudioInputSampler();
+        LightingStudioPage.Initialize(
+            _bladeLightingController,
+            () => _viewModel.CurrentDeviceDescriptors,
+            BuildStudioDevices,
+            CreateStudioHidRouter(_studioInputSampler),
+            _studioInputSampler);
+        DevicesPage.RefreshAdvancedFeaturesVisibility();
         MacrosPage.OpenEditorRequested += (_, _) => OpenMacroEditorWindow();
         OverviewPage.DeviceRequested += OnOverviewDeviceRequested;
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
@@ -108,7 +123,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        _viewModel.OpenRazer.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.RazerHid.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Viper.PropertyChanged += OnViewModelPropertyChanged;
@@ -141,6 +156,8 @@ public sealed partial class MainWindow : Window
     }
 
     internal void RefreshLightingPresetOptions() => DevicesPage.RefreshLightingPresetOptions();
+
+    internal void RefreshAdvancedFeaturesVisibility() => DevicesPage.RefreshAdvancedFeaturesVisibility();
 
     internal void InitializePicker(object picker) =>
         WinRT.Interop.InitializeWithWindow.Initialize(
@@ -373,6 +390,52 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private IReadOnlyList<StudioDeviceOption> BuildStudioDevices()
+    {
+        var options = new List<StudioDeviceOption>();
+        foreach (var descriptor in _viewModel.CurrentDeviceDescriptors)
+        {
+            if (descriptor.Access != DeviceAccessState.Available ||
+                !DeviceProtocolFamilies.IsBlade(descriptor.ProtocolFamily)) continue;
+            options.Add(new StudioDeviceOption(
+                descriptor.Name,
+                descriptor,
+                descriptor.Id,
+                descriptor.ProductId,
+                BladeLightingLayout.LogicalRows,
+                BladeLightingLayout.LogicalColumns,
+                IsBlade: true));
+        }
+
+        foreach (var row in _viewModel.RazerHid.Devices)
+        {
+            var connection = row.Connection;
+            if (connection.Definition.Category == DeviceCategory.Laptop) continue;
+            if (connection.Definition.MatrixDimensions is not { } dimensions) continue;
+            options.Add(new StudioDeviceOption(
+                connection.Definition.DisplayName,
+                null,
+                connection.InstanceId,
+                connection.Definition.ProductId,
+                dimensions.Rows,
+                dimensions.Columns));
+        }
+
+        return options;
+    }
+
+    private StudioHidOutputRouter? CreateStudioHidRouter(StudioInputSampler sampler)
+    {
+        var service = _viewModel.RazerHid.DeviceService;
+        if (service is null) return null;
+        return new StudioHidOutputRouter(
+            service,
+            () => _viewModel.RazerHid.CurrentConnections
+                .Where(connection => connection.Definition.Category != DeviceCategory.Laptop)
+                .ToArray(),
+            inputProvider: (rows, columns) => sampler.Sample(rows, columns));
+    }
+
     private void OnClosed(object sender, WindowEventArgs args)
     {
         SaveWindowSize();
@@ -383,7 +446,7 @@ public sealed partial class MainWindow : Window
         CloseBladeFanCurveWindow();
         CloseMacroEditorWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-        _viewModel.OpenRazer.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.RazerHid.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Viper.PropertyChanged -= OnViewModelPropertyChanged;
@@ -393,6 +456,7 @@ public sealed partial class MainWindow : Window
         _displayPowerNotification = null;
         _lifetime.Cancel();
         _lifetime.Dispose();
+        if (_studioInputSampler is { } sampler) _ = sampler.DisposeAsync().AsTask();
     }
 
 }

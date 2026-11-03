@@ -271,7 +271,37 @@
     "firmware": {
       "latest": {
         "version": "1.6.0.0",
-        "url": "https://rzr.to/c0q4iz"
+        "url": "https://rzr.to/c0q4iz",
+        "additional": [
+          {
+            "type": "ec",
+            "version": "1.06",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "bios",
+            "version": "4.01",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "vbios",
+            "version": "98.5.31.00.50",
+            "model": "RTX 5070",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "vbios",
+            "version": "98.3.5c.40.26",
+            "model": "RTX 5080",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "vbios",
+            "version": "98.3.5c.40.25",
+            "model": "RTX 5090",
+            "url": "https://rzr.to/k1kflh"
+          }
+        ]
       },
       "driver": {
         "version": "24.0.0.0",

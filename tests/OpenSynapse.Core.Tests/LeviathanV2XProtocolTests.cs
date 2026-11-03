@@ -81,7 +81,7 @@ public sealed class LeviathanV2XProtocolTests
     public void WaveEffect_CarriesTheDirectionAndMiddlewareRate()
     {
         var report = LeviathanV2XProtocol.CreateEffect(
-            0x0F, OpenRazerLightingEffect.Wave, 2, default, default);
+            0x0F, RazerHidLightingEffect.Wave, 2, default, default);
 
         Assert.Equal(0x06, report[6]);
         Assert.Equal(0x04, report[11]);
@@ -91,7 +91,7 @@ public sealed class LeviathanV2XProtocolTests
         Assert.Equal(0x00, report[14]);
 
         var reversed = LeviathanV2XProtocol.CreateEffect(
-            0x0F, OpenRazerLightingEffect.Wave, 1, default, default);
+            0x0F, RazerHidLightingEffect.Wave, 1, default, default);
         Assert.Equal(0x02, reversed[12]);
     }
 
@@ -99,8 +99,8 @@ public sealed class LeviathanV2XProtocolTests
     public void BreathingDualEffect_WritesBothRgbTriples()
     {
         var report = LeviathanV2XProtocol.CreateEffect(
-            0x0F, OpenRazerLightingEffect.BreathingDual, 1,
-            new OpenRazerColor(1, 2, 3), new OpenRazerColor(4, 5, 6));
+            0x0F, RazerHidLightingEffect.BreathingDual, 1,
+            new RazerHidColor(1, 2, 3), new RazerHidColor(4, 5, 6));
 
         Assert.Equal(0x0C, report[6]);
         Assert.Equal(0x02, report[11]);
@@ -110,9 +110,9 @@ public sealed class LeviathanV2XProtocolTests
     }
 
     [Theory]
-    [InlineData(OpenRazerLightingEffect.Reactive)]
-    [InlineData(OpenRazerLightingEffect.Custom)]
-    public void CreateEffect_RejectsEffectsTheSoundbarDoesNotExpose(OpenRazerLightingEffect effect)
+    [InlineData(RazerHidLightingEffect.Reactive)]
+    [InlineData(RazerHidLightingEffect.Custom)]
+    public void CreateEffect_RejectsEffectsTheSoundbarDoesNotExpose(RazerHidLightingEffect effect)
     {
         Assert.Throws<NotSupportedException>(() =>
             LeviathanV2XProtocol.CreateEffect(0x0F, effect, 1, default, default));

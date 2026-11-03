@@ -25,24 +25,24 @@ public sealed class RazerBleDeviceRowViewModel(RazerBleDevice device) : INotifyP
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
 
-public sealed record RazerBleMappingGroupOption(OpenRazerMappingGroup Group, string Name);
+public sealed record RazerBleMappingGroupOption(RazerHidMappingGroup Group, string Name);
 
 /// <summary>One BLE button row. Group/option choices reuse the USB mapping catalogue.</summary>
 public sealed class RazerBleMappingRowViewModel : INotifyPropertyChanged
 {
     private static readonly IReadOnlyList<RazerBleMappingGroupOption> Groups =
     [
-        new(OpenRazerMappingGroup.Keep, "Keep"),
-        new(OpenRazerMappingGroup.Off, "Off"),
-        new(OpenRazerMappingGroup.MouseButton, "Mouse button"),
-        new(OpenRazerMappingGroup.KeyboardKey, "Keyboard key"),
-        new(OpenRazerMappingGroup.Dpi, "DPI"),
-        new(OpenRazerMappingGroup.Profile, "Profile"),
-        new(OpenRazerMappingGroup.MediaKey, "Media"),
-        new(OpenRazerMappingGroup.PowerKey, "Power"),
-        new(OpenRazerMappingGroup.DoubleClick, "Double click"),
-        new(OpenRazerMappingGroup.RazerKey, "Razer key"),
-        new(OpenRazerMappingGroup.HyperShiftToggle, "HyperShift toggle"),
+        new(RazerHidMappingGroup.Keep, "Keep"),
+        new(RazerHidMappingGroup.Off, "Off"),
+        new(RazerHidMappingGroup.MouseButton, "Mouse button"),
+        new(RazerHidMappingGroup.KeyboardKey, "Keyboard key"),
+        new(RazerHidMappingGroup.Dpi, "DPI"),
+        new(RazerHidMappingGroup.Profile, "Profile"),
+        new(RazerHidMappingGroup.MediaKey, "Media"),
+        new(RazerHidMappingGroup.PowerKey, "Power"),
+        new(RazerHidMappingGroup.DoubleClick, "Double click"),
+        new(RazerHidMappingGroup.RazerKey, "Razer key"),
+        new(RazerHidMappingGroup.HyperShiftToggle, "HyperShift toggle"),
     ];
 
     private int _selectedGroupIndex;
@@ -54,7 +54,7 @@ public sealed class RazerBleMappingRowViewModel : INotifyPropertyChanged
     public RazerBleMappingRowViewModel(byte buttonId)
     {
         ButtonId = buttonId;
-        ButtonName = OpenRazerMappingActions.DescribeButton(buttonId);
+        ButtonName = RazerHidMappingActions.DescribeButton(buttonId);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -83,9 +83,9 @@ public sealed class RazerBleMappingRowViewModel : INotifyPropertyChanged
             if (_selectedGroupIndex == clamped) return;
             _selectedGroupIndex = clamped;
             _selectedOptionIndex = 0;
-            _optionNames = SelectedGroup == OpenRazerMappingGroup.Keep
+            _optionNames = SelectedGroup == RazerHidMappingGroup.Keep
                 ? []
-                : OpenRazerMappingActions.OptionNames(SelectedGroup);
+                : RazerHidMappingActions.OptionNames(SelectedGroup);
             OnPropertyChanged();
             OnPropertyChanged(nameof(OptionNames));
             OnPropertyChanged(nameof(SelectedOptionIndex));
@@ -94,7 +94,7 @@ public sealed class RazerBleMappingRowViewModel : INotifyPropertyChanged
         }
     }
 
-    public OpenRazerMappingGroup SelectedGroup => Groups[_selectedGroupIndex].Group;
+    public RazerHidMappingGroup SelectedGroup => Groups[_selectedGroupIndex].Group;
     public IReadOnlyList<string> OptionNames => _optionNames;
 
     public int SelectedOptionIndex
@@ -109,35 +109,35 @@ public sealed class RazerBleMappingRowViewModel : INotifyPropertyChanged
         }
     }
 
-    public IReadOnlyList<string> ModifierNames => OpenRazerMappingActions.ModifierNames;
+    public IReadOnlyList<string> ModifierNames => RazerHidMappingActions.ModifierNames;
 
     public int SelectedModifierIndex
     {
         get => _selectedModifierIndex;
         set
         {
-            var clamped = Math.Clamp(value, 0, OpenRazerMappingActions.ModifierMasks.Count - 1);
+            var clamped = Math.Clamp(value, 0, RazerHidMappingActions.ModifierMasks.Count - 1);
             if (_selectedModifierIndex == clamped) return;
             _selectedModifierIndex = clamped;
             OnPropertyChanged();
         }
     }
 
-    public Visibility ModifierVisibility => SelectedGroup == OpenRazerMappingGroup.KeyboardKey
+    public Visibility ModifierVisibility => SelectedGroup == RazerHidMappingGroup.KeyboardKey
         ? Visibility.Visible
         : Visibility.Collapsed;
 
-    public Visibility OptionVisibility => SelectedGroup == OpenRazerMappingGroup.Keep
+    public Visibility OptionVisibility => SelectedGroup == RazerHidMappingGroup.Keep
         ? Visibility.Collapsed
         : Visibility.Visible;
 
-    public OpenRazerMappingAction? CreateAction() =>
-        SelectedGroup == OpenRazerMappingGroup.Keep
+    public RazerHidMappingAction? CreateAction() =>
+        SelectedGroup == RazerHidMappingGroup.Keep
             ? null
-            : OpenRazerMappingActions.CreateAction(
+            : RazerHidMappingActions.CreateAction(
                 SelectedGroup,
                 SelectedOptionIndex,
-                OpenRazerMappingActions.ModifierMasks[SelectedModifierIndex]);
+                RazerHidMappingActions.ModifierMasks[SelectedModifierIndex]);
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -265,7 +265,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         1 => AppStrings.Text("BlackSharkCharging"),
         2 => AppStrings.Text("BleChargingFailed"),
         6 => AppStrings.Text("BleChargingLimit"),
-        0 => AppStrings.Text("OpenRazerZoneFullyCharged"),
+        0 => AppStrings.Text("RazerHidZoneFullyCharged"),
         _ => string.Empty,
     };
 
@@ -613,25 +613,10 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
-        if (_service is null)
-        {
-            if (!BeginOperation()) return;
-            try
-            {
-                _service = await RazerBleDeviceService.OpenAsync(_device, _diagnostic, cancellationToken);
-            }
-            catch (Exception exception) when (IsExpectedException(exception))
-            {
-                ErrorText = exception.Message;
-                EndOperation();
-                return;
-            }
-            OnPropertyChanged(nameof(CanEdit));
-        }
-
         if (!BeginOperation()) return;
         try
         {
+            _service ??= await RazerBleDeviceService.OpenAsync(_device, _diagnostic, cancellationToken);
             Apply(await _service.ReadStateAsync(cancellationToken));
             OperationStatusText = string.Empty;
         }
@@ -718,7 +703,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
                 {
                     var assignment = await _service.GetButtonAssignmentAsync(
                         id, (byte)SelectedMappingLayerIndex, cancellationToken);
-                    row.CurrentActionText = OpenRazerMappingActions.Describe(
+                    row.CurrentActionText = RazerHidMappingActions.Describe(
                         assignment.FunctionId, assignment.Data);
                 }
                 catch (Exception exception) when (IsExpectedException(exception))
@@ -758,7 +743,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
                     await service.SetButtonAssignmentAsync(
                         row.ButtonId, (byte)SelectedMappingLayerIndex,
                         action.FunctionId, action.Data, cancellationToken);
-                    row.CurrentActionText = OpenRazerMappingActions.Describe(
+                    row.CurrentActionText = RazerHidMappingActions.Describe(
                         action.FunctionId, action.Data);
                     row.SelectedGroupIndex = 0;
                     applied++;
@@ -832,7 +817,11 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
 
-    public Task ApplyScrollAsync(CancellationToken cancellationToken = default) =>
+    private bool _scrollApplyFailed;
+    public async Task ApplyScrollAsync(CancellationToken cancellationToken = default) =>
+        _scrollApplyFailed = !await ApplyScrollCoreAsync(cancellationToken);
+
+    private Task<bool> ApplyScrollCoreAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetScrollAsync(
                 ScrollModeVisibility == Visibility.Visible ? (byte)SelectedScrollModeIndex : null,
@@ -960,21 +949,24 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 
-    private async Task RunWriteAsync<T>(
+    private async Task<bool> RunWriteAsync<T>(
         Func<RazerBleDeviceService, Task<T>> write,
         Action<T> apply)
     {
-        if (_service is null || !BeginOperation()) return;
+        if (_service is null || !BeginOperation()) return false;
         try
         {
             apply(await write(_service));
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
             ErrorText = string.Empty;
+            return true;
         }
+        catch (OperationCanceledException) { OperationStatusText = string.Empty; return false; }
         catch (Exception exception) when (IsExpectedException(exception))
         {
             ErrorText = exception.Message;
             OperationStatusText = string.Empty;
+            return false;
         }
         finally
         {

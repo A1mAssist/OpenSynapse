@@ -89,8 +89,8 @@ public static class ViperProduct184Protocol
             arguments[offset + 4] = Low(stage.Y);
         }
 
-        // The middleware declares the full 80-byte buffer and sends 7n+3 bytes of it.
-        return Create(0x50, 0x04, 0x06, arguments);
+        // 00B8 setDPIStages overrides the declared size with 7n+3 (GET remains 80).
+        return Create(checked((byte)arguments.Length), 0x04, 0x06, arguments);
     }
 
     public static byte[] CreateSetBatteryChemistryRequest(ViperBatteryChemistry chemistry)

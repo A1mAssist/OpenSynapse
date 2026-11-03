@@ -21,7 +21,7 @@ public readonly record struct RazerScrollVirtualAccelerationLevelState(
 /// Protocol 25 class 0x02 scroll wheel commands from the 00CC Basilisk V3 Pro 35K
 /// middleware bundle: get/set free-notched [2,2,148]/[2,2,20] and get/set virtual
 /// acceleration level [2,2,162]/[2,2,34]. Smart Reel threshold already lives in
-/// <see cref="OpenRazerMouseProtocol"/> and is deliberately not duplicated here.
+/// <see cref="RazerHidMouseProtocol"/> and is deliberately not duplicated here.
 /// </summary>
 public static class RazerScrollWheelProtocol
 {

@@ -9,6 +9,12 @@ public sealed partial class RazerCoolingPadViewModel
 {
     private DispatcherTimer? _curveTimer;
     private bool _curveTickRunning;
+    private bool _disposed;
+    private int _curveGeneration;
+    private CancellationTokenSource? _curveCancellation;
+    private Task _curveTask = Task.CompletedTask;
+    private RazerCoolingPadCurveMode _activeCurveMode;
+    private RazerCoolingPadTemperatureSource _activeCurveSource;
     private int _selectedCurveModeIndex;
     private int _selectedCurveSourceIndex;
     private int? _lastCurveUnits;
@@ -58,7 +64,7 @@ public sealed partial class RazerCoolingPadViewModel
 
     public string CurveStatusText => _curveStatusText;
 
-    public bool CanApplyCurve => IsConnected && !IsBusy;
+    public bool CanApplyCurve => IsConnected && !IsBusy && !_disposed;
 
     public async Task ApplyCurveAsync(CancellationToken cancellationToken = default)
     {
@@ -70,6 +76,7 @@ public sealed partial class RazerCoolingPadViewModel
         if (SelectedCurveModeIndex == 0)
         {
             StopCurveAndSelectManual();
+            await _curveTask;
             return;
         }
 
@@ -79,11 +86,18 @@ public sealed partial class RazerCoolingPadViewModel
             return;
         }
 
+        IsBusy = true;
+        StopCurveTimer();
         try
         {
+            await _curveTask;
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_disposed || !IsConnected) return;
+            _activeCurveMode = (RazerCoolingPadCurveMode)(SelectedCurveModeIndex - 1);
+            _activeCurveSource = (RazerCoolingPadTemperatureSource)SelectedCurveSourceIndex;
             await _service.SetSmartModeAsync(
                 (RazerCoolingPadSmartMode)(SelectedCurveModeIndex + 2),
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -91,13 +105,17 @@ public sealed partial class RazerCoolingPadViewModel
             return;
         }
 
+        finally { IsBusy = false; }
+
+        if (_disposed || !IsConnected || cancellationToken.IsCancellationRequested) return;
+        _curveCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _lastCurveUnits = null;
         EnsureCurveTimer();
         _curveTimer!.Start();
         SetCurveStatus(AppStrings.FormatText(
             "CoolingPadCurveApplied",
             CurveModeOptions[SelectedCurveModeIndex]));
-        await CurveTickAsync(cancellationToken).ConfigureAwait(false);
+        await CurveTickAsync(cancellationToken);
     }
 
     private void EnsureCurveTimer()
@@ -108,12 +126,18 @@ public sealed partial class RazerCoolingPadViewModel
         }
 
         _curveTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _curveTimer.Tick += async (_, _) => await CurveTickAsync(CancellationToken.None).ConfigureAwait(false);
+        _curveTimer.Tick += async (_, _) => await CurveTickAsync(CancellationToken.None);
     }
 
-    private async Task CurveTickAsync(CancellationToken cancellationToken)
+    private Task CurveTickAsync(CancellationToken cancellationToken)
     {
-        if (_curveTickRunning ||
+        if (_curveTickRunning) return Task.CompletedTask;
+        return _curveTask = RunCurveTickAsync(cancellationToken);
+    }
+
+    private async Task RunCurveTickAsync(CancellationToken cancellationToken)
+    {
+        if (_disposed || _curveCancellation is null || _curveCancellation.IsCancellationRequested ||
             IsBusy ||
             _service is null ||
             _performanceMonitor is null ||
@@ -123,16 +147,21 @@ public sealed partial class RazerCoolingPadViewModel
         }
 
         _curveTickRunning = true;
+        var generation = _curveGeneration;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _curveCancellation.Token);
+        cancellationToken = linked.Token;
         try
         {
-            var source = (RazerCoolingPadTemperatureSource)SelectedCurveSourceIndex;
+            var source = _activeCurveSource;
             var (cpu, gpu) = await _performanceMonitor.SampleTemperaturesAsync(
                 includeCpu: source != RazerCoolingPadTemperatureSource.Gpu,
                 includeGpu: source != RazerCoolingPadTemperatureSource.Cpu,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
 
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_disposed || generation != _curveGeneration || !IsConnected) return;
             var target = RazerCoolingPadCurve.TargetRpm(
-                (RazerCoolingPadCurveMode)(SelectedCurveModeIndex - 1),
+                _activeCurveMode,
                 source,
                 cpu,
                 gpu);
@@ -148,7 +177,8 @@ public sealed partial class RazerCoolingPadViewModel
                 return;
             }
 
-            await _service.SetCurveSpeedAsync(rpm, cancellationToken).ConfigureAwait(false);
+            await _service.SetCurveSpeedAsync(rpm, cancellationToken);
+            if (_disposed || generation != _curveGeneration) return;
             _lastCurveUnits = units;
             SetCurveStatus(AppStrings.FormatText(
                 "CoolingPadCurveActive",
@@ -173,7 +203,14 @@ public sealed partial class RazerCoolingPadViewModel
         }
     }
 
-    private void StopCurveTimer() => _curveTimer?.Stop();
+    private void StopCurveTimer()
+    {
+        ++_curveGeneration;
+        _curveTimer?.Stop();
+        _curveCancellation?.Cancel();
+        _curveCancellation?.Dispose();
+        _curveCancellation = null;
+    }
 
     private void StopCurveAndSelectManual()
     {

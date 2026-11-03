@@ -113,7 +113,7 @@ public static class Program
     {
         try
         {
-            _ = LegacyPerUserInstallMigrator.TryMigrate(Environment.ProcessPath);
+            _ = LegacyPerUserInstallMigrator.CopyLegacyUserData(Environment.ProcessPath);
             _ = LegacyPerUserInstallMigrator.CleanupTransitionalRootIfMigrated();
         }
         catch (Exception)
@@ -127,6 +127,7 @@ public static class Program
     {
         try
         {
+            _ = LegacyPerUserInstallMigrator.TryMigrate(Environment.ProcessPath);
             _ = LegacyPerUserInstallMigrator.CopyLegacyUserData(Environment.ProcessPath);
             _ = LegacyPerUserInstallMigrator.CleanupTransitionalRootIfMigrated();
         }

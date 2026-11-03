@@ -52,7 +52,7 @@ public partial class App : Application
     private bool _appNotificationsRegistered;
     private AppBehaviorSettings _behaviorSettings = new();
     private LowBatteryNotificationTracker? _lowBatteryNotifications;
-    private OpenRazerDeviceService? _openRazerDeviceService;
+    private RazerHidDeviceService? _openRazerDeviceService;
     private readonly LocalDiagnosticLog _diagnosticLog = new();
 
     public App()
@@ -98,7 +98,8 @@ public partial class App : Application
             .Any(argument => StringComparer.OrdinalIgnoreCase.Equals(argument, "--silent"));
         var isElevated = ProcessIntegrityLevel.IsElevated(ProcessIntegrityLevel.Current());
         // An elevated launch must replace the tray instance; otherwise it exits before device discovery.
-        const string instanceName = @"Local\OpenSynapse";
+        // UI automation uses a separate mutex so it never replaces the user tray instance.
+        var instanceName = Environment.GetEnvironmentVariable("OPENSSYNAPSE_UI_TEST_INSTANCE") is { Length: > 0 } testInstance ? $@"Local\OpenSynapse.QA.{testInstance}" : @"Local\OpenSynapse";
         var replaceExisting = isElevated && !silentLaunch &&
             !SingleInstanceGuard.IsExistingElevated(instanceName);
         bool acquired;
@@ -125,7 +126,7 @@ public partial class App : Application
             return;
         }
 
-        _behaviorSettings = AppBehaviorSettings.Load();
+        LoadBehaviorSettings();
         try
         {
             if (Environment.ProcessPath is string executablePath &&
@@ -179,9 +180,9 @@ public partial class App : Application
         _thxAudioController = new WindowsThxAudioController();
         _elevatedMacroClient = new ElevatedMacroClient();
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
-        // Share the Razer transport so OpenRazer requests and telemetry serialize on one gate.
-        _openRazerDeviceService = new OpenRazerDeviceService(
-            OpenRazerDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
+        // Share the Razer transport so RazerHid requests and telemetry serialize on one gate.
+        _openRazerDeviceService = new RazerHidDeviceService(
+            RazerHidDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
         _openRazerDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
         var viewModel = new MainViewModel(
             new WindowsHidDiscovery(
@@ -200,7 +201,7 @@ public partial class App : Application
             registryLoad.Errors,
             new WindowsTouchpadController(),
             _openRazerDeviceService,
-            new OpenRazerSpecialLightingService(
+            new RazerHidSpecialLightingService(
                 message => _diagnosticLog.TryWrite("kraken-lighting", message)),
             thxAudioController: _thxAudioController,
             thxAudioSupported: WindowsThxAudioController.IsSupportedModel(),
@@ -232,7 +233,7 @@ public partial class App : Application
             SetChromaRestEnabledAsync,
             GetChromaRestSnapshot,
             SetBladeIndicatorDisplayAvailableAsync,
-            SetChromaSourceAllowedAsync);
+            SetChromaSourceAllowedAsync, _bladeLightingController);
         RegisterMainWindow(window, viewModel);
         StartChromaRestHost(viewModel);
         InitializeTray(window, viewModel);
@@ -298,17 +299,6 @@ public partial class App : Application
         window.Closed += async (_, _) => await CloseApplicationAsync(window, viewModel);
     }
 
-    private async Task CloseApplicationAsync(MainWindow window, MainViewModel viewModel)
-    {
-        if (!ReferenceEquals(_window, window))
-        {
-            return;
-        }
-
-        _elevatedMacroClient?.Dispose();
-        await GetShutdownTask(viewModel);
-    }
-
     internal async Task ApplyUpdateAndRestartAsync(UpdateManager updateManager, VelopackAsset release)
     {
         if (_audioMuteViewModel is null)
@@ -370,7 +360,7 @@ public partial class App : Application
                     ? Task.CompletedTask
                     : RestoreLightingAfterChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                viewModel.OpenRazer.ApplyChromaFrameAsync,
+                viewModel.RazerHid.ApplyChromaFrameAsync,
             viewModel.Lighting.IsBladeChromaOverrideEnabled,
                 _behaviorSettings.ChromaBlockedSources);
             _chromaRestHost.StartAsync();
@@ -386,7 +376,7 @@ public partial class App : Application
     private static async Task RestoreLightingAfterChromaAsync(MainViewModel viewModel)
     {
             await viewModel.Lighting.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
-        await viewModel.OpenRazer.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
+        await viewModel.RazerHid.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
     }
 
     private Task GetShutdownTask(MainViewModel viewModel)

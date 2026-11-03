@@ -94,9 +94,15 @@ internal sealed class RazerCommandRejectedException(string message) : InvalidOpe
 /// this as a capability the firmware does not answer rather than a transport failure,
 /// because a disconnected endpoint fails every command on its path, not just one.
 /// </summary>
-internal sealed class RazerDeviceTimeoutException(string message) : InvalidOperationException(message);
+internal sealed class RazerDeviceTimeoutException(string message, bool retryableBusy = false) : InvalidOperationException(message)
+{
+    public bool IsRetryableBusy { get; } = retryableBusy;
+}
 
-public sealed class RazerFeatureTransport : IRazerFeatureTransport
+/// <summary>A reply did not match the request's transaction id, command, length or checksum.</summary>
+internal sealed class RazerReportMismatchException(string message) : InvalidOperationException(message);
+
+public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 {
     private readonly LocalDiagnosticLog? _diagnosticLog;
     // Feature reports are a request/response pair on one HID collection. Discovery,
@@ -146,7 +152,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
         var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
-        return new RazerFeatureSession(handle, gate);
+        return new RazerFeatureSession(handle, gate, devicePath);
     }
 
     internal Task<byte[]> SendPreparedAsync(
@@ -218,7 +224,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
 
     internal static bool UsesLeviathanReportId(string devicePath) =>
         DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
-        OpenRazerDeviceCatalog.IsLeviathanV2X(productId);
+        RazerHidDeviceCatalog.IsLeviathanV2X(productId);
 
     internal static byte NextTransactionId(ref int sequence) =>
         unchecked((byte)(System.Threading.Interlocked.Increment(ref sequence) & 0x1F));
@@ -248,13 +254,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                 request[2] = NextLeviathanTransactionId(ref sequence[0]);
                 responseReportId = LeviathanV2XProtocol.ReportId;
             }
-            else if (request[2] != 0xFF)
-            {
-                // Match the middleware: every command gets a fresh transaction id.
-                // A fixed id lets a previous response pass for the current one.
-                var sequence = _transactionSequences.GetOrAdd(devicePath, static _ => [-1]);
-                request[2] = NextTransactionId(ref sequence[0]);
-            }
+            else PrepareStandardTransaction(devicePath, request);
 
             try
             {
@@ -317,8 +317,10 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         Action<string>? diagnostic = null)
     {
         string? lastError = null;
+        string? lastValidationError = null;
         var rejectedResponses = 0;
         var silentResponses = 0;
+        var busyResponses = 0;
         for (var attempt = 1; attempt <= MaxQueryAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -373,8 +375,9 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
 
             if (response is null)
             {
+                lastValidationError = string.IsNullOrWhiteSpace(readError) ? "No reply matched the request." : readError;
                 lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
-                diagnostic?.Invoke($"attempt {attempt}: response validation failed after {MaxReadAttempts} reads ({readError})");
+                diagnostic?.Invoke($"attempt {attempt}: response validation failed after {MaxReadAttempts} reads ({lastValidationError})");
                 await Task.Delay(QueryRetryDelay, cancellationToken).ConfigureAwait(false);
                 continue;
             }
@@ -394,11 +397,12 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
                     // length while returning an empty reply, so the length alone is not data.
                     lastError = "The device is busy (0x01).";
                     silentResponses++;
+                    busyResponses++;
                     diagnostic?.Invoke($"attempt {attempt}: {lastError}; retrying read");
                 }
                 else
                 {
-                    // OpenRazer treats BUSY as an accepted command for writes.
+                    // RazerHid treats BUSY as an accepted command for writes.
                     diagnostic?.Invoke($"attempt {attempt}: accepted, status=0x01 (busy)");
                     return response;
                 }
@@ -438,7 +442,12 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
         // A dead endpoint fails every command on its path, so busy/silent means the
         // firmware does not answer this command, not that the transport is gone.
         if (silentResponses == MaxQueryAttempts)
-            throw new RazerDeviceTimeoutException(lastError ?? "The device did not answer this command.");
+            throw new RazerDeviceTimeoutException(lastError ?? "The device did not answer this command.",
+                busyResponses > 0);
+
+        if (lastValidationError is not null && rejectedResponses == 0 && silentResponses == 0)
+            throw new RazerReportMismatchException($"The device returned a report that did not match the request: {lastValidationError}");
+
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
     }
 
@@ -471,7 +480,8 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
 
     private sealed class RazerFeatureSession(
         SafeFileHandle handle,
-        SemaphoreSlim gate) : IRazerFeatureSession
+        SemaphoreSlim gate,
+        string devicePath) : IRazerFeatureSession
     {
         private readonly object _transactionSync = new();
         private byte _transactionId;
@@ -502,6 +512,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, report);
                 var result = await Task.Run(() =>
                 {
                     var success = NativeMethods.HidD_SetFeature(handle, report, report.Length);
@@ -566,6 +577,7 @@ public sealed class RazerFeatureTransport : IRazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, request);
                 return await ExecuteOnHandleAsync(
                     handle,
                     request,

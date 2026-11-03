@@ -1,0 +1,36 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.BladeGpuOverclockCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:controls="using:OpenSynapse.App.Controls">
+  <Border Style="{StaticResource CardStyle}" Padding="20">
+    <StackPanel Spacing="12">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel Spacing="3">
+          <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="BladeGpuCardClockOffsetTitle" Text="显卡超频" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+          <TextBlock Text="{Binding Telemetry.GpuName}" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+        </StackPanel>
+        <Button local:Localized.Uid="BladeGpuCardClockOffsetReset" Grid.Column="1" Content="恢复默认" Click="ResetClick" IsEnabled="{Binding Blade.CanResetGpuClockOffset}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Top" />
+      </Grid>
+      <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+        <StackPanel Spacing="5">
+          <TextBlock local:Localized.Uid="BladeGpuCardCoreClockLabel" Text="核心频率偏移" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+          <ComboBox local:Localized.Uid="BladeGpuCardCoreClockLabel" Tag="gpuCoreOffset" ItemsSource="{Binding Blade.GpuCoreOffsetOptions}" SelectedIndex="{Binding Blade.GpuCoreOffsetIndex, Mode=TwoWay}" SelectionChanged="PresetChanged" IsEnabled="{Binding Blade.CanEditGpuClockOffset}" HorizontalAlignment="Stretch" />
+          <NumberBox local:Localized.Uid="BladeGpuCardCoreClockLabel" Value="{Binding Blade.CoreClockOffsetMhz, Mode=TwoWay}" Minimum="-500" Maximum="200" SmallChange="5" SpinButtonPlacementMode="Compact" IsEnabled="{Binding Blade.CanEditGpuClockOffset}" LostFocus="NumberLostFocus" AutomationProperties.Name="核心频率偏移" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Spacing="5">
+          <TextBlock local:Localized.Uid="BladeGpuCardMemoryClockLabel" Text="显存频率偏移" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+          <ComboBox local:Localized.Uid="BladeGpuCardMemoryClockLabel" Tag="gpuMemoryOffset" ItemsSource="{Binding Blade.GpuMemoryOffsetOptions}" SelectedIndex="{Binding Blade.GpuMemoryOffsetIndex, Mode=TwoWay}" SelectionChanged="PresetChanged" IsEnabled="{Binding Blade.CanEditGpuClockOffset}" HorizontalAlignment="Stretch" />
+          <NumberBox local:Localized.Uid="BladeGpuCardMemoryClockLabel" Value="{Binding Blade.MemoryClockOffsetMhz, Mode=TwoWay}" Minimum="-500" Maximum="2000" SmallChange="5" SpinButtonPlacementMode="Compact" IsEnabled="{Binding Blade.CanEditGpuClockOffset}" LostFocus="NumberLostFocus" AutomationProperties.Name="显存频率偏移" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Spacing="5">
+          <TextBlock local:Localized.Uid="BladeGpuCardClockLimitLabel" Text="核心频率上限" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+          <ComboBox local:Localized.Uid="BladeGpuCardClockLimitLabel" Tag="gpuCoreLimit" ItemsSource="{Binding Blade.GpuCoreLimitOptions}" SelectedIndex="{Binding Blade.GpuCoreLimitIndex, Mode=TwoWay}" SelectionChanged="PresetChanged" IsEnabled="{Binding Blade.CanEditGpuClockLimit}" HorizontalAlignment="Stretch" />
+          <NumberBox local:Localized.Uid="BladeGpuCardClockLimitLabel" Value="{Binding Blade.GpuClockLimitMhz, Mode=TwoWay}" Minimum="0" Maximum="3000" SmallChange="50" SpinButtonPlacementMode="Compact" IsEnabled="{Binding Blade.CanEditGpuClockLimit}" LostFocus="NumberLostFocus" AutomationProperties.Name="核心频率上限" />
+        </StackPanel>
+      </Grid>
+      <TextBlock Text="{Binding Blade.GpuClockOffsetStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+    </StackPanel>
+  </Border>
+</UserControl>

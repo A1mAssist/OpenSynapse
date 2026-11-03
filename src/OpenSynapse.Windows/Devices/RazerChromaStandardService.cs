@@ -32,7 +32,7 @@ public enum RazerChromaChannel
 
 /// <summary>
 /// Brightness and effect control over the class 0x10 Chroma channel shared by mice,
-/// keyboards, lamps, ARGB controllers and docks that the OpenRazer catalogue does not cover.
+/// keyboards, lamps, ARGB controllers and docks that the RazerHid catalogue does not cover.
 /// </summary>
 public sealed class RazerChromaStandardService
 {
@@ -64,7 +64,7 @@ public sealed class RazerChromaStandardService
 
     /// <summary>
     /// Devices whose only shared capability is the class 0x10 Chroma channel: mice, lamps,
-    /// ARGB controllers, docks and stands. Keyboards, audio devices, the OpenRazer catalogue
+    /// ARGB controllers, docks and stands. Keyboards, audio devices, the RazerHid catalogue
     /// and the 320-byte ARGB controller are excluded because they own a richer page.
     /// </summary>
     public static readonly IReadOnlyDictionary<ushort, (string Name, DeviceCategory Category)> Products =
@@ -152,7 +152,7 @@ public sealed class RazerChromaStandardService
         IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
         interfaces
             .Where(item => Products.ContainsKey(item.ProductId))
-            .Where(item => OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
             // A device with its own native page owns its card; Chroma never adds a second one.
             .Where(item => RazerDeviceRegistry.BuiltIn.Find(0x1532, item.ProductId) is null)
             .Where(item => !RazerHeadsetAudioService.IsSupported(item.ProductId))
@@ -293,12 +293,19 @@ public sealed class RazerChromaStandardService
                 throw new InvalidOperationException($"Brightness readback was {actual}%, expected {percent}%.");
             }
         }
-        catch
+        catch (Exception updateException)
         {
-            await TryRestoreAsync(
-                transaction => RazerChromaStandardProtocol.SetBrightness(
-                    transaction, RazerChromaStandardProtocol.ToBrightnessLevel(previous)),
-                "restore brightness").ConfigureAwait(false);
+            try
+            {
+                await RestoreBrightnessAsync(previous).ConfigureAwait(false);
+            }
+            catch (Exception restoreException)
+            {
+                throw new InvalidOperationException(
+                    "Brightness update failed and the previous brightness could not be restored.",
+                    new AggregateException(updateException, restoreException));
+            }
+
             throw;
         }
     }
@@ -324,7 +331,8 @@ public sealed class RazerChromaStandardService
         var previous = RazerChromaStandardProtocol.ReadEffect(
             await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read effect", cancellationToken)
                 .ConfigureAwait(false));
-        if (previous.Effect == effect && previous.Colors.SequenceEqual(payload))
+        EnsureStandardEffectRestorable(previous);
+        if (EffectMatches(previous, effect, 0, 0, payload, compareColors: payload.Length > 0))
         {
             return;
         }
@@ -338,17 +346,25 @@ public sealed class RazerChromaStandardService
             var actual = RazerChromaStandardProtocol.ReadEffect(
                 await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read back effect", cancellationToken)
                     .ConfigureAwait(false));
-            if (actual.Effect != effect)
+            if (!EffectMatches(actual, effect, 0, 0, payload, compareColors: payload.Length > 0))
             {
                 throw new InvalidOperationException(
-                    $"Effect readback was {actual.Effect}, expected {effect}.");
+                    $"Effect readback did not match {effect} and its parameters.");
             }
         }
-        catch
+        catch (Exception updateException)
         {
-            await TryRestoreAsync(
-                transaction => RazerChromaStandardProtocol.SetEffect(transaction, previous.Effect, previous.Colors.ToArray()),
-                "restore effect").ConfigureAwait(false);
+            try
+            {
+                await RestoreStandardEffectAsync(previous).ConfigureAwait(false);
+            }
+            catch (Exception restoreException)
+            {
+                throw new InvalidOperationException(
+                    "Effect update failed and the previous effect could not be restored.",
+                    new AggregateException(updateException, restoreException));
+            }
+
             throw;
         }
     }
@@ -386,41 +402,123 @@ public sealed class RazerChromaStandardService
         }
 
         var previous = await TryReadLegacyEffectAsync(cancellationToken).ConfigureAwait(false);
+        if (previous is { } snapshot)
+        {
+            EnsureLegacyEffectRestorable(snapshot);
+        }
+        var expectedFlags = effect == RazerChromaEffect.Breathing ? (byte)(payload.Length / 3) : (byte)0;
         if (previous is { } current &&
-            current.EffectId == (byte)effect && current.Colors.SequenceEqual(payload))
+            LegacyEffectMatches(current, effect, expectedFlags, 0, payload, compareColors: payload.Length > 0))
         {
             return;
         }
 
-        await QueryAsync(
-            transaction => RazerLegacyChromaProtocol.SetEffect(transaction, effect, payload),
-            "set effect",
-            cancellationToken).ConfigureAwait(false);
-
-        // Wired keyboards never read the effect in the middleware, so a write is verified
-        // only when this firmware answers the 0F:130 read.
-        if (previous is null)
+        try
         {
-            return;
-        }
+            await QueryAsync(
+                transaction => RazerLegacyChromaProtocol.SetEffect(transaction, effect, payload),
+                "set effect",
+                cancellationToken).ConfigureAwait(false);
 
-        var stored = await TryReadLegacyEffectAsync(cancellationToken).ConfigureAwait(false);
-        if (stored is null || stored.Value.EffectId == (byte)effect)
+            // Wired keyboards never read the effect in the middleware, so a write is verified
+            // only when this firmware answers the 0F:130 read.
+            if (previous is null)
+            {
+                return;
+            }
+
+            var stored = await TryReadLegacyEffectAsync(cancellationToken).ConfigureAwait(false);
+            if (stored is null)
+            {
+                throw new InvalidOperationException(
+                    "Effect readback became unavailable after the update.");
+            }
+            if (LegacyEffectMatches(stored.Value, effect, expectedFlags, 0, payload, compareColors: payload.Length > 0))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Effect readback did not match {(byte)effect} and its parameters.");
+        }
+        catch (Exception updateException)
         {
-            return;
-        }
+            if (previous is not { } oldState)
+            {
+                throw;
+            }
 
-        if (previous.Value.EffectId <= (byte)RazerChromaEffect.Spectrum)
-        {
-            await TryRestoreAsync(
-                transaction => RazerLegacyChromaProtocol.SetEffect(
-                    transaction, (RazerChromaEffect)previous.Value.EffectId, previous.Value.Colors),
-                "restore effect").ConfigureAwait(false);
-        }
+            try
+            {
+                await RestoreLegacyEffectAsync(oldState).ConfigureAwait(false);
+            }
+            catch (Exception restoreException)
+            {
+                throw new InvalidOperationException(
+                    "Effect update failed and the previous legacy effect could not be restored.",
+                    new AggregateException(updateException, restoreException));
+            }
 
-        throw new InvalidOperationException(
-            $"Effect readback was {stored.Value.EffectId}, expected {(byte)effect}.");
+            throw;
+        }
     }
+
+    private async Task RestoreStandardEffectAsync(
+        (RazerChromaEffect Effect, byte Flags, byte Rate, byte[] Colors) previous)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await QueryAsync(
+            transaction => RazerChromaStandardProtocol.SetEffect(
+                transaction, previous.Effect, previous.Colors, previous.Flags, previous.Rate),
+            "restore effect",
+            timeout.Token).ConfigureAwait(false);
+        var restored = RazerChromaStandardProtocol.ReadEffect(
+            await QueryAsync(RazerChromaStandardProtocol.GetEffect, "verify restored effect", timeout.Token)
+                .ConfigureAwait(false));
+        if (!EffectMatches(restored, previous.Effect, previous.Flags, previous.Rate, previous.Colors))
+        {
+            throw new InvalidOperationException("Previous effect readback did not match after restore.");
+        }
+    }
+
+    private async Task RestoreLegacyEffectAsync(
+        (byte EffectId, byte Flags, byte Rate, byte[] Colors) previous)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var effect = (RazerChromaEffect)previous.EffectId;
+        await QueryAsync(
+            transaction => RazerLegacyChromaProtocol.SetEffect(
+                transaction, effect, previous.Colors, flags: previous.Flags, rate: previous.Rate),
+            "restore effect",
+            timeout.Token).ConfigureAwait(false);
+        var restored = RazerLegacyChromaProtocol.ReadEffect(
+            await QueryAsync(RazerLegacyChromaProtocol.GetEffect, "verify restored effect", timeout.Token)
+                .ConfigureAwait(false));
+        if (!LegacyEffectMatches(restored, effect, previous.Flags, previous.Rate, previous.Colors))
+        {
+            throw new InvalidOperationException("Previous legacy effect readback did not match after restore.");
+        }
+    }
+
+    private static bool EffectMatches(
+        (RazerChromaEffect Effect, byte Flags, byte Rate, byte[] Colors) actual,
+        RazerChromaEffect effect,
+        byte flags,
+        byte rate,
+        IReadOnlyList<byte> colors,
+        bool compareColors = true) =>
+        actual.Effect == effect && actual.Flags == flags && actual.Rate == rate &&
+        (!compareColors || actual.Colors.SequenceEqual(colors));
+
+    private static bool LegacyEffectMatches(
+        (byte EffectId, byte Flags, byte Rate, byte[] Colors) actual,
+        RazerChromaEffect effect,
+        byte flags,
+        byte rate,
+        IReadOnlyList<byte> colors,
+        bool compareColors = true) =>
+        actual.EffectId == (byte)effect && actual.Flags == flags && actual.Rate == rate &&
+        (!compareColors || actual.Colors.SequenceEqual(colors));
 
     private async Task<(byte EffectId, byte Flags, byte Rate, byte[] Colors)?> TryReadLegacyEffectAsync(
         CancellationToken cancellationToken)
@@ -438,17 +536,34 @@ public sealed class RazerChromaStandardService
         }
     }
 
-    private async Task TryRestoreAsync(Func<byte, byte[]> request, string label)
+    private async Task RestoreBrightnessAsync(byte previous)
     {
-        try
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await QueryAsync(
+            transaction => RazerChromaStandardProtocol.SetBrightness(
+                transaction, RazerChromaStandardProtocol.ToBrightnessLevel(previous)),
+            "restore brightness",
+            timeout.Token).ConfigureAwait(false);
+        var restored = RazerChromaStandardProtocol.ReadBrightnessPercent(
+            await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "verify restored brightness", timeout.Token)
+                .ConfigureAwait(false));
+        if (Math.Abs(restored - previous) > 1)
         {
-            await QueryAsync(request, label, CancellationToken.None).ConfigureAwait(false);
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            _diagnostic?.Invoke($"chroma {label} failed: {exception.Message}");
+            throw new InvalidOperationException(
+                $"Previous brightness readback was {restored}%, expected {previous}%.");
         }
     }
+
+    private static void EnsureStandardEffectRestorable(
+        (RazerChromaEffect Effect, byte Flags, byte Rate, byte[] Colors) previous) =>
+        _ = RazerChromaStandardProtocol.SetEffect(
+            0, previous.Effect, previous.Colors, previous.Flags, previous.Rate);
+
+    private static void EnsureLegacyEffectRestorable(
+        (byte EffectId, byte Flags, byte Rate, byte[] Colors) previous) =>
+        _ = RazerLegacyChromaProtocol.SetEffect(
+            0, (RazerChromaEffect)previous.EffectId, previous.Colors,
+            flags: previous.Flags, rate: previous.Rate);
 
     private async Task<byte[]> QueryAsync(
         Func<byte, byte[]> request,

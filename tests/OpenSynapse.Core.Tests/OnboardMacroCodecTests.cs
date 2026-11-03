@@ -136,6 +136,7 @@ public sealed class OnboardMacroProtocolTests
     public void MemoryChunkEchoesOffsetAndSize()
     {
         var response = new byte[RazerFeatureReport.Length];
+        response[RazerFeatureReport.DataSizeOffset] = 10;
         var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
         arguments[0] = 0;
         arguments[1] = 1;
@@ -169,6 +170,7 @@ public sealed class OnboardMacroProtocolTests
     public void StorageInfoSplitsFourCounters()
     {
         var response = new byte[RazerFeatureReport.Length];
+        response[RazerFeatureReport.DataSizeOffset] = 14;
         var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
         arguments[1] = 5;
         arguments[2] = 0x00;
@@ -260,11 +262,12 @@ public sealed class OnboardMacroProtocolTests
     }
 
     [Fact]
-    public void MacroIdListReadsTwoByteIdsAfterTheHeader()
+    public void MacroIdListReadsOnlyTheRequestedWindow()
     {
         var response = new byte[RazerFeatureReport.Length];
+        response[RazerFeatureReport.DataSizeOffset] = 10;
         var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
-        arguments[3] = 3;
+        arguments[3] = 9;
         arguments[4] = 0x00;
         arguments[5] = 0x02;
         arguments[6] = 0x00;
@@ -272,9 +275,43 @@ public sealed class OnboardMacroProtocolTests
         arguments[8] = 0x00;
         arguments[9] = 0x09;
 
-        var (total, ids) = RazerOnboardMacroProtocol.ParseMacroIdList(response);
-        Assert.Equal(3, total);
+        arguments[10] = 0x7F;
+        var ids = RazerOnboardMacroProtocol.ParseMacroIdList(response, 0, 3);
         Assert.Equal(new byte[] { 2, 5, 9 }, ids);
+    }
+
+    [Fact]
+    public void MacroIdListRejectsWrongOffsetAndDeclaredLength()
+    {
+        var response = new byte[RazerFeatureReport.Length];
+        response[RazerFeatureReport.DataSizeOffset] = 6;
+        var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
+        arguments[1] = 1;
+        Assert.Throws<InvalidOperationException>(
+            () => RazerOnboardMacroProtocol.ParseMacroIdList(response, 0, 1));
+
+        arguments[1] = 0;
+        response[RazerFeatureReport.DataSizeOffset] = 80;
+        Assert.Throws<InvalidOperationException>(
+            () => RazerOnboardMacroProtocol.ParseMacroIdList(response, 0, 1));
+    }
+
+    [Fact]
+    public void MacroMemoryRequestsUseSevenByteHeaderPlusChunk()
+    {
+        var read = RazerOnboardMacroProtocol.GetMacroMemory.CreateRequest(
+            0,
+            RazerOnboardMacroProtocol.CreateReadMemoryArguments(1, 0, 72),
+            79);
+        var write = RazerOnboardMacroProtocol.SetMacroMemory.CreateRequest(
+            0,
+            RazerOnboardMacroProtocol.CreateWriteMemoryArguments(1, 72, [1, 2]),
+            9);
+
+        Assert.Equal(79, read[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(9, write[RazerFeatureReport.DataSizeOffset]);
+        Assert.Equal(RazerFeatureReport.Length, read.Length);
+        Assert.Equal(RazerFeatureReport.Length, write.Length);
     }
 
     [Fact]
@@ -289,6 +326,7 @@ public sealed class OnboardMacroProtocolTests
     public void DataSizeIsReadFromTheTrailingWord()
     {
         var response = new byte[RazerFeatureReport.Length];
+        response[RazerFeatureReport.DataSizeOffset] = 6;
         var arguments = response.AsSpan(RazerFeatureReport.ArgumentsOffset);
         arguments[5] = 0x2C;
         Assert.Equal(44, RazerOnboardMacroProtocol.ParseMacroDataSize(response));

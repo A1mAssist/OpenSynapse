@@ -393,7 +393,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         OperationStatusText = string.Empty;
         try
         {
-            _service ??= await _connect(cancellationToken).ConfigureAwait(false);
+            _service ??= await _connect(cancellationToken);
             if (_service is null)
             {
                 SetError(AppStrings.FormatText("AwBleHeadsetErrorRead", "not connected"));
@@ -401,15 +401,15 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
                 return;
             }
 
-            var state = await _service.ReadBatteryAsync(cancellationToken).ConfigureAwait(false);
+            var state = await _service.ReadBatteryAsync(cancellationToken);
             _batteryText = FormatBattery(state);
             _statusText = AppStrings.FormatText("AwBleHeadsetStatusRead", _batteryText);
             OnPropertyChanged(nameof(BatteryText));
             OnPropertyChanged(nameof(StatusText));
             SetError(string.Empty);
 
-            await LoadInfoAsync(cancellationToken).ConfigureAwait(false);
-            await LoadControlsAsync(cancellationToken).ConfigureAwait(false);
+            await LoadInfoAsync(cancellationToken);
+            await LoadControlsAsync(cancellationToken);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -480,7 +480,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     {
         _service?.Dispose();
         _service = null;
-        await Task.CompletedTask.ConfigureAwait(false);
+        await Task.CompletedTask;
     }
 
     private async Task RunWriteAsync<T>(
@@ -496,7 +496,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         NotifyBusy();
         try
         {
-            apply(await write(_service).ConfigureAwait(false));
+            apply(await write(_service));
             OperationStatusText = AppStrings.Text("AwBleHeadsetSaved");
             SetError(string.Empty);
         }
@@ -520,7 +520,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         try
         {
             return await RazerAwBleHeadsetService.ConnectAsync(device.Id, diagnostic, cancellationToken)
-                .ConfigureAwait(false);
+                ;
         }
         catch (Exception exception) when (IsExpected(exception))
         {

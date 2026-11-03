@@ -170,7 +170,7 @@ public sealed class DeviceCapabilityStructureTests
     }
 
     [Fact]
-    public void LedMatrixBladeManifestsDeclareTheLocalOpenRazerGeometry()
+    public void LedMatrixBladeManifestsDeclareTheLocalRazerHidGeometry()
     {
         var invalid = RazerDeviceRegistry.BuiltIn.Manifests
             .Where(manifest => manifest.LightingDialect == BladeLightingDialect.LedMatrixBlade)
@@ -184,17 +184,44 @@ public sealed class DeviceCapabilityStructureTests
     }
 
     [Fact]
-    public void EveryDeclaredOpenRazerPollingRateHasAnEncodableWrite()
+    public void DedicatedGpuPnpSwitchMatchesTheBladeMuxManifests()
+    {
+        var muxProductIds = RazerDeviceRegistry.BuiltIn.Manifests
+            .Where(manifest =>
+                manifest.Capabilities.ContainsKey(CapabilityIds.DisplayMuxGet) ||
+                manifest.Capabilities.ContainsKey(CapabilityIds.LegacyDisplayMuxGet))
+            .SelectMany(manifest => manifest.ProductIds)
+            .ToHashSet();
+        var mismatches = BladeModelCapabilities.AdmittedProductIds
+            .Select(productId => (
+                ProductId: productId,
+                Declared: BladeGpuModelCapabilities.SupportsDedicatedGpuPnpSwitch(productId),
+                HasMuxManifest: muxProductIds.Contains(productId)))
+            .Where(entry => entry.Declared != entry.HasMuxManifest)
+            .Select(entry =>
+                $"1532:{entry.ProductId:X4}: declared={entry.Declared}, muxManifest={entry.HasMuxManifest}")
+            .ToArray();
+
+        Assert.True(
+            mismatches.Length == 0,
+            "BladeModelCapabilities and display-MUX manifests disagree:" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, mismatches));
+        Assert.False(BladeGpuModelCapabilities.SupportsDedicatedGpuPnpSwitch(0x0270));
+        Assert.True(BladeGpuModelCapabilities.SupportsDedicatedGpuPnpSwitch(0x02C6));
+    }
+    [Fact]
+    public void EveryDeclaredRazerHidPollingRateHasAnEncodableWrite()
     {
         // The built-in catalog includes local aliases such as the Viper V3 Pro SE
         // identities and the middleware-derived mice, so this covers alias entries too.
-        var unencodable = OpenRazerDeviceCatalog.BuiltIn.Devices
+        var unencodable = RazerHidDeviceCatalog.BuiltIn.Devices
             .SelectMany(device => device.PollingRates.Select(rate => (Device: device, Rate: rate)))
             .Select(entry =>
             {
                 try
                 {
-                    var requests = OpenRazerMouseProtocol.SetPollingRate(entry.Device, entry.Rate);
+                    var requests = RazerHidMouseProtocol.SetPollingRate(entry.Device, entry.Rate);
                     return requests.Count == 0
                         ? $"1532:{entry.Device.ProductId:X4} {entry.Device.DisplayName}: {entry.Rate} Hz produced no request"
                         : null;

@@ -6,7 +6,7 @@ namespace OpenSynapse.Core.Profiles;
 
 public sealed class ProfileStore
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General)
     {
@@ -188,7 +188,7 @@ public sealed class ProfileStore
             return true;
         }
 
-        if (document.Version == 1)
+        if (document.Version is 1 or 2)
         {
             document.Version = CurrentVersion;
             return true;

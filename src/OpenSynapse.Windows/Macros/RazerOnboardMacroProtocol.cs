@@ -9,16 +9,25 @@ namespace OpenSynapse.Windows.Macros;
 /// </summary>
 public sealed record RazerOnboardMacroCommand(byte CommandClass, byte CommandId, byte DataSize)
 {
-    public byte[] CreateRequest(byte transactionId, ReadOnlySpan<byte> arguments)
+    public byte[] CreateRequest(
+        byte transactionId,
+        ReadOnlySpan<byte> arguments,
+        int? declaredSize = null)
     {
-        if (arguments.Length > DataSize)
+        var size = declaredSize ?? DataSize;
+        if (size < 0 || size > DataSize || arguments.Length > size)
         {
             throw new ArgumentException(
-                $"Command 0x{CommandClass:X2}:0x{CommandId:X2} accepts {DataSize} argument bytes, not {arguments.Length}.",
+                $"Command 0x{CommandClass:X2}:0x{CommandId:X2} accepts at most {DataSize} bytes, not {arguments.Length} arguments with declared size {size}.",
                 nameof(arguments));
         }
 
-        return RazerFeatureReport.CreateRequest(transactionId, DataSize, CommandClass, CommandId, arguments);
+        return RazerFeatureReport.CreateRequestWithDeclaredSize(
+            transactionId,
+            (byte)size,
+            CommandClass,
+            CommandId,
+            arguments);
     }
 }
 
@@ -45,6 +54,7 @@ public static class RazerOnboardMacroProtocol
     public static readonly RazerOnboardMacroCommand DeleteMacro = new(0x06, 0x03, 2);
     public static readonly RazerOnboardMacroCommand AllocateMacroData = new(0x06, 0x08, 6);
     public static readonly RazerOnboardMacroCommand SetMacroMemory = new(0x06, 0x09, 80);
+    public static readonly RazerOnboardMacroCommand GetMacroCount = new(0x06, 0x80, 2);
     public static readonly RazerOnboardMacroCommand GetMacroDataSize = new(0x06, 0x88, 6);
     public static readonly RazerOnboardMacroCommand GetMacroMemory = new(0x06, 0x89, 80);
     public static readonly RazerOnboardMacroCommand GetMacroStorageInfo = new(0x06, 0x8E, 14);
@@ -125,13 +135,13 @@ public static class RazerOnboardMacroProtocol
         ];
     }
 
-    public static RazerOnboardMacroMemoryChunk ParseMemoryChunk(ReadOnlySpan<byte> response)
+    public static RazerOnboardMacroMemoryChunk ParseMemoryChunk(ReadOnlySpan<byte> response, byte? expectedMacroId = null)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 7);
-        var arguments = response[ArgumentOffset..];
+        var arguments = Arguments(response, 7);
+        RequireMacroId(arguments, expectedMacroId);
         var offset = (arguments[2] << 24) | (arguments[3] << 16) | (arguments[4] << 8) | arguments[5];
         var size = arguments[6];
-        if (arguments.Length < 7 + size)
+        if (size is 0 or > ChunkSize || arguments.Length < 7 + size)
         {
             throw new InvalidOperationException(
                 $"Onboard macro chunk declares {size} bytes but the response carries {arguments.Length - 7}.");
@@ -142,8 +152,7 @@ public static class RazerOnboardMacroProtocol
 
     public static RazerOnboardMacroStorageInfo ParseStorageInfo(ReadOnlySpan<byte> response)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 14);
-        var data = response.Slice(ArgumentOffset, 14);
+        var data = Arguments(response, 14);
         return new RazerOnboardMacroStorageInfo(
             (data[0] << 8) | data[1],
             (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5],
@@ -152,11 +161,26 @@ public static class RazerOnboardMacroProtocol
     }
 
 
-    public static int ParseMacroDataSize(ReadOnlySpan<byte> response)
+    public static int ParseMacroDataSize(ReadOnlySpan<byte> response, byte? expectedMacroId = null)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 6);
-        var data = response[ArgumentOffset..];
+        var data = Arguments(response, 6);
+        RequireMacroId(data, expectedMacroId);
         return (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
+    }
+
+    private static ReadOnlySpan<byte> Arguments(ReadOnlySpan<byte> response, int minimumLength)
+    {
+        if (response.Length != RazerFeatureReport.Length ||
+            response[RazerFeatureReport.DataSizeOffset] < minimumLength ||
+            response[RazerFeatureReport.DataSizeOffset] > 80)
+            throw new InvalidDataException("Onboard macro response has an invalid declared payload length.");
+        return response.Slice(ArgumentOffset, response[RazerFeatureReport.DataSizeOffset]);
+    }
+
+    private static void RequireMacroId(ReadOnlySpan<byte> data, byte? expectedMacroId)
+    {
+        if (expectedMacroId is { } id && (data[0] != 0 || data[1] != id))
+            throw new InvalidDataException("Onboard macro response belongs to a different slot.");
     }
 
     public static byte[] CreateMacroIdArguments(byte macroId) => [0, macroId];
@@ -172,17 +196,52 @@ public static class RazerOnboardMacroProtocol
     }
 
     /// <summary>
-    /// Get Macro ID List answers with a two-byte offset echo, a two-byte total count
-    /// and the ids as big-endian 16-bit values.
+    /// Macro count is read independently. Each ID page echoes its offset, carries a
+    /// firmware size field, then the caller-requested IDs as big-endian 16-bit values.
     /// </summary>
-    public static (int Total, byte[] Ids) ParseMacroIdList(ReadOnlySpan<byte> response)
+    public static int ParseMacroCount(ReadOnlySpan<byte> response)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 4);
-        var data = response[ArgumentOffset..];
-        var total = (data[2] << 8) | data[3];
-        var returned = Math.Min((data.Length - 4) / 2, total);
-        var ids = new byte[returned];
-        for (var index = 0; index < returned; index++)
+        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + 2);
+        if (response[RazerFeatureReport.DataSizeOffset] != 2)
+        {
+            throw new InvalidOperationException(
+                $"Onboard macro count declares {response[RazerFeatureReport.DataSizeOffset]} bytes, expected 2.");
+        }
+        return (response[ArgumentOffset] << 8) | response[ArgumentOffset + 1];
+    }
+
+    public static byte[] ParseMacroIdList(
+        ReadOnlySpan<byte> response,
+        int expectedOffset,
+        int expectedCount)
+    {
+        if (expectedOffset is < 0 or > 0xFFFF)
+        {
+            throw new ArgumentOutOfRangeException(nameof(expectedOffset));
+        }
+        if (expectedCount is < 0 or > 32)
+        {
+            throw new ArgumentOutOfRangeException(nameof(expectedCount));
+        }
+
+        var declaredLength = 4 + (expectedCount * 2);
+        ArgumentOutOfRangeException.ThrowIfLessThan(response.Length, ArgumentOffset + declaredLength);
+        if (response[RazerFeatureReport.DataSizeOffset] != declaredLength)
+        {
+            throw new InvalidOperationException(
+                $"Onboard macro id page declares {response[RazerFeatureReport.DataSizeOffset]} bytes, expected {declaredLength}.");
+        }
+
+        var data = response.Slice(ArgumentOffset, declaredLength);
+        var returnedOffset = (data[0] << 8) | data[1];
+        if (returnedOffset != expectedOffset)
+        {
+            throw new InvalidOperationException(
+                $"Onboard macro id page returned offset {returnedOffset}, expected {expectedOffset}.");
+        }
+
+        var ids = new byte[expectedCount];
+        for (var index = 0; index < expectedCount; index++)
         {
             var id = (data[4 + (index * 2)] << 8) | data[5 + (index * 2)];
             if (id is <= 0 or > byte.MaxValue)
@@ -193,7 +252,7 @@ public static class RazerOnboardMacroProtocol
             ids[index] = (byte)id;
         }
 
-        return (total, ids);
+        return ids;
     }
 }
 

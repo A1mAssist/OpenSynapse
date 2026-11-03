@@ -19,6 +19,14 @@ public static class OnboardMacroTranslation
             var step = steps[index];
             try
             {
+                if (step.Kind != MacroStepKind.Delay && step.DelayMilliseconds > 0)
+                {
+                    items.Add(new OnboardMacroItem(OnboardMacroItemKind.Delay)
+                    {
+                        DelayMilliseconds = step.DelayMilliseconds,
+                    });
+                }
+
                 switch (step.Kind)
                 {
                     case MacroStepKind.Input when step.Input is { } input:
@@ -140,7 +148,9 @@ public static class OnboardMacroTranslation
     {
         if (input.ScanCode > 0)
         {
-            return input.ScanCode;
+            return input.ScanCode > 0xFF || !input.Extended
+                ? input.ScanCode
+                : input.ScanCode | 0xE000;
         }
 
         var scan = MapVirtualKey((uint)input.VirtualKey, MapVkVirtualToScan);

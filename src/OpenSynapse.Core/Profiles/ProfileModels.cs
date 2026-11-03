@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Macros;
@@ -182,7 +183,7 @@ public sealed class ProfileDefinition
         Blade = CloneBlade(source.Blade),
         Viper = CloneViper(source.Viper),
         Lighting = CloneLighting(source.Lighting),
-        OpenRazerLighting = source.OpenRazerLighting.ToDictionary(
+        RazerHidLighting = source.RazerHidLighting.ToDictionary(
             pair => pair.Key,
             pair => CloneLighting(pair.Value),
             StringComparer.OrdinalIgnoreCase),
@@ -331,15 +332,23 @@ public sealed class PowerProfileOverrides
     public BladeProfileSettings Blade { get; set; } = new();
     public ViperProfileSettings Viper { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
-    public Dictionary<string, LightingProfile> OpenRazerLighting { get; set; } =
+    public Dictionary<string, LightingProfile> RazerHidLighting { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
+    // Profiles written before the RazerHid rename used this key; merge it once and save only the new key.
+    [JsonPropertyName("openRazerLighting"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, LightingProfile>? LegacyRazerHidLighting { get; set; }
 
     internal void ApplySafeDefaults()
     {
         Blade ??= new BladeProfileSettings();
         Viper ??= new ViperProfileSettings();
         Lighting ??= new LightingProfile();
-        OpenRazerLighting = ProfileDictionary.Normalize(OpenRazerLighting);
+        RazerHidLighting = ProfileDictionary.Normalize(RazerHidLighting);
+        foreach (var (key, value) in ProfileDictionary.Normalize(LegacyRazerHidLighting))
+        {
+            RazerHidLighting.TryAdd(key, value);
+        }
+        LegacyRazerHidLighting = null;
         Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();

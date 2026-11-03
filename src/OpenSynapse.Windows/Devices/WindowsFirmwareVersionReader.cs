@@ -9,6 +9,12 @@ public static class WindowsFirmwareVersionReader
 
     public static (string Bios, string Ec, string Vbios) Read()
     {
+        var versions = ReadVersions();
+        return (versions.Bios, versions.Ec, versions.Vbios);
+    }
+
+    public static OpenSynapse.Core.Devices.FirmwareVersions ReadVersions()
+    {
         var bios = "--";
         var ec = "--";
         try
@@ -25,17 +31,19 @@ public static class WindowsFirmwareVersionReader
             // Keep vBIOS readable even when the SMBIOS key is unavailable.
         }
 
-        return (bios, ec, ReadVbios());
+        var (vbios, model) = ReadVbios();
+        return new(bios, ec, "--", vbios, model);
     }
 
-    private static string ReadVbios()
+    private static (string Version, string? Model) ReadVbios()
     {
+        var candidates = new HashSet<(string Version, string Model)>();
         try
         {
             using var videoRoot = Registry.LocalMachine.OpenSubKey(VideoRegistryPath, writable: false);
             if (videoRoot is null)
             {
-                return "--";
+                return ("--", null);
             }
 
             foreach (var adapterKeyName in videoRoot.GetSubKeyNames())
@@ -57,9 +65,10 @@ public static class WindowsFirmwareVersionReader
                         continue;
                     }
 
-                    return bios.StartsWith("Version", StringComparison.OrdinalIgnoreCase)
+                    var version = bios.StartsWith("Version", StringComparison.OrdinalIgnoreCase)
                         ? bios["Version".Length..].Trim()
                         : bios;
+                    candidates.Add((version, adapter));
                 }
             }
         }
@@ -69,10 +78,11 @@ public static class WindowsFirmwareVersionReader
             // vBIOS is supplementary; leave it blank rather than failing all firmware fields.
         }
 
-        return "--";
+        // Stale/multiple NVIDIA entries cannot establish which model owns a version.
+        return candidates.Count == 1 ? candidates.Single() : ("--", null);
     }
 
-    private static string FormatEc(object? majorValue, object? minorValue)
+    internal static string FormatEc(object? majorValue, object? minorValue)
     {
         if (!TryConvertByte(majorValue, out var major) || !TryConvertByte(minorValue, out var minor))
         {
@@ -84,6 +94,7 @@ public static class WindowsFirmwareVersionReader
 
     private static bool TryConvertByte(object? value, out int result)
     {
+        if (value is null) { result = 0; return false; }
         try
         {
             result = Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture);

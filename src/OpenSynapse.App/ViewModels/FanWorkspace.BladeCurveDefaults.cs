@@ -5,6 +5,13 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class FanWorkspace
 {
+    /// <summary>Build and validate inside the existing device-operation error boundary.</summary>
+    public async Task ApplyBladeFanCurveEditorAsync(CancellationToken cancellationToken = default)
+    {
+        if (BladeFanCurveVisibility != Microsoft.UI.Xaml.Visibility.Visible) return;
+        await ApplyBladeFanCurveCoreAsync(() => BladeFanCurveEditor.BuildCurve(), cancellationToken);
+    }
+
     private BladeFanCurve? TryCreateCurve(BladeProfileSettings resolved)
     {
         if (resolved.FanCurve is not { } profile)

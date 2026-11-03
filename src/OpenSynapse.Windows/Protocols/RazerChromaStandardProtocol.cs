@@ -87,16 +87,14 @@ public static class RazerChromaStandardProtocol
 
     public static byte ReadBatteryPercent(ReadOnlySpan<byte> response)
     {
-        var data = Arguments(response);
-        Require(data, 1);
-        return (byte)(data[0] * 100 / 255);
+        var data = BatteryArguments(response);
+        return (byte)(data[1] * 100 / 255);
     }
 
     public static bool ReadCharging(ReadOnlySpan<byte> response)
     {
-        var data = Arguments(response);
-        Require(data, 1);
-        return data[0] != 0;
+        var data = BatteryArguments(response);
+        return data[1] != 0;
     }
     /// <summary>Identity lives on class 0x00, the same commands the keyboard page speaks.</summary>
     public static byte[] GetFirmware(byte transactionId) =>
@@ -142,7 +140,25 @@ public static class RazerChromaStandardProtocol
                 $"Razer feature reports are {RazerFeatureReport.Length} bytes; got {response.Length}.");
         }
 
-        return response[RazerFeatureReport.ArgumentsOffset..];
+        var declaredLength = response[6];
+        if (declaredLength > 80)
+        {
+            throw new InvalidDataException($"Razer response declares {declaredLength} data bytes; 80 maximum.");
+        }
+
+        return response.Slice(RazerFeatureReport.ArgumentsOffset, declaredLength);
+    }
+
+    private static ReadOnlySpan<byte> BatteryArguments(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        if (data.Length < 2)
+        {
+            throw new InvalidDataException(
+                $"Razer battery response declares {data.Length} data bytes; 2 required.");
+        }
+
+        return data;
     }
 
     private static void Require(ReadOnlySpan<byte> data, int length)

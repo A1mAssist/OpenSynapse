@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Core.Storage;
@@ -17,6 +18,10 @@ public sealed class AppBehaviorSettings
     ];
 
     private static readonly string SettingsPath = AppDataPaths.Combine("behavior.json");
+    private static readonly object FileGate = new();
+    private string? _blockedSavePath;
+    [JsonIgnore] public string? LoadError { get; private set; }
+    [JsonIgnore] public string? RecoveryFilePath { get; private set; }
 
     public bool ModeChangeNotificationsEnabled { get; set; } = true;
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
@@ -30,16 +35,25 @@ public sealed class AppBehaviorSettings
     public HashSet<BladePerformanceMode> PerformanceCycleModes { get; set; } =
         [.. SupportedPerformanceCycleModes];
     public bool PadlessHyperBoostAccepted { get; set; }
+    public bool AdvancedFeaturesEnabled { get; set; }
     public HashSet<int>? RefreshRateCycleHertz { get; set; }
     public string? HueBridgeHost { get; set; }
     public string? HueAppKey { get; set; }
 
-    public static AppBehaviorSettings Load()
+    public static AppBehaviorSettings Load() => Load(SettingsPath);
+
+    public static AppBehaviorSettings Load(string filePath)
+    {
+        filePath = Path.GetFullPath(filePath);
+        lock (FileGate) return LoadCore(filePath);
+    }
+
+    private static AppBehaviorSettings LoadCore(string filePath)
     {
         try
         {
-            var settings = File.Exists(SettingsPath)
-                ? JsonSerializer.Deserialize<AppBehaviorSettings>(File.ReadAllText(SettingsPath)) ?? new()
+            var settings = File.Exists(filePath)
+                ? JsonSerializer.Deserialize<AppBehaviorSettings>(File.ReadAllText(filePath)) ?? throw new JsonException("Settings are null.")
                 : new();
             settings.LowBatteryNotifiedLevels = (settings.LowBatteryNotifiedLevels ?? [])
                 .Where(item => !string.IsNullOrWhiteSpace(item.Key) && item.Value is 10 or 20)
@@ -68,12 +82,33 @@ public sealed class AppBehaviorSettings
             exception is IOException or UnauthorizedAccessException or
             JsonException or System.Security.SecurityException)
         {
-            return new();
+            var fallback = new AppBehaviorSettings { LoadError = exception.Message, _blockedSavePath = filePath };
+            if (exception is JsonException)
+            {
+                var recoveryPath = $"{filePath}.corrupt-{Guid.NewGuid():N}";
+                try
+                {
+                    File.Copy(filePath, recoveryPath);
+                    fallback.RecoveryFilePath = recoveryPath;
+                    fallback._blockedSavePath = null;
+                }
+                catch (Exception recoveryError) when (recoveryError is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+                {
+                    fallback.LoadError += $" Recovery failed: {recoveryError.Message}";
+                }
+            }
+            return fallback;
         }
     }
 
-    public void Save()
+    public void Save() => Save(SettingsPath);
+    public void Save(string filePath) => Save(filePath, null);
+
+    internal void Save(string filePath, Action<string>? beforeCommit)
     {
+        filePath = Path.GetFullPath(filePath);
+        if (StringComparer.OrdinalIgnoreCase.Equals(filePath, _blockedSavePath))
+            throw new IOException("Unreadable behavior settings were not backed up; reload or recover them before saving.");
         if (PerformanceCycleModes.Count == 0 ||
             PerformanceCycleModes.Any(mode => !SupportedPerformanceCycleModes.Contains(mode)))
         {
@@ -85,7 +120,26 @@ public sealed class AppBehaviorSettings
             throw new InvalidOperationException("At least one valid refresh rate is required.");
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-        File.WriteAllText(SettingsPath, JsonSerializer.Serialize(this));
+        lock (FileGate)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            var temporaryPath = $"{filePath}.tmp-{Guid.NewGuid():N}";
+            try
+            {
+                using (var stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+                {
+                    JsonSerializer.Serialize(stream, this);
+                    stream.Flush(flushToDisk: true);
+                }
+                beforeCommit?.Invoke(temporaryPath);
+                if (File.Exists(filePath)) File.Replace(temporaryPath, filePath, null, ignoreMetadataErrors: true);
+                else File.Move(temporaryPath, filePath);
+            }
+            finally
+            {
+                try { File.Delete(temporaryPath); }
+                catch (IOException) { }
+            }
+        }
     }
 }

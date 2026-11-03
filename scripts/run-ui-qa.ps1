@@ -1,17 +1,31 @@
-# 后台跑 UI 冒烟：六个页面逐个导航 + 截图。会临时停掉正在运行的 OpenSynapse，结束后恢复。
+# 后台跑 UI 冒烟；默认不干扰已有实例，只有显式 -AllowRestart 才临时停止并恢复。
 param(
     [string]$Configuration = 'Release',
     [string]$SkillRoot = 'C:\Users\A1mAssist\.codex\skills\winui-ui-automation',
-    [string]$OutDir = 'C:\Temp\opensynapse-qa\pages'
+    [string]$OutDir = 'D:\Temp\opensynapse-qa\pages',
+    [string]$AppPath,
+    [switch]$AllowRestart
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $appDir = Join-Path $root "src\OpenSynapse.App\bin\$Configuration\net10.0-windows10.0.26100.0\win-x64"
-$exe = Join-Path $appDir 'OpenSynapse.App.exe'
-if (-not (Test-Path $exe)) { throw "先 build：$exe 不存在" }
+$exe = if ($AppPath) { [IO.Path]::GetFullPath($AppPath) } else { Join-Path $appDir 'OpenSynapse.App.exe' }
+$appDir = Split-Path -Parent $exe
+if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "先 build：$exe 不存在" }
+$runner = Join-Path $SkillRoot 'scripts/winui-qa.ps1'
+if (-not (Test-Path -LiteralPath $runner -PathType Leaf)) { throw "UIA runner 不存在：$runner" }
 
-$scenarioPath = Join-Path $env:TEMP 'opensynapse-ui-pages.json'
+$running = @(Get-Process -Name OpenSynapse.App -ErrorAction SilentlyContinue)
+if ($running.Count -gt 0 -and -not $AllowRestart) {
+    throw '已有 OpenSynapse 实例，未停止。请自行退出后重试，或显式使用 -AllowRestart。'
+}
+if ($running.Count -gt 1) { throw '存在多个实例，无法安全恢复；请自行退出后重试。' }
+if ($running.Count -eq 1 -and -not $running[0].Path) { throw '无法确定已有实例路径，未停止。' }
+
+$runDir = Join-Path $OutDir ((Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N'))
+$null = New-Item -ItemType Directory -Path $runDir -Force
+$scenarioPath = Join-Path $runDir 'scenario.json'
 $scenario = [ordered]@{
     exe              = $exe
     workingDirectory = $appDir
@@ -19,7 +33,7 @@ $scenario = [ordered]@{
     timeoutMs        = 25000
     keepForeground   = $true
     parkPopups       = $true
-    outDir           = $OutDir
+    outDir           = $runDir
     steps            = @(
         @{ action = 'wait'; ms = 3500 }
         @{ action = 'assertExists'; automationId = 'OverviewNavigationItem'; timeoutMs = 10000 }
@@ -29,16 +43,16 @@ $scenario = [ordered]@{
         @{ action = 'select'; automationId = 'DevicesNavigationItem' }
         @{ action = 'wait'; ms = 1200 }
         @{ action = 'capture'; name = '02-devices' }
-        @{ action = 'select'; controlType = 'ListItem'; name = '宏' }
+        @{ action = 'select'; automationId = 'MacrosNavigationItem' }
         @{ action = 'wait'; ms = 1200 }
         @{ action = 'capture'; name = '03-macros' }
-        @{ action = 'select'; controlType = 'ListItem'; name = '配置' }
+        @{ action = 'select'; automationId = 'ProfilesNavigationItem' }
         @{ action = 'wait'; ms = 1200 }
         @{ action = 'capture'; name = '04-profiles' }
-        @{ action = 'select'; controlType = 'ListItem'; name = '诊断' }
+        @{ action = 'select'; automationId = 'DiagnosticsNavigationItem' }
         @{ action = 'wait'; ms = 1200 }
         @{ action = 'capture'; name = '05-diagnostics' }
-        @{ action = 'select'; controlType = 'ListItem'; name = '设置' }
+        @{ action = 'select'; automationId = 'SettingsNavigationItem' }
         @{ action = 'wait'; ms = 1500 }
         @{ action = 'capture'; name = '06-settings' }
         @{ action = 'select'; automationId = 'OverviewNavigationItem' }
@@ -48,24 +62,33 @@ $scenario = [ordered]@{
 }
 $scenario | ConvertTo-Json -Depth 6 | Set-Content -Path $scenarioPath -Encoding utf8
 
-$running = Get-Process -Name OpenSynapse.App -ErrorAction SilentlyContinue |
-    Where-Object { $_.Path } | Select-Object -First 1
 $restart = $null
-if ($running) {
-    $restart = @{ Exe = $running.Path; Dir = (Split-Path $running.Path -Parent) }
-    Stop-Process -Id $running.Id -Force
-    Start-Sleep -Seconds 2
-}
-
 try {
-    & pwsh -NoProfile -File (Join-Path $SkillRoot 'scripts\winui-qa.ps1') -Scenario $scenarioPath
-    $code = $LASTEXITCODE
-    $report = Get-Content (Join-Path $OutDir 'report.json') -Raw | ConvertFrom-Json
-    "UI 冒烟：$($report.status)（截图 $OutDir）"
-    exit $code
+    if ($running.Count -eq 1) {
+        $process = $running[0]
+        $restore = @{ Exe = $process.Path; Dir = (Split-Path $process.Path -Parent) }
+        Stop-Process -Id $process.Id -Force -ErrorAction Stop
+        $restart = $restore
+        Start-Sleep -Seconds 2
+    }
+    $startedAt = [DateTimeOffset]::UtcNow
+    & pwsh -NoProfile -File $runner -Scenario $scenarioPath
+    if ($LASTEXITCODE -ne 0) { throw "UIA runner 失败：exit $LASTEXITCODE（报告 $runDir）" }
+    $reportPath = Join-Path $runDir 'report.json'
+    if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) { throw '本次运行未生成 report.json。' }
+    $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    $reportStarted = [DateTimeOffset]$report.startedAt
+    $reportFinished = [DateTimeOffset]$report.finishedAt
+    if ($report.status -ne 'passed' -or
+        [IO.Path]::GetFullPath($report.scenario) -ne [IO.Path]::GetFullPath($scenarioPath) -or
+        [IO.Path]::GetFullPath($report.exe) -ne [IO.Path]::GetFullPath($exe) -or
+        $reportStarted -lt $startedAt -or $reportFinished -lt $reportStarted) {
+        throw "UIA 报告失败或不属于本次运行：$reportPath"
+    }
+    "UI 冒烟：$($report.status)（截图 $runDir）"
 }
 finally {
     if ($restart) {
-        Start-Process -FilePath $restart.Exe -ArgumentList '--silent' -WorkingDirectory $restart.Dir -WindowStyle Hidden
+        Start-Process -FilePath $restart.Exe -ArgumentList '--silent' -WorkingDirectory $restart.Dir -WindowStyle Hidden | Out-Null
     }
 }

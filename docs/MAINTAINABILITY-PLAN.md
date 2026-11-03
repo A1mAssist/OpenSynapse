@@ -82,7 +82,7 @@ public void NoFileExceedsItsBudget()
 | `LowBatteryNotificationTracker.cs` | Core |
 | `DeviceProtocolFamilies.cs` | Core |
 | `BladeFanCurveViewModel.cs` / `BladeFanCurveEditorViewModel.cs` | Core（纯计算，无 XAML 依赖） |
-| `OpenRazerSoftwareLightingRuntime.cs` | Windows |
+| `RazerHidSoftwareLightingRuntime.cs` | Windows |
 | `MacroRuntime.cs` | 留 App，但把可测部分（播放计划执行）抽成 Core 类型 |
 | `ChromaRestHost.cs` | 留 App，单独补一个宿主级测试或明确记录为不可单测 |
 
@@ -110,7 +110,7 @@ XAML 侧：`{Binding Foo}` → `{Binding Macros.Foo}`。因为用的是经典绑
 顺序与理由：
 
 1. **Macros（2 566 行）** — 阶段 3 刚把验证器和文档服务抽到 Core，边界最清楚，先做用来验证模式。
-2. **OpenRazer（444 + `OpenRazerDeviceViewModel` 993）** — 每台设备已经是独立 VM，只差一个上层容器。
+2. **OpenRazer（444 + `RazerHidDeviceViewModel` 993）** — 每台设备已经是独立 VM，只差一个上层容器。
 3. **Profiles / Telemetry / Fan / Display / Lighting（654 / 658 / 482 / 208 / 381）** — 体量小，可并行。
 4. **Blade（1 924 行）最后做** — 它是 30 天内改动最多的文件（46 次）。在它天天被改的时候动手等于每周重新解冲突：先冻结（新逻辑写进新类），静一周再拆。
 
@@ -146,6 +146,13 @@ XAML 侧：`{Binding Foo}` → `{Binding Macros.Foo}`。因为用的是经典绑
 | 每次交付必须写清"没做什么、没验证什么" | PR 模板固定一栏 |
 
 启用：`git config core.hooksPath .githooks`（一行，写进 README 的开发环境小节）。
+
+离线治理回归：`node --test scripts/governance.test.mjs`。测试只使用临时目录和模拟进程/runner，不启动应用或操作硬件。覆盖结构分组总预算、默认单文件/public 上限、生成失败不覆盖产物、传输扫描退出码及 QA 停止/恢复边界。
+
+- `scripts/check-structure.ps1` 与 `StructureBudgetTests` 都检查分组总行数和 public；分组不豁免单文件限制。不得用 `-UpdateBudget` 掩盖增长。
+- `extract-blade-profiles.mjs --check` 只检查漂移；`--out <目录>` 隔离生成。两个 Blade 生成器均先校验所有 PID 再写入。
+- `scan-device-transport.ps1` 遇到任一 mismatch 非零退出；unsupported/no-device-type 单列为未验证，不能当硬件证据。
+- `run-ui-qa.ps1` 默认遇到已有实例即中止。确实允许丢弃未保存编辑时才用 `-AllowRestart`，结束后仅恢复脚本明确停止的实例；每次使用独立报告目录和语言无关导航 ID。用户禁止启动 UI 时不运行此脚本，也不能声称完成视觉验收。
 
 hook 拒绝三种提交：带 `Co-Authored-By:` 的、暂存了 `package.json`/`package-lock.json` 的、消息不以 `feat|fix|refactor|docs|test|chore|perf|build|ci` 开头的。
 

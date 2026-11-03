@@ -67,7 +67,7 @@ public sealed class LeviathanV2XChecksumTests
         response[10] = 0x06;
         response[89] = ChecksumIncludingTransaction(response);
 
-        Assert.Equal([0x01, 0x06], OpenRazerStandardProtocol.Arguments(response, 2).ToArray());
+        Assert.Equal([0x01, 0x06], RazerHidStandardProtocol.Arguments(response, 2).ToArray());
     }
 
     private static byte ChecksumIncludingTransaction(byte[] report)

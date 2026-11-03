@@ -18,7 +18,7 @@ public sealed class Blade029FTests
         // Visibility must follow the model contract, not the last telemetry read:
         // a missing read used to blank the CPU/Max Fan controls in Custom mode.
         Assert.True(BladeModelCapabilities.SupportsCpuBoost(0x029F));
-        Assert.False(BladeModelCapabilities.SupportsGpuBoost(0x029F));
+        Assert.True(BladeModelCapabilities.SupportsGpuBoost(0x029F));
         Assert.True(BladeModelCapabilities.SupportsMaxFan(0x029F));
         Assert.True(BladeModelCapabilities.AllowsControlWrites(0x029F));
     }
@@ -157,7 +157,7 @@ public sealed class Blade029FTests
         Assert.Equal((byte)0x03, request[6]);
         Assert.Equal((byte)0x0D, request[7]);
         Assert.Equal((byte)0x01, request[8]);
-        Assert.Equal((byte)0x00, request[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal((byte)0x01, request[RazerFeatureReport.ArgumentsOffset]);
         Assert.Equal((byte)0x01, request[RazerFeatureReport.ArgumentsOffset + 1]);
         Assert.Equal((byte)0x2A, request[RazerFeatureReport.ArgumentsOffset + 2]);
     }

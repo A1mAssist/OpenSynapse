@@ -45,7 +45,7 @@ public sealed class ThxBandViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
 
-public sealed class ThxAudioViewModel : INotifyPropertyChanged
+public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
 {
     private readonly IThxAudioController? _controller;
     private readonly bool _isSupportedHost;
@@ -94,6 +94,7 @@ public sealed class ThxAudioViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(CanApplyEqualizer));
                 OnPropertyChanged(nameof(CanResetEqualizer));
                 OnPropertyChanged(nameof(CanDownloadComponent));
+                OnPropertyChanged(nameof(CanInstallComponents));
             }
         }
     }
@@ -153,9 +154,10 @@ public sealed class ThxAudioViewModel : INotifyPropertyChanged
     };
     public Visibility DownloadVisibility => IsNativeMissingError
         ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility InstallVisibility => _errorCode == "ThxServiceMissing"
+    public Visibility InstallVisibility => _errorCode == "ThxServiceMissing" && CanInstallComponents
         ? Visibility.Visible : Visibility.Collapsed;
     public bool CanDownloadComponent => !_busy && _controller is not null && IsNativeMissingError;
+    public bool CanInstallComponents => !_busy && _controller?.CanInstallComponents == true;
     private bool IsNativeMissingError => _errorCode == "ThxNativeMissing" ||
         _errorCode?.StartsWith("ThxDownload", StringComparison.Ordinal) == true;
 
@@ -171,6 +173,12 @@ public sealed class ThxAudioViewModel : INotifyPropertyChanged
                 return;
             }
             _selectedEndpointIndex = value;
+            ++_requestGeneration;
+            _loaded = false;
+            _state = null;
+            Presets.Clear();
+            Bands.Clear();
+            OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedEndpoint));
             OnPropertyChanged(nameof(SoundNormalizationVisibility));
@@ -300,7 +308,8 @@ public sealed class ThxAudioViewModel : INotifyPropertyChanged
         }
 
         StatusText = AppStrings.Text("ThxStatusReading");
-        await ExecuteAsync(() => _controller.ReadAsync(SelectedEndpoint.Endpoint));
+        var endpoint = SelectedEndpoint.Endpoint;
+        await ExecuteAsync(() => _controller.ReadAsync(endpoint));
         _loaded = true;
     }
 
@@ -315,6 +324,20 @@ public sealed class ThxAudioViewModel : INotifyPropertyChanged
         await ExecuteAsync(
             () => controller.InstallNativeComponentAsync(SelectedEndpoint.Endpoint),
             "ThxDownloadFailed");
+        _loaded = true;
+    }
+
+    public async Task InstallComponentsAsync()
+    {
+        if (_controller is not { } controller || !CanInstallComponents)
+        {
+            return;
+        }
+
+        StatusText = AppStrings.Text("ThxStatusDownloading");
+        await ExecuteAsync(
+            () => controller.InstallComponentsAsync(SelectedEndpoint.Endpoint),
+            "ThxInstallerFailed");
         _loaded = true;
     }
 
@@ -427,115 +450,6 @@ public sealed class ThxAudioViewModel : INotifyPropertyChanged
             endpoint, kind, enabled, level));
     }
 
-    private async Task ExecuteAsync(
-        Func<Task<ThxAudioStatus>> operation,
-        string failureCode = "ThxHelperFailed")
-    {
-        IsBusy = true;
-        try
-        {
-            ApplyStatus(await operation());
-        }
-        catch (Exception exception)
-        {
-            ApplyStatus(new ThxAudioStatus(
-                ThxAudioAvailability.ComponentsUnavailable,
-                $"{failureCode}:{exception.Message}",
-                null));
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private void ApplyStatus(ThxAudioStatus status)
-    {
-        _availability = status.Availability;
-        _errorCode = status.Error;
-        OnPropertyChanged(nameof(ControlsVisibility));
-        OnPropertyChanged(nameof(UnavailableVisibility));
-        OnPropertyChanged(nameof(HasError));
-        OnPropertyChanged(nameof(UnavailableHint));
-        OnPropertyChanged(nameof(DownloadVisibility));
-        OnPropertyChanged(nameof(InstallVisibility));
-        OnPropertyChanged(nameof(CanDownloadComponent));
-        if (status.State is not { } state || !status.IsAvailable)
-        {
-            _state = null;
-            OnPropertyChanged(nameof(CanEdit));
-            OnPropertyChanged(nameof(HasEqualizerChanges));
-            OnPropertyChanged(nameof(CanApplyEqualizer));
-            OnPropertyChanged(nameof(CanResetEqualizer));
-            StatusText = LocalizeError(status);
-            return;
-        }
-
-        _state = state;
-        _applying = true;
-        try
-        {
-            SpatialEnabled = state.SpatialEnabled;
-            EqualizerEnabled = state.EqualizerEnabled;
-            VoiceClarityEnabled = state.VoiceClarity.Enabled;
-            VoiceClarityLevel = state.VoiceClarity.LevelPercent;
-            SoundNormalizationEnabled = state.SoundNormalization?.Enabled ?? false;
-            SoundNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
-
-            Presets.Clear();
-            foreach (var preset in state.Presets)
-            {
-                Presets.Add(new ThxPresetOption(preset.Id, LocalizePreset(preset)));
-            }
-            var endpoint = SelectedEndpoint.Endpoint;
-            if (!_presetCurves.TryGetValue(endpoint, out var curves))
-            {
-                curves = new Dictionary<string, double[]>(StringComparer.Ordinal);
-                _presetCurves[endpoint] = curves;
-            }
-            if (!_factoryCurves.TryGetValue(endpoint, out var factory))
-            {
-                factory = new Dictionary<string, double[]>(StringComparer.Ordinal);
-                _factoryCurves[endpoint] = factory;
-            }
-            foreach (var (id, gains) in state.FactoryCurves)
-            {
-                factory[id] = gains.ToArray();
-                curves.TryAdd(id, gains.ToArray());
-            }
-            if (state.SelectedPresetId is { } selectedId)
-            {
-                curves[selectedId] = state.EqualizerBands.Select(band => band.GainDb).ToArray();
-            }
-            var selectedIndex = state.SelectedPresetId is null
-                ? -1
-                : state.Presets.ToList().FindIndex(preset => preset.Id == state.SelectedPresetId);
-            _selectedPresetIndex = selectedIndex;
-            OnPropertyChanged(nameof(SelectedPresetIndex));
-            OnPropertyChanged(nameof(IsEditablePreset));
-            OnPropertyChanged(nameof(EqualizerEditVisibility));
-            OnPropertyChanged(nameof(EqualizerHint));
-
-            Bands.Clear();
-            foreach (var band in state.EqualizerBands)
-            {
-                var item = new ThxBandViewModel(band.FrequencyHertz, band.GainDb);
-                item.PropertyChanged += BandPropertyChanged;
-                Bands.Add(item);
-            }
-        }
-        finally
-        {
-            _applying = false;
-        }
-
-        OnPropertyChanged(nameof(CanEdit));
-        OnPropertyChanged(nameof(HasEqualizerChanges));
-        OnPropertyChanged(nameof(CanApplyEqualizer));
-        OnPropertyChanged(nameof(CanResetEqualizer));
-        StatusText = AppStrings.Text("ThxStatusReady");
-    }
-
     private void BandPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(ThxBandViewModel.GainDb))
@@ -595,6 +509,10 @@ public sealed class ThxAudioViewModel : INotifyPropertyChanged
         "ThxDownloadFailed" => AppStrings.Text("ThxStatusDownloadFailed"),
         "ThxDownloadVerificationFailed" => AppStrings.Text("ThxStatusDownloadVerificationFailed"),
         "ThxDownloadWriteFailed" => AppStrings.Text("ThxStatusDownloadWriteFailed"),
+        "ThxInstallerUnavailable" or "ThxInstallerDownloadFailed" or
+            "ThxInstallerVerificationFailed" or "ThxInstallerWriteFailed" or
+            "ThxInstallerStartFailed" or "ThxInstallerCancelled" or "ThxInstallerFailed" =>
+            AppStrings.Text("ThxStatusInstallFailed"),
         null when status.Availability == ThxAudioAvailability.Disabled => AppStrings.Text("ThxStatusDisabled"),
         null => AppStrings.Text("ThxStatusUnavailable"),
         _ when status.Error.StartsWith("ThxDownloadFailed:", StringComparison.Ordinal) =>

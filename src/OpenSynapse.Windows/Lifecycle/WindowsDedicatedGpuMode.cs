@@ -30,6 +30,12 @@ public readonly record struct DedicatedGpuSwitchResult(
     DedicatedGpuSwitchOutcome Outcome,
     int ExitCode = 0);
 
+internal sealed class DedicatedGpuOperationUncertainException(string message, Exception? inner = null)
+    : Exception(message, inner)
+{
+    internal const int PendingError = 997;
+}
+
 /// <summary>
 /// The conservative integrated-graphics mode: disable the NVIDIA display adapter
 /// with Windows' own PnP tool, exactly as Device Manager does. It is not a MUX
@@ -179,62 +185,12 @@ public static class WindowsDedicatedGpuMode
         if (await DedicatedGpuModeServiceClient.TryRestartDeviceAsync(cancellationToken)
                 .ConfigureAwait(false) is { } serviceResult)
         {
-            return await AwaitRecoveryAsync(serviceResult, cancellationToken).ConfigureAwait(false);
+            return await AwaitRecoveryAsync(serviceResult, CancellationToken.None).ConfigureAwait(false);
         }
 
-        var executablePath = Path.Combine(AppContext.BaseDirectory, "OpenSynapse.App.exe");
-        if (!File.Exists(executablePath))
-        {
-            executablePath = Environment.ProcessPath ?? string.Empty;
-        }
-        if (executablePath.Length == 0)
-        {
-            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
-        }
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = executablePath,
-            UseShellExecute = true,
-            Verb = "runas",
-            WindowStyle = ProcessWindowStyle.Hidden,
-            WorkingDirectory = AppContext.BaseDirectory,
-        };
-        startInfo.ArgumentList.Add(HelperRestart);
-
-        try
-        {
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
-            }
-
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            var helperResult = new DedicatedGpuSwitchResult(
-                process.ExitCode switch
-                {
-                    HelperSuccess => DedicatedGpuSwitchOutcome.Success,
-                    HelperRestartRequired => DedicatedGpuSwitchOutcome.RestartRequired,
-                    HelperNoDevice => DedicatedGpuSwitchOutcome.NoDevice,
-                    _ => DedicatedGpuSwitchOutcome.Failed,
-                },
-                process.ExitCode);
-            return await AwaitRecoveryAsync(helperResult, cancellationToken).ConfigureAwait(false);
-        }
-        catch (Win32Exception exception) when (exception.NativeErrorCode == UserCancelled)
-        {
-            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Cancelled);
-        }
-        catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException or
-                OperationCanceledException)
-        {
-            return new DedicatedGpuSwitchResult(
-                exception is OperationCanceledException
-                    ? DedicatedGpuSwitchOutcome.Cancelled
-                    : DedicatedGpuSwitchOutcome.Failed);
-        }
+        var helperResult = await RunElevatedHelperAsync(
+            () => StartElevatedHelper(HelperRestart), cancellationToken).ConfigureAwait(false);
+        return await AwaitRecoveryAsync(helperResult, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -318,6 +274,13 @@ public static class WindowsDedicatedGpuMode
             return serviceResult;
         }
 
+        return await RunElevatedHelperAsync(
+            () => StartElevatedHelper(HelperSwitch, enabled ? "on" : "off"),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static Task<DedicatedGpuSwitchResult>? StartElevatedHelper(string command, string? argument = null)
+    {
         var executablePath = Path.Combine(AppContext.BaseDirectory, "OpenSynapse.App.exe");
         if (!File.Exists(executablePath))
         {
@@ -325,7 +288,7 @@ public static class WindowsDedicatedGpuMode
         }
         if (executablePath.Length == 0)
         {
-            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+            return null;
         }
 
         var startInfo = new ProcessStartInfo
@@ -336,40 +299,57 @@ public static class WindowsDedicatedGpuMode
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = AppContext.BaseDirectory,
         };
-        startInfo.ArgumentList.Add(HelperSwitch);
-        startInfo.ArgumentList.Add(enabled ? "on" : "off");
+        startInfo.ArgumentList.Add(command);
+        if (argument is not null) startInfo.ArgumentList.Add(argument);
+        var process = Process.Start(startInfo);
+        return process is null ? null : WaitForHelperAsync(process);
+    }
 
+    internal static async Task<DedicatedGpuSwitchResult> RunElevatedHelperAsync(
+        Func<Task<DedicatedGpuSwitchResult>?> start, CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Cancelled);
+        Task<DedicatedGpuSwitchResult>? completion;
         try
         {
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
-            }
-
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            var outcome = process.ExitCode switch
-            {
-                HelperSuccess => DedicatedGpuSwitchOutcome.Success,
-                HelperRestartRequired => DedicatedGpuSwitchOutcome.RestartRequired,
-                HelperNoDevice => DedicatedGpuSwitchOutcome.NoDevice,
-                HelperBlocked => DedicatedGpuSwitchOutcome.Blocked,
-                _ => DedicatedGpuSwitchOutcome.Failed,
-            };
-            return new DedicatedGpuSwitchResult(outcome, process.ExitCode);
+            completion = start();
         }
         catch (Win32Exception exception) when (exception.NativeErrorCode == UserCancelled)
         {
             return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Cancelled);
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException or
-            OperationCanceledException)
+            exception is Win32Exception or InvalidOperationException or UnauthorizedAccessException)
         {
-            return new DedicatedGpuSwitchResult(
-                exception is OperationCanceledException
-                    ? DedicatedGpuSwitchOutcome.Cancelled
-                    : DedicatedGpuSwitchOutcome.Failed);
+            return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+        }
+        if (completion is null) return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+        try
+        {
+            // Once dispatched, caller cancellation cannot abandon a hardware writer.
+            return await completion.ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            throw new DedicatedGpuOperationUncertainException(
+                "The elevated GPU helper was started but its terminal state is unknown.", exception);
+        }
+    }
+
+    private static async Task<DedicatedGpuSwitchResult> WaitForHelperAsync(Process process)
+    {
+        using (process)
+        {
+            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            return new DedicatedGpuSwitchResult(process.ExitCode switch
+            {
+                HelperSuccess => DedicatedGpuSwitchOutcome.Success,
+                HelperRestartRequired => DedicatedGpuSwitchOutcome.RestartRequired,
+                HelperNoDevice => DedicatedGpuSwitchOutcome.NoDevice,
+                HelperBlocked => DedicatedGpuSwitchOutcome.Blocked,
+                _ => DedicatedGpuSwitchOutcome.Failed,
+            }, process.ExitCode);
         }
     }
 

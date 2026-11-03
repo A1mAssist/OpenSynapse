@@ -57,22 +57,12 @@ public sealed class RazerHeadsetHapticsTests
     }
 
     [Fact]
-    public async Task SetHapticsAsync_ReadsWritesAndVerifiesTheReadback()
+    public async Task SetHapticsAsync_RejectsUnverifiedEnvelopeBeforeTransport()
     {
         var transport = new FakeHapticsTransport();
         var service = new RazerHeadsetAudioService(transport, "test", TimeSpan.Zero);
-
-        await service.SetHapticsAsync(true, 0x1234);
-
-        Assert.True(transport.Enabled);
-        Assert.Equal(0x1234, transport.Strength);
-        Assert.Equal(3, transport.Requests.Count);
-        Assert.Equal(0x82, transport.Requests[0][8]);
-        Assert.Equal(0x02, transport.Requests[1][8]);
-        Assert.Equal(0x01, transport.Requests[1][9]);
-        Assert.Equal(0x34, transport.Requests[1][10]);
-        Assert.Equal(0x12, transport.Requests[1][11]);
-        Assert.Equal(0x82, transport.Requests[2][8]);
+        await Assert.ThrowsAsync<NotSupportedException>(() => service.SetHapticsAsync(true, 0x1234));
+        Assert.Empty(transport.Requests);
     }
 
     private sealed class FakeHapticsTransport(

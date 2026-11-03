@@ -102,19 +102,19 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         {
             if (_service is null)
             {
-                await ConnectAndReadAsync(cancellationToken).ConfigureAwait(false);
+                await ConnectAndReadAsync(cancellationToken);
                 return;
             }
 
             try
             {
-                await ReadCurrentAsync(cancellationToken).ConfigureAwait(false);
+                await ReadCurrentAsync(cancellationToken);
             }
             catch (Exception exception) when (IsExpected(exception))
             {
                 // A cached path can be stale after a replug; re-discover once before
                 // reporting the read failure.
-                await ConnectAndReadAsync(cancellationToken, exception.Message).ConfigureAwait(false);
+                await ConnectAndReadAsync(cancellationToken, exception.Message);
             }
         }
         finally
@@ -131,7 +131,7 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         string? connectionError = previousError;
         try
         {
-            service = await _connect(cancellationToken).ConfigureAwait(false);
+            service = await _connect(cancellationToken);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -158,7 +158,7 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         SetConnected(true);
         try
         {
-            await ReadCurrentAsync(cancellationToken).ConfigureAwait(false);
+            await ReadCurrentAsync(cancellationToken);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -177,8 +177,11 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         IsBusy = true;
         try
         {
+            await _curveTask;
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_disposed || !IsConnected) return;
             var target = (int)Math.Round(TargetRpm);
-            var actual = await _service.SetSpeedRpmAsync(target, cancellationToken).ConfigureAwait(false);
+            var actual = await _service.SetSpeedRpmAsync(target, cancellationToken);
             _currentRpmText = $"{actual} RPM";
             _operationStatusText = AppStrings.FormatText("CoolingPadStatusApplied", target, actual);
             SetError(string.Empty);
@@ -197,14 +200,14 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 
-    public void Dispose() => StopCurveTimer();
+    public void Dispose() { _disposed = true; StopCurveTimer(); }
 
     private async Task ReadCurrentAsync(CancellationToken cancellationToken)
     {
         var service = _service ?? throw new InvalidOperationException("The cooling pad is not connected.");
-        var rpm = await service.ReadSpeedRpmAsync(cancellationToken).ConfigureAwait(false);
-        await LoadLightingCoreAsync(cancellationToken).ConfigureAwait(false);
-        await LoadFixedModeCoreAsync(cancellationToken).ConfigureAwait(false);
+        var rpm = await service.ReadSpeedRpmAsync(cancellationToken);
+        await LoadLightingCoreAsync(cancellationToken);
+        await LoadFixedModeCoreAsync(cancellationToken);
         _currentRpmText = $"{rpm} RPM";
         _operationStatusText = AppStrings.FormatText("CoolingPadStatusRead", rpm);
         if (!_hasInitialTarget)

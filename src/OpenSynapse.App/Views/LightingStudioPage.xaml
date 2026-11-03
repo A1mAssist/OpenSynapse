@@ -1,0 +1,250 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.LightingStudioPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:views="using:OpenSynapse.App.Views"
+    mc:Ignorable="d"
+    x:Name="Root">
+
+  <UserControl.Resources>
+    <views:StudioEffectLabelConverter x:Key="StudioEffectLabelConverter" />
+    <views:StudioRgbBrushConverter x:Key="StudioRgbBrushConverter" />
+    <views:StudioDepthConverter x:Key="StudioDepthConverter" />
+  </UserControl.Resources>
+
+  <Grid Padding="24" RowSpacing="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <Grid ColumnSpacing="16">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Spacing="4">
+        <TextBlock local:Localized.Uid="LightingStudioTitle" Text="灯光工作室"
+                   FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+        <TextBlock local:Localized.Uid="LightingStudioSubtitle"
+                   Text="图层、区域与效果实时预览，支持多设备矩阵输出和 Chroma 文件导入导出。"
+                   FontSize="13" Foreground="{StaticResource MutedBrush}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button x:Name="PlayButton" local:Localized.Uid="LightingStudioPlay" Content="播放"
+                Click="TogglePlayClick" Style="{StaticResource SecondaryButtonStyle}" MinWidth="72" />
+        <Button local:Localized.Uid="LightingStudioApply" Content="应用到设备" Click="ApplyClick"
+                IsEnabled="{Binding CanApply}" Style="{StaticResource PrimaryButtonStyle}" />
+        <Button local:Localized.Uid="LightingStudioStop" Content="停止" Click="StopClick"
+                Style="{StaticResource SecondaryButtonStyle}" MinWidth="64" />
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnSpacing="16">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="250" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="310" />
+      </Grid.ColumnDefinitions>
+
+      <Grid RowSpacing="10">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Spacing="6">
+          <TextBlock local:Localized.Uid="LightingStudioProfileLabel" Text="配置档"
+                     FontSize="12" Foreground="{StaticResource MutedBrush}" />
+          <Grid ColumnSpacing="6">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox ItemsSource="{Binding Profiles}" DisplayMemberPath="Title"
+                      SelectedItem="{Binding SelectedProfile, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+            <Button Grid.Column="1" Content="+" Click="AddProfileClick" MinWidth="32" Padding="0" />
+            <Button Grid.Column="2" Content="&#x29C9;" Click="DuplicateProfileClick" MinWidth="32" Padding="0" />
+            <Button Grid.Column="3" Content="&#x2212;" Click="RemoveProfileClick" MinWidth="32" Padding="0" />
+          </Grid>
+          <TextBox Text="{Binding SelectedProfile.Title, Mode=TwoWay}" />
+          <TextBlock local:Localized.Uid="LightingStudioDeviceLabel" Text="设备"
+                     FontSize="12" Foreground="{StaticResource MutedBrush}" />
+          <ComboBox ItemsSource="{Binding Devices}" DisplayMemberPath="Name"
+                    SelectedItem="{Binding SelectedDevice, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+          <TextBlock local:Localized.Uid="LightingStudioNameLabel" Text="工作室名称"
+                     FontSize="12" Foreground="{StaticResource MutedBrush}" />
+          <TextBox Text="{Binding DocumentName, Mode=TwoWay}" />
+        </StackPanel>
+
+        <ListView x:Name="LayerList" Grid.Row="1" ItemsSource="{Binding LayerRows}"
+                  SelectedItem="{Binding SelectedLayerRow, Mode=TwoWay}"
+                  SelectionMode="Single" BorderThickness="0" Background="Transparent"
+                  CanDragItems="True" CanReorderItems="False" AllowDrop="True"
+                  DragItemsStarting="LayerDragStarting"
+                  DragItemsCompleted="LayerDragCompleted">
+          <ListView.ItemContainerStyle>
+            <Style TargetType="ListViewItem">
+              <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+          </ListView.ItemContainerStyle>
+          <ListView.ItemTemplate>
+            <DataTemplate>
+              <Border Tag="RowDropHint" BorderThickness="1" CornerRadius="4">
+                <Grid ColumnSpacing="8" Margin="{Binding Depth, Converter={StaticResource StudioDepthConverter}}">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Border Width="12" Height="12" CornerRadius="3" VerticalAlignment="Center"
+                          Background="{Binding Layer.Params.Primary, Converter={StaticResource StudioRgbBrushConverter}}" />
+                  <StackPanel Grid.Column="1" Spacing="1" Padding="0,2">
+                    <TextBlock Text="{Binding Layer.Title}" FontSize="13" Foreground="{StaticResource DataBrush}" />
+                    <TextBlock Text="{Binding Layer.Effect, Converter={StaticResource StudioEffectLabelConverter}}"
+                               FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListView.ItemTemplate>
+        </ListView>
+
+        <StackPanel Grid.Row="2" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Button local:Localized.Uid="LightingStudioAdd" Content="新增" Click="AddLayerClick" />
+            <Button local:Localized.Uid="LightingStudioAddGroup" Content="组" Click="AddGroupClick" />
+            <Button local:Localized.Uid="LightingStudioDuplicate" Content="复制" Click="DuplicateLayerClick" />
+            <Button local:Localized.Uid="LightingStudioRemove" Content="删除" Click="RemoveLayerClick"
+                    IsEnabled="{Binding CanRemoveLayer}" />
+          </StackPanel>
+          <Grid ColumnSpacing="6">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button local:Localized.Uid="LightingStudioMoveUp" Content="上移" Click="MoveUpClick" />
+            <Button Grid.Column="1" local:Localized.Uid="LightingStudioMoveDown" Content="下移"
+                    Click="MoveDownClick" />
+            <ComboBox Grid.Column="2" HorizontalAlignment="Stretch" ItemsSource="{Binding GroupChoices}"
+                      DisplayMemberPath="Title" SelectedItem="{Binding SelectedGroup, Mode=TwoWay}" />
+            <Button Grid.Column="3" local:Localized.Uid="LightingStudioMoveIntoGroup" Content="入组"
+                    Padding="6,4" Click="MoveIntoGroupClick" />
+            <Button Grid.Column="4" local:Localized.Uid="LightingStudioMoveToRoot" Content="出组"
+                    Padding="6,4" Click="MoveToRootClick" />
+          </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Button local:Localized.Uid="LightingStudioSave" Content="保存" Click="SaveClick" />
+            <Button local:Localized.Uid="LightingStudioLoad" Content="载入" Click="LoadClick" />
+            <Button local:Localized.Uid="LightingStudioNew" Content="新建" Click="NewClick" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Button local:Localized.Uid="LightingStudioUndo" Content="撤销" Click="UndoClick"
+                    IsEnabled="{Binding CanUndo}" />
+            <Button local:Localized.Uid="LightingStudioRedo" Content="重做" Click="RedoClick"
+                    IsEnabled="{Binding CanRedo}" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="6">
+          <Button local:Localized.Uid="LightingStudioImport" Content="导入" Click="ImportChromaClick" />
+          <Button local:Localized.Uid="LightingStudioExport" Content="导出" Click="ExportChromaClick" />
+        </StackPanel>
+      </Grid>
+
+      <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16">
+        <Grid RowSpacing="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <Grid>
+            <views:StudioCanvas x:Name="DeviceCanvas" Visibility="Collapsed" />
+            <Viewbox x:Name="FallbackPreview" Stretch="Uniform"
+                     HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Canvas x:Name="PreviewCanvas" Width="448" Height="196" />
+            </Viewbox>
+            <ComboBox x:Name="ToolPicker" SelectedIndex="0" Width="96"
+                      HorizontalAlignment="Left" VerticalAlignment="Top"
+                      SelectionChanged="ToolChanged">
+              <ComboBoxItem local:Localized.Uid="LightingStudioToolSelect" Content="选择" />
+              <ComboBoxItem local:Localized.Uid="LightingStudioToolPen" Content="画笔" />
+              <ComboBoxItem local:Localized.Uid="LightingStudioToolBucket" Content="油漆桶" />
+              <ComboBoxItem local:Localized.Uid="LightingStudioToolMove" Content="移动" />
+            </ComboBox>
+            <StackPanel Orientation="Horizontal" Spacing="6"
+                        HorizontalAlignment="Right" VerticalAlignment="Top">
+              <ComboBox x:Name="ZoomPicker" SelectedIndex="3" Width="80"
+                        SelectionChanged="ZoomStepChanged">
+                <ComboBoxItem Content="10%" />
+                <ComboBoxItem Content="25%" />
+                <ComboBoxItem Content="50%" />
+                <ComboBoxItem Content="100%" />
+                <ComboBoxItem Content="200%" />
+                <ComboBoxItem Content="300%" />
+                <ComboBoxItem Content="400%" />
+              </ComboBox>
+              <Button Content="-" Click="ZoomOutClick" MinWidth="32" Padding="0"
+                      ToolTipService.ToolTip="Zoom out" />
+              <Button Content="+" Click="ZoomInClick" MinWidth="32" Padding="0"
+                      ToolTipService.ToolTip="Zoom in" />
+            </StackPanel>
+          </Grid>
+          <StackPanel Grid.Row="1" Spacing="8">
+            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"
+                       FontSize="12" Foreground="{StaticResource MutedBrush}" />
+            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+              <Button local:Localized.Uid="LightingStudioSelectAll" Content="全选"
+                      Click="SelectAllClick" />
+              <Button local:Localized.Uid="LightingStudioApplySelection" Content="应用选区"
+                      Click="ApplySelectionClick" />
+              <Button local:Localized.Uid="LightingStudioClearSelection" Content="清除选区"
+                      Click="ClearRegionClick" />
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="10">
+          <TextBlock local:Localized.Uid="LightingStudioLayerProperties" Text="图层属性"
+                     FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+          <TextBlock local:Localized.Uid="LightingStudioLayerNameLabel" Text="名称"
+                     FontSize="12" Foreground="{StaticResource MutedBrush}" />
+          <TextBox Text="{Binding SelectedLayer.Title, Mode=TwoWay}" />
+          <CheckBox local:Localized.Uid="LightingStudioEnabled" Content="启用"
+                    IsChecked="{Binding SelectedLayer.Visible, Mode=TwoWay}" />
+          <ComboBox local:Localized.Uid="LightingStudioRegionLabel" Header="区域"
+                    ItemsSource="{Binding RegionChoices}" DisplayMemberPath="Label"
+                    SelectedItem="{Binding SelectedRegionChoice, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch" />
+          <ComboBox local:Localized.Uid="LightingStudioEffect" Header="效果"
+                    ItemsSource="{Binding EffectChoices}" DisplayMemberPath="Label"
+                    SelectedItem="{Binding SelectedEffectChoice, Mode=TwoWay}" />
+          <ComboBox local:Localized.Uid="LightingStudioBlend" Header="混合"
+                    ItemsSource="{Binding BlendChoices}" DisplayMemberPath="Label"
+                    SelectedItem="{Binding SelectedBlendChoice, Mode=TwoWay}" />
+          <TextBlock local:Localized.Uid="LightingStudioOpacity" Text="不透明度"
+                     FontSize="12" Foreground="{StaticResource MutedBrush}" />
+          <Slider Minimum="0" Maximum="100" StepFrequency="1"
+                  Value="{Binding SelectedLayer.Opacity, Mode=TwoWay}"
+                  ValueChanged="InspectorValueChanged" />
+          <views:StudioEffectInspector x:Name="Inspector" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,603 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Microsoft.UI.Dispatching;
+using OpenSynapse.App.Runtime;
+using OpenSynapse.Core.Diagnostics;
+using OpenSynapse.Core.Macros;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
+using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Protocols;
+
+namespace OpenSynapse.App.ViewModels;
+
+public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
+{
+    private readonly RazerHidDeviceService? _deviceService;
+    private readonly RazerHidChromaFrameSink? _chromaFrameSink;
+    private readonly RazerHidSpecialLightingService? _specialLightingService;
+    private readonly Func<PowerSourceKind> _currentPowerSource;
+    private readonly Func<ProfileDocument> _getProfile;
+    private readonly Func<ProfileDefinition> _getActiveProfile;
+    private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
+    private readonly LocalDiagnosticLog _diagnosticLog;
+    private readonly Func<bool> _chromaIntegrationEnabled;
+    private readonly Func<IReadOnlyList<MacroDefinition>> _localMacros;
+    private readonly Func<CancellationToken, Task> _refreshDevicesAsync;
+    private readonly Action _refreshDeviceOverview;
+    private readonly Action<string> _setDeviceOperationError;
+    private readonly DispatcherQueue? _dispatcherQueue;
+    private IReadOnlyList<RazerHidSpecialLightingConnection> _krakenConnections = [];
+    private CancellationTokenSource? _selectionCancellation;
+    // A device whose mode was already repaired must not be rewritten on every device-tree
+    // change; three HID round trips at the 31 ms device wait is not free.
+    private readonly HashSet<string> _driverModeChecked = new(StringComparer.OrdinalIgnoreCase);
+    // Software frame-pump effects outlive a single apply call, so their view model must
+    // stay alive instead of being disposed right after the profile is restored.
+    private readonly RazerHidSoftwareLightingOwner _softwareLightingOwner;
+    private RazerHidDeviceViewModel? _selectedDevice;
+    private RazerHidKrakenViewModel? _selectedKraken;
+
+    public RazerHidWorkspace(
+        RazerHidDeviceService? deviceService,
+        RazerHidSpecialLightingService? specialLightingService,
+        Func<PowerSourceKind> currentPowerSource,
+        Func<ProfileDocument> getProfile,
+        Func<ProfileDefinition> getActiveProfile,
+        Func<CancellationToken, Task<bool>> saveProfileAsync,
+        LocalDiagnosticLog diagnosticLog,
+        Func<bool> chromaIntegrationEnabled,
+        Func<IReadOnlyList<MacroDefinition>> localMacros,
+        Func<CancellationToken, Task> refreshDevicesAsync,
+        Action refreshDeviceOverview,
+        Action<string> setDeviceOperationError,
+        DispatcherQueue? dispatcherQueue)
+    {
+        _deviceService = deviceService;
+        _specialLightingService = specialLightingService;
+        _currentPowerSource = currentPowerSource;
+        _getProfile = getProfile;
+        _getActiveProfile = getActiveProfile;
+        _saveProfileAsync = saveProfileAsync;
+        _diagnosticLog = diagnosticLog;
+        _chromaIntegrationEnabled = chromaIntegrationEnabled;
+        _localMacros = localMacros;
+        _refreshDevicesAsync = refreshDevicesAsync;
+        _refreshDeviceOverview = refreshDeviceOverview;
+        _setDeviceOperationError = setDeviceOperationError;
+        _dispatcherQueue = dispatcherQueue;
+        _softwareLightingOwner = new RazerHidSoftwareLightingOwner(CreateDeviceViewModel);
+        if (_deviceService is not null)
+        {
+            _chromaFrameSink = new RazerHidChromaFrameSink(
+                _deviceService,
+                () => CurrentConnections,
+                IsLightingEnabled,
+                IsChromaOverrideEnabled);
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public ObservableCollection<RazerHidDeviceRowViewModel> Devices { get; } = new();
+    public ObservableCollection<RazerHidKrakenDeviceRowViewModel> KrakenDevices { get; } = new();
+
+    public RazerHidDeviceViewModel? SelectedDevice
+    {
+        get => _selectedDevice;
+        private set
+        {
+            if (SetField(ref _selectedDevice, value))
+            {
+                OnPropertyChanged(nameof(CanScanHidCommands));
+            }
+        }
+    }
+
+    public bool CanScanHidCommands => SelectedDevice is { IsReady: true };
+
+    public RazerHidKrakenViewModel? SelectedKraken
+    {
+        get => _selectedKraken;
+        private set => SetField(ref _selectedKraken, value);
+    }
+
+    internal int ErrorCount
+    {
+        get
+        {
+            var count = Devices.Count(row => row.HasError);
+            if (SelectedDevice is { HasError: true } selected &&
+                !Devices.Any(row => StringComparer.OrdinalIgnoreCase.Equals(
+                    row.Connection.InstanceId, selected.InstanceId) && row.HasError))
+            {
+                count++;
+            }
+
+            count += KrakenDevices.Count(row => !string.IsNullOrWhiteSpace(row.Error));
+            if (SelectedKraken?.HasError == true &&
+                !KrakenDevices.Any(row => StringComparer.OrdinalIgnoreCase.Equals(
+                    row.Connection.InstanceId, SelectedKraken.InstanceId) &&
+                    !string.IsNullOrWhiteSpace(row.Error)))
+            {
+                count++;
+            }
+
+            return count;
+        }
+    }
+
+    internal RazerHidDeviceService? DeviceService => _deviceService;
+
+    internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
+        Devices.Select(row => row.Connection).ToArray();
+
+    internal RazerHidSpecialLightingService? SpecialLightingService => _specialLightingService;
+
+    internal Task<bool> ApplyChromaFrameAsync(
+        IReadOnlyList<RazerRgb> sourceFrame,
+        CancellationToken cancellationToken = default) =>
+        _chromaFrameSink?.ApplyAsync(sourceFrame, cancellationToken) ??
+        Task.FromResult(false);
+
+    internal void RefreshLocalization()
+    {
+        foreach (var row in Devices)
+        {
+            row.RefreshLocalization();
+        }
+        foreach (var row in KrakenDevices)
+        {
+            row.RefreshLocalization();
+        }
+        SelectedDevice?.RefreshLocalization();
+        SelectedKraken?.RefreshLocalization();
+    }
+
+    internal async Task RefreshAsync(CancellationToken cancellationToken)
+    {
+        if (_deviceService is not null)
+        {
+            var connections = (await _deviceService.DiscoverAsync(cancellationToken))
+                .OrderBy(connection => DeviceUiCatalog.DeviceCategoryOrder(connection.Definition.Category))
+                .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            await RestoreDriverModeAsync(connections, cancellationToken);
+            await _softwareLightingOwner.PruneAsync(connections, cancellationToken).ConfigureAwait(false);
+            if (Devices.Count != connections.Length ||
+                !Devices.Zip(connections)
+                    .All(pair => ConnectionMatches(pair.First.Connection, pair.Second)))
+            {
+                var selectedInstanceId = SelectedDevice?.InstanceId;
+                _selectionCancellation?.Cancel();
+                _selectionCancellation?.Dispose();
+                _selectionCancellation = null;
+                Devices.Clear();
+                foreach (var connection in connections)
+                {
+                    Devices.Add(new RazerHidDeviceRowViewModel(connection));
+                }
+                var selectedRow = Devices.FirstOrDefault(row =>
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedInstanceId));
+                if (selectedRow is null)
+                {
+                    if (SelectedDevice is { } removedDevice)
+                    {
+                        await removedDevice.DisposeAsync().ConfigureAwait(false);
+                    }
+                    SelectedDevice = null;
+                }
+                else
+                {
+                    await SelectDeviceAsync(selectedRow, cancellationToken);
+                }
+            }
+            else if (SelectedDevice is { } selectedDevice)
+            {
+                // A device paused after a transport drop stays paused across rescans,
+                // because every read path returns early while the flag is set. Clear it
+                // so the rescan the user just asked for can actually recover.
+                selectedDevice.ClearRequiresRescan();
+                await selectedDevice.LoadBasicStateAsync(cancellationToken);
+                await selectedDevice.LoadSoundbarAsync(cancellationToken);
+            }
+        }
+
+        if (_specialLightingService is not null)
+        {
+            var connections = await _specialLightingService.DiscoverAsync(cancellationToken);
+            _krakenConnections = connections.Where(connection =>
+                    connection.Kind is RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4)
+                .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            // Headsets that already own an audio page get the lighting card there, so a
+            // second lighting-only row for the same headset would be a duplicate.
+            var krakenConnections = _krakenConnections
+                .Where(connection => !connection.IsMergedIntoAudioPage)
+                .ToArray();
+            if (KrakenDevices.Count != krakenConnections.Length ||
+                !KrakenDevices.Zip(krakenConnections)
+                    .All(pair => KrakenConnectionMatches(pair.First.Connection, pair.Second)))
+            {
+                var selectedKrakenId = SelectedKraken?.InstanceId;
+                KrakenDevices.Clear();
+                foreach (var connection in krakenConnections)
+                {
+                    KrakenDevices.Add(new RazerHidKrakenDeviceRowViewModel(connection));
+                }
+                var selectedKraken = KrakenDevices.FirstOrDefault(row =>
+                    StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedKrakenId));
+                SelectedKraken = selectedKraken is null
+                    ? null
+                    : new RazerHidKrakenViewModel(_specialLightingService, selectedKraken.Connection);
+                if (SelectedKraken is { } kraken)
+                {
+                    await kraken.LoadSerialAsync(cancellationToken);
+                }
+            }
+        }
+    }
+
+    public async Task SelectDeviceAsync(
+        RazerHidDeviceRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        if (_deviceService is null)
+        {
+            return;
+        }
+
+        _selectionCancellation?.Cancel();
+        _selectionCancellation?.Dispose();
+        _selectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var selectionToken = _selectionCancellation.Token;
+        var previous = SelectedDevice;
+        if (previous is not null)
+        {
+            await previous.DisposeAsync();
+        }
+        var selected = _softwareLightingOwner.Take(row.Connection.InstanceId) ??
+            CreateDeviceViewModel(row.Connection);
+        row.AttachDetail(selected);
+        SelectedKraken = null;
+        SelectedDevice = selected;
+        await selected.LoadBasicStateAsync(selectionToken);
+        await selected.LoadSoundbarAsync(selectionToken);
+        await selected.LoadDpiStagesAsync(selectionToken);
+        await selected.ApplyConfiguredLightingAsync(selectionToken);
+        NotifyDeviceOverview();
+    }
+
+    public async Task SelectKrakenAsync(RazerHidKrakenDeviceRowViewModel row)
+    {
+        if (_specialLightingService is null) return;
+        _selectionCancellation?.Cancel();
+        _selectionCancellation?.Dispose();
+        _selectionCancellation = null;
+        if (SelectedDevice is { } previous)
+        {
+            await previous.DisposeAsync().ConfigureAwait(false);
+        }
+        SelectedDevice = null;
+        SelectedKraken = new RazerHidKrakenViewModel(
+            _specialLightingService, row.Connection);
+    }
+
+    /// <summary>
+    /// Scans the selected RazerHid device, so a model the catalog does not describe
+    /// can be mapped without touching another connected device.
+    /// </summary>
+    internal async Task<string> ScanSelectedDeviceAsync(CancellationToken cancellationToken = default)
+    {
+        if (_deviceService is null)
+        {
+            throw new InvalidOperationException("RazerHid support is unavailable in this build.");
+        }
+
+        // Discovery is event driven, so the list can still be empty right after a wake.
+        await _refreshDevicesAsync(cancellationToken).ConfigureAwait(false);
+        var connection = SelectedDevice?.Connection;
+        if (connection is null || !connection.IsReady)
+        {
+            throw new InvalidOperationException("No RazerHid device is selected.");
+        }
+
+        var scan = await _deviceService
+            .ScanCommandSpaceAsync(connection, cancellationToken).ConfigureAwait(false);
+        var directory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+            "OpenSynapse");
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(
+            directory,
+            $"hid-scan-{connection.Definition.ProductId:X4}-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+        await File.WriteAllTextAsync(path, scan, cancellationToken).ConfigureAwait(false);
+        return path;
+    }
+
+    internal async Task RestoreLightingAfterExternalAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (_deviceService is null)
+        {
+            return;
+        }
+
+        await _softwareLightingOwner.RestoreAsync(
+            CurrentConnections, SelectedDevice, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal RazerHidKrakenViewModel? CreateKrakenLighting(ushort productId)
+    {
+        if (_specialLightingService is null) return null;
+        return _krakenConnections.FirstOrDefault(item => item.ProductId == productId) is { } kraken
+            ? new RazerHidKrakenViewModel(_specialLightingService, kraken)
+            : null;
+    }
+
+    internal async Task<int?> ReadBatteryPercentAsync(
+        RazerHidDeviceRowViewModel row,
+        CancellationToken cancellationToken)
+    {
+        if (_deviceService is null) return null;
+        try
+        {
+            return await _deviceService
+                .GetBatteryPercentAsync(row.Connection, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            // No answer means no percentage for this row; the menu still lists it.
+            return null;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _selectionCancellation?.Cancel();
+        _selectionCancellation?.Dispose();
+        await _softwareLightingOwner.DisposeAsync().ConfigureAwait(false);
+        if (SelectedDevice is { } device)
+        {
+            await device.DisposeAsync().ConfigureAwait(false);
+            SelectedDevice = null;
+        }
+        SelectedKraken = null;
+    }
+
+    private async Task RestoreDriverModeAsync(
+        IReadOnlyList<RazerHidDeviceConnection> connections,
+        CancellationToken cancellationToken)
+    {
+        if (_deviceService is null)
+        {
+            return;
+        }
+
+        foreach (var connection in connections)
+        {
+            if (!connection.IsReady ||
+                !connection.Capabilities.Contains(RazerHidBackendCapability.DeviceModeWrite) ||
+                _driverModeChecked.Contains(connection.InstanceId))
+            {
+                continue;
+            }
+
+            try
+            {
+                await _deviceService.EnsureDriverModeAsync(connection, cancellationToken)
+                    .ConfigureAwait(false);
+                _driverModeChecked.Add(connection.InstanceId);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (
+                exception is NotSupportedException or InvalidOperationException or
+                System.ComponentModel.Win32Exception or System.IO.IOException)
+            {
+                _diagnosticLog.TryWrite("openrazer-driver-mode",
+                    $"1532:{connection.Definition.ProductId:X4} restore failed: {exception.Message}");
+                ReportOperationError(AppStrings.FormatText("RazerHidDriverModeRestoreFailed",
+                    connection.Definition.DisplayName, exception.Message));
+            }
+        }
+    }
+
+    private RazerHidDeviceViewModel CreateDeviceViewModel(
+        RazerHidDeviceConnection connection)
+    {
+        RazerHidDeviceViewModel device = new(
+            _deviceService ?? throw new InvalidOperationException("RazerHid service is unavailable."),
+            connection,
+            _currentPowerSource,
+            powerState => ProfileResolver.ResolveRazerHidLighting(
+                _getProfile(),
+                connection.ToDescriptor(),
+                powerState),
+            (powerState, profile, token) => SaveLightingAsync(
+                connection,
+                powerState,
+                profile,
+                token),
+            () => IsLightingEnabled(connection),
+            () => IsChromaOverrideEnabled(connection),
+            (lightingEnabled, chromaOverrideEnabled, token) => SaveLightingSettingsAsync(
+                connection,
+                lightingEnabled,
+                chromaOverrideEnabled,
+                token),
+            _chromaIntegrationEnabled());
+        device.Onboard.LocalMacroProvider = _localMacros;
+        return device;
+    }
+
+    private async Task<bool> SaveLightingAsync(
+        RazerHidDeviceConnection connection,
+        PowerSourceKind powerState,
+        LightingProfile profile,
+        CancellationToken cancellationToken)
+    {
+        var active = _getActiveProfile();
+        var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
+        Dictionary<string, LightingProfile>? target = powerState switch
+        {
+            PowerSourceKind.FullPowerAdapter => active.PluggedIn.RazerHidLighting,
+            PowerSourceKind.LowPowerAdapter => active.LowPowerAdapter.RazerHidLighting,
+            PowerSourceKind.Battery => active.OnBattery.RazerHidLighting,
+            _ => null,
+        };
+
+        LightingProfile? previous = null;
+        var hadPrevious = false;
+        if (target is null)
+        {
+            if (!active.Devices.TryGetValue(key, out var settings))
+            {
+                settings = new DeviceProfileSettings();
+                active.Devices[key] = settings;
+            }
+
+            previous = CloneLightingProfile(settings.Lighting);
+            settings.Lighting = CloneLightingProfile(profile);
+        }
+        else
+        {
+            hadPrevious = target.TryGetValue(key, out previous);
+            target[key] = CloneLightingProfile(profile);
+        }
+
+        if (await _saveProfileAsync(cancellationToken))
+        {
+            return true;
+        }
+
+        if (target is null)
+        {
+            active.Devices[key].Lighting = previous ?? new LightingProfile();
+        }
+        else if (hadPrevious && previous is not null)
+        {
+            target[key] = previous;
+        }
+        else
+        {
+            target.Remove(key);
+        }
+
+        return false;
+    }
+
+    internal bool IsLightingEnabled(RazerHidDeviceConnection connection) =>
+        GetDeviceSettings(connection).LightingEnabled ?? true;
+
+    internal bool IsChromaOverrideEnabled(RazerHidDeviceConnection connection) =>
+        GetDeviceSettings(connection).ChromaOverrideEnabled ?? true;
+
+    private async Task<bool> SaveLightingSettingsAsync(
+        RazerHidDeviceConnection connection,
+        bool lightingEnabled,
+        bool chromaOverrideEnabled,
+        CancellationToken cancellationToken)
+    {
+        var active = _getActiveProfile();
+        var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
+        if (!active.Devices.TryGetValue(key, out var settings))
+        {
+            settings = new DeviceProfileSettings();
+            active.Devices[key] = settings;
+        }
+
+        var previousLightingEnabled = settings.LightingEnabled;
+        var previousChromaOverrideEnabled = settings.ChromaOverrideEnabled;
+        settings.LightingEnabled = lightingEnabled;
+        settings.ChromaOverrideEnabled = chromaOverrideEnabled;
+        if (await _saveProfileAsync(cancellationToken))
+        {
+            return true;
+        }
+
+        settings.LightingEnabled = previousLightingEnabled;
+        settings.ChromaOverrideEnabled = previousChromaOverrideEnabled;
+        return false;
+    }
+
+    private DeviceProfileSettings GetDeviceSettings(RazerHidDeviceConnection connection)
+    {
+        var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
+        return _getActiveProfile().Devices.TryGetValue(key, out var settings)
+            ? settings
+            : new DeviceProfileSettings();
+    }
+
+    private static LightingProfile CloneLightingProfile(LightingProfile profile) => new()
+    {
+        Effect = profile.Effect,
+        Parameters = new Dictionary<string, string>(profile.Parameters, StringComparer.OrdinalIgnoreCase),
+    };
+
+    private static bool ConnectionMatches(
+        RazerHidDeviceConnection previous,
+        RazerHidDeviceConnection current) =>
+        StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
+        StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
+        StringComparer.Ordinal.Equals(previous.Definition.DisplayName, current.Definition.DisplayName) &&
+        previous.EndpointState == current.EndpointState &&
+        StringComparer.Ordinal.Equals(previous.Error, current.Error);
+
+    private static bool KrakenConnectionMatches(
+        RazerHidSpecialLightingConnection previous,
+        RazerHidSpecialLightingConnection current) =>
+        StringComparer.OrdinalIgnoreCase.Equals(previous.InstanceId, current.InstanceId) &&
+        StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
+        StringComparer.Ordinal.Equals(previous.Error, current.Error);
+
+    private void NotifyDeviceOverview()
+    {
+        if (_dispatcherQueue is { HasThreadAccess: false } dispatcher)
+        {
+            dispatcher.TryEnqueue(() => _refreshDeviceOverview());
+            return;
+        }
+
+        _refreshDeviceOverview();
+    }
+
+    private void ReportOperationError(string message)
+    {
+        if (_dispatcherQueue is { HasThreadAccess: false } dispatcher)
+        {
+            dispatcher.TryEnqueue(() => _setDeviceOperationError(message));
+            return;
+        }
+
+        _setDeviceOperationError(message);
+    }
+
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value))
+        {
+            return false;
+        }
+
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        if (_dispatcherQueue is { HasThreadAccess: false } dispatcher)
+        {
+            dispatcher.TryEnqueue(() => PropertyChanged?.Invoke(
+                this, new PropertyChangedEventArgs(propertyName)));
+            return;
+        }
+
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}

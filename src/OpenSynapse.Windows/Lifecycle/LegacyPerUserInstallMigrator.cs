@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Security.Principal;
 using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.Windows.Lifecycle;
 
@@ -67,7 +69,8 @@ public static class LegacyPerUserInstallMigrator
             AppDataPaths.Root,
             stopLegacyProcesses: StopLegacyProcesses,
             uninstallLegacy: UninstallLegacy,
-            repairStartup: WindowsStartupManager.TryRepairStaleRegistration);
+            repairStartup: WindowsStartupManager.TryRepairStaleRegistration,
+            isElevated: RequiresDeferredUninstall());
     }
 
     /// <summary>
@@ -112,7 +115,7 @@ public static class LegacyPerUserInstallMigrator
     }
 
     /// <summary>
-    /// Removes the transitional data root once every file in it also exists in
+    /// Removes transitional files only after their contents are preserved in
     /// the new data root. A file that is still missing is kept so the next
     /// launch can copy it instead of losing it with the directory.
     /// </summary>
@@ -127,15 +130,12 @@ public static class LegacyPerUserInstallMigrator
         }
 
         var removed = false;
-        foreach (var file in Directory.EnumerateFiles(
-                     transitionalRoot,
-                     "*",
-                     SearchOption.AllDirectories))
+        foreach (var file in LegacyMigrationData.EnumerateFiles(transitionalRoot))
         {
             var destination = Path.Combine(
                 destinationRoot,
                 Path.GetRelativePath(transitionalRoot, file));
-            if (!File.Exists(destination))
+            if (!LegacyMigrationData.HasPreservedCopy(file, destination))
             {
                 continue;
             }
@@ -149,10 +149,7 @@ public static class LegacyPerUserInstallMigrator
         }
 
         // Only drop the directory when it holds no data that still needs to move.
-        foreach (var file in Directory.EnumerateFiles(
-                     transitionalRoot,
-                     "*",
-                     SearchOption.AllDirectories))
+        foreach (var file in LegacyMigrationData.EnumerateFiles(transitionalRoot))
         {
             if (File.Exists(file))
             {
@@ -170,12 +167,15 @@ public static class LegacyPerUserInstallMigrator
         string destinationDataRoot,
         Action<string> stopLegacyProcesses,
         Action<string> uninstallLegacy,
-        Func<string, bool> repairStartup)
+        Func<string, bool> repairStartup,
+        bool isElevated = false)
     {
+        if (isElevated) return false;
         try
         {
             stopLegacyProcesses(legacyRoot);
             _ = CopyUserData(legacyRoot, destinationDataRoot);
+            VerifyUserData(legacyRoot, destinationDataRoot);
             uninstallLegacy(legacyRoot);
             if (File.Exists(Path.Combine(
                     legacyRoot,
@@ -320,6 +320,7 @@ public static class LegacyPerUserInstallMigrator
 
     private static void UninstallLegacy(string legacyRoot)
     {
+        if (RequiresDeferredUninstall()) throw new InvalidOperationException("Never run a user-writable legacy uninstaller with elevated or unknown integrity.");
         var uninstaller = Path.Combine(legacyRoot, LegacyUninstallerName);
         var legacyExecutable = Path.Combine(
             legacyRoot,
@@ -361,62 +362,29 @@ public static class LegacyPerUserInstallMigrator
 
     private static bool CopyUserData(string legacyRoot, string destinationDataRoot)
     {
-        Directory.CreateDirectory(destinationDataRoot);
-        foreach (var file in Directory.EnumerateFiles(legacyRoot))
-        {
-            if (ShouldSkipRootFile(file))
-            {
-                continue;
-            }
-
-            var destination = Path.Combine(destinationDataRoot, Path.GetFileName(file));
-            if (!File.Exists(destination))
-            {
-                File.Copy(file, destination);
-            }
-        }
-
-        foreach (var directory in Directory.EnumerateDirectories(legacyRoot))
-        {
-            var info = new DirectoryInfo(directory);
-            if (LegacyRootDirectories.Contains(info.Name) ||
-                info.Attributes.HasFlag(FileAttributes.ReparsePoint))
-            {
-                continue;
-            }
-
-            CopyDirectory(directory, Path.Combine(destinationDataRoot, info.Name));
-        }
-
+        LegacyMigrationData.EnsureDirectory(destinationDataRoot);
+        foreach (var file in EnumerateUserFiles(legacyRoot))
+            LegacyMigrationData.PreserveFile(file, Path.Combine(destinationDataRoot, Path.GetRelativePath(legacyRoot, file)));
         return true;
     }
 
-    private static void CopyDirectory(string source, string destination)
+    private static void VerifyUserData(string source, string destination)
     {
-        Directory.CreateDirectory(destination);
+        foreach (var file in EnumerateUserFiles(source))
+            if (!LegacyMigrationData.HasPreservedCopy(file, Path.Combine(destination, Path.GetRelativePath(source, file))))
+                throw new IOException("Legacy user data has no verified migrated copy; leave the old install intact.");
+    }
+
+    private static IEnumerable<string> EnumerateUserFiles(string source)
+    {
+        LegacyMigrationData.RejectLink(source);
         foreach (var file in Directory.EnumerateFiles(source))
-        {
-            if (IsTransientUserFile(file))
-            {
-                continue;
-            }
-
-            var destinationFile = Path.Combine(destination, Path.GetFileName(file));
-            if (!File.Exists(destinationFile))
-            {
-                File.Copy(file, destinationFile);
-            }
-        }
-
+            if (!ShouldSkipRootFile(file)) yield return file;
         foreach (var directory in Directory.EnumerateDirectories(source))
         {
-            var info = new DirectoryInfo(directory);
-            if (info.Attributes.HasFlag(FileAttributes.ReparsePoint))
-            {
-                continue;
-            }
-
-            CopyDirectory(directory, Path.Combine(destination, info.Name));
+            if (LegacyRootDirectories.Contains(Path.GetFileName(directory))) continue;
+            foreach (var file in LegacyMigrationData.EnumerateFiles(directory))
+                if (!IsTransientUserFile(file)) yield return file;
         }
     }
 
@@ -573,4 +541,14 @@ public static class LegacyPerUserInstallMigrator
     private static bool IsExpectedMigrationException(Exception exception) =>
         exception is IOException or UnauthorizedAccessException or Win32Exception or
             InvalidOperationException or System.Security.SecurityException;
+
+    internal static bool CanRunLegacyUninstaller(int integrityLevel, bool isPrivileged) =>
+        integrityLevel > 0 && !ProcessIntegrityLevel.IsElevated(integrityLevel) && !isPrivileged;
+
+    private static bool RequiresDeferredUninstall()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        return !CanRunLegacyUninstaller(ProcessIntegrityLevel.Current(),
+            new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator) || identity.IsSystem);
+    }
 }

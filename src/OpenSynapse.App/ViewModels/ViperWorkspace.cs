@@ -9,7 +9,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class ViperWorkspace : INotifyPropertyChanged
+public sealed partial class ViperWorkspace : INotifyPropertyChanged
 {
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
     private readonly Func<ProfileDocument> _getProfile;
@@ -142,78 +142,6 @@ public sealed class ViperWorkspace : INotifyPropertyChanged
     public bool CanReadButtonMappings => _canReadButtonMappings;
     public bool CanSetButtonMappings => _canSetButtonMappings;
 
-    public async Task ApplyPollingRateAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanSetPollingRate)
-        {
-            return;
-        }
-
-        var hertz = PollingRateIndex switch
-        {
-            0 => 125,
-            1 => 500,
-            2 => 1000,
-            _ => 0,
-        };
-        await RunDeviceOperationAsync(AppStrings.Text("Text_CAEC7015"), async () =>
-        {
-            var actual = await _deviceTelemetryReader.SetViperPollingRateAsync(_deviceDescriptors(), hertz, cancellationToken);
-            PollingRateText = $"{actual} Hz";
-            PollingRateIndex = actual switch { 125 => 0, 500 => 1, _ => 2 };
-            _confirmedPollingRateIndex = PollingRateIndex;
-            Profile.Global.Viper.PollingRateHertz = actual;
-            await _saveProfileAsync(cancellationToken);
-        }, cancellationToken, () => PollingRateIndex = _confirmedPollingRateIndex);
-    }
-
-    public async Task ApplyDpiAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanSetDpi)
-        {
-            return;
-        }
-
-        await RunDeviceOperationAsync(AppStrings.Text("Text_25083B1F"), async () =>
-        {
-            var x = checked((int)Math.Round(DpiXValue, MidpointRounding.AwayFromZero));
-            var y = checked((int)Math.Round(DpiYValue, MidpointRounding.AwayFromZero));
-            var actual = await _deviceTelemetryReader.SetViperDpiAsync(_deviceDescriptors(), x, y, cancellationToken);
-            DpiXValue = actual.X;
-            DpiYValue = actual.Y;
-            _confirmedDpiXValue = actual.X;
-            _confirmedDpiYValue = actual.Y;
-            DpiText = $"{actual.X} × {actual.Y}";
-            Profile.Global.Viper.DpiX = actual.X;
-            Profile.Global.Viper.DpiY = actual.Y;
-            await _saveProfileAsync(cancellationToken);
-        }, cancellationToken, () =>
-        {
-            DpiXValue = _confirmedDpiXValue;
-            DpiYValue = _confirmedDpiYValue;
-        });
-    }
-
-    public async Task ApplyIdleAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanSetIdle)
-        {
-            return;
-        }
-
-        await RunDeviceOperationAsync(AppStrings.Text("Text_C41C6FC1"), async () =>
-        {
-            var minutes = checked((int)Math.Round(IdleMinutesValue, MidpointRounding.AwayFromZero));
-            var seconds = checked(minutes * 60);
-            var actual = await _deviceTelemetryReader.SetViperIdleSecondsAsync(_deviceDescriptors(), seconds, cancellationToken);
-            IdleMinutesValue = actual / 60d;
-            _confirmedIdleMinutesValue = IdleMinutesValue;
-            IdleText = FormatDuration(actual);
-            Profile.Global.Viper.IdleSeconds = actual;
-            await _saveProfileAsync(cancellationToken);
-        }, cancellationToken, () => IdleMinutesValue = _confirmedIdleMinutesValue);
-    }
-
     public async Task ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default)
     {
         if (!CanSetLowBatteryThreshold)
@@ -234,28 +162,6 @@ public sealed class ViperWorkspace : INotifyPropertyChanged
         {
             LowBatteryThresholdPercent = _confirmedLowBatteryThresholdPercent;
         });
-    }
-
-    public async Task ApplyBatteryChemistryAsync(CancellationToken cancellationToken = default)
-    {
-        if (BatteryChemistryIndex is < 0 or > 2)
-        {
-            return;
-        }
-
-        var chemistry = checked((byte)BatteryChemistryIndex);
-        await RunDeviceOperationAsync(AppStrings.Text("Text_94C31F83"), async () =>
-        {
-            var actual = await _deviceTelemetryReader.SetViperBatteryChemistryAsync(
-                _deviceDescriptors(),
-                chemistry,
-                cancellationToken);
-            BatteryChemistryIndex = actual;
-            _confirmedBatteryChemistryIndex = actual;
-            OnPropertyChanged(nameof(BatteryChemistryText));
-            Profile.Global.Viper.BatteryChemistry = actual;
-            await _saveProfileAsync(cancellationToken);
-        }, cancellationToken);
     }
 
     public async Task ApplyDpiStagesAsync(CancellationToken cancellationToken = default)

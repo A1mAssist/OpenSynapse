@@ -18,13 +18,21 @@
       <SolidColorBrush x:Key="SurfaceBrush" Color="#202020" />
       <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#292929" />
       <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#383838" />
+      <SolidColorBrush x:Key="CardBrush" Color="#141414" />
       <SolidColorBrush x:Key="LineBrush" Color="#3A3A3A" />
       <SolidColorBrush x:Key="LineStrongBrush" Color="#4C4C4C" />
       <SolidColorBrush x:Key="DataBrush" Color="#F4F4F4" />
       <SolidColorBrush x:Key="MutedBrush" Color="#B6B6B6" />
-      <SolidColorBrush x:Key="AccentBrush" Color="#99DD72" />
-      <SolidColorBrush x:Key="AccentHoverBrush" Color="#A9E889" />
-      <SolidColorBrush x:Key="AccentPressedBrush" Color="#82C95D" />
+      <Color x:Key="SystemAccentColor">#FF44D62C</Color>
+      <Color x:Key="SystemAccentColorLight1">#FF5BE547</Color>
+      <Color x:Key="SystemAccentColorLight2">#FF76EE64</Color>
+      <Color x:Key="SystemAccentColorLight3">#FF92F583</Color>
+      <Color x:Key="SystemAccentColorDark1">#FF36B522</Color>
+      <Color x:Key="SystemAccentColorDark2">#FF2E9E1D</Color>
+      <Color x:Key="SystemAccentColorDark3">#FF257F17</Color>
+      <SolidColorBrush x:Key="AccentBrush" Color="#44D62C" />
+      <SolidColorBrush x:Key="AccentHoverBrush" Color="#5BE547" />
+      <SolidColorBrush x:Key="AccentPressedBrush" Color="#36B522" />
       <SolidColorBrush x:Key="OnlineBrush" Color="#99DD72" />
       <SolidColorBrush x:Key="GpuBrush" Color="#59C7D9" />
       <SolidColorBrush x:Key="ThermalBrush" Color="#F0B95A" />
@@ -55,7 +63,7 @@
         <Setter Property="Foreground" Value="{StaticResource DataBrush}" />
       </Style>
       <Style x:Key="CardStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="Background" Value="{StaticResource CardBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="4" />
@@ -71,7 +79,7 @@
         <Setter Property="Background" Value="{StaticResource AccentBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Foreground" Value="#10200D" />
+        <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
         <Setter Property="CornerRadius" Value="4" />
         <Setter Property="FontFamily" Value="{StaticResource AppFontSemiBoldFamily}" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -87,7 +95,7 @@
         <Setter Property="FontFamily" Value="{StaticResource AppFontSemiBoldFamily}" />
         <Setter Property="FontWeight" Value="SemiBold" />
       </Style>
-      <Style x:Key="OpenRazerSaveButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+      <Style x:Key="RazerHidSaveButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
         <Setter Property="ContentTemplate">
           <Setter.Value>
             <DataTemplate>
@@ -248,7 +256,7 @@
         <Setter Property="Padding" Value="12" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="Background" Value="{StaticResource CardBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource DataBrush}" />

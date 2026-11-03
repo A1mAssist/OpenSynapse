@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using OpenSynapse.Windows.Protocols;
 
@@ -10,6 +11,9 @@ namespace OpenSynapse.Windows.Macros;
 /// </summary>
 public sealed class RazerOnboardMacroService
 {
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> TransactionGates =
+        new(StringComparer.OrdinalIgnoreCase);
+    private static readonly TimeSpan RestoreTimeout = TimeSpan.FromSeconds(10);
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
     private readonly TimeSpan _deviceWait;
@@ -90,7 +94,7 @@ public sealed class RazerOnboardMacroService
                         transactionId,
                         RazerOnboardMacroProtocol.CreateMacroIdArguments(id)),
                     $"macro {id} size",
-                    cancellationToken).ConfigureAwait(false));
+                    cancellationToken).ConfigureAwait(false), id);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -129,44 +133,55 @@ public sealed class RazerOnboardMacroService
             throw new ArgumentException("An onboard macro needs at least one item.", nameof(items));
         }
 
-        var allocation = RazerOnboardMacroProtocol.RequiredAllocation(payload.Length);
-        // Only the firmware's hard ceiling is checked. `availableMemory` is not used:
-        // overwriting a slot frees its old allocation first, which is unverified on hardware.
-        if (await ProbeStorageAsync(cancellationToken).ConfigureAwait(false) is { } storage &&
-            allocation > storage.MaxMemory)
-        {
-            throw new InvalidOperationException(
-                $"Onboard macro needs {allocation} bytes of device storage, but this device holds at most {storage.MaxMemory}.");
-        }
-
-        // Keep whatever the slot held so a failed write cannot silently destroy it.
-        var backup = await TryReadRawAsync(id, cancellationToken).ConfigureAwait(false);
+        var gate = TransactionGates.GetOrAdd(_devicePath, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await WriteRawAsync(id, payload, cancellationToken).ConfigureAwait(false);
-            var written = await ReadMemoryAsync(id, payload.Length, cancellationToken).ConfigureAwait(false);
-            if (!written.AsSpan().SequenceEqual(payload))
+            var allocation = RazerOnboardMacroProtocol.RequiredAllocation(payload.Length);
+            if (await ProbeStorageAsync(cancellationToken).ConfigureAwait(false) is { } storage &&
+                allocation > storage.MaxMemory)
             {
                 throw new InvalidOperationException(
-                    $"Onboard macro {id} did not read back the bytes that were written.");
-            }
-        }
-        catch
-        {
-            if (backup is { Length: > 0 })
-            {
-                try
-                {
-                    await WriteRawAsync(id, backup, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception restoreFailure) when (IsExpected(restoreFailure))
-                {
-                    _diagnostic?.Invoke(
-                        $"onboard macro {id} could not be restored: {restoreFailure.Message}");
-                }
+                    $"Onboard macro needs {allocation} bytes of device storage, but this device holds at most {storage.MaxMemory}.");
             }
 
-            throw;
+            var exists = (await ReadIdsAsync(cancellationToken).ConfigureAwait(false)).Contains(id);
+            var backup = exists
+                ? await ReadRawAsync(id, cancellationToken).ConfigureAwait(false)
+                : null;
+            try
+            {
+                await WriteRawAsync(id, payload, cancellationToken).ConfigureAwait(false);
+                await VerifyRawAsync(id, payload, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception writeFailure)
+            {
+                if (backup is { Length: > 0 })
+                {
+                    try
+                    {
+                        using var restore = new CancellationTokenSource(RestoreTimeout);
+                        await WriteRawAsync(id, backup, restore.Token).ConfigureAwait(false);
+                        await VerifyRawAsync(id, backup, restore.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception restoreFailure) when (
+                        IsExpected(restoreFailure) || restoreFailure is OperationCanceledException)
+                    {
+                        _diagnostic?.Invoke(
+                            $"onboard macro {id} could not be restored: {restoreFailure.Message}");
+                        throw new InvalidOperationException(
+                            $"Onboard macro {id} write failed and the original slot could not be restored. Check the slot before using it.",
+                            new AggregateException(writeFailure, restoreFailure));
+                    }
+                }
+
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(writeFailure).Throw();
+                throw;
+            }
+        }
+        finally
+        {
+            gate.Release();
         }
     }
 
@@ -189,46 +204,62 @@ public sealed class RazerOnboardMacroService
                 payload.AsSpan(offset, length));
 
             await QueryAsync(
-                transactionId => RazerOnboardMacroProtocol.SetMacroMemory.CreateRequest(transactionId, arguments),
+                transactionId => RazerOnboardMacroProtocol.SetMacroMemory.CreateRequest(transactionId, arguments, 7 + length),
                 $"macro {id} write {offset}",
                 cancellationToken).ConfigureAwait(false);
             offset += length;
         }
     }
 
-    private async Task<byte[]?> TryReadRawAsync(byte id, CancellationToken cancellationToken)
+    private async Task<byte[]> ReadRawAsync(byte id, CancellationToken cancellationToken)
     {
-        try
+        var dataSize = RazerOnboardMacroProtocol.ParseMacroDataSize(
+            await QueryAsync(
+                transactionId => RazerOnboardMacroProtocol.GetMacroDataSize.CreateRequest(
+                    transactionId,
+                    RazerOnboardMacroProtocol.CreateMacroIdArguments(id)),
+                $"macro {id} backup size",
+                cancellationToken).ConfigureAwait(false), id);
+        if (dataSize is <= 0 or > 64 * 1024)
         {
-            var existing = await ReadAsync(id, cancellationToken).ConfigureAwait(false);
-            return existing?.Raw;
+            throw new InvalidDataException(
+                $"Onboard macro {id} declares an implausible backup size {dataSize}.");
         }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            return null;
-        }
+
+        return await ReadMemoryAsync(id, dataSize, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<byte>> ReadIdsAsync(CancellationToken cancellationToken = default)
     {
-        var ids = new List<byte>();
-        var total = int.MaxValue;
-        while (ids.Count < total && ids.Count < byte.MaxValue)
+        var total = RazerOnboardMacroProtocol.ParseMacroCount(
+            await QueryAsync(
+                transactionId => RazerOnboardMacroProtocol.GetMacroCount.CreateRequest(transactionId, []),
+                "macro count",
+                cancellationToken).ConfigureAwait(false));
+        if (total > byte.MaxValue)
         {
-            var (windowTotal, window) = RazerOnboardMacroProtocol.ParseMacroIdList(
+            throw new InvalidDataException($"Onboard macro count {total} exceeds the 255-slot protocol limit.");
+        }
+
+        var ids = new List<byte>(total);
+        while (ids.Count < total)
+        {
+            var count = Math.Min(32, total - ids.Count);
+            var window = RazerOnboardMacroProtocol.ParseMacroIdList(
                 await QueryAsync(
                     transactionId => RazerOnboardMacroProtocol.GetMacroIdList.CreateRequest(
                         transactionId,
-                        RazerOnboardMacroProtocol.CreateMacroIdListArguments(ids.Count)),
+                        RazerOnboardMacroProtocol.CreateMacroIdListArguments(ids.Count),
+                        4 + (count * 2)),
                     "macro id list",
-                    cancellationToken).ConfigureAwait(false));
+                    cancellationToken).ConfigureAwait(false),
+                ids.Count,
+                count);
 
-            total = windowTotal;
-            if (window.Length == 0 || window.Any(ids.Contains))
+            if (window.Any(ids.Contains))
             {
-                break;
+                throw new InvalidDataException("Onboard macro id paging returned a duplicate slot.");
             }
-
             ids.AddRange(window);
         }
 
@@ -246,9 +277,10 @@ public sealed class RazerOnboardMacroService
                 await QueryAsync(
                     transactionId => RazerOnboardMacroProtocol.GetMacroMemory.CreateRequest(
                         transactionId,
-                        RazerOnboardMacroProtocol.CreateReadMemoryArguments(id, offset, length)),
+                        RazerOnboardMacroProtocol.CreateReadMemoryArguments(id, offset, length),
+                        7 + length),
                     $"macro {id} read {offset}",
-                    cancellationToken).ConfigureAwait(false));
+                    cancellationToken).ConfigureAwait(false), id);
 
             if (chunk.Data.Length == 0 || chunk.Offset != offset || chunk.Data.Length > length)
             {
@@ -261,6 +293,16 @@ public sealed class RazerOnboardMacroService
         }
 
         return data;
+    }
+
+    private async Task VerifyRawAsync(byte id, byte[] expected, CancellationToken cancellationToken)
+    {
+        var written = await ReadMemoryAsync(id, expected.Length, cancellationToken).ConfigureAwait(false);
+        if (!written.AsSpan().SequenceEqual(expected))
+        {
+            throw new InvalidOperationException(
+                $"Onboard macro {id} did not read back the bytes that were written.");
+        }
     }
 
     private async Task<byte[]> QueryAsync(

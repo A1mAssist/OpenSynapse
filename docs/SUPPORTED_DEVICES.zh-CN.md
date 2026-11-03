@@ -327,7 +327,7 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Barracuda Pro | `1532:0539` | 音频页 |
 | Razer Barracuda Pro | `1532:0583` | 音频页 |
 | Razer Barracuda V2 Pro | `1532:0593` | 音频页（电量/充电）；提供 THX V4 安装入口 |
-| Razer BlackShark V2 HyperSpeed | `1532:0565` | 不显示：缺少该协议族的 bundle 证据 |
+| Razer BlackShark V2 HyperSpeed | `1532:0565` | 音频页（2.4 GHz 接收器端点） |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | 音频页 |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | 音频页；提供 THX 安装入口 |
 | Razer BlackShark V2 Pro (2023) | `1532:0555` | 音频页；提供 THX 安装入口 |

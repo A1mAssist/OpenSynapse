@@ -54,7 +54,7 @@ public enum RazerMicReverbRoomMode : byte
 
 /// <summary>
 /// Razer's protocol 25 audio commands. The middleware builds them as the same 90-byte
-/// OpenRazer envelope used by every other feature-report device: data size at 5, class at 6,
+/// RazerHid envelope used by every other feature-report device: data size at 5, class at 6,
 /// command at 7, arguments at 8, XOR checksum at 88 over bytes 2..87. This class emits the
 /// 91-byte Windows report (report id prefix) and reads arguments from
 /// <see cref="RazerFeatureReport.ArgumentsOffset"/>.

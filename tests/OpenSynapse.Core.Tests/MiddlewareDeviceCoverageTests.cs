@@ -60,7 +60,7 @@ public sealed class MiddlewareDeviceCoverageTests
         }
 
         foreach (var file in Directory.EnumerateFiles(
-                     Path.Combine(repository, "src", "OpenSynapse.Windows", "Devices", "OpenRazer"),
+                     Path.Combine(repository, "src", "OpenSynapse.Windows", "Devices", "RazerHid"),
                      "*.json",
                      SearchOption.AllDirectories))
         {

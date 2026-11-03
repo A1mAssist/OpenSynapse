@@ -7,7 +7,7 @@ public static class RazerFeatureReport
     public const int DataSizeOffset = 6;
     public const int CommandClassOffset = 7;
     public const int CommandIdOffset = 8;
-    internal const int OpenRazerLogicalLength = Length - 1;
+    internal const int RazerHidLogicalLength = Length - 1;
 
     public static byte[] CreateRequest(
         byte transactionId,
@@ -37,14 +37,14 @@ public static class RazerFeatureReport
             arguments,
             allowArgumentsBeyondDeclaredSize: true);
 
-    internal static byte[] CreateRequestFromOpenRazerLogical(
+    internal static byte[] CreateRequestFromRazerHidLogical(
         ReadOnlySpan<byte> logicalReport,
         byte reportId = 0)
     {
-        if (logicalReport.Length != OpenRazerLogicalLength)
+        if (logicalReport.Length != RazerHidLogicalLength)
         {
             throw new ArgumentException(
-                $"OpenRazer logical reports must be {OpenRazerLogicalLength} bytes.",
+                $"RazerHid logical reports must be {RazerHidLogicalLength} bytes.",
                 nameof(logicalReport));
         }
         if (logicalReport[0] != 0 ||
@@ -53,9 +53,9 @@ public static class RazerFeatureReport
             logicalReport[4] != 0 ||
             logicalReport[5] > 80 ||
             logicalReport[89] != 0 ||
-            logicalReport[88] != CalculateOpenRazerCrc(logicalReport))
+            logicalReport[88] != CalculateRazerHidCrc(logicalReport))
         {
-            throw new ArgumentException("OpenRazer logical request header or CRC is invalid.", nameof(logicalReport));
+            throw new ArgumentException("RazerHid logical request header or CRC is invalid.", nameof(logicalReport));
         }
 
         // Linux report/response indexes select its USB transport path; they are not report bytes.
@@ -147,7 +147,7 @@ public static class RazerFeatureReport
         return crc;
     }
 
-    private static byte CalculateOpenRazerCrc(ReadOnlySpan<byte> logicalReport)
+    private static byte CalculateRazerHidCrc(ReadOnlySpan<byte> logicalReport)
     {
         byte crc = 0;
         for (var index = 2; index <= 87; index++)

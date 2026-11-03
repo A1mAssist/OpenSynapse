@@ -4,7 +4,7 @@ using Xunit;
 
 namespace OpenSynapse.Core.Tests;
 
-public sealed class RazerMxicHeadsetProtocolTests
+public sealed partial class RazerMxicHeadsetProtocolTests
 {
     [Fact]
     public void RequestUsesTheMxicEnvelope()
@@ -237,33 +237,11 @@ public sealed class RazerMxicHeadsetProtocolTests
     }
 
     [Fact]
-    public void ValkyrieRequestsUseReportId7()
+    public void ValkyrieRequestsUseFeature64InsteadOfMxicEnvelope()
     {
-        var getPreset = RazerMxicHeadsetProtocol.CreateGetEqPresetValkyrie();
-        Assert.Equal(7, getPreset[0]);
-        Assert.Equal(5, getPreset[9]);
-        Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x00 }, getPreset[10..15]);
-
-        var setPreset = RazerMxicHeadsetProtocol.CreateSetEqPresetValkyrie(0x02);
-        Assert.Equal(7, setPreset[0]);
-        Assert.Equal(7, setPreset[9]);
-        Assert.Equal(new byte[] { 0x04, 0x18, 0x00, 0x00, 0x00, 0x00, 0x02 }, setPreset[10..17]);
-
-        var getBands = RazerMxicHeadsetProtocol.CreateGetEqBandsValkyrie();
-        Assert.Equal(new byte[] { 0x02, 0x18, 0x81, 0x00, 0x00 }, getBands[10..15]);
-
-        var getMute = RazerMxicHeadsetProtocol.CreateGetMicMuteClass18(
-            RazerMxicHeadsetProtocol.ValkyrieReportId);
-        Assert.Equal(7, getMute[0]);
-        Assert.Equal(new byte[] { 0x02, 0x18, 0x84, 0x00, 0x02 }, getMute[10..15]);
-
-        byte[] bands = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-        var setBands = RazerMxicHeadsetProtocol.CreateSetEqBandsValkyrie(bands);
-        Assert.Equal(7, setBands[0]);
-        Assert.Equal(15, setBands[9]);
-        Assert.Equal(
-            new byte[] { 0x0C, 0x18, 0x01, 0x00, 0x00, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-            setBands[10..25]);
+        var request = RazerMxicHeadsetProtocol.CreateGetEqPresetValkyrie();
+        Assert.Equal(new byte[] { 7, 0, 1, 0, 0, 0, 2, 0x18, 0x80, 0, 1 }, request[..11]);
+        Assert.Equal(0x9B, request[62]);
     }
 
     [Fact]
@@ -275,13 +253,13 @@ public sealed class RazerMxicHeadsetProtocolTests
         var state = await service.ReadStateAsync();
         Assert.Equal((byte)1, state.EqPreset);
         // The Valkyrie T3 chunk has no mute setter, so the page leaves the toggle out.
-        Assert.Null(state.MicMuted);
+        Assert.False(state.MicMuted);
 
         await service.SetEqPresetAsync(2);
         Assert.Equal((byte)2, transport.Preset);
 
-        var read = transport.Requests.First(request => request[0] == 7 && request[11] == 0x18);
-        Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x00 }, read[10..15]);
+        var read = transport.Requests.First(request => request[0] == 7 && request[7] == 0x18);
+        Assert.Equal(new byte[] { 0x02, 0x18, 0x80, 0x00, 0x01 }, read[6..11]);
         Assert.DoesNotContain(transport.Requests, request => request[0] is not (2 or 7));
     }
 
@@ -305,6 +283,8 @@ public sealed class RazerMxicHeadsetProtocolTests
         public byte Charging { get; set; }
         public byte Preset { get; set; }
         public byte[] Bands { get; set; } = new byte[10];
+        public bool FailBandsOnce { get; set; }
+        public CancellationTokenSource? CancelBands { get; set; }
         public bool MicMuted { get; set; }
         public bool IgnorePresetWrites { get; set; }
         public bool SawRemoteMode { get; private set; }
@@ -316,13 +296,6 @@ public sealed class RazerMxicHeadsetProtocolTests
             {
                 SawRemoteMode = true;
                 return Task.CompletedTask;
-            }
-
-            // Valkyrie T3 setters are fire-and-forget; emulate the device state so the
-            // service's readback can verify the write.
-            if (report.Length >= 13 && report[11] == 0x18)
-            {
-                ApplyClass18Payload(report);
             }
 
             return Task.CompletedTask;
@@ -352,6 +325,16 @@ public sealed class RazerMxicHeadsetProtocolTests
             CancellationToken cancellationToken)
         {
             Requests.Add(report);
+            if (report[0] == 7)
+            {
+                if (report[8] == 0) Preset = report[12];
+                if (report[8] == 1) Bands = report[11..21];
+                return Task.FromResult<byte[]?>(report[8] switch
+                {
+                    0x80 => [0, Preset], 0x81 => Bands, 0x84 => [0], _ => [],
+                });
+            }
+
             if (report[11] == 0x18)
             {
                 return Task.FromResult(QueryClass18(report, expectedHeader));
@@ -447,9 +430,18 @@ public sealed class RazerMxicHeadsetProtocolTests
             return BuildResponse((0x93, [0x93, 0x01, 0x01]));
         }
 
+        private void MaybeFailBands()
+        {
+            if (!FailBandsOnce) return;
+            FailBandsOnce = false;
+            if (CancelBands is { } cancellation) { cancellation.Cancel(); throw new OperationCanceledException(cancellation.Token); }
+            throw new IOException("injected band failure");
+        }
+
         private byte[] WriteBands(byte[] data)
         {
             Bands = data;
+            MaybeFailBands();
             return BuildResponse((0x95, [0x95, 0x01, 0x01]));
         }
 

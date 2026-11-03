@@ -105,7 +105,7 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
 
     public bool CanLoad => !_isLoading;
 
-    public bool CanWrite => !_isLoading && _selectedLocalMacroIndex >= 0;
+    public bool CanWrite => !_isLoading && _storage is not null && _selectedLocalMacroIndex >= 0;
 
     public int SelectedLocalMacroIndex
     {
@@ -287,6 +287,7 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
         _storage = await service.ProbeStorageAsync(cancellationToken).ConfigureAwait(true);
         Raise(nameof(MaxMacroId));
         Raise(nameof(StorageSummaryVisibility));
+        Raise(nameof(CanWrite));
         if (_storage is null)
         {
             StatusText = AppStrings.Text("RazerOnboardMacroUnavailable");

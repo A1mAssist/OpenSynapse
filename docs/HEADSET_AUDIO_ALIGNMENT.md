@@ -82,7 +82,7 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 | Mxic64 | 0539 053B 0555 0583 0584 | `AudioMxicDevice`，`50 41`/`50 49` 信封（原有实现） |
 | Mxic64（report id 7） | 0A54 1022 | `rzDevice25ValkyrieT3` |
 | Mxic64（class 0x18） | 0A61 0A64 0A68 0A6C 0A81 | `rzDevice40` |
-| Feature91 | 051A 051C 051E 0528 0529 0520 0527 0526 0521 0560 0533 0549 0537 056D 0542 0543 0F1B 0532 0548 055A 055C 055E 056A 0F66 056E | `AudioAvnera*` / `AudioKraken*` / `AudioKrystal*` / `rzDevice25*` 的 91 字节族 |
+| Feature91 | 051A 051C 051E 0528 0529 0520 0527 0526 0521 0560 0533 0549 0537 056D 0542 0543 0F1B 0532 0548 055A 055C 055E 056A 0F66 056E 0565 | `AudioAvnera*` / `AudioKraken*` / `AudioKrystal*` / `rzDevice25*` 的 91 字节族 |
 | Feature91（音频） | 0554 | `AudioKrakenKittyV2Pro` 只在 91 字节音频基类上追加 37 字节 Chroma 帧，没有独立音频通道 |
 | 专用面板 | 0576 0577 101B 101C | BlackShark V3 Pro 已有 ANC/侧音/THX 面板，不再进通用耳机页 |
 | Billie64 | 0587 | `AudioBastetT1`，与 `AudioBillieT2` 共用 64 字节 report id 2 和 56555 命令表 |
@@ -91,7 +91,7 @@ const He=new Uint8Array([2,24,128]), Be=new Uint8Array([4,24,0]),
 | HID mixer 子集 | 053E | `AudioMixer`：64 字节 report-7 feature、report-9 状态；固件/序列号/设备模式、推子原始值、通道/麦克风静音、亮度；推子/路由/EQ/peak 需要 `CmMixerLib` |
 | Feature91（音频） | 0F1B | Seiren Emote 的音频/EQ 走 91 字节通道；本 bundle 声明 `AudioCamyT3Device` / `isChromaDevice:false`，没有矩阵帧命令，8×8 点阵不开放 |
 | 不显示（串口） | 052D | `AudioNXPDevice` 走 `rzSerial`（28 字节包头），没有串口 transport |
-| 不显示（无 bundle） | 053C 0565 | CDN 快照里没有 main.js，无法核实 `rzDeviceType` |
+| 不显示（无 bundle） | 053C | CDN 快照里没有 main.js，无法核实 `rzDeviceType` |
 
 ### 0593 protocol40 帧
 

@@ -54,7 +54,17 @@ public sealed partial class BladeFanCurvePlot : UserControl
     public BladeFanCurvePlot()
     {
         InitializeComponent();
-        Loaded += (_, _) => Localized.RefreshTree(this);
+        Loaded += (_, _) =>
+        {
+            Localized.RefreshTree(this);
+            Attach(DataContext as BladeFanCurveEditorViewModel);
+        };
+        Unloaded += (_, _) =>
+        {
+            _draggedSeries = _draggedPointIndex = -1;
+            PlotCanvas.ReleasePointerCaptures();
+            Attach(null);
+        };
         PlotCanvas.PointerPressed += PlotPointerPressed;
         PlotCanvas.PointerMoved += PlotPointerMoved;
         PlotCanvas.PointerReleased += PlotPointerReleased;
@@ -64,8 +74,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
             _draggedPointIndex = -1;
         };
         SizeChanged += (_, _) => Render();
-        DataContextChanged += (_, _) => Attach(DataContext as BladeFanCurveEditorViewModel);
-        Attach(DataContext as BladeFanCurveEditorViewModel);
+        DataContextChanged += (_, _) => Attach(IsLoaded ? DataContext as BladeFanCurveEditorViewModel : null);
         BuildStaticShapes();
     }
 

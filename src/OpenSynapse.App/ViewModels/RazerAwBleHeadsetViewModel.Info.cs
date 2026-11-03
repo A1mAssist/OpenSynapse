@@ -13,7 +13,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var firmware = await TryReadAsync(() => _service.ReadFirmwareAsync(cancellationToken))
-            .ConfigureAwait(false);
+            ;
         FirmwareVisibility = firmware is null ? Visibility.Collapsed : Visibility.Visible;
         if (firmware is { } version)
         {
@@ -21,7 +21,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var serial = await TryReadReferenceAsync(
-            () => _service.ReadSerialAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadSerialAsync(cancellationToken));
         SerialVisibility = string.IsNullOrWhiteSpace(serial)
             ? Visibility.Collapsed
             : Visibility.Visible;
@@ -31,7 +31,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var connection = await TryReadAsync(
-            () => _service.ReadConnectionAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadConnectionAsync(cancellationToken));
         ConnectionVisibility = connection is null
             ? Visibility.Collapsed
             : Visibility.Visible;
@@ -41,7 +41,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         var charging = await TryReadAsync(
-            () => _service.ReadChargingAsync(cancellationToken)).ConfigureAwait(false);
+            () => _service.ReadChargingAsync(cancellationToken));
         ChargingVisibility = charging is null
             ? Visibility.Collapsed
             : Visibility.Visible;

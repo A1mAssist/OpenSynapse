@@ -9,8 +9,8 @@ namespace OpenSynapse.Windows.Lifecycle;
 
 /// <summary>
 /// Optional fast path for machine-wide installs. A missing service, a stopped
-/// service, or a protocol mismatch returns null so the caller can use the
-/// existing one-shot UAC helper.
+/// service, or a confirmed protocol rejection returns null for the UAC helper.
+/// A PnP write with no trustworthy terminal response is uncertain, never a fallback.
 /// </summary>
 public static class DedicatedGpuModeServiceClient
 {
@@ -247,21 +247,30 @@ public static class DedicatedGpuModeServiceClient
             : new DedicatedGpuSwitchResult(response.Outcome, response.ExitCode);
     }
 
-    private static async Task<DedicatedGpuModeServiceResponse?> SendForResponseAsync(
+    private static Task<DedicatedGpuModeServiceResponse?> SendForResponseAsync(
         DedicatedGpuModeServiceRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) =>
+        SendForResponseAsync(request, cancellationToken, TryEnsureServiceRunningAsync, SendAsync, Task.Delay);
+
+    internal static async Task<DedicatedGpuModeServiceResponse?> SendForResponseAsync(
+        DedicatedGpuModeServiceRequest request, CancellationToken cancellationToken,
+        Func<CancellationToken, Task<bool>> ensureRunning,
+        Func<DedicatedGpuModeServiceRequest, CancellationToken, Task<DedicatedGpuModeServiceResponse?>> send,
+        Func<TimeSpan, CancellationToken, Task> delay)
     {
         // The service is demand-started and stops itself after an idle window, so a
         // wake-up races the pipe creation. One retry covers that gap and keeps the
         // common case off the UAC helper.
         for (var attempt = 0; attempt < 2; attempt++)
         {
-            if (!await TryEnsureServiceRunningAsync(cancellationToken).ConfigureAwait(false))
+            if (!await ensureRunning(cancellationToken).ConfigureAwait(false))
             {
                 return null;
             }
 
-            var response = await SendAsync(request, cancellationToken).ConfigureAwait(false);
+            // A dispatched write without a terminal response throws; never retry it or
+            // fall back to UAC. A status read cannot prove the same service instance survived.
+            var response = await send(request, cancellationToken).ConfigureAwait(false);
             if (response is not null &&
                 response.Handled &&
                 response.Version == DedicatedGpuModeServiceProtocol.Version)
@@ -271,7 +280,7 @@ public static class DedicatedGpuModeServiceClient
 
             if (attempt == 0)
             {
-                await Task.Delay(PipeConnectTimeout, cancellationToken).ConfigureAwait(false);
+                await delay(PipeConnectTimeout, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -320,20 +329,30 @@ public static class DedicatedGpuModeServiceClient
             }
         }, cancellationToken);
 
-    private static async Task<DedicatedGpuModeServiceResponse?> SendAsync(
+    private static Task<DedicatedGpuModeServiceResponse?> SendAsync(
         DedicatedGpuModeServiceRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) => ExchangeAsync(request, cancellationToken, async token =>
+        {
+            var pipe = new NamedPipeClientStream(
+                ".", DedicatedGpuModeServiceProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+            try
+            {
+                await pipe.ConnectAsync((int)PipeConnectTimeout.TotalMilliseconds, token).ConfigureAwait(false);
+                return pipe;
+            }
+            catch { pipe.Dispose(); throw; }
+        });
+
+    internal static async Task<DedicatedGpuModeServiceResponse?> ExchangeAsync(
+        DedicatedGpuModeServiceRequest request, CancellationToken cancellationToken,
+        Func<CancellationToken, Task<Stream>> connect, TimeSpan? responseTimeout = null)
     {
+        var pnpWrite = request.Operation is DedicatedGpuModeServiceProtocol.SetOperation or
+            DedicatedGpuModeServiceProtocol.RestartOperation;
+        var dispatched = false;
         try
         {
-            using var pipe = new NamedPipeClientStream(
-                ".",
-                DedicatedGpuModeServiceProtocol.PipeName,
-                PipeDirection.InOut,
-                PipeOptions.Asynchronous);
-            await pipe.ConnectAsync(
-                (int)PipeConnectTimeout.TotalMilliseconds,
-                cancellationToken).ConfigureAwait(false);
+            using var pipe = await connect(cancellationToken).ConfigureAwait(false);
 
             using var writer = new StreamWriter(
                 pipe,
@@ -350,20 +369,33 @@ public static class DedicatedGpuModeServiceClient
                 4096,
                 leaveOpen: true);
 
-            await writer.WriteLineAsync(JsonSerializer.Serialize(request)).ConfigureAwait(false);
-            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+            var payload = JsonSerializer.Serialize(request);
+            cancellationToken.ThrowIfCancellationRequested();
+            dispatched = true;
+            await writer.WriteLineAsync(payload).ConfigureAwait(false);
+            await writer.FlushAsync(pnpWrite ? CancellationToken.None : cancellationToken).ConfigureAwait(false);
 
-            using var responseTimeout = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken);
-            responseTimeout.CancelAfter(ResponseTimeout);
-            var line = await reader.ReadLineAsync(responseTimeout.Token).ConfigureAwait(false);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
+                pnpWrite ? CancellationToken.None : cancellationToken);
+            timeout.CancelAfter(responseTimeout ?? ResponseTimeout);
+            var line = await reader.ReadLineAsync(timeout.Token).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(line) ||
                 line.Length > DedicatedGpuModeServiceProtocol.MaximumMessageLength)
             {
+                if (pnpWrite) throw new IOException("The GPU service did not return a complete response.");
                 return null;
             }
 
-            return JsonSerializer.Deserialize<DedicatedGpuModeServiceResponse>(line);
+            var response = JsonSerializer.Deserialize<DedicatedGpuModeServiceResponse>(line);
+            if (pnpWrite && (response is null ||
+                response.Version != DedicatedGpuModeServiceProtocol.Version || !Enum.IsDefined(response.Outcome)))
+                throw new IOException("The GPU service returned an untrustworthy write response.");
+            return response;
+        }
+        catch (Exception exception) when (pnpWrite && dispatched)
+        {
+            throw new DedicatedGpuOperationUncertainException(
+                "The GPU service request may have executed; its terminal state is unknown.", exception);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
