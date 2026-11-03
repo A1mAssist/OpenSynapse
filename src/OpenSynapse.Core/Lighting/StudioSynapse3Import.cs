@@ -48,15 +48,19 @@ internal static class StudioSynapse3Import
             using var archive = ZipFile.OpenRead(path);
             foreach (var entry in archive.Entries)
             {
-                if (entry.Length == 0 ||
-                    !entry.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
+                if (entry.Length == 0 || string.IsNullOrEmpty(entry.Name)) continue;
 
                 using var stream = entry.Open();
                 using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-                AddProfiles(reader.ReadToEnd(), Path.GetFileNameWithoutExtension(entry.Name), profiles);
+                try
+                {
+                    // Razer's own migrator parses every file in the export, not only *.xml.
+                    AddProfiles(reader.ReadToEnd(), Path.GetFileNameWithoutExtension(entry.Name), profiles);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Non-XML payloads (images, thumbnails) are part of the export too.
+                }
             }
 
             return profiles;
