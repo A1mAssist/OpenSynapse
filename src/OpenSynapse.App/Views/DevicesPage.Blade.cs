@@ -554,6 +554,14 @@ public sealed partial class DevicesPage : UserControl
     private async void OpenFirmwareDownloadClick(object sender, RoutedEventArgs e) =>
         await Launcher.LaunchUriAsync(new Uri(ViewModel.Firmware.DownloadUrl));
 
+    private async void DownloadFilterDriverClick(object sender, RoutedEventArgs e)
+    {
+        if (Uri.TryCreate(ViewModel.Blade.FilterDriverDownloadUri, UriKind.Absolute, out var uri))
+        {
+            await Launcher.LaunchUriAsync(uri);
+        }
+    }
+
     private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
     {
         if (_touchpadToggleInFlight || sender is not ToggleSwitch { FocusState: not FocusState.Unfocused })

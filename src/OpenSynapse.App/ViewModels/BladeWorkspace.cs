@@ -1042,6 +1042,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     public Visibility FilterDriverVisibility => _blade._bladeFilterDriverMissing
         ? Visibility.Visible
         : Visibility.Collapsed;
+    public string FilterDriverDownloadUri =>
+        RazerDeviceRegistry.BuiltIn.Find(0x1532, _blade._bladeProductId)?.FilterDriverInstallerUrl
+        ?? string.Empty;
 
     internal void SetFilterDriverMissing(bool missing)
     {
