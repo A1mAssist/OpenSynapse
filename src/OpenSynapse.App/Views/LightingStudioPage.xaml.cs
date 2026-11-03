@@ -396,6 +396,8 @@ public sealed partial class LightingStudioPage : UserControl
         };
         picker.FileTypeFilter.Add(OpenSynapse.Core.Lighting.StudioChromaFileService.Extension);
         picker.FileTypeFilter.Add(".json");
+        picker.FileTypeFilter.Add(".zip");
+        picker.FileTypeFilter.Add(".xml");
         Host.InitializePicker(picker);
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
