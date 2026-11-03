@@ -16,6 +16,64 @@ internal sealed class OpenRazerHidReportTransport
         CancellationToken cancellationToken = default) =>
         SendAsync(devicePath, report, cancellationToken);
 
+    /// <summary>
+    /// Writes one report and reads the HID response on the same handle. The
+    /// Billie lighting commands use a request/response pair; a write-only path
+    /// leaves the device waiting for the host read.
+    /// </summary>
+    internal async Task<byte[]?> SendOutputAndReadAsync(
+        string devicePath,
+        ReadOnlyMemory<byte> report,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        if (report.IsEmpty)
+        {
+            throw new ArgumentException("The HID report cannot be empty.", nameof(report));
+        }
+
+        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var handle = NativeMethods.CreateFile(
+                devicePath,
+                NativeMethods.GenericRead | NativeMethods.GenericWrite,
+                NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
+                IntPtr.Zero,
+                NativeMethods.OpenExisting,
+                NativeMethods.FileFlagOverlapped,
+                IntPtr.Zero);
+            if (handle.IsInvalid)
+            {
+                throw new Win32Exception(
+                    Marshal.GetLastWin32Error(),
+                    "Could not open the OpenRazer HID collection.");
+            }
+
+            await using var stream = new FileStream(
+                handle, FileAccess.ReadWrite, 64, isAsync: true);
+            await stream.WriteAsync(report, cancellationToken).ConfigureAwait(false);
+
+            var buffer = new byte[64];
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromMilliseconds(500));
+            try
+            {
+                var read = await stream.ReadAsync(buffer, timeout.Token).ConfigureAwait(false);
+                return read > 0 ? buffer[..read] : null;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                return null;
+            }
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     private async Task SendAsync(
         string devicePath,
         ReadOnlyMemory<byte> report,
@@ -69,10 +127,12 @@ internal sealed class OpenRazerHidReportTransport
 
     private static class NativeMethods
     {
+        internal const uint GenericRead = 0x80000000;
         internal const uint GenericWrite = 0x40000000;
         internal const uint FileShareRead = 0x00000001;
         internal const uint FileShareWrite = 0x00000002;
         internal const uint OpenExisting = 3;
+        internal const uint FileFlagOverlapped = 0x40000000;
 
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true,
             CharSet = CharSet.Unicode)]

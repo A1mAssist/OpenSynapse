@@ -290,10 +290,12 @@ public sealed class OpenRazerSpecialLightingService
 
             foreach (var report in reports)
             {
-                await _transport.SendOutputAsync(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
+                var response = await _transport.SendOutputAndReadAsync(
+                    connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
                 _diagnostic?.Invoke(
                     $"kraken lighting 1532:{connection.ProductId:X4} effect={settings.Effect} " +
-                    $"report=[{Convert.ToHexString(report)}]");
+                    $"report=[{Convert.ToHexString(report)}] response=" +
+                    (response is null ? "none" : $"[{Convert.ToHexString(response)}]"));
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
             }
         }
