@@ -53,7 +53,7 @@ public sealed partial class BottomLayerLocalizationTests
     }
 
     [Fact]
-    public void EveryOpenRazerCapabilityHasADisplayName()
+    public void EveryRazerHidCapabilityHasADisplayName()
     {
         var repository = FindRepositoryRoot();
         var missing = new List<string>();
@@ -61,8 +61,8 @@ public sealed partial class BottomLayerLocalizationTests
         {
             var keys = ReadResourceKeys(Path.Combine(
                 repository, "src", "OpenSynapse.App", "Strings", locale, "Resources.resw"));
-            missing.AddRange(Enum.GetNames<OpenRazerBackendCapability>()
-                .Where(name => !keys.Contains($"OpenRazerCapability{name}"))
+            missing.AddRange(Enum.GetNames<RazerHidBackendCapability>()
+                .Where(name => !keys.Contains($"RazerHidCapability{name}"))
                 .Select(name => $"{locale}:{name}"));
         }
 
@@ -72,7 +72,7 @@ public sealed partial class BottomLayerLocalizationTests
     }
 
     [Fact]
-    public void LocaleResourcesIncludeOpenRazerTertiaryColorLabel()
+    public void LocaleResourcesIncludeRazerHidTertiaryColorLabel()
     {
         var repository = FindRepositoryRoot();
         foreach (var locale in new[] { "en-US", "zh-CN" })
@@ -85,7 +85,7 @@ public sealed partial class BottomLayerLocalizationTests
                 locale,
                 "Resources.resw");
             Assert.Contains(
-                "OpenRazerTertiaryColorLabel.Text",
+                "RazerHidTertiaryColorLabel.Text",
                 ReadResourceKeys(path));
         }
     }

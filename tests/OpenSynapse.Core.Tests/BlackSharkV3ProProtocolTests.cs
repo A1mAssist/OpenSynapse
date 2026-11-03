@@ -43,7 +43,7 @@ public sealed class BlackSharkV3ProProtocolTests
     }
 
     [Fact]
-    public void KnownUnsupportedBlackSharkPidDoesNotFallBackToTheV3ProPanel()
+    public void CatalogDeclaredBlackSharkPidDoesNotFallBackToTheV3ProPanel()
     {
         Assert.False(BlackSharkHeadsetService.IsBlackSharkControlInterface(
             0x0565, "Razer BlackShark V2 HyperSpeed", 0xFF14, 0x0001, 64));

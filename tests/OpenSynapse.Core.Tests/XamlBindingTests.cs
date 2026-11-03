@@ -29,6 +29,13 @@ public sealed class XamlBindingTests
         "TertiaryBrush",
         "RpmInput",         // fan-curve editor text boxes
         "TemperatureInput",
+        "DisplayName",      // lighting studio layer item template
+        "Effect",           // lighting studio layer effect label
+        "Primary",          // lighting studio layer swatch
+        "Params",           // StudioLayerItem properties inside the layer item template
+        "Layer",            // StudioLayerRow item property inside the layer list template
+        "Brush",            // lighting studio color choice swatch
+        "Label",            // lighting studio color choice tooltip
     ];
 
     /// <summary>
@@ -38,7 +45,7 @@ public sealed class XamlBindingTests
     private static readonly Dictionary<string, string> Workspaces = new(StringComparer.Ordinal)
     {
         ["Macros"] = "src/OpenSynapse.App/ViewModels/MacroWorkspace.cs",
-        ["OpenRazer"] = "src/OpenSynapse.App/ViewModels/OpenRazerWorkspace.cs",
+        ["RazerHid"] = "src/OpenSynapse.App/ViewModels/RazerHidWorkspace.cs",
         ["Profiles"] = "src/OpenSynapse.App/ViewModels/ProfilesWorkspace.cs",
         ["Telemetry"] = "src/OpenSynapse.App/ViewModels/TelemetryWorkspace.cs",
         ["Fan"] = "src/OpenSynapse.App/ViewModels/FanWorkspace.cs",
@@ -49,12 +56,14 @@ public sealed class XamlBindingTests
         ["Diagnostics"] = "src/OpenSynapse.App/ViewModels/DiagnosticsWorkspace.cs",
         ["Refresh"] = "src/OpenSynapse.App/ViewModels/RefreshWorkspace.cs",
         ["Tray"] = "src/OpenSynapse.App/ViewModels/TrayWorkspace.cs",
+        ["Accessories"] = "src/OpenSynapse.App/ViewModels/UsbAccessoriesWorkspace.cs",
+        ["CpuPower"] = "src/OpenSynapse.App/ViewModels/CpuPowerLimitWorkspace.cs",
         ["Viper"] = "src/OpenSynapse.App/ViewModels/ViperWorkspace.cs",
     };
 
     /// <summary>
     /// The headset panel sets its DataContext to the headset view model, whose own Lighting
-    /// property is an OpenRazerKrakenViewModel. Those paths are not workspace roots.
+    /// property is an RazerHidKrakenViewModel. Those paths are not workspace roots.
     /// </summary>
     private static readonly string[] ResolvedOnNestedViewModels =
     [
@@ -167,6 +176,8 @@ public sealed class XamlBindingTests
     private static HashSet<string> ViewModelMembers()
     {
         var members = new HashSet<string>(StringComparer.Ordinal);
+        members.UnionWith(typeof(OpenSynapse.Core.Devices.BladeFanCurvePointViewModel)
+            .GetProperties().Select(property => property.Name));
         foreach (var file in AppSourceFiles().Where(path =>
                      Path.GetFileName(path).Contains("ViewModel", StringComparison.Ordinal) &&
                      !Path.GetFileName(path).Contains("Workspace", StringComparison.Ordinal)))
@@ -177,18 +188,36 @@ public sealed class XamlBindingTests
         return members;
     }
 
+    [Fact]
+    public void DeviceModeCardsUseDistinctIconsAndKeepRadioTextSpacing()
+    {
+        var workspace = File.ReadAllText(
+            Path.Combine(RepoLayout.Root, "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs"));
+        Assert.Contains("BladePerformanceMode.Performance => \"\\uE945\"", workspace);
+        Assert.Contains("BladePerformanceMode.Hyperboost => \"\\uEC4A\"", workspace);
+
+        var page = File.ReadAllText(
+            Path.Combine(RepoLayout.Root, "src/OpenSynapse.App/Views/DevicesPage.xaml"));
+        Assert.Contains("GroupName=\"GpuModeSelection\" Padding=\"10,0,0,0\"", page);
+    }
+
     private static HashSet<string> MembersOf(string relativePath)
     {
         var path = Path.Combine(RepoLayout.Root, relativePath.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(File.Exists(path), $"缺少 {relativePath}");
 
         var members = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var line in File.ReadLines(path))
+        var stem = Path.GetFileNameWithoutExtension(path);
+        var directory = Path.GetDirectoryName(path)!;
+        foreach (var source in Directory.EnumerateFiles(directory, $"{stem}*.cs"))
         {
-            var match = PublicMember.Match(line);
-            if (match.Success)
+            foreach (var line in File.ReadLines(source))
             {
-                members.Add(match.Groups[1].Value);
+                var match = PublicMember.Match(line);
+                if (match.Success)
+                {
+                    members.Add(match.Groups[1].Value);
+                }
             }
         }
 

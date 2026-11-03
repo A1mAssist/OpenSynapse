@@ -197,7 +197,7 @@ internal sealed class DisplayPowerNotification
 
         try
         {
-            await _viewModel.ReplayCpuPowerLimitAfterResumeAsync(_lifetime);
+            await _viewModel.CpuPower.ReplayCpuPowerLimitAfterResumeAsync(_lifetime);
         }
         catch (Exception)
         {

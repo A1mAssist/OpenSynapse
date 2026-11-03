@@ -22,7 +22,7 @@ public static class RazerLegacyChromaProtocol
 
     /// <summary>
     /// Switches the 320-byte ARGB controller to its custom-frame effect
-    /// (class 0x0F, command 0x02, effect 0x08), the mode OpenRazer enters before
+    /// (class 0x0F, command 0x02, effect 0x08), the mode RazerHid enters before
     /// writing frames. It uses transaction 0x3F on this device.
     /// </summary>
     public static byte[] SetCustomFrameMode(byte transactionId) =>
@@ -41,7 +41,9 @@ public static class RazerLegacyChromaProtocol
         RazerChromaEffect effect,
         ReadOnlySpan<byte> colors,
         byte profileId = ReadProfileId,
-        byte regionId = ReadRegionId)
+        byte regionId = ReadRegionId,
+        byte? flags = null,
+        byte rate = 0)
     {
         if (effect is not (RazerChromaEffect.Off or RazerChromaEffect.Static or
             RazerChromaEffect.Breathing or RazerChromaEffect.Spectrum))
@@ -60,7 +62,8 @@ public static class RazerLegacyChromaProtocol
         arguments[2] = (byte)effect;
         // The flags byte selects random (0), single-colour (1) or dual-colour (2)
         // breathing; leaving it at zero made every breathing request random.
-        arguments[3] = effect == RazerChromaEffect.Breathing ? colorCount : (byte)0;
+        arguments[3] = flags ?? (effect == RazerChromaEffect.Breathing ? colorCount : (byte)0);
+        arguments[4] = rate;
         arguments[5] = colorCount;
         colors.CopyTo(arguments.AsSpan(6));
         return RazerFeatureReport.CreateRequest(
@@ -95,14 +98,20 @@ public static class RazerLegacyChromaProtocol
                 $"Razer feature reports are {RazerFeatureReport.Length} bytes; got {response.Length}.");
         }
 
-        var data = response[RazerFeatureReport.ArgumentsOffset..];
+        var declaredLength = response[6];
+        if (declaredLength > 80)
+        {
+            throw new InvalidDataException($"Razer response declares {declaredLength} data bytes; 80 maximum.");
+        }
+
+        var data = response.Slice(RazerFeatureReport.ArgumentsOffset, declaredLength);
         if (data.Length < 6)
         {
             throw new InvalidDataException($"Razer response has {data.Length} data bytes; 6 required.");
         }
 
         var count = data[5];
-        if (data.Length < 6 + (count * 3))
+        if (count > MaxColors || data.Length < 6 + (count * 3))
         {
             throw new InvalidDataException($"Chroma effect declares {count} colors.");
         }

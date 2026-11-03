@@ -327,7 +327,7 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Barracuda Pro | `1532:0539` | Audio page |
 | Razer Barracuda Pro | `1532:0583` | Audio page |
 | Razer Barracuda V2 Pro | `1532:0593` | Audio page (battery/charging); THX V4 installer |
-| Razer BlackShark V2 HyperSpeed | `1532:0565` | Not shown: no bundle evidence for the protocol family |
+| Razer BlackShark V2 HyperSpeed | `1532:0565` | Audio page (2.4 GHz dongle endpoint) |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | Audio page |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | Audio page; THX installer |
 | Razer BlackShark V2 Pro (2023) | `1532:0555` | Audio page; THX installer |

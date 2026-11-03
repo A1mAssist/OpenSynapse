@@ -29,7 +29,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
     private readonly Action _requestDeviceRefresh;
     private readonly Action<string> _setDeviceOperationError;
     private readonly Func<Task<string?>> _stopFanForSuspend;
-    private readonly Action<bool> _setOpenRazerChroma;
+    private readonly Action<bool> _setRazerHidChroma;
     private readonly BladeViewModel _blade;
     private bool _chromaIntegrationEnabled = true;
     private BladeLogoMode? _displaySuspendedLogoMode;
@@ -50,7 +50,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
         Action requestDeviceRefresh,
         Action<string> setDeviceOperationError,
         Func<Task<string?>> stopFanForSuspend,
-        Action<bool> setOpenRazerChroma,
+        Action<bool> setRazerHidChroma,
         BladeViewModel blade)
     {
         _bladeLightingController = bladeLightingController;
@@ -66,7 +66,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
         _requestDeviceRefresh = requestDeviceRefresh;
         _setDeviceOperationError = setDeviceOperationError;
         _stopFanForSuspend = stopFanForSuspend;
-        _setOpenRazerChroma = setOpenRazerChroma;
+        _setRazerHidChroma = setRazerHidChroma;
         _blade = blade;
     }
 
@@ -109,7 +109,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
         if (_chromaIntegrationEnabled == enabled) return;
         _chromaIntegrationEnabled = enabled;
         RaiseChromaVisibilityChanged();
-        _setOpenRazerChroma(enabled);
+        _setRazerHidChroma(enabled);
     }
 
     public async Task PrepareForSuspendAsync()

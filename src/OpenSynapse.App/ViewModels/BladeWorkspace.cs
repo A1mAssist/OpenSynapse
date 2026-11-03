@@ -8,6 +8,7 @@ using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
@@ -50,6 +51,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private readonly BladeViewModel _blade = new();
 
     private HashSet<BladePerformanceMode> _bladePerformanceCycleModes = [.. BladePerformanceModes];
+    private IReadOnlyList<BladePerformanceModeCardViewModel>? _performanceModeCards;
     private string _activeBladeMappingPreset = BladeProfileSettings.Product710DefaultMappingPreset;
     private bool _activeSnapTapEnabled;
     private bool _suppressBladePerformanceApply;
@@ -65,14 +67,15 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private int _bladeLogoPowerProfileIndex;
     private readonly object _bladeBrightnessGate = new();
     private Task _bladeBrightnessWriter = Task.CompletedTask;
-    private byte? _desiredBladeBrightness;
+    private readonly List<BladeBrightnessRequest> _bladeBrightnessRequests = [];
+    private BladeBrightnessRequest? _writingBladeBrightness;
     private bool _bladeBrightnessWriterActive;
     private Task _bladeBrightnessVerification = Task.CompletedTask;
     private long _bladeBrightnessVerificationGeneration;
     private bool _gpuClockOffsetProbeStarted;
     private DateTimeOffset _gpuClockOffsetNextProbe;
     private bool _bladeGpuClockLimitAvailable;
-    private double _bladeGpuClockLimitMhz = NvApiGpuClockLimit.MaximumMhz;
+    private double _bladeGpuClockLimitMhz;
 
     internal BladeWorkspace(
         IRazerDeviceTelemetryReader deviceTelemetryReader,
@@ -124,6 +127,14 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _lighting = lighting;
         _bladeRow = bladeRow;
         _readSerialAsync = readSerialAsync;
+        _gpuMode = new BladeGpuModeController(
+            ReadDisplayMuxStatusAsync,
+            SetDisplayMuxModeAsync,
+            WindowsDedicatedGpuMode.GetStatus,
+            WindowsDedicatedGpuMode.SetEnabledAsync,
+            DedicatedGpuModeServiceClient.TrySetEnabledAsync,
+            WindowsDedicatedGpuMode.RestartFaultedAsync,
+            WindowsDisplayTopology.Read);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -155,22 +166,12 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _runDeviceOperation(label, operation, cancellationToken, restoreSelection, successVerb, failureVerb);
 
     private void RequestDeviceRefresh() => _requestDeviceRefresh();
-
     private void SetDeviceOperationError(string error) => _setDeviceOperationError(error);
 
     private ProfileDefinition GetActiveProfile() =>
         Profile.Profiles.TryGetValue(Profile.ActiveProfileName, out var profile)
             ? profile
             : throw new InvalidOperationException("The active profile is missing from the profile catalog.");
-    public ValueTask<BladeDisplayMuxStatus> ReadDisplayMuxStatusAsync(
-        CancellationToken cancellationToken = default) =>
-        _deviceTelemetryReader.ReadBladeDisplayMuxStatusAsync(ActiveDescriptors, cancellationToken);
-
-    public ValueTask<BladeDisplayMuxSwitchResult> SetDisplayMuxModeAsync(
-        BladeDisplayMuxMode mode,
-        CancellationToken cancellationToken = default) =>
-        _deviceTelemetryReader.SetBladeDisplayMuxModeAsync(ActiveDescriptors, mode, cancellationToken);
-
     public async Task ApplyBrightnessAsync(CancellationToken cancellationToken = default)
     {
         if (!_blade._canSetBladeBrightness)
@@ -183,57 +184,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             () => ApplyBrightnessCoreAsync(cancellationToken),
             cancellationToken,
             () => BrightnessPercent = _blade._confirmedBladeBrightnessPercent);
-    }
-
-    private async Task ApplyBrightnessCoreAsync(CancellationToken cancellationToken)
-    {
-        var requested = ToBladeBrightness(BrightnessPercent);
-        if (!IsSelectedLightingPowerActive || !IsDisplayAvailable)
-        {
-            EditableLightingBladeProfile.KeyboardBrightness = requested;
-            SetBrightness(requested, confirm: false);
-            RefreshLightingEditor();
-            await SaveProfileAsync(cancellationToken);
-            return;
-        }
-
-        var actual = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
-            ActiveDescriptors,
-            requested,
-            cancellationToken);
-        SetBrightness(actual);
-        EditableLightingBladeProfile.KeyboardBrightness = actual;
-        await SaveProfileAsync(cancellationToken);
-    }
-
-    internal Task QueueBrightnessAsync(CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        if (!_blade._canSetBladeBrightness)
-        {
-            return Task.CompletedTask;
-        }
-
-        var requested = ToBladeBrightness(BrightnessPercent);
-        if (!IsSelectedLightingPowerActive)
-        {
-            EditableLightingBladeProfile.KeyboardBrightness = requested;
-            SetBrightness(requested, confirm: false);
-            RefreshLightingEditor();
-            return SaveProfileAsync(cancellationToken);
-        }
-
-        lock (_bladeBrightnessGate)
-        {
-            _desiredBladeBrightness = requested;
-            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
-            if (!_bladeBrightnessWriterActive)
-            {
-                _bladeBrightnessWriterActive = true;
-                _bladeBrightnessWriter = WriteDesiredBladeBrightnessAsync();
-            }
-        }
-        return Task.CompletedTask;
     }
 
     public async Task ApplyLightingEffectAsync(
@@ -564,27 +514,35 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         {
             if (!IsSelectedPerformancePowerActive)
             {
-                EditablePerformanceProfile.PerformanceMode = (byte)requested;
+                await BladePerformanceProfileEdit.SaveModeAsync(EditablePerformanceProfile, (byte)requested,
+                    SaveProfileAsync, cancellationToken, AppStrings.Text("Text_CC12A6F5"));
                 SetPerformanceMode(requested, confirm: false);
-                if (!await SaveProfileAsync(cancellationToken))
-                {
-                    throw new InvalidOperationException(AppStrings.Text("Text_CC12A6F5"));
-                }
 
                 RefreshPerformanceEditor();
                 return;
             }
 
+            var target = EditablePerformanceProfile;
+            var previousFan = (target.FanMode, target.FanTargetRpm, target.FanCurve);
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 ActiveDescriptors, requested, cancellationToken, _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
-            EditablePerformanceProfile.PerformanceMode = (byte)actual;
-            ClearFixedFanWhenLeavingCustom(actual);
-            await SaveProfileAsync(cancellationToken);
+            var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
+            try
+            {
+                await BladePerformanceProfileEdit.SaveModeAsync(target, (byte)actual, SaveProfileAsync,
+                    cancellationToken, AppStrings.Text("Text_CC12A6F5"));
+            }
+            catch
+            {
+                (target.FanMode, target.FanTargetRpm, target.FanCurve) = previousFan;
+                RequestDeviceRefresh();
+                throw;
+            }
+            if (clearedFan && ReferenceEquals(target, EditablePerformanceProfile)) _fan().ClearPendingMode();
             RequestDeviceRefresh();
             PerformanceModeChangedByUser?.Invoke(actual);
-        }, cancellationToken, () =>
-            PerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex);
+        }, cancellationToken, RefreshPerformanceEditor);
         if (limitedAdapter)
         {
             SetDeviceOperationError(AppStrings.Text("BladeHyperboostLimitedAdapter"));
@@ -596,20 +554,19 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     /// stores a target in Balanced/Silent but keeps following its own curve, so the
     /// profile would otherwise carry a value the firmware ignores.
     /// </summary>
-    private void ClearFixedFanWhenLeavingCustom(BladePerformanceMode mode)
+    private bool ClearFixedFanWhenLeavingCustom(BladePerformanceMode mode, BladeProfileSettings target)
     {
         if (mode == BladePerformanceMode.Custom ||
             !BladeModelCapabilities.FixedFanRequiresCustomMode(_blade._bladeProductId) ||
-            EditablePerformanceProfile.FanMode is null)
+            target.FanMode is null)
         {
-            return;
+            return false;
         }
 
-        var target = EditablePerformanceProfile;
         target.FanMode = null;
         target.FanTargetRpm = null;
         target.FanCurve = null;
-        _fan().ClearPendingMode();
+        return true;
     }
 
     public async Task ApplyChargeLimitAsync(CancellationToken cancellationToken = default)
@@ -622,11 +579,12 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("Text_DEE979FD"), async () =>
         {
+            var target = Profile.Global.Blade;
             var actual = await _deviceTelemetryReader.SetBladeChargeLimitAsync(
                 ActiveDescriptors, BladeChargeLimits[ChargeLimitIndex], cancellationToken);
             SetChargeLimit(actual);
-            Profile.Global.Blade.ChargeLimitPercent = actual;
-            await SaveProfileAsync(cancellationToken);
+            await BladePerformanceProfileEdit.SaveChargeLimitAsync(target, actual, SaveProfileAsync,
+                cancellationToken, AppStrings.FormatText("ProfileSaveError", AppStrings.Text("Text_DEE979FD")));
         }, cancellationToken, () =>
             ChargeLimitIndex = _blade._confirmedBladeChargeLimitIndex);
     }
@@ -693,29 +651,29 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             // global slot would silently drop a per-power-source setting.
             if (!IsSelectedPerformancePowerActive)
             {
-                EditablePerformanceProfile.MaxFanMode = (byte)requested;
-                SetMaxFan(requested);
-                if (!await SaveProfileAsync(cancellationToken))
-                {
-                    throw new InvalidOperationException(AppStrings.Text("Text_CC12A6F5"));
-                }
+                await BladePerformanceProfileEdit.SaveMaxFanAsync(EditablePerformanceProfile, (byte)requested,
+                    SaveProfileAsync, cancellationToken, AppStrings.Text("Text_CC12A6F5"));
+                SetMaxFan(requested, confirm: false);
 
                 return;
             }
 
-            var previousProfile = Profile.Clone();
             var actual = await _deviceTelemetryReader.SetBladeMaxFanModeAsync(
                 ActiveDescriptors, requested, cancellationToken);
             SetMaxFan(actual);
-            EditablePerformanceProfile.MaxFanMode = (byte)actual;
-            if (!await SaveProfileAsync(cancellationToken))
+            try
             {
-                Profile = previousProfile;
-                throw new InvalidOperationException(AppStrings.Text("Text_AB07F412"));
+                await BladePerformanceProfileEdit.SaveMaxFanAsync(EditablePerformanceProfile, (byte)actual,
+                    SaveProfileAsync, cancellationToken, AppStrings.Text("Text_AB07F412"));
+            }
+            catch
+            {
+                RequestDeviceRefresh();
+                throw;
             }
 
             RequestDeviceRefresh();
-        }, cancellationToken, () => MaxFanEnabled = _blade._confirmedBladeMaxFanEnabled);
+        }, cancellationToken, RefreshPerformanceEditor);
     }
 
     public async Task ApplyLogoAsync(CancellationToken cancellationToken = default)
@@ -821,15 +779,26 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                 modes,
                 cycleModes);
             PerformanceModeIndex = modes.ToList().IndexOf(nextMode);
+            var target = CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
+            var previousFan = (target.FanMode, target.FanTargetRpm, target.FanCurve);
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 ActiveDescriptors,
                 modes[PerformanceModeIndex],
                 cancellationToken,
                 _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
-            (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).PerformanceMode = (byte)actual;
-            ClearFixedFanWhenLeavingCustom(actual);
-            await SaveProfileAsync(cancellationToken);
+            var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
+            try
+            {
+                await BladePerformanceProfileEdit.SaveModeAsync(target, (byte)actual, SaveProfileAsync,
+                    cancellationToken, AppStrings.Text("Text_CC12A6F5"));
+            }
+            catch
+            {
+                (target.FanMode, target.FanTargetRpm, target.FanCurve) = previousFan;
+                throw;
+            }
+            if (clearedFan && ReferenceEquals(target, EditablePerformanceProfile)) _fan().ClearPendingMode();
             RequestDeviceRefresh();
             PerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
@@ -993,6 +962,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             var includedRates = configuredCycle is { Count: > 0 }
                 ? configuredCycle
                 : display.InternalDisplayRefreshRates.ToHashSet();
+            var target = CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
             display.InternalDisplayRefreshRateHertz = BladePerformanceModeCycle.GetNext(
                 display.ConfirmedRefreshRateHertz,
                 display.InternalDisplayRefreshRates,
@@ -1000,240 +970,12 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             var snapshot = display.Controller.SetRefreshRate(
                 display.InternalDisplayRefreshRateHertz);
             display.ApplyInternalDisplaySnapshot(snapshot);
-            (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).RefreshRateHertz =
-                snapshot.RefreshRateHertz;
-            await SaveProfileAsync(cancellationToken);
+            await BladePerformanceProfileEdit.SaveRefreshRateAsync(target, snapshot.RefreshRateHertz,
+                SaveProfileAsync, cancellationToken,
+                AppStrings.FormatText("ProfileSaveError", AppStrings.Text("Text_8423206D")));
             _internalDisplayRefreshRateChangedByUser(snapshot.RefreshRateHertz);
         }, cancellationToken, () =>
             _display().InternalDisplayRefreshRateHertz = _display().ConfirmedRefreshRateHertz);
-    }
-
-    internal Task StepBrightnessAsync(
-        bool increase,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        if (!_blade._canSetBladeBrightness)
-        {
-            throw new InvalidOperationException(AppStrings.Text("Text_F00EAF88"));
-        }
-
-        if (!IsDisplayAvailable)
-        {
-            var current = ToBladeBrightness(BrightnessPercent);
-            var requested = (byte)Math.Clamp(current + (increase ? 16 : -16), 0, 255);
-            if (requested == current)
-            {
-                return Task.CompletedTask;
-            }
-            BrightnessPercent = Math.Round(
-                requested * 100d / 255,
-                MidpointRounding.AwayFromZero);
-            (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade).KeyboardBrightness = requested;
-            return SaveProfileAsync(cancellationToken);
-        }
-
-        lock (_bladeBrightnessGate)
-        {
-            var current = _desiredBladeBrightness ?? ToBladeBrightness(BrightnessPercent);
-            var requested = (byte)Math.Clamp(current + (increase ? 16 : -16), 0, 255);
-            if (requested == current)
-            {
-                return Task.CompletedTask;
-            }
-
-            _desiredBladeBrightness = requested;
-            BrightnessPercent = Math.Round(
-                requested * 100d / 255,
-                MidpointRounding.AwayFromZero);
-            Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
-            if (!_bladeBrightnessWriterActive)
-            {
-                _bladeBrightnessWriterActive = true;
-                _bladeBrightnessWriter = WriteDesiredBladeBrightnessAsync();
-            }
-        }
-        return Task.CompletedTask;
-    }
-
-    private async Task WriteDesiredBladeBrightnessAsync()
-    {
-        try
-        {
-            await WriteDesiredBladeBrightnessCoreAsync().ConfigureAwait(false);
-        }
-        finally
-        {
-            lock (_bladeBrightnessGate)
-            {
-                _bladeBrightnessWriterActive = false;
-                if (_desiredBladeBrightness is not null && !IsDisposed)
-                {
-                    _bladeBrightnessWriterActive = true;
-                    _bladeBrightnessWriter = WriteDesiredBladeBrightnessAsync();
-                }
-            }
-        }
-    }
-
-    private async Task WriteDesiredBladeBrightnessCoreAsync()
-    {
-        byte? lastWritten = null;
-        while (!IsDisposed)
-        {
-            byte requested;
-            lock (_bladeBrightnessGate)
-            {
-                if (_desiredBladeBrightness is not byte desired)
-                {
-                    break;
-                }
-                requested = desired;
-            }
-
-            var original = ToBladeBrightness(_blade._confirmedBladeBrightnessPercent);
-            var applied = false;
-            await RunDeviceOperationAsync(AppStrings.Text("Text_5F0C27DB"), async () =>
-            {
-                if (!IsDisplayAvailable)
-                {
-                    bool isCurrent;
-                    lock (_bladeBrightnessGate)
-                    {
-                        isCurrent = _desiredBladeBrightness == requested;
-                        if (isCurrent) _desiredBladeBrightness = null;
-                    }
-                    if (!isCurrent)
-                    {
-                        applied = true;
-                        return;
-                    }
-                    (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade)
-                        .KeyboardBrightness = requested;
-                    SetBrightness(requested, confirm: false);
-                    await SaveProfileAsync(CancellationToken.None);
-                    return;
-                }
-
-                try
-                {
-                    await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
-                        ActiveDescriptors,
-                        requested,
-                        CancellationToken.None,
-                        verifyReadback: false);
-                }
-                catch (Exception writeError) when (RuntimeErrors.IsExpected(writeError))
-                {
-                    bool hasNewerRequest;
-                    lock (_bladeBrightnessGate)
-                    {
-                        hasNewerRequest = _desiredBladeBrightness is byte pending && pending != requested;
-                        if (!hasNewerRequest) _desiredBladeBrightness = null;
-                    }
-                    try
-                    {
-                        var restored = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
-                            ActiveDescriptors,
-                            original,
-                            CancellationToken.None);
-                        if (!hasNewerRequest) SetBrightness(restored);
-                    }
-                    catch (Exception restoreError) when (RuntimeErrors.IsExpected(restoreError))
-                    {
-                        throw new AggregateException(writeError, restoreError);
-                    }
-
-                    throw;
-                }
-
-                bool isCurrentRequest;
-                lock (_bladeBrightnessGate)
-                {
-                    isCurrentRequest = _desiredBladeBrightness == requested;
-                    if (isCurrentRequest) _desiredBladeBrightness = null;
-                }
-                if (isCurrentRequest)
-                {
-                    SetBrightness(requested);
-                    lastWritten = requested;
-                }
-                applied = true;
-            }, CancellationToken.None, () =>
-            {
-                bool restoreSelection;
-                lock (_bladeBrightnessGate)
-                {
-                    restoreSelection = _desiredBladeBrightness == requested;
-                    if (restoreSelection) _desiredBladeBrightness = null;
-                }
-                if (restoreSelection) BrightnessPercent = _blade._confirmedBladeBrightnessPercent;
-            }, successVerb: AppStrings.Text("Text_D25102CE"));
-
-            if (!applied)
-            {
-                return;
-            }
-        }
-
-        if (lastWritten is byte persistedBrightness &&
-            !IsDisplayAvailable)
-        {
-            (CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade)
-                .KeyboardBrightness = persistedBrightness;
-            await SaveProfileAsync(CancellationToken.None);
-            return;
-        }
-
-        if (lastWritten is not null && !IsDisposed)
-        {
-            ScheduleBladeBrightnessVerification();
-        }
-    }
-
-    private void ScheduleBladeBrightnessVerification()
-    {
-        var generation = Interlocked.Increment(ref _bladeBrightnessVerificationGeneration);
-        _bladeBrightnessVerification = VerifyBladeBrightnessAfterIdleAsync(generation);
-    }
-
-    private async Task VerifyBladeBrightnessAfterIdleAsync(long generation)
-    {
-        await Task.Delay(BrightnessVerificationDelay);
-        if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
-            !IsDisplayAvailable ||
-            IsDisposed)
-        {
-            return;
-        }
-
-        await RunDeviceOperationAsync(AppStrings.Text("Text_5F0C27DB"), async () =>
-        {
-            bool hasPendingBrightness;
-            lock (_bladeBrightnessGate)
-            {
-                hasPendingBrightness = _desiredBladeBrightness is not null;
-            }
-            if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
-                !IsDisplayAvailable ||
-                hasPendingBrightness)
-            {
-                return;
-            }
-
-            var actual = await _deviceTelemetryReader.ReadBladeKeyboardBrightnessAsync(
-                ActiveDescriptors,
-                CancellationToken.None);
-            if (generation != Volatile.Read(ref _bladeBrightnessVerificationGeneration) ||
-                !IsDisplayAvailable)
-            {
-                return;
-            }
-            SetBrightness(actual);
-            Profile.Global.Blade.KeyboardBrightness = actual;
-            await SaveProfileAsync(CancellationToken.None);
-        }, CancellationToken.None, () =>
-            RequestDeviceRefresh());
     }
 
     private static byte ToBladeBrightness(double percent) => checked((byte)Math.Round(
@@ -1342,11 +1084,61 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     public bool CanWriteBrightness =>
         CanSetBrightness && BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId);
     public string PerformanceModeText { get => _blade._bladePerformanceModeText; private set => SetField(ref _blade._bladePerformanceModeText, value); }
-    public IReadOnlyList<string> PerformanceModeOptions =>
-        _blade.PerformanceModes
-            .Select(mode => AppStrings.Text(BladePerformanceModeTextKey(mode)))
+    public IReadOnlyList<BladePerformanceModeCardViewModel> PerformanceModeCards =>
+        _performanceModeCards ??= _blade.PerformanceModes
+            .Select((mode, index) => new BladePerformanceModeCardViewModel(
+                mode,
+                index,
+                AppStrings.Text(BladePerformanceModeTextKey(mode)),
+                AppStrings.Text(BladePerformanceModeDescriptionKey(mode)),
+                BladePerformanceModeGlyph(mode),
+                index == PerformanceModeIndex))
             .ToArray();
 
+    private void RefreshPerformanceModeCardSelection()
+    {
+        if (_performanceModeCards is null)
+        {
+            OnPropertyChanged(nameof(PerformanceModeCards));
+            return;
+        }
+
+        foreach (var card in _performanceModeCards)
+        {
+            card.SetSelected(card.Index == PerformanceModeIndex);
+        }
+    }
+
+    private string BladePerformanceModeDescriptionKey(BladePerformanceMode mode) => mode switch
+    {
+        BladePerformanceMode.Balanced => "BladePerformanceModeBalancedDescription",
+        BladePerformanceMode.Gaming when _blade._bladeProductId == BladeModelCapabilities.Blade18_2026ProductId =>
+            "BladePerformanceModeTurboDescription",
+        BladePerformanceMode.Gaming => "BladePerformanceModeGamingDescription",
+        BladePerformanceMode.Performance => "BladePerformanceModePerformanceDescription",
+        BladePerformanceMode.BatterySaver => "BladePerformanceModeBatterySaverDescription",
+        BladePerformanceMode.Custom => "BladePerformanceModeCustomDescription",
+        BladePerformanceMode.Silent => "BladePerformanceModeSilentDescription",
+        BladePerformanceMode.BalancedDc => "BladePerformanceModeBalancedDcDescription",
+        BladePerformanceMode.Hyperboost => "BladePerformanceModeHyperboostDescription",
+        _ => "BladePerformanceModePerformanceDescription",
+    };
+
+    private static string BladePerformanceModeGlyph(BladePerformanceMode mode) => mode switch
+    {
+        BladePerformanceMode.Balanced => "\uE9D2",
+        BladePerformanceMode.Gaming => "\uE7FC",
+        BladePerformanceMode.Performance => "\uE945",
+        BladePerformanceMode.BatterySaver => "\uE83F",
+        BladePerformanceMode.Custom => "\uE713",
+        BladePerformanceMode.Silent => "\uE74F",
+        BladePerformanceMode.BalancedDc => "\uE80F",
+        BladePerformanceMode.Hyperboost => "\uEC4A",
+        _ => "\uE945",
+    };
+
+    public string FanSpeedHelpText => AppStrings.Text("BladeFanSpeedHelp");
+    public string FanControlHelpText => AppStrings.Text("BladeFanControlHelp");
     private string BladePerformanceModeTextKey(BladePerformanceMode mode) => mode switch
     {
         BladePerformanceMode.Balanced => "Text_9753B259",
@@ -1369,6 +1161,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             if (!SetField(ref _blade._bladePerformanceModeIndex, value)) return;
             // The fixed-speed range is per mode, so re-clamp the stored target on a switch.
             _fan().ReclampFixedRpm();
+            RefreshPerformanceModeCardSelection();
         }
     }
     public bool CanSetPerformanceMode
@@ -1581,7 +1374,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _blade.ResetCustomCapabilityFlags();
         _blade._bladePerformanceModeIndex = -1;
         _blade._confirmedBladePerformanceModeIndex = -1;
+        _performanceModeCards = null;
         OnPropertyChanged(nameof(PerformanceModeIndex));
+        OnPropertyChanged(nameof(PerformanceModeCards));
         _bladePerformanceCycleModes.RemoveWhere(mode => !performanceModes.Contains(mode));
         if (_bladePerformanceCycleModes.Count == 0)
         {
@@ -1592,7 +1387,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(CanWritePerformanceMode));
         OnPropertyChanged(nameof(HyperboostOptionVisibility));
         OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
-        OnPropertyChanged(nameof(PerformanceModeOptions));
         OnPropertyChanged(nameof(CanSetGamingMode));
         OnPropertyChanged(nameof(GamingModeVisibility));
         OnPropertyChanged(nameof(CustomPerformanceVisibility));
@@ -1638,7 +1432,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         : Visibility.Collapsed;
 
     /// <summary>
-    /// Collapses a whole control when the model answered none of its reads. An OpenRazer-only
+    /// Collapses a whole control when the model answered none of its reads. An RazerHid-only
     /// Blade never sees the Power Mode Control bitmask, so these cards would otherwise render
     /// a row of "--" placeholders that look like a broken device.
     /// </summary>
@@ -1987,38 +1781,36 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         }
 
         var effect = BladeLighting2023Admitted.ToWireEffect(mode);
+        var edit = new BladeLightingProfileEdit(Profile, SelectedLightingPowerState);
+        var enabled = LightingEnabled;
+        var descriptors = ActiveDescriptors.ToArray();
 
         await RunDeviceOperationAsync("Keyboard effect", async () =>
         {
-            BladeLighting2023Effect actual;
-            try
+            if (edit.CanWriteEffect(Profile, CurrentPowerSource, IsDisplayAvailable, enabled))
             {
-                actual = await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
-                    ActiveDescriptors, effect, cancellationToken);
+                try
+                {
+                    _blade._bladeKeyboardEffect2023 = await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
+                        descriptors, effect, cancellationToken);
+                }
+                catch
+                {
+                    NotifyLightingDialectChangedIfDowngraded();
+                    throw;
+                }
             }
-            catch
-            {
-                NotifyLightingDialectChangedIfDowngraded();
-                throw;
-            }
-            _blade._bladeKeyboardEffect2023 = actual;
 
             // Go through the shared codec so the persisted key matches the one
             // BladeLightingProfileCodec.Parse accepts on the next read.
-            var previousProfile = Profile.Clone();
-            var target = EditableLightingProfile;
             var encoded = BladeLightingProfileCodec.Create(new BladeLightingEffect(mode));
-            target.Effect = encoded.Effect;
-            target.Parameters = encoded.Parameters;
-            if (!await SaveProfileAsync(cancellationToken))
-            {
-                Profile = previousProfile;
-                throw new InvalidOperationException(AppStrings.Text("Text_C7D0CD75"));
-            }
+            await edit.SaveEffectAsync(Profile, encoded, SaveProfileAsync, cancellationToken,
+                AppStrings.Text("Text_C7D0CD75"));
 
             _lighting().ShadowFingerprint = string.Empty;
             RequestDeviceRefresh();
-        }, cancellationToken);
+            RefreshLightingEditor();
+        }, cancellationToken, RefreshLightingEditor);
     }
 
     public async Task ApplyLightingSettingsAsync(CancellationToken cancellationToken = default)
@@ -2276,14 +2068,16 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         {
             SetPerformanceMode((BladePerformanceMode)rawPerformanceMode, confirm: false);
         }
+        else PerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex;
 
         // Restore the Max Fan toggle from the same resolved profile, so the switch shows
         // the configured value instead of only the last value read back from the device.
         if (bladeProfile.MaxFanMode is byte rawMaxFan &&
             Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
         {
-            SetMaxFan((BladeMaxFanMode)rawMaxFan);
+            SetMaxFan((BladeMaxFanMode)rawMaxFan, confirm: false);
         }
+        else SetMaxFan(_blade._confirmedBladeMaxFanEnabled ? BladeMaxFanMode.Enabled : BladeMaxFanMode.Disabled, confirm: false);
 
         _fan().RefreshBladeFanCurveEditor();
     }
@@ -2622,28 +2416,26 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         BrightnessText = $"{percent:0}%";
         lock (_bladeBrightnessGate)
         {
-            if (_desiredBladeBrightness is null)
+            if (confirm) _blade._confirmedBladeBrightnessPercent = percent;
+            if (_bladeBrightnessRequests.Count == 0)
             {
                 BrightnessPercent = percent;
-                if (confirm)
-                {
-                    _blade._confirmedBladeBrightnessPercent = percent;
-                }
             }
         }
     }
 
     internal void SetPerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {
+        var previous = (_blade._bladePerformanceModeText, _blade._bladePerformanceModeIndex, _blade._confirmedBladePerformanceModeIndex);
         _blade.SetPerformanceMode(mode, confirm);
+        if (previous == (_blade._bladePerformanceModeText, _blade._bladePerformanceModeIndex, _blade._confirmedBladePerformanceModeIndex))
+        {
+            return;
+        }
+
         OnPropertyChanged(nameof(PerformanceModeText));
         OnPropertyChanged(nameof(PerformanceModeIndex));
-        OnPropertyChanged(nameof(CpuBoostText));
-        OnPropertyChanged(nameof(CpuBoostIndex));
-        OnPropertyChanged(nameof(GpuBoostText));
-        OnPropertyChanged(nameof(GpuBoostIndex));
-        OnPropertyChanged(nameof(MaxFanText));
-        OnPropertyChanged(nameof(MaxFanEnabled));
+        RefreshPerformanceModeCardSelection();
         OnPropertyChanged(nameof(CanSetCpuBoost));
         OnPropertyChanged(nameof(CanSetGpuBoost));
         OnPropertyChanged(nameof(CanSetMaxFan));
@@ -2709,9 +2501,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(CanSetGpuBoost));
     }
 
-    private void SetMaxFan(BladeMaxFanMode mode)
+    private void SetMaxFan(BladeMaxFanMode mode, bool confirm = true)
     {
-        _blade.SetMaxFan(mode);
+        _blade.SetMaxFan(mode, confirm);
         OnPropertyChanged(nameof(MaxFanText));
         OnPropertyChanged(nameof(MaxFanEnabled));
         OnPropertyChanged(nameof(CanSetMaxFan));
@@ -2739,7 +2531,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         Task brightnessWriter;
         lock (_bladeBrightnessGate)
         {
-            _desiredBladeBrightness = null;
+            _bladeBrightnessRequests.Clear();
             brightnessWriter = _bladeBrightnessWriter;
         }
         await brightnessWriter.ConfigureAwait(false);
@@ -2766,7 +2558,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _bladeCoolingPadConnected = connected;
         OnPropertyChanged(nameof(HyperboostOptionVisibility));
         OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
-        OnPropertyChanged(nameof(PerformanceModeOptions));
     }
 
     internal bool CoolingPadConnected => _bladeCoolingPadConnected;
@@ -2780,6 +2571,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         if (_blade._bladeProductId != (blade?.ProductId ?? 0))
         {
             _blade._bladeProductId = blade?.ProductId ?? 0;
+            _gpuModeRecoveryReconciled = false;
             RefreshModelCapabilityUi();
         }
 
@@ -2916,195 +2708,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
              BladeLightingDialect.LedMatrix710 or BladeLightingDialect.LedMatrixBlade2 or
              BladeLightingDialect.LedMatrix2026);
 
-    /// <summary>
-    /// The card stays visible when the service cannot answer, so a stale machine service
-    /// explains itself instead of silently removing the feature.
-    /// </summary>
-    public bool CanEditGpuClockOffset => _blade._bladeGpuClockOffsetAvailable;
-
-    public Visibility GpuClockLimitVisibility => _bladeGpuClockLimitAvailable
-        ? Visibility.Visible
-        : Visibility.Collapsed;
-
-    public double GpuClockLimitMhz
-    {
-        get => _bladeGpuClockLimitMhz;
-        set
-        {
-            var clamped = Math.Clamp(
-                value,
-                NvApiGpuClockLimit.MinimumMhz,
-                NvApiGpuClockLimit.MaximumMhz);
-            if (SetField(ref _bladeGpuClockLimitMhz, clamped))
-            {
-                OnPropertyChanged(nameof(GpuClockLimitText));
-            }
-        }
-    }
-
-    public string GpuClockLimitText => _bladeGpuClockLimitMhz >= NvApiGpuClockLimit.MaximumMhz
-        ? AppStrings.Text("BladeGpuClockLimitDefault")
-        : $"{_bladeGpuClockLimitMhz:0} MHz";
-
-    public double CoreClockOffsetMhz
-    {
-        get => _blade._bladeCoreClockOffsetMhz;
-        set
-        {
-            if (SetField(ref _blade._bladeCoreClockOffsetMhz, value))
-            {
-                OnPropertyChanged(nameof(CoreClockOffsetText));
-            }
-        }
-    }
-
-    public double MemoryClockOffsetMhz
-    {
-        get => _blade._bladeMemoryClockOffsetMhz;
-        set
-        {
-            if (SetField(ref _blade._bladeMemoryClockOffsetMhz, value))
-            {
-                OnPropertyChanged(nameof(MemoryClockOffsetText));
-            }
-        }
-    }
-
-    public string CoreClockOffsetText => FormatClockOffset(_blade._bladeCoreClockOffsetMhz);
-
-    public string MemoryClockOffsetText => FormatClockOffset(_blade._bladeMemoryClockOffsetMhz);
-
-    public string GpuClockOffsetStatusText
-    {
-        get => _blade._bladeGpuClockOffsetStatusText;
-        private set => SetField(ref _blade._bladeGpuClockOffsetStatusText, value);
-    }
-
-    private static string FormatClockOffset(double megahertz) =>
-        $"{(megahertz > 0 ? "+" : string.Empty)}{megahertz:0} MHz";
-
-    /// <summary>Probes once per process; the answer only changes after a driver restart.</summary>
-    internal void ProbeGpuClockOffset()
-    {
-        if (_gpuClockOffsetProbeStarted)
-        {
-            // A probe fails while the installed service is still the older build, which
-            // only matters until the service restarts on its own. Retry slowly instead of
-            // hiding the card for the rest of the process.
-            if ((_blade._bladeGpuClockOffsetAvailable && _bladeGpuClockLimitAvailable) ||
-                DateTimeOffset.UtcNow < _gpuClockOffsetNextProbe)
-            {
-                return;
-            }
-        }
-
-        _gpuClockOffsetProbeStarted = true;
-        _gpuClockOffsetNextProbe = DateTimeOffset.UtcNow.AddMinutes(2);
-        _ = ProbeGpuClockOffsetCoreAsync();
-    }
-
-    private async Task ProbeGpuClockOffsetCoreAsync()
-    {
-        try
-        {
-            var state = await DedicatedGpuModeServiceClient.TryGetGpuClockOffsetAsync();
-            _blade._bladeGpuClockOffsetAvailable = state?.Available == true;
-            if (state is { Available: true })
-            {
-                CoreClockOffsetMhz = state.CoreMhz;
-                MemoryClockOffsetMhz = state.MemoryMhz;
-            }
-            else
-            {
-                GpuClockOffsetStatusText = AppStrings.Text(state is null
-                    ? "BladeGpuClockOffsetServiceMissing"
-                    : "BladeGpuClockOffsetUnsupported");
-            }
-        }
-        catch (Exception exception) when (
-            exception is IOException or InvalidOperationException or TimeoutException or
-                ObjectDisposedException or OperationCanceledException or
-                System.ComponentModel.Win32Exception)
-        {
-            _blade._bladeGpuClockOffsetAvailable = false;
-            GpuClockOffsetStatusText = AppStrings.Text("BladeGpuClockOffsetServiceMissing");
-        }
-
-        try
-        {
-            var limit = await DedicatedGpuModeServiceClient.TryGetGpuClockLimitAsync();
-            _bladeGpuClockLimitAvailable = limit?.Available == true;
-            if (limit is { Available: true })
-            {
-                GpuClockLimitMhz =
-                    limit.Megahertz is >= NvApiGpuClockLimit.MinimumMhz and < NvApiGpuClockLimit.MaximumMhz
-                        ? limit.Megahertz
-                        : NvApiGpuClockLimit.MaximumMhz;
-            }
-        }
-        catch (Exception exception) when (
-            exception is IOException or InvalidOperationException or TimeoutException or
-                ObjectDisposedException or OperationCanceledException or
-                System.ComponentModel.Win32Exception)
-        {
-            _bladeGpuClockLimitAvailable = false;
-        }
-
-        OnPropertyChanged(nameof(CanEditGpuClockOffset));
-        OnPropertyChanged(nameof(GpuClockLimitVisibility));
-    }
-
-    public async Task ApplyGpuClockOffsetAsync(CancellationToken cancellationToken = default)
-    {
-        if (!_blade._bladeGpuClockOffsetAvailable)
-        {
-            return;
-        }
-
-        var core = (int)Math.Round(_blade._bladeCoreClockOffsetMhz);
-        var memory = (int)Math.Round(_blade._bladeMemoryClockOffsetMhz);
-        var limit = (int)Math.Round(_bladeGpuClockLimitMhz);
-        await RunDeviceOperationAsync(
-            AppStrings.Text("BladeGpuClockOffsetTitle"),
-            async () =>
-            {
-                if (!await DedicatedGpuModeServiceClient.TrySetGpuClockOffsetAsync(
-                        core, memory, cancellationToken))
-                {
-                    throw new InvalidOperationException(AppStrings.Text("BladeGpuClockOffsetFailed"));
-                }
-
-                await ApplyGpuClockLimitAsync(limit, cancellationToken);
-                GpuClockOffsetStatusText = AppStrings.Text("BladeGpuClockOffsetApplied");
-            },
-            cancellationToken);
-    }
-
-    /// <summary>An older service has no clock-limit operation, so the control stays hidden.</summary>
-    private async Task ApplyGpuClockLimitAsync(
-        int megahertz,
-        CancellationToken cancellationToken)
-    {
-        if (!_bladeGpuClockLimitAvailable)
-        {
-            return;
-        }
-
-        if (!await DedicatedGpuModeServiceClient.TrySetGpuClockLimitAsync(
-                megahertz, cancellationToken))
-        {
-            throw new InvalidOperationException(AppStrings.Text("BladeGpuClockOffsetFailed"));
-        }
-    }
-
-    /// <summary>Puts the driver back to stock clocks on the user's explicit request.</summary>
-    public async Task ResetGpuClockOffsetDefaultsAsync(CancellationToken cancellationToken = default)
-    {
-        CoreClockOffsetMhz = 0;
-        MemoryClockOffsetMhz = 0;
-        GpuClockLimitMhz = NvApiGpuClockLimit.MaximumMhz;
-        await ApplyGpuClockOffsetAsync(cancellationToken);
-    }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

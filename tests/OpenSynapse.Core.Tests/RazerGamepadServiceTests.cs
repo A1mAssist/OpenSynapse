@@ -221,7 +221,7 @@ public sealed class RazerGamepadServiceTests
         {
             Assert.False(RazerKeyboardService.IsSupported(productId), $"keyboard 0x{productId:X4}");
             Assert.False(RazerHeadsetAudioService.IsSupported(productId), $"audio 0x{productId:X4}");
-            Assert.Null(OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId));
+            Assert.Null(RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId));
         }
     }
 

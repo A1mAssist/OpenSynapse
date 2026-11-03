@@ -104,13 +104,19 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
         get => _bridgeHost;
         set
         {
+            var sameHost = SameBridgeHost(_bridgeHost, value);
             if (!SetField(ref _bridgeHost, value)) return;
-            if (_selectedBridge is { } selected &&
-                !StringComparer.OrdinalIgnoreCase.Equals(selected.Host, value))
+            if (!sameHost)
             {
-                _selectedBridge = null;
                 _appKey = null;
                 Lights.Clear();
+                SelectedColorLight = null;
+                BridgeSummary = string.Empty;
+                Persist?.Invoke(value, null);
+            }
+            if (_selectedBridge is { } selected && !SameBridgeHost(selected.Host, value))
+            {
+                _selectedBridge = null;
                 OnPropertyChanged(nameof(SelectedBridge));
             }
             StatusText = string.Empty;
@@ -124,7 +130,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
         set
         {
             if (!SetField(ref _selectedBridge, value) || value is null) return;
-            var changedHost = !StringComparer.OrdinalIgnoreCase.Equals(BridgeHost, value.Host);
+            var changedHost = !SameBridgeHost(BridgeHost, value.Host);
             if (changedHost)
             {
                 _appKey = null;
@@ -188,7 +194,8 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
 
     public void Configure(string? host, string? appKey)
     {
-        BridgeHost = host ?? string.Empty;
+        _bridgeHost = host ?? string.Empty;
+        OnPropertyChanged(nameof(BridgeHost));
         _appKey = string.IsNullOrWhiteSpace(appKey) ? null : appKey;
         Bridges.Clear();
         if (!string.IsNullOrWhiteSpace(host))
@@ -281,14 +288,15 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
         {
             using var client = new PhilipsHueClient(BridgeHost);
             var result = await client.PairAsync(cancellationToken);
+            if (!SameBridgeHost(BridgeHost, client.Host)) return;
             switch (result.Outcome)
             {
                 case PhilipsHuePairingOutcome.Paired:
+                    BridgeHost = client.Host;
                     _appKey = result.AppKey;
                     OnPropertyChanged(nameof(IsConfigured));
                     OnPropertyChanged(nameof(CanApplyColor));
                     Persist?.Invoke(client.Host, _appKey);
-                    BridgeHost = client.Host;
                     OnConnectionStateChanged();
                     StatusText = AppStrings.Text("HuePaired");
                     ErrorText = string.Empty;
@@ -327,10 +335,13 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
         try
         {
             using var client = new PhilipsHueClient(BridgeHost, _appKey);
+            var key = _appKey;
             var bridge = await client.GetBridgeAsync(cancellationToken);
+            if (!SameBridgeHost(BridgeHost, client.Host) || _appKey != key) return;
             BridgeSummary = string.Join(" · ", new[] { bridge.Name, bridge.ModelId, bridge.SoftwareVersion }
                 .Where(part => !string.IsNullOrWhiteSpace(part)));
             var lights = await client.GetLightsAsync(cancellationToken);
+            if (!SameBridgeHost(BridgeHost, client.Host) || _appKey != key) return;
             Lights.Clear();
             foreach (var light in lights)
             {
@@ -416,6 +427,16 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
         {
             light.SetBusy(false);
         }
+    }
+
+    private static bool SameBridgeHost(string left, string right)
+    {
+        try
+        {
+            return StringComparer.OrdinalIgnoreCase.Equals(
+                PhilipsHueClient.NormalizeHost(left), PhilipsHueClient.NormalizeHost(right));
+        }
+        catch (ArgumentException) { return false; }
     }
 
     private bool BeginOperation()

@@ -9,7 +9,7 @@ namespace OpenSynapse.Windows.Devices;
 /// 91-byte protocol 25 feature reports; protocol40 only exposes battery and
 /// charging in its selected device class.
 /// </summary>
-public sealed class RazerMxicHeadsetService : IAsyncDisposable
+public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
 {
     private enum MxicDialect
     {
@@ -26,7 +26,9 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
     public RazerMxicHeadsetService(ushort productId, string devicePath, Action<string>? diagnostic = null)
         : this(
-            new RazerMxicHeadsetTransport(devicePath, RazerMxicHeadsetProtocol.ReportLength),
+            RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId)
+                ? new RazerValkyrieT3Transport(devicePath)
+                : new RazerMxicHeadsetTransport(devicePath, RazerMxicHeadsetProtocol.ReportLength),
             productId,
             diagnostic)
     {
@@ -92,8 +94,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         _ => RazerMxicHeadsetProtocol.CreateSetEqBands(bands),
     };
 
-    // Valkyrie T3 writes are fire-and-forget and verified by the readback below; these
-    // headers remain only for the class-0x18 and legacy paths.
+    // Each dialect requires its own command acknowledgement before readback.
     private byte[] SetEqBandsHeader => _dialect switch
     {
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
@@ -138,21 +139,21 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         }
 
         var errors = new List<string>();
-        var firmware = await ProbeAsync(
+        var firmware = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: (Version)null!) : await ProbeAsync(
             "firmware",
             RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetFirmware, reportId: ReportId),
             RazerMxicHeadsetProtocol.FirmwareHeader,
             RazerMxicHeadsetProtocol.ReadFirmware,
             errors,
             cancellationToken).ConfigureAwait(false);
-        var battery = await ProbeAsync(
+        var battery = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: (byte)0) : await ProbeAsync(
             "battery",
             RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetBattery, reportId: ReportId),
             RazerMxicHeadsetProtocol.BatteryHeader,
             RazerMxicHeadsetProtocol.ReadBatteryPercent,
             errors,
             cancellationToken).ConfigureAwait(false);
-        var charging = await ProbeAsync(
+        var charging = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: false) : await ProbeAsync(
             "charging",
             RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetCharging, reportId: ReportId),
             RazerMxicHeadsetProtocol.ChargingHeader,
@@ -176,7 +177,14 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         // The Valkyrie T3 chunk defines Get Mute State for its own source ids but no setter,
         // so the page leaves the toggle out instead of offering a write it cannot confirm.
         var micMute = (Ok: false, Value: false);
-        if (_dialect != MxicDialect.ValkyrieT3)
+        if (_dialect == MxicDialect.ValkyrieT3)
+        {
+            micMute = await ProbeAsync("microphone mute",
+                RazerValkyrieT3Protocol.Create(0x84, [0, 2, 0]), [0, 2],
+                value => value.Length >= 1 ? value[0] != 0 : throw new InvalidDataException("Missing mute state."),
+                errors, cancellationToken).ConfigureAwait(false);
+        }
+        else
         {
             micMute = await ProbeAsync(
                 "microphone mute",
@@ -240,7 +248,10 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
             Errors: errors);
     }
 
-    public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>
+    private Task SetEqPresetCoreAsync(byte preset, CancellationToken cancellationToken = default) =>
+        _dialect == MxicDialect.ValkyrieT3 && preset > 3
+            ? Task.FromException(new ArgumentOutOfRangeException(nameof(preset), "T3 exposes presets 0..3."))
+            :
         _dialect == MxicDialect.Protocol40
             ? Task.FromException(new InvalidOperationException(
                 "The protocol40 headset bundle does not expose an EQ preset command."))
@@ -255,7 +266,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
             "EQ preset",
             cancellationToken);
 
-    public async Task SetEqBandsAsync(
+    private async Task SetEqBandsCoreAsync(
         IReadOnlyList<byte> bands,
         CancellationToken cancellationToken = default)
     {
@@ -271,6 +282,8 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
             throw new ArgumentException("Equalizer data must contain 10 bands.", nameof(bands));
         }
 
+        if (_dialect == MxicDialect.ValkyrieT3 && bands.Any(value => value > 6 && value is not (>= 129 and <= 134)))
+            throw new ArgumentOutOfRangeException(nameof(bands), "Valkyrie T3 bands must encode -6..6 dB.");
         var requested = bands.ToArray();
         await WriteAsync(
             CreateEqBandsRead(),
@@ -380,15 +393,6 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
         string label,
         CancellationToken cancellationToken)
     {
-        if (_dialect == MxicDialect.ValkyrieT3)
-        {
-            await EnsureRemoteModeAsync(cancellationToken).ConfigureAwait(false);
-            _diagnostic?.Invoke(
-                $"mxic {label}: report id {report[0]} size=0x{report[9]:X2} sent without an ack");
-            await _transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
         await QueryReportAsync(report, expectedHeader, label, cancellationToken).ConfigureAwait(false);
     }
 
@@ -410,7 +414,7 @@ public sealed class RazerMxicHeadsetService : IAsyncDisposable
 
     private async Task EnsureRemoteModeAsync(CancellationToken cancellationToken)
     {
-        if (_remoteMode || _dialect == MxicDialect.Protocol40)
+        if (_remoteMode || _dialect is MxicDialect.Protocol40 or MxicDialect.ValkyrieT3)
         {
             return;
         }

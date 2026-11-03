@@ -224,15 +224,17 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
                     bufferSize: 1,
                     FileOptions.Asynchronous);
             }
-            catch (IOException) when (Stopwatch.GetElapsedTime(started) < timeout)
+            catch (IOException exception)
             {
+                if (Stopwatch.GetElapsedTime(started) >= timeout)
+                {
+                    throw new TimeoutException(
+                        "Timed out waiting for the recovery marker ownership gate.",
+                        exception);
+                }
+
                 await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken)
                     .ConfigureAwait(false);
-            }
-
-            if (Stopwatch.GetElapsedTime(started) >= timeout)
-            {
-                throw new TimeoutException("Timed out waiting for the recovery marker ownership gate.");
             }
         }
     }

@@ -136,4 +136,37 @@ public sealed class BladeFanCurveSamplingTests
             ],
             writes);
     }
+
+    [Fact]
+    public async Task FixedControlReassertsManualTargetWhileRunning()
+    {
+        var original = new BladeFanControlSnapshot(default, BladeFanMode.Automatic, 0, 0);
+        var writes = new List<(BladeFanMode Mode, int? CpuRpm, int? GpuRpm)>();
+        var gate = new object();
+        var reasserted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var runtime = new BladeFanCurveRuntime(
+            (_, _) => ValueTask.FromResult(original),
+            (_, _, _, _, _) => throw new InvalidOperationException("The curve setter must not drive fixed fan control."),
+            (_, mode, cpu, gpu, _) =>
+            {
+                lock (gate)
+                {
+                    writes.Add((mode, cpu, gpu));
+                    if (writes.Count >= 2) reasserted.TrySetResult();
+                }
+                return ValueTask.CompletedTask;
+            },
+            (_, _, _) => ValueTask.FromResult<(double?, double?)>((null, null)),
+            TimeSpan.FromHours(1),
+            TimeSpan.FromMilliseconds(20));
+
+        await runtime.StartFixedAsync([], BladeFanMode.Manual, 3000);
+        await reasserted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        (BladeFanMode Mode, int? CpuRpm, int? GpuRpm)[] snapshot;
+        lock (gate) snapshot = writes.ToArray();
+        Assert.All(snapshot, write =>
+            Assert.Equal((BladeFanMode.Manual, (int?)3000, (int?)3000), write));
+        await runtime.StopAsync();
+    }
 }

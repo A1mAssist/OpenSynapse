@@ -2,22 +2,22 @@
 
 > 基于《雷蛇灵刃 16（2026 款）复刻 G-Helper 四种显卡模式》方案文档、当前 OpenSynapse 代码，以及 `docs/GPU_MUX_HID_ADAPTATION.zh-CN.md` 的 HID MUX 适配记录。
 
-- 日期：2026-10-31
-- 代码基线：`main`（只读核对；本文不改代码、不改协议）
-- 性质：可行性研判，不是已交付能力清单
+- 日期：2026-11-03
+- 代码基线：`main` 的本地未提交工作区（HEAD `da70093`；本文不代表已推送或已发布）
+- 性质：实现记录与 2026 实机验证边界
 
-> **证据边界：本文区分“当前 main 的代码”和“用户 1.6.2 补丁的实机结果”。**
+> **证据边界：本文区分“当前工作区代码”和“用户 1.6.2 补丁的实机反馈”。**
 >
-> 当前 main 没有 2026 款灵刃 16（`1532:02E0`）的四模式实机记录；用户 `无限的无线` 的 `OpenSynapse-补丁-1.6.2-四种显卡模式.zip` 在 2026 款上跑过四模式实机测试（聊天记录 2026-10-30 07:17“四种模式可以正常实现”，补丁说明含功耗/帧数据）。所以“四模式可行”已被用户补丁证明，缺的是把该逻辑移植进 main 并在 2026 上回归；DDS=2 仍未验证。
+> 当前工作区已借鉴用户 `无限的无线` 的四模式逻辑和最新 `OpenSynapse-补丁-1.6.2-四种显卡模式 (1).zip` 界面。用户补丁有 2026 实机反馈（聊天记录 2026-10-30 07:17“四种模式可以正常实现”，说明含功耗/帧数据），但不能替代本工作区的回归。当前未启动 App、未写实机硬件；DDS=2 的写入、重启和恢复仍未验证。
 
 ## 0. 结论先行
 
 1. **四模式在硬件概念上可以映射，但不是把 G-Helper 搬过来。** G-Helper 的显卡模式执行层依赖华硕私有的 ATKACPI / ACPI-WMI 通道；雷蛇机器没有这些设备和端点，改常量、加分支都跑不通。
-2. **四模式选择器已移植进 main，执行层仍是两块执行器。** `BladeGpuMode`/`BladeGpuModes` 按本机 PnP 状态和 `0D:8A` 能力位推导可用模式，页面用一个下拉框编排 `WindowsDedicatedGpuMode` 的 PnP 开关和 `BladeDisplayTelemetryReader` 的 MUX 写入；“自动”只走 PnP，不按电源事件写 MUX。NVIDIA 控制面板 UIAutomation 和 BIOS 写入仍不做。
-3. **2026 款的 `0D:8A` 能力位是分水岭。** 如果它只报告 `0x06`（Discrete + DDS，无 Hybrid），当前 HID 路径只能提供“独显直连”和“DDS”，无法直接提供“标准（Optimus/Hybrid）”；“标准”必须依赖 NVIDIA 控制面板 UIA 或 BIOS/驱动默认策略。如果它报告 `0x07`（Hybrid + Discrete + DDS），当前代码才可以直接写 `0x00` 得到“标准”。
+2. **工作区已实现四模式选择器，执行层仍是 PnP + MUX。** `BladeGpuModes` 按型号准入、PnP 状态和实读 MUX 能力推导可用模式；读不到 MUX 不开放集显。后台自动只走 PnP，不写 MUX；手动离开直连先释放 MUX 并提示重启，同次操作绝不继续禁用独显。NVIDIA 控制面板 UIAutomation 和 BIOS 写入不做。
+3. **2026 款的 `0D:8A` 能力位决定路由。** `0x06`（Discrete + DDS）不能写 Hybrid=0；当前“标准”可使用能力位允许的 DDS 作为非直连回退，但不等于强制 Optimus。`0x07` 才允许直接写 Hybrid=0。UI 的“自动切换”是电源策略，不能与 DDS 混为一谈。
 4. **当前 HID MUX 写入成功返回 `RestartRequired`，不适合按 AC/电池事件反复切换。** 用户 1.6.2 补丁的“自动”不是写 MUX，而是 PnP 启停独显 + 电池下借刷新率到 60 Hz，所以能工作；按电源事件反复写 MUX 才会反复重启。DDS（`0x02`）由固件/驱动动态切换，仍可作为以后的自动路径，但还没有写入验证。
 5. **DDS=2 写入仍需实机复核。** 代码能生成 `0D:09` 的 `0x02` 写入，协议测试也覆盖了字节和解析，但本文没有取得 2026 实机的写入、重启后持久性、恢复和黑屏时间证据。在完成这些验证前，DDS 只能标为“待验证”，不能标为“已完成”。
-6. **四模式的可行性已经由用户补丁在 2026 实机证明，main 已移植同一套逻辑。** 缺的是 2026 实机回归；见 0.1 和 5.4。
+6. **用户补丁反馈支持四模式的可行性，工作区仍需实机回归。** 代码、单元测试、视觉验收和硬件验收分别记录；见 0.1、5.4 和 9.3。
 
 ## 0.1 用户 1.6.2 补丁的实机记录
 
@@ -36,6 +36,13 @@
 - 实机数据（80% 亮度，电池放电）：标准 240Hz 52.47W；集显 240Hz 44.01W；集显 60Hz 36.72W；应用运行 vs 退出 44.01 vs 44.17W（0.16W）；DwmFlush 9602 帧 p50 4.17ms / p99 4.51ms / 0 丢帧。
 - 已知限制：独显直连需重启；集显下游戏/视频掉帧是核显/Quick Sync 固有代价；刷新率只在本次运行借用/归还。
 
+## 0.2 1.6.2 补丁最新包核对
+
+- 界面是横向四选一：集显模式 / 标准模式 / 独显直连 / 自动切换，右上角显示当前模式，底部显示阻塞或自动策略说明。
+- 同包包含「显卡超频」卡片：标题、GPU 名称、恢复默认按钮，三列组合框 + 数字框（核心频率偏移、显存频率偏移、核心频率上限），底部灰色提示。
+- 最新包的提示写的是「Windows 重启后驱动会清除这些设置」，并未在 `GpuOverclockBroker` 或启动路径里实现“保存偏移并在下次启动自动写回”。启动时只读取驱动当前值并显示；聊天截图里的“开机自动写回”不是最新包里可确认的行为，不能按它对外承诺。
+- 最新反编译 `GpuModePolicy.Plan` 在离开直连时只计划 MUX + 重启；`ReconcileAutomaticGpuModeAsync` 跳过需要重启的计划。工作区同样禁止后台改 MUX，设备刷新、恢复和电源变化重新读取实际状态。
+
 ## 1. 术语与证据等级
 
 | 术语 | 本文含义 |
@@ -49,7 +56,7 @@
 
 | 等级 | 含义 | 本文中的例子 |
 |---|---|---|
-| E0 | 代码存在，且有协议/策略单元测试；本次未运行测试 | `0D:89/8A/09` 报文布局、MUX 模式解析、PnP 策略 |
+| E0 | 代码与自动化测试证据；不代表硬件接受 | `0D:89/8A/09` 报文布局、MUX 模式解析、PnP 策略 |
 | E1 | 只读实机记录 | 2025 款 `1532:02C6` 的 `0D:89/8A` 只读结果 |
 | E2 | 2026 款只读实机记录 | **尚未完成** |
 | E3 | 2026 款写入 + 重启 + 恢复实机验证 | **尚未完成** |
@@ -77,7 +84,7 @@
 
 1. **BIOS 是上游。** 如果 BIOS 当前是 `Dedicated GPU Only`，系统可能只暴露独显直连；想让“标准/自动”可用，通常需要先把 BIOS 切到 `NVIDIA Dynamic Display Switch`，再重启。应用内写 BIOS 变量风险极高，本文不建议。
 2. **能力位决定 HID 能做什么。** `0D:8A` 返回的 bit 0x01/0x02/0x04/0x08 分别对应 Hybrid、Discrete、DDS、IntegratedOnly；当前代码只使用前三项，`0x08` 没有映射到任何模式。
-3. **外接屏会改变语义。** HDMI 和部分 Type-C 可能直连 dGPU；接外接屏时，MUX 切换、PnP 禁用和“集显模式”的行为都可能与内屏不同。当前 MUX 切换没有外接屏前置检查，这是需要补的护栏。
+3. **外接屏会改变语义。** HDMI 和部分 Type-C 可能直连 dGPU；接外接屏时，MUX 切换、PnP 禁用和“集显模式”的行为都可能与内屏不同。当前 PnP 禁用会被活动外接屏前置阻断；MUX 切换在写入后校验内屏与外接屏拓扑，外接屏消失时自动恢复原 MUX。
 
 ## 3. 为什么 G-Helper 不能直接移植
 
@@ -119,21 +126,21 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 ### 4.2 模式语义
 
-| 产品模式 | 屏幕输出 | dGPU 供电 | 驱动调度 | 目标执行器 |
+| 产品模式 | 屏幕输出 | dGPU 设备状态 | 驱动调度 | 目标执行器 |
 |---|---|---|---|---|
 | 集显 | iGPU 独占 | 禁用（PnP） | 不参与 | `WindowsDedicatedGpuMode` |
-| 标准 | iGPU 输出，dGPU 按需渲染 | 通电 | Optimus / Hybrid | MUX `0x00`，或 NVIDIA 控制面板 `Optimus` |
-| 独显直连 | dGPU 直连内置屏 | 通电 | 不使用 iGPU | MUX `0x01` |
-| 自动 | 按负载/电源动态 | 通电 | DDS / Advanced Optimus | MUX `0x02`；可选电源策略层 |
+| 标准 | Hybrid 时由 iGPU 输出；DDS 回退时由驱动动态决定 | 启用 | Hybrid / 受支持的 DDS 回退 | 优先 MUX `0x00`；能力位允许时回退 `0x02`，不操作 NVIDIA 控制面板 |
+| 独显直连 | dGPU 直连内置屏 | 启用 | 不使用 iGPU | MUX `0x01` |
+| 自动（当前 UI） | 插电标准；电池集显，受显示拓扑限制 | PnP 启用/禁用，不保证断电 | 电源策略，不等同 DDS | 后台不写 MUX |
 
 ### 4.3 当前代码的映射与证据
 
 | 模式 | 首选实现 | 当前 OpenSynapse 支撑 | 证据等级 | 关键条件 |
 |---|---|---|---|---|
 | 集显 | PnP 禁用 NVIDIA 显示设备 | `WindowsDedicatedGpuMode` + `DedicatedGpuModePolicy` + UI 开关 | E0；无 2026 实机 | 内屏不能由 dGPU 驱动；不能有走 dGPU 的外接屏；可能需要重启 |
-| 标准 | `0D:09` 写 `0x00`（Hybrid） | `BladeDisplayTelemetryReader` + `BladeDisplayMuxMode.Hybrid` | E0；无 2026 实机 | `0D:8A` 必须报告 bit 0x01；若只报 0x06 则 HID 不可用 |
+| 标准 | 优先 `0D:09` 写 `0x00`（Hybrid），否则使用受支持的 `0x02`（DDS） | `BladeDisplayTelemetryReader` + `BladeDisplayMuxModes.GetStandardMode` | E0；无本工作区 2026 实机 | `0D:8A` 必须允许相应模式；0x06 可走 DDS 回退，但不保证固定 Optimus |
 | 独显直连 | `0D:09` 写 `0x01`（Discrete） | `BladeDisplayTelemetryReader` + `BladeDisplayMuxMode.Discrete` | E0；无 2026 实机 | `0D:8A` 必须报告 bit 0x02；写入后需重启 |
-| 自动 | `0D:09` 写 `0x02`（DDS） | 代码路径存在；`0D:8A` 报 bit 0x04 时作为“标准”的动态回退开放，写入后回读/恢复 | E0（仅字节/解析）；**无 2026 实机写入** | `0D:8A` 必须报告 bit 0x04；BIOS 需为 DDS；重启后仍生效才算通过 |
+| 自动（电源策略） | AC 标准 / 电池集显 | `ReconcileGpuModeAsync` 读实际状态后只操作 PnP | E0；**无本工作区实机切换** | 不能需要 MUX 变化；有外接屏则不禁用独显 |
 
 ### 4.4 2026 款 `0D:8A` 的两种情形
 
@@ -141,8 +148,8 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 | `0D:8A` 返回 | 可用 HID 模式 | “标准”怎么实现 | 四模式是否完整 |
 |---|---|---|---|
-| `0x06`（Discrete + DDS） | DDS、独显直连 | HID 没有 Hybrid；只能走 NVIDIA 控制面板 `Optimus`（UIA）或 BIOS/驱动默认策略 | 否；当前代码只能覆盖“集显 + 独显直连 + DDS” |
-| `0x07`（Hybrid + Discrete + DDS） | Hybrid、DDS、独显直连 | 可直接写 `0x00` | 接近完整；仍缺 UIA 和电源状态机 |
+| `0x06`（Discrete + DDS） | DDS、独显直连 | 使用受支持 DDS 回退，不承诺强制 Optimus | 四项能否出现还取决于型号准入、当前路由和 PnP 安全检查 |
+| `0x07`（Hybrid + Discrete + DDS） | Hybrid、DDS、独显直连 | 可直接写 `0x00` | 四项还需型号准入和 PnP 安全检查；实机待验 |
 | `0x02`（仅 Discrete） | 独显直连 | 无动态路径，`CanSwitch` 为 false | 否；只能只读或走其他层 |
 | `0x00` / 读取失败 | 无 | 无 | 否；应显示不支持，不能猜 |
 
@@ -156,7 +163,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 - 真正无感的“自动”应依赖 **DDS（`0x02`）由固件/驱动动态切换**，应用只在用户选择“自动”时写一次，之后不按电源事件反复写 MUX；
 - 应用层电源状态机只能是可选的策略层，例如“插电用标准、拔电用集显”，而且必须处理重启、黑屏、冷却时间和恢复。它不是 DDS 的替代品。
 
-因此本文建议把“自动”定义为：**首选 DDS 固件动态切换；DDS 不可用时，不提供自动模式，或明确标注为需要重启的实验性策略。** 不要把“自动”写成已经能用电源事件无缝切换。
+当前 UI 已选择用户补丁的保守电源策略：**插电标准、电池集显，后台绝不写 MUX。** 如果当前是独显直连，自动对账返回阻塞，用户先手动释放路由并重启。DDS 仍是固件路由枚举，不是这个自动策略的同义词。
 
 ## 5. 当前 OpenSynapse 已实现部分
 
@@ -171,15 +178,15 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 - 检查显示拓扑：内屏不能由 dGPU 驱动、内屏必须存在、路由必须已知、不能有活动外接屏；
 - 独显故障（如 code 43）时拒绝禁用，提供“重启独显设备”恢复；
 - 返回 `Success` / `RestartRequired` / `Blocked` / `NoDevice` / `DeviceFaulted` / `Failed` 等结果；
-- UI 是“仅核显（禁用独显）”开关，不是四模式选择器。
+- 它是设备页四模式选择器的 PnP 执行后端，不再单独提供“仅核显”开关。
 
 它不是：
 
 - 不是 MUX 切换；
-- 不是 ACPI Eco 的物理断电。PnP 禁用只让设备进 D3、卸载驱动；平台实现了 `_PR3`/电源门控时 EC 才把独显切到 D3cold，否则供电轨仍在，只是芯片不工作。雷蛇没有公开的 EC/BIOS 级 iGPU-only 命令，所以这里不能声称“物理断电”；
-- 不是四模式状态机，不会在开机/恢复后自动纠正到某个目标模式。
+- 不是 ACPI Eco 的物理断电。PnP 禁用只能证明 Windows 停用了设备，不能由此确认 D3cold 或供电轨断电；当前没有独立的 EC/BIOS 电源门控证据，所以这里不声称“物理断电”；
+- 不是四模式状态机；四模式状态、启动对账和电源恢复由 `BladeGpuModeController` 统一协调。
 
-当前证据：代码和 `DedicatedGpuModePolicyTests` 存在；本次未运行测试；本文没有取得 2026 实机切换记录。
+当前证据：`BladeGpuModeControllerTests` 覆盖禁用后内屏消失、MUX 切换后外接屏消失、启动恢复、事务串行化和失败回滚；`DedicatedGpuModePolicyTests` 覆盖外接屏与拓扑阻断。构建与全量测试结果以本轮审查汇总为准；没有本工作区 2026 实机切换记录。
 
 功耗证据（用户 1.6.2 补丁，80% 亮度、电池放电）：标准 240 Hz 52.47 W，集显 240 Hz 44.01 W，集显 60 Hz 36.72 W。集显模式省约 8.5 W，说明独显确实被压到低功耗态，但这个幅度不足以证明供电轨已完全切断。D3cold 是否真正进入、轨电压、不同 BIOS/EC 版本的差异都未测。
 
@@ -208,7 +215,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 当前代码的两个关键事实：
 
 - `AllowsDds` 现在按 `0D:8A` 的 DynamicDisplaySwitch 位动态放行；没有该位的机器不会看到 DDS；写入仍走回读/恢复，实机矩阵尚未通过；
-- 因此 `BladeDisplayMuxStatus.CanChange` 不再对 DDS 放行；真实门禁是代码里的 DDS 开关和 `0D:8A` 的 bit 0x04。
+- 当前 `AllowsDds()` 返回 true，是否允许某台设备写 DDS 仍取决于型号、manifest、`0D:8A` 的 bit 0x04 和读写回读检查；这不代表实机矩阵已通过。
 
 当前证据：协议层有 `BladeDisplayMuxTests` 覆盖 manifest、get/set 字节、模式解析、能力位和未知模式拒绝；**没有 reader 层的“同模式不写、写入后回读、回读不一致恢复”单元测试**；本文没有取得 2026 实机读写记录。
 
@@ -227,28 +234,33 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 位置：`src/OpenSynapse.App/Views/DevicesPage.GpuMode.cs`、`ViewModels/BladeWorkspace.GpuMode.cs`、`Core/Displays/BladeGpuMode.cs`。
 
-- 一个下拉框给出集显 / 标准 / 独显直连 / 自动，选项由 `BladeGpuModes.GetAvailableModes` 按本机 PnP 状态与 `0D:8A` 能力推导，没有按 PID 写死；
-- 没有 MUX 的机型只显示集显 / 标准 / 自动；“标准”就是重新启用独显；
-- 独显直连只写 MUX `0x01`，写后提示重启；集显只做 PnP 禁用独显；
-- 自动 = 插电标准、电池集显，只走 PnP；不按电源事件写 MUX，避免重启循环；
+- 设备页用横向四选一给出集显模式 / 标准模式 / 独显直连 / 自动切换，每项显示标题和说明；集显是否开放先看 `BladeGpuModelCapabilities` 的型号准入，再由本机 PnP 状态与 `0D:8A` 能力推导；
+- 没有 MUX 或没有型号准入的机型不开放集显和自动；“标准”就是重新启用独显；
+- 独显直连确保独显启用后写 MUX `0x01`，提示重启；从直连选择其它档位只先释放 MUX 并提示重启，不在同次操作禁用适配器；
+- 自动 = 插电标准、电池集显，只走 PnP；启动、设备刷新、电源变化和恢复时重新对账，不使用一次失败即永久跳过的缓存；外接屏存在时不禁用独显；
 - `0D:8A` 只报 Discrete 且不可切时，仍按真实 `0D:89` 显示“独显直连”；切集显会被拦下并提示先切回标准；
 - 只有一个值需要持久化：`Global.Blade.GpuMode` 为 Auto；另外三档每次从硬件状态反推；
-- DDS 仅在 `0D:8A` 报 bit 0x04 时作为“标准”的动态回退出现；外接屏前置检查、NVIDIA 控制面板 UIAutomation、BIOS 显示模式都没有做。
+- `BladeGpuModeController` 是唯一执行入口：禁用独显前写 crash marker，操作后轮询 8 秒；内屏消失或操作前存在的外接屏消失时自动回滚。重新启用后出现 Code 43 等故障状态不会判为成功，而是回滚并显示故障码；MUX 写失败或拓扑不保留时恢复原 MUX；
+- 启动对账会处理 crash marker 和老版本遗留的禁用状态；MUX 机型上用户主动选择的集显不会被误恢复；诊断页提供“恢复独显”；
+- DDS 仅在 `0D:8A` 报 bit 0x04 时作为“标准”的动态回退出现；NVIDIA 控制面板 UIAutomation 和 BIOS 显示模式仍未做。
+- 同页「显卡超频」卡片采用三列组合框 + 数字框、GPU 名称和恢复默认按钮。启动只读；初始化/写入时禁用编辑，失败后重读实际值。旧服务不支持上限时禁用该列；核心偏移继续使用 -500..+200 MHz 护栏，不照搬补丁的更大上限。界面 `0` 对应后端 3000 MHz 复位约定，不能称为已证明解除硬件上限。
+- 集显且电池供电时临时借用 60 Hz（没有则最低受支持档）；显式 profile 优先。成功写回才清理原刷新率记录，写入失败可重试；此策略不额外重放灯光。
 
 ### 5.5 已实现/未实现总表
 
 | 能力 | 代码 | 测试 | 2026 实机 |
 |---|---|---|---|
-| PnP 仅核显（禁用/启用独显） | 已实现 | 策略测试存在 | 未验证 |
+| PnP 仅核显（禁用/启用独显） | 已实现，型号准入 + 外接屏/内屏拓扑阻断 | `DedicatedGpuModePolicyTests`、`BladeGpuModeControllerTests` | 未验证 |
 | 四模式选择器 | 已实现 | `BladeGpuModeTests` | 未验证 |
-| 自动模式（PnP，插电/电池） | 已实现 | 计划器测试存在 | 未验证 |
+| 自动模式（PnP，插电/电池） | 已实现，启动、电源变化、恢复时应用 | `BladeGpuModeTests` | 未验证 |
 | `0D:89` 读当前 MUX | 已实现 | 协议测试存在 | 未验证 |
 | `0D:8A` 读能力 | 已实现 | 协议测试存在 | 未验证 |
 | `0D:09` 写 Hybrid / Discrete | 已实现 | 协议测试存在 | 未验证 |
 | `0D:09` 写 DDS=2 | 代码路径存在 | 仅字节/解析测试 | **未验证** |
-| 写入后回读与恢复 | 已实现 | reader 层无测试 | 未验证 |
+| 写入后回读与失败恢复 | 已实现；controller 再做拓扑与 Code 43 故障后验 | `BladeGpuModeControllerTests` | 未验证 |
+| 崩溃 marker / 启动对账 | 已实现 | `BladeGpuModeControllerTests` | 未验证 |
+| 诊断页“恢复独显” | 已实现 | 代码路径 | 未验证 |
 | NVIDIA 控制面板 UIA | 未实现 | 无 | 未验证 |
-| 电源事件四模式状态机 | 未实现 | 无 | 未验证 |
 | BIOS 变量/设置写入 | 未实现 | 无 | 不建议实现 |
 
 ## 6. 未实现部分
@@ -274,7 +286,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 ### 6.2 电源事件四模式状态机
 
-当前状态：**没有实现。** `src/` 中没有 `SystemEvents.PowerModeChanged`、`WM_POWERBROADCAST`、`PBT_APMRESUMEAUTOMATIC` 或等效的电源事件订阅；没有持久化“用户想要哪个模式”；没有开机/恢复后的状态纠正。
+当前状态：**工作区已实现保守自动。** `RefreshWorkspace` 在设备刷新（含启动、恢复）和电源变化后对账；先处理 crash marker 和旧状态，恢复失败则停止本次自动策略，后续刷新可重试。`Auto` 只操作 PnP、不写 MUX；`DevicesPage.PowerModeChanged` 只请求刷新。controller 的切换、恢复、重启和对账共用实例内事务锁；跨进程全局事务锁、冷却和完整历史仍未实现。
 
 一个可用的状态机至少需要：
 
@@ -293,13 +305,13 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 ### 6.3 其他缺口
 
-- 没有开机/恢复后的 MUX/PnP 状态纠正；
-- 没有持久化目标模式和切换历史；
-- 没有跨入口的互斥锁（当前只有 UI 的 `_displayMuxBusy` / `_dedicatedGpuModeBusy`）；
-- MUX 切换没有外接屏检查；
+- 没有持久化每个非 Auto 模式的目标值和完整切换历史；
+- controller 内已串行化所有写入/恢复事务；没有覆盖所有进程和服务入口的全局事务锁；
+- MUX 切换没有在写入前阻断外接屏，而是在写入后校验并回滚；
 - 没有读取 BIOS 当前显示设置；
-- 没有 reader 层的写入/回读/恢复测试；
-- `IntegratedOnly = 0x08` 能力位未使用，若 2026 报告该位，当前代码会忽略。
+- 没有 reader 层的写入后回读/恢复单元测试；拓扑和回滚测试在 controller 层；
+- `IntegratedOnly = 0x08` 能力位未使用，若 2026 报告该位，当前代码会忽略；
+- 2026 实机的 PnP、MUX、重启恢复矩阵仍未验证。
 
 ## 7. 分阶段建议
 
@@ -312,7 +324,7 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 | P4 电源自动 | 做“自动”策略 | DDS 优先；否则不做，或做保守的 AC/电池策略 | 睡眠/恢复、开机、服务重启、失败回滚全部通过 | 不在每次电源事件写 MUX |
 | P5 BIOS | 只做人工指引 | 文档说明如何在 BIOS 切换 DDS / Dedicated GPU Only | 用户能在 BIOS 恢复显示 | 不在应用内写 BIOS 变量 |
 
-推荐的第一批交付：**移植用户 1.6.2 补丁的四模式逻辑**。用户补丁已完成 2026 实机的 P0；main 现在缺的是四模式选择器、PnP 启停独显的状态机、电池借/还刷新率、启动时对账自动模式。MUX 只做 Hybrid/Discrete，DDS=2 继续关闭。P3 UIA 和 P5 BIOS 不做。
+工作区本轮交付：四模式横向选择器、保守 PnP 自动对账、电池刷新率借还和超频卡片。下一步是实机回归，不是继续扩充未知协议；DDS 的回退写入代码已存在，但没有实机写入证据。P3 UIA 和 P5 BIOS 不做。
 
 ## 8. UIA / BIOS / PnP 风险
 
@@ -343,9 +355,10 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 ### 8.3 PnP 的具体风险
 
 - 当前 `WindowsDedicatedGpuMode` 已检查内屏是否由 dGPU 驱动、是否有活动外接屏、拓扑是否已知；这些护栏必须保留；
+- 当前 `BladeGpuModeController` 在禁用独显前写入 crash marker，操作后轮询 8 秒；内屏消失、外接屏意外消失、MUX 拓扑不保留或重新启用后出现 Code 43 等故障时自动回滚并显示故障码；
 - 禁用 dGPU 后，依赖 NVIDIA 的应用、外接屏、部分游戏启动器可能异常；启用后驱动重新枚举需要时间；
 - `pnputil` 返回 3010 才提示重启；返回 0 时设备已禁用，但是否“彻底生效”仍需实机确认；
-- Windows 更新、驱动安装、设备故障可能改变状态；需要有开机/恢复后的状态核对；
+- Windows 更新、驱动安装、设备故障可能改变状态；启动对账和诊断页“恢复独显”是最后兜底；
 - PnP 禁用不是 ACPI Eco，节电幅度不能按 G-Helper 的 Eco 数据宣传，必须实测。
 
 ### 8.4 必须保留的安全护栏
@@ -405,15 +418,15 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 
 ## 10. 结论
 
-**用户补丁已实机证明四模式可行；当前 main 还不是四模式成品。**
+**用户补丁有四模式实机反馈；当前未提交工作区已借鉴其界面和行为，但未做实机/视觉回归。**
 
 - 硬件层：2026 款具备 Advanced Optimus / DDS 和 BIOS MUX 的基础，四模式在概念上可映射；
 - 软件层：G-Helper 不能直接移植，必须独立实现 Razer 执行层；
-- 当前代码：已有 PnP 集显和 HID MUX 读写两块能力，但没有四模式状态机、没有 NVIDIA 控制面板 UIA、没有电源事件自动切换；
+- 当前代码：已有 PnP 集显、HID MUX 读写、四模式横向选择器、启动/电源自动对账和失败回滚；没有 NVIDIA 控制面板 UIA，也没有 2026 实机矩阵；
 - 关键未知：2026 的 `0D:8A` 是否包含 Hybrid 位，以及 DDS=2 是否真的可写、可持久、可恢复；用户补丁走的是 PnP + 刷新率借用，绕开了这两个未知；
-- 推荐路径：把用户 1.6.2 的四模式逻辑移植进 main 并在 2026 上回归；DDS=2 继续关闭；UIA/BIOS 不做。
+- 推荐路径：完成工作区构建/测试及协议审查后，在目标机型按写入、重启、回读、恢复矩阵验收；UIA/BIOS 不做。
 
-在把用户补丁的逻辑移植进 main 并在 2026 上回归之前，本文涉及 main 写入/自动/UIA 的内容仍应视为**方案与风险分析，不是已完成能力**；用户补丁的实机结果只作为可行性证据（见 0.1），不代表 main 已具备同等能力。
+当前工作区包含 PnP、MUX、保守自动、型号准入、拓扑后验、回滚、启动对账和诊断恢复。尚未提交、推送或发布；用户补丁的实机结果只作为可行性证据（见 0.1），不能代替这些新改动的实机验证。
 
 ## 附录：代码与证据索引
 
@@ -421,16 +434,22 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 |---|---|
 | `src/OpenSynapse.Windows/Lifecycle/WindowsDedicatedGpuMode.cs` | PnP 禁用/启用独显、UAC/服务入口、故障重启 |
 | `src/OpenSynapse.Core/Displays/DedicatedGpuModePolicy.cs` | 集显模式的前置条件与阻止原因 |
-| `src/OpenSynapse.Windows/Devices/BladeDisplayTelemetryReader.cs` | MUX 状态读取、写入、回读、恢复 |
+| `src/OpenSynapse.Windows/Devices/BladeDisplayMuxReader.cs` | MUX 状态读取、写入、回读、恢复 |
 | `src/OpenSynapse.Windows/Protocols/BladeDisplayMuxProtocol.cs` | `0D:89/8A/09` 报文与解析 |
 | `src/OpenSynapse.Core/Displays/BladeDisplayMuxMode.cs` | 模式/能力位/可切换策略 |
-| `src/OpenSynapse.App/Views/DevicesPage.Blade.cs` | MUX 与仅核显 UI 行为、互斥、重启提示 |
-| `src/OpenSynapse.App/Views/DevicesPage.xaml` | MUX 卡片、仅核显卡片的界面 |
+| `src/OpenSynapse.Core/Devices/BladeGpuModelCapabilities.cs` | 禁用独显的型号准入表 |
+| `src/OpenSynapse.Windows/Lifecycle/BladeGpuModeController.cs` | PnP/MUX 唯一执行入口、拓扑后验、自动回滚、启动对账 |
+| `src/OpenSynapse.Windows/Lifecycle/GpuModeRecoveryMarkerStore.cs` | 禁用独显前的 crash marker |
+| `src/OpenSynapse.App/ViewModels/BladeWorkspace.GpuMode.cs` | 四模式适配器，接 controller |
+| `src/OpenSynapse.App/Views/DevicesPage.GpuMode.cs` | 四模式选择器、电源/恢复事件、回滚状态文案 |
+| `src/OpenSynapse.App/Views/DiagnosticsPage.xaml` | “恢复独显”入口 |
 | `src/OpenSynapse.Windows/Devices/Manifests/blade-02e0.json` | Blade 16（2026）manifest，声明 `0D:89/8A/09` |
 | `src/OpenSynapse.Windows/Devices/Manifests/blade-02e1.json` | Blade 18（2026）manifest，声明 `0D:89/8A/09` |
 | `tests/OpenSynapse.Core.Tests/BladeDisplayMuxTests.cs` | MUX 协议字节、模式解析、能力位测试 |
-| `tests/OpenSynapse.Core.Tests/Blade2026Tests.cs` | 2026 manifest 与 `0D:89/8E/0E` 等命令声明测试 |
+| `tests/OpenSynapse.Core.Tests/BladeGpuModeTests.cs` | 四模式可用性、自动回退、型号准入 |
+| `tests/OpenSynapse.Core.Tests/BladeGpuModeControllerTests.cs` | 回滚、启动恢复、crash marker、MUX 拓扑测试 |
+| `tests/OpenSynapse.Core.Tests/DeviceCapabilityStructureTests.cs` | 型号准入与 MUX manifest 一致性测试 |
 | `tests/OpenSynapse.Core.Tests/DedicatedGpuModePolicyTests.cs` | PnP 集显模式策略测试 |
 | `docs/GPU_MUX_HID_ADAPTATION.zh-CN.md` | MUX HID 适配流程与 2025 款只读记录 |
 
-> 本文只写文档，没有修改代码或协议，也没有提交。文中“已实现”只代表当前 `main` 代码存在对应路径；除 2025 款 `1532:02C6` 的只读记录外，2026 款的读写、UIA、电源状态机和 BIOS 行为均未实机验证。
+> 代码和测试已完成；除 2025 款 `1532:02C6` 的只读记录外，2026 款的 PnP/MUX 读写、重启恢复、NVIDIA 控制面板 UIA 和 BIOS 行为均未实机验证。

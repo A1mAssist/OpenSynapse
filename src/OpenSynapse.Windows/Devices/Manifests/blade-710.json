@@ -273,7 +273,31 @@
     "firmware": {
       "latest": {
         "version": "1.8.0.0",
-        "url": "https://rzr.to/k1kflh"
+        "url": "https://rzr.to/k1kflh",
+        "additional": [
+          {
+            "type": "ec",
+            "version": "1.09",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "bios",
+            "version": "2.02",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "vbios",
+            "version": "98.3.5c.40.16",
+            "model": "RTX 5080",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "vbios",
+            "version": "98.3.5c.40.15",
+            "model": "RTX 5090",
+            "url": "https://rzr.to/k1kflh"
+          }
+        ]
       },
       "driver": {
         "version": "24.0.0.0",

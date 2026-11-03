@@ -12,10 +12,13 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     private readonly int _capabilityState;
     private readonly int _successful;
     private readonly int _total;
+    private readonly bool _telemetryPending;
 
-    public DeviceRowViewModel(DeviceDescriptor descriptor, RazerDeviceTelemetry telemetry)
+    public DeviceRowViewModel(DeviceDescriptor descriptor, RazerDeviceTelemetry telemetry, bool telemetryPending = false)
     {
+        _telemetryPending = telemetryPending;
         ProtocolFamily = descriptor.ProtocolFamily;
+        Id = descriptor.Id;
         HardwareCategory = descriptor.Category;
         Name = descriptor.Name;
         ProductId = descriptor.ProductId;
@@ -40,7 +43,12 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         (_successful, _total) = (summary.Available, summary.Supported);
         ProtocolDetails = CreateProtocolDetails(descriptor, telemetry);
 
-        if (descriptor.Access != DeviceAccessState.Available ||
+        if (_telemetryPending)
+        {
+            _capabilityState = 4;
+            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+        }
+        else if (descriptor.Access != DeviceAccessState.Available ||
             descriptor.Capability != DeviceCapabilityState.PendingValidation)
         {
             _capabilityState = 0;
@@ -66,7 +74,8 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         // The Viper reports its charge through telemetry; other families do not.
         BatteryPercent = descriptor.ProtocolFamily == "viper-184" ? telemetry.ViperBatteryPercent : null;
     }
-
+    internal string Id { get; }
+    internal DeviceCapabilitySummary CapabilitySummary => new(_successful, _total);
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
@@ -82,12 +91,14 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         0 => AppStrings.Text("Text_40985721"),
         1 => AppStrings.FormatText("ProtocolAvailableCount", _successful, _total),
         2 => AppStrings.FormatText("ProtocolPartiallyAvailableCount", _successful, _total),
+        4 => AppStrings.Text("Text_95979F99"),
         _ => AppStrings.Text("Text_FB278D95"),
     };
     public string ReportInfo { get; }
     public string IconGlyph { get; }
     public string IconAutomationName => _iconAutomationSource;
     public bool IsAvailable { get; }
+    public int SupportedCapabilityCount => _total;
     public int? BatteryPercent { get; }
     public Brush StatusBrush { get; }
     public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails { get; }
@@ -156,7 +167,10 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                     telemetry.BladeAdvancedFanCpuModeRaw is byte cpuMode ? FormatRawByte(cpuMode) : null);
                 Add("Text_37B37761", telemetry.BladeAdvancedFanGpuModeRaw,
                     telemetry.BladeAdvancedFanGpuModeRaw is byte gpuMode ? FormatRawByte(gpuMode) : null);
-                Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled);
+                if (BladeModelCapabilities.SupportsStartupAnimation(descriptor.ProductId))
+                {
+                    Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled);
+                }
                 Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
                 if (telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true)
                 {

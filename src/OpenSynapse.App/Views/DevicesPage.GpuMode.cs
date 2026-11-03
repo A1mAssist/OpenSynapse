@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Win32;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Displays;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Lifecycle;
 using System.Diagnostics;
 
@@ -13,24 +14,22 @@ public sealed partial class DevicesPage
     private bool _gpuModeUiReady;
     private bool _gpuModeBusy;
     private int _gpuModeRefreshVersion;
-    private BladeGpuModeSnapshot? _gpuModeSnapshot;
-    private bool _gpuModeStartupApplied;
+    private bool _legacyIntegratedRecoveryApplied;
 
     internal void RefreshDedicatedGpuMode() => _ = RefreshGpuModeAsync();
 
     /// <summary>
-    /// The four modes are one selector over two executors: the PnP adapter switch and the
-    /// firmware MUX. Availability comes from the model's own reports, so a laptop without
-    /// a MUX simply shows the adapter-backed modes.
+    /// The four modes are one selector over two executors. The controller is the
+    /// single entry for reading and changing them; this page only maps its result
+    /// into the card and the restart prompt.
     /// </summary>
     private async Task RefreshGpuModeAsync()
     {
         var version = ++_gpuModeRefreshVersion;
-        var dedicated = WindowsDedicatedGpuMode.GetStatus();
-        BladeDisplayMuxStatus mux;
+        BladeGpuModeState state;
         try
         {
-            mux = await ViewModel.Blade.ReadDisplayMuxStatusAsync(Lifetime);
+            state = await ViewModel.Blade.ReadGpuModeStateAsync(Lifetime);
         }
         catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
@@ -38,7 +37,13 @@ public sealed partial class DevicesPage
         }
         catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
         {
-            mux = default;
+            if (version == _gpuModeRefreshVersion)
+            {
+                SetGpuModeDetail(AppStrings.FormatText(
+                    "DedicatedGpuModeError",
+                    exception.Message));
+            }
+            return;
         }
 
         if (Lifetime.IsCancellationRequested || version != _gpuModeRefreshVersion)
@@ -46,52 +51,61 @@ public sealed partial class DevicesPage
             return;
         }
 
-        var faulted = dedicated.DeviceState.IsFaulted();
-        _gpuModeSnapshot = new BladeGpuModeSnapshot(
-            DedicatedGpuSupported: !faulted && dedicated.IsSupported,
-            DedicatedGpuEnabled: !dedicated.IsActive,
-            Mux: mux);
-        ApplyGpuModeStatus(dedicated, faulted);
+        ApplyGpuModeStatus(state);
 
-        // Auto has to reconcile once after boot; later changes arrive as power events.
-        if (!_gpuModeStartupApplied && !_gpuModeBusy &&
-            ViewModel.Blade.StoredGpuMode == BladeGpuMode.Auto)
+        if (!_legacyIntegratedRecoveryApplied &&
+            ViewModel.Blade.BladeProductId != 0 &&
+            state.Snapshot is { PnpSwitchAllowed: false, DedicatedGpuEnabled: false })
         {
-            _gpuModeStartupApplied = true;
-            _ = ApplyAutoGpuModeAsync();
+            _legacyIntegratedRecoveryApplied = true;
+            _ = RecoverLegacyIntegratedModeAsync();
         }
     }
 
-    private sealed record GpuModeOption(string Label, BladeGpuMode Mode);
+    private static string GpuModeSummary(BladeGpuMode mode) =>
+        AppStrings.Text(mode switch
+        {
+            BladeGpuMode.Integrated => "GpuModeIntegratedSummary",
+            BladeGpuMode.Discrete => "GpuModeDiscreteSummary",
+            BladeGpuMode.Auto => "GpuModeAutoSummary",
+            _ => "GpuModeStandardSummary",
+        });
 
-    private void ApplyGpuModeStatus(DedicatedGpuModeStatus dedicated, bool faulted)
+    private void ApplyGpuModeStatus(BladeGpuModeState state)
     {
+        var snapshot = state.Snapshot;
         GpuModeCard.Visibility =
-            DedicatedGpuModePolicy.ShouldShow(dedicated.BlockReason) || _gpuModeSnapshot?.MuxPresent == true
+            DedicatedGpuModePolicy.ShouldShow(state.Dedicated.BlockReason) || snapshot.MuxPresent
                 ? Visibility.Visible
                 : Visibility.Collapsed;
         _gpuModeUiReady = false;
         try
         {
+            var faulted = state.Dedicated.DeviceState.IsFaulted();
             GpuModeRestartButton.Visibility = faulted ? Visibility.Visible : Visibility.Collapsed;
             GpuModeRestartButton.IsEnabled = faulted && !_gpuModeBusy;
 
-            var snapshot = _gpuModeSnapshot ?? default;
-            var options = BladeGpuModes.GetAvailableModes(snapshot)
-                .Select(mode => new GpuModeOption(GpuModeLabel(mode), mode))
-                .ToArray();
-            GpuModeCombo.ItemsSource = options;
-            GpuModeCombo.Visibility = options.Length > 1 ? Visibility.Visible : Visibility.Collapsed;
-            GpuModeCombo.IsEnabled = !_gpuModeBusy && options.Length > 1;
-
             var stored = ViewModel.Blade.StoredGpuMode;
+            var current = BladeGpuModes.GetCurrentMode(snapshot);
             var preferred = stored == BladeGpuMode.Auto &&
-                options.Any(option => option.Mode == BladeGpuMode.Auto)
+                BladeGpuModes.IsAvailable(snapshot, BladeGpuMode.Auto)
                     ? BladeGpuMode.Auto
-                    : BladeGpuModes.GetCurrentMode(snapshot);
-            GpuModeCombo.SelectedItem = options.FirstOrDefault(option => option.Mode == preferred) ??
-                options.FirstOrDefault();
-            GpuModeStatusText.Text = GpuModeStatusMessage(dedicated, faulted, snapshot, stored);
+                    : current;
+            var options = BladeGpuModes.GetAvailableModes(snapshot)
+                .Select(mode => new GpuModeOptionViewModel(
+                    mode,
+                    GpuModeLabel(mode),
+                    GpuModeSummary(mode),
+                    mode == preferred,
+                    !_gpuModeBusy &&
+                        (mode == current || BladeGpuModes.IsAvailable(snapshot, mode))))
+                .ToArray();
+            GpuModeOptionsList.ItemsSource = options;
+            GpuModeOptionsList.Visibility = options.Length > 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            GpuModeStatusText.Text = AppStrings.FormatText("GpuModeStatusCurrent", GpuModeLabel(current));
+            SetGpuModeDetail(GpuModeStatusMessage(state, stored));
         }
         finally
         {
@@ -99,13 +113,19 @@ public sealed partial class DevicesPage
         }
     }
 
-    private string GpuModeStatusMessage(
-        DedicatedGpuModeStatus dedicated,
-        bool faulted,
-        in BladeGpuModeSnapshot snapshot,
-        BladeGpuMode? stored)
+    private void SetGpuModeDetail(string text)
     {
-        if (faulted)
+        GpuModeDetailText.Text = text;
+        GpuModeDetailText.Visibility = string.IsNullOrEmpty(text)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
+    private string GpuModeStatusMessage(BladeGpuModeState state, BladeGpuMode? stored)
+    {
+        var dedicated = state.Dedicated;
+        var snapshot = state.Snapshot;
+        if (dedicated.DeviceState.IsFaulted())
         {
             return AppStrings.FormatText("DedicatedGpuModeStatusFaulted", dedicated.ProblemCode);
         }
@@ -121,16 +141,14 @@ public sealed partial class DevicesPage
             return AppStrings.Text("GpuModeStatusOnlyDiscrete");
         }
 
-        if (stored == BladeGpuMode.Auto)
+        if (stored == BladeGpuMode.Auto && available.Contains(BladeGpuMode.Auto))
         {
             return AppStrings.FormatText(
                 "GpuModeStatusAuto",
-                GpuModeLabel(BladeGpuModes.ResolveAutoTarget(ViewModel.Blade.CurrentPowerSource)));
+                GpuModeLabel(BladeGpuModes.ResolveAutoTarget(snapshot, ViewModel.Blade.CurrentPowerSource)));
         }
 
-        return AppStrings.FormatText(
-            "GpuModeStatusCurrent",
-            GpuModeLabel(BladeGpuModes.GetCurrentMode(snapshot)));
+        return string.Empty;
     }
 
     private static string GpuModeLabel(BladeGpuMode mode) =>
@@ -142,130 +160,32 @@ public sealed partial class DevicesPage
             _ => AppStrings.Text("GpuModeStandard"),
         };
 
-    private readonly record struct GpuModeApplyResult(string Message, bool RestartRequired);
-
-    private async Task<GpuModeApplyResult> ApplyGpuModeAsync(
-        BladeGpuMode mode,
-        BladeGpuModeSnapshot snapshot,
-        CancellationToken cancellationToken)
-    {
-        if (mode == BladeGpuMode.Integrated)
-        {
-            // Disabling the adapter that currently drives the panel is a black screen.
-            if (snapshot.MuxPresent && snapshot.Mux.Mode == BladeDisplayMuxMode.Discrete)
-            {
-                return new(AppStrings.Text("GpuModeStatusDiscreteRouteLocked"), false);
-            }
-
-            return MapDedicatedGpuResult(
-                await WindowsDedicatedGpuMode.SetEnabledAsync(false, cancellationToken));
-        }
-
-        if (!snapshot.DedicatedGpuEnabled)
-        {
-            var enabled = await WindowsDedicatedGpuMode.SetEnabledAsync(true, cancellationToken);
-            // A pending restart means the adapter is not usable yet; stop before the MUX.
-            if (enabled.Outcome != DedicatedGpuSwitchOutcome.Success)
-            {
-                return MapDedicatedGpuResult(enabled);
-            }
-        }
-
-        BladeDisplayMuxMode? standardTarget = null;
-        if (mode == BladeGpuMode.Standard)
-        {
-            if (!snapshot.MuxPresent ||
-                snapshot.Mux.Mode is BladeDisplayMuxMode.Hybrid or BladeDisplayMuxMode.Dds)
-            {
-                return new(AppStrings.Text("DisplayMuxModeStatusSuccess"), false);
-            }
-
-            standardTarget = BladeDisplayMuxModes.GetStandardMode(snapshot.Mux.Capabilities);
-            if (standardTarget is null)
-            {
-                return new(AppStrings.Text("GpuModeStatusNoHybrid"), false);
-            }
-        }
-        else
-        {
-            if (!snapshot.MuxPresent ||
-                !BladeDisplayMuxModes.Supports(snapshot.Mux.Capabilities, BladeDisplayMuxMode.Discrete))
-            {
-                return new(AppStrings.Text("DisplayMuxModeStatusNoPair"), false);
-            }
-
-            if (snapshot.Mux.Mode == BladeDisplayMuxMode.Discrete)
-            {
-                return new(AppStrings.Text("DisplayMuxModeStatusSuccess"), false);
-            }
-        }
-
-        var target = mode == BladeGpuMode.Discrete
-            ? BladeDisplayMuxMode.Discrete
-            : standardTarget!.Value;
-        var result = await ViewModel.Blade.SetDisplayMuxModeAsync(target, cancellationToken);
-        return result.Outcome switch
-        {
-            BladeDisplayMuxSwitchOutcome.Success =>
-                new(AppStrings.Text("DisplayMuxModeStatusSuccess"), false),
-            BladeDisplayMuxSwitchOutcome.RestartRequired =>
-                new(AppStrings.Text("DisplayMuxModeStatusRestartRequired"), true),
-            BladeDisplayMuxSwitchOutcome.Restored =>
-                new(AppStrings.Text("DisplayMuxModeStatusRestored"), false),
-            BladeDisplayMuxSwitchOutcome.RestoreFailed =>
-                new(AppStrings.Text("DisplayMuxModeStatusRestoreFailed"), false),
-            BladeDisplayMuxSwitchOutcome.NoDevice =>
-                new(AppStrings.Text("DisplayMuxModeStatusNoDevice"), false),
-            BladeDisplayMuxSwitchOutcome.Unsupported =>
-                new(AppStrings.Text("DisplayMuxModeStatusNoPair"), false),
-            _ => new(AppStrings.FormatText("DisplayMuxModeStatusFailed", result.ErrorCode), false),
-        };
-    }
-
-    private static GpuModeApplyResult MapDedicatedGpuResult(DedicatedGpuSwitchResult result) =>
-        result.Outcome switch
-        {
-            DedicatedGpuSwitchOutcome.Success =>
-                new(AppStrings.Text("DedicatedGpuModeStatusSuccess"), false),
-            DedicatedGpuSwitchOutcome.RestartRequired =>
-                new(AppStrings.Text("DedicatedGpuModeStatusRestartRequired"), false),
-            DedicatedGpuSwitchOutcome.Cancelled =>
-                new(AppStrings.Text("DedicatedGpuModeStatusCancelled"), false),
-            DedicatedGpuSwitchOutcome.NoDevice =>
-                new(AppStrings.Text("DedicatedGpuModeStatusNoDevice"), false),
-            DedicatedGpuSwitchOutcome.DeviceFaulted =>
-                new(AppStrings.Text("DedicatedGpuModeStatusFaulted"), false),
-            // Blocked keeps the refreshed status line, which names the actual obstacle.
-            DedicatedGpuSwitchOutcome.Blocked => new(string.Empty, false),
-            _ => new(AppStrings.FormatText("DedicatedGpuModeStatusFailed", result.ExitCode), false),
-        };
-
-    private async void GpuModeChanged(object sender, SelectionChangedEventArgs e)
+    private async void GpuModeOptionClick(object sender, RoutedEventArgs e)
     {
         if (!_gpuModeUiReady || _gpuModeBusy ||
-            sender is not ComboBox { SelectedItem: GpuModeOption option } combo)
+            sender is not RadioButton { Tag: BladeGpuMode mode } radio)
         {
             return;
         }
 
-        var mode = option.Mode;
+        if (!radio.IsEnabled)
+        {
+            return;
+        }
+
         _gpuModeBusy = true;
         _gpuModeUiReady = false;
-        combo.IsEnabled = false;
-        GpuModeStatusText.Text = AppStrings.Text("DisplayMuxModeStatusApplying");
+        SetGpuModeDetail(AppStrings.Text("DisplayMuxModeStatusApplying"));
 
-        GpuModeApplyResult result;
+        BladeGpuModeApplyResult result;
         try
         {
-            await ViewModel.Blade.SaveGpuModeAsync(
-                mode == BladeGpuMode.Auto ? BladeGpuMode.Auto : null,
-                Lifetime);
-
-            var snapshot = _gpuModeSnapshot ?? default;
-            var target = mode == BladeGpuMode.Auto
-                ? BladeGpuModes.ResolveAutoTarget(ViewModel.Blade.CurrentPowerSource)
-                : mode;
-            result = await ApplyGpuModeAsync(target, snapshot, Lifetime);
+            result = await ViewModel.Blade.ApplyGpuModeAsync(mode, Lifetime);
+            if (result.Outcome is BladeGpuModeApplyOutcome.Success or
+                BladeGpuModeApplyOutcome.RestartRequired)
+            {
+                ViewModel.Refresh.RequestDeviceRefresh();
+            }
         }
         catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
@@ -276,7 +196,7 @@ public sealed partial class DevicesPage
             ViewModel.ReportApplicationError(AppStrings.FormatText(
                 "DedicatedGpuModeError",
                 exception.Message));
-            result = new(string.Empty, false);
+            result = new BladeGpuModeApplyResult(BladeGpuModeApplyOutcome.Failed, mode);
         }
         finally
         {
@@ -285,63 +205,71 @@ public sealed partial class DevicesPage
         }
 
         await RefreshGpuModeAsync();
-        if (result.Message.Length > 0)
-        {
-            GpuModeStatusText.Text = result.Message;
-        }
+        SetGpuModeDetail(result.Outcome == BladeGpuModeApplyOutcome.Blocked
+            ? GpuModeBlockedMessage(result)
+            : GpuModeResultMessage(result));
 
-        if (result.RestartRequired)
+        if (result.Outcome == BladeGpuModeApplyOutcome.RestartRequired)
         {
             await ShowDisplayMuxRestartPromptAsync();
         }
     }
 
+    private static string GpuModeBlockedMessage(in BladeGpuModeApplyResult result) =>
+        result.BlockReason switch
+        {
+            BladeGpuModeBlockReason.NotDeclared => AppStrings.Text("GpuModeStatusBlockedNotDeclared"),
+            BladeGpuModeBlockReason.NoMux => AppStrings.Text("GpuModeStatusBlockedNoMux"),
+            BladeGpuModeBlockReason.ExternalDisplay => AppStrings.Text("DedicatedGpuModeStatusBlockedExternal"),
+            BladeGpuModeBlockReason.DisplayTopology => AppStrings.Text("DedicatedGpuModeStatusBlockedDisplay"),
+            BladeGpuModeBlockReason.InternalDisplayUnsupported => AppStrings.Text("DedicatedGpuModeStatusBlockedInternal"),
+            BladeGpuModeBlockReason.DiscreteRouteLocked => AppStrings.Text("GpuModeStatusDiscreteRouteLocked"),
+            BladeGpuModeBlockReason.DeviceFaulted => AppStrings.FormatText(
+                "DedicatedGpuModeStatusFaulted",
+                result.ErrorCode),
+            BladeGpuModeBlockReason.NoDevice => AppStrings.Text("DedicatedGpuModeStatusNoDevice"),
+            _ => AppStrings.Text("DedicatedGpuModeStatusBlockedUnsupported"),
+        };
+
+    private static string GpuModeResultMessage(in BladeGpuModeApplyResult result) =>
+        result.ErrorCode == DedicatedGpuOperationUncertainException.PendingError
+            ? AppStrings.Text("GpuModeStatusPendingRestart")
+            : result.Outcome switch
+            {
+                BladeGpuModeApplyOutcome.Success => AppStrings.Text("GpuModeStatusApplied"),
+                BladeGpuModeApplyOutcome.RestartRequired => AppStrings.Text("DisplayMuxModeStatusRestartRequired"),
+                BladeGpuModeApplyOutcome.Cancelled => AppStrings.Text("DedicatedGpuModeStatusCancelled"),
+                BladeGpuModeApplyOutcome.NoDevice => AppStrings.Text("DedicatedGpuModeStatusNoDevice"),
+                BladeGpuModeApplyOutcome.RolledBack => AppStrings.Text("GpuModeStatusRolledBack"),
+                BladeGpuModeApplyOutcome.RollbackFailed => AppStrings.Text("GpuModeStatusRollbackFailed"),
+                _ => AppStrings.FormatText("DedicatedGpuModeStatusFailed", result.ErrorCode),
+            };
+
     private void SystemPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode is PowerModes.StatusChange or PowerModes.Resume)
         {
-            DispatcherQueue.TryEnqueue(() => _ = ApplyAutoGpuModeAsync());
+            DispatcherQueue.TryEnqueue(ViewModel.Refresh.RequestDeviceRefresh);
         }
     }
 
-    /// <summary>
-    /// Auto follows the power source through the adapter switch only. Writing the MUX on
-    /// every AC/battery change would restart the machine each time, so a panel that still
-    /// sits on the discrete route is reported instead of rewritten.
-    /// </summary>
-    private async Task ApplyAutoGpuModeAsync()
+    private async Task RecoverLegacyIntegratedModeAsync()
     {
-        if (_gpuModeBusy || Lifetime.IsCancellationRequested ||
-            ViewModel.Blade.StoredGpuMode != BladeGpuMode.Auto)
+        if (_gpuModeBusy || Lifetime.IsCancellationRequested)
         {
-            return;
-        }
-
-        await RefreshGpuModeAsync();
-        if (_gpuModeSnapshot is not { } snapshot)
-        {
-            return;
-        }
-
-        var target = BladeGpuModes.ResolveAutoTarget(ViewModel.Blade.CurrentPowerSource);
-        if (!BladeGpuModes.IsAvailable(snapshot, target) ||
-            BladeGpuModes.GetCurrentMode(snapshot) == target)
-        {
-            return;
-        }
-
-        if (target == BladeGpuMode.Standard && snapshot.MuxPresent &&
-            snapshot.Mux.Mode == BladeDisplayMuxMode.Discrete)
-        {
-            GpuModeStatusText.Text = AppStrings.Text("GpuModeStatusDiscreteRouteLocked");
             return;
         }
 
         _gpuModeBusy = true;
-        GpuModeApplyResult result;
         try
         {
-            result = await ApplyGpuModeAsync(target, snapshot, Lifetime);
+            var result = await ViewModel.Blade.RestoreDedicatedGpuSilentlyAsync(Lifetime);
+            if (result.Outcome is BladeGpuModeApplyOutcome.Blocked or
+                BladeGpuModeApplyOutcome.Failed or
+                BladeGpuModeApplyOutcome.RollbackFailed)
+            {
+                SetGpuModeDetail(AppStrings.Text("GpuModeStatusRecoveryNeedsElevation"));
+            }
         }
         catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
@@ -349,7 +277,9 @@ public sealed partial class DevicesPage
         }
         catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
         {
-            result = new(string.Empty, false);
+            ViewModel.ReportApplicationError(AppStrings.FormatText(
+                "DedicatedGpuModeError",
+                exception.Message));
         }
         finally
         {
@@ -357,10 +287,6 @@ public sealed partial class DevicesPage
         }
 
         await RefreshGpuModeAsync();
-        if (result.Message.Length > 0)
-        {
-            GpuModeStatusText.Text = result.Message;
-        }
     }
 
     private async Task ShowDisplayMuxRestartPromptAsync()
@@ -399,56 +325,32 @@ public sealed partial class DevicesPage
 
         _gpuModeBusy = true;
         GpuModeRestartButton.IsEnabled = false;
-        GpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusRestarting");
+        SetGpuModeDetail(AppStrings.Text("DedicatedGpuModeStatusRestarting"));
 
-        DedicatedGpuSwitchResult result;
+        BladeGpuModeApplyResult result;
         try
         {
-            result = await WindowsDedicatedGpuMode.RestartFaultedAsync(Lifetime);
+            result = await ViewModel.Blade.RestartDedicatedGpuAsync(Lifetime);
         }
         catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
         {
             return;
         }
-        catch (Exception exception)
+        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
         {
             ViewModel.ReportApplicationError(AppStrings.FormatText(
                 "DedicatedGpuModeError",
                 exception.Message));
-            result = new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Failed);
+            result = new BladeGpuModeApplyResult(BladeGpuModeApplyOutcome.Failed, BladeGpuMode.Standard);
         }
         finally
         {
             _gpuModeBusy = false;
         }
 
-        if (Lifetime.IsCancellationRequested)
-        {
-            return;
-        }
-
         RefreshDedicatedGpuMode();
-
-        switch (result.Outcome)
-        {
-            case DedicatedGpuSwitchOutcome.Success:
-                GpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusRestarted");
-                break;
-            case DedicatedGpuSwitchOutcome.RestartRequired:
-                GpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusRestartRequired");
-                break;
-            case DedicatedGpuSwitchOutcome.Cancelled:
-                GpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusCancelled");
-                break;
-            case DedicatedGpuSwitchOutcome.NoDevice:
-                GpuModeStatusText.Text = AppStrings.Text("DedicatedGpuModeStatusNoDevice");
-                break;
-            case DedicatedGpuSwitchOutcome.Failed:
-                GpuModeStatusText.Text = AppStrings.FormatText(
-                    "DedicatedGpuModeStatusFailed",
-                    result.ExitCode);
-                break;
-        }
+        SetGpuModeDetail(result.Outcome == BladeGpuModeApplyOutcome.Success
+            ? AppStrings.Text("DedicatedGpuModeStatusRestarted")
+            : GpuModeResultMessage(result));
     }
-
 }

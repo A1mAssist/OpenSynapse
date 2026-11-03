@@ -4,7 +4,7 @@ using Xunit;
 
 namespace OpenSynapse.Core.Tests;
 
-public sealed class RazerValkyrieHeadsetTests
+public sealed partial class RazerValkyrieHeadsetTests
 {
     [Fact]
     public void RequestUsesTheBundleEnvelope()
@@ -407,6 +407,8 @@ public sealed class RazerValkyrieHeadsetTests
         public byte? Charging { get; set; } = 1;
         public byte Preset { get; set; }
         public byte[] Bands { get; set; } = new byte[10];
+        public bool FailBandsOnce { get; set; }
+        public CancellationTokenSource? CancelBands { get; set; }
         public byte MicPreset { get; set; }
         public byte[] MicBands { get; set; } = new byte[10];
         public bool MicMuted { get; set; }
@@ -483,6 +485,14 @@ public sealed class RazerValkyrieHeadsetTests
             return Response(2, [0x93, 0x01, 0x01], [0]);
         }
 
+        private void MaybeFailBands()
+        {
+            if (!FailBandsOnce) return;
+            FailBandsOnce = false;
+            if (CancelBands is { } cancellation) { cancellation.Cancel(); throw new OperationCanceledException(cancellation.Token); }
+            throw new IOException("injected band failure");
+        }
+
         private byte[] WriteBands(byte[] request, bool withProfile)
         {
             var payload = request.AsSpan(13, request[12]).ToArray();
@@ -491,6 +501,7 @@ public sealed class RazerValkyrieHeadsetTests
                 Bands = withProfile ? payload[1..] : payload;
             }
 
+            MaybeFailBands();
             return Response(2, [0x95, 0x01, 0x01], [0]);
         }
 

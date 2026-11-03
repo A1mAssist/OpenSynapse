@@ -91,6 +91,7 @@ public sealed class BladeLightingController : IBladeLightingController
     private byte _transactionId;
     private bool _nativeEffectActive;
     private string? _nativeEffectDevicePath;
+    private BladeLightingEffect? _nativeEffect;
     private CancellationTokenSource? _nativeEffectKeepAliveCancellation;
     private Task _nativeEffectKeepAliveTask = Task.CompletedTask;
     private int _turnOffOnStop;
@@ -206,12 +207,14 @@ public sealed class BladeLightingController : IBladeLightingController
                     }
                     if (effect.Mode == BladeLightingMode.Off)
                     {
+                        _nativeEffect = null;
                         await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
                         _runtimeCompletion = Task.CompletedTask;
                         return;
                     }
                     _nativeEffectActive = true;
                     _nativeEffectDevicePath = device.Id;
+                    _nativeEffect = effect;
                     _nativeEffectKeepAliveCancellation = new CancellationTokenSource();
                     _nativeEffectKeepAliveTask = RunNativeEffectKeepAliveAsync(
                         device.Id,
@@ -414,6 +417,7 @@ public sealed class BladeLightingController : IBladeLightingController
                         {
                             _nativeEffectActive = false;
                             _nativeEffectDevicePath = null;
+                            _nativeEffect = null;
                         }
                     }
                 }
@@ -503,6 +507,7 @@ public sealed class BladeLightingController : IBladeLightingController
             {
                 _nativeEffectActive = false;
                 _nativeEffectDevicePath = null;
+                _nativeEffect = null;
             }
         }
 
@@ -526,30 +531,36 @@ public sealed class BladeLightingController : IBladeLightingController
             while (true)
             {
                 await Task.Delay(_nativeEffectKeepAliveInterval, cancellationToken).ConfigureAwait(false);
-                var shouldKeepAlive = false;
-                await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    shouldKeepAlive = _nativeEffectActive &&
-                        Volatile.Read(ref _displayAvailable) != 0 &&
-                        StringComparer.OrdinalIgnoreCase.Equals(_nativeEffectDevicePath, devicePath);
-                }
-                finally
-                {
-                    _gate.Release();
-                }
+                    await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        if (!_nativeEffectActive ||
+                            Volatile.Read(ref _displayAvailable) == 0 ||
+                            !StringComparer.OrdinalIgnoreCase.Equals(_nativeEffectDevicePath, devicePath))
+                        {
+                            return;
+                        }
 
-                if (!shouldKeepAlive)
-                {
-                    return;
-                }
-
-                try
-                {
-                    await ValidateCurrentPathAsync(
-                        devicePath,
-                        manifest,
-                        cancellationToken).ConfigureAwait(false);
+                        await ValidateCurrentPathAsync(
+                            devicePath,
+                            manifest,
+                            cancellationToken).ConfigureAwait(false);
+                        if (_nativeEffect is not { } effect ||
+                            !TryCreateNativeEffectRequest(effect, out var request))
+                        {
+                            return;
+                        }
+                        await SendAsync(
+                            devicePath,
+                            request,
+                            cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        _gate.Release();
+                    }
                 }
                 catch (NotSupportedException) when (!cancellationToken.IsCancellationRequested)
                 {
@@ -649,7 +660,8 @@ public sealed class BladeLightingController : IBladeLightingController
         {
             BladeLightingMode.Off => BladeLightingProtocol.CreateOffRequest(),
             BladeLightingMode.Static => BladeLightingProtocol.CreateStaticRequest(effect.Color),
-            BladeLightingMode.Wave => BladeLightingProtocol.CreateWaveRequest(effect.Direction),
+            BladeLightingMode.Wave => BladeLightingProtocol.CreateWaveRequest(
+                ToMatrixWireDirection(effect.Direction)),
             BladeLightingMode.Spectrum => BladeLightingProtocol.CreateSpectrumRequest(),
             BladeLightingMode.Reactive =>
                 BladeLightingProtocol.CreateReactiveRequest(effect.ReactiveSpeed, effect.Color),
@@ -672,6 +684,14 @@ public sealed class BladeLightingController : IBladeLightingController
 
         return request.Length != 0;
     }
+
+    // User-observed on Blade 16 2025 (710): the firmware's 0x02 moves the wave left.
+    // Keep 2026, Blade2 and 023A on the semantic enum until their hardware confirms
+    // the wire byte.
+    private BladeWaveDirection ToMatrixWireDirection(BladeWaveDirection direction) =>
+        _lightingDialect == BladeLightingDialect.LedMatrix710
+            ? direction == BladeWaveDirection.Right ? BladeWaveDirection.Left : BladeWaveDirection.Right
+            : direction;
 
     private byte[] CreateOffRequest() =>
         _lightingDialect == BladeLightingDialect.LedMatrixBlade

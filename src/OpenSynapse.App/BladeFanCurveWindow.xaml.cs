@@ -25,6 +25,7 @@ public sealed partial class BladeFanCurveWindow : Window
         InitializeComponent();
         _viewModel = viewModel;
         RootLayout.DataContext = viewModel;
+        Closed += (_, _) => RootLayout.DataContext = null;
         WindowAppearance.Apply(this);
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))

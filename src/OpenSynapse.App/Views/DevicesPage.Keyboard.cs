@@ -14,30 +14,30 @@ public sealed partial class DevicesPage : UserControl
         }
 
         SelectDevice("keyboard");
-        await ViewModel.SelectKeyboardAsync(row, Lifetime);
+        await ViewModel.Accessories.SelectKeyboardAsync(row, Lifetime);
         UpdateDeviceSelector("keyboard");
     }
 
     private async void KeyboardRefreshClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedKeyboard?.LoadAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedKeyboard?.LoadAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void KeyboardApplyGameModeClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedKeyboard?.ApplyGameModeAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedKeyboard?.ApplyGameModeAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void KeyboardApplyBrightnessClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedKeyboard?.ApplyBrightnessAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedKeyboard?.ApplyBrightnessAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void KeyboardApplyLightingClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedKeyboard?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedKeyboard?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void KeyboardApplyPollingClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedKeyboard?.ApplyPollingAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedKeyboard?.ApplyPollingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void KeyboardReadOnboardMacrosClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedKeyboard?.LoadOnboardMacrosAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedKeyboard?.LoadOnboardMacrosAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void KeyboardWriteOnboardMacroClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.SelectedKeyboard?.WriteOnboardMacroAsync(Lifetime) ?? Task.CompletedTask);
+        await (ViewModel.Accessories.SelectedKeyboard?.WriteOnboardMacroAsync(Lifetime) ?? Task.CompletedTask);
 }
 
 

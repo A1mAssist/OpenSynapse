@@ -1,0 +1,281 @@
+using Microsoft.UI.Xaml;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Devices;
+
+namespace OpenSynapse.App.ViewModels;
+
+/// <summary>
+/// Intel RAPL package wall. The index is user intent; the register is only written from
+/// <see cref="ApplyCpuPowerLimitAsync"/>, never while a report refreshes the picker.
+/// </summary>
+public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
+{
+    private static readonly double[] CpuPowerLimitPresets =
+        [0, 15, 25, 35, 45, 55, 65, 75, 85, 95];
+
+    /// <summary>The component Razer ships with Synapse for AMD PPT control.</summary>
+    internal const string AmdOverClockDownloadUri =
+        "https://app-assets.razer.com/files/synapse/devices/common/blades/RazerAMDOverClockSetup-v1.0.4.0.exe";
+
+    internal const string PawnIoDownloadUri =
+        "https://github.com/namazso/PawnIO.Setup/releases/latest";
+
+    private CpuPowerLimitReport? _cpuPowerLimitReport;
+    private int _cpuPowerLimitIndex = -1;
+    private bool _isRefreshingCpuPowerLimit;
+    private readonly Func<bool> _isBusy;
+    private readonly Func<string, Func<Task>, CancellationToken, Action?, Task> _runOperation;
+
+    internal CpuPowerLimitWorkspace(Func<bool> isBusy,
+        Func<string, Func<Task>, CancellationToken, Action?, Task> runOperation)
+    {
+        _isBusy = isBusy;
+        _runOperation = runOperation;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public IReadOnlyList<string> CpuPowerLimitOptions =>
+    [
+        AppStrings.Text("CpuPowerLimitAuto"),
+        .. CpuPowerLimitPresets.Skip(1).Select(watts => $"{watts:0} W"),
+    ];
+
+    public int CpuPowerLimitIndex
+    {
+        get => _cpuPowerLimitIndex;
+        set => SetField(ref _cpuPowerLimitIndex, value);
+    }
+
+    public string CpuPowerLimitText => _cpuPowerLimitReport switch
+    {
+        null => "--",
+        { Availability: CpuPowerLimitAvailability.Available } report =>
+            AppStrings.FormatText("CpuPowerLimitValue", report.Pl1Watts, report.Pl2Watts),
+        { Availability: CpuPowerLimitAvailability.PawnIoMissing } =>
+            AppStrings.Text("CpuPowerLimitPawnIoMissing"),
+        { Availability: CpuPowerLimitAvailability.ModuleMissing } =>
+            AppStrings.Text("CpuPowerLimitModuleMissing"),
+        { Availability: CpuPowerLimitAvailability.AccessDenied } =>
+            AppStrings.Text("CpuPowerLimitAccessDenied"),
+        { Availability: CpuPowerLimitAvailability.AmdDriverMissing } =>
+            AppStrings.Text("CpuPowerLimitAmdDriverMissing"),
+        _ => AppStrings.Text("CpuPowerLimitUnavailable"),
+    };
+
+    public string CpuPowerLimitDetailText => _cpuPowerLimitReport switch
+    {
+        null => AppStrings.Text("CpuPowerLimitChecking"),
+        { IsLocked: true } => AppStrings.Text("CpuPowerLimitLocked"),
+        { Availability: CpuPowerLimitAvailability.Available, UsesDirectSmu: true } report =>
+            $"{AppStrings.FormatText("CpuPowerLimitCeiling", report.MaximumWatts)} · " +
+            AppStrings.Text("CpuPowerLimitDirectSmu"),
+        { Availability: CpuPowerLimitAvailability.Available } report =>
+            AppStrings.FormatText("CpuPowerLimitCeiling", report.MaximumWatts),
+        { Detail: { Length: > 0 } detail } => detail,
+        _ => string.Empty,
+    };
+
+    public Visibility CpuPowerLimitDetailVisibility =>
+        CpuPowerLimitDetailText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility CpuPowerLimitAmdDownloadVisibility =>
+        _cpuPowerLimitReport?.Availability == CpuPowerLimitAvailability.AmdDriverMissing
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility CpuPowerLimitPawnIoInstallVisibility =>
+        _cpuPowerLimitReport?.Availability == CpuPowerLimitAvailability.PawnIoMissing
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public bool CanInstallCpuPowerLimitPawnIo =>
+        !_isBusy() && _cpuPowerLimitReport?.Availability == CpuPowerLimitAvailability.PawnIoMissing;
+
+    public bool CanSetCpuPowerLimit =>
+        !_isBusy() &&
+        _cpuPowerLimitReport is
+        {
+            Availability: CpuPowerLimitAvailability.Available,
+            IsLocked: false,
+        };
+
+    internal bool IsRefreshingCpuPowerLimit
+    {
+        get => _isRefreshingCpuPowerLimit;
+        private set => _isRefreshingCpuPowerLimit = value;
+    }
+
+    private async Task RefreshCpuPowerLimitAsync(CancellationToken cancellationToken = default)
+    {
+        CpuPowerLimitReport report;
+        try
+        {
+            report = await CpuPowerLimitBroker.ReadAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            report = CpuPowerLimitReport.Unavailable(
+                CpuPowerLimitAvailability.Failed,
+                exception.Message);
+        }
+
+        if (report.Availability == CpuPowerLimitAvailability.Available)
+        {
+            CpuPowerBaselineStore.Instance.Capture(report);
+        }
+
+        PublishCpuPowerLimit(report);
+    }
+
+    /// <summary>Startup path: a failed read must explain itself, not fault the window.</summary>
+    internal async Task RefreshCpuPowerLimitSafelyAsync()
+    {
+        try
+        {
+            await RefreshCpuPowerLimitAsync();
+        }
+        catch (Exception exception)
+        {
+            PublishCpuPowerLimit(CpuPowerLimitReport.Unavailable(
+                CpuPowerLimitAvailability.Failed,
+                exception.Message));
+        }
+    }
+
+    public async Task ApplyCpuPowerLimitAsync(CancellationToken cancellationToken = default)
+    {
+        var requestedIndex = _cpuPowerLimitIndex;
+        if (requestedIndex < 0 || requestedIndex >= CpuPowerLimitPresets.Length)
+        {
+            return;
+        }
+
+        await _runOperation(
+            AppStrings.Text("CpuPowerLimitTitle"),
+            async () =>
+            {
+                var report = requestedIndex == 0
+                    ? await CpuPowerLimitBroker.RestoreAsync(
+                        CpuPowerBaselineStore.Instance.Current,
+                        cancellationToken)
+                    : await ApplyCpuPowerLimitPresetAsync(requestedIndex, cancellationToken);
+                PublishCpuPowerLimit(report);
+                if (report.Availability != CpuPowerLimitAvailability.Available)
+                {
+                    throw new InvalidOperationException(
+                        CpuPowerLimitDetailText is { Length: > 0 } reason
+                            ? reason
+                            : AppStrings.Text("CpuPowerLimitUnavailable"));
+                }
+            },
+            cancellationToken,
+            () => RestoreCpuPowerLimitIndex(requestedIndex));
+
+        // The report is published while RunDeviceOperationAsync still holds IsBusy, so the
+        // picker would stay disabled. Re-raise CanSet now that the operation has cleared it.
+        OnPropertyChanged(nameof(CanSetCpuPowerLimit));
+        OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
+    }
+
+    /// <summary>
+    /// Resume replay: firmware resets the wall during sleep, so write the chosen preset
+    /// again. Auto (0) must not overwrite the firmware default, and a failure here is
+    /// background noise rather than a user-visible error.
+    /// </summary>
+    internal async Task ReplayCpuPowerLimitAfterResumeAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var requestedIndex = _cpuPowerLimitIndex;
+        if (requestedIndex <= 0 || requestedIndex >= CpuPowerLimitPresets.Length)
+        {
+            return;
+        }
+
+        try
+        {
+            var report = await ApplyCpuPowerLimitPresetAsync(requestedIndex, cancellationToken);
+            if (report.Availability == CpuPowerLimitAvailability.Available)
+            {
+                PublishCpuPowerLimit(report);
+            }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private static Task<CpuPowerLimitReport> ApplyCpuPowerLimitPresetAsync(
+        int index,
+        CancellationToken cancellationToken)
+    {
+        var pl1 = CpuPowerLimitPresets[index];
+        return CpuPowerLimitBroker.ApplyAsync(
+            new CpuPowerLimit(
+                pl1,
+                Math.Min(pl1 + 15, CpuPowerLimit.MaximumWatts),
+                CpuPowerLimit.MinimumTimeSeconds,
+                CpuPowerLimit.MaximumTimeSeconds),
+            cancellationToken);
+    }
+
+    private void PublishCpuPowerLimit(CpuPowerLimitReport report)
+    {
+        _cpuPowerLimitReport = report;
+        // A firmware default (150 W) is not a preset; a blank picker would hide that the
+        // card is on Automatic.
+        var index = report.Availability == CpuPowerLimitAvailability.Available
+            ? Math.Max(0, Array.IndexOf(CpuPowerLimitPresets, report.Pl1Watts))
+            : -1;
+        SetCpuPowerLimitIndex(index);
+        OnPropertyChanged(nameof(CpuPowerLimitText));
+        OnPropertyChanged(nameof(CpuPowerLimitDetailText));
+        OnPropertyChanged(nameof(CpuPowerLimitDetailVisibility));
+        OnPropertyChanged(nameof(CpuPowerLimitAmdDownloadVisibility));
+        OnPropertyChanged(nameof(CpuPowerLimitPawnIoInstallVisibility));
+        OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
+        OnPropertyChanged(nameof(CanSetCpuPowerLimit));
+    }
+
+    private void RestoreCpuPowerLimitIndex(int index) => SetCpuPowerLimitIndex(index);
+
+    internal void NotifyBusyChanged()
+    {
+        OnPropertyChanged(nameof(CanSetCpuPowerLimit));
+        OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
+    }
+
+    /// <summary>
+    /// The notification must stay inside the flag: the binding pushes the new index into the
+    /// ComboBox, whose SelectionChanged would otherwise write the same value back (INV-06).
+    /// </summary>
+    private void SetCpuPowerLimitIndex(int index)
+    {
+        IsRefreshingCpuPowerLimit = true;
+        try
+        {
+            _cpuPowerLimitIndex = index;
+            OnPropertyChanged(nameof(CpuPowerLimitIndex));
+        }
+        finally
+        {
+            IsRefreshingCpuPowerLimit = false;
+        }
+    }
+
+    private void SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        field = value;
+        OnPropertyChanged(name);
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}

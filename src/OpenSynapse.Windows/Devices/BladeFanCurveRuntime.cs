@@ -6,12 +6,14 @@ namespace OpenSynapse.Windows.Devices;
 public sealed class BladeFanCurveRuntime : IAsyncDisposable
 {
     private static readonly TimeSpan DefaultInterval = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan DefaultFixedKeepAliveInterval = TimeSpan.FromSeconds(10);
     private const int MaximumConsecutiveMissingSamples = 3;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, CancellationToken, ValueTask<BladeFanControlSnapshot>> _read;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> _set;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int?, int?, CancellationToken, ValueTask> _setFixed;
     private readonly Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> _sample;
     private readonly TimeSpan _interval;
+    private readonly TimeSpan _fixedKeepAliveInterval;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly object _disposeSync = new();
     private CancellationTokenSource? _stop;
@@ -38,7 +40,8 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> set,
         Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int?, int?, CancellationToken, ValueTask> setFixed,
         Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> sample,
-        TimeSpan interval)
+        TimeSpan interval,
+        TimeSpan? fixedKeepAliveInterval = null)
     {
         _read = read ?? throw new ArgumentNullException(nameof(read));
         _set = set ?? throw new ArgumentNullException(nameof(set));
@@ -48,7 +51,12 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         {
             throw new ArgumentOutOfRangeException(nameof(interval));
         }
+        if (fixedKeepAliveInterval <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(fixedKeepAliveInterval));
+        }
         _interval = interval;
+        _fixedKeepAliveInterval = fixedKeepAliveInterval ?? DefaultFixedKeepAliveInterval;
     }
 
     public Task Completion => _worker ?? Task.CompletedTask;
@@ -74,7 +82,9 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             }
             // The per-model ceiling is enforced where the write happens, because only
             // the reader knows which Blade answered.
-            BladeFanLimits.ValidateTargetRpm(targetRpm.Value);
+            var blade = devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
+            BladeFanLimits.ValidateTargetRpm(targetRpm.Value,
+                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(blade?.ProductId ?? 0));
         }
         else if (targetRpm is not null)
         {
@@ -121,7 +131,8 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             }
 
             _stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            _worker = HoldFixedAsync(deviceSnapshot, original, _stop.Token);
+            _worker = HoldFixedAsync(
+                deviceSnapshot, original, mode, cpuTarget, gpuTarget, _stop.Token);
         }
         finally
         {
@@ -279,12 +290,11 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         {
             try
             {
-                await _set(
-                    devices,
-                    original.Mode,
-                    original.CpuTargetRpm,
-                    original.GpuTargetRpm,
-                    CancellationToken.None).ConfigureAwait(false);
+                if (original.Mode == BladeFanMode.Automatic)
+                    await _setFixed(devices, original.Mode, null, null, CancellationToken.None).ConfigureAwait(false);
+                else
+                    await _set(devices, original.Mode, original.CpuTargetRpm, original.GpuTargetRpm,
+                        CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception restoreException)
             {
@@ -303,11 +313,35 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     private async Task HoldFixedAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeFanControlSnapshot original,
+        BladeFanMode mode,
+        int cpuTarget,
+        int gpuTarget,
         CancellationToken cancellationToken)
     {
         try
         {
-            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+            if (mode == BladeFanMode.Manual)
+            {
+                // The Blade EC drops a manual target back to its own curve after a while.
+                // Reassert the explicit target while fixed control owns the fans.
+                using var timer = new PeriodicTimer(_fixedKeepAliveInterval);
+                while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    try
+                    {
+                        await _setFixed(
+                            devices, mode, cpuTarget, gpuTarget, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception) when (!cancellationToken.IsCancellationRequested)
+                    {
+                        // A transient HID failure must not drop the explicit setting.
+                    }
+                }
+            }
+            else
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

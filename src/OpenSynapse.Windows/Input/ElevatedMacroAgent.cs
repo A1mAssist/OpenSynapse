@@ -49,68 +49,62 @@ public static class ElevatedMacroAgent
         return true;
     }
 
-    private static async Task RunAsync(CancellationToken cancellationToken)
+    private static Task RunAsync(CancellationToken cancellationToken)
     {
         var sink = new WindowsMacroInputSink();
+        return RunWithCleanupAsync(sink, async pressed =>
+        {
+            NamedPipeServerStream? pipe = null;
+            try
+            {
+                pipe = CreatePipe();
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await pipe.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
+                        using var requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        requestTimeout.CancelAfter(TimeSpan.FromSeconds(10));
+                        var response = await HandleAsync(pipe, sink, pressed, requestTimeout.Token).ConfigureAwait(false);
+                        if (!response.Ok) await ReleasePressedAsync(sink, pressed).ConfigureAwait(false);
+                        await WriteResponseAsync(pipe, response, requestTimeout.Token).ConfigureAwait(false);
+                        pipe.Disconnect();
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
+                    catch (Exception exception) when (exception is IOException or InvalidOperationException or
+                        UnauthorizedAccessException or JsonException or ObjectDisposedException or OperationCanceledException)
+                    {
+                        await ReleasePressedAsync(sink, pressed).ConfigureAwait(false);
+                        pipe.Dispose();
+                        pipe = CreatePipeWithRetry(cancellationToken);
+                    }
+                }
+            }
+            finally { pipe?.Dispose(); }
+        });
+    }
+
+    internal static async Task RunWithCleanupAsync(IMacroInputSink sink, Func<List<MacroInput>, Task> run)
+    {
         var pressed = new List<MacroInput>();
+        try { await run(pressed).ConfigureAwait(false); }
+        finally { await ReleasePressedAsync(sink, pressed).ConfigureAwait(false); }
+    }
 
-        // The pipe instance is reused across requests. Recreating it per
-        // request would leave a window where the app's connect attempt lands
-        // on a pipe nobody is serving.
-        var pipe = CreatePipe();
-        while (!cancellationToken.IsCancellationRequested)
+    internal static async Task<Exception?> ReleasePressedAsync(IMacroInputSink sink, List<MacroInput> pressed)
+    {
+        Exception? failure = null;
+        foreach (var input in pressed.ToArray().Reverse())
         {
             try
             {
-                await pipe.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
-                var response = await HandleAsync(pipe, sink, pressed, cancellationToken)
-                    .ConfigureAwait(false);
-                await WriteResponseAsync(pipe, response, cancellationToken).ConfigureAwait(false);
+                await sink.SendAsync(new MacroStep { Kind = MacroStepKind.Input, Input = input, IsDown = false },
+                    CancellationToken.None).ConfigureAwait(false);
+                pressed.Remove(input);
             }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception exception) when (
-                exception is IOException or InvalidOperationException or
-                    UnauthorizedAccessException or JsonException or ObjectDisposedException)
-            {
-                // A malformed or disconnected client must not stop the agent.
-                // A broken pipe cannot serve another client, so replace it.
-                // The replacement can still fail while the old instance is
-                // being torn down, so it retries until it succeeds.
-                var broken = pipe;
-                try
-                {
-                    broken.Dispose();
-                }
-                catch (IOException)
-                {
-                }
-
-                pipe = CreatePipeWithRetry(cancellationToken);
-            }
+            catch (Exception exception) { failure ??= exception; }
         }
-
-        pipe.Dispose();
-
-        // Never leave a key pressed on the desktop when the agent stops.
-        foreach (var input in pressed)
-        {
-            try
-            {
-                sink.SendAsync(new MacroStep
-                {
-                    Kind = MacroStepKind.Input,
-                    Input = input,
-                    IsDown = false,
-                }).GetAwaiter().GetResult();
-            }
-            catch (Exception exception) when (
-                exception is InvalidOperationException or Win32Exception)
-            {
-            }
-        }
+        return failure;
     }
 
     /// <summary>
@@ -135,7 +129,7 @@ public static class ElevatedMacroAgent
 
     private static async Task<ElevatedMacroResponse> HandleAsync(
         NamedPipeServerStream pipe,
-        WindowsMacroInputSink sink,
+        IMacroInputSink sink,
         List<MacroInput> pressed,
         CancellationToken cancellationToken)
     {
@@ -146,7 +140,7 @@ public static class ElevatedMacroAgent
             4096,
             leaveOpen: true);
 
-        var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+        var line = await ReadRequestLineAsync(reader, cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(line) ||
             line.Length > ElevatedMacroProtocol.MaximumMessageLength)
         {
@@ -168,26 +162,50 @@ public static class ElevatedMacroAgent
             return new ElevatedMacroResponse { Ok = false, Error = "UnsupportedVersion" };
         }
 
+        return await ExecuteRequestAsync(request, sink, pressed, ProcessIntegrityLevel.Current()).ConfigureAwait(false);
+    }
+
+    internal static async Task<string?> ReadRequestLineAsync(TextReader reader, CancellationToken cancellationToken)
+    {
+        var text = new StringBuilder();
+        var character = new char[1];
+        while (await reader.ReadAsync(character, cancellationToken).ConfigureAwait(false) != 0)
+        {
+            if (character[0] == '\n')
+            {
+                if (text.Length > 0 && text[^1] == '\r') text.Length--;
+                if (text.Length > ElevatedMacroProtocol.MaximumMessageLength) throw new InvalidDataException("RequestTooLong");
+                return text.ToString();
+            }
+            if (text.Length >= ElevatedMacroProtocol.MaximumMessageLength + 1) throw new InvalidDataException("RequestTooLong");
+            text.Append(character[0]);
+        }
+        if (text.Length != 0) throw new InvalidDataException("IncompleteRequest");
+        return null;
+    }
+
+    internal static async Task<ElevatedMacroResponse> ExecuteRequestAsync(
+        ElevatedMacroRequest request, IMacroInputSink sink, List<MacroInput> pressed, int integrityLevel)
+    {
         try
         {
-            return Execute(request, sink, pressed);
+            if (request.Version != ElevatedMacroProtocol.Version) throw new ArgumentException("UnsupportedVersion");
+            return Execute(request, sink, pressed, integrityLevel);
         }
-        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException or
+            Win32Exception or OverflowException or IOException)
         {
-            return new ElevatedMacroResponse
-            {
-                Ok = false,
-                Error = exception.Message,
-            };
+            await ReleasePressedAsync(sink, pressed).ConfigureAwait(false);
+            return new ElevatedMacroResponse { Ok = false, Error = exception.Message,
+                ErrorCode = exception is Win32Exception win32 ? win32.NativeErrorCode : 0 };
         }
     }
 
     private static ElevatedMacroResponse Execute(
         ElevatedMacroRequest request,
-        WindowsMacroInputSink sink,
-        List<MacroInput> pressed)
+        IMacroInputSink sink,
+        List<MacroInput> pressed, int integrityLevel)
     {
-        var integrityLevel = ProcessIntegrityLevel.Current();
         switch (request.Kind)
         {
             case ElevatedMacroCommandKind.Ping:
@@ -199,9 +217,10 @@ public static class ElevatedMacroAgent
 
             case ElevatedMacroCommandKind.Input:
             {
-                if (request.Input is not { } input)
+                if (request.Input is not { } input || !input.IsValid(allowPrimaryMouseButton: true) ||
+                    input.Kind is not (MacroInputKind.Keyboard or MacroInputKind.MouseButton or MacroInputKind.MouseWheel))
                 {
-                    return new ElevatedMacroResponse { Ok = false, Error = "MissingInput" };
+                    throw new ArgumentException("InvalidInput");
                 }
 
                 sink.SendAsync(new MacroStep
@@ -219,6 +238,8 @@ public static class ElevatedMacroAgent
             }
 
             case ElevatedMacroCommandKind.MouseMove:
+                if (request.MouseMoveMode is not (MacroMouseMoveMode.Absolute or MacroMouseMoveMode.Relative or MacroMouseMoveMode.ForegroundRelative))
+                    throw new ArgumentException("UnsupportedMouseMoveMode");
                 sink.SendMouseMoveAsync(request.MouseMoveMode, request.X, request.Y)
                     .GetAwaiter().GetResult();
                 return new ElevatedMacroResponse
@@ -228,6 +249,7 @@ public static class ElevatedMacroAgent
                 };
 
             case ElevatedMacroCommandKind.Text:
+                if (request.Text?.Length > ElevatedMacroProtocol.MaximumMessageLength) throw new ArgumentException("TextTooLong");
                 sink.SendTextAsync(request.Text ?? string.Empty).GetAwaiter().GetResult();
                 return new ElevatedMacroResponse
                 {
@@ -236,17 +258,7 @@ public static class ElevatedMacroAgent
                 };
 
             case ElevatedMacroCommandKind.ReleaseAll:
-                foreach (var input in pressed.ToArray())
-                {
-                    sink.SendAsync(new MacroStep
-                    {
-                        Kind = MacroStepKind.Input,
-                        Input = input,
-                        IsDown = false,
-                    }).GetAwaiter().GetResult();
-                }
-
-                pressed.Clear();
+                if (ReleasePressedAsync(sink, pressed).GetAwaiter().GetResult() is { } failure) throw failure;
                 return new ElevatedMacroResponse
                 {
                     Ok = true,
@@ -254,7 +266,7 @@ public static class ElevatedMacroAgent
                 };
 
             default:
-                return new ElevatedMacroResponse { Ok = false, Error = "UnsupportedCommand" };
+                throw new ArgumentException("UnsupportedCommand");
         }
     }
 
@@ -263,8 +275,7 @@ public static class ElevatedMacroAgent
         bool isDown,
         List<MacroInput> pressed)
     {
-        if (input.Kind is MacroInputKind.NagaSideButton or MacroInputKind.DeviceButton or
-            MacroInputKind.RazerKey)
+        if (input.Kind is not (MacroInputKind.Keyboard or MacroInputKind.MouseButton))
         {
             // These inputs cannot be replayed as keystrokes, so they never
             // leave a key stuck down.
@@ -274,7 +285,7 @@ public static class ElevatedMacroAgent
         pressed.RemoveAll(item => item.Matches(input));
         if (isDown)
         {
-            pressed.Add(input);
+            pressed.Add(input.Clone());
         }
     }
 

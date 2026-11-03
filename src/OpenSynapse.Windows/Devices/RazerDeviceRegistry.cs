@@ -145,7 +145,7 @@ internal sealed class RazerDeviceRegistry
                 [CapabilityIds.ObmAssignmentGet] = new(0x50, 0x02, 0x8C, ""),
                 [CapabilityIds.ObmAssignmentSet] = new(0x50, 0x02, 0x0C, ""),
             },
-            // Future OpenRazer devices need an audited built-in manifest and
+            // Future RazerHid devices need an audited built-in manifest and
             // verified Windows transport before any capability is admitted.
             ["openrazer-standard"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal),
         };

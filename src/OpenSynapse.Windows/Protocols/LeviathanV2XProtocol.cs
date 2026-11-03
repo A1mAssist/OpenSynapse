@@ -141,18 +141,18 @@ public static class LeviathanV2XProtocol
     /// </summary>
     public static byte[] CreateEffect(
         byte regionId,
-        OpenRazerLightingEffect effect,
+        RazerHidLightingEffect effect,
         byte direction,
-        OpenRazerColor primary,
-        OpenRazerColor secondary) => effect switch
+        RazerHidColor primary,
+        RazerHidColor secondary) => effect switch
     {
-        OpenRazerLightingEffect.Off => CreateSetEffect(WriteProfile, regionId, 0x00, 0, 0, []),
-        OpenRazerLightingEffect.Static => CreateSetEffect(WriteProfile, regionId, 0x01, 0, 0,
+        RazerHidLightingEffect.Off => CreateSetEffect(WriteProfile, regionId, 0x00, 0, 0, []),
+        RazerHidLightingEffect.Static => CreateSetEffect(WriteProfile, regionId, 0x01, 0, 0,
             [primary.Red, primary.Green, primary.Blue]),
-        OpenRazerLightingEffect.BreathingDual => CreateSetEffect(WriteProfile, regionId, 0x02, 2, 0,
+        RazerHidLightingEffect.BreathingDual => CreateSetEffect(WriteProfile, regionId, 0x02, 2, 0,
             [primary.Red, primary.Green, primary.Blue, secondary.Red, secondary.Green, secondary.Blue]),
-        OpenRazerLightingEffect.Spectrum => CreateSetEffect(WriteProfile, regionId, 0x03, 0, 0, []),
-        OpenRazerLightingEffect.Wave => CreateSetEffect(WriteProfile, regionId, 0x04,
+        RazerHidLightingEffect.Spectrum => CreateSetEffect(WriteProfile, regionId, 0x03, 0, 0, []),
+        RazerHidLightingEffect.Wave => CreateSetEffect(WriteProfile, regionId, 0x04,
             direction == 1 ? (byte)2 : (byte)1, 40, []),
         _ => throw new NotSupportedException(
             $"The Leviathan V2 X does not expose the {effect} lighting effect."),

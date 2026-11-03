@@ -22,7 +22,7 @@ public sealed record RazerKeyboardState(
 
 /// <summary>
 /// Settings the middleware exposes for the Huntsman V3 and Pro Type keyboards, which the
-/// OpenRazer catalogue does not cover: game mode, polling period, battery and identity.
+/// RazerHid catalogue does not cover: game mode, polling period, battery and identity.
 /// Each value is probed, so a model that does not answer a command simply hides that row.
 /// </summary>
 public sealed class RazerKeyboardService
@@ -101,8 +101,8 @@ public sealed class RazerKeyboardService
 
         var candidates = interfaces
             .Where(item => Products.ContainsKey(item.ProductId))
-            // The OpenRazer catalogue already owns these PIDs and shows its own page.
-            .Where(item => OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            // The RazerHid catalogue already owns these PIDs and shows its own page.
+            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
             .OrderByDescending(item => item.Access == DeviceAccessState.Available)
             .ThenBy(item => item.ProductId)
             .ToArray();

@@ -16,13 +16,14 @@ public enum BladeGpuMode
 
 /// <summary>
 /// What the machine can currently do, assembled from the PnP adapter state and the
-/// firmware MUX report. A model without MUX leaves <see cref="Mux"/> unsupported and
-/// only exposes the adapter switch.
+/// firmware MUX report. Without a readable MUX, the destructive adapter switch
+/// is not admitted.
 /// </summary>
 public readonly record struct BladeGpuModeSnapshot(
     bool DedicatedGpuSupported,
     bool DedicatedGpuEnabled,
-    BladeDisplayMuxStatus Mux)
+    BladeDisplayMuxStatus Mux,
+    bool PnpSwitchAllowed = false)
 {
     public bool MuxPresent =>
         Mux.IsSupported || Mux.Capabilities != BladeDisplayMuxCapabilities.None;
@@ -40,7 +41,14 @@ public static class BladeGpuModes
     public static bool IsAvailable(in BladeGpuModeSnapshot snapshot, BladeGpuMode mode) =>
         mode switch
         {
-            BladeGpuMode.Integrated => snapshot.DedicatedGpuSupported,
+            // Do not disable the dGPU unless the live MUX state is known. If the panel is
+            // still routed through it, a blind PnP switch can black-screen the machine.
+            BladeGpuMode.Integrated =>
+                snapshot.PnpSwitchAllowed &&
+                snapshot.MuxPresent &&
+                (snapshot.Mux.Mode == BladeDisplayMuxMode.Discrete
+                    ? IsAvailable(snapshot, BladeGpuMode.Standard)
+                    : snapshot.DedicatedGpuSupported),
             // Already being on the iGPU route counts even when the capability bits do not
             // offer a Hybrid write: no write is needed to stay there.
             BladeGpuMode.Standard =>
@@ -96,8 +104,13 @@ public static class BladeGpuModes
     /// Auto follows the power source through the PnP switch only. Never writing the MUX
     /// here is what keeps a power-source change from turning into a restart loop.
     /// </summary>
-    public static BladeGpuMode ResolveAutoTarget(PowerSourceKind powerSource) =>
-        powerSource == PowerSourceKind.Battery
+    public static BladeGpuMode ResolveAutoTarget(
+        in BladeGpuModeSnapshot snapshot,
+        PowerSourceKind powerSource)
+    {
+        var target = powerSource == PowerSourceKind.Battery
             ? BladeGpuMode.Integrated
             : BladeGpuMode.Standard;
+        return IsAvailable(snapshot, target) ? target : BladeGpuMode.Standard;
+    }
 }

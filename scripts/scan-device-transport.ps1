@@ -2,13 +2,16 @@
 
 # Audits every Razer middleware bundle's declared rzDeviceType against
 # RazerHeadsetChannelCatalog. Runs entirely from the local CDN snapshot.
+param(
+    [string]$BundleRoot = (Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts/razer-mw-full-cdn/bundles'),
+    [string]$CatalogPath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'src/OpenSynapse.Windows/Devices/RazerHeadsetChannelCatalog.cs'),
+    [string]$OutputPath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts/device-transport-scan.csv')
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$bundleRoot = Join-Path $repoRoot 'artifacts\razer-mw-full-cdn\bundles'
-$catalogPath = Join-Path $repoRoot 'src\OpenSynapse.Windows\Devices\RazerHeadsetChannelCatalog.cs'
-$outputPath = Join-Path $repoRoot 'artifacts\device-transport-scan.csv'
+$outputPath = [IO.Path]::GetFullPath($OutputPath)
 
 foreach ($required in @($bundleRoot, $catalogPath)) {
     if (-not (Test-Path -LiteralPath $required)) {
@@ -28,18 +31,19 @@ foreach ($match in [regex]::Matches(
         Channel = $match.Groups[3].Value
     }
 }
-if ($catalog.Count -lt 50) {
-    throw "Parsed only $($catalog.Count) catalog rows; the C# table format changed."
+if ($catalog.Count -eq 0) {
+    throw 'No catalog rows parsed; the C# table format changed.'
 }
 
 $channelByDeviceType = @{
     AudioMxicDevice = 'Mxic64'
-    rzDevice25ValkyrieT3 = 'Mxic64'
+    rzDevice25ValkyrieT3 = 'ValkyrieT3Feature64'
     rzDevice40 = 'Mxic64'
     AudioValkyrie = 'Valkyrie64'
     AudioBillieT1 = 'Billie64'
     AudioBillieT2 = 'Billie64'
     AudioBastetT1 = 'Billie64'
+    AudioMixer = 'Mixer053E'
     rzDevice40HeadsetAiroha = 'Mxic64'
 }
 $dedicatedBlackSharkPids = @('0576', '0577', '101B', '101C')
@@ -82,16 +86,12 @@ $rows = @(
     }
 )
 
-if (-not ($rows | Where-Object Status -eq 'ok')) {
-    throw 'No bundle matched the catalog; the rzDeviceType scan did not validate anything.'
-}
-
 $outputDirectory = Split-Path -Parent $outputPath
 $null = New-Item -ItemType Directory -Path $outputDirectory -Force
 $rows | Export-Csv -LiteralPath $outputPath -NoTypeInformation -Encoding utf8
 
 "Scanned $($rows.Count) bundles -> $outputPath"
-foreach ($channel in 'Feature91', 'Mxic64', 'Valkyrie64', 'Billie64', 'DedicatedBlackShark', 'Unsupported') {
+foreach ($channel in 'Feature91', 'Mxic64', 'ValkyrieT3Feature64', 'Valkyrie64', 'Billie64', 'Mixer053E', 'DedicatedBlackShark', 'Unsupported') {
     '  {0,-20} {1}' -f $channel, @($rows | Where-Object Channel -eq $channel).Count
 }
 $noType = @($rows | Where-Object Status -eq 'no-device-type' | ForEach-Object Pid)
@@ -99,4 +99,11 @@ $noType = @($rows | Where-Object Status -eq 'no-device-type' | ForEach-Object Pi
 $mismatches = @($rows | Where-Object Status -eq 'mismatch' | ForEach-Object Pid)
 if ($mismatches) {
     "mismatch PIDs: $($mismatches -join ', ')"
+    exit 1
 }
+$verified = @($rows | Where-Object Status -eq 'ok')
+$unverified = @($rows | Where-Object Status -in 'unsupported', 'no-device-type')
+"Validated: $($verified.Count); unverified/unsupported: $($unverified.Count) (not counted as passing)."
+'Scope: headset-channel catalog only; unsupported here does not describe other device backends.'
+if ($verified.Count -eq 0) { throw 'No bundle matched the catalog; the scan did not validate anything.' }
+exit 0

@@ -3,9 +3,9 @@ using OpenSynapse.Core.Devices;
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Exact Blade fan-target protocol. The 2026 generation passes class 1; the older
-/// 710/671 firmware was verified with class 0. The response parser accepts either
-/// selector because the middleware treats it as payload rather than a request echo.
+/// Exact Blade fan-target protocol. Every audited Blade bundle selects class 1,
+/// including the 597, 710 and 671 families; the response parser still accepts an
+/// omitted selector because some firmware leaves that byte at zero.
 /// SET construction is source-backed only; production writes stay gated by the
 /// controller until process-exit and sleep recovery are owned by the caller.
 /// </summary>
@@ -17,8 +17,8 @@ public static class BladeFanProtocol
     public const int MaximumRpm = BladeFanLimits.MaximumRpm;
     public const int StepRpm = BladeFanLimits.StepRpm;
     internal const int MinimumCurveRpm = 1900;
-    internal const byte DefaultClassId = 0x00;
-    internal const byte Blade2026ClassId = 0x01;
+    internal const byte DefaultClassId = 0x01;
+    internal const byte ThermalProfileId = 0x01;
 
     private const byte TransactionId = 0x1F;
     private const byte DataSize = 0x03;

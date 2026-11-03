@@ -73,12 +73,12 @@ public sealed class RazerBleProtocol30Tests
     }
 
     [Fact]
-    public void CompactReplyCompletesWithoutTheTwentyByteHeader()
+    public void CompactReplyWaitsUntilTheNotificationWindowCloses()
     {
         var reply = new byte[] { 0x03, 0x01, 0x00, 0x00, 0x05, 0x81, 0x00, 0x02, 0x80 };
 
-        Assert.True(RazerBleProtocol30.TryGetCompleteResponseLength(reply, out var length));
-        Assert.Equal(reply.Length, length);
+        Assert.False(RazerBleProtocol30.TryGetCompleteResponseLength(reply, out _));
+        Assert.Equal(8, RazerBleProtocol30.ParseResponse(reply).HeaderLength);
     }
 
     [Fact]

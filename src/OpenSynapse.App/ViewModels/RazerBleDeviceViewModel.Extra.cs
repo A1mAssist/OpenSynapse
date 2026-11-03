@@ -344,38 +344,23 @@ public sealed partial class RazerBleDeviceViewModel
     /// <summary>Applies the three scroll settings the wheel card owns, in one go.</summary>
     public async Task ApplyScrollExtrasAsync(CancellationToken cancellationToken = default)
     {
-        if (TactileModeVisibility == Visibility.Visible)
+        if (_scrollApplyFailed || cancellationToken.IsCancellationRequested) return;
+        await RunWriteAsync(async service =>
         {
-            await RunWriteAsync(
-                service => service.SetScrollTactileModeAsync(
-                    (RazerBleScrollTactileMode)SelectedTactileModeIndex, cancellationToken),
-                mode => SelectedTactileModeIndex = (int)mode);
-        }
-
-        if (AccelerationLevelVisibility == Visibility.Visible)
-        {
-            await RunWriteAsync(
-                service => service.SetScrollAccelerationLevelAsync(
-                    (byte)Math.Round(ScrollAccelerationLevel), cancellationToken),
-                level => ScrollAccelerationLevel = level);
-        }
-
-        if (MaskingTimeVisibility == Visibility.Visible)
-        {
-            await RunWriteAsync(
-                service => service.SetScrollMaskingTimeAsync(
-                    (byte)Math.Round(ScrollMaskingTime), cancellationToken),
-                milliseconds => ScrollMaskingTime = milliseconds);
-        }
-
-        if (HapticStageVisibility == Visibility.Visible)
-        {
-            var profileId = HapticProfileId;
-            await RunWriteAsync(
-                service => service.SetHapticStageAsync(
-                    (byte)Math.Round(SelectedHapticStage), profileId, cancellationToken),
-                stage => SelectedHapticStage = stage);
-        }
+            if (TactileModeVisibility == Visibility.Visible)
+                SelectedTactileModeIndex = (int)await service.SetScrollTactileModeAsync(
+                    (RazerBleScrollTactileMode)SelectedTactileModeIndex, cancellationToken);
+            if (AccelerationLevelVisibility == Visibility.Visible)
+                ScrollAccelerationLevel = await service.SetScrollAccelerationLevelAsync(
+                    (byte)Math.Round(ScrollAccelerationLevel), cancellationToken);
+            if (MaskingTimeVisibility == Visibility.Visible)
+                ScrollMaskingTime = await service.SetScrollMaskingTimeAsync(
+                    (byte)Math.Round(ScrollMaskingTime), cancellationToken);
+            if (HapticStageVisibility == Visibility.Visible)
+                SelectedHapticStage = await service.SetHapticStageAsync(
+                    (byte)Math.Round(SelectedHapticStage), HapticProfileId, cancellationToken);
+            return true;
+        }, _ => { });
     }
 
     public Task ApplyBatteryChemistryAsync(CancellationToken cancellationToken = default) =>

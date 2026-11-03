@@ -17,6 +17,15 @@ public sealed class ThxAudioProtocolTests
         new Dictionary<string, double[]>());
 
     [Fact]
+    public void BladeInstallerMatchesTheOfficialManifest()
+    {
+        var installer = ThxAudioAdmission.ServiceInstaller;
+        Assert.Equal(51_585_680, installer.Length);
+        Assert.Equal("0154A94D60D68882E92BF03DC1265A8C82FE8432B64DD348438862194E89E32B", installer.Sha256);
+        Assert.Equal("/s /norestart", installer.Arguments);
+    }
+
+    [Fact]
     public void Rznb11SpeakerBandsExposeSevenBandsStartingAt250Hz()
     {
         var bands = ThxAudioAdmission.ToBands(

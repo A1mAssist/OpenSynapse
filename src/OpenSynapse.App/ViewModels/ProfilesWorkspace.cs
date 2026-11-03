@@ -13,7 +13,7 @@ namespace OpenSynapse.App.ViewModels;
 /// bindings, and the startup settings that live beside them. The profile document and its
 /// save path stay in the shell because the device pages write through them too.
 /// </summary>
-public sealed class ProfilesWorkspace : INotifyPropertyChanged
+public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
 {
     private readonly ProfileStore _profileStore;
     private readonly Func<ProfileDocument> _getProfile;
@@ -109,35 +109,6 @@ public sealed class ProfilesWorkspace : INotifyPropertyChanged
     public bool IsSilentStartupEnabled { get => _isSilentStartupEnabled; private set => SetField(ref _isSilentStartupEnabled, value); }
     public bool CanSetStartup => _startupManager is not null && !string.IsNullOrWhiteSpace(_executablePath);
     public bool CanSetSilentStartup => CanSetStartup && IsStartupEnabled;
-
-    internal async Task LoadAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            _setProfile(await _profileStore.LoadAsync(cancellationToken));
-            var migrated = EnsureActiveProfileExtensions();
-            RefreshProfileState();
-            if (migrated)
-            {
-                await _profileStore.SaveAsync(_getProfile(), cancellationToken);
-            }
-            RefreshStartupState();
-            ProfileStatusText = AppStrings.FormatText("ProfileLoaded", ActiveProfileName);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or InvalidDataException)
-        {
-            _setProfile(ProfileDocument.CreateDefault());
-            RefreshProfileState();
-            RefreshStartupState();
-            ProfileStatusText = AppStrings.FormatText("DefaultProfileLoaded", ActiveProfileName);
-            _reportApplicationError(AppStrings.FormatText("ProfileLoadError", exception.Message));
-        }
-    }
 
     public async Task SelectProfileAsync(string? name, CancellationToken cancellationToken = default)
     {

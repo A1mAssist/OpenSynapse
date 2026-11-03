@@ -8,7 +8,7 @@ public enum DeviceSelectorItemKind
 {
     Blade,
     Viper,
-    OpenRazer,
+    RazerHid,
     Kraken,
     BlackShark,
     HeadsetAudio,

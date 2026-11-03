@@ -5,7 +5,7 @@ using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Windows.Devices;
 
-public sealed class WindowsHidDiscovery : IDeviceDiscovery
+public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
 {
     private readonly RazerDeviceRegistry _registry;
     private readonly Action<string>? _diagnosticLog;
@@ -119,7 +119,7 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                     throw new Win32Exception(error, "SetupDiEnumDeviceInterfaces failed.");
                 }
 
-                var path = GetDevicePath(deviceInfoSet, ref interfaceData, out var containerId);
+                var path = GetDevicePath(deviceInfoSet, ref interfaceData, out var containerId, out var devInst);
                 if (path is null)
                 {
                     continue;
@@ -155,7 +155,7 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
                 var probe = metadata ?? ProbeInterfaceMetadata(path);
                 var descriptor = new HidInterfaceDescriptor(
                     path,
-                    GetPhysicalDeviceKey(path, containerId),
+                    GetPhysicalDeviceKey(path, containerId, TryGetUsbParentDeviceId(devInst)),
                     candidateVendorId,
                     candidateProductId,
                     probe.InputReportByteLength,
@@ -324,15 +324,17 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
 
     private static string? GetDevicePath(IntPtr deviceInfoSet, ref NativeMethods.SpDeviceInterfaceData interfaceData)
     {
-        return GetDevicePath(deviceInfoSet, ref interfaceData, out _);
+        return GetDevicePath(deviceInfoSet, ref interfaceData, out _, out _);
     }
 
     private static string? GetDevicePath(
         IntPtr deviceInfoSet,
         ref NativeMethods.SpDeviceInterfaceData interfaceData,
-        out Guid? containerId)
+        out Guid? containerId,
+        out uint devInst)
     {
         containerId = null;
+        devInst = 0;
         NativeMethods.SetupDiGetDeviceInterfaceDetail(deviceInfoSet, ref interfaceData, IntPtr.Zero, 0, out var requiredSize, IntPtr.Zero);
         if (requiredSize <= 0)
         {
@@ -354,6 +356,7 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
             }
 
             containerId = TryGetContainerId(deviceInfoSet, ref deviceInfo);
+            devInst = deviceInfo.DevInst;
             return Marshal.PtrToStringUni(detailData + 4);
         }
         finally
@@ -540,27 +543,6 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         DeviceAccessState Access,
         string ProductName);
 
-    internal static string GetPhysicalDeviceKey(string devicePath)
-    {
-        return GetPhysicalDeviceKey(devicePath, null);
-    }
-
-    internal static string GetPhysicalDeviceKey(string devicePath, Guid? containerId)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
-        if (containerId is { } value && value != Guid.Empty)
-        {
-            return $"container:{value:D}";
-        }
-        var collection = devicePath.LastIndexOf("&col", StringComparison.OrdinalIgnoreCase);
-        if (collection < 0)
-        {
-            return devicePath;
-        }
-        var instance = devicePath.IndexOf('#', collection);
-        return instance >= 0 ? devicePath.Remove(collection, instance - collection) : devicePath;
-    }
-
     private static Guid? TryGetContainerId(
         IntPtr deviceInfoSet,
         ref NativeMethods.SpDevinfoData deviceInfo)
@@ -584,7 +566,7 @@ public sealed class WindowsHidDiscovery : IDeviceDiscovery
         return new Guid(buffer);
     }
 
-    private static class NativeMethods
+    private static partial class NativeMethods
     {
         internal const int DIGCF_PRESENT = 0x00000002;
         internal const int DIGCF_DEVICEINTERFACE = 0x00000010;

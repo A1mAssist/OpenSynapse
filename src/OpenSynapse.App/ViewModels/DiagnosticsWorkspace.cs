@@ -8,28 +8,31 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class DiagnosticsWorkspace
 {
-    private readonly OpenRazerWorkspace _openRazer;
+    private readonly RazerHidWorkspace _openRazer;
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly Func<string> _lastRefreshText;
     private readonly Func<string> _telemetryTimeText;
 
     internal DiagnosticsWorkspace(
-        OpenRazerWorkspace openRazer,
+        RazerHidWorkspace openRazer,
         IReadOnlyList<string> startupDiagnostics,
         Func<string> lastRefreshText,
-        Func<string> telemetryTimeText)
+        Func<string> telemetryTimeText,
+        Func<IEnumerable<AccessoryDiagnostic>> readAccessories)
     {
         _openRazer = openRazer;
         _startupDiagnostics = startupDiagnostics;
         _lastRefreshText = lastRefreshText;
         _telemetryTimeText = telemetryTimeText;
+        _readAccessories = readAccessories;
     }
 
     public ObservableCollection<DiagnosticRowViewModel> Rows { get; } = new();
 
     public string CreateReport()
     {
-        EnsureOpenRazerRows();
+        EnsureRazerHidRows();
+        RefreshAccessoryRows();
         var report = new StringBuilder();
         report.AppendLine(AppStrings.Text("DiagnosticsReportTitle"));
         report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceRefresh", _lastRefreshText()));
@@ -49,6 +52,7 @@ public sealed partial class DiagnosticsWorkspace
         IReadOnlyList<string> errors)
     {
         Rows.Clear();
+        _openRazerRows.Clear();
         var groups = new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase);
         var errorBrush = new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
         var bladeName = snapshot.Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Name
@@ -72,7 +76,7 @@ public sealed partial class DiagnosticsWorkspace
             groups.TryAdd(row.Name, group);
         }
 
-        AddOpenRazerRows(groups, errorBrush);
+        AddRazerHidRows(groups, errorBrush);
 
         foreach (var error in errors)
         {
@@ -128,6 +132,7 @@ public sealed partial class DiagnosticsWorkspace
                 AppStrings.Text("Text_4B4189B0"), detail, errorBrush));
         }
 
+        RefreshAccessoryRows();
         if (Rows.Count == 0) AddFallbackRow();
     }
 
@@ -163,14 +168,14 @@ public sealed partial class DiagnosticsWorkspace
     /// Names the capabilities that actually failed. The generic "writes are paused" text
     /// alone leaves a device owner with nothing to act on.
     /// </summary>
-    private static string DescribeFailedReads(OpenRazerDeviceViewModel device)
+    private static string DescribeFailedReads(RazerHidDeviceViewModel device)
     {
         var failures = device.BasicErrors;
         return failures.Count == 0
             ? device.ErrorText
-            : AppStrings.FormatText("OpenRazerFailedReadsDetail",
+            : AppStrings.FormatText("RazerHidFailedReadsDetail",
                 string.Join("; ", failures.Select(read =>
-                    $"{AppStrings.Text("OpenRazerCapability" + read.Key)}: {read.Value}")));
+                    $"{AppStrings.Text("RazerHidCapability" + read.Key)}: {read.Value}")));
     }
 
     private static (string Capability, string Device) LocalizeTelemetryError(

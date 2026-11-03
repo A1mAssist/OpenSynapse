@@ -40,11 +40,13 @@ public sealed class RazerKeyboardProtocolTests
     }
 
     [Fact]
-    public void ReadersUseTheClassSevenLayoutWithoutAProfileByte()
+    public void ReadersUseBatteryIdThenValueFromTheClassSevenLayout()
     {
-        Assert.Equal((byte)100, RazerKeyboardProtocol.ReadBatteryPercent(Response(1, 1, 0xFF)));
-        Assert.Equal((byte)50, RazerKeyboardProtocol.ReadBatteryPercent(Response(1, 1, 0x80)));
-        Assert.True(RazerKeyboardProtocol.ReadChargingStatus(Response(1, 1, 1)));
+        Assert.Equal((byte)100, RazerKeyboardProtocol.ReadBatteryPercent(Response(1, 2, 0x00, 0xFF)));
+        Assert.Equal((byte)50, RazerKeyboardProtocol.ReadBatteryPercent(Response(1, 2, 0x07, 0x80)));
+        Assert.True(RazerKeyboardProtocol.ReadChargingStatus(Response(1, 2, 0x09, 0x01)));
+        Assert.Throws<InvalidDataException>(() =>
+            RazerKeyboardProtocol.ReadBatteryPercent(Response(1, 1, 0xFF)));
         Assert.Equal((byte)3, RazerKeyboardProtocol.ReadActiveProfileId(Response(1, 1, 3)));
         Assert.Equal(new Version(2, 7), RazerKeyboardProtocol.ReadFirmware(Response(1, 2, 2, 7)));
         Assert.Equal("PM1234", RazerKeyboardProtocol.ReadSerialNumber(

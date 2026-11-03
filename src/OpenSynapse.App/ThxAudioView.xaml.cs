@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
-using Windows.System;
 
 namespace OpenSynapse.App;
 
@@ -37,5 +36,5 @@ public sealed partial class ThxAudioView : UserControl
         await ViewModel.InstallNativeComponentAsync();
 
     private async void OpenThxInstallClick(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri("https://www.razer.com/synapse-4"));
+        await ViewModel.InstallComponentsAsync();
 }

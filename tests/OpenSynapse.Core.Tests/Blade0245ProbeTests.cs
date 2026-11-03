@@ -15,7 +15,7 @@ public sealed class Blade0245ProbeTests
         Assert.NotNull(manifest);
         Assert.Equal("blade-671", manifest!.ProtocolFamily);
 
-        // Upstream OpenRazer only implements lighting for this product id, so the fan and power
+        // Upstream RazerHid only implements lighting for this product id, so the fan and power
         // reads below are unverified on the owner's hardware. They must still be reachable, or the
         // probe cannot report the evidence this device needs.
         foreach (var capability in new[]

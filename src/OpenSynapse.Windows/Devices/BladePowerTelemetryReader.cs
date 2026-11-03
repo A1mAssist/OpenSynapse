@@ -24,11 +24,17 @@ internal sealed class BladePowerTelemetryReader
         _fan = fan ?? throw new ArgumentNullException(nameof(fan));
     }
 
-    public async ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
+    public ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladePerformanceMode mode,
         CancellationToken cancellationToken = default,
-        bool coolingPadConnected = false)
+        bool coolingPadConnected = false) =>
+        RunPowerModeTransactionAsync(
+            () => SetBladePerformanceModeCoreAsync(devices, mode, cancellationToken, coolingPadConnected), cancellationToken);
+
+    private async ValueTask<BladePerformanceMode> SetBladePerformanceModeCoreAsync(
+        IReadOnlyList<DeviceDescriptor> devices, BladePerformanceMode mode,
+        CancellationToken cancellationToken, bool coolingPadConnected)
     {
         if (!Enum.IsDefined(mode))
         {
@@ -38,6 +44,8 @@ internal sealed class BladePowerTelemetryReader
         var blade = _resolver.FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade platform control channel is unavailable.");
         BladeTelemetryReader.EnsureControlWritesAdmitted(blade);
+        if (!blade.PublishesBladePerformanceMode(mode))
+            throw new InvalidOperationException($"Performance mode {mode} is not admitted for Blade PID {blade.Descriptor.ProductId:X4}.");
         RazerCapabilityClient.EnsureValidated(_validation.PerformancePath, blade.Descriptor.Id, "Read the Blade performance mode successfully first.");
 
         var original = await _fan.ReadThermalStateAsync(blade, cancellationToken);
@@ -53,9 +61,14 @@ internal sealed class BladePowerTelemetryReader
             originalBoost = await ReadBoostStateAsync(blade, cancellationToken);
         }
 
+        byte? originalPowerMask = blade.SupportsMaxFan &&
+            StringComparer.OrdinalIgnoreCase.Equals(_validation.PowerModePath, blade.Descriptor.Id)
+            ? await ReadPowerModeMaskAsync(blade, cancellationToken) : null;
         try
         {
-            await EnsureMaxFanOffBeforeLeavingCustomAsync(blade, mode, cancellationToken);
+            if (originalPowerMask is not null)
+                await BladePowerTelemetryShared.SetPerformanceMaxFanAsync(
+                    _client, blade, enabled: false, mode == BladePerformanceMode.Custom, cancellationToken);
             // The 028C EC keeps a stale manual flag when a preset leaves Custom mode, so
             // the fans must go back to firmware automatic instead of carrying it over.
             var fanMode = blade.FixedFanRequiresCustomMode &&
@@ -85,7 +98,9 @@ internal sealed class BladePowerTelemetryReader
             // raised budget from turning straight into throttling.
             if (mode == BladePerformanceMode.Hyperboost && !coolingPadConnected)
             {
-                await ApplyMaxFanForHyperBoostAsync(blade, cancellationToken);
+                if (originalPowerMask is not null)
+                    await BladePowerTelemetryShared.SetPerformanceMaxFanAsync(
+                        _client, blade, enabled: true, skip: false, cancellationToken);
             }
 
             var actual = await _fan.ReadThermalStateAsync(blade, cancellationToken);
@@ -112,6 +127,8 @@ internal sealed class BladePowerTelemetryReader
             {
                 restored &= await TryRestoreBoostLevelsAsync(blade, boost);
             }
+            if (originalPowerMask is byte mask)
+                restored &= await BladePowerTelemetryShared.TryRestoreMaxFanBitAsync(_client, blade, mask);
             var message = $"Performance mode update failed: {exception.Message} " +
                 (restored
                     ? "The original state was restored."
@@ -711,79 +728,6 @@ internal sealed class BladePowerTelemetryReader
         catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
         {
             return false;
-        }
-    }
-
-    /// <summary>
-    /// HyperBoost raises the sustained power ceiling but leaves the EC on its own fan
-    /// curve, which assumes a cooling pad. Without the pin the extra budget only buys
-    /// thermal throttling, so the fans go to maximum together with the mode.
-    /// </summary>
-    private async Task ApplyMaxFanForHyperBoostAsync(
-        ResolvedRazerDevice blade,
-        CancellationToken cancellationToken)
-    {
-        if (!blade.SupportsMaxFan ||
-            _validation.PowerModePath is null)
-        {
-            return;
-        }
-
-        var mask = await ReadPowerModeMaskAsync(blade, cancellationToken);
-        if ((mask & BladePowerModeProtocol.MaxFanBit) != 0)
-        {
-            return;
-        }
-
-        // 07/0F replaces the whole byte. A pending one-time setting owns a bit whose
-        // readback cannot be verified, so leave it alone rather than rewriting it.
-        var blocking = (byte)(mask &
-            ~(BladePowerModeProtocol.MaxFanBit |
-              BladePowerModeProtocol.CpuPowerBoostBit |
-              BladePowerModeProtocol.LocalDimmingBit));
-        if (blocking != 0)
-        {
-            return;
-        }
-
-        await WriteMaxFanModeAsync(blade, BladeMaxFanMode.Enabled, mask, cancellationToken);
-        var confirmed = await ReadPowerModeMaskAsync(blade, cancellationToken);
-        if ((confirmed & BladePowerModeProtocol.MaxFanBit) == 0)
-        {
-            throw new InvalidOperationException(
-                "HyperBoost could not pin the fans to maximum, so the performance mode was not changed.");
-        }
-    }
-
-    /// <summary>
-    /// Synapse turns Maximum Fans off before leaving Custom on the models that own it.
-    /// Without the same cleanup a preset write leaves the fans pinned at maximum, so the
-    /// bit is cleared and confirmed before any preset change is submitted.
-    /// </summary>
-    private async Task EnsureMaxFanOffBeforeLeavingCustomAsync(
-        ResolvedRazerDevice blade,
-        BladePerformanceMode requestedMode,
-        CancellationToken cancellationToken)
-    {
-        if (requestedMode == BladePerformanceMode.Custom ||
-            !blade.SupportsMaxFan ||
-            _validation.PowerModePath is null)
-        {
-            return;
-        }
-
-        var mask = await ReadPowerModeMaskAsync(blade, cancellationToken);
-        if ((mask & BladePowerModeProtocol.MaxFanBit) == 0)
-        {
-            return;
-        }
-
-        await WritePowerModeMaskAsync(blade, (byte)(mask & ~BladePowerModeProtocol.MaxFanBit), cancellationToken);
-        var confirmed = await ReadPowerModeMaskAsync(blade, cancellationToken);
-        if ((confirmed & BladePowerModeProtocol.MaxFanBit) != 0)
-        {
-            throw new InvalidOperationException(
-                "Maximum fan speed is still active, so the performance mode was not changed.");
         }
     }
 

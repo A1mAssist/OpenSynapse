@@ -150,16 +150,16 @@ public static class RazerMxicHeadsetProtocol
 
     // rzDevice25ValkyrieT3: S=[2,24,128] A=[4,24,0] U=[2,24,129] E=[12,24,1]. The second
     // payload byte is the preset group (0/1, validated by setPresetEQIndex), not a source.
-    public static readonly byte[] EqHeaderValkyrie = [LiveProfile, 0x00];
+    public static readonly byte[] EqHeaderValkyrie = [LiveProfile, 0x01];
 
     public static byte[] CreateGetEqPresetValkyrie() =>
-        Create(ValkyrieReportId, RazerCommand, [2, Class18, 0x80], [LiveProfile, 0x00]);
+        RazerValkyrieT3Protocol.Create(0x80, [LiveProfile, 0x01]);
 
     public static byte[] CreateSetEqPresetValkyrie(byte preset) =>
-        Create(ValkyrieReportId, RazerCommand, [4, Class18, 0x00], [LiveProfile, 0x00, 0x00, preset]);
+        RazerValkyrieT3Protocol.Create(0x00, [LiveProfile, 0x01, 0x00, preset]);
 
     public static byte[] CreateGetEqBandsValkyrie() =>
-        Create(ValkyrieReportId, RazerCommand, [2, Class18, 0x81], [LiveProfile, 0x00]);
+        RazerValkyrieT3Protocol.Create(0x81, [LiveProfile, 0x01]);
 
     public static byte[] CreateSetEqBandsValkyrie(ReadOnlySpan<byte> bands)
     {
@@ -170,9 +170,9 @@ public static class RazerMxicHeadsetProtocol
 
         var payload = new byte[12];
         payload[0] = LiveProfile;
-        payload[1] = 0x00;
+        payload[1] = 0x01;
         bands.CopyTo(payload.AsSpan(2));
-        return Create(ValkyrieReportId, RazerCommand, [12, Class18, 0x01], payload);
+        return RazerValkyrieT3Protocol.Create(0x01, payload);
     }
 
     /// <summary>The class 0x18 EQ-preset reply carries [profile, source, group, preset].</summary>

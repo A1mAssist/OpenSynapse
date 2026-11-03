@@ -32,6 +32,14 @@ public sealed class StructureBudgetTests
                 failures.Add($"{entry.Path} 超预算：{lines} > {entry.MaxLines}（多了 {lines - entry.MaxLines} 行）");
             }
         }
+        foreach (var group in LoadBudget().Groups)
+        {
+            var lines = group.MatchedFiles().Sum(RepoLayout.CountLines);
+            if (lines > group.MaxLines)
+            {
+                failures.Add($"{group.Pattern} 分组行数超预算：{lines} > {group.MaxLines}");
+            }
+        }
 
         Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
     }
@@ -41,18 +49,14 @@ public sealed class StructureBudgetTests
     {
         var failures = new List<string>();
         var budget = LoadBudget();
-        foreach (var entry in budget.Files.Where(item => item.MaxPublicMembers is not null))
+        foreach (var path in RepoLayout.CodeFiles())
         {
-            var path = Absolute(entry.Path);
-            if (!File.Exists(path))
-            {
-                continue;
-            }
-
+            var relative = RepoLayout.Relative(path);
+            var limit = budget.PublicMemberLimit(relative);
             var members = RepoLayout.CountPublicMembers(path);
-            if (members > entry.MaxPublicMembers!.Value)
+            if (members > limit)
             {
-                failures.Add($"{entry.Path} public 成员超预算：{members} > {entry.MaxPublicMembers}");
+                failures.Add($"{relative} public 成员超预算：{members} > {limit}");
             }
         }
 
@@ -113,6 +117,25 @@ public sealed class StructureBudgetTests
     internal static string Absolute(string relativePath) =>
         Path.Combine(RepoLayout.Root, relativePath.Replace('/', Path.DirectorySeparatorChar));
 
+    [Fact]
+    public void GroupDoesNotExemptANewPartialFromFileLimits()
+    {
+        var budget = new Budget { Groups = [new() { Pattern = "src/Example*.cs", MaxLines = 2000 }] };
+        Assert.True(budget.Groups[0].Matches("src/Example.New.cs"));
+        Assert.False(budget.Covers("src/Example.New.cs"));
+        Assert.Equal(100, budget.PublicMemberLimit("src/Example.New.cs"));
+    }
+
+    [Fact]
+    public void LineBudgetAloneDoesNotExemptDefaultPublicLimit()
+    {
+        var budget = new Budget { Files = [new() { Path = "src/Example.cs", MaxLines = 1000 }] };
+        Assert.True(budget.Covers("src/Example.cs"));
+        Assert.Equal(100, budget.PublicMemberLimit("src/Example.cs"));
+        budget.Files[0].MaxPublicMembers = 120;
+        Assert.Equal(120, budget.PublicMemberLimit("src/Example.cs"));
+    }
+
     internal static Budget LoadBudget()
     {
         var path = Absolute(BudgetFile);
@@ -140,8 +163,11 @@ public sealed class StructureBudgetTests
         public List<GroupBudget> Groups { get; set; } = [];
 
         public bool Covers(string relativePath) =>
-            Files.Any(entry => string.Equals(entry.Path, relativePath, StringComparison.Ordinal)) ||
-            Groups.Any(group => group.Matches(relativePath));
+            Files.Any(entry => string.Equals(entry.Path, relativePath, StringComparison.Ordinal));
+
+        public int PublicMemberLimit(string relativePath) =>
+            Files.FirstOrDefault(entry => string.Equals(entry.Path, relativePath, StringComparison.Ordinal))
+                ?.MaxPublicMembers ?? NewFilePublicMemberLimit;
     }
 
     internal sealed class FileBudget

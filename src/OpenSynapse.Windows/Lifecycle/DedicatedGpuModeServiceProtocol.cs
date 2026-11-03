@@ -4,8 +4,8 @@ namespace OpenSynapse.Windows.Lifecycle;
 
 /// <summary>
 /// The fixed command surface shared by the app and the machine-wide GPU service.
-/// Keep this wire format backward compatible; a mismatch must fall back to the
-/// existing UAC helper rather than sending an ambiguous command.
+/// Keep this wire format backward compatible. Only confirmed non-execution permits
+/// UAC fallback; losing a dispatched PnP write response does not cancel the write.
 /// </summary>
 public static class DedicatedGpuModeServiceProtocol
 {

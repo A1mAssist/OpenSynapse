@@ -39,7 +39,9 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
             TimeSpan.FromMilliseconds(20));
 
         source.Start();
-        Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(
+            () => reader.ReadCount == 1 && published.Count == 1,
+            TimeSpan.FromSeconds(2)));
         Assert.Equal(
             new BladeAudioMuteState(BladeAudioMuteTarget.Speaker, false),
             Assert.Single(published));
@@ -78,7 +80,9 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
             TimeSpan.FromMilliseconds(20));
 
         source.Start();
-        Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(
+            () => reader.ReadCount == 1 && published.Count == 1,
+            TimeSpan.FromSeconds(2)));
         Assert.Single(published);
         source.Refresh();
         Assert.True(SpinWait.SpinUntil(() => published.Count == 3, TimeSpan.FromSeconds(2)));
@@ -99,7 +103,9 @@ public sealed class WindowsCoreAudioMuteEventSourceTests
             TimeSpan.FromMilliseconds(20));
 
         source.Start();
-        Assert.True(SpinWait.SpinUntil(() => reader.ReadCount == 1, TimeSpan.FromSeconds(2)));
+        Assert.True(SpinWait.SpinUntil(
+            () => reader.ReadCount == 1 && published.Count == 1,
+            TimeSpan.FromSeconds(2)));
 
         var state = Assert.Single(published);
         Assert.Equal(new BladeAudioMuteState(BladeAudioMuteTarget.Speaker, false), state);

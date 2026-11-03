@@ -3,7 +3,12 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-public readonly record struct WindowsAudioMuteSnapshot(bool SpeakerMuted, bool MicrophoneMuted);
+public readonly record struct WindowsAudioMuteSnapshot(bool SpeakerMuted, bool MicrophoneMuted)
+{
+    // Unspecified preserves the original complete-snapshot contract for existing readers.
+    internal bool? SpeakerAvailable { get; init; }
+    internal bool? MicrophoneAvailable { get; init; }
+}
 
 internal interface IWindowsAudioMuteSnapshotReader : IDisposable
 {
@@ -52,6 +57,12 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
     public string? LastError => Volatile.Read(ref _lastError);
 
     public event Action<Exception>? ReadFailed;
+
+    internal static bool? ReadAvailableEndpoint(Func<bool> read, Action invalidate)
+    {
+        try { return read(); }
+        catch (COMException) { invalidate(); return null; }
+    }
 
     internal static void ToggleDefaultCaptureMute()
     {
@@ -133,6 +144,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                 {
                     break;
                 }
+                var retryMissingEndpoint = false;
                 try
                 {
                     if (reader is null)
@@ -141,6 +153,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                         reader.Changed += SignalChanged;
                     }
                     var current = reader.Read();
+                    retryMissingEndpoint = current.SpeakerAvailable == false || current.MicrophoneAvailable == false;
                     var forcePublish = Interlocked.Exchange(ref _forcePublish, 0) != 0;
                     if (previous is null && !forcePublish)
                     {
@@ -148,14 +161,14 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                         // speaker indicator needs its real state once. Do not seed the
                         // microphone: an unused capture endpoint is commonly muted and
                         // would light the M5 indicator at startup.
-                        PublishSpeaker(current.SpeakerMuted);
+                        if (current.SpeakerAvailable != false) PublishSpeaker(current.SpeakerMuted);
                     }
                     else
                     {
                         PublishChanges(forcePublish ? null : previous, current);
                     }
                     previous = current;
-                    Volatile.Write(ref _lastError, null);
+                    Volatile.Write(ref _lastError, retryMissingEndpoint ? "A default Core Audio endpoint is unavailable." : null);
                 }
                 catch (Exception exception)
                 {
@@ -173,7 +186,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                     reader = null;
                 }
 
-                if (WaitHandle.WaitAny(waitHandles, reader is null ? _retryInterval : Timeout.InfiniteTimeSpan) == 0)
+                if (WaitHandle.WaitAny(waitHandles, reader is null || retryMissingEndpoint ? _retryInterval : Timeout.InfiniteTimeSpan) == 0)
                 {
                     break;
                 }
@@ -246,11 +259,13 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
     {
         try
         {
-            if (previous?.SpeakerMuted != current.SpeakerMuted)
+            if (current.SpeakerAvailable != false &&
+                (previous?.SpeakerAvailable == false || previous?.SpeakerMuted != current.SpeakerMuted))
             {
                 _publish(new(BladeAudioMuteTarget.Speaker, current.SpeakerMuted));
             }
-            if (previous?.MicrophoneMuted != current.MicrophoneMuted)
+            if (current.MicrophoneAvailable != false &&
+                (previous?.MicrophoneAvailable == false || previous?.MicrophoneMuted != current.MicrophoneMuted))
             {
                 _publish(new(BladeAudioMuteTarget.Microphone, current.MicrophoneMuted));
             }
@@ -291,7 +306,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
         private readonly VolumeNotification? _volumeNotification;
         private IAudioEndpointVolume? _speaker;
         private IAudioEndpointVolume? _microphone;
-        private int _rebind = 1;
+        private int _rebind = 3;
         private readonly bool _uninitializeCom;
 
         public event Action? Changed;
@@ -330,12 +345,15 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
 
         public WindowsAudioMuteSnapshot Read()
         {
-            if (Interlocked.Exchange(ref _rebind, 0) != 0)
-            {
-                BindEndpoints();
-            }
-
-            return new(ReadMute(_speaker), ReadMute(_microphone));
+            var rebind = Interlocked.Exchange(ref _rebind, 0);
+            if ((rebind & 1) != 0) ReleaseVolume(ref _speaker);
+            if ((rebind & 2) != 0) ReleaseVolume(ref _microphone);
+            var speaker = ReadAvailableEndpoint(
+                () => ReadMute(_speaker ??= OpenVolume(ERender)), () => ReleaseVolume(ref _speaker));
+            var microphone = ReadAvailableEndpoint(
+                () => ReadMute(_microphone ??= OpenVolume(ECapture)), () => ReleaseVolume(ref _microphone));
+            return new(speaker ?? false, microphone ?? false)
+                { SpeakerAvailable = speaker.HasValue, MicrophoneAvailable = microphone.HasValue };
         }
 
         public void Dispose()
@@ -352,14 +370,6 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             {
                 CoUninitialize();
             }
-        }
-
-        private void BindEndpoints()
-        {
-            ReleaseVolume(ref _speaker);
-            ReleaseVolume(ref _microphone);
-            _speaker = OpenVolume(ERender);
-            _microphone = OpenVolume(ECapture);
         }
 
         private IAudioEndpointVolume OpenVolume(int dataFlow)
@@ -413,9 +423,9 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             Release(current);
         }
 
-        private void EndpointChanged()
+        private void EndpointChanged(int dataFlow)
         {
-            Volatile.Write(ref _rebind, 1);
+            Interlocked.Or(ref _rebind, dataFlow == ERender ? 1 : 2);
             Changed?.Invoke();
         }
 
@@ -431,7 +441,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             {
                 if (role == EMultimedia && (dataFlow == ERender || dataFlow == ECapture))
                 {
-                    owner.EndpointChanged();
+                    owner.EndpointChanged(dataFlow);
                 }
                 return 0;
             }

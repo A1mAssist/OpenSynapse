@@ -110,7 +110,7 @@ public sealed class RazerKeyboardServiceTests
         foreach (var productId in RazerKeyboardService.Products.Keys)
         {
             Assert.False(RazerHeadsetAudioService.IsSupported(productId), $"audio 0x{productId:X4}");
-            Assert.Null(OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, productId));
+            Assert.Null(RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId));
         }
     }
 
@@ -169,8 +169,8 @@ public sealed class RazerKeyboardServiceTests
                 (0x00, 0x08) when SupportsGameMode => WriteGameMode(request),
                 (0x00, 0xC0) when SupportsPolling => Response(request, 2, 0x00, PollingCode),
                 (0x00, 0x40) when SupportsPolling => WritePolling(request),
-                (0x07, 0x80) when SupportsBattery => Response(request, 1, 0xFF),
-                (0x07, 0x84) when SupportsBattery => Response(request, 1, 1),
+                (0x07, 0x80) when SupportsBattery => Response(request, 2, 0x00, 0xFF),
+                (0x07, 0x84) when SupportsBattery => Response(request, 2, 0x00, 0x01),
                 _ => throw new NotSupportedException($"Unexpected command 0x{commandClass:X2}:0x{command:X2}."),
             };
         }

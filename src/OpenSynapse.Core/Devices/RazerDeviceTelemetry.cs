@@ -176,6 +176,12 @@ public static class DeviceCapabilitySummaryCalculator
         // A shared Power Mode bit reads back on models that never implemented it, so the
         // Max Fan row is counted only where the model contract admits it.
         var supportsMaxFan = BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId);
+        // Only models whose manifest declares startup-animation.get may count it. The
+        // shared Blade report block otherwise reads on models that never exposed it.
+        var supportsStartupAnimation =
+            BladeModelCapabilities.SupportsStartupAnimation(descriptor.ProductId);
+        var supportsNativeDisplay =
+            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true;
         if (descriptor.ProtocolFamily == "blade-671")
         {
             // Blade 16 (2023): its own uniform lighting reports are admitted, but the
@@ -198,7 +204,7 @@ public static class DeviceCapabilitySummaryCalculator
 
         return descriptor.ProtocolFamily switch
         {
-            "blade-710" => new(
+            "blade-710" or "blade-710-chroma" => new(
                 Count(
                     telemetry.BladeKeyboardBrightness,
                     telemetry.BladePerformanceMode,
@@ -212,13 +218,14 @@ public static class DeviceCapabilitySummaryCalculator
                     telemetry.BladeCurrentFanGpuRpm,
                     telemetry.BladeAdvancedFanCpuModeRaw,
                     telemetry.BladeAdvancedFanGpuModeRaw,
-                    telemetry.BladeStartupAnimationEnabled,
-                    telemetry.BladeNativeDisplayMode,
+                    supportsStartupAnimation ? telemetry.BladeStartupAnimationEnabled : null,
+                    supportsNativeDisplay ? telemetry.BladeNativeDisplayMode : null,
                     telemetry.BladeSkuHardwareConfiguration,
                     telemetry.BladeOneTimeFullChargeEnabled,
                     telemetry.BladeAdapterPower) +
                     (supportsLocalDimming && telemetry.BladeLocalDimmingEnabled is not null ? 1 : 0),
-                16 + (supportsMaxFan ? 1 : 0) + (supportsLocalDimming ? 1 : 0)),
+                14 + (supportsNativeDisplay ? 1 : 0) + (supportsStartupAnimation ? 1 : 0) +
+                (supportsMaxFan ? 1 : 0) + (supportsLocalDimming ? 1 : 0)),
             "blade-597" => new(
                 Count(
                     telemetry.BladeKeyboardBrightness,
@@ -240,6 +247,28 @@ public static class DeviceCapabilitySummaryCalculator
     }
 
     private static int Count(params object?[] values) => values.Count(value => value is not null);
+}
+
+/// <summary>
+/// A sleeping wireless peripheral can stay enumerated while every command times out.
+/// Hide it until one capability answers, but keep the laptop itself present: a
+/// telemetry timeout must not remove the Blade page. An unknown family keeps its row.
+/// </summary>
+public static class DeviceVisibilityPolicy
+{
+    public static bool IsVisible(DeviceDescriptor descriptor, RazerDeviceTelemetry telemetry)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(telemetry);
+        if (DeviceProtocolFamilies.IsBlade(descriptor.ProtocolFamily))
+        {
+            return true;
+        }
+
+        var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
+            ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+        return summary.Supported == 0 || summary.Available > 0;
+    }
 }
 
 public sealed record BladeAdapterPowerSnapshot(

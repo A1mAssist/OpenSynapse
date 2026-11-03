@@ -24,6 +24,10 @@ public sealed partial class MainViewModel
         try
         {
             await operation();
+            if (!string.IsNullOrWhiteSpace(_deviceOperationErrorText))
+            {
+                return;
+            }
             DeviceTelemetryTimeText = AppStrings.FormatText("DeviceOperationSucceeded",
                 label,
                 successVerb,

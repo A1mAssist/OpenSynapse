@@ -52,18 +52,18 @@ public static class ProfileResolver
         return $"{device.VendorId:X4}:{device.ProductId:X4}";
     }
 
-    public static LightingProfile? ResolveOpenRazerLighting(
+    public static LightingProfile? ResolveRazerHidLighting(
         ProfileDocument document,
         DeviceDescriptor device,
         bool? isPluggedIn) =>
-        ResolveOpenRazerLighting(document, device, isPluggedIn switch
+        ResolveRazerHidLighting(document, device, isPluggedIn switch
         {
             true => PowerSourceKind.FullPowerAdapter,
             false => PowerSourceKind.Battery,
             _ => PowerSourceKind.Unknown,
         });
 
-    public static LightingProfile? ResolveOpenRazerLighting(
+    public static LightingProfile? ResolveRazerHidLighting(
         ProfileDocument document,
         DeviceDescriptor device,
         PowerSourceKind powerSource)
@@ -77,9 +77,9 @@ public static class ProfileResolver
         var deviceLighting = FindDeviceSettings(active.Devices, key)?.Lighting;
         var powerLighting = powerSource switch
         {
-            PowerSourceKind.FullPowerAdapter => FindLighting(active.PluggedIn.OpenRazerLighting, key),
-            PowerSourceKind.LowPowerAdapter => FindLighting(active.LowPowerAdapter.OpenRazerLighting, key),
-            PowerSourceKind.Battery => FindLighting(active.OnBattery.OpenRazerLighting, key),
+            PowerSourceKind.FullPowerAdapter => FindLighting(active.PluggedIn.RazerHidLighting, key),
+            PowerSourceKind.LowPowerAdapter => FindLighting(active.LowPowerAdapter.RazerHidLighting, key),
+            PowerSourceKind.Battery => FindLighting(active.OnBattery.RazerHidLighting, key),
             _ => null,
         };
 

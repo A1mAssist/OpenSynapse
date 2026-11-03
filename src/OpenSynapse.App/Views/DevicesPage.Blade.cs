@@ -26,7 +26,7 @@ public sealed partial class DevicesPage : UserControl
     private Color? _lightingColorBeforeEdit;
     private ColorPicker? _activeLightingColorPicker;
     private Flyout? _activeLightingColorFlyout;
-    private bool _editingOpenRazerTertiary;
+    private bool _editingRazerHidTertiary;
     private Color? _openRazerSecondaryColorBeforeTertiary;
 
     internal IReadOnlyList<LightingColorOption> LightingPaletteColors { get; } =
@@ -112,20 +112,20 @@ public sealed partial class DevicesPage : UserControl
             ViewModel.Blade.LightingTertiaryColor = preset.Tertiary;
             await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
         }
-        else if (target == "openrazer" && SelectedOpenRazerDevice is { } device)
+        else if (target == "openrazer" && SelectedRazerHidDevice is { } device)
         {
-            if ((device.SelectedLightingEffect is OpenRazerLightingEffect.StarlightRandom or
-                OpenRazerLightingEffect.StarlightSingle) &&
-                device.LightingEffects.Contains(OpenRazerLightingEffect.StarlightDual))
+            if ((device.SelectedLightingEffect is RazerHidLightingEffect.StarlightRandom or
+                RazerHidLightingEffect.StarlightSingle) &&
+                device.LightingEffects.Contains(RazerHidLightingEffect.StarlightDual))
             {
-                device.SelectedLightingEffect = OpenRazerLightingEffect.StarlightDual;
+                device.SelectedLightingEffect = RazerHidLightingEffect.StarlightDual;
             }
             device.PrimaryColor = preset.Primary;
             device.SecondaryColor = preset.Secondary;
             device.TertiaryColor = preset.Tertiary;
             await device.ApplyLightingAsync(Lifetime);
         }
-        else if (target == "kraken" && SelectedOpenRazerKraken is { } kraken)
+        else if (target == "kraken" && SelectedRazerHidKraken is { } kraken)
         {
             kraken.Primary = preset.Primary;
             kraken.Secondary = preset.Secondary;
@@ -145,12 +145,6 @@ public sealed partial class DevicesPage : UserControl
 
     private async void CpuCurveApplyClick(object sender, RoutedEventArgs e) =>
         await ViewModel.CpuCurve.ApplyAsync(Lifetime);
-
-    private async void ApplyBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
-        await ViewModel.Blade.ApplyGpuClockOffsetAsync(Lifetime);
-
-    private async void ResetBladeGpuClockOffsetClick(object sender, RoutedEventArgs e) =>
-        await ViewModel.Blade.ResetGpuClockOffsetDefaultsAsync(Lifetime);
 
     internal async Task<bool> ConfirmPadlessHyperBoostAsync()
     {
@@ -190,10 +184,10 @@ public sealed partial class DevicesPage : UserControl
     }
 
     private async void CpuPowerLimitDownloadAmdClick(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri(MainViewModel.AmdOverClockDownloadUri));
+        await Launcher.LaunchUriAsync(new Uri(CpuPowerLimitWorkspace.AmdOverClockDownloadUri));
 
     private async void CpuPowerLimitInstallPawnIoClick(object sender, RoutedEventArgs e) =>
-        await Launcher.LaunchUriAsync(new Uri(MainViewModel.PawnIoDownloadUri));
+        await Launcher.LaunchUriAsync(new Uri(CpuPowerLimitWorkspace.PawnIoDownloadUri));
 
     private async void AutoApplyComboSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -205,21 +199,6 @@ public sealed partial class DevicesPage : UserControl
 
         switch (setting)
         {
-            case "performance":
-                if (_bladePerformanceApplyInFlight)
-                {
-                    return;
-                }
-                _bladePerformanceApplyInFlight = true;
-                try
-                {
-                    await ViewModel.Blade.ApplyPerformanceModeAsync(Lifetime);
-                }
-                finally
-                {
-                    _bladePerformanceApplyInFlight = false;
-                }
-                break;
             case "charge":
                 await ViewModel.Blade.ApplyChargeLimitAsync(Lifetime);
                 break;
@@ -227,11 +206,11 @@ public sealed partial class DevicesPage : UserControl
                 await ViewModel.Blade.ApplyCpuBoostAsync(Lifetime);
                 break;
             case "cpuPowerLimit":
-                if (ViewModel.IsRefreshingCpuPowerLimit)
+                if (ViewModel.CpuPower.IsRefreshingCpuPowerLimit)
                 {
                     return;
                 }
-                await ViewModel.ApplyCpuPowerLimitAsync(Lifetime);
+                await ViewModel.CpuPower.ApplyCpuPowerLimitAsync(Lifetime);
                 break;
             case "gpuBoost":
                 await ViewModel.Blade.ApplyGpuBoostAsync(Lifetime);
@@ -251,11 +230,53 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
+    private async void BladePerformanceModeClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: BladePerformanceModeCardViewModel card } ||
+            !ViewModel.Blade.CanWritePerformanceMode ||
+            _bladePerformanceApplyInFlight ||
+            card.Index == ViewModel.Blade.PerformanceModeIndex)
+        {
+            return;
+        }
+
+        ViewModel.Blade.PerformanceModeIndex = card.Index;
+        _bladePerformanceApplyInFlight = true;
+        try
+        {
+            await ViewModel.Blade.ApplyPerformanceModeAsync(Lifetime);
+        }
+        finally
+        {
+            _bladePerformanceApplyInFlight = false;
+        }
+    }
+
     private async void BladeFanAutomaticModeClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Fan.SelectBladeFanAutomaticModeAsync(Lifetime);
 
-    private void BladeFanFixedModeClick(object sender, RoutedEventArgs e) =>
+    private async void BladeFanFixedModeClick(object sender, RoutedEventArgs e)
+    {
         ViewModel.Fan.ShowBladeFanFixedMode();
+        await Task.Delay(150);
+        SyncBladeFanFixedRpmSlider();
+    }
+
+    private void BladeFanFixedRpmSliderLoaded(object sender, RoutedEventArgs e) =>
+        SyncBladeFanFixedRpmSlider();
+
+    private void SyncBladeFanFixedRpmSlider()
+    {
+        if (DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        var fan = viewModel.Fan;
+        BladeFanFixedRpmSlider.Minimum = fan.BladeFanFixedMinimumRpm;
+        BladeFanFixedRpmSlider.Maximum = fan.BladeFanFixedMaximumRpm;
+        BladeFanFixedRpmSlider.Value = fan.BladeFanFixedRpmSlider;
+    }
 
     private void BladeFanCurveModeClick(object sender, RoutedEventArgs e) =>
         ViewModel.Fan.ShowBladeFanCurveMode();
@@ -353,10 +374,10 @@ public sealed partial class DevicesPage : UserControl
                 ? SecondaryLightingColorPicker
                 : ReferenceEquals(sender, TertiaryLightingColorFlyout)
                     ? TertiaryLightingColorPicker
-                : ReferenceEquals(sender, OpenRazerPrimaryColorFlyout)
-                    ? OpenRazerPrimaryColorPicker
-                    : ReferenceEquals(sender, OpenRazerSecondaryColorFlyout)
-                        ? OpenRazerSecondaryColorPicker
+                : ReferenceEquals(sender, RazerHidPrimaryColorFlyout)
+                    ? RazerHidPrimaryColorPicker
+                    : ReferenceEquals(sender, RazerHidSecondaryColorFlyout)
+                        ? RazerHidSecondaryColorPicker
                         : ReferenceEquals(sender, KrakenPrimaryColorFlyout)
                             ? KrakenPrimaryColorPicker
                             : ReferenceEquals(sender, KrakenSecondaryColorFlyout)
@@ -373,7 +394,7 @@ public sealed partial class DevicesPage : UserControl
         var picker = _activeLightingColorPicker;
         var changed = picker is not null && _lightingColorBeforeEdit is Color previous &&
             picker.Color != previous;
-        var editingOpenRazerTertiary = _editingOpenRazerTertiary;
+        var editingRazerHidTertiary = _editingRazerHidTertiary;
         var openRazerSecondaryColorBeforeTertiary = _openRazerSecondaryColorBeforeTertiary;
         if (changed)
         {
@@ -382,11 +403,11 @@ public sealed partial class DevicesPage : UserControl
         _lightingColorBeforeEdit = null;
         _activeLightingColorPicker = null;
         _activeLightingColorFlyout = null;
-        _editingOpenRazerTertiary = false;
+        _editingRazerHidTertiary = false;
 
-        if (editingOpenRazerTertiary &&
+        if (editingRazerHidTertiary &&
             openRazerSecondaryColorBeforeTertiary is Color secondaryBeforeTertiary &&
-            SelectedOpenRazerDevice is { } openRazerForRestore)
+            SelectedRazerHidDevice is { } openRazerForRestore)
         {
             openRazerForRestore.SecondaryColor = secondaryBeforeTertiary;
         }
@@ -403,16 +424,16 @@ public sealed partial class DevicesPage : UserControl
         {
             await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
         }
-        else if (ReferenceEquals(sender, OpenRazerPrimaryColorFlyout) ||
-            ReferenceEquals(sender, OpenRazerSecondaryColorFlyout))
+        else if (ReferenceEquals(sender, RazerHidPrimaryColorFlyout) ||
+            ReferenceEquals(sender, RazerHidSecondaryColorFlyout))
         {
-            if (SelectedOpenRazerDevice is { } openRazer)
+            if (SelectedRazerHidDevice is { } openRazer)
             {
-                if (ReferenceEquals(sender, OpenRazerPrimaryColorFlyout))
+                if (ReferenceEquals(sender, RazerHidPrimaryColorFlyout))
                     openRazer.PrimaryColor = picker!.Color;
-                else if (editingOpenRazerTertiary)
+                else if (editingRazerHidTertiary)
                     openRazer.TertiaryColor = picker!.Color;
-                else if (ReferenceEquals(sender, OpenRazerSecondaryColorFlyout))
+                else if (ReferenceEquals(sender, RazerHidSecondaryColorFlyout))
                     openRazer.SecondaryColor = picker!.Color;
                 await openRazer.ApplyLightingAsync(Lifetime);
             }
@@ -421,25 +442,25 @@ public sealed partial class DevicesPage : UserControl
             ReferenceEquals(sender, KrakenSecondaryColorFlyout) ||
             ReferenceEquals(sender, KrakenTertiaryColorFlyout))
         {
-            if (ViewModel.OpenRazer.SelectedKraken is { } kraken)
+            if (ViewModel.RazerHid.SelectedKraken is { } kraken)
             {
                 await kraken.ApplyAsync(Lifetime);
             }
         }
     }
 
-    private void OpenRazerTertiaryColorButtonClick(object sender, RoutedEventArgs e)
+    private void RazerHidTertiaryColorButtonClick(object sender, RoutedEventArgs e)
     {
-        if (SelectedOpenRazerDevice is not { } openRazer ||
+        if (SelectedRazerHidDevice is not { } openRazer ||
             sender is not FrameworkElement target)
         {
             return;
         }
 
-        _editingOpenRazerTertiary = true;
+        _editingRazerHidTertiary = true;
         _openRazerSecondaryColorBeforeTertiary = openRazer.SecondaryColor;
-        OpenRazerSecondaryColorPicker.Color = openRazer.TertiaryColor;
-        OpenRazerSecondaryColorFlyout.ShowAt(target);
+        RazerHidSecondaryColorPicker.Color = openRazer.TertiaryColor;
+        RazerHidSecondaryColorFlyout.ShowAt(target);
     }
 
     private void LightingColorSwatchClick(object sender, RoutedEventArgs e)
@@ -476,8 +497,8 @@ public sealed partial class DevicesPage : UserControl
         var visibility = RecentLightingColors.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (PrimaryRecentLightingColors is { } bladePrimary) bladePrimary.Visibility = visibility;
         if (SecondaryRecentLightingColors is { } bladeSecondary) bladeSecondary.Visibility = visibility;
-        if (OpenRazerPrimaryRecentColors is { } openRazerPrimary) openRazerPrimary.Visibility = visibility;
-        if (OpenRazerSecondaryRecentColors is { } openRazerSecondary) openRazerSecondary.Visibility = visibility;
+        if (RazerHidPrimaryRecentColors is { } openRazerPrimary) openRazerPrimary.Visibility = visibility;
+        if (RazerHidSecondaryRecentColors is { } openRazerSecondary) openRazerSecondary.Visibility = visibility;
         if (KrakenPrimaryRecentColors is { } krakenPrimary) krakenPrimary.Visibility = visibility;
         if (KrakenSecondaryRecentColors is { } krakenSecondary) krakenSecondary.Visibility = visibility;
         if (KrakenTertiaryRecentColors is { } krakenTertiary) krakenTertiary.Visibility = visibility;
@@ -548,6 +569,34 @@ public sealed partial class DevicesPage : UserControl
         finally
         {
             _touchpadToggleInFlight = false;
+        }
+    }
+
+    internal void ArrangeBladeAuxCards()
+    {
+        var cards = new (Border Card, bool Visible)[]
+        {
+            (BladeGamingModeCard, ViewModel.Blade.GamingModeVisibility == Visibility.Visible),
+            (BladeStartupAnimationCard, ViewModel.Blade.CanSetStartupAnimation),
+            (BladeOneTimeFullChargeCard, ViewModel.Blade.CanSetOneTimeFullCharge),
+        };
+        var visible = new List<Border>(cards.Length);
+        foreach (var (card, isVisible) in cards)
+        {
+            card.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+            if (isVisible) visible.Add(card);
+        }
+        BladeAuxCardsGrid.Visibility = visible.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        BladeAuxCardsGrid.ColumnDefinitions.Clear();
+        for (var index = 0; index < visible.Count; index++)
+        {
+            BladeAuxCardsGrid.ColumnDefinitions.Add(
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        }
+        for (var index = 0; index < visible.Count; index++)
+        {
+            Grid.SetColumn(visible[index], index);
+            Grid.SetColumnSpan(visible[index], 1);
         }
     }
 }

@@ -11,9 +11,11 @@ public sealed record FirmwareUpdateCheckResult(
     string? PublishedVbios,
     IReadOnlyList<string> NewerComponents,
     string? DownloadUrl = null,
-    string? DeviceName = null)
+    string? DeviceName = null,
+    IReadOnlyList<string>? UncheckedComponents = null)
 {
     public bool HasUpdate => NewerComponents.Count > 0;
+    public bool IsComplete => UncheckedComponents is { Count: 0 };
 }
 
 public sealed class RazerSupportPageNotFoundException : InvalidOperationException
@@ -93,6 +95,7 @@ public sealed partial class RazerFirmwareUpdateClient
     {
         ArgumentNullException.ThrowIfNull(installed);
         ArgumentNullException.ThrowIfNull(devices);
+        cancellationToken.ThrowIfCancellationRequested();
         var device = devices.FirstOrDefault(device =>
             DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
             device.Access == DeviceAccessState.Available);
@@ -119,17 +122,7 @@ public sealed partial class RazerFirmwareUpdateClient
         var firmware = device?.Firmware;
         if (firmware?.Latest is { } latest)
         {
-            // latestFirmwareInfo is the model's firmware package version; the MCU
-            // reading is the closest installed component that Razer publishes.
-            var newer = IsNewerOrUnknown(installed.Mcu, latest.Version);
-            return new FirmwareUpdateCheckResult(
-                PublishedBios: null,
-                PublishedEc: null,
-                PublishedMcu: latest.Version,
-                PublishedVbios: null,
-                NewerComponents: newer ? [$"Firmware {latest.Version}"] : [],
-                DownloadUrl: newer ? latest.Url : null,
-                DeviceName: device?.Name);
+            return CompareManifestComponents(installed, latest, device?.Name);
         }
         if (firmware?.Driver is { } driver)
         {
@@ -144,18 +137,6 @@ public sealed partial class RazerFirmwareUpdateClient
                 DeviceName: device?.Name);
         }
         return null;
-    }
-
-    private static bool IsNewerOrUnknown(string installed, string published)
-    {
-        var value = installed.Trim();
-        if (value is "" or "--" ||
-            !Version.TryParse(value.TrimStart('v', 'V'), out var installedVersion))
-        {
-            return true;
-        }
-        return Version.TryParse(published.Trim().TrimStart('v', 'V'), out var publishedVersion) &&
-               publishedVersion > installedVersion;
     }
 
     internal static IReadOnlyList<string> BuildSearchQueries(
@@ -183,16 +164,21 @@ public sealed partial class RazerFirmwareUpdateClient
         }
 
         var newer = new List<string>();
-        if (IsNewer(installed.Bios, publishedBios)) newer.Add("BIOS");
-        if (IsNewer(installed.Ec, publishedEc)) newer.Add("EC");
-        if (IsNewer(installed.Mcu, publishedMcu)) newer.Add("MCU");
+        var uncheckedComponents = new List<string>();
+        CompareComponent("BIOS", installed.Bios, publishedBios, newer, uncheckedComponents);
+        CompareComponent("EC", installed.Ec, publishedEc, newer, uncheckedComponents);
+        CompareComponent("MCU", installed.Mcu, publishedMcu, newer, uncheckedComponents);
+        var vbiosCandidates = rows.SelectMany(row => VbiosVersionRegex().Matches(row))
+            .Select(match => new RazerFirmwareComponent("vbios", match.Groups["version"].Value,
+                $"RTX {match.Groups["gpu"].Value.Trim()}")).ToArray();
+        CompareVbios(installed, vbiosCandidates, newer, uncheckedComponents);
 
         return new FirmwareUpdateCheckResult(
             publishedBios,
             publishedEc,
             publishedMcu,
             publishedVbios,
-            newer);
+            newer, UncheckedComponents: uncheckedComponents);
     }
 
     internal static string? FindDriversPageHref(string html)
@@ -368,13 +354,6 @@ public sealed partial class RazerFirmwareUpdateClient
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         return versions.Length == 0 ? null : string.Join(" · ", versions);
-    }
-
-    private static bool IsNewer(string installed, string? published)
-    {
-        return Version.TryParse(installed.Trim().TrimStart('v', 'V'), out var installedVersion) &&
-               Version.TryParse(published?.Trim().TrimStart('v', 'V'), out var publishedVersion) &&
-               publishedVersion > installedVersion;
     }
 
     private static string Normalize(string html)

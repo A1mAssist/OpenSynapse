@@ -156,6 +156,7 @@ public sealed partial class TrayMenuWindow : Window
         _batteryNames.Clear();
         _batteryValues.Clear();
         _batteryRows.Clear();
+        _batteryKeys.Clear();
         foreach (var device in devices)
         {
             var icon = new Viewbox
@@ -213,6 +214,7 @@ public sealed partial class TrayMenuWindow : Window
             _batteryNames.Add(name);
             _batteryValues.Add(value);
             _batteryRows.Add(row);
+            _batteryKeys.Add(device.Key);
         }
 
         var visibility = devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -233,49 +235,6 @@ public sealed partial class TrayMenuWindow : Window
     /// Reads the batteries once per open. The panel is already on screen, so this only
     /// fills values in; it never delays the menu.
     /// </summary>
-    private async Task RefreshBatteryAsync()
-    {
-        if (BatteryReader is null || _batteryValues.Count == 0)
-        {
-            return;
-        }
-
-        _batteryRead?.Cancel();
-        var cancellation = new CancellationTokenSource();
-        _batteryRead = cancellation;
-        IReadOnlyList<PeripheralBattery>? results = null;
-        try
-        {
-            results = await BatteryReader(cancellation.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-        catch (Exception)
-        {
-            // Leave results null: every row falls back to the no-answer mark.
-        }
-
-        MenuRoot.DispatcherQueue.TryEnqueue(() =>
-        {
-            if (cancellation.IsCancellationRequested)
-            {
-                return;
-            }
-
-            for (var index = 0; index < _batteryValues.Count; index++)
-            {
-                var percent = results is not null && index < results.Count
-                    ? results[index].Percent
-                    : null;
-                var text = percent is int value ? $"{value}%" : "\u2014";
-                _batteryValues[index].Text = text;
-                AutomationProperties.SetName(_batteryRows[index], $"{_batteryNames[index].Text} {text}");
-            }
-        });
-    }
-
 
 
     public event Action? ShowRequested;
@@ -295,6 +254,7 @@ public sealed partial class TrayMenuWindow : Window
     private readonly List<TextBlock> _batteryNames = [];
     private readonly List<TextBlock> _batteryValues = [];
     private readonly List<Button> _batteryRows = [];
+    private readonly List<string> _batteryKeys = [];
     private CancellationTokenSource? _batteryRead;
 
     public void RefreshLocalization()

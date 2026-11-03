@@ -507,7 +507,7 @@ public static class RazerAnalogKeyProtocol
     }
 
     private static ReadOnlySpan<byte> Arguments(ReadOnlySpan<byte> response, byte minimumLength) =>
-        OpenRazerStandardProtocol.Arguments(response, minimumLength);
+        RazerHidStandardProtocol.Arguments(response, minimumLength);
 
     private static void RequireStride(int length, int stride, string name)
     {

@@ -1,0 +1,345 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using OpenSynapse.Core.Diagnostics;
+using OpenSynapse.Windows.Devices;
+
+namespace OpenSynapse.App.ViewModels;
+
+/// <summary>Discovery, selected device lifetime and UI state for USB accessory backends.</summary>
+public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisposable
+{
+    private readonly LocalDiagnosticLog _diagnosticLog;
+    private readonly RazerHidWorkspace _openRazer;
+    private readonly MacroWorkspace _macros;
+
+    internal UsbAccessoriesWorkspace(LocalDiagnosticLog log, RazerHidWorkspace openRazer, MacroWorkspace macros)
+    {
+        _diagnosticLog = log;
+        _openRazer = openRazer;
+        _macros = macros;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private RazerHeadsetAudioDeviceRowViewModel? _selectedHeadsetAudioDevice;
+    private RazerHeadsetAudioViewModel? _selectedHeadsetAudio;
+
+    public ObservableCollection<RazerHeadsetAudioDeviceRowViewModel> HeadsetAudioDevices { get; } = new();
+
+    public RazerHeadsetAudioViewModel? SelectedHeadsetAudio
+    {
+        get => _selectedHeadsetAudio;
+        private set => SetField(ref _selectedHeadsetAudio, value);
+    }
+
+    internal async Task RefreshHeadsetAudioAsync(CancellationToken cancellationToken)
+    {
+        RazerHeadsetAudioConnection? connection;
+        try
+        {
+            connection = await RazerHeadsetAudioService.FindAsync(
+                message => _diagnosticLog.TryWrite("headset-audio", message), cancellationToken);
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _diagnosticLog.TryWrite("headset-audio", $"discovery failed: {exception}");
+            return;
+        }
+
+        if (connection is null)
+        {
+            if (HeadsetAudioDevices.Count == 0 && SelectedHeadsetAudio is null) return;
+            HeadsetAudioDevices.Clear();
+            _selectedHeadsetAudioDevice = null;
+            var stale = SelectedHeadsetAudio;
+            SelectedHeadsetAudio = null;
+            if (stale is not null) await stale.DisposeAsync();
+            return;
+        }
+
+        if (HeadsetAudioDevices.Count == 1 &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                HeadsetAudioDevices[0].Connection.DevicePath, connection.DevicePath) &&
+            HeadsetAudioDevices[0].Connection.ProductId == connection.ProductId)
+        {
+            return;
+        }
+
+        HeadsetAudioDevices.Clear();
+        HeadsetAudioDevices.Add(new RazerHeadsetAudioDeviceRowViewModel(connection));
+        if (_selectedHeadsetAudioDevice is null ||
+            !StringComparer.OrdinalIgnoreCase.Equals(
+                _selectedHeadsetAudioDevice.Connection.DevicePath, connection.DevicePath))
+        {
+            _selectedHeadsetAudioDevice = null;
+            var stale = SelectedHeadsetAudio;
+            SelectedHeadsetAudio = null;
+            if (stale is not null) await stale.DisposeAsync();
+        }
+    }
+
+    public async Task SelectHeadsetAudioAsync(
+        RazerHeadsetAudioDeviceRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        if (_selectedHeadsetAudioDevice is not null &&
+            SelectedHeadsetAudio is not null &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                _selectedHeadsetAudioDevice.Connection.DevicePath, row.Connection.DevicePath))
+        {
+            return;
+        }
+
+        _selectedHeadsetAudioDevice = row;
+        var lighting = _openRazer.CreateKrakenLighting(row.Connection.ProductId);
+
+        if (SelectedHeadsetAudio is { } previous)
+        {
+            await previous.DisposeAsync();
+        }
+
+        SelectedHeadsetAudio = new RazerHeadsetAudioViewModel(
+            row.Connection, message => _diagnosticLog.TryWrite("headset-audio", message), lighting);
+        await SelectedHeadsetAudio.LoadAsync(cancellationToken);
+    }
+
+    private RazerKeyboardDeviceRowViewModel? _selectedKeyboardDevice;
+    private RazerKeyboardViewModel? _selectedKeyboard;
+
+    public ObservableCollection<RazerKeyboardDeviceRowViewModel> KeyboardDevices { get; } = new();
+
+    public RazerKeyboardViewModel? SelectedKeyboard
+    {
+        get => _selectedKeyboard;
+        private set => SetField(ref _selectedKeyboard, value);
+    }
+
+    internal async Task RefreshKeyboardsAsync(CancellationToken cancellationToken)
+    {
+        RazerKeyboardConnection? connection;
+        try
+        {
+            connection = await RazerKeyboardService.FindAsync(
+                message => _diagnosticLog.TryWrite("keyboard", message), cancellationToken);
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _diagnosticLog.TryWrite("keyboard", $"discovery failed: {exception}");
+            return;
+        }
+
+        if (connection is null)
+        {
+            if (KeyboardDevices.Count == 0 && SelectedKeyboard is null) return;
+            KeyboardDevices.Clear();
+            _selectedKeyboardDevice = null;
+            SelectedKeyboard = null;
+            return;
+        }
+
+        if (KeyboardDevices.Count == 1 &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                KeyboardDevices[0].Connection.DevicePath, connection.DevicePath) &&
+            KeyboardDevices[0].Connection.ProductId == connection.ProductId)
+        {
+            return;
+        }
+
+        KeyboardDevices.Clear();
+        KeyboardDevices.Add(new RazerKeyboardDeviceRowViewModel(connection));
+        if (_selectedKeyboardDevice is null ||
+            !StringComparer.OrdinalIgnoreCase.Equals(
+                _selectedKeyboardDevice.Connection.DevicePath, connection.DevicePath))
+        {
+            _selectedKeyboardDevice = null;
+            SelectedKeyboard = null;
+        }
+    }
+
+    public async Task SelectKeyboardAsync(
+        RazerKeyboardDeviceRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        if (_selectedKeyboardDevice is not null &&
+            SelectedKeyboard is not null &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                _selectedKeyboardDevice.Connection.DevicePath, row.Connection.DevicePath))
+        {
+            return;
+        }
+
+        _selectedKeyboardDevice = row;
+        SelectedKeyboard = new RazerKeyboardViewModel(
+            row.Connection, message => _diagnosticLog.TryWrite("keyboard", message));
+        SelectedKeyboard.Onboard.LocalMacroProvider =
+            () => _macros.Items.Select(macro => macro.Definition).ToArray();
+        await SelectedKeyboard.LoadAsync(cancellationToken);
+    }
+
+    private RazerGamepadDeviceRowViewModel? _selectedGamepadDevice;
+    private RazerGamepadViewModel? _selectedGamepad;
+
+    public ObservableCollection<RazerGamepadDeviceRowViewModel> GamepadDevices { get; } = new();
+
+    public RazerGamepadViewModel? SelectedGamepad
+    {
+        get => _selectedGamepad;
+        private set => SetField(ref _selectedGamepad, value);
+    }
+
+    internal async Task RefreshGamepadsAsync(CancellationToken cancellationToken)
+    {
+        RazerGamepadConnection? connection;
+        try
+        {
+            connection = await RazerGamepadService.FindAsync(
+                message => _diagnosticLog.TryWrite("gamepad", message), cancellationToken);
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _diagnosticLog.TryWrite("gamepad", $"discovery failed: {exception}");
+            return;
+        }
+
+        if (connection is null)
+        {
+            if (GamepadDevices.Count == 0 && SelectedGamepad is null) return;
+            GamepadDevices.Clear();
+            _selectedGamepadDevice = null;
+            SelectedGamepad = null;
+            return;
+        }
+
+        if (GamepadDevices.Count == 1 &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                GamepadDevices[0].Connection.DevicePath, connection.DevicePath) &&
+            GamepadDevices[0].Connection.ProductId == connection.ProductId)
+        {
+            return;
+        }
+
+        GamepadDevices.Clear();
+        GamepadDevices.Add(new RazerGamepadDeviceRowViewModel(connection));
+        if (_selectedGamepadDevice is null ||
+            !StringComparer.OrdinalIgnoreCase.Equals(
+                _selectedGamepadDevice.Connection.DevicePath, connection.DevicePath))
+        {
+            _selectedGamepadDevice = null;
+            SelectedGamepad = null;
+        }
+    }
+
+    public async Task SelectGamepadAsync(
+        RazerGamepadDeviceRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        if (_selectedGamepadDevice is not null &&
+            SelectedGamepad is not null &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                _selectedGamepadDevice.Connection.DevicePath, row.Connection.DevicePath))
+        {
+            return;
+        }
+
+        _selectedGamepadDevice = row;
+        SelectedGamepad = new RazerGamepadViewModel(
+            row.Connection, message => _diagnosticLog.TryWrite("gamepad", message));
+        await SelectedGamepad.LoadAsync(cancellationToken);
+    }
+
+    private RazerChromaDeviceRowViewModel? _selectedChromaDevice;
+    private RazerChromaViewModel? _selectedChroma;
+
+    public ObservableCollection<RazerChromaDeviceRowViewModel> ChromaDevices { get; } = new();
+
+    public RazerChromaViewModel? SelectedChroma
+    {
+        get => _selectedChroma;
+        private set => SetField(ref _selectedChroma, value);
+    }
+
+    internal async Task RefreshChromaAsync(CancellationToken cancellationToken)
+    {
+        IReadOnlyList<RazerChromaDeviceConnection> connections;
+        try
+        {
+            connections = await RazerChromaStandardService.FindAllAsync(
+                message => _diagnosticLog.TryWrite("chroma", message), cancellationToken);
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _diagnosticLog.TryWrite("chroma", $"discovery failed: {exception}");
+            return;
+        }
+
+        if (connections.Count == 0)
+        {
+            if (ChromaDevices.Count == 0 && SelectedChroma is null) return;
+            ChromaDevices.Clear();
+            _selectedChromaDevice = null;
+            SelectedChroma = null;
+            return;
+        }
+
+        if (ChromaDevices.Count == connections.Count &&
+            ChromaDevices.Zip(connections).All(pair =>
+                StringComparer.OrdinalIgnoreCase.Equals(
+                    pair.First.Connection.DevicePath, pair.Second.DevicePath) &&
+                pair.First.Connection.ProductId == pair.Second.ProductId))
+        {
+            return;
+        }
+
+        var selectedPath = _selectedChromaDevice?.Connection.DevicePath;
+        ChromaDevices.Clear();
+        foreach (var connection in connections)
+        {
+            ChromaDevices.Add(new RazerChromaDeviceRowViewModel(connection));
+        }
+
+        _selectedChromaDevice = ChromaDevices.FirstOrDefault(row =>
+            StringComparer.OrdinalIgnoreCase.Equals(row.Connection.DevicePath, selectedPath));
+        if (_selectedChromaDevice is null)
+        {
+            SelectedChroma = null;
+        }
+    }
+
+    public async Task SelectChromaAsync(
+        RazerChromaDeviceRowViewModel row,
+        CancellationToken cancellationToken = default)
+    {
+        if (_selectedChromaDevice is not null &&
+            SelectedChroma is not null &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                _selectedChromaDevice.Connection.DevicePath, row.Connection.DevicePath))
+        {
+            return;
+        }
+
+        _selectedChromaDevice = row;
+        SelectedChroma = new RazerChromaViewModel(
+            row.Connection,
+            message => _diagnosticLog.TryWrite("chroma", message),
+            _openRazer.SpecialLightingService);
+        await SelectedChroma.LoadAsync(cancellationToken);
+    }
+    public async ValueTask DisposeAsync()
+    {
+        if (SelectedHeadsetAudio is { } headset)
+        {
+            await headset.DisposeAsync().ConfigureAwait(false);
+            SelectedHeadsetAudio = null;
+        }
+    }
+
+    private static bool IsExpectedRuntimeException(Exception exception) =>
+        RuntimeErrors.IsExpected(exception) || exception is System.Runtime.InteropServices.COMException;
+
+    private void SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        field = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+}

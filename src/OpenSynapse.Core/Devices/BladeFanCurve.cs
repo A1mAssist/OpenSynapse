@@ -213,12 +213,12 @@ public sealed class BladeFanCurve
     /// </summary>
     public BladeFanCurve ClampMaximumFanSpeed(int maximumRpm)
     {
-        if (maximumRpm is < MinimumPointFanSpeedRpm or > MaximumPointFanSpeedRpm)
+        if (maximumRpm < MinimumPointFanSpeedRpm)
         {
             throw new ArgumentOutOfRangeException(nameof(maximumRpm));
         }
 
-        if (maximumRpm == MaximumPointFanSpeedRpm)
+        if (maximumRpm >= MaximumPointFanSpeedRpm)
         {
             return this;
         }

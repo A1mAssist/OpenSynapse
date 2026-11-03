@@ -6,6 +6,52 @@ namespace OpenSynapse.Core.Tests;
 public sealed class ThxHeadsetAdmissionTests
 {
     [Fact]
+    public void EverySupportedHeadsetPinsItsInstaller()
+    {
+        foreach (var productId in ThxHeadsetAdmission.SupportedProductIds)
+        {
+            var profile = ThxHeadsetAdmission.GetProfile(productId);
+            Assert.NotNull(profile);
+            Assert.NotNull(profile.Installer);
+            Assert.True(profile.Installer.Length > 1_000_000);
+            Assert.Equal(64, profile.Installer.Sha256.Length);
+            Assert.StartsWith("https://app-assets.razer.com/", profile.InstallerUri);
+            Assert.True(profile.Installer.Sha256.All(Uri.IsHexDigit));
+        }
+    }
+
+    [Fact]
+    public void KrakenV4InstallerMatchesTheOfficialManifest()
+    {
+        var installer = Assert.IsType<ThxInstallerPackage>(
+            ThxHeadsetAdmission.GetProfile(0x056B)?.Installer);
+
+        Assert.Equal(45_706_008, installer.Length);
+        Assert.Equal("F55BF3C7855242EAB25719CB8E16F3C59D73442833F2A9CA6DA0B9699C51DF5E", installer.Sha256);
+        Assert.Equal("/S", installer.Arguments);
+    }
+
+    [Fact]
+    public void V4InstallerUsesTheV4SilentSwitch()
+    {
+        var installer = Assert.IsType<ThxInstallerPackage>(
+            ThxHeadsetAdmission.GetProfile(0x0576)?.Installer);
+
+        Assert.Equal(51_481_232, installer.Length);
+        Assert.Equal("/s /norestart", installer.Arguments);
+    }
+
+    [Fact]
+    public async Task UnpinnedInstallerIsRejectedBeforeDownload()
+    {
+        var result = await ThxComponentInstaller.InstallAsync(
+            new ThxInstallerPackage("https://example.invalid/thx.exe", 0, string.Empty, "/S"),
+            CancellationToken.None);
+
+        Assert.Equal("ThxInstallerVerificationFailed", result);
+    }
+
+    [Fact]
     public void UnsupportedProductStaysHidden()
     {
         var status = ThxHeadsetAdmission.Evaluate(0x9999, serviceRunning: true, nativePresent: true);

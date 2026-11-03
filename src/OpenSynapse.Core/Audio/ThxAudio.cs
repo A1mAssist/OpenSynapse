@@ -75,4 +75,10 @@ public interface IThxAudioController
     Task<ThxAudioStatus> InstallNativeComponentAsync(
         ThxAudioEndpoint endpoint,
         CancellationToken cancellationToken = default);
+
+    Task<ThxAudioStatus> InstallComponentsAsync(
+        ThxAudioEndpoint endpoint,
+        CancellationToken cancellationToken = default);
+
+    bool CanInstallComponents { get; }
 }

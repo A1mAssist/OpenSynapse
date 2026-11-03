@@ -213,9 +213,10 @@ public static class ViperMappingActions
                 Find(ViperButtonMappingFunction.HyperShift, _ => true),
             ViperButtonMappingFunction.KeyboardTurbo =>
                 Find(ViperButtonMappingFunction.KeyboardTurbo, _ => true),
-            ViperButtonMappingFunction.MouseTurbo when assignment.FunctionData.Count >= 1 =>
-                Find(ViperButtonMappingFunction.MouseTurbo,
-                    definition => definition.Value == assignment.FunctionData[0]),
+            ViperButtonMappingFunction.MouseTurbo when assignment.FunctionData.Count == 3 &&
+                assignment.FunctionData[0] is >= 1 and <= 10 &&
+                (assignment.FunctionData[1] != 0 || assignment.FunctionData[2] != 0) =>
+                Find(ViperButtonMappingFunction.MouseTurbo, _ => true),
             _ => -1,
         };
 

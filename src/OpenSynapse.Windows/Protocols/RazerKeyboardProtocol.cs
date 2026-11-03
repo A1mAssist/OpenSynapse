@@ -4,7 +4,7 @@ namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
 /// Protocol 25 keyboard commands taken from the middleware bundles of the Huntsman V3 and
-/// Pro Type families. Every request uses the shared 90-byte OpenRazer envelope, so the
+/// Pro Type families. Every request uses the shared 90-byte RazerHid envelope, so the
 /// builders below only declare data size, class, command and arguments.
 /// </summary>
 public static class RazerKeyboardProtocol
@@ -118,16 +118,14 @@ public static class RazerKeyboardProtocol
 
     public static byte ReadBatteryPercent(ReadOnlySpan<byte> response)
     {
-        var data = Arguments(response);
-        Require(data, 1);
-        return (byte)(data[0] * 100 / 255);
+        var data = BatteryArguments(response);
+        return (byte)(data[1] * 100 / 255);
     }
 
     public static bool ReadChargingStatus(ReadOnlySpan<byte> response)
     {
-        var data = Arguments(response);
-        Require(data, 1);
-        return data[0] != 0;
+        var data = BatteryArguments(response);
+        return data[1] != 0;
     }
 
     public static byte? PollingCode(int hertz)
@@ -160,6 +158,19 @@ public static class RazerKeyboardProtocol
         }
 
         return response[RazerFeatureReport.ArgumentsOffset..];
+    }
+
+    private static ReadOnlySpan<byte> BatteryArguments(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        var declaredLength = response[6];
+        if (declaredLength < 2)
+        {
+            throw new InvalidDataException(
+                $"Razer battery response declares {declaredLength} data bytes; 2 required.");
+        }
+
+        return data[..declaredLength];
     }
 
     private static void Require(ReadOnlySpan<byte> data, int length)

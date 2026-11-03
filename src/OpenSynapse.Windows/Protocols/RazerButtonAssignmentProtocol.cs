@@ -110,7 +110,7 @@ public static class RazerButtonAssignmentProtocol
     }
 
     public static IReadOnlyList<byte> ParseButtonList(ReadOnlySpan<byte> response) =>
-        OpenRazerStandardProtocol.Arguments(response, 0).ToArray();
+        RazerHidStandardProtocol.Arguments(response, 0).ToArray();
 
     public static RazerButtonAssignment ParseAssignmentListEntry(
         ReadOnlySpan<byte> response,
@@ -122,7 +122,7 @@ public static class RazerButtonAssignmentProtocol
             RazerButtonAssignmentMode.HypershiftMode => ((byte)4, 3, 5),
             _ => throw new ArgumentOutOfRangeException(nameof(mode)),
         };
-        var data = OpenRazerStandardProtocol.Arguments(response, minimumLength);
+        var data = RazerHidStandardProtocol.Arguments(response, minimumLength);
         var values = new List<byte>();
         for (var index = firstValueIndex; index < data.Length; index += 2)
         {
@@ -147,7 +147,7 @@ public static class RazerButtonAssignmentProtocol
             RazerButtonAssignmentMode.HypershiftMode => ((byte)16, 3, 5, 7),
             _ => throw new ArgumentOutOfRangeException(nameof(mode)),
         };
-        var data = OpenRazerStandardProtocol.Arguments(response, minimumLength);
+        var data = RazerHidStandardProtocol.Arguments(response, minimumLength);
 
         // The middleware reports dataSize separately and still reads all five fixed slots.
         var values = new byte[5];

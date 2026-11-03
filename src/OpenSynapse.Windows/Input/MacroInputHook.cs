@@ -372,14 +372,14 @@ public sealed class MacroInputHook : IDisposable
             }
 
             var data = Marshal.PtrToStructure<MsLlHookStruct>(lParam);
-            if ((data.Flags & LlMhInjected) != 0 ||
-                data.ExtraInfo == WindowsMacroInputSink.InjectionTag)
+            if (data.ExtraInfo == WindowsMacroInputSink.InjectionTag)
             {
                 return CallNextHookEx(0, code, wParam, lParam);
             }
 
             if (message is WmMouseWheel or WmMouseHWheel)
             {
+                if ((data.Flags & LlMhInjected) != 0) return CallNextHookEx(0, code, wParam, lParam);
                 var delta = unchecked((short)(data.MouseData >> 16));
                 if (delta == 0)
                 {
@@ -408,7 +408,7 @@ public sealed class MacroInputHook : IDisposable
                 WmXButtonUp => (false, GetXButton(data.MouseData)),
                 _ => (false, 0),
             };
-            if (button == 0)
+            if (button == 0 || !MacroMouseInputPolicy.AcceptsMouseButton(data.Flags, data.ExtraInfo, button))
             {
                 return CallNextHookEx(0, code, wParam, lParam);
             }

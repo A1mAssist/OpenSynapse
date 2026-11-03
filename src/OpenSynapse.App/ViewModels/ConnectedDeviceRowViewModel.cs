@@ -21,25 +21,29 @@ public sealed class ConnectedDeviceRowViewModel
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
         IsReady = source.IsAvailable;
-        IsVisible = true;
+        // A Blade must stay listed even when its control channel fails: telemetry loss
+        // must not make the laptop disappear from its own device page.
+        IsVisible = source.IsAvailable ||
+            DeviceProtocolFamilies.IsBlade(source.ProtocolFamily) ||
+            source.SupportedCapabilityCount == 0;
     }
 
-    public ConnectedDeviceRowViewModel(OpenRazerDeviceRowViewModel source)
+    public ConnectedDeviceRowViewModel(RazerHidDeviceRowViewModel source)
     {
         Source = source;
         Name = source.Name;
         Identity = source.Identity;
         IsReady = source.Connection.IsReady;
         Access = IsReady ? AppStrings.Text("Text_5965520A")
-            : source.Connection.EndpointState == OpenRazerEndpointState.RecognizedButUnresolved
-                ? AppStrings.FormatText("OpenRazerDeviceNotReady", source.Category)
+            : source.Connection.EndpointState == RazerHidEndpointState.RecognizedButUnresolved
+                ? AppStrings.FormatText("RazerHidDeviceNotReady", source.Category)
                 : AppStrings.Text("Text_40985721");
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
-        IsVisible = source.Connection.EndpointState != OpenRazerEndpointState.RecognizedButUnresolved;
+        IsVisible = source.Connection.IsReady && source.Connection.Capabilities.Count > 0;
     }
 
-    public ConnectedDeviceRowViewModel(OpenRazerKrakenDeviceRowViewModel source)
+    public ConnectedDeviceRowViewModel(RazerHidKrakenDeviceRowViewModel source)
     {
         Source = source;
         Name = source.Name;
@@ -50,7 +54,7 @@ public sealed class ConnectedDeviceRowViewModel
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
         IsReady = source.Connection.IsReady;
-        IsVisible = true;
+        IsVisible = source.Connection.IsReady;
     }
 
     public ConnectedDeviceRowViewModel(RazerChromaDeviceRowViewModel source)
@@ -183,8 +187,8 @@ public sealed class ConnectedDeviceRowViewModel
     public string Capability => Source switch
     {
         DeviceRowViewModel row => row.Capability,
-        OpenRazerDeviceRowViewModel row => row.Status,
-        OpenRazerKrakenDeviceRowViewModel row => row.Status,
+        RazerHidDeviceRowViewModel row => row.Status,
+        RazerHidKrakenDeviceRowViewModel row => row.Status,
         RazerBleDeviceRowViewModel row => row.Status,
         BlackSharkDeviceRowViewModel row => row.Status,
         RazerGamepadDeviceRowViewModel row => row.Status,
@@ -194,8 +198,8 @@ public sealed class ConnectedDeviceRowViewModel
     };
     public string Error => Source switch
     {
-        OpenRazerDeviceRowViewModel row => row.Error,
-        OpenRazerKrakenDeviceRowViewModel row => row.Error,
+        RazerHidDeviceRowViewModel row => row.Error,
+        RazerHidKrakenDeviceRowViewModel row => row.Error,
         BlackSharkDeviceRowViewModel row => row.Error,
         RazerCoolingPadViewModel row => row.ErrorText,
         PhilipsHueViewModel row => row.ErrorText,
@@ -204,8 +208,8 @@ public sealed class ConnectedDeviceRowViewModel
     public Brush StatusBrush => Source switch
     {
         DeviceRowViewModel row => row.StatusBrush,
-        OpenRazerDeviceRowViewModel row => row.StatusBrush,
-        OpenRazerKrakenDeviceRowViewModel row => row.StatusBrush,
+        RazerHidDeviceRowViewModel row => row.StatusBrush,
+        RazerHidKrakenDeviceRowViewModel row => row.StatusBrush,
         RazerBleDeviceRowViewModel row => row.StatusBrush,
         RazerAwBleHeadsetRowViewModel => ConnectedBrush,
         BlackSharkDeviceRowViewModel row => row.StatusBrush,

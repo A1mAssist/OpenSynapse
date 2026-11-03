@@ -7,7 +7,7 @@ public sealed class RazerHeadsetChannelCatalogTests
 {
     private static readonly HashSet<ushort> KnownUnsupported =
     [
-        0x0309, 0x052D, 0x0530, 0x0534, 0x053C, 0x0562, 0x0565,
+        0x0309, 0x052D, 0x0530, 0x0534, 0x053C, 0x0562,
     ];
 
     [Fact]
@@ -37,6 +37,9 @@ public sealed class RazerHeadsetChannelCatalogTests
     // AudioKrakenKittyV2Pro only appends a 37-byte Chroma frame to AudioKittyV2Pro;
     // the audio base class still uses the 91-byte feature channel.
     [InlineData(0x0554, RazerHeadsetChannel.Feature91)]
+    // 0565 is the 2.4 GHz endpoint of the 056E BlackShark V2 HyperSpeed bundle.
+    [InlineData(0x0565, RazerHeadsetChannel.Feature91)]
+    [InlineData(0x056E, RazerHeadsetChannel.Feature91)]
     public void BundleDifferencesSelectTheirDeclaredChannel(ushort productId, RazerHeadsetChannel expected) =>
         Assert.Equal(expected, RazerHeadsetChannelCatalog.Resolve(productId));
 

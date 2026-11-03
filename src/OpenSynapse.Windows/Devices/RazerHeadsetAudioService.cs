@@ -9,7 +9,7 @@ public enum RazerHeadsetAudioTransport
     Feature91,
     Mxic64,
     Valkyrie64,
-    Billie64, Mixer053E,
+    Billie64, Mixer053E, ValkyrieT3Feature64,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -56,9 +56,9 @@ public sealed record RazerHeadsetAudioState(
 /// USB audio controllers). Discovery follows the bundle-declared channel in
 /// <see cref="RazerHeadsetChannelCatalog"/>; this service implements the 91-byte feature
 /// path and owns the EQ, bass, microphone, audio-source, ANC and noise-suppression
-/// commands that OpenRazer does not model.
+/// commands that RazerHid does not model.
 /// </summary>
-public sealed class RazerHeadsetAudioService
+public sealed partial class RazerHeadsetAudioService
 {
     // The 2026 Hammerhead V3 and BlackShark V3 X identities (0A54, 0A61, 0A64,
     // 0A68, 0A6C, 0A81, 1022) are deliberately absent: their bundles select
@@ -230,6 +230,7 @@ public sealed class RazerHeadsetAudioService
         channel switch
         {
             RazerHeadsetChannel.Feature91 => item.FeatureReportByteLength == RazerFeatureReport.Length,
+            RazerHeadsetChannel.ValkyrieT3Feature64 => item.FeatureReportByteLength == 64,
             RazerHeadsetChannel.Mxic64 or RazerHeadsetChannel.Valkyrie64 or RazerHeadsetChannel.Billie64 => item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength && item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
             RazerHeadsetChannel.Mixer053E => item.FeatureReportByteLength == RazerMixer053EProtocol.FeatureReportLength && item.InputReportByteLength == RazerMixer053EProtocol.StatusReportLength && item.OutputReportByteLength == RazerMixer053EProtocol.OutputReportLength,
             _ => false,
@@ -239,6 +240,7 @@ public sealed class RazerHeadsetAudioService
         channel switch
         {
             RazerHeadsetChannel.Mxic64 => RazerHeadsetAudioTransport.Mxic64,
+            RazerHeadsetChannel.ValkyrieT3Feature64 => RazerHeadsetAudioTransport.ValkyrieT3Feature64,
             RazerHeadsetChannel.Valkyrie64 => RazerHeadsetAudioTransport.Valkyrie64,
             RazerHeadsetChannel.Billie64 => RazerHeadsetAudioTransport.Billie64,
             _ => channel == RazerHeadsetChannel.Mixer053E ? RazerHeadsetAudioTransport.Mixer053E : RazerHeadsetAudioTransport.Feature91,
@@ -429,77 +431,9 @@ public sealed class RazerHeadsetAudioService
         };
     }
 
-    public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default)
-    {
-        if (preset == 0xFF)
-        {
-            throw new ArgumentOutOfRangeException(nameof(preset));
-        }
-
-        return WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetEqPreset(txn),
-            RazerHeadsetAudioProtocol.ReadEqPreset,
-            preset,
-            (value, txn) => RazerHeadsetAudioProtocol.SetEqPreset(txn, value),
-            value => value == preset,
-            "EQ preset",
-            cancellationToken);
-    }
-
-    public Task SetHapticsAsync(
-        bool enabled,
-        ushort strength,
-        CancellationToken cancellationToken = default)
-    {
-        var expected = new RazerHapticsControlState(enabled, strength);
-        return WriteAsync(
-            RazerHapticsProtocol.CreateGetHapticsControlRequest,
-            ParseHapticsResponse,
-            expected,
-            (value, txn) => RazerHapticsProtocol.CreateSetHapticsControlRequest(
-                txn, value.Enabled, value.Strength),
-            value => value == expected,
-            "haptics",
-            cancellationToken);
-    }
-
-    public async Task SetEqBandsAsync(
-        IReadOnlyList<byte> bands,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(bands);
-        var tenBand = bands.Count == RazerHeadsetAudioProtocol.TenBandCount;
-        if (!tenBand && bands.Count != RazerHeadsetAudioProtocol.EightBandCount)
-        {
-            throw new ArgumentException("Equalizer data must contain 10 or 8 bands.", nameof(bands));
-        }
-
-        var previous = await ReadEqBandsRequiredAsync(tenBand, cancellationToken).ConfigureAwait(false);
-        if (previous.SequenceEqual(bands))
-        {
-            return;
-        }
-
-        try
-        {
-            await QueryAsync(
-                txn => RazerHeadsetAudioProtocol.SetEqBands(txn, bands.ToArray()),
-                "set EQ bands",
-                cancellationToken).ConfigureAwait(false);
-            var actual = await ReadEqBandsRequiredAsync(tenBand, cancellationToken).ConfigureAwait(false);
-            if (!actual.SequenceEqual(bands))
-            {
-                throw new InvalidOperationException("EQ band readback did not match the requested values.");
-            }
-        }
-        catch
-        {
-            await TryRestoreAsync(
-                txn => RazerHeadsetAudioProtocol.SetEqBands(txn, previous.ToArray()),
-                "restore EQ bands").ConfigureAwait(false);
-            throw;
-        }
-    }
+    public Task SetHapticsAsync(bool enabled, ushort strength, CancellationToken cancellationToken = default) =>
+        Task.FromException(new NotSupportedException(
+            "Headset haptics writes require independent per-product evidence for the 91-byte feature envelope."));
 
     public async Task<bool> GetMicReturnSwitchAsync(CancellationToken cancellationToken = default) =>
         RazerHeadsetAudioProtocol.ReadMicReturnSwitch(

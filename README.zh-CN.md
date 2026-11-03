@@ -40,6 +40,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 - **Viper：** 电量、DPI、轮询率、休眠、电池类型和板载映射。
 - **耳机：** 音频页按设备和已安装组件提供 EQ、麦克风音量、侧音、ANC、THX 与游戏/语音平衡。Kraken 7.1 仅支持灯光；受支持机型缺少原生组件时提供 THX V3/V4 安装入口。
 - **BlackShark V3 Pro：** 通过独立 HID 通道提供电量、充电、侧音、THX、主动降噪和游戏/语音平衡。暂不包含 EQ、麦克风增益、固件更新和指示灯模式。
+- **灯光工作室：** 侧边栏独立入口；设备画布（SVG 外形 + 逐 LED）、区域/组/配置档、14 个效果、`.ChromaEffects` 导入导出、Blade/HID 多设备矩阵输出、屏幕/音频输入和 Chroma Generate 非 AI 路径。控制器真机与 Chroma 客户端实导入仍需验证。
 
 ### Chroma REST
 
@@ -61,11 +62,11 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载其中一种安装文件。
 
-- `OpenSynapse-win.msi` 安装到 `Program Files`，并为所有用户注册 GPU 模式服务。安装时只请求一次管理员权限；之后切换“仅核显”不再弹 UAC。检测到旧的当前用户 Setup 安装时，会先保存配置和设置，卸载旧版后恢复数据，并把开机启动项迁移到新程序。
+- `OpenSynapse-win.msi` 安装到 `Program Files`，并在取得管理员权限后为所有用户注册 GPU 模式服务。注册成功后，受支持的显卡切换通过服务执行，不再重复弹 UAC。检测到旧的当前用户 Setup 安装时，安装阶段先保全配置和设置；下一次非提升启动确认所有数据文件已有保留副本后才卸载旧版并修复启动项。内容冲突保留为 `.legacy-backup` 版本副本；提升启动不执行旧用户卸载器。
 - `OpenSynapse-win-Setup.exe` 安装到当前用户目录并支持自动更新。它不安装机器级服务，切换“仅核显”仍会逐次请求 UAC。
 - `OpenSynapse-win-Portable.zip` 解压后即可运行；使用“仅核显”时会请求 UAC。
 
-MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应用程序，只接受状态查询和固定的启用/禁用请求。控制管道只允许安装该应用的 Windows 账户访问。
+MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应用程序，接受固定的状态查询、GPU 启用／禁用／重启、CPU 功耗／Curve Optimizer、GPU 时钟操作及固定宏代理启动请求。控制管道允许配置的安装用户 SID、本机 Administrators 和 SYSTEM，并拒绝网络登录；各控制项仍受型号、驱动和协议准入限制。注册失败时仍可能需要既有 UAC 后备路径。
 
 配置、日志和设备清单保存在 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`。用户数据与 Velopack 管理的目录分离，避免 MSI 升级或卸载时被清理。
 
@@ -79,7 +80,7 @@ MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应�
 
 ## 当前不包含
 
-- 固件更新、Razer 账号、云服务和 Chroma Studio。
+- 固件更新、Razer 账号、云同步和 Chroma Studio 的 AI 配色。
 - 除 Hybrid/Discrete 之外的 GPU MUX 模式，以及没有协议证据的硬件写入。
 - 缺少 Windows 传输实现的旧式固定报告设备。
 

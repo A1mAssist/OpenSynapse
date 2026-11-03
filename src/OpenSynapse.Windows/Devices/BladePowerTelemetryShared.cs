@@ -5,6 +5,53 @@ namespace OpenSynapse.Windows.Devices;
 
 internal static class BladePowerTelemetryShared
 {
+    internal static async Task SetPerformanceMaxFanAsync(
+        RazerCapabilityClient client, ResolvedRazerDevice device, bool enabled, bool skip,
+        CancellationToken cancellationToken)
+    {
+        if (skip) return;
+        var mask = await ReadPowerMaskAsync(client, device, cancellationToken);
+        if (((mask & BladePowerModeProtocol.MaxFanBit) != 0) == enabled) return;
+        // Preserve the existing HyperBoost restriction on pending/unknown bits.
+        if (enabled && (mask & ~(BladePowerModeProtocol.MaxFanBit |
+                BladePowerModeProtocol.CpuPowerBoostBit | BladePowerModeProtocol.LocalDimmingBit)) != 0)
+            throw new InvalidOperationException("HyperBoost cannot pin Max Fan while an unverified power-mode bit is active.");
+        var expected = enabled ? (byte)(mask | BladePowerModeProtocol.MaxFanBit)
+            : (byte)(mask & ~BladePowerModeProtocol.MaxFanBit);
+        await WritePowerMaskAsync(client, device, expected, cancellationToken);
+        if (await ReadPowerMaskAsync(client, device, cancellationToken) != expected)
+            throw new InvalidOperationException("Performance Max Fan readback did not match the requested state.");
+    }
+
+    internal static async Task<bool> TryRestoreMaxFanBitAsync(
+        RazerCapabilityClient client, ResolvedRazerDevice device, byte originalMask)
+    {
+        try
+        {
+            var current = await ReadPowerMaskAsync(client, device, CancellationToken.None);
+            var expected = (byte)((current & ~BladePowerModeProtocol.MaxFanBit) |
+                (originalMask & BladePowerModeProtocol.MaxFanBit));
+            if (current != expected)
+                await WritePowerMaskAsync(client, device, expected, CancellationToken.None);
+            return await ReadPowerMaskAsync(client, device, CancellationToken.None) == expected;
+        }
+        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
+    private static async Task<byte> ReadPowerMaskAsync(
+        RazerCapabilityClient client, ResolvedRazerDevice device, CancellationToken cancellationToken) =>
+        BladePowerModeProtocol.ParsePowerModeMask(
+            await client.QueryAsync(device, CapabilityIds.PowerModeGet, cancellationToken),
+            RazerCapabilityClient.CreateRequest(device, CapabilityIds.PowerModeGet));
+
+    private static Task WritePowerMaskAsync(
+        RazerCapabilityClient client, ResolvedRazerDevice device, byte mask, CancellationToken cancellationToken) =>
+        client.QueryBuiltRequestAsync(device, CapabilityIds.PowerModeSet,
+            BladePowerModeProtocol.CreateSetPowerModeMaskRequest(mask), cancellationToken);
+
     internal static BladeMaxFanMode ToMaxFanMode(byte powerModeMask) =>
         (powerModeMask & BladePowerModeProtocol.MaxFanBit) != 0
             ? BladeMaxFanMode.Enabled

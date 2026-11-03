@@ -14,8 +14,8 @@ public static class DedicatedGpuModeServiceInstaller
 {
     private const int ServiceAlreadyExists = 1073;
     private const int ServiceDoesNotExist = 1060;
-    private const string ServiceSddl =
-        "D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;IU)S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)";
+    internal const string ServiceSddl =
+        "D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;IU)";
 
     public static bool IsMachineInstallPath(string? executablePath)
     {
@@ -56,60 +56,54 @@ public static class DedicatedGpuModeServiceInstaller
 
     public static bool EnsureInstalled(string? executablePath)
     {
-        if (!IsMachineInstallPath(executablePath) ||
-            string.IsNullOrWhiteSpace(executablePath))
-        {
-            return false;
-        }
-
         try
         {
-            if (ServiceExists())
-            {
-                return true;
-            }
-
             using var identity = WindowsIdentity.GetCurrent();
             var userSid = identity.User?.Value;
-            if (string.IsNullOrWhiteSpace(userSid))
-            {
-                return false;
-            }
-
-            var create = RunSc(
-                "create",
-                DedicatedGpuModeServiceProtocol.ServiceName,
-                "binPath=",
-                $"\"{executablePath}\" {DedicatedGpuModeServiceProtocol.ServiceArgument} " +
-                    $"{DedicatedGpuModeServiceProtocol.ServiceUserArgument} {userSid}",
-                "start=",
-                "demand",
-                "obj=",
-                "LocalSystem",
-                "DisplayName=",
-                "OpenSynapse GPU Mode",
-                "error=",
-                "normal");
-            if (create.ExitCode != 0 && create.ExitCode != ServiceAlreadyExists)
-            {
-                return false;
-            }
-
-            RunSc(
-                "description",
-                DedicatedGpuModeServiceProtocol.ServiceName,
-                "Controls the NVIDIA display adapter for OpenSynapse.");
-            RunSc(
-                "sdset",
-                DedicatedGpuModeServiceProtocol.ServiceName,
-                ServiceSddl);
-            return true;
+            return EnsureInstalled(executablePath, userSid,
+                new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator) || identity.IsSystem,
+                DedicatedGpuServiceConfiguration.IsProtectedExecutable,
+                DedicatedGpuServiceConfiguration.Read, RunSc, Stop);
         }
         catch (Exception exception) when (
-            exception is Win32Exception or InvalidOperationException or IOException)
+            exception is Win32Exception or InvalidOperationException or IOException or UnauthorizedAccessException or
+                System.Security.SecurityException or ArgumentException)
         {
             return false;
         }
+    }
+
+    internal static bool EnsureInstalled(string? executablePath, string? userSid, bool mayChange,
+        Func<string, bool> isProtected, Func<DedicatedGpuServiceConfiguration?> read,
+        Func<string[], ScResult> run, Func<bool> stop)
+    {
+        if (string.IsNullOrWhiteSpace(executablePath) || string.IsNullOrWhiteSpace(userSid) ||
+            !isProtected(executablePath) || !DedicatedGpuServiceConfiguration.IsValidSid(userSid)) return false;
+        var command = $"\"{Path.GetFullPath(executablePath)}\" {DedicatedGpuModeServiceProtocol.ServiceArgument} " +
+            $"{DedicatedGpuModeServiceProtocol.ServiceUserArgument} {userSid}";
+        var current = read();
+        if (current?.Matches(command, ServiceSddl) == true) return true;
+        if (!mayChange) return false;
+        if (current is null)
+        {
+            var created = run(["create", DedicatedGpuModeServiceProtocol.ServiceName, "binPath=", command,
+                "type=", "own", "start=", "demand", "obj=", "LocalSystem",
+                "DisplayName=", "OpenSynapse GPU Mode", "error=", "normal"]);
+            if (created.ExitCode is not (0 or ServiceAlreadyExists)) return false;
+            current = read();
+            if (current is null) return false;
+        }
+        if (!current.MatchesSettings(command))
+        {
+            if (current.IsRunning && (!stop() || read() is not { IsRunning: false })) return false;
+            if (run(["config", DedicatedGpuModeServiceProtocol.ServiceName, "binPath=", command,
+                "type=", "own", "start=", "demand", "obj=", "LocalSystem", "error=", "normal"]).ExitCode != 0) return false;
+        }
+        if (!current.MatchesDacl(ServiceSddl) &&
+            run(["sdset", DedicatedGpuModeServiceProtocol.ServiceName, ServiceSddl]).ExitCode != 0) return false;
+        if (run(["description", DedicatedGpuModeServiceProtocol.ServiceName,
+            "Provides fixed GPU/CPU controls and the OpenSynapse macro broker."]).ExitCode != 0) return false;
+        return read()?.Matches(command, ServiceSddl) == true;
     }
 
     public static bool Stop()
@@ -155,23 +149,6 @@ public static class DedicatedGpuModeServiceInstaller
         }
     }
 
-    private static bool ServiceExists()
-    {
-        try
-        {
-            using var controller = new ServiceController(
-                DedicatedGpuModeServiceProtocol.ServiceName);
-            controller.Refresh();
-            _ = controller.Status;
-            return true;
-        }
-        catch (Exception exception) when (
-            exception is InvalidOperationException or Win32Exception)
-        {
-            return false;
-        }
-    }
-
     private static ScResult RunSc(params string[] arguments)
     {
         var startInfo = new ProcessStartInfo(
@@ -195,5 +172,5 @@ public static class DedicatedGpuModeServiceInstaller
         return new ScResult(process.ExitCode, $"{output}{error}".Trim());
     }
 
-    private readonly record struct ScResult(int ExitCode, string Output);
+    internal readonly record struct ScResult(int ExitCode, string Output);
 }

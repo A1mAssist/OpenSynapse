@@ -128,7 +128,8 @@ public sealed class HyperBoostCoolingPadGateTests
             coolingPadConnected: true,
             productId: 0x02B6);
 
-        Assert.Equal(BladePerformanceMode.Performance, reader.LastMode);
+        Assert.Null(reader.LastMode); // The admitted fallback is the already-active Balanced mode.
+        Assert.DoesNotContain(BladePerformanceMode.Performance, BladeModelCapabilities.PerformanceModesFor(0x02B6));
         Assert.Contains(result.Errors, error => error.StartsWith("HyperBoost", StringComparison.Ordinal));
     }
 
@@ -141,6 +142,18 @@ public sealed class HyperBoostCoolingPadGateTests
         Assert.False(BladeModelCapabilities.SupportsHyperBoost(0x02B6));
         Assert.True(BladeModelCapabilities.SupportsHyperBoost(0x02E0));
         Assert.False(BladeModelCapabilities.SupportsHyperBoost(0xFFFF));
+    }
+
+    [Theory]
+    [InlineData(0x029F)]
+    [InlineData(0x02B7)]
+    public async Task PadlessFallbackDoesNotInventPerformanceOnBalancedCustomModels(ushort productId)
+    {
+        var reader = new RecordingReader();
+        var result = await ApplyAsync(reader, null, coolingPadConnected: false, productId: productId);
+        Assert.DoesNotContain(BladePerformanceMode.Performance, BladeModelCapabilities.PerformanceModesFor(productId));
+        Assert.Null(reader.LastMode); // Already Balanced; no setter call is needed.
+        Assert.Contains(result.Errors, error => error.Contains("Balanced mode was selected", StringComparison.Ordinal));
     }
 
     [Fact]

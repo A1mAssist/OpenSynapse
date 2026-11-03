@@ -40,6 +40,7 @@ The list is grouped by device type and includes every recognized PID, so a Devic
 - **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
 - **Headsets:** an audio page exposes EQ, microphone volume, sidetone, ANC, THX, and game/chat balance where the model and installed components support them. Kraken 7.1 models are lighting-only; THX V3/V4 installers are offered on supported models when the native component is missing.
 - **BlackShark V3 Pro:** battery, charging, sidetone, THX, ANC, and game/chat balance over its own HID channel. EQ, microphone gain, firmware updates, and indicator-LED modes are not included yet.
+- **Lighting Studio:** a dedicated sidebar page with an SVG device canvas and per-LED editing, regions, groups, profiles, 14 effects, `.ChromaEffects` import/export, Blade/HID multi-device matrix output, screen/audio inputs, and the non-AI Chroma Generate path. Controller hardware and real Chroma-client import still need validation.
 
 ### Chroma REST
 
@@ -61,11 +62,11 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-win.msi` installs for all users under `Program Files` and registers the GPU mode service. Administrator permission is requested once during installation; later integrated-graphics switches do not prompt for UAC. If an older per-user Setup install is present, the MSI saves its profiles and settings, removes the old install, restores the data, and moves the startup entry to the new executable.
+- `OpenSynapse-win.msi` installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user Setup install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
 - `OpenSynapse-win-Setup.exe` installs for the current user and supports automatic updates. It does not install the machine-wide service; the GPU switch falls back to a UAC prompt for each change.
 - `OpenSynapse-win-Portable.zip` runs without installation. The GPU switch prompts for UAC when used.
 
-The MSI service runs as `LocalSystem`, uses the protected executable under `Program Files`, and accepts only status plus fixed enable/disable requests. Its control pipe is restricted to the Windows account that installed the app.
+The MSI service runs as `LocalSystem` and uses the protected executable under `Program Files`. It accepts fixed status, GPU enable/disable/restart, CPU power/Curve Optimizer and GPU clock operations, plus the fixed macro-agent launch request. The control pipe allows the configured installation-user SID, local Administrators and SYSTEM, and denies network logons. Available controls remain subject to model, driver and protocol admission; failed registration can still require the existing UAC fallback.
 
 Profiles, logs, and device manifests live in `%LOCALAPPDATA%\A1mAssist\OpenSynapse`. Keeping user data outside the Velopack-managed directory prevents an MSI upgrade or uninstall from deleting it.
 
@@ -79,7 +80,7 @@ The application does not require Razer Synapse, AppEngine, or `mapping_engine.dl
 
 ## Not included
 
-- Firmware updates, Razer accounts, cloud services, and Chroma Studio.
+- Firmware updates, Razer accounts, cloud sync, and Chroma Studio AI color generation.
 - GPU MUX modes beyond Hybrid/Discrete, and hardware writes without protocol evidence.
 - Legacy fixed-report devices whose Windows transport is unavailable.
 

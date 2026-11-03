@@ -9,6 +9,7 @@ internal sealed class MacroRuntime : IDisposable
     private const int HoldReleaseCheckMilliseconds = 100;
     private readonly object _gate = new();
     private readonly IMacroInputSink _sink;
+    private readonly bool _installInputHooks;
     private readonly Func<MacroInput, bool> _isPhysicallyDown;
     private readonly Dictionary<InputKey, SuppressedInput> _suppressedInputs = [];
     private readonly HashSet<int> _physicalModifierKeys = [];
@@ -41,10 +42,11 @@ internal sealed class MacroRuntime : IDisposable
 
     internal MacroRuntime(
         Func<MacroInput, bool>? isPhysicallyDown = null,
-        IMacroInputSink? sink = null)
+        IMacroInputSink? sink = null, bool installInputHooks = true)
     {
         _isPhysicallyDown = isPhysicallyDown ?? MacroInputHook.IsPhysicallyDown;
         _sink = sink ?? new WindowsMacroInputSink();
+        _installInputHooks = installInputHooks;
     }
 
     public event Action<string>? Error;
@@ -202,7 +204,7 @@ internal sealed class MacroRuntime : IDisposable
                 throw new InvalidOperationException("The macro input hook could not be started.");
             }
 
-            _hook!.CaptureMouseMoves =
+            if (_hook is not null) _hook.CaptureMouseMoves =
                 _recordingOptions.MouseTrackingMode != MacroMouseTrackingMode.None;
         }
     }
@@ -638,24 +640,22 @@ internal sealed class MacroRuntime : IDisposable
                 if (_recordingOptions.StopShortcut is { } stopShortcut &&
                     stopShortcut.Matches(value.Input))
                 {
-                    _recordingStopInput = value.Input.Clone();
+                    _recordingStopInput = value.IsDown ? value.Input.Clone() : null;
                     if (value.IsDown)
                     {
                         stopRequested = true;
                     }
-                    return true;
+                    suppress = true;
+                    goto InputHandled;
                 }
 
-                // Button clicks and typing in our own editor are not part of
-                // the user's target application sequence.
+                // Do not record input in our own editor.
                 if (_isOwnWindowForeground?.Invoke() == true)
                 {
                     return false;
                 }
 
-                // Device-scoped triggers cannot be replayed with SendInput.
-                // If the firmware also emits a standard key, the low-level hook
-                // records that normal key instead.
+                // Record the standard hook key, not unreplayable device-scoped triggers.
                 if (value.Input.Kind is MacroInputKind.NagaSideButton or
                     MacroInputKind.DeviceButton or MacroInputKind.RazerKey)
                 {
@@ -843,6 +843,7 @@ internal sealed class MacroRuntime : IDisposable
             }
         }
 
+    InputHandled:
         if (stopRequested)
         {
             RecordingStopRequested?.Invoke();
@@ -1219,6 +1220,7 @@ internal sealed class MacroRuntime : IDisposable
 
     private bool EnsureHookLocked()
     {
+        if (!_installInputHooks) return !_disposed;
         if (_hook is not null)
         {
             return true;
@@ -1261,12 +1263,8 @@ internal sealed class MacroRuntime : IDisposable
         return hook;
     }
 
-    private static void DisposeHook(MacroInputHook? hook)
-    {
-        // Never dispose the hook while holding _gate: its callback may be
-        // waiting for the same lock, and Dispose joins the hook thread.
-        hook?.Dispose();
-    }
+    // Outside _gate: Dispose joins a hook thread that may be waiting for that lock.
+    private static void DisposeHook(MacroInputHook? hook) => hook?.Dispose();
 
     private bool CanDetachHookLocked() =>
         _recording is null &&

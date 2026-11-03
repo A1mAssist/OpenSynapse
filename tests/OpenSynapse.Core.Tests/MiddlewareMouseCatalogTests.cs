@@ -5,7 +5,7 @@ using Xunit;
 namespace OpenSynapse.Core.Tests;
 
 /// <summary>
-/// The middleware mice have no upstream OpenRazer entry: their definitions come from the
+/// The middleware mice have no upstream RazerHid entry: their definitions come from the
 /// Razer product bundles and reuse a catalogued sibling's protocol. These tests pin the
 /// product ids, DPI ranges and polling rates so a definition cannot drift silently.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed class MiddlewareMouseCatalogTests
     [InlineData(0xB00B, 35000)]
     public void MiddlewareMiceAreCataloguedWithTheirOwnDpiRange(ushort productId, int maximumDpi)
     {
-        var device = OpenRazerDeviceCatalog.BuiltIn.Find(OpenRazerDeviceDefinition.VendorId, productId);
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(RazerHidDeviceDefinition.VendorId, productId);
 
         Assert.NotNull(device);
         Assert.Equal(maximumDpi, device.MaximumDpi);
@@ -55,19 +55,52 @@ public sealed class MiddlewareMouseCatalogTests
     {
         foreach (var productId in AllPids())
         {
-            var device = OpenRazerDeviceCatalog.BuiltIn.Find(
-                OpenRazerDeviceDefinition.VendorId, productId);
+            var device = RazerHidDeviceCatalog.BuiltIn.Find(
+                RazerHidDeviceDefinition.VendorId, productId);
             Assert.NotNull(device);
-            var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+            var capabilities = RazerHidDeviceService.GetCapabilities(device);
 
-            Assert.Contains(OpenRazerBackendCapability.DpiRead, capabilities);
-            Assert.Contains(OpenRazerBackendCapability.DpiWrite, capabilities);
-            Assert.Contains(OpenRazerBackendCapability.PollingRateRead, capabilities);
-            Assert.Contains(OpenRazerBackendCapability.PollingRateWrite, capabilities);
+            Assert.Contains(RazerHidBackendCapability.DpiRead, capabilities);
+            if (productId == 0x00A2)
+                Assert.DoesNotContain(capabilities, capability => capability.ToString().EndsWith("Write", StringComparison.Ordinal));
+            else
+                Assert.Contains(RazerHidBackendCapability.DpiWrite, capabilities);
+            Assert.Contains(RazerHidBackendCapability.PollingRateRead, capabilities);
+            if (device.PollingRates.Count > 0 && productId != 0x00A2)
+            {
+                Assert.Contains(RazerHidBackendCapability.PollingRateWrite, capabilities);
+            }
+            else
+            {
+                // 0063 reuses 006A's read builder but the middleware has no rate ladder.
+                Assert.DoesNotContain(RazerHidBackendCapability.PollingRateWrite, capabilities);
+            }
             if (WirelessPids.Contains(productId))
             {
-                Assert.Contains(OpenRazerBackendCapability.BatteryRead, capabilities);
+                Assert.Contains(RazerHidBackendCapability.BatteryRead, capabilities);
             }
+        }
+    }
+
+    [Fact]
+    public void MiddlewareMiceDoNotInheritUnevidencedWrites()
+    {
+        foreach (var productId in AllPids())
+        {
+            var device = RazerHidDeviceCatalog.BuiltIn.Find(RazerHidDeviceDefinition.VendorId, productId)!;
+            var writeBuilders = device.Transactions.Keys.Concat(device.CommandSequences.Keys)
+                .Where(builder => !builder.Contains("_get_", StringComparison.Ordinal)).ToArray();
+
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("profile_debounce", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("indicator_led", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("time_to_dim", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("gpu_card_detection", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("chroma_tap", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("force_chroma", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("battery_discharge_curve", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("battery_charge_limiter", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("auto_sleep", StringComparison.Ordinal));
+            Assert.DoesNotContain(writeBuilders, builder => builder.Contains("lk_scroll", StringComparison.Ordinal));
         }
     }
 
@@ -76,7 +109,7 @@ public sealed class MiddlewareMouseCatalogTests
     {
         Assert.Equal([125, 500, 1000], Find(0x00E0).PollingRates);
         Assert.Equal([125, 500, 1000], Find(0x0074).PollingRates);
-        Assert.Equal([125, 500, 1000], Find(0x00A2).PollingRates);
+        Assert.Empty(Find(0x00A2).PollingRates);
         Assert.Equal([125, 500, 1000, 2000, 4000, 8000], Find(0x00E2).PollingRates);
         Assert.Equal([125, 500, 1000], Find(0x00E7).PollingRates);
         // Viper V4 HyperSpeed and DeathAdder V4 HyperSpeed declare the 8 kHz ladder;
@@ -87,22 +120,37 @@ public sealed class MiddlewareMouseCatalogTests
         Assert.Equal([125, 500, 1000], Find(0xB00B).PollingRates);
     }
 
+    [Fact]
+    public void OrochiV2KeepsOfficialPointerFeaturesButDoesNotInheritCobraLighting()
+    {
+        var device = Find(0x00E0);
+        var capabilities = RazerHidDeviceService.GetCapabilities(device);
+
+        Assert.Contains(RazerHidBackendCapability.BatteryRead, capabilities);
+        Assert.Contains(RazerHidBackendCapability.DpiWrite, capabilities);
+        Assert.Contains(RazerHidBackendCapability.PollingRateWrite, capabilities);
+        Assert.DoesNotContain(RazerHidBackendCapability.BrightnessWrite, capabilities);
+        Assert.DoesNotContain(RazerHidBackendCapability.LightingEffectWrite, capabilities);
+        Assert.Empty(RazerHidDeviceService.GetSupportedLedZones(device));
+        Assert.False(device.SupportsIndependentDpi);
+    }
+
     [Theory]
     [InlineData(0x00AA)]
     [InlineData(0x00AB)]
     public void BasiliskV3ProUsesTheOfficialPollingAndMappingHint(ushort productId)
     {
         var device = Find(productId);
-        var capabilities = OpenRazerDeviceService.GetCapabilities(device);
+        var capabilities = RazerHidDeviceService.GetCapabilities(device);
 
         Assert.Equal([125, 500, 1000], device.PollingRates);
-        Assert.True(OpenRazerDeviceCatalog.HasOnboardMapping(productId));
-        Assert.DoesNotContain(OpenRazerBackendCapability.MappingRead, capabilities);
-        Assert.DoesNotContain(OpenRazerBackendCapability.MappingWrite, capabilities);
+        Assert.True(RazerHidDeviceCatalog.HasOnboardMapping(productId));
+        Assert.DoesNotContain(RazerHidBackendCapability.MappingRead, capabilities);
+        Assert.DoesNotContain(RazerHidBackendCapability.MappingWrite, capabilities);
     }
 
-    private static OpenRazerDeviceDefinition Find(ushort productId) =>
-        OpenRazerDeviceCatalog.BuiltIn.Find(OpenRazerDeviceDefinition.VendorId, productId)
+    private static RazerHidDeviceDefinition Find(ushort productId) =>
+        RazerHidDeviceCatalog.BuiltIn.Find(RazerHidDeviceDefinition.VendorId, productId)
             ?? throw new InvalidOperationException($"1532:{productId:X4} is missing.");
 
     private static IEnumerable<ushort> AllPids() =>

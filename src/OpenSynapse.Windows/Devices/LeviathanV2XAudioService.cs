@@ -13,7 +13,7 @@ public sealed record LeviathanV2XAudioState(
 
 /// <summary>
 /// Audio-only controls for the 1354 Leviathan V2 X family. Lighting and identity stay on the
-/// OpenRazer page; this service owns the EQ, bass and input-source commands that OpenRazer
+/// RazerHid page; this service owns the EQ, bass and input-source commands that RazerHid
 /// does not model.
 /// </summary>
 public sealed class LeviathanV2XAudioService

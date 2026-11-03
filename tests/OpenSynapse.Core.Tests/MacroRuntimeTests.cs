@@ -63,6 +63,22 @@ public sealed class MacroRuntimeTests
         await WaitUntilAsync(() => !runtime.IsPlaying, TimeSpan.FromSeconds(2));
     }
 
+    [Theory]
+    [InlineData(0u, 0UL, 4, true)]
+    [InlineData(1u, 0UL, 4, true)]
+    [InlineData(1u, 0UL, 1, false)]
+    [InlineData(0u, 0x4F534D4143524FUL, 4, false)]
+    public void InjectedSideButtonsAreAcceptedButOwnInjectionsAreIgnored(
+        uint flags,
+        ulong extraInfo,
+        int button,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            MacroMouseInputPolicy.AcceptsMouseButton(flags, (nuint)extraInfo, button));
+    }
+
     private static MacroInput MiddleButton() => new()
     {
         Kind = MacroInputKind.MouseButton,

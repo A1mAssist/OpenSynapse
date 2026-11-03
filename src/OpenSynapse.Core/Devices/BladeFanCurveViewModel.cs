@@ -12,20 +12,23 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
     private int _cpuRpm;
     private int _gpuRpm;
 
-    public BladeFanCurvePointViewModel(BladeFanCurvePoint point, bool isGpu = false)
+    public BladeFanCurvePointViewModel(BladeFanCurvePoint point, bool isGpu = false,
+        int minimumTemperatureCelsius = MinimumTemperatureCelsius)
     {
         _isGpu = isGpu;
-        _temperatureCelsius = point.TemperatureCelsius;
+        MinimumEditableTemperatureCelsius = minimumTemperatureCelsius;
+        _temperatureCelsius = Math.Clamp(point.TemperatureCelsius, minimumTemperatureCelsius, MaximumTemperatureCelsius);
         _cpuRpm = point.CpuFanSpeedRpm;
         _gpuRpm = point.GpuFanSpeedRpm;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public int MinimumEditableTemperatureCelsius { get; }
 
     public int TemperatureCelsius
     {
         get => _temperatureCelsius;
-        set => Set(ref _temperatureCelsius, Clamp(value, MinimumTemperatureCelsius, MaximumTemperatureCelsius));
+        set => Set(ref _temperatureCelsius, Clamp(value, MinimumEditableTemperatureCelsius, MaximumTemperatureCelsius));
     }
 
     public int CpuRpm
@@ -62,25 +65,26 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
     public double TemperatureInput
     {
         get => _temperatureCelsius;
-        set => TemperatureCelsius = (int)Math.Round(double.IsFinite(value) ? value : _temperatureCelsius);
+        set => TemperatureCelsius = (int)Math.Round(Math.Clamp(double.IsFinite(value) ? value : _temperatureCelsius,
+            MinimumEditableTemperatureCelsius, MaximumTemperatureCelsius));
     }
 
     public double CpuRpmInput
     {
         get => _cpuRpm;
-        set => CpuRpm = (int)Math.Round(double.IsFinite(value) ? value : _cpuRpm);
+        set => CpuRpm = ToRpm(value, _cpuRpm);
     }
 
     public double GpuRpmInput
     {
         get => _gpuRpm;
-        set => GpuRpm = (int)Math.Round(double.IsFinite(value) ? value : _gpuRpm);
+        set => GpuRpm = ToRpm(value, _gpuRpm);
     }
 
     public double RpmInput
     {
         get => Rpm;
-        set => Rpm = (int)Math.Round(double.IsFinite(value) ? value : Rpm);
+        set => Rpm = ToRpm(value, Rpm);
     }
 
     public string TemperatureText => $"{_temperatureCelsius} °C";
@@ -102,6 +106,10 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
 
     private static int Clamp(int value, int minimum, int maximum) =>
         Math.Clamp(value, minimum, maximum);
+
+    private static int ToRpm(double value, int previous) => (int)Math.Round(Math.Clamp(
+        double.IsFinite(value) ? value : previous,
+        BladeFanCurve.MinimumPointFanSpeedRpm, BladeFanCurve.MaximumPointFanSpeedRpm));
 
     private void Set(ref int field, int value, [CallerMemberName] string? propertyName = null)
     {

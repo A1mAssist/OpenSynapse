@@ -45,7 +45,7 @@
 
 - 引用 `OpenSynapse.Core`；
 - HID 发现与读写、PnP、WMI、服务控制、音频和显示系统调用；
-- `RazerFeatureReport`、`RazerDeviceManifest`、`OpenRazerDeviceDefinition` 等设备模型；
+- `RazerFeatureReport`、`RazerDeviceManifest`、`RazerHidDeviceDefinition` 等设备模型；
 - 协议族命令号、报文参数、超时和校验逻辑；
 - 只读探测、写入前校验、读回确认和恢复路径。
 
@@ -91,7 +91,7 @@ App 内部按三层组织，新代码照这个落位：
 |---|---|
 | `Views/` | 每个导航页一个 UserControl + 自己的 code-behind；事件处理器跟着页面走，不回到 MainWindow |
 | `ViewModels/*Workspace.cs` | 一个子系统一个 workspace，持有自己的状态、命令和订阅；构造注入最小依赖，不持有 `MainViewModel` |
-| `MainViewModel` | 只放组合属性（`Macros` `OpenRazer` `Profiles` `Telemetry` `Fan` `Display` `Lighting` `Blade` `Viper` `Firmware` `Tray` `Refresh` `Diagnostics`）和跨子系统装配；不放业务状态，**也不给 workspace 加转发属性** |
+| `MainViewModel` | 只放组合属性（`Macros` `RazerHid` `Profiles` `Telemetry` `Fan` `Display` `Lighting` `Blade` `Viper` `Firmware` `Tray` `Refresh` `Diagnostics`）和跨子系统装配；不放业务状态，**也不给 workspace 加转发属性** |
 
 ## 2. 设备能力三层
 
@@ -158,19 +158,21 @@ AND 设备端点已发现、可访问并完成必要的读取验证
 
 任何一项不成立，控制项保持关闭。这样 manifest 负责“报文存在”，family contract 负责“报文语义正确”，BladeModelCapabilities 负责“这个型号可以显示/写入”，运行时负责“当前设备真的能连上”。
 
-## 3. OpenRazer 与 middleware 两套后端
+## 3. RazerHid 与 middleware 两套后端
+
+`RazerHid*` 是 OpenSynapse 自己的 Windows 设备后端命名。`OpenRazer` 只保留为上游目录来源、`openrazer-standard` 协议家族标识和数据来源说明，不再用于新类型或文件命名。
 
 OpenSynapse 同时使用两套设备后端。它们的数据来源、加载方式和适用设备不同，但运行时必须收敛成同一种设备视图。
 
-### 3.1 OpenRazer catalog
+### 3.1 RazerHid catalog（数据来自 OpenRazer 上游）
 
-- 数据：`src/OpenSynapse.Windows/Devices/OpenRazer/*.json`，来源固定到 OpenRazer 上游提交 `477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d`；
-- 加载：`OpenRazerDeviceCatalog` → `OpenRazerDeviceDefinition`；
-- 协议：`OpenRazerDeviceService`、`OpenRazerMouseProtocol` 和 `OpenRazerStandardProtocol`；
+- 数据：`src/OpenSynapse.Windows/Devices/RazerHid/*.json`，来源固定到 OpenRazer 上游提交 `477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d`；
+- 加载：`RazerHidDeviceCatalog` → `RazerHidDeviceDefinition`；
+- 协议：`RazerHidDeviceService`、`RazerHidMouseProtocol` 和 `RazerHidStandardProtocol`；
 - 适用：上游已收录的鼠标、键盘、耳机、鼠标垫、配件等；
 - 本地扩展：Viper V3 Pro SE 别名、middleware 鼠标、Leviathan V2 X 等会在这里补充；这些条目仍然必须走同一套能力校验，不能因为“名字像”就开放写入。
 
-OpenRazer catalog 的优点是覆盖面大、命令来源明确；缺点是同一型号的 Windows 端点、feature report 长度和固件差异仍要在运行时验证。
+RazerHid catalog 的优点是覆盖面大、命令来源明确；缺点是同一型号的 Windows 端点、feature report 长度和固件差异仍要在运行时验证。
 
 ### 3.2 middleware manifest
 
@@ -201,13 +203,13 @@ ResolvedRazerDevice(Descriptor, Manifest)
 
 `RazerDeviceResolver` 只返回 `Access = Available` 且 `Capability = PendingValidation` 的设备；未解析、忙或不稳定的端点保持只读或不显示控制项。`ResolvedRazerDevice` 是运行时能力的统一出口：ViewModel 和读取器问它“这个设备是否拥有某能力”，而不是重新查 catalog、manifest 或产品名。
 
-当前 manifest 后端已经直接使用 `ResolvedRazerDevice`。OpenRazer 后端仍以 `OpenRazerDeviceDefinition` + `OpenRazerDeviceConnection` 承载等价的 resolved 语义；第 0 步把这个差异记录下来，后续重构应把 OpenRazer 的只读视图也收口到 `ResolvedRazerDevice`，而不是让 App 直接依赖 catalog 细节。
+当前 manifest 后端已经直接使用 `ResolvedRazerDevice`。RazerHid 后端仍以 `RazerHidDeviceDefinition` + `RazerHidDeviceConnection` 承载等价的 resolved 语义；第 0 步把这个差异记录下来，后续重构应把 RazerHid 的只读视图也收口到 `ResolvedRazerDevice`，而不是让 App 直接依赖 catalog 细节。
 
 ### 3.4 遥测读取器的组合关系
 
-`RazerDeviceTelemetryReader` 只负责解析设备、调用子读取器、合并遥测字段和错误。Blade 逻辑按职责组合为 `BladeTelemetryReader`、`BladeFanTelemetryReader`、`BladePowerTelemetryReader`、`BladeDisplayTelemetryReader`；鼠标通用读写由 `OpenRazerTelemetryReader` 承担，Viper OBM 由 `ViperTelemetryReader` 承担。所有子读取器通过 `RazerCapabilityClient` 访问 manifest 能力，不自行拼 HID 报文或裸查 capability。这是组合关系，不是用 partial 文件把同一个类切碎。
+`RazerDeviceTelemetryReader` 只负责解析设备、调用子读取器、合并遥测字段和错误。Blade 逻辑按职责组合为 `BladeTelemetryReader`、`BladeFanTelemetryReader`、`BladePowerTelemetryReader`、`BladeDisplayTelemetryReader`；鼠标通用读写由 `RazerHidTelemetryReader` 承担，Viper OBM 由 `ViperTelemetryReader` 承担。所有子读取器通过 `RazerCapabilityClient` 访问 manifest 能力，不自行拼 HID 报文或裸查 capability。这是组合关系，不是用 partial 文件把同一个类切碎。
 
-解析顺序和 PID 预留是后端优先级的一部分：`RazerDeviceRegistry.ReservedProductFamilies` 把 manifest 的 Blade 和 Viper 184 身份固定到对应协议家族，避免 manifest 之间互相抢占；`OpenRazerDeviceCatalog.ReservedProductIds` 则把 `00B8` 和 `02C6` 排除在 catalog 之外。两套目录可以同时收录同一台机器的不同 PID 或不同功能集，但运行时只选择一条已解析路径，UI 不直接把两边的能力结果合并。
+解析顺序和 PID 预留是后端优先级的一部分：`RazerDeviceRegistry.ReservedProductFamilies` 把 manifest 的 Blade 和 Viper 184 身份固定到对应协议家族，避免 manifest 之间互相抢占；`RazerHidDeviceCatalog.ReservedProductIds` 则把 `00B8` 和 `02C6` 排除在 catalog 之外。两套目录可以同时收录同一台机器的不同 PID 或不同功能集，但运行时只选择一条已解析路径，UI 不直接把两边的能力结果合并。
 
 ## 4. 结构测试
 
@@ -220,7 +222,7 @@ ResolvedRazerDevice(Descriptor, Manifest)
 | 测试工程卫生 | `TestProjectHygieneTests` | 测试项目重新用 `<Compile Include>` 硬链 App 源码 |
 | 能力 id | `ManifestCapabilityTests` | 源码里重新出现 `"x.get"` 形式的字符串；manifest、family contract、常量三者对不上 |
 | XAML 绑定 | `XamlBindingTests` | `{Binding X}` 指向不存在的成员（运行期静默失效的那种），包括 `Workspace.X` 的第二段 |
-| 设备能力结构 | `DeviceCapabilityStructureTests` | manifest / family contract / `BladeModelCapabilities` 三者不一致；同一 `(VID, PID)` 重复声明；OpenRazer 声明的轮询率无法编码 |
+| 设备能力结构 | `DeviceCapabilityStructureTests` | manifest / family contract / `BladeModelCapabilities` 三者不一致；同一 `(VID, PID)` 重复声明；RazerHid 声明的轮询率无法编码 |
 
 `BladeModelCapabilities` 的 39 个 PID 现在都有内建 Blade family manifest。旧款 Blade 按 `rzDeviceType` 和同组已有 manifest 分为 `blade-597`（最小命令集）与 `blade-671`（完整风扇/电源/键盘控制）两组；manifest 只声明该组已共享的报文，未凭产品名开启额外能力。
 

@@ -29,6 +29,17 @@ internal static class ThxAudioAdmission
     internal const long NativeDllLength = 13_684_872;
     internal const string NativeDllSha256 =
         "8E8F6923624762935D70B72F58BEC00808DB84DF740340047919B53331130A0A";
+
+    private const string BladeInstallerUri =
+        "https://app-assets.razer.com/files/synapse/devices/common/THX/THXAPO_rznb11_v4.2.29.1159-9d162a6-i1974a_MSSIGN-0ae022fb.517bae6e.exe";
+    private const long BladeInstallerLength = 51_585_680;
+    private const string BladeInstallerSha256 =
+        "0154A94D60D68882E92BF03DC1265A8C82FE8432B64DD348438862194E89E32B";
+    private static readonly ThxInstallerPackage BladeInstaller = new(
+        BladeInstallerUri,
+        BladeInstallerLength,
+        BladeInstallerSha256,
+        "/s /norestart");
     private static readonly int[] Frequencies = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
     private static readonly IReadOnlyDictionary<string, double[]> HeadphoneCurves =
@@ -95,6 +106,53 @@ internal static class ThxAudioAdmission
 
     internal static IReadOnlyList<int> EqualizerFrequencies => Frequencies;
 
+    internal static ThxInstallerPackage ServiceInstaller => BladeInstaller;
+
+    internal static bool CanInstallService()
+    {
+        var profile = FindHostProfile();
+        return profile?.UsbProductId is "02C5" or "02C6";
+    }
+
+    internal static async Task<ThxAudioStatus> InstallServiceAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var current = Check();
+        if (current.Status.Error != "ThxServiceMissing")
+        {
+            return current.Status;
+        }
+
+        var profile = FindHostProfile();
+        if (profile?.UsbProductId is not ("02C5" or "02C6"))
+        {
+            return new ThxAudioStatus(
+                ThxAudioAvailability.ComponentsUnavailable,
+                "ThxInstallerUnavailable",
+                null);
+        }
+
+        var error = await ThxComponentInstaller.InstallAsync(BladeInstaller, cancellationToken)
+            .ConfigureAwait(false);
+        if (error is not null)
+        {
+            return new ThxAudioStatus(
+                ThxAudioAvailability.ComponentsUnavailable,
+                error,
+                null);
+        }
+
+        for (var attempt = 0; attempt < 40; attempt++)
+        {
+            if (HasRunningService(profile.ServiceName))
+            {
+                break;
+            }
+            await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+        }
+        return Check().Status;
+    }
+
     internal static bool IsSupportedHostModel()
     {
         var model = ReadHostModel();
@@ -126,6 +184,13 @@ internal static class ThxAudioAdmission
                 $"ThxAdmissionFailed:{exception.Message}",
                 null));
         }
+    }
+
+    private static ThxAudioProfile? FindHostProfile()
+    {
+        var model = ReadHostModel();
+        return Profiles.FirstOrDefault(candidate =>
+            string.Equals(candidate.ProductName, model, StringComparison.Ordinal));
     }
 
     private static ThxAudioAdmissionResult CheckCore()

@@ -20,19 +20,25 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
     private BladeFanCurveTemperatureMode _temperatureMode = BladeFanCurveTemperatureMode.Both;
     private BladeFanCurveSelection _selectedCurve = BladeFanCurveSelection.Cpu;
     private int _selectedIndex = -1;
+    private readonly int _minimumCpuTemperature;
+    private readonly int _minimumGpuTemperature;
+    private readonly int _minimumFanSpeed;
 
     public BladeFanCurveEditorViewModel(BladeFanCurve? curve = null)
     {
         var source = curve ?? BladeFanCurve.CreateDefault();
         _temperatureMode = source.TemperatureMode;
+        _minimumCpuTemperature = source.MinimumCpuTemperatureCelsius;
+        _minimumGpuTemperature = source.MinimumGpuTemperatureCelsius;
+        _minimumFanSpeed = source.MinimumFanSpeedRpm;
         foreach (var point in source.CpuPoints)
         {
-            CpuPoints.Add(new BladeFanCurvePointViewModel(point));
+            CpuPoints.Add(new BladeFanCurvePointViewModel(point, minimumTemperatureCelsius: _minimumCpuTemperature + 1));
         }
 
         foreach (var point in source.GpuPoints)
         {
-            GpuPoints.Add(new BladeFanCurvePointViewModel(point, isGpu: true));
+            GpuPoints.Add(new BladeFanCurvePointViewModel(point, isGpu: true, _minimumGpuTemperature + 1));
         }
     }
 
@@ -118,7 +124,11 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
     public BladeFanCurvePointViewModel? SelectedPoint =>
         _selectedIndex >= 0 && _selectedIndex < Points.Count ? Points[_selectedIndex] : null;
 
-    public bool CanAddPoint => Points.Count < MaximumPoints;
+    private int SelectedMinimumTemperature =>
+        (_selectedCurve == BladeFanCurveSelection.Cpu ? _minimumCpuTemperature : _minimumGpuTemperature) + 1;
+
+    public bool CanAddPoint => Points.Count < Math.Min(MaximumPoints,
+        BladeFanCurvePointViewModel.MaximumTemperatureCelsius - SelectedMinimumTemperature + 1);
 
     public void AddPoint()
     {
@@ -135,8 +145,9 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
             temperature,
             points.Count == 0 ? BladeFanCurve.DefaultMinimumFanSpeedRpm : points[^1].CpuRpm,
             points.Count == 0 ? BladeFanCurve.DefaultMinimumFanSpeedRpm : points[^1].GpuRpm),
-            isGpu: _selectedCurve == BladeFanCurveSelection.Gpu));
-        Sort();
+            isGpu: _selectedCurve == BladeFanCurveSelection.Gpu,
+            (_selectedCurve == BladeFanCurveSelection.Cpu ? _minimumCpuTemperature : _minimumGpuTemperature) + 1));
+        EnforceStrictlyIncreasing();
         SelectedIndex = points.Count - 1;
         OnPropertyChanged(nameof(CanAddPoint));
     }
@@ -182,13 +193,16 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
             ? source.CpuPoints
             : source.GpuPoints;
         points.Clear();
-        foreach (var point in sourcePoints)
+        foreach (var point in sourcePoints.Take(Math.Min(MaximumPoints,
+            BladeFanCurvePointViewModel.MaximumTemperatureCelsius - SelectedMinimumTemperature + 1)))
         {
             points.Add(new BladeFanCurvePointViewModel(
                 point,
-                isGpu: _selectedCurve == BladeFanCurveSelection.Gpu));
+                isGpu: _selectedCurve == BladeFanCurveSelection.Gpu,
+                (_selectedCurve == BladeFanCurveSelection.Cpu ? _minimumCpuTemperature : _minimumGpuTemperature) + 1));
         }
 
+        EnforceStrictlyIncreasing();
         SelectedIndex = -1;
         OnPropertyChanged(nameof(CanAddPoint));
     }
@@ -216,12 +230,14 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
         ObservableCollection<BladeFanCurvePointViewModel> points)
     {
         Sort(points);
-        for (var index = 1; index < points.Count; index++)
+        for (var index = 0; index < points.Count; index++)
         {
-            if (points[index].TemperatureCelsius <= points[index - 1].TemperatureCelsius)
-            {
-                points[index].TemperatureCelsius = points[index - 1].TemperatureCelsius + 1;
-            }
+            var minimum = Math.Max(points[index].MinimumEditableTemperatureCelsius,
+                index == 0 ? 0 : points[index - 1].TemperatureCelsius + 1);
+            var maximum = BladeFanCurvePointViewModel.MaximumTemperatureCelsius - (points.Count - index - 1);
+            if (minimum > maximum)
+                throw new ArgumentException("There is not enough temperature range for all curve points.");
+            points[index].TemperatureCelsius = Math.Clamp(points[index].TemperatureCelsius, minimum, maximum);
         }
     }
 
@@ -232,7 +248,8 @@ public sealed class BladeFanCurveEditorViewModel : INotifyPropertyChanged
         return new BladeFanCurve(
             _temperatureMode,
             CpuPoints.Select(point => point.ToPoint()).ToArray(),
-            GpuPoints.Select(point => point.ToPoint()).ToArray());
+            GpuPoints.Select(point => point.ToPoint()).ToArray(),
+            _minimumCpuTemperature, _minimumGpuTemperature, _minimumFanSpeed);
     }
 
     private void Set(ref int field, int value, [CallerMemberName] string? propertyName = null)

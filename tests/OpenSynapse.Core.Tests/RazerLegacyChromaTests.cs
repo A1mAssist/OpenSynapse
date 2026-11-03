@@ -76,6 +76,15 @@ public sealed class RazerLegacyChromaTests
     }
 
     [Fact]
+    public void EffectResponseRejectsColorsOutsideTheDeclaredPayload()
+    {
+        Assert.Throws<InvalidDataException>(() => RazerLegacyChromaProtocol.ReadEffect(
+            ResponseWithDeclaredLength(6, 0x01, 0x00, 0x01, 0x00, 0x00, 0x01, 0x10, 0x20, 0x30)));
+        Assert.Throws<InvalidDataException>(() => RazerLegacyChromaProtocol.ReadEffect(
+            Response(0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x03)));
+    }
+
+    [Fact]
     public async Task ReadStateReportsTheLegacyEffectWithoutBrightness()
     {
         var simulator = new LegacySimulator { EffectId = 2 };
@@ -104,6 +113,27 @@ public sealed class RazerLegacyChromaTests
     }
 
     [Fact]
+    public async Task ColorlessLegacyUpdateAcceptsResidualFirmwareRgb()
+    {
+        var simulator = new LegacySimulator { EffectId = 1, Colors = [1, 2, 3] };
+        var transport = new FakeTransport(request =>
+        {
+            var previousColors = simulator.Colors;
+            var response = simulator.Handle(request);
+            if (request[8] == 0x02 && request[14] == 0) simulator.Colors = previousColors;
+            return response;
+        });
+        var service = new RazerChromaStandardService(
+            transport, "test", TimeSpan.Zero, null, RazerChromaChannel.Legacy);
+
+        await service.SetEffectAsync(RazerChromaEffect.Spectrum, []);
+
+        Assert.Equal((byte)3, simulator.EffectId);
+        Assert.Equal(new byte[] { 1, 2, 3 }, simulator.Colors);
+        Assert.Single(transport.Requests, request => request[8] == 0x02);
+    }
+
+    [Fact]
     public async Task SetEffectStillWritesWhenTheFirmwareIgnoresTheRead()
     {
         var simulator = new LegacySimulator { AnswerReads = false };
@@ -115,6 +145,56 @@ public sealed class RazerLegacyChromaTests
 
         Assert.Equal(1, simulator.EffectId);
         Assert.Equal([0x11, 0x22, 0x33], simulator.Colors);
+    }
+
+    [Fact]
+    public async Task UnknownPreviousLegacyEffectIsRejectedBeforeWriting()
+    {
+        var simulator = new LegacySimulator { EffectId = 0x7F };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerChromaStandardService(
+            transport, "test", TimeSpan.Zero, null, RazerChromaChannel.Legacy);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Static, [0x11, 0x22, 0x33]));
+
+        Assert.DoesNotContain(transport.Requests, request => request[8] == 0x02);
+    }
+
+    [Fact]
+    public async Task ReadbackBecomingUnavailableAfterAReadableGetFailsAndRestores()
+    {
+        var simulator = new LegacySimulator
+        {
+            EffectId = (byte)RazerChromaEffect.Static,
+            Colors = [0xFF, 0x00, 0x00],
+            FailReadNumber = 2,
+        };
+        var transport = new FakeTransport(simulator.Handle);
+        var service = new RazerChromaStandardService(
+            transport, "test", TimeSpan.Zero, null, RazerChromaChannel.Legacy);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Static, [0x00, 0x00, 0xFF]));
+
+        Assert.Equal(2, transport.Requests.Count(request => request[8] == 0x02));
+        Assert.Equal(0x82, transport.Requests[^1][8]);
+    }
+
+    [Fact]
+    public async Task SameLegacyEffectWithWrongColorFailsInsteadOfPassingById()
+    {
+        var simulator = new LegacySimulator
+        {
+            EffectId = (byte)RazerChromaEffect.Static,
+            Colors = [0xFF, 0x00, 0x00],
+            IgnoreWrites = true,
+        };
+        var service = new RazerChromaStandardService(
+            new FakeTransport(simulator.Handle), "test", TimeSpan.Zero, null, RazerChromaChannel.Legacy);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SetEffectAsync(RazerChromaEffect.Static, [0x00, 0x00, 0xFF]));
     }
 
     [Fact]
@@ -196,16 +276,24 @@ public sealed class RazerLegacyChromaTests
     private sealed class LegacySimulator
     {
         public byte EffectId { get; set; }
-        public byte[] Colors { get; private set; } = [];
+        public byte[] Colors { get; set; } = [];
         public bool AnswerReads { get; init; } = true;
+        public bool IgnoreWrites { get; init; }
+        public int? FailReadNumber { get; init; }
+        private int _readCount;
 
         public byte[] Handle(byte[] request)
         {
             if (request[8] == 0x82)
             {
+                _readCount++;
                 if (!AnswerReads)
                 {
                     throw new NotSupportedException("The device does not support this command.");
+                }
+                if (FailReadNumber == _readCount)
+                {
+                    throw new IOException("Effect readback unavailable.");
                 }
 
                 return Response(request, request[2], EffectPayload());
@@ -216,9 +304,12 @@ public sealed class RazerLegacyChromaTests
                 throw new NotSupportedException($"Unexpected command 0x{request[8]:X2}.");
             }
 
-            EffectId = request[11];
-            var count = request[14];
-            Colors = request[15..(15 + (count * 3))];
+            if (!IgnoreWrites)
+            {
+                EffectId = request[11];
+                var count = request[14];
+                Colors = request[15..(15 + (count * 3))];
+            }
             return Response(request, request[2], EffectPayload());
         }
 
@@ -244,7 +335,16 @@ public sealed class RazerLegacyChromaTests
         var response = new byte[RazerFeatureReport.Length];
         response[1] = 0x02;
         response[2] = transaction;
+        response[6] = (byte)Math.Min(arguments.Length, 80);
         arguments.CopyTo(response.AsSpan(RazerFeatureReport.ArgumentsOffset));
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+        return response;
+    }
+
+    private static byte[] ResponseWithDeclaredLength(byte declaredLength, params byte[] arguments)
+    {
+        var response = Response(0x01, arguments);
+        response[6] = declaredLength;
         response[89] = RazerFeatureReport.CalculateCrc(response);
         return response;
     }

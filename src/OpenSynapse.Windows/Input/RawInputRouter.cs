@@ -38,6 +38,21 @@ internal static class RawInputRouter
     private static Host? _host;
     private static int _nextId;
 
+    internal static RawInputDevice[] CreateRegistration(nint target, bool removing) =>
+    [
+        new() { UsagePage = 0x01, Flags = removing ? RidevRemove | RidevPageOnly : RidevInputSink | RidevPageOnly, Target = removing ? 0 : target },
+        new() { UsagePage = 0x0C, Flags = removing ? RidevRemove | RidevPageOnly : RidevInputSink | RidevPageOnly, Target = removing ? 0 : target },
+    ];
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct RawInputDevice
+    {
+        internal ushort UsagePage;
+        internal ushort Usage;
+        internal uint Flags;
+        internal nint Target;
+    }
+
     internal static IDisposable Subscribe(Action<RawInputFrame> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
@@ -214,23 +229,9 @@ internal static class RawInputRouter
             }
         }
 
-        private static void RegisterInputs(bool removing)
+        private void RegisterInputs(bool removing)
         {
-            RawInputDevice[] devices =
-            [
-                new()
-                {
-                    UsagePage = 0x01,
-                    Usage = 0,
-                    Flags = removing ? RidevRemove | RidevPageOnly : RidevInputSink | RidevPageOnly,
-                },
-                new()
-                {
-                    UsagePage = 0x0C,
-                    Usage = 0,
-                    Flags = removing ? RidevRemove | RidevPageOnly : RidevInputSink | RidevPageOnly,
-                },
-            ];
+            var devices = CreateRegistration(_window, removing);
             if (!RegisterRawInputDevices(
                     devices,
                     checked((uint)devices.Length),
@@ -366,15 +367,6 @@ internal static class RawInputRouter
             internal readonly ushort VirtualKey;
             internal readonly uint Message;
             internal readonly uint ExtraInformation;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RawInputDevice
-        {
-            internal ushort UsagePage;
-            internal ushort Usage;
-            internal uint Flags;
-            internal nint Target;
         }
 
         [StructLayout(LayoutKind.Sequential)]

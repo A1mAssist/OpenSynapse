@@ -20,16 +20,15 @@ public sealed class BladeGpuModeTests
             Capabilities: capabilities);
 
     [Fact]
-    public void AnOptimusLaptopWithoutMuxOffersIntegratedStandardAndAuto()
+    public void ALaptopWithoutLiveMuxOffersOnlyStandardGraphicsMode()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: true,
             DedicatedGpuEnabled: true,
             Mux: default);
 
-        Assert.Equal(
-            [BladeGpuMode.Integrated, BladeGpuMode.Standard, BladeGpuMode.Auto],
-            BladeGpuModes.GetAvailableModes(snapshot));
+        Assert.Equal([BladeGpuMode.Standard], BladeGpuModes.GetAvailableModes(snapshot));
         Assert.Equal(BladeGpuMode.Standard, BladeGpuModes.GetCurrentMode(snapshot));
     }
 
@@ -37,6 +36,7 @@ public sealed class BladeGpuModeTests
     public void ADisabledDiscreteGpuReadsAsIntegrated()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: true,
             DedicatedGpuEnabled: false,
             Mux: Mux(
@@ -50,6 +50,7 @@ public sealed class BladeGpuModeTests
     public void ASwitchableMuxOffersAllFourModes()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: true,
             DedicatedGpuEnabled: true,
             Mux: Mux(
@@ -63,6 +64,7 @@ public sealed class BladeGpuModeTests
     public void ADiscreteDirectRouteReadsAsDiscrete()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: true,
             DedicatedGpuEnabled: true,
             Mux: Mux(
@@ -74,9 +76,10 @@ public sealed class BladeGpuModeTests
     }
 
     [Fact]
-    public void ADiscreteRouteWithDdsExposesStandardAsTheDynamicPath()
+    public void ADiscreteRouteWithDdsOffersAllModesForAnExplicitRouteChange()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: false,
             DedicatedGpuEnabled: true,
             Mux: Mux(
@@ -85,14 +88,15 @@ public sealed class BladeGpuModeTests
                 BladeDisplayMuxMode.Discrete));
 
         Assert.Equal(
-            [BladeGpuMode.Standard, BladeGpuMode.Discrete],
+            BladeGpuModes.All,
             BladeGpuModes.GetAvailableModes(snapshot));
     }
 
     [Fact]
-    public void ADirectDiscreteRouteKeepsTheFirmwareMuxModesAvailableWhenPnPIsBlocked()
+    public void ADirectDiscreteRouteAllowsReleasingTheMuxBeforePnP()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: false,
             DedicatedGpuEnabled: true,
             Mux: Mux(
@@ -100,7 +104,7 @@ public sealed class BladeGpuModeTests
                 BladeDisplayMuxMode.Discrete));
 
         Assert.Equal(
-            [BladeGpuMode.Standard, BladeGpuMode.Discrete],
+            BladeGpuModes.All,
             BladeGpuModes.GetAvailableModes(snapshot));
         Assert.Equal(BladeGpuMode.Discrete, BladeGpuModes.GetCurrentMode(snapshot));
     }
@@ -109,6 +113,7 @@ public sealed class BladeGpuModeTests
     public void AMuxStuckOnDiscreteStillReportsDiscreteButHidesStandardAndAuto()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: true,
             DedicatedGpuEnabled: true,
             Mux: Mux(
@@ -117,7 +122,7 @@ public sealed class BladeGpuModeTests
                 switchable: false));
 
         Assert.Equal(
-            [BladeGpuMode.Integrated, BladeGpuMode.Discrete],
+            [BladeGpuMode.Discrete],
             BladeGpuModes.GetAvailableModes(snapshot));
         Assert.Equal(BladeGpuMode.Discrete, BladeGpuModes.GetCurrentMode(snapshot));
     }
@@ -128,6 +133,7 @@ public sealed class BladeGpuModeTests
         // 0D:8A can report Discrete only while 0D:89 says DDS; the panel is already on the
         // iGPU route, so Standard must stay selectable or the selector would show nothing.
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: true,
             DedicatedGpuEnabled: true,
             Mux: Mux(BladeDisplayMuxCapabilities.Discrete, BladeDisplayMuxMode.Dds, switchable: false));
@@ -142,6 +148,7 @@ public sealed class BladeGpuModeTests
     public void AHybridOnlyMuxHasNoDiscreteMode()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: true,
             DedicatedGpuEnabled: true,
             Mux: Mux(BladeDisplayMuxCapabilities.Hybrid, BladeDisplayMuxMode.Hybrid));
@@ -153,6 +160,7 @@ public sealed class BladeGpuModeTests
     public void AMachineWithoutADiscreteGpuOffersNoModes()
     {
         var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
             DedicatedGpuSupported: false,
             DedicatedGpuEnabled: true,
             Mux: default);
@@ -165,6 +173,45 @@ public sealed class BladeGpuModeTests
     [InlineData(PowerSourceKind.FullPowerAdapter, BladeGpuMode.Standard)]
     [InlineData(PowerSourceKind.LowPowerAdapter, BladeGpuMode.Standard)]
     [InlineData(PowerSourceKind.Unknown, BladeGpuMode.Standard)]
-    public void AutoFollowsThePowerSource(PowerSourceKind source, BladeGpuMode expected) =>
-        Assert.Equal(expected, BladeGpuModes.ResolveAutoTarget(source));
+    public void AutoFollowsThePowerSource(PowerSourceKind source, BladeGpuMode expected)
+    {
+        var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
+            DedicatedGpuSupported: true,
+            DedicatedGpuEnabled: true,
+            Mux: Mux(
+                BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+                BladeDisplayMuxMode.Hybrid));
+
+        Assert.Equal(expected, BladeGpuModes.ResolveAutoTarget(snapshot, source));
+    }
+
+    [Fact]
+    public void AMuxWithoutModelAdmissionNeverOffersIntegrated()
+    {
+        var snapshot = new BladeGpuModeSnapshot(
+            DedicatedGpuSupported: true,
+            DedicatedGpuEnabled: true,
+            Mux: Mux(
+                BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+                BladeDisplayMuxMode.Hybrid),
+            PnpSwitchAllowed: false);
+
+        Assert.False(BladeGpuModes.IsAvailable(snapshot, BladeGpuMode.Integrated));
+        Assert.DoesNotContain(BladeGpuMode.Integrated, BladeGpuModes.GetAvailableModes(snapshot));
+    }
+    [Fact]
+    public void AutoFallsBackToStandardWhenIntegratedIsUnavailable()
+    {
+        // An external display blocks the PnP disable, so Auto must not strand it.
+        var snapshot = new BladeGpuModeSnapshot(
+            PnpSwitchAllowed: true,
+            DedicatedGpuSupported: false,
+            DedicatedGpuEnabled: true,
+            Mux: Mux(
+                BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+                BladeDisplayMuxMode.Hybrid));
+
+        Assert.Equal(BladeGpuMode.Standard, BladeGpuModes.ResolveAutoTarget(snapshot, PowerSourceKind.Battery));
+    }
 }

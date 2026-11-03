@@ -8,6 +8,7 @@ using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
+using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -33,7 +34,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
     private readonly DisplayWorkspace _display;
     private readonly FanWorkspace _fan;
     private readonly LightingWorkspace _lighting;
-    private readonly OpenRazerWorkspace _openRazer;
+    private readonly RazerHidWorkspace _openRazer;
     private readonly ViperWorkspace _viper;
     private readonly TelemetryWorkspace _telemetry;
     private readonly ProfilesWorkspace _profiles;
@@ -46,6 +47,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
     private readonly Action _resetDeviceTelemetry;
     private readonly Action<RazerDeviceTelemetry> _applyDeviceTelemetry;
     private readonly Action<DeviceSnapshot, RazerDeviceTelemetry, IReadOnlyList<string>> _rebuildDiagnostics;
+    private readonly Func<int> _accessoryErrorCount;
     private readonly Action _resetBlackShark;
     private readonly Action<string> _notifyPropertyChanged;
     private readonly VerifiedProfileApplier _profileApplier = new();
@@ -85,7 +87,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
         DisplayWorkspace display,
         FanWorkspace fan,
         LightingWorkspace lighting,
-        OpenRazerWorkspace openRazer,
+        RazerHidWorkspace openRazer,
         ViperWorkspace viper,
         TelemetryWorkspace telemetry,
         ProfilesWorkspace profiles,
@@ -98,6 +100,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
         Action resetDeviceTelemetry,
         Action<RazerDeviceTelemetry> applyDeviceTelemetry,
         Action<DeviceSnapshot, RazerDeviceTelemetry, IReadOnlyList<string>> rebuildDiagnostics,
+        Func<int> accessoryErrorCount,
         Action resetBlackShark,
         Action<string> notifyPropertyChanged)
     {
@@ -134,12 +137,12 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
         _resetDeviceTelemetry = resetDeviceTelemetry;
         _applyDeviceTelemetry = applyDeviceTelemetry;
         _rebuildDiagnostics = rebuildDiagnostics;
+        _accessoryErrorCount = accessoryErrorCount;
         _resetBlackShark = resetBlackShark;
         _notifyPropertyChanged = notifyPropertyChanged;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-
     public string LastRefreshText
     {
         get => _lastRefreshText;
@@ -357,6 +360,10 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             }
             var telemetry = await _deviceTelemetryReader.ReadAsync(ActiveDescriptors, cancellationToken);
             _applyDeviceTelemetry(telemetry);
+            // The first row set is painted before the slow probes finish. If that full
+            // refresh then fails, the rows stay at their empty-telemetry counts; rebuild
+            // them once a readout proves the device answered, without touching steady state.
+            RefreshDeviceRowsIfStale(telemetry);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -393,8 +400,15 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
         try
         {
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
-            await _openRazer.RefreshAsync(cancellationToken);
-            await _refreshAccessoriesAsync(cancellationToken);
+            // WindowsHidDiscovery reports a soft failure as an empty snapshot plus an
+            // error instead of throwing. Keep the last known devices so a transient
+            // enumeration failure cannot blank the Blade page.
+            if (snapshot.Devices.Count == 0 &&
+                ActiveDescriptors.Count > 0 &&
+                !string.IsNullOrWhiteSpace(snapshot.ErrorMessage))
+            {
+                snapshot = snapshot with { Devices = ActiveDescriptors };
+            }
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
             {
@@ -403,6 +417,12 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             }
             _deviceFingerprint = nextFingerprint;
             _setDeviceDescriptors(snapshot.Devices);
+            // Show discovered base devices before the slower HID/accessory probes. A
+            // responsive Blade must not look missing while another endpoint times out.
+            _refreshDeviceSelector();
+            PopulateDeviceRows(snapshot.Devices);
+            await _openRazer.RefreshAsync(cancellationToken);
+            await _refreshAccessoriesAsync(cancellationToken);
 
             var blade = snapshot.Devices.FirstOrDefault(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
@@ -429,8 +449,9 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
                 await _telemetry.RefreshBatteryHealthAsync(cancellationToken);
             }
             _lastPowerState = powerState;
+            var applyEcoDisplay = await _blade.RefreshGpuDisplayPolicyAsync(powerState, cancellationToken);
             _notifyPropertyChanged(nameof(MainViewModel.ActivePowerSourceText));
-            _display.RefreshInternalDisplay(powerState, applyDisplayProfile);
+            _display.RefreshInternalDisplay(powerState, applyDisplayProfile || applyEcoDisplay);
             if (applyDisplayProfile)
             {
                 await _openRazer.RestoreLightingAfterExternalAsync(cancellationToken);
@@ -485,27 +506,17 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
                     profileOperationError,
                     viperAvailable ? viperMappingError : null,
                 }.Where(error => !string.IsNullOrWhiteSpace(error))));
-            // Presence and telemetry health are different; a timeout must not remove the device.
-            var visibleDevices = snapshot.Devices;
-            _setDeviceDescriptors(visibleDevices);
-            _viper.SetVisibility(viperPresent);
-            if (!viperPresent)
+            _viper.SetVisibility(viperAvailable);
+            if (!viperAvailable)
             {
                 _viper.ResetTelemetry();
             }
             _refreshDeviceSelector();
-            _devices.Clear();
-            foreach (var device in visibleDevices
-                .OrderBy(device => DeviceUiCatalog.DeviceCategoryOrder(device.Category))
-                .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase))
-            {
-                _devices.Add(new DeviceRowViewModel(device, telemetry));
-            }
-            _refreshDeviceOverview();
+            PopulateDeviceRows(snapshot.Devices, telemetry);
 
             var errors = telemetry.Errors
                 .Where(error => viperPresent ||
-                    !error.StartsWith(AppStrings.Text("Text_4B32CEE8"), StringComparison.Ordinal))
+                    !error.StartsWith("Mouse", StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (profileApply is { Errors.Count: > 0 })
             {
@@ -540,9 +551,9 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
 
             if (Volatile.Read(ref _diagnosticsRebuildEnabled) != 0)
             {
-                _rebuildDiagnostics(snapshot with { Devices = visibleDevices }, telemetry, errors);
+                _rebuildDiagnostics(snapshot, telemetry, errors);
             }
-            var totalErrorCount = errors.Count + openRazerErrorCount;
+            var totalErrorCount = errors.Count + openRazerErrorCount + _accessoryErrorCount();
             _setDeviceQueryError(totalErrorCount == 0
                 ? string.Empty
                 : AppStrings.FormatText("HardwareQueryFailureCount",
@@ -550,6 +561,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             LastRefreshText = AppStrings.FormatText("DeviceScanTime",
                 snapshot.CapturedAt.ToLocalTime());
             _notifyPropertyChanged(nameof(MainViewModel.EmptyStateText));
+            _notifyPropertyChanged(nameof(MainViewModel.EmptyStateVisibility));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -558,7 +570,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
         {
             var hadBlade = ActiveDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
             var hadViper = ActiveDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
-            _setDeviceDescriptors(Array.Empty<DeviceDescriptor>());
+            // Keep last descriptors so a transient query failure cannot blank device pages.
             _resetBlackShark();
             _blade.SetSerial(null);
             _viper.SetUnavailable(hadViper);
@@ -587,6 +599,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             _setDeviceQueryError(exception.Message);
             LastRefreshText = AppStrings.Text("Text_F9E7EDEF");
             _notifyPropertyChanged(nameof(MainViewModel.EmptyStateText));
+            _notifyPropertyChanged(nameof(MainViewModel.EmptyStateVisibility));
         }
         finally
         {
@@ -629,13 +642,47 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             return false;
         }
     }
-
-    private static string FormatDeviceStatus(DeviceDescriptor? device) => device switch
+    private void RefreshDeviceRowsIfStale(RazerDeviceTelemetry telemetry)
     {
-        null => AppStrings.Text("Text_DB0974DC"),
-        { Access: DeviceAccessState.Available, Capability: DeviceCapabilityState.PendingValidation } => AppStrings.Text("Text_95979F99"),
-        _ => AppStrings.Text("Text_A14B88EA"),
-    };
+        var descriptors = ActiveDescriptors;
+        var rowIds = _devices.Select(row => row.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var descriptor in descriptors)
+        {
+            if (DeviceVisibilityPolicy.IsVisible(descriptor, telemetry) != rowIds.Contains(descriptor.Id))
+            {
+                PopulateDeviceRows(descriptors, telemetry);
+                return;
+            }
+        }
+
+        foreach (var row in _devices)
+        {
+            var descriptor = descriptors.FirstOrDefault(device =>
+                StringComparer.OrdinalIgnoreCase.Equals(device.Id, row.Id));
+            if (descriptor is null)
+            {
+                PopulateDeviceRows(descriptors, telemetry);
+                return;
+            }
+
+            var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
+                ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+            if (row.CapabilitySummary != summary)
+            {
+                PopulateDeviceRows(descriptors, telemetry);
+                return;
+            }
+        }
+    }
+
+    private void PopulateDeviceRows(IReadOnlyList<DeviceDescriptor> devices, RazerDeviceTelemetry? telemetry = null)
+    {
+        var pending = telemetry is null;
+        telemetry ??= new(null, null, null, null, null, null, null, null, null, null, [], DateTimeOffset.UtcNow);
+        _devices.Clear();
+        foreach (var device in devices.Where(device => DeviceVisibilityPolicy.IsVisible(device, telemetry)).OrderBy(device => DeviceUiCatalog.DeviceCategoryOrder(device.Category)).ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase)) _devices.Add(new DeviceRowViewModel(device, telemetry, pending));
+        _refreshDeviceOverview();
+    }
 
     private static string CreateDeviceFingerprint(DeviceSnapshot snapshot) =>
         string.Join(

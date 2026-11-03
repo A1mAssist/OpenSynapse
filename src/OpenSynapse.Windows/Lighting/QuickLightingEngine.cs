@@ -526,7 +526,7 @@ public static class QuickLightingEngine
         {
             for (var column = 0; column < columns; column++)
             {
-                var hue = (Math.Atan2(row - centerRow, column - centerColumn) * 180 / Math.PI + phase + 360) % 360;
+                var hue = ((Math.Atan2(row - centerRow, column - centerColumn) * 180 / Math.PI + phase) % 360 + 360) % 360;
                 frame[row * columns + column] = palette is null
                     ? HsvToRgb(hue, 1, 1)
                     : palette.Sample(hue / 360, wrap: true);

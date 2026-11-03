@@ -102,7 +102,7 @@ public sealed partial class RazerGamepadService
 
         var candidates = interfaces
             .Where(item => Products.ContainsKey(item.ProductId))
-            .Where(item => OpenRazerDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
             .OrderByDescending(item => item.Access == DeviceAccessState.Available)
             .ThenBy(item => item.ProductId)
             .ToArray();
@@ -387,62 +387,6 @@ public sealed partial class RazerGamepadService
             response => RazerGamepadProtocol.ReadSocdMode(response),
             mode,
             cancellationToken);
-
-    public async Task SetVibrationScaleAsync(byte scale, CancellationToken cancellationToken = default)
-    {
-        var previous = await TryReadAsync(
-            "vibration scale",
-            transaction => RazerGamepadProtocol.CreateGetVibrationScaleRequest(transaction, _profileId, 5),
-            response => RazerGamepadProtocol.ReadVibrationScale(response, 5),
-            cancellationToken).ConfigureAwait(false);
-        if (previous.Ok && previous.Value == scale) return;
-
-        try
-        {
-            foreach (var motorId in VibrationMotorIds)
-            {
-                await QueryAsync(
-                    transaction => RazerGamepadProtocol.CreateSetVibrationScaleRequest(
-                        transaction, _profileId, motorId, scale),
-                    $"set vibration {motorId}",
-                    cancellationToken).ConfigureAwait(false);
-            }
-
-            var actual = RazerGamepadProtocol.ReadVibrationScale(
-                await QueryAsync(
-                    transaction => RazerGamepadProtocol.CreateGetVibrationScaleRequest(transaction, _profileId, 5),
-                    "read back vibration",
-                    cancellationToken).ConfigureAwait(false),
-                5);
-            if (actual != scale)
-            {
-                throw new InvalidOperationException($"Vibration readback was {actual}, expected {scale}.");
-            }
-        }
-        catch
-        {
-            if (previous.Ok)
-            {
-                foreach (var motorId in VibrationMotorIds)
-                {
-                    try
-                    {
-                        await QueryAsync(
-                            transaction => RazerGamepadProtocol.CreateSetVibrationScaleRequest(
-                                transaction, _profileId, motorId, previous.Value),
-                            $"restore vibration {motorId}",
-                            CancellationToken.None).ConfigureAwait(false);
-                    }
-                    catch (Exception exception) when (IsExpected(exception))
-                    {
-                        _diagnostic?.Invoke($"gamepad restore vibration failed: {exception.Message}");
-                    }
-                }
-            }
-
-            throw;
-        }
-    }
 
     public Task SetAdcMaskAsync(ushort mask, CancellationToken cancellationToken = default) =>
         WriteVerifiedAsync(

@@ -49,12 +49,22 @@ public sealed partial class MainWindow
         var page = (args.SelectedItemContainer as NavigationViewItem)?.Tag as string;
         OverviewPage.Visibility = page == "overview" ? Visibility.Visible : Visibility.Collapsed;
         DevicesPage.Visibility = page == "devices" ? Visibility.Visible : Visibility.Collapsed;
+        LightingStudioPage.Visibility = page == "studio" ? Visibility.Visible : Visibility.Collapsed;
         MacrosPage.Visibility = page == "macros" ? Visibility.Visible : Visibility.Collapsed;
         ProfilesPage.Visibility = page == "profiles" ? Visibility.Visible : Visibility.Collapsed;
         SettingsPage.Visibility = page == "settings" ? Visibility.Visible : Visibility.Collapsed;
         DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
+        if (page == "studio")
+        {
+            LightingStudioPage.OnNavigatedTo();
+        }
+        else
+        {
+            LightingStudioPage.OnNavigatedFrom();
+        }
         if (page == "devices")
         {
+            DevicesPage.RefreshAdvancedFeaturesVisibility();
             _ = _viewModel.RefreshHueAsync(_lifetime.Token);
         }
         UpdatePerformanceSamplingState();
@@ -67,7 +77,7 @@ public sealed partial class MainWindow
         {
             // The rebuild is skipped while this page is hidden, so entering it must refresh
             // once or the list would show whatever was captured before the user left.
-            _viewModel.Diagnostics.EnsureOpenRazerRows();
+            _viewModel.Diagnostics.EnsureRazerHidRows();
             _viewModel.Refresh.RequestDeviceRefresh();
         }
     }

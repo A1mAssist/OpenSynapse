@@ -44,8 +44,12 @@ public sealed partial class RazerCoolingPadViewModel
         }
 
         IsBusy = true;
+        StopCurveAndSelectManual();
         try
         {
+            await _curveTask;
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_disposed || !IsConnected) return;
             var mode = SelectedFixedModeIndex switch
             {
                 0 => RazerCoolingPadFixedMode.Low,
@@ -53,7 +57,7 @@ public sealed partial class RazerCoolingPadViewModel
                 3 => RazerCoolingPadFixedMode.Off,
                 _ => RazerCoolingPadFixedMode.Mid,
             };
-            var actual = await _service.SetFixedModeAsync(mode, cancellationToken).ConfigureAwait(false);
+            var actual = await _service.SetFixedModeAsync(mode, cancellationToken);
             _fixedModeStatusText = AppStrings.FormatText(
                 "CoolingPadFixedModeStatus",
                 DescribeMode((byte)mode),
@@ -76,7 +80,7 @@ public sealed partial class RazerCoolingPadViewModel
         var service = _service ?? throw new InvalidOperationException("The cooling pad is not connected.");
         try
         {
-            var state = await service.ReadCoolingModeAsync(cancellationToken).ConfigureAwait(false);
+            var state = await service.ReadCoolingModeAsync(cancellationToken);
             _hasFixedMode = true;
             if (state.ModeId <= 2)
             {

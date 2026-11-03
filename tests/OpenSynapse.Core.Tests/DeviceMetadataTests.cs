@@ -85,11 +85,11 @@ public sealed class DeviceMetadataTests
     }
 
     [Fact]
-    public void OpenRazerStandardManifestMayDeclareOnlyItsVerifiedCapabilities()
+    public void RazerHidStandardManifestMayDeclareOnlyItsVerifiedCapabilities()
     {
         var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
         root["id"] = "openrazer-standard-test";
-        root["displayName"] = "OpenRazer test device";
+        root["displayName"] = "RazerHid test device";
         root["productIds"] = new JsonArray("0BAD");
         root["protocolFamily"] = "openrazer-standard";
         root["category"] = "keyboard";
@@ -105,7 +105,7 @@ public sealed class DeviceMetadataTests
     }
 
     [Fact]
-    public void OpenRazerStandardManifestCannotUseTheLinuxLogicalLengthAsWindowsFeatureLength()
+    public void RazerHidStandardManifestCannotUseTheLinuxLogicalLengthAsWindowsFeatureLength()
     {
         var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
         root["id"] = "openrazer-linux-length-test";
@@ -124,11 +124,11 @@ public sealed class DeviceMetadataTests
     [Theory]
     [InlineData("02C6")]
     [InlineData("00B8")]
-    public void OpenRazerStandardCannotClaimCompletedDevice(string productId)
+    public void RazerHidStandardCannotClaimCompletedDevice(string productId)
     {
         var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
         root["id"] = "openrazer-reserved-test";
-        root["displayName"] = "OpenRazer reserved test device";
+        root["displayName"] = "RazerHid reserved test device";
         root["productIds"] = new JsonArray(productId);
         root["protocolFamily"] = "openrazer-standard";
         root["category"] = "keyboard";
@@ -149,11 +149,11 @@ public sealed class DeviceMetadataTests
     }
 
     [Fact]
-    public void ExternalOpenRazerStandardManifestIsRejectedUntilAudited()
+    public void ExternalRazerHidStandardManifestIsRejectedUntilAudited()
     {
         var root = JsonNode.Parse(BuiltInManifestJson("blade-710"))!.AsObject();
         root["id"] = "external-openrazer-test";
-        root["displayName"] = "External OpenRazer test device";
+        root["displayName"] = "External RazerHid test device";
         root["productIds"] = new JsonArray("0BAD");
         root["protocolFamily"] = "openrazer-standard";
         root["category"] = "keyboard";
@@ -215,6 +215,105 @@ public sealed class DeviceMetadataTests
         Assert.Equal(new DeviceCapabilitySummary(17, 17), summary);
     }
 
+    [Theory]
+    [InlineData(true, 16)]
+    [InlineData(false, 14)]
+    public void Blade02B7WithoutStartupAnimationCountsOnlyItsDeclaredCapabilities(
+        bool miniLed,
+        int expected)
+    {
+        var descriptor = Descriptor("blade-710-chroma", DeviceCategory.Laptop);
+        var telemetry = Blade02B7Telemetry(miniLed);
+
+        // 02B7 has no startup-animation.get, and non-MiniLED panels do not expose
+        // the native display row: 14 base reports plus local dimming on MiniLED.
+        var summary = DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+
+        Assert.Equal(new DeviceCapabilitySummary(expected, expected), summary);
+    }
+
+    [Fact]
+    public void Blade02B7PartialReadStaysAboveTheProtocolFailureThreshold()
+    {
+        var descriptor = Descriptor("blade-710-chroma", DeviceCategory.Laptop);
+        // The SKU report also gates the native-display and local-dimming rows. If it
+        // times out, the remaining reports must still count as a partial success.
+        var telemetry = Blade02B7Telemetry(miniLed: true) with
+        {
+            BladeSkuHardwareConfiguration = null,
+            BladeNativeDisplayMode = null,
+            BladeLocalDimmingEnabled = null,
+        };
+
+        var summary = DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+
+        Assert.Equal(13, summary.Available);
+        Assert.Equal(14, summary.Supported);
+        Assert.True(DeviceVisibilityPolicy.IsVisible(descriptor, telemetry));
+    }
+
+    [Fact]
+    public void Blade02B7StartupAnimationReadbackIsNotCounted()
+    {
+        var descriptor = Descriptor("blade-710-chroma", DeviceCategory.Laptop);
+        // The manifest does not declare startup-animation.get, so even a stray value
+        // must not inflate either side of the summary.
+        var telemetry = Blade02B7Telemetry(miniLed: true) with
+        {
+            BladeStartupAnimationEnabled = true,
+        };
+
+        var summary = DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+
+        Assert.Equal(new DeviceCapabilitySummary(16, 16), summary);
+    }
+
+    [Fact]
+    public void StartupAnimationAdmissionMatchesTheBladeManifests()
+    {
+        var bladeManifests = RazerDeviceRegistry.BuiltIn.Manifests
+            .Where(manifest => DeviceProtocolFamilies.IsBlade(manifest.ProtocolFamily))
+            .ToArray();
+
+        Assert.NotEmpty(bladeManifests);
+        foreach (var manifest in bladeManifests)
+        {
+            var declared = manifest.Capabilities.ContainsKey(CapabilityIds.StartupAnimationGet);
+            foreach (var productId in manifest.ProductIds)
+            {
+                Assert.Equal(declared, BladeModelCapabilities.SupportsStartupAnimation(productId));
+            }
+        }
+    }
+
+    private static RazerDeviceTelemetry Blade02B7Telemetry(bool miniLed) => new(
+        BladeKeyboardBrightness: 1,
+        BladePerformanceMode: BladePerformanceMode.Gaming,
+        BladeFanMode: BladeFanMode.Automatic,
+        BladeFanTargetRpm: 1,
+        BladeChargeLimitPercent: 80,
+        ViperBatteryPercent: null,
+        ViperPollingRateHertz: null,
+        ViperDpiX: null,
+        ViperDpiY: null,
+        ViperIdleSeconds: null,
+        Errors: [],
+        CapturedAt: DateTimeOffset.UtcNow,
+        BladeCpuBoostMode: BladeCpuBoostMode.Medium,
+        BladeGpuBoostMode: BladeGpuBoostMode.Low,
+        BladeMaxFanMode: null,
+        BladeCurrentFanCpuRpm: 4000,
+        BladeCurrentFanGpuRpm: 4000,
+        BladeAdvancedFanCpuModeRaw: 1,
+        BladeAdvancedFanGpuModeRaw: 0,
+        BladeLogoMode: BladeLogoMode.Static,
+        BladeStartupAnimationEnabled: null,
+        BladeNativeDisplayMode: BladeNativeDisplayMode.Uhd,
+        BladeSkuHardwareConfiguration: new(true, miniLed, false, miniLed ? (byte)0x03 : (byte)0x00),
+        BladeOneTimeFullChargeEnabled: false,
+        BladeLocalDimmingEnabled: miniLed ? true : null,
+        BladeAdapterPower: new(0x0C, 0x0C, 200, 200));
+
     [Fact]
     public void NativeDisplayModeRequiresMiniLedPanelResolution()
     {
@@ -262,7 +361,12 @@ public sealed class DeviceMetadataTests
         family,
         family,
         0x1532,
-        family == "blade-710" ? (ushort)0x02C6 : (ushort)0x0084,
+        family switch
+        {
+            "blade-710" => (ushort)0x02C6,
+            "blade-710-chroma" => (ushort)0x02B7,
+            _ => (ushort)0x0084,
+        },
         DeviceAccessState.Available,
         DeviceCapabilityState.PendingValidation,
         91,

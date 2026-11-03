@@ -1,3 +1,4 @@
+using System.Text.Json;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
@@ -10,8 +11,8 @@ public sealed class ProfileExtendedSettingsTests
     private static readonly DeviceDescriptor Blade = new(
         "blade", "Blade", 0x1532, 0x02C6, DeviceAccessState.Available,
         DeviceCapabilityState.PendingValidation, 91, 1, 2, "blade-710");
-    private static readonly DeviceDescriptor OpenRazerLaptop = new(
-        "openrazer", "OpenRazer laptop", 0x1532, 0x0200, DeviceAccessState.Available,
+    private static readonly DeviceDescriptor RazerHidLaptop = new(
+        "openrazer", "RazerHid laptop", 0x1532, 0x0200, DeviceAccessState.Available,
         DeviceCapabilityState.PendingValidation, 91, 1, 2, "openrazer-standard");
 
     [Fact]
@@ -22,7 +23,7 @@ public sealed class ProfileExtendedSettingsTests
         active.Shortcuts.PerformanceCycleModes = [BladePerformanceMode.Balanced];
         active.Shortcuts.RefreshRateCycleHertz = [240];
         document.Global.Viper.ButtonAssignments = Assignments(ViperButtonMappingFunction.MouseButton);
-        document.PluggedIn.OpenRazerLighting["1532:0200"] = new LightingProfile
+        document.PluggedIn.RazerHidLighting["1532:0200"] = new LightingProfile
         {
             Effect = "Static",
             Parameters = new Dictionary<string, string> { ["color"] = "FFFFFF" },
@@ -40,7 +41,7 @@ public sealed class ProfileExtendedSettingsTests
         active.Shortcuts.PerformanceCycleModes[0] = BladePerformanceMode.Performance;
         active.Shortcuts.RefreshRateCycleHertz[0] = 60;
         document.Global.Viper.ButtonAssignments[0].FunctionData[0] = 2;
-        document.PluggedIn.OpenRazerLighting["1532:0200"].Parameters["color"] = "000000";
+        document.PluggedIn.RazerHidLighting["1532:0200"].Parameters["color"] = "000000";
         active.LightingColorPresets[0].Primary = "#000000";
         document.LowPowerAdapter.Blade.LogoMode = (byte)BladeLogoMode.Off;
 
@@ -48,7 +49,7 @@ public sealed class ProfileExtendedSettingsTests
         Assert.Equal(BladePerformanceMode.Balanced, clonedActive.Shortcuts.PerformanceCycleModes![0]);
         Assert.Equal(240, clonedActive.Shortcuts.RefreshRateCycleHertz![0]);
         Assert.Equal(1, clone.Global.Viper.ButtonAssignments![0].FunctionData[0]);
-        Assert.Equal("FFFFFF", clone.PluggedIn.OpenRazerLighting["1532:0200"].Parameters["color"]);
+        Assert.Equal("FFFFFF", clone.PluggedIn.RazerHidLighting["1532:0200"].Parameters["color"]);
         Assert.Equal("#112233", clonedActive.LightingColorPresets[0].Primary);
         Assert.Equal((byte)BladeLogoMode.Breathing, clone.LowPowerAdapter.Blade.LogoMode);
     }
@@ -139,7 +140,7 @@ public sealed class ProfileExtendedSettingsTests
         document.OnBattery.Lighting.Effect = "static";
         document.OnBattery.Lighting.Parameters["color"] = "99DD72";
 
-        var key = ProfileResolver.GetDeviceKey(OpenRazerLaptop);
+        var key = ProfileResolver.GetDeviceKey(RazerHidLaptop);
         document.Devices[key] = new DeviceProfileSettings
         {
             Lighting = new LightingProfile
@@ -148,14 +149,14 @@ public sealed class ProfileExtendedSettingsTests
                 Parameters = new Dictionary<string, string> { ["direction"] = "left" },
             },
         };
-        document.OnBattery.OpenRazerLighting[key] = new LightingProfile
+        document.OnBattery.RazerHidLighting[key] = new LightingProfile
         {
             Effect = "static",
             Parameters = new Dictionary<string, string> { ["color"] = "FFFFFF" },
         };
 
         var blade = ProfileResolver.Resolve(document, Blade, false).Lighting;
-        var openRazer = ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, false)!;
+        var openRazer = ProfileResolver.ResolveRazerHidLighting(document, RazerHidLaptop, false)!;
 
         Assert.Equal("static", blade.Effect);
         Assert.Equal(new Dictionary<string, string> { ["color"] = "99DD72" }, blade.Parameters);
@@ -164,28 +165,28 @@ public sealed class ProfileExtendedSettingsTests
     }
 
     [Fact]
-    public void OpenRazerLightingUsesPerDevicePowerOverride()
+    public void RazerHidLightingUsesPerDevicePowerOverride()
     {
         var document = ProfileDocument.CreateDefault();
-        var key = ProfileResolver.GetDeviceKey(OpenRazerLaptop);
+        var key = ProfileResolver.GetDeviceKey(RazerHidLaptop);
         document.Devices[key] = new DeviceProfileSettings
         {
             Lighting = new LightingProfile { Effect = "Static" },
         };
-        document.PluggedIn.OpenRazerLighting[key] = new LightingProfile { Effect = "Off" };
-        document.OnBattery.OpenRazerLighting[key] = new LightingProfile { Effect = "Spectrum" };
+        document.PluggedIn.RazerHidLighting[key] = new LightingProfile { Effect = "Off" };
+        document.OnBattery.RazerHidLighting[key] = new LightingProfile { Effect = "Spectrum" };
 
-        Assert.Equal("Off", ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, true)!.Effect);
-        Assert.Equal("Spectrum", ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, false)!.Effect);
-        Assert.Equal("Static", ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, null)!.Effect);
+        Assert.Equal("Off", ProfileResolver.ResolveRazerHidLighting(document, RazerHidLaptop, true)!.Effect);
+        Assert.Equal("Spectrum", ProfileResolver.ResolveRazerHidLighting(document, RazerHidLaptop, false)!.Effect);
+        Assert.Equal("Static", ProfileResolver.ResolveRazerHidLighting(document, RazerHidLaptop, null)!.Effect);
     }
 
     [Fact]
-    public void OpenRazerLightingIsAbsentUntilConfigured()
+    public void RazerHidLightingIsAbsentUntilConfigured()
     {
         var document = ProfileDocument.CreateDefault();
 
-        Assert.Null(ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, true));
+        Assert.Null(ProfileResolver.ResolveRazerHidLighting(document, RazerHidLaptop, true));
     }
 
     [Fact]
@@ -204,7 +205,7 @@ public sealed class ProfileExtendedSettingsTests
     }
 
     [Fact]
-    public void LowPowerAdapterUsesItsOwnBladeAndOpenRazerOverrides()
+    public void LowPowerAdapterUsesItsOwnBladeAndRazerHidOverrides()
     {
         var document = ProfileDocument.CreateDefault();
         document.Global.Blade.PerformanceMode = (byte)BladePerformanceMode.Balanced;
@@ -212,10 +213,10 @@ public sealed class ProfileExtendedSettingsTests
         document.LowPowerAdapter.Blade.PerformanceMode = (byte)BladePerformanceMode.Silent;
         document.OnBattery.Blade.PerformanceMode = (byte)BladePerformanceMode.BatterySaver;
 
-        var key = ProfileResolver.GetDeviceKey(OpenRazerLaptop);
-        document.PluggedIn.OpenRazerLighting[key] = new LightingProfile { Effect = "Off" };
-        document.LowPowerAdapter.OpenRazerLighting[key] = new LightingProfile { Effect = "Static" };
-        document.OnBattery.OpenRazerLighting[key] = new LightingProfile { Effect = "Spectrum" };
+        var key = ProfileResolver.GetDeviceKey(RazerHidLaptop);
+        document.PluggedIn.RazerHidLighting[key] = new LightingProfile { Effect = "Off" };
+        document.LowPowerAdapter.RazerHidLighting[key] = new LightingProfile { Effect = "Static" };
+        document.OnBattery.RazerHidLighting[key] = new LightingProfile { Effect = "Spectrum" };
 
         Assert.Equal(
             BladePerformanceMode.Performance,
@@ -228,10 +229,10 @@ public sealed class ProfileExtendedSettingsTests
             (BladePerformanceMode)ProfileResolver.Resolve(document, Blade, PowerSourceKind.Battery).Blade.PerformanceMode!.Value);
         Assert.Equal(
             "Static",
-            ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, PowerSourceKind.LowPowerAdapter)!.Effect);
+            ProfileResolver.ResolveRazerHidLighting(document, RazerHidLaptop, PowerSourceKind.LowPowerAdapter)!.Effect);
         Assert.Equal(
             "Spectrum",
-            ProfileResolver.ResolveOpenRazerLighting(document, OpenRazerLaptop, PowerSourceKind.Battery)!.Effect);
+            ProfileResolver.ResolveRazerHidLighting(document, RazerHidLaptop, PowerSourceKind.Battery)!.Effect);
     }
 
     [Fact]
@@ -333,6 +334,21 @@ public sealed class ProfileExtendedSettingsTests
                 Assignment(buttonId, ViperButtonMappingLayer.HyperShift, function),
             })
             .ToList();
+
+    [Fact]
+    public void RazerHidLightingWritesTheNewProfileJsonKey()
+    {
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.General)
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+        var source = new PowerProfileOverrides();
+        source.RazerHidLighting["1532:0200"] = new LightingProfile { Effect = "static" };
+
+        var json = JsonSerializer.Serialize(source, options);
+        Assert.Contains("\"razerHidLighting\"", json);
+        Assert.DoesNotContain("\"openRazerLighting\"", json);
+    }
 
     private static ViperButtonAssignmentProfile Assignment(
         byte buttonId,

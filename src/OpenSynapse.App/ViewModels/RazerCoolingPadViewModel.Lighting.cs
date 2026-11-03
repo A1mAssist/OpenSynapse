@@ -192,7 +192,7 @@ public sealed partial class RazerCoolingPadViewModel
                 flags,
                 rate,
                 colors,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
             ApplyLightingState(state);
             LightingStatusText = AppStrings.Text("BlackSharkSaved");
         }
@@ -215,7 +215,7 @@ public sealed partial class RazerCoolingPadViewModel
 
         try
         {
-            var state = await _service.ReadLightingAsync(cancellationToken).ConfigureAwait(false);
+            var state = await _service.ReadLightingAsync(cancellationToken);
             if (state is null)
             {
                 _hasLighting = false;

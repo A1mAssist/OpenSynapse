@@ -219,7 +219,7 @@ public static class BladeLightingProtocol
             throw new ArgumentOutOfRangeException(nameof(speed));
         }
 
-        // OpenRazer commit 4e65f1249587 verified this wire format on hardware:
+        // RazerHid commit 4e65f1249587 verified this wire format on hardware:
         // the report declares one data byte while carrying all nine arguments.
         return RazerFeatureReport.CreateRequestWithDeclaredSize(
             TransactionId,

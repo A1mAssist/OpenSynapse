@@ -881,6 +881,14 @@ public static class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract) && contract.MaxFan;
 
     /// <summary>
+    /// True only where the device manifest declares startup-animation.get. The shared
+    /// Blade report block reads on models that never exposed the selector, which made
+    /// 02B7 look like it had a missing capability instead of an unsupported one.
+    /// </summary>
+    public static bool SupportsStartupAnimation(ushort productId) =>
+        productId is 0x02C5 or 0x02C6 or 0x02C7 or 0x02E0 or 0x02E1;
+
+    /// <summary>
     /// True only where the deviceUI publishes hasCpuBoostEnabled (028C, 029D, 02B6).
     /// The bit reads back on every model that shares the Power Mode Control mask, so a
     /// readable bit is not evidence of support.
@@ -895,7 +903,7 @@ public static class BladeModelCapabilities
     /// </summary>
     public static bool SupportsCpuBoost(ushort productId) =>
         Contracts.TryGetValue(productId, out var contract) && contract.CpuBoostModes.Count > 0;
-    public static bool SupportsGpuBoost(ushort productId) => productId != 0x029F && SupportsCpuBoost(productId); // 029F's bundle has no GPU level.
+    public static bool SupportsGpuBoost(ushort productId) => SupportsCpuBoost(productId);
     public static bool AllowsCpuBoost(ushort productId, BladeCpuBoostMode mode) =>
         Contracts.TryGetValue(productId, out var contract) && contract.CpuBoostModes.Contains(mode);
 

@@ -6,7 +6,7 @@ using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class FirmwareWorkspace : INotifyPropertyChanged
+public sealed partial class FirmwareWorkspace : INotifyPropertyChanged
 {
     private readonly RazerFirmwareUpdateClient _firmwareUpdateClient;
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _deviceDescriptors;
@@ -61,7 +61,7 @@ public sealed class FirmwareWorkspace : INotifyPropertyChanged
     public Visibility UpdateAvailableVisibility =>
         HasUpdate ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DownloadAvailableVisibility =>
-        HasUpdate && !string.IsNullOrWhiteSpace(DownloadUrl)
+        !string.IsNullOrWhiteSpace(DownloadUrl)
             ? Visibility.Visible
             : Visibility.Collapsed;
     public bool IsCheckingUpdate
@@ -83,8 +83,7 @@ public sealed class FirmwareWorkspace : INotifyPropertyChanged
 
     internal void RefreshVersions()
     {
-        var (bios, ec, vbios) = WindowsFirmwareVersionReader.Read();
-        _firmwareVersions = _firmwareVersions with { Bios = bios, Ec = ec, Vbios = vbios };
+        _firmwareVersions = WindowsFirmwareVersionReader.ReadVersions() with { Mcu = _firmwareVersions.Mcu };
         ApplyTexts();
         OnPropertyChanged(nameof(CanCheckUpdate));
     }
@@ -122,9 +121,7 @@ public sealed class FirmwareWorkspace : INotifyPropertyChanged
             var result = await _firmwareUpdateClient.CheckAsync(_firmwareVersions, _deviceDescriptors(), cancellationToken);
             DownloadUrl = result.DownloadUrl ?? string.Empty;
             HasUpdate = result.HasUpdate;
-            UpdateStatusText = result.HasUpdate
-                ? AppStrings.FormatText("FirmwareUpdateAvailable", result.DeviceName is { Length: > 0 } name ? $"{name}: {string.Join(", ", result.NewerComponents)}" : string.Join(", ", result.NewerComponents))
-                : AppStrings.Text("FirmwareUpdateCurrent");
+            UpdateStatusText = FormatUpdateStatus(result);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

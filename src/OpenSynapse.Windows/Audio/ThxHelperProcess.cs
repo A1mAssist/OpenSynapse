@@ -13,6 +13,8 @@ internal sealed class ThxHelperProcess : IAsyncDisposable
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly Func<ProcessStartInfo>? _startInfoFactory;
+    internal ThxHelperProcess(Func<ProcessStartInfo>? startInfoFactory = null) => _startInfoFactory = startInfoFactory;
     private Process? _process;
     private StreamWriter? _input;
     private StreamReader? _output;
@@ -62,6 +64,7 @@ internal sealed class ThxHelperProcess : IAsyncDisposable
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                await StopHelperAsync().ConfigureAwait(false);
                 throw;
             }
             catch (Exception exception) when (
@@ -103,12 +106,12 @@ internal sealed class ThxHelperProcess : IAsyncDisposable
 
         await StopHelperAsync().ConfigureAwait(false);
         var path = Path.Combine(AppContext.BaseDirectory, ThxAudioHelperProtocol.ExecutableName);
-        if (!File.Exists(path))
+        if (_startInfoFactory is null && !File.Exists(path))
         {
             return "ThxHelperMissing";
         }
 
-        var startInfo = new ProcessStartInfo
+        var startInfo = _startInfoFactory?.Invoke() ?? new ProcessStartInfo
         {
             FileName = path,
             UseShellExecute = false,

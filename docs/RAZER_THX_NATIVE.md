@@ -84,14 +84,19 @@ D:\Tools\ghidra_12.1.2_PUBLIC_20260605\support\analyzeHeadless.bat ^
 
 耳机音频页对 0528 / 0555 显示 THX 状态卡，逻辑与笔记本 THX 面板一致：
 
-- `VSSrv` 未运行：显示“下载 THX 安装包”，打开对应型号的官方安装包：
+- `VSSrv` 未运行：显示“安装 THX 组件”。OpenSynapse 下载对应型号的官方 THX 包，
+  按 Razer manifest 的长度和 SHA-256 校验，再用 `/S`（V3）或 `/s /norestart`（V4）
+  静默启动安装器，只安装 THX APO / SCU / VSSrv，不安装 Synapse，也不要求激活码。
   - 0528：`THX-0528-BlackSharkV2Pro2020-v3.2.3.0.exe`
   - 0555：`THX-0555-BlackSharkV2Pro2023-v3.2.3.0.exe`（41,618,480 字节，
     sha256 `8FB66381E7548F5C6DCDEA16ADB7289E8C368354F03B4074E83E8FC2F3B37D07`）
-  安装包自己请求管理员权限。
 - 服务已运行、`ThxV3Native.dll` 缺失或 hash 不符：显示“下载 THX 控制组件”，
   在应用内下载并校验 3.3 MB DLL 到 `%LOCALAPPDATA%\Razer\RazerAppEngine\User Data\Apps\Common\thxv3common`。
 - 两者都在：显示“THX 组件已安装”。
+
+THX 包的实际内容是 `THXRTAPO`（音频处理对象）、`THXRTSCU`（空间配置工具）、
+`THXRTSVC`（VSSrv 服务）和 `THXUSBAPO-Chat/Game`，没有 Synapse 客户端，也没有激活码。
+V3 是 NSIS 包内套 WiX Burn/MSI，V4 是 THXInstallerBS；两者都支持静默安装。
 
 只检测服务和 DLL，不检查 APO 是否绑定到 0528 的音频端点；这一点需要实机确认。
 

@@ -44,7 +44,7 @@ public sealed class RazerGamepadButtonAssignmentRowViewModel : INotifyPropertyCh
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    public RazerGamepadButtonAssignment Assignment => _assignment;
+    internal RazerGamepadButtonAssignment Assignment => _assignment;
     public string ButtonName { get; }
 
     public string AssignmentText
@@ -117,7 +117,7 @@ public sealed class RazerGamepadStickRowViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    public byte ControlId { get; }
+    internal byte ControlId { get; }
     public string Title => AppStrings.Text(ControlId == 1 ? "RazerGamepadLeftStick" : "RazerGamepadRightStick");
     public bool HasSensitivity { get; }
     public bool HasZones { get; }
