@@ -12,8 +12,14 @@ public static class StudioChromaFileService
     public static StudioImportResult Import(string path, IReadOnlyList<StudioDeviceMatch> connected)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        return StudioChromaImport.Import(File.ReadAllText(path), connected);
+        return IsSynapse3Profile(path)
+            ? StudioSynapse3Import.Import(path, connected)
+            : StudioChromaImport.Import(File.ReadAllText(path), connected);
     }
+
+    private static bool IsSynapse3Profile(string path) =>
+        path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".xml", StringComparison.OrdinalIgnoreCase);
 
     public static void Export(StudioProject project, string path)
     {
