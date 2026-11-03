@@ -62,6 +62,7 @@ public sealed class StudioSynapse3ImportTests
             {
                 AddEntry(archive, "one.xml", ProfileXml.Replace("<Name>Gaming</Name>", "<Name>One</Name>"));
                 AddEntry(archive, "two.xml", ProfileXml.Replace("<Name>Gaming</Name>", "<Name>Two</Name>"));
+                AddEntry(archive, "thumbnail.bin", "not xml");
             }
 
             var result = StudioSynapse3Import.Import(
