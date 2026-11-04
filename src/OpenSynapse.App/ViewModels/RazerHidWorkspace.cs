@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Dispatching;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Diagnostics;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
@@ -12,7 +13,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
+public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
     private readonly RazerHidDeviceService? _deviceService;
     private readonly RazerHidChromaFrameSink? _chromaFrameSink;
@@ -36,6 +37,7 @@ public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
     // Software frame-pump effects outlive a single apply call, so their view model must
     // stay alive instead of being disposed right after the profile is restored.
     private readonly RazerHidSoftwareLightingOwner _softwareLightingOwner;
+    private readonly StudioDeviceVisualLoader _matrixLayoutLoader = new();
     private RazerHidDeviceViewModel? _selectedDevice;
     private RazerHidKrakenViewModel? _selectedKraken;
 
@@ -133,12 +135,19 @@ public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
         Devices.Select(row => row.Connection).ToArray();
 
-    internal RazerHidSpecialLightingService? SpecialLightingService => _specialLightingService;
-
     internal Task<bool> ApplyChromaFrameAsync(
         IReadOnlyList<RazerRgb> sourceFrame,
         CancellationToken cancellationToken = default) =>
         _chromaFrameSink?.ApplyAsync(sourceFrame, cancellationToken) ??
+        Task.FromResult(false);
+
+    internal Task<bool> ApplyChromaFrameAsync(
+        IReadOnlyList<RazerRgb> sourceFrame,
+        int sourceRows,
+        int sourceColumns,
+        DeviceCategory category,
+        CancellationToken cancellationToken = default) =>
+        _chromaFrameSink?.ApplyAsync(sourceFrame, sourceRows, sourceColumns, category, cancellationToken) ??
         Task.FromResult(false);
 
     internal void RefreshLocalization()
@@ -207,6 +216,7 @@ public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
         if (_specialLightingService is not null)
         {
             var connections = await _specialLightingService.DiscoverAsync(cancellationToken);
+            CacheArgb(connections);
             _krakenConnections = connections.Where(connection =>
                     connection.Kind is RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4)
                 .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
@@ -365,6 +375,7 @@ public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
             SelectedDevice = null;
         }
         SelectedKraken = null;
+        _matrixLayoutLoader.Dispose();
     }
 
     private async Task RestoreDriverModeAsync(
@@ -405,34 +416,6 @@ public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
                     connection.Definition.DisplayName, exception.Message));
             }
         }
-    }
-
-    private RazerHidDeviceViewModel CreateDeviceViewModel(
-        RazerHidDeviceConnection connection)
-    {
-        RazerHidDeviceViewModel device = new(
-            _deviceService ?? throw new InvalidOperationException("RazerHid service is unavailable."),
-            connection,
-            _currentPowerSource,
-            powerState => ProfileResolver.ResolveRazerHidLighting(
-                _getProfile(),
-                connection.ToDescriptor(),
-                powerState),
-            (powerState, profile, token) => SaveLightingAsync(
-                connection,
-                powerState,
-                profile,
-                token),
-            () => IsLightingEnabled(connection),
-            () => IsChromaOverrideEnabled(connection),
-            (lightingEnabled, chromaOverrideEnabled, token) => SaveLightingSettingsAsync(
-                connection,
-                lightingEnabled,
-                chromaOverrideEnabled,
-                token),
-            _chromaIntegrationEnabled());
-        device.Onboard.LocalMacroProvider = _localMacros;
-        return device;
     }
 
     private async Task<bool> SaveLightingAsync(

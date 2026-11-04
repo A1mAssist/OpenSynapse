@@ -58,6 +58,7 @@ internal static class StudioSynapse3Import
                 }
             }
 
+            InvalidDataException? parseError = null;
             foreach (var entry in entries)
             {
                 try
@@ -68,12 +69,16 @@ internal static class StudioSynapse3Import
                         entries.Count == 1 ? projectName : entry.Name,
                         profiles);
                 }
-                catch (InvalidDataException)
+                catch (InvalidDataException exception)
                 {
                     // Non-XML payloads (images, thumbnails) are part of the export too.
+                    parseError ??= exception;
                 }
             }
 
+            if (profiles.Count == 0 && parseError is not null)
+                throw new InvalidDataException(
+                    "The Synapse 3 archive contains no readable LightingEffects XML profile.", parseError);
             return profiles;
         }
 
@@ -196,20 +201,35 @@ internal static class StudioSynapse3Import
 
     private static void ReadLayers(XElement root, StudioProfile profile)
     {
-        var items = new List<StudioLayerItem>();
-        var groups = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var element in Children(Child(root, "EffectLayers"), "EffectLayer"))
+        var elements = Children(Child(root, "EffectLayers"), "EffectLayer").ToList();
+        var groups = new Dictionary<string, StudioLayerItem>(StringComparer.OrdinalIgnoreCase);
+        // Synapse usually writes a group before its layers, but accept either order.
+        foreach (var element in elements)
         {
-            var effect = Child(element, "Effect")?.Value?.Trim().ToLowerInvariant();
+            if (ReadEffect(element) != "none") continue;
+            var groupId = Child(element, "GroupId")?.Value?.Trim();
+            if (!string.IsNullOrWhiteSpace(groupId) && !groups.ContainsKey(groupId))
+                groups[groupId] = StudioLayerItem.CreateGroup(groupId);
+        }
+
+        var items = new List<StudioLayerItem>();
+        foreach (var element in elements)
+        {
+            var effect = ReadEffect(element);
             if (string.IsNullOrWhiteSpace(effect)) continue;
 
             var groupId = Child(element, "GroupId")?.Value?.Trim();
             if (effect == "none")
             {
-                var group = StudioLayerItem.CreateGroup(
-                    string.IsNullOrWhiteSpace(groupId) ? "Group" : groupId);
-                items.Add(group);
-                if (!string.IsNullOrWhiteSpace(groupId)) groups[groupId] = items.Count - 1;
+                if (string.IsNullOrWhiteSpace(groupId))
+                {
+                    items.Add(StudioLayerItem.CreateGroup("Group"));
+                }
+                else if (groups.TryGetValue(groupId, out var group) && !items.Contains(group))
+                {
+                    items.Add(group);
+                }
+
                 continue;
             }
 
@@ -232,11 +252,9 @@ internal static class StudioSynapse3Import
             layer.Params = layer.Regions.FirstOrDefault()?.Params.Clone()
                 ?? StudioEffectCatalog.CreateDefault(kind.Value);
 
-            if (!string.IsNullOrWhiteSpace(groupId) &&
-                groups.TryGetValue(groupId, out var groupIndex) &&
-                items[groupIndex] is { IsGroup: true } groupItem)
+            if (!string.IsNullOrWhiteSpace(groupId) && groups.TryGetValue(groupId, out var parent))
             {
-                groupItem.Children.Insert(0, layer);
+                parent.Children.Insert(0, layer);
             }
             else
             {
@@ -247,6 +265,9 @@ internal static class StudioSynapse3Import
         items.Reverse();
         foreach (var item in items) profile.Items.Add(item);
     }
+
+    private static string? ReadEffect(XElement element) =>
+        Child(element, "Effect")?.Value?.Trim().ToLowerInvariant();
 
     private static StudioRegion ReadRegion(XElement element, StudioEffectKind kind)
     {
@@ -283,7 +304,7 @@ internal static class StudioSynapse3Import
                 var row = (int)ReadDouble(Child(cell, "Row"));
                 var col = (int)ReadDouble(Child(cell, "Col"));
                 if (row < 0 || col < 0) continue;
-                regionDevice.Leds.Add(new StudioLedRef(row, col));
+                regionDevice.Leds.Add(new StudioLedRef(row, col, InstanceId: instanceId));
             }
         }
 

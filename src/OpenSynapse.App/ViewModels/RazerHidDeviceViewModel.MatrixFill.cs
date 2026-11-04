@@ -6,7 +6,10 @@ public sealed partial class RazerHidDeviceViewModel
     {
         foreach (var cell in MatrixCells)
         {
-            cell.Color = PrimaryColor;
+            if (!cell.IsPlaceholder)
+            {
+                cell.Color = PrimaryColor;
+            }
         }
     }
 }

@@ -8,8 +8,8 @@ namespace OpenSynapse.Windows.Lighting;
 /// <summary>
 /// Decodes one Chroma Generate media file into cached 32 x 32 BGRA frames and
 /// samples them with normalized coordinates. Images use a single frame; videos
-/// use <see cref="StudioVideoPlayback"/> for timed sampling. Decoding happens
-/// once in <see cref="TryLoadAsync(string?)"/>; sampling never touches the file.
+/// use <see cref="StudioVideoPlayback"/> for timed sampling. The progressive
+/// path publishes the first video frame before the rest of the cache is loaded.
 /// </summary>
 public sealed class StudioMediaSource : IStudioMediaSampler
 {
@@ -22,11 +22,28 @@ public sealed class StudioMediaSource : IStudioMediaSampler
     private StudioMediaSource(StudioVideoPlayback video) => _video = video;
 
     /// <summary>
-    /// Loads an image or video frames. Returns null for a missing, unreadable
-    /// or undecodable file so the renderer keeps its procedural fallback.
+    /// Loads an image or every video frame. Returns null for a missing,
+    /// unreadable or undecodable file so the renderer keeps its procedural
+    /// fallback.
     /// </summary>
-    public static async Task<StudioMediaSource?> TryLoadAsync(string? path)
+    public static Task<StudioMediaSource?> TryLoadAsync(string? path) =>
+        TryLoadCoreAsync(path, progressive: false, CancellationToken.None);
+
+    /// <summary>
+    /// Loads the first video frame, then fills the rest on a background worker.
+    /// Cancellation stops the worker before it publishes another frame.
+    /// </summary>
+    public static Task<StudioMediaSource?> TryLoadProgressiveAsync(
+        string? path,
+        CancellationToken cancellationToken = default) =>
+        TryLoadCoreAsync(path, progressive: true, cancellationToken);
+
+    private static async Task<StudioMediaSource?> TryLoadCoreAsync(
+        string? path,
+        bool progressive,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(path)) return null;
 
         string fullPath;
@@ -46,13 +63,20 @@ public sealed class StudioMediaSource : IStudioMediaSampler
             var file = await StorageFile.GetFileFromPathAsync(fullPath);
             if (IsVideo(fullPath))
             {
-                var video = await StudioVideoPlayback.TryCreateAsync(file);
+                var video = progressive
+                    ? await StudioVideoPlayback.TryCreateProgressiveAsync(file, cancellationToken)
+                    : await StudioVideoPlayback.TryCreateAsync(file);
                 return video is null ? null : new StudioMediaSource(video);
             }
 
             using var stream = await file.OpenAsync(FileAccessMode.Read);
             var pixels = await DecodePixelsAsync(stream);
+            cancellationToken.ThrowIfCancellationRequested();
             return new StudioMediaSource(pixels);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception)
         {
@@ -61,6 +85,15 @@ public sealed class StudioMediaSource : IStudioMediaSampler
             return null;
         }
     }
+
+    /// <summary>Completes when the video's background cache worker stops; images complete immediately.</summary>
+    public Task BackgroundLoad => _video?.BackgroundLoad ?? Task.CompletedTask;
+
+    /// <summary>True when only the shell thumbnail could be decoded.</summary>
+    public bool IsThumbnailFallback => _video?.IsThumbnailFallback ?? false;
+
+    /// <summary>First frame decode error, or null when the media decoded cleanly.</summary>
+    public string? DecodeWarning => _video?.DecodeWarning;
 
     /// <summary>Samples the first cached frame; coordinates outside 0..1 wrap.</summary>
     public bool TrySample(double u, double v, out StudioRgb color) =>

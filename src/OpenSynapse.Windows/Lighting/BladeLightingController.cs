@@ -49,6 +49,7 @@ public sealed record BladeLightingEffect(
 
 public interface IBladeLightingController : IAsyncDisposable
 {
+    event Action<string, Exception>? RestoreFailed;
     Task RuntimeCompletion { get; }
 
     Task ApplyAsync(
@@ -67,7 +68,7 @@ public interface IBladeLightingController : IAsyncDisposable
         CancellationToken cancellationToken = default);
 }
 
-public sealed class BladeLightingController : IBladeLightingController
+public sealed partial class BladeLightingController : IBladeLightingController
 {
     // The matrix path is seven feature reports per frame. Keep only the latest
     // frame if the device cannot sustain this target; never build a stale queue.
@@ -226,7 +227,7 @@ public sealed class BladeLightingController : IBladeLightingController
                 var pump = new BladeMatrixFramePump(
                     _transport,
                     device.Id,
-                    token => RestoreAsync(device.Id, token),
+                    token => RestoreAsync(device.Id, device.Name, reportFallback: false, token),
                     _matrixRows,
                     _matrixColumns,
                     CreateFrameRequestBuilder());
@@ -333,7 +334,7 @@ public sealed class BladeLightingController : IBladeLightingController
                     _transport,
                     device.Id,
                     restorePersistentEffect
-                        ? token => RestoreAsync(device.Id, token)
+                        ? token => RestoreAsync(device.Id, device.Name, reportFallback: true, token)
                         : token => ReleaseModeLeaseAsync(CancellationToken.None),
                     _matrixRows,
                     _matrixColumns,
@@ -360,6 +361,7 @@ public sealed class BladeLightingController : IBladeLightingController
         }
     }
 
+    public event Action<string, Exception>? RestoreFailed;
     public Task RuntimeCompletion => _runtimeCompletion;
 
     public async Task SetDisplayAvailableAsync(bool available)
@@ -579,11 +581,6 @@ public sealed class BladeLightingController : IBladeLightingController
         }
     }
 
-    internal void ObserveMappingInput(BladeMappingInputEvent input)
-    {
-        _keyboardInput?.ObserveMappingInput(input);
-    }
-
     private async Task StartRuntimeAsync(
         BladeMatrixFramePump pump,
         ISoftwareLightingFrameSource source,
@@ -789,36 +786,6 @@ public sealed class BladeLightingController : IBladeLightingController
                 devicePath, request, cancellationToken, allowRemainingPacketsMismatch: true)
                 .ConfigureAwait(false);
         }
-    }
-
-    private async Task RestoreAsync(string devicePath, CancellationToken cancellationToken)
-    {
-        if (Volatile.Read(ref _turnOffOnStop) != 0)
-        {
-            return;
-        }
-
-        try
-        {
-            await SendFrameAsync(
-                devicePath,
-                BladeMatrixFramePump.ScaleFrame(_restoreFrame, _matrixRows, _matrixColumns),
-                cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception frameFailure)
-        {
-            try
-            {
-                await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception modeFailure)
-            {
-                throw new AggregateException(frameFailure, modeFailure);
-            }
-            throw;
-        }
-
-        await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
     private async Task ReleaseModeLeaseAsync(CancellationToken cancellationToken)

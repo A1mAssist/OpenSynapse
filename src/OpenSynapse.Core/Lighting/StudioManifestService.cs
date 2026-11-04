@@ -11,19 +11,28 @@ namespace OpenSynapse.Core.Lighting;
 public sealed class StudioManifestService
 {
     private const int MaxResponseBytes = 32 * 1024 * 1024;
+    private const int MemoryCacheLimit = 64;
     private const string UserAgent = "OpenSynapse-LightingStudio/1.0";
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
+    private static readonly ConcurrentDictionary<string, MemoryEntry> MemoryCache =
+        new(StringComparer.OrdinalIgnoreCase);
+    private static readonly object MemoryTrimGate = new();
 
     private readonly HttpClient _httpClient;
     private readonly string _cacheDirectory;
+    private readonly TimeSpan _memoryCacheLifetime;
     private readonly ConcurrentDictionary<(ushort ProductId, int EditionId), SemaphoreSlim> _locks = new();
 
-    public StudioManifestService(HttpClient httpClient, string cacheDirectory)
+    public StudioManifestService(
+        HttpClient httpClient,
+        string cacheDirectory,
+        TimeSpan? memoryCacheLifetime = null)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentException.ThrowIfNullOrWhiteSpace(cacheDirectory);
         _httpClient = httpClient;
         _cacheDirectory = Path.GetFullPath(cacheDirectory);
+        _memoryCacheLifetime = memoryCacheLifetime ?? TimeSpan.Zero;
     }
 
     public async Task<StudioManifestResult> GetAsync(
@@ -31,20 +40,26 @@ public sealed class StudioManifestService
         int editionId,
         CancellationToken cancellationToken = default)
     {
+        if (TryMemory(productId, editionId, out var remembered)) return remembered;
+
         var gate = _locks.GetOrAdd((productId, editionId), static _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (TryMemory(productId, editionId, out remembered)) return remembered;
+
             var cachePath = CachePath(productId, editionId, ".json");
             var etagPath = CachePath(productId, editionId, ".etag");
             var cached = await ReadCacheAsync(cachePath, etagPath, productId, editionId, cancellationToken)
                 .ConfigureAwait(false);
 
-            return cached is null
+            var result = cached is null
                 ? await FetchFirstAvailableAsync(productId, editionId, cachePath, etagPath, cancellationToken)
                     .ConfigureAwait(false)
                 : await RefreshCachedAsync(cached, productId, editionId, cachePath, etagPath, cancellationToken)
                     .ConfigureAwait(false);
+            Remember(productId, editionId, result);
+            return result;
         }
         finally
         {
@@ -311,6 +326,58 @@ public sealed class StudioManifestService
     private string CachePath(ushort productId, int editionId, string extension) =>
         Path.Combine(_cacheDirectory, FormattableString.Invariant($"{productId}_{editionId}{extension}"));
 
+    private string MemoryKey(ushort productId, int editionId) =>
+        FormattableString.Invariant(
+            $"{_cacheDirectory}|{productId}|{editionId}|{_memoryCacheLifetime.Ticks}");
+
+    private bool TryMemory(ushort productId, int editionId, out StudioManifestResult result)
+    {
+        if (_memoryCacheLifetime <= TimeSpan.Zero)
+        {
+            result = default!;
+            return false;
+        }
+
+        var key = MemoryKey(productId, editionId);
+        if (MemoryCache.TryGetValue(key, out var entry))
+        {
+            if (entry.ExpiresAt > DateTimeOffset.UtcNow)
+            {
+                result = entry.Result with { FromCache = true };
+                return true;
+            }
+
+            MemoryCache.TryRemove(key, out _);
+        }
+
+        result = default!;
+        return false;
+    }
+
+    private void Remember(ushort productId, int editionId, StudioManifestResult result)
+    {
+        if (_memoryCacheLifetime <= TimeSpan.Zero) return;
+
+        // A timeout is the expensive case this cache exists for; retry failures sooner than a manifest.
+        var lifetime = result.Manifest is null
+            ? TimeSpan.FromSeconds(30)
+            : result.Error is "offline-cache"
+                ? TimeSpan.FromMinutes(1)
+                : _memoryCacheLifetime;
+        var key = MemoryKey(productId, editionId);
+        MemoryCache[key] = new MemoryEntry(result, DateTimeOffset.UtcNow + lifetime);
+        if (MemoryCache.Count <= MemoryCacheLimit) return;
+        lock (MemoryTrimGate)
+        {
+            if (MemoryCache.Count <= MemoryCacheLimit) return;
+            foreach (var pair in MemoryCache.OrderBy(item => item.Value.ExpiresAt)
+                         .Take(MemoryCache.Count - MemoryCacheLimit))
+            {
+                MemoryCache.TryRemove(pair.Key, out _);
+            }
+        }
+    }
+
     private static string PrimaryUrl(ushort productId, int editionId) =>
         FormattableString.Invariant(
             $"https://apps.razer.com/synapse/products/{productId}/mw/lighting-manifests/DeviceManifest_{productId}_{editionId}.json");
@@ -318,6 +385,8 @@ public sealed class StudioManifestService
     private static string FallbackUrl(ushort productId, int editionId) =>
         FormattableString.Invariant(
             $"https://apps.razer.com/synapse/lighting-engine/manifest/DeviceManifest_{productId}_{editionId}.json");
+
+    private readonly record struct MemoryEntry(StudioManifestResult Result, DateTimeOffset ExpiresAt);
 
     private enum FetchStatus
     {

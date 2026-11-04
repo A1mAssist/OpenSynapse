@@ -8,7 +8,11 @@ public static partial class StudioProjectCodec
         var title = GetString(element, "title");
         if (string.IsNullOrWhiteSpace(title)) title = "Profile";
         var id = GetString(element, "id");
-        var profile = new StudioProfile(title) { Id = string.IsNullOrWhiteSpace(id) ? StudioProfile.NewId() : id };
+        var profile = new StudioProfile(title)
+        {
+            Id = string.IsNullOrWhiteSpace(id) ? StudioProfile.NewId() : id,
+            IsDefault = ReadBool(element, "default"),
+        };
         if (TryGet(element, "layers", out var layers) && layers.ValueKind == JsonValueKind.Array)
             AttachLayers(ReadLayers(layers, new HashSet<Guid>()), profile.Items);
         ReadProfileDevices(element, profile);
@@ -46,6 +50,11 @@ public static partial class StudioProjectCodec
         Rotation = TryGet(element, "orientation", out _)
             ? ReadInt(element, "orientation")
             : ReadInt(element, "rotation"),
+        ParentId = ReadFlexibleString(element, "parentId"),
+        ParentX = ReadNullableDouble(element, "parentX"),
+        ParentY = ReadNullableDouble(element, "parentY"),
+        PlacementIndex = ReadNullableInt(element, "placementIndex"),
+        LedRefJson = ReadRawJsonText(element, "ledRef"),
     };
 
     private static void MergePlacement(ObservableCollection<StudioDevicePlacement> placements, StudioDevicePlacement placement)
@@ -72,6 +81,11 @@ public static partial class StudioProjectCodec
         existing.X = placement.X;
         existing.Y = placement.Y;
         existing.Rotation = placement.Rotation;
+        if (!string.IsNullOrWhiteSpace(placement.ParentId)) existing.ParentId = placement.ParentId;
+        if (placement.ParentX is { } parentX) existing.ParentX = parentX;
+        if (placement.ParentY is { } parentY) existing.ParentY = parentY;
+        if (placement.PlacementIndex is { } placementIndex) existing.PlacementIndex = placementIndex;
+        if (!string.IsNullOrWhiteSpace(placement.LedRefJson)) existing.LedRefJson = placement.LedRefJson;
     }
 
     private static bool IsSamePlacement(StudioDevicePlacement left, StudioDevicePlacement right) =>
@@ -113,6 +127,8 @@ public static partial class StudioProjectCodec
         var paramsElement = TryGet(element, "params", out var rawParams) ? rawParams : default;
         var parameters = ReadParams(paramsElement);
         parameters.Effect = ReadEffect(element, paramsElement);
+        if (TryGet(element, "params2", out var rawParams2) && rawParams2.ValueKind == JsonValueKind.Object)
+            ReadParams2(rawParams2, parameters);
         var title = GetString(element, "title") ?? GetString(element, "name");
         if (string.IsNullOrWhiteSpace(title)) title = isGroup ? "Group" : "Layer";
         var opacity = 100d;
@@ -146,6 +162,8 @@ public static partial class StudioProjectCodec
             var parsed = new StudioRegion { Params = ReadParams(rp) };
             // Chroma keeps the effect name on the layer and only effect params on the region.
             if (!TryGet(rp, "effect", out _)) parsed.Params.Effect = item.Params.Effect;
+            if (TryGet(region, "params2", out var rp2) && rp2.ValueKind == JsonValueKind.Object)
+                ReadParams2(rp2, parsed.Params);
             if (TryGet(region, "devices", out var devices) && devices.ValueKind == JsonValueKind.Array)
                 foreach (var device in devices.EnumerateArray())
                     if (device.ValueKind == JsonValueKind.Object) parsed.Devices.Add(ReadRegionDevice(device));
@@ -167,10 +185,14 @@ public static partial class StudioProjectCodec
             foreach (var led in leds.EnumerateArray())
             {
                 if (led.ValueKind != JsonValueKind.Object) continue;
+                var ledInstanceId = TryGet(led, "openSynapse", out var ledExtras) &&
+                    ledExtras.ValueKind == JsonValueKind.Object
+                    ? ReadFlexibleString(ledExtras, "instanceId") ?? ReadFlexibleString(led, "instanceId")
+                    : ReadFlexibleString(led, "instanceId");
                 device.Leds.Add(new StudioLedRef(
                     ReadInt(led, "row"), ReadInt(led, "col"),
                     ReadNullableInt(led, "regionId"), ReadNullableInt(led, "regionIndex"),
-                    ReadFlexibleString(led, "inputType"), GetString(led, "inputData")));
+                    ReadFlexibleString(led, "inputType"), GetString(led, "inputData"), ledInstanceId));
             }
         return device;
     }
@@ -218,6 +240,57 @@ public static partial class StudioProjectCodec
                 ToUnit(ReadInt(rect, "Right")), ToUnit(ReadInt(rect, "Bottom")));
         return parameters;
     }
+
+    private static void ReadParams2(JsonElement element, StudioEffectParams parameters)
+    {
+        parameters.CenterPointX = ReadCenterPoint(element, "centerPointX2", "centerPointX");
+        parameters.CenterPointY = ReadCenterPoint(element, "centerPointY2", "centerPointY");
+        ReadWheelCenter(element, parameters);
+        parameters.Counterclockwise = ReadBool(element, "counterclockwise");
+        parameters.DeviceWithCenterPointJson = ReadRawJsonText(element, "deviceWithCenterPoint");
+    }
+
+    /// <summary>
+    /// Prefers the engine-style centerRow/centerCol pair, then derives it from
+    /// the editor's centerPoint pair. A missing pair stays unset for matrix center.
+    /// </summary>
+    private static void ReadWheelCenter(JsonElement element, StudioEffectParams parameters)
+    {
+        if (parameters.Effect != StudioEffectKind.Wheel) return;
+        var centerRow = 0;
+        var centerCol = 0;
+        var hasRow = TryGet(element, "centerRow", out var row) && TryGetInt(row, out centerRow);
+        var hasCol = TryGet(element, "centerCol", out var col) && TryGetInt(col, out centerCol);
+        if (hasRow && hasCol)
+        {
+            parameters.CenterRow = Math.Clamp(centerRow, 0, StudioEffectParams.WheelCenterMaximum);
+            parameters.CenterCol = Math.Clamp(centerCol, 0, StudioEffectParams.WheelCenterMaximum);
+            return;
+        }
+
+        var hasCenterX = TryGet(element, "centerPointX2", out _) || TryGet(element, "centerPointX", out _);
+        var hasCenterY = TryGet(element, "centerPointY2", out _) || TryGet(element, "centerPointY", out _);
+        if (!hasCenterX || !hasCenterY) return;
+        var centerX = ReadCenterPoint(element, "centerPointX2", "centerPointX");
+        var centerY = ReadCenterPoint(element, "centerPointY2", "centerPointY");
+        parameters.CenterCol = (int)Math.Clamp(
+            Math.Round(centerX / 40, MidpointRounding.AwayFromZero),
+            0,
+            StudioEffectParams.WheelCenterMaximum);
+        parameters.CenterRow = (int)Math.Clamp(
+            Math.Round(centerY / 40, MidpointRounding.AwayFromZero),
+            0,
+            StudioEffectParams.WheelCenterMaximum);
+    }
+
+    /// <summary>Canvas coordinates are authoritative; Chroma's scaled pair is center / 40.</summary>
+    private static double ReadCenterPoint(JsonElement element, string canvasName, string scaledName)
+    {
+        var canvas = ReadDouble(element, canvasName, double.NaN);
+        if (!double.IsNaN(canvas)) return Math.Clamp(canvas, 0, 10_000);
+        var scaled = ReadDouble(element, scaledName, double.NaN);
+        return double.IsNaN(scaled) ? 5_000 : Math.Clamp(scaled * 40, 0, 10_000);
+    }
     private static StudioEffectKind ReadEffect(JsonElement layer, JsonElement paramsElement)
     {
         if (TryGet(layer, "openSynapse", out var extras) && TryParseEffectName(GetString(extras, "effect"), out var extraEffect))
@@ -242,7 +315,10 @@ public static partial class StudioProjectCodec
         var documentName = GetString(root, "name");
         var project = new StudioProject();
         if (!string.IsNullOrWhiteSpace(documentName)) project.Name = documentName;
-        var profile = new StudioProfile(string.IsNullOrWhiteSpace(documentName) ? "Profile" : documentName);
+        var profile = new StudioProfile(string.IsNullOrWhiteSpace(documentName) ? "Profile" : documentName)
+        {
+            IsDefault = true,
+        };
         if (TryGet(root, "layers", out var layers) && layers.ValueKind == JsonValueKind.Array)
             foreach (var layer in layers.EnumerateArray())
             {

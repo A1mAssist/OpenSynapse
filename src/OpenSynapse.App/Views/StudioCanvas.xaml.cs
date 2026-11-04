@@ -12,6 +12,7 @@ using Windows.UI;
 using Path = Microsoft.UI.Xaml.Shapes.Path;
 using Rectangle = Microsoft.UI.Xaml.Shapes.Rectangle;
 using static OpenSynapse.App.Views.StudioCanvasGeometry;
+using static OpenSynapse.Core.Lighting.StudioLedSelection;
 
 namespace OpenSynapse.App.Views;
 
@@ -33,7 +34,7 @@ public sealed partial class StudioCanvas : UserControl
     private readonly List<HostState> _hosts = new();
     private readonly List<LedEntry> _ledEntries = new();
     private readonly List<StudioLedRef> _selection = new();
-    private readonly HashSet<(int Row, int Col)> _penVisited = new();
+    private readonly HashSet<(string InstanceId, int Row, int Col)> _penVisited = new();
     private readonly SolidColorBrush _selectionBrush = new(Color.FromArgb(255, 0x44, 0xD6, 0x2C));
     private readonly SolidColorBrush _marqueeFill = new(Color.FromArgb(40, 0x44, 0xD6, 0x2C));
     private StudioCanvasTool _tool;
@@ -46,13 +47,36 @@ public sealed partial class StudioCanvas : UserControl
     private Point _moveStart;
     private double _moveX;
     private double _moveY;
+    private bool _spaceHeld;
+    private bool _panActive;
+    private Point _panStart;
+    private double _panOffsetX;
+    private double _panOffsetY;
     public StudioCanvas()
     {
         InitializeComponent();
+        IsTabStop = true;
+        KeyDown += CanvasKeyDown;
+        KeyUp += CanvasKeyUp;
+        // The ScrollViewer can mark pointer moves handled while panning; keep receiving them.
+        Surface.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(SurfacePointerMoved), true);
+        Surface.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(SurfacePointerReleased), true);
+        Surface.AddHandler(UIElement.PointerCaptureLostEvent, new PointerEventHandler(SurfacePointerCaptureLost), true);
+        LostFocus += (_, _) =>
+        {
+            _spaceHeld = false;
+            _panActive = false;
+            UpdateCursor();
+        };
         Loaded += (_, _) => UpdateCursor();
         Refresh();
     }
     public event EventHandler? SelectionChanged;
+
+    /// <summary>Shift-click on one LED: (instanceId, matrix row, matrix column).</summary>
+    public event Action<string, int, int>? LedShiftClicked;
+    /// <summary>Bucket click: the page resolves the region/device cells and calls SelectLeds.</summary>
+    public event Action<string, int, int>? BucketClicked;
     public event DeviceMovedEventHandler? DeviceMoved;
     public event EventHandler? ZoomChanged;
     public StudioCanvasTool Tool
@@ -132,37 +156,20 @@ public sealed partial class StudioCanvas : UserControl
             BuildDevice(devices[index], x, y, rotation);
         }
         ApplyZoom();
+        ReapplyFrames();
         UpdateSelectionVisuals();
-    }
-
-    public void SetZoom(double percent)
-    {
-        if (!double.IsFinite(percent)) return;
-        var clamped = Math.Clamp(percent, MinZoom, MaxZoom);
-        if (Math.Abs(clamped - _zoom) < 0.001) return;
-        var viewportWidth = Scroller.ViewportWidth;
-        var viewportHeight = Scroller.ViewportHeight;
-        var keepCenter = viewportWidth > 0 && viewportHeight > 0;
-        var centerX = keepCenter ? (Scroller.HorizontalOffset + viewportWidth / 2) / (_zoom / 100) : 0;
-        var centerY = keepCenter ? (Scroller.VerticalOffset + viewportHeight / 2) / (_zoom / 100) : 0;
-        _zoom = clamped;
-        ApplyZoom();
-        if (keepCenter)
+#if DEBUG
+        var dump = Environment.GetEnvironmentVariable("OPENSSYNAPSE_STUDIO_DUMP");
+        if (!string.IsNullOrEmpty(dump))
         {
-            // The scrollable extent only grows after layout; ChangeView would otherwise clamp to the old size.
-            Scroller.UpdateLayout();
-            var factor = _zoom / 100;
-            Scroller.ChangeView(
-                Math.Max(0, centerX * factor - viewportWidth / 2),
-                Math.Max(0, centerY * factor - viewportHeight / 2),
-                null,
-                false);
+            var hosts = string.Join(" | ", _hosts.Select(host =>
+                $"{host.InstanceId} x={host.BaseX:0.#} y={host.BaseY:0.#} w={host.Width:0.#} h={host.Height:0.#} rot={host.Rotation} kids={host.Element.Children.Count} leds={_ledEntries.Count}"));
+            File.AppendAllText(dump,
+                $"{Environment.NewLine}canvas zoom={_zoom} surface={Surface.Width:0}x{Surface.Height:0} hosts={_hosts.Count} offset={Scroller.HorizontalOffset:0.#},{Scroller.VerticalOffset:0.#} viewport={Scroller.ViewportWidth:0}x{Scroller.ViewportHeight:0} :: {hosts}");
         }
-        ZoomChanged?.Invoke(this, EventArgs.Empty);
+#endif
     }
 
-    /// <summary>Selects a preset stop: 10, 25, 50, 100, 200, 300 or 400 percent.</summary>
-    public void SetZoomStep(int step) => SetZoom(_zoomSteps[Math.Clamp(step, 0, _zoomSteps.Length - 1)]);
     public void ClearSelection()
     {
         if (_selection.Count == 0) return;
@@ -179,82 +186,21 @@ public sealed partial class StudioCanvas : UserControl
     }
     private static void AddCell(List<StudioLedRef> leds, StudioLedRef led)
     {
-        if (IndexOfCell(leds, led.Row, led.Col) < 0) leds.Add(led);
+        if (!Contains(leds, led)) leds.Add(led);
     }
 
-    private void BuildDevice(
-        StudioDeviceVisual device, double visualX, double visualY, int rotation)
+    /// <summary>Selects every LED of every placed device, tagged with its instance.</summary>
+    public void SelectAll()
     {
-        var width = Extent(device.Width);
-        var height = Extent(device.Height);
-        var (visualWidth, visualHeight) = StudioCanvasPlacement.VisualExtent(width, height, rotation);
-        var hostX = visualX + (visualWidth - width) / 2;
-        var hostY = visualY + (visualHeight - height) / 2;
-        var host = new Canvas
+        var next = new List<StudioLedRef>();
+        foreach (var entry in _ledEntries)
         {
-            Width = width,
-            Height = height,
-            Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
-        };
-        var hostState = new HostState(
-            host, device.InstanceId ?? string.Empty, device, width, height, visualWidth, visualHeight,
-            rotation, visualX, visualY);
-        host.DataContext = hostState;
-        host.PointerPressed += HostPointerPressed;
-        var ledsByPath = new Dictionary<string, StudioVisualLed>(StringComparer.Ordinal);
-        foreach (var led in device.Leds)
-        {
-            if (!string.IsNullOrEmpty(led.PathId)) ledsByPath.TryAdd(led.PathId, led);
+            AddCell(next, Cell(entry.Host.Device, entry.Led));
         }
-        var elements = new List<(StudioVisualPath Source, Path Element, Geometry Geometry)>();
-        var selectionPaths = new Dictionary<string, Path>(StringComparer.OrdinalIgnoreCase);
-        foreach (var source in device.Paths.OrderBy(path => RoleOrder(path.Role)))
-        {
-            if (ConvertGeometry(source.Data) is not { } geometry) continue;
-            var element = new Path { Data = geometry, IsHitTestVisible = false };
-            if (double.IsFinite(source.Opacity)) element.Opacity = Math.Clamp(source.Opacity, 0, 1);
-            if (ToBrush(source.Fill) is { } fill) element.Fill = fill;
-            if (ToBrush(source.Stroke) is { } stroke)
-            {
-                element.Stroke = stroke;
-                element.StrokeThickness = 1;
-            }
-            if (source.Role == StudioSvgRole.Selection)
-            {
-                element.Fill = null;
-                element.Visibility = Visibility.Collapsed;
-                if (!string.IsNullOrEmpty(source.Id)) selectionPaths[source.Id] = element;
-            }
-            elements.Add((source, element, geometry));
-        }
-        foreach (var (source, element, geometry) in elements)
-        {
-            host.Children.Add(element);
-            if (source.Role != StudioSvgRole.Led) continue;
-            var brush = element.Fill as SolidColorBrush;
-            if (brush is null)
-            {
-                brush = new SolidColorBrush(Color.FromArgb(255, 0, 0, 0));
-                element.Fill = brush;
-            }
-            if (string.IsNullOrEmpty(source.Id) || !ledsByPath.TryGetValue(source.Id, out var led)) continue;
-            element.IsHitTestVisible = true;
-            element.Tag = led;
-            element.PointerPressed += LedPointerPressed;
-            _ledEntries.Add(new LedEntry(
-                led,
-                element,
-                brush,
-                FindSelectionPath(led, selectionPaths),
-                element.Stroke,
-                element.StrokeThickness,
-                ComputeBounds(geometry, rotation, width, height, hostX, hostY),
-                device.InstanceId ?? string.Empty,
-                led.SelectionGroup));
-        }
-        Surface.Children.Add(host);
-        _hosts.Add(hostState);
+
+        ApplySelection(next);
     }
+
     private void ApplyZoom()
     {
         var factor = _zoom / 100;
@@ -263,56 +209,60 @@ public sealed partial class StudioCanvas : UserControl
         Surface.Height = StudioCanvasPlacement.DesignSize * factor;
         ScaleGrid(factor);
     }
-    private static Transform CreateTransform(double width, double height, int rotation, double factor)
-    {
-        if (rotation == 0) return new ScaleTransform { ScaleX = factor, ScaleY = factor };
-        var group = new TransformGroup();
-        group.Children.Add(new RotateTransform { Angle = rotation, CenterX = width / 2, CenterY = height / 2 });
-        group.Children.Add(new ScaleTransform { ScaleX = factor, ScaleY = factor });
-        return group;
-    }
-
     private void LedPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (sender is not Path { Tag: StudioVisualLed led } element ||
-            !e.GetCurrentPoint(element).Properties.IsLeftButtonPressed) return;
+        if (sender is not Path { Tag: StudioVisualLed led } element) return;
+        Focus(FocusState.Programmatic);
+#if DEBUG
+        PointerQaLog($"led-press space={_spaceHeld} middle={e.GetCurrentPoint(element).Properties.IsMiddleButtonPressed} tool={_tool}");
+#endif
+        if (TryBeginPan(e)) return;
+        if (!e.GetCurrentPoint(element).Properties.IsLeftButtonPressed) return;
         e.Handled = true;
         if (element.DataContext is not HostState host) return;
+        if (e.KeyModifiers.HasFlag(VirtualKeyModifiers.Shift))
+        {
+            LedShiftClicked?.Invoke(host.InstanceId, led.MatrixRow, led.MatrixCol);
+            return;
+        }
+
         var erase = e.KeyModifiers.HasFlag(VirtualKeyModifiers.Control);
         switch (_tool)
         {
             case StudioCanvasTool.Pen:
                 _penActive = true;
                 _penVisited.Clear();
-                PenToggle(led, erase);
+                PenToggle(host.Device, led, erase);
                 Surface.CapturePointer(e.Pointer);
                 break;
             case StudioCanvasTool.Bucket:
-                SelectBucket(host.Device, led);
+                BucketClicked?.Invoke(host.InstanceId, led.MatrixRow, led.MatrixCol);
                 break;
             case StudioCanvasTool.Move:
                 BeginMove(host, e);
                 break;
             default:
-                SelectLed(led, erase);
+                SelectLed(host, led, erase);
                 break;
         }
     }
-    private void SelectLed(StudioVisualLed led, bool additive) =>
-        ApplySelection(SelectCell(_selection, led.MatrixRow, led.MatrixCol, additive));
-    private void PenToggle(StudioVisualLed led, bool erase)
+    private static StudioLedRef Cell(StudioDeviceVisual device, StudioVisualLed led) =>
+        StudioLedSelection.CellFor(device, led.MatrixRow, led.MatrixCol);
+    private void SelectLed(HostState host, StudioVisualLed led, bool additive) =>
+        ApplySelection(SelectCell(_selection, Cell(host.Device, led), additive));
+    private void PenToggle(StudioDeviceVisual device, StudioVisualLed led, bool erase)
     {
-        if (_penVisited.Add((led.MatrixRow, led.MatrixCol)))
-            ApplySelection(PenCell(_selection, led.MatrixRow, led.MatrixCol, erase));
+        if (_penVisited.Add((device.InstanceId, led.MatrixRow, led.MatrixCol)))
+            ApplySelection(PenCell(_selection, Cell(device, led), erase));
     }
     private void PenAt(Point point, bool erase)
     {
-        if (LedAt(point) is { } entry) PenToggle(entry.Led, erase);
+        if (LedAt(point) is { } entry) PenToggle(entry.Host.Device, entry.Led, erase);
     }
     private LedEntry? LedAt(Point point)
     {
         var factor = _zoom / 100;
-        return _ledEntries.Find(entry => Contains(entry.Bounds, point.X / factor, point.Y / factor));
+        return _ledEntries.Find(entry => Contains(entry.AbsoluteBounds(), point.X / factor, point.Y / factor));
     }
 
     private void BeginMove(HostState host, PointerRoutedEventArgs e)
@@ -346,8 +296,10 @@ public sealed partial class StudioCanvas : UserControl
 
     private void HostPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (sender is not Canvas canvas || canvas.DataContext is not HostState host ||
-            !e.GetCurrentPoint(canvas).Properties.IsLeftButtonPressed) return;
+        if (sender is not Canvas canvas || canvas.DataContext is not HostState host) return;
+        Focus(FocusState.Programmatic);
+        if (TryBeginPan(e)) return;
+        if (!e.GetCurrentPoint(canvas).Properties.IsLeftButtonPressed) return;
         if (_tool == StudioCanvasTool.Move)
         {
             BeginMove(host, e);
@@ -362,6 +314,8 @@ public sealed partial class StudioCanvas : UserControl
 
     private void SurfacePointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        Focus(FocusState.Programmatic);
+        if (TryBeginPan(e)) return;
         if (_tool != StudioCanvasTool.Select || !ReferenceEquals(e.OriginalSource, Surface)) return;
         var point = e.GetCurrentPoint(Surface);
         if (!point.Properties.IsLeftButtonPressed) return;
@@ -379,6 +333,11 @@ public sealed partial class StudioCanvas : UserControl
     private void SurfacePointerMoved(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(Surface).Position;
+        var panPoint = e.GetCurrentPoint(Scroller).Position;
+#if DEBUG
+        if (_panActive) PointerQaLog($"pan-move {panPoint.X:0},{panPoint.Y:0} offset={Scroller.HorizontalOffset:0}");
+#endif
+        if (_panActive) { PanTo(panPoint); e.Handled = true; return; }
         if (_penActive) { PenAt(point, e.KeyModifiers.HasFlag(VirtualKeyModifiers.Control)); e.Handled = true; }
         else if (_moveHost is not null) { MoveTo(point); e.Handled = true; }
         else if (_marqueeActive) ShowMarquee(_marqueeStart, ClampToSurface(point));
@@ -386,6 +345,11 @@ public sealed partial class StudioCanvas : UserControl
     private void SurfacePointerReleased(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(Surface).Position;
+        var panPoint = e.GetCurrentPoint(Scroller).Position;
+#if DEBUG
+        if (_panActive) PointerQaLog($"pan-release {panPoint.X:0},{panPoint.Y:0} offset={Scroller.HorizontalOffset:0}");
+#endif
+        if (_panActive) { PanTo(panPoint); EndPan(e); e.Handled = true; return; }
         if (_penActive)
         {
             PenAt(point, e.KeyModifiers.HasFlag(VirtualKeyModifiers.Control));
@@ -416,9 +380,9 @@ public sealed partial class StudioCanvas : UserControl
             : new List<StudioLedRef>();
         foreach (var entry in _ledEntries)
         {
-            if (Intersects(entry.Bounds, marquee))
+            if (Intersects(entry.AbsoluteBounds(), marquee))
             {
-                AddCell(next, new StudioLedRef(entry.Led.MatrixRow, entry.Led.MatrixCol));
+                AddCell(next, Cell(entry.Host.Device, entry.Led));
             }
         }
         ApplySelection(next);
@@ -428,29 +392,21 @@ public sealed partial class StudioCanvas : UserControl
     {
         if (!e.KeyModifiers.HasFlag(VirtualKeyModifiers.Control)) return;
         e.Handled = true;
-        var delta = e.GetCurrentPoint(Surface).Properties.MouseWheelDelta;
-        if (delta != 0) SetZoom(_zoom + (delta > 0 ? 10 : -10));
+        var point = e.GetCurrentPoint(Scroller);
+        var delta = point.Properties.MouseWheelDelta;
+        if (delta != 0) SetZoomStep(NextStep(delta > 0 ? 1 : -1), point.Position);
     }
     private void ResetGesture()
     {
         _marqueeActive = false;
         _penActive = false;
         _moveHost = null;
+        _panActive = false;
         _penVisited.Clear();
         RemoveMarquee();
+        UpdateCursor();
     }
 
-    private void UpdateCursor()
-    {
-        if (!IsLoaded) return;
-        ProtectedCursor = InputSystemCursor.Create(_tool switch
-        {
-            StudioCanvasTool.Pen => InputSystemCursorShape.Cross,
-            StudioCanvasTool.Bucket => InputSystemCursorShape.Hand,
-            StudioCanvasTool.Move => InputSystemCursorShape.SizeAll,
-            _ => InputSystemCursorShape.Arrow,
-        });
-    }
     private void ShowMarquee(Point start, Point end)
     {
         _marquee ??= new Rectangle
@@ -487,7 +443,9 @@ public sealed partial class StudioCanvas : UserControl
     {
         foreach (var entry in _ledEntries)
         {
-            var selected = IndexOfCell(_selection, entry.Led.MatrixRow, entry.Led.MatrixCol) >= 0;
+            var selected = IndexOfCell(
+                _selection, new StudioLedRef(
+                    entry.Led.MatrixRow, entry.Led.MatrixCol, InstanceId: entry.InstanceId)) >= 0;
             if (entry.Selection is { } selection)
             {
                 selection.Visibility = selected ? Visibility.Visible : Visibility.Collapsed;
@@ -503,7 +461,7 @@ public sealed partial class StudioCanvas : UserControl
         }
     }
 
-    private static Geometry? ConvertGeometry(string? data)
+    internal static Geometry? ConvertGeometry(string? data)
     {
         if (string.IsNullOrWhiteSpace(data)) return null;
         Geometry? geometry = null;
@@ -577,5 +535,14 @@ public sealed partial class StudioCanvas : UserControl
         double Thickness,
         Rect Bounds,
         string InstanceId,
-        string? SelectionGroup);
+        string? SelectionGroup,
+        HostState Host)
+    {
+        public Rect AbsoluteBounds()
+        {
+            var x = Bounds.X + Host.BaseX + (Host.VisualWidth - Host.Width) / 2;
+            var y = Bounds.Y + Host.BaseY + (Host.VisualHeight - Host.Height) / 2;
+            return new Rect(x, y, Bounds.Width, Bounds.Height);
+        }
+    }
 }

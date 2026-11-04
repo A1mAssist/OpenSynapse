@@ -168,6 +168,55 @@ public sealed class LightingStudioChromaInteropTests
     }
 
     [Fact]
+    public void ChromaExportCollapsesGenerateHistoryButInternalSaveKeepsIt()
+    {
+        var project = new StudioProject();
+        var profile = new StudioProfile("Default");
+        var layer = StudioLayerItem.CreateLayer("Generate", StudioEffectKind.ChromaGenerate);
+        layer.Params.CurrentConfigJson = """{"pattern":1}""";
+        layer.Params.EffectConfigListJson = """[{"pattern":1},{"pattern":2}]""";
+        layer.Params.CurrentConfigId = 1;
+        var region = new StudioRegion { Params = layer.Params.Clone() };
+        region.Params.CurrentConfigJson = """{"pattern":3}""";
+        layer.Regions.Add(region);
+        profile.Items.Add(layer);
+        project.Profiles.Add(profile);
+
+        var internalJson = StudioProjectCodec.Serialize(project);
+        using (var internalDocument = JsonDocument.Parse(internalJson))
+        {
+            var internalParams = internalDocument.RootElement.GetProperty("profiles")[0]
+                .GetProperty("layers")[0].GetProperty("params");
+            Assert.Equal(2, internalParams.GetProperty("effectConfigList").GetArrayLength());
+            Assert.Equal(1, internalParams.GetProperty("currentConfigId").GetInt32());
+        }
+
+        var directory = Path.Combine(Path.GetTempPath(), "opensynapse-chroma-export-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var path = Path.Combine(directory, "Generate.ChromaEffects");
+            StudioChromaFileService.Export(project, path);
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            var layerParams = document.RootElement.GetProperty("profiles")[0]
+                .GetProperty("layers")[0].GetProperty("params");
+            Assert.Equal(1, layerParams.GetProperty("effectConfigList").GetArrayLength());
+            Assert.Equal(0, layerParams.GetProperty("currentConfigId").GetInt32());
+            Assert.Equal(1, layerParams.GetProperty("currentConfig").GetProperty("pattern").GetInt32());
+
+            var regionParams = document.RootElement.GetProperty("profiles")[0]
+                .GetProperty("layers")[0].GetProperty("regions")[0].GetProperty("params");
+            Assert.Equal(1, regionParams.GetProperty("effectConfigList").GetArrayLength());
+            Assert.Equal(0, regionParams.GetProperty("currentConfigId").GetInt32());
+            Assert.Equal(3, regionParams.GetProperty("currentConfig").GetProperty("pattern").GetInt32());
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
     public void SyntheticChromaRoundTripKeepsDevicesRegionsAndRequiredShape()
     {
         const string json = """
@@ -313,6 +362,113 @@ public sealed class LightingStudioChromaInteropTests
         Assert.Equal(stats, Count(reimported.Project));
         Assert.Equal(profile.Devices.Count, Assert.Single(reimported.Project.Profiles).Devices.Count);
         Assert.Equal(exported, StudioProjectCodec.Serialize(reimported.Project));
+    }
+
+    [Fact]
+    public void ImportRemapsProfilePlacementToConnectedInstance()
+    {
+        var project = new StudioProject();
+        var profile = new StudioProfile("Default");
+        profile.Devices.Add(new StudioDevicePlacement
+        {
+            ProductId = 664,
+            InstanceId = "0",
+            DeviceId = "SN1",
+        });
+        var layer = StudioLayerItem.CreateLayer("Layer", StudioEffectKind.Solid);
+        var region = new StudioRegion();
+        var device = new StudioRegionDevice
+        {
+            ProductId = 664,
+            InstanceId = "0",
+            DeviceId = "SN1",
+        };
+        device.Leds.Add(new StudioLedRef(1, 2));
+        region.Devices.Add(device);
+        layer.Regions.Add(region);
+        profile.Items.Add(layer);
+        project.Profiles.Add(profile);
+
+        var result = StudioChromaImport.Import(
+            StudioProjectCodec.Serialize(project),
+            [new StudioDeviceMatch(664, "usb-1")]);
+
+        var placement = Assert.Single(Assert.Single(result.Project.Profiles).Devices);
+        Assert.Equal("usb-1", placement.InstanceId);
+        Assert.Contains(result.Issues, issue => issue.Kind == StudioImportIssueKind.RemappedDevice);
+        var importedRegion = Assert.Single(Assert.Single(
+            Assert.Single(result.Project.Profiles).EnumerateLayers()).Regions);
+        Assert.Equal("usb-1", Assert.Single(importedRegion.Devices).InstanceId);
+    }
+
+    [Fact]
+    public void RegionParams2KeepsTidalCenterAndDirection()
+    {
+        var project = new StudioProject();
+        var profile = new StudioProfile("Default");
+        var layer = StudioLayerItem.CreateLayer("Tidal", StudioEffectKind.Tidal);
+        var region = new StudioRegion { Params = layer.Params.Clone() };
+        region.Params.CenterPointX = 1_234;
+        region.Params.CenterPointY = 5_678;
+        region.Params.Counterclockwise = true;
+        region.Params.DeviceWithCenterPointJson = "[\"device-1\"]";
+        layer.Regions.Add(region);
+        profile.Items.Add(layer);
+        project.Profiles.Add(profile);
+
+        var json = StudioProjectCodec.Serialize(project);
+        using (var document = JsonDocument.Parse(json))
+        {
+            var params2 = document.RootElement.GetProperty("profiles")[0].GetProperty("layers")[0]
+                .GetProperty("regions")[0].GetProperty("params2");
+            Assert.Equal(1_234d, params2.GetProperty("centerPointX2").GetDouble());
+            Assert.Equal(5_678d, params2.GetProperty("centerPointY2").GetDouble());
+            Assert.True(params2.GetProperty("counterclockwise").GetBoolean());
+        }
+
+        var restored = StudioProjectCodec.Deserialize(json).Profiles[0].Items[0].Regions[0].Params;
+        Assert.Equal(1_234d, restored.CenterPointX);
+        Assert.Equal(5_678d, restored.CenterPointY);
+        Assert.True(restored.Counterclockwise);
+        Assert.Contains("device-1", restored.DeviceWithCenterPointJson);
+    }
+
+    [Fact]
+    public void ImportKeepsGenerateHistoryFromAChromaFile()
+    {
+        const string json = """
+        {
+          "version": 1,
+          "profiles": [{
+            "id": "aaaaaaaaaaaa",
+            "title": "Generate",
+            "devices": [],
+            "layers": [{
+              "id": "111111111111", "type": "layer", "title": "Generate",
+              "name": "chroma-generate", "value": 18,
+              "params": {
+                "mediaSrc": "C:\\\\media\\\\clip.mp4",
+                "currentConfig": { "pattern": "3" },
+                "effectConfigList": [{ "pattern": "1" }, { "pattern": "3" }],
+                "currentConfigId": 1
+              },
+              "regions": []
+            }]
+          }]
+        }
+        """;
+
+        var project = StudioChromaImport.Import(json, []).Project;
+        var parameters = Assert.Single(Assert.Single(project.Profiles).Items).Params;
+
+        Assert.Equal(StudioEffectKind.ChromaGenerate, parameters.Effect);
+        Assert.Equal(2, StudioGeneratePresets.Read(parameters.EffectConfigListJson).Count);
+        Assert.Equal(1, parameters.CurrentConfigId);
+        using var document = JsonDocument.Parse(StudioProjectCodec.Serialize(project));
+        var saved = document.RootElement.GetProperty("profiles")[0]
+            .GetProperty("layers")[0].GetProperty("params");
+        Assert.Equal(2, saved.GetProperty("effectConfigList").GetArrayLength());
+        Assert.Equal(1, saved.GetProperty("currentConfigId").GetInt32());
     }
 
     private static (int Layers, int Groups, int Regions, int Leds) Count(StudioProject project)

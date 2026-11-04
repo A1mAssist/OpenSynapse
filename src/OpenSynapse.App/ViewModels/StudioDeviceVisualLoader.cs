@@ -1,3 +1,4 @@
+using System.Text.Json;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
@@ -12,13 +13,18 @@ public sealed class StudioDeviceVisualLoader : IDisposable
 {
     private readonly HttpClient _http;
     private readonly StudioManifestService _service;
+    private readonly StudioProductImageService _images;
 
     public StudioDeviceVisualLoader(string? cacheDirectory = null)
     {
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         _service = new StudioManifestService(
             _http,
-            cacheDirectory ?? AppDataPaths.Combine("lighting-studio", "manifests"));
+            cacheDirectory ?? AppDataPaths.Combine("lighting-studio", "manifests"),
+            TimeSpan.FromMinutes(10));
+        _images = new StudioProductImageService(
+            _http,
+            AppDataPaths.Combine("lighting-studio", "product-images"));
     }
 
     public Task<StudioDeviceVisual?> LoadAsync(DeviceDescriptor device, CancellationToken cancellationToken)
@@ -34,6 +40,34 @@ public sealed class StudioDeviceVisualLoader : IDisposable
         if (result.Manifest is null) return null;
         return StudioDeviceVisualBuilder.Build(result.Manifest, instanceId, name);
     }
+
+    /// <summary>Loads only the LED table; the device card does not need SVG paths.</summary>
+    public async Task<StudioLedLayout?> LoadLayoutAsync(ushort productId, CancellationToken cancellationToken)
+    {
+        if (StudioLegacyLayoutCatalog.TryGet(productId, out var legacy)) return legacy;
+
+        var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
+        if (result.Manifest?.LedConfigJson is not { Length: > 0 } json)
+        {
+            return null;
+        }
+
+        try
+        {
+            return StudioLedLayout.Parse(json);
+        }
+        catch (Exception exception) when (exception is ArgumentException or FormatException or
+            InvalidOperationException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    public Task<StudioProductImage> LoadProductImageAsync(
+        ushort productId,
+        string? name,
+        CancellationToken cancellationToken) =>
+        _images.GetAsync(productId, name, cancellationToken);
 
     public void Dispose() => _http.Dispose();
 }

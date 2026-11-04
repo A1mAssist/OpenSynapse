@@ -85,4 +85,19 @@ public static class StudioMaskBuilder
 
         return mask;
     }
+
+    /// <summary>Copies one device row out of a multi-row mask for a 1 x N output.</summary>
+    public static byte[] SliceRow(byte[] mask, int rows, int columns, int row, int count)
+    {
+        ArgumentNullException.ThrowIfNull(mask);
+        if (rows < 1 || columns < 1 || mask.Length != rows * columns)
+        {
+            throw new ArgumentOutOfRangeException(nameof(rows), "The mask does not match the canvas size.");
+        }
+
+        var result = new byte[Math.Max(1, count)];
+        if ((uint)row >= (uint)rows) return result;
+        Array.Copy(mask, row * columns, result, 0, Math.Min(columns, result.Length));
+        return result;
+    }
 }
