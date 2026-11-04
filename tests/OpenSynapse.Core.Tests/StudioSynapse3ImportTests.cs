@@ -107,6 +107,49 @@ public sealed class StudioSynapse3ImportTests
     }
 
     [Fact]
+    public void ReadsTheRealSynapse3ExportRenamedToChromaEffects()
+    {
+        var path = Path.Combine(
+            AppContext.BaseDirectory, "Fixtures", "Chroma", "synapse3-peach.ChromaEffects");
+        Assert.True(File.Exists(path), $"missing fixture {path}");
+
+        var profiles = StudioSynapse3Import.ReadProfiles(path, out var projectName);
+        var profile = Assert.Single(profiles);
+        Assert.Equal("synapse3-peach", projectName);
+        Assert.Equal("黄桃律动", profile.Title);
+        Assert.Equal(4, profile.Devices.Count);
+        Assert.Contains(profile.Devices, device => device.ProductId == 550);
+
+        var layers = profile.EnumerateLayers().Where(layer => !layer.IsGroup).ToArray();
+        Assert.Contains(layers, layer => layer.Params.Effect == StudioEffectKind.Wave);
+        Assert.Contains(layers, layer => layer.Params.Effect == StudioEffectKind.Audio);
+        Assert.Contains(layers, layer => layer.Params.Effect == StudioEffectKind.Reactive);
+        Assert.Contains(layers, layer => layer.Params.Effect == StudioEffectKind.Ripple);
+
+        var wave = layers.First(layer => layer.Params.Effect == StudioEffectKind.Wave);
+        Assert.Equal(15, wave.Params.Speed);
+        Assert.Equal(100, wave.Params.Width);
+        Assert.Equal(0, wave.Params.Split);
+        Assert.Equal(100, wave.Opacity);
+    }
+
+    [Fact]
+    public void ChromaFileServiceSniffsLegacyArchiveAndReconcilesItsDevice()
+    {
+        var path = Path.Combine(
+            AppContext.BaseDirectory, "Fixtures", "Chroma", "synapse3-peach.ChromaEffects");
+
+        var result = StudioChromaFileService.Import(path, [new StudioDeviceMatch(550, "hid-550")]);
+
+        var profile = Assert.Single(result.Project.Profiles);
+        Assert.Equal("hid-550", Assert.Single(profile.Devices, device => device.ProductId == 550).InstanceId);
+        Assert.Contains(
+            profile.EnumerateLayers(),
+            layer => layer.Regions.Any(region =>
+                region.Devices.Any(device => device.InstanceId == "hid-550")));
+    }
+
+    [Fact]
     public void RejectsFilesWithoutLightingEffects()
     {
         Assert.Empty(StudioSynapse3Import.ParseProfiles("<root />"));
@@ -115,7 +158,7 @@ public sealed class StudioSynapse3ImportTests
         try
         {
             File.WriteAllText(path, "<root />");
-            Assert.Throws<InvalidOperationException>(() => StudioSynapse3Import.Import(path, []));
+            Assert.Throws<InvalidDataException>(() => StudioSynapse3Import.Import(path, []));
         }
         finally
         {
