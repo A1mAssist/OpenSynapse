@@ -112,6 +112,50 @@ public sealed class MacroDocumentServiceTests
         Assert.Equal("Renamed", inner.Name);
     }
 
+    [Fact]
+    public async Task Synapse4ExportPassesTheFullImportPipeline()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"opensynapse-macro-{Guid.NewGuid():N}.xml");
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                """
+                <Macro>
+                   <Name>太极炸鱼</Name>
+                   <MacroEvents>
+                      <MacroEvent><Type>actionBar</Type><recordProfile><mmtSetting>0</mmtSetting></recordProfile><selected>false</selected></MacroEvent>
+                      <MacroEvent><Type>1</Type><Id>3</Id><KeyEvent><Makecode>49</Makecode><State>0</State></KeyEvent><selected>false</selected><isPairing>false</isPairing></MacroEvent>
+                      <MacroEvent><Type>0</Type><Number>0.050</Number><selected>false</selected></MacroEvent>
+                      <MacroEvent><Type>1</Type><Id>3</Id><KeyEvent><Makecode>49</Makecode><State>1</State></KeyEvent><selected>false</selected><isPairing>false</isPairing></MacroEvent>
+                      <MacroEvent><Type>0</Type><Number>2.000</Number><selected>false</selected></MacroEvent>
+                   </MacroEvents>
+                   <DelaySetting>0</DelaySetting>
+                   <Guid>377c8a24-4ef9-435e-b6ee-2073da5ea676</Guid>
+                   <Version>4</Version>
+                   <MouseMoveType>none</MouseMoveType>
+                </Macro>
+                """);
+
+            var imported = await MacroDocumentService.ImportAsync(path, CancellationToken.None);
+            MacroDocumentService.PrepareImported(
+                imported,
+                () => Guid.NewGuid().ToString("N"),
+                "Imported macro");
+            var macro = Assert.Single(imported);
+
+            Assert.Equal(4, macro.Steps.Count);
+            Assert.Equal(49, macro.Steps[0].Input!.VirtualKey);
+            Assert.True(MacroValidator.ValidateTree(macro));
+            Assert.True(MacroValidator.ValidateReferences(macro, Map(macro)));
+            Assert.NotEmpty(MacroPlaybackPlan.Build(macro, Map(macro)).Actions);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static IReadOnlyDictionary<string, MacroDefinition> Map(params MacroDefinition[] macros) =>
         MacroDocumentService.IndexById(macros);
 }

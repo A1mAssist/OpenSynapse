@@ -128,6 +128,19 @@ public sealed class AppAuditRegressionTests
     }
 
     [Fact]
+    public void MacroImportDoesNotRevalidateUnrelatedDirtyDrafts()
+    {
+        var import = Method(Vm("MacroWorkspace.cs"), "public async Task ImportMacroAsync");
+        var save = import.IndexOf("TrySaveMacroProfileAsync", StringComparison.Ordinal);
+        var tree = import.IndexOf("imported.Any(macro => !ValidateMacroTree(macro))", StringComparison.Ordinal);
+        var references = import.IndexOf("imported.Any(macro => !ValidateMacroReferences(macro))", StringComparison.Ordinal);
+
+        Assert.True(tree >= 0 && references > tree && save > references);
+        Assert.Contains("prepareDirtyMacros: false", import);
+        Assert.DoesNotContain("TrySaveMacroProfileAsync(cancellationToken)", import);
+    }
+
+    [Fact]
     public void MainViewModelGroupFitsBudgetAndCompositionCallersUseWorkspaces()
     {
         var directory = Path.Combine(RepoLayout.Root, "src", "OpenSynapse.App", "ViewModels");
