@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenSynapse.Core\OpenSynapse.Core.csproj" />
+    <ProjectReference Include="..\OpenSynapse.ChromaSdk.Protocol\OpenSynapse.ChromaSdk.Protocol.csproj" />
   </ItemGroup>
 
   <ItemGroup>

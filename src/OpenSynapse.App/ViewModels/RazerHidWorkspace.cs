@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Dispatching;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Diagnostics;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
@@ -138,6 +139,15 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         IReadOnlyList<RazerRgb> sourceFrame,
         CancellationToken cancellationToken = default) =>
         _chromaFrameSink?.ApplyAsync(sourceFrame, cancellationToken) ??
+        Task.FromResult(false);
+
+    internal Task<bool> ApplyChromaFrameAsync(
+        IReadOnlyList<RazerRgb> sourceFrame,
+        int sourceRows,
+        int sourceColumns,
+        DeviceCategory category,
+        CancellationToken cancellationToken = default) =>
+        _chromaFrameSink?.ApplyAsync(sourceFrame, sourceRows, sourceColumns, category, cancellationToken) ??
         Task.FromResult(false);
 
     internal void RefreshLocalization()

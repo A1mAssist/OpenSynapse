@@ -75,10 +75,10 @@
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
-                        <TextBlock local:Localized.Uid="ChromaRestTitle" Text="Chroma REST" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="ChromaRestDescription" Text="Allow compatible games and integrations to control the Blade keyboard locally." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="ChromaRestTitle" Text="Chroma integration" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaRestDescription" Text="Allow compatible REST and SDK clients to control connected lighting locally. The SDK shim does not require Razer Synapse." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
-                      <ToggleSwitch local:Localized.Uid="ChromaRestToggle" x:Name="ChromaRestToggle" Grid.Column="1" Toggled="ChromaRestToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Chroma REST" />
+                      <ToggleSwitch local:Localized.Uid="ChromaRestToggle" x:Name="ChromaRestToggle" Grid.Column="1" Toggled="ChromaRestToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Chroma integration" />
                     </Grid>
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">

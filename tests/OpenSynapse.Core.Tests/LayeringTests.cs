@@ -36,8 +36,10 @@ public sealed class LayeringTests
         var allowed = new Dictionary<string, string[]>(StringComparer.Ordinal)
         {
             ["OpenSynapse.Core"] = [],
-            ["OpenSynapse.Windows"] = ["OpenSynapse.Core"],
-            ["OpenSynapse.App"] = ["OpenSynapse.Core", "OpenSynapse.Windows", "OpenSynapse.RecoveryHost", "OpenSynapse.ThxHelper"],
+            ["OpenSynapse.ChromaSdk.Protocol"] = [],
+            ["OpenSynapse.ChromaSdk.Shim"] = ["OpenSynapse.ChromaSdk.Protocol"],
+            ["OpenSynapse.Windows"] = ["OpenSynapse.Core", "OpenSynapse.ChromaSdk.Protocol"],
+            ["OpenSynapse.App"] = ["OpenSynapse.Core", "OpenSynapse.ChromaSdk.Protocol", "OpenSynapse.Windows", "OpenSynapse.RecoveryHost", "OpenSynapse.ThxHelper"],
             ["OpenSynapse.RecoveryHost"] = ["OpenSynapse.Windows"],
             ["OpenSynapse.ThxHelper"] = ["OpenSynapse.Windows"],
         };

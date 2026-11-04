@@ -46,7 +46,11 @@ The list is grouped by device type and includes every recognized PID, so a Devic
 
 See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.md) for the current device and transport matrix.
 
-Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified Blade 16 key layout, and OpenSynapse restores the selected lighting effect after external control ends. The native Chroma SDK and `RzChromaConnectAPI` DLL interface are not implemented.
+Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified Blade 16 key layout, and OpenSynapse restores the selected lighting effect after external control ends. Razer Synapse is not required.
+
+### Chroma SDK shim
+
+The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` that implements the Chroma SDK 4.0.1 ABI and routes keyboard effects to OpenSynapse over `\\.\pipe\OpenSynapseChromaSdk`. Keyboard `CUSTOM`, `CUSTOM_KEY`, and 8×24 `CUSTOM2`, plus mouse, headset, and mousepad custom/static effects, are decoded and applied when a matching matrix device is available. Generic `CreateEffect`, `QueryDevice`, keypad, ChromaLink, and deprecated effects are not implemented. See [Chroma SDK shim](docs/CHROMA_SDK_SHIM.md) for the ABI evidence and deployment steps.
 
 ## Screenshots
 
@@ -95,6 +99,7 @@ dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
 dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
+dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```
 
 Run the local build with:

@@ -1368,9 +1368,9 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>Gaming mode changed, but the profile could not be saved.</value></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>The Blade Fn runtime stopped safely before audio synchronization completed.</value></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>Sampling failed · showing the last value</value></data>
-  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma REST</value><comment>Chroma REST title</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Allow compatible REST games and integrations to control the Blade keyboard locally. Native Chroma SDK is not supported.</value><comment>Chroma REST description</comment></data>
-  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma REST</value><comment>Chroma REST toggle</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma integration</value><comment>Chroma integration title</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Allow compatible REST and SDK clients to control connected lighting locally. The SDK shim does not require Razer Synapse.</value><comment>Chroma integration description</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma integration</value><comment>Chroma integration toggle</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>Disabled</value></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>Disabled</value></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>Unavailable</value></data>

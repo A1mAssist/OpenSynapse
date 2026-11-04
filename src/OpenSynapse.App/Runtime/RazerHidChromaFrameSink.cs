@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -27,14 +28,23 @@ internal sealed class RazerHidChromaFrameSink
         _chromaOverrideEnabled = chromaOverrideEnabled ?? throw new ArgumentNullException(nameof(chromaOverrideEnabled));
     }
 
+    internal Task<bool> ApplyAsync(
+        IReadOnlyList<RazerRgb> sourceFrame,
+        CancellationToken cancellationToken = default) =>
+        ApplyAsync(sourceFrame, SourceRows, SourceColumns, category: null, cancellationToken);
+
     internal async Task<bool> ApplyAsync(
         IReadOnlyList<RazerRgb> sourceFrame,
+        int sourceRows,
+        int sourceColumns,
+        DeviceCategory? category,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(sourceFrame);
-        if (sourceFrame.Count != SourceRows * SourceColumns)
+        if (sourceRows <= 0 || sourceColumns <= 0 ||
+            sourceFrame.Count != sourceRows * sourceColumns)
         {
-            throw new ArgumentException("A Chroma source frame must contain 6 x 22 colors.", nameof(sourceFrame));
+            throw new ArgumentException("The Chroma source frame does not match its dimensions.", nameof(sourceFrame));
         }
 
         // REST clients can post faster than a device can accept its row writes.
@@ -49,6 +59,7 @@ internal sealed class RazerHidChromaFrameSink
             }
             var targets = _connections()
                 .Where(connection => connection.IsReady &&
+                    (category is null || connection.Definition.Category == category) &&
                     connection.Definition.MatrixDimensions is not null &&
                     connection.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite) &&
                     _lightingEnabled(connection) &&
@@ -74,7 +85,7 @@ internal sealed class RazerHidChromaFrameSink
             foreach (var target in targets)
             {
                 var dimensions = target.Definition.MatrixDimensions!;
-                var frame = Resize(sourceFrame, dimensions.Rows, dimensions.Columns)
+                var frame = Resize(sourceFrame, sourceRows, sourceColumns, dimensions.Rows, dimensions.Columns)
                     .Select(color => new RazerHidColor(color.Red, color.Green, color.Blue))
                     .ToArray();
 
@@ -112,19 +123,21 @@ internal sealed class RazerHidChromaFrameSink
 
     private static IReadOnlyList<RazerRgb> Resize(
         IReadOnlyList<RazerRgb> source,
+        int sourceRows,
+        int sourceColumns,
         int rows,
         int columns)
     {
         var result = new RazerRgb[rows * columns];
         for (var row = 0; row < rows; row++)
         {
-            var sourceRow = rows == 1 ? 0 : (int)Math.Round(row * (SourceRows - 1d) / (rows - 1d));
+            var sourceRow = rows == 1 ? 0 : (int)Math.Round(row * (sourceRows - 1d) / (rows - 1d));
             for (var column = 0; column < columns; column++)
             {
                 var sourceColumn = columns == 1
                     ? 0
-                    : (int)Math.Round(column * (SourceColumns - 1d) / (columns - 1d));
-                result[row * columns + column] = source[sourceRow * SourceColumns + sourceColumn];
+                    : (int)Math.Round(column * (sourceColumns - 1d) / (columns - 1d));
+                result[row * columns + column] = source[sourceRow * sourceColumns + sourceColumn];
             }
         }
         return result;
