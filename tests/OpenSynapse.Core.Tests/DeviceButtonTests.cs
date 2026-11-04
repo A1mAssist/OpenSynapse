@@ -108,6 +108,36 @@ public sealed class DeviceButtonTests
         Assert.Equal("DPI Clutch", RazerPrivateKeyCatalog.Describe(0x00AA, 81));
         Assert.Equal("Performance", RazerPrivateKeyCatalog.Describe(0x02C6, 211));
         Assert.Equal("Razer key 199", RazerPrivateKeyCatalog.Describe(0x00AA, 199));
+        Assert.Equal("Next DPI Stage", RazerPrivateKeyCatalog.Describe(0x00B9, 82));
+        Assert.Equal("Multi-function Trigger", RazerPrivateKeyCatalog.Describe(0x00B9, 89));
+        Assert.True(RazerPrivateKeyCatalog.SupportsThirdSideButton(0x00B9));
+        Assert.True(RazerPrivateKeyCatalog.SupportsThirdSideButton(0x00D3));
+        Assert.False(RazerPrivateKeyCatalog.SupportsThirdSideButton(0x00AA));
+    }
+
+    [Fact]
+    public void BasiliskV3XThirdSideButtonIsADeviceScopedRazerKey()
+    {
+        var input = new MacroInput
+        {
+            Kind = MacroInputKind.RazerKey,
+            DeviceId = 0x00B9,
+            DeviceName = "Razer Basilisk V3 X HyperSpeed",
+            RazerKeyCode = 89,
+        };
+
+        Assert.True(input.IsValid(
+            allowPrimaryMouseButton: false,
+            allowWheel: false,
+            allowDeviceButton: true));
+        Assert.True(new MacroTrigger { Input = input }.Matches(
+            new MacroInput
+            {
+                Kind = MacroInputKind.RazerKey,
+                DeviceId = 0x00B9,
+                RazerKeyCode = 89,
+            },
+            MacroModifierKeys.None));
     }
 
     [Fact]

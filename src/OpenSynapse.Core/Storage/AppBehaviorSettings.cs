@@ -27,6 +27,10 @@ public sealed class AppBehaviorSettings
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
     public bool TrayBatteryLevelsEnabled { get; set; } = true;
     public bool TaskbarStatusEnabled { get; set; }
+    public bool PerformanceOverlayEnabled { get; set; }
+    public bool PerformanceOverlayDetailed { get; set; }
+    public int? PerformanceOverlayX { get; set; }
+    public int? PerformanceOverlayY { get; set; }
     public int WindowWidth { get; set; }
     public int WindowHeight { get; set; }
     public Dictionary<string, int> LowBatteryNotifiedLevels { get; set; } = new(StringComparer.OrdinalIgnoreCase);

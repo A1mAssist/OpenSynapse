@@ -2,7 +2,6 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using Microsoft.UI.Dispatching;
 using OpenSynapse.App.ViewModels;
-using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Core.Storage;
@@ -13,12 +12,19 @@ namespace OpenSynapse.App;
 internal sealed class TaskbarStatusPresenter : IDisposable
 {
     private static readonly TimeSpan BladeGracePeriod = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan BatteryReadInterval = TimeSpan.FromSeconds(20);
     private readonly MainWindow _window;
     private readonly MainViewModel _viewModel;
     private readonly LocalDiagnosticLog _diagnosticLog;
+    private readonly DispatcherQueue? _dispatcherQueue;
     private readonly DispatcherQueueTimer? _timer;
+    private readonly Dictionary<string, int?> _batteryReadings = new(StringComparer.OrdinalIgnoreCase);
     private TaskbarStatusWindow? _statusWindow;
+    private CancellationTokenSource? _batteryReadCancellation;
+    private object? _activePeripheralSource;
     private DateTimeOffset? _lastBladeSeenAt;
+    private DateTimeOffset _lastBatteryReadAt = DateTimeOffset.MinValue;
+    private bool _batteryReadRequested = true;
     private bool _enabled;
     private bool _disposed;
 
@@ -31,10 +37,11 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _window = window;
         _viewModel = viewModel;
         _diagnosticLog = diagnosticLog;
-        _viewModel.Telemetry.PropertyChanged += OnTelemetryChanged;
         _viewModel.Blade.PropertyChanged += OnBladeChanged;
         _viewModel.Devices.CollectionChanged += OnDevicesChanged;
-        _timer = DispatcherQueue.GetForCurrentThread()?.CreateTimer();
+        _viewModel.RazerHid.Devices.CollectionChanged += OnDevicesChanged;
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+        _timer = _dispatcherQueue?.CreateTimer();
         if (_timer is not null)
         {
             _timer.Interval = TimeSpan.FromSeconds(2);
@@ -50,11 +57,13 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         if (!enabled)
         {
             _timer?.Stop();
+            CancelBatteryRead();
             _statusWindow?.Dispose();
             _statusWindow = null;
             return;
         }
 
+        _batteryReadRequested = true;
         _timer?.Start();
         Refresh();
     }
@@ -64,22 +73,13 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         if (_disposed) return;
         _disposed = true;
         _timer?.Stop();
+        CancelBatteryRead();
         _statusWindow?.Dispose();
         _statusWindow = null;
-        _viewModel.Telemetry.PropertyChanged -= OnTelemetryChanged;
         _viewModel.Blade.PropertyChanged -= OnBladeChanged;
         _viewModel.Devices.CollectionChanged -= OnDevicesChanged;
+        _viewModel.RazerHid.Devices.CollectionChanged -= OnDevicesChanged;
         GC.SuppressFinalize(this);
-    }
-
-    private void OnTelemetryChanged(object? sender, PropertyChangedEventArgs args)
-    {
-        if (args.PropertyName is nameof(TelemetryWorkspace.BatteryPercent)
-            or nameof(TelemetryWorkspace.IsCharging)
-            or nameof(TelemetryWorkspace.BatteryChargeState))
-        {
-            Refresh();
-        }
     }
 
     private void OnBladeChanged(object? sender, PropertyChangedEventArgs args)
@@ -91,7 +91,11 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         }
     }
 
-    private void OnDevicesChanged(object? sender, NotifyCollectionChangedEventArgs args) => Refresh();
+    private void OnDevicesChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        _batteryReadRequested = true;
+        Refresh();
+    }
 
     private void Refresh()
     {
@@ -105,11 +109,28 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         var now = DateTimeOffset.UtcNow;
         var hasBlade = bladeProductId != 0 ||
             (_lastBladeSeenAt is { } seen && now - seen < BladeGracePeriod);
+        var battery = CurrentBatteries()
+            .Where(item => item.Percent is not null)
+            .OrderBy(item => item.Percent)
+            .ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
+            .FirstOrDefault();
+        RequestBatteryReadIfDue();
+
+        if (battery is null)
+        {
+            _activePeripheralSource = null;
+            _statusWindow?.Hide();
+            return;
+        }
+
+        _activePeripheralSource = battery.Source;
         var snapshot = new TaskbarStatusSnapshot(
-            _viewModel.Telemetry.BatteryPercent,
-            _viewModel.Telemetry.IsCharging,
-            _viewModel.Blade.PerformanceModeText);
-        if (!hasBlade || !TaskbarStatusPolicy.ShouldShow(snapshot, enabled: true))
+            battery.Percent,
+            null,
+            hasBlade ? _viewModel.Blade.PerformanceModeText : string.Empty,
+            battery.Glyph,
+            battery.Name);
+        if (!TaskbarStatusPolicy.ShouldShow(snapshot, enabled: true))
         {
             _statusWindow?.Hide();
             return;
@@ -117,7 +138,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
 
         var tooltip = TaskbarStatusPolicy.FormatTooltip(
             snapshot,
-            _viewModel.Telemetry.BatteryChargeState,
+            string.Empty,
             snapshot.PerformanceMode);
         try
         {
@@ -125,7 +146,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             {
                 _statusWindow = new TaskbarStatusWindow(
                     message => _diagnosticLog.TryWrite("taskbar-status", message));
-                _statusWindow.Activated += ActivateBlade;
+                _statusWindow.Activated += ActivatePeripheral;
             }
             _statusWindow.Update(snapshot, tooltip, tooltip);
         }
@@ -139,19 +160,82 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         }
     }
 
-    private void ActivateBlade()
+    private IReadOnlyList<PeripheralBattery> CurrentBatteries()
     {
-        var bladeProductId = _viewModel.Blade.BladeProductId;
-        var row = _viewModel.Devices.FirstOrDefault(device =>
-            device.ProductId == bladeProductId &&
-            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
-        if (row is not null)
+        var batteries = _viewModel.Tray.ConnectedBatteries;
+        if (_batteryReadings.Count == 0) return batteries;
+        return batteries.Select(battery =>
+            battery.Percent is null &&
+            _batteryReadings.TryGetValue(battery.Key, out var percent) &&
+            percent is not null
+                ? battery with { Percent = percent }
+                : battery).ToArray();
+    }
+
+    private void RequestBatteryReadIfDue()
+    {
+        if (!_enabled || _disposed || _batteryReadCancellation is not null) return;
+        var now = DateTimeOffset.UtcNow;
+        if (!_batteryReadRequested && now - _lastBatteryReadAt < BatteryReadInterval) return;
+        _batteryReadRequested = false;
+        _lastBatteryReadAt = now;
+        var cancellation = new CancellationTokenSource();
+        _batteryReadCancellation = cancellation;
+        _ = ReadBatteriesAsync(cancellation);
+    }
+
+    private async Task ReadBatteriesAsync(CancellationTokenSource cancellation)
+    {
+        try
         {
-            _window.RequestDeviceNavigation(row);
+            var readings = await _viewModel.Tray.ReadBatteriesAsync(cancellation.Token);
+            if (cancellation.IsCancellationRequested || _disposed) return;
+            _batteryReadings.Clear();
+            foreach (var reading in readings)
+            {
+                if (reading.Percent is { } percent)
+                {
+                    _batteryReadings[reading.Key] = percent;
+                }
+            }
         }
-        else
+        catch (OperationCanceledException)
         {
-            _window.RequestNavigation("devices");
         }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("taskbar-battery", exception.ToString());
+        }
+        finally
+        {
+            if (ReferenceEquals(_batteryReadCancellation, cancellation))
+            {
+                _batteryReadCancellation = null;
+                cancellation.Dispose();
+                if (!_disposed && _enabled)
+                {
+                    _dispatcherQueue?.TryEnqueue(Refresh);
+                }
+            }
+        }
+    }
+
+    private void CancelBatteryRead()
+    {
+        var cancellation = _batteryReadCancellation;
+        _batteryReadCancellation = null;
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+    }
+
+    private void ActivatePeripheral()
+    {
+        if (_activePeripheralSource is { } source)
+        {
+            _window.RequestDeviceNavigation(source);
+            return;
+        }
+
+        _window.RequestNavigation("devices");
     }
 }

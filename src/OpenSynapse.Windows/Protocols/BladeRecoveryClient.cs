@@ -36,7 +36,14 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
                 markerPath,
                 TimeSpan.FromSeconds(2),
                 IsOriginalOwnerAlive,
-                stale => BladeRecoveryCoordinator.RecoverAsync(stale, []),
+                // Interface paths change across reboots. Keep the stale marker's
+                // ownership and hooks, but recover through the live endpoints.
+                stale => BladeRecoveryCoordinator.RecoverAsync(
+                    BladeRecoveryProtocol.RebaseToCurrentEndpoints(
+                        stale,
+                        featureDevicePath,
+                        filterDevicePath),
+                    []),
                 cancellationToken).ConfigureAwait(false);
             marker = new BladeRecoveryMarker(BladeRecoveryProtocol.CurrentMarkerVersion,
                 Environment.ProcessId, featureDevicePath, filterDevicePath, DateTimeOffset.UtcNow,

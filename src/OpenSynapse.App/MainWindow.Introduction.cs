@@ -2,6 +2,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
+using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Storage;
 using Windows.UI.ViewManagement;
 
@@ -11,18 +13,26 @@ public sealed partial class MainWindow
 {
     private static readonly TimeSpan IntroductionCloseTimeout = TimeSpan.FromSeconds(2);
     private static readonly string IntroductionMarkerPath =
+        AppDataPaths.Combine("introduction-v2.done");
+    private static readonly string LegacyIntroductionMarkerPath =
         AppDataPaths.Combine("introduction-v1.done");
     private bool _introductionTransitioning;
     private bool _introductionPendingAfterLaunch;
     private int _introductionStep = -1;
     private FrameworkElement? _introductionTarget;
+    private IReadOnlyList<IntroductionStep>? _introductionSteps;
     private AboutWindow? _aboutWindow;
 
-    private int IntroductionStepCount =>
-        _viewModel.Viper.DeviceVisibility == Visibility.Visible ? 4 : 3;
+    private static bool HasSeenIntroduction =>
+        File.Exists(IntroductionMarkerPath) || File.Exists(LegacyIntroductionMarkerPath);
 
-    internal void ShowIntroduction() =>
+    private int IntroductionStepCount => _introductionSteps?.Count ?? 0;
+
+    internal void ShowIntroduction()
+    {
+        _introductionSteps = null;
         _ = ShowIntroductionStepAsync(0);
+    }
 
     internal void ShowAboutWindow()
     {
@@ -44,6 +54,11 @@ public sealed partial class MainWindow
 
     private void IntroductionNextClick(object sender, RoutedEventArgs e)
     {
+        if (IntroductionStepCount == 0)
+        {
+            return;
+        }
+
         if (_introductionStep + 1 < IntroductionStepCount)
         {
             _ = ShowIntroductionStepAsync(_introductionStep + 1);
@@ -74,39 +89,21 @@ public sealed partial class MainWindow
                 return;
             }
 
-            _introductionStep = Math.Clamp(step, 0, IntroductionStepCount - 1);
-
-            FrameworkElement target;
-            switch (_introductionStep)
+            await EnsureIntroductionStepsAsync();
+            if (_exitRequested || _introductionSteps is not { Count: > 0 } steps)
             {
-                case 0:
-                    RootNavigationView.SelectedItem = OverviewNavigationItem;
-                    target = DevicesNavigationItem;
-                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
-                    break;
-                case 1:
-                    RootNavigationView.SelectedItem = OverviewNavigationItem;
-                    OverviewPage.ScrollToTop();
-                    target = OverviewPage.TelemetrySection;
-                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
-                    break;
-                case 2:
-                    RootNavigationView.SelectedItem = DevicesNavigationItem;
-                    DevicesPage.ScrollToTop();
-                    target = DevicesPage.DeviceCardsRepeaterElement;
-                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Bottom;
-                    break;
-                default:
-                    RootNavigationView.SelectedItem = DevicesNavigationItem;
-                    DevicesPage.SelectDevice("viper");
-                    DevicesPage.ScrollToTop();
-                    target = DevicesPage.ViperAnchor;
-                    IntroductionTip.PreferredPlacement = TeachingTipPlacementMode.Top;
-                    break;
+                return;
             }
 
+            _introductionStep = Math.Clamp(step, 0, steps.Count - 1);
+            var definition = steps[_introductionStep];
+            var target = await PrepareIntroductionStepAsync(definition);
+            IntroductionTip.PreferredPlacement = definition.Kind == IntroductionStepKind.DeviceControls
+                ? TeachingTipPlacementMode.Top
+                : TeachingTipPlacementMode.Bottom;
+
             RefreshIntroductionLocalization();
-            IntroductionProgressText.Text = $"{_introductionStep + 1} / {IntroductionStepCount}";
+            IntroductionProgressText.Text = $"{_introductionStep + 1} / {steps.Count}";
             IntroductionPreviousButton.Visibility = _introductionStep == 0
                 ? Visibility.Collapsed
                 : Visibility.Visible;
@@ -118,14 +115,14 @@ public sealed partial class MainWindow
 
             await WaitForNextRenderAsync();
             RootLayout.UpdateLayout();
-            if (_introductionStep == 2)
+            if (definition.Kind == IntroductionStepKind.DeviceCards)
             {
                 // ItemsRepeater virtualizes its children; resolve the first real card after layout.
                 target = DevicesPage.DeviceCardsRepeaterElement.TryGetElement(0) as FrameworkElement
-                    ?? DevicesPage.DeviceCardsRepeaterElement;
+                    ?? target;
             }
 
-            if (_introductionStep == IntroductionStepCount - 1)
+            if (definition.Kind == IntroductionStepKind.DeviceControls)
             {
                 DevicesPage.CenterOn(target);
             }
@@ -150,6 +147,123 @@ public sealed partial class MainWindow
         finally
         {
             _introductionTransitioning = false;
+        }
+    }
+
+    private async Task EnsureIntroductionStepsAsync()
+    {
+        if (_introductionSteps is not null)
+        {
+            return;
+        }
+
+        _viewModel.Refresh.RequestDeviceRefresh();
+        var deadline = Environment.TickCount64 + 2500;
+        while (_viewModel.ConnectedDevices.Count == 0 &&
+               Environment.TickCount64 < deadline &&
+               !_lifetime.IsCancellationRequested)
+        {
+            await Task.Delay(100, _lifetime.Token);
+        }
+
+        if (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _introductionSteps = BuildIntroductionSteps();
+    }
+
+    private IReadOnlyList<IntroductionStep> BuildIntroductionSteps()
+    {
+        var navigation = new IntroductionStep(
+            IntroductionStepKind.Navigation,
+            "IntroductionV2NavigationTitle",
+            "IntroductionV2NavigationBody");
+        var devices = new IntroductionStep(
+            IntroductionStepKind.DeviceCards,
+            "IntroductionV2DevicesTitle",
+            "IntroductionV2DevicesBody");
+
+        var peripheral = _viewModel.ConnectedDevices.FirstOrDefault(device =>
+            device.Category is DeviceCategory.Keyboard or DeviceCategory.Mouse);
+        if (peripheral is not null)
+        {
+            return
+            [
+                navigation,
+                devices,
+                new IntroductionStep(
+                    IntroductionStepKind.DeviceControls,
+                    "IntroductionV2DeviceSettingsTitle",
+                    peripheral.Category == DeviceCategory.Keyboard
+                        ? "IntroductionV2KeyboardBody"
+                        : "IntroductionV2MouseBody",
+                    peripheral),
+            ];
+        }
+
+        if (_viewModel.ConnectedDevices.Any(device => device.Category == DeviceCategory.Laptop))
+        {
+            return
+            [
+                navigation,
+                devices,
+                new IntroductionStep(
+                    IntroductionStepKind.DeviceControls,
+                    "IntroductionV2BladeTitle",
+                    "IntroductionV2BladeBody",
+                    _viewModel.ConnectedDevices.First(device => device.Category == DeviceCategory.Laptop)),
+            ];
+        }
+
+        if (_viewModel.ConnectedDevices.Count > 0)
+        {
+            // Other devices (headsets, accessories) keep the device-card step but are not
+            // claimed to be missing just because they are not a mouse, keyboard, or Blade.
+            return [navigation, devices];
+        }
+
+        return
+        [
+            navigation,
+            new IntroductionStep(
+                IntroductionStepKind.NoDevices,
+                "IntroductionV2NoDevicesTitle",
+                "IntroductionV2NoDevicesBody"),
+        ];
+    }
+
+    private async Task<FrameworkElement> PrepareIntroductionStepAsync(IntroductionStep step)
+    {
+        switch (step.Kind)
+        {
+            case IntroductionStepKind.Navigation:
+                RootNavigationView.SelectedItem = OverviewNavigationItem;
+                return DevicesNavigationItem;
+            case IntroductionStepKind.DeviceCards:
+                RootNavigationView.SelectedItem = DevicesNavigationItem;
+                DevicesPage.ScrollToTop();
+                return DevicesPage.DeviceCardsRepeaterElement;
+            case IntroductionStepKind.DeviceControls:
+                RootNavigationView.SelectedItem = DevicesNavigationItem;
+                if (step.Device is { Category: DeviceCategory.Laptop })
+                {
+                    DevicesPage.SelectDevice("blade");
+                }
+                else if (step.Device is { } device)
+                {
+                    await DevicesPage.ShowDeviceAsync(device.Source);
+                }
+
+                DevicesPage.ScrollToTop();
+                return step.Device is { Category: DeviceCategory.Laptop }
+                    ? DevicesPage.BladeIntroductionAnchor
+                    : DevicesPage.IntroductionDeviceAnchor;
+            default:
+                RootNavigationView.SelectedItem = DevicesNavigationItem;
+                DevicesPage.ScrollToTop();
+                return DevicesPage.NoDevicesAnchor;
         }
     }
 
@@ -227,6 +341,7 @@ public sealed partial class MainWindow
         IntroductionOverlay.Visibility = Visibility.Collapsed;
         SetIntroductionTarget(null);
         _introductionStep = -1;
+        _introductionSteps = null;
     }
 
     private void RootLayoutSizeChanged(object sender, SizeChangedEventArgs e) =>
@@ -367,20 +482,32 @@ public sealed partial class MainWindow
 
     private void RefreshIntroductionLocalization()
     {
-        if (_introductionStep < 0)
+        if (_introductionStep < 0 ||
+            _introductionSteps is not { } steps ||
+            _introductionStep >= steps.Count)
         {
             return;
         }
 
-        (IntroductionTip.Title, IntroductionBodyText.Text) = _introductionStep switch
-        {
-            0 => (AppStrings.Text("Text_5B78D29B"), AppStrings.Text("Text_4033519A")),
-            1 => (AppStrings.Text("Text_2B6750FA"), AppStrings.Text("Text_B7B42866")),
-            2 => (AppStrings.Text("Text_47A60744"), AppStrings.Text("Text_C777B66A")),
-            _ => (AppStrings.Text("Text_C796738D"), AppStrings.Text("Text_67AB4301")),
-        };
-        IntroductionNextButton.Content = _introductionStep == IntroductionStepCount - 1
+        var step = steps[_introductionStep];
+        IntroductionTip.Title = AppStrings.Text(step.TitleKey);
+        IntroductionBodyText.Text = AppStrings.Text(step.BodyKey);
+        IntroductionNextButton.Content = _introductionStep == steps.Count - 1
             ? AppStrings.Text("Text_1E13BD21")
             : AppStrings.Text("Text_10C83C81");
     }
+
+    private enum IntroductionStepKind
+    {
+        Navigation,
+        DeviceCards,
+        DeviceControls,
+        NoDevices,
+    }
+
+    private sealed record IntroductionStep(
+        IntroductionStepKind Kind,
+        string TitleKey,
+        string BodyKey,
+        ConnectedDeviceRowViewModel? Device = null);
 }

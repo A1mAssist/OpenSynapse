@@ -38,6 +38,55 @@ public sealed class BladeRecoveryProtocolTests
     }
 
     [Fact]
+    public void StaleMarkerRebasesToTheCurrentInstanceForTheSameProduct()
+    {
+        var marker = new BladeRecoveryMarker(
+            BladeRecoveryProtocol.CurrentMarkerVersion,
+            1234,
+            DevicePath,
+            FilterPath,
+            DateTimeOffset.Parse("2026-08-20T00:00:00Z"),
+            "001E:0");
+        const string currentDevicePath =
+            @"\\?\hid#vid_1532&pid_02c6&mi_00#current#{00000000-0000-0000-0000-000000000001}";
+        const string currentFilterPath =
+            @"\\?\RZCONTROL#VID_1532&PID_02C6&MI_00#current#{E3BE005D-D130-4910-88FF-09AE02F680E9}";
+
+        var rebased = BladeRecoveryProtocol.RebaseToCurrentEndpoints(
+            marker,
+            currentDevicePath,
+            currentFilterPath);
+
+        Assert.Equal(currentDevicePath, rebased.DevicePath);
+        Assert.Equal(currentFilterPath, rebased.FilterDevicePath);
+        Assert.Equal(marker.OwnerPid, rebased.OwnerPid);
+        Assert.Equal(marker.Hooks, rebased.Hooks);
+
+        var otherProduct = marker with
+        {
+            DevicePath = DevicePath.Replace("pid_02c6", "pid_02b6", StringComparison.OrdinalIgnoreCase),
+            FilterDevicePath = FilterPath.Replace("PID_02C6", "PID_02B6", StringComparison.OrdinalIgnoreCase),
+        };
+        Assert.Equal(
+            otherProduct,
+            BladeRecoveryProtocol.RebaseToCurrentEndpoints(
+                otherProduct,
+                currentDevicePath,
+                currentFilterPath));
+    }
+
+    [Fact]
+    public void StaleRecoveryUsesCurrentSessionEndpoints()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            RepoLayout.Root,
+            "src/OpenSynapse.Windows/Protocols/BladeRecoveryClient.cs"));
+        Assert.Contains("BladeRecoveryProtocol.RebaseToCurrentEndpoints(", source);
+        Assert.Contains("featureDevicePath", source);
+        Assert.Contains("filterDevicePath", source);
+    }
+
+    [Fact]
     public void SharedStateRoundTripsAndUnknownVersionFailsClosed()
     {
         var name = BladeRecoveryProtocol.CreateObjectName("RecoveryKeys", Guid.NewGuid());

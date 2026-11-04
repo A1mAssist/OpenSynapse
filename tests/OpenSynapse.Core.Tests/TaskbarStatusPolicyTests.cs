@@ -33,6 +33,17 @@ public sealed class TaskbarStatusPolicyTests
     }
 
     [Fact]
+    public void TooltipNamesThePeripheralBeforeItsPercentage()
+    {
+        var snapshot = new TaskbarStatusSnapshot(
+            87, null, "性能", "\uE962", "Razer Basilisk V3 Pro");
+
+        Assert.Equal(
+            "Razer Basilisk V3 Pro · 87% · 性能",
+            TaskbarStatusPolicy.FormatTooltip(snapshot, string.Empty, snapshot.PerformanceMode));
+    }
+
+    [Fact]
     public void MissingPerformanceOmitsSegmentFromTooltip()
     {
         var snapshot = new TaskbarStatusSnapshot(87, false, string.Empty);

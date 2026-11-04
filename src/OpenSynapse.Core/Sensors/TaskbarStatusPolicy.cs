@@ -13,7 +13,11 @@ public static class TaskbarStatusPolicy
         string chargingText,
         string performanceText)
     {
-        var parts = new List<string>(3);
+        var parts = new List<string>(4);
+        if (!string.IsNullOrWhiteSpace(snapshot.BatteryName))
+        {
+            parts.Add(snapshot.BatteryName.Trim());
+        }
         var battery = FormatBattery(snapshot.BatteryPercent);
         if (battery.Length > 0) parts.Add(battery);
         if (!string.IsNullOrWhiteSpace(chargingText)) parts.Add(chargingText.Trim());

@@ -15,6 +15,24 @@ public sealed partial class DevicesPage : UserControl
     internal bool IsBladePanelVisible => BladeDevicePanel.Visibility == Visibility.Visible;
     internal ItemsRepeater DeviceCardsRepeaterElement => DeviceCardsRepeater;
     internal FrameworkElement ViperAnchor => ViperPollingRateSaveButton;
+    internal FrameworkElement IntroductionDeviceAnchor =>
+        CurrentDeviceRoute() switch
+        {
+            "keyboard" => KeyboardIntroductionCard.Visibility == Visibility.Visible
+                ? KeyboardIntroductionCard
+                : KeyboardPanel,
+            "openrazer" => RazerHidIntroductionCard.Visibility == Visibility.Visible
+                ? RazerHidIntroductionCard
+                : RazerHidDevicePanel,
+            "viper" => ViperPollingRateCard,
+            "blade" => BladeIntroductionAnchor,
+            _ => DeviceCardsRepeater,
+        };
+    internal FrameworkElement BladeIntroductionAnchor =>
+        BladeIntroductionCard.Visibility == Visibility.Visible
+            ? BladeIntroductionCard
+            : BladeDevicePanel;
+    internal FrameworkElement NoDevicesAnchor => DeviceEmptyStateText;
 
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private CancellationToken Lifetime => Host.LifetimeToken;

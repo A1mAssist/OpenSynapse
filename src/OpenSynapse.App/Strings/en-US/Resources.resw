@@ -1665,8 +1665,15 @@
   <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>Show battery percentages for connected mice and keyboards in the tray menu. Turning this off removes the battery rows.</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tray menu peripheral battery</value></data>
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>Taskbar status strip</value></data>
-  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show laptop battery and the current performance mode in the taskbar. Appears only when a Blade battery is detected.</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar; also show the current performance mode when a Blade is detected.</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Taskbar status strip</value></data>
+  <data name="PerformanceOverlayTitle" xml:space="preserve"><value>Performance overlay</value></data>
+  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed above other windows. Drag it anywhere; its position is remembered.</value></data>
+  <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>Detailed card</value></data>
+  <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>Use the larger translucent card with a CPU/GPU load chart.</value></data>
+  <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Detailed performance overlay</value></data>
+  <data name="PerformanceOverlayToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Performance overlay</value></data>
+  <data name="PerformanceOverlayFanLabel" xml:space="preserve"><value>Fan</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>Low peripheral battery</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} has {1}% battery remaining.</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma sources</value></data>
@@ -2179,11 +2186,12 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>Middle</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>Side 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>Side 2 (Mouse 5)</value></data>
+  <data name="MacroMouseSide3Capture" xml:space="preserve"><value>Side 3 / multi-function (press to capture)</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga side {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>Mouse side buttons</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga side buttons</value></data>
   <data name="MacroTriggerDevice.Text" xml:space="preserve"><value>Capture device button</value></data>
-  <data name="MacroCapturePromptDevice" xml:space="preserve"><value>Press a button on another Razer device.</value></data>
+  <data name="MacroCapturePromptDevice" xml:space="preserve"><value>Press the mouse side button or Razer device button to bind.</value></data>
   <data name="MacroRuntimeError" xml:space="preserve"><value>Macro runtime error: {0}</value></data>
   <data name="MacroSaveFailed" xml:space="preserve"><value>Could not save the macro.</value></data>
   <data name="MacroCreated" xml:space="preserve"><value>Macro created.</value></data>
@@ -3218,4 +3226,15 @@
   <data name="LightingStudioScreenRight" xml:space="preserve"><value>Right</value></data>
   <data name="LightingStudioScreenBottom" xml:space="preserve"><value>Bottom</value></data>
   <data name="LightingStudioScreenCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="IntroductionV2NavigationTitle" xml:space="preserve"><value>Start here</value></data>
+  <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>The Devices page in the sidebar manages mice, keyboards, Blades, and headsets; Macros and Profiles are in the sidebar too.</value></data>
+  <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>Choose a device</value></data>
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>Select a device card to open its settings. If nothing appears, select Rescan and check that the device is connected.</value></data>
+  <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>Device settings</value></data>
+  <data name="IntroductionV2MouseBody" xml:space="preserve"><value>Adjust DPI, polling rate, lighting, and other supported options here; wireless mice also show battery level. Use Save or Apply on the relevant card; changes are not written automatically.</value></data>
+  <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>Adjust lighting, polling rate, game mode, and other supported options here; wireless keyboards also show battery level. Use Save or Apply on the relevant card; changes are not written automatically.</value></data>
+  <data name="IntroductionV2BladeTitle" xml:space="preserve"><value>Blade settings</value></data>
+  <data name="IntroductionV2BladeBody" xml:space="preserve"><value>Performance mode, fans, graphics mode, and keyboard lighting are on this page. Save or apply each change.</value></data>
+  <data name="IntroductionV2NoDevicesTitle" xml:space="preserve"><value>No devices found</value></data>
+  <data name="IntroductionV2NoDevicesBody" xml:space="preserve"><value>Connect a Razer device, then select Rescan. If it still does not appear, check the USB or receiver connection; you can reopen this guide from Settings.</value></data>
 </root>

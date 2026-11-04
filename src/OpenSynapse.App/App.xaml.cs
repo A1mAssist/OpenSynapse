@@ -245,6 +245,7 @@ public partial class App : Application
             window.AppWindow.IsShownInSwitchers = false;
         }
         window.Activate();
+        window.RestorePerformanceOverlay();
 
         _activationCancellation = new CancellationTokenSource();
         _ = ObserveActivationRequestsAsync(_activationCancellation.Token);

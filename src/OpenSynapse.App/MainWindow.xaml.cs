@@ -37,6 +37,7 @@ public sealed partial class MainWindow : Window
     private DisplayPowerNotification? _displayPowerNotification;
     private bool _trayLifecycleEnabled;
     private bool _taskbarStatusEnabled;
+    private bool _performanceOverlayEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
 
@@ -164,6 +165,7 @@ public sealed partial class MainWindow : Window
         _macroEditorWindow?.RefreshLocalization();
         ((App)Application.Current).RefreshTrayLocalization();
         RefreshIntroductionLocalization();
+        _performanceOverlayWindow?.RefreshLocalization();
     }
 
     internal void RefreshLightingPresetOptions() => DevicesPage.RefreshLightingPresetOptions();
@@ -337,7 +339,7 @@ public sealed partial class MainWindow : Window
         {
             return;
         }
-        if (File.Exists(IntroductionMarkerPath))
+        if (HasSeenIntroduction)
         {
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             HideLaunchOverlay();
@@ -455,6 +457,7 @@ public sealed partial class MainWindow : Window
         _aboutWindow = null;
         CloseThxAudioWindow();
         CloseBladeFanCurveWindow();
+        ClosePerformanceOverlayWindow();
         CloseMacroEditorWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.RazerHid.PropertyChanged -= OnViewModelPropertyChanged;
