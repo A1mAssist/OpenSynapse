@@ -2036,6 +2036,9 @@
   <data name="TrayBatteryTitle.Text" xml:space="preserve"><value>托盘菜单外设电量</value></data>
   <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>托盘菜单外设电量</value></data>
+  <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>任务栏状态条</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示笔记本电量和当前性能模式；只在检测到 Blade 电池时显示。</value></data>
+  <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>任务栏状态条</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>外设电量不足</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} 剩余电量为 {1}%。</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma 来源</value></data>

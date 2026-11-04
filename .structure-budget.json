@@ -247,7 +247,7 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/TelemetryWorkspace.cs",
-      "maxLines": 183,
+      "maxLines": 196,
       "maxPublicMembers": 34
     }
   ],

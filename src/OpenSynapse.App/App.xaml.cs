@@ -29,6 +29,7 @@ public partial class App : Application
     private ElevatedMacroInputSink? _elevatedMacroSink;
     private WindowsTrayIcon? _trayIcon;
     private TrayMenuWindow? _trayMenuWindow;
+    private TaskbarStatusPresenter? _taskbarStatusPresenter;
     private WindowsPerformanceMonitor? _performanceMonitor;
     private BladeLightingController? _bladeLightingController;
     private WindowsThxAudioController? _thxAudioController;
@@ -233,10 +234,12 @@ public partial class App : Application
             SetChromaRestEnabledAsync,
             GetChromaRestSnapshot,
             SetBladeIndicatorDisplayAvailableAsync,
-            SetChromaSourceAllowedAsync, _bladeLightingController);
+            SetChromaSourceAllowedAsync, _bladeLightingController, SetTaskbarStatusEnabled);
         RegisterMainWindow(window, viewModel);
         StartChromaRestHost(viewModel);
         InitializeTray(window, viewModel);
+        _taskbarStatusPresenter = new TaskbarStatusPresenter(
+            window, viewModel, _behaviorSettings, _diagnosticLog);
         if (silentLaunch)
         {
             window.AppWindow.IsShownInSwitchers = false;
@@ -434,6 +437,8 @@ public partial class App : Application
                 "Exit cleanup timed out; stale-session recovery remains armed.");
         }
         _diagnosticLog.TryWrite("application", "OpenSynapse stopped.");
+        _taskbarStatusPresenter?.Dispose();
+        _taskbarStatusPresenter = null;
         _trayIcon?.Dispose();
         _trayIcon = null;
         _trayMenuWindow?.CloseMenuHost();
@@ -584,6 +589,9 @@ public partial class App : Application
     }
 
     internal void RefreshTrayLocalization() => _trayMenuWindow?.RefreshLocalization();
+
+    private void SetTaskbarStatusEnabled(bool enabled) =>
+        _taskbarStatusPresenter?.SetEnabled(enabled);
 
     private async Task DisposeHardwareForExitAsync(MainViewModel viewModel)
     {

@@ -58,6 +58,7 @@ public sealed partial class SettingsPage : UserControl
         ModeNotificationToggle.IsOn = settings.ModeChangeNotificationsEnabled;
         LowBatteryNotificationToggle.IsOn = settings.LowBatteryNotificationsEnabled;
         TrayBatteryToggle.IsOn = settings.TrayBatteryLevelsEnabled;
+        TaskbarStatusToggle.IsOn = settings.TaskbarStatusEnabled;
         ChromaRestToggle.IsOn = settings.ExperimentalChromaRestEnabled;
         ViewModel.Lighting.SetChromaIntegrationEnabled(settings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = settings.RestoreLightingAfterChromaSession;
@@ -361,27 +362,6 @@ public sealed partial class SettingsPage : UserControl
             InvalidOperationException or System.Security.SecurityException)
         {
             settings.LowBatteryNotificationsEnabled = previous;
-            _behaviorUiReady = false;
-            toggle.IsOn = previous;
-            _behaviorUiReady = true;
-            ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
-        }
-    }
-
-    private void TrayBatteryToggled(object sender, RoutedEventArgs e)
-    {
-        if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;
-        var settings = Host.BehaviorSettings;
-        var previous = settings.TrayBatteryLevelsEnabled;
-        try
-        {
-            settings.TrayBatteryLevelsEnabled = toggle.IsOn;
-            settings.Save();
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
-            InvalidOperationException or System.Security.SecurityException)
-        {
-            settings.TrayBatteryLevelsEnabled = previous;
             _behaviorUiReady = false;
             toggle.IsOn = previous;
             _behaviorUiReady = true;

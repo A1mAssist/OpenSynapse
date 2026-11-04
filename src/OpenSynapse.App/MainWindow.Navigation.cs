@@ -2,6 +2,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using OpenSynapse.App.ViewModels;
 using Windows.Graphics;
 using Windows.UI;
 
@@ -40,6 +41,10 @@ public sealed partial class MainWindow
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(BladeWorkspace.BladeProductId))
+        {
+            UpdatePerformanceSamplingState();
+        }
         ProfilesPage.OnViewModelPropertyChanged(args.PropertyName);
         DevicesPage.OnViewModelPropertyChanged(args.PropertyName);
     }
@@ -85,7 +90,8 @@ public sealed partial class MainWindow
     private void UpdatePerformanceSamplingState()
     {
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(
-            AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible);
+            (_taskbarStatusEnabled && _viewModel.Blade.BladeProductId != 0) ||
+            (AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible));
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
             AppWindow.IsVisible && DevicesPage.Visibility == Visibility.Visible);
         _viewModel.Refresh.SetDiagnosticsRebuildEnabled(

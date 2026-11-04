@@ -31,10 +31,12 @@ public sealed partial class MainWindow : Window
     private readonly Func<bool, Task>? _setChromaRestEnabled;
     private readonly Func<ChromaRestSnapshot>? _getChromaRestSnapshot;
     private readonly Func<string, bool, Task>? _setChromaSourceAllowed;
+    private readonly Action<bool>? _setTaskbarStatusEnabled;
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly StudioInputSampler? _studioInputSampler;
     private DisplayPowerNotification? _displayPowerNotification;
     private bool _trayLifecycleEnabled;
+    private bool _taskbarStatusEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
 
@@ -44,6 +46,12 @@ public sealed partial class MainWindow : Window
     internal Func<bool, Task>? SetChromaRestEnabled => _setChromaRestEnabled;
     internal Func<ChromaRestSnapshot>? GetChromaRestSnapshot => _getChromaRestSnapshot;
     internal Func<string, bool, Task>? SetChromaSourceAllowed => _setChromaSourceAllowed;
+    internal void SetTaskbarStatusEnabled(bool enabled)
+    {
+        _taskbarStatusEnabled = enabled;
+        _setTaskbarStatusEnabled?.Invoke(enabled);
+        UpdatePerformanceSamplingState();
+    }
     internal Grid RootLayoutElement => RootLayout;
 
     internal MainWindow(
@@ -54,7 +62,8 @@ public sealed partial class MainWindow : Window
         Func<ChromaRestSnapshot>? getChromaRestSnapshot = null,
         Func<bool, Task>? setBladeIndicatorDisplayAvailable = null,
         Func<string, bool, Task>? setChromaSourceAllowed = null,
-        IBladeLightingController? bladeLightingController = null)
+        IBladeLightingController? bladeLightingController = null,
+        Action<bool>? setTaskbarStatusEnabled = null)
     {
         _viewModel = viewModel;
         _bladeLightingController = bladeLightingController;
@@ -62,6 +71,8 @@ public sealed partial class MainWindow : Window
         _setChromaRestEnabled = setChromaRestEnabled;
         _getChromaRestSnapshot = getChromaRestSnapshot;
         _setChromaSourceAllowed = setChromaSourceAllowed;
+        _setTaskbarStatusEnabled = setTaskbarStatusEnabled;
+        _taskbarStatusEnabled = behaviorSettings.TaskbarStatusEnabled;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
