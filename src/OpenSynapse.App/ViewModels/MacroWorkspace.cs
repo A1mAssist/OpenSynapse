@@ -2103,7 +2103,9 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             }
         }
 
-        if (!await TrySaveMacroProfileAsync(cancellationToken))
+        // Imported macros were validated above. An unrelated unfinished draft
+        // must not roll back the whole import.
+        if (!await TrySaveMacroProfileAsync(cancellationToken, prepareDirtyMacros: false))
         {
             RollbackImportedMacros(profile, importedIds, importedRows);
             return;
