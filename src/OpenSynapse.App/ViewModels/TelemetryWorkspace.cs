@@ -73,6 +73,8 @@ public sealed class TelemetryWorkspace : INotifyPropertyChanged
     public string BatteryHealthDetail => _system.BatteryHealthDetail;
     public string BatteryChargeValue { get; private set; } = "--";
     public string BatteryChargeState { get; private set; } = string.Empty;
+    internal int? BatteryPercent { get; private set; }
+    internal bool? IsCharging { get; private set; }
 
     internal async Task RefreshPerformanceAsync(CancellationToken cancellationToken)
     {
@@ -108,6 +110,16 @@ public sealed class TelemetryWorkspace : INotifyPropertyChanged
     {
         var percent = _powerSourceProvider.BatteryPercent;
         var charging = _powerSourceProvider.IsCharging;
+        if (BatteryPercent != percent)
+        {
+            BatteryPercent = percent;
+            OnPropertyChanged(nameof(BatteryPercent));
+        }
+        if (IsCharging != charging)
+        {
+            IsCharging = charging;
+            OnPropertyChanged(nameof(IsCharging));
+        }
         BatteryChargeValue = percent is { } value ? $"{value}%" : "--";
         BatteryChargeState = percent is null
             ? AppStrings.Text("BatteryChargeUnavailable")

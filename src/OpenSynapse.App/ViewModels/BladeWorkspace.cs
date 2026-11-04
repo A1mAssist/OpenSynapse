@@ -2574,6 +2574,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         if (_blade._bladeProductId != (blade?.ProductId ?? 0))
         {
             _blade._bladeProductId = blade?.ProductId ?? 0;
+            OnPropertyChanged(nameof(BladeProductId));
             _gpuModeRecoveryReconciled = false;
             RefreshModelCapabilityUi();
         }

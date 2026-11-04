@@ -1664,6 +1664,9 @@
   <data name="TrayBatteryTitle.Text" xml:space="preserve"><value>Tray menu peripheral battery</value></data>
   <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>Show battery percentages for connected mice and keyboards in the tray menu. Turning this off removes the battery rows.</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tray menu peripheral battery</value></data>
+  <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>Taskbar status strip</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show laptop battery and the current performance mode in the taskbar. Appears only when a Blade battery is detected.</value></data>
+  <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Taskbar status strip</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>Low peripheral battery</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} has {1}% battery remaining.</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma sources</value></data>
