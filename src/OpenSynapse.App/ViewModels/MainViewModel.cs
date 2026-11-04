@@ -202,7 +202,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             startupDiagnostics?.ToArray() ?? Array.Empty<string>(),
             () => Refresh!.LastRefreshText,
             () => DeviceTelemetryTimeText,
-            ReadAccessoryDiagnostics);
+            ReadAccessoryDiagnostics,
+            () => Devices);
         Refresh = new RefreshWorkspace(
             discovery,
             deviceTelemetryReader,

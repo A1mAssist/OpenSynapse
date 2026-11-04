@@ -13,10 +13,19 @@ public sealed partial class DiagnosticsWorkspace
         foreach (var row in _openRazerRows) Rows.Remove(row);
         _openRazerRows.Clear();
         if (Rows.Count == 1 && Rows[0].Device == "Windows HID") Rows.Clear();
+        if (Rows.Count == 0) AddCurrentDeviceRows();
         AddRazerHidRows(
             new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase),
             new SolidColorBrush(Color.FromArgb(255, 255, 107, 107)));
         if (Rows.Count == 0) AddFallbackRow();
+    }
+
+    private void AddCurrentDeviceRows()
+    {
+        foreach (var row in _currentDevices())
+        {
+            Rows.Add(CreateDeviceRow(row));
+        }
     }
 
     private void AddRazerHidRows(

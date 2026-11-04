@@ -12,19 +12,22 @@ public sealed partial class DiagnosticsWorkspace
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly Func<string> _lastRefreshText;
     private readonly Func<string> _telemetryTimeText;
+    private readonly Func<IReadOnlyList<DeviceRowViewModel>> _currentDevices;
 
     internal DiagnosticsWorkspace(
         RazerHidWorkspace openRazer,
         IReadOnlyList<string> startupDiagnostics,
         Func<string> lastRefreshText,
         Func<string> telemetryTimeText,
-        Func<IEnumerable<AccessoryDiagnostic>> readAccessories)
+        Func<IEnumerable<AccessoryDiagnostic>> readAccessories,
+        Func<IReadOnlyList<DeviceRowViewModel>> currentDevices)
     {
         _openRazer = openRazer;
         _startupDiagnostics = startupDiagnostics;
         _lastRefreshText = lastRefreshText;
         _telemetryTimeText = telemetryTimeText;
         _readAccessories = readAccessories;
+        _currentDevices = currentDevices;
     }
 
     public ObservableCollection<DiagnosticRowViewModel> Rows { get; } = new();
@@ -62,16 +65,7 @@ public sealed partial class DiagnosticsWorkspace
         foreach (var device in snapshot.Devices)
         {
             var row = new DeviceRowViewModel(device, telemetry);
-            var group = new DiagnosticRowViewModel(
-                row.Name,
-                AppStrings.Text("Text_5EAB9F51"),
-                row.Capability,
-                $"{row.Access} · {row.ReportInfo}",
-                row.StatusBrush);
-            foreach (var detail in row.ProtocolDetails)
-            {
-                group.AddProtocolDetail(detail);
-            }
+            var group = CreateDeviceRow(row);
             Rows.Add(group);
             groups.TryAdd(row.Name, group);
         }
@@ -134,6 +128,21 @@ public sealed partial class DiagnosticsWorkspace
 
         RefreshAccessoryRows();
         if (Rows.Count == 0) AddFallbackRow();
+    }
+
+    private static DiagnosticRowViewModel CreateDeviceRow(DeviceRowViewModel row)
+    {
+        var group = new DiagnosticRowViewModel(
+            row.Name,
+            AppStrings.Text("Text_5EAB9F51"),
+            row.Capability,
+            $"{row.Access} · {row.ReportInfo}",
+            row.StatusBrush);
+        foreach (var detail in row.ProtocolDetails)
+        {
+            group.AddProtocolDetail(detail);
+        }
+        return group;
     }
 
     private static void AppendDiagnostic(
