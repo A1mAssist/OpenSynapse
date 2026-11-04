@@ -37,6 +37,9 @@
   <ItemGroup>
     <Content Include="Assets\OpenSynapseLogo.svg" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\OpenSynapse.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\LightingLayouts\*.json"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-SemiBold.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />

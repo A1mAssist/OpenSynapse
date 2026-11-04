@@ -22,6 +22,9 @@
     <None Include="..\..\src\OpenSynapse.App\Native\Razer\Mappings\*.json"
           Link="Mappings\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\OpenSynapse.App\Assets\LightingLayouts\synapse2-legacy.json"
+          Link="Fixtures\synapse2-legacy.json"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

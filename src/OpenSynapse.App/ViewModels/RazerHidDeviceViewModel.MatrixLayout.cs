@@ -11,10 +11,15 @@ public sealed partial class RazerHidDeviceViewModel
     private DispatcherQueue? _dispatcherQueue;
     private readonly CancellationTokenSource _matrixLayoutCancellation = new();
     private int _matrixColumns;
+    private bool _matrixLayoutUsesManifest;
 
     public int MatrixColumns => _matrixColumns > 0
         ? _matrixColumns
         : Connection.Definition.MatrixDimensions?.Columns ?? 1;
+
+    public string MatrixLayoutDescription => AppStrings.Text(_matrixLayoutUsesManifest
+        ? "RazerHidMatrixDescription.Text"
+        : "RazerHidMatrixFallbackDescription.Text");
 
     internal void AttachMatrixLayout(
         Func<ushort, CancellationToken, Task<StudioLedLayout?>> loader,
@@ -97,13 +102,14 @@ public sealed partial class RazerHidDeviceViewModel
                 Connection.Definition.ProductId,
                 _matrixLayoutCancellation.Token).ConfigureAwait(false);
             if (layout is null || layout.Leds.Count == 0) return;
-            if (layout.DeviceRows != matrix.Rows || layout.DeviceColumns != matrix.Columns) return;
-            var cells = StudioMatrixEditorLayout.Build(layout);
+            if (!StudioMatrixEditorLayout.CanUseVisualLayout(layout, matrix.Rows, matrix.Columns)) return;
+            var cells = StudioMatrixEditorLayout.Build(layout, matrix.Rows, matrix.Columns);
             if (!cells.Any(cell => !cell.IsPlaceholder)) return;
 
             void Apply()
             {
                 _matrixColumns = layout.MatrixColumns > 0 ? layout.MatrixColumns : matrix.Columns;
+                _matrixLayoutUsesManifest = true;
                 MatrixCells.Clear();
                 foreach (var cell in cells)
                 {
@@ -111,6 +117,7 @@ public sealed partial class RazerHidDeviceViewModel
                 }
 
                 OnPropertyChanged(nameof(MatrixColumns));
+                OnPropertyChanged(nameof(MatrixLayoutDescription));
             }
 
             if (_dispatcherQueue is { } dispatcher)
