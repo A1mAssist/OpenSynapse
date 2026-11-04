@@ -213,6 +213,24 @@ public static class RazerFeatureReport
                response[89] == CalculateCrcIncludingTransaction(response);
     }
 
+    /// <summary>
+    /// Matches the 054A route the same way the 1354 middleware does: transaction, command
+    /// class and command id identify the exchange. Firmware revisions disagree about the
+    /// checksum range, and the middleware never validates the reply checksum, so a checksum
+    /// difference alone must not turn a readable soundbar into a communication failure.
+    /// </summary>
+    public static bool MatchesLeviathanResponse(
+        ReadOnlySpan<byte> request,
+        ReadOnlySpan<byte> response,
+        bool allowRemainingPacketsMismatch = false) =>
+        request.Length == Length &&
+        response.Length == Length &&
+        (response[2] == request[2] || request[2] == 0xFF) &&
+        (allowRemainingPacketsMismatch ||
+         (response[3] == request[3] && response[4] == request[4])) &&
+        response[7] == request[7] &&
+        response[8] == request[8];
+
     private static byte CalculateCrcIncludingTransaction(ReadOnlySpan<byte> report)
     {
         if (report.Length != Length)

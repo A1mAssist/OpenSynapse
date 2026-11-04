@@ -39,6 +39,23 @@ public sealed class LeviathanV2XChecksumTests
     }
 
     [Fact]
+    public void TheLeviathanRouteMatchesTheMiddlewareAndIgnoresTheChecksumRange()
+    {
+        var request = RazerFeatureReport.CreateRequest(0x08, 0x02, 0x00, 0x81, []);
+        var response = RazerFeatureReport.CreateRequest(0x08, 0x02, 0x00, 0x81, []);
+        response[0] = 0x00;
+        response[1] = 0x02;
+        response[9] = 0x01;
+        response[10] = 0x06;
+        response[89] = 0xA5;
+
+        Assert.True(RazerFeatureReport.MatchesLeviathanResponse(request, response));
+
+        response[8] = 0x82;
+        Assert.False(RazerFeatureReport.MatchesLeviathanResponse(request, response));
+    }
+
+    [Fact]
     public void TheSharedChecksumStillDrivesEveryOtherDevice()
     {
         var request = RazerFeatureReport.CreateRequest(0x1F, 0x02, 0x00, 0x81, []);

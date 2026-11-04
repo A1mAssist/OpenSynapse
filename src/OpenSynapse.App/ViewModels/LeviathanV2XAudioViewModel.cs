@@ -51,6 +51,7 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
 
     private readonly LeviathanV2XAudioService _service;
     private bool _isBusy;
+    private bool _hasState;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
     private int _selectedEqPresetIndex;
@@ -109,10 +110,26 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
             }
 
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanRefresh));
         }
     }
 
-    public bool CanEdit => !IsBusy;
+    public bool HasState
+    {
+        get => _hasState;
+        private set
+        {
+            if (!SetField(ref _hasState, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(CanEdit));
+        }
+    }
+
+    public bool CanRefresh => !IsBusy;
+    public bool CanEdit => !IsBusy && HasState;
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public string OperationStatusText
@@ -134,14 +151,17 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
             ApplyState(state);
             ErrorText = state.Errors.Count == 0
                 ? string.Empty
-                : string.Join("; ", state.Errors);
+                : AppStrings.Text(HasState
+                    ? "LeviathanPartialRead"
+                    : "LeviathanReadFailed");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
-            ErrorText = exception.Message;
+            HasState = false;
+            ErrorText = AppStrings.Text("LeviathanReadFailed");
         }
         finally
         {
@@ -183,6 +203,11 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
 
     private void ApplyState(LeviathanV2XAudioState state)
     {
+        HasState = state.EqPreset is not null ||
+            state.EqBands is not null ||
+            state.BassLevel is not null ||
+            state.InputSource is not null ||
+            state.IoStatus is not null;
         if (state.EqPreset is { } preset)
         {
             var index = Array.FindIndex(Presets, item => item.Preset == preset);
@@ -240,7 +265,7 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
-            ErrorText = exception.Message;
+            ErrorText = AppStrings.Text("LeviathanWriteFailed");
             OperationStatusText = string.Empty;
             return false;
         }
