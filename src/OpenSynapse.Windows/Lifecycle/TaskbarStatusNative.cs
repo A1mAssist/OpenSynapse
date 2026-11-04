@@ -44,9 +44,11 @@ internal static class TaskbarStatusNative
     public const int Transparent = 1;
     public const int FwNormal = 400;
     public const int FwSemibold = 600;
-    public const uint CleartypeQuality = 5;
+    public const uint AntialiasedQuality = 4;
     public const uint DefaultCharset = 1;
+    public const uint Gb2312Charset = 134;
     public const uint DefaultPitch = 0;
+    public const uint FrPrivate = 0x10;
 
     public const uint TtsAlwaysTip = 0x0001;
     public const uint TtsNoPrefix = 0x0002;
@@ -255,7 +257,10 @@ internal static class TaskbarStatusNative
     [DllImport("gdi32.dll")]
     public static extern IntPtr CreateSolidBrush(uint color);
 
-    [DllImport("gdi32.dll")]
+    [DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int AddFontResourceExW(string fileName, uint flags, IntPtr reserved);
+
+    [DllImport("gdi32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr CreateFontW(
         int height,
         int width,
@@ -289,13 +294,6 @@ internal static class TaskbarStatusNative
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetTextExtentPoint32W(
         IntPtr deviceContext, string text, int length, out Size size);
-
-    [DllImport("gdi32.dll")]
-    public static extern IntPtr CreateRoundRectRgn(
-        int left, int top, int right, int bottom, int width, int height);
-
-    [DllImport("user32.dll")]
-    public static extern int SetWindowRgn(IntPtr windowHandle, IntPtr region, bool redraw);
 
     [DllImport("gdi32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

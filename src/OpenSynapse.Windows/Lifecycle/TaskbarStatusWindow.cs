@@ -15,12 +15,12 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private const uint HostTimerInterval = 2000;
     private const int BaseWidthDip = 96;
     private const int MaximumWidthDip = 200;
-    private const int TargetHeightDip = 32;
-    private const int MinimumHeightDip = 24;
-    private const int MaximumHeightDip = 40;
+    private const int TargetHeightDip = 30;
+    private const int MinimumHeightDip = 22;
+    private const int MaximumHeightDip = 36;
     private const int GapDip = 8;
-    private const int PaddingDip = 12;
-    private const int PerformanceGapDip = 8;
+    private const int PaddingDip = 14;
+    private const int PerformanceGapDip = 10;
     private const int PerformanceMinWidthDip = 150;
     private const int BoltWidthDip = 8;
     private const int BoltHeightDip = 14;
@@ -38,6 +38,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private IntPtr _tooltipWindow;
     private IntPtr _batteryFont;
     private IntPtr _performanceFont;
+    private IntPtr _cjkFont;
     private IntPtr _tooltipTextPointer;
     private Rect _lastStatusRect;
     private TaskbarStatusSnapshot _snapshot = new(null, null, string.Empty);
@@ -257,6 +258,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         FreeTooltipText();
         DeleteFont(ref _batteryFont);
         DeleteFont(ref _performanceFont);
+        DeleteFont(ref _cjkFont);
         if (_statusWindow != IntPtr.Zero)
         {
             DestroyWindow(_statusWindow);
@@ -282,13 +284,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                       rect.Bottom != _lastStatusRect.Bottom;
         if (changed)
         {
-            var radius = Math.Max(1, height);
-            var region = CreateRoundRectRgn(0, 0, width + 1, height + 1, radius, radius);
-            if (region != IntPtr.Zero && SetWindowRgn(_statusWindow, region, true) == 0)
-            {
-                DeleteObject(region);
-            }
-
             if (!SetWindowPos(
                     _statusWindow,
                     IntPtr.Zero,
