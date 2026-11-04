@@ -44,6 +44,9 @@ public sealed class LightingStudioDeviceVisualTests
         Assert.InRange(visual.Height, 589.9, 590.1);
         Assert.Equal(86, visual.Leds.Count);
         Assert.Equal("Razer Blade 16", visual.Name);
+        Assert.NotNull(visual.Layout);
+        Assert.Equal(7, visual.Layout.MatrixRows);
+        Assert.Equal(16, visual.Layout.MatrixColumns);
 
         var escape = Assert.Single(visual.Leds, led => led.MatrixRow == 0 && led.MatrixCol == 0);
         Assert.Equal("keyEsc", escape.PathId);
@@ -66,12 +69,14 @@ public sealed class LightingStudioDeviceVisualTests
         Assert.Equal("Fallback Grid", visual.Name);
         Assert.Equal(3, visual.Leds.Count);
         Assert.Equal(3, visual.Paths.Count);
+        Assert.NotNull(visual.Layout);
+        Assert.Equal(2, visual.Layout.MatrixRows);
         Assert.Equal(new[] { "led-0-0", "led-0-1", "led-1-1" }, visual.Paths.Select(item => item.Id));
         Assert.Equal("M 8,8 H 32 V 32 H 8 Z", visual.Paths[0].Data);
         Assert.All(visual.Paths, item =>
         {
             Assert.Equal(StudioSvgRole.Led, item.Role);
-            Assert.Equal("#000000", item.Fill);
+            Assert.Equal("#242424", item.Fill);
         });
         Assert.Equal(68d, visual.Width, 3);
         Assert.Equal(68d, visual.Height, 3);

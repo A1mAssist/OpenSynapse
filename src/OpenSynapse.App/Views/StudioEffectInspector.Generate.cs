@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json.Nodes;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -62,6 +61,28 @@ public sealed partial class StudioEffectInspector
     {
         var config = Normalize(StudioGenerateConfig.Parse(_parameters?.CurrentConfigJson));
         var panel = new StackPanel { Spacing = 10 };
+        var history = StudioGeneratePresets.Read(_parameters?.EffectConfigListJson);
+        var selected = history.Count == 0
+            ? -1
+            : Math.Clamp(_parameters?.CurrentConfigId ?? -1, -1, history.Count - 1);
+        var randomize = new Button
+        {
+            Content = AppStrings.Text("LightingStudioGenerateRandomize"),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        var previous = new Button
+        {
+            Content = AppStrings.Text("LightingStudioGeneratePrevious"),
+            IsEnabled = selected > 0,
+        };
+        var next = new Button
+        {
+            Content = AppStrings.Text("LightingStudioGenerateNext"),
+            IsEnabled = selected < history.Count - 1,
+        };
+        randomize.Click += (_, _) => GenerateRandomPreset();
+        previous.Click += (_, _) => StepGeneratePreset(-1);
+        next.Click += (_, _) => StepGeneratePreset(1);
 
         var offsetX = NumberField(AppStrings.Text("LightingStudioGenerateOffsetX"), config.OffsetX, 0, 10, 0.1);
         var offsetY = NumberField(AppStrings.Text("LightingStudioGenerateOffsetY"), config.OffsetY, 0, 10, 0.1);
@@ -93,9 +114,12 @@ public sealed partial class StudioEffectInspector
 
         void Commit(Func<StudioGenerateConfig, StudioGenerateConfig> update)
         {
-            if (_parameters is null) return;
-            _parameters.CurrentConfigJson = SerializeConfig(
-                Normalize(update(StudioGenerateConfig.Parse(_parameters.CurrentConfigJson))));
+            if (_parameters is not { } parameters) return;
+            var json = StudioGeneratePresets.Format(Normalize(update(
+                StudioGenerateConfig.Parse(parameters.CurrentConfigJson))));
+            parameters.CurrentConfigJson = json;
+            parameters.EffectConfigListJson = StudioGeneratePresets.Replace(
+                parameters.EffectConfigListJson, parameters.CurrentConfigId, json);
             RaiseChanged();
         }
 
@@ -149,6 +173,22 @@ public sealed partial class StudioEffectInspector
             }
         };
 
+        panel.Children.Add(randomize);
+        var historyHeader = new Grid { ColumnSpacing = 8 };
+        historyHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        historyHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        historyHeader.Children.Add(CreateLabel(AppStrings.Text("LightingStudioGenerateHistory")));
+        var position = CreateLabel(
+            history.Count == 0
+                ? AppStrings.Text("LightingStudioGenerateHistoryEmpty")
+                : AppStrings.FormatText(
+                    "LightingStudioGenerateHistoryPosition",
+                    selected + 1,
+                    history.Count));
+        Grid.SetColumn(position, 1);
+        historyHeader.Children.Add(position);
+        panel.Children.Add(historyHeader);
+        panel.Children.Add(GridOf(2, previous, next));
         panel.Children.Add(CreateLabel(AppStrings.Text("LightingStudioGenerateTransform")));
         panel.Children.Add(GridOf(3, offsetX, offsetY, rotation, scaleX, scaleY));
         panel.Children.Add(CreateLabel(AppStrings.Text("LightingStudioGenerateMirrorFlip")));
@@ -167,6 +207,30 @@ public sealed partial class StudioEffectInspector
         color.Children.Add(ai);
         panel.Children.Add(color);
         return panel;
+    }
+
+    private void GenerateRandomPreset()
+    {
+        if (_parameters is not { } parameters) return;
+        var json = StudioGeneratePresets.Format(StudioGeneratePresets.Create(Random.Shared));
+        parameters.EffectConfigListJson = StudioGeneratePresets.Append(
+            parameters.EffectConfigListJson, json, out var currentConfigId);
+        parameters.CurrentConfigId = currentConfigId;
+        parameters.CurrentConfigJson = json;
+        RaiseChanged();
+        Refresh();
+    }
+
+    private void StepGeneratePreset(int direction)
+    {
+        if (_parameters is not { } parameters) return;
+        var presets = StudioGeneratePresets.Read(parameters.EffectConfigListJson);
+        var target = StudioGeneratePresets.Step(presets.Count, parameters.CurrentConfigId, direction);
+        if (target < 0) return;
+        parameters.CurrentConfigId = target;
+        parameters.CurrentConfigJson = presets[target];
+        RaiseChanged();
+        Refresh();
     }
 
     private static NumberBox NumberField(
@@ -231,33 +295,4 @@ public sealed partial class StudioEffectInspector
         PatternSpeed = Math.Clamp(config.PatternSpeed, -10, 10),
         Pattern = Math.Clamp(config.Pattern, 1, 9),
     };
-
-    private static string SerializeConfig(StudioGenerateConfig config)
-    {
-        var json = new JsonObject
-        {
-            // The AI generator has no local model yet; keep the native selector procedural.
-            ["colorSource"] = "procedural",
-            ["offsetX"] = Round(config.OffsetX),
-            ["offsetY"] = Round(config.OffsetY),
-            ["rotation"] = Round(config.Rotation),
-            // ScaleX/ScaleY already include the parsed multiplier, so emit scale as 1.
-            ["scale"] = 1,
-            ["scaleX"] = Round(config.ScaleX),
-            ["scaleY"] = Round(config.ScaleY),
-            ["mirrorX"] = config.MirrorX,
-            ["mirrorY"] = config.MirrorY,
-            ["flipX"] = config.FlipX,
-            ["flipY"] = config.FlipY,
-            ["patternSpread"] = Round(config.PatternSpread),
-            ["patternSpeed"] = Round(config.PatternSpeed),
-            ["blend"] = config.Blend.ToString(),
-            ["pattern"] = config.Pattern.ToString(CultureInfo.InvariantCulture),
-        };
-        return json.ToJsonString();
-    }
-
-    private static double Round(double value) =>
-        double.IsFinite(value) ? Math.Round(value, 3) : 0;
-
 }

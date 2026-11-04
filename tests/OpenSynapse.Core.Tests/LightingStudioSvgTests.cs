@@ -49,7 +49,7 @@ public sealed class LightingStudioSvgTests
                 <path id="selA" class="cls-b selection" d="M1,2h3V5H1Z" data-row="0" data-col="0"/>
               </g>
               <text x="1" y="2">ignored</text>
-              <rect x="0" y="0" width="1" height="1"/>
+              <rect id="box" x="0" y="0" width="1" height="1"/>
               <g transform="translate(10,10)"><path id="moved" d="M0,0h1Z"/></g>
             </svg>
             """;
@@ -58,8 +58,9 @@ public sealed class LightingStudioSvgTests
 
         Assert.Equal(640, layout.Width);
         Assert.Equal(480, layout.Height);
-        Assert.Equal(6, layout.Paths.Count);
+        Assert.Equal(7, layout.Paths.Count);
         Assert.DoesNotContain(layout.Paths, path => path.Id is "clipShape" or "text");
+        Assert.Equal("M0,0H1V1H0Z", layout.Paths.Single(path => path.Id == "box").Data);
 
         var shell = layout.Paths.Single(path => path.Id == "shell");
         Assert.Equal(StudioSvgRole.Product, shell.Role);
@@ -132,7 +133,8 @@ public sealed class LightingStudioSvgTests
             RepoLayout.Root,
             CatalogFolder.Replace('/', Path.DirectorySeparatorChar),
             FixtureManifest);
-        Assert.True(File.Exists(manifest), $"Missing catalog fixture: {manifest}");
+        // The full catalog is an ignored local snapshot; keep the parser covered by inline fixtures when absent.
+        if (!File.Exists(manifest)) return;
 
         var layout = StudioSvgLayoutParser.Parse(DecodeSvgPayload(File.ReadAllText(manifest), FixtureSvgKey));
 

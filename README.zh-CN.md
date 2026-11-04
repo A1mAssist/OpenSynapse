@@ -46,7 +46,11 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 参见 [Chroma 支持设备](docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md) 查看当前设备与传输方式矩阵。
 
-兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用经过验证的 Blade 16 实体键位，外部控制结束后会恢复当前选择的灯效。原生 Chroma SDK 和 `RzChromaConnectAPI` DLL 接口尚未实现。
+兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用经过验证的 Blade 16 实体键位，外部控制结束后会恢复当前选择的灯效。不需要安装雷云。
+
+### Chroma SDK 兼容层
+
+`OpenSynapse.ChromaSdk.Shim` 发布 x64 `RzChromaSDK64.dll`，实现 Chroma SDK 4.0.1 ABI，并通过 `\\.\pipe\OpenSynapseChromaSdk` 把键盘灯效交给 OpenSynapse。键盘 `CUSTOM`、`CUSTOM_KEY`、8×24 `CUSTOM2`，以及鼠标、耳机和鼠标垫的静态/自定义灯效，在有对应矩阵设备时会解码并应用。通用 `CreateEffect`、`QueryDevice`、键区、ChromaLink 和已弃用效果尚未实现。ABI 证据与部署步骤见 [Chroma SDK 兼容层](docs/CHROMA_SDK_SHIM.md)。
 
 ## 界面预览
 
@@ -93,6 +97,7 @@ dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
 dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
+dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```
 
 本地构建完成后可以这样启动。

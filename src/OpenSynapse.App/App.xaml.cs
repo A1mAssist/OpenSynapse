@@ -1,4 +1,3 @@
-using System.Net.Sockets;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppNotifications;
 using Microsoft.Windows.AppNotifications.Builder;
@@ -33,7 +32,6 @@ public partial class App : Application
     private WindowsPerformanceMonitor? _performanceMonitor;
     private BladeLightingController? _bladeLightingController;
     private WindowsThxAudioController? _thxAudioController;
-    private ChromaRestHost? _chromaRestHost;
     private readonly BladeSoftwareModeCoordinator _bladeModeCoordinator = new();
     private readonly SemaphoreSlim _audioMuteRuntimeGate = new(1, 1);
     private BladeAudioMuteRuntime? _audioMuteRuntime;
@@ -178,6 +176,8 @@ public partial class App : Application
             razerTransport,
             registryLoad.Registry,
             _bladeModeCoordinator);
+        _bladeLightingController.MappingInputObserved += input =>
+            _window?.ForwardBladeMappingInput(input);
         _thxAudioController = new WindowsThxAudioController();
         _elevatedMacroClient = new ElevatedMacroClient();
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
@@ -236,7 +236,7 @@ public partial class App : Application
             SetBladeIndicatorDisplayAvailableAsync,
             SetChromaSourceAllowedAsync, _bladeLightingController, SetTaskbarStatusEnabled);
         RegisterMainWindow(window, viewModel);
-        StartChromaRestHost(viewModel);
+        StartChromaHosts(viewModel);
         InitializeTray(window, viewModel);
         _taskbarStatusPresenter = new TaskbarStatusPresenter(
             window, viewModel, _behaviorSettings, _diagnosticLog);
@@ -314,74 +314,6 @@ public partial class App : Application
         updateManager.ApplyUpdatesAndRestart(release);
     }
 
-    internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
-
-    internal ChromaRestSnapshot GetChromaRestSnapshot() =>
-        _chromaRestHost?.Snapshot ?? default;
-
-    internal string ChromaRestStatus => _chromaRestHost?.ActiveSessionTitle is { } title
-        ? $"127.0.0.1:54235 · {title}"
-        : _chromaRestHost?.IsRunning == true
-            ? "127.0.0.1:54235 · Ready"
-            : "Disabled";
-
-    internal async Task SetChromaRestEnabledAsync(bool enabled)
-    {
-        _behaviorSettings.ExperimentalChromaRestEnabled = enabled;
-        if (_audioMuteViewModel is null)
-        {
-            return;
-        }
-
-        if (enabled)
-        {
-            StartChromaRestHost(_audioMuteViewModel);
-            return;
-        }
-
-        var host = Interlocked.Exchange(ref _chromaRestHost, null);
-        if (host is not null)
-        {
-            await host.DisposeAsync().ConfigureAwait(false);
-        }
-    }
-
-    private void StartChromaRestHost(MainViewModel viewModel)
-    {
-        if (!_behaviorSettings.ExperimentalChromaRestEnabled ||
-            _chromaRestHost is not null ||
-            _bladeLightingController is null)
-        {
-            return;
-        }
-
-        try
-        {
-            _chromaRestHost = new ChromaRestHost(
-                () => viewModel.CurrentDeviceDescriptors,
-                _bladeLightingController,
-                () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
-                    ? Task.CompletedTask
-                    : RestoreLightingAfterChromaAsync(viewModel),
-                () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                viewModel.RazerHid.ApplyChromaFrameAsync,
-            viewModel.Lighting.IsBladeChromaOverrideEnabled,
-                _behaviorSettings.ChromaBlockedSources);
-            _chromaRestHost.StartAsync();
-            _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
-        }
-        catch (SocketException exception)
-        {
-            _chromaRestHost = null;
-            _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
-        }
-    }
-
-    private static async Task RestoreLightingAfterChromaAsync(MainViewModel viewModel)
-    {
-            await viewModel.Lighting.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
-        await viewModel.RazerHid.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
-    }
 
     private Task GetShutdownTask(MainViewModel viewModel)
     {
@@ -395,19 +327,7 @@ public partial class App : Application
     {
         Interlocked.Exchange(ref _closing, 1);
         Interlocked.Increment(ref _audioMuteGeneration);
-        var chromaRestHost = _chromaRestHost;
-        _chromaRestHost = null;
-        if (chromaRestHost is not null)
-        {
-            try
-            {
-                await chromaRestHost.DisposeAsync();
-            }
-            catch (Exception exception)
-            {
-                _diagnosticLog.TryWrite("chroma-rest", $"stop failed: {exception}");
-            }
-        }
+        await DisposeChromaHostsAsync().ConfigureAwait(false);
         if (_audioMuteViewModel is not null)
         {
             _audioMuteViewModel.Blade.ControlDeviceChanged -= OnBladeControlDeviceChanged;

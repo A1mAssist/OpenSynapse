@@ -44,7 +44,7 @@ internal interface IDisplayCaptureSession : IAsyncDisposable
     ValueTask<RawDisplayFrame> ReadFrameAsync(CancellationToken cancellationToken);
 }
 
-internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
+internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapter
 {
     private const double DefaultEdgeBandFraction = 0.08;
     private readonly Func<CancellationToken, ValueTask<IDisplayCaptureSession>> _openSession;
@@ -167,86 +167,6 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
         return _latest = frame;
     }
 
-    internal static AmbientCaptureFrame ReduceEdgeBand(
-        ReadOnlySpan<byte> bgra,
-        int width,
-        int height,
-        int stride,
-        int edgeBandPixels,
-        int outputWidth = BladeLightingLayout.LogicalColumns,
-        int outputHeight = BladeLightingLayout.LogicalRows)
-    {
-        if (width <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(width));
-        }
-        if (height <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(height));
-        }
-        if (stride < checked(width * 4) || bgra.Length < checked(stride * height))
-        {
-            throw new ArgumentOutOfRangeException(nameof(stride));
-        }
-        if (edgeBandPixels <= 0 || edgeBandPixels > Math.Min(width, height))
-        {
-            throw new ArgumentOutOfRangeException(nameof(edgeBandPixels));
-        }
-        if (outputWidth <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(outputWidth));
-        }
-        if (outputHeight <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(outputHeight));
-        }
-
-        var pixels = new RazerRgb[checked(outputWidth * outputHeight)];
-        for (var row = 0; row < outputHeight; row++)
-        {
-            for (var column = 0; column < outputWidth; column++)
-            {
-                var topDistance = (row + 0.5) / outputHeight;
-                var bottomDistance = 1 - topDistance;
-                var leftDistance = (column + 0.5) / outputWidth;
-                var rightDistance = 1 - leftDistance;
-                var nearest = Math.Min(Math.Min(topDistance, bottomDistance), Math.Min(leftDistance, rightDistance));
-
-                int x0;
-                int x1;
-                int y0;
-                int y1;
-                if (nearest == topDistance)
-                {
-                    (x0, x1) = Segment(column, outputWidth, width);
-                    y0 = 0;
-                    y1 = edgeBandPixels;
-                }
-                else if (nearest == bottomDistance)
-                {
-                    (x0, x1) = Segment(column, outputWidth, width);
-                    y0 = height - edgeBandPixels;
-                    y1 = height;
-                }
-                else if (nearest == leftDistance)
-                {
-                    x0 = 0;
-                    x1 = edgeBandPixels;
-                    (y0, y1) = Segment(row, outputHeight, height);
-                }
-                else
-                {
-                    x0 = width - edgeBandPixels;
-                    x1 = width;
-                    (y0, y1) = Segment(row, outputHeight, height);
-                }
-
-                pixels[row * outputWidth + column] = Average(bgra, stride, x0, x1, y0, y1);
-            }
-        }
-        return new AmbientCaptureFrame(Array.AsReadOnly(pixels), outputWidth, outputHeight);
-    }
-
     internal static RawDisplayFrame CopyPixels(SoftwareBitmap bitmap, int width, int height)
     {
         if (width <= 0 || height <= 0 || width > bitmap.PixelWidth || height > bitmap.PixelHeight)
@@ -282,15 +202,20 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
             while (!cancellationToken.IsCancellationRequested)
             {
                 var raw = await session.ReadFrameAsync(cancellationToken).ConfigureAwait(false);
+                var bounds = CaptureRegion.ToPixelBounds(raw.Width, raw.Height);
                 var edgeBand = Math.Clamp(
-                    (int)Math.Ceiling(Math.Min(raw.Width, raw.Height) * _edgeBandFraction),
+                    (int)Math.Ceiling(Math.Min(bounds.Width, bounds.Height) * _edgeBandFraction),
                     1,
-                    Math.Min(raw.Width, raw.Height));
+                    Math.Min(bounds.Width, bounds.Height));
                 writer.TryWrite(ReduceEdgeBand(
                     raw.Bgra,
                     raw.Width,
                     raw.Height,
                     raw.Stride,
+                    bounds.X,
+                    bounds.Y,
+                    bounds.Width,
+                    bounds.Height,
                     edgeBand));
             }
         }
@@ -340,7 +265,15 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
         {
             if (worker is not null)
             {
-                await worker.ConfigureAwait(false);
+                try
+                {
+                    await worker.ConfigureAwait(false);
+                }
+                catch (Exception) when (worker.IsFaulted)
+                {
+                    // The failure already surfaced through ReadFrameAsync; a
+                    // stop must still clear the worker so capture can restart.
+                }
             }
         }
         finally
@@ -370,44 +303,6 @@ internal sealed class WindowsDisplayCaptureAdapter : ILightingInputAdapter
         await worker.ConfigureAwait(false);
         throw new InvalidOperationException("Display capture has stopped.");
     }
-
-    private static (int Start, int End) Segment(int index, int segments, int length)
-    {
-        var start = (int)((long)index * length / segments);
-        var end = Math.Max(start + 1, (int)((long)(index + 1) * length / segments));
-        return (start, Math.Min(end, length));
-    }
-
-    private static RazerRgb Average(
-        ReadOnlySpan<byte> bgra,
-        int stride,
-        int x0,
-        int x1,
-        int y0,
-        int y1)
-    {
-        long red = 0;
-        long green = 0;
-        long blue = 0;
-        var count = checked((x1 - x0) * (y1 - y0));
-        for (var y = y0; y < y1; y++)
-        {
-            for (var x = x0; x < x1; x++)
-            {
-                var offset = y * stride + x * 4;
-                blue += bgra[offset];
-                green += bgra[offset + 1];
-                red += bgra[offset + 2];
-            }
-        }
-        return new RazerRgb(
-            RoundedAverage(red, count),
-            RoundedAverage(green, count),
-            RoundedAverage(blue, count));
-    }
-
-    private static byte RoundedAverage(long value, int count) =>
-        checked((byte)((value + count / 2) / count));
 
     private sealed class WindowsGraphicsCaptureSession : IDisplayCaptureSession
     {

@@ -155,6 +155,7 @@ public sealed class ChromaSourceManagementTests
     private sealed class FakeLighting : IBladeLightingController
     {
         internal int Stops;
+        public event Action<string, Exception>? RestoreFailed { add { } remove { } }
         public Task RuntimeCompletion => Task.CompletedTask;
         public Task ApplyAsync(IReadOnlyList<DeviceDescriptor> devices, BladeLightingEffect effect,
             CancellationToken cancellationToken = default) => Task.CompletedTask;

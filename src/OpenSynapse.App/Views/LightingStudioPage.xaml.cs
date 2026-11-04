@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Lighting;
+using OpenSynapse.Windows.Protocols;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.Storage.Pickers;
@@ -23,40 +25,72 @@ public sealed partial class LightingStudioPage : UserControl
     private SolidColorBrush[] _brushes = [];
     private (int Rows, int Columns) _previewSize;
     private LightingStudioViewModel? _viewModel;
+    private StudioInputSampler? _inputSampler;
     private StudioLayerItem? _draggedLayer;
     private StudioLayerRow? _dropRow;
     private Border? _dropHint;
     private ComboBoxItem? _customZoomItem;
+    private bool _canvasFitted;
+#if DEBUG
+    private StudioCanvasBenchmark? _studioBenchmark;
+    private bool _studioBenchmarkOwnsCanvas;
+    private bool _studioSelectionQa;
+#endif
 
     internal MainWindow Host { get; set; } = null!;
 
     public LightingStudioPage()
     {
         InitializeComponent();
+        ToolTipService.SetToolTip(ZoomOutButton, AppStrings.Text("LightingStudioZoomOut"));
+        ToolTipService.SetToolTip(ZoomInButton, AppStrings.Text("LightingStudioZoomIn"));
         // ListViewBase has its own drag plumbing, so keep receiving these even if it handles them.
         LayerList.AddHandler(DragOverEvent, new DragEventHandler(LayerDragOver), true);
         LayerList.AddHandler(DropEvent, new DragEventHandler(LayerDrop), true);
+        Inspector.CaptureRegionChanged += OnCaptureRegionChanged;
         _timer.Tick += (_, _) => RenderPreview();
-        Unloaded += (_, _) => _timer.Stop();
+        _captureSaveTimer.Tick += (_, _) => SavePendingCaptureRegion();
+        Unloaded += (_, _) =>
+        {
+            _timer.Stop();
+            SavePendingCaptureRegion();
+        };
     }
 
     internal LightingStudioViewModel? ViewModel => _viewModel;
+
+    /// <summary>
+    /// Applies one decoded Blade key to the studio. The hardware frame source
+    /// runs on its own clock; the preview uses this page's preview clock.
+    /// </summary>
+    internal void HandleMappingInput(BladeMappingInputEvent input)
+    {
+        if (_viewModel?.HandleMappingInput(input, _clock.Elapsed) > 0) RenderPreview();
+    }
 
     internal void Initialize(
         IBladeLightingController? lighting,
         Func<IReadOnlyList<DeviceDescriptor>> devices,
         Func<IReadOnlyList<StudioDeviceOption>>? matrixDevices = null,
         StudioHidOutputRouter? hidRouter = null,
-        StudioInputSampler? inputSampler = null)
+        StudioInputSampler? inputSampler = null,
+        StudioArgbOutputRouter? argbRouter = null)
     {
         _viewModel?.Dispose();
-        _viewModel = new LightingStudioViewModel(lighting, devices, matrixDevices, hidRouter, inputSampler);
-        _viewModel.RefreshDevices();
+        _inputSampler = inputSampler;
+        _viewModel = new LightingStudioViewModel(
+            lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter);
+        StartStudioTimingIfRequested();
+        StudioTimingAttachViewModel();
+        RefreshDevicesWithTiming("initialize");
+        _ = RefreshDevicesFromHostAsync();
         _viewModel.DocumentChanged += (_, _) => RenderPreview();
         _viewModel.PropertyChanged += (_, args) =>
         {
+            StudioTimingOnPropertyChanged(args.PropertyName);
             if (args.PropertyName == nameof(LightingStudioViewModel.DeviceVisual) ||
-                args.PropertyName == nameof(LightingStudioViewModel.DeviceVisuals)) RefreshCanvas();
+                args.PropertyName == nameof(LightingStudioViewModel.DeviceVisuals) ||
+                args.PropertyName == nameof(LightingStudioViewModel.Profile)) RefreshCanvas();
             else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedParams)) BindInspector();
             else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedEffectChoice)) Inspector.Refresh();
             else if (args.PropertyName == nameof(LightingStudioViewModel.PreviewRows) ||
@@ -69,8 +103,20 @@ public sealed partial class LightingStudioPage : UserControl
         };
         DataContext = _viewModel;
         DeviceCanvas.DeviceMoved += OnDeviceMoved;
+        DeviceCanvas.LedShiftClicked += (_, row, column) => _viewModel?.SetTidalCenter(row, column);
+        DeviceCanvas.BucketClicked += (instanceId, row, column) =>
+        {
+            if (_viewModel?.BucketSelection(instanceId, row, column) is { Count: > 0 } cells)
+            {
+                DeviceCanvas.SelectLeds(cells);
+            }
+        };
         DeviceCanvas.ZoomChanged += (_, _) => SyncZoomPicker();
         UpdatePlayButton();
+        if (_inputSampler is not null && Host is not null)
+        {
+            _inputSampler.SetCaptureRegion(Host.BehaviorSettings.AmbientCaptureRegion);
+        }
         BindInspector();
         RefreshCanvas();
         RenderPreview();
@@ -78,7 +124,9 @@ public sealed partial class LightingStudioPage : UserControl
 
     internal void OnNavigatedTo()
     {
-        _viewModel?.RefreshDevices();
+        StudioTimingMark("navigate-enter");
+        RefreshDevicesWithTiming("navigate");
+        _ = RefreshDevicesFromHostAsync();
         _viewModel?.EnsureLayerRows();
         if (_viewModel?.IsPlaying == true)
         {
@@ -86,10 +134,22 @@ public sealed partial class LightingStudioPage : UserControl
             _timer.Start();
         }
 
+#if DEBUG
+        AttachStudioSelectionDump();
+        if (StartStudioSelectionQaIfRequested() || StartStudioBenchmarkIfRequested()) return;
+#endif
         RenderPreview();
+        StudioTimingMark("navigate-exit");
     }
 
-    internal void OnNavigatedFrom() => _timer.Stop();
+    internal void OnNavigatedFrom()
+    {
+        _timer.Stop();
+#if DEBUG
+        _studioBenchmark?.Stop();
+#endif
+    }
+
 
     private void BuildPreview()
     {
@@ -128,12 +188,25 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void RefreshCanvas()
     {
+#if DEBUG
+        if (_studioBenchmarkOwnsCanvas || _studioSelectionQa) return;
+#endif
         if (_viewModel is null) return;
+        var timingStarted = Stopwatch.GetTimestamp();
         var visuals = _viewModel.DeviceVisuals;
+#if DEBUG
+        var dumpPath = Environment.GetEnvironmentVariable("OPENSSYNAPSE_STUDIO_DUMP");
+        if (!string.IsNullOrEmpty(dumpPath))
+        {
+            File.AppendAllText(dumpPath,
+                $"{Environment.NewLine}page visuals={visuals.Count} selected={_viewModel.SelectedDevice?.Name} canvas={DeviceCanvas.Visibility}");
+        }
+#endif
         if (visuals.Count == 0)
         {
             DeviceCanvas.Visibility = Visibility.Collapsed;
             FallbackPreview.Visibility = Visibility.Visible;
+            StudioTimingMarkRefresh(timingStarted, visuals, "empty");
             return;
         }
 
@@ -143,15 +216,29 @@ public sealed partial class LightingStudioPage : UserControl
         DeviceCanvas.Visibility = Visibility.Visible;
         FallbackPreview.Visibility = Visibility.Collapsed;
         DeviceCanvas.UpdateLayout();
-        DispatcherQueue.TryEnqueue(() => DeviceCanvas.FitToView());
+        // New hosts mean new brushes and possibly different matrix dimensions; repaint the current frame.
+        RenderPreview();
+        StudioTimingMarkRefresh(timingStarted, visuals, "build");
+        // Fit the first populated canvas twice; later refreshes keep zoom and pan.
+        if (_canvasFitted) return;
+        _canvasFitted = true;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            DeviceCanvas.FitToView();
+            DispatcherQueue.TryEnqueue(() => DeviceCanvas.FitToView());
+        });
     }
 
     private void RenderPreview()
     {
+#if DEBUG
+        if (_studioBenchmarkOwnsCanvas || _studioSelectionQa) return;
+#endif
         if (_viewModel is null) return;
         if (DeviceCanvas.Visibility == Visibility.Visible)
         {
             DeviceCanvas.SetFrames(_viewModel.RenderDeviceFrames(_clock.Elapsed));
+            StudioTimingMarkFrameApplied();
             return;
         }
 
@@ -164,23 +251,27 @@ public sealed partial class LightingStudioPage : UserControl
         }
     }
 
-    private void SelectAllClick(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel?.DeviceVisual is not { } visual) return;
-        DeviceCanvas.SelectLeds(visual.Leds.Select(led =>
-            new OpenSynapse.Core.Lighting.StudioLedRef(led.MatrixRow, led.MatrixCol)));
-    }
+    private void SelectAllClick(object sender, RoutedEventArgs e) => DeviceCanvas.SelectAll();
 
     private void ApplySelectionClick(object sender, RoutedEventArgs e) =>
         _viewModel?.ApplySelectionToLayer(DeviceCanvas.Selection);
 
-    private void ClearRegionClick(object sender, RoutedEventArgs e) => _viewModel?.ClearRegions();
+    private void ClearSelectionClick(object sender, RoutedEventArgs e) => DeviceCanvas.ClearSelection();
 
-    private void ZoomInClick(object sender, RoutedEventArgs e) =>
-        DeviceCanvas.SetZoom(DeviceCanvas.ZoomPercent * 1.25);
+    /// <summary>Title boxes bind straight to the model, so the undo point lands on commit.</summary>
+    private void NameBoxLostFocus(object sender, RoutedEventArgs e) => _viewModel?.NotifyEdited();
 
-    private void ZoomOutClick(object sender, RoutedEventArgs e) =>
-        DeviceCanvas.SetZoom(DeviceCanvas.ZoomPercent / 1.25);
+    private void ZoomInClick(object sender, RoutedEventArgs e) => DeviceCanvas.ZoomStepUp();
+
+    private void RotateDeviceClick(object sender, RoutedEventArgs e)
+    {
+        var instanceId = _viewModel?.SelectedDevice?.EffectiveInstanceId;
+        if (string.IsNullOrEmpty(instanceId)) return;
+        var placed = DeviceCanvas.TryGetPlacement(instanceId, out var left, out var top);
+        _viewModel?.RotateSelectedDevice(placed ? left : 5000, placed ? top : 5000);
+    }
+
+    private void ZoomOutClick(object sender, RoutedEventArgs e) => DeviceCanvas.ZoomStepDown();
 
     private void TogglePlayClick(object sender, RoutedEventArgs e)
     {
@@ -329,6 +420,8 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void ToolChanged(object sender, SelectionChangedEventArgs e)
     {
+        // The toolbar may initialize before the canvas it controls.
+        if (DeviceCanvas is null) return;
         DeviceCanvas.Tool = ToolPicker.SelectedIndex switch
         {
             1 => StudioCanvasTool.Pen,
@@ -340,8 +433,10 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void ZoomStepChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) return;
-        if (ZoomPicker.SelectedIndex >= 0) DeviceCanvas.SetZoomStep(ZoomPicker.SelectedIndex);
+        // The toolbar may initialize before the canvas it controls.
+        if (sender is not ComboBox picker || DeviceCanvas is null) return;
+        if (ReferenceEquals(picker.SelectedItem, _customZoomItem)) return;
+        if (picker.SelectedIndex >= 0) DeviceCanvas.SetZoomStep(picker.SelectedIndex);
     }
 
     private void SyncZoomPicker()
@@ -351,6 +446,8 @@ public sealed partial class LightingStudioPage : UserControl
         {
             if (_customZoomItem is not null)
             {
+                // Removing the selected item leaves the ComboBox in a broken state.
+                if (ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) ZoomPicker.SelectedIndex = -1;
                 ZoomPicker.Items.Remove(_customZoomItem);
                 _customZoomItem = null;
             }
@@ -402,15 +499,45 @@ public sealed partial class LightingStudioPage : UserControl
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            await _viewModel.ImportChromaAsync(file.Path);
+            var imported = await _viewModel.ImportChromaAsync(file.Path);
             RefreshCanvas();
             RenderPreview();
+            if (imported is { Issues.Count: > 0 })
+            {
+                await ShowImportIssuesAsync(imported);
+            }
         }
+    }
+
+    /// <summary>Chroma shows what import changed; a bare count hides dropped or remapped devices.</summary>
+    private async Task ShowImportIssuesAsync(OpenSynapse.Core.Lighting.StudioImportResult result)
+    {
+        var lines = result.Issues
+            .GroupBy(issue => issue.Kind)
+            .Select(group => AppStrings.FormatText(
+                "LightingStudioImportIssueLine",
+                AppStrings.Text($"LightingStudioImportIssue{group.Key}"),
+                group.Count()))
+            .ToArray();
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.FormatText("LightingStudioImportIssuesTitle", result.Issues.Count),
+            Content = new TextBlock
+            {
+                Text = string.Join(Environment.NewLine, lines),
+                TextWrapping = TextWrapping.Wrap,
+            },
+            CloseButtonText = AppStrings.Text("LightingStudioImportIssuesClose"),
+            XamlRoot = XamlRoot,
+        };
+        await dialog.ShowAsync();
     }
 
     private async void ExportChromaClick(object sender, RoutedEventArgs e)
     {
         if (_viewModel is null) return;
+        var profileIds = await PickExportProfilesAsync();
+        if (profileIds is null) return;
         var picker = new FileSavePicker
         {
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
@@ -423,8 +550,33 @@ public sealed partial class LightingStudioPage : UserControl
         var file = await picker.PickSaveFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
-            _viewModel.ExportChroma(file.Path);
+            _viewModel.ExportChroma(file.Path, profileIds);
         }
+    }
+
+    /// <summary>Chroma exports the profiles the user ticks; a single profile needs no dialog.</summary>
+    private async Task<IReadOnlyList<string>?> PickExportProfilesAsync()
+    {
+        if (_viewModel is null) return null;
+        var profiles = _viewModel.Profiles;
+        if (profiles.Count <= 1) return profiles.Select(profile => profile.Id).ToArray();
+        var boxes = profiles
+            .Select(profile => new CheckBox { Content = profile.Title, IsChecked = true, Tag = profile.Id })
+            .ToArray();
+        var panel = new StackPanel { Spacing = 6 };
+        foreach (var box in boxes) panel.Children.Add(box);
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.Text("LightingStudioExportProfilesTitle"),
+            Content = new ScrollViewer { Content = panel, MaxHeight = 360 },
+            PrimaryButtonText = AppStrings.Text("LightingStudioExportProfilesConfirm"),
+            CloseButtonText = AppStrings.Text("LightingStudioImportIssuesClose"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = XamlRoot,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return null;
+        var ids = boxes.Where(box => box.IsChecked == true).Select(box => (string)box.Tag).ToArray();
+        return ids.Length == 0 ? null : ids;
     }
 
     private void NewClick(object sender, RoutedEventArgs e)
@@ -434,5 +586,11 @@ public sealed partial class LightingStudioPage : UserControl
         RenderPreview();
     }
 
-    private void BindInspector() => Inspector.Parameters = _viewModel?.SelectedParams;
+    private void BindInspector()
+    {
+        Inspector.Parameters = _viewModel?.SelectedParams;
+        if (Host is not null) Inspector.CaptureRegion = Host.BehaviorSettings.AmbientCaptureRegion;
+        Inspector.Refresh();
+    }
+
 }

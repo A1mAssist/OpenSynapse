@@ -4,40 +4,81 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Lighting;
 
 /// <summary>
-/// Renders the studio layer stack directly onto one device matrix. Every layer
-/// keeps its own playback clock, and the resulting frame uses the device's own
-/// row/column layout instead of the Blade physical map.
+/// Renders the studio layer stack on the manifest matrix and maps the result
+/// into the device's HID row/column frame. Every layer keeps its own playback
+/// clock; without a layout the legacy direct device-matrix path is preserved.
 /// </summary>
 public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
 {
     private readonly object _gate = new();
     private readonly Dictionary<Guid, StudioPlaybackClock> _clocks = new();
-    private readonly int _rows;
-    private readonly int _columns;
+    private readonly int _matrixRows;
+    private readonly int _matrixColumns;
+    private readonly int _deviceRows;
+    private readonly int _deviceColumns;
+    private readonly StudioLedLayout? _layout;
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
+    private readonly StudioPlaybackTrigger _trigger;
     private StudioLayerRender[] _layers = [];
 
     public StudioDeviceFrameSource(
         int rows, int columns, Func<int, int, StudioEffectInput>? inputProvider = null)
+        : this(rows, columns, rows, columns, null, inputProvider)
     {
-        if (rows < 1) throw new ArgumentOutOfRangeException(nameof(rows));
-        if (columns < 1) throw new ArgumentOutOfRangeException(nameof(columns));
-        if ((long)rows * columns > StudioCompositor.MaxPixels)
+    }
+
+    public StudioDeviceFrameSource(
+        int matrixRows,
+        int matrixColumns,
+        int deviceRows,
+        int deviceColumns,
+        StudioLedLayout? layout,
+        Func<int, int, StudioEffectInput>? inputProvider = null)
+    {
+        if (matrixRows < 1) throw new ArgumentOutOfRangeException(nameof(matrixRows));
+        if (matrixColumns < 1) throw new ArgumentOutOfRangeException(nameof(matrixColumns));
+        if ((long)matrixRows * matrixColumns > StudioCompositor.MaxPixels)
         {
-            throw new ArgumentOutOfRangeException(nameof(rows),
+            throw new ArgumentOutOfRangeException(nameof(matrixRows),
+                "The logical matrix is outside the supported range.");
+        }
+
+        if (deviceRows < 1) throw new ArgumentOutOfRangeException(nameof(deviceRows));
+        if (deviceColumns < 1) throw new ArgumentOutOfRangeException(nameof(deviceColumns));
+        if ((long)deviceRows * deviceColumns > StudioCompositor.MaxPixels)
+        {
+            throw new ArgumentOutOfRangeException(nameof(deviceRows),
                 "The device matrix is outside the supported range.");
         }
 
-        _rows = rows;
-        _columns = columns;
+        if (layout is null && (deviceRows != matrixRows || deviceColumns != matrixColumns))
+        {
+            throw new ArgumentException("A different device matrix needs a manifest layout.", nameof(layout));
+        }
+
+        _matrixRows = matrixRows;
+        _matrixColumns = matrixColumns;
+        _deviceRows = deviceRows;
+        _deviceColumns = deviceColumns;
+        _layout = layout;
         _inputProvider = inputProvider;
+        _trigger = new StudioPlaybackTrigger(GetClock);
     }
 
     public void Update(IEnumerable<StudioLayerRender> layers)
     {
         ArgumentNullException.ThrowIfNull(layers);
-        Volatile.Write(ref _layers, layers.ToArray());
+        var snapshot = layers.ToArray();
+        _trigger.Update(snapshot, _matrixRows, _matrixColumns);
+        Volatile.Write(ref _layers, snapshot);
     }
+
+    /// <summary>
+    /// Applies one key transition in matrix coordinates. The trigger shares this
+    /// source's clocks, so rendered frames see the same playback state.
+    /// </summary>
+    public int HandleInput(StudioTriggerInput input, double nowSeconds) =>
+        _trigger.Handle(input, nowSeconds);
 
     public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
         TimeSpan elapsed,
@@ -50,16 +91,36 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         for (var index = 0; index < layers.Length; index++)
         {
             var layer = layers[index];
-            var state = GetClock(layer.Id).Sample(now, layer.Params);
+            var state = GetClock(layer.Id).Sample(now, layer.Params, _matrixRows, _matrixColumns);
             timed[index] = (layer with { Opacity = state.Running ? layer.Opacity : 0 }, state.LocalSeconds);
         }
 
-        var input = _inputProvider?.Invoke(_rows, _columns) ?? default;
-        var logical = StudioCompositor.RenderTimedLayers(timed, _rows, _columns, input);
-        var colors = new RazerRgb[logical.Length];
-        for (var index = 0; index < logical.Length; index++)
+        var input = _inputProvider?.Invoke(_matrixRows, _matrixColumns) ?? default;
+        var logical = StudioCompositor.RenderTimedLayers(timed, _matrixRows, _matrixColumns, input);
+        var colors = new RazerRgb[_deviceRows * _deviceColumns];
+        if (_layout is null)
         {
-            colors[index] = new RazerRgb(logical[index].R, logical[index].G, logical[index].B);
+            for (var index = 0; index < logical.Length; index++)
+            {
+                colors[index] = new RazerRgb(logical[index].R, logical[index].G, logical[index].B);
+            }
+        }
+        else
+        {
+            foreach (var led in _layout.Leds)
+            {
+                if ((uint)led.MatrixRow >= (uint)_matrixRows ||
+                    (uint)led.MatrixCol >= (uint)_matrixColumns ||
+                    (uint)led.DeviceRow >= (uint)_deviceRows ||
+                    (uint)led.DeviceCol >= (uint)_deviceColumns)
+                {
+                    continue;
+                }
+
+                var color = logical[led.MatrixRow * _matrixColumns + led.MatrixCol];
+                colors[led.DeviceRow * _deviceColumns + led.DeviceCol] =
+                    new RazerRgb(color.R, color.G, color.B);
+            }
         }
 
         return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(colors);

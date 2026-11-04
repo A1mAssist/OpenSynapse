@@ -118,6 +118,7 @@ public sealed class ChromaRestLifecycleTests
 
     private sealed class FakeLighting : IBladeLightingController
     {
+        public event Action<string, Exception>? RestoreFailed { add { } remove { } }
         public Task RuntimeCompletion => Task.CompletedTask;
         public Task ApplyAsync(IReadOnlyList<DeviceDescriptor> devices, BladeLightingEffect effect, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task StopAsync() => Task.CompletedTask;

@@ -286,7 +286,7 @@ public sealed partial class DevicesPage : UserControl
 
     private void RazerHidMatrixCellClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button { Tag: RazerHidMatrixCellViewModel cell } button) return;
+        if (sender is not Button { Tag: RazerHidMatrixCellViewModel cell } button || cell.IsPlaceholder) return;
         var picker = new ColorPicker
         {
             Color = cell.Color,

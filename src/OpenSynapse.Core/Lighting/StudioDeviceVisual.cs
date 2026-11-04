@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace OpenSynapse.Core.Lighting;
 
-/// <summary>One drawable shape in a device visual, in document order.</summary>
+/// <summary>One drawable shape in a device visual, with SVG transforms already baked into <see cref="Data"/>.</summary>
 public sealed record StudioVisualPath(
     string Id,
     string Data,
@@ -30,11 +30,13 @@ public sealed record StudioDeviceVisual(
     double Height,
     IReadOnlyList<StudioVisualPath> Paths,
     IReadOnlyList<StudioVisualLed> Leds,
-    bool UsesSvg);
+    bool UsesSvg,
+    StudioLedLayout? Layout = null);
 
 /// <summary>
 /// Turns a Chroma manifest into canvas render data. SVG geometry is flattened
-/// as-is; when it cannot be drawn as LEDs, a rectangular LED grid is synthesized.
+/// with transforms baked into path data; when it cannot be drawn as LEDs, a
+/// rectangular LED grid is synthesized.
 /// </summary>
 public static class StudioDeviceVisualBuilder
 {
@@ -62,7 +64,8 @@ public static class StudioDeviceVisualBuilder
                 svg.Height,
                 svg.Paths.Select(ToVisualPath).ToArray(),
                 BuildLedTable(leds, svg.Paths),
-                UsesSvg: true);
+                UsesSvg: true,
+                Layout: leds);
         }
 
         return BuildFallback(manifest, instanceId, name, leds);
@@ -96,24 +99,26 @@ public static class StudioDeviceVisualBuilder
         return leds;
     }
 
-    private static StudioDeviceVisual BuildFallback(
-        StudioManifestDevice manifest,
+    /// <summary>Builds a rectangular LED grid without an SVG payload.</summary>
+    public static StudioDeviceVisual BuildGrid(
+        ushort productId,
         string instanceId,
-        string? name,
-        StudioLedLayout? layout)
+        string name,
+        StudioLedLayout layout)
     {
-        var resolvedName = ResolveName(manifest, name);
-        if (layout is null || layout.Leds.Count == 0)
+        ArgumentNullException.ThrowIfNull(layout);
+        if (layout.Leds.Count == 0)
         {
             return new StudioDeviceVisual(
                 instanceId,
-                manifest.ProductId,
-                resolvedName,
+                productId,
+                name,
                 EmptySize,
                 EmptySize,
                 Array.Empty<StudioVisualPath>(),
                 Array.Empty<StudioVisualLed>(),
-                UsesSvg: false);
+                UsesSvg: false,
+                Layout: layout);
         }
 
         var rows = Math.Max(layout.MatrixRows, layout.Leds.Max(led => led.MatrixRow) + 1);
@@ -129,7 +134,8 @@ public static class StudioDeviceVisualBuilder
             paths[index] = new StudioVisualPath(
                 id,
                 CellPath(x, y),
-                "#000000",
+                // Unlit cells still need to read as a key, not vanish into the dark canvas.
+                "#242424",
                 null,
                 1d,
                 StudioSvgRole.Led);
@@ -138,13 +144,35 @@ public static class StudioDeviceVisualBuilder
 
         return new StudioDeviceVisual(
             instanceId,
-            manifest.ProductId,
-            resolvedName,
+            productId,
+            name,
             Margin * 2 + columns * CellSize + (columns - 1) * CellGap,
             Margin * 2 + rows * CellSize + (rows - 1) * CellGap,
             paths,
             leds,
-            UsesSvg: false);
+            UsesSvg: false,
+            Layout: layout);
+    }
+
+    private static StudioDeviceVisual BuildFallback(
+        StudioManifestDevice manifest,
+        string instanceId,
+        string? name,
+        StudioLedLayout? layout)
+    {
+        var resolvedName = ResolveName(manifest, name);
+        return layout is null || layout.Leds.Count == 0
+            ? new StudioDeviceVisual(
+                instanceId,
+                manifest.ProductId,
+                resolvedName,
+                EmptySize,
+                EmptySize,
+                Array.Empty<StudioVisualPath>(),
+                Array.Empty<StudioVisualLed>(),
+                UsesSvg: false,
+                Layout: layout)
+            : BuildGrid(manifest.ProductId, instanceId, resolvedName, layout);
     }
 
     private static string CellPath(double x, double y) =>

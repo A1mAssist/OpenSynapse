@@ -1,0 +1,37 @@
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
+using OpenSynapse.Windows.Devices;
+
+namespace OpenSynapse.App.ViewModels;
+
+public sealed partial class RazerHidWorkspace
+{
+    private RazerHidDeviceViewModel CreateDeviceViewModel(
+        RazerHidDeviceConnection connection)
+    {
+        RazerHidDeviceViewModel device = new(
+            _deviceService ?? throw new InvalidOperationException("RazerHid service is unavailable."),
+            connection,
+            _currentPowerSource,
+            powerState => ProfileResolver.ResolveRazerHidLighting(
+                _getProfile(),
+                connection.ToDescriptor(),
+                powerState),
+            (powerState, profile, token) => SaveLightingAsync(
+                connection,
+                powerState,
+                profile,
+                token),
+            () => IsLightingEnabled(connection),
+            () => IsChromaOverrideEnabled(connection),
+            (lightingEnabled, chromaOverrideEnabled, token) => SaveLightingSettingsAsync(
+                connection,
+                lightingEnabled,
+                chromaOverrideEnabled,
+                token),
+            _chromaIntegrationEnabled());
+        device.AttachMatrixLayout(_matrixLayoutLoader.LoadLayoutAsync, _dispatcherQueue);
+        device.Onboard.LocalMacroProvider = _localMacros;
+        return device;
+    }
+}

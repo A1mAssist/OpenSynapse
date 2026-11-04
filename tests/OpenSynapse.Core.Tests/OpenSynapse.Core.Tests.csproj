@@ -16,16 +16,21 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\OpenSynapse.Core\OpenSynapse.Core.csproj" />
     <ProjectReference Include="..\..\src\OpenSynapse.Windows\OpenSynapse.Windows.csproj" />
+    <ProjectReference Include="..\..\src\OpenSynapse.ChromaSdk.Protocol\OpenSynapse.ChromaSdk.Protocol.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\src\OpenSynapse.App\Native\Razer\Mappings\*.json"
           Link="Mappings\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\OpenSynapse.App\Assets\LightingLayouts\synapse2-legacy.json"
+          Link="Fixtures\synapse2-legacy.json"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Fixtures\studio-two-tone.mp4" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures\studio-*.mp4" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures\Chroma\*.ChromaEffects" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures\Fire\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

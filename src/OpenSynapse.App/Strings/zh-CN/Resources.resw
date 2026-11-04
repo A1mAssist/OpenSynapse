@@ -1740,9 +1740,9 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>游戏模式已切换，但配置保存失败。</value><comment>游戏模式配置保存失败</comment></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Blade Fn 运行时在音频同步完成前已被安全停止。</value><comment>Fn 运行时提前停止</comment></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>采样失败 · 显示上次值</value><comment>性能采样不可用</comment></data>
-  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma REST</value><comment>Chroma REST 标题</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允许兼容 REST 的游戏和外部集成在本机控制 Blade 键盘灯光；暂不支持原生 Chroma SDK。</value><comment>Chroma REST 说明</comment></data>
-  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma REST</value><comment>Chroma REST 开关</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma 集成</value><comment>Chroma 集成标题</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允许兼容的 REST 与 SDK 客户端在本机控制已连接设备的灯光；SDK 兼容层不需要安装雷云。</value><comment>Chroma 集成说明</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma 集成</value><comment>Chroma 集成开关</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 状态</comment></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 已禁用</comment></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>不可用</value><comment>Chroma REST 不可用</comment></data>
@@ -1958,7 +1958,8 @@
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
-  <data name="RazerHidMatrixDescription.Text" xml:space="preserve"><value>选择色块调整单个像素，或点「填充当前颜色」一次铺满，然后应用整帧。</value></data>
+  <data name="RazerHidMatrixDescription.Text" xml:space="preserve"><value>按设备真实键位/灯位排布，点击色块调整颜色；空白位置不可选，应用时按硬件坐标写回。</value></data>
+  <data name="RazerHidMatrixFallbackDescription.Text" xml:space="preserve"><value>当前设备使用硬件矩阵坐标，真实键位尚未校准。点击色块调整颜色，应用时按硬件坐标写回。</value></data>
   <data name="RazerHidApplyMatrixButton.Content" xml:space="preserve"><value>应用整帧</value></data>
   <data name="RazerHidFillMatrixButton.Content" xml:space="preserve"><value>填充当前颜色</value></data>
   <data name="RazerHidMatrixCellLabel" xml:space="preserve"><value>第 {0} 行，第 {1} 列</value></data>
@@ -3511,7 +3512,13 @@
   <data name="LightingStudioApply" xml:space="preserve"><value>应用到设备</value></data>
   <data name="LightingStudioStop" xml:space="preserve"><value>停止</value></data>
   <data name="LightingStudioDeviceLabel" xml:space="preserve"><value>设备</value></data>
-  <data name="LightingStudioNoDevice" xml:space="preserve"><value>未检测到可用的 Blade 键盘</value></data>
+  <data name="LightingStudioLayers" xml:space="preserve"><value>图层</value></data>
+  <data name="LightingStudioDocument" xml:space="preserve"><value>文档</value></data>
+  <data name="LightingStudioGroup" xml:space="preserve"><value>分组</value></data>
+  <data name="LightingStudioNoDevice" xml:space="preserve"><value>未检测到可编辑的矩阵设备</value></data>
+  <data name="LightingStudioDeviceNoPixelOutput" xml:space="preserve"><value>无逐像素输出。此设备无法接收工作室帧，画布仅供预览，应用时会跳过。</value></data>
+  <data name="LightingStudioZoomIn" xml:space="preserve"><value>放大</value></data>
+  <data name="LightingStudioZoomOut" xml:space="preserve"><value>缩小</value></data>
   <data name="LightingStudioNameLabel" xml:space="preserve"><value>工作室名称</value></data>
   <data name="LightingStudioUntitled" xml:space="preserve"><value>未命名工作室</value></data>
   <data name="LightingStudioAdd" xml:space="preserve"><value>新增</value></data>
@@ -3562,6 +3569,7 @@
   <data name="LightingStudioEffectWheel" xml:space="preserve"><value>色轮</value></data>
   <data name="LightingStudioEffectGenerate" xml:space="preserve"><value>图片生成</value></data>
   <data name="LightingStudioEffectTidal" xml:space="preserve"><value>潮汐</value></data>
+  <data name="LightingStudioEffectRadiate" xml:space="preserve"><value>辐射</value></data>
   <data name="LightingStudioBlendNormal" xml:space="preserve"><value>正常</value></data>
   <data name="LightingStudioBlendAdd" xml:space="preserve"><value>叠加</value></data>
   <data name="LightingStudioBlendMultiply" xml:space="preserve"><value>正片叠底</value></data>
@@ -3576,6 +3584,7 @@
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>白</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>选择图层后调整参数，预览会实时更新。</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>正在获取设备布局...</value></data>
+  <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>未加载 {0} 的布局，键盘输入已忽略。</value></data>
   <data name="LightingStudioStatusLayoutFailed" xml:space="preserve"><value>已退回矩阵布局：{0}</value></data>
   <data name="LightingStudioStatusSelectLayer" xml:space="preserve"><value>先选一个图层。</value></data>
   <data name="LightingStudioStatusSelectLeds" xml:space="preserve"><value>先在画布上选灯。</value></data>
@@ -3583,13 +3592,32 @@
   <data name="LightingStudioStatusRegionCleared" xml:space="preserve"><value>已清除选区，图层作用于整机。</value></data>
   <data name="LightingStudioApplySelection" xml:space="preserve"><value>应用选区</value></data>
   <data name="LightingStudioSelectAll" xml:space="preserve"><value>全选</value></data>
+  <data name="LightingStudioStatusDeviceWriteFailed" xml:space="preserve"><value>{0} 写入失败，正在重试</value></data>
+  <data name="LightingStudioImportIssuesTitle" xml:space="preserve"><value>导入完成，有 {0} 项需要确认</value></data>
+  <data name="LightingStudioExportProfilesTitle" xml:space="preserve"><value>选择要导出的配置档</value></data>
+  <data name="LightingStudioStatusRestoreFailed" xml:space="preserve"><value>{0} 未能恢复原灯效</value></data>
+  <data name="LightingStudioStatusLayoutFallback" xml:space="preserve"><value>未能获取官方布局，已用矩阵网格代替。</value></data>
+  <data name="LightingStudioExportProfilesConfirm" xml:space="preserve"><value>导出</value></data>
+  <data name="LightingStudioImportIssueLine" xml:space="preserve"><value>{0}：{1}</value></data>
+  <data name="LightingStudioImportIssuesClose" xml:space="preserve"><value>知道了</value></data>
+  <data name="LightingStudioImportIssueMissingDevice" xml:space="preserve"><value>缺失设备</value></data>
+  <data name="LightingStudioImportIssueAmbiguousDevice" xml:space="preserve"><value>设备匹配不唯一</value></data>
+  <data name="LightingStudioImportIssueRemappedDevice" xml:space="preserve"><value>设备已重映射</value></data>
+  <data name="LightingStudioImportIssueRemappedLeds" xml:space="preserve"><value>灯位已重映射</value></data>
+  <data name="LightingStudioImportIssueDeviceDropped" xml:space="preserve"><value>设备已移除</value></data>
+  <data name="LightingStudioStatusTidalCenterSet" xml:space="preserve"><value>已把点选的灯位设为潮汐中心。</value></data>
+  <data name="LightingStudioRotateDevice.Content" xml:space="preserve"><value>↻</value></data>
+  <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>旋转 90°</value></data>
+  <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>旋转 90°</value></data>
   <data name="LightingStudioClearSelection" xml:space="preserve"><value>清除选区</value></data>
   <data name="LightingStudioStatusLayerAdded" xml:space="preserve"><value>已新增 {0}</value></data>
   <data name="LightingStudioStatusLayerRemoved" xml:space="preserve"><value>已删除图层</value></data>
-  <data name="LightingStudioStatusNoDevice" xml:space="preserve"><value>未找到可用的 Blade 键盘。</value></data>
+  <data name="LightingStudioStatusNoDevice" xml:space="preserve"><value>未找到支持的灯光设备。</value></data>
   <data name="LightingStudioStatusApplied" xml:space="preserve"><value>已下发到 {0}。</value></data>
   <data name="LightingStudioStatusApplyFailed" xml:space="preserve"><value>下发失败：{0}</value></data>
-  <data name="LightingStudioStatusStopped" xml:space="preserve"><value>已停止并恢复设备原有效果。</value></data>
+  <data name="LightingStudioStatusStopped" xml:space="preserve"><value>已停止。</value></data>
+  <data name="LightingStudioStatusUndo" xml:space="preserve"><value>已撤销。</value></data>
+  <data name="LightingStudioStatusRedo" xml:space="preserve"><value>已重做。</value></data>
   <data name="LightingStudioStatusStopFailed" xml:space="preserve"><value>停止失败：{0}</value></data>
   <data name="LightingStudioStatusSaved" xml:space="preserve"><value>已保存到 {0}</value></data>
   <data name="LightingStudioStatusSaveFailed" xml:space="preserve"><value>保存失败：{0}</value></data>
@@ -3610,13 +3638,24 @@
   <data name="LightingStudioParamWidth" xml:space="preserve"><value>宽度</value></data>
   <data name="LightingStudioParamAngle" xml:space="preserve"><value>角度</value></data>
   <data name="LightingStudioParamSplit" xml:space="preserve"><value>分割</value></data>
+  <data name="LightingStudioParamCenterPoint" xml:space="preserve"><value>中心点</value></data>
+  <data name="LightingStudioParamCenterPointReset" xml:space="preserve"><value>重置到中心</value></data>
+  <data name="LightingStudioParamCenterX" xml:space="preserve"><value>X</value></data>
+  <data name="LightingStudioParamCenterY" xml:space="preserve"><value>Y</value></data>
+  <data name="LightingStudioParamCenterRow" xml:space="preserve"><value>行</value></data>
+  <data name="LightingStudioParamCenterCol" xml:space="preserve"><value>列</value></data>
+  <data name="LightingStudioParamCounterclockwise" xml:space="preserve"><value>向内（逆时针）</value></data>
   <data name="LightingStudioParamDensity" xml:space="preserve"><value>密度</value></data>
   <data name="LightingStudioParamBoost" xml:space="preserve"><value>增强</value></data>
   <data name="LightingStudioParamAutoBoost" xml:space="preserve"><value>自动增强</value></data>
   <data name="LightingStudioParamDecay" xml:space="preserve"><value>衰减</value></data>
   <data name="LightingStudioParamScreen" xml:space="preserve"><value>屏幕区域</value></data>
-  <data name="LightingStudioParamScreenRect" xml:space="preserve"><value>自定义区域</value></data>
-  <data name="LightingStudioParamScreenRectHint" xml:space="preserve"><value>自定义区域请在画布上编辑。</value></data>
+  <data name="LightingStudioParamScreenRect" xml:space="preserve"><value>自定义效果区域</value></data>
+  <data name="LightingStudioParamScreenRectHint" xml:space="preserve"><value>仅在屏幕区域选择“自定义”时使用。</value></data>
+  <data name="LightingStudioParamScreenRectReset" xml:space="preserve"><value>重置自定义区域</value></data>
+  <data name="LightingStudioParamCaptureRegion" xml:space="preserve"><value>屏幕捕获区域 (%)</value></data>
+  <data name="LightingStudioParamCaptureRegionHint" xml:space="preserve"><value>拖动选区，或输入 0–100% 数值；作用于所有环境光图层。</value></data>
+  <data name="LightingStudioParamCaptureRegionReset" xml:space="preserve"><value>重置为全屏</value></data>
   <data name="LightingStudioParamBlur" xml:space="preserve"><value>模糊</value></data>
   <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>媒体来源</value></data>
   <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>生成配置 (JSON)</value></data>
@@ -3639,6 +3678,12 @@
   <data name="LightingStudioGeneratePatternSection" xml:space="preserve"><value>图案</value></data>
   <data name="LightingStudioGenerateAi" xml:space="preserve"><value>AI 取色（需本机模型）</value></data>
   <data name="LightingStudioGenerateColorSource" xml:space="preserve"><value>颜色来源</value></data>
+  <data name="LightingStudioGenerateRandomize" xml:space="preserve"><value>随机生成</value></data>
+  <data name="LightingStudioGeneratePrevious" xml:space="preserve"><value>上一个</value></data>
+  <data name="LightingStudioGenerateNext" xml:space="preserve"><value>下一个</value></data>
+  <data name="LightingStudioGenerateHistory" xml:space="preserve"><value>历史</value></data>
+  <data name="LightingStudioGenerateHistoryPosition" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="LightingStudioGenerateHistoryEmpty" xml:space="preserve"><value>暂无历史</value></data>
   <data name="LightingStudioResetPalette" xml:space="preserve"><value>重置调色板</value></data>
   <data name="LightingStudioSeconds" xml:space="preserve"><value>{0:0.###} 秒</value></data>
   <data name="LightingStudioImport" xml:space="preserve"><value>导入</value></data>
@@ -3663,4 +3708,10 @@
   <data name="IntroductionV2BladeBody" xml:space="preserve"><value>性能模式、风扇、显卡模式和键盘灯光都在这个页面；修改后按对应按钮保存或应用。</value></data>
   <data name="IntroductionV2NoDevicesTitle" xml:space="preserve"><value>还没有发现设备</value></data>
   <data name="IntroductionV2NoDevicesBody" xml:space="preserve"><value>插好雷蛇设备后点“重新探测”。如果仍然看不到，检查 USB 或接收器连接；需要时可以在设置里重新打开使用引导。</value></data>
+  <data name="LightingStudioStatusMediaUnavailable" xml:space="preserve"><value>媒体 {0} 无法加载，已使用程序化回退。{1}</value></data>
+  <data name="LightingStudioStatusMediaDecodeFallback" xml:space="preserve"><value>媒体 {0} 未能完整解码，已使用静态缩略图。{1}</value></data>
+  <data name="LightingStudioMediaUnavailableReason" xml:space="preserve"><value>文件不存在或格式不受支持。</value></data>
+  <data name="LightingStudioProject" xml:space="preserve"><value>项目</value></data>
+  <data name="LightingStudioMore" xml:space="preserve"><value>更多</value></data>
+  <data name="LightingStudioProfileTitle" xml:space="preserve"><value>配置档名称</value></data>
 </root>

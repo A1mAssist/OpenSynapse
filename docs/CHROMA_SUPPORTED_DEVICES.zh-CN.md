@@ -4,7 +4,7 @@
 
 ## 运行时可用性
 
-下面的清单是 manifest 能力库存。运行时仍必须先解析到设备端点，并且事务实际被设备接受，软件才会显示对应控件；事务被拒绝或端点不可用时，控件会隐藏。下面的 91-byte HID 路径来自 OpenRazer 协议定义，不是原生 Chroma SDK，也不会加载 `RzChromaConnectAPI.dll`。
+下面的清单是 manifest 能力库存。运行时仍必须先解析到设备端点，并且事务实际被设备接受，软件才会显示对应控件；事务被拒绝或端点不可用时，控件会隐藏。下面的 91-byte HID 路径来自 OpenRazer 协议定义。独立的 OpenSynapse `RzChromaSDK64.dll` 兼容层实现 Chroma SDK 4.0.1 ABI，见 [Chroma SDK 兼容层](CHROMA_SDK_SHIM.md)。
 
 ## Blade Chroma REST
 
@@ -169,6 +169,33 @@
 | 鼠标 | Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | 1x12 | Extended 91-byte HID；仍需运行时解析设备端点 |
 | 鼠标 | Razer Basilisk V3 Pro 35K Phantom Green Edition (Wireless) | `1532:00D7` | 1x12 | Extended 91-byte HID；仍需运行时解析设备端点 |
 
+## Manifest 补录的键盘
+
+以下键盘没有 OpenRazer 条目。Razer 引擎 manifest 声明它们使用与 OpenRazer 键盘相同的
+`rzDevice25` 帧协议，因此单独的工作室注册表复用同族事务集，矩阵尺寸取 manifest 的
+`DeviceMaxRow`/`DeviceMaxCol`（不是视觉用的 `MatrixMaxRow`/`MatrixMaxCol`）。设备页继续保留
+游戏模式、轮询率和电量控制；注册表条目只服务灯光画布。真机写帧验收仍未完成。
+
+| 型号 | VID:PID | 设备矩阵 | 借用定义 |
+|---|---:|---:|---|
+| Razer Turret Keyboard Xbox One Edition | `1532:023E` | 6x18 | `02D7` |
+| Razer Turret Keyboard Gears of War 5 Edition | `1532:0A23` | 6x18 | `02D7` |
+| Razer Huntsman V3 X Tenkeyless | `1532:02B1` | 6x18 | `02D7` |
+| Razer BlackWidow V4 Pro 75% | `1532:02B3` | 6x18 | `02D7` |
+| Razer Pro Type Ergo | `1532:02C4` | 1x19 | `02A7` |
+| Razer BlackWidow V4 Low-profile HyperSpeed | `1532:02CC` | 7x22 | `02CF` |
+| Razer Huntsman V3 Pro Tenkeyless 8KHz | `1532:02D0` | 6x22 | `02CF` |
+| Razer Huntsman V3 Pro Mini 8KHz | `1532:02D1` | 5x15 | `02B0` |
+| Razer BlackWidow V4 Low-Profile Tenkeyless HyperSpeed | `1532:02D4` | 6x18 | `02D7` |
+| Razer Huntsman Signature Edition | `1532:02D8` | 6x22 | `02CF` |
+| Razer Reclusa X Mini 65% | `1532:02E3` | 5x16 | `02A5` |
+| Razer Huntsman V3 HE Magnetic Mini 65% 8KHz | `1532:02E4` | 5x16 | `02A5` |
+| Razer Huntsman V3 Tenkeyless 8KHz | `1532:02E5` | 6x22 | `02CF` |
+| Razer Huntsman V3 Pro Low-Profile Tenkeyless 8KHz | `1532:02E6` | 6x22 | `02CF` |
+| Razer Huntsman V3 HE Magnetic Tenkeyless 8KHz | `1532:02EA` | 6x18 | `02D7` |
+| Razer BlackWidow V4 75% XBOX 25 Anniversary Edition | `1532:02F0` | 7x18 | `02D7` |
+| Razer Reclusa Mini 65% | `1532:02F4` | 5x16 | `02A5` |
+
 ## Kraken 灯光设备
 
 以下型号使用独立的 Kraken 37-byte Output Report。每个 USB PID 单独列出，因为它们对应独立的产品定义。
@@ -191,7 +218,7 @@
 
 ## 边界说明
 
-- OpenSynapse 不加载 `RzChromaConnectAPI.dll`、原生 Chroma SDK 或 Razer Synapse。
+- OpenSynapse 不加载雷云或 Razer 签名的 `RzChromaConnectAPI.dll`；可选的 `RzChromaSDK64.dll` 是 OpenSynapse 自己的 ABI 兼容层。
 - Chroma REST 当前只在 Blade 16 键盘上完成验证；这不代表 REST 帧会被转译到所有 OpenRazer 矩阵设备。
 - 矩阵尺寸和 manifest 事务只是能力元数据，不是硬件认证；连接端点和成功事务仍是最终依据。
 - 不支持或未验证的控件会被隐藏，不会伪装成可配置控件。

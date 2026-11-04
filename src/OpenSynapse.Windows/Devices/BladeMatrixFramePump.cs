@@ -5,7 +5,7 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Sends only the newest complete 6 x 17 frame and restores a known persistent
+/// Sends only the newest complete declared-matrix frame and restores a known persistent
 /// effect after the software-lighting session ends or faults.
 /// </summary>
 public sealed class BladeMatrixFramePump : IAsyncDisposable
@@ -68,9 +68,14 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     public bool TryPublish(IReadOnlyList<RazerRgb> frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
-        if (frame.Count != BladeLightingProtocol.Rows * BladeLightingProtocol.Columns)
+        // Studio renders the manifest matrix directly for non-710 dialects; legacy
+        // 710-family sources still publish the canonical 6 x 17 frame and scale.
+        if (frame.Count != _matrixRows * _matrixColumns &&
+            frame.Count != BladeLightingProtocol.Rows * BladeLightingProtocol.Columns)
         {
-            throw new ArgumentException("A Blade lighting frame must contain exactly 6 x 17 colors.", nameof(frame));
+            throw new ArgumentException(
+                $"A Blade lighting frame must contain exactly {_matrixRows} x {_matrixColumns} colors.",
+                nameof(frame));
         }
 
         return Volatile.Read(ref _stopped) == 0 &&
@@ -292,8 +297,9 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         int matrixRows,
         int matrixColumns)
     {
-        if (matrixRows == BladeLightingProtocol.Rows &&
-            matrixColumns == BladeLightingProtocol.Columns)
+        if (frame.Count == matrixRows * matrixColumns ||
+            (matrixRows == BladeLightingProtocol.Rows &&
+             matrixColumns == BladeLightingProtocol.Columns))
         {
             return frame.ToArray();
         }
