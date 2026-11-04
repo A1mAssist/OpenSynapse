@@ -6,9 +6,11 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
+using OpenSynapse.Windows.Protocols;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
@@ -96,7 +98,8 @@ public sealed partial class MainWindow : Window
             () => _viewModel.CurrentDeviceDescriptors,
             BuildStudioDevices,
             CreateStudioHidRouter(_studioInputSampler),
-            _studioInputSampler);
+            _studioInputSampler,
+            CreateStudioArgbRouter(_studioInputSampler));
         DevicesPage.RefreshAdvancedFeaturesVisibility();
         MacrosPage.OpenEditorRequested += (_, _) => OpenMacroEditorWindow();
         OverviewPage.DeviceRequested += OnOverviewDeviceRequested;
@@ -117,6 +120,9 @@ public sealed partial class MainWindow : Window
         RootLayout.Loaded += (_, _) =>
         {
             Localized.RefreshTree(RootLayout);
+#if DEBUG
+            StartPageIfRequested();
+#endif
             // The first activation can run before XAML has a XamlRoot. Reapply the saved
             // geometry once the layout is live so a low-DPI fallback cannot pin the window
             // to the minimum size for the rest of the session.
@@ -135,6 +141,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.RazerHid.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.RazerHid.Devices.CollectionChanged += OnRazerHidDevicesChanged;
         _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Viper.PropertyChanged += OnViewModelPropertyChanged;
@@ -268,6 +275,7 @@ public sealed partial class MainWindow : Window
             if (sender.IsVisible)
             {
                 _viewModel.Refresh.RequestDeviceRefresh();
+                RequestStudioDeviceRefresh();
                 if (DevicesPage.Visibility == Visibility.Visible)
                 {
                     _ = _viewModel.RefreshHueAsync(_lifetime.Token);
@@ -401,38 +409,101 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private static string? CategoryName(DeviceCategory category) =>
+        category == DeviceCategory.Unknown ? null : category.ToString().ToLowerInvariant();
+
     private IReadOnlyList<StudioDeviceOption> BuildStudioDevices()
     {
         var options = new List<StudioDeviceOption>();
         foreach (var descriptor in _viewModel.CurrentDeviceDescriptors)
         {
-            if (descriptor.Access != DeviceAccessState.Available ||
-                !DeviceProtocolFamilies.IsBlade(descriptor.ProtocolFamily)) continue;
+            if (StudioBladeDevices.Resolve(descriptor) is not { } profile) continue;
             options.Add(new StudioDeviceOption(
                 descriptor.Name,
                 descriptor,
                 descriptor.Id,
                 descriptor.ProductId,
-                BladeLightingLayout.LogicalRows,
-                BladeLightingLayout.LogicalColumns,
-                IsBlade: true));
+                profile.Rows,
+                profile.Columns,
+                IsBlade: true,
+                BladeFrameMode: profile.Mode,
+                Category: "keyboard"));
         }
 
         foreach (var row in _viewModel.RazerHid.Devices)
         {
             var connection = row.Connection;
             if (connection.Definition.Category == DeviceCategory.Laptop) continue;
-            if (connection.Definition.MatrixDimensions is not { } dimensions) continue;
+            if (connection.Definition.ProductId == StudioArgbDevice.ProductId) continue;
+
+            var staticZone = StudioHidOutputRouter.FindStaticZone(connection);
+            var writesFrames = connection.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite);
+            if (connection.Definition.MatrixDimensions is { } dimensions &&
+                (writesFrames || staticZone is null))
+            {
+                options.Add(new StudioDeviceOption(
+                    connection.Definition.DisplayName,
+                    null,
+                    connection.InstanceId,
+                    connection.Definition.ProductId,
+                    dimensions.Rows,
+                    dimensions.Columns,
+                    Category: CategoryName(connection.Definition.Category))
+                {
+                    HasNoPixelOutput = connection.IsReady && !writesFrames,
+                });
+                continue;
+            }
+
+            if (staticZone is not null)
+            {
+                // Without frame writes, every LED in the zone shows one color; the
+                // canvas gets one representative cell instead of a per-key promise.
+                options.Add(new StudioDeviceOption(
+                    connection.Definition.DisplayName,
+                    null,
+                    connection.InstanceId,
+                    connection.Definition.ProductId,
+                    1,
+                    1,
+                    IsSingleZone: true,
+                    Category: CategoryName(connection.Definition.Category)));
+            }
+        }
+
+        if (_viewModel.RazerHid.ArgbConnection is { } argb)
+        {
+            var info = StudioArgbDevice.Create(
+                argb.InstanceId, argb.DisplayName, ArgbStripSettings.Load());
             options.Add(new StudioDeviceOption(
-                connection.Definition.DisplayName,
+                info.Name,
                 null,
-                connection.InstanceId,
-                connection.Definition.ProductId,
-                dimensions.Rows,
-                dimensions.Columns));
+                info.InstanceId,
+                info.ProductId,
+                info.Rows,
+                info.Columns,
+                IsArgb: true,
+                Layout: info.Layout,
+                Category: "argb"));
         }
 
         return options;
+    }
+
+    internal async Task RefreshStudioArgbAsync()
+    {
+        try
+        {
+            await _viewModel.RazerHid.RefreshArgbDiscoveredAsync(_lifetime.Token);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            // Device enumeration failing must not break opening the studio page.
+        }
     }
 
     private StudioHidOutputRouter? CreateStudioHidRouter(StudioInputSampler sampler)
@@ -442,9 +513,27 @@ public sealed partial class MainWindow : Window
         return new StudioHidOutputRouter(
             service,
             () => _viewModel.RazerHid.CurrentConnections
-                .Where(connection => connection.Definition.Category != DeviceCategory.Laptop)
+                .Where(connection =>
+                    connection.Definition.Category != DeviceCategory.Laptop &&
+                    connection.Definition.ProductId != StudioArgbDevice.ProductId)
                 .ToArray(),
             inputProvider: (rows, columns) => sampler.Sample(rows, columns));
+    }
+
+    private StudioArgbOutputRouter? CreateStudioArgbRouter(StudioInputSampler sampler)
+    {
+        var service = _viewModel.RazerHid.SpecialLightingService;
+        if (service is null) return null;
+        return new StudioArgbOutputRouter(
+            service,
+            () => ArgbStripSettings.Load(),
+            (rows, columns) => sampler.Sample(rows, columns));
+    }
+
+    internal void ForwardBladeMappingInput(BladeMappingInputEvent input)
+    {
+        if (!input.IsDown) return;
+        _dispatcherQueue.TryEnqueue(() => LightingStudioPage.HandleMappingInput(input));
     }
 
     private void OnClosed(object sender, WindowEventArgs args)
@@ -458,6 +547,7 @@ public sealed partial class MainWindow : Window
         CloseMacroEditorWindow();
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.RazerHid.PropertyChanged -= OnViewModelPropertyChanged;
+        _viewModel.RazerHid.Devices.CollectionChanged -= OnRazerHidDevicesChanged;
         _viewModel.Display.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Viper.PropertyChanged -= OnViewModelPropertyChanged;

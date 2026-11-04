@@ -14,21 +14,49 @@ public static partial class StudioProjectCodec
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
     };
-    public static string Serialize(StudioProject project)
+    /// <summary>
+    /// Writes the selected profile subset and marks one exported profile with
+    /// Chroma's <c>default</c> flag. When no profile is marked, the selected
+    /// profile (or the first) becomes the default.
+    /// </summary>
+    public static string Serialize(
+        StudioProject project,
+        IReadOnlyCollection<string>? profileIds = null,
+        bool export = false)
     {
         ArgumentNullException.ThrowIfNull(project);
+        var requested = profileIds is { Count: > 0 }
+            ? profileIds.Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : null;
+        var profiles = requested is null
+            ? project.Profiles.ToList()
+            : project.Profiles.Where(profile => requested.Contains(profile.Id)).ToList();
+        if (requested is not null && profiles.Count == 0)
+            throw new ArgumentException(
+                "None of the selected profile ids exist in this project.", nameof(profileIds));
+        var selected = project.SelectedProfile is { } current && profiles.Contains(current)
+            ? current
+            : profiles.FirstOrDefault();
+        var defaultProfile = profiles.FirstOrDefault(profile => profile.IsDefault) ?? selected;
         return JsonSerializer.Serialize(new RootDto
         {
             Version = 1,
-            Profiles = project.Profiles.Select(ToProfileDto).ToList(),
+            Profiles = profiles.Select(profile =>
+                ToProfileDto(profile, ReferenceEquals(profile, defaultProfile), export)).ToList(),
             OpenSynapse = new RootExtrasDto
             {
                 SchemaVersion = StudioProject.CurrentSchemaVersion,
                 Name = project.Name,
-                SelectedProfileId = project.SelectedProfile?.Id,
+                SelectedProfileId = selected?.Id,
             },
         }, Options);
     }
+    /// <summary>
+    /// Reads a Studio project. A missing <c>openSynapse.schemaVersion</c> is
+    /// treated as the current schema; newer schemas are rejected rather than
+    /// read with silently missing fields. Legacy v1 documents still migrate.
+    /// </summary>
     public static StudioProject Deserialize(string json)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
@@ -42,6 +70,16 @@ public static partial class StudioProjectCodec
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object)
                 throw new InvalidOperationException("The lighting project root must be a JSON object.");
+            var schemaVersion = ReadSchemaVersion(root);
+            if (schemaVersion > StudioProject.CurrentSchemaVersion)
+            {
+                throw new InvalidOperationException(
+                    $"The lighting project schema {schemaVersion} is newer than this build supports " +
+                    $"({StudioProject.CurrentSchemaVersion}).");
+            }
+
+            // Only v1 has a different document shape; older profile documents
+            // continue through the current reader.
             if (IsSchemaV1(root)) return MigrateV1(root);
             if (!TryGet(root, "profiles", out var profiles) || profiles.ValueKind != JsonValueKind.Array)
                 throw new InvalidOperationException("The lighting project must contain a profiles array.");
@@ -54,10 +92,13 @@ public static partial class StudioProjectCodec
             foreach (var profile in profiles.EnumerateArray())
                 if (profile.ValueKind == JsonValueKind.Object) project.Profiles.Add(ReadProfile(profile));
             if (project.Profiles.Count == 0) project.Profiles.Add(new StudioProfile("Default"));
+            NormalizeDefaultProfile(project);
             var selected = TryGet(root, "openSynapse", out extras) && extras.ValueKind == JsonValueKind.Object
                 ? GetString(extras, "selectedProfileId")
                 : null;
-            project.SelectedProfileId = project.Profiles.Any(p => p.Id == selected) ? selected : project.Profiles.FirstOrDefault()?.Id;
+            project.SelectedProfileId = project.Profiles.Any(p => p.Id == selected)
+                ? selected
+                : project.Profiles.FirstOrDefault(p => p.IsDefault)?.Id ?? project.Profiles.FirstOrDefault()?.Id;
             return project;
         }
         catch (JsonException ex)
@@ -70,7 +111,11 @@ public static partial class StudioProjectCodec
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         return Deserialize(File.ReadAllText(path));
     }
-    public static void Save(string path, StudioProject project)
+    public static void Save(
+        string path,
+        StudioProject project,
+        IReadOnlyCollection<string>? profileIds = null,
+        bool export = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(project);
@@ -80,7 +125,7 @@ public static partial class StudioProjectCodec
         var tempPath = fullPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.WriteAllText(tempPath, Serialize(project));
+            File.WriteAllText(tempPath, Serialize(project, profileIds, export));
             File.Move(tempPath, fullPath, true);
         }
         finally
@@ -108,6 +153,33 @@ public static partial class StudioProjectCodec
     private static StudioBlendMode ReadBlend(string? name) => Enum.TryParse(name, true, out StudioBlendMode blend) && Enum.IsDefined(blend) ? blend : StudioBlendMode.Normal;
     private static StudioPlaybackStart ReadStart(string? value) => value?.Trim().ToLowerInvariant() switch { "onpress" => StudioPlaybackStart.OnPress, "onselectedkeys" => StudioPlaybackStart.OnSelectedKeys, _ => StudioPlaybackStart.Random };
     private static StudioPlaybackEnd ReadEnd(string? value) => value?.Trim().ToLowerInvariant() switch { "after" => StudioPlaybackEnd.After, "toggle" => StudioPlaybackEnd.Toggle, _ => StudioPlaybackEnd.Never };
+    /// <summary>
+    /// A present but malformed version is rejected instead of falling back to the
+    /// current schema, which would silently downgrade an unknown document.
+    /// </summary>
+    private static int ReadSchemaVersion(JsonElement root)
+    {
+        if (!TryGet(root, "openSynapse", out var extras) || extras.ValueKind == JsonValueKind.Null)
+            return StudioProject.CurrentSchemaVersion;
+        if (extras.ValueKind != JsonValueKind.Object)
+            throw new InvalidOperationException("The lighting project openSynapse value must be an object.");
+        if (!TryGet(extras, "schemaVersion", out var value) || value.ValueKind == JsonValueKind.Null)
+            return StudioProject.CurrentSchemaVersion;
+        if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var version) || version < 0)
+            throw new InvalidOperationException(
+                "The lighting project openSynapse.schemaVersion must be a non-negative integer.");
+        return version;
+    }
+
+    /// <summary>Chroma exports at most one default profile; an absent marker means the first.</summary>
+    private static void NormalizeDefaultProfile(StudioProject project)
+    {
+        var defaultProfile = project.Profiles.FirstOrDefault(profile => profile.IsDefault)
+            ?? project.Profiles.FirstOrDefault();
+        foreach (var profile in project.Profiles)
+            profile.IsDefault = ReferenceEquals(profile, defaultProfile);
+    }
+
     private static bool IsSchemaV1(JsonElement root) =>
         TryGet(root, "schemaVersion", out var version) && version.ValueKind == JsonValueKind.Number &&
         version.TryGetDouble(out var number) && number <= 1;
@@ -229,6 +301,11 @@ public static partial class StudioProjectCodec
                double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out number)
             ? number
             : fallback;
+    }
+    private static double? ReadNullableDouble(JsonElement element, string name)
+    {
+        var number = ReadDouble(element, name, double.NaN);
+        return double.IsNaN(number) ? null : number;
     }
     private static double ReadSplit(JsonElement element)
     {

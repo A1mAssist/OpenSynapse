@@ -256,6 +256,23 @@ public sealed class LightingStudioEffectRendererTests
         Assert.False(first.SequenceEqual(second));
     }
 
+    [Theory]
+    [InlineData(StudioEffectKind.Fire)]
+    [InlineData(StudioEffectKind.Starlight)]
+    public void SeededRandomEffectsRepeatAtTheSameTime(StudioEffectKind effect)
+    {
+        var parameters = new StudioEffectParams
+        {
+            Effect = effect,
+            Density = 5,
+        };
+
+        var first = StudioEffectRenderer.Render(parameters, 6, 17, 1.7);
+        var second = StudioEffectRenderer.Render(parameters, 6, 17, 1.7);
+
+        Assert.Equal(first, second);
+    }
+
     [Fact]
     public void GradientInterpolatesAcrossColumns()
     {
@@ -281,7 +298,7 @@ public sealed class LightingStudioEffectRendererTests
             Effect = StudioEffectKind.Breathing,
             Primary = new StudioRgb(0, 0, 0),
             Secondary = new StudioRgb(255, 255, 255),
-            DurationMs = 7000,
+            DurationMs = 14_000,
         };
 
         var dark = StudioEffectRenderer.Render(parameters, 1, 2, 0);
@@ -289,6 +306,113 @@ public sealed class LightingStudioEffectRendererTests
 
         Assert.Equal(parameters.Primary, dark[0]);
         Assert.Equal(parameters.Secondary, bright[0]);
+    }
+
+    [Fact]
+    public void WheelCenterMovesTheColorPivot()
+    {
+        StudioRgb[] Render(int row, int column) => StudioEffectRenderer.Render(
+            new StudioEffectParams
+            {
+                Effect = StudioEffectKind.Wheel,
+                CenterRow = row,
+                CenterCol = column,
+            },
+            9,
+            13,
+            1.75);
+
+        var centered = Render(125, 125);
+        var corner = Render(0, 0);
+
+        Assert.True(centered.Distinct().Count() > 1);
+        Assert.False(centered.SequenceEqual(corner));
+        Assert.Equal(centered, Render(125, 125));
+    }
+
+    [Fact]
+    public void WheelMissingCenterFallsBackToTheMatrixCenter()
+    {
+        var fallback = new StudioEffectParams { Effect = StudioEffectKind.Wheel };
+        var centered = new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Wheel,
+            CenterRow = 4,
+            CenterCol = 6,
+        };
+
+        Assert.Equal(
+            StudioEffectRenderer.Render(centered, 9, 13, 1.75),
+            StudioEffectRenderer.Render(fallback, 9, 13, 1.75));
+    }
+
+    [Fact]
+    public void WheelCenterFallsBackForMissingAndClampsHighValues()
+    {
+        StudioRgb[] Render(int row, int column) => StudioEffectRenderer.Render(
+            new StudioEffectParams
+            {
+                Effect = StudioEffectKind.Wheel,
+                CenterRow = row,
+                CenterCol = column,
+            },
+            9,
+            13,
+            1.75);
+
+        Assert.Equal(
+            Render(4, 6),
+            Render(-100, -100));
+        Assert.Equal(
+            Render(StudioEffectParams.WheelCenterMaximum, StudioEffectParams.WheelCenterMaximum),
+            Render(999, 999));
+    }
+
+    [Fact]
+    public void TidalCenterPointMovesTheSweep()
+    {
+        StudioRgb[] Render(double centerX) => StudioEffectRenderer.Render(
+            new StudioEffectParams
+            {
+                Effect = StudioEffectKind.Tidal,
+                Angle = 0,
+                Split = 100,
+                Speed = 10,
+                CenterPointX = centerX,
+            },
+            12,
+            24,
+            1.3);
+
+        var centered = Render(5_000);
+        var shifted = Render(2_500);
+
+        Assert.False(centered.SequenceEqual(shifted));
+    }
+
+    [Fact]
+    public void TidalCounterclockwiseChangesTheSweepDirection()
+    {
+        StudioRgb[] Render(bool counterclockwise) => StudioEffectRenderer.Render(
+            new StudioEffectParams
+            {
+                Effect = StudioEffectKind.Tidal,
+                Angle = 0,
+                Split = 100,
+                Speed = 10,
+                Counterclockwise = counterclockwise,
+            },
+            12,
+            23,
+            1.3);
+
+        var outward = Render(false);
+        var inward = Render(true);
+
+        Assert.True(outward.Distinct().Count() > 1);
+        Assert.False(outward.SequenceEqual(inward));
+        Assert.Equal(outward, Render(false));
+        Assert.Equal(inward, Render(true));
     }
 
     [Fact]

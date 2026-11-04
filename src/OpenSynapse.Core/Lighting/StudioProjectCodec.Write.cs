@@ -4,22 +4,25 @@ using System.Text.Json.Serialization;
 namespace OpenSynapse.Core.Lighting;
 public static partial class StudioProjectCodec
 {
-    private static ProfileDto ToProfileDto(StudioProfile profile)
+    private static ProfileDto ToProfileDto(StudioProfile profile, bool isDefault, bool export)
     {
         var devices = CollectPlacements(profile);
+        var deviceDtos = devices.Select((device, index) => ToProfileDeviceDto(device, index)).ToList();
         var dto = new ProfileDto
         {
             Id = profile.Id,
             Title = profile.Title,
-            Devices = devices.Select((device, index) => ToProfileDeviceDto(device, index)).ToList(),
-            Layers = profile.Items.Select(item => ToLayerDto(item, null)).ToList(),
+            Default = isDefault ? true : null,
+            Devices = deviceDtos,
+            Layers = profile.Items.Select(item => ToLayerDto(item, null, export)).ToList(),
         };
         if (devices.Count > 0)
             dto.OpenSynapse = new ProfileExtrasDto
             {
-                Devices = devices.Select(device => new DeviceDto
+                Devices = devices.Select((device, index) => new DeviceDto
                 {
-                    Id = device.Id,
+                    // Must match the official array entry; otherwise import reads two placements.
+                    Id = deviceDtos[index].Id,
                     InstanceId = device.InstanceId,
                     ProductId = device.ProductId,
                     DeviceId = device.DeviceId,
@@ -96,6 +99,11 @@ public static partial class StudioProjectCodec
         X = device.X,
         Y = device.Y,
         Orientation = NormalizeRotation(device.Rotation),
+        ParentId = FlexibleNumber(device.ParentId),
+        ParentX = device.ParentX,
+        ParentY = device.ParentY,
+        PlacementIndex = device.PlacementIndex,
+        LedRef = string.IsNullOrWhiteSpace(device.LedRefJson) ? null : RawJson(device.LedRefJson),
     };
 
     private static string GeneratedDeviceId(ushort productId, string? instanceId, string? deviceId, int index)
@@ -122,7 +130,7 @@ public static partial class StudioProjectCodec
         FlexibleNumber(text) is long number ? number : string.IsNullOrWhiteSpace(text) ? null : 0L;
 
     private static int NormalizeRotation(int rotation) => rotation is 90 or 180 or 270 ? rotation : 0;
-    private static LayerDto ToLayerDto(StudioLayerItem item, Guid? parentGroupId)
+    private static LayerDto ToLayerDto(StudioLayerItem item, Guid? parentGroupId, bool export)
     {
         var dto = new LayerDto
         {
@@ -134,27 +142,38 @@ public static partial class StudioProjectCodec
         if (item.IsGroup)
         {
             dto.Opened = item.Opened;
-            dto.Layers = item.Children.Select(child => ToLayerDto(child, item.Id)).ToList();
+            dto.Layers = item.Children.Select(child => ToLayerDto(child, item.Id, export)).ToList();
         }
         else
         {
-            dto.Name = StudioEffectMap.ToName(item.Params.Effect);
-            dto.Value = StudioEffectMap.ToUiValue(item.Params.Effect);
-            dto.Params = ToParamsDto(item.Params);
-            dto.Regions = item.Regions.Select(ToRegionDto).ToList();
+            // Engine-only radiate has no Studio name; export the official spectrum
+            // shape and restore radiate from the openSynapse extension.
+            var exportedEffect = item.Params.Effect == StudioEffectKind.Radiate
+                ? StudioEffectKind.Spectrum
+                : item.Params.Effect;
+            dto.Name = StudioEffectMap.ToName(exportedEffect);
+            dto.Value = StudioEffectMap.ToUiValue(exportedEffect);
+            dto.Params = ToParamsDto(item.Params, export: export);
+            dto.Params2 = ToParams2Dto(item.Params);
+            dto.Regions = item.Regions.Select(region => ToRegionDto(region, export)).ToList();
         }
         if (parentGroupId is Guid groupId) dto.GroupId = groupId.ToString();
         var extras = new LayerExtrasDto();
         var hasExtras = false;
         if (item.Opacity != 100) { extras.Opacity = item.Opacity; hasExtras = true; }
         if (item.Blend != StudioBlendMode.Normal) { extras.Blend = item.Blend.ToString(); hasExtras = true; }
-        if (item.Params.Effect == StudioEffectKind.Gradient) { extras.Effect = "gradient"; hasExtras = true; }
+        if (item.Params.Effect is StudioEffectKind.Gradient or StudioEffectKind.Radiate)
+        {
+            extras.Effect = item.Params.Effect == StudioEffectKind.Gradient ? "gradient" : "radiate";
+            hasExtras = true;
+        }
         if (hasExtras) dto.OpenSynapse = extras;
         return dto;
     }
-    private static RegionDto ToRegionDto(StudioRegion region) => new()
+    private static RegionDto ToRegionDto(StudioRegion region, bool export) => new()
     {
-        Params = ToParamsDto(region.Params, true),
+        Params = ToParamsDto(region.Params, true, export),
+        Params2 = ToParams2Dto(region.Params),
         Devices = region.Devices.Select(ToRegionDeviceDto).ToList(),
     };
 
@@ -177,13 +196,16 @@ public static partial class StudioProjectCodec
                 RegionIndex = led.RegionIndex,
                 InputType = led.InputType,
                 InputData = led.InputData,
+                OpenSynapse = string.IsNullOrWhiteSpace(led.InstanceId)
+                    ? null
+                    : new LedExtrasDto { InstanceId = led.InstanceId },
             }).ToList(),
         };
         if (instance is not long && !string.IsNullOrWhiteSpace(device.InstanceId))
             dto.OpenSynapse = new RegionDeviceExtrasDto { InstanceId = device.InstanceId };
         return dto;
     }
-    private static ParamsDto ToParamsDto(StudioEffectParams p, bool includeEffect = false)
+    private static ParamsDto ToParamsDto(StudioEffectParams p, bool includeEffect = false, bool export = false)
     {
         var dto = new ParamsDto { Color = Pack(p.Primary), Color2 = Pack(p.Secondary) };
         if (includeEffect && p.Effect != StudioEffectKind.Solid) dto.Effect = p.Effect == StudioEffectKind.Gradient ? "gradient" : StudioEffectMap.ToName(p.Effect);
@@ -210,9 +232,47 @@ public static partial class StudioProjectCodec
         if (p.Blur != 0) dto.Blur = p.Blur;
         if (!string.IsNullOrWhiteSpace(p.MediaSrc)) dto.MediaSrc = p.MediaSrc;
         if (!string.IsNullOrWhiteSpace(p.CurrentConfigJson)) dto.CurrentConfig = RawJson(p.CurrentConfigJson);
-        if (!string.IsNullOrWhiteSpace(p.EffectConfigListJson)) dto.EffectConfigList = RawJson(p.EffectConfigListJson);
-        if (p.CurrentConfigId != -1) dto.CurrentConfigId = p.CurrentConfigId;
+        if (export && p.Effect == StudioEffectKind.ChromaGenerate &&
+            !string.IsNullOrWhiteSpace(p.CurrentConfigJson))
+        {
+            dto.EffectConfigList = RawJson($"[{p.CurrentConfigJson}]");
+            dto.CurrentConfigId = 0;
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(p.EffectConfigListJson)) dto.EffectConfigList = RawJson(p.EffectConfigListJson);
+            if (p.CurrentConfigId != -1) dto.CurrentConfigId = p.CurrentConfigId;
+        }
         return dto;
+    }
+
+    /// <summary>
+    /// Chroma keeps the tidal/wheel center in per-layer editor state that its own
+    /// export drops; OpenSynapse writes it so the setting survives a save.
+    /// </summary>
+    private static Params2Dto? ToParams2Dto(StudioEffectParams p)
+    {
+        var hasWheelCenter = p.Effect == StudioEffectKind.Wheel && p.CenterRow >= 0 && p.CenterCol >= 0;
+        if (p.Effect != StudioEffectKind.Tidal && !hasWheelCenter &&
+            p.CenterPointX == 5_000 && p.CenterPointY == 5_000 &&
+            !p.Counterclockwise && string.IsNullOrWhiteSpace(p.DeviceWithCenterPointJson))
+            return null;
+
+        var centerX = hasWheelCenter ? p.CenterCol * 40d : p.CenterPointX;
+        var centerY = hasWheelCenter ? p.CenterRow * 40d : p.CenterPointY;
+        return new Params2Dto
+        {
+            CenterPointX = centerX / 40,
+            CenterPointX2 = centerX,
+            CenterPointY = centerY / 40,
+            CenterPointY2 = centerY,
+            CenterRow = hasWheelCenter ? p.CenterRow : null,
+            CenterCol = hasWheelCenter ? p.CenterCol : null,
+            Counterclockwise = p.Counterclockwise,
+            DeviceWithCenterPoint = string.IsNullOrWhiteSpace(p.DeviceWithCenterPointJson)
+                ? null
+                : RawJson(p.DeviceWithCenterPointJson),
+        };
     }
 
     private sealed class RootDto { public int Version { get; set; } public List<ProfileDto> Profiles { get; set; } = new(); public RootExtrasDto? OpenSynapse { get; set; } }
@@ -221,6 +281,7 @@ public static partial class StudioProjectCodec
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
+        public bool? Default { get; set; }
         public List<ProfileDeviceDto> Devices { get; set; } = new();
         public List<LayerDto> Layers { get; set; } = new();
         public ProfileExtrasDto? OpenSynapse { get; set; }
@@ -242,6 +303,11 @@ public static partial class StudioProjectCodec
         public double X { get; set; } = 5000;
         public double Y { get; set; } = 5000;
         public int Orientation { get; set; }
+        public object? ParentId { get; set; }
+        public double? ParentX { get; set; }
+        public double? ParentY { get; set; }
+        public int? PlacementIndex { get; set; }
+        public JsonElement? LedRef { get; set; }
     }
     private sealed class ProfileExtrasDto { public List<DeviceDto> Devices { get; set; } = new(); }
     private sealed class DeviceDto
@@ -270,6 +336,7 @@ public static partial class StudioProjectCodec
         public bool Visible { get; set; } = true;
         public bool? Opened { get; set; }
         public ParamsDto? Params { get; set; }
+        public Params2Dto? Params2 { get; set; }
         public List<RegionDto>? Regions { get; set; }
         public string? GroupId { get; set; }
         public List<LayerDto>? Layers { get; set; }
@@ -305,6 +372,17 @@ public static partial class StudioProjectCodec
         public JsonElement? EffectConfigList { get; set; }
         public int? CurrentConfigId { get; set; }
     }
+    private sealed class Params2Dto
+    {
+        public double CenterPointX { get; set; }
+        public double CenterPointX2 { get; set; }
+        public double CenterPointY { get; set; }
+        public double CenterPointY2 { get; set; }
+        public int? CenterRow { get; set; }
+        public int? CenterCol { get; set; }
+        public bool Counterclockwise { get; set; }
+        public JsonElement? DeviceWithCenterPoint { get; set; }
+    }
     private sealed class ColorStopDto
     {
         [JsonPropertyName("Stop")] public int Stop { get; set; }
@@ -317,7 +395,12 @@ public static partial class StudioProjectCodec
         [JsonPropertyName("Right")] public int Right { get; set; }
         [JsonPropertyName("Bottom")] public int Bottom { get; set; }
     }
-    private sealed class RegionDto { public ParamsDto Params { get; set; } = new(); public List<RegionDeviceDto> Devices { get; set; } = new(); }
+    private sealed class RegionDto
+    {
+        public ParamsDto Params { get; set; } = new();
+        public Params2Dto? Params2 { get; set; }
+        public List<RegionDeviceDto> Devices { get; set; } = new();
+    }
     private sealed class RegionDeviceDto
     {
         public string Id { get; set; } = string.Empty;
@@ -328,6 +411,7 @@ public static partial class StudioProjectCodec
         public RegionDeviceExtrasDto? OpenSynapse { get; set; }
     }
     private sealed class RegionDeviceExtrasDto { public string? InstanceId { get; set; } }
+    private sealed class LedExtrasDto { public string? InstanceId { get; set; } }
     private sealed class LedDto
     {
         public int Row { get; set; }
@@ -336,5 +420,6 @@ public static partial class StudioProjectCodec
         public int? RegionIndex { get; set; }
         public string? InputType { get; set; }
         public string? InputData { get; set; }
+        public LedExtrasDto? OpenSynapse { get; set; }
     }
 }

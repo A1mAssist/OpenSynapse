@@ -1,21 +1,36 @@
+using System.Collections.ObjectModel;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Lighting;
 
 namespace OpenSynapse.App.ViewModels;
+
+/// <summary>One device that rejected a frame or failed to restore its own lighting.</summary>
+public sealed record StudioOutputFailure(string DeviceName, string Error, bool Restore);
 
 /// <summary>Per-device layer snapshots and the HID frame pump.</summary>
 public sealed partial class LightingStudioViewModel
 {
+    /// <summary>Latest failure per device and operation, observable without hiding the global status.</summary>
+    public ObservableCollection<StudioOutputFailure> OutputFailures { get; } = new();
+
+    public bool CanApply =>
+        !_isBusy && (_argbRouter is not null ||
+            ((_lighting is not null || _hidRouter is not null) &&
+             Devices.Any(device => device.Descriptor is not null || device.HasMatrix)));
+
     private StudioLayerRender[] BuildLayers()
     {
         var device = SelectedDevice;
-        return device is null
-            ? []
-            : BuildLayersFor(device.EffectiveProductId, device.EffectiveInstanceId, device.Rows, device.Columns);
+        return device is null ? [] : BuildLayersFor(device);
     }
 
-    private StudioLayerRender[] BuildLayersFor(StudioDeviceOption device) =>
-        BuildLayersFor(device.EffectiveProductId, device.EffectiveInstanceId, device.Rows, device.Columns);
+    private StudioLayerRender[] BuildLayersFor(StudioDeviceOption device)
+    {
+        var (rows, columns) = FrameSize(device);
+        return BuildLayersFor(device.EffectiveProductId, device.EffectiveInstanceId, rows, columns);
+    }
 
     private StudioLayerRender[] BuildLayersFor(
         ushort productId, string? instanceId, int rows, int columns)
@@ -56,6 +71,35 @@ public sealed partial class LightingStudioViewModel
         return false;
     }
 
+    private IReadOnlyList<StudioDeviceMatch> ConnectedMatches()
+    {
+        var matches = Devices
+            .Where(device => device.HasMatrix && device.EffectiveProductId != 0 &&
+                !string.IsNullOrWhiteSpace(device.EffectiveInstanceId))
+            .Select(device => new StudioDeviceMatch(
+                device.EffectiveProductId, device.EffectiveInstanceId!, LayoutFor(device)))
+            .ToList();
+        var products = matches.Select(match => match.ProductId).ToHashSet();
+        foreach (var descriptor in _devices().Where(device =>
+            device.Access == DeviceAccessState.Available &&
+            device.ProductId != StudioArgbDevice.ProductId &&
+            !products.Contains(device.ProductId)))
+        {
+            matches.Add(new StudioDeviceMatch(descriptor.ProductId, descriptor.Id, LayoutFor(descriptor.Id)));
+        }
+
+        return matches;
+    }
+
+    private StudioLedLayout? LayoutFor(StudioDeviceOption device) =>
+        LayoutFor(device.EffectiveInstanceId) ?? device.Layout;
+
+    private StudioLedLayout? LayoutFor(string? instanceId) =>
+        string.IsNullOrWhiteSpace(instanceId)
+            ? null
+            : DeviceVisuals.FirstOrDefault(visual =>
+                string.Equals(visual.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase))?.Layout;
+
     /// <summary>Renders one frame per matrix device for the canvas preview.</summary>
     public IReadOnlyDictionary<string, StudioDeviceFrame> RenderDeviceFrames(TimeSpan elapsed)
     {
@@ -64,21 +108,28 @@ public sealed partial class LightingStudioViewModel
         foreach (var device in Devices)
         {
             if (!device.HasMatrix) continue;
+            var (rows, columns) = FrameSize(device);
             var layers = BuildLayersFor(device);
-            if (layers.Length == 0) continue;
+            if (layers.Length == 0)
+            {
+                // The hardware pump writes black for an empty stack; the preview must match.
+                frames[device.EffectiveInstanceId ?? string.Empty] = new StudioDeviceFrame(
+                    rows, columns, new StudioRgb[rows * columns]);
+                continue;
+            }
             var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
             for (var index = 0; index < layers.Length; index++)
             {
                 var layer = layers[index];
-                var state = GetClock(layer.Id).Sample(now, layer.Params);
+                var state = GetClock(layer.Id).Sample(now, layer.Params, rows, columns);
                 timed[index] = (layer with { Opacity = state.Running ? layer.Opacity : 0 }, state.LocalSeconds);
             }
 
-            var input = _inputSampler?.Sample(device.Rows, device.Columns) ?? default;
+            var input = _inputSampler?.Sample(rows, columns) ?? default;
             frames[device.EffectiveInstanceId ?? string.Empty] = new StudioDeviceFrame(
-                device.Rows,
-                device.Columns,
-                StudioCompositor.RenderTimedLayers(timed, device.Rows, device.Columns, input));
+                rows,
+                columns,
+                StudioCompositor.RenderTimedLayers(timed, rows, columns, input));
         }
 
         return frames;
@@ -91,17 +142,48 @@ public sealed partial class LightingStudioViewModel
         var snapshots = new Dictionary<string, StudioLayerRender[]>(StringComparer.OrdinalIgnoreCase);
         foreach (var target in live)
         {
-            if (target.Definition.MatrixDimensions is not { } dimensions) continue;
+            var (rows, columns) = target.Definition.MatrixDimensions is { } dimensions &&
+                target.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite)
+                ? MatrixSize(FindLayout(target.InstanceId), dimensions.Rows, dimensions.Columns)
+                : (1, 1);
             snapshots[target.InstanceId] = BuildLayersFor(
-                target.Definition.ProductId, target.InstanceId, dimensions.Rows, dimensions.Columns);
+                target.Definition.ProductId, target.InstanceId, rows, columns);
         }
 
         _hidRouter.Update(connection => snapshots.TryGetValue(connection.InstanceId, out var layers) ? layers : []);
     }
 
-    private void StartHidPump()
+    private void RefreshArgbSnapshots(IReadOnlyList<StudioArgbPort> ports)
     {
-        if (_hidRouter is null) return;
+        if (_argbRouter is null) return;
+        var snapshots = new Dictionary<byte, StudioLayerRender[]>();
+        foreach (var port in ports)
+        {
+            var device = Devices.FirstOrDefault(item => item.IsArgb &&
+                StudioLedSelection.SameInstance(item.EffectiveInstanceId, port.InstanceId));
+            var (rows, columns) = device is null ? (1, port.LedCount) : MatrixSize(device);
+            var layers = BuildLayersFor(port.ProductId, port.InstanceId, rows, columns);
+            snapshots[port.Channel] = rows > 1
+                ? StudioArgbDevice.SliceChannel(layers, rows, columns, port.Channel, port.LedCount)
+                : layers;
+        }
+
+        _argbRouter.Update(port => snapshots.TryGetValue(port.Channel, out var layers) ? layers : []);
+    }
+
+    private async Task ApplyArgbAsync(List<string> applied, bool outputPumpStarted)
+    {
+        if (_argbRouter is null || !await _argbRouter.RefreshAsync()) return;
+        var ports = _argbRouter.GetTargets();
+        if (ports.Count == 0) return;
+        RefreshArgbSnapshots(ports);
+        if (!outputPumpStarted) StartOutputPump();
+        applied.AddRange(ports.Select(port => port.DisplayName).Distinct(StringComparer.OrdinalIgnoreCase));
+    }
+
+    private void StartOutputPump()
+    {
+        if (_hidRouter is null && _argbRouter is null) return;
         _outputCancellation?.Cancel();
         _outputCancellation?.Dispose();
         _outputCancellation = new CancellationTokenSource();
@@ -114,7 +196,10 @@ public sealed partial class LightingStudioViewModel
             {
                 while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
                 {
-                    await _hidRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    if (_hidRouter is not null)
+                        await _hidRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    if (_argbRouter is not null)
+                        await _argbRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
@@ -127,7 +212,7 @@ public sealed partial class LightingStudioViewModel
         }, token);
     }
 
-    private async Task StopHidPumpAsync()
+    private async Task StopOutputPumpAsync()
     {
         var cancellation = _outputCancellation;
         _outputCancellation = null;
@@ -146,5 +231,51 @@ public sealed partial class LightingStudioViewModel
 
         _outputTask = null;
         cancellation.Dispose();
+    }
+
+    private void OnOutputWriteFailed(string deviceName, Exception exception)
+    {
+        var error = DescribeFailure(exception);
+        RecordOutputFailure(deviceName, error, restore: false);
+        void Report() => StatusText =
+            $"{AppStrings.FormatText("LightingStudioStatusDeviceWriteFailed", deviceName)}: {error}";
+        if (_dispatcher is { } dispatcher && !dispatcher.HasThreadAccess) dispatcher.TryEnqueue(Report);
+        else Report();
+    }
+
+    private void OnHidRestoreFailed(string deviceName, Exception exception)
+    {
+        var error = DescribeFailure(exception);
+        RecordOutputFailure(deviceName, error, restore: true);
+        void Report() => StatusText =
+            $"{AppStrings.FormatText("LightingStudioStatusRestoreFailed", deviceName)}: {error}";
+        if (_dispatcher is { } dispatcher && !dispatcher.HasThreadAccess) dispatcher.TryEnqueue(Report);
+        else Report();
+    }
+
+    private static string DescribeFailure(Exception exception) =>
+        string.IsNullOrWhiteSpace(exception.Message) ? exception.GetType().Name : exception.Message;
+
+    private void RecordOutputFailure(string deviceName, string error, bool restore)
+    {
+        void Report()
+        {
+            var failure = new StudioOutputFailure(deviceName, error, restore);
+            for (var index = 0; index < OutputFailures.Count; index++)
+            {
+                var existing = OutputFailures[index];
+                if (existing.Restore == restore &&
+                    string.Equals(existing.DeviceName, deviceName, StringComparison.Ordinal))
+                {
+                    OutputFailures[index] = failure;
+                    return;
+                }
+            }
+
+            OutputFailures.Add(failure);
+        }
+
+        if (_dispatcher is { } dispatcher && !dispatcher.HasThreadAccess) dispatcher.TryEnqueue(Report);
+        else Report();
     }
 }

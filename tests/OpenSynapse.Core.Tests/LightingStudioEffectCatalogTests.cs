@@ -29,8 +29,8 @@ public sealed class LightingStudioEffectCatalogTests
     {
         var kinds = Enum.GetValues<StudioEffectKind>();
 
-        Assert.Equal(14, kinds.Length);
-        Assert.Equal(14, StudioEffectCatalog.All.Count);
+        Assert.Equal(15, kinds.Length);
+        Assert.Equal(15, StudioEffectCatalog.All.Count);
         Assert.Equal(
             kinds.OrderBy(kind => kind).ToArray(),
             StudioEffectCatalog.All.Select(descriptor => descriptor.Effect).OrderBy(effect => effect).ToArray());
@@ -46,7 +46,7 @@ public sealed class LightingStudioEffectCatalogTests
             .Select(descriptor => descriptor.UiValue)
             .Distinct()
             .Count();
-        Assert.Equal(13, uniqueValues);
+        Assert.Equal(14, uniqueValues);
         Assert.Equal(
             StudioEffectCatalog.Get(StudioEffectKind.Spectrum).UiValue,
             StudioEffectCatalog.Get(StudioEffectKind.Gradient).UiValue);
@@ -116,12 +116,44 @@ public sealed class LightingStudioEffectCatalogTests
         Assert.Equal(new StudioRgb(0x00, 0xFF, 0x00), parameters.Primary);
         Assert.Equal(new StudioRgb(0x00, 0x00, 0xFF), parameters.Secondary);
         Assert.False(parameters.RandomColor);
+        Assert.Equal(100d, parameters.Width);
         Assert.Equal(10d, parameters.Speed);
         Assert.Equal(160, parameters.Angle);
         Assert.Equal(100d, parameters.Split);
+        Assert.Equal(5_000d, parameters.CenterPointX);
+        Assert.Equal(5_000d, parameters.CenterPointY);
+        Assert.False(parameters.Counterclockwise);
         Assert.Equal(StudioPlaybackStart.Random, parameters.PlaybackStart);
         Assert.Equal(StudioPlaybackEnd.Never, parameters.PlaybackEnd);
         Assert.Equal(-1, parameters.Cycles);
+    }
+
+    [Fact]
+    public void WheelDefaultsMatchChroma()
+    {
+        var parameters = StudioEffectCatalog.CreateDefault(StudioEffectKind.Wheel);
+        var descriptor = StudioEffectCatalog.Get(StudioEffectKind.Wheel);
+
+        Assert.Equal(StudioEffectParams.WheelCenterMaximum / 2, parameters.CenterRow);
+        Assert.Equal(StudioEffectParams.WheelCenterMaximum / 2, parameters.CenterCol);
+        Assert.Equal(60d, parameters.Speed);
+        Assert.Equal(StudioPlaybackStart.Random, parameters.PlaybackStart);
+        Assert.Equal(StudioPlaybackEnd.Never, parameters.PlaybackEnd);
+        Assert.Equal(-1, parameters.Cycles);
+        Assert.Equal(
+            new StudioParameterRange(0, StudioEffectParams.WheelCenterMaximum, 1,
+                StudioEffectParams.WheelCenterMaximum / 2),
+            descriptor.Ranges[CenterPoint]);
+
+        var applied = new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Wheel,
+            CenterRow = 0,
+            CenterCol = StudioEffectParams.WheelCenterMaximum,
+        };
+        StudioEffectCatalog.ApplyDefaults(applied);
+        Assert.Equal(StudioEffectParams.WheelCenterMaximum / 2, applied.CenterRow);
+        Assert.Equal(StudioEffectParams.WheelCenterMaximum / 2, applied.CenterCol);
     }
 
     [Fact]
@@ -183,6 +215,25 @@ public sealed class LightingStudioEffectCatalogTests
         Assert.Equal(
             new[] { MediaSrc, GenerateConfig },
             StudioEffectCatalog.Get(StudioEffectKind.ChromaGenerate).Fields.ToArray());
+        Assert.Equal(
+            new[] { ColorStops, Speed, CenterPoint, PlaybackStart, PlaybackEnd, Cycles },
+            StudioEffectCatalog.Get(StudioEffectKind.Wheel).Fields.ToArray());
+        Assert.Equal(
+            new[] { Color, Color2, RandomColor, Speed, Angle, Split, CenterPoint, Counterclockwise, PlaybackStart, PlaybackEnd, Cycles },
+            StudioEffectCatalog.Get(StudioEffectKind.Tidal).Fields.ToArray());
+    }
+
+    [Fact]
+    public void RadiateDefaultsToTheRainbowPaletteAndExportsEffect17()
+    {
+        var parameters = StudioEffectCatalog.CreateDefault(StudioEffectKind.Radiate);
+
+        Assert.Equal(7, parameters.ColorStops.Count);
+        Assert.Equal(17, StudioEffectMap.ToUiValue(StudioEffectKind.Radiate));
+        Assert.Equal(StudioEffectKind.Radiate, StudioEffectMap.FromUiValue(17));
+        Assert.Equal(
+            new[] { ColorStops },
+            StudioEffectCatalog.Get(StudioEffectKind.Radiate).Fields.ToArray());
     }
 
     [Fact]

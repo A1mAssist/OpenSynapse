@@ -17,6 +17,8 @@ public enum StudioParameterField
     Width,
     Angle,
     Split,
+    CenterPoint,
+    Counterclockwise,
     Density,
     Boost,
     AutoBoost,
@@ -37,9 +39,9 @@ public sealed record StudioEffectDescriptor(
     IReadOnlyDictionary<StudioParameterField, StudioParameterRange> Ranges);
 
 /// <summary>
-/// Inspector metadata for the fourteen studio effects. Values mirror Razer
-/// Chroma Studio layer params; Gradient is an OpenSynapse extension that shares
-/// Spectrum's UI id.
+/// Inspector metadata for the studio effects. Values mirror Razer Chroma
+/// Studio layer params; Gradient is an OpenSynapse extension that shares
+/// Spectrum's UI id, and Radiate is the engine-only effect 17.
 /// </summary>
 public static class StudioEffectCatalog
 {
@@ -110,6 +112,12 @@ public static class StudioEffectCatalog
         parameters.AutoBoost = defaults.AutoBoost;
         parameters.Decay = defaults.Decay;
         parameters.Blur = defaults.Blur;
+        parameters.CenterPointX = defaults.CenterPointX;
+        parameters.CenterPointY = defaults.CenterPointY;
+        parameters.CenterRow = defaults.CenterRow;
+        parameters.CenterCol = defaults.CenterCol;
+        parameters.Counterclockwise = defaults.Counterclockwise;
+        parameters.DeviceWithCenterPointJson = defaults.DeviceWithCenterPointJson;
         parameters.Screen = defaults.Screen;
         parameters.ScreenRect = defaults.ScreenRect;
         parameters.ColorStopsCustom = defaults.ColorStopsCustom;
@@ -156,6 +164,7 @@ public static class StudioEffectCatalog
                 parameters.Secondary = Green;
                 parameters.RandomColor = false;
                 parameters.DurationMs = 1_500;
+                parameters.Decay = 0.1;
                 parameters.PlaybackStart = StudioPlaybackStart.OnPress;
                 parameters.PlaybackEnd = StudioPlaybackEnd.After;
                 parameters.Cycles = 1;
@@ -192,6 +201,8 @@ public static class StudioEffectCatalog
             case StudioEffectKind.Wheel:
                 UsePalette(parameters, Rainbow7);
                 parameters.Speed = 60;
+                parameters.CenterRow = StudioEffectParams.WheelCenterMaximum / 2;
+                parameters.CenterCol = StudioEffectParams.WheelCenterMaximum / 2;
                 parameters.PlaybackStart = StudioPlaybackStart.Random;
                 parameters.PlaybackEnd = StudioPlaybackEnd.Never;
                 parameters.Cycles = -1;
@@ -202,6 +213,7 @@ public static class StudioEffectCatalog
                 parameters.Primary = Green;
                 parameters.Secondary = Blue;
                 parameters.RandomColor = false;
+                parameters.Width = 100;
                 parameters.Speed = 10;
                 parameters.Angle = 160;
                 parameters.Split = 100;
@@ -212,6 +224,12 @@ public static class StudioEffectCatalog
             case StudioEffectKind.Gradient:
                 parameters.Primary = GradientPrimary;
                 parameters.Secondary = GradientSecondary;
+                break;
+            case StudioEffectKind.Radiate:
+                UsePalette(parameters, Rainbow7);
+                parameters.PlaybackStart = StudioPlaybackStart.OnPress;
+                parameters.PlaybackEnd = StudioPlaybackEnd.After;
+                parameters.Cycles = 1;
                 break;
         }
 
@@ -304,9 +322,14 @@ public static class StudioEffectCatalog
                 (Decay, new StudioParameterRange(0.1, 2, 0.1, 1)))),
 
         Describe(StudioEffectKind.Wheel,
-            Fields(ColorStops, Speed, PlaybackStart, PlaybackEnd, Cycles),
+            Fields(ColorStops, Speed, CenterPoint, PlaybackStart, PlaybackEnd, Cycles),
             Ranges(
                 (Speed, new StudioParameterRange(0, 360, 1, 60)),
+                (CenterPoint, new StudioParameterRange(
+                    0,
+                    StudioEffectParams.WheelCenterMaximum,
+                    1,
+                    StudioEffectParams.WheelCenterMaximum / 2)),
                 (PlaybackStart, Choice(0)),
                 (PlaybackEnd, Choice(0)),
                 (Cycles, new StudioParameterRange(-1, 100, 1, -1)))),
@@ -316,7 +339,7 @@ public static class StudioEffectCatalog
             Ranges()),
 
         Describe(StudioEffectKind.Tidal,
-            Fields(Color, Color2, RandomColor, Speed, Angle, Split, PlaybackStart, PlaybackEnd, Cycles),
+            Fields(Color, Color2, RandomColor, Speed, Angle, Split, CenterPoint, Counterclockwise, PlaybackStart, PlaybackEnd, Cycles),
             Ranges(
                 (Color, ColorRange(Green)),
                 (Color2, ColorRange(Blue)),
@@ -324,6 +347,8 @@ public static class StudioEffectCatalog
                 (Speed, new StudioParameterRange(0, 50, 1, 10)),
                 (Angle, new StudioParameterRange(0, 359, 1, 160)),
                 (Split, new StudioParameterRange(0, 100, 100, 100)),
+                (CenterPoint, new StudioParameterRange(0, 10_000, 40, 5_000)),
+                (Counterclockwise, Toggle()),
                 (PlaybackStart, Choice(0)),
                 (PlaybackEnd, Choice(0)),
                 (Cycles, new StudioParameterRange(-1, 100, 1, -1)))),
@@ -333,6 +358,10 @@ public static class StudioEffectCatalog
             Ranges(
                 (Color, ColorRange(GradientPrimary)),
                 (Color2, ColorRange(GradientSecondary)))),
+
+        Describe(StudioEffectKind.Radiate,
+            Fields(ColorStops),
+            Ranges()),
     ];
 
     private static StudioEffectDescriptor Describe(

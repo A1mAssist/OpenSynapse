@@ -42,4 +42,45 @@ public sealed class LightingStudioRegionFactoryTests
 
         Assert.Empty(region.Devices);
     }
+
+    [Fact]
+    public void GroupsLedsByInstanceIntoOneRegion()
+    {
+        var parameters = new StudioEffectParams { Effect = StudioEffectKind.Wave, Speed = 15 };
+        var region = StudioRegionFactory.FromLedsByInstance(
+            parameters,
+            [
+                new StudioLedRef(0, 0, InstanceId: "kbd-a"),
+                new StudioLedRef(0, 0, InstanceId: "kbd-b"),
+                new StudioLedRef(0, 0, InstanceId: "kbd-a"),
+                new StudioLedRef(1, 1, InstanceId: "kbd-b"),
+            ],
+            instanceId => instanceId == "kbd-a" ? (ushort)1 : (ushort)2);
+
+        Assert.Equal(2, region.Devices.Count);
+        var first = Assert.Single(region.Devices, device => device.InstanceId == "kbd-a");
+        Assert.Equal((ushort)1, first.ProductId);
+        Assert.Equal("kbd-a", Assert.Single(first.Leds).InstanceId);
+        var second = Assert.Single(region.Devices, device => device.InstanceId == "kbd-b");
+        Assert.Equal((ushort)2, second.ProductId);
+        Assert.Equal(2, second.Leds.Count);
+        Assert.Equal(StudioEffectKind.Wave, region.Params.Effect);
+        Assert.Equal(15, region.Params.Speed);
+        Assert.NotSame(parameters, region.Params);
+    }
+
+    [Fact]
+    public void LegacySelectionFallsBackToCurrentDevice()
+    {
+        var region = StudioRegionFactory.FromLedsByInstance(
+            new StudioEffectParams(),
+            [new StudioLedRef(2, 3)],
+            instanceId => StudioLedSelection.SameInstance(instanceId, "kbd-a") ? (ushort)736 : null,
+            "kbd-a");
+
+        var device = Assert.Single(region.Devices);
+        Assert.Equal("kbd-a", device.InstanceId);
+        Assert.Equal((ushort)736, device.ProductId);
+        Assert.Equal("kbd-a", Assert.Single(device.Leds).InstanceId);
+    }
 }

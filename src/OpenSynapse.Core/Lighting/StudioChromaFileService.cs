@@ -16,7 +16,7 @@ public static class StudioChromaFileService
         {
             ChromaFileFormat.Legacy => ImportLegacy(path, connected),
             ChromaFileFormat.Json => StudioChromaImport.Import(File.ReadAllText(path), connected),
-            _ => throw new InvalidOperationException(
+            _ => throw new InvalidDataException(
                 "Unsupported .ChromaEffects file. Expected Chroma JSON, a Synapse 3 XML profile, " +
                 "or a ZIP archive containing XML profiles."),
         };
@@ -30,8 +30,8 @@ public static class StudioChromaFileService
         }
         catch (InvalidDataException exception)
         {
-            throw new InvalidOperationException(
-                "The .ChromaEffects archive is invalid or unsupported.", exception);
+            throw new InvalidDataException(
+                "The .ChromaEffects archive is invalid or unsupported: " + exception.Message, exception);
         }
     }
 
@@ -87,11 +87,11 @@ public static class StudioChromaFileService
         Unsupported,
     }
 
-    public static void Export(StudioProject project, string path)
+    public static void Export(StudioProject project, string path, IReadOnlyCollection<string>? profileIds = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        StudioProjectCodec.Save(WithExtension(path), project);
+        StudioProjectCodec.Save(WithExtension(path), project, profileIds, export: true);
     }
 
     private static string WithExtension(string path) =>

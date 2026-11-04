@@ -36,8 +36,9 @@ public sealed record StudioSvgLayout(
     IReadOnlyList<StudioSvgPath> Paths);
 
 /// <summary>
-/// Flattens a Chroma DeviceManifest SVG into render data. Path data is returned
-/// as-is: transforms are not applied and unsupported shapes are ignored.
+/// Flattens a Chroma DeviceManifest SVG into render data. Basic shapes become
+/// paths, and group or element transforms are baked into the path coordinates.
+/// use/image/filter/mask/text are intentionally not rendered.
 /// </summary>
 public static class StudioSvgLayoutParser
 {
@@ -122,17 +123,17 @@ public static class StudioSvgLayoutParser
     private static List<StudioSvgPath> ReadPaths(string text, List<CssRule> rules)
     {
         var paths = new List<StudioSvgPath>();
-        var groups = new Stack<(int Depth, StudioSvgRole Role)>();
-        var definitionsDepth = int.MaxValue;
+        var groups = new Stack<Group>();
+        var skipDepth = int.MaxValue;
 
         using var reader = CreateReader(text);
         while (reader.Read())
         {
             if (reader.NodeType == XmlNodeType.EndElement)
             {
-                if (reader.LocalName == "defs" && reader.Depth == definitionsDepth)
+                if (reader.Depth == skipDepth)
                 {
-                    definitionsDepth = int.MaxValue;
+                    skipDepth = int.MaxValue;
                 }
 
                 continue;
@@ -146,32 +147,47 @@ public static class StudioSvgLayoutParser
                 groups.Pop();
             }
 
-            if (reader.LocalName == "defs")
+            if (reader.Depth > skipDepth) continue;
+
+            if (IsHiddenContainer(reader.LocalName))
             {
-                // Clip and mask geometry is referenced by other shapes, never drawn on its own.
-                if (!reader.IsEmptyElement) definitionsDepth = reader.Depth;
+                // Referenced paint servers and text content are not drawn where they are defined.
+                if (!reader.IsEmptyElement) skipDepth = reader.Depth;
                 continue;
             }
 
-            if (reader.Depth > definitionsDepth) continue;
-
-            var inherited = groups.Count > 0 ? groups.Peek().Role : StudioSvgRole.Other;
+            var inherited = groups.Count > 0
+                ? groups.Peek()
+                : new Group(0, StudioSvgRole.Other, SvgMatrix.Identity, null, null, null, null);
             if (reader.LocalName == "g")
             {
                 var own = RoleOf(reader.GetAttribute("id"));
                 if (own == StudioSvgRole.Other) own = RoleOf(reader.GetAttribute("class"));
-                groups.Push((reader.Depth, own == StudioSvgRole.Other ? inherited : own));
+                groups.Push(new Group(
+                    reader.Depth,
+                    own == StudioSvgRole.Other ? inherited.Role : own,
+                    inherited.Transform.Multiply(SvgMatrix.Parse(reader.GetAttribute("transform"))),
+                    ReadInt(reader.GetAttribute("data-row")) ?? inherited.Row,
+                    ReadInt(reader.GetAttribute("data-col")) ?? inherited.Col,
+                    reader.GetAttribute("data-assumed-key-name") ?? inherited.KeyName,
+                    reader.GetAttribute("data-selection-group") ?? inherited.SelectionGroup));
             }
-            else if (reader.LocalName == "path")
+            else if (IsDrawable(reader.LocalName))
             {
-                paths.Add(CreatePath(reader, inherited, rules));
+                if (CreatePath(reader, inherited, rules) is { } path) paths.Add(path);
             }
         }
 
         return paths;
     }
 
-    private static StudioSvgPath CreatePath(XmlReader reader, StudioSvgRole inheritedRole, List<CssRule> rules)
+    private static bool IsHiddenContainer(string name) =>
+        name is "defs" or "mask" or "clipPath" or "filter" or "symbol" or "pattern" or "marker" or "text" or "foreignObject";
+
+    private static bool IsDrawable(string name) =>
+        name is "path" or "rect" or "circle" or "ellipse" or "line" or "polygon" or "polyline";
+
+    private static StudioSvgPath? CreatePath(XmlReader reader, Group inherited, List<CssRule> rules)
     {
         var classes = reader.GetAttribute("class");
         string? fill = null;
@@ -196,18 +212,24 @@ public static class StudioSvgLayoutParser
         opacity = ReadDouble(reader.GetAttribute("opacity")) ?? opacity;
         ApplyDeclarations(reader.GetAttribute("style"), ref fill, ref stroke, ref opacity);
 
-        var role = inheritedRole != StudioSvgRole.Other ? inheritedRole : RoleOf(classes);
+        var data = reader.LocalName == "path"
+            ? reader.GetAttribute("d")
+            : SvgShapePath.Create(reader);
+        if (string.IsNullOrWhiteSpace(data)) return null;
+
+        var transform = inherited.Transform.Multiply(SvgMatrix.Parse(reader.GetAttribute("transform")));
+        var role = inherited.Role != StudioSvgRole.Other ? inherited.Role : RoleOf(classes);
         return new StudioSvgPath(
             reader.GetAttribute("id") ?? string.Empty,
-            reader.GetAttribute("d") ?? string.Empty,
+            SvgPathData.Transform(data, transform),
             Painted(fill),
             Painted(stroke),
             opacity ?? 1d,
             role,
-            ReadInt(reader.GetAttribute("data-row")),
-            ReadInt(reader.GetAttribute("data-col")),
-            reader.GetAttribute("data-assumed-key-name"),
-            reader.GetAttribute("data-selection-group"));
+            ReadInt(reader.GetAttribute("data-row")) ?? inherited.Row,
+            ReadInt(reader.GetAttribute("data-col")) ?? inherited.Col,
+            reader.GetAttribute("data-assumed-key-name") ?? inherited.KeyName,
+            reader.GetAttribute("data-selection-group") ?? inherited.SelectionGroup);
     }
 
     private static List<CssRule> ParseCss(string css)
@@ -332,6 +354,15 @@ public static class StudioSvgLayoutParser
     }
 
     private sealed record Head(double Width, double Height, List<CssRule> Rules);
+
+    private readonly record struct Group(
+        int Depth,
+        StudioSvgRole Role,
+        SvgMatrix Transform,
+        int? Row,
+        int? Col,
+        string? KeyName,
+        string? SelectionGroup);
 
     private sealed record CssRule(string Selector, string? Fill, string? Stroke, double? Opacity);
 }

@@ -11,10 +11,9 @@ namespace OpenSynapse.App.Views;
 internal static class StudioCanvasGeometry
 {
     public static Rect ComputeBounds(
-        Geometry geometry, int rotation, double width, double height, double hostX, double hostY)
+        Geometry geometry, int rotation, double width, double height)
     {
-        var rotated = RotateBounds(geometry.Bounds, rotation, width, height);
-        return new Rect(rotated.X + hostX, rotated.Y + hostY, rotated.Width, rotated.Height);
+        return RotateBounds(geometry.Bounds, rotation, width, height);
     }
 
     public static bool Contains(Rect rect, double x, double y) =>
@@ -48,69 +47,18 @@ internal static class StudioCanvasGeometry
 
     public static double Extent(double value) => double.IsFinite(value) && value > 0 ? value : 1;
 
-    public static bool SameSelection(IReadOnlyList<StudioLedRef> current, List<StudioLedRef> next)
+    /// <summary>
+    /// Canvas.Left/Top for a host whose scale/rotation is centered. The transformed
+    /// bounding box must start at the visual box origin, not the unscaled host origin.
+    /// </summary>
+    public static (double X, double Y) ScaledHostOrigin(
+        double left, double top, double width, double height, int rotation, double factor)
     {
-        if (next.Count != current.Count) return false;
-        foreach (var led in next)
-        {
-            if (IndexOfCell(current, led.Row, led.Col) < 0) return false;
-        }
-
-        return true;
-    }
-
-    public static int IndexOfCell(IReadOnlyList<StudioLedRef> leds, int row, int column)
-    {
-        for (var index = 0; index < leds.Count; index++)
-        {
-            if (leds[index].Row == row && leds[index].Col == column) return index;
-        }
-
-        return -1;
-    }
-
-    public static List<StudioLedRef> SelectCell(
-        IReadOnlyList<StudioLedRef> current, int row, int column, bool toggle)
-    {
-        var next = new List<StudioLedRef>(current);
-        var index = IndexOfCell(next, row, column);
-        if (!toggle)
-        {
-            next.Clear();
-            next.Add(new StudioLedRef(row, column));
-        }
-        else if (index >= 0)
-        {
-            next.RemoveAt(index);
-        }
-        else
-        {
-            next.Add(new StudioLedRef(row, column));
-        }
-
-        return next;
-    }
-
-    public static List<StudioLedRef> PenCell(
-        IReadOnlyList<StudioLedRef> current, int row, int column, bool erase)
-    {
-        var next = new List<StudioLedRef>(current);
-        var index = IndexOfCell(next, row, column);
-        if (index >= 0) next.RemoveAt(index);
-        else if (!erase) next.Add(new StudioLedRef(row, column));
-        return next;
-    }
-
-    public static List<StudioLedRef> DeviceCells(StudioDeviceVisual device)
-    {
-        var next = new List<StudioLedRef>();
-        foreach (var led in device.Leds)
-        {
-            var cell = new StudioLedRef(led.MatrixRow, led.MatrixCol);
-            if (IndexOfCell(next, cell.Row, cell.Col) < 0) next.Add(cell);
-        }
-
-        return next;
+        var boundsWidth = rotation is 90 or 270 ? height : width;
+        var boundsHeight = rotation is 90 or 270 ? width : height;
+        return (
+            left * factor - (width - boundsWidth * factor) / 2,
+            top * factor - (height - boundsHeight * factor) / 2);
     }
 
     public static Color? ParseColor(string value)

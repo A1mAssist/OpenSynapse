@@ -12,7 +12,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
+public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
     private readonly RazerHidDeviceService? _deviceService;
     private readonly RazerHidChromaFrameSink? _chromaFrameSink;
@@ -133,8 +133,6 @@ public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
         Devices.Select(row => row.Connection).ToArray();
 
-    internal RazerHidSpecialLightingService? SpecialLightingService => _specialLightingService;
-
     internal Task<bool> ApplyChromaFrameAsync(
         IReadOnlyList<RazerRgb> sourceFrame,
         CancellationToken cancellationToken = default) =>
@@ -207,6 +205,7 @@ public sealed class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
         if (_specialLightingService is not null)
         {
             var connections = await _specialLightingService.DiscoverAsync(cancellationToken);
+            CacheArgb(connections);
             _krakenConnections = connections.Where(connection =>
                     connection.Kind is RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4)
                 .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)

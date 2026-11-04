@@ -34,6 +34,36 @@ public sealed partial class LightingStudioViewModel
         }
     }
 
+    /// <summary>
+    /// Official bucket rule: the clicked device's cells inside the region that owns the
+    /// cell, otherwise that device's cells not covered by any region.
+    /// </summary>
+    public IReadOnlyList<StudioLedRef> BucketSelection(string instanceId, int row, int column)
+    {
+        if (_selectedLayer is not { } layer) return Array.Empty<StudioLedRef>();
+        var visual = DeviceVisuals.FirstOrDefault(item =>
+            StudioLedSelection.SameInstance(item.InstanceId, instanceId));
+        return visual is null
+            ? Array.Empty<StudioLedRef>()
+            : StudioLedSelection.BucketCells(layer.Regions, visual, row, column);
+    }
+
+    /// <summary>Shift-click maps one LED to the Tidal centre in its 0..10000 parameter space.</summary>
+    public void SetTidalCenter(int row, int column)
+    {
+        if (SelectedParams is not { Effect: StudioEffectKind.Tidal } parameters) return;
+        var (rows, columns) = SelectedPreviewSize();
+        if (rows <= 0 || columns <= 0) return;
+        parameters.CenterPointX = columns <= 1
+            ? 5000
+            : (int)Math.Round(column * 10000d / (columns - 1), MidpointRounding.AwayFromZero);
+        parameters.CenterPointY = rows <= 1
+            ? 5000
+            : (int)Math.Round(row * 10000d / (rows - 1), MidpointRounding.AwayFromZero);
+        NotifyEdited();
+        StatusText = AppStrings.Text("LightingStudioStatusTidalCenterSet");
+    }
+
     /// <summary>Restricts the selected layer to the LEDs picked on the canvas.</summary>
     public void ApplySelectionToLayer(IReadOnlyList<StudioLedRef> leds)
     {
@@ -56,8 +86,20 @@ public sealed partial class LightingStudioViewModel
             return;
         }
 
-        var replacement = StudioRegionFactory.FromLeds(
-            _selectedLayer.Params, device.EffectiveProductId, device.EffectiveInstanceId, leds);
+        var replacement = StudioRegionFactory.FromLedsByInstance(
+            _selectedLayer.Params,
+            leds,
+            instanceId => StudioLedSelection.SameInstance(device.EffectiveInstanceId, instanceId)
+                ? device.EffectiveProductId
+                : Devices.FirstOrDefault(option =>
+                    StudioLedSelection.SameInstance(option.EffectiveInstanceId, instanceId))?.EffectiveProductId,
+            device.EffectiveInstanceId);
+        if (replacement.Devices.Count == 0)
+        {
+            StatusText = AppStrings.Text("LightingStudioStatusNoDevice");
+            return;
+        }
+
         var region = _selectedRegion;
         if (region is null)
         {
@@ -73,7 +115,9 @@ public sealed partial class LightingStudioViewModel
         _selectedRegion = region;
         RefreshRegionChoices();
         SelectedRegionChoice = RegionChoices.FirstOrDefault(choice => ReferenceEquals(choice.Region, region));
-        StatusText = AppStrings.FormatText("LightingStudioStatusRegionApplied", leds.Count);
+        StatusText = AppStrings.FormatText(
+            "LightingStudioStatusRegionApplied", replacement.Devices.Sum(item => item.Leds.Count));
+        _history?.Capture();
         NotifyDocumentChanged();
     }
 

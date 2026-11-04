@@ -22,6 +22,7 @@ public static class StudioEffectMap
         StudioEffectKind.Gradient => 4,
         StudioEffectKind.ChromaGenerate => 18,
         StudioEffectKind.Tidal => 19,
+        StudioEffectKind.Radiate => 17,
         _ => 6,
     };
 
@@ -43,6 +44,7 @@ public static class StudioEffectMap
             11 => StudioEffectKind.Ambient,
             12 => StudioEffectKind.Audio,
             13 => StudioEffectKind.Wheel,
+            17 => StudioEffectKind.Radiate,
             18 => StudioEffectKind.ChromaGenerate,
             19 => StudioEffectKind.Tidal,
             _ => (StudioEffectKind)(-1),
@@ -66,6 +68,7 @@ public static class StudioEffectMap
         StudioEffectKind.Gradient => "spectrum",
         StudioEffectKind.ChromaGenerate => "chroma-generate",
         StudioEffectKind.Tidal => "tidal",
+        StudioEffectKind.Radiate => "radiate",
         _ => "static",
     };
 
@@ -84,6 +87,7 @@ public static class StudioEffectMap
         "wheel" => StudioEffectKind.Wheel,
         "chroma-generate" or "generate" => StudioEffectKind.ChromaGenerate,
         "tidal" => StudioEffectKind.Tidal,
+        "radiate" => StudioEffectKind.Radiate,
         "gradient" => StudioEffectKind.Gradient,
         _ => StudioEffectKind.Solid,
     };

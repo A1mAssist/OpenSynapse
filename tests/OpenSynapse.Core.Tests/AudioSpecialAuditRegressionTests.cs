@@ -73,7 +73,7 @@ public sealed class AudioSpecialAuditRegressionTests
         var service = new RazerHidSpecialLightingService((_, report, _) =>
         { reports.Add(report.ToArray()); return Task.CompletedTask; });
         var connection = new RazerHidSpecialLightingConnection(productId, "test",
-            RazerHidSpecialLightingKind.Kraken37, "test", "fake", null,
+            RazerHidSpecialLightingKind.Kraken37, "test", "fake", null, null,
             new HashSet<RazerHidLightingEffect> { RazerHidLightingEffect.Off }, true, false, null);
         await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
         Assert.NotEmpty(reports);
@@ -88,7 +88,7 @@ public sealed class AudioSpecialAuditRegressionTests
         var service = new RazerHidSpecialLightingService((_, report, _) =>
         { reports.Add(report.ToArray()); return Task.CompletedTask; });
         var connection = new RazerHidSpecialLightingConnection(productId, "test",
-            RazerHidSpecialLightingKind.KrakenV4, "test", "fake", null,
+            RazerHidSpecialLightingKind.KrakenV4, "test", "fake", null, null,
             new HashSet<RazerHidLightingEffect> { RazerHidLightingEffect.Off }, true, false, null);
         await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
         Assert.Equal(RazerHidKrakenV4Protocol.CreateConnect(productId == 0x056C), reports[0]);

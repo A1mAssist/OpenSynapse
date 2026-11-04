@@ -230,7 +230,7 @@ public sealed class LightingStudioChromaGenerateTests
     }
 
     [Fact]
-    public void VideoPlaybackClampsTimeOutsideTheCache()
+    public void VideoPlaybackWrapsTimeAfterTheCache()
     {
         var playback = StudioVideoPlayback.FromFrames(
             TimeSpan.FromMilliseconds(250),
@@ -239,14 +239,51 @@ public sealed class LightingStudioChromaGenerateTests
         Assert.True(playback.TrySampleAt(0.5, 0.5, -12, out var before));
         Assert.Equal(new StudioRgb(255, 0, 0), before);
 
-        Assert.True(playback.TrySampleAt(0.5, 0.5, 90, out var after));
-        Assert.Equal(new StudioRgb(0, 0, 255), after);
+        Assert.True(playback.TrySampleAt(0.5, 0.5, 0.6, out var wrapped));
+        Assert.Equal(new StudioRgb(255, 0, 0), wrapped);
+
+        Assert.True(playback.TrySampleAt(0.5, 0.5, 1.3, out var secondLoop));
+        Assert.Equal(new StudioRgb(0, 0, 255), secondLoop);
 
         Assert.True(playback.TrySampleAt(0.5, 0.5, double.PositiveInfinity, out var infinite));
         Assert.Equal(new StudioRgb(0, 0, 255), infinite);
 
         Assert.True(playback.TrySampleAt(0.5, 0.5, double.NaN, out var nan));
         Assert.Equal(new StudioRgb(255, 0, 0), nan);
+    }
+
+    [Fact]
+    public void VideoPlaybackWrapsAfterSixtySecondsOfCachedFrames()
+    {
+        var frames = new byte[240][];
+        for (var index = 0; index < frames.Length; index++)
+        {
+            frames[index] = SolidFrame((byte)index, 0, 0);
+        }
+
+        var playback = StudioVideoPlayback.FromFrames(TimeSpan.FromMilliseconds(250), frames);
+
+        Assert.True(playback.TrySampleAt(0.5, 0.5, 59.9, out var last));
+        Assert.Equal(new StudioRgb(239, 0, 0), last);
+
+        Assert.True(playback.TrySampleAt(0.5, 0.5, 60.1, out var wrapped));
+        Assert.Equal(new StudioRgb(0, 0, 0), wrapped);
+
+        Assert.True(playback.TrySampleAt(0.5, 0.5, 61.3, out var afterWrap));
+        Assert.Equal(new StudioRgb(5, 0, 0), afterWrap);
+
+        Assert.True(playback.TrySampleAt(0.5, 0.5, double.MaxValue, out _));
+    }
+
+    [Fact]
+    public void VideoPlaybackSingleFrameIgnoresTime()
+    {
+        var playback = StudioVideoPlayback.FromFrames(
+            TimeSpan.FromMilliseconds(250),
+            [SolidFrame(1, 2, 3)]);
+
+        Assert.True(playback.TrySampleAt(0.5, 0.5, 1e12, out var color));
+        Assert.Equal(new StudioRgb(1, 2, 3), color);
     }
 
     [Fact]
@@ -283,6 +320,90 @@ public sealed class LightingStudioChromaGenerateTests
         }
     }
 
+    [Fact]
+    public void RandomPresetRepeatsForTheSameSeed()
+    {
+        var first = StudioGeneratePresets.Create(new Random(20261104));
+        var second = StudioGeneratePresets.Create(new Random(20261104));
+
+        Assert.Equal(first, second);
+        Assert.Equal(first, StudioGenerateConfig.Parse(StudioGeneratePresets.Format(first)));
+    }
+
+    [Fact]
+    public void RandomPresetStaysInsideTheCapturedGeneratorRanges()
+    {
+        var random = new Random(17);
+        for (var index = 0; index < 200; index++)
+        {
+            var config = StudioGeneratePresets.Create(random);
+
+            Assert.False(config.IsAi);
+            Assert.InRange(config.OffsetX, 0, 10);
+            Assert.InRange(config.OffsetY, 0, 10);
+            Assert.InRange(config.Rotation, -180, 180);
+            Assert.InRange(config.ScaleX, 0.1, 10);
+            Assert.InRange(config.ScaleY, 0.1, 10);
+            Assert.InRange(config.PatternSpread, 1, 50);
+            Assert.InRange(config.PatternSpeed, -10, 10);
+            Assert.InRange(config.Pattern, 1, 9);
+            Assert.Equal(Math.Round(config.Rotation, 1), config.Rotation, 6);
+        }
+    }
+
+    [Fact]
+    public void HistoryKeepsFivePresetsAndDropsTheOldest()
+    {
+        string? list = null;
+        var generated = new List<string>();
+        for (var index = 0; index < StudioGeneratePresets.HistoryLimit + 2; index++)
+        {
+            var json = StudioGeneratePresets.Format(StudioGeneratePresets.Create(new Random(index)));
+            generated.Add(json);
+            list = StudioGeneratePresets.Append(list, json, out var currentConfigId);
+            Assert.Equal(Math.Min(generated.Count, StudioGeneratePresets.HistoryLimit) - 1, currentConfigId);
+        }
+
+        var stored = StudioGeneratePresets.Read(list);
+        Assert.Equal(StudioGeneratePresets.HistoryLimit, stored.Count);
+        Assert.Equal(generated.TakeLast(StudioGeneratePresets.HistoryLimit), stored);
+    }
+
+    [Fact]
+    public void HistoryReplacesOnlyTheSelectedPreset()
+    {
+        var first = StudioGeneratePresets.Format(StudioGenerateConfig.Default);
+        var second = StudioGeneratePresets.Format(StudioGenerateConfig.Default with { Pattern = 4 });
+        var list = StudioGeneratePresets.Append(null, first, out _);
+        list = StudioGeneratePresets.Append(list, second, out _);
+
+        var edited = StudioGeneratePresets.Format(StudioGenerateConfig.Default with { Rotation = 45 });
+        var stored = StudioGeneratePresets.Read(StudioGeneratePresets.Replace(list, 0, edited));
+
+        Assert.Equal(new[] { edited, second }, stored);
+        Assert.Equal(list, StudioGeneratePresets.Replace(list, 9, edited));
+        Assert.Null(StudioGeneratePresets.Replace(null, 0, edited));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("{")]
+    [InlineData("{}")]
+    [InlineData("[\"x\",null,3]")]
+    public void MalformedHistoryReadsAsEmpty(string? json) =>
+        Assert.Empty(StudioGeneratePresets.Read(json));
+    [Theory]
+    [InlineData(5, -1, 1, 0)]
+    [InlineData(5, 0, 1, 1)]
+    [InlineData(5, 4, 1, -1)]
+    [InlineData(5, 0, -1, -1)]
+    [InlineData(5, 3, -1, 2)]
+    [InlineData(5, 9, -1, 3)]
+    [InlineData(0, -1, 1, -1)]
+    [InlineData(0, -1, -1, -1)]
+    public void HistoryStepMovesWithinTheStoredPresets(int count, int currentConfigId, int direction, int expected) =>
+        Assert.Equal(expected, StudioGeneratePresets.Step(count, currentConfigId, direction));
     private static StudioEffectParams Create(string config, IStudioMediaSampler? sampler) => new()
     {
         Effect = StudioEffectKind.ChromaGenerate,

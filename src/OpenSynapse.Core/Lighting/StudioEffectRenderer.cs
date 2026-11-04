@@ -7,25 +7,31 @@ namespace OpenSynapse.Core.Lighting;
 /// callback maps them to its own normalized capture coordinates.
 /// </param>
 /// <param name="ScreenSamplerUv">Normalized (u, v) screen sampler for region mapping.</param>
+/// <param name="ScreenCaptureRect">
+/// Normalized screen region already cropped by the capture source; effect regions
+/// are mapped into it so a shared capture does not double-crop.
+/// </param>
 public readonly record struct StudioEffectInput(
     double AudioLevel = 0,
     Func<int, int, StudioRgb>? ScreenSampler = null,
-    Func<double, double, StudioRgb>? ScreenSamplerUv = null);
+    Func<double, double, StudioRgb>? ScreenSamplerUv = null,
+    StudioScreenRect? ScreenCaptureRect = null,
+    uint? StarlightSeed = null,
+    int? FireSeed = null,
+    int? FireRate = null);
 
 /// <summary>
-/// Renders one studio effect into an arbitrary LED matrix. The renderer is
-/// clock-free and hash-based, so identical inputs always produce identical frames.
+/// Renders one studio effect into an arbitrary LED matrix. Every effect is a pure
+/// function of its parameters and time; Starlight keeps a per-thread tick cursor so
+/// long playback advances its native random stream instead of replaying it.
 /// </summary>
-public static class StudioEffectRenderer
+public static partial class StudioEffectRenderer
 {
     private const double DefaultBreathingSeconds = 7;
     private const double DefaultSpectrumSeconds = 10;
-    private const double DefaultWaveSeconds = 4;
     private const double DefaultReactiveSeconds = 1;
-    private const double DefaultRippleSeconds = 2.5;
     private const double DefaultStarlightSeconds = 1.2;
-    private const double WheelSeconds = 4;
-    private const double TidalFramesPerSecond = 25;
+    private const double NativeFramesPerSecond = 25;
 
     public static StudioRgb[] Render(
         StudioEffectParams parameters,
@@ -50,15 +56,22 @@ public static class StudioEffectRenderer
             StudioEffectKind.Spectrum => RenderSpectrum(parameters, rows, columns, time),
             StudioEffectKind.Wave => RenderWave(parameters, rows, columns, time),
             StudioEffectKind.Gradient => RenderGradient(parameters, rows, columns),
-            StudioEffectKind.Fire => RenderFire(parameters, rows, columns, time),
+            StudioEffectKind.Fire => RenderFire(
+                parameters,
+                rows,
+                columns,
+                time,
+                input.FireSeed ?? FireDefaultSeed,
+                input.FireRate ?? FireDefaultRate),
             StudioEffectKind.Reactive => RenderReactive(parameters, rows, columns, time),
             StudioEffectKind.Ripple => RenderRipple(parameters, rows, columns, time),
-            StudioEffectKind.Starlight => RenderStarlight(parameters, rows, columns, time),
+            StudioEffectKind.Starlight => RenderStarlight(parameters, rows, columns, time, input.StarlightSeed),
             StudioEffectKind.Ambient => RenderAmbient(parameters, rows, columns, input),
             StudioEffectKind.Audio => RenderAudio(parameters, rows, columns, input),
             StudioEffectKind.Wheel => RenderWheel(parameters, rows, columns, time),
             StudioEffectKind.ChromaGenerate => RenderChromaGenerate(parameters, rows, columns, time),
             StudioEffectKind.Tidal => RenderTidal(parameters, rows, columns, time),
+            StudioEffectKind.Radiate => RenderRadiate(parameters, rows, columns),
             _ => RenderSolid(parameters, rows, columns),
         };
     }
@@ -72,21 +85,36 @@ public static class StudioEffectRenderer
         int columns,
         double time)
     {
+        // Native 14s Duration renders a 7s cycle: quarter off, quarter ramp,
+        // quarter hold, quarter fade (oracle effect_5).
         var period = parameters.DurationMs > 0
-            ? parameters.DurationMs / 1000d
+            ? parameters.DurationMs / 2000d
             : DefaultBreathingSeconds;
         var position = Fraction(time / period);
         var intensity = position switch
         {
             < 0.25 => 0,
-            < 0.50 => SmoothStep((position - 0.25) * 4),
-            < 0.75 => SmoothStep((0.75 - position) * 4),
-            _ => 0,
+            < 0.50 => (position - 0.25) * 4,
+            < 0.75 => 1,
+            _ => (1 - position) * 4,
         };
-        var color = parameters.Secondary != parameters.Primary
-            ? StudioRgb.Lerp(parameters.Primary, parameters.Secondary, intensity)
-            : StudioRgb.Lerp(StudioRgb.Black, parameters.Primary, intensity);
-        return Fill(rows, columns, color);
+        if (parameters.RandomColor)
+        {
+            return Fill(rows, columns, Scale(RandomHue((long)Math.Floor(time / period)), intensity));
+        }
+
+        if (parameters.ColorStops.Count > 0)
+        {
+            // CBreathingEffect 0x650f0 builds a duration-length palette and
+            // advances one entry per 25 fps tick; the stops already describe
+            // the two peaks, so no separate envelope is applied.
+            var frames = PaletteFrames(parameters, 14_000);
+            var palette = GradientTable(parameters, frames);
+            return Fill(rows, columns, palette[PaletteCursor(time, frames)]);
+        }
+
+        // Preserve the UI contract for layers that use only Color/Color2.
+        return Fill(rows, columns, StudioRgb.Lerp(parameters.Primary, parameters.Secondary, intensity));
     }
 
     private static StudioRgb[] RenderSpectrum(
@@ -98,11 +126,15 @@ public static class StudioEffectRenderer
         var period = parameters.DurationMs > 0
             ? parameters.DurationMs / 1000d
             : DefaultSpectrumSeconds;
-        var position = Fraction(time / period);
-        var color = parameters.ColorStops.Count >= 2
-            ? parameters.Resolve(position)
-            : StudioRgb.FromHsv(position, 1, 1);
-        return Fill(rows, columns, color);
+        if (parameters.ColorStops.Count >= 2)
+        {
+            // CSpectrumEffect 0x61dc0 writes one palette entry per 25 fps tick.
+            var frames = PaletteFrames(parameters, 37_740);
+            var palette = GradientTable(parameters, frames);
+            return Fill(rows, columns, palette[PaletteCursor(time, frames)]);
+        }
+
+        return Fill(rows, columns, StudioRgb.FromHsv(Fraction(time / period), 1, 1));
     }
 
     private static StudioRgb[] RenderWave(
@@ -111,41 +143,104 @@ public static class StudioEffectRenderer
         int columns,
         double time)
     {
-        var cycle = parameters.DurationMs > 0 ? parameters.DurationMs / 1000d : DefaultWaveSeconds;
-        var pause = Math.Max(0, parameters.PauseMs) / 1000d;
-        var span = cycle + pause;
-        var local = span > 0 ? time % span : 0;
-        var phase = local < cycle ? local / cycle : 1;
-        var angle = parameters.Angle * Math.PI / 180;
+        // CWaveEffect 0x65f50: a palette cursor advances one entry per 25 fps
+        // frame. Width controls how many frames one palette spans; Duration is
+        // not read by the native factory. Pause adds empty frames to the cycle.
+        var angle = (parameters.Angle + 270) * Math.PI / 180d;
         var cosine = Math.Cos(angle);
         var sine = Math.Sin(angle);
-        var extent = Math.Abs(cosine) + Math.Abs(sine);
-        if (extent < 1e-9) extent = 1;
+        if (Math.Abs(cosine) < 1e-12) cosine = 0;
+        if (Math.Abs(sine) < 1e-12) sine = 0;
 
-        var width = Math.Clamp(parameters.Width, 0, 100);
-        var speed = StudioSpeed.Multiplier(parameters);
-        var bands = Math.Max(
-            1,
-            (int)Math.Round((1 + (100 - width) / 12.5) * (0.5 + speed / 2)));
-        var split = Math.Clamp(parameters.Split, 0, 100) / 100;
-        var hasStops = parameters.ColorStops.Count >= 2;
+        var timing = MeasureWave(parameters, rows, columns);
+        var palette = GradientTable(parameters, timing.ActiveFrames);
+
+        var tick = (int)Math.Floor(time * NativeFramesPerSecond);
+        var cursor = timing.Speed <= 0 || tick <= 0
+            ? 0
+            : (tick - 1) % timing.CycleFrames;
+        var offset = timing.CycleFrames - cursor;
         var frame = new StudioRgb[rows * columns];
         for (var row = 0; row < rows; row++)
         {
-            var y = rows == 1 ? 0 : row / (double)(rows - 1);
+            var y = row / (double)rows;
             for (var column = 0; column < columns; column++)
             {
-                var x = columns == 1 ? 0 : column / (double)(columns - 1);
-                var projection = ((x - 0.5) * cosine + (y - 0.5) * sine) / extent + 0.5;
-                var position = Fraction(projection * bands - phase);
-                frame[row * columns + column] = hasStops
-                    ? parameters.Resolve(position)
-                    : position < split ? parameters.Primary : parameters.Secondary;
+                var x = column / (double)columns;
+                var projection = (int)((x * cosine + y * sine) * timing.SpanFrames);
+                var index = ((projection + offset) % timing.CycleFrames + timing.CycleFrames) %
+                    timing.CycleFrames;
+                if (index < palette.Length) frame[row * columns + column] = palette[index];
             }
         }
 
         return frame;
     }
+
+    private static WaveTiming MeasureWave(StudioEffectParams parameters, int rows, int columns)
+    {
+        var angle = (parameters.Angle + 270) * Math.PI / 180d;
+        var cosine = Math.Cos(angle);
+        var sine = Math.Sin(angle);
+        if (Math.Abs(cosine) < 1e-12) cosine = 0;
+        if (Math.Abs(sine) < 1e-12) sine = 0;
+
+        // Native samples LED edges and truncates the projected extent.
+        var extent = Math.Max(1, (int)(Math.Abs(cosine) * columns) + (int)(Math.Abs(sine) * rows));
+        var speed = Math.Clamp(parameters.Speed, 0, 50);
+        var step = speed <= 0
+            ? 1d / NativeFramesPerSecond
+            : 4 * speed / 100d * extent / NativeFramesPerSecond;
+        var spanFrames = Math.Max(1, (int)(extent / step));
+        var width = Math.Clamp(parameters.Width, 10, 400);
+        var widthFrames = Math.Max(1, (int)(spanFrames * width / 100d));
+        var stopCount = Math.Max(PaletteStopCount(parameters), 2);
+        var activeFrames = Math.Max(widthFrames, stopCount);
+        var pauseFrames = (int)(Math.Max(0, parameters.PauseMs) * NativeFramesPerSecond / 1000);
+        return new WaveTiming(spanFrames, activeFrames, activeFrames + pauseFrames, speed);
+    }
+
+    /// <summary>
+    /// The renderer's visible cycle, shared with the playback clock so an
+    /// "after N cycles" stop lands on the same frame the user sees.
+    /// </summary>
+    internal static double CycleSeconds(StudioEffectParams parameters, int rows, int columns)
+    {
+        var seconds = parameters.Effect switch
+        {
+            StudioEffectKind.Breathing => parameters.DurationMs > 0
+                ? parameters.DurationMs / 2000d
+                : DefaultBreathingSeconds,
+            StudioEffectKind.Spectrum => parameters.DurationMs > 0
+                ? parameters.DurationMs / 1000d
+                : DefaultSpectrumSeconds,
+            StudioEffectKind.Reactive => parameters.DurationMs > 0
+                ? parameters.DurationMs / 1000d
+                : DefaultReactiveSeconds,
+            StudioEffectKind.Starlight => parameters.DurationMs > 0
+                ? parameters.DurationMs / 1000d
+                : DefaultStarlightSeconds,
+            StudioEffectKind.Wave when rows > 0 && columns > 0 =>
+                MeasureWave(parameters, rows, columns).CycleFrames / NativeFramesPerSecond,
+            StudioEffectKind.Ripple when rows > 0 && columns > 0 =>
+                MeasureRipple(parameters, rows, columns).LifetimeSeconds,
+            StudioEffectKind.Wheel when MeasureWheelSteps(parameters) > 0 =>
+                MeasureWheelSteps(parameters) / (double)NativeFramesPerSecond,
+            StudioEffectKind.Tidal when rows > 0 && columns > 0 =>
+                (3 * MeasureTidal(parameters, rows, columns).Width + 1) /
+                (double)NativeFramesPerSecond,
+            _ => Math.Max(1, parameters.DurationMs > 0
+                ? parameters.DurationMs
+                : StudioEffectDefaults.DurationMs(parameters.Effect)) / 1000d,
+        };
+        return Math.Max(0.05, seconds);
+    }
+
+    private readonly record struct WaveTiming(
+        int SpanFrames,
+        int ActiveFrames,
+        int CycleFrames,
+        double Speed);
 
     private static StudioRgb[] RenderGradient(StudioEffectParams parameters, int rows, int columns)
     {
@@ -163,35 +258,6 @@ public static class StudioEffectRenderer
         return frame;
     }
 
-    private static StudioRgb[] RenderFire(
-        StudioEffectParams parameters,
-        int rows,
-        int columns,
-        double time)
-    {
-        var frame = new StudioRgb[rows * columns];
-        var hasStops = parameters.ColorStops.Count >= 2;
-        var frameIndex = (long)Math.Floor(time * 12);
-        for (var row = 0; row < rows; row++)
-        {
-            var height = rows == 1 ? 1 : row / (double)(rows - 1);
-            for (var column = 0; column < columns; column++)
-            {
-                var noise = Hash(row, column, frameIndex) / (double)uint.MaxValue;
-                var flicker = 0.05 * Math.Sin(time * 2.1 + column * 0.35 + row * 0.6);
-                var heat = Math.Clamp(0.18 + 0.72 * height + (noise - 0.5) * 0.55 + flicker, 0, 1);
-                var ramp = hasStops
-                    ? parameters.Resolve(heat)
-                    : heat < 0.5
-                        ? StudioRgb.Lerp(parameters.Primary, parameters.Secondary, heat * 2)
-                        : StudioRgb.Lerp(parameters.Secondary, StudioRgb.White, (heat - 0.5) * 2);
-                frame[row * columns + column] = Scale(ramp, Math.Pow(heat, 0.7));
-            }
-        }
-
-        return frame;
-    }
-
     private static StudioRgb[] RenderReactive(
         StudioEffectParams parameters,
         int rows,
@@ -199,80 +265,20 @@ public static class StudioEffectRenderer
         double time)
     {
         var period = parameters.DurationMs > 0 ? parameters.DurationMs / 1000d : DefaultReactiveSeconds;
-        var phase = Fraction(time / period);
-        var exponent = 1 + Math.Clamp(parameters.Decay, 0, 100) / 25;
-        var factor = Math.Pow(1 - phase, exponent);
-        return Fill(rows, columns, Scale(parameters.Primary, factor));
-    }
-
-    private static StudioRgb[] RenderRipple(
-        StudioEffectParams parameters,
-        int rows,
-        int columns,
-        double time)
-    {
-        var frame = new StudioRgb[rows * columns];
-        var centerRow = (rows - 1) / 2d;
-        var centerColumn = (columns - 1) / 2d;
-        var maxRadius = Math.Sqrt(centerRow * centerRow + centerColumn * centerColumn);
-        if (maxRadius < 1e-9) maxRadius = 1;
-
-        var period = parameters.DurationMs > 0 ? parameters.DurationMs / 1000d : DefaultRippleSeconds;
-        var phase = Fraction(time / period);
-        var rings = 1 + StudioSpeed.Multiplier(parameters);
-        var halfBand = 0.05 + 0.45 * Math.Clamp(parameters.Width, 0, 100) / 100;
-        var hasStops = parameters.ColorStops.Count >= 2;
-        for (var row = 0; row < rows; row++)
+        var frames = PaletteFrames(parameters, 1_500);
+        if (parameters.RandomColor)
         {
-            for (var column = 0; column < columns; column++)
-            {
-                var deltaRow = row - centerRow;
-                var deltaColumn = column - centerColumn;
-                var distance = Math.Sqrt(deltaRow * deltaRow + deltaColumn * deltaColumn) / maxRadius;
-                var position = Fraction(distance * rings - phase);
-                var band = Math.Max(0, 1 - Math.Abs(position - halfBand) / halfBand);
-                if (band <= 0) continue;
-
-                var color = hasStops
-                    ? parameters.Resolve(position)
-                    : StudioRgb.Lerp(parameters.Primary, parameters.Secondary, position);
-                frame[row * columns + column] = Scale(color, band);
-            }
+            var peak = RandomHue((long)Math.Floor(time / period));
+            var random = GradientTable([], peak, StudioRgb.Black, frames);
+            return Fill(rows, columns, random[PaletteCursor(time, frames)]);
         }
 
-        return frame;
-    }
-
-    private static StudioRgb[] RenderStarlight(
-        StudioEffectParams parameters,
-        int rows,
-        int columns,
-        double time)
-    {
-        var frame = new StudioRgb[rows * columns];
-        var period = parameters.DurationMs > 0
-            ? parameters.DurationMs / 1000d
-            : DefaultStarlightSeconds;
-        var slot = (long)Math.Floor(time / period);
-        var local = Fraction(time / period);
-        var density = Math.Clamp(parameters.Density, 0, 100);
-        for (var row = 0; row < rows; row++)
-        {
-            for (var column = 0; column < columns; column++)
-            {
-                var presence = Hash(row, column, slot) % 1000 / 10d;
-                if (presence >= density) continue;
-
-                var colorSeed = Hash(column, row, slot + 0x51ED);
-                var offset = colorSeed / (double)uint.MaxValue;
-                var phase = Fraction(local + offset);
-                var brightness = Math.Sin(phase * Math.PI);
-                var color = parameters.Resolve(offset);
-                frame[row * columns + column] = Scale(color, brightness);
-            }
-        }
-
-        return frame;
+        // CReactiveEffect 0x63680 fades the stop palette to the transparent
+        // sentinel at one 25 fps frame per entry.
+        var palette = parameters.ColorStops.Count > 0
+            ? GradientTable(parameters, frames)
+            : GradientTable([], parameters.Primary, StudioRgb.Black, frames);
+        return Fill(rows, columns, palette[PaletteCursor(time, frames)]);
     }
 
     private static StudioRgb[] RenderAmbient(StudioEffectParams parameters, int rows, int columns, StudioEffectInput input)
@@ -280,12 +286,22 @@ public static class StudioEffectRenderer
         var frame = new StudioRgb[rows * columns];
         if (input.ScreenSamplerUv is { } uv)
         {
-            var rect = ResolveScreenRect(parameters);
+            var rect = StudioScreenRect.Resolve(parameters.Screen, parameters.ScreenRect);
+            var capture = input.ScreenCaptureRect?.Clamp();
+            if (capture is { } cropped)
+            {
+                rect = StudioScreenRect.MapIntoCapture(rect, cropped);
+            }
             for (var index = 0; index < frame.Length; index++)
             {
-                frame[index] = uv(
-                    rect.X + (index % columns + 0.5) / columns * rect.Width,
-                    rect.Y + (index / columns + 0.5) / rows * rect.Height);
+                var u = rect.X + (index % columns + 0.5) / columns * rect.Width;
+                var v = rect.Y + (index / columns + 0.5) / rows * rect.Height;
+                if (capture is { } source)
+                {
+                    u = source.X + u * source.Width;
+                    v = source.Y + v * source.Height;
+                }
+                frame[index] = uv(u, v);
             }
         }
         else if (input.ScreenSampler is { } grid)
@@ -297,17 +313,6 @@ public static class StudioEffectRenderer
         else return frame;
         return Blur(frame, rows, columns, Math.Clamp(parameters.Blur, 0, 20));
     }
-
-    private static StudioScreenRect ResolveScreenRect(StudioEffectParams parameters) =>
-        parameters.Screen?.Trim().ToLowerInvariant() switch
-        {
-            "left" => new StudioScreenRect(0, 0, 0.5, 1),
-            "top" => new StudioScreenRect(0, 0, 1, 0.5),
-            "right" => new StudioScreenRect(0.5, 0, 0.5, 1),
-            "bottom" => new StudioScreenRect(0, 0.5, 1, 0.5),
-            "custom" when parameters.ScreenRect is { } rect => rect,
-            _ => new StudioScreenRect(0, 0, 1, 1),
-        };
 
     private static StudioRgb[] Blur(StudioRgb[] frame, int rows, int columns, int radius)
     {
@@ -348,10 +353,11 @@ public static class StudioEffectRenderer
     {
         var frame = new StudioRgb[rows * columns];
         var level = double.IsFinite(input.AudioLevel) ? Math.Clamp(input.AudioLevel, 0, 1) : 0;
-        var boost = Math.Clamp(parameters.Boost, 0, 3);
-        var adjusted = Math.Clamp(level * (1 + boost), 0, 1);
+        var boost = Math.Clamp(parameters.Boost, 0.25, 4);
+        if (parameters.AutoBoost) boost = Math.Max(boost, 1 + level * 3);
+        var adjusted = Math.Clamp(level * boost, 0, 1);
         var litColumns = (int)Math.Ceiling(adjusted * columns);
-        var exponent = 1 + Math.Clamp(parameters.Decay, 0, 100) / 25;
+        var exponent = 0.25 + Math.Clamp(parameters.Decay, 0.1, 2) * 1.25;
         for (var row = 0; row < rows; row++)
         {
             for (var column = 0; column < columns; column++)
@@ -362,34 +368,6 @@ public static class StudioEffectRenderer
                 var brightness = 0.1 + 0.9 * Math.Pow(1 - edge, exponent);
                 var position = columns == 1 ? 0 : column / (double)(columns - 1);
                 frame[row * columns + column] = Scale(parameters.Resolve(position), brightness);
-            }
-        }
-
-        return frame;
-    }
-
-    private static StudioRgb[] RenderWheel(
-        StudioEffectParams parameters,
-        int rows,
-        int columns,
-        double time)
-    {
-        var frame = new StudioRgb[rows * columns];
-        var centerRow = (rows - 1) / 2d;
-        var centerColumn = (columns - 1) / 2d;
-        var rotation = Fraction(time / WheelSeconds);
-        var offset = parameters.Angle / 360d;
-        var wraps = 0.5 + StudioSpeed.Multiplier(parameters) / 2;
-        var hasStops = parameters.ColorStops.Count >= 2;
-        for (var row = 0; row < rows; row++)
-        {
-            for (var column = 0; column < columns; column++)
-            {
-                var angle = Math.Atan2(row - centerRow, column - centerColumn) / (Math.PI * 2);
-                var hue = Fraction(angle * wraps + rotation + offset);
-                frame[row * columns + column] = hasStops
-                    ? parameters.Resolve(hue)
-                    : StudioRgb.FromHsv(hue, 1, 1);
             }
         }
 
@@ -492,108 +470,5 @@ public static class StudioEffectRenderer
             + 0.25 * Math.Sin(y * secondFrequency * Math.PI - time * drift * 0.7 + secondPhase)
             + 0.2 * Math.Sin((x + y) * 3 + time * 0.4 + firstPhase * 0.5);
         return parameters.Resolve(Math.Clamp(value, 0, 1));
-    }
-
-    private static StudioRgb[] RenderTidal(
-        StudioEffectParams parameters,
-        int rows,
-        int columns,
-        double time)
-    {
-        var frame = new StudioRgb[rows * columns];
-        var angle = parameters.Angle * Math.PI / 180;
-        var cosine = Math.Cos(angle);
-        var sine = Math.Sin(angle);
-        var centerRow = (rows - 1) / 2d;
-        var centerColumn = (columns - 1) / 2d;
-        var columnExtent = Math.Max(centerColumn, columns - 1 - centerColumn);
-        var rowExtent = Math.Max(centerRow, rows - 1 - centerRow);
-        var distance = Math.Abs(columnExtent * cosine) + Math.Abs(rowExtent * sine);
-        if (distance < 1e-6) distance = 1;
-
-        var speed = StudioSpeed.Multiplier(parameters);
-        var sliceCount = Math.Max(8, (int)Math.Round(12 + speed * 8));
-        var spatialStep = distance / sliceCount;
-        var cycleFrames = sliceCount * 3;
-        var tick = time * TidalFramesPerSecond % cycleFrames;
-        var temporalFraction = tick - Math.Floor(tick);
-        var splitOffset = (Math.Clamp(parameters.Split, 0, 100) - 50) / 100 * sliceCount;
-        for (var row = 0; row < rows; row++)
-        {
-            for (var column = 0; column < columns; column++)
-            {
-                var projection = ((column - centerColumn) * cosine + (row - centerRow) * sine) /
-                    spatialStep;
-                for (var lane = 0; lane < 3; lane++)
-                {
-                    var laneFront = tick - lane * sliceCount - splitOffset;
-                    if (laneFront > sliceCount * 2) laneFront -= cycleFrames;
-
-                    var colorFrame = laneFront - projection;
-                    if (colorFrame <= 0 || colorFrame >= sliceCount) continue;
-
-                    var position = Math.Clamp(
-                        (colorFrame + temporalFraction) / (sliceCount - 1),
-                        0,
-                        1);
-                    frame[row * columns + column] = parameters.Resolve(position);
-                    break;
-                }
-            }
-        }
-
-        return frame;
-    }
-
-    private readonly record struct ChromaField(uint ConfigHash, uint MediaHash);
-
-    private static StudioRgb[] Fill(int rows, int columns, StudioRgb color)
-    {
-        var frame = new StudioRgb[rows * columns];
-        Array.Fill(frame, color);
-        return frame;
-    }
-
-    private static StudioRgb Scale(StudioRgb color, double factor)
-    {
-        var amount = Math.Clamp(factor, 0, 1);
-        return new StudioRgb(
-            (byte)Math.Clamp(Math.Round(color.R * amount), 0, 255),
-            (byte)Math.Clamp(Math.Round(color.G * amount), 0, 255),
-            (byte)Math.Clamp(Math.Round(color.B * amount), 0, 255));
-    }
-
-    private static double Fraction(double value) => value - Math.Floor(value);
-
-    private static double SmoothStep(double value)
-    {
-        var clamped = Math.Clamp(value, 0, 1);
-        return clamped * clamped * (3 - 2 * clamped);
-    }
-
-    private static uint Hash(long first, long second, long third)
-    {
-        unchecked
-        {
-            var hash = (ulong)(first * 374761393 + second * 668265263 + third * 2246822519);
-            hash = (hash ^ (hash >> 13)) * 1274126177UL;
-            return (uint)(hash ^ (hash >> 16));
-        }
-    }
-
-    private static uint HashText(string? text)
-    {
-        unchecked
-        {
-            var hash = 2166136261u;
-            if (text is null) return hash;
-            foreach (var character in text)
-            {
-                hash ^= character;
-                hash *= 16777619u;
-            }
-
-            return hash;
-        }
     }
 }

@@ -53,6 +53,7 @@ scripts/*
 !scripts/extract-blade-mappings.mjs
 !scripts/extract-blade-profiles.mjs
 !scripts/governance.test.mjs
+!scripts/Test-ChromaEffects.ps1
 
 # IDE and user state
 .vs/
