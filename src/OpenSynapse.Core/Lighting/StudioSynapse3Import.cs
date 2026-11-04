@@ -25,7 +25,7 @@ internal static class StudioSynapse3Import
         var profiles = ReadProfiles(path, out var projectName);
         if (profiles.Count == 0)
         {
-            throw new InvalidOperationException(
+            throw new InvalidDataException(
                 "No LightingEffects data was found in the Razer Synapse 3 profile.");
         }
 
@@ -43,21 +43,32 @@ internal static class StudioSynapse3Import
     {
         projectName = Path.GetFileNameWithoutExtension(path);
         var profiles = new List<StudioProfile>();
-        if (Path.GetExtension(path).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+        if (IsZipFile(path))
         {
-            using var archive = ZipFile.OpenRead(path);
-            foreach (var entry in archive.Entries)
+            var entries = new List<(string Text, string Name)>();
+            using (var archive = ZipFile.OpenRead(path))
             {
-                if (entry.Length == 0 || string.IsNullOrEmpty(entry.Name)) continue;
+                foreach (var entry in archive.Entries)
+                {
+                    if (entry.Length == 0 || string.IsNullOrEmpty(entry.Name)) continue;
 
-                using var stream = entry.Open();
-                using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+                    entries.Add((reader.ReadToEnd(), Path.GetFileNameWithoutExtension(entry.Name)));
+                }
+            }
+
+            foreach (var entry in entries)
+            {
                 try
                 {
                     // Razer's own migrator parses every file in the export, not only *.xml.
-                    AddProfiles(reader.ReadToEnd(), Path.GetFileNameWithoutExtension(entry.Name), profiles);
+                    AddProfiles(
+                        entry.Text,
+                        entries.Count == 1 ? projectName : entry.Name,
+                        profiles);
                 }
-                catch (InvalidOperationException)
+                catch (InvalidDataException)
                 {
                     // Non-XML payloads (images, thumbnails) are part of the export too.
                 }
@@ -68,6 +79,18 @@ internal static class StudioSynapse3Import
 
         AddProfiles(File.ReadAllText(path), projectName, profiles);
         return profiles;
+    }
+
+    /// <summary>Legacy exports keep the .ChromaEffects extension, so sniff the archive header too.</summary>
+    private static bool IsZipFile(string path)
+    {
+        if (Path.GetExtension(path).Equals(".zip", StringComparison.OrdinalIgnoreCase)) return true;
+        using var stream = File.OpenRead(path);
+        Span<byte> header = stackalloc byte[4];
+        var length = stream.ReadAtLeast(header, header.Length, throwOnEndOfStream: false);
+        return length == 4 &&
+            header[0] == (byte)'P' && header[1] == (byte)'K' &&
+            header[2] is 3 or 5 or 7 && header[3] is 4 or 6 or 8;
     }
 
     internal static IReadOnlyList<StudioProfile> ParseProfiles(string xml)
@@ -86,7 +109,7 @@ internal static class StudioSynapse3Import
         }
         catch (XmlException exception)
         {
-            throw new InvalidOperationException("The selected file is not valid XML.", exception);
+            throw new InvalidDataException("The selected file is not valid XML.", exception);
         }
 
         if (document.Root is null) return;
@@ -200,6 +223,7 @@ internal static class StudioSynapse3Import
 
             var layer = StudioLayerItem.CreateLayer(effect.ToUpperInvariant(), kind.Value);
             layer.Visible = ReadBool(Child(element, "Visible"), fallback: true);
+            layer.Opacity = Math.Clamp(ReadDouble(Child(element, "Alpha"), 100), 0, 100);
             foreach (var regionElement in Children(Child(element, "Regions"), "EffectRegion"))
             {
                 layer.Regions.Add(ReadRegion(regionElement, kind.Value));
@@ -269,6 +293,7 @@ internal static class StudioSynapse3Import
     private static void ApplyParameters(StudioEffectParams parameters, StudioEffectKind kind, XElement region)
     {
         ApplyPlayback(parameters, region);
+        var durationMs = (int)ReadDouble(Child(region, "DurationMs"));
         switch (kind)
         {
             case StudioEffectKind.Solid:
@@ -287,7 +312,7 @@ internal static class StudioSynapse3Import
                 ApplyPalette(parameters, region);
                 parameters.Width = ReadDouble(Child(region, "Width"), parameters.Width);
                 parameters.Speed = ReadDouble(Child(region, "Speed"), parameters.Speed);
-                parameters.Split = ReadDouble(Child(region, "Split"), parameters.Split);
+                parameters.Split = ReadSplit(Child(region, "Split"), parameters.Split);
                 parameters.PauseMs = (int)Math.Round(ReadDouble(Child(region, "Pause")) * 1000);
                 parameters.Angle = (int)ReadDouble(Child(region, "Angle"), parameters.Angle);
                 break;
@@ -326,10 +351,12 @@ internal static class StudioSynapse3Import
             case StudioEffectKind.Tidal:
                 ApplyColors(parameters, region, 2);
                 parameters.Speed = ReadDouble(Child(region, "Speed"), parameters.Speed);
-                parameters.Split = ReadDouble(Child(region, "Split"), parameters.Split);
+                parameters.Split = ReadSplit(Child(region, "Split"), parameters.Split);
                 parameters.Angle = (int)ReadDouble(Child(region, "Angle"), parameters.Angle);
                 break;
         }
+
+        if (durationMs > 0) parameters.DurationMs = durationMs;
     }
 
     private static void ApplyColors(StudioEffectParams parameters, XElement region, int count)
@@ -478,7 +505,10 @@ internal static class StudioSynapse3Import
         var text = Child(device, "RegionId")?.Value?.Trim();
         if (!long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var regionId))
         {
-            return null;
+            // Synapse 3 exports without RegionId still carry a per-session Handle.
+            // Prefix it so a 32-bit handle is not serialized as an out-of-range integer.
+            var handle = Child(device, "Handle")?.Value?.Trim();
+            return string.IsNullOrWhiteSpace(handle) ? null : "handle-" + handle;
         }
 
         var instance = regionId - InstanceIdBase;
@@ -512,6 +542,13 @@ internal static class StudioSynapse3Import
 
     private static byte ReadByte(XElement? element) =>
         (byte)Math.Clamp((int)ReadDouble(element), 0, 255);
+
+    private static double ReadSplit(XElement? element, double fallback)
+    {
+        var text = element?.Value?.Trim();
+        if (bool.TryParse(text, out var flag)) return flag ? 50 : 0;
+        return ReadDouble(element, fallback);
+    }
 
     private static double ReadDouble(XElement? element, double fallback = 0) =>
         double.TryParse(
