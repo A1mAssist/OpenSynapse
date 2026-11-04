@@ -249,19 +249,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             () => IsLightingBusy, value => IsLightingBusy = value,
             () => _service.TriggerReactiveAsync(Connection, cancellationToken), cancellationToken);
 
-    public Task ApplyMatrixAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(RazerHidBackendCapability.MatrixFrameWrite,
-            () => IsMatrixBusy, value => IsMatrixBusy = value,
-            async () =>
-            {
-                foreach (var row in MatrixCells.GroupBy(cell => cell.Row).OrderBy(group => group.Key))
-                {
-                    var colors = row.OrderBy(cell => cell.Column)
-                        .Select(cell => ToRazerHidColor(cell.Color)).ToArray();
-                    await _service.SetCustomRowAsync(Connection, row.Key, 0, colors, cancellationToken);
-                }
-            }, cancellationToken);
-
     private async Task DisableLightingAsync(CancellationToken cancellationToken)
     {
         await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(false);
