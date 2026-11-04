@@ -169,6 +169,35 @@ The device list is a manifest capability inventory. At runtime, OpenSynapse stil
 | Mouse | Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired) | `1532:00D6` | 1x12 | Extended 91-byte HID; runtime endpoint check required |
 | Mouse | Razer Basilisk V3 Pro 35K Phantom Green Edition (Wireless) | `1532:00D7` | 1x12 | Extended 91-byte HID; runtime endpoint check required |
 
+## Manifest-derived keyboard entries
+
+These keyboards have no OpenRazer entry. Each Razer engine manifest declares the same
+`rzDevice25` frame protocol used by the OpenRazer keyboards, so a separate studio
+registry reuses a same-family transaction set and takes the device grid from the
+manifest's `DeviceMaxRow`/`DeviceMaxCol` (not the visual `MatrixMaxRow`/`MatrixMaxCol`).
+The keyboard page keeps game mode, polling and battery controls; the registry entry only
+adds the lighting canvas. Hardware write verification is still pending.
+
+| Model | VID:PID | Device matrix | Donor |
+|---|---:|---:|---|
+| Razer Turret Keyboard Xbox One Edition | `1532:023E` | 6x18 | `02D7` |
+| Razer Turret Keyboard Gears of War 5 Edition | `1532:0A23` | 6x18 | `02D7` |
+| Razer Huntsman V3 X Tenkeyless | `1532:02B1` | 6x18 | `02D7` |
+| Razer BlackWidow V4 Pro 75% | `1532:02B3` | 6x18 | `02D7` |
+| Razer Pro Type Ergo | `1532:02C4` | 1x19 | `02A7` |
+| Razer BlackWidow V4 Low-profile HyperSpeed | `1532:02CC` | 7x22 | `02CF` |
+| Razer Huntsman V3 Pro Tenkeyless 8KHz | `1532:02D0` | 6x22 | `02CF` |
+| Razer Huntsman V3 Pro Mini 8KHz | `1532:02D1` | 5x15 | `02B0` |
+| Razer BlackWidow V4 Low-Profile Tenkeyless HyperSpeed | `1532:02D4` | 6x18 | `02D7` |
+| Razer Huntsman Signature Edition | `1532:02D8` | 6x22 | `02CF` |
+| Razer Reclusa X Mini 65% | `1532:02E3` | 5x16 | `02A5` |
+| Razer Huntsman V3 HE Magnetic Mini 65% 8KHz | `1532:02E4` | 5x16 | `02A5` |
+| Razer Huntsman V3 Tenkeyless 8KHz | `1532:02E5` | 6x22 | `02CF` |
+| Razer Huntsman V3 Pro Low-Profile Tenkeyless 8KHz | `1532:02E6` | 6x22 | `02CF` |
+| Razer Huntsman V3 HE Magnetic Tenkeyless 8KHz | `1532:02EA` | 6x18 | `02D7` |
+| Razer BlackWidow V4 75% XBOX 25 Anniversary Edition | `1532:02F0` | 7x18 | `02D7` |
+| Razer Reclusa Mini 65% | `1532:02F4` | 5x16 | `02A5` |
+
 ## Kraken lighting devices
 
 These models use the separate Kraken 37-byte Output Report. Each USB PID is listed separately because it is a separate product definition.

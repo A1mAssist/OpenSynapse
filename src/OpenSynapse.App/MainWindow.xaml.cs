@@ -471,6 +471,28 @@ public sealed partial class MainWindow : Window
             }
         }
 
+        // Keyboards owned by the keyboard page join the canvas through a synthetic
+        // matrix definition; their settings page stays unchanged.
+        foreach (var keyboard in _viewModel.Accessories.KeyboardDevices)
+        {
+            var connection = StudioKeyboardCatalog.CreateConnection(keyboard.Connection);
+            if (connection?.Definition.MatrixDimensions is not { } keyboardMatrix ||
+                options.Any(option => string.Equals(
+                    option.EffectiveInstanceId, connection.InstanceId, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            options.Add(new StudioDeviceOption(
+                connection.Definition.DisplayName,
+                null,
+                connection.InstanceId,
+                connection.Definition.ProductId,
+                keyboardMatrix.Rows,
+                keyboardMatrix.Columns,
+                Category: "keyboard"));
+        }
+
         if (_viewModel.RazerHid.ArgbConnection is { } argb)
         {
             var info = StudioArgbDevice.Create(
@@ -516,6 +538,10 @@ public sealed partial class MainWindow : Window
                 .Where(connection =>
                     connection.Definition.Category != DeviceCategory.Laptop &&
                     connection.Definition.ProductId != StudioArgbDevice.ProductId)
+                .Concat(_viewModel.Accessories.KeyboardDevices
+                    .Select(row => StudioKeyboardCatalog.CreateConnection(row.Connection))
+                    .Where(connection => connection is not null)
+                    .Select(connection => connection!))
                 .ToArray(),
             inputProvider: (rows, columns) => sampler.Sample(rows, columns));
     }
