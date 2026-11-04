@@ -7,32 +7,69 @@ namespace OpenSynapse.Windows.Lifecycle;
 
 public sealed partial class TaskbarStatusWindow
 {
+    private static readonly string[] BundledDisplayFonts =
+    [
+        Path.Combine("Assets", "Fonts", "TitilliumWeb-Regular.ttf"),
+        Path.Combine("Assets", "Fonts", "TitilliumWeb-SemiBold.ttf"),
+    ];
+    private static bool _displayFontsLoaded;
+    private static bool _displayFontsAvailable;
+
+    private static bool EnsureDisplayFonts()
+    {
+        if (_displayFontsLoaded) return _displayFontsAvailable;
+        _displayFontsLoaded = true;
+        foreach (var relativePath in BundledDisplayFonts)
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, relativePath);
+            if (File.Exists(path) &&
+                AddFontResourceExW(path, FrPrivate, IntPtr.Zero) > 0)
+            {
+                _displayFontsAvailable = true;
+            }
+        }
+        return _displayFontsAvailable;
+    }
+
     private void CreateFonts()
     {
         DeleteFont(ref _batteryFont);
         DeleteFont(ref _performanceFont);
+        DeleteFont(ref _cjkFont);
         var scale = _dpi / 96.0;
+        var displayFamily = EnsureDisplayFonts() ? "Titillium Web" : "Segoe UI Variable Text";
         _batteryFont = CreateFontW(
-            -(int)Math.Round(13 * scale), 0, 0, 0, FwSemibold,
-            0, 0, 0, DefaultCharset, 0, 0, CleartypeQuality, DefaultPitch,
-            "Segoe UI Variable Text");
+            -(int)Math.Round(14 * scale), 0, 0, 0, FwSemibold,
+            0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+            displayFamily);
         _performanceFont = CreateFontW(
-            -(int)Math.Round(12 * scale), 0, 0, 0, FwNormal,
-            0, 0, 0, DefaultCharset, 0, 0, CleartypeQuality, DefaultPitch,
-            "Segoe UI Variable Text");
+            -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
+            0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+            displayFamily);
+        _cjkFont = CreateFontW(
+            -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
+            0, 0, 0, Gb2312Charset, 0, 0, AntialiasedQuality, DefaultPitch,
+            "Microsoft YaHei UI");
         if (_batteryFont == IntPtr.Zero)
         {
             _batteryFont = CreateFontW(
-                -(int)Math.Round(13 * scale), 0, 0, 0, FwSemibold,
-                0, 0, 0, DefaultCharset, 0, 0, CleartypeQuality, DefaultPitch,
-                "Segoe UI");
+                -(int)Math.Round(14 * scale), 0, 0, 0, FwSemibold,
+                0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+                "Segoe UI Variable Text");
         }
         if (_performanceFont == IntPtr.Zero)
         {
             _performanceFont = CreateFontW(
-                -(int)Math.Round(12 * scale), 0, 0, 0, FwNormal,
-                0, 0, 0, DefaultCharset, 0, 0, CleartypeQuality, DefaultPitch,
-                "Segoe UI");
+                -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
+                0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+                "Segoe UI Variable Text");
+        }
+        if (_cjkFont == IntPtr.Zero)
+        {
+            _cjkFont = CreateFontW(
+                -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
+                0, 0, 0, Gb2312Charset, 0, 0, AntialiasedQuality, DefaultPitch,
+                "Microsoft YaHei");
         }
     }
 
@@ -111,7 +148,7 @@ public sealed partial class TaskbarStatusWindow
             if (includePerformance && !string.IsNullOrWhiteSpace(_snapshot.PerformanceMode))
             {
                 width += PerformanceGapDip * scale +
-                    MeasureText(dc, _performanceFont, _snapshot.PerformanceMode);
+                    MeasureMixedText(dc, _performanceFont, _cjkFont, _snapshot.PerformanceMode);
             }
             return (int)Math.Ceiling(width);
         }
@@ -134,6 +171,72 @@ public sealed partial class TaskbarStatusWindow
             SelectObject(dc, previous);
         }
     }
+
+    private static int MeasureMixedText(
+        IntPtr dc, IntPtr latinFont, IntPtr cjkFont, string text)
+    {
+        var width = 0;
+        foreach (var run in SplitTextRuns(text))
+        {
+            width += MeasureText(dc, run.Cjk ? cjkFont : latinFont, run.Text);
+        }
+        return width;
+    }
+
+    private static void DrawMixedText(
+        IntPtr dc,
+        IntPtr latinFont,
+        IntPtr cjkFont,
+        string text,
+        ref Rect rect,
+        uint flags)
+    {
+        var previous = SelectObject(dc, latinFont);
+        var x = rect.Left;
+        try
+        {
+            foreach (var run in SplitTextRuns(text))
+            {
+                var font = run.Cjk ? cjkFont : latinFont;
+                SelectObject(dc, font);
+                var width = MeasureText(dc, font, run.Text);
+                var runRect = new Rect
+                {
+                    Left = x,
+                    Top = rect.Top,
+                    Right = x + width,
+                    Bottom = rect.Bottom,
+                };
+                DrawTextW(dc, run.Text, run.Text.Length, ref runRect, flags);
+                x += width;
+            }
+        }
+        finally
+        {
+            SelectObject(dc, previous);
+        }
+    }
+
+    internal static IEnumerable<(string Text, bool Cjk)> SplitTextRuns(string text)
+    {
+        if (string.IsNullOrEmpty(text)) yield break;
+        var start = 0;
+        var cjk = IsCjk(text[0]);
+        for (var index = 1; index < text.Length; index++)
+        {
+            var next = IsCjk(text[index]);
+            if (next == cjk) continue;
+            yield return (text[start..index], cjk);
+            start = index;
+            cjk = next;
+        }
+        yield return (text[start..], cjk);
+    }
+
+    private static bool IsCjk(char value) =>
+        value is >= '\u2E80' and <= '\u9FFF' or
+        >= '\uF900' and <= '\uFAFF' or
+        >= '\uFF00' and <= '\uFFEF';
 
     private void Draw(IntPtr window)
     {
@@ -176,7 +279,6 @@ public sealed partial class TaskbarStatusWindow
             if (_showPerformance && !string.IsNullOrWhiteSpace(_snapshot.PerformanceMode))
             {
                 x += PerformanceGapDip * scale;
-                SelectObject(dc, _performanceFont);
                 SetTextColor(dc, secondary);
                 var performanceRect = new Rect
                 {
@@ -185,10 +287,11 @@ public sealed partial class TaskbarStatusWindow
                     Right = client.Right - (int)Math.Round(PaddingDip * scale),
                     Bottom = client.Bottom,
                 };
-                DrawTextW(
+                DrawMixedText(
                     dc,
+                    _performanceFont,
+                    _cjkFont,
                     _snapshot.PerformanceMode,
-                    _snapshot.PerformanceMode.Length,
                     ref performanceRect,
                     DtSingleLine | DtVCenter | DtNoPrefix);
             }
