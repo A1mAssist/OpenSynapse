@@ -274,14 +274,20 @@ public sealed class OpenRazerSpecialLightingService
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _transport.SendOutputBatchAsync(
-                connection.DevicePath!, reports, cancellationToken).ConfigureAwait(false);
+            await _transport.SendOutputAsync(
+                connection.DevicePath!,
+                OpenRazerKrakenV4Protocol.CreateConnect(isDongle),
+                cancellationToken).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
 
             foreach (var report in reports)
             {
+                await _transport.SendOutputAsync(
+                    connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
                 _diagnostic?.Invoke(
                     $"kraken lighting 1532:{connection.ProductId:X4} effect={settings.Effect} " +
                     $"report=[{Convert.ToHexString(report)}]");
+                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
             }
         }
         finally

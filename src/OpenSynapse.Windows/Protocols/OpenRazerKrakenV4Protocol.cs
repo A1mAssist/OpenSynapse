@@ -1,10 +1,11 @@
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Razer Kraken V4 wired 64-byte report family. Static colour is the same
-/// direct frame OpenRGB sends for 056B/056C: command 0F 03 with nine RGB
-/// triples. The firmware does not write a checksum for that frame. Off and
-/// wave stay on the C0 effect command, with the brightness set first.
+/// Razer Kraken V4 wired 64-byte report family. Static colour follows the
+/// audio bundle's Set Chroma Effect + Set Chroma Frame sequence: effect
+/// C0 00 01 01, then 0F 03 with nine RGB triples. The custom frame carries
+/// no checksum. Off and wave stay on the C0 effect command, with the
+/// brightness set first.
 /// </summary>
 internal static class OpenRazerKrakenV4Protocol
 {
@@ -21,6 +22,7 @@ internal static class OpenRazerKrakenV4Protocol
     private const byte FrameCommandClass = 0x0F;
     private const byte FrameCommandId = 0x03;
     private const byte EffectOff = 0x00;
+    private const byte EffectStatic = 0x01;
     private const byte EffectWave = 0x04;
     private const byte MaxBrightness = 0xFF;
     private const int LedCount = 9;
@@ -31,11 +33,17 @@ internal static class OpenRazerKrakenV4Protocol
     internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false) =>
         [CreateEffect(EffectOff, isDongle)];
 
+    /// <summary>
+    /// The bundle's connect handshake is the general command 02 00 00.
+    /// </summary>
+    internal static byte[] CreateConnect(bool isDongle = false) =>
+        CreateGeneralReport([0x02, 0x00, 0x00], [], isDongle);
+
     internal static IReadOnlyList<byte[]> CreateStatic(
         OpenRazerColor color,
         byte? intensity = null,
         bool isDongle = false) =>
-        [CreateBrightness(MaxBrightness, isDongle), CreateFrame(Scale(color, intensity), isDongle)];
+        [CreateEffect(EffectStatic, isDongle), CreateFrame(Scale(color, intensity), isDongle)];
 
     internal static IReadOnlyList<byte[]> CreateWave(byte? intensity = null, bool isDongle = false) =>
         [CreateBrightness(MaxBrightness, isDongle), CreateEffect(EffectWave, isDongle)];
@@ -69,7 +77,9 @@ internal static class OpenRazerKrakenV4Protocol
         var report = new byte[ReportLength];
         report[0] = ReportId;
         report[2] = TransactionId;
-        report[6] = checked((byte)(5 + (LedCount * 3)));
+        // The bundle's custom-frame builder includes the five-byte header in
+        // its size field and adds the one-byte trailing count: 5 + 27 + 1.
+        report[6] = checked((byte)(6 + (LedCount * 3)));
         report[7] = FrameCommandClass;
         report[8] = FrameCommandId;
         report[9] = isDongle ? DongleFlag : WiredFlag;
