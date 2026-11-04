@@ -1959,6 +1959,7 @@
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
   <data name="RazerHidMatrixDescription.Text" xml:space="preserve"><value>按设备真实键位/灯位排布，点击色块调整颜色；空白位置不可选，应用时按硬件坐标写回。</value></data>
+  <data name="RazerHidMatrixFallbackDescription.Text" xml:space="preserve"><value>当前设备使用硬件矩阵坐标，真实键位尚未校准。点击色块调整颜色，应用时按硬件坐标写回。</value></data>
   <data name="RazerHidApplyMatrixButton.Content" xml:space="preserve"><value>应用整帧</value></data>
   <data name="RazerHidFillMatrixButton.Content" xml:space="preserve"><value>填充当前颜色</value></data>
   <data name="RazerHidMatrixCellLabel" xml:space="preserve"><value>第 {0} 行，第 {1} 列</value></data>

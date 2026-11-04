@@ -67,6 +67,59 @@ public sealed class StudioMatrixEditorLayoutTests
     }
 
     [Fact]
+    public void DecorativeLedOutsideTheFrameDoesNotRejectKeyLayout()
+    {
+        var layout = StudioLedLayout.Create(
+            matrixRows: 2,
+            matrixColumns: 2,
+            deviceRows: 2,
+            deviceColumns: 3,
+            leds:
+            [
+                new StudioLedMap(0, 0, 0, 0),
+                new StudioLedMap(1, 1, 1, 2),
+            ],
+            inputs: [new StudioInputMap("kbd", 1, 0, 0, 0)]);
+
+        Assert.True(StudioMatrixEditorLayout.CanUseVisualLayout(layout, 2, 2));
+
+        var cells = StudioMatrixEditorLayout.Build(layout, 2, 2);
+        Assert.False(cells[0].IsPlaceholder);
+        Assert.True(cells[3].IsPlaceholder);
+    }
+
+    [Fact]
+    public void KeyOutsideTheFrameRejectsVisualLayout()
+    {
+        var layout = StudioLedLayout.Create(
+            matrixRows: 2,
+            matrixColumns: 2,
+            deviceRows: 2,
+            deviceColumns: 3,
+            leds: [new StudioLedMap(1, 1, 1, 2)],
+            inputs: [new StudioInputMap("kbd", 1, 0, 1, 1)]);
+
+        Assert.False(StudioMatrixEditorLayout.CanUseVisualLayout(layout, 2, 2));
+    }
+
+    [Fact]
+    public void LayoutWithoutInputMapRequiresEveryLedInsideTheFrame()
+    {
+        var layout = StudioLedLayout.Create(
+            matrixRows: 2,
+            matrixColumns: 2,
+            deviceRows: 2,
+            deviceColumns: 3,
+            leds:
+            [
+                new StudioLedMap(0, 0, 0, 0),
+                new StudioLedMap(1, 1, 1, 2),
+            ]);
+
+        Assert.False(StudioMatrixEditorLayout.CanUseVisualLayout(layout, 2, 2));
+    }
+
+    [Fact]
     public void UniformGridIsRowMajor()
     {
         var cells = StudioMatrixEditorLayout.BuildUniform(2, 2);

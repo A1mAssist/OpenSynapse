@@ -44,6 +44,8 @@ public sealed class StudioDeviceVisualLoader : IDisposable
     /// <summary>Loads only the LED table; the device card does not need SVG paths.</summary>
     public async Task<StudioLedLayout?> LoadLayoutAsync(ushort productId, CancellationToken cancellationToken)
     {
+        if (StudioLegacyLayoutCatalog.TryGet(productId, out var legacy)) return legacy;
+
         var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
         if (result.Manifest?.LedConfigJson is not { Length: > 0 } json)
         {

@@ -19,20 +19,50 @@ public readonly record struct StudioMatrixEditorCell(
 /// </summary>
 public static class StudioMatrixEditorLayout
 {
-    public static IReadOnlyList<StudioMatrixEditorCell> Build(StudioLedLayout layout)
+    /// <summary>
+    /// A manifest may include decorative LEDs beyond the frame this driver exposes.
+    /// Keep the visual layout only when every physical key still has a writable LED;
+    /// layouts without key input maps must fit completely.
+    /// </summary>
+    public static bool CanUseVisualLayout(
+        StudioLedLayout layout,
+        int deviceRows,
+        int deviceColumns)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        if (layout.Leds.Count == 0 || layout.MatrixRows <= 0 || layout.MatrixColumns <= 0 ||
+            layout.MatrixRows > 256 || layout.MatrixColumns > 256 ||
+            deviceRows <= 0 || deviceColumns <= 0)
+        {
+            return false;
+        }
+
+        var keyedLeds = layout.Leds
+            .Where(led => layout.FindInputAt(led.MatrixRow, led.MatrixCol) is not null)
+            .ToArray();
+        var requiredLeds = keyedLeds.Length > 0 ? keyedLeds : layout.Leds.ToArray();
+        return requiredLeds.All(led => IsInBounds(led, deviceRows, deviceColumns));
+    }
+
+    public static IReadOnlyList<StudioMatrixEditorCell> Build(StudioLedLayout layout) =>
+        Build(layout, layout.DeviceRows, layout.DeviceColumns);
+
+    public static IReadOnlyList<StudioMatrixEditorCell> Build(
+        StudioLedLayout layout,
+        int deviceRows,
+        int deviceColumns)
     {
         ArgumentNullException.ThrowIfNull(layout);
         if (layout.MatrixRows <= 0 || layout.MatrixColumns <= 0 ||
             layout.MatrixRows > 256 || layout.MatrixColumns > 256)
         {
-            return BuildUniform(layout.DeviceRows, layout.DeviceColumns);
+            return BuildUniform(deviceRows, deviceColumns);
         }
 
         var byMatrix = new Dictionary<(int Row, int Col), List<(int Row, int Col)>>();
         foreach (var led in layout.Leds)
         {
-            if (led.DeviceRow < 0 || led.DeviceRow >= layout.DeviceRows ||
-                led.DeviceCol < 0 || led.DeviceCol >= layout.DeviceColumns)
+            if (!IsInBounds(led, deviceRows, deviceColumns))
             {
                 continue;
             }
@@ -58,6 +88,10 @@ public static class StudioMatrixEditorLayout
 
         return cells;
     }
+
+    private static bool IsInBounds(StudioLedMap led, int deviceRows, int deviceColumns) =>
+        led.DeviceRow >= 0 && led.DeviceRow < deviceRows &&
+        led.DeviceCol >= 0 && led.DeviceCol < deviceColumns;
 
     public static IReadOnlyList<StudioMatrixEditorCell> BuildUniform(int deviceRows, int deviceColumns)
     {

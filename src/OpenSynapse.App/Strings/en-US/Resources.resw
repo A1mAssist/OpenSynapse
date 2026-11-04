@@ -1587,6 +1587,7 @@
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
   <data name="RazerHidMatrixDescription.Text" xml:space="preserve"><value>Cells follow the device's real key and LED layout. Select a cell to change its color; blank gaps are not selectable, and applying writes the frame in hardware coordinates.</value></data>
+  <data name="RazerHidMatrixFallbackDescription.Text" xml:space="preserve"><value>This device is using hardware matrix coordinates; its real key layout is not calibrated yet. Select a cell to change its color; applying writes the frame in hardware coordinates.</value></data>
   <data name="RazerHidApplyMatrixButton.Content" xml:space="preserve"><value>Apply frame</value></data>
   <data name="RazerHidFillMatrixButton.Content" xml:space="preserve"><value>Fill with current color</value></data>
   <data name="RazerHidMatrixCellLabel" xml:space="preserve"><value>Row {0}, column {1}</value></data>
