@@ -67,6 +67,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenSynapse.Core\OpenSynapse.Core.csproj" />
+    <ProjectReference Include="..\OpenSynapse.ChromaSdk.Protocol\OpenSynapse.ChromaSdk.Protocol.csproj" />
     <ProjectReference Include="..\OpenSynapse.RecoveryHost\OpenSynapse.RecoveryHost.csproj"
                       ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\OpenSynapse.ThxHelper\OpenSynapse.ThxHelper.csproj"

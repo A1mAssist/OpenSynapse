@@ -4,7 +4,7 @@
 
 ## 运行时可用性
 
-下面的清单是 manifest 能力库存。运行时仍必须先解析到设备端点，并且事务实际被设备接受，软件才会显示对应控件；事务被拒绝或端点不可用时，控件会隐藏。下面的 91-byte HID 路径来自 OpenRazer 协议定义，不是原生 Chroma SDK，也不会加载 `RzChromaConnectAPI.dll`。
+下面的清单是 manifest 能力库存。运行时仍必须先解析到设备端点，并且事务实际被设备接受，软件才会显示对应控件；事务被拒绝或端点不可用时，控件会隐藏。下面的 91-byte HID 路径来自 OpenRazer 协议定义。独立的 OpenSynapse `RzChromaSDK64.dll` 兼容层实现 Chroma SDK 4.0.1 ABI，见 [Chroma SDK 兼容层](CHROMA_SDK_SHIM.md)。
 
 ## Blade Chroma REST
 
@@ -218,7 +218,7 @@
 
 ## 边界说明
 
-- OpenSynapse 不加载 `RzChromaConnectAPI.dll`、原生 Chroma SDK 或 Razer Synapse。
+- OpenSynapse 不加载雷云或 Razer 签名的 `RzChromaConnectAPI.dll`；可选的 `RzChromaSDK64.dll` 是 OpenSynapse 自己的 ABI 兼容层。
 - Chroma REST 当前只在 Blade 16 键盘上完成验证；这不代表 REST 帧会被转译到所有 OpenRazer 矩阵设备。
 - 矩阵尺寸和 manifest 事务只是能力元数据，不是硬件认证；连接端点和成功事务仍是最终依据。
 - 不支持或未验证的控件会被隐藏，不会伪装成可配置控件。

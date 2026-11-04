@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\OpenSynapse.Core\OpenSynapse.Core.csproj" />
     <ProjectReference Include="..\..\src\OpenSynapse.Windows\OpenSynapse.Windows.csproj" />
+    <ProjectReference Include="..\..\src\OpenSynapse.ChromaSdk.Protocol\OpenSynapse.ChromaSdk.Protocol.csproj" />
   </ItemGroup>
 
   <ItemGroup>
