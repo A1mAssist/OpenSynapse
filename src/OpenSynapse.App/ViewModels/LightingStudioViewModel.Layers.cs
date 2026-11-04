@@ -178,7 +178,7 @@ public sealed partial class LightingStudioViewModel
             string.Equals(item.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase));
         if (placement is null)
         {
-            placement = new StudioDevicePlacement { InstanceId = instanceId };
+            placement = NewPlacement(instanceId);
             profile.Devices.Add(placement);
         }
 
@@ -192,6 +192,7 @@ public sealed partial class LightingStudioViewModel
     {
         if (_history?.Undo() is not { } project) return;
         ApplyProject(project, resetHistory: false);
+        StatusText = AppStrings.Text("LightingStudioStatusUndo");
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
     }
@@ -200,6 +201,7 @@ public sealed partial class LightingStudioViewModel
     {
         if (_history?.Redo() is not { } project) return;
         ApplyProject(project, resetHistory: false);
+        StatusText = AppStrings.Text("LightingStudioStatusRedo");
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
     }

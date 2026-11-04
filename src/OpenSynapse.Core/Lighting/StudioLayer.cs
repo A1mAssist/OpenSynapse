@@ -19,6 +19,8 @@ public enum StudioEffectKind
     Wheel,
     ChromaGenerate,
     Tidal,
+    /// <summary>Engine-only Radiate (effect 17); appended to keep old numeric values stable.</summary>
+    Radiate,
 }
 
 public enum StudioBlendMode

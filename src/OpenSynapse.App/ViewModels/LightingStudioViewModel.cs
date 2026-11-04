@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
@@ -19,20 +20,6 @@ public sealed record StudioEffectChoice(StudioEffectKind Kind, string Label);
 public sealed record StudioBlendChoice(StudioBlendMode Mode, string Label);
 
 public sealed record StudioColorChoice(string Label, string Hex, SolidColorBrush Brush);
-
-public sealed record StudioDeviceOption(
-    string Name,
-    DeviceDescriptor? Descriptor,
-    string? InstanceId = null,
-    ushort ProductId = 0,
-    int Rows = 0,
-    int Columns = 0,
-    bool IsBlade = false)
-{
-    public ushort EffectiveProductId => Descriptor?.ProductId ?? ProductId;
-    public string? EffectiveInstanceId => InstanceId ?? Descriptor?.Id;
-    public bool HasMatrix => Rows > 0 && Columns > 0;
-}
 
 /// <summary>
 /// State and commands for the lighting studio page. Preview rendering is pulled
@@ -57,8 +44,11 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _devices;
     private readonly Func<IReadOnlyList<StudioDeviceOption>>? _matrixDevices;
     private readonly StudioHidOutputRouter? _hidRouter;
+    private readonly StudioArgbOutputRouter? _argbRouter;
     private readonly StudioInputSampler? _inputSampler;
-    private string? _loadedMediaSrc;
+    private readonly DispatcherQueue? _dispatcher;
+    private readonly Dictionary<StudioEffectParams, string?> _loadedMedia =
+        new(ReferenceEqualityComparer.Instance);
     private CancellationTokenSource? _outputCancellation;
     private Task? _outputTask;
     private readonly Stopwatch _outputClock = new();
@@ -71,6 +61,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private StudioDeviceOption? _selectedDevice;
     private readonly StudioDeviceVisualLoader _visualLoader = new();
     private StudioBladeFrameSourceV2? _source;
+    private StudioDeviceOption? _appliedBlade;
     private StudioDeviceVisual? _deviceVisual;
     private CancellationTokenSource? _visualCancellation;
     private CancellationTokenSource? _visualsCancellation;
@@ -85,13 +76,24 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         Func<IReadOnlyList<DeviceDescriptor>> devices,
         Func<IReadOnlyList<StudioDeviceOption>>? matrixDevices = null,
         StudioHidOutputRouter? hidRouter = null,
-        StudioInputSampler? inputSampler = null)
+        StudioInputSampler? inputSampler = null,
+        StudioArgbOutputRouter? argbRouter = null)
     {
         _lighting = lighting;
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _matrixDevices = matrixDevices;
         _hidRouter = hidRouter;
+        _argbRouter = argbRouter;
         _inputSampler = inputSampler;
+        _dispatcher = DispatcherQueue.GetForCurrentThread();
+        if (_hidRouter is not null)
+        {
+            _hidRouter.WriteFailed += OnOutputWriteFailed;
+            _hidRouter.RestoreFailed += OnHidRestoreFailed;
+        }
+        if (_argbRouter is not null) _argbRouter.WriteFailed += OnOutputWriteFailed;
+        if (_lighting is not null) _lighting.RestoreFailed += OnHidRestoreFailed;
+
         _project = StudioProject.CreateDefault();
         LocalizeDefaultProject(_project);
         _history = new StudioHistory(_project);
@@ -112,6 +114,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             new(StudioEffectKind.Wheel, AppStrings.Text("LightingStudioEffectWheel")),
             new(StudioEffectKind.ChromaGenerate, AppStrings.Text("LightingStudioEffectGenerate")),
             new(StudioEffectKind.Tidal, AppStrings.Text("LightingStudioEffectTidal")),
+            new(StudioEffectKind.Radiate, AppStrings.Text("LightingStudioEffectRadiate")),
         ];
         BlendChoices =
         [
@@ -131,6 +134,9 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         SyncLayersFromProfile();
         _selectedLayer = Layers.FirstOrDefault();
         RefreshRegionChoices();
+        // The first screen must already show Ambient/Audio/Generate instead of a black frame.
+        _ = EnsureInputAsync();
+        _ = EnsureMediaSamplerAsync();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -206,6 +212,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             OnPropertyChanged(nameof(CanApply));
             OnPropertyChanged(nameof(PreviewRows));
             OnPropertyChanged(nameof(PreviewColumns));
+            OnPropertyChanged(nameof(NoPixelOutputVisibility));
             NotifyDocumentChanged();
             _ = LoadVisualAsync(value);
         }
@@ -224,25 +231,12 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             var previous = parameters.Effect;
             parameters.Effect = value.Kind;
             _selectedLayer?.NotifyEffectChanged();
-            var descriptor = StudioEffectCatalog.Get(value.Kind);
-            if (descriptor.Fields.Contains(StudioParameterField.ColorStops))
-            {
-                var defaults = StudioEffectCatalog.CreateDefault(value.Kind);
-                parameters.ColorStops.Clear();
-                parameters.ColorStops.AddRange(defaults.ColorStops);
-                parameters.ColorStopsCustom = defaults.ColorStopsCustom;
-            }
-
-            if (descriptor.Ranges.TryGetValue(StudioParameterField.Speed, out var speed) &&
-                !StudioEffectCatalog.Get(previous).Ranges.ContainsKey(StudioParameterField.Speed))
-            {
-                parameters.Speed = speed.Default;
-            }
+            ApplyEffectDefaults(parameters, previous);
+            _selectedLayer?.NotifyColorChanged();
 
             OnPropertyChanged();
             OnPropertyChanged(nameof(SpeedMinimum));
             OnPropertyChanged(nameof(SpeedMaximum));
-            if (_selectedRegion is null) PropagateLayerParamsToRegions();
             NotifyDocumentChanged();
             _ = EnsureMediaSamplerAsync();
             _ = EnsureInputAsync();
@@ -307,15 +301,16 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         }
     }
 
-    public bool CanApply =>
-        !_isBusy && (_lighting is not null || _hidRouter is not null) &&
-        Devices.Any(device => device.Descriptor is not null || device.HasMatrix);
-
     public bool CanRemoveLayer => _selectedLayer is not null;
 
-    public int PreviewRows => SelectedDevice is { Rows: > 0 } device ? device.Rows : BladeLightingLayout.LogicalRows;
+    public int PreviewRows => SelectedPreviewSize().Rows;
 
-    public int PreviewColumns => SelectedDevice is { Columns: > 0 } device ? device.Columns : BladeLightingLayout.LogicalColumns;
+    public int PreviewColumns => SelectedPreviewSize().Columns;
+
+    private (int Rows, int Columns) SelectedPreviewSize() =>
+        SelectedDevice is { } device
+            ? FrameSize(device)
+            : (BladeLightingLayout.LogicalRows, BladeLightingLayout.LogicalColumns);
 
     public StudioRgb[] RenderPreview(TimeSpan elapsed)
     {
@@ -329,7 +324,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         for (var index = 0; index < layers.Length; index++)
         {
             var layer = layers[index];
-            var state = GetClock(layer.Id).Sample(now, layer.Params);
+            var state = GetClock(layer.Id).Sample(now, layer.Params, rows, columns);
             timed[index] = (layer with { Opacity = state.Running ? layer.Opacity : 0 }, state.LocalSeconds);
         }
 
@@ -361,6 +356,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         if (_selectedLayer is null || _project.SelectedProfile is not { } profile) return;
         var next = profile.RemoveItem(_selectedLayer);
         SyncLayersFromProfile();
+        // SyncLayersFromProfile suppresses OnLayersChanged, so the removal needs its own undo point.
+        _history?.Capture();
         RebuildLayerRows();
         SelectedLayer = next;
         SelectedLayerRow = next is null ? null : LayerRows.FirstOrDefault(row => row.Layer == next);
@@ -388,7 +385,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     {
         if (SelectedParams is not { } parameters) return;
         parameters.Primary = StudioRgb.FromHex(hex);
-        if (_selectedRegion is null) PropagateLayerParamsToRegions();
+        _selectedLayer?.NotifyColorChanged();
         NotifyDocumentChanged();
     }
 
@@ -396,38 +393,36 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     {
         if (SelectedParams is not { } parameters) return;
         parameters.Secondary = StudioRgb.FromHex(hex);
-        if (_selectedRegion is null) PropagateLayerParamsToRegions();
+        _selectedLayer?.NotifyColorChanged();
         NotifyDocumentChanged();
     }
 
     public void TogglePlayback() => IsPlaying = !IsPlaying;
 
     /// <summary>Called by the inspector for bindings that do not raise layer notifications.</summary>
+    // Regions own their params after creation; later layer edits stay on the layer.
     public void NotifyEdited()
     {
-        if (_selectedRegion is null) PropagateLayerParamsToRegions();
-        NotifyDocumentChanged();
+        _selectedLayer?.NotifyColorChanged();
         _history?.Capture();
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        NotifyDocumentChanged();
         _ = EnsureMediaSamplerAsync();
         _ = EnsureInputAsync();
     }
 
-    private void PropagateLayerParamsToRegions()
-    {
-        if (_selectedLayer is not { Regions.Count: > 0 } layer) return;
-        foreach (var region in layer.Regions) region.Params = layer.Params.Clone();
-    }
-
     public async Task ApplyAsync()
     {
-        if (_isBusy || (_lighting is null && _hidRouter is null)) return;
+        if (_isBusy || (_lighting is null && _hidRouter is null && _argbRouter is null)) return;
         var applied = new List<string>();
+        var startOutputPump = false;
         IsBusy = true;
         try
         {
             var blade = Devices.FirstOrDefault(device =>
                 device.IsBlade || (device.Descriptor is not null &&
-                    DeviceProtocolFamilies.IsBlade(device.Descriptor.ProtocolFamily)));
+                    DeviceProtocolFamilies.UsesBladeMatrix(device.Descriptor.ProtocolFamily)));
             if (_inputSampler is not null && NeedsLiveInput())
             {
                 await _inputSampler.StartAsync(CancellationToken.None);
@@ -435,8 +430,15 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
             if (_lighting is not null && blade is not null)
             {
+                var (rows, columns) = FrameSize(blade);
                 _source = new StudioBladeFrameSourceV2(
-                    (rows, columns) => _inputSampler?.Sample(rows, columns) ?? default);
+                    blade.BladeFrameMode,
+                    rows,
+                    columns,
+                    (inputRows, inputColumns) =>
+                        _inputSampler?.Sample(inputRows, inputColumns) ?? default);
+                _appliedBlade = blade;
+                _inputClock.Restart();
                 _source.Update(BuildLayersFor(blade));
                 await _lighting.ApplyExternalAsync(_devices(), _source);
                 applied.Add(blade.Name);
@@ -448,10 +450,13 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 if (targets.Count > 0)
                 {
                     RefreshHidSnapshots(targets);
-                    StartHidPump();
+                    StartOutputPump();
+                    startOutputPump = true;
                     applied.AddRange(targets.Select(target => target.Definition.DisplayName));
                 }
             }
+
+            await ApplyArgbAsync(applied, startOutputPump);
 
             IsApplied = applied.Count > 0;
             StatusText = applied.Count == 0
@@ -471,21 +476,39 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     public async Task StopAsync()
     {
-        if (_lighting is null && _hidRouter is null) return;
+        if (_lighting is null && _hidRouter is null && _argbRouter is null) return;
         IsBusy = true;
+        var failures = new List<string>();
+        async Task StopPartAsync(Func<Task> stop)
+        {
+            try
+            {
+                await stop().ConfigureAwait(true);
+            }
+            catch (Exception exception) when (IsExpected(exception))
+            {
+                failures.Add(exception.Message);
+            }
+        }
+
         try
         {
-            await StopHidPumpAsync();
-            if (_hidRouter is not null) await _hidRouter.StopAsync();
-            if (_lighting is not null) await _lighting.StopAsync();
-            if (_inputSampler is not null) await _inputSampler.StopAsync();
-            _source = null;
-            IsApplied = false;
+            await StopPartAsync(StopOutputPumpAsync);
+            if (_hidRouter is not null) await StopPartAsync(() => _hidRouter.StopAsync());
+            if (_argbRouter is not null) await StopPartAsync(() => _argbRouter.StopAsync());
+            // Set the neutral status first; a restore-failure event that follows must win.
             StatusText = AppStrings.Text("LightingStudioStatusStopped");
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            StatusText = AppStrings.FormatText("LightingStudioStatusStopFailed", exception.Message);
+            if (_lighting is not null) await StopPartAsync(() => _lighting.StopAsync());
+            if (_inputSampler is not null) await StopPartAsync(() => _inputSampler.StopAsync().AsTask());
+            _source = null;
+            _appliedBlade = null;
+            IsApplied = false;
+            if (failures.Count > 0)
+            {
+                StatusText = AppStrings.FormatText(
+                    "LightingStudioStatusStopFailed",
+                    string.Join("; ", failures));
+            }
         }
         finally
         {
@@ -530,31 +553,31 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     }
 
     /// <summary>Imports a Chroma file and reconciles its devices against this machine.</summary>
-    public async Task ImportChromaAsync(string path)
+    public async Task<StudioImportResult?> ImportChromaAsync(string path)
     {
         try
         {
-            var connected = _devices()
-                .Where(device => device.Access == DeviceAccessState.Available)
-                .Select(device => new StudioDeviceMatch(device.ProductId, device.Id))
-                .ToArray();
+            var connected = ConnectedMatches();
             var result = await Task.Run(() => StudioChromaFileService.Import(path, connected));
             ApplyProject(result.Project);
             StatusText = result.Issues.Count == 0
                 ? AppStrings.FormatText("LightingStudioStatusImported", path)
                 : AppStrings.FormatText("LightingStudioStatusImportedIssues", path, result.Issues.Count);
+            return result;
         }
         catch (Exception exception) when (IsExpected(exception))
         {
             StatusText = AppStrings.FormatText("LightingStudioStatusLoadFailed", exception.Message);
+            return null;
         }
     }
 
-    public void ExportChroma(string path)
+    public void ExportChroma(string path, IReadOnlyCollection<string>? profileIds = null)
     {
+        EnsurePlacementIdentity();
         try
         {
-            StudioChromaFileService.Export(_project, path);
+            StudioChromaFileService.Export(_project, path, profileIds);
             StatusText = AppStrings.FormatText("LightingStudioStatusExported", path);
         }
         catch (Exception exception) when (IsExpected(exception))
@@ -574,7 +597,14 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-        DetachProfile(_project.SelectedProfile);
+        if (_hidRouter is not null)
+        {
+            _hidRouter.WriteFailed -= OnOutputWriteFailed;
+            _hidRouter.RestoreFailed -= OnHidRestoreFailed;
+        }
+        if (_argbRouter is not null) _argbRouter.WriteFailed -= OnOutputWriteFailed;
+        if (_lighting is not null) _lighting.RestoreFailed -= OnHidRestoreFailed;
+        DetachProfile(_project.SelectedProfile); CancelMediaLoads();
         _visualCancellation?.Cancel();
         _visualCancellation?.Dispose();
         _visualsCancellation?.Cancel();
@@ -584,6 +614,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         _outputCancellation?.Dispose();
         if (_inputSampler is { } sampler) _ = sampler.DisposeAsync().AsTask();
         _source = null;
+        _appliedBlade = null;
     }
 
     private StudioPlaybackClock GetClock(Guid id)
@@ -622,6 +653,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         OnPropertyChanged(nameof(Profiles));
         OnPropertyChanged(nameof(SelectedProfile));
         NotifyDocumentChanged();
+        _ = EnsureInputAsync();
+        _ = EnsureMediaSamplerAsync();
     }
 
     private void AttachProfile(StudioProfile? profile)
@@ -711,11 +744,9 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     private void NotifyDocumentChanged()
     {
-        var blade = Devices.FirstOrDefault(device =>
-            device.IsBlade || (device.Descriptor is not null &&
-                DeviceProtocolFamilies.IsBlade(device.Descriptor.ProtocolFamily)));
-        if (_source is not null && blade is not null) _source.Update(BuildLayersFor(blade));
+        if (_source is not null && _appliedBlade is not null) _source.Update(BuildLayersFor(_appliedBlade));
         if (IsApplied && _hidRouter is not null) RefreshHidSnapshots();
+        if (IsApplied && _argbRouter is not null) RefreshArgbSnapshots(_argbRouter.GetTargets());
         DocumentChanged?.Invoke(this, EventArgs.Empty);
     }
 

@@ -3074,7 +3074,13 @@
   <data name="LightingStudioApply" xml:space="preserve"><value>Apply to device</value></data>
   <data name="LightingStudioStop" xml:space="preserve"><value>Stop</value></data>
   <data name="LightingStudioDeviceLabel" xml:space="preserve"><value>Device</value></data>
-  <data name="LightingStudioNoDevice" xml:space="preserve"><value>No Blade keyboard detected</value></data>
+  <data name="LightingStudioLayers" xml:space="preserve"><value>Layers</value></data>
+  <data name="LightingStudioDocument" xml:space="preserve"><value>Document</value></data>
+  <data name="LightingStudioGroup" xml:space="preserve"><value>Group</value></data>
+  <data name="LightingStudioNoDevice" xml:space="preserve"><value>No editable matrix device detected</value></data>
+  <data name="LightingStudioDeviceNoPixelOutput" xml:space="preserve"><value>No per-pixel output. This device cannot receive Studio frames; the canvas is preview-only and Apply skips it.</value></data>
+  <data name="LightingStudioZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="LightingStudioZoomOut" xml:space="preserve"><value>Zoom out</value></data>
   <data name="LightingStudioNameLabel" xml:space="preserve"><value>Studio name</value></data>
   <data name="LightingStudioUntitled" xml:space="preserve"><value>Untitled Studio</value></data>
   <data name="LightingStudioAdd" xml:space="preserve"><value>Add</value></data>
@@ -3125,6 +3131,7 @@
   <data name="LightingStudioEffectWheel" xml:space="preserve"><value>Wheel</value></data>
   <data name="LightingStudioEffectGenerate" xml:space="preserve"><value>Image</value></data>
   <data name="LightingStudioEffectTidal" xml:space="preserve"><value>Tidal</value></data>
+  <data name="LightingStudioEffectRadiate" xml:space="preserve"><value>Radiate</value></data>
   <data name="LightingStudioBlendNormal" xml:space="preserve"><value>Normal</value></data>
   <data name="LightingStudioBlendAdd" xml:space="preserve"><value>Add</value></data>
   <data name="LightingStudioBlendMultiply" xml:space="preserve"><value>Multiply</value></data>
@@ -3139,6 +3146,7 @@
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>White</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>Select a layer and adjust its parameters; the preview updates live.</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>Loading device layout...</value></data>
+  <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>Keyboard input ignored: the {0} layout is not loaded yet.</value></data>
   <data name="LightingStudioStatusLayoutFailed" xml:space="preserve"><value>Using the matrix layout: {0}</value></data>
   <data name="LightingStudioStatusSelectLayer" xml:space="preserve"><value>Select a layer first.</value></data>
   <data name="LightingStudioStatusSelectLeds" xml:space="preserve"><value>Select LEDs on the canvas first.</value></data>
@@ -3146,13 +3154,32 @@
   <data name="LightingStudioStatusRegionCleared" xml:space="preserve"><value>Regions cleared; the layer covers the whole device.</value></data>
   <data name="LightingStudioApplySelection" xml:space="preserve"><value>Apply selection</value></data>
   <data name="LightingStudioSelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="LightingStudioStatusDeviceWriteFailed" xml:space="preserve"><value>Frame write to {0} failed, retrying</value></data>
+  <data name="LightingStudioImportIssuesTitle" xml:space="preserve"><value>Imported with {0} item(s) to review</value></data>
+  <data name="LightingStudioExportProfilesTitle" xml:space="preserve"><value>Profiles to export</value></data>
+  <data name="LightingStudioStatusRestoreFailed" xml:space="preserve"><value>{0} could not restore its original lighting</value></data>
+  <data name="LightingStudioStatusLayoutFallback" xml:space="preserve"><value>Layout unavailable; using the matrix grid.</value></data>
+  <data name="LightingStudioExportProfilesConfirm" xml:space="preserve"><value>Export</value></data>
+  <data name="LightingStudioImportIssueLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="LightingStudioImportIssuesClose" xml:space="preserve"><value>OK</value></data>
+  <data name="LightingStudioImportIssueMissingDevice" xml:space="preserve"><value>Missing devices</value></data>
+  <data name="LightingStudioImportIssueAmbiguousDevice" xml:space="preserve"><value>Ambiguous device matches</value></data>
+  <data name="LightingStudioImportIssueRemappedDevice" xml:space="preserve"><value>Devices remapped</value></data>
+  <data name="LightingStudioImportIssueRemappedLeds" xml:space="preserve"><value>LEDs remapped</value></data>
+  <data name="LightingStudioImportIssueDeviceDropped" xml:space="preserve"><value>Devices dropped</value></data>
+  <data name="LightingStudioStatusTidalCenterSet" xml:space="preserve"><value>Tidal centre moved to the picked LED.</value></data>
+  <data name="LightingStudioRotateDevice.Content" xml:space="preserve"><value>↻</value></data>
+  <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Rotate 90°</value></data>
+  <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Rotate 90°</value></data>
   <data name="LightingStudioClearSelection" xml:space="preserve"><value>Clear region</value></data>
   <data name="LightingStudioStatusLayerAdded" xml:space="preserve"><value>Added {0}</value></data>
   <data name="LightingStudioStatusLayerRemoved" xml:space="preserve"><value>Layer removed</value></data>
-  <data name="LightingStudioStatusNoDevice" xml:space="preserve"><value>No available Blade keyboard was found.</value></data>
+  <data name="LightingStudioStatusNoDevice" xml:space="preserve"><value>No supported lighting device was found.</value></data>
   <data name="LightingStudioStatusApplied" xml:space="preserve"><value>Applied to {0}.</value></data>
   <data name="LightingStudioStatusApplyFailed" xml:space="preserve"><value>Apply failed: {0}</value></data>
-  <data name="LightingStudioStatusStopped" xml:space="preserve"><value>Stopped and restored the device effect.</value></data>
+  <data name="LightingStudioStatusStopped" xml:space="preserve"><value>Stopped.</value></data>
+  <data name="LightingStudioStatusUndo" xml:space="preserve"><value>Undone.</value></data>
+  <data name="LightingStudioStatusRedo" xml:space="preserve"><value>Redone.</value></data>
   <data name="LightingStudioStatusStopFailed" xml:space="preserve"><value>Stop failed: {0}</value></data>
   <data name="LightingStudioStatusSaved" xml:space="preserve"><value>Saved to {0}</value></data>
   <data name="LightingStudioStatusSaveFailed" xml:space="preserve"><value>Save failed: {0}</value></data>
@@ -3173,13 +3200,24 @@
   <data name="LightingStudioParamWidth" xml:space="preserve"><value>Width</value></data>
   <data name="LightingStudioParamAngle" xml:space="preserve"><value>Angle</value></data>
   <data name="LightingStudioParamSplit" xml:space="preserve"><value>Split</value></data>
+  <data name="LightingStudioParamCenterPoint" xml:space="preserve"><value>Center point</value></data>
+  <data name="LightingStudioParamCenterPointReset" xml:space="preserve"><value>Reset to center</value></data>
+  <data name="LightingStudioParamCenterX" xml:space="preserve"><value>X</value></data>
+  <data name="LightingStudioParamCenterY" xml:space="preserve"><value>Y</value></data>
+  <data name="LightingStudioParamCenterRow" xml:space="preserve"><value>Row</value></data>
+  <data name="LightingStudioParamCenterCol" xml:space="preserve"><value>Column</value></data>
+  <data name="LightingStudioParamCounterclockwise" xml:space="preserve"><value>Inward (counterclockwise)</value></data>
   <data name="LightingStudioParamDensity" xml:space="preserve"><value>Density</value></data>
   <data name="LightingStudioParamBoost" xml:space="preserve"><value>Boost</value></data>
   <data name="LightingStudioParamAutoBoost" xml:space="preserve"><value>Auto boost</value></data>
   <data name="LightingStudioParamDecay" xml:space="preserve"><value>Decay</value></data>
   <data name="LightingStudioParamScreen" xml:space="preserve"><value>Screen area</value></data>
-  <data name="LightingStudioParamScreenRect" xml:space="preserve"><value>Custom region</value></data>
-  <data name="LightingStudioParamScreenRectHint" xml:space="preserve"><value>Edit the custom region on the canvas.</value></data>
+  <data name="LightingStudioParamScreenRect" xml:space="preserve"><value>Custom effect region</value></data>
+  <data name="LightingStudioParamScreenRectHint" xml:space="preserve"><value>Used when Screen area is Custom.</value></data>
+  <data name="LightingStudioParamScreenRectReset" xml:space="preserve"><value>Reset custom region</value></data>
+  <data name="LightingStudioParamCaptureRegion" xml:space="preserve"><value>Screen capture region (%)</value></data>
+  <data name="LightingStudioParamCaptureRegionHint" xml:space="preserve"><value>Drag the selection or enter 0–100% values. Applies to all Ambient layers.</value></data>
+  <data name="LightingStudioParamCaptureRegionReset" xml:space="preserve"><value>Reset to full screen</value></data>
   <data name="LightingStudioParamBlur" xml:space="preserve"><value>Blur</value></data>
   <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>Media source</value></data>
   <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>Generate config (JSON)</value></data>
@@ -3202,6 +3240,12 @@
   <data name="LightingStudioGeneratePatternSection" xml:space="preserve"><value>Pattern</value></data>
   <data name="LightingStudioGenerateAi" xml:space="preserve"><value>AI color (local model required)</value></data>
   <data name="LightingStudioGenerateColorSource" xml:space="preserve"><value>Color source</value></data>
+  <data name="LightingStudioGenerateRandomize" xml:space="preserve"><value>Randomize</value></data>
+  <data name="LightingStudioGeneratePrevious" xml:space="preserve"><value>Previous</value></data>
+  <data name="LightingStudioGenerateNext" xml:space="preserve"><value>Next</value></data>
+  <data name="LightingStudioGenerateHistory" xml:space="preserve"><value>History</value></data>
+  <data name="LightingStudioGenerateHistoryPosition" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="LightingStudioGenerateHistoryEmpty" xml:space="preserve"><value>No presets yet</value></data>
   <data name="LightingStudioResetPalette" xml:space="preserve"><value>Reset palette</value></data>
   <data name="LightingStudioSeconds" xml:space="preserve"><value>{0:0.###} s</value></data>
   <data name="LightingStudioImport" xml:space="preserve"><value>Import</value></data>
@@ -3215,4 +3259,10 @@
   <data name="LightingStudioScreenRight" xml:space="preserve"><value>Right</value></data>
   <data name="LightingStudioScreenBottom" xml:space="preserve"><value>Bottom</value></data>
   <data name="LightingStudioScreenCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="LightingStudioStatusMediaUnavailable" xml:space="preserve"><value>Media {0} could not be loaded; using the procedural fallback. {1}</value></data>
+  <data name="LightingStudioStatusMediaDecodeFallback" xml:space="preserve"><value>Media {0} could not be fully decoded; using a static thumbnail. {1}</value></data>
+  <data name="LightingStudioMediaUnavailableReason" xml:space="preserve"><value>The file is missing or its format is unsupported.</value></data>
+  <data name="LightingStudioProject" xml:space="preserve"><value>Project</value></data>
+  <data name="LightingStudioMore" xml:space="preserve"><value>More</value></data>
+  <data name="LightingStudioProfileTitle" xml:space="preserve"><value>Profile name</value></data>
 </root>

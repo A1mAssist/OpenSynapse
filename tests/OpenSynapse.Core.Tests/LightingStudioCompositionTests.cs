@@ -19,7 +19,26 @@ public sealed class LightingStudioCompositionTests
         var state = clock.Sample(5, parameters);
 
         Assert.True(state.Running);
-        Assert.InRange(state.LocalSeconds, 0.45, 0.55);
+        // Breathing's visible cycle is half of DurationMs, so a 1s duration is a 0.5s cycle.
+        Assert.InRange(state.LocalSeconds, 0.2, 0.3);
+    }
+
+    [Fact]
+    public void BreathingStopsAfterTheVisibleCycle()
+    {
+        var clock = new StudioPlaybackClock();
+        var parameters = new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Breathing,
+            PlaybackStart = StudioPlaybackStart.OnPress,
+            PlaybackEnd = StudioPlaybackEnd.After,
+            DurationMs = 14_000,
+            Cycles = 1,
+        };
+        clock.Start(0);
+
+        Assert.True(clock.Sample(6.9, parameters, 6, 17).Running);
+        Assert.False(clock.Sample(7.1, parameters, 6, 17).Running);
     }
 
     [Fact]
@@ -38,6 +57,42 @@ public sealed class LightingStudioCompositionTests
 
         Assert.True(clock.Sample(1.5, parameters).Running);
         Assert.False(clock.Sample(2.5, parameters).Running);
+    }
+
+    [Fact]
+    public void WheelAfterOneCycleStopsAtAFullRotation()
+    {
+        var clock = new StudioPlaybackClock();
+        var parameters = new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Wheel,
+            PlaybackStart = StudioPlaybackStart.OnPress,
+            PlaybackEnd = StudioPlaybackEnd.After,
+            Speed = 60,
+            Cycles = 1,
+        };
+        clock.Start(0);
+
+        Assert.True(clock.Sample(5.9, parameters).Running);
+        Assert.False(clock.Sample(6.1, parameters).Running);
+    }
+
+    [Fact]
+    public void MissingDurationUsesTheRendererFallbackCycle()
+    {
+        var clock = new StudioPlaybackClock();
+        var parameters = new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Reactive,
+            PlaybackStart = StudioPlaybackStart.OnPress,
+            PlaybackEnd = StudioPlaybackEnd.After,
+            DurationMs = 0,
+            Cycles = 1,
+        };
+        clock.Start(0);
+
+        Assert.True(clock.Sample(0.9, parameters).Running);
+        Assert.False(clock.Sample(1.1, parameters).Running);
     }
 
     [Fact]

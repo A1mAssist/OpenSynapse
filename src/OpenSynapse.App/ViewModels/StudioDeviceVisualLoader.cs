@@ -12,13 +12,18 @@ public sealed class StudioDeviceVisualLoader : IDisposable
 {
     private readonly HttpClient _http;
     private readonly StudioManifestService _service;
+    private readonly StudioProductImageService _images;
 
     public StudioDeviceVisualLoader(string? cacheDirectory = null)
     {
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         _service = new StudioManifestService(
             _http,
-            cacheDirectory ?? AppDataPaths.Combine("lighting-studio", "manifests"));
+            cacheDirectory ?? AppDataPaths.Combine("lighting-studio", "manifests"),
+            TimeSpan.FromMinutes(10));
+        _images = new StudioProductImageService(
+            _http,
+            AppDataPaths.Combine("lighting-studio", "product-images"));
     }
 
     public Task<StudioDeviceVisual?> LoadAsync(DeviceDescriptor device, CancellationToken cancellationToken)
@@ -34,6 +39,12 @@ public sealed class StudioDeviceVisualLoader : IDisposable
         if (result.Manifest is null) return null;
         return StudioDeviceVisualBuilder.Build(result.Manifest, instanceId, name);
     }
+
+    public Task<StudioProductImage> LoadProductImageAsync(
+        ushort productId,
+        string? name,
+        CancellationToken cancellationToken) =>
+        _images.GetAsync(productId, name, cancellationToken);
 
     public void Dispose() => _http.Dispose();
 }

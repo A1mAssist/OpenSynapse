@@ -179,6 +179,74 @@ public sealed class StudioSynapse3ImportTests
         Assert.Equal(StudioEffectKind.Audio, profile.Items[1].Params.Effect);
     }
 
+    [Fact]
+    public void GroupDeclaredAfterItsChildrenStillNestsThem()
+    {
+        const string xml = """
+            <LightingEffects>
+              <Name>Ordered</Name>
+              <EffectLayers>
+                <EffectLayer><Effect>static</Effect><Visible>true</Visible><GroupId>G</GroupId></EffectLayer>
+                <EffectLayer><Effect>none</Effect><Visible>true</Visible><GroupId>G</GroupId></EffectLayer>
+              </EffectLayers>
+            </LightingEffects>
+            """;
+
+        var profile = Assert.Single(StudioSynapse3Import.ParseProfiles(xml));
+        var group = Assert.Single(profile.Items);
+
+        Assert.True(group.IsGroup);
+        Assert.Equal("G", group.Title);
+        Assert.Equal(StudioEffectKind.Solid, Assert.Single(group.Children).Params.Effect);
+    }
+
+    [Fact]
+    public void RejectsMalformedXmlWithInvalidDataException()
+    {
+        Assert.Throws<InvalidDataException>(() => StudioSynapse3Import.ParseProfiles("<LightingEffects><Name>"));
+    }
+
+    [Fact]
+    public void ZipWithOnlyUnreadableEntriesFailsWithInvalidDataException()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"opensynapse-syn3-{Guid.NewGuid():N}.zip");
+        try
+        {
+            using (var archive = ZipFile.Open(path, ZipArchiveMode.Create))
+                AddEntry(archive, "thumbnail.bin", "not xml");
+
+            var error = Assert.Throws<InvalidDataException>(() => StudioSynapse3Import.Import(path, []));
+
+            Assert.Contains("no readable", error.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void ZipWithMalformedEntryKeepsTheValidProfile()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"opensynapse-syn3-{Guid.NewGuid():N}.zip");
+        try
+        {
+            using (var archive = ZipFile.Open(path, ZipArchiveMode.Create))
+            {
+                AddEntry(archive, "broken.xml", "<LightingEffects>");
+                AddEntry(archive, "profile.xml", ProfileXml);
+            }
+
+            var result = StudioSynapse3Import.Import(path, []);
+
+            Assert.Equal("Gaming", Assert.Single(result.Project.Profiles).Title);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static void AddEntry(ZipArchive archive, string name, string content)
     {
         var entry = archive.CreateEntry(name);

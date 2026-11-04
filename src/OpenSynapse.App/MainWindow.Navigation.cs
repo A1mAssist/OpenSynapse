@@ -1,8 +1,10 @@
+using System.Collections.Specialized;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Devices;
 using Windows.Graphics;
 using Windows.UI;
 
@@ -10,6 +12,10 @@ namespace OpenSynapse.App;
 
 public sealed partial class MainWindow
 {
+    private int _studioRefreshQueued;
+    private bool _studioDevicesDirty;
+    private string _studioDeviceSignature = string.Empty;
+
     internal void RequestNavigation(string page) => _dispatcherQueue.TryEnqueue(() =>
     {
         if (StringComparer.Ordinal.Equals(page, "about"))
@@ -45,9 +51,90 @@ public sealed partial class MainWindow
         {
             UpdatePerformanceSamplingState();
         }
+        if (args.PropertyName == nameof(RefreshWorkspace.LastRefreshText))
+        {
+            RequestStudioDeviceRefresh();
+        }
         ProfilesPage.OnViewModelPropertyChanged(args.PropertyName);
         DevicesPage.OnViewModelPropertyChanged(args.PropertyName);
     }
+
+    private void OnRazerHidDevicesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
+        RequestStudioDeviceRefresh();
+
+    /// <summary>Coalesces device events into one Studio refresh on the dispatcher.</summary>
+    private void RequestStudioDeviceRefresh()
+    {
+        if (Interlocked.Exchange(ref _studioRefreshQueued, 1) != 0) return;
+        _dispatcherQueue.TryEnqueue(RefreshStudioDevicesIfCurrent);
+    }
+
+    private void RefreshStudioDevicesIfCurrent()
+    {
+        Interlocked.Exchange(ref _studioRefreshQueued, 0);
+        if (_lifetime.IsCancellationRequested) return;
+        if (LightingStudioPage.Visibility != Visibility.Visible || !AppWindow.IsVisible)
+        {
+            // A hidden page only records the change; navigation refreshes once on entry.
+            _studioDevicesDirty = true;
+            return;
+        }
+
+        var signature = StudioDeviceSignature();
+        if (!_studioDevicesDirty &&
+            StringComparer.Ordinal.Equals(signature, _studioDeviceSignature)) return;
+        _studioDeviceSignature = signature;
+        _studioDevicesDirty = false;
+        _ = LightingStudioPage.RefreshDevicesFromHostAsync();
+    }
+
+    /// <summary>The Studio list is built from these three live sources.</summary>
+    private string StudioDeviceSignature() =>
+        string.Join(
+            "|",
+            _viewModel.CurrentDeviceDescriptors
+                .Where(device => device.Access == DeviceAccessState.Available)
+                .OrderBy(device => device.ProductId)
+                .ThenBy(device => device.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(device => $"{device.ProductId:X4}:{device.Id}:{device.Access}")) +
+        "#" + string.Join(
+            "|",
+            _viewModel.RazerHid.Devices
+                .OrderBy(row => row.Connection.InstanceId, StringComparer.OrdinalIgnoreCase)
+                .Select(row =>
+                    $"{row.Connection.InstanceId}:{row.Connection.Definition.ProductId}:" +
+                    $"{row.Connection.Definition.MatrixDimensions?.Rows}x" +
+                    $"{row.Connection.Definition.MatrixDimensions?.Columns}:{row.Connection.IsReady}")) +
+        "#" + (_viewModel.RazerHid.ArgbConnection?.InstanceId ?? string.Empty);
+
+#if DEBUG
+    /// <summary>Lets background UI QA open a page without synthesizing pointer input.</summary>
+    private void StartPageIfRequested()
+    {
+        var page = Environment.GetEnvironmentVariable("OPENSSYNAPSE_START_PAGE");
+        if (string.IsNullOrWhiteSpace(page)) return;
+        if (int.TryParse(Environment.GetEnvironmentVariable("OPENSSYNAPSE_START_PAGE_DELAY_MS"), out var delay) &&
+            delay > 0)
+        {
+            var timer = _dispatcherQueue.CreateTimer();
+            timer.Interval = TimeSpan.FromMilliseconds(delay);
+            timer.IsRepeating = false;
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop();
+                Environment.SetEnvironmentVariable("OPENSSYNAPSE_START_PAGE_DELAY_MS", null);
+                StartPageIfRequested();
+            };
+            timer.Start();
+            return;
+        }
+
+        RootNavigationView.SelectedItem = RootNavigationView.MenuItems
+            .Concat(RootNavigationView.FooterMenuItems)
+            .OfType<NavigationViewItem>()
+            .FirstOrDefault(item => StringComparer.Ordinal.Equals(item.Tag as string, page));
+    }
+#endif
 
     private void NavigationChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
@@ -62,6 +149,9 @@ public sealed partial class MainWindow
         if (page == "studio")
         {
             LightingStudioPage.OnNavigatedTo();
+            // Entry already refreshes both HID and ARGB; start clean.
+            _studioDevicesDirty = false;
+            _studioDeviceSignature = StudioDeviceSignature();
         }
         else
         {

@@ -16,6 +16,7 @@ public enum StudioLayerType
 /// </summary>
 public sealed class StudioProject : INotifyPropertyChanged
 {
+    /// <summary>Written as <c>openSynapse.schemaVersion</c>; readers reject newer documents.</summary>
     public const int CurrentSchemaVersion = 2;
     private string _name = "Untitled Studio";
     private string? _selectedProfileId;
@@ -59,7 +60,7 @@ public sealed class StudioProject : INotifyPropertyChanged
     public static StudioProject CreateDefault()
     {
         var project = new StudioProject();
-        var profile = new StudioProfile("Default");
+        var profile = new StudioProfile("Default") { IsDefault = true };
         profile.Items.Add(StudioLayerItem.CreateLayer("Background", StudioEffectKind.Solid));
         project.Profiles.Add(profile);
         project.SelectedProfileId = profile.Id;
@@ -131,6 +132,7 @@ public sealed class StudioProject : INotifyPropertyChanged
 public sealed class StudioProfile : INotifyPropertyChanged
 {
     private string _title;
+    private bool _isDefault;
 
     public StudioProfile(string title)
     {
@@ -142,6 +144,21 @@ public sealed class StudioProfile : INotifyPropertyChanged
 
     /// <summary>Twelve lowercase hex characters, matching the Chroma export ids.</summary>
     public string Id { get; init; }
+
+    /// <summary>
+    /// Chroma's optional <c>default</c> profile marker. Import normalizes a
+    /// document to exactly one default profile, falling back to the first.
+    /// </summary>
+    public bool IsDefault
+    {
+        get => _isDefault;
+        set
+        {
+            if (_isDefault == value) return;
+            _isDefault = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsDefault)));
+        }
+    }
 
     public string Title
     {
@@ -315,8 +332,20 @@ public sealed class StudioLayerItem : INotifyPropertyChanged
     /// <summary>Effect kind for the layer panel; forwards to <see cref="Params"/>.</summary>
     public StudioEffectKind Effect => Params.Effect;
 
+    /// <summary>Primary swatch for the layer panel; forwards to <see cref="Params"/>.</summary>
+    public StudioRgb PrimaryColor => Params.Primary;
+
+    /// <summary>Secondary swatch for the layer panel; forwards to <see cref="Params"/>.</summary>
+    public StudioRgb SecondaryColor => Params.Secondary;
+
     /// <summary>Raises <see cref="Effect"/> after the params effect changes in place.</summary>
     public void NotifyEffectChanged() => Raise(nameof(Effect));
+
+    public void NotifyColorChanged()
+    {
+        Raise(nameof(PrimaryColor));
+        Raise(nameof(SecondaryColor));
+    }
 
     public ObservableCollection<StudioRegion> Regions { get; } = new();
 
@@ -412,8 +441,9 @@ public sealed class StudioRegionDevice
 }
 
 /// <summary>
-/// One LED inside a region. Keyboard keys carry InputType/InputData so an
-/// import can remap them onto a different layout; other devices use region ids.
+/// One LED inside a region. Keyboard keys keep InputType/InputData from the
+/// file; this importer preserves them as authored instead of rebuilding
+/// coordinates from a different layout.
 /// </summary>
 public readonly record struct StudioLedRef(
     int Row,
@@ -421,7 +451,8 @@ public readonly record struct StudioLedRef(
     int? RegionId = null,
     int? RegionIndex = null,
     string? InputType = null,
-    string? InputData = null);
+    string? InputData = null,
+    string? InstanceId = null);
 
 /// <summary>One device placement from the profile's Chroma devices array.</summary>
 public sealed class StudioDevicePlacement
@@ -461,6 +492,21 @@ public sealed class StudioDevicePlacement
     /// <summary>0, 90, 180 or 270 degrees.</summary>
     public int Rotation { get; set; }
 
+    /// <summary>Parent device's product id; empty when the placement has no parent.</summary>
+    public string? ParentId { get; set; }
+
+    /// <summary>Canvas x of the parent when this placement was attached.</summary>
+    public double? ParentX { get; set; }
+
+    /// <summary>Canvas y of the parent when this placement was attached.</summary>
+    public double? ParentY { get; set; }
+
+    /// <summary>Placement slot Chroma picked under <see cref="ParentId"/>.</summary>
+    public int? PlacementIndex { get; set; }
+
+    /// <summary>Raw LED snapshot Chroma keeps to remap effects when the layout changes.</summary>
+    public string? LedRefJson { get; set; }
+
     public StudioDevicePlacement Clone() => new()
     {
         Id = Id,
@@ -478,5 +524,10 @@ public sealed class StudioDevicePlacement
         X = X,
         Y = Y,
         Rotation = Rotation,
+        ParentId = ParentId,
+        ParentX = ParentX,
+        ParentY = ParentY,
+        PlacementIndex = PlacementIndex,
+        LedRefJson = LedRefJson,
     };
 }

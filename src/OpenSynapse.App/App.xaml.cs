@@ -178,6 +178,8 @@ public partial class App : Application
             razerTransport,
             registryLoad.Registry,
             _bladeModeCoordinator);
+        _bladeLightingController.MappingInputObserved += input =>
+            _window?.ForwardBladeMappingInput(input);
         _thxAudioController = new WindowsThxAudioController();
         _elevatedMacroClient = new ElevatedMacroClient();
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);

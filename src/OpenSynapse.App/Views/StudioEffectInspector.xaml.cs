@@ -74,6 +74,8 @@ public sealed partial class StudioEffectInspector : UserControl
         StudioParameterField.Width => BuildRangeSlider("LightingStudioParamWidth", nameof(StudioEffectParams.Width), descriptor.Ranges[StudioParameterField.Width]),
         StudioParameterField.Angle => BuildRangeSlider("LightingStudioParamAngle", nameof(StudioEffectParams.Angle), descriptor.Ranges[StudioParameterField.Angle], new RoundedIntConverter()),
         StudioParameterField.Split => BuildToggle("LightingStudioParamSplit", nameof(StudioEffectParams.Split), new SplitConverter()),
+        StudioParameterField.CenterPoint => BuildCenterPointRow(),
+        StudioParameterField.Counterclockwise => BuildToggle("LightingStudioParamCounterclockwise", nameof(StudioEffectParams.Counterclockwise)),
         StudioParameterField.Density => BuildRangeSlider("LightingStudioParamDensity", nameof(StudioEffectParams.Density), descriptor.Ranges[StudioParameterField.Density]),
         StudioParameterField.Boost => BuildRangeSlider("LightingStudioParamBoost", nameof(StudioEffectParams.Boost), descriptor.Ranges[StudioParameterField.Boost]),
         StudioParameterField.AutoBoost => BuildToggle("LightingStudioParamAutoBoost", nameof(StudioEffectParams.AutoBoost)),
@@ -315,76 +317,77 @@ public sealed partial class StudioEffectInspector : UserControl
         return Rowed("LightingStudioParamScreen", combo);
     }
 
-    private FrameworkElement BuildScreenRectRow()
+    private FrameworkElement BuildCenterPointRow()
     {
-        var row = new StackPanel { Spacing = 4 };
-        row.Children.Add(CreateLabel(AppStrings.Text("LightingStudioParamScreenRect")));
-        var rect = _parameters?.ScreenRect ?? new StudioScreenRect(0, 0, 1, 1);
-        var x = UnitBox("X", rect.X);
-        var y = UnitBox("Y", rect.Y);
-        var width = UnitBox("W", rect.Width);
-        var height = UnitBox("H", rect.Height);
+        var row = new StackPanel { Spacing = 6 };
+        row.Children.Add(CreateLabel(AppStrings.Text("LightingStudioParamCenterPoint")));
+        if (_parameters is null) return row;
 
-        var syncing = false;
-        ScreenRectPreview? preview = null;
+        var wheel = _parameters.Effect == StudioEffectKind.Wheel;
+        var center = StudioEffectParams.WheelCenterMaximum / 2;
+        var maximum = wheel ? StudioEffectParams.WheelCenterMaximum : 10_000d;
+        var step = wheel ? 1d : 40d;
+        var first = CenterBox(
+            AppStrings.Text(wheel ? "LightingStudioParamCenterRow" : "LightingStudioParamCenterX"),
+            wheel ? Effective(_parameters.CenterRow, center) : _parameters.CenterPointX,
+            maximum,
+            step);
+        var second = CenterBox(
+            AppStrings.Text(wheel ? "LightingStudioParamCenterCol" : "LightingStudioParamCenterY"),
+            wheel ? Effective(_parameters.CenterCol, center) : _parameters.CenterPointY,
+            maximum,
+            step);
 
-        void Apply(StudioScreenRect value, bool syncBoxes)
+        void Apply()
         {
-            if (_parameters is null) return;
-            _parameters.ScreenRect = value;
-            preview?.Render(value);
-            if (syncBoxes)
+            if (_parameters is null || double.IsNaN(first.Value) || double.IsNaN(second.Value)) return;
+            if (wheel)
             {
-                syncing = true;
-                x.Value = value.X;
-                y.Value = value.Y;
-                width.Value = value.Width;
-                height.Value = value.Height;
-                syncing = false;
+                _parameters.CenterRow = (int)Math.Round(Math.Clamp(first.Value, 0, maximum));
+                _parameters.CenterCol = (int)Math.Round(Math.Clamp(second.Value, 0, maximum));
+            }
+            else
+            {
+                _parameters.CenterPointX = Math.Clamp(first.Value, 0, maximum);
+                _parameters.CenterPointY = Math.Clamp(second.Value, 0, maximum);
             }
 
             RaiseChanged();
         }
 
-        void ApplyBoxes()
-        {
-            if (syncing) return;
-            Apply(
-                new StudioScreenRect(UnitValue(x), UnitValue(y), UnitValue(width), UnitValue(height)),
-                syncBoxes: false);
-        }
+        first.ValueChanged += (_, _) => Apply();
+        second.ValueChanged += (_, _) => Apply();
 
-        x.ValueChanged += (_, _) => ApplyBoxes();
-        y.ValueChanged += (_, _) => ApplyBoxes();
-        width.ValueChanged += (_, _) => ApplyBoxes();
-        height.ValueChanged += (_, _) => ApplyBoxes();
-
-        preview = new ScreenRectPreview(rect, value => Apply(value, syncBoxes: true));
-        row.Children.Add(preview.View);
-
-        var grid = new Grid { ColumnSpacing = 4, RowSpacing = 4 };
+        var grid = new Grid { ColumnSpacing = 4 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.Children.Add(x);
-        Grid.SetColumn(y, 1);
-        grid.Children.Add(y);
-        Grid.SetRow(width, 1);
-        grid.Children.Add(width);
-        Grid.SetRow(height, 1);
-        Grid.SetColumn(height, 1);
-        grid.Children.Add(height);
+        grid.Children.Add(first);
+        Grid.SetColumn(second, 1);
+        grid.Children.Add(second);
         row.Children.Add(grid);
+
+        var reset = new Button
+        {
+            Content = AppStrings.Text("LightingStudioParamCenterPointReset"),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        reset.Click += (_, _) =>
+        {
+            first.Value = wheel ? center : 5_000;
+            second.Value = wheel ? center : 5_000;
+        };
+        row.Children.Add(reset);
         return row;
     }
 
-    private static NumberBox UnitBox(string header, double value) => new()
+    private static double Effective(int value, int fallback) => value < 0 ? fallback : value;
+
+    private static NumberBox CenterBox(string header, double value, double maximum, double step) => new()
     {
         Header = header,
         Minimum = 0,
-        Maximum = 1,
-        SmallChange = 0.05,
+        Maximum = maximum,
+        SmallChange = step,
         SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
         Value = value,
         HorizontalAlignment = HorizontalAlignment.Stretch,

@@ -127,8 +127,11 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
         return new StudioEffectInput(
             level,
             (column, row) => pixels[row * columns + column],
-            (u, v) => SampleUv(pixels, rows, columns, u, v));
+            (u, v) => SampleUv(pixels, rows, columns, u, v),
+            _display.CaptureRegion);
     }
+
+    internal void SetCaptureRegion(StudioScreenRect region) => _display.SetCaptureRegion(region);
 
     /// <summary>
     /// Bilinearly samples a matrix snapshot at a normalized 0..1 position.

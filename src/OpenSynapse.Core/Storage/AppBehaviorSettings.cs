@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 
 namespace OpenSynapse.Core.Storage;
 
@@ -20,6 +21,7 @@ public sealed class AppBehaviorSettings
     private static readonly string SettingsPath = AppDataPaths.Combine("behavior.json");
     private static readonly object FileGate = new();
     private string? _blockedSavePath;
+    private StudioScreenRect _ambientCaptureRegion = StudioScreenRect.FullScreen;
     [JsonIgnore] public string? LoadError { get; private set; }
     [JsonIgnore] public string? RecoveryFilePath { get; private set; }
 
@@ -37,6 +39,11 @@ public sealed class AppBehaviorSettings
         [.. SupportedPerformanceCycleModes];
     public bool PadlessHyperBoostAccepted { get; set; }
     public bool AdvancedFeaturesEnabled { get; set; }
+    public StudioScreenRect AmbientCaptureRegion
+    {
+        get => _ambientCaptureRegion;
+        set => _ambientCaptureRegion = value.Clamp();
+    }
     public HashSet<int>? RefreshRateCycleHertz { get; set; }
     public string? HueBridgeHost { get; set; }
     public string? HueAppKey { get; set; }

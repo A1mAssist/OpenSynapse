@@ -21,6 +21,7 @@ public sealed class RazerHidSpecialLightingConnection
         string instanceId,
         string? devicePath,
         string? controlDevicePath,
+        string? featureDevicePath,
         IReadOnlySet<RazerHidLightingEffect> effects,
         bool supportsStaticColor,
         bool isMergedIntoAudioPage,
@@ -32,6 +33,7 @@ public sealed class RazerHidSpecialLightingConnection
         InstanceId = instanceId;
         DevicePath = devicePath;
         ControlDevicePath = controlDevicePath;
+        FeatureDevicePath = featureDevicePath;
         SupportedEffects = effects;
         SupportsStaticColor = supportsStaticColor;
         IsMergedIntoAudioPage = isMergedIntoAudioPage;
@@ -54,6 +56,7 @@ public sealed class RazerHidSpecialLightingConnection
     public bool IsReady => DevicePath is not null || ControlDevicePath is not null;
     internal string? DevicePath { get; }
     internal string? ControlDevicePath { get; }
+    internal string? FeatureDevicePath { get; }
 }
 
 public sealed class RazerHidSpecialLightingService
@@ -152,6 +155,11 @@ public sealed class RazerHidSpecialLightingService
                 ? await RazerFilterEndpointDiscovery.DiscoverAsync(ArgbProductId, cancellationToken)
                     .ConfigureAwait(false)
                 : null;
+            var featureDevicePath = argb
+                ? group.FirstOrDefault(item =>
+                    item.Access == DeviceAccessState.Available &&
+                    item.FeatureReportByteLength == RazerFeatureReport.Length)?.DevicePath
+                : null;
             var error = argb && controlDevicePath is null
                 ? "ARGB needs Razer's 0F1F control driver (PID0f1fDrv) to send the 320-byte SET_FEATURE frame; its RZCONTROL endpoint is not installed."
                 : !argb && endpoint is null
@@ -173,6 +181,7 @@ public sealed class RazerHidSpecialLightingService
                 group.Key.PhysicalDeviceKey,
                 endpoint?.DevicePath,
                 controlDevicePath,
+                featureDevicePath,
                 argb ? Effects(RazerHidLightingEffect.Custom) : definition!.Effects,
                 !argb && definition!.WritesColor,
                 mergedIntoAudioPage,
@@ -192,6 +201,29 @@ public sealed class RazerHidSpecialLightingService
         return RazerFilterControlTransport
             .SetFeatureAsync(connection.ControlDevicePath!, frame, cancellationToken)
             .AsTask();
+    }
+
+    /// <summary>
+    /// Switches the controller to the custom-frame effect on its 91-byte feature
+    /// endpoint before the router starts writing 320-byte channel frames.
+    /// </summary>
+    public async Task SetArgbCustomFrameModeAsync(
+        RazerHidSpecialLightingConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection, RazerHidSpecialLightingKind.Argb320);
+        if (connection.FeatureDevicePath is not { } path)
+        {
+            throw new InvalidOperationException(
+                "The ARGB controller did not expose its 91-byte Chroma feature interface.");
+        }
+
+        var service = new RazerChromaStandardService(
+            new RazerFeatureTransport(),
+            path,
+            TimeSpan.FromMilliseconds(20),
+            _diagnostic);
+        await service.SetCustomFrameModeAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task SetKrakenLightingAsync(

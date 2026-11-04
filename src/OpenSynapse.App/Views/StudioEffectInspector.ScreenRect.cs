@@ -12,8 +12,153 @@ namespace OpenSynapse.App.Views;
 
 public sealed partial class StudioEffectInspector
 {
-    private static double UnitValue(NumberBox box) =>
-        double.IsNaN(box.Value) ? 0 : Math.Clamp(box.Value, 0, 1);
+    private StudioScreenRect _captureRegion = StudioScreenRect.FullScreen;
+
+    public StudioScreenRect CaptureRegion
+    {
+        get => _captureRegion;
+        set => _captureRegion = value.Clamp();
+    }
+
+    public event Action<StudioScreenRect>? CaptureRegionChanged;
+
+    private static double PercentValue(NumberBox box) =>
+        (double.IsNaN(box.Value) ? 0 : Math.Clamp(box.Value, 0, 100)) / 100;
+
+    private static NumberBox PercentBox(string header, double unit, string automationPrefix)
+    {
+        var box = new NumberBox
+        {
+            Header = header,
+            Minimum = 0,
+            Maximum = 100,
+            SmallChange = 5,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+            Value = Math.Clamp(unit, 0, 1) * 100,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        AutomationProperties.SetAutomationId(box, $"{automationPrefix}{header}");
+        return box;
+    }
+
+    private FrameworkElement BuildScreenRectRow()
+    {
+        var section = new StackPanel { Spacing = 12 };
+        section.Children.Add(BuildRectRow(
+            "LightingStudioParamScreenRect",
+            "LightingStudioParamScreenRectHint",
+            "LightingStudioParamScreenRectReset",
+            "StudioEffectRect",
+            _parameters?.ScreenRect ?? StudioScreenRect.FullScreen,
+            value =>
+            {
+                if (_parameters is { } parameters) parameters.ScreenRect = value;
+                RaiseChanged();
+            }));
+        section.Children.Add(BuildCaptureRegionRow());
+        return section;
+    }
+
+    private FrameworkElement BuildCaptureRegionRow() => BuildRectRow(
+        "LightingStudioParamCaptureRegion",
+        "LightingStudioParamCaptureRegionHint",
+        "LightingStudioParamCaptureRegionReset",
+        "StudioCapture",
+        CaptureRegion,
+        value =>
+        {
+            CaptureRegion = value;
+            CaptureRegionChanged?.Invoke(value);
+            RaiseChanged();
+        });
+
+    private FrameworkElement BuildRectRow(
+        string labelKey,
+        string hintKey,
+        string resetKey,
+        string automationPrefix,
+        StudioScreenRect initial,
+        Action<StudioScreenRect> changed)
+    {
+        var row = new StackPanel { Spacing = 4 };
+        row.Children.Add(CreateLabel(AppStrings.Text(labelKey)));
+        var hint = CreateLabel(AppStrings.Text(hintKey));
+        hint.FontSize = 11;
+        hint.TextWrapping = TextWrapping.Wrap;
+        row.Children.Add(hint);
+        var rect = initial.Clamp();
+        var x = PercentBox("X", rect.X, automationPrefix);
+        var y = PercentBox("Y", rect.Y, automationPrefix);
+        var width = PercentBox("W", rect.Width, automationPrefix);
+        var height = PercentBox("H", rect.Height, automationPrefix);
+
+        var syncing = false;
+        ScreenRectPreview? preview = null;
+
+        void Apply(StudioScreenRect value, bool syncBoxes)
+        {
+            value = value.Clamp();
+            changed(value);
+            preview?.Render(value);
+            if (syncBoxes)
+            {
+                syncing = true;
+                x.Value = value.X * 100;
+                y.Value = value.Y * 100;
+                width.Value = value.Width * 100;
+                height.Value = value.Height * 100;
+                syncing = false;
+            }
+        }
+
+        void ApplyBoxes()
+        {
+            if (syncing) return;
+            Apply(
+                new StudioScreenRect(
+                    PercentValue(x),
+                    PercentValue(y),
+                    PercentValue(width),
+                    PercentValue(height)),
+                syncBoxes: true);
+        }
+
+        x.ValueChanged += (_, _) => ApplyBoxes();
+        y.ValueChanged += (_, _) => ApplyBoxes();
+        width.ValueChanged += (_, _) => ApplyBoxes();
+        height.ValueChanged += (_, _) => ApplyBoxes();
+
+        preview = new ScreenRectPreview(
+            rect,
+            value => Apply(value, syncBoxes: true),
+            AppStrings.Text(labelKey));
+
+        var grid = new Grid { ColumnSpacing = 4, RowSpacing = 4 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.Children.Add(x);
+        Grid.SetColumn(y, 1);
+        grid.Children.Add(y);
+        Grid.SetRow(width, 1);
+        grid.Children.Add(width);
+        Grid.SetRow(height, 1);
+        Grid.SetColumn(height, 1);
+        grid.Children.Add(height);
+        row.Children.Add(grid);
+
+        var reset = new Button
+        {
+            Content = AppStrings.Text(resetKey),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        AutomationProperties.SetAutomationId(reset, $"{automationPrefix}Reset");
+        reset.Click += (_, _) => Apply(StudioScreenRect.FullScreen, syncBoxes: true);
+        row.Children.Add(reset);
+        row.Children.Add(preview.View);
+        return row;
+    }
 
     /// <summary>16:9 canvas that mirrors ScreenRect; drag the body to move, the handle to resize.</summary>
     private sealed class ScreenRectPreview
@@ -32,7 +177,10 @@ public sealed partial class StudioEffectInspector
         private StudioScreenRect _startRect;
         private Point _startPoint;
 
-        public ScreenRectPreview(StudioScreenRect value, Action<StudioScreenRect> changed)
+        public ScreenRectPreview(
+            StudioScreenRect value,
+            Action<StudioScreenRect> changed,
+            string automationName)
         {
             _changed = changed;
             var accent = (SolidColorBrush)Application.Current.Resources["AccentBrush"];
@@ -44,8 +192,8 @@ public sealed partial class StudioEffectInspector
                 Height = CanvasHeight,
                 Background = canvasBrush,
             };
-            AutomationProperties.SetName(_canvas, AppStrings.Text("LightingStudioParamScreenRect"));
-            AutomationProperties.SetHelpText(_canvas, AppStrings.Text("LightingStudioParamScreenRectHint"));
+            AutomationProperties.SetName(_canvas, automationName);
+            AutomationProperties.SetHelpText(_canvas, automationName);
 
             _canvas.Children.Add(new Rectangle
             {
@@ -87,6 +235,7 @@ public sealed partial class StudioEffectInspector
                 Child = _canvas,
                 Stretch = Stretch.Uniform,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
+                MaxHeight = 150,
             };
             Render(value);
         }

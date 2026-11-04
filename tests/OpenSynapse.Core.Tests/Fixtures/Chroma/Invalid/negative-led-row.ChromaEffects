@@ -1,0 +1,1 @@
+{"version":1,"profiles":[{"id":"cccccccccccc","title":"Bad Led","devices":[],"layers":[{"id":"111111111111","type":"layer","title":"Static","name":"static","value":6,"visible":true,"params":{},"regions":[{"params":{},"devices":[{"id":"device-664-0","productId":664,"instanceId":0,"leds":[{"row":-1,"col":0}]}]}]}]}]}
