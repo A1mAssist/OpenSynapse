@@ -26,5 +26,6 @@
 
   <ItemGroup>
     <None Update="Fixtures\studio-two-tone.mp4" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures\Chroma\*.ChromaEffects" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

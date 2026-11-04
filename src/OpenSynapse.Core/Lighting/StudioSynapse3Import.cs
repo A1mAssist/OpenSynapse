@@ -283,7 +283,7 @@ internal static class StudioSynapse3Import
                 var row = (int)ReadDouble(Child(cell, "Row"));
                 var col = (int)ReadDouble(Child(cell, "Col"));
                 if (row < 0 || col < 0) continue;
-                regionDevice.Leds.Add(new StudioLedRef(row, col, InstanceId: instanceId));
+                regionDevice.Leds.Add(new StudioLedRef(row, col));
             }
         }
 
