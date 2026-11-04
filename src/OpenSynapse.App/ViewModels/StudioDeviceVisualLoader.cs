@@ -1,3 +1,4 @@
+using System.Text.Json;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
@@ -38,6 +39,26 @@ public sealed class StudioDeviceVisualLoader : IDisposable
         var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
         if (result.Manifest is null) return null;
         return StudioDeviceVisualBuilder.Build(result.Manifest, instanceId, name);
+    }
+
+    /// <summary>Loads only the LED table; the device card does not need SVG paths.</summary>
+    public async Task<StudioLedLayout?> LoadLayoutAsync(ushort productId, CancellationToken cancellationToken)
+    {
+        var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
+        if (result.Manifest?.LedConfigJson is not { Length: > 0 } json)
+        {
+            return null;
+        }
+
+        try
+        {
+            return StudioLedLayout.Parse(json);
+        }
+        catch (Exception exception) when (exception is ArgumentException or FormatException or
+            InvalidOperationException or JsonException)
+        {
+            return null;
+        }
     }
 
     public Task<StudioProductImage> LoadProductImageAsync(

@@ -36,6 +36,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     // Software frame-pump effects outlive a single apply call, so their view model must
     // stay alive instead of being disposed right after the profile is restored.
     private readonly RazerHidSoftwareLightingOwner _softwareLightingOwner;
+    private readonly StudioDeviceVisualLoader _matrixLayoutLoader = new();
     private RazerHidDeviceViewModel? _selectedDevice;
     private RazerHidKrakenViewModel? _selectedKraken;
 
@@ -364,6 +365,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             SelectedDevice = null;
         }
         SelectedKraken = null;
+        _matrixLayoutLoader.Dispose();
     }
 
     private async Task RestoreDriverModeAsync(
@@ -404,34 +406,6 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                     connection.Definition.DisplayName, exception.Message));
             }
         }
-    }
-
-    private RazerHidDeviceViewModel CreateDeviceViewModel(
-        RazerHidDeviceConnection connection)
-    {
-        RazerHidDeviceViewModel device = new(
-            _deviceService ?? throw new InvalidOperationException("RazerHid service is unavailable."),
-            connection,
-            _currentPowerSource,
-            powerState => ProfileResolver.ResolveRazerHidLighting(
-                _getProfile(),
-                connection.ToDescriptor(),
-                powerState),
-            (powerState, profile, token) => SaveLightingAsync(
-                connection,
-                powerState,
-                profile,
-                token),
-            () => IsLightingEnabled(connection),
-            () => IsChromaOverrideEnabled(connection),
-            (lightingEnabled, chromaOverrideEnabled, token) => SaveLightingSettingsAsync(
-                connection,
-                lightingEnabled,
-                chromaOverrideEnabled,
-                token),
-            _chromaIntegrationEnabled());
-        device.Onboard.LocalMacroProvider = _localMacros;
-        return device;
     }
 
     private async Task<bool> SaveLightingAsync(

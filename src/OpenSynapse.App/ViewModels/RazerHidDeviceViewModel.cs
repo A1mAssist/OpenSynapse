@@ -153,13 +153,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             ? connection.Definition.DefaultLedZone : LightingZones.FirstOrDefault();
         _selectedLightingEffect = LightingEffects.FirstOrDefault();
         _selectedPollingRate = PollingOptions.FirstOrDefault();
-        if (connection.Definition.MatrixDimensions is { } matrix &&
-            connection.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite))
-        {
-            for (byte row = 0; row < matrix.Rows; row++)
-            for (byte column = 0; column < matrix.Columns; column++)
-                MatrixCells.Add(new RazerHidMatrixCellViewModel(row, column));
-        }
+        InitializeMatrixEditor();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -171,6 +165,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             return;
         }
 
+        DisposeMatrixEditor();
         try
         {
             await StopSoftwareLightingAsync(CancellationToken.None).ConfigureAwait(false);
@@ -820,7 +815,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
 
     public Visibility MatrixVisibility => VisibleWhen(MatrixCells.Count > 0 && Has(RazerHidBackendCapability.MatrixFrameWrite));
     public ObservableCollection<RazerHidMatrixCellViewModel> MatrixCells { get; } = new();
-    public int MatrixColumns => Connection.Definition.MatrixDimensions?.Columns ?? 1;
     public bool IsMatrixBusy { get => _isMatrixBusy; private set => SetBusy(ref _isMatrixBusy, value, nameof(CanApplyMatrix)); }
     public bool CanApplyMatrix => CanUse(RazerHidBackendCapability.MatrixFrameWrite) &&
         LightingEnabled;
