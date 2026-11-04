@@ -35,12 +35,12 @@ internal static class RazerPrivateKeyCatalog
         "02EB|1=KEY_FN;103=DKM_KEYPAD_103;104=DKM_KEYPAD_104;105=KEY_ID_RIGHT_STICK_BTN",
         "02C4|247=AI_Launcher;32=BUTTON_M_01;33=BUTTON_M_02;34=BUTTON_M_03;35=BUTTON_M_04;36=BUTTON_M_05;65=BUTTON_D41;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY;96=DKM_KB_LEFTKNOB",
         "00DD|33=SensitivityStageDown;80=CycleUpProfile",
-        "00D3|210=AI_Launcher;82=CycleUpSensitivityStages;89=Razer Hypershift",
+        "00D3|210=AI_Launcher;82=CycleUpSensitivityStages;89=MultiFunctionTrigger",
         "0050|2=Key1;3=Key2;32=SensitivityStageUp;33=SensitivityStageDown;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7",
         "02D4|246=BUTTON_D2;247=AI_Launcher;32=BUTTON_M_01;33=BUTTON_M_02;34=BUTTON_M_03;35=BUTTON_M_04;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "00F1|210=Key9;32=SensitivityStageUp;33=SensitivityStageDown;80=CycleUpProfile;82=CycleUpSensitivityStages;84=ScrollModeSwitch;87=CycleUpScrollStages",
         "02B3|103=DKM_KB_LEFTKNOB;82=DIAL_CLICK",
-        "00B9|82=CycleUpSensitivityStages;89=Razer Hypershift",
+        "00B9|82=CycleUpSensitivityStages;89=MultiFunctionTrigger",
         "025E|80=MEDIA_VOLUME_DOWN;81=MEDIA_VOLUME_UP;82=MEDIA_MUTE;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "02A7|100=LEFT_BUTTON_02;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "00A7,00A8|2=Key1;3=Key2;32=SensitivityStageUp;33=SensitivityStageDown;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7;80=CycleUpProfile;82=CycleUpSensitivityStages;87=CycleUpScrollStages",
@@ -63,6 +63,10 @@ internal static class RazerPrivateKeyCatalog
         return $"Razer key {keyCode}";
     }
 
+    internal static bool SupportsThirdSideButton(ushort productId) =>
+        Mappings.TryGetValue(productId, out var mapping) &&
+        mapping.Values.Any(label => label == "MultiFunctionTrigger");
+
     private static string Friendly(string label) => label switch
     {
         "SensitivityStageUp" => "DPI +",
@@ -81,6 +85,7 @@ internal static class RazerPrivateKeyCatalog
         "MEDIA_PAUSE_PLAY" => "Play/Pause",
         "AI_Launcher" => "AI Launcher",
         "Razer Hypershift" => "HyperShift",
+        "MultiFunctionTrigger" => "Multi-function Trigger",
         "LEFT_BUTTON_01" => "Side Key 1",
         "LEFT_BUTTON_02" => "Side Key 2",
         "LEFT_BUTTON_03" => "Side Key 3",

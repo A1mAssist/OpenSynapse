@@ -41,8 +41,6 @@ public sealed class TelemetryWorkspace : INotifyPropertyChanged
 
     public event Action<DeviceBatteryReading>? BatteryObserved;
 
-    public string TelemetryTimeText => _system.TelemetryTimeText;
-
     public string CpuName => _system.CpuName;
     public string CpuValue => _system.CpuValue;
     public double CpuPercent => _system.CpuPercent;
@@ -65,6 +63,7 @@ public sealed class TelemetryWorkspace : INotifyPropertyChanged
     public string GpuMemoryText => _system.GpuMemoryText;
     public string MemoryValue => _system.MemoryValue;
     public string MemoryDetail => _system.MemoryDetail;
+    public string MemoryClockText => _system.MemoryClockText;
     public double MemoryPercent => _system.MemoryPercent;
     public string StorageValue => _system.StorageValue;
     public string StorageDetail => _system.StorageDetail;

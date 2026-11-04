@@ -18,6 +18,8 @@ public static class BladeRecoveryProtocol
     private const int LegacyMarkerVersion = 2;
     public const int MaximumMarkerBytes = 16 * 1024;
     private const int MaximumHooks = 64;
+    private const string BladeDevicePathPrefix = @"\\?\hid#vid_1532&pid_";
+    private const string FilterDevicePathPrefix = @"\\?\RZCONTROL#VID_1532&PID_";
 
     public static BladeRecoveryMarker ParseMarker(string json)
     {
@@ -213,6 +215,29 @@ public static class BladeRecoveryProtocol
         }
     }
 
+    internal static BladeRecoveryMarker RebaseToCurrentEndpoints(
+        BladeRecoveryMarker marker,
+        string devicePath,
+        string filterDevicePath)
+    {
+        ArgumentNullException.ThrowIfNull(marker);
+        if (!TryGetProductId(marker.DevicePath, BladeDevicePathPrefix, out var markerPid) ||
+            !TryGetProductId(devicePath, BladeDevicePathPrefix, out var devicePid) ||
+            markerPid != devicePid ||
+            !TryGetProductId(marker.FilterDevicePath, FilterDevicePathPrefix, out markerPid) ||
+            !TryGetProductId(filterDevicePath, FilterDevicePathPrefix, out devicePid) ||
+            markerPid != devicePid)
+        {
+            return marker;
+        }
+
+        return marker with
+        {
+            DevicePath = devicePath,
+            FilterDevicePath = filterDevicePath,
+        };
+    }
+
     private static void ValidateMarker(BladeRecoveryMarker marker)
     {
         ArgumentNullException.ThrowIfNull(marker);
@@ -229,8 +254,7 @@ public static class BladeRecoveryProtocol
 
     private static void ValidateBladeDevicePath(string? devicePath)
     {
-        const string prefix = @"\\?\hid#vid_1532&pid_";
-        if (!HasRazerPid(devicePath, prefix))
+        if (!TryGetProductId(devicePath, BladeDevicePathPrefix, out _))
         {
             throw new ArgumentException("Recovery marker devicePath is not a Razer HID path.", nameof(devicePath));
         }
@@ -238,21 +262,23 @@ public static class BladeRecoveryProtocol
 
     private static void ValidateFilterDevicePath(string? devicePath)
     {
-        const string prefix = @"\\?\RZCONTROL#VID_1532&PID_";
-        if (!HasRazerPid(devicePath, prefix))
+        if (!TryGetProductId(devicePath, FilterDevicePathPrefix, out _))
         {
             throw new ArgumentException("Recovery marker filterDevicePath is not a Razer filter endpoint.", nameof(devicePath));
         }
     }
 
-    private static bool HasRazerPid(string? devicePath, string prefix) =>
-        !string.IsNullOrWhiteSpace(devicePath) &&
-        devicePath.Length > prefix.Length + 5 &&
-        devicePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
-        devicePath[prefix.Length + 4] == '&' &&
-        ushort.TryParse(
-            devicePath.AsSpan(prefix.Length, 4),
-            NumberStyles.HexNumber,
-            CultureInfo.InvariantCulture,
-            out _);
+    private static bool TryGetProductId(string? devicePath, string prefix, out ushort productId)
+    {
+        productId = 0;
+        return !string.IsNullOrWhiteSpace(devicePath) &&
+            devicePath.Length > prefix.Length + 5 &&
+            devicePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+            devicePath[prefix.Length + 4] == '&' &&
+            ushort.TryParse(
+                devicePath.AsSpan(prefix.Length, 4),
+                NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture,
+                out productId);
+    }
 }

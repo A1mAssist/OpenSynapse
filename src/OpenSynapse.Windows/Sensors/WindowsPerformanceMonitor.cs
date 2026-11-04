@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Management;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
@@ -12,6 +13,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
     private static readonly TimeSpan StorageSampleCacheInterval = TimeSpan.FromSeconds(30);
     private readonly string _cpuName;
     private readonly CpuHardwareMonitor _cpuHardware = new();
+    private readonly Lazy<int?> _memoryClockMegahertz = new(ReadMemoryClockMegahertz);
     private readonly WindowsGpuActivityReader _gpuActivity = new();
     private readonly AmdAdlTelemetryReader _amdGpu = new();
     private readonly IntelIgclTelemetryReader _intelGpu = new();
@@ -41,6 +43,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var cpuUsage = ReadCpuUsage();
         var cpu = _cpuHardware.Read();
         ReadMemory(out var memoryUsed, out var memoryTotal);
+        var memoryClock = _memoryClockMegahertz.Value;
         ReadStorageThrottled(out var storageUsed, out var storageTotal);
         var windowsGpus = _gpuActivity.Read();
         var nvidiaActive = WindowsGpuActivityReader.IsNvidiaActive(windowsGpus);
@@ -79,7 +82,8 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
                 : nvidiaActive && nvidia is null
                     ? "NVIDIA is active, but detailed temperature, power, and frequency data are temporarily unavailable."
                     : null,
-            selected?.IsIntegrated == true ? "Shared memory" : "Dedicated memory");
+            selected?.IsIntegrated == true ? "Shared memory" : "Dedicated memory",
+            memoryClock);
     }
 
     public async ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)> SampleTemperaturesAsync(
@@ -166,6 +170,37 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         total = status.TotalPhysical;
         used = status.TotalPhysical - status.AvailablePhysical;
     }
+
+    private static int? ReadMemoryClockMegahertz()
+    {
+        try
+        {
+            using var searcher = new ManagementObjectSearcher(
+                "SELECT ConfiguredClockSpeed, Speed FROM Win32_PhysicalMemory");
+            using var results = searcher.Get();
+            var maximum = 0;
+            foreach (ManagementObject module in results)
+            {
+                using (module)
+                {
+                    var configured = ToInt32(module["ConfiguredClockSpeed"]);
+                    var speed = ToInt32(module["Speed"]);
+                    var clock = configured > 0 ? configured : speed;
+                    if (clock > maximum) maximum = clock;
+                }
+            }
+
+            return maximum > 0 ? maximum : null;
+        }
+        catch (Exception exception) when (
+            exception is ManagementException or COMException or UnauthorizedAccessException or
+            InvalidOperationException or FormatException or OverflowException)
+        {
+            return null;
+        }
+    }
+
+    private static int ToInt32(object? value) => value is null ? 0 : Convert.ToInt32(value);
 
     private static void ReadStorage(out long? used, out long? total)
     {

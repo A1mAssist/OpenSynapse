@@ -21,6 +21,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private const int GapDip = 8;
     private const int PaddingDip = 14;
     private const int PerformanceGapDip = 10;
+    private const int BatteryIconGapDip = 5;
     private const int PerformanceMinWidthDip = 150;
     private const int BoltWidthDip = 8;
     private const int BoltHeightDip = 14;
@@ -39,6 +40,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private IntPtr _batteryFont;
     private IntPtr _performanceFont;
     private IntPtr _cjkFont;
+    private IntPtr _iconFont;
     private IntPtr _tooltipTextPointer;
     private Rect _lastStatusRect;
     private TaskbarStatusSnapshot _snapshot = new(null, null, string.Empty);
@@ -259,6 +261,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         DeleteFont(ref _batteryFont);
         DeleteFont(ref _performanceFont);
         DeleteFont(ref _cjkFont);
+        DeleteFont(ref _iconFont);
         if (_statusWindow != IntPtr.Zero)
         {
             DestroyWindow(_statusWindow);

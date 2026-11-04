@@ -29,6 +29,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _gpuMemoryText = "--";
     private string _memoryValue = "--";
     private string _memoryDetail = "-- / -- GB";
+    private string _memoryClockText = "--";
     private double _memoryPercent;
     private string _storageValue = "--";
     private string _storageDetail = "-- / -- GB";
@@ -61,6 +62,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string GpuMemoryText { get => _gpuMemoryText; private set => SetField(ref _gpuMemoryText, value); }
     public string MemoryValue { get => _memoryValue; private set => SetField(ref _memoryValue, value); }
     public string MemoryDetail { get => _memoryDetail; private set => SetField(ref _memoryDetail, value); }
+    public string MemoryClockText { get => _memoryClockText; private set => SetField(ref _memoryClockText, value); }
     public double MemoryPercent { get => _memoryPercent; private set => SetField(ref _memoryPercent, value); }
     public string StorageValue { get => _storageValue; private set => SetField(ref _storageValue, value); }
     public string StorageDetail { get => _storageDetail; private set => SetField(ref _storageDetail, value); }
@@ -125,6 +127,8 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
             MemoryValue = "--";
             MemoryDetail = "-- / -- GB";
         }
+
+        MemoryClockText = FormatNumber(snapshot.MemoryClockMegahertz, "0", " MHz");
 
         if (CalculatePercent(snapshot.StorageUsedBytes, snapshot.StorageTotalBytes) is double storagePercent)
         {

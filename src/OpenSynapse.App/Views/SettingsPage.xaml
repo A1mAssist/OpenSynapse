@@ -66,10 +66,29 @@
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="TaskbarStatusTitle" Text="任务栏状态条" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Text="在任务栏显示笔记本电量和当前性能模式；只在检测到 Blade 电池时显示。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Text="在任务栏显示已连接外设的电量；检测到 Blade 时同时显示当前性能模式。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                     <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="任务栏状态条" />
                   </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="PerformanceOverlayTitle" Text="性能悬浮窗" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDescription" Text="在桌面置顶显示性能模式、CPU/GPU 温度和风扇转速；可拖动并记住位置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="PerformanceOverlayToggle" x:Name="PerformanceOverlayToggle" Grid.Column="1" Toggled="PerformanceOverlayToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="性能悬浮窗" />
+                    </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDetailedTitle" Text="详细卡片" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDetailedDescription" Text="使用较大的半透明卡片，并显示 CPU/GPU 负载折线图。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="PerformanceOverlayDetailedToggle" x:Name="PerformanceOverlayDetailedToggle" Grid.Column="1" Toggled="PerformanceOverlayDetailedToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="详细性能悬浮窗" />
+                    </Grid>
+                  </StackPanel>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">

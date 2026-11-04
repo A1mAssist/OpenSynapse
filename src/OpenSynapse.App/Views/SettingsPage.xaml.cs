@@ -59,6 +59,8 @@ public sealed partial class SettingsPage : UserControl
         LowBatteryNotificationToggle.IsOn = settings.LowBatteryNotificationsEnabled;
         TrayBatteryToggle.IsOn = settings.TrayBatteryLevelsEnabled;
         TaskbarStatusToggle.IsOn = settings.TaskbarStatusEnabled;
+        PerformanceOverlayToggle.IsOn = settings.PerformanceOverlayEnabled;
+        PerformanceOverlayDetailedToggle.IsOn = settings.PerformanceOverlayDetailed;
         ChromaRestToggle.IsOn = settings.ExperimentalChromaRestEnabled;
         ViewModel.Lighting.SetChromaIntegrationEnabled(settings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = settings.RestoreLightingAfterChromaSession;

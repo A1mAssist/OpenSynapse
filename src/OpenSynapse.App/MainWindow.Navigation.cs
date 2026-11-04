@@ -90,6 +90,7 @@ public sealed partial class MainWindow
     private void UpdatePerformanceSamplingState()
     {
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(
+            _performanceOverlayEnabled ||
             (_taskbarStatusEnabled && _viewModel.Blade.BladeProductId != 0) ||
             (AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible));
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(

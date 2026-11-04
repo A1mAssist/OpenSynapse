@@ -36,6 +36,7 @@ public sealed partial class TaskbarStatusWindow
         DeleteFont(ref _batteryFont);
         DeleteFont(ref _performanceFont);
         DeleteFont(ref _cjkFont);
+        DeleteFont(ref _iconFont);
         var scale = _dpi / 96.0;
         var displayFamily = EnsureDisplayFonts() ? "Titillium Web" : "Segoe UI Variable Text";
         _batteryFont = CreateFontW(
@@ -50,6 +51,10 @@ public sealed partial class TaskbarStatusWindow
             -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
             0, 0, 0, Gb2312Charset, 0, 0, AntialiasedQuality, DefaultPitch,
             "Microsoft YaHei UI");
+        _iconFont = CreateFontW(
+            -(int)Math.Round(15 * scale), 0, 0, 0, FwNormal,
+            0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+            "Segoe MDL2 Assets");
         if (_batteryFont == IntPtr.Zero)
         {
             _batteryFont = CreateFontW(
@@ -70,6 +75,13 @@ public sealed partial class TaskbarStatusWindow
                 -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
                 0, 0, 0, Gb2312Charset, 0, 0, AntialiasedQuality, DefaultPitch,
                 "Microsoft YaHei");
+        }
+        if (_iconFont == IntPtr.Zero)
+        {
+            _iconFont = CreateFontW(
+                -(int)Math.Round(15 * scale), 0, 0, 0, FwNormal,
+                0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+                "Segoe UI Symbol");
         }
     }
 
@@ -139,7 +151,13 @@ public sealed partial class TaskbarStatusWindow
         if (dc == IntPtr.Zero) return (int)Math.Round(BaseWidthDip * scale);
         try
         {
-            var width = PaddingDip * 2 * scale + MeasureText(dc, _batteryFont,
+            var width = PaddingDip * 2 * scale;
+            if (!string.IsNullOrWhiteSpace(_snapshot.BatteryIcon))
+            {
+                width += MeasureText(dc, _iconFont, _snapshot.BatteryIcon) +
+                    BatteryIconGapDip * scale;
+            }
+            width += MeasureText(dc, _batteryFont,
                 TaskbarStatusPolicy.FormatBattery(_snapshot.BatteryPercent));
             if (_snapshot.IsCharging == true)
             {
@@ -255,6 +273,34 @@ public sealed partial class TaskbarStatusWindow
             SetBkMode(dc, Transparent);
 
             var x = PaddingDip * scale;
+            if (!string.IsNullOrWhiteSpace(_snapshot.BatteryIcon))
+            {
+                SetTextColor(dc, secondary);
+                var iconWidth = MeasureText(dc, _iconFont, _snapshot.BatteryIcon);
+                var previousIconFont = SelectObject(dc, _iconFont);
+                try
+                {
+                    var iconRect = new Rect
+                    {
+                        Left = (int)Math.Round(x),
+                        Top = 0,
+                        Right = (int)Math.Round(x + iconWidth + 2),
+                        Bottom = client.Bottom,
+                    };
+                    DrawTextW(
+                        dc,
+                        _snapshot.BatteryIcon,
+                        _snapshot.BatteryIcon.Length,
+                        ref iconRect,
+                        DtSingleLine | DtVCenter | DtNoPrefix);
+                }
+                finally
+                {
+                    SelectObject(dc, previousIconFont);
+                }
+                x += iconWidth + BatteryIconGapDip * scale;
+            }
+
             var battery = TaskbarStatusPolicy.FormatBattery(_snapshot.BatteryPercent);
             var previousFont = SelectObject(dc, _batteryFont);
             SetTextColor(dc, primary);

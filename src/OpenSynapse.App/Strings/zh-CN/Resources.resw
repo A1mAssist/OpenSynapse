@@ -2037,8 +2037,15 @@
   <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>托盘菜单外设电量</value></data>
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>任务栏状态条</value></data>
-  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示笔记本电量和当前性能模式；只在检测到 Blade 电池时显示。</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量；检测到 Blade 时同时显示当前性能模式。</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>任务栏状态条</value></data>
+  <data name="PerformanceOverlayTitle" xml:space="preserve"><value>性能悬浮窗</value></data>
+  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面置顶显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置。</value></data>
+  <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>详细卡片</value></data>
+  <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>使用较大的半透明卡片，并显示 CPU/GPU 负载折线图。</value></data>
+  <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>详细性能悬浮窗</value></data>
+  <data name="PerformanceOverlayToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>性能悬浮窗</value></data>
+  <data name="PerformanceOverlayFanLabel" xml:space="preserve"><value>风扇</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>外设电量不足</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} 剩余电量为 {1}%。</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma 来源</value></data>
@@ -2605,11 +2612,12 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>中键</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2 (Mouse 5)</value></data>
+  <data name="MacroMouseSide3Capture" xml:space="preserve"><value>侧键 3 / 多功能键（按下捕获）</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga 侧键 {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>鼠标侧键</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga 侧键</value></data>
   <data name="MacroTriggerDevice.Text" xml:space="preserve"><value>捕获设备按键</value></data>
-  <data name="MacroCapturePromptDevice" xml:space="preserve"><value>请按下其他 Razer 设备上的按键。</value></data>
+  <data name="MacroCapturePromptDevice" xml:space="preserve"><value>请按下要绑定的鼠标侧键或 Razer 设备按键。</value></data>
   <data name="MacroRuntimeError" xml:space="preserve"><value>宏运行时错误：{0}</value></data>
   <data name="MacroSaveFailed" xml:space="preserve"><value>宏保存失败。</value></data>
   <data name="MacroCreated" xml:space="preserve"><value>已创建宏。</value></data>
@@ -3644,4 +3652,15 @@
   <data name="LightingStudioScreenRight" xml:space="preserve"><value>右侧</value></data>
   <data name="LightingStudioScreenBottom" xml:space="preserve"><value>底部</value></data>
   <data name="LightingStudioScreenCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="IntroductionV2NavigationTitle" xml:space="preserve"><value>从这里开始</value></data>
+  <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>左侧的“设备”集中管理鼠标、键盘、Blade 和耳机；宏和配置也在侧栏。</value></data>
+  <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>选择设备</value></data>
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>点设备卡片进入设置。没看到设备就点“重新探测”，并确认设备已经连接。</value></data>
+  <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>设备设置</value></data>
+  <data name="IntroductionV2MouseBody" xml:space="preserve"><value>在这里调整 DPI、轮询率、灯光和设备支持的其他选项；无线鼠标还会显示电量。修改后按对应卡片里的“保存”或“应用”，不会自动写入设备。</value></data>
+  <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>在这里调整灯光、轮询率、游戏模式和设备支持的其他选项；无线键盘还会显示电量。修改后按对应卡片里的“保存”或“应用”，不会自动写入设备。</value></data>
+  <data name="IntroductionV2BladeTitle" xml:space="preserve"><value>Blade 设置</value></data>
+  <data name="IntroductionV2BladeBody" xml:space="preserve"><value>性能模式、风扇、显卡模式和键盘灯光都在这个页面；修改后按对应按钮保存或应用。</value></data>
+  <data name="IntroductionV2NoDevicesTitle" xml:space="preserve"><value>还没有发现设备</value></data>
+  <data name="IntroductionV2NoDevicesBody" xml:space="preserve"><value>插好雷蛇设备后点“重新探测”。如果仍然看不到，检查 USB 或接收器连接；需要时可以在设置里重新打开使用引导。</value></data>
 </root>
