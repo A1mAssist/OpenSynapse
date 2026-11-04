@@ -1,11 +1,10 @@
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Razer Kraken V4 wired 64-byte report family, matching the "Billie" headset
-/// implementation in Razer's own product bundle. Every frame is an output report
-/// with the report id in byte 0, the audio transaction id in byte 2, the command
-/// class and id in bytes 7 and 8, and the payload from byte 10. General commands
-/// carry an XOR checksum in byte 62.
+/// Razer Kraken V4 wired 64-byte report family. Static colour is the same
+/// direct frame OpenRGB sends for 056B/056C: command 0F 03 with nine RGB
+/// triples. The firmware does not write a checksum for that frame. Off and
+/// wave stay on the C0 effect command, with the brightness set first.
 /// </summary>
 internal static class OpenRazerKrakenV4Protocol
 {
@@ -18,48 +17,77 @@ internal static class OpenRazerKrakenV4Protocol
 
     private const byte EffectCommandClass = 0x00;
     private const byte EffectCommandId = 0xC0;
+    private const byte BrightnessCommandId = 0xC1;
+    private const byte FrameCommandClass = 0x0F;
+    private const byte FrameCommandId = 0x03;
     private const byte EffectOff = 0x00;
-    private const byte EffectStatic = 0x01;
     private const byte EffectWave = 0x04;
+    private const byte MaxBrightness = 0xFF;
+    private const int LedCount = 9;
 
     private const int PayloadOffset = 10;
     private const int ChecksumOffset = ReportLength - 2;
 
     internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false) =>
-        [CreateEffect(EffectOff, null, isDongle)];
-
-    /// <summary>
-    /// The bundle's connect handshake is the general command 02 00 00. Synapse
-    /// sends it before it issues any lighting command.
-    /// </summary>
-    internal static byte[] CreateConnect(bool isDongle = false) =>
-        CreateGeneralReport([0x02, 0x00, 0x00], [], isDongle);
+        [CreateEffect(EffectOff, isDongle)];
 
     internal static IReadOnlyList<byte[]> CreateStatic(
         OpenRazerColor color,
         byte? intensity = null,
         bool isDongle = false) =>
-        [CreateEffect(EffectStatic, Scale(color, intensity), isDongle)];
+        [CreateBrightness(MaxBrightness, isDongle), CreateFrame(Scale(color, intensity), isDongle)];
 
     internal static IReadOnlyList<byte[]> CreateWave(byte? intensity = null, bool isDongle = false) =>
-        [CreateEffect(EffectWave, null, isDongle)];
+        [CreateBrightness(MaxBrightness, isDongle), CreateEffect(EffectWave, isDongle)];
 
     /// <summary>
-    /// Set Chroma Effect is C0 00 &lt;payload length&gt;. Static carries the
-    /// effect id plus the RGB colour; Off and Wave carry only the effect id.
+    /// Set Chroma Effect is C0 00 &lt;payload length&gt;. Off and Wave carry
+    /// only the effect id; the colour path uses the direct frame instead.
     /// </summary>
-    private static byte[] CreateEffect(
-        byte effectId,
-        OpenRazerColor? color,
-        bool isDongle)
+    private static byte[] CreateEffect(byte effectId, bool isDongle)
     {
-        var data = color is { } value
-            ? new byte[] { effectId, value.Red, value.Green, value.Blue }
-            : new byte[] { effectId };
+        var data = new[] { effectId };
         return CreateGeneralReport(
             [EffectCommandId, EffectCommandClass, checked((byte)data.Length)],
             data,
             isDongle);
+    }
+
+    /// <summary>
+    /// Set Chroma Effect Brightness is C1 00 01 with one byte from 0 to 255.
+    /// </summary>
+    private static byte[] CreateBrightness(byte brightness, bool isDongle) =>
+        CreateGeneralReport([BrightnessCommandId, 0x00, 0x01], [brightness], isDongle);
+
+    /// <summary>
+    /// Set Chroma Frame is 0F 03. The arguments are five header bytes
+    /// (0, 0, row, 0, column) followed by one RGB triple per LED. The custom
+    /// frame builder leaves byte 62 at zero; it is not checksummed.
+    /// </summary>
+    private static byte[] CreateFrame(OpenRazerColor color, bool isDongle)
+    {
+        var report = new byte[ReportLength];
+        report[0] = ReportId;
+        report[2] = TransactionId;
+        report[6] = checked((byte)(5 + (LedCount * 3)));
+        report[7] = FrameCommandClass;
+        report[8] = FrameCommandId;
+        report[9] = isDongle ? DongleFlag : WiredFlag;
+        report[PayloadOffset + 0] = 0;
+        report[PayloadOffset + 1] = 0;
+        report[PayloadOffset + 2] = 0;
+        report[PayloadOffset + 3] = 0;
+        report[PayloadOffset + 4] = LedCount - 1;
+
+        for (var index = 0; index < LedCount; index++)
+        {
+            var offset = PayloadOffset + 5 + (index * 3);
+            report[offset] = color.Red;
+            report[offset + 1] = color.Green;
+            report[offset + 2] = color.Blue;
+        }
+
+        return report;
     }
 
     /// <summary>

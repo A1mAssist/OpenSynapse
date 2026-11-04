@@ -232,14 +232,6 @@ public sealed class OpenRazerSpecialLightingService
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // Synapse sends this general command when it opens the device. The
-            // firmware ignores the lighting commands without it.
-            await _transport.SendOutputAsync(
-                connection.DevicePath!,
-                OpenRazerKrakenV4Protocol.CreateConnect(),
-                cancellationToken).ConfigureAwait(false);
-            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
-
             foreach (var report in reports)
             {
                 await _transport.SendOutputAsync(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
@@ -282,21 +274,14 @@ public sealed class OpenRazerSpecialLightingService
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _transport.SendOutputAsync(
-                connection.DevicePath!,
-                OpenRazerKrakenV4Protocol.CreateConnect(isDongle),
-                cancellationToken).ConfigureAwait(false);
-            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+            await _transport.SendOutputBatchAsync(
+                connection.DevicePath!, reports, cancellationToken).ConfigureAwait(false);
 
             foreach (var report in reports)
             {
-                var response = await _transport.SendOutputAndReadAsync(
-                    connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
                 _diagnostic?.Invoke(
                     $"kraken lighting 1532:{connection.ProductId:X4} effect={settings.Effect} " +
-                    $"report=[{Convert.ToHexString(report)}] response=" +
-                    (response is null ? "none" : $"[{Convert.ToHexString(response)}]"));
-                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+                    $"report=[{Convert.ToHexString(report)}]");
             }
         }
         finally

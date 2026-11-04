@@ -14,75 +14,44 @@ internal sealed class OpenRazerHidReportTransport
         string devicePath,
         ReadOnlyMemory<byte> report,
         CancellationToken cancellationToken = default) =>
-        SendAsync(devicePath, report, cancellationToken);
+        SendBatchAsync(devicePath, [report], cancellationToken);
 
     /// <summary>
-    /// Writes one report and reads the HID response on the same handle. The
-    /// Billie lighting commands use a request/response pair; a write-only path
-    /// leaves the device waiting for the host read.
+    /// Writes related reports through one HID handle. The Kraken V4 lighting
+    /// path depends on brightness and frame reports arriving in order.
     /// </summary>
-    internal async Task<byte[]?> SendOutputAndReadAsync(
+    internal Task SendOutputBatchAsync(
         string devicePath,
-        ReadOnlyMemory<byte> report,
+        IReadOnlyList<byte[]> reports,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
-        if (report.IsEmpty)
+        ArgumentNullException.ThrowIfNull(reports);
+        var batch = new ReadOnlyMemory<byte>[reports.Count];
+        for (var index = 0; index < reports.Count; index++)
         {
-            throw new ArgumentException("The HID report cannot be empty.", nameof(report));
+            batch[index] = reports[index];
         }
 
-        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
-        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            using var handle = NativeMethods.CreateFile(
-                devicePath,
-                NativeMethods.GenericRead | NativeMethods.GenericWrite,
-                NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
-                IntPtr.Zero,
-                NativeMethods.OpenExisting,
-                NativeMethods.FileFlagOverlapped,
-                IntPtr.Zero);
-            if (handle.IsInvalid)
-            {
-                throw new Win32Exception(
-                    Marshal.GetLastWin32Error(),
-                    "Could not open the OpenRazer HID collection.");
-            }
-
-            await using var stream = new FileStream(
-                handle, FileAccess.ReadWrite, 64, isAsync: true);
-            await stream.WriteAsync(report, cancellationToken).ConfigureAwait(false);
-
-            var buffer = new byte[64];
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(TimeSpan.FromMilliseconds(500));
-            try
-            {
-                var read = await stream.ReadAsync(buffer, timeout.Token).ConfigureAwait(false);
-                return read > 0 ? buffer[..read] : null;
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                return null;
-            }
-        }
-        finally
-        {
-            gate.Release();
-        }
+        return SendBatchAsync(devicePath, batch, cancellationToken);
     }
 
-    private async Task SendAsync(
+    private async Task SendBatchAsync(
         string devicePath,
-        ReadOnlyMemory<byte> report,
+        IReadOnlyList<ReadOnlyMemory<byte>> reports,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
-        if (report.IsEmpty)
+        if (reports.Count == 0)
         {
-            throw new ArgumentException("The HID report cannot be empty.", nameof(report));
+            throw new ArgumentException("At least one HID report is required.", nameof(reports));
+        }
+
+        foreach (var report in reports)
+        {
+            if (report.IsEmpty)
+            {
+                throw new ArgumentException("The HID report cannot be empty.", nameof(reports));
+            }
         }
 
         var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
@@ -105,17 +74,20 @@ internal sealed class OpenRazerHidReportTransport
                     throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the OpenRazer HID collection.");
                 }
 
-                var bytes = report.ToArray();
-                if (!NativeMethods.WriteFile(
-                        handle,
-                        bytes,
-                        checked((uint)bytes.Length),
-                        out var written,
-                        IntPtr.Zero) ||
-                    written != bytes.Length)
+                foreach (var report in reports)
                 {
-                    throw new Win32Exception(Marshal.GetLastWin32Error(),
-                        "OpenRazer output report write failed.");
+                    var bytes = report.ToArray();
+                    if (!NativeMethods.WriteFile(
+                            handle,
+                            bytes,
+                            checked((uint)bytes.Length),
+                            out var written,
+                            IntPtr.Zero) ||
+                        written != bytes.Length)
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(),
+                            "OpenRazer output report write failed.");
+                    }
                 }
             }, cancellationToken).ConfigureAwait(false);
         }
@@ -127,12 +99,10 @@ internal sealed class OpenRazerHidReportTransport
 
     private static class NativeMethods
     {
-        internal const uint GenericRead = 0x80000000;
         internal const uint GenericWrite = 0x40000000;
         internal const uint FileShareRead = 0x00000001;
         internal const uint FileShareWrite = 0x00000002;
         internal const uint OpenExisting = 3;
-        internal const uint FileFlagOverlapped = 0x40000000;
 
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true,
             CharSet = CharSet.Unicode)]
