@@ -298,11 +298,10 @@ internal sealed class BladeFanTelemetryReader
                 RazerCapabilityClient.CreateConfiguredRequest(device, CapabilityIds.FanTargetGet, requests[index]),
                 maximumRpm,
                 classId);
-            if (rpm is not null && rpm != current)
-            {
-                throw new InvalidOperationException($"Blade fan-zone targets do not match: {rpm} / {current} RPM.");
-            }
-            rpm = current;
+            // The two zones may hold independent targets. This method serves the
+            // single-value telemetry field, so keep the first readable zone and let
+            // the transaction path compare each zone against what it wrote.
+            rpm ??= current;
         }
 
         return rpm ?? throw new InvalidOperationException("Blade did not return a fan speed.");

@@ -72,6 +72,18 @@ public sealed class BladeAuditTransactionTests
             await reader.SetBladeFanAsync([Descriptor(0x0239)], BladeFanMode.Manual, 5500, 5500));
     }
 
+    [Fact]
+    public async Task DifferentFanZoneTargetsRemainAReadableTelemetryValue()
+    {
+        var transport = new StatefulBladeTransport(BladePerformanceMode.Custom, BladeFanMode.Manual);
+        transport.Targets[0] = 3100;
+        transport.Targets[1] = 2500;
+        var (_, fan, device) = Readers(transport, 0x02C6);
+        var blade = new RazerDeviceResolver(RazerDeviceRegistry.BuiltIn).FindReadyBlade([device])!;
+
+        Assert.Equal(3100, await fan.ReadFanTargetRpmAsync(blade, default));
+    }
+
     [Theory]
     [InlineData(BladePerformanceMode.Performance)]
     [InlineData(BladePerformanceMode.BatterySaver)]
