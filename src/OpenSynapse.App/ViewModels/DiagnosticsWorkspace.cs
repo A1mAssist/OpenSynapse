@@ -196,6 +196,9 @@ public sealed partial class DiagnosticsWorkspace
         {
             "Keyboard brightness" => ("Text_5F0C27DB", bladeName),
             "Performance and fan state" => ("DiagnosticPerformanceFan", bladeName),
+            "Performance mode" => ("DiagnosticPerformanceFan", bladeName),
+            "Fan mode" => ("DiagnosticPerformanceFan", bladeName),
+            "Fan target" => ("DiagnosticPerformanceFan", bladeName),
             "Current CPU fan speed" => ("Text_5FCEEE13", bladeName),
             "Current GPU fan speed" => ("Text_737DBF87", bladeName),
             "CPU advanced fan mode" => ("Text_BE0A43ED", bladeName),
