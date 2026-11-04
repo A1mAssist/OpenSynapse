@@ -779,11 +779,11 @@
                           <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="LeviathanAudioTitle" Text="音频" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
                           <TextBlock local:Localized.Uid="LeviathanAudioDescription" Text="均衡器、低音和输入状态通过 1354 中间件协议读取与写回。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                         </StackPanel>
-                        <Button Grid.Column="1" local:Localized.Uid="LeviathanRefreshButton" Content="刷新" Click="LeviathanRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
+                        <Button Grid.Column="1" local:Localized.Uid="LeviathanRefreshButton" Content="刷新" Click="LeviathanRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>
                       <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                       <TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
-                      <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="16" Visibility="{Binding HasState, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel Spacing="8">
                           <TextBlock local:Localized.Uid="LeviathanEqPresetLabel" Text="均衡器预设" Style="{StaticResource MetricLabelStyle}" />
                           <ComboBox ItemsSource="{Binding EqPresetOptions}" SelectedIndex="{Binding SelectedEqPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
@@ -796,8 +796,8 @@
                           <Button local:Localized.Uid="LeviathanBassApply" Content="应用低音" Click="LeviathanApplyBassClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                         </StackPanel>
                       </Grid>
-                      <TextBlock local:Localized.Uid="LeviathanEqBandsTitle" Text="10 段均衡器" Style="{StaticResource MetricLabelStyle}" />
-                      <ItemsControl ItemsSource="{Binding EqBands}" IsEnabled="{Binding CanEdit}">
+                      <TextBlock local:Localized.Uid="LeviathanEqBandsTitle" Text="10 段均衡器" Style="{StaticResource MetricLabelStyle}" Visibility="{Binding HasState, Converter={StaticResource BoolToVisibilityConverter}}" />
+                      <ItemsControl ItemsSource="{Binding EqBands}" IsEnabled="{Binding CanEdit}" Visibility="{Binding HasState, Converter={StaticResource BoolToVisibilityConverter}}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
                             <Grid ColumnDefinitions="64,*,36" ColumnSpacing="8" MinHeight="30">
@@ -808,8 +808,8 @@
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
-                      <Button local:Localized.Uid="LeviathanEqBandsApply" Content="应用自定义 EQ" Click="LeviathanApplyEqBandsClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
-                      <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                      <Button local:Localized.Uid="LeviathanEqBandsApply" Content="应用自定义 EQ" Click="LeviathanApplyEqBandsClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" Visibility="{Binding HasState, Converter={StaticResource BoolToVisibilityConverter}}" />
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="16" Visibility="{Binding HasState, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="{Binding InputSourceText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                         <TextBlock Grid.Column="1" Text="{Binding AudioIoText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </Grid>

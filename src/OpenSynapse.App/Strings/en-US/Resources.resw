@@ -2434,6 +2434,9 @@
   <data name="LeviathanAudioIoLabel" xml:space="preserve"><value>Audio I/O</value></data>
   <data name="LeviathanOptical" xml:space="preserve"><value>Optical</value></data>
   <data name="LeviathanBluetooth" xml:space="preserve"><value>Bluetooth</value></data>
+  <data name="LeviathanReadFailed" xml:space="preserve"><value>Could not read the soundbar state. Check the connection, close Razer Synapse, then refresh.</value></data>
+  <data name="LeviathanPartialRead" xml:space="preserve"><value>Some audio settings could not be read. The available controls were kept; refresh to retry.</value></data>
+  <data name="LeviathanWriteFailed" xml:space="preserve"><value>The audio setting was not applied. Close Razer Synapse, then refresh and try again.</value></data>
   <data name="LeviathanSaved" xml:space="preserve"><value>Applied</value></data>
   <data name="LeviathanPresetDefault" xml:space="preserve"><value>Default</value></data>
   <data name="LeviathanPresetGame" xml:space="preserve"><value>Game</value></data>

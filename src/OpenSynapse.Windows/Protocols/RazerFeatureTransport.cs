@@ -361,9 +361,13 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 }
 
                 var matches = usesLeviathanReportId
-                    ? RazerFeatureReport.MatchesWithTransactionChecksum(request, candidate, allowRemainingPacketsMismatch)
+                    ? RazerFeatureReport.MatchesLeviathanResponse(request, candidate, allowRemainingPacketsMismatch)
                     : RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch);
-                if (!RazerFeatureReport.MatchesReportId(candidate, responseReportId) || !matches)
+                // The 1354 middleware never checks the reply's report id; the feature
+                // collection only has one feature report and the transaction plus command
+                // already identify the exchange. Keep the id gate for other devices.
+                if ((!usesLeviathanReportId && !RazerFeatureReport.MatchesReportId(candidate, responseReportId)) ||
+                    !matches)
                 {
                     readError = $"status=0x{candidate[1]:X2}, txn=0x{candidate[2]:X2} (want 0x{request[2]:X2}), class=0x{candidate[7]:X2} (want 0x{request[7]:X2}), command=0x{candidate[8]:X2} (want 0x{request[8]:X2}), len={candidate[6]} (want {request[6]}), crc=0x{candidate[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(candidate):X2}";
                     continue;

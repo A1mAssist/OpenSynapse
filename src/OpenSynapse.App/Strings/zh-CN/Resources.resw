@@ -2860,6 +2860,9 @@
   <data name="LeviathanAudioIoLabel" xml:space="preserve"><value>音频接口</value></data>
   <data name="LeviathanOptical" xml:space="preserve"><value>光纤</value></data>
   <data name="LeviathanBluetooth" xml:space="preserve"><value>蓝牙</value></data>
+  <data name="LeviathanReadFailed" xml:space="preserve"><value>暂时读不到音箱状态。确认设备已连接并关闭雷云后点“刷新”。</value></data>
+  <data name="LeviathanPartialRead" xml:space="preserve"><value>部分音频设置读取失败，已保留可用项；可点“刷新”重试。</value></data>
+  <data name="LeviathanWriteFailed" xml:space="preserve"><value>音频设置写入失败。关闭雷云后点“刷新”重试。</value></data>
   <data name="LeviathanSaved" xml:space="preserve"><value>已应用</value></data>
   <data name="LeviathanPresetDefault" xml:space="preserve"><value>默认</value></data>
   <data name="LeviathanPresetGame" xml:space="preserve"><value>游戏</value></data>

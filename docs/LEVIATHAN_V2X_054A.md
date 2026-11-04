@@ -31,7 +31,7 @@ logical[89] = 0
 
 响应按逻辑报文的 `[0]` 状态、`[1]` transaction、`[5]` size、`[6]` class、`[7]` command 读取；Windows 层对应为 report ID 后的 `[1]`、`[2]`、`[6]`、`[7]`、`[8]`。`rzDevice25._getTransactionId()` 是 `0..31` 递增并回绕，不是固定值；当前实现由 `RazerFeatureTransport` 对 `054A` 使用 report ID `0x07`，并为每个设备路径分配循环 transaction。
 
-**响应的校验和与请求不同**：实机日志显示 054A 把 transaction id 也算进了响应校验和，而通用的范围不含它（逻辑报文 `[2..87]`）。三次探测的差值精确等于各自的 transaction id：`0x08`（固件）、`0x09`（序列号）、`0x0A`（亮度）。状态、transaction、class、command、长度全部匹配，只有校验和差这一个字节。官方 JS 从不校验响应校验和，只比对 transaction、class、command 和状态，所以官方不会碰到这个差异。`RazerFeatureReport.MatchesWithTransactionChecksum` 覆盖逻辑报文 `[1..87]`，只对 054A 启用。
+**响应的校验和与请求不同**：实机日志显示 054A 把 transaction id 也算进了响应校验和，而通用的范围不含它（逻辑报文 `[2..87]`）。三次探测的差值精确等于各自的 transaction id：`0x08`（固件）、`0x09`（序列号）、`0x0A`（亮度）。状态、transaction、class、command、长度全部匹配，只有校验和差这一个字节。官方 JS 从不校验响应校验和，只比对 transaction、class、command 和状态，所以官方不会碰到这个差异。当前 054A 路由同样只匹配 transaction、class、command，不对 checksum 或响应 report id 做硬拒绝；不同固件版本的 checksum 范围差异不能把可读设备误判成通信中断。`RazerFeatureReport.MatchesWithTransactionChecksum` 保留给需要显式校验该范围的测试，实际传输使用 `MatchesLeviathanResponse`。
 
 ## 已实现命令
 
