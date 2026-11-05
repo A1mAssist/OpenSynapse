@@ -71,6 +71,12 @@ public static class Program
             })
             .Run();
 
+        if (ProcessIntegrityLevel.IsElevated(ProcessIntegrityLevel.Current()) &&
+            DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
+        {
+            EnsureGpuService();
+        }
+
         MigrateLegacyUserData();
 
         // Velopack can restart the app with its parent directory as the working directory.
