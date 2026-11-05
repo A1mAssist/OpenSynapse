@@ -59,6 +59,25 @@ public sealed class RazerOnboardMacroService
         }
     }
 
+    /// <summary>
+    /// Reads only slot ids and name blocks. The mapping page uses this to show macro
+    /// names without pulling every macro data stream off the device.
+    /// </summary>
+    public async Task<IReadOnlyList<RazerOnboardMacroSlotInfo>> ReadSlotInfosAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var ids = await ReadIdsAsync(cancellationToken).ConfigureAwait(false);
+        var slots = new List<RazerOnboardMacroSlotInfo>(ids.Count);
+        foreach (var id in ids)
+        {
+            slots.Add(new RazerOnboardMacroSlotInfo(
+                id,
+                await ReadNameAsync(id, cancellationToken).ConfigureAwait(false)));
+        }
+
+        return slots;
+    }
+
     public async Task<IReadOnlyList<RazerOnboardMacro>> ReadAllAsync(
         CancellationToken cancellationToken = default)
     {
@@ -109,16 +128,49 @@ public sealed class RazerOnboardMacroService
         }
 
         var raw = await ReadMemoryAsync(id, dataSize, cancellationToken).ConfigureAwait(false);
-        return new RazerOnboardMacro(id, dataSize, raw, RazerOnboardMacroCodec.Decode(raw));
+        var name = await ReadNameAsync(id, cancellationToken).ConfigureAwait(false);
+        return new RazerOnboardMacro(id, dataSize, raw, RazerOnboardMacroCodec.Decode(raw), name);
+    }
+
+    /// <summary>
+    /// Reads the 250-byte name block in 64-byte pages. Firmware that does not answer
+    /// the command returns null so the slot itself remains usable by id.
+    /// </summary>
+    public async Task<RazerOnboardMacroName?> ReadNameAsync(
+        byte id,
+        CancellationToken cancellationToken = default)
+    {
+        if (id == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id));
+        }
+
+        try
+        {
+            return RazerOnboardMacroName.Decode(
+                await ReadNameRawAsync(id, cancellationToken).ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke($"onboard macro {id} name unavailable: {exception.Message}");
+            return null;
+        }
     }
 
     /// <summary>
     /// Rewrites one macro and confirms it by reading the bytes back. Callers keep the
     /// original RazerOnboardMacro.Raw so a failed round trip can be restored.
     /// </summary>
+    public Task WriteAsync(
+        byte id,
+        IReadOnlyList<OnboardMacroItem> items,
+        CancellationToken cancellationToken = default) =>
+        WriteAsync(id, items, null, cancellationToken);
+
     public async Task WriteAsync(
         byte id,
         IReadOnlyList<OnboardMacroItem> items,
+        RazerOnboardMacroName? name,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(items);
@@ -149,10 +201,19 @@ public sealed class RazerOnboardMacroService
             var backup = exists
                 ? await ReadRawAsync(id, cancellationToken).ConfigureAwait(false)
                 : null;
+            var nameBackup = exists && name is not null
+                ? await ReadNameRawAsync(id, cancellationToken).ConfigureAwait(false)
+                : null;
             try
             {
                 await WriteRawAsync(id, payload, cancellationToken).ConfigureAwait(false);
                 await VerifyRawAsync(id, payload, cancellationToken).ConfigureAwait(false);
+                if (name is not null)
+                {
+                    var encodedName = name.Encode();
+                    await WriteNameRawAsync(id, encodedName, cancellationToken).ConfigureAwait(false);
+                    await VerifyNameRawAsync(id, encodedName, cancellationToken).ConfigureAwait(false);
+                }
             }
             catch (Exception writeFailure)
             {
@@ -163,6 +224,11 @@ public sealed class RazerOnboardMacroService
                         using var restore = new CancellationTokenSource(RestoreTimeout);
                         await WriteRawAsync(id, backup, restore.Token).ConfigureAwait(false);
                         await VerifyRawAsync(id, backup, restore.Token).ConfigureAwait(false);
+                        if (nameBackup is { Length: > 0 })
+                        {
+                            await WriteNameRawAsync(id, nameBackup, restore.Token).ConfigureAwait(false);
+                            await VerifyNameRawAsync(id, nameBackup, restore.Token).ConfigureAwait(false);
+                        }
                     }
                     catch (Exception restoreFailure) when (
                         IsExpected(restoreFailure) || restoreFailure is OperationCanceledException)
@@ -175,6 +241,21 @@ public sealed class RazerOnboardMacroService
                     }
                 }
 
+                if (backup is null)
+                {
+                    try
+                    {
+                        using var restore = new CancellationTokenSource(RestoreTimeout);
+                        await DeleteAsync(id, restore.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception deleteFailure) when (
+                        IsExpected(deleteFailure) || deleteFailure is OperationCanceledException)
+                    {
+                        _diagnostic?.Invoke(
+                            $"onboard macro {id} could not be deleted after a failed write: {deleteFailure.Message}");
+                    }
+                }
+
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(writeFailure).Throw();
                 throw;
             }
@@ -183,6 +264,20 @@ public sealed class RazerOnboardMacroService
         {
             gate.Release();
         }
+    }
+
+    public async Task DeleteAsync(byte id, CancellationToken cancellationToken = default)
+    {
+        if (id == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id));
+        }
+
+        await QueryAsync(
+            transactionId => RazerOnboardMacroProtocol.DeleteMacro.CreateRequest(
+                transactionId, RazerOnboardMacroProtocol.CreateMacroIdArguments(id)),
+            $"macro {id} delete",
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task WriteRawAsync(byte id, byte[] payload, CancellationToken cancellationToken)
@@ -208,6 +303,60 @@ public sealed class RazerOnboardMacroService
                 $"macro {id} write {offset}",
                 cancellationToken).ConfigureAwait(false);
             offset += length;
+        }
+    }
+
+    private async Task<byte[]> ReadNameRawAsync(byte id, CancellationToken cancellationToken)
+    {
+        var data = new byte[RazerOnboardMacroProtocol.NameStructureSize];
+        for (var offset = 0; offset < data.Length;)
+        {
+            var length = Math.Min(RazerOnboardMacroProtocol.NameChunkSize, data.Length - offset);
+            var arguments = RazerOnboardMacroProtocol.CreateReadNameArguments(id, offset);
+            var response = await QueryAsync(
+                transactionId => RazerOnboardMacroProtocol.GetMacroName.CreateRequest(
+                    transactionId, arguments),
+                $"macro {id} name {offset}",
+                cancellationToken).ConfigureAwait(false);
+            RazerOnboardMacroProtocol.ParseNameChunk(response, id, offset, length)
+                .CopyTo(data, offset);
+            offset += length;
+        }
+
+        return data;
+    }
+
+    private async Task WriteNameRawAsync(
+        byte id,
+        byte[] data,
+        CancellationToken cancellationToken)
+    {
+        for (var offset = 0; offset < data.Length;)
+        {
+            var length = Math.Min(RazerOnboardMacroProtocol.NameChunkSize, data.Length - offset);
+            var arguments = RazerOnboardMacroProtocol.CreateWriteNameArguments(
+                id,
+                offset,
+                data.AsSpan(offset, length));
+            await QueryAsync(
+                transactionId => RazerOnboardMacroProtocol.SetMacroName.CreateRequest(
+                    transactionId, arguments),
+                $"macro {id} name write {offset}",
+                cancellationToken).ConfigureAwait(false);
+            offset += length;
+        }
+    }
+
+    private async Task VerifyNameRawAsync(
+        byte id,
+        byte[] expected,
+        CancellationToken cancellationToken)
+    {
+        var written = await ReadNameRawAsync(id, cancellationToken).ConfigureAwait(false);
+        if (!written.AsSpan().SequenceEqual(expected))
+        {
+            throw new InvalidOperationException(
+                $"Onboard macro {id} did not read back the name block that was written.");
         }
     }
 

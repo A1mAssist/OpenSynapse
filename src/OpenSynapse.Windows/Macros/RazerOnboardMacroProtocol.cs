@@ -59,8 +59,12 @@ public static class RazerOnboardMacroProtocol
     public static readonly RazerOnboardMacroCommand GetMacroMemory = new(0x06, 0x89, 80);
     public static readonly RazerOnboardMacroCommand GetMacroStorageInfo = new(0x06, 0x8E, 14);
     public static readonly RazerOnboardMacroCommand GetMacroIdList = new(0x06, 0x8B, 80);
+    public static readonly RazerOnboardMacroCommand GetMacroName = new(0x06, 0x8C, 80);
+    public static readonly RazerOnboardMacroCommand SetMacroName = new(0x06, 0x0C, 80);
 
     public const int ChunkSize = 72;
+    public const int NameStructureSize = 250;
+    public const int NameChunkSize = 64;
     public const int AllocationGranularity = 256;
     private const int ArgumentOffset = RazerFeatureReport.ArgumentsOffset;
 
@@ -184,6 +188,77 @@ public static class RazerOnboardMacroProtocol
     }
 
     public static byte[] CreateMacroIdArguments(byte macroId) => [0, macroId];
+
+    public static byte[] CreateReadNameArguments(byte macroId, int offset)
+    {
+        if (offset is < 0 or > 0xFFFF)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset));
+        }
+
+        return [0, macroId, (byte)(offset >> 8), (byte)offset];
+    }
+
+    public static byte[] CreateWriteNameArguments(
+        byte macroId,
+        int offset,
+        ReadOnlySpan<byte> data)
+    {
+        if (offset is < 0 or > 0xFFFF)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset));
+        }
+
+        if (data.Length is <= 0 or > NameChunkSize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(data));
+        }
+
+        var arguments = new byte[6 + data.Length];
+        arguments[0] = 0;
+        arguments[1] = macroId;
+        arguments[2] = (byte)(offset >> 8);
+        arguments[3] = (byte)offset;
+        arguments[4] = (byte)(NameStructureSize >> 8);
+        arguments[5] = (byte)NameStructureSize;
+        data.CopyTo(arguments.AsSpan(6));
+        return arguments;
+    }
+
+    public static byte[] ParseNameChunk(
+        ReadOnlySpan<byte> response,
+        byte expectedMacroId,
+        int expectedOffset,
+        int expectedLength)
+    {
+        var arguments = Arguments(response, 0);
+        if (expectedLength is <= 0 or > NameChunkSize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(expectedLength));
+        }
+
+        // Firmware variants either return the payload alone or repeat the id/offset
+        // header in front of it. Both shapes are accepted, but a mismatched header is
+        // not silently treated as data.
+        if (arguments.Length >= 6 + expectedLength)
+        {
+            if (arguments[0] != 0 || arguments[1] != expectedMacroId ||
+                ((arguments[2] << 8) | arguments[3]) != expectedOffset)
+            {
+                throw new InvalidDataException("Onboard macro name response belongs to a different slot.");
+            }
+
+            return arguments.Slice(6, expectedLength).ToArray();
+        }
+
+        if (arguments.Length < expectedLength)
+        {
+            throw new InvalidDataException(
+                $"Onboard macro name chunk returned {arguments.Length} bytes, expected {expectedLength}.");
+        }
+
+        return arguments.Slice(0, expectedLength).ToArray();
+    }
 
     public static byte[] CreateMacroIdListArguments(int offset)
     {

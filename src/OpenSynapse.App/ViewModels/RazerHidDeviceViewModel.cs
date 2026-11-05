@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
@@ -95,6 +96,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     private readonly Func<bool>? _lightingEnabledResolver;
     private readonly Func<bool>? _chromaOverrideResolver;
     private readonly Func<bool, bool, CancellationToken, Task<bool>>? _lightingSettingsSaver;
+    private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
     private readonly RazerHidSoftwareLightingRuntime? _softwareLightingRuntime;
     private WasapiAudioMeterAdapter? _softwareAudioInput;
     private TimeSpan _softwareLightingElapsed;
@@ -118,7 +120,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         Func<bool>? lightingEnabledResolver = null,
         Func<bool>? chromaOverrideResolver = null,
         Func<bool, bool, CancellationToken, Task<bool>>? lightingSettingsSaver = null,
-        bool chromaIntegrationEnabled = true)
+        bool chromaIntegrationEnabled = true,
+        Func<IReadOnlyList<MacroDefinition>>? localMacros = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -141,6 +144,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         _lightingEnabledResolver = lightingEnabledResolver;
         _chromaOverrideResolver = chromaOverrideResolver;
         _lightingSettingsSaver = lightingSettingsSaver;
+        _localMacros = localMacros;
         _lightingEnabled = lightingEnabledResolver?.Invoke() ?? true;
         _chromaOverrideEnabled = chromaOverrideResolver?.Invoke() ?? true;
         _chromaIntegrationEnabled = chromaIntegrationEnabled;

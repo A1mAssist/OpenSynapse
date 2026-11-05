@@ -29,7 +29,8 @@ public sealed partial class RazerHidWorkspace
                 lightingEnabled,
                 chromaOverrideEnabled,
                 token),
-            _chromaIntegrationEnabled());
+            _chromaIntegrationEnabled(),
+            _localMacros);
         device.AttachMatrixLayout(_matrixLayoutLoader.LoadLayoutAsync, _dispatcherQueue);
         device.Onboard.LocalMacroProvider = _localMacros;
         return device;

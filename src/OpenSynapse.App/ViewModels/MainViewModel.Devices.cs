@@ -198,7 +198,7 @@ public sealed partial class MainViewModel
     {
         Diagnostics.CaptureAccessorySnapshot();
         // One unplugged or unresponsive accessory must not abort the whole refresh:
-        // that used to surface as "设备探测失败" and tear down unrelated device pages.
+        // that used to surface as a generic probe failure and tear down unrelated device pages.
         await RefreshAccessoryAsync("blackshark", RefreshBlackSharkAsync, cancellationToken);
         await RefreshAccessoryAsync("headset-audio", Accessories.RefreshHeadsetAudioAsync, cancellationToken);
         await RefreshAccessoryAsync("keyboard", Accessories.RefreshKeyboardsAsync, cancellationToken);
@@ -265,7 +265,7 @@ public sealed partial class MainViewModel
             yield return new("cooling-pad", CoolingPad.Name, "CoolingPad", CoolingPad.Identity, CoolingPad.StatusText, CoolingPad.ErrorText);
         if (Kiyo.IsConnected || Kiyo.HasError)
             yield return new("kiyo", Kiyo.Name, "Kiyo", Kiyo.Identity, Kiyo.StatusText, Kiyo.ErrorText);
-        if (Hue.IsReady || Hue.HasError)
+        if (Hue.IsConfigured)
             yield return new("hue:" + Hue.BridgeHost, "Philips Hue", "Hue", Hue.DeviceIdentity, Hue.DeviceStatusText, Hue.ErrorText);
     }
 }

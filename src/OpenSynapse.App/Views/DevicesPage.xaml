@@ -616,31 +616,7 @@
                     </StackPanel>
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
-                    <StackPanel Spacing="10">
-                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="按键映射" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
-                      <ComboBox Header="层" ItemsSource="{Binding MappingLayerOptions}" SelectedIndex="{Binding SelectedMappingLayerIndex, Mode=TwoWay}" SelectionChanged="BleMappingLayerChanged" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
-                      <TextBlock Text="{Binding MappingStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
-                      <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding MappingRows}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="viewModels:RazerBleMappingRowViewModel">
-                              <Grid ColumnDefinitions="130,*" ColumnSpacing="10" Padding="0,6">
-                                <StackPanel Spacing="2">
-                                  <TextBlock Text="{Binding ButtonName}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding CurrentActionText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                                </StackPanel>
-                                <Grid Grid.Column="1" ColumnDefinitions="120,160,100" ColumnSpacing="8">
-                                  <ComboBox ItemsSource="{Binding GroupOptions}" DisplayMemberPath="Name" SelectedIndex="{Binding SelectedGroupIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
-                                  <ComboBox Grid.Column="1" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding SelectedOptionIndex, Mode=TwoWay}" Visibility="{Binding OptionVisibility}" HorizontalAlignment="Stretch" />
-                                  <ComboBox Grid.Column="2" ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding SelectedModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" HorizontalAlignment="Stretch" />
-                                </Grid>
-                              </Grid>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </ScrollViewer>
-                      <Button Content="应用映射" Click="BleApplyMappingClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Left" />
-                    </StackPanel>
+                    <views:RazerMappingView DataContext="{Binding Mapping}" />
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding DpiStagesVisibility}">
                     <StackPanel Spacing="10">
@@ -853,56 +829,7 @@
                     </StackPanel>
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
-                    <StackPanel Spacing="12">
-                      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
-                        <StackPanel Spacing="3">
-                          <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="板载映射" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
-                          <TextBlock Text="{Binding Mapping.StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ComboBox Grid.Column="1" Width="132" Header="映射层" AutomationProperties.Name="映射层" SelectedIndex="{Binding Mapping.LayerIndex, Mode=TwoWay}" VerticalAlignment="Bottom">
-                          <ComboBoxItem Content="普通层" />
-                          <ComboBoxItem Content="Shift 层" />
-                        </ComboBox>
-                        <Button Grid.Column="2" Content="读取" Click="RazerHidReadMappingClick" IsEnabled="{Binding Mapping.CanRead}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
-                        <Button Grid.Column="3" Content="保存" Click="RazerHidApplyMappingClick" IsEnabled="{Binding Mapping.CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
-                      </Grid>
-                      <InfoBar IsOpen="{Binding Mapping.HasError}" IsClosable="False" Severity="Warning" Message="{Binding Mapping.ErrorText}" />
-                      <Grid ColumnDefinitions="110,1.1*,1*,1.4*,260" ColumnSpacing="12">
-                        <TextBlock Text="按键" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="1" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="2" Text="类型" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="3" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
-                        <TextBlock Grid.Column="4" Text="参数" Style="{StaticResource MetricLabelStyle}" />
-                      </Grid>
-                      <ItemsControl ItemsSource="{Binding Mapping.Rows}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate>
-                            <Grid ColumnDefinitions="110,1.1*,1*,1.4*,260" ColumnSpacing="12" MinHeight="38">
-                              <TextBlock Text="{Binding ButtonName}" VerticalAlignment="Center" />
-                              <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                              <ComboBox Grid.Column="2" SelectedIndex="{Binding GroupIndex, Mode=TwoWay}" AutomationProperties.Name="目标映射类型" HorizontalAlignment="Stretch">
-                                <ComboBoxItem Content="保持" />
-                                <ComboBoxItem Content="关闭" />
-                                <ComboBoxItem Content="鼠标按键" />
-                                <ComboBoxItem Content="键盘按键" />
-                                <ComboBoxItem Content="DPI" />
-                                <ComboBoxItem Content="配置切换" />
-                                <ComboBoxItem Content="媒体键" />
-                                <ComboBoxItem Content="电源键" />
-                                <ComboBoxItem Content="双击" />
-                                <ComboBoxItem Content="滚轮模式" />
-                                <ComboBoxItem Content="Razer 键" />
-                                <ComboBoxItem Content="Windows 快捷键" />
-                                <ComboBoxItem Content="HyperShift 切换" />
-                                <ComboBoxItem Content="宏" /><ComboBoxItem Content="Turbo 键" /><ComboBoxItem Content="Turbo 按钮" /><ComboBoxItem Content="DPI 离合" /><ComboBoxItem Content="指定配置" />
-                              </ComboBox>
-                              <ComboBox Grid.Column="3" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding OptionIndex, Mode=TwoWay}" IsEnabled="{Binding CanApply}" AutomationProperties.Name="目标映射动作" HorizontalAlignment="Stretch" />
-                              <StackPanel Grid.Column="4" Spacing="4" VerticalAlignment="Center"><ComboBox ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" AutomationProperties.Name="键盘修饰键" HorizontalAlignment="Stretch" /><ComboBox ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" AutomationProperties.Name="宏播放方式" HorizontalAlignment="Stretch" /><NumberBox Header="Turbo 次/秒" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" /><NumberBox Header="配置 ID" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" /><StackPanel Orientation="Horizontal" Spacing="4" Visibility="{Binding DpiClutchVisibility}"><NumberBox Header="DPI X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchX, Mode=TwoWay}" /><NumberBox Header="DPI Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchY, Mode=TwoWay}" /></StackPanel><NumberBox Header="宏次数" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding MacroRepeatCount, Mode=TwoWay}" Visibility="{Binding MacroRepeatVisibility}" /></StackPanel>
-                            </Grid>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </StackPanel>
+                    <views:RazerMappingView DataContext="{Binding Mapping}" />
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding PowerVisibility}">
                     <StackPanel Spacing="14"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidPowerTitle" Text="电源管理" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>

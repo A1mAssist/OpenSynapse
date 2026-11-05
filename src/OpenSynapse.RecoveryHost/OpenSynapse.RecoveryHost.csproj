@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>OpenSynapse.RecoveryHost</RootNamespace>
+    <Platforms>x64</Platforms>
     <AssemblyName>OpenSynapse.RecoveryHost</AssemblyName>
     <CetCompat>false</CetCompat>
     <!-- Task Manager shows the default .NET icon without this. -->
