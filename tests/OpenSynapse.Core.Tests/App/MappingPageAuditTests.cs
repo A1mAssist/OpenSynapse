@@ -34,6 +34,28 @@ public sealed class MappingPageAuditTests
     }
 
     [Fact]
+    public void MappingStageUsesEvidencedCalloutsAndKeepsTheTableFallback()
+    {
+        var root = RepoLayout.Root;
+        var view = File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.App", "Views", "RazerMappingView.xaml"));
+        var code = File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.App", "Views", "RazerMappingView.xaml.cs"));
+        var assets = File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.App", "ViewModels", "RazerMappingAssetCatalog.cs"));
+
+        Assert.Contains("LeftCalloutControl", view);
+        Assert.Contains("RightCalloutControl", view);
+        Assert.Contains("ConnectorCanvas", view);
+        Assert.Contains("StageVisibility", view);
+        Assert.Contains("TableVisibility", view);
+        Assert.Contains("CalloutClick", code);
+        Assert.Contains("FindLayout", assets);
+        Assert.Contains("0x00B8", assets);
+        Assert.DoesNotContain("00B9", assets);
+    }
+
+    [Fact]
     public void MappingAssetsOnlyContainEvidencedDeviceImages()
     {
         var directory = Path.Combine(

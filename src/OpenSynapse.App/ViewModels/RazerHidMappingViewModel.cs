@@ -24,6 +24,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
     private readonly Func<CancellationToken, Task>? _afterApplyAsync;
     private readonly Action<string>? _log;
     private readonly ImageSource? _layoutImage;
+    private readonly RazerMappingImageLayout? _layout;
     private bool _isBusy;
     private string _statusText = string.Empty;
     private string _errorText = string.Empty;
@@ -42,6 +43,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         Func<RazerOnboardMacroService>? macroServiceFactory = null,
         Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
         Uri? layoutUri = null,
+        RazerMappingImageLayout? layout = null,
         Action<string>? log = null,
         IRazerMappingActionCatalog? actionCatalog = null,
         Func<CancellationToken, Task>? afterApplyAsync = null)
@@ -52,13 +54,16 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         _macroServiceFactory = macroServiceFactory;
         _localMacroProvider = localMacros;
         _afterApplyAsync = afterApplyAsync;
-        _layoutImage = CreateLayoutImage(layoutUri);
+        _layout = layout;
+        _layoutImage = CreateLayoutImage(layout?.ImageUri ?? layoutUri);
         _log = log;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<RazerHidMappingRowViewModel> Rows { get; } = [];
+    public ObservableCollection<RazerHidMappingRowViewModel> LeftRows { get; } = [];
+    public ObservableCollection<RazerHidMappingRowViewModel> RightRows { get; } = [];
     public bool IsLoaded => _loaded;
     public bool IsBusy
     {
@@ -101,7 +106,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             if (_loaded)
             {
-                Rows.Clear();
+                ClearRows();
                 _loaded = false;
                 SelectedRow = null;
                 StatusText = string.Empty;
@@ -121,14 +126,58 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
             if (_selectedRow == value) return;
             _selectedRow = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedButtonName));
+            OnPropertyChanged(nameof(EditorVisibility));
         }
     }
+    public string SelectedButtonName => _selectedRow?.ButtonName ?? string.Empty;
+    public Visibility EditorVisibility => _selectedRow is null ? Visibility.Collapsed : Visibility.Visible;
     public ImageSource? LayoutImage => _layoutImage;
+    public RazerMappingImageLayout? Layout => _layout;
     public bool HasLayout => _layoutImage is not null;
     public Visibility LayoutVisibility => HasLayout ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility StageVisibility => _layout is null ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility TableVisibility => _layout is null ? Visibility.Visible : Visibility.Collapsed;
     public bool SupportsMacros => _macrosAvailable;
 
     private byte Mode => (byte)LayerIndex;
+
+    private void ClearRows()
+    {
+        Rows.Clear();
+        LeftRows.Clear();
+        RightRows.Clear();
+    }
+
+    private void AddRow(RazerHidMappingRowViewModel row) => Rows.Add(row);
+
+    private void PopulateStageRows()
+    {
+        LeftRows.Clear();
+        RightRows.Clear();
+        if (_layout is null)
+        {
+            return;
+        }
+
+        var ordered = Rows
+            .Select(row => (Row: row, Hotspot: _layout.Hotspots.TryGetValue(row.ButtonId, out var point)
+                ? point
+                : new RazerMappingPoint(_layout.SourceWidth / 2, _layout.SourceHeight / 2)))
+            .OrderBy(item => item.Hotspot.Y)
+            .ToArray();
+        foreach (var (row, hotspot) in ordered)
+        {
+            if (hotspot.X < _layout.SourceWidth / 2)
+            {
+                LeftRows.Add(row);
+            }
+            else
+            {
+                RightRows.Add(row);
+            }
+        }
+    }
 
     private static ImageSource? CreateLayoutImage(Uri? uri)
     {
@@ -147,7 +196,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         {
             await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);
             var ids = await _transport.GetButtonIdsAsync(cancellationToken).ConfigureAwait(true);
-            Rows.Clear();
+            ClearRows();
             SelectedRow = null;
             var defaults = _freeSlots.ToList();
             foreach (var id in ids.Where(id => id != 0))
@@ -182,9 +231,10 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                         .ToArray();
                 }
                 row.SetMacroSlots(slotOptions, assignedSlot, preferred);
-                Rows.Add(row);
+                AddRow(row);
             }
 
+            PopulateStageRows();
             _loaded = true;
             StatusText = Rows.Count == 0
                 ? AppStrings.Text("RazerHidMappingNoButtons")
@@ -196,7 +246,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         catch (Exception exception) when (IsExpected(exception))
         {
             _loaded = false;
-            Rows.Clear();
+            ClearRows();
             StatusText = string.Empty;
             ErrorText = exception.Message;
             _log?.Invoke($"mapping read failed: {exception}");
@@ -292,7 +342,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
     internal void SetLoadError(string message)
     {
         _loaded = false;
-        Rows.Clear();
+        ClearRows();
         SelectedRow = null;
         StatusText = string.Empty;
         ErrorText = string.IsNullOrWhiteSpace(message)

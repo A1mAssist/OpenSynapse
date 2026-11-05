@@ -3302,6 +3302,10 @@
   <data name="LightingStudioMore" xml:space="preserve"><value>More</value></data>
   <data name="LightingStudioProfileTitle" xml:space="preserve"><value>Profile name</value></data>
   <data name="RazerMappingDeviceImageLabel" xml:space="preserve"><value>Device image</value></data>
+  <data name="RazerMappingModifierHeader" xml:space="preserve"><value>Modifier key</value></data>
+  <data name="RazerMappingMacroSlotHeader" xml:space="preserve"><value>Macro slot</value></data>
+  <data name="RazerMappingPlaybackHeader" xml:space="preserve"><value>Playback</value></data>
+  <data name="RazerMappingCalloutHint" xml:space="preserve"><value>Select a button label beside the device to edit its mapping.</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>Button mapping</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>Read</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>

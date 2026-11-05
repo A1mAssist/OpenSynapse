@@ -3728,6 +3728,10 @@
   <data name="LightingStudioMore" xml:space="preserve"><value>更多</value></data>
   <data name="LightingStudioProfileTitle" xml:space="preserve"><value>配置档名称</value></data>
   <data name="RazerMappingDeviceImageLabel" xml:space="preserve"><value>设备图</value></data>
+  <data name="RazerMappingModifierHeader" xml:space="preserve"><value>修饰键</value></data>
+  <data name="RazerMappingMacroSlotHeader" xml:space="preserve"><value>宏槽</value></data>
+  <data name="RazerMappingPlaybackHeader" xml:space="preserve"><value>播放方式</value></data>
+  <data name="RazerMappingCalloutHint" xml:space="preserve"><value>点击设备旁的按键标签编辑映射</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>按键映射</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>读取</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>保存</value></data>
