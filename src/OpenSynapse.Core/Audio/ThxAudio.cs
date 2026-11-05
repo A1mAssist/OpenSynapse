@@ -23,7 +23,11 @@ public enum ThxAudioEnhancementKind
     Sidetone,
 }
 
-public sealed record ThxAudioPreset(string Id, string Name);
+public sealed record ThxAudioPreset(string Id, string Name)
+{
+    /// <summary>A missing vendor label must not render as a blank combo-box row.</summary>
+    public string DisplayName => string.IsNullOrWhiteSpace(Name) ? Id : Name;
+}
 
 public sealed record ThxAudioBand(int FrequencyHertz, double GainDb);
 

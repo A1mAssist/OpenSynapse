@@ -77,4 +77,11 @@ public sealed class ThxAudioProtocolTests
         Assert.Equal("game", Assert.Single(v4Presets).Id);
         Assert.Equal("game", ThxVendorJson.ParseSelectedPresetValue("{\"name\":\"game\"}"));
     }
+
+    [Fact]
+    public void MissingPresetNameFallsBackToTheId()
+    {
+        Assert.Equal("game", new ThxAudioPreset("game", "").DisplayName);
+        Assert.Equal("Game", new ThxAudioPreset("game", "Game").DisplayName);
+    }
 }
