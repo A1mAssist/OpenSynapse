@@ -197,15 +197,36 @@ public sealed partial class MainViewModel
     private async Task RefreshAttachedDevicesAsync(CancellationToken cancellationToken)
     {
         Diagnostics.CaptureAccessorySnapshot();
-        await RefreshBlackSharkAsync(cancellationToken);
-        await Accessories.RefreshHeadsetAudioAsync(cancellationToken);
-        await Accessories.RefreshKeyboardsAsync(cancellationToken);
-        await Accessories.RefreshGamepadsAsync(cancellationToken);
-        await CoolingPad.RefreshAsync(cancellationToken);
-        await Kiyo.RefreshAsync(cancellationToken);
-        await Accessories.RefreshChromaAsync(cancellationToken);
-        await RefreshBleAsync(cancellationToken);
-        await RefreshAwBleAsync(cancellationToken);
+        // One unplugged or unresponsive accessory must not abort the whole refresh:
+        // that used to surface as "设备探测失败" and tear down unrelated device pages.
+        await RefreshAccessoryAsync("blackshark", RefreshBlackSharkAsync, cancellationToken);
+        await RefreshAccessoryAsync("headset-audio", Accessories.RefreshHeadsetAudioAsync, cancellationToken);
+        await RefreshAccessoryAsync("keyboard", Accessories.RefreshKeyboardsAsync, cancellationToken);
+        await RefreshAccessoryAsync("gamepad", Accessories.RefreshGamepadsAsync, cancellationToken);
+        await RefreshAccessoryAsync("cooling-pad", CoolingPad.RefreshAsync, cancellationToken);
+        await RefreshAccessoryAsync("kiyo", Kiyo.RefreshAsync, cancellationToken);
+        await RefreshAccessoryAsync("chroma", Accessories.RefreshChromaAsync, cancellationToken);
+        await RefreshAccessoryAsync("ble", RefreshBleAsync, cancellationToken);
+        await RefreshAccessoryAsync("aw-ble", RefreshAwBleAsync, cancellationToken);
+    }
+
+    private async Task RefreshAccessoryAsync(
+        string label,
+        Func<CancellationToken, Task> refresh,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await refresh(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("devices", $"{label} refresh failed: {exception}");
+        }
     }
 
     private IEnumerable<AccessoryDiagnostic> ReadAccessoryDiagnostics()
