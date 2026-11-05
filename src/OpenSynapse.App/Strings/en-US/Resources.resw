@@ -3200,6 +3200,7 @@
   <data name="LightingStudioStatusLoadFailed" xml:space="preserve"><value>Load failed: {0}</value></data>
   <data name="LightingStudioStatusNew" xml:space="preserve"><value>New empty studio created.</value></data>
   <data name="LightingStudioParamColor" xml:space="preserve"><value>Primary color</value></data>
+  <data name="LightingStudioCustomColor" xml:space="preserve"><value>Custom color</value></data>
   <data name="LightingStudioParamColor2" xml:space="preserve"><value>Secondary color</value></data>
   <data name="LightingStudioParamColorStops" xml:space="preserve"><value>Palette</value></data>
   <data name="LightingStudioParamRandomColor" xml:space="preserve"><value>Random color</value></data>

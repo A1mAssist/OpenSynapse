@@ -3626,6 +3626,7 @@
   <data name="LightingStudioStatusLoadFailed" xml:space="preserve"><value>载入失败：{0}</value></data>
   <data name="LightingStudioStatusNew" xml:space="preserve"><value>已新建空白工作室。</value></data>
   <data name="LightingStudioParamColor" xml:space="preserve"><value>主色</value></data>
+  <data name="LightingStudioCustomColor" xml:space="preserve"><value>自定义颜色</value></data>
   <data name="LightingStudioParamColor2" xml:space="preserve"><value>副色</value></data>
   <data name="LightingStudioParamColorStops" xml:space="preserve"><value>调色板</value></data>
   <data name="LightingStudioParamRandomColor" xml:space="preserve"><value>随机颜色</value></data>
