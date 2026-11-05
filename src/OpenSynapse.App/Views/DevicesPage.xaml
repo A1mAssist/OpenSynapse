@@ -157,6 +157,7 @@
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button local:Localized.Uid="RazerHeadsetThxInstallButton" Content="安装 THX 组件" Click="HeadsetAudioInstallThxClick" Visibility="{Binding ThxInstallerVisibility}" IsEnabled="{Binding CanInstallThx}" Style="{StaticResource PrimaryButtonStyle}" />
                         <Button local:Localized.Uid="RazerHeadsetThxDownloadButton" Content="下载 THX 控制组件" Click="HeadsetAudioDownloadThxClick" Visibility="{Binding ThxDownloadVisibility}" IsEnabled="{Binding CanDownloadThxComponent}" Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button local:Localized.Uid="RazerHeadsetThxInstallerLinkButton" Content="手动下载 THX 安装包" Click="HeadsetAudioOpenThxInstallerClick" Visibility="{Binding ThxInstallerLinkVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
                         <Button local:Localized.Uid="RazerHeadsetThxGameProfilesButton" Content="更新 THX 游戏配置" Click="HeadsetAudioOpenThxGameProfilesClick" Visibility="{Binding ThxGameProfilesVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
                         <Button local:Localized.Uid="RazerHeadsetThxPatcherButton" Content="更新 THX Patcher" Click="HeadsetAudioOpenThxPatcherClick" Visibility="{Binding ThxPatcherVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
                       </StackPanel>

@@ -2913,6 +2913,8 @@
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点上面的按钮下载。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载并安装 THX 组件…</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 组件下载、校验或安装失败，请确认允许管理员权限后重试。</value></data>
+  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>安装程序已结束，但 THX 服务仍未就绪。请重启后重试，或点“手动下载 THX 安装包”自行安装。</value></data>
+  <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>手动下载 THX 安装包</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>应用空间音效</value></data>
