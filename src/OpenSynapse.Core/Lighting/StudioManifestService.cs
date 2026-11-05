@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 
@@ -20,18 +21,23 @@ public sealed class StudioManifestService
 
     private readonly HttpClient _httpClient;
     private readonly string _cacheDirectory;
+    private readonly string? _offlineCatalogPath;
     private readonly TimeSpan _memoryCacheLifetime;
     private readonly ConcurrentDictionary<(ushort ProductId, int EditionId), SemaphoreSlim> _locks = new();
 
     public StudioManifestService(
         HttpClient httpClient,
         string cacheDirectory,
-        TimeSpan? memoryCacheLifetime = null)
+        TimeSpan? memoryCacheLifetime = null,
+        string? offlineCatalogPath = null)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentException.ThrowIfNullOrWhiteSpace(cacheDirectory);
         _httpClient = httpClient;
         _cacheDirectory = Path.GetFullPath(cacheDirectory);
+        _offlineCatalogPath = string.IsNullOrWhiteSpace(offlineCatalogPath)
+            ? null
+            : Path.GetFullPath(offlineCatalogPath);
         _memoryCacheLifetime = memoryCacheLifetime ?? TimeSpan.Zero;
     }
 
@@ -58,6 +64,12 @@ public sealed class StudioManifestService
                     .ConfigureAwait(false)
                 : await RefreshCachedAsync(cached, productId, editionId, cachePath, etagPath, cancellationToken)
                     .ConfigureAwait(false);
+            // The packaged catalog keeps the studio usable when Razer's CDN is blocked or offline.
+            if (result.Manifest is null && TryReadOfflineCatalog(productId, editionId) is { } offline)
+            {
+                result = offline;
+            }
+
             Remember(productId, editionId, result);
             return result;
         }
@@ -235,6 +247,34 @@ public sealed class StudioManifestService
         return buffer.ToArray();
     }
 
+    /// <summary>Reads the packaged fallback catalog without touching the network.</summary>
+    public StudioManifestResult? TryGetOfflineCatalog(ushort productId, int editionId) =>
+        TryReadOfflineCatalog(productId, editionId);
+
+    private StudioManifestResult? TryReadOfflineCatalog(ushort productId, int editionId)
+    {
+        if (_offlineCatalogPath is null || !File.Exists(_offlineCatalogPath)) return null;
+
+        try
+        {
+            using var archive = ZipFile.OpenRead(_offlineCatalogPath);
+            var entry = archive.GetEntry(FormattableString.Invariant($"DeviceManifest_{productId}_{editionId}.json"));
+            if (entry is null) return null;
+
+            using var stream = entry.Open();
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            var manifest = StudioManifestParser.Parse(
+                reader.ReadToEnd(), productId, editionId, etag: null, lastModified: null);
+            return manifest is null
+                ? null
+                : new StudioManifestResult(manifest, _offlineCatalogPath, FromCache: true, Error: null);
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     private async Task<StudioManifestDevice?> ReadCacheAsync(
         string cachePath,
         string etagPath,
@@ -361,7 +401,7 @@ public sealed class StudioManifestService
         // A timeout is the expensive case this cache exists for; retry failures sooner than a manifest.
         var lifetime = result.Manifest is null
             ? TimeSpan.FromSeconds(30)
-            : result.Error is "offline-cache"
+            : result.Error is "offline-cache" || IsOfflineCatalog(result)
                 ? TimeSpan.FromMinutes(1)
                 : _memoryCacheLifetime;
         var key = MemoryKey(productId, editionId);
@@ -377,6 +417,10 @@ public sealed class StudioManifestService
             }
         }
     }
+
+    private bool IsOfflineCatalog(StudioManifestResult result) =>
+        _offlineCatalogPath is not null &&
+        string.Equals(result.SourceUrl, _offlineCatalogPath, StringComparison.OrdinalIgnoreCase);
 
     private static string PrimaryUrl(ushort productId, int editionId) =>
         FormattableString.Invariant(
