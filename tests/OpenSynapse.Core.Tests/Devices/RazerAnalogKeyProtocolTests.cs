@@ -220,6 +220,46 @@ public sealed class RazerAnalogKeyProtocolTests
         Assert.Equal(new RazerAnalogKeyKillSwitch(0x01, true, 0x02, 0x03), killSwitch);
     }
 
+    [Theory]
+    [InlineData(0.1, 1638)]
+    [InlineData(0.3, 4914)]
+    [InlineData(2.0, 32760)]
+    [InlineData(4.0, 65520)]
+    public void MillimeterThresholdsUseTheMiddlewareUnit(double millimeters, ushort expected)
+    {
+        Assert.Equal(expected, RazerAnalogKeyProtocol.ToThreshold(millimeters));
+        Assert.Equal(millimeters, RazerAnalogKeyProtocol.ToMillimeters(expected), 3);
+    }
+
+    [Fact]
+    public void SnapTapUsesTheFullFifteenByteStagingBuffer()
+    {
+        var get = RazerAnalogKeyProtocol.CreateGetAnalogSnapTapRequest(0x71, 0x01);
+        var set = RazerAnalogKeyProtocol.CreateSetAnalogSnapTapRequest(0x72, 0x01, true,
+        [
+            new RazerAnalogSnapTapPair(31, 33, 0),
+            new RazerAnalogSnapTapPair(17, 18, 1),
+        ]);
+
+        Assert.Equal((15, 0x02, 0xA7), Command(get));
+        Assert.Equal(new byte[] { 0x01 }, get[9..10]);
+        Assert.Equal((15, 0x02, 0x27), Command(set));
+        Assert.Equal(
+            new byte[]
+            {
+                0x01, 0x02, 0x01,
+                31, 33, 0,
+                17, 18, 1,
+                0, 0, 0, 0, 0, 0,
+            },
+            set[9..24]);
+
+        var state = RazerAnalogKeyProtocol.ParseAnalogSnapTap(
+            Response(0x72, 9, 0x01, 0x02, 0x01, 31, 33, 0, 17, 18, 1));
+        Assert.True(state.Enabled);
+        Assert.Equal(new RazerAnalogSnapTapPair(17, 18, 1), state.Pairs[1]);
+    }
+
     [Fact]
     public void CountsAndPartialRecordsAreRejected()
     {
