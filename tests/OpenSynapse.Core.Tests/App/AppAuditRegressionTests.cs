@@ -264,6 +264,15 @@ public sealed class AppAuditRegressionTests
         Assert.Contains("Interlocked.Exchange(ref _processExitRequested, 1)", source);
     }
 
+    [Fact]
+    public void UnpairedHueBridgeDoesNotAppearInTheDeviceList()
+    {
+        var source = Method(
+            Vm("ConnectedDeviceRowViewModel.cs"),
+            "public ConnectedDeviceRowViewModel(PhilipsHueViewModel source)");
+        Assert.Contains("IsVisible = source.IsConfigured;", source);
+    }
+
     private static string Vm(string file) => App("ViewModels/" + file);
     private static string App(string file) => File.ReadAllText(Path.Combine(RepoLayout.Root, "src/OpenSynapse.App", file));
 
