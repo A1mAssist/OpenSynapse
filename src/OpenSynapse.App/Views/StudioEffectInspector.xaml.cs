@@ -109,6 +109,48 @@ public sealed partial class StudioEffectInspector : UserControl
             swatches.Children.Add(swatch);
         }
 
+        if (_parameters is not { } parameters)
+        {
+            return Rowed(labelKey, swatches);
+        }
+
+        var customLabel = AppStrings.Text("LightingStudioCustomColor");
+        var custom = new Button
+        {
+            Width = 28,
+            Height = 28,
+            Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(6),
+            BorderThickness = new Thickness(1),
+            BorderBrush = (Brush)Application.Current.Resources["LineStrongBrush"],
+            Content = new FontIcon
+            {
+                Glyph = "\uE790",
+                FontSize = 14,
+                FontFamily = (FontFamily)Application.Current.Resources["IconFontFamily"],
+            },
+        };
+        var picker = new ColorPicker
+        {
+            Color = ToColor(secondary ? parameters.Secondary : parameters.Primary),
+            IsAlphaEnabled = false,
+            IsColorChannelTextInputVisible = true,
+            IsColorSpectrumVisible = true,
+            IsHexInputVisible = true,
+            IsMoreButtonVisible = false,
+            Width = 280,
+        };
+        picker.ColorChanged += (_, args) =>
+        {
+            SetColor($"#{args.NewColor.R:X2}{args.NewColor.G:X2}{args.NewColor.B:X2}", secondary);
+        };
+        AutomationProperties.SetAutomationId(custom,
+            secondary ? "StudioSecondaryCustomColor" : "StudioPrimaryCustomColor");
+        AutomationProperties.SetName(custom, customLabel);
+        ToolTipService.SetToolTip(custom, customLabel);
+        custom.Flyout = new Flyout { Content = picker };
+        swatches.Children.Add(custom);
+
         return Rowed(labelKey, swatches);
     }
 
