@@ -96,7 +96,8 @@ public sealed partial class MainWindow : Window
             BuildStudioDevices,
             CreateStudioHidRouter(_studioInputSampler),
             _studioInputSampler,
-            CreateStudioArgbRouter(_studioInputSampler));
+            CreateStudioArgbRouter(_studioInputSampler),
+            _viewModel.RestoreLightingAfterExternalAsync);
         DevicesPage.RefreshAdvancedFeaturesVisibility();
         MacrosPage.OpenEditorRequested += (_, _) => OpenMacroEditorWindow();
         OverviewPage.DeviceRequested += OnOverviewDeviceRequested;
@@ -274,10 +275,6 @@ public sealed partial class MainWindow : Window
             {
                 _viewModel.Refresh.RequestDeviceRefresh();
                 RequestStudioDeviceRefresh();
-                if (DevicesPage.Visibility == Visibility.Visible)
-                {
-                    _ = _viewModel.RefreshHueAsync(_lifetime.Token);
-                }
             }
         }
 

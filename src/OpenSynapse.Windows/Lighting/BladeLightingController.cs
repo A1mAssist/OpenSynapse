@@ -545,15 +545,28 @@ public sealed partial class BladeLightingController : IBladeLightingController
                             return;
                         }
 
-                        await ValidateCurrentPathAsync(
-                            devicePath,
-                            manifest,
-                            cancellationToken).ConfigureAwait(false);
+                        try
+                        {
+                            await ValidateCurrentPathAsync(
+                                devicePath,
+                                manifest,
+                                cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception exception) when (
+                            !cancellationToken.IsCancellationRequested &&
+                            exception is NotSupportedException or Win32Exception or IOException or
+                                InvalidOperationException or UnauthorizedAccessException or TimeoutException)
+                        {
+                            // The probe can fail while the device is idle; the effect write
+                            // below is the keepalive's real job.
+                        }
+
                         if (_nativeEffect is not { } effect ||
                             !TryCreateNativeEffectRequest(effect, out var request))
                         {
                             return;
                         }
+                        await SendLightingEngineGateAsync(devicePath, cancellationToken).ConfigureAwait(false);
                         await SendAsync(
                             devicePath,
                             request,
@@ -564,15 +577,12 @@ public sealed partial class BladeLightingController : IBladeLightingController
                         _gate.Release();
                     }
                 }
-                catch (NotSupportedException) when (!cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
                 catch (Exception exception) when (
                     !cancellationToken.IsCancellationRequested &&
-                    exception is Win32Exception or IOException or InvalidOperationException)
+                    exception is NotSupportedException or Win32Exception or IOException or
+                        InvalidOperationException or UnauthorizedAccessException or TimeoutException)
                 {
-                    // A transient HID failure must not permanently disable the keepalive.
+                    // A transient HID or firmware state must not permanently stop the keepalive.
                 }
             }
         }

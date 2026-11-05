@@ -277,7 +277,11 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     /// Stops accepting frames and waits for the in-flight write to finish.
     /// Call <see cref="Update"/> before the next apply to start a new session.
     /// </summary>
-    public async Task StopAsync(CancellationToken cancellationToken = default)
+    /// <param name="applyFallback">
+    /// When false, no Spectrum exit effect is written for a device without a readable
+    /// baseline; the caller is responsible for restoring configured lighting.
+    /// </param>
+    public async Task StopAsync(CancellationToken cancellationToken = default, bool applyFallback = true)
     {
         Volatile.Write(ref _stopped, 1);
         await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -318,6 +322,14 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
                     ReportRestoreFailure(current, restoreFailures, failures);
                     // Keep the entry so a later Stop retries the capture-based restore.
+                    continue;
+                }
+
+                if (!applyFallback)
+                {
+                    // The caller re-applies its configured lighting after the router stops.
+                    // Do not write the documented Spectrum exit effect over that restore.
+                    _outputs.TryRemove(key, out _);
                     continue;
                 }
 

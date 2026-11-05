@@ -324,6 +324,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     internal IReadOnlyList<DeviceDescriptor> CurrentDeviceDescriptors => _deviceDescriptors;
 
+    // Shared hand-back path for Chroma hosts and Lighting Studio.
+    internal async Task RestoreLightingAfterExternalAsync()
+    {
+        await Lighting.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
+        await RazerHid.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
+    }
+
     public string EmptyStateText => ConnectedDevices.Count == 0
         ? AppStrings.Text("Text_76BEF6E0")
         : string.Empty;

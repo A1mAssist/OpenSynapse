@@ -43,8 +43,7 @@ public sealed partial class LightingStudioPage : UserControl
     public LightingStudioPage()
     {
         InitializeComponent();
-        ToolTipService.SetToolTip(ZoomOutButton, AppStrings.Text("LightingStudioZoomOut"));
-        ToolTipService.SetToolTip(ZoomInButton, AppStrings.Text("LightingStudioZoomIn"));
+        SetIconButtonLabels();
         // ListViewBase has its own drag plumbing, so keep receiving these even if it handles them.
         LayerList.AddHandler(DragOverEvent, new DragEventHandler(LayerDragOver), true);
         LayerList.AddHandler(DropEvent, new DragEventHandler(LayerDrop), true);
@@ -75,12 +74,13 @@ public sealed partial class LightingStudioPage : UserControl
         Func<IReadOnlyList<StudioDeviceOption>>? matrixDevices = null,
         StudioHidOutputRouter? hidRouter = null,
         StudioInputSampler? inputSampler = null,
-        StudioArgbOutputRouter? argbRouter = null)
+        StudioArgbOutputRouter? argbRouter = null,
+        Func<Task>? restoreAfterExternal = null)
     {
         _viewModel?.Dispose();
         _inputSampler = inputSampler;
         _viewModel = new LightingStudioViewModel(
-            lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter);
+            lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter, restoreAfterExternal);
         StartStudioTimingIfRequested();
         StudioTimingAttachViewModel();
         RefreshDevicesWithTiming("initialize");
@@ -282,53 +282,6 @@ public sealed partial class LightingStudioPage : UserControl
 
     /// <summary>Title boxes bind straight to the model, so the undo point lands on commit.</summary>
     private void NameBoxLostFocus(object sender, RoutedEventArgs e) => _viewModel?.NotifyEdited();
-
-    private void ZoomInClick(object sender, RoutedEventArgs e) => DeviceCanvas.ZoomStepUp();
-
-    private void RotateDeviceClick(object sender, RoutedEventArgs e)
-    {
-        var instanceId = _viewModel?.SelectedDevice?.EffectiveInstanceId;
-        if (string.IsNullOrEmpty(instanceId)) return;
-        var placed = DeviceCanvas.TryGetPlacement(instanceId, out var left, out var top);
-        _viewModel?.RotateSelectedDevice(placed ? left : 5000, placed ? top : 5000);
-    }
-
-    private void ZoomOutClick(object sender, RoutedEventArgs e) => DeviceCanvas.ZoomStepDown();
-
-    private void TogglePlayClick(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null) return;
-        _viewModel.TogglePlayback();
-        UpdatePlayButton();
-        if (_viewModel.IsPlaying)
-        {
-            _clock.Restart();
-            _timer.Start();
-        }
-        else
-        {
-            _timer.Stop();
-            RenderPreview();
-        }
-    }
-
-    private void UpdatePlayButton()
-    {
-        PlayButton.Content = AppStrings.Text(_viewModel?.IsPlaying == true ? "LightingStudioPause" : "LightingStudioPlay");
-        PlayButton.HorizontalContentAlignment = HorizontalAlignment.Center;
-    }
-
-    private async void ApplyClick(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null) return;
-        await _viewModel.ApplyAsync();
-    }
-
-    private async void StopClick(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null) return;
-        await _viewModel.StopAsync();
-    }
 
     private void InspectorValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e) =>
         _viewModel?.NotifyEdited();
