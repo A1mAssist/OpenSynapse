@@ -20,12 +20,11 @@ public sealed class ConnectedDeviceRowViewModel
         Access = source.Access;
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
-        IsReady = source.IsAvailable;
-        // A Blade must stay listed even when its control channel fails: telemetry loss
-        // must not make the laptop disappear from its own device page.
-        IsVisible = source.IsAvailable ||
-            DeviceProtocolFamilies.IsBlade(source.ProtocolFamily) ||
-            source.SupportedCapabilityCount == 0;
+        IsReady = source.IsAvailable ||
+            (source.IsPresent && source.ProtocolFamily == DeviceProtocolFamilies.Viper);
+        // Presence is enough to list the device. A failed telemetry probe changes its
+        // status; it must not make the laptop or a sleeping wireless mouse disappear.
+        IsVisible = source.IsPresent || DeviceProtocolFamilies.IsBlade(source.ProtocolFamily);
     }
 
     public ConnectedDeviceRowViewModel(RazerHidDeviceRowViewModel source)

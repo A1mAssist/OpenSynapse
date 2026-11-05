@@ -529,6 +529,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         StringComparer.OrdinalIgnoreCase.Equals(previous.DevicePath, current.DevicePath) &&
         StringComparer.Ordinal.Equals(previous.Definition.DisplayName, current.Definition.DisplayName) &&
         previous.EndpointState == current.EndpointState &&
+        previous.Capabilities.SetEquals(current.Capabilities) &&
         StringComparer.Ordinal.Equals(previous.Error, current.Error);
 
     private static bool KrakenConnectionMatches(

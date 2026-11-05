@@ -1208,7 +1208,7 @@ public sealed partial class RazerHidDeviceService
         var buttonList = RazerHidMappingProtocol.GetButtonList();
         if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                 "mapping", buttonList.Report,
-                response => RazerHidMappingProtocol.ParseButtonList(response).Count > 0,
+                response => RazerHidMappingProtocol.ParseButtonList(response).Any(id => id != 0),
                 cancellationToken).ConfigureAwait(false))
         {
             result.UnionWith(MappingCapabilities);
@@ -1348,6 +1348,31 @@ public sealed partial class RazerHidDeviceService
                 lastError = exception.Message;
                 WriteDiagnostic(definition.ProductId,
                     $"safe probe failed builder={probe.BuilderName}, declared-txn=0x{probe.Report[2]:X2}, class=0x{probe.Report[7]:X2}, command=0x{probe.Report[8]:X2}: {DescribeProbeFailure(exception)}");
+            }
+        }
+
+        if (definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
+        {
+            // This read-only GET is the last-resort endpoint probe. Some mapping-only
+            // firmware answers it when the catalog's identity probes time out, so the
+            // runtime button list, not a static PID list, decides whether the page opens.
+            var mapping = RazerHidMappingProtocol.GetButtonList();
+            try
+            {
+                await _transport.QueryPreparedAsync(
+                    devicePath,
+                    mapping.Report,
+                    definition.DeviceWait,
+                    cancellationToken).ConfigureAwait(false);
+                return new(EndpointProbeOutcome.Answered, null);
+            }
+            catch (Exception exception) when (exception is Win32Exception or IOException or
+                COMException or InvalidOperationException or NotSupportedException or
+                InvalidDataException or TimeoutException)
+            {
+                lastError = exception.Message;
+                WriteDiagnostic(definition.ProductId,
+                    $"mapping fallback probe class=0x{mapping.Report[7]:X2}, command=0x{mapping.Report[8]:X2}: {DescribeProbeFailure(exception)}");
             }
         }
 

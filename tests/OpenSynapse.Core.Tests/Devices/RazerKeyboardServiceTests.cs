@@ -125,6 +125,31 @@ public sealed class RazerKeyboardServiceTests
         Assert.Equal(0x02C9, Assert.Single(candidates).ProductId);
     }
 
+    [Fact]
+    public void SelectConnectionsKeepsEveryPhysicalKeyboardAndCollapsesItsInterfaces()
+    {
+        var interfaces = new[]
+        {
+            Descriptor("wireless", "keyboard-wireless", 0x02C9),
+            Descriptor("wired", "keyboard-wireless", 0x02CC),
+            Descriptor("protype", "keyboard-protype", 0x0277),
+            Descriptor("huntsman-a", "keyboard-huntsman-a", 0x02D0),
+            Descriptor("huntsman-b", "keyboard-huntsman-b", 0x02D0),
+            Descriptor("wireless-only", "keyboard-wireless-only", 0x02F5),
+            Descriptor("offline", "keyboard-offline", 0x0249, DeviceAccessState.BusyOrUnavailable),
+            Descriptor("not-admitted", "keyboard-other", 0x1234),
+        };
+
+        var connections = RazerKeyboardService.SelectConnections(interfaces);
+
+        Assert.Equal(
+            ["protype", "wired", "huntsman-a", "huntsman-b", "wireless-only", "offline"],
+            connections.Select(item => item.DevicePath));
+        Assert.Equal((ushort)0x02CC, connections[1].ProductId);
+        Assert.Equal((ushort)0x02CC, connections[1].DisplayProductId);
+        Assert.Equal("Razer BlackWidow V4 Low-profile HyperSpeed", connections[1].Name);
+    }
+
     [Theory]
     [InlineData(0x023E)]
     [InlineData(0x024F)]
@@ -150,6 +175,119 @@ public sealed class RazerKeyboardServiceTests
             Assert.Null(RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId));
         }
     }
+
+    [Fact]
+    public async Task MappingReadsMiddleware02ButtonListAndRoundTripsAssignment()
+    {
+        byte function = RazerHidMappingFunctions.ButtonCode;
+        var data = new[] { (byte)0x05 };
+        var transport = new FakeTransport(request =>
+        {
+            var commandClass = request[7];
+            var command = request[8];
+            return (commandClass, command) switch
+            {
+                (0x02, 0x84) => Response([0x03, 0x01, 0x02, 0x03]),
+                (0x02, 0x8C) => Response(
+                    [0x01, request[10], request[11], function, (byte)data.Length, .. data]),
+                (0x02, 0x0C) => WriteMiddlewareAssignment(request, ref function, ref data),
+                _ => throw new NotSupportedException(
+                    $"Unexpected mapping command 0x{commandClass:X2}:0x{command:X2}."),
+            };
+        });
+        var service = new RazerKeyboardService(transport, "test", TimeSpan.Zero);
+
+        Assert.Equal([0x01, 0x02, 0x03], await service.GetMappingButtonIdsAsync());
+        var before = await service.GetMappingAssignmentAsync(0x02, 0);
+        Assert.Equal(function, before.FunctionId);
+        Assert.Equal(data, before.Data);
+
+        await service.SetMappingAssignmentAsync(0x02, 0, RazerHidMappingFunctions.KeyCode, new byte[] { 0x04 });
+
+        var after = await service.GetMappingAssignmentAsync(0x02, 0);
+        Assert.Equal(RazerHidMappingFunctions.KeyCode, after.FunctionId);
+        Assert.Equal([0x04], after.Data);
+    }
+
+    [Fact]
+    public async Task MappingFallsBackToButtonAssignment08AndRoundTripsAssignment()
+    {
+        byte function = (byte)RazerButtonFunctionType.ButtonCode;
+        var data = new[] { (byte)0x04 };
+        var transport = new FakeTransport(request =>
+        {
+            var commandClass = request[7];
+            var command = request[8];
+            return (commandClass, command) switch
+            {
+                (0x02, 0x84) => throw new NotSupportedException(),
+                (0x08, 0x80) => Response([0x01, 0x02]),
+                (0x08, 0x84) => ButtonAssignment08Response(request[10], function, data),
+                (0x08, 0x04) => WriteButtonAssignment08(request, ref function, ref data),
+                _ => throw new NotSupportedException(
+                    $"Unexpected mapping command 0x{commandClass:X2}:0x{command:X2}."),
+            };
+        });
+        var service = new RazerKeyboardService(transport, "test", TimeSpan.Zero);
+
+        Assert.Equal([0x01, 0x02], await service.GetMappingButtonIdsAsync());
+        var before = await service.GetMappingAssignmentAsync(0x01, 0);
+        Assert.Equal(function, before.FunctionId);
+        Assert.Equal(data, before.Data);
+
+        await service.SetMappingAssignmentAsync(0x01, 0, (byte)RazerButtonFunctionType.KeyCode, new byte[] { 0x05 });
+
+        var after = await service.GetMappingAssignmentAsync(0x01, 0);
+        Assert.Equal((byte)RazerButtonFunctionType.KeyCode, after.FunctionId);
+        Assert.Equal([0x05], after.Data);
+    }
+
+    private static byte[] WriteMiddlewareAssignment(byte[] request, ref byte function, ref byte[] data)
+    {
+        function = request[12];
+        var size = request[13];
+        data = request[14..(14 + size)].ToArray();
+        return Response([]);
+    }
+
+    private static byte[] ButtonAssignment08Response(byte button, byte function, byte[] data)
+    {
+        var arguments = new byte[15];
+        arguments[0] = button;
+        arguments[2] = function;
+        arguments[4] = (byte)data.Length;
+        for (var index = 0; index < data.Length; index++)
+        {
+            arguments[6 + (index * 2)] = data[index];
+        }
+        return Response(arguments);
+    }
+
+    private static byte[] WriteButtonAssignment08(byte[] request, ref byte function, ref byte[] data)
+    {
+        function = request[14];
+        var size = request[15];
+        data = request[16..(16 + size)].ToArray();
+        return Response([]);
+    }
+
+    private static byte[] Response(params byte[] arguments)
+    {
+        var response = new byte[RazerFeatureReport.Length];
+        response[1] = 0x02;
+        response[6] = (byte)arguments.Length;
+        arguments.CopyTo(response, RazerFeatureReport.ArgumentsOffset);
+        response[89] = RazerFeatureReport.CalculateCrc(response);
+        return response;
+    }
+
+    private static WindowsHidDiscovery.HidInterfaceDescriptor Descriptor(
+        string devicePath,
+        string physicalDeviceKey,
+        ushort productId,
+        DeviceAccessState access = DeviceAccessState.Available) =>
+        new(devicePath, physicalDeviceKey, 0x1532, productId, 64, 64, 91, 0xFF00, 0x0001,
+            access, "test");
 
     private sealed class FakeTransport(Func<byte[], byte[]> handler) : IRazerFeatureTransport
     {

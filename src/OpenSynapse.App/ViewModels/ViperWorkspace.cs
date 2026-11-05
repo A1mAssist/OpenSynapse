@@ -51,10 +51,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     private int _activeDpiStage;
     private bool _canSetDpiStages;
     private ViperDpiStagesTelemetry? _confirmedDpiStages;
-    private string _buttonMappingsText = AppStrings.Text("Text_C409646C");
-    private int _buttonMappingLayerIndex;
-    private bool _canReadButtonMappings;
-    private bool _canSetButtonMappings;
+    private RazerHidMappingViewModel? _mapping;
     private string _mappingProfileFingerprint = string.Empty;
 
     internal ViperWorkspace(
@@ -121,26 +118,12 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         set => SetField(ref _activeDpiStage, Math.Clamp(value, 1, Math.Max(1, DpiStages.Count)));
     }
     public bool CanSetDpiStages { get => _canSetDpiStages; private set => SetField(ref _canSetDpiStages, value); }
-    public string ButtonMappingsText { get => _buttonMappingsText; private set => SetField(ref _buttonMappingsText, value); }
-    public ObservableCollection<ViperButtonAssignmentRowViewModel> ButtonAssignments { get; } = new();
-    public IReadOnlyList<string> ButtonMappingLayerOptions => AppStrings.Texts("Text_5F541189", "Text_0670E591");
-    public int ButtonMappingLayerIndex
-    {
-        get => _buttonMappingLayerIndex;
-        set
-        {
-            if (SetField(ref _buttonMappingLayerIndex, Math.Clamp(value, 0, 1)))
-            {
-                OnPropertyChanged(nameof(VisibleButtonAssignments));
-            }
-        }
-    }
-    public IReadOnlyList<ViperButtonAssignmentRowViewModel> VisibleButtonAssignments =>
-        ButtonAssignments
-            .Where(row => (int)row.Assignment.Layer == ButtonMappingLayerIndex)
-            .ToArray();
-    public bool CanReadButtonMappings => _canReadButtonMappings;
-    public bool CanSetButtonMappings => _canSetButtonMappings;
+    public RazerHidMappingViewModel Mapping =>
+        _mapping ??= new RazerHidMappingViewModel(
+            new RazerViperMappingTransport(_deviceTelemetryReader, _deviceDescriptors),
+            canWrite: true,
+            actionCatalog: RazerViperMappingActionCatalog.Instance,
+            afterApplyAsync: PersistMappingProfileAsync);
 
     public async Task ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default)
     {
@@ -197,111 +180,6 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
                 throw new InvalidOperationException(AppStrings.Text("Text_86504D84"));
             }
         }, cancellationToken, RestoreDpiStages);
-    }
-
-    public async Task ReadButtonMappingsAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanReadButtonMappings)
-        {
-            return;
-        }
-
-        await RunDeviceOperationAsync(AppStrings.Text("Text_D9C12104"), async () =>
-        {
-            var previousProfileAssignments = Profile.Global.Viper.ButtonAssignments;
-            var assignments = await _deviceTelemetryReader.ReadViperButtonAssignmentsAsync(
-                _deviceDescriptors(), cancellationToken);
-            SetButtonAssignments(assignments);
-            Profile.Global.Viper.ButtonAssignments = assignments
-                .Select(ToProfileAssignment)
-                .ToList();
-            if (!await _saveProfileAsync(cancellationToken))
-            {
-                Profile.Global.Viper.ButtonAssignments = previousProfileAssignments;
-                throw new InvalidOperationException(AppStrings.Text(
-                    "ViperMappingReadProfileSaveFailed"));
-            }
-        }, cancellationToken, () =>
-        {
-            ButtonAssignments.Clear();
-            OnPropertyChanged(nameof(VisibleButtonAssignments));
-            _canSetButtonMappings = false;
-            ButtonMappingsText = AppStrings.Text("Text_6320369E");
-            OnPropertyChanged(nameof(CanSetButtonMappings));
-        });
-    }
-
-    public async Task ApplyButtonMappingAsync(
-        ViperButtonAssignmentRowViewModel row,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(row);
-        if (!CanSetButtonMappings || !row.CanApply)
-        {
-            return;
-        }
-
-        await RunDeviceOperationAsync(AppStrings.Text("Text_D9C12104"), async () =>
-        {
-            var previous = row.Assignment;
-            var previousProfileAssignments = Profile.Global.Viper.ButtonAssignments;
-            var actual = await _deviceTelemetryReader.SetViperButtonAssignmentAsync(
-                _deviceDescriptors(), row.CreateAssignment(), cancellationToken);
-            row.Apply(actual);
-            Profile.Global.Viper.ButtonAssignments = ButtonAssignments
-                .Select(item => ToProfileAssignment(item.Assignment))
-                .ToList();
-            if (!await _saveProfileAsync(cancellationToken))
-            {
-                Profile.Global.Viper.ButtonAssignments = previousProfileAssignments;
-                var restored = await _deviceTelemetryReader.SetViperButtonAssignmentAsync(
-                    _deviceDescriptors(), previous, CancellationToken.None);
-                row.Apply(restored);
-                throw new InvalidOperationException(AppStrings.Text(
-                    "ViperMappingSaveFailedRestored"));
-            }
-        }, cancellationToken, row.RestoreSelection);
-    }
-
-    public async Task ApplyAllButtonMappingsAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanSetButtonMappings)
-        {
-            return;
-        }
-
-        if (!ButtonAssignments.Any(row => row.CanApply))
-        {
-            return;
-        }
-
-        await RunDeviceOperationAsync(AppStrings.Text("Text_D9C12104"), async () =>
-        {
-            var previous = ButtonAssignments.Select(row => row.Assignment).ToArray();
-            var previousProfileAssignments = Profile.Global.Viper.ButtonAssignments;
-            var requested = ButtonAssignments.Select(row => row.CreateAssignment()).ToArray();
-            var actual = await _deviceTelemetryReader.SetViperButtonAssignmentsAsync(
-                _deviceDescriptors(), requested, cancellationToken);
-            SetButtonAssignments(actual);
-            Profile.Global.Viper.ButtonAssignments = actual
-                .Select(ToProfileAssignment)
-                .ToList();
-            if (!await _saveProfileAsync(cancellationToken))
-            {
-                Profile.Global.Viper.ButtonAssignments = previousProfileAssignments;
-                var restored = await _deviceTelemetryReader.SetViperButtonAssignmentsAsync(
-                    _deviceDescriptors(), previous, CancellationToken.None);
-                SetButtonAssignments(restored);
-                throw new InvalidOperationException(AppStrings.Text(
-                    "ViperMappingBatchSaveFailedRestored"));
-            }
-        }, cancellationToken, () =>
-        {
-            foreach (var row in ButtonAssignments.Where(row => row.CanApply))
-            {
-                row.RestoreSelection();
-            }
-        });
     }
 
     internal void ApplyTelemetry(RazerDeviceTelemetry telemetry)
@@ -374,8 +252,6 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         if (viper is not null)
         {
             CanSetBatteryChemistry = true;
-            _canReadButtonMappings = true;
-            OnPropertyChanged(nameof(CanReadButtonMappings));
             StatusText = telemetry.ViperBatteryPercent is not null ||
                          telemetry.ViperPollingRateHertz is not null ||
                          telemetry.ViperDpiX is not null ||
@@ -429,7 +305,6 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
                     cancellationToken);
             }
 
-            SetButtonAssignments(actual);
             _mappingProfileFingerprint = fingerprint;
             return null;
         }
@@ -442,6 +317,27 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             _mappingProfileFingerprint = string.Empty;
             return AppStrings.FormatText("ViperMappingProfileError", exception.Message);
         }
+    }
+
+    private async Task PersistMappingProfileAsync(CancellationToken cancellationToken)
+    {
+        var previous = Profile.Global.Viper.ButtonAssignments;
+        var actual = await _deviceTelemetryReader.ReadViperButtonAssignmentsAsync(
+            _deviceDescriptors(), cancellationToken).ConfigureAwait(true);
+        Profile.Global.Viper.ButtonAssignments = actual
+            .Select(ToProfileAssignment)
+            .ToList();
+        if (!await _saveProfileAsync(cancellationToken).ConfigureAwait(true))
+        {
+            Profile.Global.Viper.ButtonAssignments = previous;
+            throw new InvalidOperationException(AppStrings.Text("ViperMappingReadProfileSaveFailed"));
+        }
+
+        var viper = _deviceDescriptors().FirstOrDefault(device =>
+            device.ProtocolFamily == DeviceProtocolFamilies.Viper);
+        _mappingProfileFingerprint = CreateMappingFingerprint(
+            viper?.Id ?? string.Empty,
+            Profile.Global.Viper.ButtonAssignments);
     }
 
     internal void SetDevice(DeviceDescriptor? device, string? serial, string status)
@@ -457,7 +353,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     internal void SetUnavailable(bool hadViper)
     {
         Serial = null;
-        DeviceVisibility = Visibility.Collapsed;
+        DeviceVisibility = hadViper ? Visibility.Visible : Visibility.Collapsed;
         StatusText = hadViper ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");
     }
 
@@ -491,10 +387,6 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         _activeDpiStage = 0;
         _confirmedDpiStages = null;
         _canSetDpiStages = false;
-        ButtonAssignments.Clear();
-        _buttonMappingsText = AppStrings.Text("Text_C409646C");
-        _canReadButtonMappings = false;
-        _canSetButtonMappings = false;
         OnPropertyChanged(string.Empty);
     }
 
@@ -506,10 +398,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
 
     internal void RefreshLocalization()
     {
-        foreach (var row in ButtonAssignments)
-        {
-            row.RefreshLocalization();
-        }
+        OnPropertyChanged(string.Empty);
     }
 
     private ProfileDocument Profile => _getProfile();
@@ -580,23 +469,6 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         {
             SetDpiStages(confirmed, confirm: false);
         }
-    }
-
-    private void SetButtonAssignments(IReadOnlyList<ViperButtonAssignment> assignments)
-    {
-        ButtonAssignments.Clear();
-        foreach (var assignment in assignments
-            .OrderBy(item => item.ButtonId)
-            .ThenBy(item => item.Layer))
-        {
-            ButtonAssignments.Add(new(assignment));
-        }
-        OnPropertyChanged(nameof(VisibleButtonAssignments));
-        _canSetButtonMappings = assignments.Count == 16;
-        ButtonMappingsText = _canSetButtonMappings
-            ? AppStrings.Text("Text_0913960E")
-            : AppStrings.FormatText("MappingReadIncomplete", assignments.Count);
-        OnPropertyChanged(nameof(CanSetButtonMappings));
     }
 
     private string CreateMappingFingerprint(

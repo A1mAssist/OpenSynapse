@@ -3296,6 +3296,7 @@
   <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>Normal</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift</value></data>
+  <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>Key {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>Button</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>Current action</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>Type</value></data>

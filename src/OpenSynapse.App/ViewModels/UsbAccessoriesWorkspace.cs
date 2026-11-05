@@ -116,10 +116,10 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
 
     internal async Task RefreshKeyboardsAsync(CancellationToken cancellationToken)
     {
-        RazerKeyboardConnection? connection;
+        IReadOnlyList<RazerKeyboardConnection> connections;
         try
         {
-            connection = await RazerKeyboardService.FindAsync(
+            connections = await RazerKeyboardService.FindAllAsync(
                 message => _diagnosticLog.TryWrite("keyboard", message), cancellationToken);
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
@@ -128,7 +128,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             return;
         }
 
-        if (connection is null)
+        if (connections.Count == 0)
         {
             if (KeyboardDevices.Count == 0 && SelectedKeyboard is null) return;
             KeyboardDevices.Clear();
@@ -137,21 +137,26 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             return;
         }
 
-        if (KeyboardDevices.Count == 1 &&
-            StringComparer.OrdinalIgnoreCase.Equals(
-                KeyboardDevices[0].Connection.DevicePath, connection.DevicePath) &&
-            KeyboardDevices[0].Connection.ProductId == connection.ProductId)
+        if (KeyboardDevices.Count == connections.Count &&
+            KeyboardDevices.Zip(connections).All(pair =>
+                StringComparer.OrdinalIgnoreCase.Equals(
+                    pair.First.Connection.DevicePath, pair.Second.DevicePath) &&
+                pair.First.Connection.ProductId == pair.Second.ProductId))
         {
             return;
         }
 
+        var selectedPath = _selectedKeyboardDevice?.Connection.DevicePath;
         KeyboardDevices.Clear();
-        KeyboardDevices.Add(new RazerKeyboardDeviceRowViewModel(connection));
-        if (_selectedKeyboardDevice is null ||
-            !StringComparer.OrdinalIgnoreCase.Equals(
-                _selectedKeyboardDevice.Connection.DevicePath, connection.DevicePath))
+        foreach (var connection in connections)
         {
-            _selectedKeyboardDevice = null;
+            KeyboardDevices.Add(new RazerKeyboardDeviceRowViewModel(connection));
+        }
+
+        _selectedKeyboardDevice = KeyboardDevices.FirstOrDefault(row =>
+            StringComparer.OrdinalIgnoreCase.Equals(row.Connection.DevicePath, selectedPath));
+        if (_selectedKeyboardDevice is null)
+        {
             SelectedKeyboard = null;
         }
     }

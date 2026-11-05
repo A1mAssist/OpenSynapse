@@ -470,9 +470,9 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             _blade.RefreshPerformanceEditor();
             _blade.RefreshLogoEditor();
             var viperPresent = viper is not null;
-            var viperAvailable = viper is { } viperDevice &&
-                (telemetry.CapabilitySummaries?.GetValueOrDefault(viperDevice.Id)
-                    ?? DeviceCapabilitySummaryCalculator.Calculate(viperDevice, telemetry)).Available > 0;
+            // The Viper mapping channel can answer while battery/DPI telemetry is asleep.
+            // Presence decides whether its page and mapping editor stay reachable.
+            var viperAvailable = viperPresent;
             var bladeProfileBlocked = profileApply?.Errors.Any(error =>
                 error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
             var fanApply = bladeProfileBlocked

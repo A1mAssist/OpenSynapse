@@ -82,6 +82,18 @@ public sealed class RazerHidMappingTests
     }
 
     [Fact]
+    public async Task MappingProbeRejectsAZeroOnlyButtonList()
+    {
+        var definition = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x00E5)!;
+        var transport = new ProbeTransport(_ => Response([0x01, 0x00]));
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+
+        var capabilities = await service.ProbeMiddlewareCapabilitiesAsync(definition, "test");
+
+        Assert.DoesNotContain(RazerHidBackendCapability.MappingRead, capabilities);
+    }
+
+    [Fact]
     public async Task MappingProbeSkipsNonPointerDevices()
     {
         var definition = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x054A)!;
