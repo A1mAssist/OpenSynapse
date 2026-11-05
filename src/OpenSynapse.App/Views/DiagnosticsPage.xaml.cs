@@ -19,7 +19,7 @@ public sealed partial class DiagnosticsPage : UserControl
     {
         ViewModel.Refresh.SetDiagnosticsRebuildEnabled(true);
         await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
-        _ = ViewModel.RefreshHueAsync(Lifetime);
+        if (ViewModel.Hue.IsConfigured) _ = ViewModel.RefreshHueAsync(Lifetime);
     }
 
     private async void CopyDiagnosticsClick(object sender, RoutedEventArgs e)

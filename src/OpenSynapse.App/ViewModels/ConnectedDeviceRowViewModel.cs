@@ -172,7 +172,8 @@ public sealed class ConnectedDeviceRowViewModel
         IconGlyph = "\uE706";
         Category = DeviceCategory.Accessory;
         IsReady = source.IsReady;
-        IsVisible = source.IsReady;
+        // An unpaired bridge is an onboarding candidate, not a device in the list.
+        IsVisible = source.IsConfigured;
     }
 
     public object Source { get; }
