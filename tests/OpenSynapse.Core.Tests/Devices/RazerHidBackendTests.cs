@@ -2229,6 +2229,47 @@ public sealed class RazerHidBackendTests
         Assert.True(assignmentWrite > modeWrite, "the assignment must follow the mode repair");
     }
 
+    [Fact]
+    public async Task KeyboardMappingUsesTheKeyAssignmentTable()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x028D)!;
+        var transport = new NormalModeTransport();
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = MappingConnection(device);
+
+        // The echo transport cannot remember a write, so the read-back check fails by design.
+        await Record.ExceptionAsync(() => service.SetButtonAssignmentAsync(connection,
+            buttonId: 0x04, mode: 0x00, functionId: 0x01, data: [0x04, 0x00]));
+
+        Assert.Contains(transport.Requests, request => request[7] == 0x02 && request[8] == 0x0D);
+        Assert.Contains(transport.Requests, request => request[7] == 0x02 && request[8] == 0x8D);
+        Assert.DoesNotContain(transport.Requests, request => request[7] == 0x02 && request[8] == 0x0C);
+    }
+
+    [Fact]
+    public async Task MouseMappingKeepsTheButtonAssignmentTable()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0098)!;
+        var transport = new NormalModeTransport();
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = MappingConnection(device);
+
+        await Record.ExceptionAsync(() => service.SetButtonAssignmentAsync(connection,
+            buttonId: 0x04, mode: 0x00, functionId: 0x01, data: [0x04, 0x00]));
+
+        Assert.Contains(transport.Requests, request => request[7] == 0x02 && request[8] == 0x0C);
+        Assert.DoesNotContain(transport.Requests, request => request[7] == 0x02 && request[8] == 0x0D);
+    }
+
+    private static RazerHidDeviceConnection MappingConnection(RazerHidDeviceDefinition device) =>
+        new(device, "test-path", "test-device", RazerHidEndpointState.Resolved,
+            new HashSet<RazerHidBackendCapability>
+            {
+                RazerHidBackendCapability.MappingRead,
+                RazerHidBackendCapability.MappingWrite,
+            },
+            new Dictionary<RazerHidLedZone, RazerHidLightingZoneCapabilities>(), null);
+
     /// <summary>Answers get-device-mode with normal mode and echoes every other frame.</summary>
     private sealed class NormalModeTransport : IRazerFeatureTransport
     {

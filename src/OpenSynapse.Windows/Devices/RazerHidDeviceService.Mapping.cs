@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -8,9 +9,19 @@ public sealed partial class RazerHidDeviceService
         RazerHidDeviceConnection connection,
         byte buttonId,
         byte mode,
-        CancellationToken cancellationToken = default) =>
-        RazerHidMappingProtocol.ParseAssignment(await ExecuteAsync(connection,
-            RazerHidMappingProtocol.GetAssignment(buttonId, mode), cancellationToken).ConfigureAwait(false));
+        CancellationToken cancellationToken = default)
+    {
+        var request = UsesKeyAssignments(connection)
+            ? RazerHidMappingProtocol.GetKeyAssignment(buttonId, mode)
+            : RazerHidMappingProtocol.GetAssignment(buttonId, mode);
+        return RazerHidMappingProtocol.ParseAssignment(
+            await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false));
+    }
+
+    // Keyboards act on the key table; the button table accepts writes but never
+    // drives a key press. Synapse's OBM engine makes the same split.
+    private static bool UsesKeyAssignments(RazerHidDeviceConnection connection) =>
+        connection.Definition.Category == DeviceCategory.Keyboard;
 
     public async Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
@@ -28,9 +39,10 @@ public sealed partial class RazerHidDeviceService
             await EnsureDriverModeAsync(connection, cancellationToken).ConfigureAwait(false);
         }
 
-        await ExecuteWithoutResultAsync(connection,
-            RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray()),
-            cancellationToken).ConfigureAwait(false);
+        var request = UsesKeyAssignments(connection)
+            ? RazerHidMappingProtocol.SetKeyAssignment(buttonId, mode, functionId, data.ToArray())
+            : RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray());
+        await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
         var applied = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
             .ConfigureAwait(false);
         if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(data))
