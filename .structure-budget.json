@@ -105,7 +105,11 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/LightingStudioViewModel.cs",
-      "maxLines": 759
+      "maxLines": 782
+    },
+    {
+      "path": "src/OpenSynapse.App/Views/LightingStudioPage.xaml.cs",
+      "maxLines": 612
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/BladePowerTelemetryReader.cs",
