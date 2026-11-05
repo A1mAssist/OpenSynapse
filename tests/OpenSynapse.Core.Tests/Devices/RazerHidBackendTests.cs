@@ -602,6 +602,63 @@ public sealed class RazerHidBackendTests
         Assert.Equal(RazerFeatureReport.CalculateCrc(request), request[89]);
     }
 
+    [Fact]
+    public void BlackWidowV4ProWristRestUsesRowSeven()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x028D)!;
+        Assert.True(RazerHidWristRestProtocol.Supports(device));
+
+        var request = RazerHidWristRestProtocol
+            .CreateSetColorRequest(device, new RazerHidColor(0x11, 0x22, 0x33))
+            .Report;
+
+        var arguments = RazerFeatureReport.ArgumentsOffset;
+        Assert.Equal(0x0F, request[7]);
+        Assert.Equal(0x03, request[8]);
+        Assert.Equal(0x00, request[arguments]);
+        Assert.Equal(0x00, request[arguments + 1]);
+        Assert.Equal(RazerHidWristRestProtocol.Row, request[arguments + 2]);
+        Assert.Equal(0x00, request[arguments + 3]);
+        Assert.Equal(RazerHidWristRestProtocol.Columns - 1, request[arguments + 4]);
+        Assert.Equal((0x11, 0x22, 0x33),
+            (request[arguments + 5], request[arguments + 6], request[arguments + 7]));
+        Assert.Equal((0x11, 0x22, 0x33),
+            (request[arguments + 5 + (RazerHidWristRestProtocol.Columns - 1) * 3],
+             request[arguments + 6 + (RazerHidWristRestProtocol.Columns - 1) * 3],
+             request[arguments + 7 + (RazerHidWristRestProtocol.Columns - 1) * 3]));
+        Assert.Equal(RazerFeatureReport.CalculateCrc(request), request[89]);
+    }
+
+    [Fact]
+    public void WristRestIsLimitedToBlackWidowV4Pro()
+    {
+        var other = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0225)!;
+        Assert.False(RazerHidWristRestProtocol.Supports(other));
+        Assert.Throws<NotSupportedException>(() =>
+            RazerHidWristRestProtocol.CreateSetColorRequest(other, default));
+    }
+
+    [Fact]
+    public async Task SetWristRestColorWritesOneRow()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x028D)!;
+        var transport = new RecordingTransport();
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = new RazerHidDeviceConnection(device, "test-path", "test-device",
+            RazerHidEndpointState.Resolved,
+            new HashSet<RazerHidBackendCapability> { RazerHidBackendCapability.MatrixFrameWrite },
+            new Dictionary<RazerHidLedZone, RazerHidLightingZoneCapabilities>(), null);
+
+        await service.SetWristRestColorAsync(connection, new RazerHidColor(1, 2, 3));
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Equal(RazerHidWristRestProtocol.Row,
+            request[RazerFeatureReport.ArgumentsOffset + 2]);
+        Assert.Equal(RazerHidWristRestProtocol.Columns - 1,
+            request[RazerFeatureReport.ArgumentsOffset + 4]);
+    }
+
+
     [Theory]
     [InlineData(0x0F1A, 0x1F, 0x00, 0x1F)]
     [InlineData(0x0203, 0xFF, 0xFF, 0xFF)]

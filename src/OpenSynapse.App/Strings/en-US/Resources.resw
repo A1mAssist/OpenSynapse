@@ -1436,6 +1436,10 @@
   <data name="RazerHidLightingZone.Header" xml:space="preserve"><value>Zone</value></data>
   <data name="RazerHidLightingEffect.Header" xml:space="preserve"><value>Effect</value></data>
   <data name="RazerHidBrightnessLabel.Text" xml:space="preserve"><value>Brightness</value></data>
+  <data name="RazerHidWristRestTitle.Text" xml:space="preserve"><value>Wrist rest lighting</value></data>
+  <data name="RazerHidWristRestDescription.Text" xml:space="preserve"><value>Razer exposes the wrist rest's 20 underglow LEDs on row 8 of the keyboard matrix. Set its colour here.</value></data>
+  <data name="RazerHidWristRestEnabled.Header" xml:space="preserve"><value>Enable wrist rest lighting</value></data>
+  <data name="RazerHidWristRestApply.Content" xml:space="preserve"><value>Apply wrist rest colour</value></data>
   <data name="RazerHidLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Effect speed or duration</value></data>
   <data name="RazerHidLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting direction</value></data>
   <data name="RazerHidLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>

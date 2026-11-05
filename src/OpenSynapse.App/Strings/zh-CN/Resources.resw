@@ -1808,6 +1808,10 @@
   <data name="RazerHidLightingZone.Header" xml:space="preserve"><value>区域</value></data>
   <data name="RazerHidLightingEffect.Header" xml:space="preserve"><value>效果</value></data>
   <data name="RazerHidBrightnessLabel.Text" xml:space="preserve"><value>亮度</value></data>
+  <data name="RazerHidWristRestTitle.Text" xml:space="preserve"><value>腕托灯</value></data>
+  <data name="RazerHidWristRestDescription.Text" xml:space="preserve"><value>雷云把腕托的 20 颗 underglow 灯放在键盘矩阵第 8 行；这里单独给腕托上色。</value></data>
+  <data name="RazerHidWristRestEnabled.Header" xml:space="preserve"><value>启用腕托灯</value></data>
+  <data name="RazerHidWristRestApply.Content" xml:space="preserve"><value>应用腕托颜色</value></data>
   <data name="RazerHidLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效速度或持续时间</value></data>
   <data name="RazerHidLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效方向</value></data>
   <data name="RazerHidLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
