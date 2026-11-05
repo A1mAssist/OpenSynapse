@@ -35,7 +35,7 @@
 这条规则对 agent、对人、对赶工都一样有效，因为它不依赖任何人记得规矩。
 
 ```csharp
-// tests/OpenSynapse.Core.Tests/StructureBudgetTests.cs 形状
+// tests/OpenSynapse.Core.Tests/Architecture/StructureBudgetTests.cs 形状
 [Fact]
 public void NoFileExceedsItsBudget()
 {
@@ -51,10 +51,10 @@ public void NoFileExceedsItsBudget()
 
 | 新增 | 检查什么 |
 |---|---|
-| `tests/OpenSynapse.Core.Tests/StructureBudgetTests.cs` | 单文件行数、单类型 public 成员数只降不升 |
+| `tests/OpenSynapse.Core.Tests/Architecture/StructureBudgetTests.cs` | 单文件行数、单类型 public 成员数只降不升 |
 | `.structure-budget.json` | 上述两类的白名单与上限 |
-| `tests/OpenSynapse.Core.Tests/LayeringTests.cs` | Core 不得 `using OpenSynapse.Windows/App`；Windows 不得 `using OpenSynapse.App` |
-| `tests/OpenSynapse.Core.Tests/TestProjectHygieneTests.cs` | 测试 csproj 不得出现指向 `src/OpenSynapse.App` 的 `<Compile Include>`（阶段 2 完成后启用） |
+| `tests/OpenSynapse.Core.Tests/Architecture/LayeringTests.cs` | Core 不得 `using OpenSynapse.Windows/App`；Windows 不得 `using OpenSynapse.App` |
+| `tests/OpenSynapse.Core.Tests/Infrastructure/TestProjectHygieneTests.cs` | 测试 csproj 不得出现指向 `src/OpenSynapse.App` 的 `<Compile Include>`（阶段 2 完成后启用） |
 | `scripts/check-structure.ps1` | 本地一次跑完，输出表格式清单 + 退出码 |
 
 验收：`dotnet test` 全绿；**故意给某个超预算文件加一行，测试必须红**；删掉加的那行，必须绿。这一步不做完不进阶段 1——否则整套机制没有证明过它会响。

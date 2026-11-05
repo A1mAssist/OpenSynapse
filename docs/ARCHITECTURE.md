@@ -8,10 +8,10 @@
 
 | 项目 | 值 |
 |---|---|
-| 基线日期 | 2026-10-30 |
+| 基线日期 | 2026-11-05 |
 | 分支 | `main` |
 | 构建 | `dotnet build src\OpenSynapse.App\OpenSynapse.App.csproj -c Release -r win-x64 --no-restore` → 0 警告，0 错误 |
-| 测试 | `dotnet test tests\OpenSynapse.Core.Tests\OpenSynapse.Core.Tests.csproj -c Release --no-restore` → 1657 个测试，1657 通过，0 失败，0 跳过 |
+| 测试 | `dotnet test tests\OpenSynapse.Core.Tests\OpenSynapse.Core.Tests.csproj -c Release --no-restore` → 3502 个测试，3502 通过，0 失败，0 跳过 |
 | Blade manifest | `BladeModelCapabilities` 的 39 个 PID 都有内建 manifest |
 
 测试前需要清空 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 及其小写形式，并设置 `NO_PROXY=no_proxy=127.0.0.1,localhost`；否则 Chroma 测试会尝试走本机代理 `127.0.0.1:7890`。

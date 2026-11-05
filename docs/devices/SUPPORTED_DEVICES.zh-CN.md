@@ -498,6 +498,6 @@ Philips Hue 配对后通过桥的 HTTPS API 控制。
 
 THX V3/V4 耳机路径和部分中间件推导设备来自原生客户端与协议证据，标注未实机验证的仍需硬件验收。BLE 鼠标必须暴露 Razer protocol 30 服务 `52401523`；该页面面向 Basilisk V3 Pro、Viper V4 Pro 这类设备，按实际响应提供电量、轮询率、DPI、灯光和按键映射。AudioAWKittyBLE 耳机（`0309`、`0530`、`0534`、`0562`）使用服务 `416d656c-2d52-617a-6572-424c4501f40a`，走独立的 GATT 控制页。
 
-外部灯光集成见 [Chroma 支持设备](CHROMA_SUPPORTED_DEVICES.zh-CN.md)。
+外部灯光集成见 [Chroma 支持设备](../lighting/CHROMA_SUPPORTED_DEVICES.zh-CN.md)。
 
-返回 [README](../README.zh-CN.md)。
+返回 [README](../../README.zh-CN.md)。

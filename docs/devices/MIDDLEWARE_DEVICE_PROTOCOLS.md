@@ -22,7 +22,7 @@
 - 只收录出现在产品**自身 handler** 里的命令。共享设备类库（`rzDevice25`、`rzDevice30` 等）里定义的命令不算——库里定义了不代表这台设备支持。
 - 命令存在不等于硬件支持。写入前仍需读能力位、写后读回、准备恢复路径。
 - `dataSize` 是从命令常量推出的上限，实际响应可能更短。
-- 不是所有功能都走 HID。中间件把这些交给原生 DLL：Philips Hue 的桥发现与配对（`DiscoverBridges` / `PairBridge` / `GetConnectedBridgeInfo`）、THX APO 的侧音（sidetone）、麦克风压缩器、齿音消除、混响、限制器、HRTF。这类条目即使出现在 profile 表里，也没有可解析的报文，不能按 HID 命令实现。注意：耳机硬件自身的侧音不是这条；BlackShark V2 Pro 走自己的 HID 命令，见 `docs/RAZER_THX_NATIVE.md`。
+- 不是所有功能都走 HID。中间件把这些交给原生 DLL：Philips Hue 的桥发现与配对（`DiscoverBridges` / `PairBridge` / `GetConnectedBridgeInfo`）、THX APO 的侧音（sidetone）、麦克风压缩器、齿音消除、混响、限制器、HRTF。这类条目即使出现在 profile 表里，也没有可解析的报文，不能按 HID 命令实现。注意：耳机硬件自身的侧音不是这条；BlackShark V2 Pro 走自己的 HID 命令，见 `docs/protocols/RAZER_THX_NATIVE.md`。
 
 ## 设备与 profile
 
@@ -899,7 +899,7 @@
 
 设备：`0F1F` RAZER CHROMA ADDRESSABLE RGB CONTROLLER、`0F28` Razer Raptor 27 (165Hz)、`0F2C` Razer Chroma Wireless ARGB Controller、`0F35` RAZER HANBO AIO、`0F3C` RAZER PWM PC FAN CONTROLLER、`0F64` Razer Soma Chroma
 
-> ARGB 帧是 320 字节的 SET_FEATURE report（`struct razer_argb_report`，pinned `6820f9d`）：`report_id`（通道 <5 用 `0x04`，≥5 用 `0x84`）+ `channel_1` + `channel_2` + `pad` + `last_idx`（本帧颜色数 −1）+ 315 字节 RGB（最多 105 颗灯），USB 侧 `wValue 0x0300`、`wIndex 1`。Windows 上走 Razer 的 `RzDev_0f1f` 过滤驱动：打开 `RZCONTROL\VID_1532&PID_0F1F&MI_00` 的接口，`DeviceIoControl(0x88883010, frame)` 会被原样转发成 `IOCTL_HID_SET_FEATURE`，长度不受 HID 栈限制。详见 `docs/RAZER_0F1F_FILTER_DRIVER.md`。
+> ARGB 帧是 320 字节的 SET_FEATURE report（`struct razer_argb_report`，pinned `6820f9d`）：`report_id`（通道 <5 用 `0x04`，≥5 用 `0x84`）+ `channel_1` + `channel_2` + `pad` + `last_idx`（本帧颜色数 −1）+ 315 字节 RGB（最多 105 颗灯），USB 侧 `wValue 0x0300`、`wIndex 1`。Windows 上走 Razer 的 `RzDev_0f1f` 过滤驱动：打开 `RZCONTROL\VID_1532&PID_0F1F&MI_00` 的接口，`DeviceIoControl(0x88883010, frame)` 会被原样转发成 `IOCTL_HID_SET_FEATURE`，长度不受 HID 栈限制。详见 `docs/protocols/RAZER_0F1F_FILTER_DRIVER.md`。
 
 | class:cmd | dataSize | 命令 |
 |---|---:|---|
