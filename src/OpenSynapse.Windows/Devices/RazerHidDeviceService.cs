@@ -768,33 +768,6 @@ public sealed partial class RazerHidDeviceService
         RazerHidMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
             RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
 
-    public async Task<RazerHidButtonAssignment> GetButtonAssignmentAsync(
-        RazerHidDeviceConnection connection,
-        byte buttonId,
-        byte mode,
-        CancellationToken cancellationToken = default) =>
-        RazerHidMappingProtocol.ParseAssignment(await ExecuteAsync(connection,
-            RazerHidMappingProtocol.GetAssignment(buttonId, mode), cancellationToken).ConfigureAwait(false));
-
-    public async Task SetButtonAssignmentAsync(
-        RazerHidDeviceConnection connection,
-        byte buttonId,
-        byte mode,
-        byte functionId,
-        IReadOnlyList<byte> data,
-        CancellationToken cancellationToken = default)
-    {
-        await ExecuteWithoutResultAsync(connection,
-            RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray()),
-            cancellationToken).ConfigureAwait(false);
-        var applied = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
-            .ConfigureAwait(false);
-        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(data))
-        {
-            throw new InvalidOperationException("The device kept a different button assignment.");
-        }
-    }
-
     public async Task<byte> GetBrightnessAsync(
         RazerHidDeviceConnection connection,
         RazerHidStorage? storage = null,

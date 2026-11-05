@@ -2201,6 +2201,71 @@ public sealed class RazerHidBackendTests
         }
     }
 
+    [Fact]
+    public async Task MappingWriteRepairsNormalDeviceModeFirst()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x00BE)!;
+        var transport = new NormalModeTransport();
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = new RazerHidDeviceConnection(device, "test-path", "test-device",
+            RazerHidEndpointState.Resolved,
+            new HashSet<RazerHidBackendCapability>
+            {
+                RazerHidBackendCapability.MappingWrite,
+                RazerHidBackendCapability.DeviceModeWrite,
+            },
+            new Dictionary<RazerHidLedZone, RazerHidLightingZoneCapabilities>(), null);
+
+        // The transport answers normal mode and never stores the assignment, so the
+        // final readback cannot match. This pins the order Synapse uses before a write.
+        await Record.ExceptionAsync(() => service.SetButtonAssignmentAsync(
+            connection, buttonId: 0x04, mode: 0x00, functionId: 0x01, data: [0x01]));
+
+        var modeWrite = transport.Requests.FindIndex(request =>
+            request[7] == 0x00 && request[8] == 0x04 && request[9] == 0x03);
+        var assignmentWrite = transport.Requests.FindIndex(request =>
+            request[7] == 0x02 && request[8] == 0x0C);
+        Assert.True(modeWrite >= 0, "the driver-mode write must be sent");
+        Assert.True(assignmentWrite > modeWrite, "the assignment must follow the mode repair");
+    }
+
+    /// <summary>Answers get-device-mode with normal mode and echoes every other frame.</summary>
+    private sealed class NormalModeTransport : IRazerFeatureTransport
+    {
+        internal List<byte[]> Requests { get; } = [];
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            Requests.Add(request.ToArray());
+            var response = request.ToArray();
+            response[1] = 0x02;
+            if (request.Span[7] == 0x00 && request.Span[8] == 0x84)
+            {
+                response[6] = 0x02;
+                response[9] = 0x00;
+            }
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
+
     private sealed class RecordingTransport : IRazerFeatureTransport
     {
         internal List<byte[]> Requests { get; } = [];
