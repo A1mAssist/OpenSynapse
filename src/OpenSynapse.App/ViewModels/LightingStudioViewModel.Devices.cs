@@ -100,8 +100,15 @@ public sealed partial class LightingStudioViewModel
                 continue;
             }
 
-            // The manifest fetch can take tens of seconds; show an editable grid until it lands.
-            if (GridVisual(device) is { } placeholder) AddVisual(placeholder);
+            // The manifest fetch can take seconds; paint the packaged layout (or an editable
+            // grid) now and replace it when the live manifest lands.
+            if ((_visualLoader.LoadOfflineVisual(
+                    device.EffectiveProductId,
+                    instanceId,
+                    device.Name) ?? GridVisual(device)) is { } placeholder)
+            {
+                AddVisual(placeholder);
+            }
             try
             {
                 var visual = device.Descriptor is { } descriptor
@@ -279,16 +286,25 @@ public sealed partial class LightingStudioViewModel
             return;
         }
 
-        var placeholder = GridVisual(option);
+        var offline = _visualLoader.LoadOfflineVisual(
+            option.EffectiveProductId,
+            option.EffectiveInstanceId ?? string.Empty,
+            option.Name);
+        var placeholder = offline ?? GridVisual(option);
         if (placeholder is not null)
         {
-            // The manifest request can take seconds; the editable grid must be visible now.
+            // The manifest request can take seconds; the packaged layout (or editable grid)
+            // must be visible now.
             SetDeviceVisual(placeholder);
         }
 
-        var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        // The network/manifest path is bounded below; do not leave the page on a loading
+        // status if the request hangs or the CDN is unreachable.
+        var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(12));
         _visualCancellation = cancellation;
-        StatusText = AppStrings.Text("LightingStudioStatusLoadingLayout");
+        StatusText = AppStrings.Text(offline is null
+            ? "LightingStudioStatusLoadingLayout"
+            : "LightingStudioStatusHint");
         try
         {
             var visual = option.Descriptor is { } descriptor
@@ -298,7 +314,7 @@ public sealed partial class LightingStudioViewModel
                     option.EffectiveInstanceId ?? string.Empty,
                     option.Name,
                     cancellation.Token);
-            if (!cancellation.IsCancellationRequested)
+            if (ReferenceEquals(_visualCancellation, cancellation) && !cancellation.IsCancellationRequested)
             {
                 SetDeviceVisual(visual ?? placeholder);
                 StatusText = AppStrings.Text("LightingStudioStatusHint");
@@ -306,9 +322,16 @@ public sealed partial class LightingStudioViewModel
         }
         catch (OperationCanceledException)
         {
+            if (ReferenceEquals(_visualCancellation, cancellation))
+            {
+                SetDeviceVisual(placeholder);
+                StatusText = AppStrings.Text("LightingStudioStatusLayoutFallback");
+            }
         }
         catch (Exception exception) when (IsExpected(exception))
         {
+            if (!ReferenceEquals(_visualCancellation, cancellation)) return;
+
             // No manifest (offline, unknown product) still gets an editable grid from the
             // matrix dimensions the device already reports.
             var fallback = GridVisual(option);
