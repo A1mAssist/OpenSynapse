@@ -1,20 +1,23 @@
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>
-/// Device images are optional. A model appears only when its SVG asset was captured
-/// with the layout; no synthetic outline or reused coordinates.
+/// Device images are optional. A model appears only when its own captured asset exists;
+/// no synthetic outline and no coordinates reused from another model.
 /// </summary>
 public static class RazerMappingAssetCatalog
 {
     public static Uri? FindDeviceImage(ushort productId)
     {
-        var path = Path.Combine(
-            AppContext.BaseDirectory,
-            "Assets",
-            "MappingLayouts",
-            $"{productId:X4}.svg");
-        return File.Exists(path)
-            ? new Uri($"ms-appx:///Assets/MappingLayouts/{productId:X4}.svg")
-            : null;
+        foreach (var extension in new[] { ".svg", ".png" })
+        {
+            var name = $"{productId:X4}{extension}";
+            var path = Path.Combine(AppContext.BaseDirectory, "Assets", "MappingLayouts", name);
+            if (File.Exists(path))
+            {
+                return new Uri(Path.GetFullPath(path));
+            }
+        }
+
+        return null;
     }
 }

@@ -3301,6 +3301,7 @@
   <data name="LightingStudioProject" xml:space="preserve"><value>Project</value></data>
   <data name="LightingStudioMore" xml:space="preserve"><value>More</value></data>
   <data name="LightingStudioProfileTitle" xml:space="preserve"><value>Profile name</value></data>
+  <data name="RazerMappingDeviceImageLabel" xml:space="preserve"><value>Device image</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>Button mapping</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>Read</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>

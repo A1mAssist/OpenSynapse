@@ -39,8 +39,14 @@ public sealed class MappingPageAuditTests
         var directory = Path.Combine(
             RepoLayout.Root, "src", "OpenSynapse.App", "Assets", "MappingLayouts");
         Assert.True(Directory.Exists(directory));
-        var images = Directory.GetFiles(directory, "*.svg");
+        var images = Directory
+            .EnumerateFiles(directory)
+            .Where(path =>
+                path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
+                path.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
         Assert.Contains(images, path => Path.GetFileName(path) == "00B9.svg");
+        Assert.Contains(images, path => Path.GetFileName(path) == "00B8.png");
         Assert.DoesNotContain(
             Directory.GetFiles(directory, "*.json"),
             _ => true);
