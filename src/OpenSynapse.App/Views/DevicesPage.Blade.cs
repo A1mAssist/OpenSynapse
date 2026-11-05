@@ -422,6 +422,13 @@ public sealed partial class DevicesPage : UserControl
             ReferenceEquals(sender, SecondaryLightingColorFlyout) ||
             ReferenceEquals(sender, TertiaryLightingColorFlyout))
         {
+            // Programmatic swatch changes must reach the VM before applying.
+            if (ReferenceEquals(sender, PrimaryLightingColorFlyout))
+                ViewModel.Blade.LightingColor = picker!.Color;
+            else if (ReferenceEquals(sender, SecondaryLightingColorFlyout))
+                ViewModel.Blade.LightingSecondColor = picker!.Color;
+            else
+                ViewModel.Blade.LightingTertiaryColor = picker!.Color;
             await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
         }
         else if (ReferenceEquals(sender, RazerHidPrimaryColorFlyout) ||
