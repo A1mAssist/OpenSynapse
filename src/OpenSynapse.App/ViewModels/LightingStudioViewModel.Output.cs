@@ -191,7 +191,7 @@ public sealed partial class LightingStudioViewModel
         _outputClock.Restart();
         _outputTask = Task.Run(async () =>
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(33));
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000d / 60d));
             try
             {
                 while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))

@@ -19,7 +19,7 @@ namespace OpenSynapse.App.Views;
 public sealed partial class LightingStudioPage : UserControl
 {
     private const double CellSize = 28;
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(33) };
+    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(1000d / 60d) };
     private readonly Stopwatch _clock = new();
     private Rectangle[] _cells = [];
     private SolidColorBrush[] _brushes = [];

@@ -295,24 +295,11 @@ internal sealed class RazerHidSoftwareLightingRuntime : IAsyncDisposable
             return requested;
         }
 
-        var largestMatrix = targets.Max(connection =>
-        {
-            var dimensions = connection.Definition.MatrixDimensions!;
-            return dimensions.Rows * dimensions.Columns;
-        });
         var slowestDeviceWait = targets.Max(connection => connection.Definition.DeviceWait);
-        var targetFps = largestMatrix switch
-        {
-            <= 64 => 60d,
-            <= 132 => 45d,
-            _ => 30d,
-        };
-        var cadence = TimeSpan.FromSeconds(1d / targetFps);
         var rows = targets.Max(connection => connection.Definition.MatrixDimensions!.Rows);
         var transportFloor = slowestDeviceWait * Math.Max(1, (int)rows) + TimeSpan.FromMilliseconds(1);
-        return requested > cadence
-            ? requested > transportFloor ? requested : transportFloor
-            : cadence > transportFloor ? cadence : transportFloor;
+        // Keep the requested cadence unless the actual HID transfer time cannot sustain it.
+        return requested > transportFloor ? requested : transportFloor;
     }
 
     private async Task ClearStateAsync(CancellationToken cancellationToken)
