@@ -20,7 +20,7 @@ public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
     public DeviceCategory HardwareCategory => DeviceCategory.Keyboard;
     public string Name => Connection.Name;
     public string Category => AppStrings.Text("RazerKeyboardCategory");
-    public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
+    public string Identity => $"VID_1532 / PID_{Connection.DisplayProductId:X4}";
     public string IconGlyph => "\uE765";
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
     public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
@@ -66,7 +66,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
     public string Name => _connection.Name;
     public string CategoryText => AppStrings.Text("RazerKeyboardCategory");
-    public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
+    public string Identity => $"VID_1532 / PID_{_connection.DisplayProductId:X4}";
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
 

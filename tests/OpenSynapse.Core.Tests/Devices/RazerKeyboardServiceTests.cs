@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
@@ -86,6 +87,42 @@ public sealed class RazerKeyboardServiceTests
         Assert.Contains(transport.Requests, request =>
             request[7] == 0x00 && request[8] == 0x40 &&
             request[9] == 0x03 && request[10] == 0x08);
+    }
+
+    [Theory]
+    [InlineData(0x02C9, 0x02CC)]
+    [InlineData(0x02CA, 0x02CC)]
+    [InlineData(0x02D2, 0x02D4)]
+    [InlineData(0x02D3, 0x02D4)]
+    [InlineData(0x02B4, 0x02B3)]
+    [InlineData(0x02B5, 0x02B3)]
+    [InlineData(0x02C2, 0x02C4)]
+    [InlineData(0x02C3, 0x02C4)]
+    [InlineData(0x02F5, 0x02F4)]
+    [InlineData(0x02F6, 0x02F4)]
+    public void WirelessPidsAdmitTheWiredModel(ushort wireless, ushort wired)
+    {
+        Assert.True(RazerProductAliases.IsWirelessAlias(wireless));
+        Assert.Equal(wired, RazerProductAliases.Canonical(wireless));
+        Assert.True(RazerKeyboardService.IsSupported(wireless));
+        Assert.Equal(
+            RazerKeyboardService.UsesLegacyChroma(wired),
+            RazerKeyboardService.UsesLegacyChroma(wireless));
+    }
+
+    [Fact]
+    public void TheDongleInterfaceIsAdmittedForTheBlackWidowV4LowProfile()
+    {
+        var dongle = new WindowsHidDiscovery.HidInterfaceDescriptor(
+            @"\\?\hid#vid_1532&pid_02c9&mi_02", "container", 0x1532, 0x02C9,
+            InputReportByteLength: 64, OutputReportByteLength: 64,
+            FeatureReportByteLength: 91, UsagePage: 0xFF00, Usage: 0x0001,
+            DeviceAccessState.Available,
+            "Razer BlackWidow V4 Low-profile HyperSpeed");
+
+        var candidates = RazerKeyboardService.SelectCandidates([dongle]);
+
+        Assert.Equal(0x02C9, Assert.Single(candidates).ProductId);
     }
 
     [Theory]
