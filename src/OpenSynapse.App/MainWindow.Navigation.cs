@@ -160,7 +160,6 @@ public sealed partial class MainWindow
         if (page == "devices")
         {
             DevicesPage.RefreshAdvancedFeaturesVisibility();
-            _ = _viewModel.RefreshHueAsync(_lifetime.Token);
         }
         UpdatePerformanceSamplingState();
         SettingsPage.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
@@ -182,7 +181,9 @@ public sealed partial class MainWindow
         // Peak tracking must keep sampling while the window is hidden.
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(true);
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
-            AppWindow.IsVisible && DevicesPage.Visibility == Visibility.Visible);
+            AppWindow.IsVisible &&
+            (DevicesPage.Visibility == Visibility.Visible ||
+             DiagnosticsPage.Visibility == Visibility.Visible));
         _viewModel.Refresh.SetDiagnosticsRebuildEnabled(
             AppWindow.IsVisible && DiagnosticsPage.Visibility == Visibility.Visible);
     }

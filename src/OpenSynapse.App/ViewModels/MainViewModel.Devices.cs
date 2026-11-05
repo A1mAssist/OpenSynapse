@@ -265,6 +265,7 @@ public sealed partial class MainViewModel
             yield return new("cooling-pad", CoolingPad.Name, "CoolingPad", CoolingPad.Identity, CoolingPad.StatusText, CoolingPad.ErrorText);
         if (Kiyo.IsConnected || Kiyo.HasError)
             yield return new("kiyo", Kiyo.Name, "Kiyo", Kiyo.Identity, Kiyo.StatusText, Kiyo.ErrorText);
+        // Unpaired bridges are onboarding candidates, not devices yet.
         if (Hue.IsConfigured)
             yield return new("hue:" + Hue.BridgeHost, "Philips Hue", "Hue", Hue.DeviceIdentity, Hue.DeviceStatusText, Hue.ErrorText);
     }

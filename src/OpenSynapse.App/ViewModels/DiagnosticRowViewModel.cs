@@ -38,6 +38,16 @@ public sealed class DiagnosticRowViewModel(
         PropertyChanged?.Invoke(this, new(nameof(ProtocolDetailsVisibility)));
     }
 
+    public void UpdateProtocolDetails(IReadOnlyList<DeviceProtocolDetailViewModel> details)
+    {
+        foreach (var detail in details)
+        {
+            var existing = ProtocolDetails.FirstOrDefault(item =>
+                string.Equals(item.CapabilityKey, detail.CapabilityKey, StringComparison.Ordinal));
+            existing?.UpdateFrom(detail);
+        }
+    }
+
     public void RefreshLocalization()
     {
         PropertyChanged?.Invoke(this, new(string.Empty));

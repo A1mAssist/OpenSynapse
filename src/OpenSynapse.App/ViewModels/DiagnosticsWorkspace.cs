@@ -49,6 +49,28 @@ public sealed partial class DiagnosticsWorkspace
         return report.ToString().TrimEnd();
     }
 
+    /// <summary>
+    /// Refreshes only the readout values. Error rows stay in place so a live
+    /// tachometer refresh cannot erase a communication failure from diagnostics.
+    /// </summary>
+    internal void UpdateDeviceTelemetry(
+        IReadOnlyList<DeviceDescriptor> descriptors,
+        RazerDeviceTelemetry telemetry)
+    {
+        if (Rows.Count == 0) return;
+        var updates = descriptors
+            .Select(descriptor => new DeviceRowViewModel(descriptor, telemetry))
+            .GroupBy(row => row.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First().ProtocolDetails, StringComparer.OrdinalIgnoreCase);
+        foreach (var row in Rows.Where(row => row.ProtocolDetails.Count > 0))
+        {
+            if (updates.TryGetValue(row.Device, out var details))
+            {
+                row.UpdateProtocolDetails(details);
+            }
+        }
+    }
+
     internal void Rebuild(
         DeviceSnapshot snapshot,
         RazerDeviceTelemetry telemetry,

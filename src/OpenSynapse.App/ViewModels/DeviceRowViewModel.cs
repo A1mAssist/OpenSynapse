@@ -218,9 +218,9 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
 public sealed class DeviceProtocolDetailViewModel : INotifyPropertyChanged
 {
     private readonly string _capabilityResourceKey;
-    private readonly string _detail;
+    private string _detail;
     private readonly bool _capabilityIsLiteral;
-    private readonly bool _failed;
+    private bool _failed;
 
     public DeviceProtocolDetailViewModel(
         string capabilityResourceKey,
@@ -243,14 +243,29 @@ public sealed class DeviceProtocolDetailViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public bool IsAvailable { get; }
+    public bool IsAvailable { get; private set; }
     public bool IsPresent { get; }
+    internal string CapabilityKey => _capabilityResourceKey;
     public string Capability => _capabilityIsLiteral ? _capabilityResourceKey : AppStrings.Text(_capabilityResourceKey);
     public string Status => AppStrings.Text(_failed
         ? "DiagnosticProtocolFailedStatus"
         : IsAvailable ? "DiagnosticProtocolAvailable" : "DiagnosticProtocolUnavailable");
     public string Detail => _detail;
-    public Brush StatusBrush { get; }
+    public Brush StatusBrush { get; private set; }
+
+    internal void UpdateFrom(DeviceProtocolDetailViewModel other)
+    {
+        if (IsAvailable == other.IsAvailable && _detail == other.Detail && _failed == other._failed) return;
+        IsAvailable = other.IsAvailable;
+        _detail = other.Detail;
+        _failed = other._failed;
+        StatusBrush = new SolidColorBrush(_failed
+            ? Color.FromArgb(255, 255, 107, 107)
+            : IsAvailable
+                ? Color.FromArgb(255, 153, 221, 114)
+                : Color.FromArgb(255, 255, 181, 71));
+        PropertyChanged?.Invoke(this, new(string.Empty));
+    }
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
 }

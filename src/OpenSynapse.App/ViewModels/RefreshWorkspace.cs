@@ -188,9 +188,9 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
 
     internal void SetDeviceReadoutSamplingEnabled(bool enabled) =>
         Interlocked.Exchange(ref _deviceReadoutSamplingEnabled, enabled ? 1 : 0);
-
     internal void SetDiagnosticsRebuildEnabled(bool enabled) =>
         Interlocked.Exchange(ref _diagnosticsRebuildEnabled, enabled ? 1 : 0);
+    internal bool DiagnosticsRebuildEnabled => Volatile.Read(ref _diagnosticsRebuildEnabled) != 0;
 
     internal void RequestProfileApply()
     {
