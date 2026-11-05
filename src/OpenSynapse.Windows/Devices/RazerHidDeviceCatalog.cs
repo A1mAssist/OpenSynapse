@@ -166,6 +166,7 @@ public sealed partial class RazerHidDeviceCatalog
             ? _byProductId.GetValueOrDefault(productId)
             : null;
 
+
     private static RazerHidDeviceCatalog LoadBuiltIn()
     {
         var assembly = typeof(RazerHidDeviceCatalog).Assembly;
