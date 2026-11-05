@@ -6,395 +6,594 @@
         Background="Transparent"
         PointerPressed="DragRegionPointerPressed">
     <Border x:Name="CompactCard"
-            Background="#D91A1A1A"
-            CornerRadius="10"
-            Padding="10,8">
-      <Grid ColumnDefinitions="*,*"
-            RowDefinitions="Auto,Auto,Auto,Auto"
-            ColumnSpacing="10"
-            RowSpacing="2">
-        <StackPanel Grid.ColumnSpan="2"
-                    Orientation="Horizontal"
-                    Spacing="6"
+            CornerRadius="12"
+            Padding="10"
+            AutomationProperties.AutomationId="PerformanceOverlayCompact">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+          <GradientStop Color="#F014191D" Offset="0" />
+          <GradientStop Color="#E80B0E11" Offset="1" />
+        </LinearGradientBrush>
+      </Border.Background>
+      <Grid RowDefinitions="Auto,*" RowSpacing="6">
+        <StackPanel Orientation="Horizontal"
+                    Spacing="7"
                     VerticalAlignment="Center">
-          <FontIcon x:Name="CompactModeIcon"
-                    Glyph="&#xE945;"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="15"
-                    Foreground="{StaticResource AccentBrush}"
-                    VerticalAlignment="Center" />
+          <Border Width="20"
+                  Height="20"
+                  Background="#1F44D62C"
+                  CornerRadius="6">
+            <FontIcon x:Name="CompactModeIcon"
+                      Glyph="&#xE945;"
+                      FontFamily="{StaticResource IconFontFamily}"
+                      FontSize="12"
+                      Foreground="{StaticResource AccentBrush}" />
+          </Border>
           <TextBlock Text="{Binding Blade.PerformanceModeText}"
-                     FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                     FontFamily="Microsoft YaHei UI"
+                     FontSize="13"
+                     Foreground="{StaticResource DataBrush}"
+                     TextTrimming="CharacterEllipsis"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              RowDefinitions="*,*"
+              ColumnSpacing="8"
+              RowSpacing="2">
+          <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                ColumnSpacing="4"
+                VerticalAlignment="Center">
+            <Border Width="18"
+                    Height="18"
+                    Background="#1844D62C"
+                    CornerRadius="5">
+              <FontIcon Glyph="&#xE950;"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="11"
+                        Foreground="{StaticResource AccentBrush}" />
+            </Border>
+            <TextBlock Grid.Column="1"
+                       Text="CPU"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       CharacterSpacing="40"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2"
+                       Text="{Binding Telemetry.CpuTemperatureText}"
+                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                       FontSize="13"
+                       Foreground="{StaticResource DataBrush}"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3"
+                       Text="·"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#70FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="4"
+                       Text="{Binding Telemetry.CpuClockText}"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+          </Grid>
+
+          <Grid Grid.Column="1"
+                ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                ColumnSpacing="4"
+                VerticalAlignment="Center">
+            <Border Width="18"
+                    Height="18"
+                    Background="#1859C7D9"
+                    CornerRadius="5">
+              <FontIcon Glyph="&#xE7F4;"
+                        FontFamily="{StaticResource IconFontFamily}"
+                        FontSize="11"
+                        Foreground="{StaticResource GpuBrush}" />
+            </Border>
+            <TextBlock Grid.Column="1"
+                       Text="GPU"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       CharacterSpacing="40"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2"
+                       Text="{Binding Telemetry.GpuTemperatureText}"
+                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                       FontSize="13"
+                       Foreground="{StaticResource DataBrush}"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3"
+                       Text="·"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#70FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="4"
+                       Text="{Binding Telemetry.GpuClockText}"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+          </Grid>
+
+          <Grid Grid.Row="1"
+                ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                ColumnSpacing="4"
+                VerticalAlignment="Center">
+            <Border Width="18"
+                    Height="18"
+                    Background="#18E2B663"
+                    CornerRadius="5">
+              <Viewbox Width="11" Height="11">
+                <Grid Width="16" Height="16">
+                  <Border Width="12"
+                          Height="8"
+                          CornerRadius="1"
+                          Background="#E2B663"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center" />
+                  <StackPanel Orientation="Horizontal"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Bottom"
+                              Spacing="2">
+                    <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                    <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                    <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                    <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                    <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                  </StackPanel>
+                </Grid>
+              </Viewbox>
+            </Border>
+            <TextBlock Grid.Column="1"
+                       Text="RAM"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       CharacterSpacing="40"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2"
+                       Text="{Binding Telemetry.MemoryValue}"
+                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                       FontSize="13"
+                       Foreground="{StaticResource DataBrush}"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3"
+                       Text="·"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#70FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="4"
+                       Text="{Binding Telemetry.MemoryClockText}"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+          </Grid>
+
+          <Grid Grid.Row="1"
+                Grid.Column="1"
+                ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                ColumnSpacing="4"
+                VerticalAlignment="Center">
+            <Border Width="18"
+                    Height="18"
+                    Background="#18A5B4C8"
+                    CornerRadius="5">
+              <Viewbox Width="11" Height="11">
+                <Grid Width="16" Height="16">
+                  <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                        Fill="#A5B4C8" />
+                  <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                        Fill="#A5B4C8">
+                    <Path.RenderTransform>
+                      <RotateTransform Angle="90" CenterX="8" CenterY="8" />
+                    </Path.RenderTransform>
+                  </Path>
+                  <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                        Fill="#A5B4C8">
+                    <Path.RenderTransform>
+                      <RotateTransform Angle="180" CenterX="8" CenterY="8" />
+                    </Path.RenderTransform>
+                  </Path>
+                  <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                        Fill="#A5B4C8">
+                    <Path.RenderTransform>
+                      <RotateTransform Angle="270" CenterX="8" CenterY="8" />
+                    </Path.RenderTransform>
+                  </Path>
+                  <Ellipse Width="3"
+                           Height="3"
+                           Fill="#111518"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+                </Grid>
+              </Viewbox>
+            </Border>
+            <TextBlock x:Name="CompactFanLabel"
+                       Grid.Column="1"
+                       Text="风扇"
+                       FontFamily="Microsoft YaHei UI"
+                       FontSize="9"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2"
+                       Text="{Binding Blade.CurrentFanCpuRpmText}"
+                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                       FontSize="10"
+                       Foreground="{StaticResource DataBrush}"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3"
+                       Text="/"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#70FFFFFF"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="4"
+                       Text="{Binding Blade.CurrentFanGpuRpmText}"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="9"
+                       Foreground="#A8FFFFFF"
+                       VerticalAlignment="Center" />
+          </Grid>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Border x:Name="DetailedCard"
+            CornerRadius="12"
+            Padding="12"
+            Visibility="Collapsed"
+            AutomationProperties.AutomationId="PerformanceOverlayDetailed">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+          <GradientStop Color="#F014191D" Offset="0" />
+          <GradientStop Color="#E80B0E11" Offset="1" />
+        </LinearGradientBrush>
+      </Border.Background>
+      <Grid RowDefinitions="Auto,*" RowSpacing="8">
+        <StackPanel Orientation="Horizontal"
+                    Spacing="8"
+                    VerticalAlignment="Center">
+          <Border Width="22"
+                  Height="22"
+                  Background="#1F44D62C"
+                  CornerRadius="6">
+            <FontIcon x:Name="DetailedModeIcon"
+                      Glyph="&#xE945;"
+                      FontFamily="{StaticResource IconFontFamily}"
+                      FontSize="13"
+                      Foreground="{StaticResource AccentBrush}" />
+          </Border>
+          <TextBlock Text="{Binding Blade.PerformanceModeText}"
+                     FontFamily="Microsoft YaHei UI"
                      FontSize="14"
                      Foreground="{StaticResource DataBrush}"
                      TextTrimming="CharacterEllipsis"
                      VerticalAlignment="Center" />
         </StackPanel>
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    Spacing="4"
-                    VerticalAlignment="Center">
-          <FontIcon Glyph="&#xE950;"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="12"
-                    Foreground="{StaticResource AccentBrush}"
-                    VerticalAlignment="Center" />
-          <TextBlock Text="CPU"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.CpuTemperatureText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="11"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="·"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.CpuClockText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="1"
-                    Grid.Column="1"
-                    Orientation="Horizontal"
-                    Spacing="4"
-                    VerticalAlignment="Center">
-          <FontIcon Glyph="&#xE7F4;"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="12"
-                    Foreground="{StaticResource AccentBrush}"
-                    VerticalAlignment="Center" />
-          <TextBlock Text="GPU"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.GpuTemperatureText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="11"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="·"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.GpuClockText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="2"
-                    Grid.ColumnSpan="2"
-                    Orientation="Horizontal"
-                    Spacing="4"
-                    VerticalAlignment="Center">
-          <Viewbox Width="13"
-                   Height="13"
-                   VerticalAlignment="Center">
-            <Grid Width="16" Height="16">
-              <Border Width="12"
-                      Height="8"
-                      CornerRadius="1"
-                      Background="{StaticResource AccentBrush}"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center" />
-              <StackPanel Orientation="Horizontal"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Bottom"
-                          Spacing="2">
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-              </StackPanel>
-            </Grid>
-          </Viewbox>
-          <TextBlock Text="RAM"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.MemoryValue}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="11"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="·"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.MemoryClockText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="3"
-                    Grid.ColumnSpan="2"
-                    Orientation="Horizontal"
-                    Spacing="6"
-                    VerticalAlignment="Center">
-          <Viewbox Width="13"
-                   Height="13"
-                   VerticalAlignment="Center">
-            <Grid Width="16" Height="16">
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}" />
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}">
-                <Path.RenderTransform>
-                  <RotateTransform Angle="90" CenterX="8" CenterY="8" />
-                </Path.RenderTransform>
-              </Path>
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}">
-                <Path.RenderTransform>
-                  <RotateTransform Angle="180" CenterX="8" CenterY="8" />
-                </Path.RenderTransform>
-              </Path>
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}">
-                <Path.RenderTransform>
-                  <RotateTransform Angle="270" CenterX="8" CenterY="8" />
-                </Path.RenderTransform>
-              </Path>
-              <Ellipse Width="3"
-                       Height="3"
-                       Fill="#D91A1A1A"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center" />
-            </Grid>
-          </Viewbox>
-          <TextBlock x:Name="CompactFanLabel"
-                     Text="风扇"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Blade.FanText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     TextTrimming="CharacterEllipsis"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-      </Grid>
-    </Border>
 
-    <Border x:Name="DetailedCard"
-            Background="#D91A1A1A"
-            CornerRadius="10"
-            Padding="12,10"
-            Visibility="Collapsed">
-      <Grid ColumnDefinitions="*,116"
-            RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-            ColumnSpacing="14"
-            RowSpacing="3">
-        <StackPanel Grid.ColumnSpan="2"
-                    Orientation="Horizontal"
-                    Spacing="7"
-                    VerticalAlignment="Center">
-          <FontIcon x:Name="DetailedModeIcon"
-                    Glyph="&#xE945;"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="16"
-                    Foreground="{StaticResource AccentBrush}"
-                    VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Blade.PerformanceModeText}"
-                     FontFamily="{StaticResource AppFontSemiBoldFamily}"
-                     FontSize="15"
-                     Foreground="{StaticResource DataBrush}"
-                     TextTrimming="CharacterEllipsis"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    Spacing="5"
-                    VerticalAlignment="Center">
-          <FontIcon Glyph="&#xE950;"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="13"
-                    Foreground="{StaticResource AccentBrush}"
-                    VerticalAlignment="Center" />
-          <TextBlock Text="CPU"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.CpuTemperatureText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="12"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="·"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.CpuClockText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="11"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    Spacing="5"
-                    VerticalAlignment="Center">
-          <FontIcon Glyph="&#xE7F4;"
-                    FontFamily="{StaticResource IconFontFamily}"
-                    FontSize="13"
-                    Foreground="{StaticResource AccentBrush}"
-                    VerticalAlignment="Center" />
-          <TextBlock Text="GPU"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.GpuTemperatureText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="12"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="·"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.GpuClockText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="11"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="3"
-                    Orientation="Horizontal"
-                    Spacing="5"
-                    VerticalAlignment="Center">
-          <Viewbox Width="13"
-                   Height="13"
-                   VerticalAlignment="Center">
-            <Grid Width="16" Height="16">
-              <Border Width="12"
-                      Height="8"
-                      CornerRadius="1"
-                      Background="{StaticResource AccentBrush}"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center" />
-              <StackPanel Orientation="Horizontal"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Bottom"
-                          Spacing="2">
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-                <Rectangle Width="1" Height="2" Fill="{StaticResource AccentBrush}" />
-              </StackPanel>
+        <Grid Grid.Row="1"
+              ColumnDefinitions="190,194"
+              ColumnSpacing="12">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+                RowSpacing="4"
+                VerticalAlignment="Center">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                  ColumnSpacing="5"
+                  VerticalAlignment="Center">
+              <Border Width="20"
+                      Height="20"
+                      Background="#1844D62C"
+                      CornerRadius="5">
+                <FontIcon Glyph="&#xE950;"
+                          FontFamily="{StaticResource IconFontFamily}"
+                          FontSize="12"
+                          Foreground="{StaticResource AccentBrush}" />
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="CPU"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         CharacterSpacing="40"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2"
+                         Text="{Binding Telemetry.CpuTemperatureText}"
+                         FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                         FontSize="14"
+                         Foreground="{StaticResource DataBrush}"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3"
+                         Text="·"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#70FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4"
+                         Text="{Binding Telemetry.CpuClockText}"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
             </Grid>
-          </Viewbox>
-          <TextBlock Text="RAM"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.MemoryValue}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="12"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="·"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Telemetry.MemoryClockText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="11"
-                     Foreground="{StaticResource DataBrush}"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Grid.Row="4"
-                    Grid.ColumnSpan="2"
-                    Orientation="Horizontal"
-                    Spacing="6"
-                    VerticalAlignment="Center">
-          <Viewbox Width="13"
-                   Height="13"
-                   VerticalAlignment="Center">
-            <Grid Width="16" Height="16">
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}" />
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}">
-                <Path.RenderTransform>
-                  <RotateTransform Angle="90" CenterX="8" CenterY="8" />
-                </Path.RenderTransform>
-              </Path>
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}">
-                <Path.RenderTransform>
-                  <RotateTransform Angle="180" CenterX="8" CenterY="8" />
-                </Path.RenderTransform>
-              </Path>
-              <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
-                    Fill="{StaticResource AccentBrush}">
-                <Path.RenderTransform>
-                  <RotateTransform Angle="270" CenterX="8" CenterY="8" />
-                </Path.RenderTransform>
-              </Path>
-              <Ellipse Width="3"
-                       Height="3"
-                       Fill="#D91A1A1A"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center" />
+
+            <Grid Grid.Row="1"
+                  ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                  ColumnSpacing="5"
+                  VerticalAlignment="Center">
+              <Border Width="20"
+                      Height="20"
+                      Background="#1859C7D9"
+                      CornerRadius="5">
+                <FontIcon Glyph="&#xE7F4;"
+                          FontFamily="{StaticResource IconFontFamily}"
+                          FontSize="12"
+                          Foreground="{StaticResource GpuBrush}" />
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="GPU"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         CharacterSpacing="40"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2"
+                         Text="{Binding Telemetry.GpuTemperatureText}"
+                         FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                         FontSize="14"
+                         Foreground="{StaticResource DataBrush}"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3"
+                         Text="·"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#70FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4"
+                         Text="{Binding Telemetry.GpuClockText}"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
             </Grid>
-          </Viewbox>
-          <TextBlock x:Name="DetailedFanLabel"
-                     Text="风扇"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     VerticalAlignment="Center" />
-          <TextBlock Text="{Binding Blade.FanText}"
-                     FontFamily="{StaticResource AppFontFamily}"
-                     FontSize="10"
-                     Foreground="{StaticResource MutedBrush}"
-                     TextTrimming="CharacterEllipsis"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <Border Grid.Row="1"
-                Grid.RowSpan="3"
-                Grid.Column="1"
-                Background="#22FFFFFF"
-                CornerRadius="6"
-                Padding="4">
-          <Grid>
-            <Canvas Width="108"
-                    Height="38">
-              <Polyline x:Name="GpuSparkline"
-                        Stroke="{StaticResource GpuBrush}"
-                        StrokeThickness="1.5"
-                        StrokeLineJoin="Round" />
-              <Polyline x:Name="CpuSparkline"
-                        Stroke="{StaticResource AccentBrush}"
-                        StrokeThickness="1.5"
-                        StrokeLineJoin="Round" />
-            </Canvas>
+
+            <Grid Grid.Row="2"
+                  ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                  ColumnSpacing="5"
+                  VerticalAlignment="Center">
+              <Border Width="20"
+                      Height="20"
+                      Background="#18E2B663"
+                      CornerRadius="5">
+                <Viewbox Width="12" Height="12">
+                  <Grid Width="16" Height="16">
+                    <Border Width="12"
+                            Height="8"
+                            CornerRadius="1"
+                            Background="#E2B663"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Spacing="2">
+                      <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                      <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                      <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                      <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                      <Rectangle Width="1" Height="2" Fill="#E2B663" />
+                    </StackPanel>
+                  </Grid>
+                </Viewbox>
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="RAM"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         CharacterSpacing="40"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2"
+                         Text="{Binding Telemetry.MemoryValue}"
+                         FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                         FontSize="14"
+                         Foreground="{StaticResource DataBrush}"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3"
+                         Text="·"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#70FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4"
+                         Text="{Binding Telemetry.MemoryClockText}"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
+            </Grid>
+
+            <Grid Grid.Row="3"
+                  ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                  ColumnSpacing="4"
+                  VerticalAlignment="Center">
+              <Border Width="20"
+                      Height="20"
+                      Background="#18A5B4C8"
+                      CornerRadius="5">
+                <Viewbox Width="12" Height="12">
+                  <Grid Width="16" Height="16">
+                    <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                          Fill="#A5B4C8" />
+                    <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                          Fill="#A5B4C8">
+                      <Path.RenderTransform>
+                        <RotateTransform Angle="90" CenterX="8" CenterY="8" />
+                      </Path.RenderTransform>
+                    </Path>
+                    <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                          Fill="#A5B4C8">
+                      <Path.RenderTransform>
+                        <RotateTransform Angle="180" CenterX="8" CenterY="8" />
+                      </Path.RenderTransform>
+                    </Path>
+                    <Path Data="M8,1 C9.4,1 10.6,2.2 10.6,3.6 L10.6,6.4 C10.6,7.2 9.8,8 8,8 C6.2,8 5.4,7.2 5.4,6.4 L5.4,3.6 C5.4,2.2 6.6,1 8,1 Z"
+                          Fill="#A5B4C8">
+                      <Path.RenderTransform>
+                        <RotateTransform Angle="270" CenterX="8" CenterY="8" />
+                      </Path.RenderTransform>
+                    </Path>
+                    <Ellipse Width="3"
+                             Height="3"
+                             Fill="#111518"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center" />
+                  </Grid>
+                </Viewbox>
+              </Border>
+              <TextBlock x:Name="DetailedFanLabel"
+                         Grid.Column="1"
+                         Text="风扇"
+                         FontFamily="Microsoft YaHei UI"
+                         FontSize="9"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2"
+                         Text="{Binding Blade.FanModeText}"
+                         FontFamily="Microsoft YaHei UI"
+                         FontSize="9"
+                         Foreground="#A8FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3"
+                         Text="·"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#70FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4"
+                         Text="{Binding Blade.CurrentFanCpuRpmText}"
+                         FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                         FontSize="10"
+                         Foreground="{StaticResource DataBrush}"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="5"
+                         Text="/"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="9"
+                         Foreground="#70FFFFFF"
+                         VerticalAlignment="Center" />
+              <TextBlock Grid.Column="6"
+                         Text="{Binding Blade.CurrentFanGpuRpmText}"
+                         FontFamily="{StaticResource AppFontFamily}"
+                         FontSize="10"
+                         Foreground="#B8FFFFFF"
+                         VerticalAlignment="Center" />
+            </Grid>
           </Grid>
-        </Border>
+
+          <Border Grid.Column="1"
+                  Background="#0CFFFFFF"
+                  CornerRadius="8"
+                  Padding="7,6">
+            <Grid RowDefinitions="Auto,*" RowSpacing="3">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="5"
+                            VerticalAlignment="Center">
+                  <TextBlock Text="LOAD"
+                             FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                             FontSize="9"
+                             CharacterSpacing="120"
+                             Foreground="#A8FFFFFF" />
+                  <TextBlock Text="48S"
+                             FontFamily="{StaticResource AppFontFamily}"
+                             FontSize="8"
+                             CharacterSpacing="60"
+                             Foreground="#58FFFFFF"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="5"
+                            VerticalAlignment="Center">
+                  <Ellipse Width="5"
+                           Height="5"
+                           Fill="{StaticResource AccentBrush}"
+                           VerticalAlignment="Center" />
+                  <TextBlock Text="CPU"
+                             FontFamily="{StaticResource AppFontFamily}"
+                             FontSize="8"
+                             Foreground="#A8FFFFFF"
+                             VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding Telemetry.CpuValue}"
+                             FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                             FontSize="9"
+                             Foreground="{StaticResource AccentBrush}"
+                             VerticalAlignment="Center" />
+                  <Ellipse Width="5"
+                           Height="5"
+                           Fill="{StaticResource GpuBrush}"
+                           VerticalAlignment="Center" />
+                  <TextBlock Text="GPU"
+                             FontFamily="{StaticResource AppFontFamily}"
+                             FontSize="8"
+                             Foreground="#A8FFFFFF"
+                             VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding Telemetry.GpuValue}"
+                             FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                             FontSize="9"
+                             Foreground="{StaticResource GpuBrush}"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+              </Grid>
+
+              <Canvas x:Name="ChartCanvas"
+                      Grid.Row="1"
+                      Width="178"
+                      Height="70"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                <Line X1="0" Y1="0" X2="178" Y2="0"
+                      Stroke="#12FFFFFF" StrokeThickness="1" />
+                <Line X1="0" Y1="35" X2="178" Y2="35"
+                      Stroke="#12FFFFFF" StrokeThickness="1" />
+                <Line X1="0" Y1="70" X2="178" Y2="70"
+                      Stroke="#18FFFFFF" StrokeThickness="1" />
+                <Polygon x:Name="GpuArea">
+                  <Polygon.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                      <GradientStop Color="#2E59C7D9" Offset="0" />
+                      <GradientStop Color="#0059C7D9" Offset="1" />
+                    </LinearGradientBrush>
+                  </Polygon.Fill>
+                </Polygon>
+                <Polygon x:Name="CpuArea">
+                  <Polygon.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                      <GradientStop Color="#3844D62C" Offset="0" />
+                      <GradientStop Color="#0044D62C" Offset="1" />
+                    </LinearGradientBrush>
+                  </Polygon.Fill>
+                </Polygon>
+                <Polyline x:Name="GpuSparkline"
+                          Stroke="{StaticResource GpuBrush}"
+                          StrokeThickness="1.6"
+                          StrokeLineJoin="Round" />
+                <Polyline x:Name="CpuSparkline"
+                          Stroke="{StaticResource AccentBrush}"
+                          StrokeThickness="1.8"
+                          StrokeLineJoin="Round" />
+              </Canvas>
+            </Grid>
+          </Border>
+        </Grid>
       </Grid>
     </Border>
   </Grid>
