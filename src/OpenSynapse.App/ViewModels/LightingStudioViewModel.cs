@@ -238,6 +238,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             OnPropertyChanged(nameof(SpeedMinimum));
             OnPropertyChanged(nameof(SpeedMaximum));
             NotifyDocumentChanged();
+            if (IsApplied) TriggerAppliedEffect();
             _ = EnsureMediaSamplerAsync();
             _ = EnsureInputAsync();
         }
@@ -399,6 +400,33 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     public void TogglePlayback() => IsPlaying = !IsPlaying;
 
+    /// <summary>Starts one-shot OnPress/OnSelectedKeys effects for the preview clock.</summary>
+    public void TriggerPreviewEffect(double nowSeconds)
+    {
+        if (SelectedParams is not { } parameters || _selectedLayer is not { } layer) return;
+        if (parameters.PlaybackStart is not (StudioPlaybackStart.OnPress or StudioPlaybackStart.OnSelectedKeys)) return;
+        GetClock(layer.Id).Trigger(Math.Max(0, nowSeconds));
+    }
+
+    private void TriggerAppliedEffect()
+    {
+        if (SelectedParams is not { } parameters ||
+            parameters.PlaybackStart is not (StudioPlaybackStart.OnPress or StudioPlaybackStart.OnSelectedKeys))
+        {
+            return;
+        }
+
+        _source?.HandleInput(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
+        if (_hidRouter is null) return;
+        foreach (var target in _hidRouter.GetTargets())
+        {
+            _hidRouter.HandleInput(
+                target.InstanceId,
+                new StudioTriggerInput(0, 0),
+                _outputClock.Elapsed.TotalSeconds);
+        }
+    }
+
     /// <summary>Called by the inspector for bindings that do not raise layer notifications.</summary>
     // Regions own their params after creation; later layer edits stay on the layer.
     public void NotifyEdited()
@@ -441,6 +469,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 _inputClock.Restart();
                 _source.Update(BuildLayersFor(blade));
                 await _lighting.ApplyExternalAsync(_devices(), _source);
+                _source.HandleInput(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
                 applied.Add(blade.Name);
             }
 
@@ -451,6 +480,10 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 {
                     RefreshHidSnapshots(targets);
                     StartOutputPump();
+                    foreach (var target in targets)
+                    {
+                        _hidRouter.HandleInput(target.InstanceId, new StudioTriggerInput(0, 0), 0);
+                    }
                     startOutputPump = true;
                     applied.AddRange(targets.Select(target => target.Definition.DisplayName));
                 }
@@ -729,18 +762,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         NotifyDocumentChanged();
     }
 
-    private void OnLayerPropertyChanged(object? sender, PropertyChangedEventArgs args)
-    {
-        if (ReferenceEquals(sender, _selectedLayer))
-        {
-            OnPropertyChanged(nameof(SelectedEffectChoice));
-            _ = EnsureMediaSamplerAsync();
-            OnPropertyChanged(nameof(SelectedBlendChoice));
-            OnPropertyChanged(nameof(SelectedParams));
-        }
-
+    private void OnLayerPropertyChanged(object? sender, PropertyChangedEventArgs args) =>
         NotifyDocumentChanged();
-    }
 
     private void NotifyDocumentChanged()
     {
