@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Read [docs/devices/DEVICE_ADAPTATION.md](https://github.com/A1mAssist/OpenSynapse/blob/main/docs/devices/DEVICE_ADAPTATION.md) before submitting. The short owner checklist is at the top; the protocol sections are maintainer reference and are not required to open a request.
+        Read [docs/DEVICE_ADAPTATION.md](https://github.com/A1mAssist/OpenSynapse/blob/main/docs/DEVICE_ADAPTATION.md) before submitting. The short owner checklist is at the top; the protocol sections are maintainer reference and are not required to open a request.
 
         Only the device model, SKU or model number, USB PID, and current behavior are required. If you do not know the PID, write `unknown`. The collector output is optional; leave it empty if you prefer not to run PowerShell.
 
@@ -57,7 +57,7 @@ body:
     id: openrazer_status
     attributes:
       label: OpenRazer catalog status
-      description: Check docs/devices/SUPPORTED_DEVICES.md before answering.
+      description: Check docs/SUPPORTED_DEVICES.md before answering.
       options:
         - Listed, but the requested capability is missing
         - Not listed

@@ -68,7 +68,7 @@ public sealed partial class RazerHeadsetAudioService
     // identities (0A4E, 0A51, 101E, 101F) are listed as identities but route to
     // RazerValkyrieHeadsetService through RazerHeadsetChannelCatalog. 0x101C keeps the
     // dedicated BlackShark THX panel instead: it is BlackSharkV3ProProtocol.UsbProductId.
-    // See docs/devices/HEADSET_AUDIO_ALIGNMENT.md.
+    // See docs/HEADSET_AUDIO_ALIGNMENT.md.
     public static readonly IReadOnlyDictionary<ushort, string> Products =
         new Dictionary<ushort, string>
         {

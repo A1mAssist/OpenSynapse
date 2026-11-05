@@ -18,13 +18,13 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 > 当前版本 `v1.6.0` · Windows 11 x64 · 未签名
 
-完整版本记录见 [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md)，英文版见 [CHANGELOG.md](CHANGELOG.md)。架构、设备、协议与功能文档见 [docs/README.md](docs/README.md)。
+完整版本记录见 [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md)，英文版见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 支持范围
 
 OpenSynapse 不只有少数型号。当前支持范围包含 **389 个可识别设备 ID**，按设备类型分为鼠标 136、键盘 96、笔记本 50、耳机 40、音箱 8、麦克风 4、鼠标垫 8、显示器 2、配件 44 和网络灯光桥 1。
 
-**[查看完整设备与能力列表](docs/devices/SUPPORTED_DEVICES.zh-CN.md)**，其中包含型号名称、USB PID、控制项以及明确的验证边界。
+**[查看完整设备与能力列表](docs/SUPPORTED_DEVICES.zh-CN.md)**，其中包含型号名称、USB PID、控制项以及明确的验证边界。
 
 ### 按能力显示控制项
 
@@ -44,13 +44,13 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 ### Chroma REST
 
-参见 [Chroma 支持设备](docs/lighting/CHROMA_SUPPORTED_DEVICES.zh-CN.md) 查看当前设备与传输方式矩阵。
+参见 [Chroma 支持设备](docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md) 查看当前设备与传输方式矩阵。
 
 兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用经过验证的 Blade 16 实体键位，外部控制结束后会恢复当前选择的灯效。不需要安装雷云。
 
 ### Chroma SDK 兼容层
 
-`OpenSynapse.ChromaSdk.Shim` 发布 x64 `RzChromaSDK64.dll`，实现 Chroma SDK 4.0.1 ABI，并通过 `\\.\pipe\OpenSynapseChromaSdk` 把键盘灯效交给 OpenSynapse。键盘 `CUSTOM`、`CUSTOM_KEY`、8×24 `CUSTOM2`，以及鼠标、耳机和鼠标垫的静态/自定义灯效，在有对应矩阵设备时会解码并应用。通用 `CreateEffect`、`QueryDevice`、键区、ChromaLink 和已弃用效果尚未实现。ABI 证据与部署步骤见 [Chroma SDK 兼容层](docs/lighting/CHROMA_SDK_SHIM.md)。
+`OpenSynapse.ChromaSdk.Shim` 发布 x64 `RzChromaSDK64.dll`，实现 Chroma SDK 4.0.1 ABI，并通过 `\\.\pipe\OpenSynapseChromaSdk` 把键盘灯效交给 OpenSynapse。键盘 `CUSTOM`、`CUSTOM_KEY`、8×24 `CUSTOM2`，以及鼠标、耳机和鼠标垫的静态/自定义灯效，在有对应矩阵设备时会解码并应用。通用 `CreateEffect`、`QueryDevice`、键区、ChromaLink 和已弃用效果尚未实现。ABI 证据与部署步骤见 [Chroma SDK 兼容层](docs/CHROMA_SDK_SHIM.md)。
 
 ## 界面预览
 
@@ -110,7 +110,7 @@ dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj 
 
 提交代码或文档前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。生成的二进制文件、日志、抓包、逆向工程目录、凭据和本机配置不应进入 Git。
 
-如果需要为新设备补齐支持，请阅读 [设备适配协作指南](docs/devices/DEVICE_ADAPTATION.zh-CN.md)，并使用[设备支持 issue 模板](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml)。不要把 Razer 专有文件或用户设备隐私数据上传到公开 issue。
+如果需要为新设备补齐支持，请阅读 [设备适配协作指南](docs/DEVICE_ADAPTATION.zh-CN.md)，并使用[设备支持 issue 模板](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml)。不要把 Razer 专有文件或用户设备隐私数据上传到公开 issue。
 
 ## 许可
 
