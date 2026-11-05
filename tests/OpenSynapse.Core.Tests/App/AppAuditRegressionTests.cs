@@ -79,8 +79,13 @@ public sealed class AppAuditRegressionTests
             Assert.Contains("\"" + backend + "\"", provider);
         Assert.DoesNotContain("ConnectedDevices", provider);
         Assert.Contains("Mixer053E?.ErrorText", provider);
+        Assert.Contains("if (Hue.IsConfigured)", provider);
+        Assert.DoesNotContain("Hue.IsReady", provider);
         var refresh = Method(root, "private async Task RefreshAttachedDevicesAsync");
-        Assert.True(refresh.IndexOf("CaptureAccessorySnapshot", StringComparison.Ordinal) < refresh.IndexOf("await RefreshBlackSharkAsync", StringComparison.Ordinal));
+        Assert.True(refresh.IndexOf("CaptureAccessorySnapshot", StringComparison.Ordinal) <
+            refresh.IndexOf("RefreshAccessoryAsync(\"blackshark\"", StringComparison.Ordinal));
+        foreach (var backend in new[] { "blackshark", "headset-audio", "keyboard", "gamepad", "cooling-pad", "kiyo", "chroma", "ble", "aw-ble" })
+            Assert.Contains("RefreshAccessoryAsync(\"" + backend + "\"", refresh);
         Assert.Contains("RefreshAccessoryRows();", Method(Vm("DiagnosticsWorkspace.cs"), "public string CreateReport"));
         var snapshots = Vm("DiagnosticsWorkspace.Accessories.cs");
         Assert.Contains("DiagnosticPreviouslyObserved", snapshots);
