@@ -114,18 +114,44 @@ public sealed class RazerHidSpecialLightingService
         hasAudioFeatureInterface && RazerHeadsetAudioService.IsSupported(productId);
 
     private readonly Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> _sendOutput;
+    private readonly Func<string, IReadOnlyList<byte[]>, bool, CancellationToken, Task> _sendKrakenV4;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _krakenV4Connected =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Action<string>? _diagnostic;
 
     public RazerHidSpecialLightingService(Action<string>? diagnostic = null)
-        : this(new RazerHidHidReportTransport().SendOutputAsync, diagnostic) { }
+        : this(new RazerHidHidReportTransport().SendOutputAsync, null, diagnostic) { }
 
     internal RazerHidSpecialLightingService(
         Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput, Action<string>? diagnostic = null)
+        : this(sendOutput,
+            (path, reports, _, cancellationToken) => SendAllAsync(sendOutput, path, reports, cancellationToken),
+            diagnostic)
+    {
+    }
+
+    private RazerHidSpecialLightingService(
+        Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput,
+        Func<string, IReadOnlyList<byte[]>, bool, CancellationToken, Task>? sendKrakenV4,
+        Action<string>? diagnostic)
     {
         _sendOutput = sendOutput;
+        _sendKrakenV4 = sendKrakenV4 ?? SendKrakenV4Async;
         _diagnostic = diagnostic;
+    }
+
+    private static async Task SendAllAsync(
+        Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput,
+        string devicePath,
+        IReadOnlyList<byte[]> reports,
+        CancellationToken cancellationToken)
+    {
+        foreach (var report in reports)
+        {
+            await sendOutput(devicePath, report, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task<IReadOnlyList<RazerHidSpecialLightingConnection>> DiscoverAsync(
@@ -311,24 +337,74 @@ public sealed class RazerHidSpecialLightingService
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _sendOutput(
-                connection.DevicePath!,
-                RazerHidKrakenV4Protocol.CreateConnect(isDongle),
-                cancellationToken).ConfigureAwait(false);
-            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
-
-            foreach (var report in reports)
+            var devicePath = connection.DevicePath!;
+            var sendConnect = !_krakenV4Connected.ContainsKey(devicePath);
+            var reportsToSend = new List<byte[]>(reports.Count + (sendConnect ? 1 : 0));
+            if (sendConnect)
             {
-                await _sendOutput(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
+                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
+            }
+
+            reportsToSend.AddRange(reports);
+            foreach (var report in reportsToSend)
+            {
                 _diagnostic?.Invoke(
                     $"kraken lighting 1532:{connection.ProductId:X4} effect={settings.Effect} " +
                     $"report=[{Convert.ToHexString(report)}]");
-                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+            }
+
+            await _sendKrakenV4(devicePath, reportsToSend, sendConnect, cancellationToken)
+                .ConfigureAwait(false);
+            if (sendConnect)
+            {
+                _krakenV4Connected.TryAdd(devicePath, 0);
             }
         }
         finally
         {
             gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Billie T2 writes through HidD_SetOutputReport and answers every general
+    /// command. The old WriteFile-only path never drained those replies, so the
+    /// firmware stopped accepting the static frame.
+    /// </summary>
+    private async Task SendKrakenV4Async(
+        string devicePath,
+        IReadOnlyList<byte[]> reports,
+        bool sendConnect,
+        CancellationToken cancellationToken)
+    {
+        await using var transport = new RazerMxicHeadsetTransport(
+            devicePath, RazerHidKrakenV4Protocol.ReportLength);
+
+        for (var index = 0; index < reports.Count; index++)
+        {
+            var report = reports[index];
+            if (sendConnect && index == 0)
+            {
+                await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken).ConfigureAwait(false);
+                continue;
+            }
+
+            if (RazerHidKrakenV4Protocol.ExpectsResponse(report))
+            {
+                var response = await transport.QueryRawAsync(
+                    report, data => RazerHidKrakenV4Protocol.IsEffectResponse(data), cancellationToken)
+                    .ConfigureAwait(false);
+                _diagnostic?.Invoke(response is null
+                    ? "kraken lighting response=none"
+                    : $"kraken lighting response status=0x{response[1]:X2} report=[{Convert.ToHexString(response)}]");
+            }
+            else
+            {
+                await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
         }
     }
 

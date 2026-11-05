@@ -94,6 +94,29 @@ public sealed class AudioSpecialAuditRegressionTests
         Assert.Equal(RazerHidKrakenV4Protocol.CreateConnect(productId == 0x056C), reports[0]);
     }
 
+    [Theory]
+    [InlineData(0x056B)] [InlineData(0x056C)]
+    public async Task V4ServiceSendsTheHandshakeOncePerPath(ushort productId)
+    {
+        var reports = new List<byte[]>();
+        var service = new RazerHidSpecialLightingService((_, report, _) =>
+        {
+            reports.Add(report.ToArray());
+            return Task.CompletedTask;
+        });
+        var connection = new RazerHidSpecialLightingConnection(productId, "test",
+            RazerHidSpecialLightingKind.KrakenV4, $"test-{productId}", "fake", null, null,
+            new HashSet<RazerHidLightingEffect> { RazerHidLightingEffect.Off }, true, false, null);
+
+        await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
+        var firstCallCount = reports.Count;
+        await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
+
+        Assert.Equal(firstCallCount + 1, reports.Count);
+        Assert.DoesNotContain(reports.Skip(firstCallCount), report =>
+            report.SequenceEqual(RazerHidKrakenV4Protocol.CreateConnect(productId == 0x056C)));
+    }
+
     [Fact]
     public async Task MotorFiveAlreadyAtTargetDoesNotSkipTheOtherMotors()
     {

@@ -1924,6 +1924,9 @@
   <data name="ThxPresetLabel.Header" xml:space="preserve">
     <value>Preset</value>
   </data>
+  <data name="ThxPresetLabel.PlaceholderText" xml:space="preserve">
+    <value>Default configuration</value>
+  </data>
   <data name="ThxEqualizerTitle.Text" xml:space="preserve">
     <value>Bands</value>
   </data>
@@ -2497,6 +2500,7 @@
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>Spatial audio</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>Apply spatial audio</value></data>
   <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>Preset</value></data>
+  <data name="RazerHeadsetThxPresetLabel.PlaceholderText" xml:space="preserve"><value>Default configuration</value></data>
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>Apply preset</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX equalizer</value></data>
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>Apply bands</value></data>

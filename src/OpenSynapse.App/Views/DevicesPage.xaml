@@ -166,7 +166,7 @@
                           <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetThxSpatialApply" Content="应用空间音效" Click="HeadsetAudioApplyThxSpatialClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
                         </Grid>
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                          <ComboBox local:Localized.Uid="RazerHeadsetThxPresetLabel" Header="预设" ItemsSource="{Binding ThxPresetOptions}" SelectedIndex="{Binding SelectedThxPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" HorizontalAlignment="Stretch" />
+                          <ComboBox local:Localized.Uid="RazerHeadsetThxPresetLabel" Header="预设" ItemsSource="{Binding ThxPresetOptions}" SelectedIndex="{Binding SelectedThxPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" PlaceholderText="默认配置" HorizontalAlignment="Stretch" />
                           <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetThxPresetApply" Content="应用预设" Click="HeadsetAudioApplyThxPresetClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
                         </Grid>
                         <StackPanel Spacing="8" Visibility="{Binding ThxBandsVisibility}">
