@@ -714,6 +714,9 @@
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
+                    <views:RazerMappingView DataContext="{Binding Mapping}" />
+                  </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding Onboard.Visibility}">
                     <StackPanel Spacing="10">
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerOnboardMacroTitle" Text="板载宏" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
@@ -830,9 +833,6 @@
                       </ContentControl>
                       <Button local:Localized.Uid="RazerHidSaveButton" Content="保存" Click="RazerHidApplyDpiStagesClick" IsEnabled="{Binding CanEditDpiStages}" Visibility="{Binding DpiStagesWriteVisibility}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                     </StackPanel>
-                  </Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
-                    <views:RazerMappingView DataContext="{Binding Mapping}" />
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding PowerVisibility}">
                     <StackPanel Spacing="14"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidPowerTitle" Text="电源管理" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
@@ -1368,6 +1368,9 @@
                 </StackPanel>
                 <StackPanel x:Name="ViperDevicePanel" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Viper.DeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding Viper.ProtocolText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Viper.IdentityText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <views:RazerMappingView DataContext="{Binding Viper.Mapping}" />
+                  </Border>
                   <StackPanel Visibility="{Binding Viper.SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="RazerHidSerialLabel" Text="序列号" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Viper.Serial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
                   <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="14">
                     <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="Loc_BEA434DB0D" Text="电量" Style="{StaticResource MetricLabelStyle}" /></StackPanel><TextBlock Text="{Binding Viper.BatteryText}" Style="{StaticResource MetricValueStyle}" /><TextBlock local:Localized.Uid="Loc_AAABCC9222" Text="只读" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource MutedBrush}" /></StackPanel></Border>
@@ -1442,9 +1445,7 @@
                       <Button local:Localized.Uid="Loc_3500845EBF" Click="ApplyDpiStagesClick" IsEnabled="{Binding Viper.CanSetDpiStages}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Right" AutomationProperties.Name="保存 DPI 档位"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_B7184FA7E2" Text="保存档位" /></StackPanel></Button>
                     </StackPanel>
                   </Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="16">
-                    <views:RazerMappingView DataContext="{Binding Viper.Mapping}" />
-                  </Border>
+
                 </StackPanel>
               </StackPanel>
   </ScrollViewer>

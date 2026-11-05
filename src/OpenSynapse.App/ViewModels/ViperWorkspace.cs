@@ -122,6 +122,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         _mapping ??= new RazerHidMappingViewModel(
             new RazerViperMappingTransport(_deviceTelemetryReader, _deviceDescriptors),
             canWrite: true,
+            layoutUri: RazerMappingAssetCatalog.FindDeviceImage(0x00B8),
             actionCatalog: RazerViperMappingActionCatalog.Instance,
             afterApplyAsync: PersistMappingProfileAsync);
 

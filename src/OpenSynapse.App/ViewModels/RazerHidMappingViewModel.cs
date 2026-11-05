@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Macros;
@@ -21,7 +23,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacroProvider;
     private readonly Func<CancellationToken, Task>? _afterApplyAsync;
     private readonly Action<string>? _log;
-    private readonly Uri? _layoutUri;
+    private readonly ImageSource? _layoutImage;
     private bool _isBusy;
     private string _statusText = string.Empty;
     private string _errorText = string.Empty;
@@ -50,7 +52,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         _macroServiceFactory = macroServiceFactory;
         _localMacroProvider = localMacros;
         _afterApplyAsync = afterApplyAsync;
-        _layoutUri = layoutUri;
+        _layoutImage = CreateLayoutImage(layoutUri);
         _log = log;
     }
 
@@ -121,12 +123,20 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    public Uri? LayoutUri => _layoutUri;
-    public bool HasLayout => _layoutUri is not null;
+    public ImageSource? LayoutImage => _layoutImage;
+    public bool HasLayout => _layoutImage is not null;
     public Visibility LayoutVisibility => HasLayout ? Visibility.Visible : Visibility.Collapsed;
     public bool SupportsMacros => _macrosAvailable;
 
     private byte Mode => (byte)LayerIndex;
+
+    private static ImageSource? CreateLayoutImage(Uri? uri)
+    {
+        if (uri is null) return null;
+        return Path.GetExtension(uri.LocalPath).Equals(".svg", StringComparison.OrdinalIgnoreCase)
+            ? new SvgImageSource { UriSource = uri }
+            : new BitmapImage(uri);
+    }
 
     public async Task ReadAsync(CancellationToken cancellationToken = default)
     {
