@@ -13,6 +13,25 @@
 
 设备卡按 PnP/发现结果和 `Access == Available` 保留。无线鼠标睡眠时遥测会失败，但设备仍在；页面显示“不可读/查询失败”，不把设备卡和映射入口一起隐藏。映射能力在重新扫描后会参与连接比较；晚到的 `MappingRead` 会重建设备行。
 
+## 云端产品目录与 manifest
+
+雷云不把设备清单写死在页面上。已核实的云端入口：
+
+- `https://apps.razer.com/synapse/dashboard/AvailableDevices.json`：335 个产品 ID，附带 dongle / BLE / wired / Xbox / PS / monitor 关系与 `isNotChromaDevice`，没有名称、类别或映射表。它证明产品集合是云端枚举的，但不足以单独生成页面。`SynapseProductManifestService` 用 `dongleId` / `bleId` / `wiredId` / `xBoxId` 把只枚举出接收器 PID 的设备指回产品 PID，再取产品 manifest；接收器 PID 自己没有 `mw` bundle 时也能得到正确名称和类别。
+- `https://apps.razer.com/synapse/products/{decimalPid}/mw/manifest.json`：按十进制 USB PID 取单个产品。鼠标 `184`（`0x00B8`）和键盘 `590`（`0x024E`）都返回 200。关键字段是 `deviceName`、`icons[0].src`、`editionId`、`productTranslations`。
+- `icons[0].src` 的文件名就是产品类别：`MOUSE.svg`、`KEYBOARD.svg`、`KEYPAD.svg`、`MOUSEMAT.svg`、`GAMEPAD.svg` 等。`SynapseProductManifestService` 只按这个证据分类，不用 HID usage page 猜鼠标/键盘（91 字节 vendor collection 的 usage 都是 `0xFF00:0x0001` 一类，无法区分）。
+- 没有纯 JSON 的映射端点：`mapping-manifests`、`device-manifests`、`button-list.json`、`default-mappings.json` 对 99 / 184 / 590 / 710 都是 404。`BUTTON_LIST` / `DEFAULTMAPPINGS` 只存在于 `main.<hash>.js`。运行时不会下载并执行或静态解析这些 JS；按钮行的唯一事实来源仍是设备自己的 `02:84` 回答。
+
+运行规则：
+
+1. 本地 `RazerHidDeviceCatalog` 收录的 PID 继续使用原定义和完整探测，不受云端影响。
+2. 目录外的 91 字节设备先查对应 manifest。manifest 明确是 `MOUSE` / `KEYBOARD` / `KEYPAD` 才进入映射探测；类别不是鼠标/键盘（耳机、灯带、风扇等）直接跳过。
+3. manifest 不可达时退回 HID 产品字符串和 `DeviceCategory.Unknown`，仍然探测 `02:84`。离线不会让页面对目录外设备失效。
+4. 目录外设备只获得 `MappingRead` / `MappingWrite`，不继承其他型号的灯光、DPI、滚轮或宏写命令；`02:84` 不返回非零按钮 id 就不建设备卡。
+5. manifest 只负责名称和类别，不参与按钮行生成，也不作为准入硬门槛。
+
+缓存放在 `%LOCALAPPDATA%\A1mAssist\OpenSynapse\synapse-products\manifests`，5 秒请求超时、1 MB 上限，带 ETag；网络失败时读磁盘缓存。`RazerKeyboardService` 已收录的 23 个键盘仍由键盘页拥有，避免同一设备出现两张卡。
+
 ## 共享传输层
 
 `IRazerMappingTransport` 把读按钮、读映射、写映射收敛成三个调用：

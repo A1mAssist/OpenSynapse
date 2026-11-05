@@ -182,8 +182,13 @@ public partial class App : Application
         _elevatedMacroClient = new ElevatedMacroClient();
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
         // Share the Razer transport so RazerHid requests and telemetry serialize on one gate.
+        // The product manifest only names and categorises PIDs outside the local catalogue.
+        var productManifests = new SynapseProductManifestService(
+            new HttpClient { Timeout = TimeSpan.FromSeconds(10) },
+            AppDataPaths.Combine("synapse-products", "manifests"),
+            TimeSpan.FromMinutes(30));
         _openRazerDeviceService = new RazerHidDeviceService(
-            RazerHidDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
+            RazerHidDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog, productManifests);
         _openRazerDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
         var viewModel = new MainViewModel(
             new WindowsHidDiscovery(
