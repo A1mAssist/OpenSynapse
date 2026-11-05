@@ -177,39 +177,52 @@ public sealed partial class RazerMappingView : UserControl
                 continue;
             }
 
-            var start = new Point(
+            var target = new Point(
                 drawLeft + hotspot.X * scale,
                 drawTop + hotspot.Y * scale);
             var labelEdge = container.TransformToVisual(MappingStage)
                 .TransformPoint(new Point(
                     left ? container.ActualWidth : 0,
                     container.ActualHeight / 2));
-            var end = new Point(labelEdge.X + (left ? 8 : -8), labelEdge.Y);
-            ConnectorCanvas.Children.Add(new Line
-            {
-                X1 = start.X,
-                Y1 = start.Y,
-                X2 = end.X,
-                Y2 = end.Y,
-                Stroke = accent,
-                StrokeThickness = 4,
-                Opacity = 0.12,
-                IsHitTestVisible = false,
-            });
-            ConnectorCanvas.Children.Add(new Line
-            {
-                X1 = start.X,
-                Y1 = start.Y,
-                X2 = end.X,
-                Y2 = end.Y,
-                Stroke = accent,
-                StrokeThickness = 1.1,
-                Opacity = 0.72,
-                IsHitTestVisible = false,
-            });
-            AddDot(start, 7, accent, 0.9);
-            AddDot(end, 5, accent, 0.75);
+            var start = new Point(labelEdge.X + (left ? 8 : -8), labelEdge.Y);
+            var corner = new Point(start.X + (left ? 53 : -53), start.Y);
+            AddConnector(start, corner, target, accent);
+            AddDot(start, 5, accent, 0.65);
+            AddDot(target, 7, accent, 0.95);
+            AddRing(target, 13, accent, 0.55);
         }
+    }
+
+    private void AddConnector(Point start, Point corner, Point target, Brush accent)
+    {
+        foreach (var (thickness, opacity) in new[] { (4.0, 0.12), (1.1, 0.72) })
+        {
+            ConnectorCanvas.Children.Add(new Polyline
+            {
+                Points = new PointCollection { start, corner, target },
+                Stroke = accent,
+                StrokeThickness = thickness,
+                Opacity = opacity,
+                StrokeLineJoin = PenLineJoin.Round,
+                IsHitTestVisible = false,
+            });
+        }
+    }
+
+    private void AddRing(Point point, double size, Brush brush, double opacity)
+    {
+        var ring = new Ellipse
+        {
+            Width = size,
+            Height = size,
+            Stroke = brush,
+            StrokeThickness = 1.5,
+            Opacity = opacity,
+            IsHitTestVisible = false,
+        };
+        Canvas.SetLeft(ring, point.X - size / 2);
+        Canvas.SetTop(ring, point.Y - size / 2);
+        ConnectorCanvas.Children.Add(ring);
     }
 
     private void AddDot(Point point, double size, Brush brush, double opacity)
