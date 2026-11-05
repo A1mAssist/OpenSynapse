@@ -910,6 +910,7 @@ public sealed partial class RazerHidDeviceService
         }
     }
 
+
     public Task SetLedStateAsync(RazerHidDeviceConnection connection, RazerHidStorage storage, RazerHidLedZone ledId, bool enabled, CancellationToken cancellationToken = default)
     {
         RequireLightingZone(connection, ledId, capability => capability.CanWriteState, "LED state write");

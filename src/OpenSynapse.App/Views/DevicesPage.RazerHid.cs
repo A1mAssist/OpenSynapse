@@ -273,7 +273,14 @@ public sealed partial class DevicesPage : UserControl
         await device.ApplyLightingAsync(Lifetime);
         await device.ApplyBrightnessAsync(Lifetime);
         await device.ApplyLedStateAsync(Lifetime);
+        if (device.HasWristRestLighting)
+        {
+            await device.ApplyWristRestAsync(Lifetime);
+        }
     }
+
+    private async void RazerHidApplyWristRestClick(object sender, RoutedEventArgs e) =>
+        await (SelectedRazerHidDevice?.ApplyWristRestAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void RazerHidLightingSettingsToggled(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyLightingSettingsAsync(Lifetime) ?? Task.CompletedTask);
