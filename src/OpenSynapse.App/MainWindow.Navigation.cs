@@ -179,10 +179,8 @@ public sealed partial class MainWindow
 
     private void UpdatePerformanceSamplingState()
     {
-        _viewModel.Telemetry.SetPerformanceSamplingEnabled(
-            _performanceOverlayEnabled ||
-            (_taskbarStatusEnabled && _viewModel.Blade.BladeProductId != 0) ||
-            (AppWindow.IsVisible && OverviewPage.Visibility == Visibility.Visible));
+        // Peak tracking must keep sampling while the window is hidden.
+        _viewModel.Telemetry.SetPerformanceSamplingEnabled(true);
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
             AppWindow.IsVisible && DevicesPage.Visibility == Visibility.Visible);
         _viewModel.Refresh.SetDiagnosticsRebuildEnabled(

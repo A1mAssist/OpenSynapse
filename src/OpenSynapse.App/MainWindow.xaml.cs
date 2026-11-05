@@ -38,7 +38,6 @@ public sealed partial class MainWindow : Window
     private readonly StudioInputSampler? _studioInputSampler;
     private DisplayPowerNotification? _displayPowerNotification;
     private bool _trayLifecycleEnabled;
-    private bool _taskbarStatusEnabled;
     private bool _performanceOverlayEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
@@ -51,7 +50,6 @@ public sealed partial class MainWindow : Window
     internal Func<string, bool, Task>? SetChromaSourceAllowed => _setChromaSourceAllowed;
     internal void SetTaskbarStatusEnabled(bool enabled)
     {
-        _taskbarStatusEnabled = enabled;
         _setTaskbarStatusEnabled?.Invoke(enabled);
         UpdatePerformanceSamplingState();
     }
@@ -75,12 +73,10 @@ public sealed partial class MainWindow : Window
         _getChromaRestSnapshot = getChromaRestSnapshot;
         _setChromaSourceAllowed = setChromaSourceAllowed;
         _setTaskbarStatusEnabled = setTaskbarStatusEnabled;
-        _taskbarStatusEnabled = behaviorSettings.TaskbarStatusEnabled;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
             ?? throw new InvalidOperationException(AppStrings.Text("Text_693F327E"));
-        _viewModel.Telemetry.SetPerformanceSamplingEnabled(false);
         _viewModel.Refresh.SetDeviceWatchActive(false);
         InitializeComponent();
         // The card needs a real value on first open without delaying the window.
