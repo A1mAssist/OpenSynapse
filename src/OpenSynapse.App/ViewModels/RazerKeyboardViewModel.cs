@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Macros;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
 
@@ -53,6 +54,9 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
     private bool _hasPolling;
     private bool _hasBattery;
+    private RazerKeyboardService? _mappingService;
+    private RazerHidMappingViewModel? _mapping;
+    private Microsoft.UI.Xaml.Visibility _mappingVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public RazerKeyboardViewModel(
         RazerKeyboardConnection connection,
@@ -171,6 +175,26 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         _hasPolling ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
     public Microsoft.UI.Xaml.Visibility BatteryVisibility =>
         _hasBattery ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+    public Microsoft.UI.Xaml.Visibility MappingVisibility
+    {
+        get => _mappingVisibility;
+        private set
+        {
+            if (_mappingVisibility == value) return;
+            _mappingVisibility = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public RazerHidMappingViewModel Mapping =>
+        _mapping ??= new RazerHidMappingViewModel(
+            new RazerKeyboardMappingTransport(MappingService),
+            canWrite: true,
+            macroServiceFactory: CreateService,
+            localMacros: () => Onboard.LocalMacroProvider?.Invoke() ?? [],
+            actionCatalog: RazerKeyboardMappingActionCatalog.Instance);
+
+    private RazerKeyboardService MappingService => _mappingService ??= OpenService();
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -188,6 +212,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             }
 
             ApplyLighting(lighting);
+            await RefreshMappingAvailabilityAsync(cancellationToken).ConfigureAwait(true);
             ErrorText = state.Firmware is null && state.Serial is null && state.BatteryPercent is null &&
                 state.GameModeEnabled is null && state.PollingRate is null
                     ? AppStrings.Text("RazerHeadsetReadFailed")
@@ -299,6 +324,22 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         }
 
         OnPropertyChanged(nameof(LightingVisibility));
+    }
+
+    private async Task RefreshMappingAvailabilityAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var ids = await MappingService.GetMappingButtonIdsAsync(cancellationToken).ConfigureAwait(true);
+            MappingVisibility = ids.Any(id => id != 0)
+                ? Microsoft.UI.Xaml.Visibility.Visible
+                : Microsoft.UI.Xaml.Visibility.Collapsed;
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            _diagnostic?.Invoke($"keyboard mapping unavailable: {exception.Message}");
+            MappingVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+        }
     }
 
     private RazerKeyboardService OpenService() =>

@@ -15,9 +15,11 @@ namespace OpenSynapse.App.ViewModels;
 public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
 {
     private readonly IRazerMappingTransport _transport;
+    private readonly IRazerMappingActionCatalog _catalog;
     private readonly bool _canWrite;
     private readonly Func<RazerOnboardMacroService>? _macroServiceFactory;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacroProvider;
+    private readonly Func<CancellationToken, Task>? _afterApplyAsync;
     private readonly Action<string>? _log;
     private readonly Uri? _layoutUri;
     private bool _isBusy;
@@ -38,12 +40,16 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         Func<RazerOnboardMacroService>? macroServiceFactory = null,
         Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
         Uri? layoutUri = null,
-        Action<string>? log = null)
+        Action<string>? log = null,
+        IRazerMappingActionCatalog? actionCatalog = null,
+        Func<CancellationToken, Task>? afterApplyAsync = null)
     {
         _transport = transport;
+        _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;
         _canWrite = canWrite;
         _macroServiceFactory = macroServiceFactory;
         _localMacroProvider = localMacros;
+        _afterApplyAsync = afterApplyAsync;
         _layoutUri = layoutUri;
         _log = log;
     }
@@ -136,7 +142,8 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
             var defaults = _freeSlots.ToList();
             foreach (var id in ids.Where(id => id != 0))
             {
-                var row = new RazerHidMappingRowViewModel(id, _localMacroOptions, _macrosAvailable);
+                var row = new RazerHidMappingRowViewModel(
+                    id, _localMacroOptions, _macrosAvailable, _catalog);
                 row.PropertyChanged += OnRowPropertyChanged;
                 byte? assignedSlot = null;
                 try
@@ -144,7 +151,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                     var assignment = await _transport.GetAssignmentAsync(id, Mode, cancellationToken)
                         .ConfigureAwait(true);
                     assignedSlot = MacroSlotOf(assignment.FunctionId, assignment.Data);
-                    row.CurrentActionText = RazerHidMappingActions.Describe(
+                    row.CurrentActionText = _catalog.Describe(
                         assignment.FunctionId,
                         assignment.Data,
                         _slotChoices);
@@ -243,13 +250,19 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                 await _transport.SetAssignmentAsync(
                     row.ButtonId, Mode, action.FunctionId, action.Data, cancellationToken)
                     .ConfigureAwait(true);
-                row.CurrentActionText = RazerHidMappingActions.Describe(
+                row.CurrentActionText = _catalog.Describe(
                     action.FunctionId,
                     action.Data,
                     _slotChoices);
                 row.GroupIndex = 0;
                 applied++;
             }
+
+            if (applied > 0 && _afterApplyAsync is not null)
+            {
+                await _afterApplyAsync(cancellationToken).ConfigureAwait(true);
+            }
+
             StatusText = applied == 0
                 ? AppStrings.Text("RazerHidMappingNothingChanged")
                 : AppStrings.FormatText("RazerHidMappingSavedCount", applied);

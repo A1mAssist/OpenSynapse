@@ -20,12 +20,17 @@ public sealed class MappingPageAuditTests
             .Where(path => !IsBuildOutput(path))
             .Select(File.ReadAllText));
 
-        Assert.Equal(2, Count(devicesPage, "RazerMappingView"));
+        Assert.Equal(4, Count(devicesPage, "RazerMappingView"));
         Assert.Contains("IRazerMappingTransport", source);
         Assert.DoesNotContain("RazerBleMappingRowViewModel", source);
         Assert.DoesNotContain("RazerBleMappingGroupOption", source);
+        Assert.DoesNotContain("ViperButtonAssignmentRowViewModel", source);
+        Assert.Contains("RazerViperMappingActionCatalog", source);
+        Assert.Contains("RazerKeyboardMappingActionCatalog", source);
         Assert.DoesNotContain("RazerBossKeyAction", source);
         Assert.DoesNotContain("BossKey", source);
+        Assert.Contains("Viper.Mapping", devicesPage);
+        Assert.Contains("MappingVisibility", devicesPage);
     }
 
     [Fact]

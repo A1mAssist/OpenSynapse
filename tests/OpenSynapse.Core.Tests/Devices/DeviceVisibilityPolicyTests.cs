@@ -6,9 +6,10 @@ namespace OpenSynapse.Core.Tests;
 public sealed class DeviceVisibilityPolicyTests
 {
     [Fact]
-    public void SleepingViperDongleIsHidden()
+    public void SleepingViperDongleStaysVisibleAsAnUnreadableDevice()
     {
-        Assert.False(DeviceVisibilityPolicy.IsVisible(Descriptor(0x00B8, DeviceProtocolFamilies.Viper), Telemetry()));
+        Assert.True(DeviceVisibilityPolicy.IsVisible(
+            Descriptor(0x00B8, DeviceProtocolFamilies.Viper), Telemetry()));
     }
 
     [Fact]

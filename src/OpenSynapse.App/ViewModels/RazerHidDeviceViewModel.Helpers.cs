@@ -382,6 +382,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ProtocolTotalCount));
         OnPropertyChanged(nameof(ProtocolDetails));
         OnPropertyChanged(nameof(CanWrite));
+        OnPropertyChanged(nameof(MappingVisibility));
         OnPropertyChanged(nameof(BasicVisibility));
         OnPropertyChanged(nameof(FirmwareVisibility));
         OnPropertyChanged(nameof(SerialVisibility));

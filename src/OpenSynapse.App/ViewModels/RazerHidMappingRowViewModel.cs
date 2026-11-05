@@ -48,6 +48,7 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     private readonly IReadOnlyList<RazerHidMacroOption> _localMacros;
     private readonly bool _supportsMacros;
     private readonly IReadOnlyList<RazerMappingGroupOption> _groupOptions;
+    private readonly IRazerMappingActionCatalog _catalog;
     private int _groupIndex;
     private int _optionIndex;
     private int _modifierIndex;
@@ -65,13 +66,15 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     internal RazerHidMappingRowViewModel(
         byte buttonId,
         IReadOnlyList<RazerHidMacroOption> localMacros,
-        bool supportsMacros)
+        bool supportsMacros,
+        IRazerMappingActionCatalog catalog)
     {
         _localMacros = localMacros;
         _supportsMacros = supportsMacros;
+        _catalog = catalog;
         _groupOptions = RazerMappingText.GroupOptions(_supportsMacros && _localMacros.Count > 0);
         ButtonId = buttonId;
-        ButtonName = RazerHidMappingActions.DescribeButton(buttonId);
+        ButtonName = catalog.DescribeButton(buttonId);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -130,7 +133,7 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
         {
             if (_groupIndex == value) return;
             _groupIndex = value;
-            OptionNames = RazerHidMappingActions.OptionNames(
+            OptionNames = _catalog.OptionNames(
                 (RazerHidMappingGroup)value,
                 _localMacros);
             _optionIndex = 0;
@@ -339,7 +342,7 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
                 (RazerHidMacroPlayback)_macroPlaybackIndex,
                 checked((int)MacroRepeatCount)),
             RazerHidMappingGroup.Keep => null,
-            var group => RazerHidMappingActions.CreateAction(
+            var group => _catalog.CreateAction(
                 group,
                 _optionIndex,
                 RazerHidMappingActions.ModifierMasks[Math.Clamp(

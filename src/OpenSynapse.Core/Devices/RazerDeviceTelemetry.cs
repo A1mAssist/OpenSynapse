@@ -250,9 +250,10 @@ public static class DeviceCapabilitySummaryCalculator
 }
 
 /// <summary>
-/// A sleeping wireless peripheral can stay enumerated while every command times out.
-/// Hide it until one capability answers, but keep the laptop itself present: a
-/// telemetry timeout must not remove the Blade page. An unknown family keeps its row.
+/// A discovered device keeps its page while it is present. Wireless telemetry can stop
+/// answering while the mapping or settings channel still works, so an unreadable count
+/// must not erase the device; 'unreadable' is a status, not absence. Unknown families
+/// keep their diagnostic row as before.
 /// </summary>
 public static class DeviceVisibilityPolicy
 {
@@ -260,14 +261,15 @@ public static class DeviceVisibilityPolicy
     {
         ArgumentNullException.ThrowIfNull(descriptor);
         ArgumentNullException.ThrowIfNull(telemetry);
-        if (DeviceProtocolFamilies.IsBlade(descriptor.ProtocolFamily))
+        if (DeviceProtocolFamilies.IsBlade(descriptor.ProtocolFamily) ||
+            descriptor.Access == DeviceAccessState.Available)
         {
             return true;
         }
 
         var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
             ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
-        return summary.Supported == 0 || summary.Available > 0;
+        return summary.Supported == 0;
     }
 }
 

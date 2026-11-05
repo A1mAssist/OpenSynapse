@@ -25,6 +25,12 @@ public sealed record RazerKeyboardState(
     int? PollingRate,
     IReadOnlyList<string> Errors);
 
+public enum RazerKeyboardMappingProtocol
+{
+    Middleware02,
+    ButtonAssignment08,
+}
+
 /// <summary>
 /// Settings the middleware exposes for the Huntsman V3 and Pro Type keyboards, which the
 /// RazerHid catalogue does not cover: game mode, polling period, battery and identity.
@@ -99,6 +105,16 @@ public sealed class RazerKeyboardService
 
     public static async Task<RazerKeyboardConnection?> FindAsync(
         Action<string>? diagnostic = null,
+        CancellationToken cancellationToken = default) =>
+        (await FindAllAsync(diagnostic, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+    /// <summary>
+    /// Every attached keyboard that belongs to this page. Several keyboards can be
+    /// connected at once, including two units of the same model, so discovery must not
+    /// stop at the first interface.
+    /// </summary>
+    public static async Task<IReadOnlyList<RazerKeyboardConnection>> FindAllAsync(
+        Action<string>? diagnostic = null,
         CancellationToken cancellationToken = default)
     {
         var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
@@ -112,28 +128,21 @@ public sealed class RazerKeyboardService
             diagnostic?.Invoke(
                 "keyboard found no admitted 91-byte interface; " +
                 $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}"))}");
-            return null;
+            return [];
         }
 
-        var chosen = candidates[0];
-        var canonical = RazerProductAliases.Canonical(chosen.ProductId);
         diagnostic?.Invoke(
-            $"keyboard selected pid={chosen.ProductId:X4} model={canonical:X4} " +
-            $"path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
-            $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} access={chosen.Access}");
-        return new RazerKeyboardConnection(
-            chosen.DevicePath,
-            canonical,
-            Products[canonical],
-            chosen.FeatureReportByteLength,
-            UsesLegacyChroma(canonical),
-            chosen.ProductId);
+            "keyboard selected " + string.Join(", ", candidates.Select(item =>
+                $"pid={item.ProductId:X4} model={RazerProductAliases.Canonical(item.ProductId):X4} " +
+                $"path={RazerFeatureTransport.DescribeDevicePath(item.DevicePath)} " +
+                $"usage=0x{item.UsagePage:X4}:0x{item.Usage:X4} access={item.Access}")));
+        return candidates.Select(CreateConnection).ToArray();
     }
 
     /// <summary>
-    /// Keeps the interfaces this page admits. The dongle and BLE links enumerate their
-    /// own PID, so admission goes through the wired alias; a wired link wins when both
-    /// are present because its path is stable across reconnects.
+    /// Keeps one interface per physical keyboard. The dongle and BLE links enumerate
+    /// their own PID, so admission goes through the wired alias. Available links come
+    /// first, then wired ahead of wireless because a wired path is stable across reconnects.
     /// </summary>
     internal static WindowsHidDiscovery.HidInterfaceDescriptor[] SelectCandidates(
         IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
@@ -141,10 +150,35 @@ public sealed class RazerKeyboardService
             .Where(item => Products.ContainsKey(RazerProductAliases.Canonical(item.ProductId)))
             // The RazerHid catalogue already owns these PIDs and shows its own page.
             .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group
+                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+                .ThenBy(item => RazerProductAliases.IsWirelessAlias(item.ProductId))
+                .ThenBy(item => item.ProductId)
+                .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
+                .First())
             .OrderByDescending(item => item.Access == DeviceAccessState.Available)
             .ThenBy(item => RazerProductAliases.IsWirelessAlias(item.ProductId))
             .ThenBy(item => item.ProductId)
+            .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+
+    internal static IReadOnlyList<RazerKeyboardConnection> SelectConnections(
+        IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
+        SelectCandidates(interfaces).Select(CreateConnection).ToArray();
+
+    private static RazerKeyboardConnection CreateConnection(
+        WindowsHidDiscovery.HidInterfaceDescriptor descriptor)
+    {
+        var canonical = RazerProductAliases.Canonical(descriptor.ProductId);
+        return new RazerKeyboardConnection(
+            descriptor.DevicePath,
+            canonical,
+            Products[canonical],
+            descriptor.FeatureReportByteLength,
+            UsesLegacyChroma(canonical),
+            descriptor.ProductId);
+    }
 
     public async Task<RazerKeyboardState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
@@ -291,6 +325,150 @@ public sealed class RazerKeyboardService
         }
     }
 
+    private RazerKeyboardMappingProtocol? _mappingProtocol;
+    private IReadOnlyList<byte>? _mappingButtonIds;
+
+    /// <summary>
+    /// Probes the two middleware button-assignment families in order. Both are read-only
+    /// GETs; the first non-empty list wins, and no product-id list decides admission here.
+    /// The 0x02 family is the shared mouse/keyboard mapping path. Some firmware exposes
+    /// the protocol-30 0x08 family instead, which uses the existing frame decoder.
+    /// </summary>
+    public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (_mappingButtonIds is not null)
+        {
+            return _mappingButtonIds;
+        }
+
+        foreach (var protocol in new[]
+        {
+            RazerKeyboardMappingProtocol.Middleware02,
+            RazerKeyboardMappingProtocol.ButtonAssignment08,
+        })
+        {
+            try
+            {
+                var response = protocol switch
+                {
+                    RazerKeyboardMappingProtocol.Middleware02 =>
+                        await QueryPreparedAsync(
+                            RazerHidMappingProtocol.GetButtonList().Report,
+                            "mapping 02:84",
+                            cancellationToken).ConfigureAwait(false),
+                    _ => await QueryPreparedAsync(
+                        RazerButtonAssignmentProtocol.CreateGetButtonListRequest(
+                            NextTransactionId(), 0x02),
+                        "mapping 08:80",
+                        cancellationToken).ConfigureAwait(false),
+                };
+                var ids = protocol switch
+                {
+                    RazerKeyboardMappingProtocol.Middleware02 =>
+                        RazerHidMappingProtocol.ParseButtonList(response),
+                    _ => RazerButtonAssignmentProtocol.ParseButtonList(response),
+                };
+                if (ids.Any(id => id != 0))
+                {
+                    _mappingProtocol = protocol;
+                    _mappingButtonIds = ids;
+                    return ids;
+                }
+            }
+            catch (Exception exception) when (IsExpected(exception))
+            {
+                _diagnostic?.Invoke($"keyboard mapping probe {protocol} failed: {exception.Message}");
+            }
+        }
+
+        return [];
+    }
+
+    public async Task<RazerHidButtonAssignment> GetMappingAssignmentAsync(
+        byte buttonId,
+        byte mode,
+        CancellationToken cancellationToken = default)
+    {
+        if (_mappingProtocol is null)
+        {
+            _ = await GetMappingButtonIdsAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        if (_mappingProtocol == RazerKeyboardMappingProtocol.Middleware02)
+        {
+            return RazerHidMappingProtocol.ParseAssignment(
+                await QueryPreparedAsync(
+                    RazerHidMappingProtocol.GetAssignment(buttonId, mode).Report,
+                    "mapping 02:8C",
+                    cancellationToken).ConfigureAwait(false));
+        }
+
+        if (_mappingProtocol == RazerKeyboardMappingProtocol.ButtonAssignment08)
+        {
+            var assignment = RazerButtonAssignmentProtocol.ParseSingleAssignment(
+                await QueryPreparedAsync(
+                    RazerButtonAssignmentProtocol.CreateGetSingleAssignmentRequest(
+                        NextTransactionId(), 0x02, buttonId),
+                    "mapping 08:84",
+                    cancellationToken).ConfigureAwait(false),
+                (RazerButtonAssignmentMode)mode);
+            return new RazerHidButtonAssignment(
+                assignment.ButtonId,
+                (byte)assignment.Mode,
+                (byte)assignment.FunctionId,
+                assignment.Data.Take(assignment.DataSize).ToArray());
+        }
+
+        throw new InvalidOperationException("The keyboard did not report a button list.");
+    }
+
+    public async Task SetMappingAssignmentAsync(
+        byte buttonId,
+        byte mode,
+        byte functionId,
+        ReadOnlyMemory<byte> data,
+        CancellationToken cancellationToken = default)
+    {
+        if (_mappingProtocol is null)
+        {
+            _ = await GetMappingButtonIdsAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        if (_mappingProtocol == RazerKeyboardMappingProtocol.Middleware02)
+        {
+            await QueryPreparedAsync(
+                RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.Span).Report,
+                "mapping 02:0C",
+                cancellationToken).ConfigureAwait(false);
+        }
+        else if (_mappingProtocol == RazerKeyboardMappingProtocol.ButtonAssignment08)
+        {
+            await QueryPreparedAsync(
+                RazerButtonAssignmentProtocol.CreateSetSingleAssignmentRequest(
+                    NextTransactionId(),
+                    0x02,
+                    buttonId,
+                    (RazerButtonAssignmentMode)mode,
+                    (RazerButtonFunctionType)functionId,
+                    data.Span),
+                "mapping 08:04",
+                cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            throw new InvalidOperationException("The keyboard did not report a button list.");
+        }
+
+        var applied = await GetMappingAssignmentAsync(buttonId, mode, cancellationToken)
+            .ConfigureAwait(false);
+        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(data.ToArray()))
+        {
+            throw new InvalidOperationException(
+                "The keyboard kept a different button assignment.");
+        }
+    }
+
     private async Task<byte> TryReadActiveProfileAsync(CancellationToken cancellationToken)
     {
         try
@@ -338,12 +516,17 @@ public sealed class RazerKeyboardService
         }
     }
 
-    private async Task<byte[]> QueryAsync(
+    private Task<byte[]> QueryAsync(
         Func<byte, byte[]> request,
+        string label,
+        CancellationToken cancellationToken) =>
+        QueryPreparedAsync(request(NextTransactionId()), label, cancellationToken);
+
+    private async Task<byte[]> QueryPreparedAsync(
+        byte[] report,
         string label,
         CancellationToken cancellationToken)
     {
-        var report = request(NextTransactionId());
         _diagnostic?.Invoke(
             $"keyboard {label}: size={report[6]}, class=0x{report[7]:X2}, command=0x{report[8]:X2}");
         return await _transport.QueryPreparedAsync(

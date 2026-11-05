@@ -20,6 +20,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         ProtocolFamily = descriptor.ProtocolFamily;
         Id = descriptor.Id;
         HardwareCategory = descriptor.Category;
+        IsPresent = descriptor.Access == DeviceAccessState.Available;
         Name = descriptor.Name;
         ProductId = descriptor.ProductId;
         Identity = $"VID_{descriptor.VendorId:X4} / PID_{descriptor.ProductId:X4}";
@@ -98,6 +99,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public string IconGlyph { get; }
     public string IconAutomationName => _iconAutomationSource;
     public bool IsAvailable { get; }
+    public bool IsPresent { get; }
     public int SupportedCapabilityCount => _total;
     public int? BatteryPercent { get; }
     public Brush StatusBrush { get; }
@@ -242,6 +244,7 @@ public sealed class DeviceProtocolDetailViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public bool IsAvailable { get; }
+    public bool IsPresent { get; }
     public string Capability => _capabilityIsLiteral ? _capabilityResourceKey : AppStrings.Text(_capabilityResourceKey);
     public string Status => AppStrings.Text(_failed
         ? "DiagnosticProtocolFailedStatus"

@@ -78,6 +78,25 @@ public sealed class RazerHidDiscoveryCacheRegressionTests
     }
 
     [Fact]
+    public async Task MappingOnlyEndpointResolvesThroughTheReadOnlyFallback()
+    {
+        var definition = Find(0x00E5);
+        var transport = new EndpointTransport
+        {
+            Handler = (_, request) => request[7] == 0x02 && request[8] == 0x84
+                ? Echo(request, 0x03, 0x01, 0x02, 0x04)
+                : throw new IOException("identity probes unavailable"),
+        };
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+
+        var resolved = await service.ResolveEndpointPathAsync(definition, ["mapping-only"]);
+
+        Assert.Equal("mapping-only", resolved.Path);
+        Assert.Contains(transport.Requests, request =>
+            request[7] == 0x02 && request[8] == 0x84);
+    }
+
+    [Fact]
     public async Task OrochiV2DpiWriteUsesOneAxisValue()
     {
         var definition = Find(0x00E0);

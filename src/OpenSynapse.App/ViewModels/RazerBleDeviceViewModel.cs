@@ -571,7 +571,11 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
             }
 
             await _mapping.ReadAsync(cancellationToken).ConfigureAwait(true);
-            MappingVisibility = _mapping.Rows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            // A read failure means the device advertised mapping but did not answer this
+            // time; keep the card visible so the error is actionable instead of hiding it.
+            MappingVisibility = _mapping.Rows.Count > 0 || _mapping.HasError
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {

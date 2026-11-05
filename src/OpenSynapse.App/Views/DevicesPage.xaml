@@ -293,6 +293,9 @@
                         <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="{Binding Onboard.MaxMacroId}" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
                         <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="KeyboardWriteOnboardMacroClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
+                    <views:RazerMappingView DataContext="{Binding Mapping}" />
                   </Border>                </StackPanel>
                 <StackPanel x:Name="GamepadPanel" DataContext="{Binding Accessories.SelectedGamepad}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -1431,45 +1434,7 @@
                     </StackPanel>
                   </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16">
-                    <StackPanel Spacing="12">
-                      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
-                        <StackPanel Spacing="3"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="Loc_7228F14C77" Text="板载映射" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel><TextBlock Text="{Binding Viper.ButtonMappingsText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="3">
-                          <TextBlock local:Localized.Uid="Loc_38C9EAF77D" Text="映射层" Style="{StaticResource MetricLabelStyle}" />
-                          <ComboBox local:Localized.Uid="Loc_91C223D2EC" Width="152" ItemsSource="{Binding Viper.ButtonMappingLayerOptions}" SelectedIndex="{Binding Viper.ButtonMappingLayerIndex, Mode=TwoWay}" AutomationProperties.Name="板载映射层" />
-                        </StackPanel>
-                        <Button local:Localized.Uid="Loc_56F4B1E701" Grid.Column="2" Content="读取" Click="ReadViperButtonMappingsClick" IsEnabled="{Binding Viper.CanReadButtonMappings}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
-                        <Button local:Localized.Uid="Loc_767A063324" Grid.Column="3" Click="ApplyAllViperButtonMappingsClick" IsEnabled="{Binding Viper.CanSetButtonMappings}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" AutomationProperties.Name="保存板载映射"><StackPanel Orientation="Horizontal" Spacing="7"><SymbolIcon Symbol="Save" /><TextBlock local:Localized.Uid="Loc_1B300DD952" Text="保存" /></StackPanel></Button>
-                      </Grid>
-                      <ContentControl IsEnabled="{Binding Viper.CanSetButtonMappings}" Padding="0" HorizontalContentAlignment="Stretch">
-                          <Grid RowDefinitions="Auto,Auto" RowSpacing="6">
-                            <Grid ColumnDefinitions="110,1.2*,1*,1.35*" ColumnSpacing="10">
-                              <TextBlock local:Localized.Uid="Loc_51866506E5" Text="鼠标控制" Style="{StaticResource MetricLabelStyle}" />
-                              <TextBlock local:Localized.Uid="Loc_6C071A20D1" Grid.Column="1" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
-                              <TextBlock local:Localized.Uid="Loc_C89F81E3D1" Grid.Column="2" Text="目标动作" Style="{StaticResource MetricLabelStyle}" /><TextBlock local:Localized.Uid="Loc_6EE879D982" Grid.Column="3" Text="参数" Style="{StaticResource MetricLabelStyle}" />
-                            </Grid>
-                            <ItemsRepeater Grid.Row="1" ItemsSource="{Binding Viper.VisibleButtonAssignments}">
-                              <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
-                              <ItemsRepeater.ItemTemplate>
-                                <DataTemplate>
-                                  <Grid ColumnDefinitions="110,1.2*,1*,1.35*" ColumnSpacing="10" MinHeight="58">
-                                    <TextBlock Text="{Binding ButtonText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" TextWrapping="Wrap" ToolTipService.ToolTip="{Binding CurrentActionText}" VerticalAlignment="Center" />
-                                    <StackPanel Grid.Column="2" Spacing="4" VerticalAlignment="Center"><ComboBox ItemsSource="{Binding ActionGroupOptions}" SelectedIndex="{Binding SelectedActionGroupIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="目标映射类型" />
-                                      <ComboBox local:Localized.Uid="Loc_2D72DC9E3F" ItemsSource="{Binding ActionOptions}" SelectedIndex="{Binding SelectedActionIndex, Mode=TwoWay}" PlaceholderText="{Binding CurrentActionText}" Loaded="ViperActionComboBoxLoaded" DataContextChanged="ViperActionComboBoxDataContextChanged" SelectionChanged="ViperActionComboBoxSelectionChanged" HorizontalAlignment="Stretch" AutomationProperties.Name="目标板载映射动作" />
-                                    </StackPanel>
-                                    <Grid Grid.Column="3" RowDefinitions="Auto,Auto" RowSpacing="4" VerticalAlignment="Center"><Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Visibility="{Binding KeyboardParameterVisibility}"><NumberBox local:Localized.Uid="Loc_A931F2A16F" Header="修饰键 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding KeyboardModifierValue, Mode=TwoWay}" AutomationProperties.Name="键盘修饰键码" /><NumberBox local:Localized.Uid="Loc_0E422F6A72" Grid.Column="1" Header="Usage 0–255" Minimum="0" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding KeyboardUsageValue, Mode=TwoWay}" AutomationProperties.Name="键盘 HID Usage" /><NumberBox Grid.Column="2" Header="每秒次数" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboKeyRateVisibility}" AutomationProperties.Name="Turbo 每秒次数" /></Grid>
-                                      <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Visibility="{Binding DpiClutchParameterVisibility}"><NumberBox Header="DPI 离合 X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchX, Mode=TwoWay}" AutomationProperties.Name="DPI 离合 X" /><NumberBox Grid.Column="1" Header="DPI 离合 Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchY, Mode=TwoWay}" AutomationProperties.Name="DPI 离合 Y" /></Grid>
-                                      <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Visibility="{Binding TurboButtonParameterVisibility}"><ComboBox Header="Turbo 按钮" ItemsSource="{Binding TurboButtonOptions}" SelectedIndex="{Binding TurboButtonIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="Turbo 目标按钮" /><NumberBox Grid.Column="1" Header="每秒次数" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" AutomationProperties.Name="Turbo 每秒次数" /></Grid>
-                                      <TextBlock local:Localized.Uid="Loc_9F41F9592F" Grid.Row="1" Text="固定双击" Visibility="{Binding DoubleClickParameterVisibility}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" /><NumberBox Grid.Row="1" Header="配置 ID" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" AutomationProperties.Name="配置 ID" />
-                                    </Grid>
-                                  </Grid>
-                                </DataTemplate>
-                              </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
-                          </Grid>
-                      </ContentControl>
-                    </StackPanel>
+                    <views:RazerMappingView DataContext="{Binding Viper.Mapping}" />
                   </Border>
                 </StackPanel>
               </StackPanel>
