@@ -36,6 +36,7 @@ internal static class RazerHidKrakenV4Protocol
     private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x00, 0x01];
 
     private const byte EffectOff = 0x00;
+    private const byte EffectStatic = 0x01;
     private const byte EffectWave = 0x04;
 
     private const int PayloadOffset = 10;
@@ -43,8 +44,8 @@ internal static class RazerHidKrakenV4Protocol
 
     internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false) =>
     [
+        // Billie T2 only changes the effect mode; the frame engine is not involved.
         CreateEffect(EffectOff, isDongle),
-        CreateFrame(0, LedCount - 1, new RazerHidColor(0, 0, 0), isDongle),
     ];
 
     /// <summary>
@@ -59,8 +60,9 @@ internal static class RazerHidKrakenV4Protocol
         byte? intensity = null,
         bool isDongle = false) =>
     [
-        // OpenRGB's verified direct path writes the frame on its own. The preceding
-        // C0 effect command is not part of that path and made the frame a no-op on 056B.
+        // Billie T2 switches to the static effect before it streams the frame. The
+        // effect command is request/response; the caller drains its reply.
+        CreateEffect(EffectStatic, isDongle),
         CreateFrame(0, LedCount - 1, Scale(color, intensity), isDongle),
     ];
 
@@ -68,6 +70,23 @@ internal static class RazerHidKrakenV4Protocol
     [
         CreateEffect(EffectWave, isDongle),
     ];
+
+    /// <summary>
+    /// Billie T2 answers every general command. Custom frames are fire-and-forget,
+    /// so only the general shape has to have its reply drained.
+    /// </summary>
+    internal static bool ExpectsResponse(ReadOnlySpan<byte> report) =>
+        report.Length == ReportLength && report[7] == 0x00 && report[8] == 0x00;
+
+    /// <summary>
+    /// Replies to C0 00 01 carry C0 01 01 in the command slot at bytes 10..12.
+    /// </summary>
+    internal static bool IsEffectResponse(ReadOnlySpan<byte> report) =>
+        report.Length == ReportLength &&
+        report[0] == ReportId &&
+        report[2] == TransactionId &&
+        report[10] == GetEffectCommandId &&
+        report[11] == 0x01;
 
     /// <summary>
     /// "Set Chroma Frame" takes the row and column bounds followed by the colour
@@ -103,9 +122,9 @@ internal static class RazerHidKrakenV4Protocol
         var report = new byte[ReportLength];
         report[0] = ReportId;
         report[2] = TransactionId;
-        // OpenRGB passes 5 + (3 * cols) for this frame. Unlike the general
-        // command shape, this size does not add the trailing checksum slot.
-        report[6] = checked((byte)payload.Count);
+        // The bundle counts the trailing checksum slot even though the custom frame
+        // leaves that slot zero: 5 + 27 + 1 = 0x21 for the nine-LED row.
+        report[6] = checked((byte)(payload.Count + 1));
         report[7] = commandClass;
         report[8] = commandId;
         report[9] = isDongle ? DongleFlag : WiredFlag;

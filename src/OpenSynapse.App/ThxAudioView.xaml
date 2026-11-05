@@ -39,7 +39,7 @@
                         <ToggleSwitch local:Localized.Uid="ThxSpatialToggle" IsOn="{Binding SpatialEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
                         <TextBlock local:Localized.Uid="ThxEqualizerLabel" Text="均衡器" Style="{StaticResource MetricLabelStyle}" />
                         <ToggleSwitch local:Localized.Uid="ThxEqualizerToggle" IsOn="{Binding EqualizerEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" />
-                        <ComboBox local:Localized.Uid="ThxPresetLabel" Header="预设" ItemsSource="{Binding Presets}" DisplayMemberPath="Label" SelectedIndex="{Binding SelectedPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                        <ComboBox local:Localized.Uid="ThxPresetLabel" Header="预设" ItemsSource="{Binding Presets}" DisplayMemberPath="Label" SelectedIndex="{Binding SelectedPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" PlaceholderText="默认配置" HorizontalAlignment="Stretch" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="6">
                         <TextBlock local:Localized.Uid="ThxEqualizerTitle" Text="频段" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />

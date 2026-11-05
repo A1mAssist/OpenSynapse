@@ -2304,6 +2304,9 @@
     <value>预设</value>
     <comment>预设</comment>
   </data>
+  <data name="ThxPresetLabel.PlaceholderText" xml:space="preserve">
+    <value>默认配置</value>
+  </data>
   <data name="ThxEqualizerTitle.Text" xml:space="preserve">
     <value>频段</value>
     <comment>频段</comment>
@@ -2923,6 +2926,7 @@
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>应用空间音效</value></data>
   <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>预设</value></data>
+  <data name="RazerHeadsetThxPresetLabel.PlaceholderText" xml:space="preserve"><value>默认配置</value></data>
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX 均衡器</value></data>
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>应用频段</value></data>

@@ -52,18 +52,29 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken)
     {
-        await ExecuteAsync(report, null, cancellationToken).ConfigureAwait(false);
+        await ExecuteAsync(report, null, null, cancellationToken).ConfigureAwait(false);
     }
 
     public Task<byte[]?> QueryAsync(
         byte[] report,
         byte[] expectedHeader,
         CancellationToken cancellationToken) =>
-        ExecuteAsync(report, expectedHeader, cancellationToken);
+        ExecuteAsync(report, expectedHeader, null, cancellationToken);
+
+    /// <summary>
+    /// Sends a report and returns the first reply that satisfies <paramref name="matches"/>.
+    /// Billie's lighting replies use the flat 02/C0 01 01 shape, not the MXIC PI frame.
+    /// </summary>
+    public Task<byte[]?> QueryRawAsync(
+        byte[] report,
+        Func<byte[], bool> matches,
+        CancellationToken cancellationToken) =>
+        ExecuteAsync(report, null, matches, cancellationToken);
 
     private async Task<byte[]?> ExecuteAsync(
         byte[] report,
         byte[]? expectedHeader,
+        Func<byte[], bool>? rawMatches,
         CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -85,7 +96,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
                 }
             }, cancellationToken).ConfigureAwait(false);
 
-            if (expectedHeader is null)
+            if (expectedHeader is null && rawMatches is null)
             {
                 return null;
             }
@@ -98,9 +109,24 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
                 {
                     while (_reports.Reader.TryRead(out var data))
                     {
+                        if (rawMatches is not null)
+                        {
+                            if (rawMatches(data))
+                            {
+                                return data;
+                            }
+
+                            continue;
+                        }
+
                         // The input report id matches the request's, so 0555 stays on 2 and
                         // the Valkyrie T3 family reads its id-7 replies. An empty expected
                         // header selects the protocol40 reply layout.
+                        if (expectedHeader is null)
+                        {
+                            continue;
+                        }
+
                         if (expectedHeader.Length == 0)
                         {
                             if (RazerProtocol40HeadsetProtocol.TryReadValue(data, report, out var protocol40))
