@@ -2261,6 +2261,27 @@ public sealed class RazerHidBackendTests
         Assert.DoesNotContain(transport.Requests, request => request[7] == 0x02 && request[8] == 0x0D);
     }
 
+    [Fact]
+    public async Task AnalogKeyboardMappingUsesTheAnalogKeyTableAndKeepsThresholds()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0266)!;
+        var transport = new AnalogKeyboardTransport();
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = MappingConnection(device);
+
+        // The fake cannot store a write, so the read-back check fails by design.
+        await Record.ExceptionAsync(() => service.SetButtonAssignmentAsync(connection,
+            buttonId: 0x04, mode: 0x00, functionId: 0x01, data: [0x04, 0x00]));
+
+        Assert.Contains(transport.Requests, request => request[7] == 0x02 && request[8] == 0x92);
+        Assert.DoesNotContain(transport.Requests, request => request[7] == 0x02 && request[8] == 0x0D);
+        var write = transport.Requests.First(request => request[7] == 0x02 && request[8] == 0x12);
+        Assert.Equal(0x11, write[12]);
+        Assert.Equal(0x22, write[13]);
+        Assert.Equal(0x01, write[14]);
+        Assert.Equal(0x02, write[15]);
+    }
+
     private static RazerHidDeviceConnection MappingConnection(RazerHidDeviceDefinition device) =>
         new(device, "test-path", "test-device", RazerHidEndpointState.Resolved,
             new HashSet<RazerHidBackendCapability>
@@ -2269,6 +2290,49 @@ public sealed class RazerHidBackendTests
                 RazerHidBackendCapability.MappingWrite,
             },
             new Dictionary<RazerHidLedZone, RazerHidLightingZoneCapabilities>(), null);
+
+    /// <summary>Returns a fixed analog key assignment so the write can preserve its thresholds.</summary>
+    private sealed class AnalogKeyboardTransport : IRazerFeatureTransport
+    {
+        internal List<byte[]> Requests { get; } = [];
+
+        public Task<byte[]> QueryAsync(
+            string devicePath,
+            byte transactionId,
+            byte dataSize,
+            byte commandClass,
+            byte commandId,
+            ReadOnlyMemory<byte> arguments,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false) =>
+            throw new NotSupportedException();
+
+        public Task<byte[]> QueryPreparedAsync(
+            string devicePath,
+            ReadOnlyMemory<byte> request,
+            TimeSpan deviceWait,
+            CancellationToken cancellationToken,
+            bool allowRemainingPacketsMismatch = false)
+        {
+            Requests.Add(request.ToArray());
+            var response = request.ToArray();
+            response[1] = 0x02;
+            if (request.Span[7] == 0x02 && request.Span[8] == 0x92)
+            {
+                response[6] = 7;
+                response[9] = 0x02;
+                response[10] = request.Span[10];
+                response[11] = request.Span[11];
+                response[12] = 0x11;
+                response[13] = 0x22;
+                response[14] = 0x00;
+                response[15] = 0x00;
+            }
+            response[89] = RazerFeatureReport.CalculateCrc(response);
+            return Task.FromResult(response);
+        }
+    }
 
     /// <summary>Answers get-device-mode with normal mode and echoes every other frame.</summary>
     private sealed class NormalModeTransport : IRazerFeatureTransport

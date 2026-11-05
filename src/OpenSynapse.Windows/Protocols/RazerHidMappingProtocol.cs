@@ -6,7 +6,13 @@ public sealed record RazerHidButtonAssignment(
     byte ButtonId,
     byte Mode,
     byte FunctionId,
-    IReadOnlyList<byte> Data);
+    IReadOnlyList<byte> Data)
+{
+    /// <summary>Analog keyboards keep the actuation band that belonged to the key.</summary>
+    public byte ThresholdL { get; init; }
+
+    public byte ThresholdH { get; init; }
+}
 
 /// <summary>
 /// Onboard button assignment (class 0x02, commands 0x84 / 0x8C / 0x0C) as the Razer
@@ -26,6 +32,8 @@ internal static class RazerHidMappingProtocol
     private const byte SetAssignmentCommand = 0x0C;
     private const byte GetKeyAssignmentCommand = 0x8D;
     private const byte SetKeyAssignmentCommand = 0x0D;
+    private const byte GetAnalogKeyAssignmentCommand = 0x92;
+    private const byte SetAnalogKeyAssignmentCommand = 0x12;
 
     internal static RazerHidRequest GetButtonList() => new(
         "mapping.getButtonList",
@@ -45,6 +53,12 @@ internal static class RazerHidMappingProtocol
             TransactionId, ReportDataSize, MappingClass, GetKeyAssignmentCommand,
             new[] { ProfileId, keyId, mode }));
 
+    internal static RazerHidRequest GetAnalogKeyAssignment(byte keyId, byte mode) => new(
+        "mapping.getAnalogKeyAssignment",
+        RazerFeatureReport.CreateRequest(
+            TransactionId, ReportDataSize, MappingClass, GetAnalogKeyAssignmentCommand,
+            new[] { ProfileId, keyId, mode }));
+
     internal static RazerHidRequest SetAssignment(
         byte buttonId,
         byte mode,
@@ -58,6 +72,34 @@ internal static class RazerHidMappingProtocol
         byte functionId,
         ReadOnlySpan<byte> data) =>
         CreateAssignmentRequest("mapping.setKeyAssignment", SetKeyAssignmentCommand, keyId, mode, functionId, data);
+
+    internal static RazerHidRequest SetAnalogKeyAssignment(
+        byte keyId,
+        byte mode,
+        byte thresholdL,
+        byte thresholdH,
+        byte functionId,
+        ReadOnlySpan<byte> data)
+    {
+        if (data.Length > 5)
+        {
+            throw new ArgumentOutOfRangeException(nameof(data));
+        }
+
+        Span<byte> arguments = stackalloc byte[7 + data.Length];
+        arguments[0] = ProfileId;
+        arguments[1] = keyId;
+        arguments[2] = mode;
+        arguments[3] = thresholdL;
+        arguments[4] = thresholdH;
+        arguments[5] = functionId;
+        arguments[6] = (byte)data.Length;
+        data.CopyTo(arguments[7..]);
+        return new RazerHidRequest(
+            "mapping.setAnalogKeyAssignment",
+            RazerFeatureReport.CreateRequest(
+                TransactionId, ReportDataSize, MappingClass, SetAnalogKeyAssignmentCommand, arguments));
+    }
 
     private static RazerHidRequest CreateAssignmentRequest(
         string builderName,
@@ -106,5 +148,20 @@ internal static class RazerHidMappingProtocol
             arguments[2],
             arguments[3],
             arguments.Slice(5, size).ToArray());
+    }
+
+    internal static RazerHidButtonAssignment ParseAnalogAssignment(ReadOnlySpan<byte> response)
+    {
+        var arguments = RazerHidStandardProtocol.Arguments(response, 7);
+        var size = Math.Min((int)arguments[6], 5);
+        return new RazerHidButtonAssignment(
+            arguments[1],
+            arguments[2],
+            arguments[5],
+            arguments.Slice(7, size).ToArray())
+        {
+            ThresholdL = arguments[3],
+            ThresholdH = arguments[4],
+        };
     }
 }

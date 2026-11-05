@@ -11,6 +11,13 @@ public sealed partial class RazerHidDeviceService
         byte mode,
         CancellationToken cancellationToken = default)
     {
+        if (UsesAnalogKeyAssignments(connection))
+        {
+            return RazerHidMappingProtocol.ParseAnalogAssignment(await ExecuteAsync(connection,
+                RazerHidMappingProtocol.GetAnalogKeyAssignment(buttonId, mode), cancellationToken)
+                .ConfigureAwait(false));
+        }
+
         var request = UsesKeyAssignments(connection)
             ? RazerHidMappingProtocol.GetKeyAssignment(buttonId, mode)
             : RazerHidMappingProtocol.GetAssignment(buttonId, mode);
@@ -19,9 +26,14 @@ public sealed partial class RazerHidDeviceService
     }
 
     // Keyboards act on the key table; the button table accepts writes but never
-    // drives a key press. Synapse's OBM engine makes the same split.
+    // drives a key press. Analog keyboards keep a separate table with the actuation band.
+    // Synapse's OBM engine makes the same split.
     private static bool UsesKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.Category == DeviceCategory.Keyboard;
+
+    // 0266 Huntsman V2 Analog and 0282 Huntsman Mini Analog declare the analog OBM engine.
+    private static bool UsesAnalogKeyAssignments(RazerHidDeviceConnection connection) =>
+        connection.Definition.ProductId is 0x0266 or 0x0282;
 
     public async Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
@@ -39,9 +51,21 @@ public sealed partial class RazerHidDeviceService
             await EnsureDriverModeAsync(connection, cancellationToken).ConfigureAwait(false);
         }
 
-        var request = UsesKeyAssignments(connection)
-            ? RazerHidMappingProtocol.SetKeyAssignment(buttonId, mode, functionId, data.ToArray())
-            : RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray());
+        RazerHidRequest request;
+        if (UsesAnalogKeyAssignments(connection))
+        {
+            // Preserve the key's actuation band; changing it would alter how the key feels.
+            var current = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
+                .ConfigureAwait(false);
+            request = RazerHidMappingProtocol.SetAnalogKeyAssignment(buttonId, mode,
+                current.ThresholdL, current.ThresholdH, functionId, data.ToArray());
+        }
+        else
+        {
+            request = UsesKeyAssignments(connection)
+                ? RazerHidMappingProtocol.SetKeyAssignment(buttonId, mode, functionId, data.ToArray())
+                : RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray());
+        }
         await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
         var applied = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
             .ConfigureAwait(false);
