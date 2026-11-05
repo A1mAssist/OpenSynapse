@@ -9,7 +9,7 @@ public sealed class RazerHeadsetNewDevicesTests
 {
     // The Xbox/PlayStation BlackShark V3 identities select AudioValkyrie, which uses the
     // 64-byte 0x60 frame rather than the MXIC 50 41 envelope.
-    // See docs/devices/HEADSET_AUDIO_ALIGNMENT.md.
+    // See docs/HEADSET_AUDIO_ALIGNMENT.md.
     [Theory]
     [InlineData(0x0A4E)]
     [InlineData(0x0A51)]
@@ -39,7 +39,7 @@ public sealed class RazerHeadsetNewDevicesTests
     }
 
     // The Hammerhead V3 dongles use the rzDevice40 class 0x18 triplet layout on the same
-    // 64-byte MXIC envelope. See docs/devices/HEADSET_AUDIO_ALIGNMENT.md.
+    // 64-byte MXIC envelope. See docs/HEADSET_AUDIO_ALIGNMENT.md.
     [Theory]
     [InlineData(0x0A61)]
     [InlineData(0x0A64)]
@@ -56,7 +56,7 @@ public sealed class RazerHeadsetNewDevicesTests
     }
 
     // The BlackShark V3 X identities select rzDevice25ValkyrieT3: same 0x18 tuples on
-    // 64-byte report id 7. See docs/devices/HEADSET_AUDIO_ALIGNMENT.md.
+    // 64-byte report id 7. See docs/HEADSET_AUDIO_ALIGNMENT.md.
     [Theory]
     [InlineData(0x0A54)]
     [InlineData(0x1022)]

@@ -1,6 +1,6 @@
 # 灵刃 16（2026 款）四显卡模式可行性研判
 
-> 基于《雷蛇灵刃 16（2026 款）复刻 G-Helper 四种显卡模式》方案文档、当前 OpenSynapse 代码，以及 `docs/blade/GPU_MUX_HID_ADAPTATION.zh-CN.md` 的 HID MUX 适配记录。
+> 基于《雷蛇灵刃 16（2026 款）复刻 G-Helper 四种显卡模式》方案文档、当前 OpenSynapse 代码，以及 `docs/GPU_MUX_HID_ADAPTATION.zh-CN.md` 的 HID MUX 适配记录。
 
 - 日期：2026-11-03
 - 代码基线：`main` 的本地未提交工作区（HEAD `da70093`；本文不代表已推送或已发布）
@@ -445,11 +445,11 @@ G-Helper 的 WMI 调用失败后通常只记日志、界面保持原状态；按
 | `src/OpenSynapse.App/Views/DiagnosticsPage.xaml` | “恢复独显”入口 |
 | `src/OpenSynapse.Windows/Devices/Manifests/blade-02e0.json` | Blade 16（2026）manifest，声明 `0D:89/8A/09` |
 | `src/OpenSynapse.Windows/Devices/Manifests/blade-02e1.json` | Blade 18（2026）manifest，声明 `0D:89/8A/09` |
-| `tests/OpenSynapse.Core.Tests/Blade/BladeDisplayMuxTests.cs` | MUX 协议字节、模式解析、能力位测试 |
-| `tests/OpenSynapse.Core.Tests/Blade/BladeGpuModeTests.cs` | 四模式可用性、自动回退、型号准入 |
-| `tests/OpenSynapse.Core.Tests/Blade/BladeGpuModeControllerTests.cs` | 回滚、启动恢复、crash marker、MUX 拓扑测试 |
-| `tests/OpenSynapse.Core.Tests/Architecture/DeviceCapabilityStructureTests.cs` | 型号准入与 MUX manifest 一致性测试 |
-| `tests/OpenSynapse.Core.Tests/Blade/DedicatedGpuModePolicyTests.cs` | PnP 集显模式策略测试 |
-| `docs/blade/GPU_MUX_HID_ADAPTATION.zh-CN.md` | MUX HID 适配流程与 2025 款只读记录 |
+| `tests/OpenSynapse.Core.Tests/BladeDisplayMuxTests.cs` | MUX 协议字节、模式解析、能力位测试 |
+| `tests/OpenSynapse.Core.Tests/BladeGpuModeTests.cs` | 四模式可用性、自动回退、型号准入 |
+| `tests/OpenSynapse.Core.Tests/BladeGpuModeControllerTests.cs` | 回滚、启动恢复、crash marker、MUX 拓扑测试 |
+| `tests/OpenSynapse.Core.Tests/DeviceCapabilityStructureTests.cs` | 型号准入与 MUX manifest 一致性测试 |
+| `tests/OpenSynapse.Core.Tests/DedicatedGpuModePolicyTests.cs` | PnP 集显模式策略测试 |
+| `docs/GPU_MUX_HID_ADAPTATION.zh-CN.md` | MUX HID 适配流程与 2025 款只读记录 |
 
 > 代码和测试已完成；除 2025 款 `1532:02C6` 的只读记录外，2026 款的 PnP/MUX 读写、重启恢复、NVIDIA 控制面板 UIA 和 BIOS 行为均未实机验证。

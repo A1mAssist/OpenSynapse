@@ -498,6 +498,6 @@ A listed ID means a code path exists for that device. It does not mean every con
 
 The THX V3/V4 headset path and parts of the middleware-derived device set are built from native clients and protocol evidence; hardware acceptance is still required where noted. BLE mice must expose Razer protocol 30 service `52401523`; that page targets devices such as the Basilisk V3 Pro and Viper V4 Pro, with battery, polling, DPI, lighting and button mapping where the device answers those commands. AudioAWKittyBLE headsets (`0309`, `0530`, `0534`, `0562`) use service `416d656c-2d52-617a-6572-424c4501f40a` and a separate GATT control page.
 
-For external lighting integrations, see [Chroma-supported devices](../lighting/CHROMA_SUPPORTED_DEVICES.md).
+For external lighting integrations, see [Chroma-supported devices](CHROMA_SUPPORTED_DEVICES.md).
 
-Back to [README](../../README.md).
+Back to [README](../README.md).
