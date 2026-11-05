@@ -21,7 +21,8 @@ public sealed class StudioDeviceVisualLoader : IDisposable
         _service = new StudioManifestService(
             _http,
             cacheDirectory ?? AppDataPaths.Combine("lighting-studio", "manifests"),
-            TimeSpan.FromMinutes(10));
+            TimeSpan.FromMinutes(10),
+            Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "studio-manifests.zip"));
         _images = new StudioProductImageService(
             _http,
             AppDataPaths.Combine("lighting-studio", "product-images"));
@@ -39,6 +40,16 @@ public sealed class StudioDeviceVisualLoader : IDisposable
         var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
         if (result.Manifest is null) return null;
         return StudioDeviceVisualBuilder.Build(result.Manifest, instanceId, name);
+    }
+
+    /// <summary>Builds the packaged layout immediately; the network fetch may replace it later.</summary>
+    public StudioDeviceVisual? LoadOfflineVisual(ushort productId, string instanceId, string name)
+    {
+        if (productId == 0) return null;
+        var result = _service.TryGetOfflineCatalog(productId, 0);
+        return result?.Manifest is { } manifest
+            ? StudioDeviceVisualBuilder.Build(manifest, instanceId, name)
+            : null;
     }
 
     /// <summary>Loads only the LED table; the device card does not need SVG paths.</summary>
