@@ -13,10 +13,10 @@
     <!-- Win10 22H2 without the 2024 CET update cannot launch a CET-marked apphost. -->
     <CetCompat>false</CetCompat>
     <ApplicationIcon>Assets\OpenSynapse.ico</ApplicationIcon>
-    <Version>1.6.1-beta.40</Version>
+    <Version>1.6.1-beta.41</Version>
     <AssemblyVersion>1.6.1.0</AssemblyVersion>
     <FileVersion>1.6.1.0</FileVersion>
-    <InformationalVersion>1.6.1-beta.40</InformationalVersion>
+    <InformationalVersion>1.6.1-beta.41</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <SatelliteResourceLanguages>zh-CN;en-US</SatelliteResourceLanguages>
     <DefaultLanguage>zh-CN</DefaultLanguage>
