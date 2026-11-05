@@ -263,6 +263,25 @@ public static class RazerHidMappingActions
         }
     }
 
+    public static RazerHidMappingAction CreateMacroAction(
+        byte slotId,
+        RazerHidMacroPlayback playback,
+        int repeatCount = 1) => playback switch
+    {
+        RazerHidMacroPlayback.Once => new(
+            $"Macro {slotId}", RazerHidMappingFunctions.MacroTypeI, [0x00, slotId, 0x01]),
+        RazerHidMacroPlayback.Repeat => new(
+            $"Macro {slotId}", RazerHidMappingFunctions.MacroTypeI,
+            [0x00, slotId, (byte)Math.Clamp(repeatCount, 1, byte.MaxValue)]),
+        RazerHidMacroPlayback.Hold => new(
+            $"Macro {slotId}", RazerHidMappingFunctions.MacroTypeII, [0x00, slotId]),
+        RazerHidMacroPlayback.Toggle => new(
+            $"Macro {slotId}", RazerHidMappingFunctions.MacroTypeIII, [0x00, slotId]),
+        RazerHidMacroPlayback.Sequence => new(
+            $"Macro {slotId}", RazerHidMappingFunctions.MacroTypeIV, [0x00, slotId]),
+        _ => throw new ArgumentOutOfRangeException(nameof(playback)),
+    };
+
     public static string Describe(
         byte functionId,
         IReadOnlyList<byte> data,

@@ -22,6 +22,7 @@ docs/*
 !docs/SUPPORTED_DEVICES.zh-CN.md
 !docs/DEVICE_ADAPTATION.md
 !docs/DEVICE_ADAPTATION.zh-CN.md
+!docs/MAPPING_PAGE.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/

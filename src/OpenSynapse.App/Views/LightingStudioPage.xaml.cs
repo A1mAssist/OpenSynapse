@@ -518,7 +518,6 @@ public sealed partial class LightingStudioPage : UserControl
             }
         }
     }
-
     /// <summary>Chroma shows what import changed; a bare count hides dropped or remapped devices.</summary>
     private async Task ShowImportIssuesAsync(OpenSynapse.Core.Lighting.StudioImportResult result)
     {
@@ -542,7 +541,6 @@ public sealed partial class LightingStudioPage : UserControl
         };
         await dialog.ShowAsync();
     }
-
     private async void ExportChromaClick(object sender, RoutedEventArgs e)
     {
         if (_viewModel is null) return;
@@ -563,7 +561,6 @@ public sealed partial class LightingStudioPage : UserControl
             _viewModel.ExportChroma(file.Path, profileIds);
         }
     }
-
     /// <summary>Chroma exports the profiles the user ticks; a single profile needs no dialog.</summary>
     private async Task<IReadOnlyList<string>?> PickExportProfilesAsync()
     {
@@ -588,19 +585,16 @@ public sealed partial class LightingStudioPage : UserControl
         var ids = boxes.Where(box => box.IsChecked == true).Select(box => (string)box.Tag).ToArray();
         return ids.Length == 0 ? null : ids;
     }
-
     private void NewClick(object sender, RoutedEventArgs e)
     {
         _viewModel?.NewDocument();
         BindInspector();
         RenderPreview();
     }
-
     private void BindInspector()
     {
         Inspector.Parameters = _viewModel?.SelectedParams;
         if (Host is not null) Inspector.CaptureRegion = Host.BehaviorSettings.AmbientCaptureRegion;
         Inspector.Refresh();
     }
-
 }

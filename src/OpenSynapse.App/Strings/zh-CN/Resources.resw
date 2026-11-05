@@ -3717,4 +3717,44 @@
   <data name="LightingStudioProject" xml:space="preserve"><value>项目</value></data>
   <data name="LightingStudioMore" xml:space="preserve"><value>更多</value></data>
   <data name="LightingStudioProfileTitle" xml:space="preserve"><value>配置档名称</value></data>
+  <data name="RazerMappingTitle" xml:space="preserve"><value>按键映射</value></data>
+  <data name="RazerMappingRead" xml:space="preserve"><value>读取</value></data>
+  <data name="RazerMappingSave" xml:space="preserve"><value>保存</value></data>
+  <data name="RazerMappingLayerNormal" xml:space="preserve"><value>普通层</value></data>
+  <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift 层</value></data>
+  <data name="RazerMappingButtonColumn" xml:space="preserve"><value>按键</value></data>
+  <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>当前动作</value></data>
+  <data name="RazerMappingTypeColumn" xml:space="preserve"><value>类型</value></data>
+  <data name="RazerMappingActionColumn" xml:space="preserve"><value>目标动作</value></data>
+  <data name="RazerMappingParameterColumn" xml:space="preserve"><value>参数</value></data>
+  <data name="RazerMappingMacroSlot" xml:space="preserve"><value>宏槽 {0}</value></data>
+  <data name="RazerMappingMacroDuplicateSlot" xml:space="preserve"><value>多个按键同时选择了宏槽 {0}，请为每个按键选择不同槽位。</value></data>
+  <data name="RazerMappingMacroSelectionMissing" xml:space="preserve"><value>请选择一个本地宏。</value></data>
+  <data name="RazerMappingMacroUnavailable" xml:space="preserve"><value>此设备没有可用的板载宏存储。</value></data>
+  <data name="RazerMappingMacroEmpty" xml:space="preserve"><value>所选宏没有可写入板载存储的步骤。</value></data>
+  <data name="RazerMappingMacroNoFreeSlot" xml:space="preserve"><value>没有空闲宏槽</value></data>
+  <data name="RazerMappingGroupKeep" xml:space="preserve"><value>保持</value></data>
+  <data name="RazerMappingGroupOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerMappingGroupMouseButton" xml:space="preserve"><value>鼠标按键</value></data>
+  <data name="RazerMappingGroupKeyboardKey" xml:space="preserve"><value>键盘按键</value></data>
+  <data name="RazerMappingGroupDpi" xml:space="preserve"><value>DPI</value></data>
+  <data name="RazerMappingGroupProfile" xml:space="preserve"><value>配置切换</value></data>
+  <data name="RazerMappingGroupMediaKey" xml:space="preserve"><value>媒体键</value></data>
+  <data name="RazerMappingGroupPowerKey" xml:space="preserve"><value>电源键</value></data>
+  <data name="RazerMappingGroupDoubleClick" xml:space="preserve"><value>双击</value></data>
+  <data name="RazerMappingGroupScrollWheelMode" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="RazerMappingGroupRazerKey" xml:space="preserve"><value>Razer 键</value></data>
+  <data name="RazerMappingGroupWindowsShortcut" xml:space="preserve"><value>Windows 快捷键</value></data>
+  <data name="RazerMappingGroupHyperShiftToggle" xml:space="preserve"><value>HyperShift 切换</value></data>
+  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>用户宏</value></data>
+  <data name="RazerMappingGroupTurboKey" xml:space="preserve"><value>Turbo 键</value></data>
+  <data name="RazerMappingGroupTurboButton" xml:space="preserve"><value>Turbo 按钮</value></data>
+  <data name="RazerMappingGroupDpiClutch" xml:space="preserve"><value>DPI 离合</value></data>
+  <data name="RazerMappingGroupProfileSpecific" xml:space="preserve"><value>指定配置</value></data>
+  <data name="RazerMappingMacroSlotInUse" xml:space="preserve"><value>宏槽 {0} 已被占用，请选择空闲槽。</value></data>
+  <data name="RazerMappingTurboHeader" xml:space="preserve"><value>Turbo 次/秒</value></data>
+  <data name="RazerMappingProfileIdHeader" xml:space="preserve"><value>配置 ID</value></data>
+  <data name="RazerMappingDpiXHeader" xml:space="preserve"><value>DPI X</value></data>
+  <data name="RazerMappingDpiYHeader" xml:space="preserve"><value>DPI Y</value></data>
+  <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>宏次数</value></data>
 </root>

@@ -25,124 +25,6 @@ public sealed class RazerBleDeviceRowViewModel(RazerBleDevice device) : INotifyP
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
 
-public sealed record RazerBleMappingGroupOption(RazerHidMappingGroup Group, string Name);
-
-/// <summary>One BLE button row. Group/option choices reuse the USB mapping catalogue.</summary>
-public sealed class RazerBleMappingRowViewModel : INotifyPropertyChanged
-{
-    private static readonly IReadOnlyList<RazerBleMappingGroupOption> Groups =
-    [
-        new(RazerHidMappingGroup.Keep, "Keep"),
-        new(RazerHidMappingGroup.Off, "Off"),
-        new(RazerHidMappingGroup.MouseButton, "Mouse button"),
-        new(RazerHidMappingGroup.KeyboardKey, "Keyboard key"),
-        new(RazerHidMappingGroup.Dpi, "DPI"),
-        new(RazerHidMappingGroup.Profile, "Profile"),
-        new(RazerHidMappingGroup.MediaKey, "Media"),
-        new(RazerHidMappingGroup.PowerKey, "Power"),
-        new(RazerHidMappingGroup.DoubleClick, "Double click"),
-        new(RazerHidMappingGroup.RazerKey, "Razer key"),
-        new(RazerHidMappingGroup.HyperShiftToggle, "HyperShift toggle"),
-    ];
-
-    private int _selectedGroupIndex;
-    private int _selectedOptionIndex;
-    private int _selectedModifierIndex;
-    private IReadOnlyList<string> _optionNames = [];
-    private string _currentActionText = string.Empty;
-
-    public RazerBleMappingRowViewModel(byte buttonId)
-    {
-        ButtonId = buttonId;
-        ButtonName = RazerHidMappingActions.DescribeButton(buttonId);
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public byte ButtonId { get; }
-    public string ButtonName { get; }
-    public string CurrentActionText
-    {
-        get => _currentActionText;
-        set
-        {
-            if (_currentActionText == value) return;
-            _currentActionText = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public IReadOnlyList<RazerBleMappingGroupOption> GroupOptions => Groups;
-
-    public int SelectedGroupIndex
-    {
-        get => _selectedGroupIndex;
-        set
-        {
-            var clamped = Math.Clamp(value, 0, Groups.Count - 1);
-            if (_selectedGroupIndex == clamped) return;
-            _selectedGroupIndex = clamped;
-            _selectedOptionIndex = 0;
-            _optionNames = SelectedGroup == RazerHidMappingGroup.Keep
-                ? []
-                : RazerHidMappingActions.OptionNames(SelectedGroup);
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(OptionNames));
-            OnPropertyChanged(nameof(SelectedOptionIndex));
-            OnPropertyChanged(nameof(ModifierVisibility));
-            OnPropertyChanged(nameof(OptionVisibility));
-        }
-    }
-
-    public RazerHidMappingGroup SelectedGroup => Groups[_selectedGroupIndex].Group;
-    public IReadOnlyList<string> OptionNames => _optionNames;
-
-    public int SelectedOptionIndex
-    {
-        get => _selectedOptionIndex;
-        set
-        {
-            var clamped = Math.Clamp(value, 0, Math.Max(0, _optionNames.Count - 1));
-            if (_selectedOptionIndex == clamped) return;
-            _selectedOptionIndex = clamped;
-            OnPropertyChanged();
-        }
-    }
-
-    public IReadOnlyList<string> ModifierNames => RazerHidMappingActions.ModifierNames;
-
-    public int SelectedModifierIndex
-    {
-        get => _selectedModifierIndex;
-        set
-        {
-            var clamped = Math.Clamp(value, 0, RazerHidMappingActions.ModifierMasks.Count - 1);
-            if (_selectedModifierIndex == clamped) return;
-            _selectedModifierIndex = clamped;
-            OnPropertyChanged();
-        }
-    }
-
-    public Visibility ModifierVisibility => SelectedGroup == RazerHidMappingGroup.KeyboardKey
-        ? Visibility.Visible
-        : Visibility.Collapsed;
-
-    public Visibility OptionVisibility => SelectedGroup == RazerHidMappingGroup.Keep
-        ? Visibility.Collapsed
-        : Visibility.Visible;
-
-    public RazerHidMappingAction? CreateAction() =>
-        SelectedGroup == RazerHidMappingGroup.Keep
-            ? null
-            : RazerHidMappingActions.CreateAction(
-                SelectedGroup,
-                SelectedOptionIndex,
-                RazerHidMappingActions.ModifierMasks[SelectedModifierIndex]);
-
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-}
-
 public sealed class RazerBleDpiStageRowViewModel(byte index, int x, int y, int z) : INotifyPropertyChanged
 {
     private double _x = x;
@@ -186,6 +68,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
     private readonly RazerBleDevice _device;
     private readonly Action<string>? _diagnostic;
     private RazerBleDeviceService? _service;
+    private RazerHidMappingViewModel? _mapping;
     private bool _isBusy;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
@@ -226,8 +109,6 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
     private int _selectedLightingDirectionIndex;
     private Color _lightingColor = Color.FromArgb(255, 255, 0, 0);
     private string _lightingStatusText = string.Empty;
-    private int _selectedMappingLayerIndex;
-    private string _mappingStatusText = string.Empty;
     private int _activeDpiStage = 1;
     private string _dpiStagesStatusText = string.Empty;
     private int _selectedScrollModeIndex;
@@ -569,21 +450,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         private set => SetField(ref _lightingStatusText, value);
     }
 
-    public IReadOnlyList<string> MappingLayerOptions { get; } = ["Normal", "HyperShift"];
-
-    public int SelectedMappingLayerIndex
-    {
-        get => _selectedMappingLayerIndex;
-        set => SetField(ref _selectedMappingLayerIndex, Math.Clamp(value, 0, 1));
-    }
-
-    public ObservableCollection<RazerBleMappingRowViewModel> MappingRows { get; } = [];
-
-    public string MappingStatusText
-    {
-        get => _mappingStatusText;
-        private set => SetField(ref _mappingStatusText, value);
-    }
+    public RazerHidMappingViewModel? Mapping => _mapping;
 
     public bool IsBusy
     {
@@ -694,36 +561,21 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         if (_service is null || !BeginOperation()) return;
         try
         {
-            var ids = await _service.GetMappingButtonIdsAsync(cancellationToken);
-            MappingRows.Clear();
-            foreach (var id in ids.Where(id => id != 0))
+            if (_mapping is null)
             {
-                var row = new RazerBleMappingRowViewModel(id);
-                try
-                {
-                    var assignment = await _service.GetButtonAssignmentAsync(
-                        id, (byte)SelectedMappingLayerIndex, cancellationToken);
-                    row.CurrentActionText = RazerHidMappingActions.Describe(
-                        assignment.FunctionId, assignment.Data);
-                }
-                catch (Exception exception) when (IsExpectedException(exception))
-                {
-                    row.CurrentActionText = "unreadable";
-                }
-
-                MappingRows.Add(row);
+                _mapping = new RazerHidMappingViewModel(
+                    new RazerBleMappingTransport(_service),
+                    canWrite: true,
+                    log: _diagnostic);
+                OnPropertyChanged(nameof(Mapping));
             }
 
-            MappingStatusText = MappingRows.Count == 0
-                ? "No mappable buttons"
-                : $"Read {MappingRows.Count} buttons";
-            MappingVisibility = Visibility.Visible;
+            await _mapping.ReadAsync(cancellationToken).ConfigureAwait(true);
+            MappingVisibility = _mapping.Rows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
-            MappingRows.Clear();
             MappingVisibility = Visibility.Collapsed;
-            MappingStatusText = exception.Message;
         }
         finally
         {
@@ -731,31 +583,19 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
 
-    public Task ApplyMappingAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(
-            async service =>
-            {
-                var applied = 0;
-                foreach (var row in MappingRows.Where(row => row.SelectedGroupIndex > 0).ToArray())
-                {
-                    var action = row.CreateAction();
-                    if (action is null) continue;
-                    await service.SetButtonAssignmentAsync(
-                        row.ButtonId, (byte)SelectedMappingLayerIndex,
-                        action.FunctionId, action.Data, cancellationToken);
-                    row.CurrentActionText = RazerHidMappingActions.Describe(
-                        action.FunctionId, action.Data);
-                    row.SelectedGroupIndex = 0;
-                    applied++;
-                }
-
-                return applied;
-            },
-            applied =>
-            {
-                MappingStatusText = applied == 0 ? "No changes" : $"Applied {applied} buttons";
-                OperationStatusText = AppStrings.Text("BlackSharkSaved");
-            });
+    public async Task ApplyMappingAsync(CancellationToken cancellationToken = default)
+    {
+        if (_mapping is null) return;
+        await _mapping.ApplyAsync(cancellationToken).ConfigureAwait(true);
+        if (_mapping.HasError)
+        {
+            ErrorText = _mapping.ErrorText;
+        }
+        else
+        {
+            OperationStatusText = AppStrings.Text("BlackSharkSaved");
+        }
+    }
 
     public async Task LoadDpiStagesAsync(CancellationToken cancellationToken = default)
     {

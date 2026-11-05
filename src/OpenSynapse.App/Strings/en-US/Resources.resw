@@ -3291,4 +3291,44 @@
   <data name="LightingStudioProject" xml:space="preserve"><value>Project</value></data>
   <data name="LightingStudioMore" xml:space="preserve"><value>More</value></data>
   <data name="LightingStudioProfileTitle" xml:space="preserve"><value>Profile name</value></data>
+  <data name="RazerMappingTitle" xml:space="preserve"><value>Button mapping</value></data>
+  <data name="RazerMappingRead" xml:space="preserve"><value>Read</value></data>
+  <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>
+  <data name="RazerMappingLayerNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift</value></data>
+  <data name="RazerMappingButtonColumn" xml:space="preserve"><value>Button</value></data>
+  <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>Current action</value></data>
+  <data name="RazerMappingTypeColumn" xml:space="preserve"><value>Type</value></data>
+  <data name="RazerMappingActionColumn" xml:space="preserve"><value>Target action</value></data>
+  <data name="RazerMappingParameterColumn" xml:space="preserve"><value>Parameters</value></data>
+  <data name="RazerMappingMacroSlot" xml:space="preserve"><value>Macro slot {0}</value></data>
+  <data name="RazerMappingMacroDuplicateSlot" xml:space="preserve"><value>Several buttons target macro slot {0}. Choose a different slot for each button.</value></data>
+  <data name="RazerMappingMacroSelectionMissing" xml:space="preserve"><value>Select a local macro.</value></data>
+  <data name="RazerMappingMacroUnavailable" xml:space="preserve"><value>This device has no onboard macro storage.</value></data>
+  <data name="RazerMappingMacroEmpty" xml:space="preserve"><value>The selected macro has no steps that can be stored onboard.</value></data>
+  <data name="RazerMappingMacroNoFreeSlot" xml:space="preserve"><value>No free macro slot</value></data>
+  <data name="RazerMappingGroupKeep" xml:space="preserve"><value>Keep</value></data>
+  <data name="RazerMappingGroupOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerMappingGroupMouseButton" xml:space="preserve"><value>Mouse button</value></data>
+  <data name="RazerMappingGroupKeyboardKey" xml:space="preserve"><value>Keyboard key</value></data>
+  <data name="RazerMappingGroupDpi" xml:space="preserve"><value>DPI</value></data>
+  <data name="RazerMappingGroupProfile" xml:space="preserve"><value>Profile switch</value></data>
+  <data name="RazerMappingGroupMediaKey" xml:space="preserve"><value>Media key</value></data>
+  <data name="RazerMappingGroupPowerKey" xml:space="preserve"><value>Power key</value></data>
+  <data name="RazerMappingGroupDoubleClick" xml:space="preserve"><value>Double click</value></data>
+  <data name="RazerMappingGroupScrollWheelMode" xml:space="preserve"><value>Scroll mode</value></data>
+  <data name="RazerMappingGroupRazerKey" xml:space="preserve"><value>Razer key</value></data>
+  <data name="RazerMappingGroupWindowsShortcut" xml:space="preserve"><value>Windows shortcut</value></data>
+  <data name="RazerMappingGroupHyperShiftToggle" xml:space="preserve"><value>HyperShift toggle</value></data>
+  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>User macro</value></data>
+  <data name="RazerMappingGroupTurboKey" xml:space="preserve"><value>Turbo key</value></data>
+  <data name="RazerMappingGroupTurboButton" xml:space="preserve"><value>Turbo button</value></data>
+  <data name="RazerMappingGroupDpiClutch" xml:space="preserve"><value>DPI clutch</value></data>
+  <data name="RazerMappingGroupProfileSpecific" xml:space="preserve"><value>Specific profile</value></data>
+  <data name="RazerMappingMacroSlotInUse" xml:space="preserve"><value>Macro slot {0} is in use. Choose a free slot.</value></data>
+  <data name="RazerMappingTurboHeader" xml:space="preserve"><value>Turbo per second</value></data>
+  <data name="RazerMappingProfileIdHeader" xml:space="preserve"><value>Profile ID</value></data>
+  <data name="RazerMappingDpiXHeader" xml:space="preserve"><value>DPI X</value></data>
+  <data name="RazerMappingDpiYHeader" xml:space="preserve"><value>DPI Y</value></data>
+  <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>Macro repeats</value></data>
 </root>

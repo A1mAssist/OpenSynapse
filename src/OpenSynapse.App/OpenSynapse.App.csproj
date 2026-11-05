@@ -40,6 +40,9 @@
     <Content Include="Assets\LightingLayouts\*.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Assets\MappingLayouts\*.svg"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-SemiBold.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />

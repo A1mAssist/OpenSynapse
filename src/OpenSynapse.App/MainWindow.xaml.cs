@@ -568,13 +568,11 @@ public sealed partial class MainWindow : Window
             () => ArgbStripSettings.Load(),
             (rows, columns) => sampler.Sample(rows, columns));
     }
-
     internal void ForwardBladeMappingInput(BladeMappingInputEvent input)
     {
         if (!input.IsDown) return;
         _dispatcherQueue.TryEnqueue(() => LightingStudioPage.HandleMappingInput(input));
     }
-
     private void OnClosed(object sender, WindowEventArgs args)
     {
         SaveWindowSize();
@@ -599,5 +597,4 @@ public sealed partial class MainWindow : Window
         _lifetime.Dispose();
         if (_studioInputSampler is { } sampler) _ = sampler.DisposeAsync().AsTask();
     }
-
 }
