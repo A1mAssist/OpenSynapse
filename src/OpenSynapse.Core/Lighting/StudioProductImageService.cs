@@ -34,14 +34,7 @@ public sealed class StudioProductImageService
     public static Uri? ResolveUri(ushort productId) =>
         productId == 0
             ? null
-            : new Uri(FormattableString.Invariant($"{AssetRoot}{AssetProductId(productId)}/cover.png"));
-
-    /// <summary>
-    /// The wireless BlackWidow V3 Mini (0271) shares the wired 0258 bundle, whose
-    /// Synapse asset folder is 600. The PID-based URL returns 403 for 0271.
-    /// </summary>
-    private static ushort AssetProductId(ushort productId) =>
-        productId == 0x0271 ? (ushort)0x0258 : productId;
+            : new Uri(FormattableString.Invariant($"{AssetRoot}{productId}/cover.png"));
 
     public async Task<StudioProductImage> GetAsync(
         ushort productId,

@@ -12,7 +12,13 @@ public sealed record StudioManifestDevice(
     string SvgBase64,
     string LedConfigJson,
     string? ETag,
-    DateTimeOffset? LastModified);
+    DateTimeOffset? LastModified,
+    ushort WiredProductId = 0,
+    ushort DongleProductId = 0)
+{
+    /// <summary>Product folder that owns the Synapse cover art.</summary>
+    public ushort CoverProductId => WiredProductId != 0 ? WiredProductId : ProductId;
+}
 
 /// <summary>The manifest plus its source and any reason it came from cache.</summary>
 public sealed record StudioManifestResult(
@@ -46,6 +52,9 @@ internal static class StudioManifestParser
                 productId = declaredProductId;
             }
 
+            var wiredProductId = ReadUInt16(root, "wiredProductId");
+            var dongleProductId = ReadUInt16(root, "dongleProductId");
+
             var productName = root.TryGetProperty("productName", out var nameElement) &&
                 nameElement.ValueKind == JsonValueKind.String
                     ? nameElement.GetString()
@@ -69,13 +78,20 @@ internal static class StudioManifestParser
                 svgBase64,
                 ledConfigJson,
                 etag,
-                lastModified);
+                lastModified,
+                wiredProductId,
+                dongleProductId);
         }
         catch (JsonException)
         {
             return null;
         }
     }
+
+    private static ushort ReadUInt16(JsonElement root, string propertyName) =>
+        root.TryGetProperty(propertyName, out var element) && element.TryGetUInt16(out var value)
+            ? value
+            : (ushort)0;
 
     private static (string Key, string Base64) ReadSvg(JsonElement root, int editionId)
     {
