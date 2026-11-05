@@ -35,6 +35,9 @@ public sealed class StudioPlaybackClock : IStudioPlaybackClock
     private bool _started;
     private double _startedAt;
     private double _phase;
+    private StudioEffectKind? _signatureEffect;
+    private StudioPlaybackStart _signatureStart;
+    private StudioPlaybackEnd _signatureEnd;
 
     public StudioPlaybackClock(double randomPhase = 0)
     {
@@ -92,6 +95,26 @@ public sealed class StudioPlaybackClock : IStudioPlaybackClock
 
         lock (_gate)
         {
+            // Reusing a layer clock after a one-shot effect must not leave the
+            // next effect permanently stopped. Reset only when playback
+            // semantics change; color and speed edits keep the current clock.
+            if (_signatureEffect != parameters.Effect ||
+                _signatureStart != parameters.PlaybackStart ||
+                _signatureEnd != parameters.PlaybackEnd)
+            {
+                var firstSample = _signatureEffect is null;
+                _signatureEffect = parameters.Effect;
+                _signatureStart = parameters.PlaybackStart;
+                _signatureEnd = parameters.PlaybackEnd;
+                if (!(firstSample && _started))
+                {
+                    var wasRunning = _running;
+                    _started = wasRunning;
+                    _startedAt = wasRunning ? nowSeconds : 0;
+                }
+                _phase = 0;
+            }
+
             if (parameters.PlaybackStart == StudioPlaybackStart.Random && !_started)
             {
                 _started = true;
