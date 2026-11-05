@@ -2191,7 +2191,7 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>Middle</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>Side 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>Side 2 (Mouse 5)</value></data>
-  <data name="MacroMouseSide3Capture" xml:space="preserve"><value>Side 3 / multi-function (press to capture)</value></data>
+  <data name="MacroMouseSideCapture" xml:space="preserve"><value>Other side / multi-function (press to capture)</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga side {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>Mouse side buttons</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga side buttons</value></data>
@@ -2623,6 +2623,8 @@
   <data name="BleChargingLimit" xml:space="preserve"><value>Charging limit reached</value></data>
   <data name="BleIdentity" xml:space="preserve"><value>BLE · protocol 30</value></data>
   <data name="HueTitle" xml:space="preserve"><value>Philips Hue</value></data>
+  <data name="HueConfigureButton.Content" xml:space="preserve"><value>Configure</value></data>
+  <data name="HueConfigureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Philips Hue</value></data>
   <data name="HueDescription" xml:space="preserve"><value>Find a Hue bridge on the local network, or enter its address manually. Press the link button on the bridge, then choose Pair.</value></data>
   <data name="HuePairButton" xml:space="preserve"><value>Pair</value></data>
   <data name="HueRefreshButton" xml:space="preserve"><value>Refresh</value></data>
@@ -3130,6 +3132,8 @@
   <data name="LightingStudioMoveToRoot" xml:space="preserve"><value>Out of group</value></data>
   <data name="LightingStudioUndo" xml:space="preserve"><value>Undo</value></data>
   <data name="LightingStudioRedo" xml:space="preserve"><value>Redo</value></data>
+  <data name="LightingStudioToolLabel" xml:space="preserve"><value>Tool</value></data>
+  <data name="LightingStudioZoomLabel" xml:space="preserve"><value>Zoom</value></data>
   <data name="LightingStudioToolSelect" xml:space="preserve"><value>Select</value></data>
   <data name="LightingStudioToolPen" xml:space="preserve"><value>Pen</value></data>
   <data name="LightingStudioToolBucket" xml:space="preserve"><value>Bucket</value></data>
@@ -3187,7 +3191,9 @@
   <data name="LightingStudioImportIssueDeviceDropped" xml:space="preserve"><value>Devices dropped</value></data>
   <data name="LightingStudioStatusTidalCenterSet" xml:space="preserve"><value>Tidal centre moved to the picked LED.</value></data>
   <data name="LightingStudioRotateDevice.Content" xml:space="preserve"><value>↻</value></data>
+  <data name="LightingStudioRotateDeviceLabel" xml:space="preserve"><value>Rotate 90°</value></data>
   <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Rotate 90°</value></data>
+  <data name="LightingStudioStatusRestoreFallback" xml:space="preserve"><value>{0} does not expose a readable original effect; the default exit effect was applied.</value></data>
   <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Rotate 90°</value></data>
   <data name="LightingStudioClearSelection" xml:space="preserve"><value>Clear region</value></data>
   <data name="LightingStudioStatusLayerAdded" xml:space="preserve"><value>Added {0}</value></data>

@@ -97,6 +97,31 @@ public sealed class AppAuditRegressionTests
     }
 
     [Fact]
+    public void MouseSideTriggerMenuAlwaysOffersADeviceCaptureFallback()
+    {
+        var source = App("MacroEditorWindow.MouseSide.cs");
+        Assert.Contains("MacroMouseSideCapture", source);
+        Assert.Contains("CaptureMacroDeviceTriggerAsync", source);
+        Assert.DoesNotContain("SupportsThirdSideButton", source);
+    }
+
+    [Fact]
+    public void HueAppearsAsADeviceOnlyAfterPairingAndIsConfiguredFromSettings()
+    {
+        var rows = Vm("ConnectedDeviceRowViewModel.cs");
+        var hue = rows[rows.IndexOf("public ConnectedDeviceRowViewModel(PhilipsHueViewModel source)", StringComparison.Ordinal)..];
+        Assert.Contains("IsVisible = source.IsConfigured", hue);
+        Assert.DoesNotContain("IsVisible = source.IsReady", hue);
+        Assert.Contains("Click=\"HueSettingsClick\"", App("Views/SettingsPage.xaml"));
+        Assert.Contains("RequestDeviceNavigation(ViewModel.Hue)", App("Views/SettingsPage.Hue.cs"));
+        Assert.DoesNotContain("RefreshHueAsync", App("Views/DevicesPage.xaml.cs"));
+        Assert.DoesNotContain("RefreshHueAsync", App("MainWindow.Navigation.cs"));
+        Assert.DoesNotContain("RefreshHueAsync", App("MainWindow.xaml.cs"));
+        Assert.Contains("if (ViewModel.Hue.IsConfigured)", App("Views/DiagnosticsPage.xaml.cs"));
+        Assert.Contains("ViperDevicePanel.Visibility == Visibility.Visible", App("Views/DevicesPage.xaml.cs"));
+    }
+
+    [Fact]
     public void BrightnessRepliesCannotPublishOverNewInputOrDropReturnToConfirmedValue()
     {
         var queue = Method(Vm("DisplayWorkspace.cs"), "internal Task QueueInternalDisplayBrightnessAsync");
@@ -253,6 +278,19 @@ public sealed class AppAuditRegressionTests
     }
 
     [Fact]
+    public void DiagnosticsLiveReadoutsRefreshValuesWithoutClearingIssues()
+    {
+        var sampling = App("MainWindow.Navigation.cs");
+        Assert.Contains("DiagnosticsPage.Visibility == Visibility.Visible", sampling);
+        Assert.Contains("Refresh.DiagnosticsRebuildEnabled", Vm("MainViewModel.DeviceTelemetry.cs"));
+        Assert.Contains("DiagnosticsRebuildEnabled =>", Vm("RefreshWorkspace.cs"));
+        var update = Method(Vm("DiagnosticsWorkspace.cs"), "internal void UpdateDeviceTelemetry");
+        Assert.Contains("UpdateProtocolDetails", update);
+        Assert.DoesNotContain("Rows.Clear", update);
+        Assert.Contains("UpdateProtocolDetails", Vm("DiagnosticRowViewModel.cs"));
+    }
+
+    [Fact]
     public void MainWindowShutdownAlwaysTerminatesTheProcess()
     {
         var source = Method(App("App.Lifecycle.cs"), "private async Task CloseApplicationAsync");
@@ -271,6 +309,23 @@ public sealed class AppAuditRegressionTests
             Vm("ConnectedDeviceRowViewModel.cs"),
             "public ConnectedDeviceRowViewModel(PhilipsHueViewModel source)");
         Assert.Contains("IsVisible = source.IsConfigured;", source);
+    }
+
+    [Fact]
+    public void StudioStopReappliesTheConfiguredLightingAfterTheHardwareSession()
+    {
+        var stop = Method(Vm("LightingStudioViewModel.Output.cs"), "public async Task StopAsync");
+        var restore = stop.IndexOf("if (_needsExternalRestore", StringComparison.Ordinal);
+        Assert.True(restore >= 0);
+        Assert.True(stop.IndexOf("_lighting.StopAsync()", StringComparison.Ordinal) < restore);
+        Assert.Contains("_needsExternalRestore", stop);
+        Assert.Contains("applyFallback: _restoreAfterExternal is null", stop);
+        Assert.Contains("restorePersistentEffect: _restoreAfterExternal is null", Vm("LightingStudioViewModel.cs"));
+        Assert.Contains("_viewModel.RestoreLightingAfterExternalAsync", App("MainWindow.xaml.cs"));
+        var restoreAll = Method(Vm("MainViewModel.cs"), "internal async Task RestoreLightingAfterExternalAsync");
+        Assert.Contains("Lighting.RestoreBladeLightingAfterExternalAsync", restoreAll);
+        Assert.Contains("RazerHid.RestoreLightingAfterExternalAsync", restoreAll);
+        Assert.Contains("viewModel.RestoreLightingAfterExternalAsync()", App("App.Chroma.cs"));
     }
 
     private static string Vm(string file) => App("ViewModels/" + file);
