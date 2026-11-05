@@ -126,7 +126,7 @@ XAML 侧：`{Binding Foo}` → `{Binding Macros.Foo}`。因为用的是经典绑
 2. **Devices（1 225 行）** 再拆，这是最大的一笔，拆完文件立刻减 70%。
 3. 然后 Profiles / Macros / Settings / Overview。
 
-每页一个 `tests/ui/<page>.scenario.json` + 一张基线截图 + `scripts/run-ui-qa.ps1` 包装。
+UI 场景由 `scripts/run-ui-qa.ps1` 生成到 `artifacts/`，不提交 scenario 文件。
 
 验收：`MainWindow.xaml` ≤ 500 行；`MainWindow*.cs` ≤ 1 200 行；导航 + 6 个页面截图全部通过；`x:Name` 引用清零。
 
@@ -140,7 +140,7 @@ XAML 侧：`{Binding Foo}` → `{Binding Macros.Foo}`。因为用的是经典绑
 | 能力 id 只能来自 `CapabilityIds` | `ManifestCapabilityTests` |
 | 新设备 = manifest + family contract + 结构测试 | 已有 `DeviceCapabilityStructureTests` |
 | 测试项目不得 include App 源码 | `TestProjectHygieneTests` |
-| UI 改动必须跑 UI 自动化并留截图 | `scripts/run-ui-qa.ps1` + `tests/ui/*.scenario.json` |
+| UI 改动必须跑 UI 自动化并留截图 | `scripts/run-ui-qa.ps1`（报告输出到 `artifacts/`） |
 | 提交用 Conventional Commits、无 `Co-Authored-By`、不提交 `package.json` / `package-lock.json` | `.githooks/pre-commit` + `commit-msg` |
 | 证据分四档：构建通过 / 协议对齐 / 实机验证 / 生产验证，不许混写 | PR 模板 + CHANGELOG 模板 |
 | 每次交付必须写清"没做什么、没验证什么" | PR 模板固定一栏 |
