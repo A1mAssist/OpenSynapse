@@ -1,6 +1,6 @@
 # Chroma 外设/底座灯光对齐
 
-扫描日期：2026-10-28。命令集取自每个 PID 的 middleware bundle 中实际 `sendCommand` 的 `class:id`，并与 `docs/MIDDLEWARE_DEVICE_PROTOCOLS.md`、`accessories.json` 现有条目对照。
+扫描日期：2026-10-28。命令集取自每个 PID 的 middleware bundle 中实际 `sendCommand` 的 `class:id`，并与 `docs/devices/MIDDLEWARE_DEVICE_PROTOCOLS.md`、`accessories.json` 现有条目对照。
 
 | PID | JS / 官方名称 | 兄弟型号 | 关键 class:id | 结论 |
 |---|---|---|---|---|

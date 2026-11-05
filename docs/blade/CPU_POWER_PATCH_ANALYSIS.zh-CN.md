@@ -76,7 +76,7 @@ CpuPowerLimitBroker.ApplyAsync(new CpuPowerLimit(
 - 档位表：`MainViewModel.PowerLimit.cs:13-14`
 - PL2 计算：`MainViewModel.PowerLimit.cs:177-189`
 - 用户上限：`src/OpenSynapse.Core/Devices/CpuPowerLimit.cs:26-30`
-- 单元测试：`tests/OpenSynapse.Core.Tests/CpuPowerLimitTests.cs:48-64` 明确覆盖 15/25/45/95 的编码和解码。
+- 单元测试：`tests/OpenSynapse.Core.Tests/Blade/CpuPowerLimitTests.cs:48-64` 明确覆盖 15/25/45/95 的编码和解码。
 
 补丁说明的验收点也是“选 15 W 后数值应变 15 / 30”，档位列表为 15/25/35/45/55/65/75/85/95。按补丁说明和 `CpuPowerLimitPresets` 字符串，补丁与 main 在档位数值上对齐。
 
@@ -308,7 +308,7 @@ main 的基线文件：
 
 测试覆盖：
 
-- `tests/OpenSynapse.Core.Tests/RyzenSmuTests.cs` 覆盖 family→命令映射、PM table 解码、异常表、夹紧和毫瓦换算；
+- `tests/OpenSynapse.Core.Tests/System/RyzenSmuTests.cs` 覆盖 family→命令映射、PM table 解码、异常表、夹紧和毫瓦换算；
 - 不覆盖真实 SMU mailbox、PM table 布局或 EC 覆盖。
 
 补丁包没有 AMD 分支：
@@ -446,7 +446,7 @@ main 的细节：
 | main 服务 operation / ACL | `src/OpenSynapse.App/GpuModeServiceHost.cs:307-322`, `:392-425`, `:483-505` |
 | main 服务安装 | `src/OpenSynapse.Windows/Lifecycle/DedicatedGpuModeServiceInstaller.cs:57-113` |
 | main AMD SMU | `src/OpenSynapse.Windows/Devices/RyzenSmuCpuPowerLimit.cs:128-189`, `src/OpenSynapse.Windows/Devices/RyzenSmuSession.cs:51-191` |
-| main 单元测试 | `tests/OpenSynapse.Core.Tests/CpuPowerLimitTests.cs`, `CpuPowerLimitProtocolTests.cs`, `RyzenSmuTests.cs` |
+| main 单元测试 | `tests/OpenSynapse.Core.Tests/Blade/CpuPowerLimitTests.cs`, `CpuPowerLimitProtocolTests.cs`, `RyzenSmuTests.cs` |
 | 补丁说明 | `artifacts/user-cpu-power-patch-20261031/OpenSynapse-补丁-1.6.0-CPU功耗墙/补丁说明.txt` |
 | 补丁脚本 | 同目录 `应用补丁.cmd`、`回滚补丁.cmd` |
 | 补丁二进制证据 | `payload/OpenSynapse.App.dll` ProductVersion `1.6.0+b41af4d...`；`payload/OpenSynapse.Windows.dll` 无 Ryzen 类型/字符串；`payload` 无 `RyzenSMU.bin` |

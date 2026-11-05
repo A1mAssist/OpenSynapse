@@ -24,7 +24,7 @@ public sealed class MiddlewareDeviceCoverageTests
     {
         var repository = FindRepositoryRoot();
         var reference = File.ReadAllText(
-            Path.Combine(repository, "docs", "MIDDLEWARE_DEVICE_PROTOCOLS.md"));
+            Path.Combine(repository, "docs", "devices", "MIDDLEWARE_DEVICE_PROTOCOLS.md"));
         var pids = Regex.Matches(reference, @"`1532:([0-9A-F]{4})`")
             .Select(match => match.Groups[1].Value)
             .Distinct(StringComparer.OrdinalIgnoreCase)
