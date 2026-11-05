@@ -46,6 +46,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private readonly StudioHidOutputRouter? _hidRouter;
     private readonly StudioArgbOutputRouter? _argbRouter;
     private readonly StudioInputSampler? _inputSampler;
+    private readonly Func<Task>? _restoreAfterExternal;
     private readonly DispatcherQueue? _dispatcher;
     private readonly Dictionary<StudioEffectParams, string?> _loadedMedia =
         new(ReferenceEqualityComparer.Instance);
@@ -68,6 +69,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private string _statusText = AppStrings.Text("LightingStudioStatusHint");
     private bool _isBusy;
     private bool _isApplied;
+    private bool _needsExternalRestore;
     private bool _isPlaying;
     private int _disposed;
 
@@ -77,7 +79,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         Func<IReadOnlyList<StudioDeviceOption>>? matrixDevices = null,
         StudioHidOutputRouter? hidRouter = null,
         StudioInputSampler? inputSampler = null,
-        StudioArgbOutputRouter? argbRouter = null)
+        StudioArgbOutputRouter? argbRouter = null,
+        Func<Task>? restoreAfterExternal = null)
     {
         _lighting = lighting;
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
@@ -85,6 +88,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         _hidRouter = hidRouter;
         _argbRouter = argbRouter;
         _inputSampler = inputSampler;
+        _restoreAfterExternal = restoreAfterExternal;
         _dispatcher = DispatcherQueue.GetForCurrentThread();
         if (_hidRouter is not null)
         {
@@ -382,24 +386,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         NotifyDocumentChanged();
     }
 
-    public void SetPrimaryColor(string hex)
-    {
-        if (SelectedParams is not { } parameters) return;
-        parameters.Primary = StudioRgb.FromHex(hex);
-        _selectedLayer?.NotifyColorChanged();
-        NotifyDocumentChanged();
-    }
-
-    public void SetSecondaryColor(string hex)
-    {
-        if (SelectedParams is not { } parameters) return;
-        parameters.Secondary = StudioRgb.FromHex(hex);
-        _selectedLayer?.NotifyColorChanged();
-        NotifyDocumentChanged();
-    }
-
-    public void TogglePlayback() => IsPlaying = !IsPlaying;
-
     /// <summary>Starts one-shot OnPress/OnSelectedKeys effects for the preview clock.</summary>
     public void TriggerPreviewEffect(double nowSeconds)
     {
@@ -426,6 +412,24 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 _outputClock.Elapsed.TotalSeconds);
         }
     }
+
+    public void SetPrimaryColor(string hex)
+    {
+        if (SelectedParams is not { } parameters) return;
+        parameters.Primary = StudioRgb.FromHex(hex);
+        _selectedLayer?.NotifyColorChanged();
+        NotifyDocumentChanged();
+    }
+
+    public void SetSecondaryColor(string hex)
+    {
+        if (SelectedParams is not { } parameters) return;
+        parameters.Secondary = StudioRgb.FromHex(hex);
+        _selectedLayer?.NotifyColorChanged();
+        NotifyDocumentChanged();
+    }
+
+    public void TogglePlayback() => IsPlaying = !IsPlaying;
 
     /// <summary>Called by the inspector for bindings that do not raise layer notifications.</summary>
     // Regions own their params after creation; later layer edits stay on the layer.
@@ -468,7 +472,10 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 _appliedBlade = blade;
                 _inputClock.Restart();
                 _source.Update(BuildLayersFor(blade));
-                await _lighting.ApplyExternalAsync(_devices(), _source);
+                await _lighting.ApplyExternalAsync(
+                    _devices(),
+                    _source,
+                    restorePersistentEffect: _restoreAfterExternal is null);
                 _source.HandleInput(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
                 applied.Add(blade.Name);
             }
@@ -492,6 +499,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             await ApplyArgbAsync(applied, startOutputPump);
 
             IsApplied = applied.Count > 0;
+            if (IsApplied) _needsExternalRestore = true;
             StatusText = applied.Count == 0
                 ? AppStrings.Text("LightingStudioStatusNoDevice")
                 : AppStrings.FormatText("LightingStudioStatusApplied", string.Join(", ", applied));
@@ -500,48 +508,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         {
             IsApplied = false;
             StatusText = AppStrings.FormatText("LightingStudioStatusApplyFailed", exception.Message);
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    public async Task StopAsync()
-    {
-        if (_lighting is null && _hidRouter is null && _argbRouter is null) return;
-        IsBusy = true;
-        var failures = new List<string>();
-        async Task StopPartAsync(Func<Task> stop)
-        {
-            try
-            {
-                await stop().ConfigureAwait(true);
-            }
-            catch (Exception exception) when (IsExpected(exception))
-            {
-                failures.Add(exception.Message);
-            }
-        }
-
-        try
-        {
-            await StopPartAsync(StopOutputPumpAsync);
-            if (_hidRouter is not null) await StopPartAsync(() => _hidRouter.StopAsync());
-            if (_argbRouter is not null) await StopPartAsync(() => _argbRouter.StopAsync());
-            // Set the neutral status first; a restore-failure event that follows must win.
-            StatusText = AppStrings.Text("LightingStudioStatusStopped");
-            if (_lighting is not null) await StopPartAsync(() => _lighting.StopAsync());
-            if (_inputSampler is not null) await StopPartAsync(() => _inputSampler.StopAsync().AsTask());
-            _source = null;
-            _appliedBlade = null;
-            IsApplied = false;
-            if (failures.Count > 0)
-            {
-                StatusText = AppStrings.FormatText(
-                    "LightingStudioStatusStopFailed",
-                    string.Join("; ", failures));
-            }
         }
         finally
         {

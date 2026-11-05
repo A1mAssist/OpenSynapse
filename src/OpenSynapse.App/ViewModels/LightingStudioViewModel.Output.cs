@@ -233,6 +233,62 @@ public sealed partial class LightingStudioViewModel
         cancellation.Dispose();
     }
 
+    public async Task StopAsync()
+    {
+        if (_lighting is null && _hidRouter is null && _argbRouter is null) return;
+        IsPlaying = false;
+        IsBusy = true;
+        var failures = new List<string>();
+        async Task StopPartAsync(Func<Task> stop)
+        {
+            try
+            {
+                await stop().ConfigureAwait(true);
+            }
+            catch (Exception exception) when (IsExpected(exception))
+            {
+                failures.Add(exception.Message);
+            }
+        }
+
+        try
+        {
+            await StopPartAsync(StopOutputPumpAsync);
+            if (_hidRouter is not null) await StopPartAsync(() =>
+                _hidRouter.StopAsync(applyFallback: _restoreAfterExternal is null));
+            if (_argbRouter is not null) await StopPartAsync(() => _argbRouter.StopAsync());
+            // Set the neutral status first; a restore-failure event that follows must win.
+            StatusText = AppStrings.Text("LightingStudioStatusStopped");
+            if (_lighting is not null) await StopPartAsync(() => _lighting.StopAsync());
+            if (_inputSampler is not null) await StopPartAsync(() => _inputSampler.StopAsync().AsTask());
+            if (_needsExternalRestore && _restoreAfterExternal is { } restore)
+            {
+                try
+                {
+                    await restore().ConfigureAwait(true);
+                    _needsExternalRestore = false;
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    failures.Add(exception.Message);
+                }
+            }
+            _source = null;
+            _appliedBlade = null;
+            IsApplied = false;
+            if (failures.Count > 0)
+            {
+                StatusText = AppStrings.FormatText(
+                    "LightingStudioStatusStopFailed",
+                    string.Join("; ", failures));
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private void OnOutputWriteFailed(string deviceName, Exception exception)
     {
         var error = DescribeFailure(exception);
@@ -245,6 +301,19 @@ public sealed partial class LightingStudioViewModel
 
     private void OnHidRestoreFailed(string deviceName, Exception exception)
     {
+        // A Blade without readable effect state uses a documented exit effect rather
+        // than restoring a frame; show that as a plain state, not a raw English error.
+        if (exception is NotSupportedException)
+        {
+            RecordOutputFailure(deviceName, exception.Message, restore: true);
+            void ReportFallback() => StatusText =
+                AppStrings.FormatText("LightingStudioStatusRestoreFallback", deviceName);
+            if (_dispatcher is { } fallbackDispatcher && !fallbackDispatcher.HasThreadAccess)
+                fallbackDispatcher.TryEnqueue(ReportFallback);
+            else ReportFallback();
+            return;
+        }
+
         var error = DescribeFailure(exception);
         RecordOutputFailure(deviceName, error, restore: true);
         void Report() => StatusText =

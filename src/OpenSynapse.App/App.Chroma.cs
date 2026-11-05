@@ -58,7 +58,7 @@ public partial class App
                 applier.ApplyAsync,
                 () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
                     ? Task.CompletedTask
-                    : RestoreLightingAfterChromaAsync(viewModel),
+                    : viewModel.RestoreLightingAfterExternalAsync(),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
                 () => applier.SupportedDevices);
             bridge.StartAsync();
@@ -88,7 +88,7 @@ public partial class App
                 _bladeLightingController,
                 () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
                     ? Task.CompletedTask
-                    : RestoreLightingAfterChromaAsync(viewModel),
+                    : viewModel.RestoreLightingAfterExternalAsync(),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
                 viewModel.RazerHid.ApplyChromaFrameAsync,
                 viewModel.Lighting.IsBladeChromaOverrideEnabled,
@@ -101,12 +101,6 @@ public partial class App
             _chromaRestHost = null;
             _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
         }
-    }
-
-    private static async Task RestoreLightingAfterChromaAsync(MainViewModel viewModel)
-    {
-        await viewModel.Lighting.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
-        await viewModel.RazerHid.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
     }
 
     private async Task DisposeChromaHostsAsync()

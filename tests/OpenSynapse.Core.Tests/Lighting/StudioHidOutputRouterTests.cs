@@ -528,6 +528,32 @@ public sealed class StudioHidOutputRouterTests
             IsStaticEffectWrite(request.Report) || IsColorWrite(request.Report));
     }
 
+    [Fact]
+    public async Task StopWithoutFallbackLeavesRestoreToTheConfiguredLighting()
+    {
+        var keyboard = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0203)!;
+        RazerHidDeviceConnection[] connections =
+        [
+            new(keyboard, "test-real-keyboard", "real-keyboard", RazerHidEndpointState.Resolved,
+                RazerHidDeviceService.GetCapabilities(keyboard),
+                RazerHidDeviceService.GetLightingZoneCapabilities(keyboard), null),
+        ];
+        var transport = new RecordingTransport();
+        await using var router = new StudioHidOutputRouter(
+            new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport),
+            () => connections);
+        var failures = new List<string>();
+        router.RestoreFailed += (name, _) => failures.Add(name);
+        router.Update(_ => [Solid(new StudioRgb(0, 255, 0))]);
+
+        Assert.True(await router.ApplyAsync(TimeSpan.Zero));
+        await router.StopAsync(applyFallback: false);
+
+        Assert.Empty(failures);
+        Assert.DoesNotContain(transport.Requests, request => IsSpectrumEffectWrite(request.Report));
+        Assert.False(await router.ApplyAsync(TimeSpan.Zero));
+    }
+
     [Theory]
     [InlineData(0x00A3, RazerHidLedZone.Logo)]
     [InlineData(0x0C00, RazerHidLedZone.Backlight)]
