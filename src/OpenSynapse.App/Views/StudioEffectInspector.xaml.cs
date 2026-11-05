@@ -114,44 +114,20 @@ public sealed partial class StudioEffectInspector : UserControl
             return Rowed(labelKey, swatches);
         }
 
-        var customLabel = AppStrings.Text("LightingStudioCustomColor");
-        var custom = new Button
+        var initial = secondary ? parameters.Secondary : parameters.Primary;
+        var custom = new Expander
         {
-            Width = 28,
-            Height = 28,
-            Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(6),
-            BorderThickness = new Thickness(1),
-            BorderBrush = (Brush)Application.Current.Resources["LineStrongBrush"],
-            Content = new FontIcon
-            {
-                Glyph = "\uE790",
-                FontSize = 14,
-                FontFamily = (FontFamily)Application.Current.Resources["IconFontFamily"],
-            },
-        };
-        var picker = new ColorPicker
-        {
-            Color = ToColor(secondary ? parameters.Secondary : parameters.Primary),
-            IsAlphaEnabled = false,
-            IsColorChannelTextInputVisible = true,
-            IsColorSpectrumVisible = true,
-            IsHexInputVisible = true,
-            IsMoreButtonVisible = false,
-            Width = 280,
-        };
-        picker.ColorChanged += (_, args) =>
-        {
-            SetColor($"#{args.NewColor.R:X2}{args.NewColor.G:X2}{args.NewColor.B:X2}", secondary);
+            Header = AppStrings.Text("LightingStudioCustomColor"),
+            IsExpanded = false,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Content = BuildColorEditor(initial, color => SetColor(color.ToHex(), secondary)),
         };
         AutomationProperties.SetAutomationId(custom,
             secondary ? "StudioSecondaryCustomColor" : "StudioPrimaryCustomColor");
-        AutomationProperties.SetName(custom, customLabel);
-        ToolTipService.SetToolTip(custom, customLabel);
-        custom.Flyout = new Flyout { Content = picker };
-        swatches.Children.Add(custom);
-
-        return Rowed(labelKey, swatches);
+        var content = new StackPanel { Spacing = 6 };
+        content.Children.Add(swatches);
+        content.Children.Add(custom);
+        return Rowed(labelKey, content);
     }
 
     private FrameworkElement BuildPaletteRow()
@@ -174,25 +150,19 @@ public sealed partial class StudioEffectInspector : UserControl
                 BorderThickness = new Thickness(0),
                 Background = ToBrush(stops[index].Color),
             };
-            var picker = new ColorPicker
+            swatch.Flyout = new Flyout
             {
-                Color = ToColor(stops[index].Color),
-                IsAlphaEnabled = false,
-                IsColorChannelTextInputVisible = true,
-            };
-            picker.ColorChanged += (_, args) =>
-            {
-                if (stopIndex < _parameters.ColorStops.Count)
+                Placement = FlyoutPlacementMode.Left,
+                Content = BuildColorEditor(stops[index].Color, color =>
                 {
+                    if (stopIndex >= _parameters.ColorStops.Count) return;
                     _parameters.ColorStops[stopIndex] = new StudioColorStop(
-                        _parameters.ColorStops[stopIndex].Stop,
-                        StudioRgb.FromHex($"#{args.NewColor.R:X2}{args.NewColor.G:X2}{args.NewColor.B:X2}"));
+                        _parameters.ColorStops[stopIndex].Stop, color);
                     _parameters.ColorStopsCustom = true;
-                    swatch.Background = ToBrush(_parameters.ColorStops[stopIndex].Color);
+                    swatch.Background = ToBrush(color);
                     RaiseChanged();
-                }
+                }),
             };
-            swatch.Flyout = new Flyout { Content = picker };
             strip.Children.Add(swatch);
         }
 
@@ -316,7 +286,7 @@ public sealed partial class StudioEffectInspector : UserControl
         {
             Minimum = -1,
             Maximum = 100,
-            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Hidden,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         Bind(box, NumberBox.ValueProperty, nameof(StudioEffectParams.Cycles), new RoundedIntConverter());
@@ -430,7 +400,7 @@ public sealed partial class StudioEffectInspector : UserControl
         Minimum = 0,
         Maximum = maximum,
         SmallChange = step,
-        SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+        SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Hidden,
         Value = value,
         HorizontalAlignment = HorizontalAlignment.Stretch,
     };

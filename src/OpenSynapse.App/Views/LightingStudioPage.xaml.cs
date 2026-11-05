@@ -93,7 +93,19 @@ public sealed partial class LightingStudioPage : UserControl
                 args.PropertyName == nameof(LightingStudioViewModel.DeviceVisuals) ||
                 args.PropertyName == nameof(LightingStudioViewModel.Profile)) RefreshCanvas();
             else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedParams)) BindInspector();
-            else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedEffectChoice)) Inspector.Refresh();
+            else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedEffectChoice))
+            {
+                Inspector.Refresh();
+                var effect = _viewModel?.SelectedParams?.Effect;
+                if (effect is StudioEffectKind.Ripple or StudioEffectKind.Reactive or StudioEffectKind.Radiate)
+                {
+                    // A one-shot effect has no frames at t=0; start the preview clock so
+                    // selecting it actually shows the ring instead of a black canvas.
+                    _clock.Restart();
+                    _timer.Start();
+                }
+                _viewModel?.TriggerPreviewEffect(_clock.Elapsed.TotalSeconds);
+            }
             else if (args.PropertyName == nameof(LightingStudioViewModel.PreviewRows) ||
                      args.PropertyName == nameof(LightingStudioViewModel.PreviewColumns)) BuildPreview();
         };
