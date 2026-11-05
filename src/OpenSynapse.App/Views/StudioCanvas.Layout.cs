@@ -8,7 +8,7 @@ namespace OpenSynapse.App.Views;
 /// <summary>Viewport fitting and host positioning in design coordinates.</summary>
 public sealed partial class StudioCanvas
 {
-    private const double FitPadding = 160;
+    private const double FitPadding = 40;
 
     /// <summary>Fits the devices' bounding box, not the empty 10000x10000 canvas.</summary>
     public void FitToView()
@@ -65,17 +65,15 @@ public sealed partial class StudioCanvas
         return false;
     }
 
-    // One composite keeps rotation and zoom on the same centre; a TransformGroup
-    // rotated about the unscaled centre and then scaled about the origin throws the
-    // device off-screen at any zoom below 100%.
-    private static Transform CreateTransform(double width, double height, int rotation, double factor) =>
+    // Rotation stays on the host; zoom is applied to the geometry itself. A
+    // scale transform on the host makes WinUI composite the device at its
+    // layout size, so 300% zoom shows a soft bitmap instead of vector paths.
+    private static Transform CreateRotationTransform(double width, double height, int rotation) =>
         new CompositeTransform
         {
             CenterX = width / 2,
             CenterY = height / 2,
             Rotation = rotation,
-            ScaleX = factor,
-            ScaleY = factor,
         };
 
     private static void PositionHost(HostState host, double factor)
@@ -84,6 +82,9 @@ public sealed partial class StudioCanvas
             host.BaseX, host.BaseY, host.Width, host.Height, host.Rotation, factor);
         Canvas.SetLeft(host.Element, left);
         Canvas.SetTop(host.Element, top);
-        host.Element.RenderTransform = CreateTransform(host.Width, host.Height, host.Rotation, factor);
+        host.Element.Width = host.Width * factor;
+        host.Element.Height = host.Height * factor;
+        host.Element.RenderTransform = CreateRotationTransform(
+            host.Width * factor, host.Height * factor, host.Rotation);
     }
 }

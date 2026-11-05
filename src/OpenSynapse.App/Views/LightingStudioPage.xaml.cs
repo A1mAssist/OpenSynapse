@@ -31,6 +31,7 @@ public sealed partial class LightingStudioPage : UserControl
     private Border? _dropHint;
     private ComboBoxItem? _customZoomItem;
     private bool _canvasFitted;
+    private string? _fittedVisualSignature;
 #if DEBUG
     private StudioCanvasBenchmark? _studioBenchmark;
     private bool _studioBenchmarkOwnsCanvas;
@@ -210,6 +211,13 @@ public sealed partial class LightingStudioPage : UserControl
             return;
         }
 
+        var visualSignature = string.Join(
+            "|",
+            visuals.Select(visual =>
+                FormattableString.Invariant(
+                    $"{visual.InstanceId}:{visual.Width:0.##}x{visual.Height:0.##}:{visual.Leds.Count}")));
+        var needsFit = !_canvasFitted ||
+            !string.Equals(_fittedVisualSignature, visualSignature, StringComparison.Ordinal);
         DeviceCanvas.Devices = visuals.ToArray();
         DeviceCanvas.Profile = _viewModel.Profile;
         DeviceCanvas.Refresh();
@@ -219,9 +227,11 @@ public sealed partial class LightingStudioPage : UserControl
         // New hosts mean new brushes and possibly different matrix dimensions; repaint the current frame.
         RenderPreview();
         StudioTimingMarkRefresh(timingStarted, visuals, "build");
-        // Fit the first populated canvas twice; later refreshes keep zoom and pan.
-        if (_canvasFitted) return;
+        // Fit after the device manifest replaces the temporary grid, and when the
+        // selected device changes. Later frame refreshes keep the user's zoom.
+        if (!needsFit) return;
         _canvasFitted = true;
+        _fittedVisualSignature = visualSignature;
         DispatcherQueue.TryEnqueue(() =>
         {
             DeviceCanvas.FitToView();

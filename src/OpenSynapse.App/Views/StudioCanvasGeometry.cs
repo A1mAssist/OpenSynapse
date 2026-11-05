@@ -48,8 +48,8 @@ internal static class StudioCanvasGeometry
     public static double Extent(double value) => double.IsFinite(value) && value > 0 ? value : 1;
 
     /// <summary>
-    /// Canvas.Left/Top for a host whose scale/rotation is centered. The transformed
-    /// bounding box must start at the visual box origin, not the unscaled host origin.
+    /// Canvas.Left/Top for a host whose own size is scaled and whose rotation is centered.
+    /// The transformed bounding box must start at the visual box origin.
     /// </summary>
     public static (double X, double Y) ScaledHostOrigin(
         double left, double top, double width, double height, int rotation, double factor)
@@ -57,8 +57,8 @@ internal static class StudioCanvasGeometry
         var boundsWidth = rotation is 90 or 270 ? height : width;
         var boundsHeight = rotation is 90 or 270 ? width : height;
         return (
-            left * factor - (width - boundsWidth * factor) / 2,
-            top * factor - (height - boundsHeight * factor) / 2);
+            factor * (left - (width - boundsWidth) / 2),
+            factor * (top - (height - boundsHeight) / 2));
     }
 
     public static Color? ParseColor(string value)
