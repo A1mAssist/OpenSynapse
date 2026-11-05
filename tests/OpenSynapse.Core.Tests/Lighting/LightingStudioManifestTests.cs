@@ -239,6 +239,32 @@ public sealed class LightingStudioManifestTests : IDisposable
     }
 
     [Fact]
+    public async Task UsesPackagedCatalogWhenTheCdnIsUnavailable()
+    {
+        var catalog = Path.Combine(
+            RepoLayout.Root,
+            "src", "OpenSynapse.App", "Assets", "LightingLayouts", "studio-manifests.zip");
+        if (!File.Exists(catalog)) return;
+
+        var handler = new FakeHandler(_ => throw new HttpRequestException("offline"));
+        using var http = new HttpClient(handler);
+        var service = new StudioManifestService(
+            http,
+            _directory,
+            offlineCatalogPath: catalog);
+
+        var result = await service.GetAsync(600, EditionId);
+
+        Assert.Null(result.Error);
+        Assert.True(result.FromCache);
+        Assert.Equal(catalog, result.SourceUrl);
+        var manifest = Assert.IsType<StudioManifestDevice>(result.Manifest);
+        Assert.Equal("Razer BlackWidow V3 Mini Hyperspeed", manifest.ProductName);
+        Assert.False(string.IsNullOrEmpty(manifest.SvgBase64));
+        Assert.False(string.IsNullOrEmpty(manifest.LedConfigJson));
+    }
+
+    [Fact]
     public async Task TimeoutReportsTimeout()
     {
         var handler = new FakeHandler(_ => throw new TaskCanceledException("simulated timeout"));

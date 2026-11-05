@@ -13,10 +13,10 @@
     <!-- Win10 22H2 without the 2024 CET update cannot launch a CET-marked apphost. -->
     <CetCompat>false</CetCompat>
     <ApplicationIcon>Assets\OpenSynapse.ico</ApplicationIcon>
-    <Version>1.6.1-beta.35</Version>
+    <Version>1.6.1-beta.36</Version>
     <AssemblyVersion>1.6.1.0</AssemblyVersion>
     <FileVersion>1.6.1.0</FileVersion>
-    <InformationalVersion>1.6.1-beta.35</InformationalVersion>
+    <InformationalVersion>1.6.1-beta.36</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <SatelliteResourceLanguages>zh-CN;en-US</SatelliteResourceLanguages>
     <DefaultLanguage>zh-CN</DefaultLanguage>
@@ -41,6 +41,9 @@
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\MappingLayouts\*.svg"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Assets\LightingLayouts\studio-manifests.zip"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />

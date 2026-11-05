@@ -58,6 +58,28 @@ public sealed class LightingStudioDeviceVisualTests
     }
 
     [Fact]
+    public void BlackWidowV3MiniManifestBuildsSvgVisual()
+    {
+        var manifestPath = Path.Combine(
+            RepoLayout.Root,
+            CatalogFolder.Replace('/', Path.DirectorySeparatorChar),
+            "DeviceManifest_600_0.json");
+        if (!File.Exists(manifestPath)) return; // The catalog is a local artifact snapshot.
+
+        var visual = StudioDeviceVisualBuilder.Build(ReadManifest(File.ReadAllText(manifestPath)), "blackwidow-v3-mini");
+
+        Assert.True(visual.UsesSvg);
+        Assert.Equal("Razer BlackWidow V3 Mini Hyperspeed", visual.Name);
+        Assert.Equal(680d, visual.Width);
+        Assert.Equal(320d, visual.Height);
+        Assert.Equal(69, visual.Leds.Count);
+        Assert.All(visual.Leds, led => Assert.NotNull(led.PathId));
+        Assert.Contains(visual.Paths, item => item.Role == StudioSvgRole.Product);
+        Assert.Contains(visual.Paths, item => item.Role == StudioSvgRole.Led);
+        Assert.Contains(visual.Paths, item => item.Role == StudioSvgRole.Selection);
+    }
+
+    [Fact]
     public void EmptySvgBuildsLedGrid()
     {
         var visual = StudioDeviceVisualBuilder.Build(
