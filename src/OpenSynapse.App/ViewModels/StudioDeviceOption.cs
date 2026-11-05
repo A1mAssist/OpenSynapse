@@ -101,7 +101,7 @@ public sealed class StudioDeviceOption : INotifyPropertyChanged
         ArgumentNullException.ThrowIfNull(image);
         _productImage = image;
         _image = image.State == StudioProductImageState.Loaded && image.Path is { } path
-            ? new BitmapImage(new Uri(path)) { DecodePixelWidth = 96 }
+            ? new BitmapImage(new Uri(path)) { DecodePixelWidth = 256 }
             : null;
         OnPropertyChanged(nameof(ProductImage));
         OnPropertyChanged(nameof(ImageState));
