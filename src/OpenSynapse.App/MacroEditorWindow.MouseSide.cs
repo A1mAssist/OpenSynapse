@@ -1,7 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using OpenSynapse.Core.Devices;
-using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App;
 
@@ -45,31 +43,17 @@ public sealed partial class MacroEditorWindow
             MacroMouseSideTriggerMenu.Items.Add(item);
         }
 
-        var supportsThirdSideButton = false;
-        foreach (var device in _viewModel.Devices)
-        {
-            if (device.HardwareCategory == DeviceCategory.Mouse &&
-                RazerPrivateKeyCatalog.SupportsThirdSideButton(device.ProductId))
-            {
-                supportsThirdSideButton = true;
-                break;
-            }
-        }
-
-        if (!supportsThirdSideButton)
-        {
-            return;
-        }
-
-        // The third side button is a Razer private key (DKM_FN), not Mouse 6.
-        // Capture it so the saved trigger stays device-scoped.
+        // Fixed Mouse 4/5 items only cover buttons Windows still reports as
+        // XBUTTON1/2. Onboard profiles and multi-function paddles can emit a
+        // keyboard key, a Razer private key, or nothing standard; capture the
+        // actual event instead of guessing from the model name.
         MacroMouseSideTriggerMenu.Items.Add(new MenuFlyoutSeparator());
-        var thirdSideButton = new MenuFlyoutItem
+        var otherSideButton = new MenuFlyoutItem
         {
-            Text = AppStrings.Text("MacroMouseSide3Capture"),
+            Text = AppStrings.Text("MacroMouseSideCapture"),
         };
-        thirdSideButton.Click += CaptureMacroMouseSide3TriggerClick;
-        MacroMouseSideTriggerMenu.Items.Add(thirdSideButton);
+        otherSideButton.Click += CaptureMacroMouseSideTriggerClick;
+        MacroMouseSideTriggerMenu.Items.Add(otherSideButton);
     }
 
     private async void MouseSideButtonTriggerClick(object sender, RoutedEventArgs e)
@@ -82,7 +66,7 @@ public sealed partial class MacroEditorWindow
         }
     }
 
-    private async void CaptureMacroMouseSide3TriggerClick(object sender, RoutedEventArgs e) =>
+    private async void CaptureMacroMouseSideTriggerClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Macros.CaptureMacroDeviceTriggerAsync(_lifetime.Token);
 
     private async void NagaSideButtonTriggerClick(object sender, RoutedEventArgs e)

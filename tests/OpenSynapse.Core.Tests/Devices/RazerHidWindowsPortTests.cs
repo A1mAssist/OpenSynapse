@@ -436,10 +436,10 @@ public sealed class RazerHidWindowsPortTests
         await transport.SecondBrightnessRead.WaitAsync(TimeSpan.FromSeconds(1));
         await Task.Delay(50);
 
-        Assert.Single(transport.Requests, request =>
+        Assert.True(transport.Requests.Count(request =>
             request.CommandClass == 0x0F &&
             request.CommandId == 0x02 &&
-            request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 }));
+            request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 })) >= 2);
         // The 710 firmware's 0x01 is the rightward animation, so a Right effect
         // must put 0x01 on the wire.
         Assert.True(transport.Requests.Count(request =>
@@ -491,7 +491,7 @@ public sealed class RazerHidWindowsPortTests
     }
 
     [Fact]
-    public async Task NativeBladeLightingKeepAliveStopsAfterUnsupportedRead()
+    public async Task NativeBladeLightingKeepAliveContinuesAfterUnsupportedRead()
     {
         var transport = new PreparedReportRecordingTransport
         {
@@ -517,11 +517,13 @@ public sealed class RazerHidWindowsPortTests
         await controller.ApplyAsync(
             [device],
             new BladeLightingEffect(BladeLightingMode.Wave));
-        await controller.RuntimeCompletion.WaitAsync(TimeSpan.FromSeconds(1));
-        var writesAfterUnsupported = transport.Requests.Count;
-        await Task.Delay(40);
+        await transport.ThirdBrightnessRead.WaitAsync(TimeSpan.FromSeconds(1));
 
-        Assert.Equal(writesAfterUnsupported, transport.Requests.Count);
+        Assert.False(controller.RuntimeCompletion.IsCompleted);
+        Assert.True(transport.Requests.Count(request =>
+            request.CommandClass == 0x0F &&
+            request.CommandId == 0x02 &&
+            request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 })) >= 2);
         await controller.SetDisplayAvailableAsync(false);
     }
 

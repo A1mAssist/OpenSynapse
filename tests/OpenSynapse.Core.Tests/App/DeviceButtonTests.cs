@@ -106,6 +106,8 @@ public sealed class DeviceButtonTests
         Assert.Equal("DPI +", RazerPrivateKeyCatalog.Describe(0x00E8, 32));
         Assert.Equal("M1", RazerPrivateKeyCatalog.Describe(0x0203, 32));
         Assert.Equal("DPI Clutch", RazerPrivateKeyCatalog.Describe(0x00AA, 81));
+        Assert.Equal("Next DPI Stage", RazerPrivateKeyCatalog.Describe(0x00AA, 82));
+        Assert.Equal("Scroll Mode", RazerPrivateKeyCatalog.Describe(0x00AA, 84));
         Assert.Equal("Performance", RazerPrivateKeyCatalog.Describe(0x02C6, 211));
         Assert.Equal("Razer key 199", RazerPrivateKeyCatalog.Describe(0x00AA, 199));
         Assert.Equal("Next DPI Stage", RazerPrivateKeyCatalog.Describe(0x00B9, 82));
@@ -136,6 +138,31 @@ public sealed class DeviceButtonTests
                 Kind = MacroInputKind.RazerKey,
                 DeviceId = 0x00B9,
                 RazerKeyCode = 89,
+            },
+            MacroModifierKeys.None));
+    }
+
+    [Fact]
+    public void BasiliskV3ProThirdSideButtonIsADeviceScopedRazerKey()
+    {
+        var input = new MacroInput
+        {
+            Kind = MacroInputKind.RazerKey,
+            DeviceId = 0x00AA,
+            DeviceName = "Razer Basilisk V3 Pro",
+            RazerKeyCode = 82,
+        };
+
+        Assert.True(input.IsValid(
+            allowPrimaryMouseButton: false,
+            allowWheel: false,
+            allowDeviceButton: true));
+        Assert.True(new MacroTrigger { Input = input }.Matches(
+            new MacroInput
+            {
+                Kind = MacroInputKind.RazerKey,
+                DeviceId = 0x00AA,
+                RazerKeyCode = 82,
             },
             MacroModifierKeys.None));
     }
