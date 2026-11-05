@@ -63,11 +63,17 @@ public sealed class StudioDeviceVisualLoader : IDisposable
         }
     }
 
-    public Task<StudioProductImage> LoadProductImageAsync(
+    public async Task<StudioProductImage> LoadProductImageAsync(
         ushort productId,
         string? name,
-        CancellationToken cancellationToken) =>
-        _images.GetAsync(productId, name, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        if (productId == 0) return StudioProductImage.Unavailable(name, "no-product");
+
+        var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
+        var coverProductId = result.Manifest?.CoverProductId ?? productId;
+        return await _images.GetAsync(coverProductId, name, cancellationToken).ConfigureAwait(false);
+    }
 
     public void Dispose() => _http.Dispose();
 }

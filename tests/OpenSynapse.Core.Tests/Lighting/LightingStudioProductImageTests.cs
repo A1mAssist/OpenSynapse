@@ -42,14 +42,6 @@ public sealed class LightingStudioProductImageTests : IDisposable
     }
 
     [Fact]
-    public void WirelessBlackWidowV3MiniUsesTheSharedWiredCover()
-    {
-        Assert.Equal(
-            "https://app-assets.razer.com/files/synapse/devices/600/cover.png",
-            StudioProductImageService.ResolveUri(0x0271)!.ToString());
-    }
-
-    [Fact]
     public async Task CoverDownloadsOnceAndIsReusedByMemoryAndDiskCache()
     {
         var handler = new FakeHandler(_ => Png());

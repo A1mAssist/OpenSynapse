@@ -87,6 +87,32 @@ public sealed class LightingStudioManifestTests : IDisposable
     }
 
     [Fact]
+    public async Task DualLinkManifestUsesTheWiredProductForCoverArt()
+    {
+        const string json = """
+        {
+          "productId": 625,
+          "wiredProductId": 600,
+          "dongleProductId": 625,
+          "productName": "Razer BlackWidow V3 Mini Hyperspeed"
+        }
+        """;
+        var handler = new FakeHandler(_ => Json(json));
+        using var http = new HttpClient(handler);
+        var service = new StudioManifestService(http, _directory);
+
+        var manifest = Assert.IsType<StudioManifestDevice>(
+            (await service.GetAsync(625, EditionId)).Manifest);
+
+        Assert.Equal((ushort)600, manifest.WiredProductId);
+        Assert.Equal((ushort)625, manifest.DongleProductId);
+        Assert.Equal((ushort)600, manifest.CoverProductId);
+        Assert.Equal(
+            "https://app-assets.razer.com/files/synapse/devices/600/cover.png",
+            StudioProductImageService.ResolveUri(manifest.CoverProductId)!.ToString());
+    }
+
+    [Fact]
     public async Task ConditionalRequestReturnsCachedManifestOnNotModified()
     {
         const string json = """
