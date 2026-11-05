@@ -340,7 +340,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     public IReadOnlyList<string> ThxPresetOptions =>
-        _thxState?.Presets.Select(preset => preset.Name).ToArray() ?? [];
+        _thxState?.Presets.Select(preset => preset.DisplayName).ToArray() ?? [];
 
     public int SelectedThxPresetIndex
     {

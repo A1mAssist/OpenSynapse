@@ -442,8 +442,16 @@ public sealed partial class DevicesPage : UserControl
             ReferenceEquals(sender, KrakenSecondaryColorFlyout) ||
             ReferenceEquals(sender, KrakenTertiaryColorFlyout))
         {
-            if (ViewModel.RazerHid.SelectedKraken is { } kraken)
+            if (ViewModel.RazerHid.SelectedKraken is { } kraken && picker is not null)
             {
+                // Setting ColorPicker.Color from a swatch does not reliably push the
+                // programmatic change through the Kraken panel's TwoWay binding.
+                if (ReferenceEquals(sender, KrakenPrimaryColorFlyout))
+                    kraken.Primary = picker.Color;
+                else if (ReferenceEquals(sender, KrakenSecondaryColorFlyout))
+                    kraken.Secondary = picker.Color;
+                else
+                    kraken.Tertiary = picker.Color;
                 await kraken.ApplyAsync(Lifetime);
             }
         }

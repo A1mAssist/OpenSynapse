@@ -25,10 +25,8 @@ internal static class RazerHidKrakenV4Protocol
     private const byte FrameCommandClass = 0x0F;
     private const byte FrameCommandId = 0x03;
 
-    /// <summary>Chroma command class 0x00, "Get/Set Chroma Effect".</summary>
-    private const byte EffectCommandClass = 0x00;
+    /// <summary>Set Chroma Effect is C0 00 01 in the request.</summary>
     private const byte GetEffectCommandId = 0xC0;
-    private const byte SetEffectCommandId = 0xC1;
 
     /// <summary>
     /// Set Chroma Effect is C0 00 01 in the request; C0 01 01 is the expected
@@ -38,7 +36,6 @@ internal static class RazerHidKrakenV4Protocol
     private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x00, 0x01];
 
     private const byte EffectOff = 0x00;
-    private const byte EffectStatic = 0x01;
     private const byte EffectWave = 0x04;
 
     private const int PayloadOffset = 10;
@@ -62,7 +59,8 @@ internal static class RazerHidKrakenV4Protocol
         byte? intensity = null,
         bool isDongle = false) =>
     [
-        CreateEffect(EffectStatic, isDongle),
+        // OpenRGB's verified direct path writes the frame on its own. The preceding
+        // C0 effect command is not part of that path and made the frame a no-op on 056B.
         CreateFrame(0, LedCount - 1, Scale(color, intensity), isDongle),
     ];
 
@@ -105,7 +103,9 @@ internal static class RazerHidKrakenV4Protocol
         var report = new byte[ReportLength];
         report[0] = ReportId;
         report[2] = TransactionId;
-        report[6] = checked((byte)(payload.Count + 1));
+        // OpenRGB passes 5 + (3 * cols) for this frame. Unlike the general
+        // command shape, this size does not add the trailing checksum slot.
+        report[6] = checked((byte)payload.Count);
         report[7] = commandClass;
         report[8] = commandId;
         report[9] = isDongle ? DongleFlag : WiredFlag;
