@@ -487,7 +487,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         "voice" => AppStrings.Text("ThxPresetVoice"),
         "custom" => AppStrings.Text("ThxPresetCustom"),
         "default" => AppStrings.Text("ThxPresetDefault"),
-        _ => preset.Name,
+        _ => preset.DisplayName,
     };
 
     private static string LocalizeError(ThxAudioStatus status) => status.Error switch
