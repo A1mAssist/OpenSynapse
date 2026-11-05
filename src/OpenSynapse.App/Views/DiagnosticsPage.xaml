@@ -28,7 +28,9 @@
                       <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
                       <ItemsRepeater.ItemTemplate>
                         <DataTemplate>
-                          <Expander HorizontalAlignment="Stretch" IsExpanded="False">
+                          <Expander HorizontalAlignment="Stretch" IsExpanded="False"
+                                    AutomationProperties.AutomationId="DiagnosticsRow"
+                                    AutomationProperties.Name="{Binding Device}">
                             <Expander.Header>
                               <Grid ColumnDefinitions="4,*,Auto,Auto" ColumnSpacing="12" MinHeight="32">
                                 <Border Background="{Binding StatusBrush}" CornerRadius="2" />

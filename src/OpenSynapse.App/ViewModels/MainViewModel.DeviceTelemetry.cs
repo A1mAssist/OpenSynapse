@@ -7,6 +7,10 @@ public sealed partial class MainViewModel
     private void ApplyDeviceTelemetry(RazerDeviceTelemetry telemetry)
     {
         _lastDeviceTelemetry = telemetry;
+        if (Refresh.DiagnosticsRebuildEnabled)
+        {
+            Diagnostics.UpdateDeviceTelemetry(_deviceDescriptors, telemetry);
+        }
         Blade.ApplyTelemetry(telemetry);
         Viper.ApplyTelemetry(telemetry);
 
