@@ -210,7 +210,19 @@ public sealed partial class StudioCanvas : UserControl
     private void ApplyZoom()
     {
         var factor = _zoom / 100;
-        foreach (var host in _hosts) PositionHost(host, factor);
+        foreach (var host in _hosts)
+        {
+            foreach (var path in host.Element.Children.OfType<Path>())
+            {
+                if (path.Data is { } geometry)
+                {
+                    geometry.Transform = new ScaleTransform { ScaleX = factor, ScaleY = factor };
+                }
+            }
+
+            PositionHost(host, factor);
+        }
+
         Surface.Width = StudioCanvasPlacement.DesignSize * factor;
         Surface.Height = StudioCanvasPlacement.DesignSize * factor;
         ScaleGrid(factor);
