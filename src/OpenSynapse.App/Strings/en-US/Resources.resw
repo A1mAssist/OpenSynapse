@@ -2487,6 +2487,8 @@
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>The THX service is ready, but the control component is missing. Download it above.</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Downloading and installing THX components...</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX components could not be downloaded, verified, or installed. Allow administrator rights and try again.</value></data>
+  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>The installer finished but the THX service is still not ready. Restart and retry, or use "Download THX installer" to install it yourself.</value></data>
+  <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>Download THX installer</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX components are installed.</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>Spatial audio</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>Apply spatial audio</value></data>

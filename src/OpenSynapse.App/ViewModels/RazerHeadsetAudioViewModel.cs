@@ -292,6 +292,15 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public string ThxPatcherUri =>
         ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.PatcherUri ?? string.Empty;
 
+    /// <summary>The pinned official installer, for a manual retry when the silent run fails.</summary>
+    public string ThxInstallerUri =>
+        ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.InstallerUri ?? string.Empty;
+
+    public Visibility ThxInstallerLinkVisibility =>
+        ThxVisibility == Visibility.Visible && ThxInstallerUri.Length > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
     public Visibility ThxPatcherVisibility =>
         ThxPatcherUri.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -796,13 +805,23 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         if (!BeginOperation()) return;
         try
         {
-            var state = _connection.Transport switch
+            Task<RazerHeadsetAudioState> ReadStateOnceAsync() => _connection.Transport switch
             {
-                RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 => await ReadMxicStateAsync(cancellationToken),
+                RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
+                    ReadMxicStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-                    await ReadValkyrieStateAsync(cancellationToken),
-                _ => await OpenService().ReadStateAsync(cancellationToken),
+                    ReadValkyrieStateAsync(cancellationToken),
+                _ => OpenService().ReadStateAsync(cancellationToken),
             };
+
+            var state = await ReadStateOnceAsync();
+            if (state.Errors.Count > 0 && !HasAnyValue(state))
+            {
+                // A wireless headset that just woke up drops the first probe batch; one
+                // short retry clears the transient case without hiding a dead device.
+                await Task.Delay(250, cancellationToken);
+                state = await ReadStateOnceAsync();
+            }
             ApplyState(state);
             if (IsFeature91 && !IsSeirenEmote)
             {

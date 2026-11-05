@@ -33,6 +33,14 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
+    private async void HeadsetAudioOpenThxInstallerClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Accessories.SelectedHeadsetAudio is { ThxInstallerUri: { Length: > 0 } uri })
+        {
+            await Launcher.LaunchUriAsync(new Uri(uri));
+        }
+    }
+
     private async void HeadsetAudioOpenThxPatcherClick(object sender, RoutedEventArgs e)
     {
         if (ViewModel.Accessories.SelectedHeadsetAudio is { ThxPatcherUri: { Length: > 0 } uri })
