@@ -13,7 +13,8 @@ internal static class RazerPrivateKeyCatalog
         "02A6,02CF,02D0,02D8,02E5,02E6|100=LEFT_BUTTON_02;101=LEFT_BUTTON_03;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "028F,0294,02A1,02A2,02A3|80=MEDIA_VOLUME_DOWN;81=MEDIA_VOLUME_UP;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "0078,007A,0091,0094,00E0|34=Button4;35=Button5;82=CycleUpSensitivityStages",
-        "0099,00AA,00AB,00CB,00CC,00D6|80=CycleUpProfile;81=SensitivityClutch",
+        "0099,00CB,00CC,00D6|80=CycleUpProfile;81=SensitivityClutch",
+        "00AA,00AB|80=CycleUpProfile;81=SensitivityClutch;82=CycleUpSensitivityStages;84=ScrollModeSwitch", // DKM_SB_01/02/03, DKM_M_106
         "009E,00B2,00B4,00B6,00C2|32=SensitivityStageUp;33=SensitivityStageDown;82=CycleUpSensitivityStages",
         "0067,008D,008F,0093|2=Key1;3=Key2;32=SensitivityStageUp;33=SensitivityStageDown;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7;80=CycleUpProfile",
         "0063,006A,006B|32=SensitivityStageUp;33=SensitivityStageDown;34=Button5;35=Button4",
