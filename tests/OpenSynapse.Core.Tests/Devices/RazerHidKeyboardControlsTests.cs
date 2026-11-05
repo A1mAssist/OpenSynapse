@@ -305,6 +305,39 @@ public sealed class RazerHidKeyboardControlsTests
         Assert.Equal(2, transport.Count);
     }
 
+    [Fact]
+    public async Task SnapTapUsesTheFullStagingBuffer()
+    {
+        var transport = new ProbeTransport(request => request[8] switch
+        {
+            0xA7 => Echo(request, new byte[15]),
+            0x27 => Echo(request, request[9..24]),
+            _ => throw new InvalidOperationException($"Unexpected command 0x{request[8]:X2}."),
+        });
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = Connection(0x02A6);
+
+        var state = await service.GetAnalogSnapTapAsync(connection, 0x01);
+        await service.SetAnalogSnapTapAsync(connection, 0x01, true,
+        [
+            new RazerAnalogSnapTapPair(31, 33, 0),
+            new RazerAnalogSnapTapPair(17, 18, 1),
+        ]);
+
+        Assert.True(state.ProfileId == 0 && !state.Enabled && state.Pairs.Count == 0);
+        Assert.Equal((15, 0x02, 0xA7), Command(transport.Requests[0]));
+        Assert.Equal(new byte[] { 0x01 }, transport.Requests[0][9..10]);
+        Assert.Equal((15, 0x02, 0x27), Command(transport.Requests[1]));
+        Assert.Equal(
+            new byte[]
+            {
+                0x01, 0x02, 0x01,
+                31, 33, 0,
+                17, 18, 1,
+                0, 0, 0, 0, 0, 0,
+            },
+            transport.Requests[1][9..24]);
+    }
     private static RazerHidDeviceDefinition Definition(ushort productId) =>
         RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId)!;
 
