@@ -123,3 +123,23 @@ Razer 没有通用的 hotspot JSON 接口。产品 184 的映射页把八个锚�
 - Razer 的锚点是每个产品 bundle 内的构建时常量，不同 PID 的锚点不同，没有可稳定查询的公共 schema；不在运行时抓取任意 6 MB UI bundle 猜坐标。
 - 没有逐型号热点证据的设备回退到行表格，不显示设备旁标签或引线。
 - 00B9 的 `DeviceManifest_185_0.json` SVG 可作为装饰资产，但它的 `svg_0_0` 只有整机 `Product_Fill` / `Product_Outline` / `LED` 等层，没有逐按钮锚点，因此不生成点击热区。
+
+## 实时解析探针
+
+`tools/Probe-RazerMappingAssets.ps1` 用来验证某个产品的 3x 图、鼠标锚点和键盘路径锚点是否能从线上 bundle 实时读取。
+
+```powershell
+pwsh -NoProfile -File tools/Probe-RazerMappingAssets.ps1 -ProductId 184
+pwsh -NoProfile -File tools/Probe-RazerMappingAssets.ps1 -ProductId 590
+```
+
+鼠标锚点来自 UI bundle 的 `drawLines()`；键盘没有 `drawLines`，每个键的 `buttonList[].d` 路径通过 WPF `Geometry.Parse()` 计算包围盒中心。键盘的产品图不是单张 `prd-3x`，而是多张 `img_prods/*-3x.png`；探针会同时列出这些 URL。
+
+2026-11-06 实测：
+
+- 184：8 个鼠标锚点，3x 图可用；冷启动约 1.26 秒，缓存 `main.js` 后约 0.29 秒
+- 185：9 个鼠标锚点；冷启动约 1.28 秒，缓存后约 0.29 秒
+- 99：9 个鼠标锚点；冷启动约 1.24 秒，缓存后约 0.24 秒
+- 590：125 个键盘路径锚点，20 张键盘图片；冷启动约 0.87 秒，缓存后约 0.28 秒
+
+`main.js` 缓存在 `%TEMP%\OpenSynapse-RazerMappingProbe`。实时解析可行，但冷启动仍需要约 1 秒网络时间；正式功能应把解析结果缓存或放到构建产物，而不是每次打开页面都重新下载 bundle。
