@@ -41,4 +41,16 @@ public static class StudioCanvasPlacement
         }
         return result;
     }
+
+    /// <summary>Assigns z-order: large footprints at the back, small devices in front.</summary>
+    public static int[] LayerOrder(IReadOnlyList<(double Width, double Height)> sizes)
+    {
+        var order = Enumerable.Range(0, sizes.Count)
+            .OrderByDescending(index => Math.Max(0, sizes[index].Width) * Math.Max(0, sizes[index].Height))
+            .ThenBy(index => index)
+            .ToArray();
+        var z = new int[sizes.Count];
+        for (var index = 0; index < order.Length; index++) z[order[index]] = index;
+        return z;
+    }
 }
