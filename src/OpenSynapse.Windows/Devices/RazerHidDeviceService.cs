@@ -59,13 +59,11 @@ public sealed partial class RazerHidDeviceService
     internal RazerHidDeviceService(
         RazerHidDeviceCatalog catalog,
         IRazerFeatureTransport transport,
-        LocalDiagnosticLog? diagnosticLog = null,
-        SynapseProductManifestService? productManifests = null)
+        LocalDiagnosticLog? diagnosticLog = null)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _diagnosticLog = diagnosticLog;
-        _productManifests = productManifests;
         _executor = new RazerHidRequestExecutor(transport, _endpointCache, WriteDiagnostic);
     }
 
@@ -93,6 +91,7 @@ public sealed partial class RazerHidDeviceService
             LogObservedInterface).ConfigureAwait(false);
         var results = new List<RazerHidDeviceConnection>();
         foreach (var group in interfaces
+            .Where(item => _catalog.Find(item.VendorId, item.ProductId) is not null)
             // A locally admitted Blade manifest owns the laptop controls and matrix path;
             // discovering it twice would show one physical device as two cards.
             .Where(item => RazerDeviceRegistry.BuiltIn.Find(item.VendorId, item.ProductId) is null)
@@ -106,13 +105,7 @@ public sealed partial class RazerHidDeviceService
             .OrderBy(group => group.Key.ProductId)
             .ThenBy(group => group.Key.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase))
         {
-            var known = _catalog.Find(RazerHidDeviceDefinition.VendorId, group.Key.ProductId) is not null;
-            var definition = await ResolveDefinitionAsync(
-                group.Key.ProductId,
-                group.Select(item => item.ProductName).FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)),
-                cancellationToken).ConfigureAwait(false);
-            if (definition is null) continue;
-
+            var definition = _catalog.Find(RazerHidDeviceDefinition.VendorId, group.Key.ProductId)!;
             var candidates = group.ToArray();
             WriteDiagnostic(definition.ProductId,
                 $"scan found {candidates.Length} matching 91-byte HID collection(s)");
@@ -121,13 +114,10 @@ public sealed partial class RazerHidDeviceService
             {
                 WriteDiagnostic(definition.ProductId,
                     $"no usable 91-byte HID control collection: {DescribeRejected(candidates)}");
-                if (known)
-                {
-                    results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
-                        RazerHidEndpointState.BusyOrUnavailable,
-                        // Name the rejected collections: a wired receiver collection can hide why.
-                        $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
-                }
+                results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
+                    RazerHidEndpointState.BusyOrUnavailable,
+                    // Name the rejected collections: a wired receiver collection can hide why.
+                    $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
                 continue;
             }
 
@@ -157,33 +147,22 @@ public sealed partial class RazerHidDeviceService
                     InvalidateMiddlewareProbeCache(candidate.DevicePath);
                 }
                 WriteDiagnostic(definition.ProductId, $"control channel unresolved: {lastError ?? "no side-effect-free GET answered"}");
-                if (known)
-                {
-                    results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
-                        RazerHidEndpointState.RecognizedButUnresolved, lastError));
-                }
+                results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
+                    RazerHidEndpointState.RecognizedButUnresolved, lastError));
             }
             else
             {
                 _endpointCache[group.Key.PhysicalDeviceKey] = resolvedPath;
                 var resolvedDefinition = await ResolveLeviathanDefinitionAsync(
                     definition, resolvedPath, cancellationToken).ConfigureAwait(false);
-                var probedCapabilities = known
-                    ? await ProbeMiddlewareCapabilitiesAsync(
-                        resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false)
-                    : await ProbeProvisionedMappingAsync(
-                        resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
-                if (!known && !probedCapabilities.Contains(RazerHidBackendCapability.MappingRead)) continue;
-
+                var probedCapabilities = await ProbeMiddlewareCapabilitiesAsync(
+                    resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
                 results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
                     RazerHidEndpointState.Resolved, null,
                     probedCapabilities.Count > 0 ? probedCapabilities : null));
 
-                if (known)
-                {
-                    await AddLinkedConnectionsAsync(results, resolvedDefinition, resolvedPath, ordered,
-                        group.Key.PhysicalDeviceKey, cancellationToken).ConfigureAwait(false);
-                }
+                await AddLinkedConnectionsAsync(results, resolvedDefinition, resolvedPath, ordered,
+                    group.Key.PhysicalDeviceKey, cancellationToken).ConfigureAwait(false);
             }
         }
         RemoveDuplicateLinkedConnections(results);
@@ -1211,6 +1190,71 @@ public sealed partial class RazerHidDeviceService
             [checked((byte)(mouseProductId >> 8)), checked((byte)mouseProductId)]), cancellationToken);
 
     /// <summary>
+    /// Sends the middleware-only GETs once per device and caches which command families
+    /// answer, so a control appears only when the firmware really understands it. The cache
+    /// keeps device-watch rescans from re-sending a HID request every few seconds.
+    /// </summary>
+    internal async Task<IReadOnlySet<RazerHidBackendCapability>> ProbeMiddlewareCapabilitiesAsync(
+        RazerHidDeviceDefinition definition,
+        string devicePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (definition.Category is not (DeviceCategory.Mouse or DeviceCategory.Keyboard))
+        {
+            return FrozenSet<RazerHidBackendCapability>.Empty;
+        }
+
+        var result = new HashSet<RazerHidBackendCapability>();
+        var buttonList = RazerHidMappingProtocol.GetButtonList();
+        if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                "mapping", buttonList.Report,
+                response => RazerHidMappingProtocol.ParseButtonList(response).Any(id => id != 0),
+                cancellationToken).ConfigureAwait(false))
+        {
+            result.UnionWith(MappingCapabilities);
+        }
+
+        if (definition.Category == DeviceCategory.Mouse)
+        {
+            var freeNotched = RazerScrollWheelProtocol.CreateGetScrollFreeNotchedModeRequest(MiddlewareTransactionId);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "scroll.freeNotched", freeNotched, response =>
+                {
+                    _ = RazerScrollWheelProtocol.ParseScrollFreeNotchedMode(response, freeNotched);
+                    return true;
+                }, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(RazerHidBackendCapability.ScrollFreeNotchedModeRead);
+                result.Add(RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
+            }
+
+            var accelerationLevel =
+                RazerScrollWheelProtocol.CreateGetScrollVirtualAccelerationLevelRequest(MiddlewareTransactionId);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "scroll.accelerationLevel", accelerationLevel, response =>
+                {
+                    _ = RazerScrollWheelProtocol.ParseScrollVirtualAccelerationLevel(response, accelerationLevel);
+                    return true;
+                }, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(RazerHidBackendCapability.ScrollAccelerationLevelRead);
+                result.Add(RazerHidBackendCapability.ScrollAccelerationLevelWrite);
+            }
+        }
+
+        await ProbeOnboardProfileAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeWirelessPairingAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeKnobAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeAnalogKeyAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeOledAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeHapticScrollAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+
+        if (RazerHidDeviceCatalog.IsMiddlewareMouseReadOnly(definition.ProductId))
+            result.RemoveWhere(capability => capability.ToString().EndsWith("Write", StringComparison.Ordinal));
+        return result.ToFrozenSet();
+    }
+
+    /// <summary>
     /// Sends one middleware GET and caches whether the firmware answered, so device-watch
     /// rescans do not re-send it. Shared by every protocol family that has no RazerHid
     /// capability of its own to gate on.
@@ -1307,7 +1351,7 @@ public sealed partial class RazerHidDeviceService
             }
         }
 
-        if (definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard or DeviceCategory.Unknown)
+        if (definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
         {
             // This read-only GET is the last-resort endpoint probe. Some mapping-only
             // firmware answers it when the catalog's identity probes time out, so the
