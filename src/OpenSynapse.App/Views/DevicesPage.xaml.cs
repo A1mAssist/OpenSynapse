@@ -58,7 +58,6 @@ public sealed partial class DevicesPage : UserControl
     private async void RefreshClick(object sender, RoutedEventArgs e)
     {
         await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
-        _ = ViewModel.RefreshHueAsync(Lifetime);
     }
 
     internal void SelectDevice(string device)
@@ -183,7 +182,8 @@ public sealed partial class DevicesPage : UserControl
     internal void OnViewModelPropertyChanged(string? propertyName)
     {
         if (propertyName == nameof(ViperWorkspace.DeviceVisibility) &&
-            ViewModel.Viper.DeviceVisibility != Visibility.Visible)
+            ViewModel.Viper.DeviceVisibility != Visibility.Visible &&
+            ViperDevicePanel.Visibility == Visibility.Visible)
         {
             DispatcherQueue.TryEnqueue(() => SelectDevice("blade"));
         }

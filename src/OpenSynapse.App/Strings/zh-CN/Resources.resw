@@ -2617,7 +2617,7 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>中键</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2 (Mouse 5)</value></data>
-  <data name="MacroMouseSide3Capture" xml:space="preserve"><value>侧键 3 / 多功能键（按下捕获）</value></data>
+  <data name="MacroMouseSideCapture" xml:space="preserve"><value>其他侧键 / 多功能键（按下捕获）</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga 侧键 {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>鼠标侧键</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga 侧键</value></data>
@@ -3049,6 +3049,8 @@
   <data name="BleChargingLimit" xml:space="preserve"><value>已达充电上限</value></data>
   <data name="BleIdentity" xml:space="preserve"><value>BLE · 协议 30</value></data>
   <data name="HueTitle" xml:space="preserve"><value>飞利浦 Hue</value></data>
+  <data name="HueConfigureButton.Content" xml:space="preserve"><value>配置</value></data>
+  <data name="HueConfigureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>飞利浦 Hue</value></data>
   <data name="HueDescription" xml:space="preserve"><value>自动查找局域网中的 Hue 桥；找不到时可手动填写地址。按桥上的配对按钮后点“配对”。</value></data>
   <data name="HuePairButton" xml:space="preserve"><value>配对</value></data>
   <data name="HueRefreshButton" xml:space="preserve"><value>刷新</value></data>
@@ -3556,6 +3558,8 @@
   <data name="LightingStudioMoveToRoot" xml:space="preserve"><value>出组</value></data>
   <data name="LightingStudioUndo" xml:space="preserve"><value>撤销</value></data>
   <data name="LightingStudioRedo" xml:space="preserve"><value>重做</value></data>
+  <data name="LightingStudioToolLabel" xml:space="preserve"><value>工具</value></data>
+  <data name="LightingStudioZoomLabel" xml:space="preserve"><value>缩放</value></data>
   <data name="LightingStudioToolSelect" xml:space="preserve"><value>选择</value></data>
   <data name="LightingStudioToolPen" xml:space="preserve"><value>画笔</value></data>
   <data name="LightingStudioToolBucket" xml:space="preserve"><value>油漆桶</value></data>
@@ -3613,7 +3617,9 @@
   <data name="LightingStudioImportIssueDeviceDropped" xml:space="preserve"><value>设备已移除</value></data>
   <data name="LightingStudioStatusTidalCenterSet" xml:space="preserve"><value>已把点选的灯位设为潮汐中心。</value></data>
   <data name="LightingStudioRotateDevice.Content" xml:space="preserve"><value>↻</value></data>
+  <data name="LightingStudioRotateDeviceLabel" xml:space="preserve"><value>旋转 90°</value></data>
   <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>旋转 90°</value></data>
+  <data name="LightingStudioStatusRestoreFallback" xml:space="preserve"><value>{0} 无法读取原灯效，已改为默认退场灯效。</value></data>
   <data name="LightingStudioRotateDevice/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>旋转 90°</value></data>
   <data name="LightingStudioClearSelection" xml:space="preserve"><value>清除选区</value></data>
   <data name="LightingStudioStatusLayerAdded" xml:space="preserve"><value>已新增 {0}</value></data>

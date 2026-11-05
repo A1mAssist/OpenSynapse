@@ -118,6 +118,15 @@
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="HueTitle" Text="飞利浦 Hue" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="HueDescription" Text="自动查找局域网中的 Hue 桥；找不到时可手动填写地址。按桥上的配对按钮后点“配对”。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button local:Localized.Uid="HueConfigureButton" Grid.Column="1" Content="配置" Click="HueSettingsClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="Loc_69C8D0D8B7" Text="语言" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
