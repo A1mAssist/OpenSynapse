@@ -98,12 +98,14 @@ Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免�
 
 ## 设备图
 
-设备图是可选装饰。映射卡按 PID 查找 `Assets/MappingLayouts/<PID>.svg` 或 `.png`，以资产实际存在为准；没有设备图的设备只显示行表格。图片按绝对文件路径加载，发布目录里不依赖 `ms-appx:///` 解析。
+设备图是可选装饰。映射卡按 PID 查找 `Assets/MappingLayouts/<PID>.svg` 或 `.png`，以资产实际存在为准；图片按绝对文件路径加载，发布目录里不依赖 `ms-appx:///` 解析。
 
-当前包含 `00B8.png`：来自 Razer 产品 184 的官方 dashboard 图（`https://apps.razer.com/synapse/products/184/mw/184_0/PluginImages/184_0_0_dashboard3x.png`），仅作 Viper 00B8 的设备装饰，不提供热点坐标。
+当前包含 `00B8.png`：来自 Razer 产品 184 的官方 dashboard 图（`https://apps.razer.com/synapse/products/184/mw/184_0/PluginImages/184_0_0_dashboard3x.png`），裁掉透明边后为 193 × 348 像素。
+
+`00B8` 的 `RazerMappingImageLayout` 带有一组按源图像素测量的热点。页面据此把按键标签放在设备图两侧，并用细引线从标签连到实际按钮；点击标签在下方打开该按键的映射编辑器。热点只覆盖 Viper 00B8 的已读按钮：左键、右键、滚轮按下、后退、前进、滚轮上/下和 DPI 循环。
 
 当前不伪造热点：
 
 - 不从其他型号复制坐标。
-- 没有逐型号热点证据就不做点击热区。
-- 00B9 的 `DeviceManifest_185_0.json` SVG 可作为装饰资产，但不把草图坐标当热点证据。
+- 没有逐型号热点证据的设备回退到行表格，不显示设备旁标签或引线。
+- 00B9 的 `DeviceManifest_185_0.json` SVG 可作为装饰资产，但不把草图坐标当热点证据，也不生成点击热区。
