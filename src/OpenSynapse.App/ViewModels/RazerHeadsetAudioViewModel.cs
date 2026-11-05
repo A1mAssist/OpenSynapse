@@ -202,13 +202,14 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private static readonly RazerChromaEffect[] LightingEffects =
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
+    private bool IsKrakenBase => _connection.Transport == RazerHeadsetAudioTransport.KrakenBase37;
     private bool IsT3 => _connection.Transport == RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsMxic => _connection.Transport is RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
     private bool IsValkyrie => _connection.Transport is
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
-    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E;
+    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase;
     private (byte Value, string Key)[] ActivePresets => IsT3 ? Presets[..4] : IsFeature91 ? Presets : MxicPresets;
 
     private byte ToFirmwareBand(double level) => _connection.Transport switch
@@ -499,7 +500,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility EqBandsVisibility => _hasEqBands ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility EqPresetVisibility => IsMixer053E || IsProtocol40 ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility EqPresetVisibility => IsMixer053E || IsProtocol40 || IsKrakenBase
+        ? Visibility.Collapsed
+        : Visibility.Visible;
 
     public double Bass
     {
@@ -740,19 +743,24 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public Visibility ParametricEqVisibility =>
         _hasParametricEq ? Visibility.Visible : Visibility.Collapsed;
 
+    private RazerAncState[] DeviceAncStates => IsKrakenBase
+        ? [RazerAncState.Off, RazerAncState.On]
+        : AncStates;
+
     public IReadOnlyList<string> AncOptions =>
-    [
-        AppStrings.Text("RazerHeadsetAncOff"),
-        AppStrings.Text("RazerHeadsetAncOn"),
-        AppStrings.Text("RazerHeadsetAncAmbient"),
-    ];
+        DeviceAncStates.Select(state => AppStrings.Text(state switch
+        {
+            RazerAncState.Off => "RazerHeadsetAncOff",
+            RazerAncState.On => "RazerHeadsetAncOn",
+            _ => "RazerHeadsetAncAmbient",
+        })).ToArray();
 
     public int SelectedAncIndex
     {
         get => _selectedAncIndex;
         set
         {
-            if (!SetField(ref _selectedAncIndex, Math.Clamp(value, 0, AncStates.Length - 1))) return;
+            if (!SetField(ref _selectedAncIndex, Math.Clamp(value, 0, DeviceAncStates.Length - 1))) return;
             OnPropertyChanged(nameof(AncLevelVisibility));
         }
     }
@@ -768,7 +776,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     public string AncLevelText => $"{Math.Round(AncLevel)} / 10";
-    public Visibility AncLevelVisibility => _selectedAncIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility AncLevelVisibility => !IsKrakenBase && _selectedAncIndex == 1
+        ? Visibility.Visible
+        : Visibility.Collapsed;
     public Visibility AncVisibility => _hasAnc ? Visibility.Visible : Visibility.Collapsed;
 
     public bool IsBusy
@@ -1054,6 +1064,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)
     {
+        if (IsKrakenBase) return Task.CompletedTask;
         var preset = ActivePresets[SelectedEqPresetIndex].Value;
         return _connection.Transport switch
         {
@@ -1305,10 +1316,10 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             : RunWriteAsync((service, token) => service.SetNoiseSuppressionAsync(NoiseSuppression, token), cancellationToken);
 
     public Task ApplyAncAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
+        !IsFeature91 && !IsKrakenBase
             ? Task.CompletedTask
             : RunWriteAsync(
-                (service, token) => service.SetAncAsync(AncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
+                (service, token) => service.SetAncAsync(DeviceAncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
                 cancellationToken);
 
     public void RefreshLocalization()
@@ -1334,7 +1345,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     private RazerHeadsetAudioService OpenService() =>
-        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+        new(new RazerFeatureTransport(), _connection.DevicePath,
+            IsKrakenBase ? TimeSpan.FromMilliseconds(250) : TimeSpan.FromMilliseconds(20),
+            _diagnostic, _connection.Transport);
 
     private RazerMxicHeadsetService OpenMxicService() =>
         new(_connection.ProductId, _connection.DevicePath, _diagnostic);
@@ -1631,7 +1644,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         if (state.AncState is RazerAncState anc)
         {
-            var index = Array.IndexOf(AncStates, anc);
+            var index = Array.IndexOf(DeviceAncStates, anc);
             if (index >= 0)
             {
                 SelectedAncIndex = index;
@@ -1644,6 +1657,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     private static bool HasAnyValue(RazerHeadsetAudioState state) =>
+        state.Firmware is not null || state.AncState is not null ||
         state.BatteryPercent is not null || state.EqPreset is not null || state.EqBands is not null ||
         state.MicBands is not null ||
         state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null;
