@@ -243,8 +243,15 @@ public partial class App : Application
         if (silentLaunch)
         {
             window.AppWindow.IsShownInSwitchers = false;
+            // Activate() composites a frame before OnActivated can hide the window,
+            // which is the window users see flash at sign-in. Boot the runtime with
+            // the window still hidden; the tray opens it normally on first use.
+            window.StartHiddenLaunch();
         }
-        window.Activate();
+        else
+        {
+            window.Activate();
+        }
         window.RestorePerformanceOverlay();
 
         _activationCancellation = new CancellationTokenSource();

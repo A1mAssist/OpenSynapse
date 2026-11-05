@@ -310,6 +310,21 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Startup-registration path: the window is created but never activated, so the
+    /// compositor paints no frame. The runtime still starts and the tray takes over;
+    /// the first tray click activates the window normally.
+    /// </summary>
+    internal void StartHiddenLaunch()
+    {
+        Activated -= OnActivated;
+        LaunchProgressRing.IsActive = false;
+        LaunchOverlay.Visibility = Visibility.Collapsed;
+        ApplyTitleBarColors(launchOverlayActive: false);
+        ResizeForCurrentDisplay();
+        _ = InitializeRuntimeAsync();
+    }
+
     private async void OnActivated(object sender, WindowActivatedEventArgs args)
     {
         Activated -= OnActivated;
