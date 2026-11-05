@@ -9,7 +9,12 @@ public sealed record RazerKeyboardConnection(
     ushort ProductId,
     string Name,
     ushort FeatureReportByteLength,
-    bool UsesLegacyChroma);
+    bool UsesLegacyChroma,
+    ushort ReportedProductId = 0)
+{
+    /// <summary>PID Windows enumerated; the dongle and BLE links use their own.</summary>
+    public ushort DisplayProductId => ReportedProductId == 0 ? ProductId : ReportedProductId;
+}
 
 public sealed record RazerKeyboardState(
     Version? Firmware,
@@ -65,7 +70,8 @@ public sealed class RazerKeyboardService
         0x02D4, 0x02D8, 0x02E3, 0x02E4, 0x02E5, 0x02EA, 0x02EB, 0x02F4,
     };
 
-    public static bool UsesLegacyChroma(ushort productId) => LegacyChromaProducts.Contains(productId);
+    public static bool UsesLegacyChroma(ushort productId) =>
+        LegacyChromaProducts.Contains(RazerProductAliases.Canonical(productId));
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -88,7 +94,8 @@ public sealed class RazerKeyboardService
         _diagnostic = diagnostic;
     }
 
-    public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
+    public static bool IsSupported(ushort productId) =>
+        Products.ContainsKey(RazerProductAliases.Canonical(productId));
 
     public static async Task<RazerKeyboardConnection?> FindAsync(
         Action<string>? diagnostic = null,
@@ -99,13 +106,7 @@ public sealed class RazerKeyboardService
             RazerKeyboardProtocol.ReportLength,
             cancellationToken).ConfigureAwait(false);
 
-        var candidates = interfaces
-            .Where(item => Products.ContainsKey(item.ProductId))
-            // The RazerHid catalogue already owns these PIDs and shows its own page.
-            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
-            .OrderByDescending(item => item.Access == DeviceAccessState.Available)
-            .ThenBy(item => item.ProductId)
-            .ToArray();
+        var candidates = SelectCandidates(interfaces);
         if (candidates.Length == 0)
         {
             diagnostic?.Invoke(
@@ -115,16 +116,35 @@ public sealed class RazerKeyboardService
         }
 
         var chosen = candidates[0];
+        var canonical = RazerProductAliases.Canonical(chosen.ProductId);
         diagnostic?.Invoke(
-            $"keyboard selected pid={chosen.ProductId:X4} path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
+            $"keyboard selected pid={chosen.ProductId:X4} model={canonical:X4} " +
+            $"path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
             $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} access={chosen.Access}");
         return new RazerKeyboardConnection(
             chosen.DevicePath,
-            chosen.ProductId,
-            Products[chosen.ProductId],
+            canonical,
+            Products[canonical],
             chosen.FeatureReportByteLength,
-            UsesLegacyChroma(chosen.ProductId));
+            UsesLegacyChroma(canonical),
+            chosen.ProductId);
     }
+
+    /// <summary>
+    /// Keeps the interfaces this page admits. The dongle and BLE links enumerate their
+    /// own PID, so admission goes through the wired alias; a wired link wins when both
+    /// are present because its path is stable across reconnects.
+    /// </summary>
+    internal static WindowsHidDiscovery.HidInterfaceDescriptor[] SelectCandidates(
+        IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
+        interfaces
+            .Where(item => Products.ContainsKey(RazerProductAliases.Canonical(item.ProductId)))
+            // The RazerHid catalogue already owns these PIDs and shows its own page.
+            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+            .ThenBy(item => RazerProductAliases.IsWirelessAlias(item.ProductId))
+            .ThenBy(item => item.ProductId)
+            .ToArray();
 
     public async Task<RazerKeyboardState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
