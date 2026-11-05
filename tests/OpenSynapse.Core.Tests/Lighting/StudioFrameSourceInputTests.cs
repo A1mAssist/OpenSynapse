@@ -87,6 +87,44 @@ public sealed class StudioFrameSourceInputTests
         Assert.Contains(lit, color => color != default);
     }
 
+    [Fact]
+    public async Task FinishedRippleDoesNotFreezeTheNextEffect()
+    {
+        var source = new StudioDeviceFrameSource(5, 16);
+        var id = Guid.Parse("8f5e4b3c-2d1a-4c6b-9e7f-0123456789ab");
+        source.Update(
+        [
+            new StudioLayerRender(
+                StudioEffectCatalog.CreateDefault(StudioEffectKind.Ripple),
+                null,
+                100,
+                StudioBlendMode.Normal,
+                true,
+                id),
+        ]);
+
+        Assert.Equal(1, source.HandleInput(new StudioTriggerInput(2, 7), 0));
+        Assert.Contains(await RenderAsync(source, 0.1), color => color != default);
+        Assert.All(await RenderAsync(source, 10), color => Assert.Equal(default, color));
+
+        source.Update(
+        [
+            new StudioLayerRender(
+                new StudioEffectParams
+                {
+                    Effect = StudioEffectKind.Solid,
+                    Primary = new StudioRgb(0, 255, 0),
+                },
+                null,
+                100,
+                StudioBlendMode.Normal,
+                true,
+                id),
+        ]);
+
+        Assert.Contains(await RenderAsync(source, 10.1), color => color != default);
+    }
+
     private static StudioLayerRender Layer(
         StudioPlaybackStart start,
         StudioPlaybackEnd end = StudioPlaybackEnd.Never,
