@@ -35,8 +35,11 @@ public sealed partial class StudioCanvas : UserControl
     private readonly List<LedEntry> _ledEntries = new();
     private readonly List<StudioLedRef> _selection = new();
     private readonly HashSet<(string InstanceId, int Row, int Col)> _penVisited = new();
-    private readonly SolidColorBrush _selectionBrush = new(Color.FromArgb(255, 0x44, 0xD6, 0x2C));
-    private readonly SolidColorBrush _marqueeFill = new(Color.FromArgb(40, 0x44, 0xD6, 0x2C));
+    private const double SelectionStrokePixels = 2.5;
+    private readonly SolidColorBrush _selectionBrush = new(Color.FromArgb(255, 0xB6, 0xFF, 0x6B));
+    private readonly SolidColorBrush _marqueeFill = new(Color.FromArgb(56, 0xB6, 0xFF, 0x6B));
+    private int _topZIndex;
+    private int _moveOriginalZIndex;
     private StudioCanvasTool _tool;
     private double _zoom = 100;
     private bool _marqueeActive;
@@ -106,6 +109,7 @@ public sealed partial class StudioCanvas : UserControl
         _hosts.Clear();
         _ledEntries.Clear();
         var devices = Devices;
+        _topZIndex = devices.Count;
         var placements = new Dictionary<string, StudioDevicePlacement>(StringComparer.OrdinalIgnoreCase);
         if (Profile is { } profile)
         {
@@ -131,6 +135,8 @@ public sealed partial class StudioCanvas : UserControl
 
         RebuildGrid();
         var defaults = StudioCanvasPlacement.CenterRow(unplaced, RowGap);
+        var zByIndex = StudioCanvasPlacement.LayerOrder(
+            sizes.Select(size => (size.Width, size.Height)).ToArray());
         var defaultIndex = 0;
         for (var index = 0; index < devices.Count; index++)
         {
@@ -153,7 +159,7 @@ public sealed partial class StudioCanvas : UserControl
             {
                 (x, y) = defaults[defaultIndex++];
             }
-            BuildDevice(devices[index], x, y, rotation);
+            BuildDevice(devices[index], x, y, rotation, zByIndex[index]);
         }
         ApplyZoom();
         ReapplyFrames();
@@ -208,6 +214,7 @@ public sealed partial class StudioCanvas : UserControl
         Surface.Width = StudioCanvasPlacement.DesignSize * factor;
         Surface.Height = StudioCanvasPlacement.DesignSize * factor;
         ScaleGrid(factor);
+        if (_selection.Count > 0) UpdateSelectionVisuals();
     }
     private void LedPointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -268,6 +275,8 @@ public sealed partial class StudioCanvas : UserControl
     private void BeginMove(HostState host, PointerRoutedEventArgs e)
     {
         _moveHost = host;
+        _moveOriginalZIndex = Canvas.GetZIndex(host.Element);
+        Canvas.SetZIndex(host.Element, ++_topZIndex);
         var factor = _zoom / 100;
         var point = e.GetCurrentPoint(Surface).Position;
         _moveStart = new Point(point.X / factor, point.Y / factor);
@@ -289,6 +298,7 @@ public sealed partial class StudioCanvas : UserControl
     {
         if (_moveHost is not { } host) return;
         _moveHost = null;
+        Canvas.SetZIndex(host.Element, _moveOriginalZIndex);
         host.BaseX = StudioCanvasPlacement.Snap(host.BaseX, host.VisualWidth);
         host.BaseY = StudioCanvasPlacement.Snap(host.BaseY, host.VisualHeight);
         DeviceMoved?.Invoke(host.InstanceId, host.BaseX, host.BaseY);
@@ -400,6 +410,7 @@ public sealed partial class StudioCanvas : UserControl
     {
         _marqueeActive = false;
         _penActive = false;
+        if (_moveHost is { } host) Canvas.SetZIndex(host.Element, _moveOriginalZIndex);
         _moveHost = null;
         _panActive = false;
         _penVisited.Clear();
@@ -413,10 +424,14 @@ public sealed partial class StudioCanvas : UserControl
         {
             IsHitTestVisible = false,
             Stroke = _selectionBrush,
-            StrokeThickness = 1,
             Fill = _marqueeFill,
         };
-        if (_marquee.Parent is null) Surface.Children.Add(_marquee);
+        if (_marquee.Parent is null)
+        {
+            Surface.Children.Add(_marquee);
+            Canvas.SetZIndex(_marquee, int.MaxValue);
+        }
+        _marquee.StrokeThickness = SelectionStrokePixels / Math.Max(_zoom / 100, 0.1);
         var rect = NormalizeRect(start, end);
         Canvas.SetLeft(_marquee, rect.X);
         Canvas.SetTop(_marquee, rect.Y);
@@ -441,6 +456,8 @@ public sealed partial class StudioCanvas : UserControl
     }
     private void UpdateSelectionVisuals()
     {
+        var factor = _zoom / 100;
+        var thickness = SelectionStrokePixels / Math.Max(factor, 0.1);
         foreach (var entry in _ledEntries)
         {
             var selected = IndexOfCell(
@@ -452,12 +469,12 @@ public sealed partial class StudioCanvas : UserControl
                 if (selected)
                 {
                     selection.Stroke = _selectionBrush;
-                    selection.StrokeThickness = 2;
+                    selection.StrokeThickness = thickness;
                 }
             }
             var usePath = selected && entry.Selection is null;
             entry.Element.Stroke = usePath ? _selectionBrush : entry.Stroke;
-            entry.Element.StrokeThickness = usePath ? 2 : entry.Thickness;
+            entry.Element.StrokeThickness = usePath ? thickness : entry.Thickness;
         }
     }
 

@@ -12,7 +12,7 @@ namespace OpenSynapse.App.Views;
 public sealed partial class StudioCanvas
 {
     private void BuildDevice(
-        StudioDeviceVisual device, double visualX, double visualY, int rotation)
+        StudioDeviceVisual device, double visualX, double visualY, int rotation, int zIndex)
     {
         var width = Extent(device.Width);
         var height = Extent(device.Height);
@@ -81,6 +81,7 @@ public sealed partial class StudioCanvas
                 hostState));
         }
         Surface.Children.Add(host);
+        Canvas.SetZIndex(host, zIndex);
         _hosts.Add(hostState);
     }
 }

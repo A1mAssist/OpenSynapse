@@ -60,4 +60,13 @@ public sealed class StudioCanvasPlacementTests
         Assert.Equal((4440d, 4900d), pair[0]);
         Assert.Equal((5160d, 4950d), pair[1]);
     }
+
+    [Fact]
+    public void LayerOrderPutsLargeDevicesBehindSmallOnes()
+    {
+        var order = StudioCanvasPlacement.LayerOrder(
+            [(100, 100), (600, 400), (400, 400)]);
+
+        Assert.Equal([2, 0, 1], order);
+    }
 }
