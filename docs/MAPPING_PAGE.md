@@ -96,16 +96,30 @@ HID 适配器复用 `RazerHidDeviceService` 的 `02:84 / 02:8C / 02:0C`；独立
 
 Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免下次启动时旧 profile 把用户改动覆盖回去。
 
-## 设备图
+## 设备图与热点
 
-设备图是可选装饰。映射卡按 PID 查找 `Assets/MappingLayouts/<PID>.svg` 或 `.png`，以资产实际存在为准；图片按绝对文件路径加载，发布目录里不依赖 `ms-appx:///` 解析。
+设备图是可选装饰。映射卡按 PID 查找 `Assets/MappingLayouts/<PID>.svg` 或 `.png`，以资产实际存在为准；图片按绝对文件路径加载，发布目录里不依赖 `ms-appx:///` 解析。设备图画布保持透明，跟随页面深色背景，不再套白色底板。
 
-当前包含 `00B8.png`：来自 Razer 产品 184 的官方 dashboard 图（`https://apps.razer.com/synapse/products/184/mw/184_0/PluginImages/184_0_0_dashboard3x.png`），裁掉透明边后为 193 × 348 像素。
+当前包含 `00B8.png`：来自 Razer 产品 184 映射页自己的产品图 `https://apps.razer.com/synapse/products/184/ui/static/media/prd-3x.68dba287.avif`（300 × 340 画布的 3x 图，转换为 900 × 1020 PNG），裁去透明边并保留 12 像素安全边后为 408 × 778。它不是 dashboard 大图，也不是从截图量的坐标。
 
-`00B8` 的 `RazerMappingImageLayout` 带有一组按源图像素测量的热点。页面据此把按键标签放在设备图两侧，并用细引线从标签连到实际按钮；点击标签在下方打开该按键的映射编辑器。热点只覆盖 Viper 00B8 的已读按钮：左键、右键、滚轮按下、后退、前进、滚轮上/下和 DPI 循环。
+Razer 没有通用的 hotspot JSON 接口。产品 184 的映射页把八个锚点写死在 UI bundle `https://apps.razer.com/synapse/products/184/ui/static/js/main.2371171b.js` 的 `drawLines()` 里；`h5` 只定义画布尺寸、标签列和 53 像素引线长度。表中是 bundle 原始锚点和转换到裁边产品图的坐标：
+
+| 按钮 | Razer 画布 | 裁边产品图 | 列 |
+|---|---:|---:|---|
+| LeftClick | 114, 58 | 96, 52 | 左 |
+| RightClick | 181, 58 | 282, 52 | 右 |
+| ScrollClick | 147, 88 | 180, 142 | 左 |
+| ScrollUp | 148, 75 | 183, 103 | 右 |
+| ScrollDown | 148, 105 | 183, 193 | 右 |
+| MouseButton4 | 88, 145 | 3, 313 | 左 |
+| MouseButton5 | 88, 175 | 3, 403 | 左 |
+| CycleUpSensitivityStages | 148, 138 | 183, 292 | 右 |
+
+左右列不是按坐标 X 猜的，而是沿用 bundle `drawLines()` 的 `isLeft` 参数；滚动、DPI 和右键都在右列，左键、中键和两个侧键在左列。页面先画 53 像素水平短引线，再斜线连到按钮，端点使用小圆点和外圈；点击左侧或右侧标签在下方打开该按键的映射编辑器。热点只覆盖 Viper 00B8 的已读按钮：左键、右键、滚轮按下、后退、前进、滚轮上/下和 DPI 循环。
 
 当前不伪造热点：
 
 - 不从其他型号复制坐标。
+- Razer 的锚点是每个产品 bundle 内的构建时常量，不同 PID 的锚点不同，没有可稳定查询的公共 schema；不在运行时抓取任意 6 MB UI bundle 猜坐标。
 - 没有逐型号热点证据的设备回退到行表格，不显示设备旁标签或引线。
-- 00B9 的 `DeviceManifest_185_0.json` SVG 可作为装饰资产，但不把草图坐标当热点证据，也不生成点击热区。
+- 00B9 的 `DeviceManifest_185_0.json` SVG 可作为装饰资产，但它的 `svg_0_0` 只有整机 `Product_Fill` / `Product_Outline` / `LED` 等层，没有逐按钮锚点，因此不生成点击热区。

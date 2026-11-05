@@ -1,11 +1,11 @@
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>One button hotspot in source-image pixels.</summary>
-public readonly record struct RazerMappingPoint(double X, double Y);
+public readonly record struct RazerMappingPoint(double X, double Y, bool IsLeft);
 
 /// <summary>
-/// A device image plus the hotspot map measured from that same image. Models without
-/// an evidenced image and hotspot map keep the table-only fallback.
+/// A device image plus the hotspot map from that product's own Razer UI bundle.
+/// Models without an evidenced image and hotspot map keep the table-only fallback.
 /// </summary>
 public sealed record RazerMappingImageLayout(
     Uri ImageUri,
@@ -35,8 +35,9 @@ public static class RazerMappingAssetCatalog
     }
 
     /// <summary>
-    /// Hotspots are only supplied for a product image that was measured directly. The
-    /// Viper coordinates are source pixels in the cropped 00B8 PNG.
+    /// Hotspots are only supplied for a product whose own Razer UI bundle contains
+    /// anchors. The 00B8 values come from product 184's drawLines() table, translated
+    /// to the trimmed 3x product image (12 px transparent safety border).
     /// </summary>
     public static RazerMappingImageLayout? FindLayout(ushort productId)
     {
@@ -47,18 +48,18 @@ public static class RazerMappingAssetCatalog
 
         return new RazerMappingImageLayout(
             image,
-            193,
-            348,
+            408,
+            778,
             new Dictionary<byte, RazerMappingPoint>
             {
-                [0x01] = new(55, 80),   // left click
-                [0x02] = new(140, 80),  // right click
-                [0x03] = new(101, 64),  // wheel click
-                [0x04] = new(22, 140),  // back
-                [0x05] = new(22, 172),  // forward
-                [0x09] = new(101, 42),  // wheel up
-                [0x0A] = new(101, 86),  // wheel down
-                [0x60] = new(101, 112), // DPI cycle up
+                [0x01] = new(96, 52, true),   // LeftClick, Razer (114,58)
+                [0x02] = new(282, 52, false), // RightClick, Razer (181,58)
+                [0x03] = new(180, 142, true), // ScrollClick, Razer (147,88)
+                [0x04] = new(3, 313, true),   // MouseButton4, Razer (88,145)
+                [0x05] = new(3, 403, true),   // MouseButton5, Razer (88,175)
+                [0x09] = new(183, 103, false),// ScrollUp, Razer (148,75)
+                [0x0A] = new(183, 193, false),// ScrollDown, Razer (148,105)
+                [0x60] = new(183, 292, false),// CycleUpSensitivityStages, Razer (148,138)
             });
     }
 }

@@ -50,9 +50,12 @@ public sealed class MappingPageAuditTests
         Assert.Contains("StageVisibility", view);
         Assert.Contains("TableVisibility", view);
         Assert.Contains("CalloutClick", code);
+        Assert.Contains("left ? 53 : -53", code);
         Assert.Contains("FindLayout", assets);
         Assert.Contains("0x00B8", assets);
+        Assert.Contains("IsLeft", assets);
         Assert.DoesNotContain("00B9", assets);
+        Assert.DoesNotContain("#EDEDED", view);
     }
 
     [Fact]

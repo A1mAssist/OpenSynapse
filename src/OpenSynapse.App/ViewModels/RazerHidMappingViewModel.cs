@@ -163,12 +163,12 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         var ordered = Rows
             .Select(row => (Row: row, Hotspot: _layout.Hotspots.TryGetValue(row.ButtonId, out var point)
                 ? point
-                : new RazerMappingPoint(_layout.SourceWidth / 2, _layout.SourceHeight / 2)))
+                : new RazerMappingPoint(_layout.SourceWidth / 2, _layout.SourceHeight / 2, true)))
             .OrderBy(item => item.Hotspot.Y)
             .ToArray();
         foreach (var (row, hotspot) in ordered)
         {
-            if (hotspot.X < _layout.SourceWidth / 2)
+            if (hotspot.IsLeft)
             {
                 LeftRows.Add(row);
             }

@@ -164,7 +164,7 @@
               Height="500"
               Padding="10"
               CornerRadius="12"
-              Background="#EDEDED"
+              Background="Transparent"
               VerticalAlignment="Center">
         <Image x:Name="DeviceImage"
                Width="330"
@@ -224,11 +224,11 @@
               Width="340"
               Padding="16"
               CornerRadius="12"
-              Background="#EDEDED"
+              Background="Transparent"
               VerticalAlignment="Top"
               Visibility="{Binding LayoutVisibility}">
         <StackPanel Spacing="8">
-          <TextBlock local:Localized.Uid="RazerMappingDeviceImageLabel" Text="设备图" Foreground="#4A4A4A" FontSize="11" HorizontalAlignment="Center" />
+          <TextBlock local:Localized.Uid="RazerMappingDeviceImageLabel" Text="设备图" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Center" />
           <Image Width="308"
                  Height="380"
                  Stretch="Uniform"
