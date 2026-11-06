@@ -2194,7 +2194,7 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>Middle</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>Side 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>Side 2 (Mouse 5)</value></data>
-  <data name="MacroMouseSideCapture" xml:space="preserve"><value>Other side / multi-function (press to capture)</value></data>
+  <data name="MacroMouseSideCapture" xml:space="preserve"><value>Third / other multi-function (press to capture)</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga side {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>Mouse side buttons</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga side buttons</value></data>

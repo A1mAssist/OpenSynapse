@@ -1,4 +1,6 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using Xunit;
 
@@ -97,6 +99,41 @@ public sealed class DeviceButtonTests
             },
             MacroModifierKeys.None));
     }
+
+    [Fact]
+    public void PrivateKeyReaderUsesUsageNotUsagePage()
+    {
+        Assert.True(RazerPrivateKeyInput.IsPrivateCollection(PrivateKeyDescriptor(
+            usagePage: 0x0001,
+            usage: 0x0080)));
+        Assert.True(RazerPrivateKeyInput.IsPrivateCollection(PrivateKeyDescriptor(
+            usagePage: 0x0001,
+            usage: 0x0000)));
+        Assert.False(RazerPrivateKeyInput.IsPrivateCollection(PrivateKeyDescriptor(
+            usagePage: 0x0001,
+            usage: 0x0002)));
+        Assert.False(RazerPrivateKeyInput.IsPrivateCollection(PrivateKeyDescriptor(
+            usagePage: 0x0001,
+            usage: 0x0080,
+            path: @"\\?\hid#vid_1532&pid_02c6&mi_01&col04#7&1&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}")));
+    }
+
+    private static WindowsHidDiscovery.HidInterfaceDescriptor PrivateKeyDescriptor(
+        ushort usagePage,
+        ushort usage,
+        string path = @"\\?\hid#vid_1532&pid_00aa&col01#7&1&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}") =>
+        new(
+            path,
+            "physical",
+            0x1532,
+            0x00AA,
+            InputReportByteLength: 16,
+            OutputReportByteLength: 0,
+            FeatureReportByteLength: 0,
+            usagePage,
+            usage,
+            DeviceAccessState.Available,
+            "Razer Basilisk V3 Pro");
 
     [Fact]
     public void PrivateKeyLabelsAreProductScoped()
