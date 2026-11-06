@@ -441,7 +441,8 @@ public sealed partial class StudioCanvas : UserControl
         if (_marquee.Parent is null)
         {
             Surface.Children.Add(_marquee);
-            Canvas.SetZIndex(_marquee, int.MaxValue);
+            // WinUI rejects int.MaxValue here; keep the marquee above hosts with the same counter.
+            Canvas.SetZIndex(_marquee, ++_topZIndex);
         }
         _marquee.StrokeThickness = SelectionStrokePixels / Math.Max(_zoom / 100, 0.1);
         var rect = NormalizeRect(start, end);
