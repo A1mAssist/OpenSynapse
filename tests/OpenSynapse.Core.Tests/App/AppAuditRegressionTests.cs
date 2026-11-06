@@ -329,6 +329,17 @@ public sealed class AppAuditRegressionTests
     }
 
     [Fact]
+    public void RazerHidRowsStayVisibleWhenTheControlChannelIsUnresolved()
+    {
+        var rows = Vm("ConnectedDeviceRowViewModel.cs");
+        var razer = rows[
+            rows.IndexOf("public ConnectedDeviceRowViewModel(RazerHidDeviceRowViewModel source)", StringComparison.Ordinal)..
+            rows.IndexOf("public ConnectedDeviceRowViewModel(RazerHidKrakenDeviceRowViewModel source)", StringComparison.Ordinal)];
+        Assert.Contains("IsVisible = true;", razer);
+        Assert.DoesNotContain("source.Connection.IsReady && source.Connection.Capabilities.Count > 0", razer);
+    }
+
+    [Fact]
     public void ScrollWheelPresetUsesOneDropdownForHidDevices()
     {
         var xaml = App("Views/DevicesPage.xaml");
