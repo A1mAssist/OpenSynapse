@@ -110,7 +110,41 @@ public sealed partial class TaskbarStatusWindow
         if (dc == IntPtr.Zero) return;
         try
         {
-            if (GetClientRect(window, out var client)) Draw(dc, client);
+            if (!GetClientRect(window, out var client) ||
+                client.Width <= 0 ||
+                client.Height <= 0)
+            {
+                return;
+            }
+
+            // GDI paints the background before the text. Without an off-screen
+            // buffer that intermediate state can reach the screen on every update.
+            var memory = CreateCompatibleDC(dc);
+            var bitmap = memory == IntPtr.Zero
+                ? IntPtr.Zero
+                : CreateCompatibleBitmap(dc, client.Width, client.Height);
+            if (memory == IntPtr.Zero || bitmap == IntPtr.Zero)
+            {
+                if (bitmap != IntPtr.Zero) DeleteObject(bitmap);
+                if (memory != IntPtr.Zero) DeleteDC(memory);
+                Draw(dc, client);
+                return;
+            }
+
+            var previous = SelectObject(memory, bitmap);
+            try
+            {
+                Draw(memory, client);
+                BitBlt(
+                    dc, 0, 0, client.Width, client.Height,
+                    memory, 0, 0, Srccopy);
+            }
+            finally
+            {
+                SelectObject(memory, previous);
+                DeleteObject(bitmap);
+                DeleteDC(memory);
+            }
         }
         finally
         {
