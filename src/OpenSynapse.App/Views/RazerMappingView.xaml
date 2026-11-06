@@ -195,6 +195,19 @@
               VerticalAlignment="Stretch" />
     </Grid>
 
+    <StackPanel Spacing="8" Visibility="{Binding KeyboardStageVisibility}">
+      <Viewbox Stretch="Uniform" MaxHeight="420" HorizontalAlignment="Center">
+        <Canvas x:Name="KeyboardCanvas"
+                Width="{Binding KeyboardWidth}"
+                Height="{Binding KeyboardHeight}"
+                Background="Transparent" />
+      </Viewbox>
+      <TextBlock local:Localized.Uid="RazerMappingKeyboardHint"
+                 Text="点击键位编辑映射"
+                 Foreground="{StaticResource MutedBrush}"
+                 HorizontalAlignment="Center" />
+    </StackPanel>
+
     <TextBlock local:Localized.Uid="RazerMappingCalloutHint"
                Text="点击设备旁的按键标签编辑映射"
                Foreground="{StaticResource MutedBrush}"
@@ -219,27 +232,8 @@
       </StackPanel>
     </Border>
 
-    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="24" Visibility="{Binding TableVisibility}">
-      <Border Grid.Column="0"
-              Width="340"
-              Padding="16"
-              CornerRadius="12"
-              Background="Transparent"
-              VerticalAlignment="Top"
-              Visibility="{Binding LayoutVisibility}">
-        <StackPanel Spacing="8">
-          <TextBlock local:Localized.Uid="RazerMappingDeviceImageLabel" Text="设备图" Foreground="{StaticResource MutedBrush}" FontSize="11" HorizontalAlignment="Center" />
-          <Image Width="308"
-                 Height="380"
-                 Stretch="Uniform"
-                 HorizontalAlignment="Center"
-                 AutomationProperties.Name="设备图"
-                 Source="{Binding LayoutImage}"
-                 Visibility="{Binding LayoutVisibility}" />
-        </StackPanel>
-      </Border>
-
-      <StackPanel Grid.Column="1" Spacing="8">
+    <Grid Visibility="{Binding TableVisibility}">
+      <StackPanel Spacing="8">
         <Grid ColumnDefinitions="110,1.2*,150,1.3*,*" ColumnSpacing="10">
           <TextBlock local:Localized.Uid="RazerMappingButtonColumn" Text="按键" Style="{StaticResource MetricLabelStyle}" />
           <TextBlock Grid.Column="1" local:Localized.Uid="RazerMappingCurrentColumn" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />

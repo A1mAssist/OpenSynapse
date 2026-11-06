@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -13,7 +14,10 @@ public sealed partial class RazerHidDeviceViewModel
             Has(RazerHidBackendCapability.MappingWrite),
             CreateService,
             _localMacros,
-            RazerMappingAssetCatalog.FindDeviceImage(Connection.Definition.ProductId));
+            productId: Connection.Definition.ProductId,
+            deviceKind: Connection.Definition.Category == DeviceCategory.Keyboard
+                ? RazerMappingDeviceKind.Keyboard
+                : RazerMappingDeviceKind.Mouse);
 
     public Visibility MappingVisibility => VisibleWhen(Has(RazerHidBackendCapability.MappingRead));
 

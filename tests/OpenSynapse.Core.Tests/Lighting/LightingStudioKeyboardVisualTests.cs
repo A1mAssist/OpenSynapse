@@ -47,6 +47,36 @@ public sealed class LightingStudioKeyboardVisualTests
         Assert.DoesNotContain(visual.Keys, key => key.KeyName.Equals("Logo", StringComparison.OrdinalIgnoreCase));
     }
 
+    private const string ProductCharactersSvg = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360">
+          <style>
+            .productfill { fill: #111111; }
+            .characters { fill: #D2D2D2; }
+            .led { fill: #FF00FF; }
+          </style>
+          <g id="Product">
+            <path class="productfill" d="M0,0H960V360H0Z"/>
+            <path class="characters" d="M10,10H20V20H10Z M30,10H40V20H30Z"/>
+          </g>
+          <g id="US_LED">
+            <path id="keyA" class="keyA led" data-assumed-key-name="A" d="M50,50H80V80H50Z"/>
+          </g>
+        </svg>
+        """;
+
+    [Fact]
+    public void CharactersInsideProductGroupStayLetteringWithCssFill()
+    {
+        var visual = StudioKeyboardVisualBuilder.Build(ProductCharactersSvg);
+
+        var lettering = Assert.Single(visual.Paths, path => path.Role == StudioSvgRole.Lettering);
+        Assert.Equal("#D2D2D2", lettering.Fill);
+        Assert.False(string.IsNullOrWhiteSpace(lettering.Data));
+        Assert.Contains(visual.Paths, path => path.Role == StudioSvgRole.Product);
+        Assert.Equal("A", Assert.Single(visual.Keys).KeyName);
+    }
+
     [Fact]
     public void ManifestBuildDecodesSvgPayload()
     {

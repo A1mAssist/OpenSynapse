@@ -3347,4 +3347,6 @@
   <data name="RazerMappingDpiXHeader" xml:space="preserve"><value>DPI X</value></data>
   <data name="RazerMappingDpiYHeader" xml:space="preserve"><value>DPI Y</value></data>
   <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>Macro repeats</value></data>
+  <data name="RazerMappingKeyboardHint" xml:space="preserve"><value>Select a key to edit its mapping</value></data>
+  <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>Keyboard</value></data>
 </root>

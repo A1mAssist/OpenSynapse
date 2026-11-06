@@ -1,5 +1,7 @@
 namespace OpenSynapse.App.ViewModels;
 
+using OpenSynapse.Core.Lighting;
+
 /// <summary>One button hotspot in source-image pixels.</summary>
 public readonly record struct RazerMappingPoint(double X, double Y, bool IsLeft);
 
@@ -12,6 +14,21 @@ public sealed record RazerMappingImageLayout(
     double SourceWidth,
     double SourceHeight,
     IReadOnlyDictionary<byte, RazerMappingPoint> Hotspots);
+
+/// <summary>A keyboard SVG plus the firmware key id resolved for each key name.</summary>
+public sealed record RazerMappingKeyboardLayout(
+    StudioKeyboardVisual Visual,
+    IReadOnlyDictionary<string, byte> ButtonIdsByKeyName);
+
+/// <summary>Optional device art. Null members mean the table-only fallback is used.</summary>
+public sealed record RazerMappingVisual(
+    RazerMappingImageLayout? Mouse,
+    RazerMappingKeyboardLayout? Keyboard,
+    string? Error)
+{
+    public static RazerMappingVisual Empty { get; } = new(null, null, null);
+    public bool HasVisual => Mouse is not null || Keyboard is not null;
+}
 
 /// <summary>
 /// Device images are optional. A model appears only when its own captured asset exists;
@@ -35,9 +52,8 @@ public static class RazerMappingAssetCatalog
     }
 
     /// <summary>
-    /// Hotspots are only supplied for a product whose own Razer UI bundle contains
-    /// anchors. The 00B8 values come from product 184's drawLines() table, translated
-    /// to the trimmed 3x product image (12 px transparent safety border).
+    /// Offline fallback for 00B8 only. The live path uses the product's own UI bundle;
+    /// this captured pair keeps the Viper page usable when the CDN is unreachable.
     /// </summary>
     public static RazerMappingImageLayout? FindLayout(ushort productId)
     {
@@ -52,14 +68,14 @@ public static class RazerMappingAssetCatalog
             778,
             new Dictionary<byte, RazerMappingPoint>
             {
-                [0x01] = new(96, 52, true),   // LeftClick, Razer (114,58)
-                [0x02] = new(282, 52, false), // RightClick, Razer (181,58)
-                [0x03] = new(180, 142, true), // ScrollClick, Razer (147,88)
-                [0x04] = new(3, 313, true),   // MouseButton4, Razer (88,145)
-                [0x05] = new(3, 403, true),   // MouseButton5, Razer (88,175)
-                [0x09] = new(183, 103, false),// ScrollUp, Razer (148,75)
-                [0x0A] = new(183, 193, false),// ScrollDown, Razer (148,105)
-                [0x60] = new(183, 292, false),// CycleUpSensitivityStages, Razer (148,138)
+                [0x01] = new(96, 52, true),
+                [0x02] = new(282, 52, false),
+                [0x03] = new(180, 142, true),
+                [0x04] = new(3, 313, true),
+                [0x05] = new(3, 403, true),
+                [0x09] = new(183, 103, false),
+                [0x0A] = new(183, 193, false),
+                [0x60] = new(183, 292, false),
             });
     }
 }
