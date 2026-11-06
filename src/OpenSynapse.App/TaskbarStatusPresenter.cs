@@ -1,5 +1,4 @@
 using System.Collections.Specialized;
-using System.ComponentModel;
 using Microsoft.UI.Dispatching;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Diagnostics;
@@ -11,7 +10,6 @@ namespace OpenSynapse.App;
 
 internal sealed class TaskbarStatusPresenter : IDisposable
 {
-    private static readonly TimeSpan BladeGracePeriod = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan BatteryReadInterval = TimeSpan.FromSeconds(20);
     private readonly MainWindow _window;
     private readonly MainViewModel _viewModel;
@@ -22,7 +20,6 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private TaskbarStatusWindow? _statusWindow;
     private CancellationTokenSource? _batteryReadCancellation;
     private object? _activePeripheralSource;
-    private DateTimeOffset? _lastBladeSeenAt;
     private DateTimeOffset _lastBatteryReadAt = DateTimeOffset.MinValue;
     private bool _batteryReadRequested = true;
     private bool _enabled;
@@ -37,7 +34,6 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _window = window;
         _viewModel = viewModel;
         _diagnosticLog = diagnosticLog;
-        _viewModel.Blade.PropertyChanged += OnBladeChanged;
         _viewModel.Devices.CollectionChanged += OnDevicesChanged;
         _viewModel.RazerHid.Devices.CollectionChanged += OnDevicesChanged;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
@@ -76,19 +72,9 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         CancelBatteryRead();
         _statusWindow?.Dispose();
         _statusWindow = null;
-        _viewModel.Blade.PropertyChanged -= OnBladeChanged;
         _viewModel.Devices.CollectionChanged -= OnDevicesChanged;
         _viewModel.RazerHid.Devices.CollectionChanged -= OnDevicesChanged;
         GC.SuppressFinalize(this);
-    }
-
-    private void OnBladeChanged(object? sender, PropertyChangedEventArgs args)
-    {
-        if (args.PropertyName is nameof(BladeWorkspace.BladeProductId)
-            or nameof(BladeWorkspace.PerformanceModeText))
-        {
-            Refresh();
-        }
     }
 
     private void OnDevicesChanged(object? sender, NotifyCollectionChangedEventArgs args)
@@ -100,15 +86,6 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private void Refresh()
     {
         if (!_enabled || _disposed) return;
-        var bladeProductId = _viewModel.Blade.BladeProductId;
-        if (bladeProductId != 0)
-        {
-            _lastBladeSeenAt = DateTimeOffset.UtcNow;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var hasBlade = bladeProductId != 0 ||
-            (_lastBladeSeenAt is { } seen && now - seen < BladeGracePeriod);
         var battery = CurrentBatteries()
             .Where(item => item.Percent is not null)
             .OrderBy(item => item.Percent)
@@ -127,7 +104,6 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         var snapshot = new TaskbarStatusSnapshot(
             battery.Percent,
             null,
-            hasBlade ? _viewModel.Blade.PerformanceModeText : string.Empty,
             battery.Glyph,
             battery.Name);
         if (!TaskbarStatusPolicy.ShouldShow(snapshot, enabled: true))
@@ -136,10 +112,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             return;
         }
 
-        var tooltip = TaskbarStatusPolicy.FormatTooltip(
-            snapshot,
-            string.Empty,
-            snapshot.PerformanceMode);
+        var automationText = TaskbarStatusPolicy.FormatDescription(snapshot, string.Empty);
         try
         {
             if (_statusWindow is null)
@@ -148,7 +121,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
                     message => _diagnosticLog.TryWrite("taskbar-status", message));
                 _statusWindow.Activated += ActivatePeripheral;
             }
-            _statusWindow.Update(snapshot, tooltip, tooltip);
+            _statusWindow.Update(snapshot, automationText);
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or System.ComponentModel.Win32Exception)
