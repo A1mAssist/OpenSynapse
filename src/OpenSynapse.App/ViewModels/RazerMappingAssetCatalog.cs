@@ -13,7 +13,10 @@ public sealed record RazerMappingImageLayout(
     Uri ImageUri,
     double SourceWidth,
     double SourceHeight,
-    IReadOnlyDictionary<byte, RazerMappingPoint> Hotspots);
+    IReadOnlyDictionary<byte, RazerMappingPoint> Hotspots)
+{
+    public IReadOnlyDictionary<byte, string>? ButtonNames { get; init; }
+}
 
 /// <summary>A keyboard SVG plus the firmware key id resolved for each key name.</summary>
 public sealed record RazerMappingKeyboardLayout(

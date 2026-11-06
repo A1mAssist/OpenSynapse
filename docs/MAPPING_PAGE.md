@@ -107,9 +107,11 @@ Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免�
 
 AVIF 的透明底会被 Windows 解码成不透明黑。映射图不做颜色抠图，只把整张图的亮度加 `#141414` 提亮到卡片背景色；这样黑底和卡片融合，黑色机身边缘不会被抠成透明缺口。
 
-`drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象，按钮对象的 `counter` 是固件按钮 id，`buttonPos` 是左右列。锚点坐标先减去 `(cvsW - 300) / 2`，再按 `300 × 340` 的产品图画布使用；3x 图实际是 `900 × 1020`，UI 只按同一比例缩放，不另存一套裁边坐标。左右列优先用 `buttonPos`，没有时才用 `!isLeft`。没有按钮 id 的 `drawLine` 不生成热点。
+`drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象。`counter` 是 bundle 的界面序号，不是固件按钮 id：00B8 设备实际回读的按钮是 `1,2,3,4,5,9,10,96`，而 bundle 的 `counter` 是 `1..8`。解析锚点时先把标准鼠标键位映射到固件 id（`LeftClick→1`、`RightClick→2`、`ScrollClick→3`、`MouseButton4→4`、`MouseButton5→5`、`ScrollUp→9`、`ScrollDown→10`、`CycleUpSensitivityStages→0x60`），未知键才回退 `counter`；`buttonPos` 是左右列。`drawLine` 实际画圆点的中心是 `x + 3*dotRadius`、`y + dotRadius`，再减去产品图在画布中的居中偏移 `(cvsW - 300) / 2`、`(cvsH - 340) / 2`；`cvsW`、`cvsH`、`dotRadius` 从 bundle 的同一段画布配置读取，缺省为 `310`、`340`、`2.5`。3x 图比例必须是 `300:340`，否则映射卡回退表格，不把锚点画到错误位置。左右列优先用 `buttonPos`，没有时才用 `!isLeft`；省略第五参数时按 `drawLine` 默认值归到左列。没有固件 id 的 `drawLine` 不生成热点。
 
-不是每个按钮都有锚点。产品 99 的 bundle 有 9 个 `drawLine` 位置，但只有 5 个按钮对象能确认 id；这 5 个显示设备旁标签，其余行保留在下方表格里。没有锚点的行不伪造中心点。
+行标题按同一固件 id 用 bundle 的 `buttonKey` 生成（`ScrollUp → Scroll up`、`MouseButton4 → Button 4`、`CycleUpSensitivityStages → DPI cycle up`）；没有 bundle 名称时才回退通用鼠标表。不要把 `counter` 直接当按钮 id，否则 00B8 的 4/5 会把侧键引线画到滚轮上。
+
+不是每个按钮都有锚点。产品 99 的 bundle 有 9 个 `drawLine` 位置；只有能从按钮对象解析出固件 id 的位置生成热点，其余行保留在下方表格里。没有锚点的行不伪造中心点。
 
 键盘 SVG 的 `characters` 层是键帽文字，`led` 层是键位热区，Razer logo（`KeyName=Logo` 或 `selection-group=logo`）只画不点。键名到固件键 id 用标准 USB HID usage 映射，例如 `A → 4`、`Esc → 41`、`LeftShift → 225`；没有可靠映射的键仍显示，但点击不会硬选一行。键盘不铺 111 条引线，当前选中的键用描边高亮，编辑器在下方，完整行表格也保留。
 

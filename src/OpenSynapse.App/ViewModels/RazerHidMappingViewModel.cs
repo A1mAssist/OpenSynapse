@@ -403,6 +403,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                     OnPropertyChanged(nameof(Layout));
                     OnPropertyChanged(nameof(StageVisibility));
                     OnPropertyChanged(nameof(TableVisibility));
+                    RazerHidMappingRowViewModel.ApplyButtonNames(Rows, mouse.ButtonNames);
                     PopulateStageRows();
                 }
             }
