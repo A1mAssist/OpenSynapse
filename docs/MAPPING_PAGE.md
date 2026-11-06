@@ -107,6 +107,8 @@ Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免�
 
 AVIF 的透明底会被 Windows 解码成不透明黑。映射图不做颜色抠图，只把整张图的亮度加 `#141414` 提亮到卡片背景色；这样黑底和卡片融合，黑色机身边缘不会被抠成透明缺口。
 
+00B8 例外：打包的 `00B8.png` 带正确的透明通道和已验证锚点，构造时已经有 layout 就不再下载云端 AVIF 覆盖它。Windows 的 AVIF 解码器会丢掉 alpha，云端图里的半透明投影会被提亮成矩形或条纹；实机验收以本地 PNG 为准。其他型号继续使用云端 bundle 的 3x 图，失败时回退表格。
+
 `drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象。`counter` 是 bundle 的界面序号，不是固件按钮 id：00B8 设备实际回读的按钮是 `1,2,3,4,5,9,10,96`，而 bundle 的 `counter` 是 `1..8`。解析锚点时先把标准鼠标键位映射到固件 id（`LeftClick→1`、`RightClick→2`、`ScrollClick→3`、`MouseButton4→4`、`MouseButton5→5`、`ScrollUp→9`、`ScrollDown→10`、`CycleUpSensitivityStages→0x60`），未知键才回退 `counter`；`buttonPos` 是左右列。`drawLine` 实际画圆点的中心是 `x + 3*dotRadius`、`y + dotRadius`，再减去产品图在画布中的居中偏移 `(cvsW - 300) / 2`、`(cvsH - 340) / 2`；`cvsW`、`cvsH`、`dotRadius` 从 bundle 的同一段画布配置读取，缺省为 `310`、`340`、`2.5`。3x 图比例必须是 `300:340`，否则映射卡回退表格，不把锚点画到错误位置。左右列优先用 `buttonPos`，没有时才用 `!isLeft`；省略第五参数时按 `drawLine` 默认值归到左列。没有固件 id 的 `drawLine` 不生成热点。
 
 行标题按同一固件 id 用 bundle 的 `buttonKey` 生成（`ScrollUp → Scroll up`、`MouseButton4 → Button 4`、`CycleUpSensitivityStages → DPI cycle up`）；没有 bundle 名称时才回退通用鼠标表。不要把 `counter` 直接当按钮 id，否则 00B8 的 4/5 会把侧键引线画到滚轮上。

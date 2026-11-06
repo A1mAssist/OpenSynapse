@@ -268,7 +268,10 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
             }
 
             PopulateStageRows();
-            StartVisualLoad();
+            if (_layout is null)
+            {
+                StartVisualLoad();
+            }
             _loaded = true;
             StatusText = Rows.Count == 0
                 ? AppStrings.Text("RazerHidMappingNoButtons")
