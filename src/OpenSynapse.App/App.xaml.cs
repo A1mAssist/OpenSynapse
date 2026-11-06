@@ -26,6 +26,7 @@ public partial class App : Application
     private SingleInstanceGuard? _singleInstanceGuard;
     private ElevatedMacroClient? _elevatedMacroClient;
     private ElevatedMacroInputSink? _elevatedMacroSink;
+    private RazerFilterMacroInputSink? _razerFilterMacroSink;
     private WindowsTrayIcon? _trayIcon;
     private TrayMenuWindow? _trayMenuWindow;
     private TaskbarStatusPresenter? _taskbarStatusPresenter;
@@ -181,6 +182,7 @@ public partial class App : Application
         _thxAudioController = new WindowsThxAudioController();
         _elevatedMacroClient = new ElevatedMacroClient();
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
+        _razerFilterMacroSink = new RazerFilterMacroInputSink(_elevatedMacroSink);
         // Share the Razer transport so RazerHid requests and telemetry serialize on one gate.
         _openRazerDeviceService = new RazerHidDeviceService(
             RazerHidDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
@@ -206,7 +208,7 @@ public partial class App : Application
                 message => _diagnosticLog.TryWrite("kraken-lighting", message)),
             thxAudioController: _thxAudioController,
             thxAudioSupported: WindowsThxAudioController.IsSupportedModel(),
-            macroInputSink: _elevatedMacroSink);
+            macroInputSink: _razerFilterMacroSink);
         _ = EnsureMacroAgentAsync();
         _audioMuteViewModel = viewModel;
         viewModel.Blade.ControlDeviceChanged += OnBladeControlDeviceChanged;
@@ -558,6 +560,20 @@ public partial class App : Application
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("application", $"Fan recovery before exit failed: {exception}");
+        }
+
+        var macroSink = _razerFilterMacroSink;
+        _razerFilterMacroSink = null;
+        if (macroSink is not null)
+        {
+            try
+            {
+                await macroSink.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("macro", $"Driver macro sink shutdown failed: {exception.Message}");
+            }
         }
 
         await _audioMuteRuntimeGate.WaitAsync();
