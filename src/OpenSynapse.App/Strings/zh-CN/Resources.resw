@@ -3773,4 +3773,6 @@
   <data name="RazerMappingDpiXHeader" xml:space="preserve"><value>DPI X</value></data>
   <data name="RazerMappingDpiYHeader" xml:space="preserve"><value>DPI Y</value></data>
   <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>宏次数</value></data>
+  <data name="RazerMappingKeyboardHint" xml:space="preserve"><value>点击键位编辑映射</value></data>
+  <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>键盘</value></data>
 </root>

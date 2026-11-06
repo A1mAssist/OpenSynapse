@@ -1,12 +1,16 @@
 using System.Collections.Specialized;
+using System.ComponentModel;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Lighting;
 using Windows.Foundation;
 using Windows.UI;
+using Path = Microsoft.UI.Xaml.Shapes.Path;
 
 namespace OpenSynapse.App.Views;
 
@@ -14,6 +18,8 @@ public sealed partial class RazerMappingView : UserControl
 {
     private RazerHidMappingViewModel? _mapping;
     private bool _connectorsPending;
+    private readonly Dictionary<string, Path> _keyboardKeyPaths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<byte, Path> _keyboardPathsByButton = new();
 
     public RazerMappingView()
     {
@@ -96,6 +102,9 @@ public sealed partial class RazerMappingView : UserControl
             _mapping.Rows.CollectionChanged += RowsChanged;
             _mapping.LeftRows.CollectionChanged += RowsChanged;
             _mapping.RightRows.CollectionChanged += RowsChanged;
+            _mapping.PropertyChanged += MappingPropertyChanged;
+            DrawKeyboard();
+            UpdateKeyboardSelection();
         }
     }
 
@@ -109,10 +118,147 @@ public sealed partial class RazerMappingView : UserControl
         _mapping.Rows.CollectionChanged -= RowsChanged;
         _mapping.LeftRows.CollectionChanged -= RowsChanged;
         _mapping.RightRows.CollectionChanged -= RowsChanged;
+        _mapping.PropertyChanged -= MappingPropertyChanged;
         _mapping = null;
+        KeyboardCanvas.Children.Clear();
+        _keyboardKeyPaths.Clear();
+        _keyboardPathsByButton.Clear();
     }
 
     private void RowsChanged(object? sender, NotifyCollectionChangedEventArgs e) => RequestConnectors();
+
+    private void MappingPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(RazerHidMappingViewModel.KeyboardLayout))
+        {
+            DrawKeyboard();
+            UpdateKeyboardSelection();
+        }
+        else if (args.PropertyName == nameof(RazerHidMappingViewModel.SelectedRow))
+        {
+            UpdateKeyboardSelection();
+        }
+        else if (args.PropertyName is nameof(RazerHidMappingViewModel.LayoutImage) or
+            nameof(RazerHidMappingViewModel.Layout))
+        {
+            RequestConnectors();
+        }
+    }
+
+    private void DrawKeyboard()
+    {
+        KeyboardCanvas.Children.Clear();
+        _keyboardKeyPaths.Clear();
+        _keyboardPathsByButton.Clear();
+        if (Mapping?.KeyboardLayout is not { } layout)
+        {
+            return;
+        }
+
+        KeyboardCanvas.Width = layout.Visual.Width;
+        KeyboardCanvas.Height = layout.Visual.Height;
+        var ledKeys = layout.Visual.Paths
+            .Where(path => path.Role == StudioSvgRole.Led && !string.IsNullOrWhiteSpace(path.KeyName))
+            .Select(path => path.KeyName!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var source in layout.Visual.Paths.OrderBy(path => StudioCanvasGeometry.RoleOrder(path.Role)))
+        {
+            if (source.Role == StudioSvgRole.Selection &&
+                source.KeyName is { Length: > 0 } selectedKey &&
+                ledKeys.Contains(selectedKey))
+            {
+                continue;
+            }
+
+            if (StudioCanvas.ConvertGeometry(source.Data) is not { } geometry)
+            {
+                continue;
+            }
+
+            var element = new Path
+            {
+                Data = geometry,
+                IsHitTestVisible = false,
+                Opacity = double.IsFinite(source.Opacity) ? Math.Clamp(source.Opacity, 0, 1) : 1,
+            };
+            if (StudioCanvasGeometry.ParseColor(source.Fill ?? string.Empty) is { } fill)
+            {
+                element.Fill = new SolidColorBrush(fill);
+            }
+
+            if (StudioCanvasGeometry.ParseColor(source.Stroke ?? string.Empty) is { } stroke)
+            {
+                element.Stroke = new SolidColorBrush(stroke);
+                element.StrokeThickness = 1;
+            }
+
+            if (source.Role is StudioSvgRole.Led or StudioSvgRole.Selection &&
+                source.KeyName is { Length: > 0 } keyName)
+            {
+                element.IsHitTestVisible = true;
+                element.Fill = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+                element.Stroke = Application.Current.Resources["LineStrongBrush"] as Brush;
+                element.StrokeThickness = 0.6;
+                element.Tag = keyName;
+                element.PointerPressed += KeyboardKeyPressed;
+                AutomationProperties.SetName(element, keyName);
+                ToolTipService.SetToolTip(element, keyName);
+                _keyboardKeyPaths[keyName] = element;
+                if (layout.ButtonIdsByKeyName.TryGetValue(keyName, out var buttonId))
+                {
+                    _keyboardPathsByButton[buttonId] = element;
+                }
+            }
+
+            KeyboardCanvas.Children.Add(element);
+        }
+    }
+
+    private void KeyboardKeyPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is not Path { Tag: string keyName } ||
+            Mapping is not { KeyboardLayout: { } layout } mapping ||
+            !layout.ButtonIdsByKeyName.TryGetValue(keyName, out var buttonId))
+        {
+            return;
+        }
+
+        var row = mapping.Rows.FirstOrDefault(item => item.ButtonId == buttonId);
+        if (row is not null)
+        {
+            mapping.SelectedRow = row;
+        }
+    }
+
+    private void UpdateKeyboardSelection()
+    {
+        var mapping = Mapping;
+        if (mapping?.KeyboardLayout is not { } layout)
+        {
+            return;
+        }
+
+        var accent = Application.Current.Resources["AccentBrush"] as Brush ??
+            new SolidColorBrush(Color.FromArgb(255, 0x44, 0xD6, 0x2C));
+        var accentColor = accent is SolidColorBrush solid
+            ? solid.Color
+            : Color.FromArgb(255, 0x44, 0xD6, 0x2C);
+        var selected = mapping.SelectedRow?.ButtonId;
+        foreach (var (keyName, element) in _keyboardKeyPaths)
+        {
+            var isSelected = selected is { } id &&
+                layout.ButtonIdsByKeyName.TryGetValue(keyName, out var mapped) &&
+                mapped == id;
+            element.Fill = isSelected
+                ? new SolidColorBrush(Color.FromArgb(72, accentColor.R, accentColor.G, accentColor.B))
+                : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            element.Stroke = isSelected
+                ? accent
+                : Application.Current.Resources["LineStrongBrush"] as Brush;
+            element.StrokeThickness = isSelected ? 1.8 : 0.6;
+        }
+    }
 
     private void RequestConnectors()
     {

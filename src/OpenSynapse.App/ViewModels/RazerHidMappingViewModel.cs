@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Macros;
@@ -23,8 +24,13 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacroProvider;
     private readonly Func<CancellationToken, Task>? _afterApplyAsync;
     private readonly Action<string>? _log;
-    private readonly ImageSource? _layoutImage;
-    private readonly RazerMappingImageLayout? _layout;
+    private readonly ushort _productId;
+    private readonly RazerMappingDeviceKind _deviceKind;
+    private readonly RazerMappingAssetService _assetService;
+    private ImageSource? _layoutImage;
+    private RazerMappingImageLayout? _layout;
+    private RazerMappingKeyboardLayout? _keyboardLayout;
+    private bool _visualLoadStarted;
     private bool _isBusy;
     private string _statusText = string.Empty;
     private string _errorText = string.Empty;
@@ -46,7 +52,10 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         RazerMappingImageLayout? layout = null,
         Action<string>? log = null,
         IRazerMappingActionCatalog? actionCatalog = null,
-        Func<CancellationToken, Task>? afterApplyAsync = null)
+        Func<CancellationToken, Task>? afterApplyAsync = null,
+        ushort productId = 0,
+        RazerMappingDeviceKind deviceKind = RazerMappingDeviceKind.Mouse,
+        RazerMappingAssetService? assetService = null)
     {
         _transport = transport;
         _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;
@@ -57,6 +66,9 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         _layout = layout;
         _layoutImage = CreateLayoutImage(layout?.ImageUri ?? layoutUri);
         _log = log;
+        _productId = productId;
+        _deviceKind = deviceKind;
+        _assetService = assetService ?? RazerMappingAssetService.Shared;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -132,12 +144,31 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
     }
     public string SelectedButtonName => _selectedRow?.ButtonName ?? string.Empty;
     public Visibility EditorVisibility => _selectedRow is null ? Visibility.Collapsed : Visibility.Visible;
-    public ImageSource? LayoutImage => _layoutImage;
+    public ImageSource? LayoutImage
+    {
+        get => _layoutImage;
+        private set
+        {
+            if (ReferenceEquals(_layoutImage, value)) return;
+            _layoutImage = value;
+            OnPropertyChanged();
+        }
+    }
     public RazerMappingImageLayout? Layout => _layout;
-    public bool HasLayout => _layoutImage is not null;
-    public Visibility LayoutVisibility => HasLayout ? Visibility.Visible : Visibility.Collapsed;
+    public RazerMappingKeyboardLayout? KeyboardLayout => _keyboardLayout;
     public Visibility StageVisibility => _layout is null ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility TableVisibility => _layout is null ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility KeyboardStageVisibility =>
+        _keyboardLayout is null ? Visibility.Collapsed : Visibility.Visible;
+    public double KeyboardWidth => _keyboardLayout?.Visual.Width ?? 0;
+    public double KeyboardHeight => _keyboardLayout?.Visual.Height ?? 0;
+    public string KeyboardHint => AppStrings.Text("RazerMappingKeyboardHint");
+    // The keyboard keeps the row table below the device so a key that has no
+    // reliable name-to-HID match is still editable.
+    public Visibility TableVisibility =>
+        _keyboardLayout is not null || _layout is null ||
+        Rows.Count > LeftRows.Count + RightRows.Count
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     public bool SupportsMacros => _macrosAvailable;
 
     private byte Mode => (byte)LayerIndex;
@@ -147,6 +178,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         Rows.Clear();
         LeftRows.Clear();
         RightRows.Clear();
+        OnPropertyChanged(nameof(TableVisibility));
     }
 
     private void AddRow(RazerHidMappingRowViewModel row) => Rows.Add(row);
@@ -161,9 +193,8 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         }
 
         var ordered = Rows
-            .Select(row => (Row: row, Hotspot: _layout.Hotspots.TryGetValue(row.ButtonId, out var point)
-                ? point
-                : new RazerMappingPoint(_layout.SourceWidth / 2, _layout.SourceHeight / 2, true)))
+            .Where(row => _layout.Hotspots.ContainsKey(row.ButtonId))
+            .Select(row => (Row: row, Hotspot: _layout.Hotspots[row.ButtonId]))
             .OrderBy(item => item.Hotspot.Y)
             .ToArray();
         foreach (var (row, hotspot) in ordered)
@@ -177,6 +208,8 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                 RightRows.Add(row);
             }
         }
+
+        OnPropertyChanged(nameof(TableVisibility));
     }
 
     private static ImageSource? CreateLayoutImage(Uri? uri)
@@ -235,6 +268,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
             }
 
             PopulateStageRows();
+            StartVisualLoad();
             _loaded = true;
             StatusText = Rows.Count == 0
                 ? AppStrings.Text("RazerHidMappingNoButtons")
@@ -336,6 +370,61 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
             OnPropertyChanged(nameof(CanApply));
+        }
+    }
+
+    private void StartVisualLoad()
+    {
+        if (_visualLoadStarted || _productId == 0)
+        {
+            return;
+        }
+
+        _visualLoadStarted = true;
+        _ = LoadVisualAsync();
+    }
+
+    private async Task LoadVisualAsync()
+    {
+        try
+        {
+            var visual = await _assetService.GetAsync(_productId, _deviceKind).ConfigureAwait(true);
+            if (visual.Mouse is { } mouse)
+            {
+                var image = await RazerMappingImageLoader.LoadAsync(mouse.ImageUri).ConfigureAwait(true);
+                if (image is null)
+                {
+                    _log?.Invoke($"mapping image decode failed: {mouse.ImageUri}");
+                }
+                else
+                {
+                    _layout = mouse;
+                    LayoutImage = image;
+                    OnPropertyChanged(nameof(Layout));
+                    OnPropertyChanged(nameof(StageVisibility));
+                    OnPropertyChanged(nameof(TableVisibility));
+                    PopulateStageRows();
+                }
+            }
+
+            if (visual.Keyboard is { } keyboard)
+            {
+                _keyboardLayout = keyboard;
+                OnPropertyChanged(nameof(KeyboardLayout));
+                OnPropertyChanged(nameof(KeyboardStageVisibility));
+                OnPropertyChanged(nameof(KeyboardWidth));
+                OnPropertyChanged(nameof(KeyboardHeight));
+                OnPropertyChanged(nameof(TableVisibility));
+            }
+
+            if (!string.IsNullOrWhiteSpace(visual.Error))
+            {
+                _log?.Invoke($"mapping visual unavailable: {visual.Error}");
+            }
+        }
+        catch (Exception exception) when (IsExpected(exception) || exception is ArgumentException)
+        {
+            _log?.Invoke($"mapping visual failed: {exception.Message}");
         }
     }
 

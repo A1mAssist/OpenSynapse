@@ -77,6 +77,33 @@ public sealed class MappingPageAuditTests
             _ => true);
     }
 
+    [Fact]
+    public void MappingArtIsResolvedPerProductAtRuntime()
+    {
+        var root = RepoLayout.Root;
+        var service = File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.App", "ViewModels", "RazerMappingAssetService.cs"));
+        var bundle = File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.Core", "Devices", "RazerMappingBundle.cs"));
+        var view = File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.App", "Views", "RazerMappingView.xaml"));
+
+        Assert.Contains("asset-manifest.json", service);
+        Assert.Contains("prd-3x", service);
+        Assert.Contains("StudioManifestService", service);
+        Assert.Contains("RazerMappingBundleParser", service);
+        Assert.Contains("offlineCatalogPath:", service);
+        Assert.Contains("studio-manifests.zip", service);
+        Assert.Contains("{ 0, 129 }", service);
+        Assert.Contains("var image = await LoadBundleAsync", service);
+        Assert.Contains("drawLines", bundle);
+        Assert.Contains("buttonPos", bundle);
+        Assert.Contains("KeyboardCanvas", view);
+        Assert.Contains("KeyboardStageVisibility", view);
+        Assert.DoesNotContain("MappingProductIds", service);
+        Assert.DoesNotContain("PidWhitelist", service);
+    }
+
     private static bool IsBuildOutput(string path)
     {
         var separator = Path.DirectorySeparatorChar;

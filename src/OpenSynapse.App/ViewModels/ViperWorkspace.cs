@@ -124,6 +124,8 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             canWrite: true,
             layout: RazerMappingAssetCatalog.FindLayout(0x00B8),
             actionCatalog: RazerViperMappingActionCatalog.Instance,
+            productId: 0x00B8,
+            deviceKind: RazerMappingDeviceKind.Mouse,
             afterApplyAsync: PersistMappingProfileAsync);
 
     public async Task ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default)
