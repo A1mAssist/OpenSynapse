@@ -98,6 +98,8 @@ public sealed class MappingPageAuditTests
         Assert.Contains("prd-3x", service);
         Assert.Contains("prd.svg", service);
         Assert.Contains("CreateImageOnlyAsync", service);
+        Assert.Contains("BuildKeypad", service);
+        Assert.Contains("ResolveKeypad", service);
         Assert.Contains("RazerAvifDecoder", service);
         Assert.Contains("StudioManifestService", service);
         Assert.Contains("RazerMappingBundleParser", service);

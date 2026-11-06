@@ -102,6 +102,7 @@ Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免�
 
 - **鼠标**：先读 `https://apps.razer.com/synapse/products/{decimalPid}/ui/asset-manifest.json`，从 `main.js` 取该产品自己的 `drawLines()` 锚点，从 `static/media/prd-3x.*.avif` 取产品图；AVIF 由打包的 libavif + dav1d 解码，保留 alpha。
 - **键盘**：优先读 `DeviceManifest_{PID}_0.json` 的灯光工作室 SVG，直接画 `productfill` / `productoutline` / `characters` / LED 键位，不画引线。`edition 0` 不存在时再试 `129`；清单在线获取并写入 ETag 磁盘缓存，没有缓存时回退行表格。现有 catalog 里 edition 129 的样本不一定是键盘，这个兜底没有实机验证，不能当键盘专用版本。
+- **Keypad**：清单 `category=KEYPAD` 时走 `StudioKeyboardVisualBuilder.BuildKeypad`。SVG 的 `selection-N` 路径按出现顺序编号为 `key1..keyN`，`scroll` 单独识别；按键 id 按 bundle 的 `counter` 1..20 和 `ScrollClick` 的 3 绑定。D-pad 不在该 SVG 里，仍保留行表格，不猜坐标。
 - **键盘没有 studio SVG**：回退产品 bundle 的 3x 图 + `drawLines` 锚点，和鼠标共用一套 callout。多数键盘 bundle 没有 `drawLines` 或 `prd-3x`，这种型号仍然只显示行表格。
 - **没有对应资源**：只显示行表格；映射读写不受影响。
 
@@ -150,6 +151,6 @@ pwsh -NoProfile -File tools/Probe-RazerMappingAssets.ps1 -ProductId 590
 - 99：9 个 drawLine 位置，其中 5 个能确认按钮 id；冷启动约 1.24 秒，缓存后约 0.24 秒
 - 590：111 个键盘路径锚点（按 HID 去重），20 张键盘图片；冷启动约 0.9–1.3 秒，缓存后约 0.3 秒
 
-2026-11-06 对 `AvailableDevices.json` 的 335 个产品 id 做了全量扫描：334 个有 `asset-manifest`，174 个有 `prd-3x`；用 `RazerMappingBundleParser` 实际解析后，71 个鼠标 bundle 有非空锚点，74 个键盘清单能生成键位路径。其余型号多数不是映射设备，或者 bundle 没有 `drawLines` / 键位证据，按设计回退行表格。没有锚点但有图片资源的型号现在只显示装饰图：208/199 用 `prd-3x`，235/226/45061/45063 用 `prd.svg`，555/580 用 `prd-3x`；热点为空，编辑仍走行表格。PID 680 的 `asset-manifest` 返回 404。555/580 这类 keypad 使用另一套 400×450 的画布和字符串键名 `drawLine`，坐标不能套鼠标的 300×340 模型，因此没有生成热点。
+2026-11-06 对 `AvailableDevices.json` 的 335 个产品 id 做了全量扫描：334 个有 `asset-manifest`，174 个有 `prd-3x`；用 `RazerMappingBundleParser` 实际解析后，71 个鼠标 bundle 有非空锚点，74 个键盘清单能生成键位路径。其余型号多数不是映射设备，或者 bundle 没有 `drawLines` / 键位证据，按设计回退行表格。没有锚点但有图片资源的型号现在只显示装饰图：208/199 用 `prd-3x`，235/226/45061/45063 用 `prd.svg`，555/580 用 studio keypad SVG；555/580 的 20 个按键和滚轮有热点，D-pad 没有 SVG 证据，保留行表格。PID 680 的 `asset-manifest` 返回 404。
 
 `main.js` 缓存在 `%TEMP%\OpenSynapse-RazerMappingProbe`。正式映射页复用同一套解析规则，并把清单、`main.js`、图片和解析结果写入 `%LOCALAPPDATA%` 缓存；冷启动仍需约 1 秒网络时间，命中缓存后只读本地文件。

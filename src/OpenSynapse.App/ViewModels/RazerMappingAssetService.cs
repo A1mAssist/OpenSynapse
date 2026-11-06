@@ -136,8 +136,11 @@ public sealed partial class RazerMappingAssetService
                     {
                         if (bundle.MouseAnchors.Count == 0)
                         {
-                            return await CreateImageOnlyAsync(new Uri(imagePath), cancellationToken)
-                                .ConfigureAwait(false);
+                            var imageOnly = await CreateImageOnlyAsync(
+                                new Uri(imagePath), cancellationToken).ConfigureAwait(false);
+                            return imageOnly is null
+                                ? null
+                                : imageOnly with { ButtonNames = bundle.ButtonNamesById };
                         }
 
                         if (await HasExpectedAspectAsync(imagePath, bundle.ImageWidth, bundle.ImageHeight)
@@ -192,13 +195,18 @@ public sealed partial class RazerMappingAssetService
             }
 
             var visual = StudioKeyboardVisualBuilder.Build(result.Manifest);
-            if (visual is not { Keys.Count: > 0 })
+            if (visual is { Keys.Count: > 0 })
             {
-                continue;
+                return new RazerMappingKeyboardLayout(
+                    visual, RazerKeyboardKeyCatalog.Resolve(visual.Keys));
             }
 
-            return new RazerMappingKeyboardLayout(
-                visual, RazerKeyboardKeyCatalog.Resolve(visual.Keys));
+            if (result.Manifest.Category?.Equals("KEYPAD", StringComparison.OrdinalIgnoreCase) == true &&
+                StudioKeyboardVisualBuilder.BuildKeypad(result.Manifest) is { } keypad)
+            {
+                return new RazerMappingKeyboardLayout(
+                    keypad, RazerKeyboardKeyCatalog.ResolveKeypad(keypad.Keys));
+            }
         }
 
         return null;
@@ -451,6 +459,28 @@ internal static class RazerKeyboardKeyCatalog
         foreach (var key in keys)
         {
             if (TryGet(key.KeyName, out var id))
+            {
+                result[key.KeyName] = id;
+            }
+        }
+
+        return result;
+    }
+
+    public static IReadOnlyDictionary<string, byte> ResolveKeypad(IEnumerable<StudioKeyboardKey> keys)
+    {
+        var result = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+        foreach (var key in keys)
+        {
+            if (key.KeyName.Equals("scroll", StringComparison.OrdinalIgnoreCase))
+            {
+                result[key.KeyName] = 3;
+                continue;
+            }
+
+            if (key.KeyName.StartsWith("key", StringComparison.OrdinalIgnoreCase) &&
+                byte.TryParse(key.KeyName.AsSpan(3), NumberStyles.None, CultureInfo.InvariantCulture, out var id) &&
+                id > 0)
             {
                 result[key.KeyName] = id;
             }
