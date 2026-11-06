@@ -206,6 +206,19 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase;
     private (byte Value, string Key)[] ActivePresets => IsT3 ? Presets[..4] : IsFeature91 ? Presets : MxicPresets;
 
+    private static bool SupportsS3Baseline(ushort productId) =>
+        productId is 0x0521 or 0x0549;
+
+    // Synapse 3 shipped the KrystalT2 family (Kraken V3 / HyperSense) with this
+    // Game curve. Synapse 4 changed the same preset to [-3,-3,-4,0,5,5,4,1,0,-1],
+    // which is +7 dB at 500 Hz and -3 dB at 4-16 kHz versus the curve below.
+    private static readonly byte[] Synapse3GameBands =
+    [
+        0xFB, 0xFB, 0xFC, 0xFD, 0xFE, 0x02, 0x04, 0x04, 0x03, 0x02,
+    ];
+
+    private static readonly double[] FlatThxBands = new double[10];
+
     private byte ToFirmwareBand(double level) => _connection.Transport switch
     {
         RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToStep(level),
@@ -325,6 +338,10 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         _thxStatus.Availability == ThxHeadsetAvailability.Available && _thxState is not null
             ? Visibility.Visible
             : Visibility.Collapsed;
+
+    /// <summary>Synapse 3 baseline applies only to the two affected Kraken models.</summary>
+    public Visibility ThxS3BaselineVisibility =>
+        SupportsS3Baseline(_connection.ProductId) ? Visibility.Visible : Visibility.Collapsed;
 
     public bool CanDownloadThxComponent =>
         !IsBusy && _thxStatus.Availability == ThxHeadsetAvailability.NativeMissing;
@@ -821,6 +838,46 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             (controller, token) => controller.SetGainsAsync(
                 ThxAudioEndpoint.Headphones, gains, token),
             cancellationToken);
+    }
+
+    /// <summary>
+    /// Synapse 3 ran these headsets with VirtualSurround off and its Game EQ on
+    /// the headset firmware. Synapse 4 keeps spatial on for the Kitty and uses a
+    /// different Game curve, so restore both halves of the old baseline.
+    /// </summary>
+    public async Task ApplyS3BaselineAsync(CancellationToken cancellationToken = default)
+    {
+        if (!SupportsS3Baseline(_connection.ProductId) || !CanApplyThx) return;
+
+        ThxSpatialEnabled = false;
+        await ApplyThxSpatialAsync(cancellationToken);
+        if (!CanApplyThx || ThxSpatialEnabled) return;
+
+        var customPresetId = _thxState?.Presets
+            .FirstOrDefault(preset =>
+                preset.Id.Equals("Custom", StringComparison.OrdinalIgnoreCase) ||
+                preset.DisplayName.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+            ?.Id ?? "Custom";
+        await RunThxAsync(
+            (controller, token) => controller.SelectPresetAsync(
+                ThxAudioEndpoint.Headphones, customPresetId, FlatThxBands, token),
+            cancellationToken);
+
+        // 0549 and the other 91-byte THX headsets expose the ten-band firmware EQ.
+        // 0521 (KrakenBase37) has no EQ writer here; its Synapse 3 fix is spatial off.
+        if (IsFeature91 && CanApplyThx)
+        {
+            var customIndex = Array.FindIndex(
+                ActivePresets, preset => preset.Key == "RazerHeadsetPresetCustom");
+            if (customIndex >= 0)
+            {
+                var customPreset = ActivePresets[customIndex].Value;
+                await RunWriteAsync(
+                    (service, token) => service.SetCustomEqAsync(
+                        customPreset, Synapse3GameBands, token),
+                    cancellationToken);
+            }
+        }
     }
 
     private WindowsThxHeadsetController ThxController =>

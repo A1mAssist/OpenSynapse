@@ -2525,6 +2525,8 @@
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX components are installed.</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>Spatial audio</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>Apply spatial audio</value></data>
+  <data name="RazerHeadsetThxS3Baseline.Content" xml:space="preserve"><value>Synapse 3 baseline</value></data>
+  <data name="RazerHeadsetThxS3BaselineHint.Text" xml:space="preserve"><value>Turns spatial off and flattens THX; 0549 also gets the Synapse 3 Game curve.</value></data>
   <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>Preset</value></data>
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>Apply preset</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX equalizer</value></data>

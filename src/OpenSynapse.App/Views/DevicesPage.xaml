@@ -190,6 +190,10 @@
                           <ToggleSwitch local:Localized.Uid="RazerHeadsetThxSpatialToggle" Header="空间音效" IsOn="{Binding ThxSpatialEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
                           <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetThxSpatialApply" Content="应用空间音效" Click="HeadsetAudioApplyThxSpatialClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
                         </Grid>
+                        <StackPanel Spacing="4" Visibility="{Binding ThxS3BaselineVisibility}">
+                          <Button local:Localized.Uid="RazerHeadsetThxS3Baseline" Content="雷云3 默认声底" Click="HeadsetAudioApplyThxS3BaselineClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Left" />
+                          <TextBlock local:Localized.Uid="RazerHeadsetThxS3BaselineHint" Text="关闭空间音效并把 THX 归零；0549 额外写回雷云3 的 Game 曲线。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+                        </StackPanel>
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                           <ComboBox local:Localized.Uid="RazerHeadsetThxPresetLabel" Header="预设" ItemsSource="{Binding ThxPresetOptions}" SelectedIndex="{Binding SelectedThxPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" HorizontalAlignment="Stretch" />
                           <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetThxPresetApply" Content="应用预设" Click="HeadsetAudioApplyThxPresetClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
